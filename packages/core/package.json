@@ -55,8 +55,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
-    "check": "tsc -p tsconfig.build.json --noEmit"
+    "build": "vite build && tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "fflate": "^0.8.2"

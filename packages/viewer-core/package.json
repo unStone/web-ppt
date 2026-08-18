@@ -2,7 +2,12 @@
   "name": "@web-ppt/viewer-core",
   "version": "0.1.0",
   "description": "Web-PPT 查看器的 headless 状态机与播放层：导航 / 缩放 / 搜索 / 动画批次，可被任意 UI 框架驱动",
-  "keywords": ["pptx", "viewer", "headless", "state-machine"],
+  "keywords": [
+    "pptx",
+    "viewer",
+    "headless",
+    "state-machine"
+  ],
   "license": "MIT",
   "author": "unStone",
   "homepage": "https://github.com/unStone/web-ppt#readme",
@@ -17,13 +22,18 @@
   "module": "./dist/viewer-core.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/viewer-core.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/viewer-core.js"
+    },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
-    "check": "tsc --noEmit"
+    "build": "vite build && tsc -p tsconfig.build.json"
   },
   "peerDependencies": {
     "web-ppt": "^0.1.0"

@@ -1,7 +1,16 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // 类型检查直接走源码，不依赖任何包已经构建过 —— 干净 clone 上 `npm run check` 也能过。
+    // 只放在这里：各包的 tsconfig.build.json 设了 rootDir: src，
+    // 若在 base 里全局映射，会把上游源码拖进下游的 .d.ts 产物。
+    "paths": {
+      "web-ppt": ["./packages/core/src/index.ts"],
+      "web-ppt/worker": ["./packages/core/src/worker.ts"],
+      "web-ppt/geometry": ["./packages/core/src/pptx/geometry.ts"],
+      "@web-ppt/viewer-core": ["./packages/viewer-core/src/index.ts"]
+    }
   },
   "include": [
     "packages/*/src"
