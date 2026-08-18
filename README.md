@@ -38,8 +38,9 @@ Cordis 之类的应用框架只出现在那一层，不下沉到 core。
 - **core 保持无 DOM**：`web-ppt` 现在完全不碰 `document`，Worker 里可整包运行
 
 抽出来的当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，
-`next()` 会落在最后一张**隐藏**页上——因为没有任何 fixture 带隐藏页，
-而合成一份 4 页的假文稿只要一行。
+`next()` 会落在最后一张**隐藏**页上。它能活那么久，是因为当时 9 个 fixture 里
+**没有一张隐藏页**——快照测试挡得住「变了」，挡不住「一开始就没测过」。
+现已补上 `sample-hidden.pptx` / `.ppt`，两种格式的隐藏页导航都进了回归。
 
 ## 架构
 
@@ -138,7 +139,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，986 项断言 + 102 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1056 项断言 + 122 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，95 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -248,6 +249,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | `sample-media.pptx` | 视频/音频封面 / 墨迹 / 评论 / 分节 / 气泡·股价·复合饼·曲面图 |
 | `sample-metafile.pptx` | 内嵌 EMF 与 WMF |
 | `sample.pptx` · `sample.ppt` | 母版继承 / 最小合法 CFB |
+| `sample-hidden.pptx` · `.ppt` | 隐藏页导航：可见 · 隐 · 隐 · 可见 · 隐（pptx 走 `sld@show`，ppt 走 `F_HIDDEN`） |
 
 `.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run compare` 同款命令，或 `soffice --headless --convert-to ppt <file>`。
 

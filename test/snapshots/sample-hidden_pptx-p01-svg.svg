@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 40)">
+<path d="M 0 106.669 A 106.669 106.669 0 0 1 106.669 0 L 1093.331 0 A 106.669 106.669 0 0 1 1200 106.669 L 1200 533.331 A 106.669 106.669 0 0 1 1093.331 640 L 106.669 640 A 106.669 106.669 0 0 1 0 533.331 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
+<text x="600" y="343.81" text-anchor="middle" xml:space="preserve">
+<tspan font-size="128" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">1</tspan>
+</text>
+<text x="600" y="407.55" text-anchor="middle" xml:space="preserve">
+<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">可见页</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 644)">
+<path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="200" y="16.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">p:sld（无 show 属性）</tspan>
+</text>
+</g>
+</g>
+</svg>

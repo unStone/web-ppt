@@ -199,9 +199,11 @@ const FIXTURES = [
   { file: 'sample-metafile.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
+  { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
+  { file: 'sample-hidden.ppt', minPages: 5, source: 'ppt' },
 ];
 
 const parsed = new Map();
@@ -1023,29 +1025,41 @@ group('headless 状态机');
 
     st.destroy();
 
-    // 隐藏页：固件里没有，但状态机是纯逻辑，造一份最小文稿即可验证
-    const fake = {
-      width: 960, height: 540,
-      slides: [{}, { hidden: true }, { hidden: true }, {}],
-    };
-    const skip = new St(fake, { skipHidden: true });
-    skip.next();
-    eq('skipHidden 连续跳过隐藏页', skip.index, 3);
-    skip.prev();
-    eq('skipHidden 回退也跳过', skip.index, 0);
-    skip.destroy();
+    // 隐藏页导航：走真实文件（sample-hidden.pptx / .ppt），不用合成对象。
+    // 页序 1 可见 · 2 隐藏 · 3 隐藏 · 4 可见 · 5 隐藏，两种格式都要过。
+    for (const file of ['sample-hidden.pptx', 'sample-hidden.ppt']) {
+      const hp = parsed.get(file);
+      if (!check(`${file} 已解析`, !!hp)) continue;
 
-    const keep = new St(fake, { skipHidden: false });
-    keep.next();
-    eq('不跳过时落在隐藏页', keep.index, 1);
-    keep.destroy();
+      eq(`${file} 隐藏标记`, JSON.stringify(hp.slides.map((s2) => !!s2.hidden)),
+        JSON.stringify([false, true, true, false, true]));
 
-    // 全隐藏时 next 不应死循环或越界
-    const allHidden = new St({ width: 960, height: 540, slides: [{}, { hidden: true }, { hidden: true }] },
-      { skipHidden: true });
-    allHidden.next();
-    eq('后续全隐藏时停在原页', allHidden.index, 0);
-    allHidden.destroy();
+      const skip = new St(hp, { skipHidden: true });
+      skip.next();
+      eq(`${file} 连续跳过两张隐藏页`, skip.index, 3);
+      skip.prev();
+      eq(`${file} 回退也跳过`, skip.index, 0);
+      // 第 5 页隐藏且之后没有可见页 —— 不能钳到隐藏页上（曾经的 bug）
+      skip.goTo(3);
+      skip.next();
+      eq(`${file} 后续全隐藏时停在原页`, skip.index, 3);
+      eq(`${file} 停下时仍在可见页`, hp.slides[skip.index].hidden, undefined);
+      skip.destroy();
+
+      // 关掉 skipHidden 则隐藏页照常参与翻页
+      const keep = new St(hp, { skipHidden: false });
+      keep.next();
+      eq(`${file} 不跳过时落在隐藏页`, keep.index, 1);
+      keep.goTo(4);
+      keep.next();
+      eq(`${file} 不跳过时末页不越界`, keep.index, 4);
+      keep.destroy();
+
+      // 隐藏页仍然可以被直接跳转命中（大纲/缩略图点击）
+      const direct = new St(hp, { skipHidden: true });
+      check(`${file} goTo 可直达隐藏页`, direct.goTo(1) === true && direct.index === 1);
+      direct.destroy();
+    }
   }
 
   // 动画批次由状态机推进，播放交给 UI

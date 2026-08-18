@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="3073" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 40)">
+<path d="M 0 106.667 A 106.667 106.667 0 0 1 106.667 0 L 1093.333 0 A 106.667 106.667 0 0 1 1200 106.667 L 1200 533.333 A 106.667 106.667 0 0 1 1093.333 640 L 106.667 640 A 106.667 106.667 0 0 1 0 533.333 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
+<text x="600" y="341.81" text-anchor="middle" xml:space="preserve">
+<tspan font-size="128" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">1</tspan>
+</text>
+<text x="600" y="407.55" text-anchor="middle" xml:space="preserve">
+<tspan font-size="32" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">可见页</tspan>
+</text>
+</g>
+</g>
+<g data-el="3074" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 644)">
+<path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="200" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">p:sld</tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">（无 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">show </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">属性）</tspan>
+</text>
+</g>
+</g>
+</svg>

@@ -150,8 +150,9 @@ export function label(t, size = 900, color = '404040') {
 
 export const solid = (c) => `<a:solidFill>${c.startsWith('accent') || ['tx1', 'tx2', 'bg1', 'bg2'].includes(c) ? `<a:schemeClr val="${c}"/>` : `<a:srgbClr val="${c}"/>`}</a:solidFill>`;
 
-export function slideXml(body, bg = '') {
-  return `${XML}<p:sld xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
+/** `attrs` 用于给 <p:sld> 加属性，例如隐藏页的 show="0" */
+export function slideXml(body, bg = '', attrs = '') {
+  return `${XML}<p:sld xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}"${attrs ? ' ' + attrs : ''}>
 <p:cSld>${bg}<p:spTree>
 ${nvGrp}
 ${body}

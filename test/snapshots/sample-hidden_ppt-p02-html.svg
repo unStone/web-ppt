@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="4097" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 40)">
+<path d="M 0 106.667 A 106.667 106.667 0 0 1 106.667 0 L 1093.333 0 A 106.667 106.667 0 0 1 1200 106.667 L 1200 533.333 A 106.667 106.667 0 0 1 1093.333 640 L 106.667 640 A 106.667 106.667 0 0 1 0 533.333 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<foreignObject width="1200" height="640" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1200px;height:640px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:128px;color:rgb(255,255,255);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">2</span>
+</div>
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:32px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">隐藏页</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="4098" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 644)">
+<path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="400" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">p:sld show=&quot;0&quot;</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

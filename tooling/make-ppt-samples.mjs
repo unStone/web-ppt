@@ -26,7 +26,7 @@ if (!SOFFICE) {
   process.exit(0);
 }
 
-const TARGETS = ['showcase.pptx', 'sample-chart.pptx'];
+const TARGETS = ['showcase.pptx', 'sample-chart.pptx', 'sample-hidden.pptx'];
 const tmp = join(root, 'out/pptconv');
 
 for (const name of TARGETS) {
@@ -48,6 +48,6 @@ for (const name of TARGETS) {
   }
   const dest = join(root, 'fixtures', name.replace(/\.pptx$/, '.ppt'));
   renameSync(join(tmp, hit), dest);
-  console.log(`public/${name.replace(/\.pptx$/, '.ppt')} 已生成`);
+  console.log(`fixtures/${name.replace(/\.pptx$/, '.ppt')} 已生成`);
 }
 rmSync(tmp, { recursive: true, force: true });
