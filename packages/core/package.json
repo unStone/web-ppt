@@ -55,9 +55,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json"
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

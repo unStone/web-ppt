@@ -30,12 +30,17 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json"
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
     "web-ppt": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
