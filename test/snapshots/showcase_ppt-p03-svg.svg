@@ -1,0 +1,324 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<marker id="s1" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s3" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 L3 5 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s4" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 L3 5 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s5" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 5 L5 0 L10 5 L5 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 5 L5 0 L10 5 L5 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s7" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 5 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s8" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 5 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s9" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10" fill="none" stroke="rgb(68,114,196)" stroke-width="1.6"/>
+</marker>
+<marker id="s10" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10" fill="none" stroke="rgb(68,114,196)" stroke-width="1.6"/>
+</marker>
+<marker id="s11" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s12" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s13" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s14" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="1025" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="5121" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="7.2" y="26.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">线条 </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">· </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">箭头 </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">· </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">连接线</tspan>
+</text>
+</g>
+</g>
+<g data-el="5122" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 74)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99" marker-start="url(#s1)" marker-end="url(#s2)"/>
+</g>
+</g>
+<g data-el="5123" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 62)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">triangle</tspan>
+</text>
+</g>
+</g>
+<g data-el="5124" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 118)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99" marker-start="url(#s3)" marker-end="url(#s4)"/>
+</g>
+</g>
+<g data-el="5125" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 106)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">stealth</tspan>
+</text>
+</g>
+</g>
+<g data-el="5126" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 162)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99" marker-start="url(#s5)" marker-end="url(#s6)"/>
+</g>
+</g>
+<g data-el="5127" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 150)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">diamond</tspan>
+</text>
+</g>
+</g>
+<g data-el="5128" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 206)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99" marker-start="url(#s7)" marker-end="url(#s8)"/>
+</g>
+</g>
+<g data-el="5129" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 194)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">oval</tspan>
+</text>
+</g>
+</g>
+<g data-el="5130" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 250)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99" marker-start="url(#s9)" marker-end="url(#s10)"/>
+</g>
+</g>
+<g data-el="5131" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 238)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">arrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="5132" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 294)">
+<path d="M 0 0 L 320 0.167" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="2.99"/>
+</g>
+</g>
+<g data-el="5133" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 282)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">none</tspan>
+</text>
+</g>
+</g>
+<g data-el="5134" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 74)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2"/>
+</g>
+</g>
+<g data-el="5135" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 62)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">solid</tspan>
+</text>
+</g>
+</g>
+<g data-el="5136" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 112)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="16.03 6.01 2 6.01"/>
+</g>
+</g>
+<g data-el="5137" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 100)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">dash</tspan>
+</text>
+</g>
+</g>
+<g data-el="5138" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 150)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="16.03 6.01"/>
+</g>
+</g>
+<g data-el="5139" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 138)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">dot</tspan>
+</text>
+</g>
+</g>
+<g data-el="5140" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 188)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="2 2"/>
+</g>
+</g>
+<g data-el="5141" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 176)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">dashDot</tspan>
+</text>
+</g>
+</g>
+<g data-el="5142" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 226)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="16.03 6.01 2 6.01 2 6.01"/>
+</g>
+</g>
+<g data-el="5143" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 214)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">lgDash</tspan>
+</text>
+</g>
+</g>
+<g data-el="5144" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 264)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="6.01 6.01 2 6.01"/>
+</g>
+</g>
+<g data-el="5145" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 252)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">lgDashDotDot</tspan>
+</text>
+</g>
+</g>
+<g data-el="5146" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 302)">
+<path d="M 0 0 L 300 0.167" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="8.01 6.01"/>
+</g>
+</g>
+<g data-el="5147" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 290)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="15.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">sysDash</tspan>
+</text>
+</g>
+</g>
+<g data-el="5148" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 400)">
+<path d="M 0 0 L 200 0 L 200 120 L 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.34" marker-end="url(#s11)"/>
+</g>
+</g>
+<g data-el="5149" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">bentConnector2</tspan>
+</text>
+</g>
+</g>
+<g data-el="5150" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 400)">
+<path d="M 0 0 L 100.019 0 L 100.019 120 L 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.34" marker-end="url(#s12)"/>
+</g>
+</g>
+<g data-el="5151" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">bentConnector3</tspan>
+</text>
+</g>
+</g>
+<g data-el="5152" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(660 400)">
+<path d="M 0 0 C 100 0 100 120 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.34" marker-end="url(#s13)"/>
+</g>
+</g>
+<g data-el="5153" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(660 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">curvedConnector3</tspan>
+</text>
+</g>
+</g>
+<g data-el="5154" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(960 400)">
+<path d="M 0 0 C 100 0 100 120 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.34" marker-end="url(#s14)"/>
+</g>
+</g>
+<g data-el="5155" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(960 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">curvedConnector4</tspan>
+</text>
+</g>
+</g>
+<g data-el="5156" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 620)">
+<path d="M 0 0 L 220 0.167" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="4.99"/>
+</g>
+</g>
+<g data-el="5157" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="110" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">cap=flat</tspan>
+</text>
+</g>
+</g>
+<g data-el="5158" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 620)">
+<path d="M 0 0 L 220 0.167" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="4.99"/>
+</g>
+</g>
+<g data-el="5159" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="110" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">cap=rnd</tspan>
+</text>
+</g>
+</g>
+<g data-el="5160" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(740 620)">
+<path d="M 0 0 L 220 0.167" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="4.99"/>
+</g>
+</g>
+<g data-el="5161" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(740 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<text x="110" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">cap=sq</tspan>
+</text>
+</g>
+</g>
+</svg>

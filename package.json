@@ -1,0 +1,30 @@
+{
+  "name": "web-ppt-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @web-ppt/viewer",
+    "build": "npm run build -w web-ppt && npm run build -w @web-ppt/viewer-core",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node tooling/test-core.mjs && node tooling/test-metafile.mjs",
+    "test:core": "node tooling/test-core.mjs",
+    "test:metafile": "node tooling/test-metafile.mjs",
+    "fixtures": "node tooling/make-fixture.mjs && node tooling/make-ppt-fixture.mjs && node tooling/make-showcase.mjs && node tooling/make-chart-fixture.mjs && node tooling/make-effects-fixture.mjs && node tooling/make-media-fixture.mjs && node tooling/make-metafile-fixture.mjs",
+    "ppt-samples": "node tooling/make-ppt-samples.mjs",
+    "compare": "node tooling/compare-libreoffice.mjs",
+    "bench": "node --expose-gc tooling/bench.mjs",
+    "dev:site": "npm run dev -w @web-ppt/site",
+    "build:site": "npm run build && npm run build -w @web-ppt/site"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8"
+  }
+}

@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<filter id="s1" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="4.71" dy="4.71" stdDeviation="4" flood-color="rgba(0,0,0,0.45)" result="e1"/>
+</filter>
+<filter id="s2" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="0" dy="0" stdDeviation="8" flood-color="rgba(237,125,49,0.8)" flood-opacity="1" result="e1"/>
+</filter>
+<filter id="s3" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6" result="se"/>
+<feComponentTransfer in="se" result="seMask">
+<feFuncA type="linear" slope="2.2" intercept="-0.6"/>
+</feComponentTransfer>
+<feComposite in="SourceGraphic" in2="seMask" operator="in" result="e1"/>
+</filter>
+<filter id="s4" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="0" dy="0" stdDeviation="4" flood-color="rgb(255,192,0)" flood-opacity="1" result="e1"/>
+<feDropShadow in="e1" dx="0" dy="4" stdDeviation="2.67" flood-color="rgba(0,0,0,0.5)" result="e2"/>
+</filter>
+<linearGradient id="s5" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
+<stop offset="0%" stop-color="rgb(68,114,196)"/>
+<stop offset="100%" stop-color="rgb(237,125,49)"/>
+</linearGradient>
+<linearGradient id="s6" x1="0" y1="0.5" x2="1" y2="0.5">
+<stop offset="0%" stop-color="rgb(255,82,82)"/>
+<stop offset="50%" stop-color="rgb(255,215,64)"/>
+<stop offset="100%" stop-color="rgb(105,240,174)"/>
+</linearGradient>
+<radialGradient id="s7" cx="50%" cy="50%" r="70%">
+<stop offset="0%" stop-color="rgb(255,255,255)"/>
+<stop offset="100%" stop-color="rgb(91,155,213)"/>
+</radialGradient>
+<pattern id="s8" patternUnits="userSpaceOnUse" width="8" height="8">
+<rect width="8" height="8" fill="rgb(255,255,255)"/>
+<path d="M0 0L8 8M8 0L0 8" stroke="rgb(68,114,196)" stroke-width="1" fill="none"/>
+</pattern>
+<pattern id="s9" patternUnits="userSpaceOnUse" width="8" height="8">
+<rect width="8" height="8" fill="rgb(242,242,242)"/>
+<path d="M0 2h8v2H0z" fill="rgb(112,173,71)"/>
+</pattern>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="342" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="600" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">效果 · 填充</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="343" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 80)" filter="url(#s1)">
+<path d="M 0 18.334 A 18.334 18.334 0 0 1 18.334 0 L 171.666 0 A 18.334 18.334 0 0 1 190 18.334 L 190 91.666 A 18.334 18.334 0 0 1 171.666 110 L 18.334 110 A 18.334 18.334 0 0 1 0 91.666 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="190" height="110" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:110px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(255,255,255);">外阴影</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="344" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 80)" filter="url(#s2)">
+<path d="M 0 18.334 A 18.334 18.334 0 0 1 18.334 0 L 171.666 0 A 18.334 18.334 0 0 1 190 18.334 L 190 91.666 A 18.334 18.334 0 0 1 171.666 110 L 18.334 110 A 18.334 18.334 0 0 1 0 91.666 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+<foreignObject width="190" height="110" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:110px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(255,255,255);">发光</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="345" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 80)" filter="url(#s3)">
+<path d="M 0 18.334 A 18.334 18.334 0 0 1 18.334 0 L 171.666 0 A 18.334 18.334 0 0 1 190 18.334 L 190 91.666 A 18.334 18.334 0 0 1 171.666 110 L 18.334 110 A 18.334 18.334 0 0 1 0 91.666 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<foreignObject width="190" height="110" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:110px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(255,255,255);">柔化边缘</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="346" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 80)" filter="url(#s4)">
+<path d="M 0 18.334 A 18.334 18.334 0 0 1 18.334 0 L 171.666 0 A 18.334 18.334 0 0 1 190 18.334 L 190 91.666 A 18.334 18.334 0 0 1 171.666 110 L 18.334 110 A 18.334 18.334 0 0 1 0 91.666 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<foreignObject width="190" height="110" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:110px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(255,255,255);">阴影+发光</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="347" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s5)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="348" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">线性渐变 45°</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="349" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s6)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="350" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">三色渐变 0°</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="351" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s7)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="352" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">径向渐变</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="353" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s8)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="354" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">图案 diagCross</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="355" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s9)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="356" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">图案 horz</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="357" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgba(165,165,165,0.4)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="358" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">半透明 40%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="359" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgb(47,85,151)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="360" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">lumMod 75%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="361" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgb(248,215,205)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.67"/>
+</g>
+</g>
+<g data-el="362" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="240" height="20" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">tint 40%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

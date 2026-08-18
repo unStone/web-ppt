@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<marker id="s1" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(237,125,49)"/>
+</marker>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="1025" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8193" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 700 0 L 700 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="700" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:700px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自定义几何 </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">· </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">组合嵌套 </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">· </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">调节值</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8194" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 90)">
+<path d="M 0 0 L 260 0 L 260 260 L 0 260 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8195" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 90)">
+<path d="M 0 0 L 260 0 L 260 260 L 0 260 Z" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="4.01" marker-end="url(#s1)"/>
+</g>
+</g>
+<g data-el="8196" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(655.17 27.17)">
+<g transform=" scale(1 1) translate(-655.17 -27.17)">
+<g data-el="8197" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(15 804.75 183.58) translate(684.83 53.67)">
+<path d="M 0 39.972 A 39.972 39.972 0 0 1 39.972 0 L 199.861 0 A 39.972 39.972 0 0 1 239.833 39.972 L 239.833 219.861 A 39.972 39.972 0 0 1 199.861 259.833 L 39.972 259.833 A 39.972 39.972 0 0 1 0 219.861 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<foreignObject width="239.83" height="259.83" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:239.83px;height:259.83px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">外层 </span>
+<span style="font-size:12px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">A</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8198" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930.83 119)">
+<g transform=" scale(1 1) translate(-930.83 -119)">
+<g data-el="8199" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(15 1090.75 198.25) translate(970.83 148.33)">
+<path d="M 0 49.917 A 119.917 49.917 0 0 1 239.833 49.917 A 119.917 49.917 0 0 1 0 49.917 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<foreignObject width="239.83" height="99.83" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:239.83px;height:99.83px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:9.33px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内层</span>
+<span style="font-size:9.33px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">1</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8200" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(15 1059.58 314.08) translate(939.67 264.17)">
+<path d="M 0 49.917 A 119.917 49.917 0 0 1 239.833 49.917 A 119.917 49.917 0 0 1 0 49.917 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<foreignObject width="239.83" height="99.83" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:239.83px;height:99.83px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:9.33px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内层</span>
+<span style="font-size:9.33px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">2</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+<g data-el="8201" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 360)">
+<path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="260" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">custGeom + gdLst </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">公式</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8202" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 360)">
+<path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="260" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">custGeom arcTo + </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">箭头（开放路径）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8203" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 360)">
+<path d="M 0 0 L 520 0 L 520 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="520" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:520px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">嵌套组合 </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">组旋转 </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">子坐标系缩放</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8204" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 410)">
+<path d="M 0 10 A 10 10 0 0 1 10 0 L 110 0 A 10 10 0 0 1 120 10 L 120 90 A 10 10 0 0 1 110 100 L 10 100 A 10 10 0 0 1 0 90 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="120" height="100" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:100px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">adj 10%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8205" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(210 410)">
+<path d="M 0 25 A 25 25 0 0 1 25 0 L 95 0 A 25 25 0 0 1 120 25 L 120 75 A 25 25 0 0 1 95 100 L 25 100 A 25 25 0 0 1 0 75 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="120" height="100" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:100px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">adj 25%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8206" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 410)">
+<path d="M 0 45 A 45 45 0 0 1 45 0 L 75 0 A 45 45 0 0 1 120 45 L 120 55 A 45 45 0 0 1 75 100 L 45 100 A 45 45 0 0 1 0 55 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="120" height="100" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:100px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">adj 45%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8207" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 410)">
+<path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 10 50 A 50 40 0 0 0 110 50 A 50 40 0 0 0 10 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8208" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(690 410)">
+<path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 30 50 A 30 20 0 0 0 90 50 A 30 20 0 0 0 30 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8209" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(840 410)">
+<path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 48 50 A 12 2 0 0 0 72 50 A 12 2 0 0 0 48 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8210" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 545)">
+<path d="M 0 0 L 120 0 L 120 110 L 0 110 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8211" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(210 545)">
+<path d="M 0 0 L 120 0 L 120 110 L 0 110 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8212" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 545)">
+<path d="M 0 0 L 120 0 L 120 110 L 0 110 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8213" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 545)">
+<path d="M 0 55 A 60 55 0 0 1 120 55 L 92.5 55 A 32.5 27.5 0 0 0 27.5 55 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8214" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(690 545)">
+<path d="M 0 55 A 60 55 0 0 1 120 55 L 92.5 55 A 32.5 27.5 0 0 0 27.5 55 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="8215" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 665)">
+<path d="M 0 0 L 620 0 L 620 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="620" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:620px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">调节值：</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">roundRect / donut / pie / blockArc</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

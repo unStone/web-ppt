@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 800 0 L 800 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">EMF / WMF 矢量图元文件</tspan>
+</text>
+</g>
+</g>
+<g data-el="10" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 60)">
+<image href="data:<10fd77dcb56b>" width="600" height="340" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 405)">
+<path d="M 0 0 L 600 0 L 600 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="300" y="17.28" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">EMF（增强型图元文件）</tspan>
+</text>
+</g>
+</g>
+<g data-el="11" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(650 60)">
+<image href="data:<2fcb1e882efb>" width="600" height="340" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(650 405)">
+<path d="M 0 0 L 600 0 L 600 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="300" y="17.28" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">WMF（Windows 图元文件）</tspan>
+</text>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 450)">
+<path d="M 0 10 A 10 10 0 0 1 10 0 L 1210 0 A 10 10 0 0 1 1220 10 L 1220 50 A 10 10 0 0 1 1210 60 L 10 60 A 10 10 0 0 1 0 50 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<text x="610" y="35.82" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">两张图都由浏览器端解码为 SVG，无服务端参与</tspan>
+</text>
+</g>
+</g>
+</svg>

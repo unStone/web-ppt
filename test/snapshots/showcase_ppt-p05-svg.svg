@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<pattern id="s1" patternUnits="userSpaceOnUse" width="150" height="120">
+<image href="blob:<runtime>" width="150" height="120" preserveAspectRatio="xMidYMid slice" opacity="0.45"/>
+</pattern>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="1025" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="7169" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="7.2" y="26.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">表格 </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">· </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">图片</tspan>
+</text>
+</g>
+</g>
+<g transform="translate(40 90)">
+<g transform="translate(0 0)">
+<rect width="220.05" height="56.03" fill="rgb(68,114,196)"/>
+<text x="7.2" y="32.84" text-anchor="start" xml:space="preserve">
+<tspan font-size="17.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">功能模块</tspan>
+</text>
+</g>
+<g transform="translate(220.05 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<text x="80.02" y="32.84" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">.pptx</tspan>
+</text>
+</g>
+<g transform="translate(380.09 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<text x="80.02" y="32.84" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">.ppt</tspan>
+</text>
+</g>
+<g transform="translate(540.13 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<text x="80.02" y="32.84" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">备注</tspan>
+</text>
+</g>
+<g transform="translate(0 56.03)">
+<rect width="220.05" height="50.03" fill="rgb(207,213,233)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">形状渲染</tspan>
+</text>
+</g>
+<g transform="translate(220.05 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">完整</tspan>
+</text>
+</g>
+<g transform="translate(380.09 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">规划中</tspan>
+</text>
+</g>
+<g transform="translate(540.13 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">140+ </tspan>
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">预设几何</tspan>
+</text>
+</g>
+<g transform="translate(0 106.06)">
+<rect width="220.05" height="50.03" fill="rgb(255,255,255)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本排版</tspan>
+</text>
+</g>
+<g transform="translate(220.05 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">完整</tspan>
+</text>
+</g>
+<g transform="translate(380.09 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">纯文本</tspan>
+</text>
+</g>
+<g transform="translate(540.13 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">含竖排</tspan>
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">/</tspan>
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">分栏</tspan>
+</text>
+</g>
+<g transform="translate(0 156.08)">
+<rect width="380.09" height="50.03" fill="rgb(232,240,254)"/>
+<text x="190.05" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">跨列合并演示</tspan>
+</text>
+</g>
+<g transform="translate(380.09 156.08)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自定义边框</tspan>
+</text>
+</g>
+<g transform="translate(540.13 156.08)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">粗橙边框</tspan>
+</text>
+</g>
+<g transform="translate(0 206.11)">
+<rect width="220.05" height="50.03" fill="rgb(255,255,255)"/>
+<text x="7.2" y="29.39" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">垂直居中</tspan>
+</text>
+</g>
+<g transform="translate(220.05 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="7.2" y="40.2" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">垂直底部</tspan>
+</text>
+</g>
+<g transform="translate(380.09 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">默认顶部</tspan>
+</text>
+</g>
+<g transform="translate(540.13 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<text x="152.84" y="18.58" text-anchor="end" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">对齐测试</tspan>
+</text>
+</g>
+<g transform="translate(0 256.14)">
+<rect width="220.05" height="50.03" fill="rgb(207,213,233)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹行验证</tspan>
+</text>
+</g>
+<g transform="translate(220.05 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">band2</tspan>
+</text>
+</g>
+<g transform="translate(380.09 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="80.02" y="18.58" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">band1</tspan>
+</text>
+</g>
+<g transform="translate(540.13 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<text x="7.2" y="18.58" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">交替底色</tspan>
+</text>
+</g>
+<g transform="translate(0 0)">
+</g>
+<g transform="translate(220.05 0)">
+</g>
+<g transform="translate(380.09 0)">
+</g>
+<g transform="translate(540.13 0)">
+</g>
+<g transform="translate(0 56.03)">
+</g>
+<g transform="translate(220.05 56.03)">
+</g>
+<g transform="translate(380.09 56.03)">
+</g>
+<g transform="translate(540.13 56.03)">
+</g>
+<g transform="translate(0 106.06)">
+</g>
+<g transform="translate(220.05 106.06)">
+</g>
+<g transform="translate(380.09 106.06)">
+</g>
+<g transform="translate(540.13 106.06)">
+</g>
+<g transform="translate(0 156.08)">
+</g>
+<g transform="translate(380.09 156.08)">
+</g>
+<g transform="translate(540.13 156.08)">
+</g>
+<g transform="translate(0 206.11)">
+</g>
+<g transform="translate(220.05 206.11)">
+</g>
+<g transform="translate(380.09 206.11)">
+</g>
+<g transform="translate(540.13 206.11)">
+</g>
+<g transform="translate(0 256.14)">
+</g>
+<g transform="translate(220.05 256.14)">
+</g>
+<g transform="translate(380.09 256.14)">
+</g>
+<g transform="translate(540.13 256.14)">
+</g>
+</g>
+<g data-el="7222" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 90)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7223" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 135)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="18.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">原图</tspan>
+</text>
+</g>
+</g>
+<g data-el="7224" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 235)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7225" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 280)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="18.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁剪 </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">25%</tspan>
+</text>
+</g>
+</g>
+<g data-el="7226" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 380)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7227" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 425)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="18.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁进圆形</tspan>
+</text>
+</g>
+</g>
+<g data-el="7228" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 525)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7229" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 570)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="18.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁进星形</tspan>
+</text>
+</g>
+</g>
+<g data-el="7230" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 90)">
+<image href="blob:<runtime>" width="150" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7231" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 235)">
+<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="url(#s1)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="7232" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 380)">
+<path d="M 0 0 L 150 0 L 150 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="18.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">平铺</tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">+</tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">透明</tspan>
+</text>
+</g>
+</g>
+<g data-el="7233" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 480)">
+<path d="M 0 0 L 700 0 L 700 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="350" y="18.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">表格样式：首行强调 </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">+ </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">条纹行 </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">+ </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">合并单元格 </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">+ </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">自定义边框 </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">+ </tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">垂直对齐</tspan>
+</text>
+</g>
+</g>
+</svg>

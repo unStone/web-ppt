@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(245,247,251)"/>
+<g data-el="11265" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(64 24)">
+<path d="M 0 0 L 1152 0 L 1152 78 L 0 78 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1152" height="78" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1152px;height:78px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">3D </span>
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">柱状图 </span>
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">· </span>
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">簇状 </span>
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">/ </span>
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">堆叠</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="11266" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 120)">
+<image href="data:<6d0c30e62cbc>" width="560" height="544" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="11267" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 120)">
+<image href="data:<f3983eb9e66f>" width="560" height="544" preserveAspectRatio="none"/>
+</g>
+</g>
+</svg>

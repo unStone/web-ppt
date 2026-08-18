@@ -1,0 +1,397 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<clipPath id="s1">
+<rect width="160" height="120"/>
+</clipPath>
+<clipPath id="s2">
+<path d="M 0 60 A 80 60 0 0 1 160 60 A 80 60 0 0 1 0 60 Z"/>
+</clipPath>
+<clipPath id="s3">
+<path d="M 80 0 L 97.963 41.457 L 156.085 41.459 L 109.064 67.083 L 127.023 108.541 L 80 82.92 L 32.977 108.541 L 50.936 67.083 L 3.915 41.459 L 62.037 41.457 Z"/>
+</clipPath>
+<pattern id="s4" patternUnits="userSpaceOnUse" width="150" height="120">
+<image href="blob:<runtime>" x="-50" y="-40" width="250" height="200" preserveAspectRatio="none"/>
+</pattern>
+<pattern id="s5" patternUnits="userSpaceOnUse" width="11.25" height="9">
+<image href="blob:<runtime>" width="11.25" height="9" preserveAspectRatio="none" opacity="0.45"/>
+</pattern>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="389" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">表格 · 图片</tspan>
+</text>
+</g>
+</g>
+<g data-el="500" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 90)">
+<g transform="translate(0 0)">
+<rect width="220" height="56" fill="rgb(68,114,196)"/>
+<text x="9.6" y="33.82" text-anchor="start" xml:space="preserve">
+<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">功能模块</tspan>
+</text>
+</g>
+<g transform="translate(220 0)">
+<rect width="160" height="56" fill="rgb(68,114,196)"/>
+<text x="80" y="33.82" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">.pptx</tspan>
+</text>
+</g>
+<g transform="translate(380 0)">
+<rect width="160" height="56" fill="rgb(68,114,196)"/>
+<text x="80" y="33.82" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">.ppt</tspan>
+</text>
+</g>
+<g transform="translate(540 0)">
+<rect width="160" height="56" fill="rgb(68,114,196)"/>
+<text x="80" y="33.82" text-anchor="middle" xml:space="preserve">
+<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">备注</tspan>
+</text>
+</g>
+<g transform="translate(0 56)">
+<rect width="220" height="50" fill="rgb(207,213,234)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">形状渲染</tspan>
+</text>
+</g>
+<g transform="translate(220 56)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">完整</tspan>
+</text>
+</g>
+<g transform="translate(380 56)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">规划中</tspan>
+</text>
+</g>
+<g transform="translate(540 56)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">140+ 预设几何</tspan>
+</text>
+</g>
+<g transform="translate(0 106)">
+<rect width="220" height="50" fill="rgb(255,255,255)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">文本排版</tspan>
+</text>
+</g>
+<g transform="translate(220 106)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">完整</tspan>
+</text>
+</g>
+<g transform="translate(380 106)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">纯文本</tspan>
+</text>
+</g>
+<g transform="translate(540 106)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">含竖排/分栏</tspan>
+</text>
+</g>
+<g transform="translate(0 156)">
+<rect width="380" height="50" fill="rgb(232,240,254)"/>
+<text x="190" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">跨列合并演示</tspan>
+</text>
+</g>
+<g transform="translate(380 156)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">自定义边框</tspan>
+</text>
+</g>
+<g transform="translate(540 156)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">粗橙边框</tspan>
+</text>
+</g>
+<g transform="translate(0 206)">
+<rect width="220" height="50" fill="rgb(255,255,255)"/>
+<text x="9.6" y="30.38" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">垂直居中</tspan>
+</text>
+</g>
+<g transform="translate(220 206)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="9.6" y="40.98" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">垂直底部</tspan>
+</text>
+</g>
+<g transform="translate(380 206)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">默认顶部</tspan>
+</text>
+</g>
+<g transform="translate(540 206)">
+<rect width="160" height="50" fill="rgb(255,255,255)"/>
+<text x="150.4" y="19.78" text-anchor="end" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">对齐测试</tspan>
+</text>
+</g>
+<g transform="translate(0 256)">
+<rect width="220" height="50" fill="rgb(207,213,234)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">条纹行验证</tspan>
+</text>
+</g>
+<g transform="translate(220 256)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">band2</tspan>
+</text>
+</g>
+<g transform="translate(380 256)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="80" y="19.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">band1</tspan>
+</text>
+</g>
+<g transform="translate(540 256)">
+<rect width="160" height="50" fill="rgb(207,213,234)"/>
+<text x="9.6" y="19.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">交替底色</tspan>
+</text>
+</g>
+<g transform="translate(0 0)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="56" x2="220" y2="56" stroke="rgb(255,255,255)" stroke-width="4"/>
+<line x1="0" y1="0" x2="0" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="220" y1="0" x2="220" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(220 0)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="56" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="4"/>
+<line x1="0" y1="0" x2="0" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 0)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="56" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="4"/>
+<line x1="0" y1="0" x2="0" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(540 0)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="56" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="4"/>
+<line x1="0" y1="0" x2="0" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="56" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(0 56)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="220" y1="0" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(220 56)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 56)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(540 56)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(0 106)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="220" y1="0" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(220 106)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 106)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(540 106)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(0 156)">
+<line x1="0" y1="0" x2="380" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="380" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="380" y1="0" x2="380" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 156)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(237,125,49)" stroke-width="2"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(237,125,49)" stroke-width="2"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(237,125,49)" stroke-width="2"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(237,125,49)" stroke-width="2"/>
+</g>
+<g transform="translate(540 156)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(0 206)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="220" y1="0" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(220 206)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 206)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(540 206)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(0 256)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="220" y1="0" x2="220" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(220 256)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(380 256)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+<g transform="translate(540 256)">
+<line x1="0" y1="0" x2="160" y2="0" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="50" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="0" y1="0" x2="0" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+<line x1="160" y1="0" x2="160" y2="50" stroke="rgb(255,255,255)" stroke-width="1.33"/>
+</g>
+</g>
+</g>
+<g data-el="520" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 90)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="390" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 135)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">原图</tspan>
+</text>
+</g>
+</g>
+<g data-el="521" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 235)">
+<g clip-path="url(#s1)">
+<image href="blob:<runtime>" x="-80" y="-60" width="320" height="240" preserveAspectRatio="none"/>
+</g>
+</g>
+</g>
+<g data-el="391" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 280)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁剪 25%</tspan>
+</text>
+</g>
+</g>
+<g data-el="522" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 380)">
+<g clip-path="url(#s2)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+</g>
+<g data-el="392" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 425)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁进圆形</tspan>
+</text>
+</g>
+</g>
+<g data-el="523" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 525)">
+<g clip-path="url(#s3)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+</g>
+<g data-el="393" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 570)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="70" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">裁进星形</tspan>
+</text>
+</g>
+</g>
+<g data-el="394" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 90)">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 130 0 A 20 20 0 0 1 150 20 L 150 100 A 20 20 0 0 1 130 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="url(#s4)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="395" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 235)">
+<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="url(#s5)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="396" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 380)">
+<path d="M 0 0 L 150 0 L 150 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="75" y="19.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">平铺+透明</tspan>
+</text>
+</g>
+</g>
+<g data-el="397" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 480)">
+<path d="M 0 0 L 700 0 L 700 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<text x="350" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">表格样式：首行强调 + 条纹行 + 合并单元格 + 自定义边框 + 垂直对齐</tspan>
+</text>
+</g>
+</g>
+</svg>

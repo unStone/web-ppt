@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="960" height="720" fill="rgb(255,255,255)"/>
+<g transform="translate(57.6 36)">
+<foreignObject width="844.8" height="115.2" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:844.8px;height:115.2px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4px 8px 4px 8px;overflow:visible;">
+<div style="margin:0px 0 6px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:34px;color:rgb(30,30,30);font-weight:700;">.ppt 实验性解析</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(57.6 172.8)">
+<foreignObject width="844.8" height="489.6" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:844.8px;height:489.6px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4px 8px 4px 8px;overflow:visible;">
+<div style="margin:0px 0 6px 0;text-align:left;padding-left:24px;text-indent:-24px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(50,50,50);">•&#160;</span>
+<span style="font-size:20px;color:rgb(50,50,50);">CFB 复合文档容器读取</span>
+</div>
+<div style="margin:0px 0 6px 0;text-align:left;padding-left:24px;text-indent:-24px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(50,50,50);">•&#160;</span>
+<span style="font-size:20px;color:rgb(50,50,50);">PowerPoint Document 流记录遍历</span>
+</div>
+<div style="margin:0px 0 6px 0;text-align:left;padding-left:24px;text-indent:-24px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(50,50,50);">•&#160;</span>
+<span style="font-size:20px;color:rgb(50,50,50);">SlideListWithText 文本提取</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</svg>

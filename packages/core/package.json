@@ -1,0 +1,64 @@
+{
+  "name": "web-ppt",
+  "version": "0.1.0",
+  "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
+  "keywords": [
+    "pptx",
+    "ppt",
+    "powerpoint",
+    "presentation",
+    "slides",
+    "renderer",
+    "viewer",
+    "svg",
+    "browser",
+    "ooxml",
+    "emf",
+    "wmf"
+  ],
+  "license": "MIT",
+  "author": "unStone",
+  "homepage": "https://github.com/unStone/web-ppt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unStone/web-ppt.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/unStone/web-ppt/issues"
+  },
+  "type": "module",
+  "sideEffects": [
+    "./dist/web-ppt.js"
+  ],
+  "main": "./dist/web-ppt.js",
+  "module": "./dist/web-ppt.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/web-ppt.js"
+    },
+    "./worker": {
+      "types": "./dist/worker.d.ts",
+      "import": "./dist/worker.js"
+    },
+    "./geometry": {
+      "types": "./dist/pptx/geometry.d.ts",
+      "import": "./dist/geometry.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  }
+}

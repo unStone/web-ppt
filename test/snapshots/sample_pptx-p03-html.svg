@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<linearGradient id="s1" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(247,250,255)"/>
+<stop offset="100%" stop-color="rgb(221,231,247)"/>
+</linearGradient>
+<clipPath id="s2">
+<rect width="181.1" height="181.1"/>
+</clipPath>
+</defs>
+<rect width="1280" height="720" fill="url(#s1)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 700)">
+<path d="M 0 0 L 1280 0 L 1280 20 L 0 20 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(88 38.33)">
+<foreignObject width="1104" height="139.17" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1104px;height:139.17px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:53.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">表格 · 图片 · 组合</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="3" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(73.49 199.48)">
+<g transform="translate(0 0)">
+<rect width="209.97" height="83.99" fill="rgb(68,114,196)"/>
+<foreignObject width="209.97" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:209.97px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;">能力</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(209.97 0)">
+<rect width="188.98" height="83.99" fill="rgb(68,114,196)"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;">.pptx</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(398.95 0)">
+<rect width="188.98" height="83.99" fill="rgb(68,114,196)"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;">.ppt</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 83.99)">
+<rect width="209.97" height="83.99" fill="none"/>
+<foreignObject width="209.97" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:209.97px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">形状渲染</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(209.97 83.99)">
+<rect width="188.98" height="83.99" fill="rgb(233,240,228)"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">支持</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(398.95 83.99)">
+<rect width="188.98" height="83.99" fill="none"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">路线图</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 167.98)">
+<rect width="209.97" height="83.99" fill="none"/>
+<foreignObject width="209.97" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:209.97px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">文本提取</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(209.97 167.98)">
+<rect width="188.98" height="83.99" fill="rgb(233,240,228)"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">支持</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(398.95 167.98)">
+<rect width="188.98" height="83.99" fill="rgb(251,243,217)"/>
+<foreignObject width="188.98" height="83.99" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:188.98px;height:83.99px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:20px;color:rgb(0,0,0);">实验性</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 0)">
+<line x1="0" y1="0" x2="209.97" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="209.97" y1="0" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(209.97 0)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(398.95 0)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 83.99)">
+<line x1="0" y1="0" x2="209.97" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="209.97" y1="0" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(209.97 83.99)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(398.95 83.99)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 167.98)">
+<line x1="0" y1="0" x2="209.97" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="209.97" y1="0" x2="209.97" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(209.97 167.98)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(398.95 167.98)">
+<line x1="0" y1="0" x2="188.98" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="83.99" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="188.98" y1="0" x2="188.98" y2="83.99" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+</g>
+</g>
+<g data-el="4" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713.91 199.48)">
+<image href="blob:<runtime>" width="241.47" height="181.1" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="5" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(997.38 199.48)">
+<g clip-path="url(#s2)">
+<image href="blob:<runtime>" x="-90.55" y="-90.55" width="362.2" height="362.2" preserveAspectRatio="none"/>
+</g>
+</g>
+</g>
+<g data-el="6" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713.91 430.45)">
+<g transform=" scale(2 2) translate(0 0)">
+<g data-el="7" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 0)">
+<path d="M 0 14.873 A 14.873 14.873 0 0 1 14.873 0 L 90.113 0 A 14.873 14.873 0 0 1 104.987 14.873 L 104.987 74.365 A 14.873 14.873 0 0 1 90.113 89.239 L 14.873 89.239 A 14.873 14.873 0 0 1 0 74.365 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<foreignObject width="104.99" height="89.24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:104.99px;height:89.24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(255,255,255);">组合内 A</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(125.98 0)">
+<path d="M 0 44.619 A 52.493 44.619 0 0 1 104.987 44.619 A 52.493 44.619 0 0 1 0 44.619 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<foreignObject width="104.99" height="89.24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:104.99px;height:89.24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(255,255,255);">组合内 B</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</g>
+<g data-el="9" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(73.49 482.94)">
+<rect width="587.93" height="157.48" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>
+<text x="293.96" y="78.74" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="16">图表</text>
+</g>
+</g>
+</svg>

@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="384" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="600" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">文字特性</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="401" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 70)">
+<path d="M 0 0 L 600 0 L 600 400 L 0 400 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="600" height="400" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:400px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">普通 </span>
+<span style="font-size:24px;color:rgb(0,0,0);font-weight:700;">加粗</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-style:italic;"> 斜体</span>
+<span style="font-size:24px;color:rgb(0,0,0);text-decoration:underline;"> 下划线</span>
+<span style="font-size:24px;color:rgb(0,0,0);text-decoration:line-through;"> 删除线</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">化学式 H</span>
+<span style="font-size:24px;color:rgb(0,0,0);vertical-align:sub;font-size:15.6px;">2</span>
+<span style="font-size:24px;color:rgb(0,0,0);">O，数学 x</span>
+<span style="font-size:24px;color:rgb(0,0,0);vertical-align:super;font-size:15.6px;">2</span>
+<span style="font-size:24px;color:rgb(0,0,0);"> + y</span>
+<span style="font-size:24px;color:rgb(0,0,0);vertical-align:super;font-size:15.6px;">2</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);letter-spacing:8px;">宽字间距文本</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);text-transform:uppercase;">all caps text</span>
+<span style="font-size:24px;color:rgb(0,0,0);">  |  </span>
+<span style="font-size:24px;color:rgb(0,0,0);font-variant:small-caps;">small caps text</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:37.33px;color:rgb(255,255,255);font-weight:700;-webkit-text-stroke:1.33px rgb(68,114,196);">描边文字</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:37.33px;background-image:linear-gradient(90deg,rgb(68,114,196) 0%,rgb(237,125,49) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;">渐变文字效果</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(0,0,0);background-color:rgb(255,241,118);">高亮标记的文字</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(0,0,0);">段落对齐：右对齐</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(0,0,0);">段落对齐：居中</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:22.4px;color:rgb(237,125,49);">●&#160;</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);">一级项目符号</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:60px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(0,0,0);">◦&#160;</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);">二级项目符号</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(0,0,0);">i.&#160;</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);">罗马数字编号一</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(0,0,0);">ii.&#160;</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);">罗马数字编号二</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(0,0,0);">(c)&#160;</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);">带括号编号</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="410" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 70)">
+<path d="M 0 0 L 90 0 L 90 280 L 0 280 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<foreignObject width="90" height="280" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:90px;height:280px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;writing-mode:vertical-rl;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);">竖排文字测试</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="411" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(800 70)">
+<path d="M 0 0 L 450 0 L 450 170 L 0 170 Z" fill="rgb(245,247,250)" fill-rule="nonzero"/>
+<foreignObject width="450" height="170" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:450px;height:170px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;column-count:2;column-gap:24px;display:block;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:14.67px;color:rgb(0,0,0);">双栏排版：左栏文本会自动流入右栏，用于验证 numCol 与 spcCol 的解析与渲染。</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:14.67px;color:rgb(0,0,0);">第二段继续填充，确保分栏高度计算正确。</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="412" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(800 270)">
+<path d="M 0 0 L 450 0 L 450 120 L 0 120 Z" fill="rgb(255,248,225)" fill-rule="nonzero"/>
+<foreignObject width="450" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:450px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.1;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(0,0,0);">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本框。</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="413" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 420)">
+<path d="M 0 0 L 560 0 L 560 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="560" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+<span style="font-size:18.67px;color:rgb(0,0,0);">外部超链接（example.com）</span>
+</a>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<a data-slide="1" style="cursor:pointer;text-decoration:underline">
+<span style="font-size:18.67px;color:rgb(0,0,0);">跳转到第 1 页</span>
+</a>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="385" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(30 90 555) translate(30 520)">
+<path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="120" height="70" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);">rot=1800000</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="386" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(-30 240 555) translate(180 520)">
+<path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+<foreignObject width="120" height="70" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);">rot=-1800000</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="387" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 520)">
+<g transform="translate(60 35) scale(-1 1) translate(-60 -35)">
+<path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+</g>
+<foreignObject width="120" height="70" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);">flipH</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="388" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(480 520)">
+<g transform="translate(60 35) scale(1 -1) translate(-60 -35)">
+<path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+<foreignObject width="120" height="70" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(255,255,255);">flipV</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

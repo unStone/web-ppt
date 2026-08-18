@@ -1,0 +1,18 @@
+{
+  "name": "@web-ppt/site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web-PPT 官网：定位 / 能力矩阵 / 浏览器内实时 Demo",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "web-ppt": "*",
+    "@web-ppt/viewer-core": "*"
+  }
+}

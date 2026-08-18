@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<linearGradient id="s1" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(247,250,255)"/>
+<stop offset="100%" stop-color="rgb(221,231,247)"/>
+</linearGradient>
+</defs>
+<rect width="1280" height="720" fill="url(#s1)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 700)">
+<path d="M 0 0 L 1280 0 L 1280 20 L 0 20 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(88 38.33)">
+<text x="9.6" y="87.5" text-anchor="start" xml:space="preserve">
+<tspan font-size="53.33" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">Web PPT 渲染引擎</tspan>
+</text>
+</g>
+</g>
+<g data-el="3" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(88 191.67)">
+<text x="9.6" y="42.75" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">• </tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</tspan>
+</text>
+<text x="57.6" y="81.49" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(106,106,106)">– </tspan>
+<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(106,106,106)">形状 / 渐变 / 图片 / 表格 / 组合 / 母版继承</tspan>
+</text>
+<text x="57.6" y="118.83" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(106,106,106)">– </tspan>
+<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(106,106,106)">统一 Schema，渲染层与解析层解耦</tspan>
+</text>
+<text x="9.6" y="163.82" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">• </tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">混排：</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" font-weight="700">加粗</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" font-style="italic"> 斜体 </tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" text-decoration="underline">主题色下划线</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)"> 小字号</tspan>
+</text>
+</g>
+</g>
+</svg>

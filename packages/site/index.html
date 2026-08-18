@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Web-PPT · 纯浏览器端 PPT 渲染引擎</title>
+<meta name="description" content="纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 JSON Schema → SVG。零服务端依赖、零框架依赖，文件不出浏览器。" />
+<meta property="og:title" content="Web-PPT · 纯浏览器端 PPT 渲染引擎" />
+<meta property="og:description" content=".pptx / .ppt → 统一 JSON Schema → SVG。零服务端、零框架，文件不离开浏览器。" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8622c'/><path d='M10 8h7.5a5.5 5.5 0 010 11H14v5h-4V8zm4 3.4v4.2h3.2a2.1 2.1 0 000-4.2H14z' fill='%23fff'/></svg>" />
+<link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="#top"><span class="mark">P</span> Web-PPT</a>
+  <nav>
+    <a href="#demo">Demo</a>
+    <a href="#matrix">能力</a>
+    <a href="#start">上手</a>
+    <a href="#arch">架构</a>
+    <a href="#proof">保真 &amp; 性能</a>
+    <a class="ghost" href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+</header>
+
+<main id="top">
+
+<section class="hero">
+  <p class="eyebrow">零服务端 · 零框架 · 文件不出浏览器</p>
+  <h1>在浏览器里<br />把 PPT 渲染成 SVG</h1>
+  <p class="lede">
+    <code>.pptx</code> / <code>.ppt</code> → 统一 JSON Schema → SVG。<br />
+    自研 OOXML、CFB/OfficeArt、EMF/WMF 解析，唯一运行时依赖是 fflate。
+  </p>
+  <div class="cta">
+    <a class="btn primary" href="#demo">试一下 ↓</a>
+    <a class="btn" href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <div class="install"><code>npm i web-ppt</code><button class="copy" data-copy="npm i web-ppt" title="复制">复制</button></div>
+
+  <ul class="stats">
+    <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
+    <li><b>67<i>KB</i></b><span>gzip 核心包</span></li>
+    <li><b>1<i>个</i></b><span>运行时依赖</span></li>
+    <li><b>1081</b><span>断言 + 102 快照</span></li>
+  </ul>
+</section>
+
+<!-- ── 实时 Demo ───────────────────────────────────────────── -->
+<section id="demo" class="section">
+  <h2>就在这个页面里跑</h2>
+  <p class="sub">下面这个查看器用的就是 npm 上的 <code>web-ppt</code>。拖一个自己的文件进来——它不会被上传到任何地方。</p>
+
+  <div class="demo" id="demoRoot">
+    <div class="demo-bar">
+      <div class="samples" role="group" aria-label="样本文件">
+        <button class="chip active" data-src="demo/showcase.pptx">showcase.pptx</button>
+        <button class="chip" data-src="demo/showcase.ppt">showcase.ppt</button>
+        <button class="chip" data-src="demo/sample-chart.pptx">图表.pptx</button>
+      </div>
+      <div class="spacer"></div>
+      <label class="chip file">
+        打开本地文件<input id="pick" type="file" accept=".pptx,.ppt" hidden />
+      </label>
+    </div>
+
+    <div class="demo-body">
+      <aside class="thumbs" id="thumbs" aria-label="幻灯片缩略图"></aside>
+      <div class="stage-wrap">
+        <div class="stage" id="stage"></div>
+        <div class="drop-hint" id="dropHint"><span>松手即可渲染</span></div>
+      </div>
+    </div>
+
+    <div class="demo-foot">
+      <button class="icon" id="prev" title="上一页" aria-label="上一页">‹</button>
+      <span class="pager" id="pager">— / —</span>
+      <button class="icon" id="next" title="下一页" aria-label="下一页">›</button>
+      <div class="spacer"></div>
+      <span class="meta" id="meta">载入中…</span>
+    </div>
+  </div>
+  <p class="note">解析与渲染全部发生在你的设备上，没有任何网络请求把文件送出去。</p>
+</section>
+
+<!-- ── 能力矩阵 ────────────────────────────────────────────── -->
+<section id="matrix" class="section">
+  <h2>能力矩阵</h2>
+  <p class="sub">两种格式各自走完全独立的解析链路，渲染层共用同一份 Schema。</p>
+  <div class="table-scroll">
+    <table class="matrix">
+      <thead><tr><th>能力</th><th>.pptx</th><th>.ppt</th></tr></thead>
+      <tbody>
+        <tr><td>预设几何</td><td class="y">163 个预设</td><td class="y">MSOSPT 全表</td></tr>
+        <tr><td>自定义几何</td><td class="y">custGeom + 公式求值 + arcTo</td><td class="y">pVertices / pSegmentInfo</td></tr>
+        <tr><td>填充</td><td class="y">纯色 / 渐变 / 图片 / 平铺 / 图案 / 主题色变换</td><td class="y">纯色 / 渐变 / 图片</td></tr>
+        <tr><td>描边</td><td class="y">虚线 / 箭头 / 端点 / 连接</td><td class="y">虚线 / 箭头</td></tr>
+        <tr><td>效果</td><td class="y">外阴影 / 内阴影 / 发光 / 柔化 / 倒影</td><td class="n">忽略</td></tr>
+        <tr><td>立体 3D</td><td class="y">挤出 / 斜角 / 轮廓 / 材质 / 视角</td><td class="n">忽略</td></tr>
+        <tr><td>样式继承</td><td class="y">母版 → 版式 → 占位符 → 段落 → run</td><td class="y">TxMasterStyle → 形状</td></tr>
+        <tr><td>文本</td><td class="y">完整 + 15 种艺术字变形</td><td class="y">字号 / 颜色 / 粗斜下划线 / 对齐 / 项目符号</td></tr>
+        <tr><td>图片</td><td class="y">裁剪 / 裁进形状 / 透明度 / 灰度</td><td class="y">Pictures 流 + DEFLATE</td></tr>
+        <tr><td>EMF / WMF</td><td class="y">自研 GDI 解释器 → SVG</td><td class="y">自研 GDI 解释器 → SVG</td></tr>
+        <tr><td>表格</td><td class="y">tableStyles / 条纹 / 合并 / 边框</td><td class="y">表格属性 + 网格还原</td></tr>
+        <tr><td>图表</td><td class="y">13 类 · 次坐标轴 · 3D</td><td class="y">经内嵌 EMF 预览</td></tr>
+        <tr><td>切换效果</td><td class="y">20 种</td><td class="n">—</td></tr>
+        <tr><td>元素动画</td><td class="y">入场 / 退场 / 强调，按点击分批</td><td class="n">—</td></tr>
+        <tr><td>SmartArt</td><td class="y">经 diagram drawing part</td><td class="n">—</td></tr>
+        <tr><td>媒体 · 墨迹 · 评论 · 节</td><td class="y">支持</td><td class="n">—</td></tr>
+        <tr><td>备注 · 超链接</td><td class="y">支持</td><td class="y">支持</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── 上手 ────────────────────────────────────────────────── -->
+<section id="start" class="section">
+  <h2>上手</h2>
+  <div class="cards">
+    <article class="card">
+      <h3>渲染一页</h3>
+<pre><code><span class="k">import</span> { parse, renderSlideToSvg } <span class="k">from</span> <span class="s">'web-ppt'</span>;
+
+<span class="k">const</span> pres = <span class="k">await</span> parse(file);   <span class="c">// File | Blob | ArrayBuffer</span>
+el.innerHTML = renderSlideToSvg(pres, pres.slides[<span class="n">0</span>]);</code></pre>
+    </article>
+    <article class="card">
+      <h3>完整查看器</h3>
+<pre><code><span class="k">import</span> { Viewer } <span class="k">from</span> <span class="s">'@web-ppt/viewer-core'</span>;
+
+<span class="k">const</span> v = <span class="k">new</span> Viewer(box, pres, { animate: <span class="k">true</span> });
+v.next();          <span class="c">// 先播动画，播完才翻页</span>
+v.setZoom(<span class="n">1.5</span>);
+<span class="k">await</span> v.exportPng(<span class="n">2</span>);</code></pre>
+    </article>
+    <article class="card">
+      <h3>接你自己的 UI</h3>
+<pre><code><span class="k">import</span> { PresentationState } <span class="k">from</span> <span class="s">'@web-ppt/viewer-core'</span>;
+
+<span class="c">// 无 DOM 的状态机，React / Vue 直接驱动</span>
+<span class="k">const</span> st = <span class="k">new</span> PresentationState(pres);
+st.subscribe(setState);
+st.next(); st.search(<span class="s">'关键词'</span>);</code></pre>
+    </article>
+    <article class="card">
+      <h3>不阻塞主线程</h3>
+<pre><code><span class="k">import</span> { parseInWorker } <span class="k">from</span> <span class="s">'web-ppt'</span>;
+
+<span class="k">const</span> w = <span class="k">new</span> Worker(
+  <span class="k">new</span> URL(<span class="s">'web-ppt/worker'</span>, <span class="k">import</span>.meta.url),
+  { type: <span class="s">'module'</span> });
+<span class="k">const</span> pres = <span class="k">await</span> parseInWorker(w, buf);</code></pre>
+    </article>
+    <article class="card">
+      <h3>导出</h3>
+<pre><code><span class="k">await</span> slideToPng(pres, slide, <span class="n">2</span>);        <span class="c">// → Blob</span>
+<span class="k">await</span> slideToSvgFile(pres, slide);       <span class="c">// → string</span>
+<span class="k">await</span> presentationToPrintableHtml(pres); <span class="c">// 浏览器打印即 PDF</span></code></pre>
+    </article>
+    <article class="card">
+      <h3>按需裁体积</h3>
+<pre><code><span class="c">// 图表与图元文件解码器都是 hook 注入</span>
+setChartRenderer(myRenderer);
+setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~15KB gzip</span></code></pre>
+    </article>
+  </div>
+</section>
+
+<!-- ── 架构 ────────────────────────────────────────────────── -->
+<section id="arch" class="section">
+  <h2>架构</h2>
+  <p class="sub">解析层与渲染层完全解耦——渲染层只认 Schema，不认文件格式。</p>
+  <div class="arch" id="arch"></div>
+  <div class="notes">
+    <div><b>格式按魔数识别</b><span><code>PK</code> → pptx，<code>D0CF11E0</code> → ppt。调用方不需要关心扩展名。</span></div>
+    <div><b>两条文本渲染路径</b><span>预览用 <code>foreignObject</code>（可选中、支持分栏）；导出用原生 <code>&lt;text&gt;</code> + 自实现测量断行——Chrome 会把含 <code>foreignObject</code> 的 SVG 判为污染画布，无法 <code>toBlob</code>。</span></div>
+    <div><b>惰性解析</b><span>每页首次访问时才解析，210 页首屏 376ms → 42ms。</span></div>
+  </div>
+</section>
+
+<!-- ── 保真与性能 ──────────────────────────────────────────── -->
+<section id="proof" class="section">
+  <h2>保真 &amp; 性能</h2>
+  <div class="two">
+    <div>
+      <h3>保真不靠"看着差不多"</h3>
+      <p class="sub">拿 LibreOffice 的实际渲染做 ground truth 逐档比对。主题色 <code>shade</code>/<code>tint</code> 必须在线性 RGB 里算：</p>
+      <table class="cmp">
+        <thead><tr><th>档位</th><th>LibreOffice</th><th>sRGB 直乘</th><th>线性 RGB</th></tr></thead>
+        <tbody>
+          <tr><td>shade 20%</td><td><span class="sw" style="--c:rgb(33,56,97)"></span>33,56,97</td>
+              <td class="bad"><span class="sw" style="--c:rgb(14,23,39)"></span>Δ69</td>
+              <td class="good"><span class="sw" style="--c:rgb(28,51,93)"></span>Δ8</td></tr>
+          <tr><td>tint 60%</td><td><span class="sw" style="--c:rgb(176,187,222)"></span>176,187,222</td>
+              <td class="bad"><span class="sw" style="--c:rgb(143,170,220)"></span>Δ37</td>
+              <td class="good"><span class="sw" style="--c:rgb(176,188,222)"></span>Δ1</td></tr>
+        </tbody>
+      </table>
+      <p class="note">快照测试只能挡住"变了"，挡不住"一开始就错了"——所以要有外部真值。</p>
+    </div>
+    <div>
+      <h3>性能</h3>
+      <p class="sub">浏览器实测，210 页 / 11280 元素：</p>
+      <table class="cmp">
+        <tbody>
+          <tr><td>惰性首屏（解析 + 首页渲染）</td><td class="big">42ms</td></tr>
+          <tr><td>全量解析</td><td>376ms（1.8ms/页）</td></tr>
+          <tr><td>单页渲染</td><td>0.09ms</td></tr>
+          <tr><td>JS 堆</td><td>40MB（0.19MB/页）</td></tr>
+        </tbody>
+      </table>
+      <table class="cmp">
+        <thead><tr><th>优化</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td>惰性解析（默认）</td><td class="good">首屏 9×</td></tr>
+          <tr><td>Worker 解析</td><td class="good">主线程零阻塞</td></tr>
+          <tr><td>缩略图虚拟化</td><td class="good">210 页只渲 7 个</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>包</h2>
+  <div class="table-scroll">
+    <table class="matrix pkgs">
+      <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
+      <tbody>
+        <tr><td><code>web-ppt</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>67KB gzip</td></tr>
+        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>web-ppt</code></td><td>5.2KB gzip</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">想接 React / Vue / Svelte，直接驱动 <code>PresentationState</code>，不需要等官方封装。</p>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div><span class="mark">P</span> Web-PPT · MIT</div>
+  <nav>
+    <a href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://www.npmjs.com/package/web-ppt" target="_blank" rel="noopener">npm</a>
+    <a href="https://github.com/unStone/web-ppt/issues" target="_blank" rel="noopener">反馈</a>
+  </nav>
+</footer>
+
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>

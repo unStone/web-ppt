@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(251,252,254)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 24)">
+<text x="9.6" y="46.75" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">墨迹批注：InkML → SVG 路径</tspan>
+</text>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 128)">
+<path d="M 0 0 L 560 0 L 560 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<text x="280" y="17.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">p14:contentPart → InkML（含差分编码 trace）</tspan>
+</text>
+</g>
+</g>
+<g data-el="506" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 170)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(83.78 0)">
+<path d="M 0 142.7 L 6.13 149.61 L 12.26 156.53 L 18.4 163.44 L 24.53 170.35 L 30.66 177.26 L 36.79 184.18 L 42.92 191.09 L 49.05 198 L 55.19 204.91 L 61.32 211.82 L 67.45 218.74 L 73.58 225.65 L 82.28 215.39 L 90.97 205.14 L 99.67 194.88 L 108.36 184.62 L 117.06 174.36 L 125.76 164.11 L 134.45 153.85 L 143.15 143.59 L 151.84 133.34 L 160.54 123.08 L 169.24 112.82 L 177.93 102.57 L 186.63 92.31 L 195.32 82.05 L 204.02 71.8 L 212.72 61.54 L 221.41 51.28 L 230.11 41.03 L 238.8 30.77 L 247.5 20.51 L 256.2 10.26 L 264.89 0" fill="none" fill-rule="nonzero" stroke="#E8453C" stroke-width="8.03" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(178.55 80.94)">
+<path d="M 256.42 84.06 L 255.19 95.54 L 251.63 106.8 L 245.83 117.62 L 237.8 127.88 L 227.66 137.24 L 215.73 145.71 L 202.13 152.96 L 187.19 158.87 L 171.13 163.44 L 154.3 166.56 L 136.91 168.12 L 119.51 168.12 L 102.12 166.56 L 85.29 163.44 L 69.23 158.87 L 54.29 152.96 L 40.69 145.71 L 28.76 137.24 L 18.62 127.88 L 10.59 117.62 L 4.79 106.8 L 1.23 95.54 L 0 84.06 L 1.23 72.58 L 4.79 61.32 L 10.59 50.5 L 18.62 40.25 L 28.76 30.88 L 40.69 22.41 L 54.29 15.16 L 69.23 9.25 L 85.29 4.68 L 102.12 1.56 L 119.51 0 L 136.91 0 L 154.3 1.56 L 171.13 4.68 L 187.19 9.25 L 202.13 15.16 L 215.73 22.41 L 227.66 30.88 L 237.8 40.25 L 245.83 50.5 L 251.63 61.32 L 255.19 72.58 L 256.42 84.06" fill="none" fill-rule="nonzero" stroke="#2E7BE4" stroke-width="6.02" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(72.64 301.01)">
+<path d="M 0 14.49 L 6.91 19.06 L 13.82 23.19 L 20.74 26.42 L 27.65 28.43 L 34.56 28.99 L 41.47 27.98 L 48.39 25.64 L 55.3 22.19 L 62.21 17.95 L 69.12 13.27 L 76.03 8.81 L 82.95 4.79 L 89.86 1.9 L 96.77 0.22 L 103.68 0.11 L 110.59 1.45 L 117.51 4.13 L 124.42 7.8 L 131.33 12.26 L 138.24 16.95 L 145.16 21.29 L 152.07 24.97 L 158.98 27.65 L 165.89 28.88 L 172.8 28.65 L 179.72 26.98 L 186.63 23.97 L 193.54 20.07 L 200.45 15.5 L 207.36 10.93 L 214.28 6.58 L 221.19 3.12 L 228.1 0.89 L 235.01 0 L 241.93 0.67 L 248.84 2.68 L 255.75 5.91 L 262.66 10.15 L 269.57 14.72 L 276.49 19.29 L 283.4 23.41 L 290.31 26.53 L 297.22 28.43 L 304.14 28.99 L 311.05 27.98 L 317.96 25.53 L 324.87 22.07 L 331.78 17.73 L 338.7 13.04 L 345.61 8.58 L 352.52 4.68 L 359.43 1.78 L 366.34 0.22 L 373.26 0.11 L 380.17 1.56 L 387.08 4.24 L 393.99 8.03 L 400.91 12.49 L 407.82 17.17 L 414.73 21.52" fill="none" fill-rule="nonzero" stroke="#F2A93B" stroke-width="5.13" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 128)">
+<path d="M 0 0 L 480 0 L 480 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<text x="240" y="17.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">InkML 缺失 → 回退 mc:Fallback 的位图</tspan>
+</text>
+</g>
+</g>
+<g data-el="509" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 170)">
+<image href="blob:<runtime>" width="480" height="240" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(680 440)">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 460 0 A 20 20 0 0 1 480 20 L 480 100 A 20 20 0 0 1 460 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(238,243,251)" fill-rule="nonzero" stroke="rgb(185,205,234)" stroke-width="1.33"/>
+<text x="240" y="64.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(60,71,89)">墨迹按整体包围盒等比映射进 contentPart 的框内，笔宽随之缩放</tspan>
+</text>
+</g>
+</g>
+</svg>

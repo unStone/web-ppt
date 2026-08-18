@@ -1,0 +1,298 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(245,247,251)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(64 24)">
+<foreignObject width="1152" height="78" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1152px;height:78px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:37.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">折线图 · 标记 / 平滑 / 缺口 / 负值</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="10" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(80 120)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(7.33 7.33)">
+<foreignObject width="1105.33" height="32.8" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1105.33px;height:32.8px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">月度净增（折线 + 标记）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(46.53 508)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 453.77)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 399.53)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 345.3)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 291.07)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 236.83)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 182.6)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 128.37)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 74.13)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 453.77)">
+<path d="M 0 0 L 1055.47 0" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
+</g>
+<g transform="translate(46.53 74.13)">
+<path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
+</g>
+<g transform="translate(98.97 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">1月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(230.9 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">2月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(362.83 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">3月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(494.77 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">4月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(626.7 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">5月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(758.63 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">6月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(890.57 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">7月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(1022.5 514)">
+<foreignObject width="27.07" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.07px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">8月</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 498.67)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">-50</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(26.8 444.43)">
+<foreignObject width="13.73" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:13.73px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">0</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(19.73 390.2)">
+<foreignObject width="20.8" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:20.8px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">50</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 335.97)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">100</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 281.73)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">150</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 227.5)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">200</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 173.27)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">250</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 119.03)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">300</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(12.67 64.8)">
+<foreignObject width="27.87" height="18.67" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:27.87px;height:18.67px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">350</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(112.5 117.52)">
+<path d="M 0 206.09 L 131.93 154.02 L 263.87 178.97 L 395.8 108.47 L 527.73 121.48 L 659.67 48.81 L 791.6 75.93 L 923.53 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3"/>
+</g>
+<g transform="translate(112.5 301.91)">
+<path d="M 0 108.47 C 21.99 118.95 87.96 175.35 131.93 171.38 C 175.91 167.4 241.88 99.07 263.87 84.6 M 527.73 119.31 C 549.72 107.38 615.69 40.13 659.67 47.73 C 703.64 55.32 747.62 172.82 791.6 164.87 C 835.58 156.92 901.54 27.48 923.53 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="3"/>
+</g>
+<g transform="translate(107.83 318.94)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(239.77 266.88)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(371.7 291.82)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(503.63 221.32)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(635.57 234.34)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(767.5 161.66)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(899.43 188.78)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(1031.37 112.85)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(107.83 405.71)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(239.77 468.62)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(371.7 381.85)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(635.57 416.56)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(767.5 344.97)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(899.43 462.12)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(1031.37 297.25)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(454 51.8)">
+<path d="M 0 0 L 16 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3"/>
+</g>
+<g transform="translate(457.33 47.13)">
+<path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(474.67 40.13)">
+<foreignObject width="59.33" height="23.33" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:59.33px;height:23.33px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">新增用户</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540 51.8)">
+<path d="M 0 0 L 16 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="3"/>
+</g>
+<g transform="translate(543.33 47.13)">
+<path d="M 4.67 0 L 9.33 4.67 L 4.67 9.33 L 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(560.67 40.13)">
+<foreignObject width="99.33" height="23.33" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:99.33px;height:23.33px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.15;white-space:pre;word-break:break-word;">
+<span style="font-size:13.33px;color:#20242B;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">净增（含流失）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</svg>

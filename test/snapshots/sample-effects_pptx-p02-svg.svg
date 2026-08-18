@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<linearGradient id="s1" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="192">
+<stop offset="0" stop-color="#fff" stop-opacity="0.9"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s2" maskUnits="userSpaceOnUse" x="-65" y="120" width="390" height="72">
+<rect x="-65" y="120" width="390" height="72" fill="url(#s1)"/>
+</mask>
+<linearGradient id="s3" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="162">
+<stop offset="0" stop-color="#fff" stop-opacity="0.5"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s4" maskUnits="userSpaceOnUse" x="-65" y="120" width="390" height="42">
+<rect x="-65" y="120" width="390" height="42" fill="url(#s3)"/>
+</mask>
+<linearGradient id="s5" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="240">
+<stop offset="0" stop-color="#fff" stop-opacity="0.3"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s6" maskUnits="userSpaceOnUse" x="-65" y="120" width="390" height="120">
+<rect x="-65" y="120" width="390" height="120" fill="url(#s5)"/>
+</mask>
+<linearGradient id="s7" gradientUnits="userSpaceOnUse" x1="0" y1="132" x2="0" y2="192">
+<stop offset="0" stop-color="#fff" stop-opacity="0.7"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s8" maskUnits="userSpaceOnUse" x="-65" y="132" width="390" height="60">
+<rect x="-65" y="132" width="390" height="60" fill="url(#s7)"/>
+</mask>
+<linearGradient id="s9" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="186">
+<stop offset="0" stop-color="#fff" stop-opacity="0.65"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s10" maskUnits="userSpaceOnUse" x="-65" y="120" width="390" height="66">
+<rect x="-65" y="120" width="390" height="66" fill="url(#s9)"/>
+</mask>
+<filter id="s11" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="2.83" dy="2.83" stdDeviation="2.67" flood-color="rgba(0,0,0,0.4)" result="e1"/>
+</filter>
+<linearGradient id="s12" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="174">
+<stop offset="0" stop-color="#fff" stop-opacity="0.6"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<mask id="s13" maskUnits="userSpaceOnUse" x="-65" y="120" width="390" height="54">
+<rect x="-65" y="120" width="390" height="54" fill="url(#s12)"/>
+</mask>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="122" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 10)">
+<path d="M 0 0 L 900 0 L 900 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="28.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">倒影 a:reflection</tspan>
+<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(128,128,128)">   stA → 起始不透明度，endPos → 可见比例，dist → 与本体间距</tspan>
+</text>
+</g>
+</g>
+<g data-el="123" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 90)">
+<g mask="url(#s2)" aria-hidden="true">
+<use href="#s14" xlink:href="#s14" transform="translate(0 240) scale(1 -1)"/>
+</g>
+<g id="s14">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 240 0 A 20 20 0 0 1 260 20 L 260 100 A 20 20 0 0 1 240 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+<g data-el="124" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 335)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">alpha 90% / size 60%</tspan>
+</text>
+</g>
+</g>
+<g data-el="125" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(460 90)">
+<g mask="url(#s4)" aria-hidden="true">
+<use href="#s15" xlink:href="#s15" transform="translate(0 240) scale(1 -1)"/>
+</g>
+<g id="s15">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 240 0 A 20 20 0 0 1 260 20 L 260 100 A 20 20 0 0 1 240 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+<g data-el="126" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(460 335)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">alpha 50% / size 35%</tspan>
+</text>
+</g>
+</g>
+<g data-el="127" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 90)">
+<g mask="url(#s6)" aria-hidden="true">
+<use href="#s16" xlink:href="#s16" transform="translate(0 240) scale(1 -1)"/>
+</g>
+<g id="s16">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 240 0 A 20 20 0 0 1 260 20 L 260 100 A 20 20 0 0 1 240 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+<g data-el="128" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 335)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">alpha 30% / size 100%</tspan>
+</text>
+</g>
+</g>
+<g data-el="129" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 390)">
+<g mask="url(#s8)" aria-hidden="true">
+<use href="#s17" xlink:href="#s17" transform="translate(0 252) scale(1 -1)"/>
+</g>
+<g id="s17">
+<path d="M 0 60 A 130 60 0 0 1 260 60 A 130 60 0 0 1 0 60 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+<g data-el="130" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 635)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">alpha 70% / 间距 12px</tspan>
+</text>
+</g>
+</g>
+<g data-el="131" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(460 390)">
+<g mask="url(#s10)" aria-hidden="true">
+<use href="#s18" xlink:href="#s18" transform="translate(0 240) scale(1 -1)"/>
+</g>
+<g id="s18">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 240 0 A 20 20 0 0 1 260 20 L 260 100 A 20 20 0 0 1 240 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<text x="130" y="68.06" text-anchor="middle" xml:space="preserve">
+<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">REFLECT</tspan>
+</text>
+</g>
+</g>
+</g>
+<g data-el="132" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(460 635)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">倒影 + 文字</tspan>
+</text>
+</g>
+</g>
+<g data-el="133" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 390)">
+<g mask="url(#s13)" aria-hidden="true">
+<use href="#s19" xlink:href="#s19" transform="translate(0 240) scale(1 -1)"/>
+</g>
+<g filter="url(#s11)">
+<g id="s19">
+<path d="M 130 0 L 159.189 41.457 L 253.637 41.459 L 177.229 67.083 L 206.412 108.541 L 130 82.92 L 53.588 108.541 L 82.771 67.083 L 6.363 41.459 L 100.811 41.457 Z" fill="rgb(127,127,127)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+</g>
+<g data-el="134" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 635)">
+<path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
+<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">倒影 + 外阴影</tspan>
+</text>
+</g>
+</g>
+</svg>

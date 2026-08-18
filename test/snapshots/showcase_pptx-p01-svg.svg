@@ -1,0 +1,1578 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="341" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 8)">
+<path d="M 0 0 L 700 0 L 700 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">预设形状库（120 个）</tspan>
+</text>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 48)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">rect</tspan>
+</text>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 48)">
+<path d="M 0 5.667 A 5.667 5.667 0 0 1 5.667 0 L 44.333 0 A 5.667 5.667 0 0 1 50 5.667 L 50 28.333 A 5.667 5.667 0 0 1 44.333 34 L 5.667 34 A 5.667 5.667 0 0 1 0 28.333 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">roundRect</tspan>
+</text>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 48)">
+<path d="M 0 0 L 44.333 0 A 5.667 5.667 0 0 1 50 5.667 L 50 34 L 0 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">round1Rect</tspan>
+</text>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 48)">
+<path d="M 0 5.667 A 5.667 5.667 0 0 1 5.667 0 L 50 0 L 50 28.333 A 5.667 5.667 0 0 1 44.333 34 L 0 34 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">round2DiagRect</tspan>
+</text>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 48)">
+<path d="M 0 0 L 44.333 0 L 50 5.667 L 50 34 L 0 34 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">snip1Rect</tspan>
+</text>
+</g>
+</g>
+<g data-el="111" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 48)">
+<path d="M 0 0 L 44.333 0 L 50 5.667 L 50 34 L 5.667 34 L 0 28.333 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="112" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">snip2DiagRect</tspan>
+</text>
+</g>
+</g>
+<g data-el="113" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 48)">
+<path d="M 5.667 0 L 44.333 0 A 5.667 5.667 0 0 0 50 5.667 L 50 28.333 A 5.667 5.667 0 0 0 44.333 34 L 5.667 34 A 5.667 5.667 0 0 0 0 28.333 L 0 5.667 A 5.667 5.667 0 0 0 5.667 0 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="114" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">plaque</tspan>
+</text>
+</g>
+</g>
+<g data-el="115" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 48)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="116" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">bevel</tspan>
+</text>
+</g>
+</g>
+<g data-el="117" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 48)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="118" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">frame</tspan>
+</text>
+</g>
+</g>
+<g data-el="119" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 48)">
+<path d="M 0 0 L 50 0 L 38.667 11.333 L 11.333 11.333 L 11.333 22.667 L 0 34 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="120" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">halfFrame</tspan>
+</text>
+</g>
+</g>
+<g data-el="121" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 48)">
+<path d="M 0 0 L 17 0 L 17 17 L 50 17 L 50 34 L 0 34 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="122" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">corner</tspan>
+</text>
+</g>
+</g>
+<g data-el="123" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 48)">
+<path d="M 0 17 L 25 0 L 50 0 L 0 34 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="124" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">diagStripe</tspan>
+</text>
+</g>
+</g>
+<g data-el="125" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 48)">
+<path d="M 0 0 L 50 0 L 50 28.333 L 44.333 34 L 0 34 Z M 44.333 34 L 45.92 29.92 L 50 28.333 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="126" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">foldedCorner</tspan>
+</text>
+</g>
+</g>
+<g data-el="127" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 48)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="128" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ellipse</tspan>
+</text>
+</g>
+</g>
+<g data-el="129" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 48)">
+<path d="M 25 0 L 50 34 L 0 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="130" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">triangle</tspan>
+</text>
+</g>
+</g>
+<g data-el="131" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 48)">
+<path d="M 0 0 L 50 34 L 0 34 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="132" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 83)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">rtTriangle</tspan>
+</text>
+</g>
+</g>
+<g data-el="133" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 110)">
+<path d="M 25 0 L 50 17 L 25 34 L 0 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="134" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">diamond</tspan>
+</text>
+</g>
+</g>
+<g data-el="135" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 110)">
+<path d="M 8.5 0 L 50 0 L 41.5 34 L 0 34 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="136" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">parallelogram</tspan>
+</text>
+</g>
+</g>
+<g data-el="137" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 110)">
+<path d="M 8.5 0 L 41.5 0 L 50 34 L 0 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="138" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">trapezoid</tspan>
+</text>
+</g>
+</g>
+<g data-el="139" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 110)">
+<path d="M 25 0 L 48.776 11.747 L 39.695 30.753 L 10.305 30.753 L 1.224 11.747 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="140" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">pentagon</tspan>
+</text>
+</g>
+</g>
+<g data-el="141" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 110)">
+<path d="M 8.5 0 L 41.5 0 L 50 17 L 41.5 34 L 8.5 34 L 0 17 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="142" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">hexagon</tspan>
+</text>
+</g>
+</g>
+<g data-el="143" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 110)">
+<path d="M 25 0 L 44.546 6.401 L 49.373 20.783 L 35.847 32.316 L 14.153 32.316 L 0.627 20.783 L 5.454 6.401 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="144" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">heptagon</tspan>
+</text>
+</g>
+</g>
+<g data-el="145" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 110)">
+<path d="M 9.958 0 L 40.042 0 L 50 9.958 L 50 24.042 L 40.042 34 L 9.958 34 L 0 24.042 L 0 9.958 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="146" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">octagon</tspan>
+</text>
+</g>
+</g>
+<g data-el="147" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 110)">
+<path d="M 25 0 L 39.695 3.247 L 48.776 11.747 L 48.776 22.253 L 39.695 30.753 L 25 34 L 10.305 30.753 L 1.224 22.253 L 1.224 11.747 L 10.305 3.247 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="148" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">decagon</tspan>
+</text>
+</g>
+</g>
+<g data-el="149" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 110)">
+<path d="M 0 0 L 33 0 L 50 17 L 33 34 L 0 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="150" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">homePlate</tspan>
+</text>
+</g>
+</g>
+<g data-el="151" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 110)">
+<path d="M 0 0 L 33 0 L 50 17 L 33 34 L 0 34 L 17 17 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="152" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">chevron</tspan>
+</text>
+</g>
+</g>
+<g data-el="153" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 110)">
+<path d="M 8.5 0 L 41.5 0 L 41.5 8.5 L 50 8.5 L 50 25.5 L 41.5 25.5 L 41.5 34 L 8.5 34 L 8.5 25.5 L 0 25.5 L 0 8.5 L 8.5 8.5 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="154" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">plus</tspan>
+</text>
+</g>
+</g>
+<g data-el="155" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 110)">
+<path d="M 0 17 A 25 17 0 0 1 25 0 L 50 0 L 50 17 A 25 17 0 0 1 0 17 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="156" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">teardrop</tspan>
+</text>
+</g>
+</g>
+<g data-el="157" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 110)">
+<path d="M 0 4.25 A 25 4.25 0 0 1 50 4.25 L 50 29.75 A 25 4.25 0 0 1 0 29.75 Z M 0 4.25 A 25 4.25 0 0 1 50 4.25 A 25 4.25 0 0 1 0 4.25 Z M 0 4.25 A 25 4.25 0 0 0 50 4.25 A 25 4.25 0 0 0 0 4.25 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="158" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">can</tspan>
+</text>
+</g>
+</g>
+<g data-el="159" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 110)">
+<path d="M 0 8.5 L 8.5 0 L 50 0 L 50 25.5 L 41.5 34 L 0 34 Z M 0 8.5 L 41.5 8.5 L 50 0 L 41.5 8.5 L 0 8.5 M 41.5 8.5 L 41.5 34 L 41.5 8.5" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="160" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">cube</tspan>
+</text>
+</g>
+</g>
+<g data-el="161" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 110)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z M 8.5 17 A 16.5 8.5 0 0 0 41.5 17 A 16.5 8.5 0 0 0 8.5 17 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="162" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">donut</tspan>
+</text>
+</g>
+</g>
+<g data-el="163" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 110)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z M 6.375 17 A 18.625 10.625 0 0 0 43.625 17 A 18.625 10.625 0 0 0 6.375 17 Z M 14.084 26.767 L 40.424 11.741 L 35.916 7.233 L 9.576 22.259 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="164" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 145)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">noSmoking</tspan>
+</text>
+</g>
+</g>
+<g data-el="165" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 172)">
+<path d="M 25 17 L 50 17 A 25 17 0 1 1 25 0 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="166" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">pie</tspan>
+</text>
+</g>
+</g>
+<g data-el="167" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 172)">
+<path d="M 42.678 29.021 A 25 17 0 1 1 25 0 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="168" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">chord</tspan>
+</text>
+</g>
+</g>
+<g data-el="169" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 172)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 L 41.5 17 A 16.5 8.5 0 0 0 8.5 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="170" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">blockArc</tspan>
+</text>
+</g>
+</g>
+<g data-el="171" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 172)">
+<path d="M 10 26.86 C 3 26.86 0 22.44 3.5 18.7 C 0 14.62 5 10.54 11 11.56 C 12.5 5.44 22 3.06 28 6.46 C 32.5 1.7 43 3.06 44 8.84 C 50 10.2 50.5 16.32 46 19.04 C 50 23.46 45 28.22 38 26.86 C 34 30.94 25 31.62 21 28.56 C 18 30.94 12.5 30.26 10 26.86 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="172" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">cloud</tspan>
+</text>
+</g>
+</g>
+<g data-el="173" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 172)">
+<path d="M 25 34 C -3 18.02 4 -3.74 25 8.5 C 46 -3.74 53 18.02 25 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="174" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">heart</tspan>
+</text>
+</g>
+</g>
+<g data-el="175" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 172)">
+<path d="M 27.5 0 L 50 18.7 L 34 18.7 L 40 34 L 0 14.28 L 21 14.28 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="176" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">lightningBolt</tspan>
+</text>
+</g>
+</g>
+<g data-el="177" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 172)">
+<path d="M 8.75 17 A 16.25 11.05 0 0 1 41.25 17 A 16.25 11.05 0 0 1 8.75 17 Z M 41.05 15.271 L 50 17 L 41.05 18.729 Z M 38.147 23.495 L 42.678 29.021 L 34.552 25.94 Z M 27.542 27.914 L 25 34 L 22.458 27.914 Z M 15.448 25.94 L 7.322 29.021 L 11.853 23.495 Z M 8.95 18.729 L 0 17 L 8.95 15.271 Z M 11.853 10.505 L 7.322 4.979 L 15.448 8.06 Z M 22.458 6.086 L 25 0 L 27.542 6.086 Z M 34.552 8.06 L 42.678 4.979 L 38.147 10.505 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="178" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">sun</tspan>
+</text>
+</g>
+</g>
+<g data-el="179" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 172)">
+<path d="M 50 0 C 10 5.1 10 28.9 50 34 C 5 31.28 5 2.72 50 0 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="180" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">moon</tspan>
+</text>
+</g>
+</g>
+<g data-el="181" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 172)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z M 13.25 11.9 A 2.75 2.72 0 0 0 18.75 11.9 A 2.75 2.72 0 0 0 13.25 11.9 Z M 31.25 11.9 A 2.75 2.72 0 0 0 36.75 11.9 A 2.75 2.72 0 0 0 31.25 11.9 Z M 13 21.42 Q 25 32.064 37 21.42 Q 25 32.064 13 21.42" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="182" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">smileyFace</tspan>
+</text>
+</g>
+</g>
+<g data-el="183" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 172)">
+<path d="M 4.5 9.52 L 12 11.9 L 6.5 3.06 L 17.5 8.84 L 21 0 L 26.5 8.16 L 36 2.04 L 35 10.54 L 46.5 8.16 L 40.5 15.3 L 50 18.02 L 41.5 21.76 L 48 28.22 L 36.5 26.86 L 37.5 34 L 28 29.24 L 22.5 34 L 19 28.22 L 9.5 31.96 L 11.5 24.48 L 0 25.5 L 8 19.72 L 0 15.3 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="184" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">irregularSeal1</tspan>
+</text>
+</g>
+</g>
+<g data-el="185" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 172)">
+<path d="M 37.694 13.167 L 41.762 14.165 L 41.762 19.835 L 37.694 20.833 L 34.666 26.077 L 35.836 30.099 L 30.926 32.934 L 28.028 29.91 L 21.972 29.91 L 19.074 32.934 L 14.164 30.099 L 15.334 26.077 L 12.306 20.833 L 8.238 19.835 L 8.238 14.165 L 12.306 13.167 L 15.334 7.923 L 14.164 3.901 L 19.074 1.066 L 21.972 4.09 L 28.028 4.09 L 30.926 1.066 L 35.836 3.901 L 34.666 7.923 Z M 18.88 17 A 6.12 6.12 0 0 0 31.12 17 A 6.12 6.12 0 0 0 18.88 17 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="186" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">gear6</tspan>
+</text>
+</g>
+</g>
+<g data-el="187" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 172)">
+<path d="M 0 3.4 A 25 3.4 0 0 1 50 3.4 L 28 24.48 L 28 34 L 22 34 L 22 24.48 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="188" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">funnel</tspan>
+</text>
+</g>
+</g>
+<g data-el="189" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 172)">
+<path d="M 25 0 L 30.303 13.394 L 50 17 L 30.303 20.606 L 25 34 L 19.697 20.606 L 0 17 L 19.697 13.394 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="190" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star4</tspan>
+</text>
+</g>
+</g>
+<g data-el="191" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 172)">
+<path d="M 25 0 L 30.613 11.746 L 48.776 11.747 L 34.083 19.007 L 39.695 30.753 L 25 23.494 L 10.305 30.753 L 15.917 19.007 L 1.224 11.747 L 19.387 11.746 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="192" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star5</tspan>
+</text>
+</g>
+</g>
+<g data-el="193" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 172)">
+<path d="M 25 0 L 32.213 8.505 L 46.651 8.5 L 39.425 17 L 46.651 25.5 L 32.213 25.495 L 25 34 L 17.788 25.495 L 3.349 25.5 L 10.575 17 L 3.349 8.5 L 17.787 8.505 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="194" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star6</tspan>
+</text>
+</g>
+</g>
+<g data-el="195" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 172)">
+<path d="M 25 0 L 28.588 11.11 L 42.678 4.979 L 33.661 14.56 L 50 17 L 33.661 19.44 L 42.678 29.021 L 28.588 22.89 L 25 34 L 21.412 22.89 L 7.322 29.021 L 16.339 19.44 L 0 17 L 16.339 14.56 L 7.322 4.979 L 21.412 11.11 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="196" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 207)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star8</tspan>
+</text>
+</g>
+</g>
+<g data-el="197" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 234)">
+<path d="M 25 0 L 28.235 8.79 L 37.5 2.278 L 33.839 10.99 L 46.651 8.5 L 37.074 14.8 L 50 17 L 37.074 19.2 L 46.651 25.5 L 33.839 23.01 L 37.5 31.722 L 28.235 25.21 L 25 34 L 21.765 25.21 L 12.5 31.722 L 16.161 23.01 L 3.349 25.5 L 12.926 19.2 L 0 17 L 12.926 14.8 L 3.349 8.5 L 16.161 10.99 L 12.5 2.278 L 21.765 8.79 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="198" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star12</tspan>
+</text>
+</g>
+</g>
+<g data-el="199" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 234)">
+<path d="M 25 0 L 26.224 10.68 L 31.47 0.579 L 28.588 11.11 L 37.5 2.278 L 30.707 11.942 L 42.678 4.979 L 32.438 13.119 L 46.651 8.5 L 33.661 14.56 L 49.148 12.6 L 34.295 16.168 L 50 17 L 34.295 17.832 L 49.148 21.4 L 33.661 19.44 L 46.651 25.5 L 32.438 20.881 L 42.678 29.021 L 30.707 22.058 L 37.5 31.722 L 28.588 22.89 L 31.47 33.421 L 26.224 23.32 L 25 34 L 23.776 23.32 L 18.53 33.421 L 21.412 22.89 L 12.5 31.722 L 19.293 22.058 L 7.322 29.021 L 17.562 20.881 L 3.349 25.5 L 16.339 19.44 L 0.852 21.4 L 15.705 17.832 L 0 17 L 15.705 16.168 L 0.852 12.6 L 16.339 14.56 L 3.349 8.5 L 17.562 13.119 L 7.322 4.979 L 19.293 11.942 L 12.5 2.278 L 21.412 11.11 L 18.53 0.579 L 23.776 10.68 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="200" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">star24</tspan>
+</text>
+</g>
+</g>
+<g data-el="201" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 234)">
+<path d="M 0 8.5 L 33 8.5 L 33 0 L 50 17 L 33 34 L 33 25.5 L 0 25.5 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="202" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">rightArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="203" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 234)">
+<path d="M 0 17 L 17 0 L 17 8.5 L 33 8.5 L 33 0 L 50 17 L 33 34 L 33 25.5 L 17 25.5 L 17 34 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="204" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">leftRightArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="205" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 234)">
+<path d="M 25 0 L 50 17 L 37.5 17 L 37.5 17 L 50 17 L 25 34 L 0 17 L 12.5 17 L 12.5 17 L 0 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="206" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">upDownArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="207" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 234)">
+<path d="M 25 0 L 33.5 8.5 L 28.825 8.5 L 28.825 13.175 L 41.5 13.175 L 41.5 8.5 L 50 17 L 41.5 25.5 L 41.5 20.825 L 28.825 20.825 L 28.825 25.5 L 33.5 25.5 L 25 34 L 16.5 25.5 L 21.175 25.5 L 21.175 20.825 L 8.5 20.825 L 8.5 25.5 L 0 17 L 8.5 8.5 L 8.5 13.175 L 21.175 13.175 L 21.175 8.5 L 16.5 8.5 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="208" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">quadArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="209" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 234)">
+<path d="M 0 34 L 0 4.25 L 41.5 4.25 L 41.5 0 L 50 8.5 L 41.5 17 L 41.5 12.75 L 8.5 12.75 L 8.5 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="210" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">bentArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="211" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 234)">
+<path d="M 0 34 L 0 18.667 A 21.875 18.667 0 0 1 43.75 18.667 L 43.75 22.667 L 50 22.667 L 37.5 34 L 25 22.667 L 31.25 22.667 L 31.25 18.667 A 9.375 6.167 0 0 0 12.5 18.667 L 12.5 34 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="212" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">uturnArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="213" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 234)">
+<path d="M 0 8.5 A 41.5 25.5 0 0 1 39.76 26.694 L 47.904 24.258 L 37.25 34 L 23.473 31.565 L 31.616 29.129 A 33 17 0 0 0 0 17 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="214" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">curvedRightArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="215" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 234)">
+<path d="M 8.5 34 A 41.5 25.5 0 0 1 37.264 9.731 L 34.655 1.641 L 50 14.75 L 43.709 29.717 L 41.1 21.627 A 29 13 0 0 0 21 34 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="216" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">curvedUpArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="217" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 234)">
+<path d="M 6 8.5 L 33 8.5 L 33 0 L 50 17 L 33 34 L 33 25.5 L 6 25.5 Z M 0 8.5 L 2.5 8.5 L 2.5 25.5 L 0 25.5 Z M 3.5 8.5 L 5 8.5 L 5 25.5 L 3.5 25.5 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="218" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">stripedRightArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="219" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 234)">
+<path d="M 0 8.5 L 33 8.5 L 33 0 L 50 17 L 33 34 L 33 25.5 L 0 25.5 L 8.5 17 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="220" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">notchedRightArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="221" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 234)">
+<path d="M 12.22 12.349 A 13.6 13.6 0 1 1 28.643 30.103 L 29.554 33.379 L 25 29.538 L 27.163 24.78 L 28.074 28.056 A 11.475 11.475 0 1 0 14.217 13.075 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="222" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">circularArrow</tspan>
+</text>
+</g>
+</g>
+<g data-el="223" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 234)">
+<path d="M 0 0 L 33.334 0 L 33.334 13.852 L 43.705 13.852 L 43.705 0 L 50 17 L 43.705 34 L 43.705 20.148 L 33.334 20.148 L 33.334 34 L 0 34 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="224" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">rightArrowCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="225" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 234)">
+<path d="M 0 17 L 6.295 0 L 6.295 13.852 L 12.969 13.852 L 12.969 0 L 37.031 0 L 37.031 13.852 L 43.705 13.852 L 43.705 0 L 50 17 L 43.705 34 L 43.705 20.148 L 37.031 20.148 L 37.031 34 L 12.969 34 L 12.969 20.148 L 6.295 20.148 L 6.295 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="226" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">leftRightArrowCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="227" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 234)">
+<path d="M 21.002 1.7 L 28.998 1.7 L 28.998 13.002 L 47.5 13.002 L 47.5 20.998 L 28.998 20.998 L 28.998 32.3 L 21.002 32.3 L 21.002 20.998 L 2.5 20.998 L 2.5 13.002 L 21.002 13.002 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="228" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 269)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">mathPlus</tspan>
+</text>
+</g>
+</g>
+<g data-el="229" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 296)">
+<path d="M 10.72 8.375 L 16.375 2.72 L 25 11.345 L 33.625 2.72 L 39.28 8.375 L 30.655 17 L 39.28 25.625 L 33.625 31.28 L 25 22.655 L 16.375 31.28 L 10.72 25.625 L 19.345 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="230" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">mathMultiply</tspan>
+</text>
+</g>
+</g>
+<g data-el="231" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 296)">
+<path d="M 4 13.002 L 46 13.002 L 46 20.998 L 4 20.998 Z M 21.94 7.48 A 3.06 3.06 0 0 1 28.06 7.48 A 3.06 3.06 0 0 1 21.94 7.48 Z M 21.94 26.52 A 3.06 3.06 0 0 1 28.06 26.52 A 3.06 3.06 0 0 1 21.94 26.52 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="232" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">mathDivide</tspan>
+</text>
+</g>
+</g>
+<g data-el="233" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 296)">
+<path d="M 2.5 9.003 L 47.5 9.003 L 47.5 17 L 2.5 17 Z M 2.5 17 L 47.5 17 L 47.5 24.997 L 2.5 24.997 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="234" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">mathEqual</tspan>
+</text>
+</g>
+</g>
+<g data-el="235" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 296)">
+<path d="M 2.5 7.562 L 47.5 7.562 L 47.5 15.558 L 2.5 15.558 Z M 2.5 18.442 L 47.5 18.442 L 47.5 26.438 L 2.5 26.438 Z M 21 0 L 28 0 L 31 34 L 24 34 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="236" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">mathNotEqual</tspan>
+</text>
+</g>
+</g>
+<g data-el="237" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 296)">
+<path d="M 0 0 L 12.5 0 L 18.167 17 L 12.5 34 L 0 34 L 5.667 17 Z M 50 0 L 37.5 0 L 31.833 17 L 37.5 34 L 50 34 L 44.333 17 Z M 12.5 0 L 37.5 0 L 37.5 34 L 12.5 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="238" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ribbon</tspan>
+</text>
+</g>
+</g>
+<g data-el="239" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 296)">
+<path d="M 12.5 34 L 37.5 34 L 37.5 0 L 12.5 0 Z M 0 34 L 12.5 34 L 18.167 17 L 12.5 0 L 0 0 L 5.667 17 Z M 50 34 L 37.5 34 L 31.833 17 L 37.5 0 L 50 0 L 44.333 17 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="240" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ribbon2</tspan>
+</text>
+</g>
+</g>
+<g data-el="241" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 296)">
+<path d="M 4.25 4.25 L 4.25 29.75 A 4.25 4.25 0 0 0 8.5 34 L 50 34 L 50 4.25 A 4.25 4.25 0 0 0 41.5 4.25 Z M 4.25 4.25 A 4.25 4.25 0 0 1 8.5 0 L 45.75 0 A 4.25 4.25 0 0 1 41.5 4.25 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="242" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">verticalScroll</tspan>
+</text>
+</g>
+</g>
+<g data-el="243" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 296)">
+<path d="M 4.25 4.25 L 45.75 4.25 A 4.25 4.25 0 0 1 50 8.5 L 50 34 L 8.5 34 A 4.25 4.25 0 0 1 4.25 25.5 Z M 4.25 4.25 A 4.25 4.25 0 0 0 0 8.5 L 0 29.75 A 4.25 4.25 0 0 0 4.25 25.5 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="244" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">horizontalScroll</tspan>
+</text>
+</g>
+</g>
+<g data-el="245" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 296)">
+<path d="M 0 4.25 C 12.5 0 37.5 8.5 50 4.25 L 50 29.75 C 37.5 34 12.5 25.5 0 29.75 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="246" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">wave</tspan>
+</text>
+</g>
+</g>
+<g data-el="247" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 296)">
+<path d="M 0 2.125 C 6.25 -2.125 18.75 6.375 25 2.125 C 31.25 -2.125 43.75 6.375 50 2.125 L 50 31.875 C 43.75 36.125 31.25 27.625 25 31.875 C 18.75 36.125 6.25 27.625 0 31.875 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="248" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">doubleWave</tspan>
+</text>
+</g>
+</g>
+<g data-el="249" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 296)">
+<path d="M 0 0 L 50 0 L 50 34 L 30 34 L 14.584 38.25 L 20 34 L 0 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="250" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">wedgeRectCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="251" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 296)">
+<path d="M 5.668 0 L 44.332 0 A 5.668 5.668 0 0 1 50 5.668 L 50 28.332 A 5.668 5.668 0 0 1 44.332 34 L 30 34 L 14.584 38.25 L 20 34 L 5.668 34 A 5.668 5.668 0 0 1 0 28.332 L 0 5.668 A 5.668 5.668 0 0 1 5.668 0 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="252" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">wedgeRoundRectCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="253" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 296)">
+<path d="M 10.979 31.075 A 25 17 0 1 1 17.227 33.158 L 14.584 38.25 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="254" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">wedgeEllipseCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="255" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 296)">
+<path d="M 10 21.488 C 3 21.488 0 17.952 3.5 14.96 C 0 11.696 5 8.432 11 9.248 C 12.5 4.352 22 2.448 28 5.168 C 32.5 1.36 43 2.448 44 7.072 C 50 8.16 50.5 13.056 46 15.232 C 50 18.768 45 22.576 38 21.488 C 34 24.752 25 25.296 21 22.848 C 18 24.752 12.5 24.208 10 21.488 Z M 15.75 29.92 A 2.25 1.53 0 0 1 20.25 29.92 A 2.25 1.53 0 0 1 15.75 29.92 Z M 13.334 38.25 A 1.25 0.85 0 0 1 15.834 38.25 A 1.25 0.85 0 0 1 13.334 38.25 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="256" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">cloudCallout</tspan>
+</text>
+</g>
+</g>
+<g data-el="257" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 296)">
+<path d="M 50 0 L 2.833 0 A 2.833 2.833 0 0 0 0 2.833 L 0 31.167 A 2.833 2.833 0 0 0 2.833 34 L 50 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="258" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">leftBracket</tspan>
+</text>
+</g>
+</g>
+<g data-el="259" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 296)">
+<path d="M 5.667 0 A 5.667 5.667 0 0 0 0 5.667 L 0 28.333 A 5.667 5.667 0 0 0 5.667 34 M 44.333 0 A 5.667 5.667 0 0 1 50 5.667 L 50 28.333 A 5.667 5.667 0 0 1 44.333 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="260" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 331)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">bracketPair</tspan>
+</text>
+</g>
+</g>
+<g data-el="261" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 358)">
+<path d="M 50 0 A 50 2.833 0 0 0 25 2.833 L 25 14.167 A 25 2.833 0 0 1 0 17 A 25 2.833 0 0 1 25 19.833 L 25 31.167 A 50 2.833 0 0 0 50 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="262" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">leftBrace</tspan>
+</text>
+</g>
+</g>
+<g data-el="263" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 358)">
+<path d="M 12.5 0 A 12.5 2.833 0 0 0 12.5 2.833 L 12.5 14.167 A 12.5 2.833 0 0 1 0 17 A 12.5 2.833 0 0 1 12.5 19.833 L 12.5 31.167 A 12.5 2.833 0 0 0 12.5 34 M 37.5 0 A 12.5 2.833 0 0 1 37.5 2.833 L 37.5 14.167 A 12.5 2.833 0 0 0 50 17 A 12.5 2.833 0 0 0 37.5 19.833 L 37.5 31.167 A 12.5 2.833 0 0 1 37.5 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="264" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">bracePair</tspan>
+</text>
+</g>
+</g>
+<g data-el="265" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 358)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="266" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Process</tspan>
+</text>
+</g>
+</g>
+<g data-el="267" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 358)">
+<path d="M 25 0 L 50 17 L 25 34 L 0 17 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="268" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Decision</tspan>
+</text>
+</g>
+</g>
+<g data-el="269" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 358)">
+<path d="M 10 0 L 50 0 L 40 34 L 0 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="270" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">InputOutput</tspan>
+</text>
+</g>
+</g>
+<g data-el="271" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 358)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 6.25 0 L 6.25 34 L 6.25 0 M 43.75 0 L 43.75 34 L 43.75 0" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="272" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">PredefinedProcess</tspan>
+</text>
+</g>
+</g>
+<g data-el="273" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 358)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 6.25 0 L 6.25 34 L 6.25 0 M 0 4.25 L 50 4.25 L 0 4.25" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="274" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">InternalStorage</tspan>
+</text>
+</g>
+</g>
+<g data-el="275" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 358)">
+<path d="M 0 0 L 50 0 L 50 28.56 C 37.5 36.04 12.5 21.08 0 28.56 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="276" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Document</tspan>
+</text>
+</g>
+</g>
+<g data-el="277" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 358)">
+<path d="M 0 6.8 L 45 6.8 L 45 29.24 C 34 35.36 11 22.44 0 29.24 Z M 2.5 3.4 L 47.5 3.4 L 47.5 25.84 L 47.5 3.4 L 2.5 3.4 M 5 0 L 50 0 L 50 22.44 L 50 0 L 5 0" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="278" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Multidocument</tspan>
+</text>
+</g>
+</g>
+<g data-el="279" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 358)">
+<path d="M 17 0 L 33 0 A 17 17 0 0 1 33 34 L 17 34 A 17 17 0 0 1 17 0 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="280" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Terminator</tspan>
+</text>
+</g>
+</g>
+<g data-el="281" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 358)">
+<path d="M 10 0 L 40 0 L 50 17 L 40 34 L 10 34 L 0 17 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="282" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Preparation</tspan>
+</text>
+</g>
+</g>
+<g data-el="283" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 358)">
+<path d="M 0 6.8 L 50 0 L 50 34 L 0 34 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="284" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ManualInput</tspan>
+</text>
+</g>
+</g>
+<g data-el="285" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 358)">
+<path d="M 0 0 L 50 0 L 40 34 L 10 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="286" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ManualOperation</tspan>
+</text>
+</g>
+</g>
+<g data-el="287" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 358)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="288" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Connector</tspan>
+</text>
+</g>
+</g>
+<g data-el="289" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 358)">
+<path d="M 0 0 L 50 0 L 50 27.2 L 25 34 L 0 27.2 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="290" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">OffpageConnector</tspan>
+</text>
+</g>
+</g>
+<g data-el="291" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 358)">
+<path d="M 10 0 L 50 0 L 50 34 L 0 34 L 0 6.8 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="292" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 393)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">PunchedCard</tspan>
+</text>
+</g>
+</g>
+<g data-el="293" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 420)">
+<path d="M 0 3.74 C 12.5 0 37.5 7.48 50 3.74 L 50 30.26 C 37.5 34 12.5 26.52 0 30.26 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="294" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">PunchedTape</tspan>
+</text>
+</g>
+</g>
+<g data-el="295" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 420)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z M 7.32 4.978 L 42.68 29.022 L 7.32 4.978 M 42.68 4.978 L 7.32 29.022 L 42.68 4.978" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="296" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">SummingJunction</tspan>
+</text>
+</g>
+</g>
+<g data-el="297" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 420)">
+<path d="M 0 17 A 25 17 0 0 1 50 17 A 25 17 0 0 1 0 17 Z M 25 0 L 25 34 L 25 0 M 0 17 L 50 17 L 0 17" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="298" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Or</tspan>
+</text>
+</g>
+</g>
+<g data-el="299" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 420)">
+<path d="M 0 0 L 50 0 L 25 17 L 50 34 L 0 34 L 25 17 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="300" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Collate</tspan>
+</text>
+</g>
+</g>
+<g data-el="301" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 420)">
+<path d="M 25 0 L 50 17 L 25 34 L 0 17 Z M 0 17 L 50 17 L 0 17" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="302" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Sort</tspan>
+</text>
+</g>
+</g>
+<g data-el="303" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 420)">
+<path d="M 25 0 L 50 34 L 0 34 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="304" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Extract</tspan>
+</text>
+</g>
+</g>
+<g data-el="305" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 420)">
+<path d="M 0 0 L 50 0 L 25 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="306" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Merge</tspan>
+</text>
+</g>
+</g>
+<g data-el="307" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 420)">
+<path d="M 8 0 L 50 0 A 8 17 0 0 0 50 34 L 8 34 A 8 17 0 0 1 8 0 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="308" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">OnlineStorage</tspan>
+</text>
+</g>
+</g>
+<g data-el="309" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(637 420)">
+<path d="M 0 15.64 A 25 15.64 0 0 1 50 15.64 A 25 15.64 0 0 1 0 15.64 Z M 25 31.28 L 50 31.28 L 50 34 L 25 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="310" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(624 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">MagneticTape</tspan>
+</text>
+</g>
+</g>
+<g data-el="311" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(713 420)">
+<path d="M 0 4.25 A 25 4.25 0 0 1 50 4.25 L 50 29.75 A 25 4.25 0 0 1 0 29.75 Z M 0 4.25 A 25 4.25 0 0 1 50 4.25 A 25 4.25 0 0 1 0 4.25 Z M 0 4.25 A 25 4.25 0 0 0 50 4.25 A 25 4.25 0 0 0 0 4.25 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="312" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">MagneticDisk</tspan>
+</text>
+</g>
+</g>
+<g data-el="313" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(789 420)">
+<path d="M 6.25 0 L 43.75 0 A 6.25 17 0 0 1 43.75 34 L 6.25 34 A 6.25 17 0 0 1 6.25 0 Z M 37.5 17 A 6.25 17 0 0 1 50 17 A 6.25 17 0 0 1 37.5 17 Z M 37.5 17 A 6.25 17 0 0 0 50 17 A 6.25 17 0 0 0 37.5 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="314" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(776 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">MagneticDrum</tspan>
+</text>
+</g>
+</g>
+<g data-el="315" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(865 420)">
+<path d="M 8 0 L 42 0 A 8 17 0 0 1 42 34 L 8 34 L 0 17 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="316" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(852 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Display</tspan>
+</text>
+</g>
+</g>
+<g data-el="317" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(941 420)">
+<path d="M 0 0 L 25 0 A 25 17 0 0 1 25 34 L 0 34 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="318" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(928 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Delay</tspan>
+</text>
+</g>
+</g>
+<g data-el="319" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1017 420)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 25 8.84 L 33.16 17 L 29.896 17 L 29.896 25.16 L 20.104 25.16 L 20.104 17 L 16.84 17 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="320" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1004 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Home</tspan>
+</text>
+</g>
+</g>
+<g data-el="321" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1093 420)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 20.104 8.84 L 30.712 17 L 20.104 25.16 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="322" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1080 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">ForwardNext</tspan>
+</text>
+</g>
+</g>
+<g data-el="323" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1169 420)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 16.84 17 A 8.16 8.16 0 0 1 33.16 17 A 8.16 8.16 0 0 1 16.84 17 Z M 23.694 13.328 A 1.306 1.306 0 0 1 26.306 13.328 A 1.306 1.306 0 0 1 23.694 13.328 Z M 23.694 15.776 L 26.306 15.776 L 26.306 21.896 L 23.694 21.896 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="324" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1156 455)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Information</tspan>
+</text>
+</g>
+</g>
+<g data-el="325" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(29 482)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 20.104 22.712 L 26.632 22.712 A 4.08 4.08 0 0 0 26.632 14.552 L 23.368 14.552 M 23.368 12.104 L 20.104 14.552 L 23.368 17 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="326" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(16 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Return</tspan>
+</text>
+</g>
+</g>
+<g data-el="327" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(105 482)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 19.288 14.552 L 22.552 14.552 L 25.816 10.472 L 25.816 23.528 L 22.552 19.448 L 19.288 19.448 Z M 27.856 13.736 L 31.12 12.104 L 27.856 13.736 M 27.856 17 L 31.528 17 L 27.856 17 M 27.856 20.264 L 31.12 21.896 L 27.856 20.264" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="328" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(92 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Sound</tspan>
+</text>
+</g>
+</g>
+<g data-el="329" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(181 482)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 18.472 12.92 L 27.856 12.92 L 27.856 15.776 L 31.528 13.328 L 31.528 20.672 L 27.856 18.224 L 27.856 21.08 L 18.472 21.08 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="330" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(168 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Movie</tspan>
+</text>
+</g>
+</g>
+<g data-el="331" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(257 482)">
+<path d="M 0 0 L 50 0 L 50 34 L 0 34 Z M 4.25 4.25 L 45.75 4.25 L 45.75 29.75 L 4.25 29.75 L 4.25 4.25 L 4.25 29.75 L 45.75 29.75 L 45.75 4.25 L 4.25 4.25 M 22.144 14.552 A 2.856 2.856 0 1 1 25 17.816 L 25 19.856 M 23.939 22.549 A 1.061 1.061 0 0 1 26.061 22.549 A 1.061 1.061 0 0 1 23.939 22.549 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="332" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(244 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">Help</tspan>
+</text>
+</g>
+</g>
+<g data-el="333" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(333 482)">
+<path d="M 0 0 L 50 34 M 50 0 L 0 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="334" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">chartX</tspan>
+</text>
+</g>
+</g>
+<g data-el="335" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(409 482)">
+<path d="M 25 0 L 25 34 M 0 17 L 50 17" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="336" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(396 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">chartPlus</tspan>
+</text>
+</g>
+</g>
+<g data-el="337" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(485 482)">
+<path d="M 0 0 L 50 34 M 50 0 L 0 34 M 25 0 L 25 34" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="338" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(472 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">chartStar</tspan>
+</text>
+</g>
+</g>
+<g data-el="339" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(561 482)">
+<path d="M 38.007 14.424 L 41.894 15.105 L 41.894 18.895 L 38.007 19.576 L 36.62 23.388 L 39.16 26.408 L 36.724 29.311 L 33.309 27.334 L 29.795 29.363 L 29.8 33.308 L 26.067 33.966 L 24.722 30.257 L 20.727 29.553 L 18.194 32.578 L 14.912 30.683 L 16.266 26.977 L 13.658 23.869 L 9.773 24.559 L 8.477 20.997 L 11.896 19.029 L 11.896 14.971 L 8.477 13.003 L 9.773 9.441 L 13.658 10.131 L 16.266 7.023 L 14.912 3.317 L 18.194 1.422 L 20.727 4.447 L 24.722 3.743 L 26.067 0.034 L 29.8 0.692 L 29.795 4.637 L 33.309 6.666 L 36.724 4.689 L 39.16 7.592 L 36.62 10.612 Z M 18.88 17 A 6.12 6.12 0 0 0 31.12 17 A 6.12 6.12 0 0 0 18.88 17 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="1"/>
+</g>
+</g>
+<g data-el="340" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(548 517)">
+<path d="M 0 0 L 76 0 L 76 14 L 0 14 Z" fill="none" fill-rule="nonzero"/>
+<text x="38" y="12.29" text-anchor="middle" xml:space="preserve">
+<tspan font-size="8" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">gear9</tspan>
+</text>
+</g>
+</g>
+</svg>

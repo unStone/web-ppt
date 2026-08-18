@@ -1,0 +1,421 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<pattern id="s1" patternUnits="userSpaceOnUse" width="150" height="120">
+<image href="blob:<runtime>" width="150" height="120" preserveAspectRatio="xMidYMid slice" opacity="0.45"/>
+</pattern>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="1025" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="7169" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="600" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">表格 </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">· </span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">图片</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g transform="translate(40 90)">
+<g transform="translate(0 0)">
+<rect width="220.05" height="56.03" fill="rgb(68,114,196)"/>
+<foreignObject width="220.05" height="56.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220.05px;height:56.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">功能模块</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(220.05 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<foreignObject width="160.04" height="56.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:56.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">.pptx</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<foreignObject width="160.04" height="56.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:56.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">.ppt</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 0)">
+<rect width="160.04" height="56.03" fill="rgb(68,114,196)"/>
+<foreignObject width="160.04" height="56.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:56.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">备注</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 56.03)">
+<rect width="220.05" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="220.05" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220.05px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">形状渲染</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(220.05 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">完整</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">规划中</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 56.03)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">140+ </span>
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">预设几何</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 106.06)">
+<rect width="220.05" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="220.05" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220.05px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">文本排版</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(220.05 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">完整</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯文本</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 106.06)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">含竖排</span>
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">/</span>
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">分栏</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 156.08)">
+<rect width="380.09" height="50.03" fill="rgb(232,240,254)"/>
+<foreignObject width="380.09" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:380.09px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">跨列合并演示</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 156.08)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自定义边框</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 156.08)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">粗橙边框</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 206.11)">
+<rect width="220.05" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="220.05" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220.05px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">垂直居中</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(220.05 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">垂直底部</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">默认顶部</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 206.11)">
+<rect width="160.04" height="50.03" fill="rgb(255,255,255)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">对齐测试</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 256.14)">
+<rect width="220.05" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="220.05" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220.05px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">条纹行验证</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(220.05 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">band2</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(380.09 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">band1</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(540.13 256.14)">
+<rect width="160.04" height="50.03" fill="rgb(207,213,233)"/>
+<foreignObject width="160.04" height="50.03" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:160.04px;height:50.03px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">交替底色</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 0)">
+</g>
+<g transform="translate(220.05 0)">
+</g>
+<g transform="translate(380.09 0)">
+</g>
+<g transform="translate(540.13 0)">
+</g>
+<g transform="translate(0 56.03)">
+</g>
+<g transform="translate(220.05 56.03)">
+</g>
+<g transform="translate(380.09 56.03)">
+</g>
+<g transform="translate(540.13 56.03)">
+</g>
+<g transform="translate(0 106.06)">
+</g>
+<g transform="translate(220.05 106.06)">
+</g>
+<g transform="translate(380.09 106.06)">
+</g>
+<g transform="translate(540.13 106.06)">
+</g>
+<g transform="translate(0 156.08)">
+</g>
+<g transform="translate(380.09 156.08)">
+</g>
+<g transform="translate(540.13 156.08)">
+</g>
+<g transform="translate(0 206.11)">
+</g>
+<g transform="translate(220.05 206.11)">
+</g>
+<g transform="translate(380.09 206.11)">
+</g>
+<g transform="translate(540.13 206.11)">
+</g>
+<g transform="translate(0 256.14)">
+</g>
+<g transform="translate(220.05 256.14)">
+</g>
+<g transform="translate(380.09 256.14)">
+</g>
+<g transform="translate(540.13 256.14)">
+</g>
+</g>
+<g data-el="7222" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 90)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7223" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 135)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="140" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">原图</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="7224" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 235)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7225" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 280)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="140" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁剪 </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">25%</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="7226" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 380)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7227" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 425)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="140" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁进圆形</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="7228" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(790 525)">
+<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7229" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(965 570)">
+<path d="M 0 0 L 140 0 L 140 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="140" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁进星形</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="7230" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 90)">
+<image href="blob:<runtime>" width="150" height="120" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="7231" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 235)">
+<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="url(#s1)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="7232" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1090 380)">
+<path d="M 0 0 L 150 0 L 150 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">平铺</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">透明</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="7233" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 480)">
+<path d="M 0 0 L 700 0 L 700 30 L 0 30 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="700" height="30" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:700px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
+<div style="margin:0px 0 2px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">表格样式：首行强调 </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">条纹行 </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">合并单元格 </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自定义边框 </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">+ </span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">垂直对齐</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

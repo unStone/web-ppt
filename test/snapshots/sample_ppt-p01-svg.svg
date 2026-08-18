@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="960" height="720" fill="rgb(255,255,255)"/>
+<g transform="translate(57.6 36)">
+<text x="8" y="66.02" text-anchor="start" xml:space="preserve">
+<tspan font-size="34" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(30,30,30)" font-weight="700">.ppt 实验性解析</tspan>
+</text>
+</g>
+<g transform="translate(57.6 172.8)">
+<text x="8" y="22.72" text-anchor="start" xml:space="preserve">
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">• </tspan>
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">CFB 复合文档容器读取</tspan>
+</text>
+<text x="8" y="52.72" text-anchor="start" xml:space="preserve">
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">• </tspan>
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">PowerPoint Document 流记录遍历</tspan>
+</text>
+<text x="8" y="82.72" text-anchor="start" xml:space="preserve">
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">• </tspan>
+<tspan font-size="20" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(50,50,50)">SlideListWithText 文本提取</tspan>
+</text>
+</g>
+</svg>

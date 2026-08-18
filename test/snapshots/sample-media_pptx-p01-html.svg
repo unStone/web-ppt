@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(251,252,254)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 24)">
+<foreignObject width="1184" height="72" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1184px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">媒体对象：封面帧 + 播放标识</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 128)">
+<path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="460" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">内嵌视频（mp4）· 封面帧来自 blipFill</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="501" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 160)">
+<image href="blob:<runtime>" width="460" height="259" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频</title>
+<circle cx="230" cy="129.5" r="34" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="3.06"/>
+<path d="M220.3 113.86 L245.64 129.5 L220.3 145.14 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(560 128)">
+<path d="M 0 0 L 300 0 L 300 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="300" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:300px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">内嵌音频（wav）· 喇叭图标为封面</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="502" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 160)">
+<image href="blob:<runtime>" width="130" height="130" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频</title>
+<circle cx="65" cy="65" r="28.6" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.57"/>
+<path d="M51.19 59.95 H58.63 L69.2 52.99 V77.01 L58.63 70.05 H51.19 Z" fill="#fff"/>
+<path d="M72.81 57.79 A 9.01 9.01 0 0 1 72.81 72.21" fill="none" stroke="#fff" stroke-width="3.12" stroke-linecap="round"/>
+<path d="M78.81 52.39 A 16.22 16.22 0 0 1 78.81 77.61" fill="none" stroke="#fff" stroke-width="3.12" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 128)">
+<path d="M 0 0 L 360 0 L 360 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="360" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:360px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">外链视频（r:link → https）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="503" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(860 160)">
+<image href="blob:<runtime>" width="340" height="191" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频（外链）</title>
+<circle cx="170" cy="95.5" r="34" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="3.06"/>
+<path d="M160.3 79.86 L185.64 95.5 L160.3 111.14 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 452)">
+<path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="460" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">无封面帧的媒体：深色底板 + 标识</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="504" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 484)">
+<rect width="300" height="169" fill="rgb(38,42,48)"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频</title>
+<circle cx="150" cy="84.5" r="34" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="3.06"/>
+<path d="M140.3 68.86 L165.64 84.5 L140.3 100.14 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 452)">
+<path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="460" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">无封面音频</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="505" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(470 484)">
+<rect width="150" height="150" fill="rgb(38,42,48)"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频</title>
+<circle cx="75" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M59.06 69.18 H67.65 L79.85 61.14 V88.86 L67.65 80.82 H59.06 Z" fill="#fff"/>
+<path d="M84.01 66.68 A 10.4 10.4 0 0 1 84.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M90.94 60.45 A 18.71 18.71 0 0 1 90.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+</svg>

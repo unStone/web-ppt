@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web PPT 渲染器</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">Web-PPT <span class="tag">纯浏览器渲染</span></div>
+    <div class="file-info" id="fileInfo">未打开文件</div>
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="搜索全文…" />
+      <span id="searchHits"></span>
+      <span id="animInfo"></span>
+    </div>
+    <div class="actions">
+      <button id="btnZoomOut" title="缩小 (-)">−</button>
+      <span id="zoomLabel">适应</span>
+      <button id="btnZoomIn" title="放大 (+)">＋</button>
+      <button id="btnFit" title="适应窗口 (0)">适应</button>
+      <span class="sep"></span>
+      <button id="btnNotes" title="备注 (N)">备注</button>
+      <button id="btnExportPng" title="导出当前页 PNG">PNG</button>
+      <button id="btnExportSvg" title="导出当前页 SVG（矢量）">SVG</button>
+      <button id="btnExportPdf" title="全部页面打印为 PDF">PDF</button>
+      <button id="btnPresent" title="演示 (F)">演示</button>
+      <button id="btnOpen" class="primary">打开文件</button>
+      <input type="file" id="fileInput" accept=".pptx,.ppt" hidden />
+    </div>
+  </header>
+
+  <main>
+    <aside id="thumbs"></aside>
+    <section id="stageWrap">
+      <div id="stageScroll">
+        <div id="stage">
+          <div id="dropHint">拖入 .pptx / .ppt 文件，或点击右上角「打开文件」<br /><small>正在加载内置示例…</small></div>
+        </div>
+      </div>
+      <div id="notesPanel" hidden><div class="notes-title">演讲者备注</div><div id="notesBody"></div></div>
+      <footer id="navbar">
+        <button id="btnPrev" title="上一页 (←)">‹</button>
+        <span id="pageIndicator">- / -</span>
+        <button id="btnNext" title="下一页 (→)">›</button>
+        <span class="hint">← → 翻页 · +/− 缩放 · N 备注 · F 演示 · Enter 跳过动画</span>
+      </footer>
+    </section>
+  </main>
+
+  <div id="presenter" hidden>
+    <div class="pv-main"><div id="pvCurrent"></div></div>
+    <div class="pv-side">
+      <div class="pv-label">下一页</div>
+      <div id="pvNext" class="pv-next"></div>
+      <div class="pv-label">备注</div>
+      <div id="pvNotes" class="pv-notes"></div>
+      <div class="pv-foot"><span id="pvPage"></span><span id="pvAnim"></span><button id="pvExit">退出 (Esc)</button></div>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<marker id="s1" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s3" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 L3 5 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s4" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 L3 5 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s5" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 5 L5 0 L10 5 L5 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth" orient="auto">
+<path d="M0 5 L5 0 L10 5 L5 10 z" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s7" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 5 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s8" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth" orient="auto">
+<path d="M0 5 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" fill="rgb(68,114,196)"/>
+</marker>
+<marker id="s9" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10" fill="none" stroke="rgb(68,114,196)" stroke-width="1.6"/>
+</marker>
+<marker id="s10" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10" fill="none" stroke="rgb(68,114,196)" stroke-width="1.6"/>
+</marker>
+<marker id="s11" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s12" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s13" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+<marker id="s14" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="3" markerHeight="3" markerUnits="strokeWidth" orient="auto">
+<path d="M0 0 L10 5 L0 10 z" fill="rgb(112,173,71)"/>
+</marker>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="363" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="600" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">线条 · 箭头 · 连接线</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="554" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 74)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3" marker-start="url(#s1)" marker-end="url(#s2)"/>
+</g>
+</g>
+<g data-el="364" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 62)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">triangle</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="598" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 118)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3" marker-start="url(#s3)" marker-end="url(#s4)"/>
+</g>
+</g>
+<g data-el="365" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 106)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">stealth</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="642" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 162)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3" marker-start="url(#s5)" marker-end="url(#s6)"/>
+</g>
+</g>
+<g data-el="366" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 150)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">diamond</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="686" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 206)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3" marker-start="url(#s7)" marker-end="url(#s8)"/>
+</g>
+</g>
+<g data-el="367" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 194)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">oval</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="730" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 250)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3" marker-start="url(#s9)" marker-end="url(#s10)"/>
+</g>
+</g>
+<g data-el="368" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 238)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">arrow</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="774" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(180 294)">
+<path d="M 0 0 L 320 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3"/>
+</g>
+</g>
+<g data-el="369" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 282)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">none</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1074" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 74)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2"/>
+</g>
+</g>
+<g data-el="370" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 62)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">solid</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1112" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 112)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="8 6"/>
+</g>
+</g>
+<g data-el="371" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 100)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">dash</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1150" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 150)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="2 6"/>
+</g>
+</g>
+<g data-el="372" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 138)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">dot</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1188" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 188)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="8 6 2 6"/>
+</g>
+</g>
+<g data-el="373" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 176)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">dashDot</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1226" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 226)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="16 6"/>
+</g>
+</g>
+<g data-el="374" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 214)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">lgDash</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1264" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 264)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="16 6 2 6 2 6"/>
+</g>
+</g>
+<g data-el="375" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 252)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">lgDashDotDot</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1302" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 302)">
+<path d="M 0 0 L 300 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="2" stroke-dasharray="6 6"/>
+</g>
+</g>
+<g data-el="376" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(540 290)">
+<path d="M 0 0 L 150 0 L 150 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="150" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">sysDash</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="760" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 400)">
+<path d="M 0 0 L 200 0 L 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.33" marker-end="url(#s11)"/>
+</g>
+</g>
+<g data-el="377" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">bentConnector2</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1060" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 400)">
+<path d="M 0 0 L 100 0 L 100 120 L 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.33" marker-end="url(#s12)"/>
+</g>
+</g>
+<g data-el="378" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(360 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">bentConnector3</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1360" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(660 400)">
+<path d="M 0 0 C 100 0 100 120 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.33" marker-end="url(#s13)"/>
+</g>
+</g>
+<g data-el="379" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(660 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">curvedConnector3</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1660" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(960 400)">
+<path d="M 0 0 C 100 0 100 60 150 60 S 200 90 200 120" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="2.33" marker-end="url(#s14)"/>
+</g>
+</g>
+<g data-el="380" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(960 530)">
+<path d="M 0 0 L 200 0 L 200 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">curvedConnector4</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1020" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 620)">
+<path d="M 0 0 L 220 0" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="5" stroke-linecap="butt"/>
+</g>
+</g>
+<g data-el="381" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="220" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">cap=flat</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1340" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 620)">
+<path d="M 0 0 L 220 0" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="5" stroke-linecap="round"/>
+</g>
+</g>
+<g data-el="382" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="220" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">cap=rnd</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="1660" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(740 620)">
+<path d="M 0 0 L 220 0" fill="none" fill-rule="nonzero" stroke="rgb(255,192,0)" stroke-width="5" stroke-linecap="square"/>
+</g>
+</g>
+<g data-el="383" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(740 640)">
+<path d="M 0 0 L 220 0 L 220 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="220" height="22" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:12px;color:rgb(64,64,64);">cap=sq</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(251,252,254)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 24)">
+<foreignObject width="1184" height="72" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1184px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">批注：解析成结构化数据（默认不渲染标记）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 160)">
+<path d="M 0 33.334 A 33.334 33.334 0 0 1 33.334 0 L 486.666 0 A 33.334 33.334 0 0 1 520 33.334 L 520 166.666 A 33.334 33.334 0 0 1 486.666 200 L 33.334 200 A 33.334 33.334 0 0 1 0 166.666 Z" fill="rgb(255,247,230)" fill-rule="nonzero" stroke="rgb(240,198,116)" stroke-width="1.33"/>
+<foreignObject width="520" height="200" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:520px;height:200px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(107,78,18);">批注 1 锚点在这一块附近</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(700 300)">
+<path d="M 0 30.001 A 30.001 30.001 0 0 1 30.001 0 L 389.999 0 A 30.001 30.001 0 0 1 420 30.001 L 420 149.999 A 30.001 30.001 0 0 1 389.999 180 L 30.001 180 A 30.001 30.001 0 0 1 0 149.999 Z" fill="rgb(232,243,236)" fill-rule="nonzero" stroke="rgb(143,191,163)" stroke-width="1.33"/>
+<foreignObject width="420" height="180" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:420px;height:180px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(35,74,52);">批注 2 锚点在这一块附近</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="111" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 600)">
+<path d="M 0 0 L 900 0 L 900 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="26" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(90,97,114);">RenderOptions.showComments = true 时才画黄色气泡标记</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

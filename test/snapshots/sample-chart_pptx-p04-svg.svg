@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(245,247,251)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(64 24)">
+<text x="9.6" y="51.54" text-anchor="start" xml:space="preserve">
+<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">饼图 + 环形图</tspan>
+</text>
+</g>
+</g>
+<g data-el="10" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 120)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(7.33 7.33)">
+<text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">区域收入分布（饼图）</tspan>
+</text>
+</g>
+<g transform="translate(71.01 93.87)">
+<path d="M 189.54 189.54 L 189.54 0 A 189.54 189.54 0 0 1 338.9 306.23 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(60.79 98.86)">
+<path d="M 189.54 189.54 L 338.9 306.23 A 189.54 189.54 0 0 1 57.87 325.88 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(60.79 98.86)">
+<path d="M 189.54 189.54 L 57.87 325.88 A 189.54 189.54 0 0 1 19.18 106.45 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(60.79 98.86)">
+<path d="M 189.54 189.54 L 19.18 106.45 A 189.54 189.54 0 0 1 100.56 22.19 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(60.79 98.86)">
+<path d="M 189.54 189.54 L 100.56 22.19 A 189.54 189.54 0 0 1 189.54 0 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(444.67 178.63)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">36%</tspan>
+</text>
+</g>
+<g transform="translate(252.17 499.33)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">27%</tspan>
+</text>
+</g>
+<g transform="translate(20.31 318.18)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
+</text>
+</g>
+<g transform="translate(78.67 127.27)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
+</text>
+</g>
+<g transform="translate(185.14 66.66)">
+<text x="12" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8%</tspan>
+</text>
+</g>
+<g transform="translate(493.33 236.93)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 230.07)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
+</text>
+</g>
+<g transform="translate(493.33 260.27)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 253.4)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
+</text>
+</g>
+<g transform="translate(493.33 283.6)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 276.73)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
+</text>
+</g>
+<g transform="translate(493.33 306.93)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 300.07)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
+</text>
+</g>
+<g transform="translate(493.33 330.27)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 323.4)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+<g data-el="11" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 120)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(7.33 7.33)">
+<text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">两年对比（环形图）</tspan>
+</text>
+</g>
+<g transform="translate(122.19 118.92)">
+<path d="M 157.81 0 A 157.81 157.81 0 0 1 273.92 264.7 L 229.88 224.15 A 97.95 97.95 0 0 0 157.81 59.86 Z" fill="#4472C4" fill-rule="nonzero"/>
+</g>
+<g transform="translate(122.19 118.92)">
+<path d="M 273.92 264.7 A 157.81 157.81 0 0 1 33.28 254.74 L 80.51 217.98 A 97.95 97.95 0 0 0 229.88 224.15 Z" fill="#ED7D31" fill-rule="nonzero"/>
+</g>
+<g transform="translate(122.19 118.92)">
+<path d="M 33.28 254.74 A 157.81 157.81 0 0 1 25.7 71.5 L 75.81 104.24 A 97.95 97.95 0 0 0 80.51 217.98 Z" fill="#A5A5A5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(122.19 118.92)">
+<path d="M 25.7 71.5 A 157.81 157.81 0 0 1 106.57 8.55 L 126.01 65.17 A 97.95 97.95 0 0 0 75.81 104.24 Z" fill="#FFC000" fill-rule="nonzero"/>
+</g>
+<g transform="translate(122.19 118.92)">
+<path d="M 106.57 8.55 A 157.81 157.81 0 0 1 157.81 0 L 157.81 59.86 A 97.95 97.95 0 0 0 126.01 65.17 Z" fill="#5B9BD5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(62.33 59.06)">
+<path d="M 217.67 0 A 217.67 217.67 0 0 1 389.2 351.68 L 342.03 314.83 A 157.81 157.81 0 0 0 217.67 59.86 Z" fill="#4472C4" fill-rule="nonzero"/>
+</g>
+<g transform="translate(62.33 59.06)">
+<path d="M 389.2 351.68 A 217.67 217.67 0 0 1 66.46 374.25 L 108.05 331.19 A 157.81 157.81 0 0 0 342.03 314.83 Z" fill="#ED7D31" fill-rule="nonzero"/>
+</g>
+<g transform="translate(62.33 59.06)">
+<path d="M 66.46 374.25 A 217.67 217.67 0 0 1 22.03 122.25 L 75.83 148.49 A 157.81 157.81 0 0 0 108.05 331.19 Z" fill="#A5A5A5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(62.33 59.06)">
+<path d="M 22.03 122.25 A 217.67 217.67 0 0 1 115.48 25.48 L 143.58 78.33 A 157.81 157.81 0 0 0 75.83 148.49 Z" fill="#FFC000" fill-rule="nonzero"/>
+</g>
+<g transform="translate(62.33 59.06)">
+<path d="M 115.48 25.48 A 217.67 217.67 0 0 1 217.67 0 L 217.67 59.86 A 157.81 157.81 0 0 0 143.58 78.33 Z" fill="#5B9BD5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(131.67 520.2)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="#4472C4" fill-rule="nonzero"/>
+</g>
+<g transform="translate(152.33 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
+</text>
+</g>
+<g transform="translate(191 520.2)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="#ED7D31" fill-rule="nonzero"/>
+</g>
+<g transform="translate(211.67 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
+</text>
+</g>
+<g transform="translate(250.33 520.2)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="#A5A5A5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(271 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
+</text>
+</g>
+<g transform="translate(309.67 520.2)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="#FFC000" fill-rule="nonzero"/>
+</g>
+<g transform="translate(330.33 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
+</text>
+</g>
+<g transform="translate(369 520.2)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="#5B9BD5" fill-rule="nonzero"/>
+</g>
+<g transform="translate(389.67 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

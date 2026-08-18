@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<filter id="s1" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="4.71" dy="4.71" stdDeviation="4" flood-color="rgba(0,0,0,0.45)" result="e1"/>
+</filter>
+<filter id="s2" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="3.33" result="is0b"/>
+<feOffset in="is0b" dx="3.77" dy="3.77" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(0,0,0,0.75)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+<filter id="s3" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="2.67" result="is0b"/>
+<feOffset in="is0b" dx="-3.3" dy="-3.3" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(0,0,0,0.75)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+<filter id="s4" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="5.33" result="is0b"/>
+<feOffset in="is0b" dx="0" dy="0" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(0,0,0,0.8)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+<filter id="s5" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="4" result="is0b"/>
+<feOffset in="is0b" dx="0" dy="4" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(31,56,100,0.9)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+<filter id="s6" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="0" dy="0" stdDeviation="8" flood-color="rgba(237,125,49,0.8)" flood-opacity="1" result="e1"/>
+</filter>
+<filter id="s7" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6" result="se"/>
+<feComponentTransfer in="se" result="seMask">
+<feFuncA type="linear" slope="2.2" intercept="-0.6"/>
+</feComponentTransfer>
+<feComposite in="SourceGraphic" in2="seMask" operator="in" result="e1"/>
+</filter>
+<filter id="s8" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="0" dy="0" stdDeviation="4" flood-color="rgb(255,192,0)" flood-opacity="1" result="e1"/>
+<feComponentTransfer in="SourceAlpha" result="is1a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is1a" stdDeviation="3.33" result="is1b"/>
+<feOffset in="is1b" dx="3.3" dy="3.3" result="is1c"/>
+<feComposite in="is1c" in2="SourceAlpha" operator="in" result="is1d"/>
+<feFlood flood-color="rgba(0,0,0,0.8)" result="is1e"/>
+<feComposite in="is1e" in2="is1d" operator="in" result="is1f"/>
+<feComposite in="is1f" in2="e1" operator="over" result="e2"/>
+</filter>
+<linearGradient id="s9" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(68,114,196)"/>
+<stop offset="100%" stop-color="rgb(91,155,213)"/>
+</linearGradient>
+<filter id="s10" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="4" result="is0b"/>
+<feOffset in="is0b" dx="3.77" dy="3.77" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(0,0,0,0.85)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+<filter id="s11" x="-30%" y="-30%" width="160%" height="160%">
+<feComponentTransfer in="SourceAlpha" result="is0a">
+<feFuncA type="table" tableValues="1 0"/>
+</feComponentTransfer>
+<feGaussianBlur in="is0a" stdDeviation="3.33" result="is0b"/>
+<feOffset in="is0b" dx="3.77" dy="3.77" result="is0c"/>
+<feComposite in="is0c" in2="SourceAlpha" operator="in" result="is0d"/>
+<feFlood flood-color="rgba(0,0,0,0.7)" result="is0e"/>
+<feComposite in="is0e" in2="is0d" operator="in" result="is0f"/>
+<feComposite in="is0f" in2="SourceGraphic" operator="over" result="e1"/>
+</filter>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 10)">
+<path d="M 0 0 L 900 0 L 900 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="40" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">效果：外阴影 / 内阴影 / 发光 / 柔化边缘</span>
+<span style="font-size:14.67px;color:rgb(128,128,128);">   内阴影用 SVG filter 反转 alpha 实现</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 90)" filter="url(#s1)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 226)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">外阴影</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 90)" filter="url(#s2)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 226)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（右下）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(520 90)" filter="url(#s3)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(520 226)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（左上）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(760 90)" filter="url(#s4)">
+<path d="M 0 65 A 100 65 0 0 1 200 65 A 100 65 0 0 1 0 65 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(760 226)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（无位移）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1000 90)" filter="url(#s5)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(127,127,127)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="111" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1000 226)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（彩色）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="112" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 330)" filter="url(#s6)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="113" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 466)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">发光</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="114" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 330)" filter="url(#s7)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="115" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 466)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">柔化边缘</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="116" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(520 330)" filter="url(#s8)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="117" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(520 466)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影 + 发光</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="118" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(760 330)" filter="url(#s10)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="url(#s9)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="119" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(760 466)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（渐变填充）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="120" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1000 330)" filter="url(#s11)">
+<path d="M 0 21.667 A 21.667 21.667 0 0 1 21.667 0 L 178.333 0 A 21.667 21.667 0 0 1 200 21.667 L 200 108.333 A 21.667 21.667 0 0 1 178.333 130 L 21.667 130 A 21.667 21.667 0 0 1 0 108.333 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<foreignObject width="200" height="130" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:130px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;">Inner</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="121" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1000 466)">
+<path d="M 0 0 L 200 0 L 200 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="200" height="18" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影 + 文字</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

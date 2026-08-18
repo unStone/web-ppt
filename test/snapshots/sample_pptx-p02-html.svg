@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<linearGradient id="s1" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
+<stop offset="0%" stop-color="rgb(68,114,196)"/>
+<stop offset="100%" stop-color="rgb(91,155,213)"/>
+</linearGradient>
+</defs>
+<rect width="1280" height="720" fill="rgb(238,243,251)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 700)">
+<path d="M 0 0 L 1280 0 L 1280 20 L 0 20 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(62.99 52.49)">
+<path d="M 0 27.997 A 27.997 27.997 0 0 1 27.997 0 L 286.964 0 A 27.997 27.997 0 0 1 314.961 27.997 L 314.961 139.982 A 27.997 27.997 0 0 1 286.964 167.979 L 27.997 167.979 A 27.997 27.997 0 0 1 0 139.982 Z" fill="url(#s1)" fill-rule="nonzero"/>
+<foreignObject width="314.96" height="167.98" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:314.96px;height:167.98px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:26.67px;color:rgb(255,255,255);font-weight:700;">渐变圆角矩形</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="3" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(430.45 52.49)">
+<path d="M 0 83.99 A 120.735 83.99 0 0 1 241.47 83.99 A 120.735 83.99 0 0 1 0 83.99 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="4"/>
+<foreignObject width="241.47" height="167.98" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:241.47px;height:167.98px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(255,255,255);">椭圆+描边</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="4" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(724.41 41.99)">
+<path d="M 94.488 0 L 115.704 65.287 L 184.352 65.29 L 128.816 105.642 L 150.027 170.931 L 94.488 130.583 L 38.949 170.931 L 60.16 105.642 L 4.625 65.29 L 73.272 65.287 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="5" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(20 1086.61 125.98) translate(965.88 73.49)">
+<path d="M 0 26.247 L 188.976 26.247 L 188.976 0 L 241.47 52.493 L 188.976 104.987 L 188.976 78.74 L 0 78.74 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="6" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(62.99 262.47)">
+<path d="M 0 0 L 1154.856 0" fill="none" fill-rule="nonzero" stroke="rgb(165,165,165)" stroke-width="3" stroke-dasharray="9 9"/>
+</g>
+</g>
+<g data-el="7" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(62.99 293.96)">
+<path d="M 0 0 L 566.929 0 L 566.929 356.955 L 0 356.955 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="566.93" height="356.96" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:566.93px;height:356.96px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">•&#160;</span>
+<span style="font-size:24px;color:rgb(0,0,0);">字符项目符号第一条</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">•&#160;</span>
+<span style="font-size:24px;color:rgb(0,0,0);">第二条，带换行</span>
+<span style="font-size:24px;color:rgb(0,0,0);">
+<br/>
+</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);">（软换行后的小字）</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">1.&#160;</span>
+<span style="font-size:24px;color:rgb(0,0,0);">自动编号一</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">2.&#160;</span>
+<span style="font-size:24px;color:rgb(0,0,0);">自动编号二</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(0,0,0);text-decoration:line-through;">右对齐删除线</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="8" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(692.91 314.96)">
+<g transform="translate(99.74 78.74) scale(1 -1) translate(-99.74 -78.74)">
+<path d="M 99.738 0 L 199.475 157.48 L 0 157.48 Z" fill="rgba(91,155,213,0.6)" fill-rule="nonzero"/>
+</g>
+</g>
+</g>
+<g data-el="9" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(944.88 304.46)">
+<path d="M 138.583 0 L 251.969 173.228 L 171.339 173.228 L 201.575 314.961 L 0 132.283 L 105.827 132.283 Z" fill="rgb(47,85,151)" fill-rule="nonzero"/>
+</g>
+</g>
+</svg>

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: 类型检查
+        run: npm run check
+
+      - name: 重新生成测试文件
+        # fixture 由脚本手写 OOXML 生成，确保仓库里的与脚本一致
+        run: npm run fixtures
+
+      - name: 核心解析 / 渲染测试
+        run: npm run test:core
+
+      - name: 图元文件解码测试
+        run: npm run test:metafile
+
+      - name: 构建
+        run: npm run build
+
+      - name: 上传快照差异
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-actual
+          path: |
+            test/snapshots/
+            out/core/
+          retention-days: 7

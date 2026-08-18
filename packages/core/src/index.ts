@@ -1,0 +1,238 @@
+import { parseChart } from './chart';
+import { metafileToSvg } from './image';
+import { setChartRenderer } from './chart/hook';
+import { setMetafileDecoder } from './metafile';
+import { parsePpt } from './ppt/parser';
+import { parsePptx } from './pptx/parser';
+import { renderSlideToSvg } from './render/svg';
+import type { Presentation, Slide, SlideElement, TextBody } from './types';
+
+export * from './types';
+export { renderSlideToSvg };
+export { setChartRenderer } from './chart/hook';
+export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
+export { metafileToSvg, detectMetafile } from './image';
+
+// 接入图表渲染器与图元文件解码器（解析器通过 hook 解耦调用）
+setChartRenderer(parseChart);
+setMetafileDecoder(metafileToSvg);
+
+export interface ParseOptions {
+  /**
+   * 惰性解析幻灯片（默认开启，仅对 .pptx 生效）。
+   * 每页在首次访问时才解析，200 页文件首屏约快 11 倍。
+   * 需要把整份演示文稿 `structuredClone` 或序列化时，设为 false 更省心。
+   */
+  lazy?: boolean;
+}
+
+/** 按魔数自动识别 .pptx（Zip）/ .ppt（CFB）并解析为统一 Schema */
+export async function parse(
+  input: File | Blob | ArrayBuffer | Uint8Array,
+  opts: ParseOptions = {},
+): Promise<Presentation> {
+  let bytes: Uint8Array;
+  if (input instanceof Uint8Array) bytes = input;
+  else if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
+  else bytes = new Uint8Array(await input.arrayBuffer());
+
+  if (bytes[0] === 0x50 && bytes[1] === 0x4b) return parsePptx(bytes, opts);
+  if (bytes[0] === 0xd0 && bytes[1] === 0xcf) return parsePpt(bytes);
+  throw new Error('无法识别的文件格式：既不是 .pptx（Zip）也不是 .ppt（CFB）');
+}
+
+// ---------------- Worker 解析 ----------------
+
+/** 把 Schema 里的 asset:N 令牌换成真实 blob URL */
+function rehydrateAssets(pres: Presentation, urls: (string | null)[]): void {
+  const map = (v: string | undefined | null): string | null | undefined => {
+    if (typeof v !== 'string' || !v.startsWith('asset:')) return v;
+    const i = Number(v.slice(6));
+    return Number.isInteger(i) ? urls[i] ?? null : null;
+  };
+
+  const fixFill = (f: unknown): void => {
+    const fill = f as { type?: string; src?: string } | null;
+    if (fill && fill.type === 'image' && typeof fill.src === 'string') {
+      fill.src = map(fill.src) ?? '';
+    }
+  };
+
+  const walk = (els: SlideElement[]): void => {
+    for (const el of els) {
+      if (el.kind === 'image') {
+        el.src = map(el.src) ?? '';
+        if (el.media?.src) el.media.src = map(el.media.src) ?? null;
+      } else if (el.kind === 'shape') {
+        fixFill(el.fill);
+        for (const p of el.text?.paragraphs ?? []) {
+          if (p.bulletImage) p.bulletImage = map(p.bulletImage) ?? null;
+        }
+      } else if (el.kind === 'group') {
+        walk(el.children);
+      } else if (el.kind === 'table') {
+        for (const row of el.rows) for (const cell of row.cells) fixFill(cell.fill);
+      }
+    }
+  };
+
+  for (const s of pres.slides) {
+    fixFill(s.background);
+    walk(s.elements);
+  }
+  for (const f of pres.embeddedFonts ?? []) f.src = map(f.src) ?? '';
+}
+
+let workerSeq = 0;
+
+/**
+ * 在 Worker 里解析 .pptx，主线程零阻塞。
+ *
+ * 调用方负责提供 Worker 实例（打包器各异，库不代为创建）：
+ * ```ts
+ * const worker = new Worker(new URL('web-ppt/dist/worker.js', import.meta.url), { type: 'module' });
+ * const pres = await parseInWorker(worker, bytes);
+ * ```
+ * 返回的 `Presentation` 是纯数据，`dispose()` 由本函数补上以回收图片 URL。
+ */
+export function parseInWorker(worker: Worker, input: ArrayBuffer | Uint8Array): Promise<Presentation> {
+  const bytes = input instanceof Uint8Array
+    ? input.slice().buffer as ArrayBuffer
+    : input;
+  const id = ++workerSeq;
+
+  return new Promise<Presentation>((resolve, reject) => {
+    const onMessage = (e: MessageEvent<{ id: number; ok: boolean; presentation?: Presentation;
+      assets?: { mime: string; data: ArrayBuffer }[]; error?: string }>): void => {
+      if (e.data.id !== id) return;
+      worker.removeEventListener('message', onMessage);
+      if (!e.data.ok || !e.data.presentation) {
+        reject(new Error(e.data.error ?? 'Worker 解析失败'));
+        return;
+      }
+      const urls: (string | null)[] = [];
+      for (const a of e.data.assets ?? []) {
+        try {
+          urls.push(URL.createObjectURL(new Blob([a.data], { type: a.mime })));
+        } catch {
+          urls.push(null);
+        }
+      }
+      const pres = e.data.presentation;
+      rehydrateAssets(pres, urls);
+      pres.dispose = () => {
+        for (const u of urls) if (u) URL.revokeObjectURL(u);
+        urls.length = 0;
+      };
+      resolve(pres);
+    };
+    worker.addEventListener('message', onMessage);
+    worker.postMessage({ id, bytes }, [bytes]);
+  });
+}
+
+// ---------------- 文本提取（搜索 / 无障碍） ----------------
+
+function textOfBody(t: TextBody | null): string {
+  if (!t) return '';
+  return t.paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
+}
+
+function collectText(els: SlideElement[], out: string[]): void {
+  for (const el of els) {
+    switch (el.kind) {
+      case 'shape':
+        out.push(textOfBody(el.text));
+        break;
+      case 'group':
+        collectText(el.children, out);
+        break;
+      case 'table':
+        for (const row of el.rows) for (const cell of row.cells) out.push(textOfBody(cell.text));
+        break;
+    }
+  }
+}
+
+export function slideText(slide: Slide): string {
+  const out: string[] = [];
+  collectText(slide.elements, out);
+  if (slide.notes) out.push(slide.notes);
+  return out.filter(Boolean).join('\n');
+}
+
+// ---------------- 导出 ----------------
+
+/** 把 SVG 中的 blob: 图片替换成 data URI，使其可被 <img> 独立加载（导出 PNG 必需） */
+async function inlineImages(svg: string): Promise<string> {
+  const urls = Array.from(new Set(svg.match(/blob:[^"')\s]+/g) ?? []));
+  if (!urls.length) return svg;
+  const pairs = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const blob = await (await fetch(url)).blob();
+        const data = await new Promise<string>((res, rej) => {
+          const fr = new FileReader();
+          fr.onload = () => res(String(fr.result));
+          fr.onerror = rej;
+          fr.readAsDataURL(blob);
+        });
+        return [url, data] as const;
+      } catch {
+        return [url, url] as const;
+      }
+    }),
+  );
+  let out = svg;
+  for (const [url, data] of pairs) out = out.split(url).join(data);
+  return out;
+}
+
+/** 单页导出为 PNG Blob；scale 为相对幻灯片原始尺寸的倍数 */
+export async function slideToPng(pres: Presentation, slide: Slide, scale = 2): Promise<Blob> {
+  // 必须用 svg 文本模式：foreignObject 会污染画布导致 toBlob 抛 SecurityError
+  const svg = await inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg' }));
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+  try {
+    const img = new Image();
+    img.decoding = 'sync';
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('SVG 渲染失败'));
+      img.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(pres.width * scale);
+    canvas.height = Math.round(pres.height * scale);
+    const g = canvas.getContext('2d');
+    if (!g) throw new Error('无法获取 canvas 上下文');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, canvas.width, canvas.height);
+    g.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((res, rej) => {
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error('导出失败'))), 'image/png');
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** 单页导出为独立可用的 SVG 字符串（图片内联为 data URI，可直接保存/打印） */
+export async function slideToSvgFile(pres: Presentation, slide: Slide): Promise<string> {
+  return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg' }));
+}
+
+/** 整份演示导出为一份可打印的 HTML（浏览器「打印为 PDF」即得 PDF） */
+export async function presentationToPrintableHtml(pres: Presentation): Promise<string> {
+  const pages = await Promise.all(pres.slides.map((s) => slideToSvgFile(pres, s)));
+  return (
+    '<!doctype html><html><head><meta charset="utf-8"><title>slides</title><style>' +
+    `@page{size:${Math.round(pres.width)}px ${Math.round(pres.height)}px;margin:0}` +
+    'html,body{margin:0;padding:0}' +
+    '.pg{page-break-after:always;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}' +
+    '.pg svg{width:100%;height:100%}' +
+    '</style></head><body>' +
+    pages.map((p) => `<div class="pg">${p}</div>`).join('') +
+    '</body></html>'
+  );
+}

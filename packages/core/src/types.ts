@@ -1,0 +1,373 @@
+/**
+ * 内部统一 Schema：所有格式（.pptx / .ppt）解析后归一到这里，渲染层只依赖本文件。
+ * 长度单位一律为 CSS px（EMU / 9525），角度为度。
+ * 注意：新增能力一律用可选字段，保证已有生产者（如图表模块）无需同步改动。
+ */
+
+export interface Presentation {
+  width: number;
+  height: number;
+  slides: Slide[];
+  source: 'pptx' | 'ppt';
+  /** 嵌入字体：字体名 → @font-face src（blob URL） */
+  embeddedFonts?: EmbeddedFont[];
+  /**
+   * 释放本次解析创建的所有 blob URL。
+   * 不再需要这份演示文稿时调用；大文件（数十 MB 图片）不释放会一直占着内存。
+   * 调用后依赖这些 URL 的已渲染 SVG 将无法显示图片。
+   */
+  dispose?: () => void;
+  /** 节（p14:sectionLst），供缩略图分组 */
+  sections?: Section[];
+}
+
+/** 演示文稿的「节」 */
+export interface Section {
+  name: string;
+  /** p:sldId@id 列表（与 presentation.xml 的 sldIdLst 对应） */
+  slideIds: number[];
+  /** 对应的页序号（0 基），缺失的 id 会被跳过 */
+  slideIndexes?: number[];
+}
+
+export interface EmbeddedFont {
+  family: string;
+  src: string;
+  bold: boolean;
+  italic: boolean;
+}
+
+export interface Slide {
+  background: Fill | null;
+  elements: SlideElement[];
+  /** 演讲者备注纯文本 */
+  notes?: string;
+  /** 幻灯片是否被隐藏 */
+  hidden?: boolean;
+  /** 版式名，用于调试与缩略图分组 */
+  layoutName?: string;
+  /** 切换效果 */
+  transition?: Transition;
+  /** 元素动画，按点击分组后由查看器逐步播放 */
+  animations?: AnimStep[];
+  /** 批注（ppt/comments/*.xml），默认不渲染，由 RenderOptions 开关控制 */
+  comments?: SlideComment[];
+}
+
+/** 幻灯片批注 */
+export interface SlideComment {
+  author: string;
+  /** 作者缩写 */
+  initials?: string;
+  /** 原始时间字符串（ISO 8601） */
+  date?: string;
+  text: string;
+  /** 锚点坐标（px，幻灯片坐标系） */
+  x: number;
+  y: number;
+  /** 批注序号（p:cm@idx） */
+  idx?: number;
+}
+
+export type TransitionType =
+  | 'none' | 'fade' | 'cut' | 'push' | 'pull' | 'cover' | 'wipe' | 'split' | 'zoom'
+  | 'dissolve' | 'checker' | 'blinds' | 'comb' | 'wheel' | 'circle' | 'diamond'
+  | 'plus' | 'wedge' | 'newsflash' | 'randomBar' | 'strips';
+
+export interface Transition {
+  type: TransitionType;
+  /** 方向：l/r/u/d/horz/vert/in/out，具体含义随 type 而定 */
+  dir?: string;
+  durationMs: number;
+  /** 自动换片延迟（毫秒）；缺省表示需要手动触发 */
+  advanceAfterMs?: number;
+}
+
+export type AnimEffect =
+  | 'appear' | 'fade' | 'fly' | 'wipe' | 'zoom' | 'split' | 'wheel' | 'blinds'
+  | 'grow' | 'spin' | 'float' | 'bounce' | 'dissolve' | 'stretch' | 'swivel' | 'random';
+
+export interface AnimStep {
+  /** 目标元素 id（对应 SlideElement.id） */
+  target: number;
+  effect: AnimEffect;
+  dir?: string;
+  delayMs: number;
+  durationMs: number;
+  /** 与前一步的时序关系 */
+  trigger: 'click' | 'withPrev' | 'afterPrev';
+  /** 动画类别 */
+  kind: 'entrance' | 'exit' | 'emphasis' | 'motion';
+  /** 由查看器计算：属于第几个点击批次 */
+  clickGroup?: number;
+}
+
+export type Fill =
+  | { type: 'solid'; color: string }
+  | { type: 'gradient'; angle: number; stops: GradientStop[]; radial?: boolean }
+  | { type: 'image'; src: string; tile?: ImageTile; alpha?: number; crop?: { l: number; t: number; r: number; b: number } }
+  | { type: 'pattern'; fg: string; bg: string; preset: string }
+  | { type: 'none' };
+
+export interface ImageTile {
+  sx: number;
+  sy: number;
+  flip: string;
+}
+
+export interface GradientStop {
+  /** 0-1 */
+  pos: number;
+  color: string;
+}
+
+export type LineEndType = 'none' | 'triangle' | 'stealth' | 'diamond' | 'oval' | 'arrow';
+
+export interface LineEnd {
+  type: LineEndType;
+  /** 相对线宽的倍数 */
+  w: number;
+  h: number;
+}
+
+export interface Stroke {
+  color: string;
+  width: number;
+  dash: number[] | null;
+  cap?: 'butt' | 'round' | 'square';
+  join?: 'miter' | 'round' | 'bevel';
+  head?: LineEnd;
+  tail?: LineEnd;
+  /** 复合线型（双线等）暂只用于标记 */
+  compound?: string;
+}
+
+/** 立体效果（scene3d / sp3d）。做等轴测风格的近似，不做真实三维投影。 */
+export interface Shape3D {
+  /** 挤出深度 px */
+  extrusion?: number;
+  /** 挤出面颜色 */
+  extrusionColor?: string;
+  /** 顶部斜角高度 px */
+  bevelTop?: number;
+  /** 底部斜角高度 px */
+  bevelBottom?: number;
+  /** 轮廓线宽 px */
+  contourWidth?: number;
+  contourColor?: string;
+  /** 材质预设名，用于选择高光强度 */
+  material?: string;
+  /** 场景绕 X / Y 轴的旋转角度（度），用于决定挤出方向 */
+  rotX?: number;
+  rotY?: number;
+}
+
+export interface Effects {
+  shadow?: {
+    dx: number;
+    dy: number;
+    blur: number;
+    color: string;
+    /** 内阴影 */
+    inner?: boolean;
+  };
+  glow?: { radius: number; color: string };
+  softEdge?: number;
+  reflection?: { alpha: number; size: number; distance: number };
+}
+
+export interface ElementBase {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  flipH: boolean;
+  flipV: boolean;
+  effects?: Effects;
+  /** 超链接目标（外部 URL 或 slide:<index>） */
+  link?: string;
+  /** 无障碍/调试用名称 */
+  name?: string;
+  /** 形状 id（来自 cNvPr@id），动画以此定位目标 */
+  id?: number;
+  /** 立体效果 */
+  scene3d?: Shape3D;
+}
+
+export type SlideElement =
+  | ShapeElement
+  | ImageElement
+  | GroupElement
+  | TableElement
+  | UnsupportedElement;
+
+export interface ShapeElement extends ElementBase {
+  kind: 'shape';
+  /** SVG path d（局部坐标 0,0-w,h）；null 表示纯文本框，无可见几何 */
+  path: string | null;
+  fill: Fill | null;
+  stroke: Stroke | null;
+  text: TextBody | null;
+  /** 开放路径：只描边不填充 */
+  openGeom?: boolean;
+}
+
+/** 媒体对象（音频 / 视频）：封面帧走 ImageElement.src，本字段记录可播放的源 */
+export interface MediaInfo {
+  kind: 'audio' | 'video';
+  /** 媒体地址：包内资源为 blob URL，外链为原始 URL；解析不到时为 null */
+  src: string | null;
+  /** 来自 r:link 的外部链接 */
+  external?: boolean;
+  /** 媒体 MIME，便于将来交给 <video>/<audio> */
+  mime?: string;
+}
+
+export interface ImageElement extends ElementBase {
+  kind: 'image';
+  /** 图片地址；媒体对象无封面帧时可能为空串 */
+  src: string;
+  /** 裁剪比例 0-1，来自 srcRect */
+  crop: { l: number; t: number; r: number; b: number } | null;
+  /** 图片被裁剪进的形状轮廓（局部坐标 path） */
+  clipPath?: string | null;
+  /** 0-1，来自 alphaModFix */
+  alpha?: number;
+  /** CSS filter，用于 duotone / 灰度 / 亮度对比度 */
+  filter?: string;
+  stroke?: Stroke | null;
+  /** 音视频对象：渲染封面帧 + 播放标识 */
+  media?: MediaInfo;
+}
+
+export interface GroupElement extends ElementBase {
+  kind: 'group';
+  /** 子坐标系原点与缩放：child 坐标先减 (childX,childY) 再乘 scale */
+  childX: number;
+  childY: number;
+  scaleX: number;
+  scaleY: number;
+  children: SlideElement[];
+}
+
+export interface TableElement extends ElementBase {
+  kind: 'table';
+  colWidths: number[];
+  rows: TableRow[];
+}
+
+export interface TableRow {
+  height: number;
+  cells: TableCell[];
+}
+
+export interface CellBorders {
+  l?: Stroke | null;
+  r?: Stroke | null;
+  t?: Stroke | null;
+  b?: Stroke | null;
+}
+
+export interface TableCell {
+  colSpan: number;
+  rowSpan: number;
+  /** 被合并覆盖的占位格，不渲染 */
+  merged: boolean;
+  fill: Fill | null;
+  text: TextBody | null;
+  borders?: CellBorders;
+  /** [上,右,下,左] px */
+  margins?: [number, number, number, number];
+  vAlign?: 'top' | 'middle' | 'bottom';
+  /** 竖排文字方向 */
+  vert?: TextVert;
+}
+
+export interface UnsupportedElement extends ElementBase {
+  kind: 'unsupported';
+  label: string;
+}
+
+export type TextVert = 'horz' | 'vert' | 'vert270' | 'wordArtVert';
+
+export interface TextBody {
+  anchor: 'top' | 'middle' | 'bottom';
+  /** [上, 右, 下, 左] */
+  insets: [number, number, number, number];
+  wrap: boolean;
+  /** normAutofit 字号缩放，1 = 不缩放 */
+  fontScale: number;
+  paragraphs: Paragraph[];
+  /** normAutofit 行距压缩，0-1 */
+  lnSpcReduction?: number;
+  /** 竖排 */
+  vert?: TextVert;
+  /** 水平居中（anchorCtr） */
+  anchorCtr?: boolean;
+  /** spAutoFit：形状随文字增高（渲染时允许溢出） */
+  autoFitShape?: boolean;
+  /** 分栏 */
+  columns?: number;
+  columnGap?: number;
+  /** 艺术字变形（bodyPr/prstTxWarp）；adj 为 avLst 里的 gd 名 → 数值 */
+  warp?: TextWarp;
+}
+
+export interface TextWarp {
+  /** 预设名，如 textArchUp / textWave1 */
+  preset: string;
+  /** avLst：adj / adj1 / adj2 → 原始数值（角度为 1/60000 度，比例为 1/100000） */
+  adj: Record<string, number>;
+}
+
+export interface Paragraph {
+  align: 'left' | 'center' | 'right' | 'justify';
+  lvl: number;
+  marL: number;
+  indent: number;
+  bullet: string | null;
+  /** 行高倍数；null 用默认 */
+  lineHeight: number | null;
+  spaceBefore: number;
+  spaceAfter: number;
+  runs: TextRun[];
+  /** 项目符号独立样式 */
+  bulletColor?: string | null;
+  bulletFont?: string | null;
+  /** 相对首个 run 字号的比例 */
+  bulletSize?: number | null;
+  /** 图片项目符号 */
+  bulletImage?: string | null;
+  /** 从右到左 */
+  rtl?: boolean;
+}
+
+export interface TextRun {
+  text: string;
+  b: boolean;
+  i: boolean;
+  u: boolean;
+  strike: boolean;
+  /** px */
+  size: number;
+  color: string;
+  fonts: string[];
+  /** 上下标：正数上标、负数下标（百分比） */
+  baseline?: number;
+  /** 字间距 px */
+  spacing?: number;
+  /** 全大写 / 小型大写 */
+  caps?: 'none' | 'all' | 'small';
+  /** 文字描边 */
+  outline?: { color: string; width: number } | null;
+  /** 渐变文字：CSS background-image 值 */
+  gradient?: string | null;
+  /** 超链接 */
+  link?: string;
+  /** 文字高亮底色 */
+  highlight?: string | null;
+  underlineColor?: string | null;
+  /** 文字阴影（CSS text-shadow） */
+  shadow?: string | null;
+}

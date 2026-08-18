@@ -1,0 +1,17 @@
+{
+  "name": "@web-ppt/viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web-PPT 的开箱即用查看器：缩略图 / 缩放 / 搜索 / 备注 / 演示模式 / 导出",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "web-ppt": "*",
+    "@web-ppt/viewer-core": "*"
+  }
+}

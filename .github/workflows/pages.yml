@@ -1,0 +1,51 @@
+name: 官网
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+# 只允许一个部署在跑，新的推送取消排队中的旧任务
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      # 站点直接消费 web-ppt / @web-ppt/viewer-core 的 dist，必须先构建
+      - name: 构建依赖包
+        run: npm run build
+
+      - name: 构建站点
+        run: npm run build -w @web-ppt/site
+        env:
+          SITE_BASE: /web-ppt/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

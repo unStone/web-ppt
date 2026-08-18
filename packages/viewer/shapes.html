@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>几何调试 · Web-PPT</title>
+  <style>
+    body { margin: 0; background: #16181d; color: #d7dbe2; font-family: -apple-system, 'PingFang SC', sans-serif; }
+    header { padding: 12px 20px; background: #1f2229; border-bottom: 1px solid #2c313b; display: flex; gap: 16px; align-items: center; }
+    input, select { background: #2a2f38; color: inherit; border: 1px solid #3a4150; border-radius: 6px; padding: 6px 10px; }
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; padding: 20px; }
+    .cell { background: #fff; border-radius: 8px; padding: 8px; }
+    .cell svg { width: 100%; height: 130px; display: block; }
+    .cell .n { font-size: 11px; color: #333; text-align: center; margin-top: 6px; word-break: break-all; }
+    .cell.open { outline: 2px solid #4c8dff; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>几何调试</strong>
+    <input id="q" placeholder="过滤形状名…" />
+    <label>调节值 <input id="adj" type="range" min="0" max="100000" value="25000" step="1000" /></label>
+    <label>宽高比 <select id="ratio"><option value="1.6">16:10</option><option value="1">1:1</option><option value="0.6">竖向</option></select></label>
+    <span id="count"></span>
+  </header>
+  <div id="grid"></div>
+  <script type="module" src="/src/shapes.ts"></script>
+</body>
+</html>

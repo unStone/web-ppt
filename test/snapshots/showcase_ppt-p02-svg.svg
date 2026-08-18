@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<filter id="s1" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="4.69" dy="4.69" stdDeviation="2" flood-color="rgba(0,0,0,0.45)" result="e1"/>
+</filter>
+<filter id="s2" x="-30%" y="-30%" width="160%" height="160%">
+<feDropShadow in="SourceGraphic" dx="0" dy="4.01" stdDeviation="2" flood-color="rgba(0,0,0,0.5)" result="e1"/>
+</filter>
+<linearGradient id="s3" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(68,114,196)"/>
+<stop offset="100%" stop-color="rgb(237,125,49)"/>
+</linearGradient>
+<linearGradient id="s4" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(255,82,82)"/>
+<stop offset="100%" stop-color="rgb(105,240,174)"/>
+</linearGradient>
+<linearGradient id="s5" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0%" stop-color="rgb(91,155,213)"/>
+<stop offset="100%" stop-color="rgb(255,255,255)"/>
+</linearGradient>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="1025" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 714)">
+<path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+</g>
+<g data-el="4097" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(24 14)">
+<path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="7.2" y="26.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">效果 </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">· </tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">填充</tspan>
+</text>
+</g>
+</g>
+<g data-el="4098" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 80)" filter="url(#s1)">
+<path d="M 0 18.333 A 18.333 18.333 0 0 1 18.333 0 L 171.667 0 A 18.333 18.333 0 0 1 190 18.333 L 190 91.667 A 18.333 18.333 0 0 1 171.667 110 L 18.333 110 A 18.333 18.333 0 0 1 0 91.667 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<text x="95" y="58.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">外阴影</tspan>
+</text>
+</g>
+</g>
+<g data-el="4099" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 80)">
+<path d="M 0 18.333 A 18.333 18.333 0 0 1 18.333 0 L 171.667 0 A 18.333 18.333 0 0 1 190 18.333 L 190 91.667 A 18.333 18.333 0 0 1 171.667 110 L 18.333 110 A 18.333 18.333 0 0 1 0 91.667 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+<text x="95" y="58.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">发光</tspan>
+</text>
+</g>
+</g>
+<g data-el="4100" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 80)">
+<path d="M 0 18.333 A 18.333 18.333 0 0 1 18.333 0 L 171.667 0 A 18.333 18.333 0 0 1 190 18.333 L 190 91.667 A 18.333 18.333 0 0 1 171.667 110 L 18.333 110 A 18.333 18.333 0 0 1 0 91.667 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<text x="95" y="58.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">柔化边缘</tspan>
+</text>
+</g>
+</g>
+<g data-el="4101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 80)" filter="url(#s2)">
+<path d="M 0 18.333 A 18.333 18.333 0 0 1 18.333 0 L 171.667 0 A 18.333 18.333 0 0 1 190 18.333 L 190 91.667 A 18.333 18.333 0 0 1 171.667 110 L 18.333 110 A 18.333 18.333 0 0 1 0 91.667 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<text x="95" y="58.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">阴影</tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">+</tspan>
+<tspan font-size="13.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">发光</tspan>
+</text>
+</g>
+</g>
+<g data-el="4102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s3)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">线性渐变 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">45°</tspan>
+</text>
+</g>
+</g>
+<g data-el="4104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s4)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">三色渐变 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">0°</tspan>
+</text>
+</g>
+</g>
+<g data-el="4106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 260)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="url(#s5)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">径向渐变</tspan>
+</text>
+</g>
+</g>
+<g data-el="4108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(939.67 259.67)">
+<image href="data:<69434e68b8da>" width="240.67" height="110.67" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="4109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 374)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">图案 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">diagCross</tspan>
+</text>
+</g>
+</g>
+<g data-el="4110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(39.67 449.67)">
+<image href="data:<a9e90b9c1efb>" width="240.67" height="110.67" preserveAspectRatio="none"/>
+</g>
+</g>
+<g data-el="4111" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">图案 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">horz</tspan>
+</text>
+</g>
+</g>
+<g data-el="4112" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgba(165,165,165,0.4)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4113" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(340 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">半透明 </tspan>
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">40%</tspan>
+</text>
+</g>
+</g>
+<g data-el="4114" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgb(47,85,151)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4115" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">lumMod 75%</tspan>
+</text>
+</g>
+</g>
+<g data-el="4116" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 450)">
+<path d="M 0 0 L 240 0 L 240 110 L 0 110 Z" fill="rgb(248,215,205)" fill-rule="nonzero" stroke="rgb(153,153,153)" stroke-width="0.68"/>
+</g>
+</g>
+<g data-el="4117" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(940 564)">
+<path d="M 0 0 L 240 0 L 240 20 L 0 20 Z" fill="none" fill-rule="nonzero"/>
+<text x="120" y="14.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">tint 40%</tspan>
+</text>
+</g>
+</g>
+</svg>
