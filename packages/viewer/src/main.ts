@@ -1,6 +1,6 @@
-import { parse, presentationToPrintableHtml, slideToSvgFile, slideText } from 'web-ppt';
+import { parse, presentationToPrintableHtml, slideToSvgFile, slideText } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
-import type { Presentation } from 'web-ppt';
+import type { Presentation } from '@web-ppt/core';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 

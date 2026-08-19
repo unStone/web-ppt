@@ -1,5 +1,5 @@
-import { parse } from 'web-ppt';
-import type { Presentation } from 'web-ppt';
+import { parse } from '@web-ppt/core';
+import type { Presentation } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 
 /* ── 元素 ─────────────────────────────────────── */

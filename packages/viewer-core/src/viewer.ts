@@ -1,5 +1,5 @@
-import type { Presentation, Slide } from 'web-ppt';
-import { renderSlideToSvg, slideToPng } from 'web-ppt';
+import type { Presentation, Slide } from '@web-ppt/core';
+import { renderSlideToSvg, slideToPng } from '@web-ppt/core';
 import { playGroup, playTransition, type PlayHandle } from './playback';
 import { PresentationState, type PresentationStateOptions } from './state';
 

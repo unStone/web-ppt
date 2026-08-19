@@ -38,7 +38,7 @@
     <a class="btn primary" href="#demo">试一下 ↓</a>
     <a class="btn" href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub</a>
   </div>
-  <div class="install"><code>npm i web-ppt</code><button class="copy" data-copy="npm i web-ppt" title="复制">复制</button></div>
+  <div class="install"><code>npm i @web-ppt/core</code><button class="copy" data-copy="npm i @web-ppt/core" title="复制">复制</button></div>
 
   <ul class="stats">
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
@@ -122,7 +122,7 @@
   <div class="cards">
     <article class="card">
       <h3>渲染一页</h3>
-<pre><code><span class="k">import</span> { parse, renderSlideToSvg } <span class="k">from</span> <span class="s">'web-ppt'</span>;
+<pre><code><span class="k">import</span> { parse, renderSlideToSvg } <span class="k">from</span> <span class="s">'@web-ppt/core'</span>;
 
 <span class="k">const</span> pres = <span class="k">await</span> parse(file);   <span class="c">// File | Blob | ArrayBuffer</span>
 el.innerHTML = renderSlideToSvg(pres, pres.slides[<span class="n">0</span>]);</code></pre>
@@ -147,10 +147,10 @@ st.next(); st.search(<span class="s">'关键词'</span>);</code></pre>
     </article>
     <article class="card">
       <h3>不阻塞主线程</h3>
-<pre><code><span class="k">import</span> { parseInWorker } <span class="k">from</span> <span class="s">'web-ppt'</span>;
+<pre><code><span class="k">import</span> { parseInWorker } <span class="k">from</span> <span class="s">'@web-ppt/core'</span>;
 
 <span class="k">const</span> w = <span class="k">new</span> Worker(
-  <span class="k">new</span> URL(<span class="s">'web-ppt/worker'</span>, <span class="k">import</span>.meta.url),
+  <span class="k">new</span> URL(<span class="s">'@web-ppt/core/worker'</span>, <span class="k">import</span>.meta.url),
   { type: <span class="s">'module'</span> });
 <span class="k">const</span> pres = <span class="k">await</span> parseInWorker(w, buf);</code></pre>
     </article>

@@ -7,13 +7,13 @@
 `Viewer` 是它之上最薄的一层 DOM 绑定（塞 SVG、设可见性、调播放，约 24 行）。
 
 ```bash
-npm i web-ppt @web-ppt/viewer-core
+npm i @web-ppt/core @web-ppt/viewer-core
 ```
 
 ## 开箱即用
 
 ```ts
-import { parse } from 'web-ppt';
+import { parse } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 
 const pres = await parse(file);

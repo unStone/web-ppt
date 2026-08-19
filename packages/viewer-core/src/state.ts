@@ -1,5 +1,5 @@
-import type { AnimStep, Presentation, Slide, Transition } from 'web-ppt';
-import { slideText } from 'web-ppt';
+import type { AnimStep, Presentation, Slide, Transition } from '@web-ppt/core';
+import { slideText } from '@web-ppt/core';
 import { autoAdvanceMs, groupSteps, hiddenBefore } from './playback';
 
 /**

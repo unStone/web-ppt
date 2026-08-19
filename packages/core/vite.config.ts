@@ -7,7 +7,7 @@ export default defineConfig({
     copyPublicDir: false,
     lib: {
       // worker 单独出一个入口，调用方用 new Worker(new URL('.../worker.js', import.meta.url))
-      entry: { 'web-ppt': 'src/index.ts', worker: 'src/worker.ts', geometry: 'src/pptx/geometry.ts' },
+      entry: { core: 'src/index.ts', worker: 'src/worker.ts', geometry: 'src/pptx/geometry.ts' },
       name: 'WebPPT',
       formats: ['es'],
     },

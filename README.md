@@ -90,13 +90,13 @@ flowchart LR
 ## 安装
 
 ```bash
-npm i web-ppt
+npm i @web-ppt/core
 ```
 
 ## 使用
 
 ```ts
-import { parse, slideToPng, slideToSvgFile, presentationToPrintableHtml } from 'web-ppt';
+import { parse, slideToPng, slideToSvgFile, presentationToPrintableHtml } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 
 const pres = await parse(file);                       // File | Blob | ArrayBuffer | Uint8Array
@@ -186,9 +186,9 @@ st.search('关键词');            // → 命中的页索引数组
 #### Worker 用法
 
 ```ts
-import { parseInWorker } from 'web-ppt';
+import { parseInWorker } from '@web-ppt/core';
 
-const worker = new Worker(new URL('web-ppt/worker', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('@web-ppt/core/worker', import.meta.url), { type: 'module' });
 const pres = await parseInWorker(worker, bytes);   // 主线程零阻塞
 ```
 

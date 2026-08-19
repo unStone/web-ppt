@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @web-ppt/viewer",
-    "build": "npm run build -w web-ppt && npm run build -w @web-ppt/viewer-core",
+    "build": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/viewer-core",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "node tooling/test-core.mjs && node tooling/test-metafile.mjs",
     "test:core": "node tooling/test-core.mjs",

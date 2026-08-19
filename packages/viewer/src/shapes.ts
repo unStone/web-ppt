@@ -1,4 +1,4 @@
-import { presetGeom } from 'web-ppt/geometry';
+import { presetGeom } from '@web-ppt/core/geometry';
 
 // 与 geometry.ts 的 PRESETS 保持同步的展示清单
 const NAMES = [

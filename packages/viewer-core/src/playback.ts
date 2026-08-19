@@ -1,4 +1,4 @@
-import type { AnimStep, Slide, Transition } from 'web-ppt';
+import type { AnimStep, Slide, Transition } from '@web-ppt/core';
 
 /**
  * 动画与切换的播放层。全部走 Web Animations API，

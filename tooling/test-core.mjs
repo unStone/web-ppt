@@ -54,7 +54,7 @@ const lib = await import(`file://${bundle}?t=${Date.now()}`);
 // viewer-core 是独立包，把 `web-ppt` 重定向到刚打好的 core 产物，避免依赖 dist
 const viewerBundle = join(outDir, 'viewer-core-bundle.mjs');
 execFileSync('npx', ['esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--alias:web-ppt=${join(root, 'packages/core/src/index.ts')}`,
+  '--platform=browser', '--log-level=error', `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--outfile=${viewerBundle}`], { cwd: root, stdio: 'inherit' });
 const viewerLib = await import(`file://${viewerBundle}?t=${Date.now()}`);
 const geo = await (async () => {

@@ -1,5 +1,5 @@
 {
-  "name": "web-ppt",
+  "name": "@web-ppt/core",
   "version": "0.1.0",
   "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
   "keywords": [
@@ -29,15 +29,15 @@
   },
   "type": "module",
   "sideEffects": [
-    "./dist/web-ppt.js"
+    "./dist/core.js"
   ],
-  "main": "./dist/web-ppt.js",
-  "module": "./dist/web-ppt.js",
+  "main": "./dist/core.js",
+  "module": "./dist/core.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/web-ppt.js"
+      "import": "./dist/core.js"
     },
     "./worker": {
       "types": "./dist/worker.d.ts",

@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "web-ppt": "*",
+    "@web-ppt/core": "*",
     "@web-ppt/viewer-core": "*"
   }
 }
