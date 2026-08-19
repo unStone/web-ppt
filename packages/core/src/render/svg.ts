@@ -18,6 +18,7 @@ const esc = (s: string): string =>
 interface Ctx {
   defs: string[];
   textMode: 'html' | 'svg';
+  media: 'badge' | 'player';
 }
 
 export interface RenderOptions {
@@ -32,10 +33,26 @@ export interface RenderOptions {
   textMode?: 'html' | 'svg';
   /** 画批注标记（Slide.comments），默认关闭 */
   showComments?: boolean;
+  /**
+   * 媒体呈现方式：
+   * - 'badge'（默认）：只画封面帧 + 播放标识，纯 SVG，导出安全
+   * - 'player'：嵌入真实 <video>/<audio>，可播放
+   *
+   * 'player' 会引入 foreignObject —— Chrome 据此把 SVG 判为污染画布，
+   * 导致无法 toBlob。所以它只在 textMode 为 'html'（屏幕预览）时生效，
+   * 导出路径一律退回 badge。
+   */
+  media?: 'badge' | 'player';
 }
 
 export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderOptions = {}): string {
-  const ctx: Ctx = { defs: [], textMode: opts.textMode ?? 'html' };
+  const textMode = opts.textMode ?? 'html';
+  const ctx: Ctx = {
+    defs: [],
+    textMode,
+    // 导出路径不能出现 foreignObject，强制退回 badge
+    media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
+  };
   const bgFill = slide.background ? paint(slide.background, ctx, pres.width, pres.height) : '#fff';
   const bg = `<rect width="${r(pres.width)}" height="${r(pres.height)}" fill="${bgFill}"/>`;
   const body = slide.elements.map((el) => renderEl(el, ctx)).join('')
@@ -451,6 +468,22 @@ function mediaBadge(el: ImageElement, media: MediaInfo): string {
   return `<g aria-hidden="true" pointer-events="none"><title>${esc(note)}</title>${ring}${glyph}</g>`;
 }
 
+/** 真实播放器：<video> 用封面帧做 poster，<audio> 贴底显示以免盖住封面 */
+function mediaPlayer(el: ImageElement, media: MediaInfo): string {
+  const common = 'width:100%;height:100%;display:block;object-fit:contain;background:#000';
+  const inner = media.kind === 'audio'
+    ? `<audio controls preload="none" src="${esc(media.src ?? '')}" style="width:100%;display:block"></audio>`
+    : `<video controls preload="metadata" src="${esc(media.src ?? '')}"`
+      + (el.src ? ` poster="${esc(el.src)}"` : '')
+      + ` style="${common}"></video>`;
+  // 音频控件本身很矮，贴在元素底部，上面仍露出封面帧
+  const h = media.kind === 'audio' ? Math.min(el.h, 54) : el.h;
+  const y = media.kind === 'audio' ? el.h - h : 0;
+  return `<foreignObject x="0" y="${r(y)}" width="${r(el.w)}" height="${r(h)}">`
+    + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%">${inner}</div>`
+    + '</foreignObject>';
+}
+
 function renderImage(el: ImageElement, ctx: Ctx): string {
   const attrs =
     (el.alpha !== undefined && el.alpha < 1 ? ` opacity="${r(el.alpha)}"` : '') +
@@ -484,7 +517,11 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
   const flip = flipTransform(el);
   if (flip) img = `<g transform="${flip}">${img}</g>`;
   // 播放标识画在翻转之外，避免图标被镜像
-  if (el.media) img += mediaBadge(el, el.media);
+  if (el.media) {
+    img += ctx.media === 'player' && el.media.src
+      ? mediaPlayer(el, el.media)
+      : mediaBadge(el, el.media);
+  }
   return wrapEl(el, img, ctx);
 }
 

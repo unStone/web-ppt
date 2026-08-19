@@ -114,6 +114,9 @@ viewer.setZoom(1.5);
 viewer.search('关键词');                               // → 命中的页索引数组
 await viewer.exportPng(2);                            // → Blob
 
+// 想让视频 / 音频真的能播（会引入 foreignObject，仅屏幕预览可用）
+const v2 = new Viewer(container, pres, { media: 'player' });
+
 const svg = await slideToSvgFile(pres, pres.slides[0]);
 const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 PDF
 ```
@@ -144,7 +147,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1132 项断言 + 138 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1138 项断言 + 138 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，103 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -267,7 +270,6 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
 | .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
 | .ppt SmartArt · 自动编号 · 嵌套组 | 未实现；嵌套组会被展平 |
-| 媒体播放 | 只渲染封面帧 + 播放标识，未接真实播放器（`media.src`/`mime` 已备好） |
 | OMML 公式 | 只取线性文本，不做 MathML 排版 |
 | 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
 | 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |

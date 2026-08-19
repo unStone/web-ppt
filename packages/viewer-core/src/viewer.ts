@@ -11,11 +11,18 @@ import { PresentationState, type PresentationStateOptions } from './state';
  * 因此换成 React / Vue 只需重写这三件事。
  */
 
-export interface ViewerOptions extends PresentationStateOptions {}
+export interface ViewerOptions extends PresentationStateOptions {
+  /**
+   * 媒体呈现：'badge' 只画封面帧与播放标识，'player' 嵌入可播放的
+   * <video>/<audio>。导出（exportPng）不受影响，始终走 badge。
+   */
+  media?: 'badge' | 'player';
+}
 
 export class Viewer {
   readonly state: PresentationState;
   private svgCache = new Map<number, string>();
+  private media: 'badge' | 'player';
   private playing: PlayHandle | null = null;
   private cancelAuto: (() => void) | null = null;
   private unsubscribe: () => void;
@@ -30,6 +37,7 @@ export class Viewer {
     readonly presentation: Presentation,
     options: ViewerOptions = {},
   ) {
+    this.media = options.media ?? 'badge';
     this.state = new PresentationState(presentation, options);
     this.unsubscribe = this.state.subscribe((change) => {
       if (change.type === 'slide') {
@@ -80,7 +88,7 @@ export class Viewer {
   slideSvg(i: number): string {
     let svg = this.svgCache.get(i);
     if (svg === undefined) {
-      svg = renderSlideToSvg(this.presentation, this.presentation.slides[i]);
+      svg = renderSlideToSvg(this.presentation, this.presentation.slides[i], { media: this.media });
       this.svgCache.set(i, svg);
     }
     return svg;
@@ -88,6 +96,7 @@ export class Viewer {
 
   /** 不走缓存，用于缩略图等需要独立 defs id 的场景 */
   renderSlide(i: number): string {
+    // 缩略图不嵌播放器：既没意义，还会为每个缩略图各建一个媒体元素
     return renderSlideToSvg(this.presentation, this.presentation.slides[i]);
   }
 

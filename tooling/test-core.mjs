@@ -1219,6 +1219,30 @@ group('导出路径的分栏');
   }
 }
 
+group('媒体播放器');
+{
+  const mp = parsed.get('sample-media.pptx');
+  const withMedia = mp && mp.slides.findIndex((s2) =>
+    s2.elements.some((e) => e.media?.src));
+  if (check('存在带可播放源的媒体', withMedia >= 0)) {
+    const page = mp.slides[withMedia];
+    const badge = lib.renderSlideToSvg(mp, page);
+    const player = lib.renderSlideToSvg(mp, page, { media: 'player' });
+    const exported = lib.renderSlideToSvg(mp, page, { media: 'player', textMode: 'svg' });
+
+    // 默认渲染里 foreignObject 本来就有（HTML 文本路径用它），要看的是播放器元素
+    check('默认不嵌播放器', !/<video|<audio/.test(badge));
+    check('player 模式嵌入真实播放器',
+      /<video[^>]+controls/.test(player) || /<audio[^>]+controls/.test(player));
+    check('player 模式用封面帧做 poster', !player.includes('<video') || /poster="/.test(player));
+
+    // 关键约束：导出路径出现 foreignObject 就会让 toBlob 失败
+    check('导出路径强制退回 badge，无 foreignObject', !exported.includes('<foreignObject'),
+      exported.slice(exported.indexOf('<foreignObject'), exported.indexOf('<foreignObject') + 60));
+    check('导出路径仍保留播放标识', exported.includes('<circle'));
+  }
+}
+
 group('渲染快照');
 {
   const snapDir = join(root, 'test/snapshots');
