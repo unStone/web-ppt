@@ -12,7 +12,7 @@
 | `packages/site/` | 官网（private），含浏览器内实时 Demo |
 | `fixtures/` | 测试样本，**全部由 `tooling/make-*.mjs` 确定性生成** |
 | `tooling/` | 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准 |
-| `test/snapshots/` | 122 个渲染快照基线 |
+| `test/snapshots/` | 142 个渲染快照基线 |
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
@@ -21,7 +21,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1169 + 109 项断言、148 个快照 |
+| `npm test` | 全部测试：1169 + 109 项断言、142 个快照 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |

@@ -97,16 +97,16 @@
 
   <ul class="stats">
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
-    <li><b>67<i>KB</i></b><span>gzip 核心包</span></li>
+    <li><b>68<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>1154</b><span>断言 + 122 快照</span></li>
+    <li><b>1278</b><span>断言 + 142 快照</span></li>
   </ul>
 </section>
 
 <!-- ── 实时 Demo ───────────────────────────────────────────── -->
 <section id="demo" class="section">
   <h2>就在这个页面里跑</h2>
-  <p class="sub">下面这个查看器用的就是 npm 上的 <code>web-ppt</code>。拖一个自己的文件进来——它不会被上传到任何地方。</p>
+  <p class="sub">下面这个查看器用的就是 npm 上的 <code>@web-ppt/core</code>。拖一个自己的文件进来——它不会被上传到任何地方。</p>
 
   <div class="demo" id="demoRoot">
     <div class="demo-bar">
@@ -163,7 +163,9 @@
         <tr><td>切换效果</td><td class="y">20 种</td><td class="y">经 SSSlideInfoAtom</td></tr>
         <tr><td>元素动画</td><td class="y">入场 / 退场 / 强调，按点击分批</td><td class="y">同上</td></tr>
         <tr><td>SmartArt</td><td class="y">经 diagram drawing part</td><td class="n">—</td></tr>
-        <tr><td>媒体 · 墨迹 · 评论 · 节</td><td class="y">支持</td><td class="n">—</td></tr>
+        <tr><td>媒体</td><td class="y">封面帧 + 播放标识，可选嵌真实播放器</td><td class="n">—</td></tr>
+        <tr><td>墨迹 · 评论 · 节</td><td class="y">支持</td><td class="n">—</td></tr>
+        <tr><td>OLE 嵌入对象</td><td class="y">渲染 PowerPoint 存的预览图</td><td class="n">—</td></tr>
         <tr><td>隐藏页</td><td class="y">sld@show="0"</td><td class="y">SSSlideInfoAtom</td></tr>
         <tr><td>备注 · 超链接</td><td class="y">支持</td><td class="y">支持</td></tr>
       </tbody>
@@ -231,7 +233,7 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
   <div class="arch" id="arch"></div>
   <div class="notes">
     <div><b>格式按魔数识别</b><span><code>PK</code> → pptx，<code>D0CF11E0</code> → ppt。调用方不需要关心扩展名。</span></div>
-    <div><b>两条文本渲染路径</b><span>预览用 <code>foreignObject</code>（可选中、支持分栏）；导出用原生 <code>&lt;text&gt;</code> + 自实现测量断行——Chrome 会把含 <code>foreignObject</code> 的 SVG 判为污染画布，无法 <code>toBlob</code>。</span></div>
+    <div><b>两条文本渲染路径</b><span>预览用 <code>foreignObject</code>（文本可选中）；导出用原生 <code>&lt;text&gt;</code> + 自实现测量断行与分栏——Chrome 会把含 <code>foreignObject</code> 的 SVG 判为污染画布，无法 <code>toBlob</code>。</span></div>
     <div><b>惰性解析</b><span>每页首次访问时才解析，210 页首屏 376ms → 42ms。</span></div>
   </div>
 </section>
@@ -285,8 +287,8 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
     <table class="matrix pkgs">
       <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
       <tbody>
-        <tr><td><code>web-ppt</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>67KB gzip</td></tr>
-        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>web-ppt</code></td><td>5.2KB gzip</td></tr>
+        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>68KB gzip</td></tr>
+        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>5.1KB gzip</td></tr>
       </tbody>
     </table>
   </div>
