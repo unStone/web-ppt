@@ -25,7 +25,7 @@
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |
-| `npm run compare <file>` | 用 LibreOffice 生成参考图做并排对比 |
+| `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
 
 **改完代码必须跑**：`npm run check && npm test && npm run build`。三条都绿才算完成。
 
