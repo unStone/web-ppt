@@ -3,7 +3,7 @@ import type {
   Slide, SlideElement, TableCell, TableElement, TableRow, TextBody, TextRun, Transition,
 } from '../types';
 import { metafileDataUrl } from '../metafile';
-import { presetGeom } from '../pptx/geometry';
+import { presetGeom } from '../geometry';
 import { AutoNum, collectAutoNums, formatAutoNum } from './autonum';
 import { Cfb } from './cfb';
 import {

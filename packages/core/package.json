@@ -44,7 +44,7 @@
       "import": "./dist/worker.js"
     },
     "./geometry": {
-      "types": "./dist/pptx/geometry.d.ts",
+      "types": "./dist/geometry/index.d.ts",
       "import": "./dist/geometry.js"
     },
     "./package.json": "./package.json"
