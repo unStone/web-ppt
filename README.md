@@ -262,7 +262,8 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 
 | 项 | 说明 |
 |---|---|
-| .ppt 的发光 / 柔化 / 倒影 / 3D | 二进制格式下未实现（外阴影已支持） |
+| .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
+| .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
 | .ppt SmartArt · 自动编号 · 嵌套组 | 未实现；嵌套组会被展平 |
 | 媒体播放 | 只渲染封面帧 + 播放标识，未接真实播放器（`media.src`/`mime` 已备好） |
 | OMML 公式 | 只取线性文本，不做 MathML 排版 |
