@@ -31,7 +31,7 @@ const W = 1200, H = 630;
 // 指标与 README / 官网 hero 保持一致
 const STATS = [
   ['42ms', '210 页首屏'],
-  ['67KB', 'gzip 核心包'],
+  ['68KB', 'gzip 核心包'],
   ['0', '服务端依赖'],
   ['0', '框架依赖'],
 ];
@@ -47,9 +47,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <text x="95" y="103" text-anchor="middle" font-family="${SANS}" font-size="27" font-weight="700" fill="#fff">P</text>
   <text x="134" y="103" font-family="${SANS}" font-size="27" font-weight="650" fill="#16161a">Web-PPT</text>
 
-  <text x="72" y="245" font-family="${SANS}" font-size="70" font-weight="700" fill="#16161a" letter-spacing="-2">在浏览器里</text>
-  <text x="72" y="330" font-family="${SANS}" font-size="70" font-weight="700" fill="#16161a" letter-spacing="-2">把 PPT 渲染成 SVG</text>
-  <text x="72" y="392" font-family="${MONO}" font-size="24" fill="#5c5c66">.pptx / .ppt → 统一 JSON Schema → SVG</text>
+  <text x="72" y="245" font-family="${SANS}" font-size="70" font-weight="700" fill="#16161a" letter-spacing="-2">纯浏览器</text>
+  <text x="72" y="330" font-family="${SANS}" font-size="70" font-weight="700" fill="#16161a" letter-spacing="-2">渲染 PPT</text>
+  <text x="72" y="392" font-family="${MONO}" font-size="24" fill="#5c5c66">.pptx / .ppt · 不需要后端，也不用装 Office</text>
 
   <g font-family="${SANS}">
 ${STATS.map(([n, label], i) => {
