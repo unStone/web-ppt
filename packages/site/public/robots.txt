@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://unstone.github.io/web-ppt/sitemap.xml

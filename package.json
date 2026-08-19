@@ -20,7 +20,8 @@
     "compare": "node tooling/compare-libreoffice.mjs",
     "bench": "node --expose-gc tooling/bench.mjs",
     "dev:site": "npm run dev -w @web-ppt/site",
-    "build:site": "npm run build && npm run build -w @web-ppt/site"
+    "build:site": "npm run build && npm run build -w @web-ppt/site",
+    "og": "node tooling/make-og-image.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

@@ -3,13 +3,68 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <title>Web-PPT · 纯浏览器端 PPT 渲染引擎</title>
-<meta name="description" content="纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 JSON Schema → SVG。零服务端依赖、零框架依赖，文件不出浏览器。" />
+<meta name="description" content="纯浏览器端 PPT 渲染引擎：.pptx / .ppt 解析为统一 JSON Schema 并渲染成 SVG。零服务端依赖、零框架依赖，唯一运行时依赖是 fflate，文件不离开浏览器。支持 163 个预设形状、图表、表格、EMF/WMF、动画与切换效果。" />
+<link rel="canonical" href="https://unstone.github.io/web-ppt/" />
+<meta name="author" content="unStone" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e0e11" />
+
+<!-- 社交分享卡片 -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Web-PPT" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:url" content="https://unstone.github.io/web-ppt/" />
 <meta property="og:title" content="Web-PPT · 纯浏览器端 PPT 渲染引擎" />
 <meta property="og:description" content=".pptx / .ppt → 统一 JSON Schema → SVG。零服务端、零框架，文件不离开浏览器。" />
-<meta property="og:type" content="website" />
+<meta property="og:image" content="https://unstone.github.io/web-ppt/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Web-PPT：在浏览器里把 PPT 渲染成 SVG" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Web-PPT · 纯浏览器端 PPT 渲染引擎" />
+<meta name="twitter:description" content=".pptx / .ppt → 统一 JSON Schema → SVG。零服务端、零框架，文件不离开浏览器。" />
+<meta name="twitter:image" content="https://unstone.github.io/web-ppt/og.png" />
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8622c'/><path d='M10 8h7.5a5.5 5.5 0 010 11H14v5h-4V8zm4 3.4v4.2h3.2a2.1 2.1 0 000-4.2H14z' fill='%23fff'/></svg>" />
+<link rel="apple-touch-icon" href="https://unstone.github.io/web-ppt/og.png" />
 <link rel="stylesheet" href="./src/style.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Web-PPT",
+      "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 JSON Schema → SVG",
+      "url": "https://unstone.github.io/web-ppt/",
+      "codeRepository": "https://github.com/unStone/web-ppt",
+      "programmingLanguage": "TypeScript",
+      "runtimePlatform": "Browser",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@type": "Person", "name": "unStone" },
+      "keywords": "pptx, ppt, powerpoint, svg, renderer, viewer, ooxml, emf, wmf, typescript, browser"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Web-PPT",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Any browser",
+      "url": "https://unstone.github.io/web-ppt/",
+      "softwareVersion": "0.1.0",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "WebSite",
+      "name": "Web-PPT",
+      "url": "https://unstone.github.io/web-ppt/",
+      "inLanguage": "zh-CN"
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
