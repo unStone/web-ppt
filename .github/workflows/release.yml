@@ -18,12 +18,21 @@ jobs:
         with:
           # Trusted Publishing 要求 Node ≥ 22.14.0
           node-version: 22
-          registry-url: https://registry.npmjs.org
           cache: npm
+          # 刻意不设 registry-url：它会写一个带 _authToken=${NODE_AUTH_TOKEN}
+          # 的 .npmrc，而该变量为空，npm 会拿着空凭据去发布 —— scoped 包
+          # 在无凭据时返回的是 404 而不是 401，极难排查。OIDC 自己会认 registry。
 
       - name: 升级 npm
         # Trusted Publishing 要求 npm ≥ 11.5.1，Actions 自带的通常更旧
         run: npm i -g npm@latest
+
+      - name: OIDC 环境自检
+        run: |
+          echo "npm  $(npm --version)   node $(node --version)"
+          echo "id-token 端点: ${ACTIONS_ID_TOKEN_REQUEST_URL:+已注入}${ACTIONS_ID_TOKEN_REQUEST_URL:-缺失（检查 permissions.id-token）}"
+          echo "NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:+非空}${NODE_AUTH_TOKEN:-未设置（符合预期）}"
+          echo "生效的 .npmrc:"; npm config list | sed -E 's#(_authToken *= *).*#\1<隐去>#'
 
       - run: npm ci
 
