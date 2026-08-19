@@ -217,8 +217,8 @@ st.next(); st.search(<span class="s">'关键词'</span>);</code></pre>
     </article>
     <article class="card">
       <h3>按需裁体积</h3>
-<pre><code><span class="c">// 图表与图元文件解码器都是 hook 注入</span>
-setChartRenderer(myRenderer);
+<pre><code><span class="c">// 图表解析器与图元文件解码器都经 hook 注入</span>
+setChartParser(myChartParser);
 setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~15KB gzip</span></code></pre>
     </article>
   </div>

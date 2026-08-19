@@ -6,7 +6,7 @@ import type {
 } from '../types';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
-import { getChartRenderer } from '../chart/hook';
+import { getChartParser } from '../chart/hook';
 import { ColorCtx, childColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseTiming, parseTransition } from './animation';
@@ -943,7 +943,7 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
 
 function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {
   if (!data) return null;
-  const render = getChartRenderer();
+  const render = getChartParser();
   const rid = attr(kid(data, 'chart'), 'r:id');
   const target = rid ? env.rels[rid]?.target : null;
   if (!render || !target) return null;

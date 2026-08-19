@@ -1,6 +1,6 @@
 import { parseChart } from './chart';
 import { metafileToSvg } from './image';
-import { setChartRenderer } from './chart/hook';
+import { setChartParser } from './chart/hook';
 import { setMetafileDecoder } from './metafile';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
@@ -9,12 +9,13 @@ import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
 export { renderSlideToSvg };
-export { setChartRenderer } from './chart/hook';
+export { setChartParser, setChartRenderer } from './chart/hook';
+export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
 export { metafileToSvg, detectMetafile } from './image';
 
 // 接入图表渲染器与图元文件解码器（解析器通过 hook 解耦调用）
-setChartRenderer(parseChart);
+setChartParser(parseChart);
 setMetafileDecoder(metafileToSvg);
 
 export interface ParseOptions {

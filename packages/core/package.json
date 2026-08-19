@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
   "keywords": [
     "pptx",

@@ -55,7 +55,12 @@ flowchart LR
     V --> E["PNG / SVG / PDF 导出"]
 ```
 
-解析层与渲染层完全解耦，渲染层只依赖 `src/types.ts`。格式按魔数识别：`PK` → pptx，`D0CF11E0` → ppt。图表、图元文件解码器通过 hook 注入，可按需裁剪。
+解析层与渲染层完全解耦，渲染层只依赖 `src/types.ts`。格式按魔数识别：`PK` → pptx，`D0CF11E0` → ppt。
+
+图表与图元文件解码器经 hook 注入，可按需 tree-shake。注意 `chart/` **是第四条解析链路而非渲染插件**：
+它读 `ppt/charts/chart1.xml`（本身即 OOXML/DrawingML）并产出 `SlideElement[]`。
+hook 的作用是打破 `pptx/parser → chart → pptx/color` 的模块环并支持裁剪，
+不代表它与文件格式无关——`ChartEnv` 携带 `ColorCtx` / `ThemeFonts` 是正当复用。
 
 **两条文本渲染路径**：屏幕预览用 `foreignObject` + HTML 排版（文本可选中、支持分栏）；导出用原生 `<text>` + 自实现测量断行——因为 Chrome 会把含 `foreignObject` 的 SVG 判定为污染画布，无法 `toBlob`。
 
