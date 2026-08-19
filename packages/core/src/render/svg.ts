@@ -53,7 +53,11 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
     // 导出路径不能出现 foreignObject，强制退回 badge
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
   };
-  const bgFill = slide.background ? paint(slide.background, ctx, pres.width, pres.height) : '#fff';
+  // 背景解析失败只该丢背景，不该丢整页
+  let bgFill = '#fff';
+  try {
+    if (slide.background) bgFill = paint(slide.background, ctx, pres.width, pres.height);
+  } catch { /* 保持白底 */ }
   const bg = `<rect width="${r(pres.width)}" height="${r(pres.height)}" fill="${bgFill}"/>`;
   const body = slide.elements.map((el) => renderEl(el, ctx)).join('')
     + (opts.showComments ? renderComments(slide.comments, pres.width, pres.height) : '');
@@ -329,14 +333,42 @@ function withLink(inner: string, link: string | undefined): string {
 
 // ---------------- 元素分发 ----------------
 
+/**
+ * 单个元素渲染失败时的占位框。
+ *
+ * 存在的理由：一份 PPT 里只要有一个畸形形状，整页就会白屏——而用户看不出是哪一个。
+ * 画成红色虚线框并把错误挂在 <title> 上，其余元素照常渲染；
+ * 调用方可以用 `[data-render-error]` 统计失败数。
+ */
+function renderFailure(el: SlideElement, err: unknown): string {
+  // 占位框自己也要能失败：元素坏到连 x/y/w/h 都读不出时，直接什么都不画，
+  // 否则「一个元素不拖垮整页」这句保证就是假的
+  try {
+    const msg = err instanceof Error ? err.message : String(err);
+    const label = el.name ? `${el.kind} · ${el.name}` : el.kind;
+    return (
+      `<g transform="${baseTransform(el)}" data-render-error="1">` +
+      `<title>${esc(label)} 渲染失败：${esc(msg.slice(0, 200))}</title>` +
+      `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(220,38,38,0.06)" ` +
+      `stroke="#dc2626" stroke-width="1" stroke-dasharray="5 4"/></g>`
+    );
+  } catch {
+    return '';
+  }
+}
+
 function renderEl(el: SlideElement, ctx: Ctx): string {
   let out: string;
-  switch (el.kind) {
-    case 'shape': out = renderShape(el, ctx); break;
-    case 'image': out = renderImage(el, ctx); break;
-    case 'group': out = renderGroup(el, ctx); break;
-    case 'table': out = renderTable(el, ctx); break;
-    case 'unsupported': out = renderUnsupported(el); break;
+  try {
+    switch (el.kind) {
+      case 'shape': out = renderShape(el, ctx); break;
+      case 'image': out = renderImage(el, ctx); break;
+      case 'group': out = renderGroup(el, ctx); break;
+      case 'table': out = renderTable(el, ctx); break;
+      case 'unsupported': out = renderUnsupported(el); break;
+    }
+  } catch (e) {
+    out = renderFailure(el, e);
   }
   // 动画需要按形状 id 定位到具体节点
   if (el.id !== undefined) {

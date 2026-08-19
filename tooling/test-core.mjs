@@ -1282,6 +1282,37 @@ group('OLE 对象预览图');
   }
 }
 
+group('渲染错误隔离');
+{
+  const sc = parsed.get('showcase.pptx');
+  const page = sc && sc.slides.find((x) => x.elements.length >= 2);
+  if (check('取到多元素页', !!page)) {
+    const good = lib.renderSlideToSvg(sc, page);
+    const goodIds = [...good.matchAll(/data-el="(\d+)"/g)].map((m) => m[1]);
+
+    // 注入一个访问即抛的元素，模拟畸形形状
+    const bad = { kind: 'shape', x: 10, y: 20, w: 120, h: 60, rot: 0, flipH: false, flipV: false, name: '坏形状' };
+    Object.defineProperty(bad, 'path', { get() { throw new Error('注入的渲染错误'); } });
+    const svg = lib.renderSlideToSvg(sc, { ...page, elements: [bad, ...page.elements] });
+
+    check('失败元素标记为 data-render-error', svg.includes('data-render-error="1"'));
+    check('失败元素画出红色虚线占位框', svg.includes('stroke="#dc2626"'));
+    check('错误原因写进 title', svg.includes('注入的渲染错误'));
+    check('占位框标出元素名', svg.includes('坏形状'));
+    const stillThere = goodIds.every((id) => svg.includes(`data-el="${id}"`));
+    check('同页其余元素照常渲染', stillThere, `原有 ${goodIds.length} 个元素`);
+    check('产物仍是合法 XML', !parseXml(svg).error, parseXml(svg).error || '');
+
+    // 背景解析失败只该丢背景
+    const badBg = { ...page };
+    Object.defineProperty(badBg, 'background', { get() { throw new Error('背景炸了'); } });
+    let bgSvg = null;
+    try { bgSvg = lib.renderSlideToSvg(sc, badBg); } catch { /* 期望不抛 */ }
+    check('背景渲染失败不影响整页', !!bgSvg && bgSvg.includes('<svg'));
+    check('背景失败时退回白底', !!bgSvg && bgSvg.includes('fill="#fff"'));
+  }
+}
+
 group('渲染快照');
 {
   const snapDir = join(root, 'test/snapshots');
