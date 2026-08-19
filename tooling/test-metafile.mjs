@@ -394,6 +394,12 @@ console.log('esbuild 打包完成 →', bundle);
 
 const { metafileToSvg, detectMetafile, metafileToDataUri } = await import(`file://${bundle}`);
 
+// gdi.ts 单独打包：dibToDataUri 不从 image/index.ts 导出，但测 RLE 需要直接调它
+const gdiBundle = join(outDir, 'gdi-bundle.mjs');
+execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image/gdi.ts'), '--bundle', '--format=esm',
+  '--platform=node', '--log-level=warning', `--outfile=${gdiBundle}`], { cwd: root, stdio: 'inherit' });
+const { dibToDataUri } = await import(`file://${gdiBundle}`);
+
 // ---------------- 用例 1：合成 EMF ----------------
 
 group('合成 EMF');
@@ -485,6 +491,94 @@ const wmfSized = metafileToSvg(wmfBytes, { width: 1024 });
 check('WMF：只给 width 时高度回落默认', /width="1024" height="288"/.test(wmfSized ?? ''));
 
 // ---------------- 用例 3：非法输入与鲁棒性 ----------------
+
+group('RLE 压缩位图');
+{
+  // 4 色调色板（DIB 调色板是 BGRA 序）
+  const PAL = [[0, 0, 0, 0], [0, 0, 255, 0], [0, 255, 0, 0], [255, 0, 0, 0]];
+  // 宽度取 5 而非 4：绝对模式的数据字节数变成奇数，才能验到「按字对齐」那一步。
+  // 末行两个索引交替：RLE4 编码模式要求两个半字节轮换，全同值的行验不出来。
+  const W = 5, H = 4;
+  const ROWS = [[0, 1, 2, 3, 1], [1, 1, 1, 1, 1], [3, 2, 1, 0, 2], [1, 2, 1, 2, 1]];
+  const pad = (b, len) => { for (let i = 0; i < len; i++) b.raw([0]); return b; };
+  const same = (row) => row.every((v) => v === row[0]);
+  const alternating = (row) => row.every((v, i) => v === row[i % 2]);
+
+  /** 未压缩 8 位：每行 5 字节，补到 8 */
+  const raw8 = () => {
+    const b = bih(W, H, 8, { clrUsed: 4, sizeImage: 8 * H });
+    for (const c of PAL) b.raw(c);
+    for (const row of ROWS) pad(b.raw(row), 3);
+    return b.bytes();
+  };
+
+  /** BI_RLE8：整行同值走编码模式，否则绝对模式（5 字节 → 补 1 字节对齐） */
+  const rle8 = () => {
+    const b = bih(W, H, 8, { comp: 1, clrUsed: 4 });
+    for (const c of PAL) b.raw(c);
+    for (const row of ROWS) {
+      if (same(row)) b.raw([row.length, row[0]]);
+      else pad(b.raw([0, row.length]).raw(row), row.length & 1);
+      b.raw([0, 0]);                                                   // 行结束
+    }
+    b.raw([0, 1]);                                                     // 图结束
+    return b.bytes();
+  };
+
+  const a8 = dibToDataUri(raw8(), 0, 40, 40 + 16, 8 * H);
+  const c8 = dibToDataUri(rle8(), 0, 40, 40 + 16, 1e9);
+  if (check('未压缩 8 位可解码', !!a8) && check('BI_RLE8 可解码', !!c8)) {
+    check('RLE8 与未压缩产出逐字节相同', a8 === c8,
+      `raw ${String(a8).slice(0, 46)}… / rle ${String(c8).slice(0, 46)}…`);
+  }
+
+  /** 5 个 4 位索引打包成 3 字节 */
+  const pack4 = (row) => {
+    const out = [];
+    for (let i = 0; i < row.length; i += 2) out.push(((row[i] & 0x0f) << 4) | (row[i + 1] ?? 0));
+    return out;
+  };
+
+  /** 未压缩 4 位：3 字节 + 1 字节补齐 */
+  const raw4 = () => {
+    const b = bih(W, H, 4, { clrUsed: 4, sizeImage: 4 * H });
+    for (const c of PAL) b.raw(c);
+    for (const row of ROWS) pad(b.raw(pack4(row)), 1);
+    return b.bytes();
+  };
+
+  /** BI_RLE4：编码模式的数据字节是两个交替的半字节；绝对模式 3 字节 → 补 1 字节 */
+  const rle4 = () => {
+    const b = bih(W, H, 4, { comp: 2, clrUsed: 4 });
+    for (const c of PAL) b.raw(c);
+    for (const row of ROWS) {
+      if (alternating(row)) b.raw([row.length, (row[0] << 4) | row[1]]);
+      else {
+        const bytes = pack4(row);
+        pad(b.raw([0, row.length]).raw(bytes), bytes.length & 1);
+      }
+      b.raw([0, 0]);
+    }
+    b.raw([0, 1]);
+    return b.bytes();
+  };
+
+  const a4 = dibToDataUri(raw4(), 0, 40, 40 + 16, 4 * H);
+  const c4 = dibToDataUri(rle4(), 0, 40, 40 + 16, 1e9);
+  if (check('未压缩 4 位可解码', !!a4) && check('BI_RLE4 可解码', !!c4)) {
+    check('RLE4 与未压缩产出逐字节相同', a4 === c4,
+      `raw ${String(a4).slice(0, 46)}… / rle ${String(c4).slice(0, 46)}…`);
+  }
+
+  // 位深与压缩类型不匹配必须拒绝（RLE8 只配 8 位，RLE4 只配 4 位）
+  const bad = bih(W, H, 8, { comp: 2, clrUsed: 4 }).raw([0, 0, 0, 0]).bytes();
+  check('位深与 RLE 类型不符时拒绝', dibToDataUri(bad, 0, 40, 40 + 4, 1e9) === null);
+
+  // 截断的 RLE 数据不能挂死
+  let threw = false;
+  try { dibToDataUri(rle8().slice(0, 40 + 16 + 3), 0, 40, 40 + 16, 1e9); } catch { threw = true; }
+  check('截断的 RLE 数据不抛异常', !threw);
+}
 
 group('鲁棒性');
 const cases = [

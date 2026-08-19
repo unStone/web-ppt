@@ -145,7 +145,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1059 项断言 + 122 个渲染快照 |
-| `npm run test:metafile` | EMF / WMF 解码器，95 项断言 + 模糊测试 |
+| `npm run test:metafile` | EMF / WMF 解码器，103 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm run build` | 构建 `web-ppt` + `@web-ppt/viewer-core` |
@@ -270,7 +270,6 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | 图表次轴刻度对齐 | 主次轴各自独立分级，刻度条数可能不同 |
 | 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
 | EMF+ / Region / 光栅操作码 | 图元文件解码器不处理，退化为常规绘制 |
-| RLE 压缩位图 | 跳过该位图，其余照常 |
 | 导出时的分栏 | SVG 文本路径不支持 `numCol`，导出为单栏 |
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
