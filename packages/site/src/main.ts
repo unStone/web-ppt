@@ -58,8 +58,15 @@ function sync(): void {
   thumbs.querySelectorAll('.thumb').forEach((t, i) => {
     t.classList.toggle('active', i === viewer!.index);
   });
-  const active = thumbs.children[viewer.index];
-  active?.scrollIntoView({ block: 'nearest' });
+  // 只滚缩略图栏，不要用 scrollIntoView —— 它会滚动所有可滚动祖先，
+  // 包括 document 本身：首屏 Demo 一加载完就把整页往下拽一段。
+  const active = thumbs.children[viewer.index] as HTMLElement | undefined;
+  if (active) {
+    const a = active.getBoundingClientRect();
+    const box = thumbs.getBoundingClientRect();
+    if (a.top < box.top) thumbs.scrollTop += a.top - box.top;
+    else if (a.bottom > box.bottom) thumbs.scrollTop += a.bottom - box.bottom;
+  }
 }
 
 /**
