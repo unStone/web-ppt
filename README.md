@@ -147,7 +147,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1142 项断言 + 138 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1169 项断言 + 148 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -260,6 +260,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | `sample-hidden.pptx` · `.ppt` | 隐藏页导航：可见 · 隐 · 隐 · 可见 · 隐（pptx 走 `sld@show`，ppt 走 `F_HIDDEN`） |
 | `sample-autofit.pptx` | 文本自动缩放五种情形：溢出/放得下 × 裸 normAutofit、无 autofit、显式 fontScale、缩到 25% 下限 |
 | `sample-placeholder.pptx` | 占位符几何继承：图片占位符空 spPr / 图片自带 xfrm / 形状占位符 |
+| `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
 
 `.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run compare` 同款命令，或 `soffice --headless --convert-to ppt <file>`。
 
@@ -278,7 +279,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
 | chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）未实现 |
-| OLE 嵌入对象 | 渲染为占位框，不解析内部文档 |
+| OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
 
 ## 给编码代理
 

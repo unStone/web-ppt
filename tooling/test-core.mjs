@@ -202,6 +202,7 @@ const FIXTURES = [
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
+  { file: 'sample-ole.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -1261,6 +1262,23 @@ group('.ppt 的组与自动编号');
     check('组结构没有被展平', groups > 0, `组元素 ${groups}`);
     check('嵌套组保留层级', maxDepth >= 2, `最大深度 ${maxDepth}`);
     check('StyleTextProp9Atom 的自动编号生效', autonum > 0, `自动编号项 ${autonum}`);
+  }
+}
+
+group('OLE 对象预览图');
+{
+  const op = parsed.get('sample-ole.pptx');
+  if (check('sample-ole.pptx 已解析', !!op)) {
+    const p1 = op.slides[0].elements.find((e) => e.kind === 'image');
+    const p2 = op.slides[1].elements.find((e) => e.kind === 'unsupported');
+
+    // 预览图存在旧式 VML 部件里：oleObj@spid → v:shape → v:imagedata → 媒体
+    check('可解码的预览图渲染成图片', !!p1 && !!p1.src, p1 ? String(p1.src) : '没解出图片');
+    if (p1) eq('图片沿用 graphicFrame 的框', `${Math.round(p1.x)},${Math.round(p1.y)} ${Math.round(p1.w)}×${Math.round(p1.h)}`, '120,160 460×300');
+
+    // 认不出的格式（Mac 存的 PICT 之类）宁可给占位框，也别塞一张裂图
+    check('认不出的预览格式退回占位框', !!p2, '第 2 页没有占位元素');
+    if (p2) eq('占位框标为 OLE 对象', p2.label, 'OLE 对象');
   }
 }
 

@@ -945,9 +945,51 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
     return { kind: 'unsupported', ...base(xf), label: 'SmartArt', name, id: frameId };
   }
 
-  const label = uri.includes('oleObject') ? 'OLE 对象'
-    : uri.includes('/media') || uri.includes('video') ? '媒体对象' : '不支持的对象';
+  // graphicData 的 URI 是 .../presentationml/2006/ole，不含 oleObject —— 原先的
+  // includes('oleObject') 从来没匹配上，OLE 一直落到「不支持的对象」分支
+  if (uri.endsWith('/ole') || uri.includes('oleObject')) {
+    const oleObj = kid(data, 'oleObj');
+    const src = oleObj ? olePreview(oleObj, env) : null;
+    // 预览图解得出就当普通图片渲染，比一个灰框有用得多
+    if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId };
+    return { kind: 'unsupported', ...base(xf), label: 'OLE 对象', name, id: frameId };
+  }
+
+  const label = uri.includes('/media') || uri.includes('video') ? '媒体对象' : '不支持的对象';
   return { kind: 'unsupported', ...base(xf), label, name, id: frameId };
+}
+
+/**
+ * OLE 对象的预览图。
+ *
+ * PowerPoint 把嵌入对象的渲染快照放在旧式 VML 部件里：幻灯片的
+ * vmlDrawing 关系 → <v:shape id="{oleObj@spid}"> → <v:imagedata o:relid>
+ * → 该 VML 部件自己的关系 → 媒体文件。
+ *
+ * 预览格式随创作平台而变：Windows 通常是 EMF/WMF（我们能解），
+ * Mac 版存的是 PICT（解不了）。mediaUrl 对认不出的扩展名返回 null，
+ * 此时退回占位框而不是塞一张裂图。
+ */
+function olePreview(oleObj: Element, env: Env): string | null {
+  const spid = attr(oleObj, 'spid');
+  if (!spid) return null;
+  const vmlPath = relByType(env.rels, '/vmlDrawing');
+  if (!vmlPath) return null;
+  // Pkg.rels 存的 target 已是包内绝对路径，不要再 resolvePath 一次
+  const root = env.pkg.xml(vmlPath);
+  if (!root) return null;
+
+  for (const shape of root.getElementsByTagName('*')) {
+    if (shape.localName !== 'shape' || attr(shape, 'id') !== spid) continue;
+    for (const data of shape.getElementsByTagName('*')) {
+      if (data.localName !== 'imagedata') continue;
+      const rid = attr(data, 'o:relid') ?? attr(data, 'r:id');
+      const target = rid ? env.pkg.rels(vmlPath)[rid]?.target : null;
+      if (!target) return null;
+      return env.pkg.mediaUrl(target);
+    }
+  }
+  return null;
 }
 
 function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {

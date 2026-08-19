@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 50)">
+<path d="M 0 0 L 1200 0 L 1200 60 L 0 60 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1200" height="60" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1200px;height:60px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:29.33px;color:rgb(31,56,100);font-weight:700;">OLE + 认不出的格式 → 退回占位框</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="22" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 160)">
+<rect width="460" height="300" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>
+<text x="230" y="150" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="16">OLE 对象</text>
+</g>
+</g>
+</svg>
