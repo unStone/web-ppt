@@ -21,7 +21,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1197 + 109 项断言、142 个快照 |
+| `npm test` | 全部测试：1298 + 109 项断言、142 个快照 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |

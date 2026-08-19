@@ -154,7 +154,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1197 项断言 + 142 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1298 项断言 + 142 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
