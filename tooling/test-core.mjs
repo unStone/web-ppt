@@ -1243,6 +1243,27 @@ group('媒体播放器');
   }
 }
 
+group('.ppt 的组与自动编号');
+{
+  const sp2 = parsed.get('showcase.ppt');
+  if (check('showcase.ppt 已解析', !!sp2)) {
+    let groups = 0, maxDepth = 0, autonum = 0;
+    const walk = (els, d) => { for (const e of els ?? []) {
+      if (e.kind === 'group') { groups++; maxDepth = Math.max(maxDepth, d + 1); }
+      for (const q of e.text?.paragraphs ?? []) {
+        if (q.bullet && /^[0-9a-zA-Z]+[.)]/.test(q.bullet)) autonum++;
+      }
+      walk(e.children, d + 1);
+    } };
+    for (const s2 of sp2.slides) walk(s2.elements, 0);
+
+    // 这两条 README 曾经记成「未实现；嵌套组会被展平」，实测都是错的
+    check('组结构没有被展平', groups > 0, `组元素 ${groups}`);
+    check('嵌套组保留层级', maxDepth >= 2, `最大深度 ${maxDepth}`);
+    check('StyleTextProp9Atom 的自动编号生效', autonum > 0, `自动编号项 ${autonum}`);
+  }
+}
+
 group('渲染快照');
 {
   const snapDir = join(root, 'test/snapshots');
