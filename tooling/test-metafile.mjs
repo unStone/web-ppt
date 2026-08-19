@@ -165,6 +165,16 @@ function dib1() {
 
 // ---------------- 样例：EMF ----------------
 
+/** 只含指定记录的最小 EMF，用于隔离测单个记录的行为 */
+function buildEmfWith(records) {
+  return emfFile([
+    er(17, (q) => q.u32(1)),                                            // SETMAPMODE MM_TEXT
+    er(39, (q) => q.u32(1).u32(0).u32(colorref(220, 20, 60)).u32(0)),   // 实心红画刷
+    er(37, (q) => q.u32(1)),                                            // SELECTOBJECT brush
+    ...records,
+  ]);
+}
+
 function buildEmf() {
   const recs = [];
   const push = (r) => recs.push(r);
@@ -578,6 +588,41 @@ group('RLE 压缩位图');
   let threw = false;
   try { dibToDataUri(rle8().slice(0, 40 + 16 + 3), 0, 40, 40 + 16, 1e9); } catch { threw = true; }
   check('截断的 RLE 数据不抛异常', !threw);
+}
+
+group('EMF 区域裁剪');
+{
+  // EMR_EXTSELECTCLIPRGN(75)：cbRgnData + iMode + RGNDATAHEADER + nCount×RECTL
+  const rgn = (mode, rects) => er(75, (p) => {
+    const hdrAndRects = 32 + rects.length * 16;
+    p.u32(hdrAndRects).u32(mode);
+    p.u32(32).u32(1).u32(rects.length).u32(rects.length * 16);   // dwSize/iType/nCount/nRgnSize
+    // rcBound：所有矩形的包围盒
+    rectl(p, Math.min(...rects.map((r2) => r2[0])), Math.min(...rects.map((r2) => r2[1])),
+      Math.max(...rects.map((r2) => r2[2])), Math.max(...rects.map((r2) => r2[3])));
+    for (const [l, t, r2, b] of rects) rectl(p, l, t, r2, b);
+  });
+  /** 一个覆盖整幅画面的实心矩形，用来观察被裁掉多少 */
+  const bigRect = er(43, (p) => { rectl(p, 0, 0, 400, 300); });   // RECTANGLE
+
+  const build = (records) => buildEmfWith(records);
+
+  const noClip = metafileToSvg(build([bigRect]));
+  const clipped = metafileToSvg(build([rgn(5, [[20, 20, 120, 120]]), bigRect]));
+  const twoRects = metafileToSvg(build([rgn(5, [[20, 20, 120, 120], [200, 40, 300, 140]]), bigRect]));
+  const cleared = metafileToSvg(build([rgn(5, [[20, 20, 120, 120]]), er(75, (p) => { p.u32(0).u32(5); }), bigRect]));
+
+  check('无裁剪时矩形不带 clip-path', !/clip-path="url\(#/.test(noClip ?? ''));
+  check('RGN_COPY 单矩形 → 生成 clipPath', /<clipPath id="[^"]*"><rect /.test(clipped ?? ''), (clipped ?? '').slice(0, 160));
+  check('矩形被裁剪引用', /<rect[^>]*clip-path="url\(#/.test(clipped ?? ''));
+  check('多矩形区域 → clipPath 里两个 rect',
+    ((twoRects ?? '').match(/<clipPath[^>]*>(<rect[^>]*\/>){2}<\/clipPath>/) ?? []).length > 0,
+    ((twoRects ?? '').match(/<clipPath[^>]*>[\s\S]{0,140}/) ?? [''])[0]);
+  check('cbRgnData=0 且 RGN_COPY → 清除裁剪', !/clip-path="url\(#/.test(cleared ?? ''));
+
+  // OR / XOR / DIFF 需要区域布尔运算，SVG 裁剪表达不了；宁可不裁也别裁错
+  const orMode = metafileToSvg(build([rgn(2, [[20, 20, 120, 120]]), bigRect]));
+  check('RGN_OR 不生成裁剪（宁可不裁也别裁错）', !/clip-path="url\(#/.test(orMode ?? ''));
 }
 
 group('鲁棒性');

@@ -5,6 +5,7 @@
 
 import {
   BS_NULL, BS_SOLID, Gfx, ID_MAT, MM_TEXT, PS_NULL,
+  RDH_RECTANGLES, RGN_AND, RGN_COPY,
   Reader, compose, decodeAnsi, defFont, dibToDataUri,
 } from './gdi';
 import type { Brush, Fnt, Mat, Pen, Pt, Rect } from './gdi';
@@ -24,6 +25,7 @@ const R = {
   ELLIPSE: 42, RECTANGLE: 43, ROUNDRECT: 44, ARC: 45, CHORD: 46, PIE: 47,
   LINETO: 54, ARCTO: 55, POLYDRAW: 56, BEGINPATH: 59, ENDPATH: 60, CLOSEFIGURE: 61,
   FILLPATH: 62, STROKEANDFILLPATH: 63, STROKEPATH: 64, SELECTCLIPPATH: 67, ABORTPATH: 68,
+  EXTSELECTCLIPRGN: 75,
   BITBLT: 76, STRETCHBLT: 77, STRETCHDIBITS: 81, EXTCREATEFONTINDIRECTW: 82,
   EXTTEXTOUTA: 83, EXTTEXTOUTW: 84,
   POLYBEZIER16: 85, POLYGON16: 86, POLYLINE16: 87, POLYBEZIERTO16: 88, POLYLINETO16: 89,
@@ -208,6 +210,7 @@ function record(g: Gfx, bytes: Uint8Array, type: number, base: number, size: num
     case R.SETTEXTCOLOR: g.dc.textColor = r.color(); break;
     case R.SETBKCOLOR: g.dc.bkColor = r.color(); break;
     case R.INTERSECTCLIPRECT: g.intersectClip(r.rectL()); break;
+    case R.EXTSELECTCLIPRGN: extSelectClipRgn(g, r); break;
 
     // ---- 文本 ----
     case R.EXTTEXTOUTW: case R.EXTTEXTOUTA: extTextOut(g, r, bytes, base, size, type === R.EXTTEXTOUTW); break;
@@ -331,6 +334,36 @@ function xform(r: Reader): Mat {
 }
 
 // ---------------- 文本 ----------------
+
+/**
+ * EMR_EXTSELECTCLIPRGN：用区域对象设置裁剪。
+ *
+ * EMF 的区域一律表达为矩形并集（RGNDATAHEADER 后跟 nCount 个 RECTL），
+ * 所以直接映射成一个含多个 <rect> 的 clipPath 即可。
+ * cbRgnData 为 0 且模式为 RGN_COPY 表示清除裁剪。
+ */
+function extSelectClipRgn(g: Gfx, r: Reader): void {
+  const cbRgnData = r.u32();
+  const mode = r.u32();                       // 1=AND 2=OR 3=XOR 4=DIFF 5=COPY
+  if (cbRgnData === 0) {
+    if (mode === RGN_COPY) g.clearClip();
+    return;
+  }
+  r.u32();                                    // RGNDATAHEADER.dwSize
+  const iType = r.u32();
+  const nCount = r.u32();
+  r.u32();                                    // nRgnSize
+  r.rectL();                                  // rcBound
+  // RDH_RECTANGLES 是规范里唯一定义的类型；其余一律忽略而不是瞎猜
+  if (iType !== RDH_RECTANGLES || nCount <= 0 || nCount > 65536) return;
+
+  const rects: Rect[] = [];
+  for (let i = 0; i < nCount; i++) rects.push(r.rectL());
+  // 只有 COPY 与 AND 能用嵌套 clipPath 无损表达；OR / XOR / DIFF
+  // 需要区域布尔运算，SVG 裁剪表达不了，宁可不裁也别裁错
+  if (mode === RGN_COPY) g.setClipRects(rects, false);
+  else if (mode === RGN_AND) g.setClipRects(rects, true);
+}
 
 function extTextOut(g: Gfx, r: Reader, bytes: Uint8Array, base: number, size: number, wide: boolean): void {
   r.skip(16); // Bounds

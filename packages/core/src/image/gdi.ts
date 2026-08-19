@@ -120,6 +120,11 @@ export const rgb = (r: number, g: number, b: number): string => `#${hex2(r)}${he
 
 // ---------------- GDI 对象 ----------------
 
+/** ExtSelectClipRgn 的组合模式（[MS-EMF] 2.1.20）*/
+export const RGN_AND = 1, RGN_OR = 2, RGN_XOR = 3, RGN_DIFF = 4, RGN_COPY = 5;
+/** RGNDATAHEADER.iType 规范里只定义了这一种 */
+export const RDH_RECTANGLES = 1;
+
 export const PS_SOLID = 0, PS_DASH = 1, PS_DOT = 2, PS_DASHDOT = 3, PS_DASHDOTDOT = 4, PS_NULL = 5;
 
 export interface Pen { kind: 'pen'; style: number; width: number; color: string; cap: number; join: number }
@@ -424,6 +429,33 @@ export class Gfx {
     const key = `clip:${d}|${parent ?? ''}`;
     this.dc.clip = this.svg.def(key, 'c', (id) =>
       `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}><path d="${d}"/></clipPath>`);
+  }
+
+  /** EXTSELECTCLIPRGN 用：清除裁剪 */
+  clearClip(): void { this.dc.clip = null; }
+
+  /**
+   * 用一组矩形（区域）设置裁剪。intersect=true 时与当前裁剪求交（嵌套 clipPath），
+   * 否则替换。矩形之间是并集——clipPath 的多个子元素天然如此。
+   */
+  setClipRects(rects: Rect[], intersect: boolean): void {
+    const m = this.xf();
+    const parts: string[] = [];
+    for (const rc of rects) {
+      const a = xfPt(m, rc.l, rc.t);
+      const b = xfPt(m, rc.r, rc.b);
+      if (!ok(a) || !ok(b)) continue;
+      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+      const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
+      if (!(w > 0) || !(h > 0)) continue;
+      parts.push(`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}"/>`);
+    }
+    if (!parts.length) return;
+    const parent = intersect ? this.dc.clip : null;
+    const body = parts.join('');
+    const key = `rgn:${body}|${parent ?? ''}`;
+    this.dc.clip = this.svg.def(key, 'c', (id) =>
+      `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}>${body}</clipPath>`);
   }
 
   private clipAttr(): string { return this.dc.clip ? ` clip-path="url(#${this.dc.clip})"` : ''; }

@@ -148,7 +148,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1142 项断言 + 138 个渲染快照 |
-| `npm run test:metafile` | EMF / WMF 解码器，103 项断言 + 模糊测试 |
+| `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm run build` | 构建 `web-ppt` + `@web-ppt/viewer-core` |
@@ -273,7 +273,8 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | OMML 公式 | 只取线性文本，不做 MathML 排版 |
 | 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
 | 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
-| EMF+ / Region / 光栅操作码 | 图元文件解码器不处理，退化为常规绘制 |
+| EMF+ / 光栅操作码 | 图元文件解码器不处理，退化为常规绘制 |
+| Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
 | chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）未实现 |
