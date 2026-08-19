@@ -274,6 +274,10 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | 导出时的分栏 | SVG 文本路径不支持 `numCol`，导出为单栏 |
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
 
+## 给编码代理
+
+约定、命令、架构约束与已知陷阱见 [AGENTS.md](AGENTS.md)。
+
 ## 交流
 
 | 渠道 | 地址 |
