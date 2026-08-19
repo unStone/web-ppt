@@ -116,6 +116,9 @@
 <div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第二段继续填充，确保分栏高度计算正确。</span>
 </div>
+<div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</span>
+</div>
 </div>
 </foreignObject>
 </g>

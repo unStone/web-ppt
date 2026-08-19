@@ -147,6 +147,15 @@ const ANCHOR: Record<Paragraph['align'], string> = {
 /** RTL 段落：SVG 的 text-anchor 相对书写方向，翻转后才能保持与 HTML 一致的物理对齐 */
 const flipAnchor = (a: string): string => (a === 'start' ? 'end' : a === 'end' ? 'start' : a);
 
+interface RenderItem {
+  lp: LaidPara;
+  line: LaidPara['lines'][number];
+  li: number;
+  /** 含段前/段后间距的整行占高，用于分栏时决定断点 */
+  h: number;
+  padTop: number;
+}
+
 /** 段落排版：把每段拆成行并算出行高。renderTextSvg 与自动缩放测量共用。 */
 function layout(t: TextBody, boxW: number, scale: number): LaidPara[] {
   return t.paragraphs.map((p) => {
@@ -227,32 +236,47 @@ export function renderTextSvg(
   if (warped) return warped;
 
   const laid = layout(t, boxW, scale);
-
-  const totalH = laid.reduce(
-    (sum, lp) => sum + lp.before + lp.after + lp.lineHeights.reduce((a, b) => a + b, 0),
-    0,
-  );
-  void 0;
   const anchor = vAlignOverride ?? t.anchor;
-  let y = pt;
-  if (anchor === 'middle') y = pt + Math.max(0, (h - pt - pb - totalH) / 2);
-  else if (anchor === 'bottom') y = Math.max(pt, h - pb - totalH);
 
-  const out: string[] = [];
-  for (const lp of laid) {
-    y += lp.before;
-    lp.lines.forEach((line, li) => {
+  /** 把排好的段落摊成「一行一项」，分栏时按行切列用得上 */
+  const flatten = (ls: LaidPara[]): RenderItem[] => {
+    const items: RenderItem[] = [];
+    ls.forEach((lp) => {
+      lp.lines.forEach((line, li) => {
+        items.push({
+          lp, line, li,
+          h: lp.lineHeights[li] + (li === 0 ? lp.before : 0)
+            + (li === lp.lines.length - 1 ? lp.after : 0),
+          padTop: li === 0 ? lp.before : 0,
+        });
+      });
+    });
+    return items;
+  };
+
+  const sum = (items: RenderItem[]): number => items.reduce((a, it) => a + it.h, 0);
+
+  /** 渲染一列：originX 是该列左边界，colW 是列宽 */
+  const paint = (items: RenderItem[], originX: number, colW: number): string => {
+    const colH = sum(items);
+    let y = pt;
+    if (anchor === 'middle') y = pt + Math.max(0, (h - pt - pb - colH) / 2);
+    else if (anchor === 'bottom') y = Math.max(pt, h - pb - colH);
+
+    const out: string[] = [];
+    for (const { lp, line, li, padTop } of items) {
+      y += padTop;
       const lh = lp.lineHeights[li];
       const baseline = y + lh * 0.78;
       const indent = li === 0 ? lp.para.indent : 0;
-      const left = pl + Math.max(0, lp.para.marL) + indent;
+      const left = originX + Math.max(0, lp.para.marL) + indent;
 
       let x: number;
       // 物理对齐用于定位，写到属性上的 anchor 在 RTL 下需要翻转
       const textAnchor = ANCHOR[lp.para.align];
       const rtl = lp.para.rtl === true;
-      if (textAnchor === 'middle') x = pl + boxW / 2;
-      else if (textAnchor === 'end') x = w - pr;
+      if (textAnchor === 'middle') x = originX + colW / 2;
+      else if (textAnchor === 'end') x = originX + colW;
       else x = left;
 
       if (line.segs.length) {
@@ -276,11 +300,34 @@ export function renderTextSvg(
           ` xml:space="preserve">${tspans}</text>`,
         );
       }
-      y += lh;
-    });
-    y += lp.after;
+      y += lh + (li === lp.lines.length - 1 ? lp.after : 0);
+    }
+    return out.join('');
+  };
+
+  const cols = Math.max(1, Math.min(Math.floor(t.columns ?? 1), 16));
+  if (cols === 1) return paint(flatten(laid), pl, boxW);
+
+  // 分栏：按列宽重新排版，再按可用高度把行依次装进各列。
+  // PowerPoint 在行边界断栏，最后一列装不下的部分溢出，与它一致。
+  const gap = t.columnGap ?? 0;
+  const colW = Math.max(1, (boxW - gap * (cols - 1)) / cols);
+  const colItems = flatten(layout(t, colW, scale));
+  const colH = Math.max(1, h - pt - pb);
+
+  const buckets: RenderItem[][] = [[]];
+  let used = 0;
+  for (const it of colItems) {
+    if (used > 0 && used + it.h > colH && buckets.length < cols) {
+      buckets.push([]);
+      used = 0;
+    }
+    buckets[buckets.length - 1].push(it);
+    used += it.h;
   }
-  return out.join('');
+  return buckets
+    .map((items, i) => paint(items, pl + i * (colW + gap), colW))
+    .join('');
 }
 
 /** "linear-gradient(90deg,#a 0%,#b 100%)" → SVG linearGradient，返回 url(#id) */

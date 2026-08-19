@@ -152,6 +152,9 @@ ${textPara(run('带括号编号', { attrs: 'sz="1300"' }), '<a:pPr marL="342900"
 <p:txBody><a:bodyPr numCol="2" spcCol="228600"/><a:lstStyle/>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>双栏排版：左栏文本会自动流入右栏，用于验证 numCol 与 spcCol 的解析与渲染。</a:t></a:r></a:p>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>第二段继续填充，确保分栏高度计算正确。</a:t></a:r></a:p>
+<a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</a:t></a:r></a:p>
+<a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>再补一段把左栏彻底填满，剩余内容必须出现在右栏，否则这条分支等于没测。</a:t></a:r></a:p>
+<a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>Latin filler keeps the column break deterministic because the headless text metric falls back to a per-character estimate that under-measures CJK; this sentence is long enough to overflow the left column under either measurement path.</a:t></a:r></a:p>
 </p:txBody></p:sp>` +
   `<p:sp><p:nvSpPr><p:cNvPr id="412" name="AutoFit"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(800)}" y="${px(270)}"/><a:ext cx="${px(450)}" cy="${px(120)}"/></a:xfrm>

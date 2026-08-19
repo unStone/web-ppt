@@ -1191,6 +1191,34 @@ group('占位符几何继承');
   }
 }
 
+group('导出路径的分栏');
+{
+  const sc = parsed.get('showcase.pptx');
+  const el = sc && sc.slides.flatMap((s2) => s2.elements).find((e) => e.text?.columns);
+  if (check('存在分栏文本框', !!el)) {
+    eq('numCol 解析为 2 栏', el.text.columns, 2);
+    check('spcCol 解析出栏间距', (el.text.columnGap ?? 0) > 0, String(el.text.columnGap));
+
+    const page = sc.slides.findIndex((s2) => s2.elements.includes(el));
+    const svg = lib.renderSlideToSvg(sc, sc.slides[page], { textMode: 'svg' });
+    // 切出该元素的分组，看里面的 <text> 落在几个横向偏移上
+    const at = svg.indexOf(`<g data-el="${el.id}"`);
+    const seg = at >= 0 ? svg.slice(at, svg.indexOf('<g data-el=', at + 1) + 1 || undefined) : '';
+    const xs = [...new Set([...seg.matchAll(/<text x="([\d.]+)"/g)].map((m) => +m[1]))].sort((a, b) => a - b);
+
+    // 导出路径此前完全忽略 numCol，整段排成单栏
+    check('SVG 文本路径分成两栏', xs.length >= 2, `实际横向偏移 ${xs.join(',')}`);
+    if (xs.length >= 2) {
+      const [pt2, , , pl2] = el.text.insets;
+      void pt2;
+      const colW = (el.w - pl2 * 2 - el.text.columnGap) / 2;
+      check('右栏偏移 = 左栏 + 栏宽 + 栏间距',
+        Math.abs(xs[1] - (xs[0] + colW + el.text.columnGap)) < 1.5,
+        `${xs[1]} vs ${xs[0] + colW + el.text.columnGap}`);
+    }
+  }
+}
+
 group('渲染快照');
 {
   const snapDir = join(root, 'test/snapshots');

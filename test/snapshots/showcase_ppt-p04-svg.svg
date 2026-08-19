@@ -102,6 +102,9 @@
 <text x="7.2" y="36.93" text-anchor="start" xml:space="preserve">
 <tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二段继续填充，确保分栏高度计算正确。</tspan>
 </text>
+<text x="7.2" y="56.53" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</tspan>
+</text>
 </g>
 </g>
 <g data-el="6149" style="transform-box:fill-box;transform-origin:center">
