@@ -19,6 +19,7 @@ interface Ctx {
   defs: string[];
   textMode: 'html' | 'svg';
   media: 'badge' | 'player';
+  hidden: ReadonlySet<number> | null;
 }
 
 export interface RenderOptions {
@@ -57,6 +58,7 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
     textMode,
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
+    hidden: opts.hiddenElements?.length ? new Set(opts.hiddenElements) : null,
   };
   // 背景解析失败只该丢背景，不该丢整页
   let bgFill = '#fff';

@@ -1,3 +1,4 @@
+import { groupSteps, hiddenBefore } from './anim-steps';
 import { parseChart } from './chart';
 import { metafileToSvg } from './image';
 import { setChartParser } from './chart/hook';
@@ -9,6 +10,7 @@ import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
 export { renderSlideToSvg };
+export { groupSteps, hiddenBefore };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';

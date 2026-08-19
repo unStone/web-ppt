@@ -106,35 +106,6 @@ export function framesFor(step: AnimStep): Keyframes {
   return entranceFrames(step);
 }
 
-/** 把动画按点击批次分组 */
-export function groupSteps(steps: AnimStep[] | undefined): AnimStep[][] {
-  if (!steps?.length) return [];
-  const groups: AnimStep[][] = [];
-  for (const s of steps) {
-    const g = s.clickGroup ?? 0;
-    (groups[g] ??= []).push(s);
-  }
-  return groups.filter(Boolean);
-}
-
-/** 一批动画开始前，哪些元素应处于隐藏状态 */
-export function hiddenBefore(groups: AnimStep[][], upTo: number): Set<number> {
-  const hidden = new Set<number>();
-  // 入场动画未播放前隐藏
-  for (let g = upTo; g < groups.length; g++) {
-    for (const s of groups[g]) if (s.kind === 'entrance') hidden.add(s.target);
-  }
-  // 已播放的退场动画保持隐藏
-  for (let g = 0; g < upTo; g++) {
-    for (const s of groups[g]) if (s.kind === 'exit') hidden.add(s.target);
-  }
-  // 后续还有入场的元素不应因为早前的退场而被永久隐藏
-  for (let g = upTo; g < groups.length; g++) {
-    for (const s of groups[g]) if (s.kind === 'entrance') hidden.add(s.target);
-  }
-  return hidden;
-}
-
 export interface PlayHandle {
   cancel(): void;
   finished: Promise<void>;

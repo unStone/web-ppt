@@ -1,6 +1,7 @@
 import type { AnimStep, Presentation, Slide, Transition } from '@web-ppt/core';
 import { slideText } from '@web-ppt/core';
-import { autoAdvanceMs, groupSteps, hiddenBefore } from './playback';
+import { groupSteps, hiddenBefore } from '@web-ppt/core';
+import { autoAdvanceMs } from './playback';
 
 /**
  * 演示文稿的 headless 状态机：翻页、缩放、搜索、动画批次。

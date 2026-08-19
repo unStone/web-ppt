@@ -10,7 +10,7 @@ export type { PresentationStateOptions, StateChange } from './state';
 export { Viewer } from './viewer';
 export { foreignObjectScalesCorrectly, resetForeignObjectProbe } from './foreign-object';
 export type { ViewerOptions } from './viewer';
-export {
-  autoAdvanceMs, framesFor, groupSteps, hiddenBefore, playGroup, playTransition,
-} from './playback';
+export { autoAdvanceMs, framesFor, playGroup, playTransition } from './playback';
+// 这两个是对 AnimStep 的纯推导，实现已下沉到 core；此处转出以保持既有 API
+export { groupSteps, hiddenBefore } from '@web-ppt/core';
 export type { PlayHandle } from './playback';

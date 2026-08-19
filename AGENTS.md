@@ -50,6 +50,7 @@
 | **package-lock 不能用镜像源** | 用 `--registry=npmmirror` 装依赖会把镜像 URL 烘进 lock，新版 npm 直接 `EALLOWREMOTE` 拒绝。装依赖一律用官方源；本机代理导致 TLS 失败时用 `env -u HTTP_PROXY -u HTTPS_PROXY npm i` 绕开 |
 | **画布污染只发生在 `blob:`** | 含 `foreignObject` 的 SVG 经 **blob: URL** 加载会让画布被判污染（`toBlob` 抛 `SecurityError`），换成 **`data:` URI 就不会**——实测 Chrome 148 仍是这样。Chromium 曾提案让 blob: 也不污染（原计划 M131），至今未生效，别依赖。所以 `slideToPng` 走 data: URI + `foreignObject`，排版与屏幕预览逐像素一致 |
 | **SVG-as-image 是隔离上下文** | 被 `<img>` 加载的 SVG 拿不到宿主页面的 `@font-face` / FontFace API 注册的字体（实测：未知字体名与页面已注册字体的渲染结果完全一致）。**系统已安装字体可用，其余必须把 `@font-face` 连同 base64 字体内联进 SVG 的 `<style>`**——`svg.ts` 的 `embeddedFonts` 就是干这个的，别把它优化掉 |
+| **WebKit 不给 `foreignObject` 应用 SVG 缩放** | [WebKit bug 23113](https://bugs.webkit.org/show_bug.cgi?id=23113)，2008 年至今，新的 LBSE 引擎才修。我们的幻灯片是 `viewBox` + `width:100%`，永远处于被缩放状态，受影响的 Safari / iOS 上 foreignObject 里的文本会按 1× 排版并错位。`viewer-core/foreign-object.ts` 做运行时探测，中招就整页切到原生 `<text>`（代价：文本不可选中）。**不要用 UA 判断，也不要照搬 marpit-svg-polyfill 的 `getScreenCTM()` 补偿**——那套要求 foreignObject 位于原点，而我们的嵌在每个形状各自的 translate/rotate 里 |
 | **量不到就得记住量不到** | `text-svg.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 
