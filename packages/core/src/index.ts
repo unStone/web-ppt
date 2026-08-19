@@ -189,36 +189,71 @@ async function inlineImages(svg: string): Promise<string> {
   return out;
 }
 
-/** 单页导出为 PNG Blob；scale 为相对幻灯片原始尺寸的倍数 */
+/**
+ * 把 SVG 串成可被 <img> 加载的 URL。
+ *
+ * 必须是 data: URI，不能用 blob:——含 <foreignObject> 的 SVG 经 blob: URL 加载会让
+ * 画布被判为污染（toBlob 抛 SecurityError），data: URI 则不会。实测 Chrome 148 两者
+ * 表现依旧不同；Chromium 曾提案让 blob: 也不污染（原计划 M131），至今未生效，别依赖。
+ */
+function svgToDataUri(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+async function loadSvgImage(svg: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  img.decoding = 'sync';
+  await new Promise<void>((res, rej) => {
+    img.onload = () => res();
+    img.onerror = () => rej(new Error('SVG 渲染失败'));
+    img.src = svgToDataUri(svg);
+  });
+  return img;
+}
+
+async function rasterize(
+  pres: Presentation,
+  slide: Slide,
+  scale: number,
+  textMode: 'html' | 'svg',
+): Promise<Blob> {
+  const svg = await inlineImages(renderSlideToSvg(pres, slide, { textMode }));
+  const img = await loadSvgImage(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(pres.width * scale);
+  canvas.height = Math.round(pres.height * scale);
+  const g = canvas.getContext('2d');
+  if (!g) throw new Error('无法获取 canvas 上下文');
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return await new Promise<Blob>((res, rej) => {
+    canvas.toBlob((b) => (b ? res(b) : rej(new Error('导出失败'))), 'image/png');
+  });
+}
+
+/**
+ * 单页导出为 PNG Blob；scale 为相对幻灯片原始尺寸的倍数。
+ *
+ * 优先 'html'：排版交给浏览器，导出结果与屏幕预览逐像素一致，断行/字距不会有第二套实现的偏差。
+ * 若某引擎仍把 foreignObject 判为污染画布，退回自绘文本的 'svg' 模式——宁可换排版实现，
+ * 也不能让导出直接失败。
+ */
 export async function slideToPng(pres: Presentation, slide: Slide, scale = 2): Promise<Blob> {
-  // 必须用 svg 文本模式：foreignObject 会污染画布导致 toBlob 抛 SecurityError
-  const svg = await inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg' }));
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   try {
-    const img = new Image();
-    img.decoding = 'sync';
-    await new Promise<void>((res, rej) => {
-      img.onload = () => res();
-      img.onerror = () => rej(new Error('SVG 渲染失败'));
-      img.src = url;
-    });
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(pres.width * scale);
-    canvas.height = Math.round(pres.height * scale);
-    const g = canvas.getContext('2d');
-    if (!g) throw new Error('无法获取 canvas 上下文');
-    g.fillStyle = '#fff';
-    g.fillRect(0, 0, canvas.width, canvas.height);
-    g.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return await new Promise<Blob>((res, rej) => {
-      canvas.toBlob((b) => (b ? res(b) : rej(new Error('导出失败'))), 'image/png');
-    });
-  } finally {
-    URL.revokeObjectURL(url);
+    return await rasterize(pres, slide, scale, 'html');
+  } catch (e) {
+    if ((e as { name?: string } | null)?.name !== 'SecurityError') throw e;
+    return rasterize(pres, slide, scale, 'svg');
   }
 }
 
-/** 单页导出为独立可用的 SVG 字符串（图片内联为 data URI，可直接保存/打印） */
+/**
+ * 单页导出为独立可用的 SVG 字符串（图片内联为 data URI，可直接保存/打印）。
+ *
+ * 这里固定用 'svg' 文本模式而非导出 PNG 时的 'html'：foreignObject 只有浏览器认，
+ * Inkscape / librsvg / 各类设计工具打开会整块丢失文本。文件是要交出去的，必须自包含。
+ */
 export async function slideToSvgFile(pres: Presentation, slide: Slide): Promise<string> {
   return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg' }));
 }

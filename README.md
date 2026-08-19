@@ -62,7 +62,9 @@ flowchart LR
 hook 的作用是打破 `pptx/parser → chart → pptx/color` 的模块环并支持裁剪，
 不代表它与文件格式无关——`ChartEnv` 携带 `ColorCtx` / `ThemeFonts` 是正当复用。
 
-**两条文本渲染路径**：屏幕预览用 `foreignObject` + HTML 排版（文本可选中、支持分栏）；导出用原生 `<text>` + 自实现测量断行——因为 Chrome 会把含 `foreignObject` 的 SVG 判定为污染画布，无法 `toBlob`。
+**两条文本渲染路径**：`foreignObject` + HTML 排版（屏幕预览、PNG 导出）——排版交给浏览器，文本可选中、支持分栏；
+原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）——因为 `foreignObject` 只有浏览器认，
+Inkscape / librsvg / 设计工具打开会整块丢失文本，交出去的文件必须自包含。
 
 ## 能力矩阵
 

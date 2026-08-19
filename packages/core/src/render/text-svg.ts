@@ -2,8 +2,9 @@ import type { Paragraph, TextBody, TextRun } from '../types';
 
 /**
  * 纯 SVG <text> 排版：自己做文本测量与断行。
- * 用途：PNG / PDF 导出——Chrome 会把含 <foreignObject> 的 SVG 判定为污染画布，
- * 无法 toBlob；屏幕渲染仍走 foreignObject 以保留可选中文本与更好的排版。
+ * 用途：产出要脱离浏览器使用的 SVG（独立文件、打印 HTML）——<foreignObject> 只有浏览器认，
+ * 别的 SVG 渲染器打开会整块丢失文本。屏幕渲染与 PNG 导出仍走 foreignObject，
+ * 让浏览器自己排版，省掉第二套断行实现带来的偏差。
  */
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');

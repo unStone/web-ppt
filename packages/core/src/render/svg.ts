@@ -27,8 +27,8 @@ export interface RenderOptions {
   /**
    * 文本渲染方式：
    * - 'html'（默认）：foreignObject + HTML 排版，屏幕效果最佳、文本可选中
-   * - 'svg'：原生 <text> + 自实现断行，用于 PNG/PDF 导出
-   *   （Chrome 会把含 foreignObject 的 SVG 视为污染画布，无法 toBlob）
+   * - 'svg'：原生 <text> + 自实现断行，用于导出独立 SVG 文件
+   *   （foreignObject 只有浏览器认，其他 SVG 渲染器会整块丢失文本）
    */
   textMode?: 'html' | 'svg';
   /** 画批注标记（Slide.comments），默认关闭 */
@@ -38,9 +38,8 @@ export interface RenderOptions {
    * - 'badge'（默认）：只画封面帧 + 播放标识，纯 SVG，导出安全
    * - 'player'：嵌入真实 <video>/<audio>，可播放
    *
-   * 'player' 会引入 foreignObject —— Chrome 据此把 SVG 判为污染画布，
-   * 导致无法 toBlob。所以它只在 textMode 为 'html'（屏幕预览）时生效，
-   * 导出路径一律退回 badge。
+   * 'player' 靠 foreignObject 承载，只有浏览器认；而 textMode 为 'svg' 恰恰意味着
+   * 产物要脱离浏览器使用（独立 SVG 文件 / 被光栅化），此时一律退回 badge。
    */
   media?: 'badge' | 'player';
 }
@@ -50,7 +49,7 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
   const ctx: Ctx = {
     defs: [],
     textMode,
-    // 导出路径不能出现 foreignObject，强制退回 badge
+    // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
   };
   // 背景解析失败只该丢背景，不该丢整页
@@ -372,7 +371,8 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
   }
   // 动画需要按形状 id 定位到具体节点
   if (el.id !== undefined) {
-    out = `<g data-el="${el.id}" style="transform-box:fill-box;transform-origin:center">${out}</g>`;
+    const hide = ctx.hidden?.has(el.id) ? 'visibility:hidden;' : '';
+    out = `<g data-el="${el.id}" style="${hide}transform-box:fill-box;transform-origin:center">${out}</g>`;
   }
   return withLink(out, el.link);
 }
