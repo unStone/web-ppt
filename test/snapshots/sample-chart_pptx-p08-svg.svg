@@ -119,57 +119,32 @@
 </g>
 <g transform="translate(1046.67 475.33)">
 <text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8%</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0%</tspan>
 </text>
 </g>
-<g transform="translate(1046.67 435.89)">
+<g transform="translate(1046.67 403.02)">
+<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">5%</tspan>
+</text>
+</g>
+<g transform="translate(1046.67 330.71)">
 <text x="0" y="13.63" text-anchor="start" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
 </text>
 </g>
-<g transform="translate(1046.67 396.45)">
+<g transform="translate(1046.67 258.4)">
 <text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12%</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">15%</tspan>
 </text>
 </g>
-<g transform="translate(1046.67 357.01)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">14%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 317.56)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">16%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 278.12)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">18%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 238.68)">
+<g transform="translate(1046.67 186.09)">
 <text x="0" y="13.63" text-anchor="start" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
 </text>
 </g>
-<g transform="translate(1046.67 199.24)">
+<g transform="translate(1046.67 113.78)">
 <text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">22%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 159.79)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 120.35)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">26%</tspan>
-</text>
-</g>
-<g transform="translate(1046.67 80.91)">
-<text x="0" y="13.63" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">28%</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">25%</tspan>
 </text>
 </g>
 <g transform="translate(1046.67 41.47)">
@@ -218,25 +193,25 @@
 <g transform="translate(964.49 137.57)">
 <path d="M 0 0 L 50.79 0 L 50.79 347.09 L 0 347.09 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(160.79 68.55)">
-<path d="M 0 412.17 L 159.98 347.09 L 319.96 388.51 L 479.93 173.55 L 639.91 84.8 L 799.89 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="3"/>
+<g transform="translate(160.79 63.82)">
+<path d="M 0 302.26 L 159.98 254.54 L 319.96 284.91 L 479.93 127.27 L 639.91 62.19 L 799.89 0" fill="none" fill-rule="nonzero" stroke="rgb(237,125,49)" stroke-width="3"/>
 </g>
-<g transform="translate(156.12 476.06)">
+<g transform="translate(156.12 361.41)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(316.1 410.98)">
+<g transform="translate(316.1 313.68)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(476.08 452.39)">
+<g transform="translate(476.08 344.06)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(636.06 237.43)">
+<g transform="translate(636.06 186.42)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(796.03 148.68)">
+<g transform="translate(796.03 121.34)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(956.01 63.88)">
+<g transform="translate(956.01 59.15)">
 <path d="M 0 4.67 A 4.67 4.67 0 1 1 9.33 4.67 A 4.67 4.67 0 1 1 0 4.67 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
 <g transform="translate(411 520.2)">

@@ -173,6 +173,15 @@ export interface Extent {
   hi: number;
 }
 
+/**
+ * Excel / LibreOffice 的数值轴自动最小值规则：数据全为正、且最小值不到最大值的
+ * 5/6 时，轴从 0 起。数据挤在远离零的窄带里（如股价）才保留数据最小值。
+ * 不这么做的话，折线会被拉伸到撑满整个绘图区，与 PowerPoint 的观感差得很远。
+ */
+function autoZero(lo: number, hi: number): number {
+  return lo > 0 && hi > 0 && lo <= hi * (5 / 6) ? 0 : lo;
+}
+
 function pad(e: Extent): Extent {
   if (e.lo !== e.hi) return e;
   if (e.lo === 0) return { lo: 0, hi: 1 };
@@ -228,6 +237,8 @@ export function valueExtent(groups: PlotGroup[]): Extent {
   if (baseline) {
     lo = Math.min(lo, 0);
     hi = Math.max(hi, 0);
+  } else {
+    lo = autoZero(lo, hi);
   }
   return pad({ lo, hi });
 }
@@ -251,7 +262,7 @@ export function xExtent(groups: PlotGroup[]): Extent {
     }
   }
   if (lo === Infinity) return { lo: 0, hi: 1 };
-  return pad({ lo, hi });
+  return pad({ lo: autoZero(lo, hi), hi });
 }
 
 // ---------- 分级 ----------
