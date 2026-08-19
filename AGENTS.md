@@ -43,7 +43,7 @@
 | 陷阱 | 说明 |
 |---|---|
 | **渲染结果同进程不可重复** | defs id 来自跨解析累加的全局计数器（同页多个 SVG 不能撞 id，是有意设计）。同一份文件连渲两次，产物不同。要比对渲染结果**必须在独立进程里算**，见 `tooling/lib/ppt-fingerprint.mjs` |
-| **快照挡不住「一开始就错」** | 快照只能发现「变了」。判断保真度要拿 **LibreOffice 实际渲染做 ground truth**（`npm run compare`）。历史教训：`shade`/`tint` 曾在 sRGB 里直乘，最大偏差 Δ69，快照一路绿着 |
+| **快照挡不住「一开始就错」** | 快照只能发现「变了」。判断保真度要拿 **LibreOffice 实际渲染做 ground truth**（`npm run compare`，产出单文件页面，直接 open，不需要 dev server）。历史教训：`shade`/`tint` 曾在 sRGB 里直乘，最大偏差 Δ69，快照一路绿着。注意 LibreOffice 自己也只是另一种近似（字体、抗锯齿、图表画法都不同），SSIM 不会到 1，它的用途是**横向比较改动前后**和定位整片偏色，不是及格线 |
 | **固件覆盖盲区** | 加能力时**必须同时加固件**。隐藏页曾经零固件覆盖，让一个 `skipHidden` 的真 bug 在 986 项断言下活了很久 |
 | **LibreOffice 转换非确定性** | `.ppt` 样本由 LibreOffice 转出，字节不可重复。`make-ppt-samples.mjs` 因此按**渲染结果**而非字节比对，内容没变就保留原文件 |
 | **固件必须确定性** | `npm run fixtures` 重跑两次字节必须一致，CI 会验。写生成脚本时不要引入时间戳 / 随机数 |

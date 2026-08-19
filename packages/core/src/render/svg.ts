@@ -34,6 +34,12 @@ export interface RenderOptions {
   /** 画批注标记（Slide.comments），默认关闭 */
   showComments?: boolean;
   /**
+   * 直接渲染成隐藏的元素 id（`Slide.animations` 里的 target）。
+   * 用于把「动画播到第 N 步」的状态固化进静态产物——播放时不要用它，
+   * 查看器是在已插入的 DOM 上改 visibility，不重新渲染。
+   */
+  hiddenElements?: readonly number[];
+  /**
    * 媒体呈现方式：
    * - 'badge'（默认）：只画封面帧 + 播放标识，纯 SVG，导出安全
    * - 'player'：嵌入真实 <video>/<audio>，可播放

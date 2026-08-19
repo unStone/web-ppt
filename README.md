@@ -66,6 +66,9 @@ hook 的作用是打破 `pptx/parser → chart → pptx/color` 的模块环并�
 原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）——因为 `foreignObject` 只有浏览器认，
 Inkscape / librsvg / 设计工具打开会整块丢失文本，交出去的文件必须自包含。
 
+Safari 系有个 [15 年未修的老 bug](https://bugs.webkit.org/show_bug.cgi?id=23113)：不给 `foreignObject` 里的 HTML 应用外层 SVG 的缩放。
+查看器运行时探测，中招就整页切到 `<text>` 路径。
+
 ## 能力矩阵
 
 | 能力 | .pptx | .ppt |

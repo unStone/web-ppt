@@ -1,5 +1,6 @@
 import type { Presentation, Slide } from '@web-ppt/core';
 import { renderSlideToSvg, slideToPng } from '@web-ppt/core';
+import { foreignObjectScalesCorrectly } from './foreign-object';
 import { playGroup, playTransition, type PlayHandle } from './playback';
 import { PresentationState, type PresentationStateOptions } from './state';
 
@@ -17,12 +18,19 @@ export interface ViewerOptions extends PresentationStateOptions {
    * <video>/<audio>。导出（exportPng）不受影响，始终走 badge。
    */
   media?: 'badge' | 'player';
+  /**
+   * 文本渲染方式。默认 'auto'：探测到引擎不给 foreignObject 应用 SVG 缩放
+   * （WebKit bug 23113）时自动切到原生 <text>，否则用 foreignObject。
+   * 传死值可绕过探测。
+   */
+  textMode?: 'auto' | 'html' | 'svg';
 }
 
 export class Viewer {
   readonly state: PresentationState;
   private svgCache = new Map<number, string>();
   private media: 'badge' | 'player';
+  private textMode: 'html' | 'svg';
   private playing: PlayHandle | null = null;
   private cancelAuto: (() => void) | null = null;
   private unsubscribe: () => void;
@@ -38,6 +46,10 @@ export class Viewer {
     options: ViewerOptions = {},
   ) {
     this.media = options.media ?? 'badge';
+    const mode = options.textMode ?? 'auto';
+    this.textMode = mode !== 'auto'
+      ? mode
+      : foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg';
     this.state = new PresentationState(presentation, options);
     this.unsubscribe = this.state.subscribe((change) => {
       if (change.type === 'slide') {
@@ -88,7 +100,10 @@ export class Viewer {
   slideSvg(i: number): string {
     let svg = this.svgCache.get(i);
     if (svg === undefined) {
-      svg = renderSlideToSvg(this.presentation, this.presentation.slides[i], { media: this.media });
+      svg = renderSlideToSvg(this.presentation, this.presentation.slides[i], {
+        media: this.media,
+        textMode: this.textMode,
+      });
       this.svgCache.set(i, svg);
     }
     return svg;
@@ -97,7 +112,7 @@ export class Viewer {
   /** 不走缓存，用于缩略图等需要独立 defs id 的场景 */
   renderSlide(i: number): string {
     // 缩略图不嵌播放器：既没意义，还会为每个缩略图各建一个媒体元素
-    return renderSlideToSvg(this.presentation, this.presentation.slides[i]);
+    return renderSlideToSvg(this.presentation, this.presentation.slides[i], { textMode: this.textMode });
   }
 
   exportPng(scale = 2, i = this.index): Promise<Blob> {

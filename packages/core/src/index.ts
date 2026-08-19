@@ -254,13 +254,41 @@ export async function slideToPng(pres: Presentation, slide: Slide, scale = 2): P
  * 这里固定用 'svg' 文本模式而非导出 PNG 时的 'html'：foreignObject 只有浏览器认，
  * Inkscape / librsvg / 各类设计工具打开会整块丢失文本。文件是要交出去的，必须自包含。
  */
-export async function slideToSvgFile(pres: Presentation, slide: Slide): Promise<string> {
-  return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg' }));
+export async function slideToSvgFile(
+  pres: Presentation,
+  slide: Slide,
+  hiddenElements?: readonly number[],
+): Promise<string> {
+  return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg', hiddenElements }));
+}
+
+export interface PrintableOptions {
+  /**
+   * 有动画的页按点击批次展开成多页，每页只显示到该批次为止应可见的元素。
+   * 借鉴 reveal.js 的 pdfSeparateFragments：打印稿里一次性显示全部元素，
+   * 会把「逐步揭示」本身承载的信息结构压平。
+   */
+  animationSteps?: boolean;
 }
 
 /** 整份演示导出为一份可打印的 HTML（浏览器「打印为 PDF」即得 PDF） */
-export async function presentationToPrintableHtml(pres: Presentation): Promise<string> {
-  const pages = await Promise.all(pres.slides.map((s) => slideToSvgFile(pres, s)));
+export async function presentationToPrintableHtml(
+  pres: Presentation,
+  opts: PrintableOptions = {},
+): Promise<string> {
+  const jobs: Promise<string>[] = [];
+  for (const s of pres.slides) {
+    const groups = opts.animationSteps ? groupSteps(s.animations) : [];
+    if (!groups.length) {
+      jobs.push(slideToSvgFile(pres, s));
+      continue;
+    }
+    // n 批点击 → n+1 个状态：初始态，以及每批播完后的样子
+    for (let i = 0; i <= groups.length; i++) {
+      jobs.push(slideToSvgFile(pres, s, [...hiddenBefore(groups, i)]));
+    }
+  }
+  const pages = await Promise.all(jobs);
   return (
     '<!doctype html><html><head><meta charset="utf-8"><title>slides</title><style>' +
     `@page{size:${Math.round(pres.width)}px ${Math.round(pres.height)}px;margin:0}` +

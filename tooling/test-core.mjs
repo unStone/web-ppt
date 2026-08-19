@@ -1395,6 +1395,108 @@ group('导出光栅化');
   }
 }
 
+group('渲染错误隔离');
+{
+  const sc = parsed.get('showcase.pptx');
+  const page = sc && sc.slides.find((x) => x.elements.length >= 2);
+  if (check('取到多元素页', !!page)) {
+    const good = lib.renderSlideToSvg(sc, page);
+    const goodIds = [...good.matchAll(/data-el="(\d+)"/g)].map((m) => m[1]);
+
+    // 注入一个访问即抛的元素，模拟畸形形状
+    const bad = { kind: 'shape', x: 10, y: 20, w: 120, h: 60, rot: 0, flipH: false, flipV: false, name: '坏形状' };
+    Object.defineProperty(bad, 'path', { get() { throw new Error('注入的渲染错误'); } });
+    const svg = lib.renderSlideToSvg(sc, { ...page, elements: [bad, ...page.elements] });
+
+    check('失败元素标记为 data-render-error', svg.includes('data-render-error="1"'));
+    check('失败元素画出红色虚线占位框', svg.includes('stroke="#dc2626"'));
+    check('错误原因写进 title', svg.includes('注入的渲染错误'));
+    check('占位框标出元素名', svg.includes('坏形状'));
+    const stillThere = goodIds.every((id) => svg.includes(`data-el="${id}"`));
+    check('同页其余元素照常渲染', stillThere, `原有 ${goodIds.length} 个元素`);
+    check('产物仍是合法 XML', !parseXml(svg).error, parseXml(svg).error || '');
+
+    // 背景解析失败只该丢背景
+    const badBg = { ...page };
+    Object.defineProperty(badBg, 'background', { get() { throw new Error('背景炸了'); } });
+    let bgSvg = null;
+    try { bgSvg = lib.renderSlideToSvg(sc, badBg); } catch { /* 期望不抛 */ }
+    check('背景渲染失败不影响整页', !!bgSvg && bgSvg.includes('<svg'));
+    check('背景失败时退回白底', !!bgSvg && bgSvg.includes('fill="#fff"'));
+  }
+}
+
+group('导出光栅化');
+{
+  const sc = parsed.get('showcase.pptx');
+  // 挑一页没有位图的，避免 inlineImages 去 fetch 假 blob URL
+  const page = sc && sc.slides.find((x) => !lib.renderSlideToSvg(sc, x).includes('<image'));
+  if (check('取到无位图页', !!page)) {
+    const doc = globalThis.document;
+    const realImage = globalThis.Image;
+    const realCreate = doc.createElement.bind(doc);
+    const srcs = [];
+    let toBlobFails = 0;
+
+    globalThis.Image = class {
+      set src(v) { srcs.push(v); queueMicrotask(() => this.onload && this.onload()); }
+    };
+    doc.createElement = (tag) => {
+      if (tag !== 'canvas') return realCreate(tag);
+      return {
+        width: 0, height: 0,
+        getContext: () => ({ fillStyle: '', font: '', fillRect() {}, drawImage() {}, measureText: (s2) => ({ width: s2.length * 8 }) }),
+        toBlob(cb) {
+          if (toBlobFails-- > 0) { const e = new Error('tainted'); e.name = 'SecurityError'; throw e; }
+          cb(new globalThis.Blob(['png']));
+        },
+      };
+    };
+
+    try {
+      await lib.slideToPng(sc, page, 1);
+      check('导出用 data: URI 加载 SVG', srcs.length === 1 && srcs[0].startsWith('data:image/svg+xml'),
+        String(srcs[0]).slice(0, 40));
+      // blob: 会让含 foreignObject 的 SVG 污染画布，data: 不会
+      check('导出不再经 blob: URL', !srcs.some((u) => u.startsWith('blob:')));
+      check('默认走 html 文本模式（与屏幕预览同一套排版）',
+        decodeURIComponent(srcs[0] || '').includes('<foreignObject'));
+
+      // 引擎仍判污染时应自动退回自绘文本，而不是让导出失败
+      srcs.length = 0;
+      toBlobFails = 1;
+      const blob = await lib.slideToPng(sc, page, 1);
+      check('画布被判污染时导出仍成功', !!blob);
+      eq('污染回退渲染了两次', srcs.length, 2);
+      check('回退产物不含 foreignObject',
+        !decodeURIComponent(srcs[1] || '').includes('<foreignObject'));
+    } finally {
+      globalThis.Image = realImage;
+      doc.createElement = realCreate;
+    }
+  }
+}
+
+group('foreignObject 缩放探测');
+{
+  // jsdom 量不到布局尺寸，此时不该误判成「引擎有问题」而降级
+  viewerLib.resetForeignObjectProbe?.();
+  eq('量不到尺寸时不降级', viewerLib.foreignObjectScalesCorrectly(globalThis.document), true);
+
+  const pres = parsed.get('showcase.pptx');
+  if (pres) {
+    const box = globalThis.document.createElement('div');
+    globalThis.document.body.appendChild(box);
+    const vh = new viewerLib.Viewer(box, pres, { textMode: 'html' });
+    check('text:html 用 foreignObject 排版', vh.slideSvg(0).includes('<foreignObject'));
+    const vs = new viewerLib.Viewer(box, pres, { textMode: 'svg' });
+    check('text:svg 改用原生 <text>', !vs.slideSvg(0).includes('<foreignObject'));
+    check('text:svg 仍渲染出文本', /<text[\s>]/.test(vs.slideSvg(0)));
+    vh.destroy(); vs.destroy();
+    box.remove();
+  }
+}
+
 group('渲染快照');
 {
   const snapDir = join(root, 'test/snapshots');

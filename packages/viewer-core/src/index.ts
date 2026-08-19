@@ -8,6 +8,7 @@
 export { PresentationState } from './state';
 export type { PresentationStateOptions, StateChange } from './state';
 export { Viewer } from './viewer';
+export { foreignObjectScalesCorrectly, resetForeignObjectProbe } from './foreign-object';
 export type { ViewerOptions } from './viewer';
 export {
   autoAdvanceMs, framesFor, groupSteps, hiddenBefore, playGroup, playTransition,
