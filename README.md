@@ -274,11 +274,12 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | OMML 公式 | 只取线性文本，不做 MathML 排版 |
 | 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
 | 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
-| EMF+ / 光栅操作码 | 图元文件解码器不处理，退化为常规绘制 |
+| EMF+ | 不处理。实测手上全部图元文件都是**双模式**——GDI 记录已承载完整绘制（`sample-metafile.pptx` 里 16125 条 GDI 记录 vs 3 条 EMF+ 注释），走 GDI 路径即可。只有纯 EMF+ 文件才需要，尚无样本 |
+| 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
+| chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）整条链路未实现。经典 16 种图表已全支持 |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
-| chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）未实现 |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
 
 ## 给编码代理
