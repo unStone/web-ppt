@@ -1,0 +1,63 @@
+name: 发布
+
+# 打 tag 触发：git tag v0.1.1 && git push origin v0.1.1
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write        # OIDC 换取短期发布令牌所必需，缺了会退回要 NPM_TOKEN
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Trusted Publishing 要求 Node ≥ 22.14.0
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: 升级 npm
+        # Trusted Publishing 要求 npm ≥ 11.5.1，Actions 自带的通常更旧
+        run: npm i -g npm@latest
+
+      - run: npm ci
+
+      - name: 校验 tag 与包版本一致
+        # tag 与 package.json 对不上时，发出去的版本号会让人迷惑，不如直接失败
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for p in packages/core packages/viewer-core; do
+            v=$(node -p "require('./$p/package.json').version")
+            [ "$v" = "$tag" ] || { echo "::error::$p 版本 $v 与 tag $tag 不一致"; exit 1; }
+          done
+          echo "tag $tag 与两个包版本一致"
+
+      - name: 类型检查
+        run: npm run check
+
+      - name: 重新生成测试文件
+        run: npm run fixtures
+
+      - name: 核心解析 / 渲染测试
+        run: npm run test:core
+
+      - name: 图元文件解码测试
+        run: npm run test:metafile
+
+      # 两个包各自的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
+      # 万一构建失败，能在动 registry 之前就失败掉
+      - name: 构建
+        run: npm run build
+
+      # 顺序不能反：viewer-core 以 @web-ppt/core 为 peer 依赖
+      - name: 发布 @web-ppt/core
+        run: npm publish -w @web-ppt/core
+
+      - name: 发布 @web-ppt/viewer-core
+        run: npm publish -w @web-ppt/viewer-core
