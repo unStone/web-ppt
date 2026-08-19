@@ -14,12 +14,22 @@ const esc = (s: string): string =>
 const FALLBACK = `'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif`;
 
 let measureCtx: CanvasRenderingContext2D | null = null;
+let measureProbed = false;
 
+/**
+ * 拿一个用来量文字宽度的 2D 上下文，拿不到就返回 null（调用方退到字符宽度估算）。
+ *
+ * 「拿不到」这件事必须只判一次：Node / jsdom / 反指纹浏览器里 getContext('2d')
+ * 恒为 null，不缓存这个结论就会在每次测字时新建一个 <canvas>，一页文本能造出上千个。
+ * 同时只认真的能测字的上下文——有些环境（测试替身、canvas 拦截插件）会给出残缺对象，
+ * 直接调 measureText 会抛，而排版不该因为量不到字就整页失败。
+ */
 function ctx2d(): CanvasRenderingContext2D | null {
-  if (measureCtx) return measureCtx;
+  if (measureProbed) return measureCtx;
+  measureProbed = true;
   try {
-    const c = document.createElement('canvas');
-    measureCtx = c.getContext('2d');
+    const g = document.createElement('canvas').getContext('2d');
+    measureCtx = g && typeof g.measureText === 'function' ? g : null;
   } catch {
     measureCtx = null;
   }
