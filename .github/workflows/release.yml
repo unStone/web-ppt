@@ -24,8 +24,10 @@ jobs:
           # 在无凭据时返回的是 404 而不是 401，极难排查。OIDC 自己会认 registry。
 
       - name: 升级 npm
-        # Trusted Publishing 要求 npm ≥ 11.5.1，Actions 自带的通常更旧
-        run: npm i -g npm@latest
+        # Trusted Publishing 要求 npm ≥ 11.5.1。钉在 11.x：npm 12 刚发布，
+        # 实测 12.0.2 在环境完全达标（id-token 已注入、无任何 auth 配置）时
+        # 仍直接报 ENEEDAUTH，根本不发起 OIDC 交换。
+        run: npm i -g npm@^11.5.1
 
       - name: OIDC 环境自检
         run: |
@@ -64,9 +66,13 @@ jobs:
       - name: 构建
         run: npm run build
 
-      # 顺序不能反：viewer-core 以 @web-ppt/core 为 peer 依赖
+      # 顺序不能反：viewer-core 以 @web-ppt/core 为 peer 依赖。
+      # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
+      # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。
       - name: 发布 @web-ppt/core
-        run: npm publish -w @web-ppt/core
+        working-directory: packages/core
+        run: npm publish
 
       - name: 发布 @web-ppt/viewer-core
-        run: npm publish -w @web-ppt/viewer-core
+        working-directory: packages/viewer-core
+        run: npm publish
