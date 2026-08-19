@@ -201,6 +201,7 @@ const FIXTURES = [
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
+  { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -1166,6 +1167,27 @@ group('文本自动缩放');
       return all.length ? Math.max(...all) : NaN;
     };
     check('HTML 与 SVG 两条路径缩放一致', Math.abs(pick(html) - pick(svg)) < 0.5, `${pick(html)} vs ${pick(svg)}`);
+  }
+}
+
+group('占位符几何继承');
+{
+  const pp = parsed.get('sample-placeholder.pptx');
+  if (check('sample-placeholder.pptx 已解析', !!pp)) {
+    const at = (i, kind) => pp.slides[i].elements.find((e) => e.kind === kind);
+    const box = (e) => e && `${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.w)}×${Math.round(e.h)}`;
+
+    // 图片占位符 + 空 spPr：几何全部来自版式。不继承的话整张图会被丢掉。
+    const p1 = at(0, 'image');
+    if (check('图片占位符没有被丢掉', !!p1)) eq('几何继承自版式', box(p1), '80,140 420×300');
+
+    // 自带 xfrm 时不该被版式覆盖
+    eq('自带 xfrm 优先于版式', box(at(1, 'image')), '620,200 240×180');
+
+    // 形状侧的继承原本就支持，这里防回归
+    const shapes = pp.slides[2].elements.filter((e) => e.kind === 'shape');
+    check('形状占位符也继承几何', shapes.some((e) => box(e) === '560,140 340×300'),
+      shapes.map(box).join(' | '));
   }
 }
 

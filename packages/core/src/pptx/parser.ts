@@ -671,7 +671,16 @@ function parseMedia(nvPr: Element | null, env: Env): MediaInfo | undefined {
 
 function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | null {
   const spPr = kid(pic, 'spPr');
-  const xf = parseXfrm(kid(spPr, 'xfrm'));
+  // 内容占位符里放的图片常常是空 <p:spPr/>，位置尺寸全靠版式/母版继承。
+  // 不做这一步整张图会被丢掉——真实文件里这种写法很常见。
+  const ph = walk(pic, 'nvPicPr', 'nvPr', 'ph');
+  let xf = parseXfrm(kid(spPr, 'xfrm'));
+  if (!xf && ph) {
+    const phType = attr(ph, 'type');
+    const phIdx = attr(ph, 'idx');
+    xf = parseXfrm(walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'xfrm'))
+      ?? parseXfrm(walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'xfrm'));
+  }
   if (!xf) return null;
   const cNvPr = walk(pic, 'nvPicPr', 'cNvPr');
   const blipFill = kid(pic, 'blipFill');
