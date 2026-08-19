@@ -32,7 +32,7 @@ jobs:
       - name: OIDC 环境自检
         run: |
           echo "npm  $(npm --version)   node $(node --version)"
-          echo "id-token 端点: ${ACTIONS_ID_TOKEN_REQUEST_URL:+已注入}${ACTIONS_ID_TOKEN_REQUEST_URL:-缺失（检查 permissions.id-token）}"
+          echo "id-token 端点: ${ACTIONS_ID_TOKEN_REQUEST_URL:+已注入}${ACTIONS_ID_TOKEN_REQUEST_URL:-缺失（检查 permissions.id-token）}" # 只打是否存在，URL 本身不必进公开日志
           echo "NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:+非空}${NODE_AUTH_TOKEN:-未设置（符合预期）}"
           echo "生效的 .npmrc:"; npm config list | sed -E 's#(_authToken *= *).*#\1<隐去>#'
 
