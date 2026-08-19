@@ -903,6 +903,25 @@ group('健壮性');
   check(`健壮性用例无崩溃（${cases.length} 例）`, crashed === 0, `${crashed} 例崩溃`);
   check('健壮性用例无卡死', hung === 0, `${hung} 例超时`);
   check('健壮性用例无半成品输出', partial === 0, `${partial} 例`);
+  // 加密文件：设了打开密码的 pptx 也是 CFB 容器，会被魔数判成 .ppt。
+  // 必须给出「已加密」而不是「找不到 PowerPoint Document 流」——
+  // 后者会让人以为文件损坏，跑去修一个根本没坏的文件。
+  const encBase = load('sample.ppt');
+  if (check('有 .ppt 样本可改造', !!encBase)) {
+    const buf = Buffer.from(encBase);
+    const at = buf.toString('utf16le').indexOf('PowerPoint Document');
+    if (check('定位到目录项名字段', at >= 0)) {
+      const off = at * 2;
+      const nm = 'EncryptedPackage';
+      buf.fill(0, off, off + 64);
+      Buffer.from(nm, 'utf16le').copy(buf, off);
+      buf.writeUInt16LE((nm.length + 1) * 2, off + 64);   // nameLen 含结尾 NUL
+      let msg = '';
+      try { await lib.parse(new Uint8Array(buf)); } catch (e) { msg = e.message; }
+      check('加密文件报「已加密」而非「文件损坏」', msg.includes('已加密'), `实际：${msg}`);
+    }
+  }
+
   console.log(`  ${cases.length} 例：正常解析 ${ok} · 明确拒绝 ${rejected}`);
 }
 

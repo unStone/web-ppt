@@ -1230,6 +1230,13 @@ interface Shared {
 
 export function parsePpt(bytes: Uint8Array): Presentation {
   const cfb = new Cfb(bytes);
+
+  // 设了打开密码的 .pptx / .ppt 都是 CFB 容器，会被魔数判成 .ppt 走到这里。
+  // 不单独识别的话只会得到「找不到 PowerPoint Document 流」，让人以为文件损坏。
+  if (cfb.stream('EncryptedPackage') || cfb.stream('EncryptionInfo')) {
+    throw new Error('该文件已加密（设置了打开密码），暂不支持解析');
+  }
+
   const doc = cfb.stream('PowerPoint Document');
   if (!doc) throw new Error('无效的 .ppt：找不到 PowerPoint Document 流');
   const dv = new DataView(doc.buffer, doc.byteOffset, doc.byteLength);
