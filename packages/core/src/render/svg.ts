@@ -3,7 +3,7 @@ import type {
   Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody, TextRun,
   UnsupportedElement,
 } from '../types';
-import { renderTextSvg, warpSupported } from './text-svg';
+import { autoFitScale, renderTextSvg, warpSupported } from './text-svg';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -646,6 +646,13 @@ function renderText(
   vertOverride?: string,
 ): string {
   // 艺术字变形无法用 HTML 排版表达，强制走 SVG 文本路径，保证屏幕与导出一致
+  // 裸 normAutofit：文件没写 fontScale，缩放要在这里算。两条文本路径共用同一个
+  // 结果，否则预览与导出会不一致。spAutoFit 是形状随文字增高，不该缩字。
+  if (t.autoFitCompute && !t.autoFitShape) {
+    const s = autoFitScale(t, w, h);
+    if (s < 1) t = { ...t, fontScale: t.fontScale * s };
+  }
+
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
     const addDef = (markup: string): string => {
       const id = nextId('tg');

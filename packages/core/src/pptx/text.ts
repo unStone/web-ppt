@@ -318,7 +318,9 @@ export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | 
     if (kid(b, 'normAutofit')) { autofitEl = kid(b, 'normAutofit'); break; }
     if (kid(b, 'spAutoFit')) { spAutoFit = true; break; }
   }
-  const fontScale = autofitEl ? (numAttr(autofitEl, 'fontScale') ?? 100000) / 100000 : 1;
+  const explicitScale = autofitEl ? numAttr(autofitEl, 'fontScale') : null;
+  const fontScale = explicitScale !== null && explicitScale !== undefined ? explicitScale / 100000 : 1;
+  const autoFitCompute = !!autofitEl && (explicitScale === null || explicitScale === undefined);
   const lnSpcReduction = autofitEl ? (numAttr(autofitEl, 'lnSpcReduction') ?? 0) / 100000 : 0;
 
   const vert = VERT[attrOf('vert') ?? 'horz'] ?? 'horz';
@@ -405,6 +407,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | 
   if (!hasContent) return null;
   return {
     anchor, insets, wrap, fontScale, paragraphs,
+    ...(autoFitCompute ? { autoFitCompute: true } : {}),
     lnSpcReduction: lnSpcReduction || undefined,
     vert: vert !== 'horz' ? vert : undefined,
     anchorCtr: anchorCtr || undefined,

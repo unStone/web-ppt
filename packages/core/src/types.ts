@@ -298,6 +298,11 @@ export interface TextBody {
   wrap: boolean;
   /** normAutofit 字号缩放，1 = 不缩放 */
   fontScale: number;
+  /**
+   * 有 normAutofit 但文件里没写 fontScale —— 缩放比例要由渲染器自己算。
+   * PowerPoint 只在自己排过版后才写回该属性，实测真实文件里缺失的占多数。
+   */
+  autoFitCompute?: boolean;
   paragraphs: Paragraph[];
   /** normAutofit 行距压缩，0-1 */
   lnSpcReduction?: number;

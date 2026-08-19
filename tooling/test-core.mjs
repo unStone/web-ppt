@@ -200,6 +200,7 @@ const FIXTURES = [
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
+  { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -1123,6 +1124,48 @@ group('headless 状态机');
       st3.destroy();
     }
     st.destroy();
+  }
+}
+
+group('文本自动缩放');
+{
+  const ap = parsed.get('sample-autofit.pptx');
+  if (check('sample-autofit.pptx 已解析', !!ap)) {
+    // 从渲染产出里读实际字号：这才是使用者真正看到的东西
+    // 页面上只有三种字号：标题 24pt(32px)、右侧说明 9pt(12px)、以及被测正文。
+    // 不能用区间过滤——缩到下限时正文只有 6.67px，会被滤掉。
+    const sizeOf = (i) => {
+      const svg = lib.renderSlideToSvg(ap, ap.slides[i], { textMode: 'svg' });
+      const all = [...svg.matchAll(/font-size="([\d.]+)"/g)].map((m) => +m[1]);
+      const body = all.filter((v) => Math.abs(v - 32) > 0.01 && Math.abs(v - 12) > 0.01);
+      return body.length ? Math.max(...body) : NaN;
+    };
+    const flagOf = (i) => ap.slides[i].elements.find((e) => e.name === 'target').text;
+
+    check('裸 normAutofit 被识别', flagOf(0).autoFitCompute === true);
+    check('显式 fontScale 不走自算', flagOf(3).autoFitCompute !== true, `实际 ${flagOf(3).autoFitCompute}`);
+    eq('显式 fontScale 原样保留', flagOf(3).fontScale, 0.5);
+
+    const nominal = sizeOf(2);            // 无 autofit：标称字号
+    check('溢出 + 裸 normAutofit → 缩小', sizeOf(0) < nominal * 0.95, `${sizeOf(0)} vs 标称 ${nominal}`);
+    check('缩放不低于 25% 下限', sizeOf(0) >= nominal * 0.25);
+    // 第 5 页的文本远超容量，缩放会一路压到下限；再低就没法读了
+    check('极端长文本停在 25% 下限', Math.abs(sizeOf(4) - nominal * 0.25) < 0.5,
+      `${sizeOf(4)} vs 下限 ${nominal * 0.25}`);
+    eq('放得下 + 裸 normAutofit → 不缩', sizeOf(1), nominal);
+    eq('无 autofit → 照常溢出不缩', sizeOf(2), nominal);
+    check('显式 fontScale 50% 生效', Math.abs(sizeOf(3) - nominal * 0.5) < 0.5, `${sizeOf(3)} vs ${nominal * 0.5}`);
+
+    // 两条文本路径必须用同一个缩放结果，否则预览与导出不一致
+    const html = lib.renderSlideToSvg(ap, ap.slides[0], { textMode: 'html' });
+    const svg = lib.renderSlideToSvg(ap, ap.slides[0], { textMode: 'svg' });
+    const pick = (s) => {
+      const all = [...s.matchAll(/font-size:\s*([\d.]+)px|font-size="([\d.]+)"/g)]
+        .map((m) => +(m[1] ?? m[2]))
+        .filter((v) => Math.abs(v - 32) > 0.01 && Math.abs(v - 12) > 0.01);
+      return all.length ? Math.max(...all) : NaN;
+    };
+    check('HTML 与 SVG 两条路径缩放一致', Math.abs(pick(html) - pick(svg)) < 0.5, `${pick(html)} vs ${pick(svg)}`);
   }
 }
 

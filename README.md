@@ -144,7 +144,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1059 项断言 + 122 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1098 项断言 + 132 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，103 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -255,6 +255,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | `sample-metafile.pptx` | 内嵌 EMF 与 WMF |
 | `sample.pptx` · `sample.ppt` | 母版继承 / 最小合法 CFB |
 | `sample-hidden.pptx` · `.ppt` | 隐藏页导航：可见 · 隐 · 隐 · 可见 · 隐（pptx 走 `sld@show`，ppt 走 `F_HIDDEN`） |
+| `sample-autofit.pptx` | 文本自动缩放五种情形：溢出/放得下 × 裸 normAutofit、无 autofit、显式 fontScale、缩到 25% 下限 |
 
 `.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run compare` 同款命令，或 `soffice --headless --convert-to ppt <file>`。
 

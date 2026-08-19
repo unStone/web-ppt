@@ -147,6 +147,59 @@ const ANCHOR: Record<Paragraph['align'], string> = {
 /** RTL 段落：SVG 的 text-anchor 相对书写方向，翻转后才能保持与 HTML 一致的物理对齐 */
 const flipAnchor = (a: string): string => (a === 'start' ? 'end' : a === 'end' ? 'start' : a);
 
+/** 段落排版：把每段拆成行并算出行高。renderTextSvg 与自动缩放测量共用。 */
+function layout(t: TextBody, boxW: number, scale: number): LaidPara[] {
+  return t.paragraphs.map((p) => {
+    const first = p.runs[0];
+    const bulletRun: TextRun | null = p.bullet && first
+      ? { ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1), color: p.bulletColor ?? first.color, u: false, strike: false }
+      : null;
+    const runs = bulletRun ? [bulletRun, ...p.runs] : p.runs;
+    const avail = Math.max(1, boxW - Math.max(0, p.marL));
+    const lines = wrap(tokenize(runs, scale), avail, t.wrap, p.indent);
+    const lineHeights = lines.map((l) => {
+      const base = (l.size || first?.size || 18) * scale;
+      return base * (p.lineHeight ?? 1.2);
+    });
+    return { lines, para: p, before: p.spaceBefore, after: p.spaceAfter, lineHeights };
+  });
+}
+
+/** 给定缩放比例下文本占用的总高度 */
+function textHeight(t: TextBody, boxW: number, scale: number): number {
+  return layout(t, boxW, scale).reduce(
+    (sum, lp) => sum + lp.before + lp.after + lp.lineHeights.reduce((a, b) => a + b, 0),
+    0,
+  );
+}
+
+/**
+ * `<a:normAutofit/>` 不带 fontScale 时由渲染器自行算缩放。
+ *
+ * PowerPoint 只在自己排过版后才把算好的 fontScale 写回文件；从其它工具存出、
+ * 或缩放继承自版式的文件里，属性往往是缺的。此时若按标称字号渲染，文字会直接
+ * 溢出版面——实测 8 个真实演讲文件共 229 处裸 normAutofit，仅 39 处带 fontScale。
+ *
+ * 二分求解而非按 PowerPoint 的离散档位（92.5% / 85% / …）：LibreOffice 用连续值，
+ * 而它是本项目的保真基准。
+ */
+export function autoFitScale(t: TextBody, w: number, h: number): number {
+  const [pt, pr, pb, pl] = t.insets;
+  const boxW = Math.max(1, w - pl - pr);
+  const boxH = Math.max(1, h - pt - pb);
+  if (textHeight(t, boxW, 1) <= boxH) return 1;
+
+  let lo = MIN_AUTOFIT, hi = 1;
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2;
+    if (textHeight(t, boxW, mid) <= boxH) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
+/** PowerPoint 的自动缩放下限也是 25% */
+const MIN_AUTOFIT = 0.25;
+
 export function renderTextSvg(
   t: TextBody,
   w: number,
@@ -173,26 +226,13 @@ export function renderTextSvg(
   const warped = renderWarp(t, w, h, addDef, [pt, pr, pb, pl], vAlignOverride ?? t.anchor);
   if (warped) return warped;
 
-  const laid: LaidPara[] = t.paragraphs.map((p) => {
-    const first = p.runs[0];
-    const bulletRun: TextRun | null = p.bullet && first
-      ? { ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1), color: p.bulletColor ?? first.color, u: false, strike: false }
-      : null;
-    const runs = bulletRun ? [bulletRun, ...p.runs] : p.runs;
-    const avail = Math.max(1, boxW - Math.max(0, p.marL));
-    const lines = wrap(tokenize(runs, scale), avail, t.wrap, p.indent);
-    const lineHeights = lines.map((l) => {
-      const base = (l.size || first?.size || 18) * scale;
-      return base * (p.lineHeight ?? 1.2);
-    });
-    return { lines, para: p, before: p.spaceBefore, after: p.spaceAfter, lineHeights };
-  });
+  const laid = layout(t, boxW, scale);
 
   const totalH = laid.reduce(
     (sum, lp) => sum + lp.before + lp.after + lp.lineHeights.reduce((a, b) => a + b, 0),
     0,
   );
-
+  void 0;
   const anchor = vAlignOverride ?? t.anchor;
   let y = pt;
   if (anchor === 'middle') y = pt + Math.max(0, (h - pt - pb - totalH) / 2);
