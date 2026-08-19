@@ -257,7 +257,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 
 | 项 | 说明 |
 |---|---|
-| .ppt 的效果 / 3D | 二进制格式下未实现 |
+| .ppt 的发光 / 柔化 / 倒影 / 3D | 二进制格式下未实现（外阴影已支持） |
 | .ppt SmartArt · 自动编号 · 嵌套组 | 未实现；嵌套组会被展平 |
 | 媒体播放 | 只渲染封面帧 + 播放标识，未接真实播放器（`media.src`/`mime` 已备好） |
 | OMML 公式 | 只取线性文本，不做 MathML 排版 |
@@ -268,3 +268,13 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | RLE 压缩位图 | 跳过该位图，其余照常 |
 | 导出时的分栏 | SVG 文本路径不支持 `numCol`，导出为单栏 |
 | 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
+
+## 交流
+
+| 渠道 | 地址 |
+|---|---|
+| 问题反馈 / 需求 | [GitHub Issues](https://github.com/unStone/web-ppt/issues) |
+| 微信交流群 | [置顶 Issue 里的二维码](https://github.com/unStone/web-ppt/issues?q=is%3Aissue+label%3A%E4%BA%A4%E6%B5%81%E7%BE%A4) |
+
+微信群二维码 7 天失效，所以放在 Issue 里而不是直接贴进 README——
+换码只需编辑那条 Issue，README 和已发布的 npm 包都不用动。
