@@ -131,7 +131,8 @@ let workerSeq = 0;
  *
  * 调用方负责提供 Worker 实例（打包器各异，库不代为创建）：
  * ```ts
- * const worker = new Worker(new URL('web-ppt/dist/worker.js', import.meta.url), { type: 'module' });
+ * // 走 exports 里声明的 ./worker 子路径；深路径（dist/worker.js）会被 exports 挡掉
+ * const worker = new Worker(new URL('@web-ppt/core/worker', import.meta.url), { type: 'module' });
  * const pres = await parseInWorker(worker, bytes);
  * ```
  * 返回的 `Presentation` 是纯数据，`dispose()` 由本函数补上以回收图片 URL。
