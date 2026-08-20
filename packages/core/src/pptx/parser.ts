@@ -952,9 +952,20 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
   // includes('oleObject') 从来没匹配上，OLE 一直落到「不支持的对象」分支
   if (uri.endsWith('/ole') || uri.includes('oleObject')) {
     const oleObj = kid(data, 'oleObj');
-    const src = oleObj ? olePreview(oleObj, env) : null;
-    // 预览图解得出就当普通图片渲染，比一个灰框有用得多
-    if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId };
+    if (oleObj) {
+      // Office 2010+ 把预览图直接写成 p:oleObj 的 p:pic 子元素，
+      // 走它能连裁剪 / 效果一起拿到；旧式的 VML 快照是后备路径
+      const pic = kid(oleObj, 'pic');
+      if (pic) {
+        const img = parsePic(pic, env);
+        // p:pic 自己的 xfrm 是相对 frame 的，位置以 frame 为准
+        if (img && img.kind === 'image' && img.src) {
+          return { ...img, ...base(xf), name: name ?? img.name, id: frameId };
+        }
+      }
+      const src = olePreview(oleObj, env);
+      if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId };
+    }
     return { kind: 'unsupported', ...base(xf), label: 'OLE 对象', name, id: frameId };
   }
 

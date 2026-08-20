@@ -254,7 +254,7 @@ const FIXTURES = [
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
-  { file: 'sample-ole.pptx', minPages: 2, source: 'pptx' },
+  { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
@@ -1701,6 +1701,16 @@ group('OLE 对象预览图');
     // 认不出的格式（Mac 存的 PICT 之类）宁可给占位框，也别塞一张裂图
     check('认不出的预览格式退回占位框', !!p2, '第 2 页没有占位元素');
     if (p2) eq('占位框标为 OLE 对象', p2.label, 'OLE 对象');
+
+    // Office 2010+ 把预览直接写成 p:oleObj 的 p:pic 子元素，这条路不经过 VML。
+    // 第 3 页刻意不写 spid，走 VML 那条会直接返回 null。
+    const p3 = op.slides[2].elements.find((e) => e.kind === 'image');
+    check('内嵌 p:pic 的预览渲染成图片', !!p3 && !!p3.src, p3 ? String(p3.src) : '没解出图片');
+    if (p3) {
+      eq('p:pic 预览沿用 graphicFrame 的框',
+        `${Math.round(p3.x)},${Math.round(p3.y)} ${Math.round(p3.w)}×${Math.round(p3.h)}`, '120,160 460×300');
+      check('p:pic 走的是自己的图，不是 VML 那张', p3.src !== p1?.src, `${p3.src} vs ${p1?.src}`);
+    }
   }
 }
 

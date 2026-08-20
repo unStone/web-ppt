@@ -6,9 +6,12 @@
  *   → 该 VML 部件自己的关系 → 媒体文件
  * 解得出预览就当普通图片渲染，解不出（例如 Mac 存的 PICT）退回占位框。
  *
- * 两页：
- *   1 OLE + 可解码的 PNG 预览 → 渲染成图片
- *   2 OLE + 认不出的扩展名     → 退回「OLE 对象」占位
+ * Office 2010+ 还会把预览直接写成 p:oleObj 的 p:pic 子元素，那条路优先。
+ *
+ * 三页：
+ *   1 OLE + VML 里可解码的 PNG 预览 → 渲染成图片
+ *   2 OLE + 认不出的扩展名           → 退回「OLE 对象」占位
+ *   3 OLE + 内嵌 p:pic 预览          → 走 p:pic，不依赖 VML
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -34,9 +37,25 @@ const title = (t) => sp({
   text: `<a:p><a:r><a:rPr sz="2200" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`,
 });
 
+/** Office 2010+ 的写法：预览图直接内嵌在 p:oleObj 里，不必绕 VML */
+const olePicFrame = (id) => `<p:graphicFrame>
+<p:nvGraphicFramePr><p:cNvPr id="${id}" name="Object ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
+<p:xfrm><a:off x="${px(FRAME.x)}" y="${px(FRAME.y)}"/><a:ext cx="${px(FRAME.w)}" cy="${px(FRAME.h)}"/></p:xfrm>
+<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/presentationml/2006/ole">
+<p:oleObj name="Worksheet" r:id="rId3" imgW="2971800" imgH="2374900" progId="Excel.Sheet.12">
+<p:embed/>
+<p:pic><p:nvPicPr><p:cNvPr id="${id + 100}" name="预览"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
+<p:blipFill><a:blip r:embed="rId4"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
+<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${px(FRAME.w)}" cy="${px(FRAME.h)}"/></a:xfrm>
+<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>
+</p:oleObj>
+</a:graphicData></a:graphic>
+</p:graphicFrame>`;
+
 const SLIDES = [
   slideXml(title('OLE + 可解码预览图 → 渲染成图片') + oleFrame('_x0000_s1026', 21)),
   slideXml(title('OLE + 认不出的格式 → 退回占位框') + oleFrame('_x0000_s1027', 22)),
+  slideXml(title('OLE + 内嵌 p:pic 预览 → 不依赖 VML') + olePicFrame(23)),
 ];
 
 /** VML 部件：两个 shape 各自指向一张预览 */
@@ -132,11 +151,14 @@ const slideRels = `${XML}<Relationships xmlns="${NS.rel}">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing" Target="../drawings/vmlDrawing1.vml"/>
 <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="../embeddings/oleObject1.bin"/>
+<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.png"/>
 </Relationships>`;
 
 const entries = [
   ['[Content_Types].xml', contentTypes],
   ['ppt/media/image1.png', makePng(120, 90, (x, y) => [(x * 2) & 255, 90, (y * 3) & 255])],
+  // p:pic 路径用的预览，配色与 image1 明显不同，便于在快照里区分是哪条路走通了
+  ['ppt/media/image2.png', makePng(120, 90, (x, y) => [40, (x * 2) & 255, (y * 3) & 255])],
   // 认不出的扩展名：mediaUrl 会返回 null，走占位框分支
   ['ppt/media/preview.pict', new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0])],
   ['ppt/embeddings/oleObject1.bin', new Uint8Array([0xd0, 0xcf, 0x11, 0xe0])],

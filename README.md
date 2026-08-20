@@ -85,6 +85,7 @@ st.search('关键词');            // → 命中的页索引数组
 | 切换效果 | ✅ 20 种（淡入/推进/擦除/覆盖/分割/缩放…） | ✅ 经 SSSlideInfoAtom，实测 6 种 |
 | 元素动画 | ✅ 入场 / 退场 / 强调 / 运动路径，按点击分批 | ✅ 入场 / 退场 / 强调，实测 5 步 |
 | 演讲者备注 · 超链接 | ✅ | ✅ |
+| OLE 嵌入对象 | ✅ 内嵌 p:pic 预览 / 旧式 VML 快照；PICT 预览退回占位框 | ❌ |
 | 加密文档 | ✅ 标准（AES-ECB）/ 敏捷（AES-CBC 分段） | ❌ 老式 RC4 CryptoAPI |
 | 数学公式 OMML | ✅ 分式 / 根式 / 上下标 / 大算符 / 矩阵 / 定界符 / 重音 / 极限 | ❌ |
 | 隐藏页 | ✅ `sld@show="0"` | ✅ `SSSlideInfoAtom` F_HIDDEN |
@@ -182,7 +183,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1518 项断言 + 142 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1679 项断言 + 158 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -205,7 +206,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          142 个渲染快照基线
+└── test/snapshots/          158 个渲染快照基线
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -224,7 +225,7 @@ Cordis 之类的应用框架只出现在那一层，不下沉到 core。
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 11 个测试文件 × 全部页 × 两条文本路径 = 142 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 14 个测试文件 × 全部页 × 两条文本路径 = 158 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |
