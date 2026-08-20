@@ -11,7 +11,7 @@
 </clipPath>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>
-<g data-el="479" style="transform-box:fill-box;transform-origin:center">
+<g data-el="480" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 714)">
 <path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
@@ -341,6 +341,30 @@
 <path d="M 0 0 L 400 0 L 400 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="200" y="17.48" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 5 个方块带入场动画（演示模式逐次点击）</tspan>
+</text>
+</g>
+</g>
+<g data-el="479" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 520)">
+<path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<text x="200" y="17.28" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 2 个走运动路径（直线 / 三次曲线闭合）</tspan>
+</text>
+</g>
+</g>
+<g data-el="706" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 556)">
+<path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+<text x="90" y="45.38" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">直线路径</tspan>
+</text>
+</g>
+</g>
+<g data-el="707" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 556)">
+<path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<text x="90" y="45.38" text-anchor="middle" xml:space="preserve">
+<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">曲线路径</tspan>
 </text>
 </g>
 </g>

@@ -103,6 +103,8 @@ function emphasisFrames(step: AnimStep): Keyframes {
 export function framesFor(step: AnimStep): Keyframes {
   if (step.kind === 'exit') return exitFrames(step);
   if (step.kind === 'emphasis') return emphasisFrames(step);
+  // 路径动画的位移由 motionPath 铺关键帧；解不出路径时保持原样，不该退化成淡入
+  if (step.kind === 'motion') return { from: { opacity: 1 }, to: { opacity: 1 } };
   return entranceFrames(step);
 }
 
@@ -128,11 +130,18 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     node.style.visibility = 'visible';
     if (step.kind === 'entrance') node.style.opacity = '';
 
+    // 运动路径给的是等距采样点，直接铺成多关键帧；
+    // 用 offset-path 会更"正统"，但它在 <img> 加载的 SVG 与 foreignObject 里支持不一致
+    const frames: Keyframe[] = step.motionPath?.length
+      ? step.motionPath.map(([dx, dy]) => ({ transform: `translate(${dx}px, ${dy}px)` }))
+      : [from, to];
+
     try {
-      const anim = node.animate([from, to], {
+      const anim = node.animate(frames, {
         duration: step.durationMs,
         delay: start,
-        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        // 路径动画在 PowerPoint 里是匀速，不能套入场用的缓动
+        easing: step.motionPath?.length ? 'linear' : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         fill: 'both',
       });
       if (step.kind === 'exit') {
@@ -141,7 +150,7 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
       anims.push(anim);
     } catch {
       // 浏览器不支持某个属性时直接落到终态
-      Object.assign(node.style, to as Record<string, string>);
+      Object.assign(node.style, (frames[frames.length - 1] ?? to) as Record<string, string>);
     }
   }
 

@@ -11,7 +11,7 @@
 </clipPath>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>
-<g data-el="479" style="transform-box:fill-box;transform-origin:center">
+<g data-el="480" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 714)">
 <path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
@@ -371,6 +371,42 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:13.33px;color:rgb(64,64,64);">下面 5 个方块带入场动画（演示模式逐次点击）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="479" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 520)">
+<path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="400" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(64,64,64);">下面 2 个走运动路径（直线 / 三次曲线闭合）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="706" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 556)">
+<path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+<foreignObject width="180" height="80" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:180px;height:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;">直线路径</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="707" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(280 556)">
+<path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<foreignObject width="180" height="80" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:180px;height:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;">曲线路径</span>
 </div>
 </div>
 </foreignObject>

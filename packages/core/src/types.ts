@@ -98,6 +98,12 @@ export interface AnimStep {
   trigger: 'click' | 'withPrev' | 'afterPrev';
   /** 动画类别 */
   kind: 'entrance' | 'exit' | 'emphasis' | 'motion';
+  /**
+   * 运动路径采样点：相对元素起始位置的位移（px），首点恒为 (0,0)。
+   * 在 core 里按弧长等距重采样，播放层直接当关键帧用——
+   * 采样放在这边是因为它是纯数学，能在 Node 里测，也不必让播放层依赖 SVG 测长 API。
+   */
+  motionPath?: [number, number][];
   /** 由查看器计算：属于第几个点击批次 */
   clickGroup?: number;
 }

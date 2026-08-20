@@ -499,17 +499,41 @@ group('动画 / 切换');
 
     const anim = pres.slides.find((s) => s.animations?.length);
     if (check('存在带动画的页', !!anim)) {
-      eq('动画条数', anim.animations.length, 5);
+      const entr = anim.animations.filter((a) => a.kind === 'entrance');
+      const motion = anim.animations.filter((a) => a.kind === 'motion');
+      eq('入场动画条数', entr.length, 5);
       // 回归：曾把 <p:set dur="1"> 误当成动画时长，导致全部退化成 60ms
       check('动画时长取自 animEffect 而非 p:set',
-        anim.animations.every((a) => a.durationMs === 600),
-        anim.animations.map((a) => a.durationMs).join(','));
+        entr.every((a) => a.durationMs === 600),
+        entr.map((a) => a.durationMs).join(','));
       // 回归：slide(fromLeft) 的方向曾被映射反
       const fly = anim.animations.find((a) => a.effect === 'fly');
       check('飞入方向映射正确', fly && fly.dir === 'l', fly ? fly.dir : '无 fly');
-      check('逐次点击分批', anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4',
+      check('逐次点击分批', anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4,5,6',
         anim.animations.map((a) => a.clickGroup).join(','));
-      check('全部为入场动画', anim.animations.every((a) => a.kind === 'entrance'));
+
+      // 运动路径
+      eq('运动路径动画条数', motion.length, 2);
+      for (const m of motion) {
+        check(`运动路径 ${m.target} 有采样点`, (m.motionPath?.length ?? 0) >= 8, `${m.motionPath?.length}`);
+        check(`运动路径 ${m.target} 起点归零`,
+          m.motionPath[0][0] === 0 && m.motionPath[0][1] === 0, JSON.stringify(m.motionPath?.[0]));
+        check(`运动路径 ${m.target} 无脏值`, !BAD.test(JSON.stringify(m.motionPath)));
+        // 弧长等距重采样：相邻步长应基本一致，否则 WAAPI 会把长段走得比短段慢
+        const d = m.motionPath.slice(1).map(([x, y], i) =>
+          Math.hypot(x - m.motionPath[i][0], y - m.motionPath[i][1]));
+        check(`运动路径 ${m.target} 采样等距`, Math.max(...d) / Math.min(...d) < 1.2,
+          `max/min=${(Math.max(...d) / Math.min(...d)).toFixed(3)}`);
+      }
+      // 闭合路径（Z）必须回到原点
+      const closed = motion.find((m) => m.target === 707);
+      check('闭合路径终点回到起点',
+        closed && Math.hypot(...closed.motionPath[closed.motionPath.length - 1]) < 1,
+        closed ? JSON.stringify(closed.motionPath[closed.motionPath.length - 1]) : '无');
+      // 三次曲线要真被折线化，否则闭合路径会退化成一条直线来回
+      check('曲线路径不是直线',
+        closed && closed.motionPath.some(([, y]) => Math.abs(y) > 20),
+        closed ? String(Math.max(...closed.motionPath.map(([, y]) => Math.abs(y)))) : '无');
       // 动画目标必须能在渲染结果里定位到
       const svg = lib.renderSlideToSvg(pres, anim);
       for (const a of anim.animations) {
@@ -1002,11 +1026,38 @@ group('播放引擎');
   const anim = pres?.slides.find((s) => s.animations?.length);
   if (anim) {
     const real = viewerLib.groupSteps(anim.animations);
-    eq('真实文件分 5 批', real.length, 5);
+    eq('真实文件分 7 批', real.length, 7);
     const svg = lib.renderSlideToSvg(pres, anim);
+    // 只有入场动画会在播放前隐藏元素；运动路径的形状一直可见，
+    // 因此隐藏数是「尚未播到的入场批次数」，不是「剩余批次数」
+    const entrGroups = real.map((g) => g.some((x) => x.kind === 'entrance'));
     for (let i = 0; i <= real.length; i++) {
-      const hidden = viewerLib.hiddenBefore(real, i);
-      eq(`播完 ${i} 批后隐藏 ${real.length - i} 个`, hidden.size, real.length - i);
+      const want = entrGroups.slice(i).filter(Boolean).length;
+      eq(`播完 ${i} 批后隐藏 ${want} 个`, viewerLib.hiddenBefore(real, i).size, want);
+    }
+    check('运动路径元素始终可见', !viewerLib.hiddenBefore(real, 0).has(706));
+
+    // playGroup 必须把 motionPath 铺成多关键帧并走线性缓动，
+    // 否则路径只会取首末两点连成直线、且被入场用的 ease 带偏速度
+    {
+      const calls = [];
+      const fakeNode = { style: {}, animate: (frames, opts) => {
+        calls.push({ frames, opts });
+        return { finished: Promise.resolve(), finish() {} };
+      } };
+      const fakeContainer = { querySelector: () => fakeNode };
+      const mstep = anim.animations.find((a) => a.kind === 'motion');
+      viewerLib.playGroup(fakeContainer, [mstep]);
+      eq('运动路径铺成多关键帧', calls[0]?.frames.length, mstep.motionPath.length);
+      eq('运动路径走线性缓动', calls[0]?.opts.easing, 'linear');
+      check('关键帧是 translate',
+        /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(calls[0].frames[3].transform),
+        calls[0].frames[3].transform);
+
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [anim.animations.find((a) => a.kind === 'entrance')]);
+      eq('入场动画仍是两帧', calls[0]?.frames.length, 2);
+      check('入场动画不走线性缓动', calls[0]?.opts.easing !== 'linear', calls[0]?.opts.easing);
     }
     check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
   }

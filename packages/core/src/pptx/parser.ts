@@ -1534,6 +1534,11 @@ function parseSlide(
     if (background) break;
   }
 
+  // 运动路径的坐标是幻灯片尺寸的比例，解析时就得换算成 px
+  const sz = kid(presRoot, 'sldSz');
+  const slideW = emu(numAttr(sz, 'cx') ?? 12192000);
+  const slideH = emu(numAttr(sz, 'cy') ?? 6858000);
+
   const notesPath = relByType(slideRels, '/notesSlide');
   const notes = notesPath ? extractText(walk(pkg.xml(notesPath), 'cSld', 'spTree')) : '';
   const comments = parseSlideComments(pkg, slideRels, authors);
@@ -1546,6 +1551,6 @@ function parseSlide(
     hidden: attr(slideRoot, 'show') === '0' || undefined,
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: parseTransition(slideRoot) ?? parseTransition(layoutRoot),
-    animations: parseTiming(kid(slideRoot, 'timing')),
+    animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
   };
 }

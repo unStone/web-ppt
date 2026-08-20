@@ -119,6 +119,108 @@ function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } 
 }
 
 /** 在节点子树里找第一个 spTgt 的 spid */
+/**
+ * p:animMotion@path —— 语法源自 VML，与 SVG 的 d 不同：
+ * 只有 M / L / C / Z 四个几何命令，外加一个 E 表示「路径结束」；
+ * 坐标是幻灯片宽高的比例（0-1），且相对形状**起始中心**而非画布原点。
+ *
+ * 返回按弧长等距重采样的位移点（px）。等距是必要的：直接用控制点当关键帧，
+ * WAAPI 会把每段都按相同时长走完，长段慢、短段快，与 PowerPoint 的匀速不符。
+ */
+export function parseMotionPath(
+  path: string, slideW: number, slideH: number, samples = 24,
+): [number, number][] | undefined {
+  const tokens = path.match(/[MLCZEmlcze]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
+  if (!tokens) return undefined;
+
+  const pts: [number, number][] = [];
+  let cur: [number, number] = [0, 0];
+  let startPt: [number, number] = [0, 0];
+  let i = 0;
+  const num = (): number => {
+    const v = Number(tokens[i++]);
+    return Number.isFinite(v) ? v : 0;
+  };
+  const push = (p: [number, number]): void => { pts.push(p); cur = p; };
+
+  while (i < tokens.length) {
+    const cmd = tokens[i++];
+    switch (cmd) {
+      case 'M': case 'm': {
+        const p: [number, number] = [num(), num()];
+        startPt = p; pts.length = 0; push(p);
+        break;
+      }
+      case 'L': case 'l':
+        push([num(), num()]);
+        break;
+      case 'C': case 'c': {
+        const [x1, y1, x2, y2, x, y] = [num(), num(), num(), num(), num(), num()];
+        const [x0, y0] = cur;
+        // 固定 16 段折线化：运动路径的曲率很低，再细也看不出差别
+        for (let k = 1; k <= 16; k++) {
+          const t = k / 16, u = 1 - t;
+          pts.push([
+            u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x,
+            u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y,
+          ]);
+        }
+        cur = [x, y];
+        break;
+      }
+      case 'Z': case 'z':
+        push([startPt[0], startPt[1]]);
+        break;
+      default:
+        // E（结束）与任何未知命令都终止解析；散落的数字被 num() 吃掉
+        i = tokens.length;
+    }
+  }
+
+  if (pts.length < 2) return undefined;
+
+  // 换算成 px 并以首点为原点——路径描述的是位移，不是绝对坐标
+  const [ox, oy] = pts[0];
+  const abs = pts.map(([x, y]): [number, number] => [(x - ox) * slideW, (y - oy) * slideH]);
+
+  // 按弧长等距重采样
+  const seg: number[] = [0];
+  for (let k = 1; k < abs.length; k++) {
+    seg.push(seg[k - 1] + Math.hypot(abs[k][0] - abs[k - 1][0], abs[k][1] - abs[k - 1][1]));
+  }
+  const total = seg[seg.length - 1];
+  if (!(total > 0)) return undefined;
+
+  const out: [number, number][] = [];
+  let j = 1;
+  for (let k = 0; k < samples; k++) {
+    const want = (total * k) / (samples - 1);
+    while (j < seg.length - 1 && seg[j] < want) j++;
+    const span = seg[j] - seg[j - 1];
+    const t = span > 0 ? (want - seg[j - 1]) / span : 0;
+    out.push([
+      abs[j - 1][0] + (abs[j][0] - abs[j - 1][0]) * t,
+      abs[j - 1][1] + (abs[j][1] - abs[j - 1][1]) * t,
+    ]);
+  }
+  return out;
+}
+
+/** 子树里第一个带 path 的 p:animMotion */
+function findMotion(el: Element, depth = 8): string | null {
+  for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
+    if (c.localName === 'animMotion') {
+      const p = attr(c, 'path');
+      if (p) return p;
+    }
+    if (depth > 0) {
+      const hit = findMotion(c, depth - 1);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
 function findTargetId(el: Element, depth = 8): number | null {
   for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
     if (c.localName === 'spTgt') {
@@ -181,14 +283,14 @@ function startDelay(cTn: Element): number {
   return Number.isFinite(n) ? Math.max(0, n) : 0;
 }
 
-export function parseTiming(timing: Element | null): AnimStep[] | undefined {
+export function parseTiming(timing: Element | null, slideW = 0, slideH = 0): AnimStep[] | undefined {
   if (!timing) return undefined;
   const steps: AnimStep[] = [];
 
   const visit = (el: Element, depth: number): void => {
     for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
       if (c.localName === 'cTn' && attr(c, 'presetClass')) {
-        const step = buildStep(c);
+        const step = buildStep(c, slideW, slideH);
         if (step) steps.push(step);
         // 效果节点内部不会再嵌套别的效果，跳过其子树
         continue;
@@ -209,7 +311,7 @@ export function parseTiming(timing: Element | null): AnimStep[] | undefined {
   return steps;
 }
 
-function buildStep(cTn: Element): AnimStep | null {
+function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | null {
   const target = findTargetId(cTn);
   if (target === null) return null;
 
@@ -230,6 +332,12 @@ function buildStep(cTn: Element): AnimStep | null {
 
   const dur = findDuration(cTn) ?? 500;
 
+  // 运动路径优先于 presetID 推出来的效果：路径本身就完整描述了位移
+  const rawPath = kind === 'motion' ? findMotion(cTn) : null;
+  const motionPath = rawPath && slideW > 0 && slideH > 0
+    ? parseMotionPath(rawPath, slideW, slideH)
+    : undefined;
+
   return {
     target,
     effect,
@@ -238,5 +346,6 @@ function buildStep(cTn: Element): AnimStep | null {
     durationMs: Math.max(60, Math.min(10000, dur)),
     trigger,
     kind,
+    motionPath,
   };
 }

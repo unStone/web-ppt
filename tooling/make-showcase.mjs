@@ -330,6 +330,12 @@ const ANIM_SHAPES = [
   [705, '旋转', 'accent5'],
 ];
 
+/** 运动路径动画：坐标是幻灯片尺寸的比例，相对形状起始中心 */
+const MOTION_SHAPES = [
+  [706, '直线路径', 'accent3'],
+  [707, '曲线路径', 'accent1'],
+];
+
 const slide7 = slideXml(
   sp({ x: 24, y: 14, w: 700, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>立体效果 · 动画</a:t></a:r></a:p>` }) +
   D3_DEMOS.map(([name, scene, prst, accent], i) => {
@@ -338,6 +344,12 @@ const slide7 = slideXml(
       sp({ x, y: y + 122, w: 170, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) });
   }).join('') +
   sp({ x: 830, y: 80, w: 400, h: 26, prst: 'rect', fill: '<a:noFill/>', text: label('下面 5 个方块带入场动画（演示模式逐次点击）', 1000) }) +
+  sp({ x: 50, y: 520, w: 400, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('下面 2 个走运动路径（直线 / 三次曲线闭合）', 1000) }) +
+  MOTION_SHAPES.map(([id, name, accent], i) =>
+    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="motion${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:spPr><a:xfrm><a:off x="${px(60 + i * 220)}" y="${px(556)}"/><a:ext cx="${px(180)}" cy="${px(80)}"/></a:xfrm>
+<a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>${solid(accent)}</p:spPr>
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1200" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${name}</a:t></a:r></a:p></p:txBody></p:sp>`).join('') +
   ANIM_SHAPES.map(([id, name, accent], i) =>
     `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="anim${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(840)}" y="${px(130 + i * 92)}"/><a:ext cx="${px(380)}" cy="${px(72)}"/></a:xfrm>
@@ -357,6 +369,15 @@ ${[[701, 2, 8, 'slide(fromLeft)'], [702, 10, 0, 'fade'], [703, 21, 4, 'wipe(up)'
 <p:childTnLst>
 <p:set><p:cBhvr><p:cTn id="${12 + i * 3}" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>
 <p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:cTn dur="600"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cBhvr></p:animEffect>
+</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`).join('')}
+${[[706, 'M 0 0 L 0.25 -0.18 L 0.42 0.05 E'], [707, 'M 0 0 C 0.1 -0.22 0.3 -0.22 0.36 0 C 0.3 0.14 0.1 0.14 0 0 Z E']]
+  .map(([spid, path], i) => `
+<p:par><p:cTn id="${40 + i * 3}" fill="hold" nodeType="clickEffect">
+<p:stCondLst><p:cond delay="indefinite"/></p:stCondLst>
+<p:childTnLst><p:par><p:cTn id="${41 + i * 3}" presetID="0" presetClass="path" fill="hold" nodeType="clickEffect">
+<p:stCondLst><p:cond delay="0"/></p:stCondLst>
+<p:childTnLst>
+<p:animMotion origin="layout" path="${path}" pathEditMode="relative"><p:cBhvr><p:cTn id="${42 + i * 3}" dur="2000" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl><p:attrNameLst><p:attrName>ppt_x</p:attrName><p:attrName>ppt_y</p:attrName></p:attrNameLst></p:cBhvr></p:animMotion>
 </p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`).join('')}
 </p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
 
