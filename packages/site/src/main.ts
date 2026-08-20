@@ -22,7 +22,36 @@ function setStatus(html: string, cls = ''): void {
   stage.innerHTML = `<div class="${cls}">${html}</div>`;
 }
 
-async function show(bytes: ArrayBuffer, label: string): Promise<void> {
+const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
+
+/**
+ * 下载进度。远程样本有好几 MB，走的是别人的网络，跟引擎快慢没有半点关系 ——
+ * 只转个圈会让人把等待算到渲染头上，而这恰恰是本项目最不该被误解的地方。
+ * 所以下载单独显示进度，计时也单独列，别和解析 / 首屏混在一起。
+ */
+function setProgress(got: number, total: number): void {
+  const pct = total ? Math.min(100, (got / total) * 100) : 0;
+  stage.innerHTML =
+    `<div class="loading">` +
+    `<div class="loading-label">下载中 · ${fmtMB(got)}${total ? ` / ${fmtMB(total)}` : ''}</div>` +
+    `<div class="loading-bar"><i style="width:${total ? pct.toFixed(1) : 0}%"></i></div>` +
+    `<div class="loading-note">下载完成后才开始解析，解析与渲染全在本地</div>` +
+    `</div>`;
+}
+
+/** netMs 为空表示本地文件，没有下载这一段 */
+async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<void> {
+  setStatus('', 'spin');
+  // 让上面这帧先画出来，否则大文件解析会把「下载中」一直定在屏幕上。
+  // 不能只等 rAF —— 标签页在后台时它根本不触发，await 会一直挂着；
+  // 补一个定时器兜底，谁先到算谁。
+  await new Promise((r) => {
+    let done = false;
+    const go = (): void => { if (!done) { done = true; r(null); } };
+    requestAnimationFrame(go);
+    setTimeout(go, 50);
+  });
+
   const t0 = performance.now();
   let pres: Presentation;
   try {
@@ -47,6 +76,10 @@ async function show(bytes: ArrayBuffer, label: string): Promise<void> {
   const kb = Math.round(bytes.byteLength / 1024);
   meta.textContent =
     `${label} · ${kb}KB · ${pres.slides.length} 页 · ` +
+    // 秒级用 s、毫秒级用 ms：同源小文件本来就是几十毫秒，写成「0.0s」像是没测
+    (netMs === undefined
+      ? ''
+      : `下载 ${netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`} · `) +
     `解析 ${parseMs.toFixed(0)}ms · 首屏 ${(performance.now() - renderT0 + parseMs).toFixed(0)}ms`;
 }
 
@@ -99,12 +132,45 @@ function buildThumbs(pres: Presentation): void {
 
 async function loadUrl(src: string, label: string): Promise<void> {
   thumbs.innerHTML = '';
-  setStatus('', 'spin');
-  meta.textContent = '载入中…';
+  setProgress(0, 0);
+  meta.textContent = '下载中…';
   try {
+    const t0 = performance.now();
     const res = await fetch(src);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    await show(await res.arrayBuffer(), label);
+
+    // Content-Length 可能没有（分块传输）：那就只报已下载量，不画百分比
+    const total = Number(res.headers.get('content-length')) || 0;
+    let bytes: ArrayBuffer;
+
+    if (!res.body) {
+      bytes = await res.arrayBuffer(); // 老浏览器没有流，退回一次性读取
+    } else {
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let got = 0;
+      let painted = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        got += value.length;
+        // 每 64KB 更新一次就够了，每个分块都重排 DOM 反而拖慢下载
+        if (got - painted > 65536) {
+          painted = got;
+          setProgress(got, total);
+        }
+      }
+      const merged = new Uint8Array(got);
+      let at = 0;
+      for (const c of chunks) {
+        merged.set(c, at);
+        at += c.length;
+      }
+      bytes = merged.buffer;
+    }
+
+    await show(bytes, label, performance.now() - t0);
   } catch (e) {
     // 样本取不到是网络或样本库的事，跟引擎无关。别把 HTTP 码甩给用户，
     // 指一条还走得通的路：本地文件的解析压根不需要网络。

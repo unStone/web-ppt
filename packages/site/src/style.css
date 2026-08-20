@@ -216,6 +216,12 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* 下载进度：跟解析 / 渲染分开呈现，别让网络等待被记到引擎账上 */
+.stage .loading { display: flex; flex-direction: column; gap: 9px; align-items: center; width: min(300px, 80%); }
+.loading-label { font: 500 13px/1 var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.loading-bar { width: 100%; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.loading-bar i { display: block; height: 100%; background: var(--accent); transition: width .18s ease-out; }
+.loading-note { font-size: 11.5px; color: var(--fg-faint); text-align: center; }
 .stage .err { color: var(--bad); font-size: 13.5px; text-align: center; max-width: 380px; }
 
 /* ── 表格 ─────────────────────────────────────── */
