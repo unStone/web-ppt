@@ -171,6 +171,13 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   background: var(--accent); opacity: .5; margin-right: 6px; vertical-align: 1.5px;
 }
 .chip.remote.active::before { opacity: 1; }
+/* 展开其余样本：虚线边框表示「还有，点开」，不是又一个样本 */
+.chip.more {
+  font-family: var(--sans); font-size: 13px;
+  border-style: dashed; color: var(--fg-faint);
+}
+.chip.more:hover { color: var(--accent); border-color: var(--accent); }
+.chip.more::after { content: " ›"; }
 .icon {
   width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px;
   background: var(--bg); color: var(--fg); cursor: pointer; font-size: 17px; line-height: 1;

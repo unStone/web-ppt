@@ -327,15 +327,16 @@ async function loadRemoteSamples(): Promise<void> {
 
   const doc = data as { base?: unknown; samples?: unknown };
   const base = typeof doc.base === 'string' ? doc.base : SAMPLES_INDEX;
-  const list = Array.isArray(doc.samples) ? doc.samples.slice(0, MAX_REMOTE_SAMPLES) : [];
+  const all = Array.isArray(doc.samples) ? doc.samples : [];
 
-  for (const raw of list) {
+  /** 清单条目 → chip；字段不合规或指向白名单外的源就返回 null */
+  const makeChip = (raw: unknown): HTMLButtonElement | null => {
     const s = raw as { file?: unknown; title?: unknown; highlight?: unknown };
-    if (typeof s.file !== 'string' || typeof s.title !== 'string') continue;
+    if (typeof s.file !== 'string' || typeof s.title !== 'string') return null;
 
     let url: URL;
-    try { url = new URL(s.file, base); } catch { continue; }
-    if (!SAMPLE_ORIGINS.includes(url.origin)) continue;
+    try { url = new URL(s.file, base); } catch { return null; }
+    if (!SAMPLE_ORIGINS.includes(url.origin)) return null;
 
     const chip = document.createElement('button');
     chip.className = 'chip remote';
@@ -343,8 +344,36 @@ async function loadRemoteSamples(): Promise<void> {
     chip.textContent = s.title; // 外部文本，只走 textContent
     if (typeof s.highlight === 'string') chip.title = s.highlight;
     chip.addEventListener('click', () => selectChip(chip));
-    bar.appendChild(chip);
+    return chip;
+  };
+
+  // 只展示标了 demo 的精选。样本库会一直加，示例栏不该跟着无限变长；
+  // 大文件也不适合默认摆在这儿 —— 让人为了看一眼先等几十秒是劝退的。
+  // 整份清单一个都没标时退回全量，免得旧版清单把示例栏弄空。
+  const curated = all.filter((s) => (s as { demo?: unknown }).demo === true);
+  const shown = (curated.length ? curated : all).slice(0, MAX_REMOTE_SAMPLES);
+  const rest = curated.length ? all.filter((s) => !curated.includes(s)) : [];
+
+  for (const raw of shown) {
+    const chip = makeChip(raw);
+    if (chip) bar.appendChild(chip);
   }
+
+  if (!rest.length) return;
+
+  // 精选之外的不是藏起来，只是不默认占位：点开就地展开，不跳走
+  const more = document.createElement('button');
+  more.className = 'chip more';
+  more.textContent = `更多 ${rest.length} 个`;
+  more.title = '样本库里还有这些，多为大文件或风格重复的';
+  more.addEventListener('click', () => {
+    for (const raw of rest.slice(0, MAX_REMOTE_SAMPLES)) {
+      const chip = makeChip(raw);
+      if (chip) bar.insertBefore(chip, more);
+    }
+    more.remove();
+  });
+  bar.appendChild(more);
 }
 
 void loadRemoteSamples();
