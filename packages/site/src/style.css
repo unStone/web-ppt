@@ -164,6 +164,13 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 .chip:hover { color: var(--fg); border-color: var(--fg-faint); }
 .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .chip.file { font-family: var(--sans); font-size: 13px; }
+/* 来自样本库的条目：一个小点，跟同源内置样本区分开 */
+.chip.remote { font-family: var(--sans); font-size: 13px; }
+.chip.remote::before {
+  content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent); opacity: .5; margin-right: 6px; vertical-align: 1.5px;
+}
+.chip.remote.active::before { opacity: 1; }
 .icon {
   width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px;
   background: var(--bg); color: var(--fg); cursor: pointer; font-size: 17px; line-height: 1;

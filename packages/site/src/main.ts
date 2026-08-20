@@ -106,19 +106,27 @@ async function loadUrl(src: string, label: string): Promise<void> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     await show(await res.arrayBuffer(), label);
   } catch (e) {
-    setStatus(`载入失败：${e instanceof Error ? e.message : String(e)}`, 'err');
+    // 样本取不到是网络或样本库的事，跟引擎无关。别把 HTTP 码甩给用户，
+    // 指一条还走得通的路：本地文件的解析压根不需要网络。
+    const why = e instanceof TypeError ? '网络不通' : e instanceof Error ? e.message : String(e);
+    setStatus(
+      `示例载入失败（${why}）<br>把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。`,
+      'err',
+    );
     meta.textContent = '';
   }
 }
 
 /* ── 交互 ─────────────────────────────────────── */
 
+function selectChip(chip: HTMLElement): void {
+  document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
+  chip.classList.add('active');
+  void loadUrl(chip.dataset.src!, chip.textContent!.trim());
+}
+
 document.querySelectorAll<HTMLButtonElement>('.samples .chip').forEach((chip) => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
-    chip.classList.add('active');
-    void loadUrl(chip.dataset.src!, chip.textContent!.trim());
-  });
+  chip.addEventListener('click', () => selectChip(chip));
 });
 
 prevBtn.addEventListener('click', () => viewer?.prev());
@@ -220,6 +228,60 @@ function drawArch(): void {
 
 drawArch();
 void loadUrl('demo/showcase.pptx', 'showcase.pptx');
+
+/* ── 远程样本库 ───────────────────────────────── */
+
+/**
+ * 精选样本放在独立仓库（web-ppt-samples），官网启动后异步追加成 chip。
+ *
+ * 分工的理由：HTML 里静态写死的那几个是**基线** —— 与站点同源、首屏即可用、
+ * 首轮抓取能看到、JS 或远程仓库出事都不影响。远程样本纯属增补，取不到就
+ * 安静跳过：不弹错、不留占位，用户根本察觉不到样本库挂了。
+ *
+ * 加新样本只改样本仓库的 index.json，官网这边一行都不用动。
+ */
+const SAMPLES_INDEX = 'https://unstone.github.io/web-ppt-samples/index.json';
+
+/** 清单是别处来的数据，可以指向任意地址：把真正会去拉取的源钉死在这里 */
+const SAMPLE_ORIGINS = ['https://unstone.github.io', 'https://cdn.jsdelivr.net'];
+const MAX_REMOTE_SAMPLES = 24;
+
+async function loadRemoteSamples(): Promise<void> {
+  const bar = document.querySelector('.samples');
+  if (!bar) return;
+
+  let data: unknown;
+  try {
+    const res = await fetch(SAMPLES_INDEX);
+    if (!res.ok) return;
+    data = await res.json();
+  } catch {
+    return; // 样本库不可达不该影响基线，静默即可
+  }
+
+  const doc = data as { base?: unknown; samples?: unknown };
+  const base = typeof doc.base === 'string' ? doc.base : SAMPLES_INDEX;
+  const list = Array.isArray(doc.samples) ? doc.samples.slice(0, MAX_REMOTE_SAMPLES) : [];
+
+  for (const raw of list) {
+    const s = raw as { file?: unknown; title?: unknown; highlight?: unknown };
+    if (typeof s.file !== 'string' || typeof s.title !== 'string') continue;
+
+    let url: URL;
+    try { url = new URL(s.file, base); } catch { continue; }
+    if (!SAMPLE_ORIGINS.includes(url.origin)) continue;
+
+    const chip = document.createElement('button');
+    chip.className = 'chip remote';
+    chip.dataset.src = url.href;
+    chip.textContent = s.title; // 外部文本，只走 textContent
+    if (typeof s.highlight === 'string') chip.title = s.highlight;
+    chip.addEventListener('click', () => selectChip(chip));
+    bar.appendChild(chip);
+  }
+}
+
+void loadRemoteSamples();
 
 /* ── 疑难杂症 ─────────────────────────────────── */
 
