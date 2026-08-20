@@ -8,15 +8,19 @@
 import { emfToSvg, isEmf } from './emf';
 import type { MetafileOptions } from './emf';
 import { isWmf, wmfToSvg } from './wmf';
+import { isPict, pictToSvg } from './pict';
 
 export type { MetafileOptions };
-export { emfToSvg, wmfToSvg, isEmf, isWmf };
+export { emfToSvg, wmfToSvg, pictToSvg, isEmf, isWmf, isPict };
 
 /** 按魔数识别图元文件类型 */
-export function detectMetafile(bytes: Uint8Array): 'emf' | 'wmf' | null {
+export function detectMetafile(bytes: Uint8Array): 'emf' | 'wmf' | 'pict' | null {
   if (!bytes || bytes.length < 20) return null;
   if (isEmf(bytes)) return 'emf';
   if (isWmf(bytes)) return 'wmf';
+  // PICT 放最后：它没有真正的魔数，靠 picFrame 合理性 + 版本号识别，
+  // 先让有确定魔数的两种认领，避免误判
+  if (isPict(bytes)) return 'pict';
   return null;
 }
 
@@ -26,6 +30,7 @@ export function metafileToSvg(bytes: Uint8Array, opts?: MetafileOptions): string
     const kind = detectMetafile(bytes);
     if (kind === 'emf') return emfToSvg(bytes, opts);
     if (kind === 'wmf') return wmfToSvg(bytes, opts);
+    if (kind === 'pict') return pictToSvg(bytes, opts);
     return null;
   } catch {
     return null;

@@ -8,7 +8,19 @@
 
 export type Decryptor = (info: Uint8Array, pkg: Uint8Array, password: string) => Uint8Array;
 
+/** 老式 .ppt 的 RC4 解密：文档流 + Current User 流 + 口令 → 明文文档流 */
+export type PptDecryptor = (doc: Uint8Array, currentUser: Uint8Array, password: string) => Uint8Array | null;
+
 let decryptor: Decryptor | null = null;
+let pptDecryptor: PptDecryptor | null = null;
+
+export function setPptDecryptor(fn: PptDecryptor): void {
+  pptDecryptor = fn;
+}
+
+export function getPptDecryptor(): PptDecryptor | null {
+  return pptDecryptor;
+}
 
 export function setDecryptor(fn: Decryptor): void {
   decryptor = fn;

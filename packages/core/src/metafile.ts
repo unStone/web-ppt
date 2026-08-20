@@ -34,4 +34,4 @@ export function metafileDataUrl(bytes: Uint8Array, opts?: { width?: number; heig
   }
 }
 
-export const METAFILE_EXT = new Set(['emf', 'wmf']);
+export const METAFILE_EXT = new Set(['emf', 'wmf', 'pict', 'pct', 'pic']);

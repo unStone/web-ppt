@@ -6,6 +6,8 @@ import { metafileDataUrl } from '../metafile';
 import { presetGeom } from '../geometry';
 import { AutoNum, collectAutoNums, formatAutoNum } from './autonum';
 import { Cfb } from './cfb';
+import { getPptDecryptor } from '../crypto/hook';
+import { isPptEncrypted } from '../crypto/ppt';
 import {
   ESCHER, EscherProps, MSO_SHAPE, P, Scheme, SP_FLAG, escherColor, extractBlips,
   isTableGroup, MSO_PICTURE_FRAME, parseOpt, readAnchor, readChildAnchor, readSp, readSpgr,
@@ -1228,17 +1230,29 @@ interface Shared {
   envStyles: MasterStyles;
 }
 
-export function parsePpt(bytes: Uint8Array): Presentation {
+export function parsePpt(bytes: Uint8Array, password?: string): Presentation {
   const cfb = new Cfb(bytes);
 
-  // 加密的 .pptx 已在 parse() 里被 EncryptedPackage 流拦下并解密，走不到这里；
-  // 落到这一分支的是老式二进制 .ppt 的 RC4 CryptoAPI 加密，那是另一套方案。
+  // 加密的 .pptx 已在 parse() 里被 EncryptedPackage 流拦下并解密，走不到这里
   if (cfb.stream('EncryptedPackage') || cfb.stream('EncryptionInfo')) {
-    throw new Error('该 .ppt 使用老式二进制加密（RC4 CryptoAPI），暂不支持；加密的 .pptx 请用 parse(input, { password })');
+    throw new Error('该文件是加密的 OOXML 容器，请用 parse(input, { password })');
   }
 
-  const doc = cfb.stream('PowerPoint Document');
+  let doc = cfb.stream('PowerPoint Document');
   if (!doc) throw new Error('无效的 .ppt：找不到 PowerPoint Document 流');
+
+  // 老式 .ppt 的 RC4 CryptoAPI 加密。判据在 Current User 流的 headerToken 上，
+  // 不看这一处就只会得到「.ppt 中未找到幻灯片」——实测 POI 语料里 5 个加密文件
+  // 全都被这样误诊过。
+  const currentUser = cfb.stream('Current User');
+  if (isPptEncrypted(currentUser) && currentUser) {
+    const decrypt = getPptDecryptor();
+    if (!decrypt) throw new Error('该 .ppt 已加密，但未注入解密器（setPptDecryptor）');
+    if (password === undefined) throw new Error('该 .ppt 已加密，请通过 parse(input, { password }) 提供打开密码');
+    const plain = decrypt(doc, currentUser, password);
+    if (!plain) throw new Error('该 .ppt 已加密，但加密结构无法识别');
+    doc = plain;
+  }
   const dv = new DataView(doc.buffer, doc.byteOffset, doc.byteLength);
 
   let width = 720 * (96 / 72);
@@ -1249,8 +1263,9 @@ export function parsePpt(bytes: Uint8Array): Presentation {
   const blips = pictures ? extractBlips(pictures) : [];
   const blobs = blips.map((b) => {
     try {
-      // 图元文件浏览器无法直接解码，转成 SVG data URI
-      if (b.mime === 'image/emf' || b.mime === 'image/wmf') {
+      // 图元文件浏览器无法直接解码，转成 SVG data URI。
+      // PICT 是 Mac 版存的，同样要走解码器——直接丢给 <img> 只会是裂图
+      if (b.mime === 'image/emf' || b.mime === 'image/wmf' || b.mime === 'image/pict') {
         return metafileDataUrl(b.data);
       }
       return URL.createObjectURL(new Blob([b.data.slice().buffer], { type: b.mime }));

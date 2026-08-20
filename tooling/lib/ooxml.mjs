@@ -245,3 +245,76 @@ ${slideOverrides}
   });
   return makeZip(entries);
 }
+
+// ---------- CFB 复合文档写入 ----------
+
+/**
+ * 只写我们自己要读的那点结构：一个 FAT 扇区 + 目录 + 两条常规流。
+ * 流一律走常规扇区（不用 MiniFAT），因此每条流必须 ≥ 4096 字节——
+ * EncryptionInfo 只有几百字节，补零到 4096 即可，读取方按内部长度字段截断。
+ */
+export function writeCfb(streams) {
+  const SECTOR = 512;
+  const padded = streams.map(([name, data]) => [name, data.length < 4096
+    ? Buffer.concat([data, Buffer.alloc(4096 - data.length)]) : data]);
+
+  const dirEntries = 1 + padded.length;                 // Root + 各流
+  const dirSectors = Math.ceil(dirEntries / 4);
+  const streamSectors = padded.map(([, d]) => Math.ceil(d.length / SECTOR));
+  const totalData = streamSectors.reduce((a, b) => a + b, 0);
+  const fatEntries = 1 + dirSectors + totalData;        // FAT 自身 + 目录 + 数据
+  const fatSectors = Math.ceil(fatEntries / (SECTOR / 4));
+
+  const fat = Buffer.alloc(fatSectors * SECTOR, 0xff);
+  const setFat = (i, v) => fat.writeUInt32LE(v >>> 0, i * 4);
+  let next = 0;
+  const fatStart = next; for (let i = 0; i < fatSectors; i++) setFat(next++, 0xfffffffd);
+  const dirStart = next;
+  for (let i = 0; i < dirSectors; i++) setFat(next, i === dirSectors - 1 ? 0xfffffffe : next + 1), next++;
+  const starts = [];
+  for (const n of streamSectors) {
+    starts.push(next);
+    for (let i = 0; i < n; i++) setFat(next, i === n - 1 ? 0xfffffffe : next + 1), next++;
+  }
+
+  const dir = Buffer.alloc(dirSectors * SECTOR);
+  const putEntry = (idx, name, type, start, size) => {
+    const off = idx * 128;
+    const nm = Buffer.from(name + ' ', 'utf16le');
+    nm.copy(dir, off);
+    dir.writeUInt16LE(nm.length, off + 64);
+    dir.writeUInt8(type, off + 66);        // 5=Root 2=Stream
+    dir.writeUInt8(1, off + 67);           // color: black
+    dir.writeInt32LE(-1, off + 68);        // left
+    dir.writeInt32LE(-1, off + 72);        // right
+    dir.writeInt32LE(type === 5 ? 1 : -1, off + 76); // child
+    dir.writeUInt32LE(start >>> 0, off + 116);
+    dir.writeUInt32LE(size >>> 0, off + 120);
+  };
+  putEntry(0, 'Root Entry', 5, 0xfffffffe, 0);
+  padded.forEach(([name, data], i) => putEntry(i + 1, name, 2, starts[i], data.length));
+  // 目录项之间用右兄弟串起来，读取方遍历时才能都看到
+  for (let i = 1; i < dirEntries; i++) {
+    dir.writeInt32LE(i + 1 < dirEntries ? i + 1 : -1, i * 128 + 72);
+  }
+
+  const header = Buffer.alloc(SECTOR);
+  Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(header, 0);
+  header.writeUInt16LE(0x003e, 24);       // minor version
+  header.writeUInt16LE(3, 26);            // major version（512 字节扇区）
+  header.writeUInt16LE(0xfffe, 28);       // 小端标记
+  header.writeUInt16LE(9, 30);            // 扇区大小 = 1<<9
+  header.writeUInt16LE(6, 32);            // 迷你扇区大小 = 1<<6
+  header.writeUInt32LE(fatSectors, 44);
+  header.writeUInt32LE(dirStart, 48);
+  header.writeUInt32LE(4096, 56);         // mini stream cutoff
+  header.writeUInt32LE(0xfffffffe, 60);   // 无 MiniFAT
+  header.writeUInt32LE(0, 64);
+  header.writeUInt32LE(0xfffffffe, 68);   // 无 DIFAT 扩展
+  header.writeUInt32LE(0, 72);
+  for (let i = 0; i < 109; i++) header.writeUInt32LE(i < fatSectors ? fatStart + i : 0xffffffff, 76 + i * 4);
+
+  const body = [fat, dir, ...padded.map(([, d]) =>
+    d.length % SECTOR ? Buffer.concat([d, Buffer.alloc(SECTOR - (d.length % SECTOR))]) : d)];
+  return Buffer.concat([header, ...body]);
+}

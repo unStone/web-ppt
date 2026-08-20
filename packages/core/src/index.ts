@@ -4,8 +4,9 @@ import { metafileToSvg } from './image';
 import { setChartParser } from './chart/hook';
 import { setMetafileDecoder } from './metafile';
 import { Cfb } from './ppt/cfb';
-import { getDecryptor, setDecryptor } from './crypto/hook';
+import { getDecryptor, setDecryptor, setPptDecryptor } from './crypto/hook';
 import { decryptOoxml } from './crypto/ooxml';
+import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
 import { renderSlideToSvg } from './render/svg';
@@ -17,8 +18,8 @@ export { groupSteps, hiddenBefore };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
-export { setDecryptor, hasDecryptor } from './crypto/hook';
-export type { Decryptor } from './crypto/hook';
+export { setDecryptor, setPptDecryptor, hasDecryptor } from './crypto/hook';
+export type { Decryptor, PptDecryptor } from './crypto/hook';
 export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
 export { metafileToSvg, detectMetafile } from './image';
 
@@ -26,6 +27,7 @@ export { metafileToSvg, detectMetafile } from './image';
 setChartParser(parseChart);
 setMetafileDecoder(metafileToSvg);
 setDecryptor(decryptOoxml);
+setPptDecryptor(decryptPptStream);
 
 export interface ParseOptions {
   /**
@@ -75,7 +77,7 @@ export async function parse(
       if (opts.password === undefined) throw new Error('该文件已加密，请通过 parse(input, { password }) 提供打开密码');
       return parsePptx(decrypt(enc.info, enc.pkg, opts.password), opts);
     }
-    return parsePpt(bytes);
+    return parsePpt(bytes, opts.password);
   }
   throw new Error('无法识别的文件格式：既不是 .pptx（Zip）也不是 .ppt（CFB）');
 }

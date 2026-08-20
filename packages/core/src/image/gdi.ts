@@ -113,6 +113,27 @@ export class Reader {
     }
     return s;
   }
+
+  // ---- 以下为 PICT（QuickDraw）所需：它是大端，与 EMF/WMF 相反 ----
+
+  get pos(): number { return this.p; }
+  get limit(): number { return this.end; }
+
+  i8(): number { return (this.u8() << 24) >> 24; }
+  /** 大端 16 位有符号 */
+  i16be(): number { if (!this.has(2)) { this.p += 2; return 0; } const v = this.dv.getInt16(this.p, false); this.p += 2; return v; }
+  /** 大端 16 位无符号 */
+  u16be(): number { if (!this.has(2)) { this.p += 2; return 0; } const v = this.dv.getUint16(this.p, false); this.p += 2; return v; }
+  /** 大端 32 位无符号 */
+  u32be(): number { if (!this.has(4)) { this.p += 4; return 0; } const v = this.dv.getUint32(this.p, false); this.p += 4; return v; }
+
+  /** 取 len 字节并前移；越界时按剩余长度截断 */
+  take(len: number): Uint8Array {
+    const n = Math.max(0, Math.min(len, this.end - this.p));
+    const out = new Uint8Array(this.dv.buffer, this.dv.byteOffset + this.p, n);
+    this.p += len;
+    return out;
+  }
 }
 
 const hex2 = (v: number): string => (v & 0xff).toString(16).padStart(2, '0');

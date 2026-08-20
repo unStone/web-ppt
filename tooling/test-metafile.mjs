@@ -354,6 +354,80 @@ function buildWmf() {
   return wmfFile(recs);
 }
 
+
+// ---------------- PICT 构造 ----------------
+
+/**
+ * 合成 PICT v2。与 EMF/WMF 有两处根本差异，都是踩过就忘不掉的：
+ *   1. 全部大端（EMF/WMF 是小端）
+ *   2. opcode 必须落在偶数字节上，奇数位置要补一个字节
+ */
+function buildPict() {
+  const b = [];
+  const u8 = (v) => b.push(v & 0xff);
+  const u16 = (v) => { u8(v >> 8); u8(v); };
+  const i16 = (v) => u16(v < 0 ? v + 0x10000 : v);
+  const rect = (t, l, bo, r) => { i16(t); i16(l); i16(bo); i16(r); };
+  const rgb6 = (r, g, gb) => { u16(r * 257); u16(g * 257); u16(gb * 257); };
+  const align = () => { if ((b.length - 14) % 2) u8(0); };
+  const op = (o) => { align(); u16(o); };
+
+  u16(0);                       // picSize（v2 里不再用）
+  rect(0, 0, 200, 300);         // picFrame
+  u16(0x0011); u16(0x02ff);     // VersionOp + version 2
+  op(0x0c00); for (let i = 0; i < 24; i++) u8(0);   // HeaderOp
+
+  op(0x0001); u16(10); rect(0, 0, 200, 300);        // Clip
+
+  op(0x001a); rgb6(0xdc, 0x14, 0x3c);               // RGBFgCol
+  op(0x0030); rect(10, 10, 60, 120);                // frameRect
+  op(0x001a); rgb6(0x14, 0x3c, 0xdc);
+  op(0x0031); rect(70, 10, 120, 120);               // paintRect
+  op(0x0050); rect(10, 140, 60, 250);               // frameOval
+  op(0x0051); rect(70, 140, 120, 250);              // paintOval
+  op(0x000b); i16(16); i16(16);                     // OvSize
+  op(0x0040); rect(130, 10, 180, 120);              // frameRoundRect
+  op(0x0020); i16(130); i16(140); i16(180); i16(280); // Line
+
+  // 多边形：size(u16) + bbox + 顶点
+  op(0x0070);
+  const polyPts = [[130, 140], [150, 200], [175, 150]];
+  u16(2 + 8 + polyPts.length * 4); rect(130, 140, 180, 210);
+  for (const [y, x] of polyPts) { i16(y); i16(x); }
+
+  op(0x000d); u16(18);                              // TxSize
+  op(0x001a); rgb6(0x0a, 0x5a, 0xa0);
+  op(0x0028); i16(195); i16(10);                    // LongText @ (10,195)
+  const txt = 'PICT <&> 图元';
+  const enc = Buffer.from(txt, 'latin1');
+  u8(enc.length); for (const c of enc) u8(c);
+
+  // 8 位索引色 PackBitsRect：4×2 棋盘
+  op(0x0098);
+  const bw = 4, bh = 2, rowBytes = 8;
+  u16(0x8000 | rowBytes);
+  rect(0, 0, bh, bw);                               // bounds
+  u16(0); u16(0); for (let i = 0; i < 4; i++) u8(0); // pmVersion packType packSize
+  for (let i = 0; i < 8; i++) u8(0);                // hRes/vRes
+  u16(0); u16(8); u16(1); u16(8);                   // pixelType pixelSize cmpCount cmpSize
+  for (let i = 0; i < 4; i++) u8(0);                // planeBytes
+  for (let i = 0; i < 8; i++) u8(0);                // pmTable/pmReserved
+  for (let i = 0; i < 4; i++) u8(0);                // ctSeed
+  u16(0); u16(1);                                   // ctFlags, ctSize = 索引数-1
+  u16(0); rgb6(0xff, 0x00, 0x00);                   // 索引 0 红
+  u16(1); rgb6(0x00, 0x00, 0xff);                   // 索引 1 蓝
+  rect(0, 0, bh, bw); rect(150, 220, 190, 290);     // srcRect / dstRect
+  u16(0);                                           // mode
+  // rowBytes < 8 时不压缩；这里 = 8 走 PackBits，且行长 ≤250 用 u8 长度
+  for (let y = 0; y < bh; y++) {
+    const row = [0, 1, 0, 1, 0, 1, 0, 1].map((v) => (v + y) & 1);
+    u8(row.length + 1); u8(row.length - 1); for (const v of row) u8(v);
+  }
+
+  op(0x00ff);                                       // OpEndPic
+  return new Uint8Array(b);
+}
+
 // ---------------- 输出校验 ----------------
 
 /** 极简 XML 良构检查：标签配对 + 无裸尖括号 */
@@ -736,6 +810,47 @@ function coordsInRange(svg) {
   return outliers / Math.max(1, nums.length) < 0.02;
 }
 
+
+// ---------------- 用例：合成 PICT ----------------
+
+group('合成 PICT');
+const pictBytes = buildPict();
+check('detectMetafile → pict', detectMetafile(pictBytes) === 'pict', String(detectMetafile(pictBytes)));
+// 回退顺序：EMF/WMF 有确定魔数，PICT 只能靠 picFrame + 版本号认，不能抢在前面
+check('EMF 不会被误判为 pict', detectMetafile(emfBytes) === 'emf');
+check('WMF 不会被误判为 pict', detectMetafile(wmfBytes) === 'wmf');
+
+const pictSvg = metafileToSvg(pictBytes);
+if (sane('PICT', pictSvg)) {
+  check('PICT：矩形与圆角矩形 → <path>', countTag(pictSvg, 'path') >= 3, `实际 ${countTag(pictSvg, 'path')}`);
+  check('PICT：有 <text>', countTag(pictSvg, 'text') >= 1);
+  check('PICT：文字内容与转义', pictSvg.includes('&lt;&amp;&gt;'), pictSvg.slice(0, 0));
+  check('PICT：frame 动作 → 只描边不填充', /fill="none"/.test(pictSvg));
+  check('PICT：paint 动作用前景色 #143cdc', pictSvg.includes('#143cdc'));
+  check('PICT：描边色 #dc143c', pictSvg.includes('#dc143c'));
+  check('PICT：文字色 #0a5aa0', pictSvg.includes('fill="#0a5aa0"'));
+  check('PICT：PackBits 位图 → PNG data URI',
+    /xlink:href="data:image\/png;base64,[A-Za-z0-9+/=]{20,}"/.test(pictSvg));
+  check('PICT：椭圆用贝塞尔近似', (pictSvg.match(/C/g) || []).length >= 8);
+  // 画布尺寸取自 picFrame
+  check('PICT：viewBox 取自 picFrame', /viewBox="0 0 300 200"/.test(pictSvg), (pictSvg.match(/viewBox="[^"]*"/) || [])[0]);
+}
+
+// 大端读错就会把长度读成天文数字，整条流当场错位——这是最容易犯的错
+{
+  const swapped = pictBytes.slice();
+  for (let i = 14; i + 1 < swapped.length; i += 2) { const t = swapped[i]; swapped[i] = swapped[i + 1]; swapped[i + 1] = t; }
+  const svg = metafileToSvg(swapped);
+  check('PICT：字节序打乱后不产生脏路径', svg === null || !/NaN|Infinity/.test(svg.replace(/data:[^"]*/g, 'd')));
+}
+
+// 截断的 PICT 位图应该画出已读到的部分，而不是整张放弃
+{
+  const cut = pictBytes.slice(0, pictBytes.length - 6);
+  const svg = metafileToSvg(cut);
+  check('PICT：截断后仍能产出内容', svg !== null && countTag(svg, 'path') >= 3, svg ? 'ok' : 'null');
+}
+
 // 需要人眼确认时：DUMP_FIXTURES=1 会把合成样本与其 SVG 落盘到 out/metafile
 if (process.env.DUMP_FIXTURES) {
   const { writeFileSync } = await import('node:fs');
@@ -743,6 +858,8 @@ if (process.env.DUMP_FIXTURES) {
   writeFileSync(join(outDir, 'synthetic.wmf'), wmfBytes);
   writeFileSync(join(outDir, 'synthetic-emf.svg'), emfSvg ?? '');
   writeFileSync(join(outDir, 'synthetic-wmf.svg'), wmfSvg ?? '');
+  writeFileSync(join(outDir, 'synthetic.pict'), pictBytes);
+  writeFileSync(join(outDir, 'synthetic-pict.svg'), pictSvg ?? '');
   console.log('  合成样本已落盘 → out/metafile/synthetic-*.svg');
 }
 

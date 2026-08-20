@@ -86,7 +86,13 @@ const load = (name) => {
 // ---------------- 通用工具 ----------------
 
 const NUM = /-?\d+(?:\.\d+)?/g;
-const BAD = /NaN|Infinity|undefined|null/;
+/**
+ * 脏值检测。必须先把 data URI 抹掉再查——base64 字母表里出现字面量 "NaN"
+ * 完全是碰运气的事，实测 210 个真实文件里就有 3 个中招，会让人白查半天。
+ */
+const stripData = (s) => String(s).replace(/data:[a-z/+.\-]+[;,][^"')\s]*/gi, 'data:<x>');
+const BAD_RE = /NaN|Infinity|undefined|null/;
+const BAD = { test: (s) => BAD_RE.test(stripData(s)) };
 
 function walkElements(els, fn) {
   for (const el of els) {
@@ -775,6 +781,32 @@ group('加密文档');
 
   const PW = 'web-ppt-2024';
   const plain = load('sample.pptx');
+
+  // 老式 .ppt 的 RC4 CryptoAPI —— 与 OOXML 加密是完全不同的两套方案
+  for (const [file, keyBits] of [['sample-ppt-encrypted.ppt', 40], ['sample-ppt-encrypted-56.ppt', 56]]) {
+    const bytes = load(file);
+    if (!check(`${file} 存在`, !!bytes)) continue;
+
+    const pres = await lib.parse(bytes, { password: PW });
+    eq(`${file} 解密后页数`, pres.slides.length, 2);
+    const txt = pres.slides.map((s) => lib.slideText(s)).join(' ');
+    check(`${file} 解密后取到文本`, txt.includes('RC4 CryptoAPI'), txt.slice(0, 50));
+
+    let err = null;
+    try { await lib.parse(bytes, { password: 'nope' }); } catch (e) { err = e; }
+    eq(`${file} 密码错抛 WrongPasswordError`, err && err.name, 'WrongPasswordError');
+
+    err = null;
+    try { await lib.parse(bytes); } catch (e) { err = e; }
+    // 回归：判据在 Current User 流的 headerToken 上。不看这一处就只会得到
+    // 「.ppt 中未找到幻灯片」——POI 语料里 5 个加密文件全被这样误诊过
+    check(`${file} 缺密码时诊断为「已加密」而非「找不到幻灯片」`,
+      err && /已加密/.test(err.message), err && err.message);
+    void keyBits;
+  }
+  // 40 位密钥要补零到 128 位、56 位按原长度用；规则搞反了口令校验就过不了。
+  // 两个固件唯一的差别就是密钥长度，同时绿才说明两条分支都对
+
   for (const [file, scheme] of [['sample-encrypted-agile.pptx', 'agile'],
     ['sample-encrypted-standard.pptx', 'standard']]) {
     const bytes = load(file);
