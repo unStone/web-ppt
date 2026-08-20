@@ -189,12 +189,12 @@ function drawArch(): void {
         fill="var(--fg-faint)" font-size="10" font-family="var(--mono)">${label}</text>` : ''}
     </g>`;
 
-  $('#arch').innerHTML = `
+  $('#archDiagram').innerHTML = `
 <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Web-PPT 架构图">
   <text x="92" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">输入</text>
   ${box(20, 28, 145, 56, '.pptx', 'Zip + OOXML')}
   ${box(20, 100, 145, 56, '.ppt', 'CFB + OfficeArt')}
-  ${box(20, 172, 145, 56, 'EMF / WMF', 'GDI 记录流')}
+  ${box(20, 172, 145, 56, 'EMF / WMF / PICT', 'GDI / QuickDraw')}
 
   ${arrow(165, 56, 285, 90, 'fflate')}
   ${arrow(165, 128, 285, 118, 'Escher')}
@@ -224,90 +224,29 @@ void loadUrl('demo/showcase.pptx', 'showcase.pptx');
 /* ── 疑难杂症 ─────────────────────────────────── */
 
 /**
- * 每格左侧是「天真做法」的手写 SVG，右侧由引擎实时渲染 hardcases.pptx 的对应页。
- * 页序与 tooling/make-hardcases-fixture.mjs 里的 CASES 一一对应，改一边要改两边。
+ * 卡片骨架（标题 / 说明 / 天真做法）写死在 index.html 里，这里只把引擎渲染
+ * 结果填进每张卡的 .good .pane。
+ *
+ * 这么分工有两个理由：首轮抓取不执行 JS，标题与说明必须在静态 HTML 里才算数；
+ * JS 关掉时也还剩「天真做法」一侧可看，不至于是六个空框。
+ *
+ * 卡片顺序与 tooling/make-hardcases-fixture.mjs 的 CASES 一一对应，改一边要改两边。
  */
-interface HardCase {
-  title: string;
-  trap: string;
-  /** 天真做法的手写 SVG（viewBox 与固件页一致：480×300） */
-  naive: string;
-}
-
-const NAIVE_VB = 'viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg"';
-const SERIF = "font-family:'Cambria Math','Times New Roman',serif";
-
-const HARD_CASES: HardCase[] = [
-  {
-    title: '组合附加符号',
-    trap: 'OMML 的 <code>m:acc@chr</code> 存的是组合码位（U+20D7 等）。它本该附着在前一个字符上，单独当一个字形画出来，浏览器要么画成点状圈里的符号、要么位置漂移。',
-    naive: `<svg ${NAIVE_VB}><text x="240" y="170" text-anchor="middle" style="${SERIF};font-size:64px;font-style:italic">v&#x20D7;&#183;xy&#x0305;</text></svg>`,
-  },
-  {
-    title: '可伸缩定界符',
-    trap: '括号按内容高度拉伸时不能绕基线等比放大。矩阵整体压在<b>数学轴</b>上、上下不对称，等比放大会让括号下缘冲出内容一大截。',
-    // 绕基线等比放大：上端溢出一大截、下端反而够不着最后一行
-    naive: `<svg ${NAIVE_VB}><g style="${SERIF};font-size:56px">
-      <g transform="translate(0 172) scale(1 2.6) translate(0 -172)">
-        <text x="150" y="172">(</text><text x="308" y="172">)</text></g>
-      <text x="205" y="140" font-style="italic">a</text><text x="262" y="140" font-style="italic">b</text>
-      <text x="205" y="208" font-style="italic">c</text><text x="262" y="208" font-style="italic">d</text></g></svg>`,
-  },
-  {
-    title: '分数线的基准',
-    trap: '分数线要压在<b>数学轴</b>（约 x 高度的一半）上，不是压在基线上。单层分式看不出差别，一嵌套就整个塌下去。',
-    naive: `<svg ${NAIVE_VB}><g style="${SERIF};font-size:44px" text-anchor="middle">
-      <text x="240" y="106">1</text><rect x="196" y="120" width="88" height="2.5" fill="currentColor"/>
-      <text x="216" y="168">1</text><text x="244" y="168">+</text>
-      <text x="290" y="150">1</text><rect x="272" y="160" width="38" height="2" fill="currentColor"/>
-      <text x="290" y="196" font-style="italic">x</text></g></svg>`,
-  },
-  {
-    title: '零面积描线',
-    trap: '标注引线是三点<b>开放</b>子路径。SVG 填充会把它自动闭合，于是引线被补成一块实心楔形。正确做法是正向走一遍再反向走回来——穿越数 +2，在 <code>evenodd</code> 下不改变填充，描边却照样可见。',
-    naive: `<svg ${NAIVE_VB}><path d="M60 40 H420 V190 H60 Z M114 190 L78 226 L20 250" fill="currentColor" fill-rule="evenodd" stroke="currentColor" stroke-width="4"/></svg>`,
-  },
-  {
-    title: 'evenodd 互相挖空',
-    trap: '云形若用一堆重叠的椭圆拼，在 <code>evenodd</code> 填充规则下重叠处穿越数为偶，会被挖成洞。必须收敛成单条闭合轮廓。',
-    naive: `<svg ${NAIVE_VB}><g fill="currentColor" fill-rule="evenodd" stroke="currentColor" stroke-width="3">
-      <ellipse cx="170" cy="170" rx="72" ry="52"/><ellipse cx="250" cy="140" rx="86" ry="62"/>
-      <ellipse cx="330" cy="176" rx="66" ry="46"/><ellipse cx="212" cy="120" rx="58" ry="44"/></g></svg>`,
-  },
-  {
-    title: '内圈绕向',
-    trap: '要在实心图形里挖洞，内圈必须<b>反向</b>绕。绕向相同时 <code>nonzero</code> 下洞根本不出现，换 <code>evenodd</code> 又会牵连别处的自交图形。',
-    naive: `<svg ${NAIVE_VB}><g fill="currentColor" fill-rule="nonzero" stroke="currentColor" stroke-width="3">
-      <path d="M240 60 A90 90 0 1 1 239 60 Z M240 96 A54 54 0 1 1 239 96 Z"/></g></svg>`,
-  },
-];
-
 async function renderHardCases(): Promise<void> {
-  const grid = document.getElementById('hardGrid');
-  if (!grid) return;
-
-  grid.innerHTML = HARD_CASES.map((c, i) => `
-    <article class="hard-card">
-      <h3>${c.title}</h3>
-      <p>${c.trap}</p>
-      <div class="hard-pair">
-        <figure class="bad"><div class="pane">${c.naive}</div><figcaption>天真做法</figcaption></figure>
-        <figure class="good"><div class="pane" id="hc${i}"></div><figcaption>本引擎</figcaption></figure>
-      </div>
-    </article>`).join('');
+  const panes = document.querySelectorAll<HTMLElement>('#hardGrid .good .pane');
+  if (!panes.length) return;
 
   try {
     const res = await fetch('demo/hardcases.pptx');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const pres = await parse(await res.arrayBuffer());
-    HARD_CASES.forEach((_, i) => {
+    panes.forEach((host, i) => {
       const slide = pres.slides[i];
-      const host = document.getElementById(`hc${i}`);
-      if (slide && host) host.innerHTML = renderSlideToSvg(pres, slide, { textMode: 'svg' });
+      if (slide) host.innerHTML = renderSlideToSvg(pres, slide, { textMode: 'svg' });
     });
   } catch {
     // 案例展示不该拖垮整页：取不到固件就只留天真侧，不弹错
-    grid.querySelectorAll('.good .pane').forEach((p) => { (p as HTMLElement).textContent = '样本载入失败'; });
+    panes.forEach((p) => { p.textContent = '样本载入失败'; });
   }
 }
 
