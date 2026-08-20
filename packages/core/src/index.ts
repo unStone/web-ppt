@@ -3,6 +3,9 @@ import { parseChart } from './chart';
 import { metafileToSvg } from './image';
 import { setChartParser } from './chart/hook';
 import { setMetafileDecoder } from './metafile';
+import { Cfb } from './ppt/cfb';
+import { getDecryptor, setDecryptor } from './crypto/hook';
+import { decryptOoxml } from './crypto/ooxml';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
 import { renderSlideToSvg } from './render/svg';
@@ -14,11 +17,15 @@ export { groupSteps, hiddenBefore };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
+export { setDecryptor, hasDecryptor } from './crypto/hook';
+export type { Decryptor } from './crypto/hook';
+export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
 export { metafileToSvg, detectMetafile } from './image';
 
 // 接入图表渲染器与图元文件解码器（解析器通过 hook 解耦调用）
 setChartParser(parseChart);
 setMetafileDecoder(metafileToSvg);
+setDecryptor(decryptOoxml);
 
 export interface ParseOptions {
   /**
@@ -27,6 +34,24 @@ export interface ParseOptions {
    * 需要把整份演示文稿 `structuredClone` 或序列化时，设为 false 更省心。
    */
   lazy?: boolean;
+  /** 打开密码。文件加密时必填，密码错误抛 {@link WrongPasswordError} */
+  password?: string;
+}
+
+/**
+ * 加密的 OOXML 是个 CFB 容器。EncryptedPackage 流的存在就是判据——
+ * 只要有它就是加密文档，哪怕 EncryptionInfo 缺失（那是文件坏了，
+ * 也不该被误诊成「这是个 .ppt」）。
+ */
+function encryptedStreams(bytes: Uint8Array): { info: Uint8Array | null; pkg: Uint8Array } | null {
+  let cfb: Cfb;
+  try {
+    cfb = new Cfb(bytes);
+  } catch {
+    return null;
+  }
+  const pkg = cfb.stream('EncryptedPackage');
+  return pkg ? { info: cfb.stream('EncryptionInfo'), pkg } : null;
 }
 
 /** 按魔数自动识别 .pptx（Zip）/ .ppt（CFB）并解析为统一 Schema */
@@ -40,7 +65,18 @@ export async function parse(
   else bytes = new Uint8Array(await input.arrayBuffer());
 
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) return parsePptx(bytes, opts);
-  if (bytes[0] === 0xd0 && bytes[1] === 0xcf) return parsePpt(bytes);
+  if (bytes[0] === 0xd0 && bytes[1] === 0xcf) {
+    // 设了打开密码的 .pptx 也是 CFB，魔数与 .ppt 无法区分，只能看流名
+    const enc = encryptedStreams(bytes);
+    if (enc) {
+      if (!enc.info) throw new Error('该文件已加密，但 EncryptionInfo 流缺失，文件可能已损坏');
+      const decrypt = getDecryptor();
+      if (!decrypt) throw new Error('该文件已加密，但未注入解密器（setDecryptor）');
+      if (opts.password === undefined) throw new Error('该文件已加密，请通过 parse(input, { password }) 提供打开密码');
+      return parsePptx(decrypt(enc.info, enc.pkg, opts.password), opts);
+    }
+    return parsePpt(bytes);
+  }
   throw new Error('无法识别的文件格式：既不是 .pptx（Zip）也不是 .ppt（CFB）');
 }
 

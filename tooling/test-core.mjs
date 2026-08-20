@@ -64,6 +64,13 @@ const geo = await (async () => {
   return import(`file://${g}?t=${Date.now()}`);
 })();
 
+const crypto = await (async () => {
+  const c = join(outDir, 'crypto-bundle.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/crypto/primitives.ts'), '--bundle', '--format=esm',
+    '--platform=neutral', '--log-level=error', `--outfile=${c}`], { cwd: root, stdio: 'inherit' });
+  return import(`file://${c}?t=${Date.now()}`);
+})();
+
 const colorMod = await (async () => {
   const c = join(outDir, 'color-bundle.mjs');
   execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/color.ts'), '--bundle', '--format=esm',
@@ -578,6 +585,102 @@ group('动画 / 切换');
       }
     }
   }
+}
+
+// ---------------- 5.5 加密文档 ----------------
+
+group('加密文档');
+{
+  const nodeCrypto = await import('node:crypto');
+  const hex = (b) => Buffer.from(b).toString('hex');
+
+  // 原语必须与 Node 的实现逐字节一致——这里错一位，后面全是"密码错误"
+  {
+    let bad = 0, cases = 0;
+    for (const [fn, algo] of [[crypto.sha1, 'sha1'], [crypto.sha256, 'sha256'],
+      [crypto.sha384, 'sha384'], [crypto.sha512, 'sha512']]) {
+      // 覆盖补位边界：正好一块、差一字节、跨块
+      for (const len of [0, 1, 55, 56, 63, 64, 111, 112, 127, 128, 1000]) {
+        const buf = Buffer.alloc(len, 0xa5);
+        cases++;
+        if (hex(fn(new Uint8Array(buf))) !== nodeCrypto.createHash(algo).update(buf).digest('hex')) bad++;
+      }
+    }
+    eq(`哈希与 Node 一致（${cases} 例）`, bad, 0);
+  }
+  {
+    let bad = 0;
+    for (const bits of [128, 192, 256]) {
+      // 用固定明文/密钥，测试本身也要确定性
+      const key = Buffer.alloc(bits / 8, 0x3c);
+      const pt = Buffer.alloc(64, 0x5a);
+      const ecb = nodeCrypto.createCipheriv(`aes-${bits}-ecb`, key, null);
+      ecb.setAutoPadding(false);
+      const ct = Buffer.concat([ecb.update(pt), ecb.final()]);
+      if (hex(crypto.aesDecryptEcb(new Uint8Array(key), new Uint8Array(ct))) !== pt.toString('hex')) bad++;
+      const iv = Buffer.alloc(16, 0x11);
+      const cbc = nodeCrypto.createCipheriv(`aes-${bits}-cbc`, key, iv);
+      cbc.setAutoPadding(false);
+      const ct2 = Buffer.concat([cbc.update(pt), cbc.final()]);
+      if (hex(crypto.aesDecryptCbc(new Uint8Array(key), new Uint8Array(iv), new Uint8Array(ct2))) !== pt.toString('hex')) bad++;
+    }
+    eq('AES 解密与 Node 一致（ECB/CBC × 128/192/256）', bad, 0);
+  }
+
+  const PW = 'web-ppt-2024';
+  const plain = load('sample.pptx');
+  for (const [file, scheme] of [['sample-encrypted-agile.pptx', 'agile'],
+    ['sample-encrypted-standard.pptx', 'standard']]) {
+    const bytes = load(file);
+    if (!check(`${file} 存在`, !!bytes)) continue;
+
+    // 加密的 .pptx 是 CFB，魔数与 .ppt 一样，必须靠流名区分
+    eq(`${file} 魔数是 CFB`, bytes[0] === 0xd0 && bytes[1] === 0xcf, true);
+
+    const pres = await lib.parse(bytes, { password: PW });
+    eq(`${file} 解密后页数`, pres.slides.length, 3);
+    check(`${file} 解密后能取到文本`, lib.slideText(pres.slides[0]).includes('Web PPT'),
+      lib.slideText(pres.slides[0]).slice(0, 40));
+    eq(`${file} 加密方案识别`, lib.encryptionScheme(readEncryptionInfo(bytes)), scheme);
+
+    // 密码错与文件坏必须能区分开：前者可以提示重输，后者不能
+    let err = null;
+    try { await lib.parse(bytes, { password: 'not-the-password' }); } catch (e) { err = e; }
+    eq(`${file} 密码错抛 WrongPasswordError`, err && err.name, 'WrongPasswordError');
+
+    err = null;
+    try { await lib.parse(bytes); } catch (e) { err = e; }
+    check(`${file} 不给密码时提示明确`, err && /密码/.test(err.message), err && err.message);
+  }
+
+  // 解密结果必须与明文原件逐字节相同，"能解析"不等于"解对了"
+  {
+    const dec = await lib.parse(load('sample-encrypted-agile.pptx'), { password: PW });
+    const ref = await lib.parse(plain);
+    eq('解密结果与明文原件页数一致', dec.slides.length, ref.slides.length);
+    eq('解密结果与明文原件文本一致',
+      dec.slides.map((s) => lib.slideText(s)).join('|'),
+      ref.slides.map((s) => lib.slideText(s)).join('|'));
+  }
+}
+
+/** 从 CFB 里取 EncryptionInfo 流：定位目录项，按扇区链读出 */
+function readEncryptionInfo(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const sec = 1 << dv.getUint16(30, true);
+  const dirStart = dv.getUint32(48, true);
+  for (let i = 0; i < 8; i++) {
+    const off = (dirStart + 1) * sec + i * 128;
+    if (off + 128 > bytes.length) break;
+    const nameLen = dv.getUint16(off + 64, true);
+    let name = '';
+    for (let k = 0; k + 1 < nameLen; k += 2) name += String.fromCharCode(dv.getUint16(off + k, true));
+    if (name.replace(/\0/g, '').trim() === 'EncryptionInfo') {
+      const start = dv.getUint32(off + 116, true);
+      return bytes.subarray((start + 1) * sec, (start + 1) * sec + dv.getUint32(off + 120, true));
+    }
+  }
+  return new Uint8Array(16);
 }
 
 // ---------------- 6. 3D ----------------

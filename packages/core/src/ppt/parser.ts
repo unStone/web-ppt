@@ -1231,10 +1231,10 @@ interface Shared {
 export function parsePpt(bytes: Uint8Array): Presentation {
   const cfb = new Cfb(bytes);
 
-  // 设了打开密码的 .pptx / .ppt 都是 CFB 容器，会被魔数判成 .ppt 走到这里。
-  // 不单独识别的话只会得到「找不到 PowerPoint Document 流」，让人以为文件损坏。
+  // 加密的 .pptx 已在 parse() 里被 EncryptedPackage 流拦下并解密，走不到这里；
+  // 落到这一分支的是老式二进制 .ppt 的 RC4 CryptoAPI 加密，那是另一套方案。
   if (cfb.stream('EncryptedPackage') || cfb.stream('EncryptionInfo')) {
-    throw new Error('该文件已加密（设置了打开密码），暂不支持解析');
+    throw new Error('该 .ppt 使用老式二进制加密（RC4 CryptoAPI），暂不支持；加密的 .pptx 请用 parse(input, { password })');
   }
 
   const doc = cfb.stream('PowerPoint Document');
