@@ -21,7 +21,9 @@
     "bench": "node --expose-gc tooling/bench.mjs",
     "dev:site": "npm run dev -w @web-ppt/site",
     "build:site": "npm run build && npm run build -w @web-ppt/site",
-    "og": "node tooling/make-og-image.mjs"
+    "og": "node tooling/make-og-image.mjs",
+    "corpus": "node tooling/fetch-corpus.mjs",
+    "corpus:probe": "node tooling/probe-corpus.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",
