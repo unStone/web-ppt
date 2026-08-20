@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/viewer-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Web-PPT 查看器的 headless 状态机与播放层：导航 / 缩放 / 搜索 / 动画批次，可被任意 UI 框架驱动",
   "keywords": [
     "pptx",
@@ -41,6 +41,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
@@ -49,7 +50,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.2.0"
+    "@web-ppt/core": "^0.3.0"
   },
   "publishConfig": {
     "access": "public"

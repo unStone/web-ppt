@@ -13,6 +13,8 @@ const pkgDir = process.cwd();
 const name = basename(pkgDir);
 
 copyFileSync(join(root, 'LICENSE'), join(pkgDir, 'LICENSE'));
+// 更新日志两个包共用一份：装了包的人看不到 git log，只能靠它知道版本间的变化
+copyFileSync(join(root, 'CHANGELOG.md'), join(pkgDir, 'CHANGELOG.md'));
 
 // core 就是这个项目本体，直接用仓库根的 README；其余包各自维护
 if (name === 'core') copyFileSync(join(root, 'README.md'), join(pkgDir, 'README.md'));
