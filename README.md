@@ -21,7 +21,7 @@ web-ppt/                     npm workspaces monorepo
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| `web-ppt` | 解析 / 渲染 / 导出 | fflate | 67KB |
+| `web-ppt` | 解析 / 渲染 / 导出 | fflate | 70KB |
 | `@web-ppt/viewer-core` | 导航 / 缩放 / 搜索 / 动画批次 | `web-ppt` | 5.2KB |
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -73,7 +73,7 @@ Safari 系有个 [15 年未修的老 bug](https://bugs.webkit.org/show_bug.cgi?i
 
 | 能力 | .pptx | .ppt |
 |---|---|---|
-| 预设几何 | ✅ 163 个预设 | ✅ MSOSPT 全表映射 |
+| 预设几何 | ✅ 187 个预设（ECMA-376 全集） | ✅ MSOSPT 全表映射 |
 | 自定义几何 | ✅ custGeom + gdLst 公式求值 + arcTo | ✅ pVertices / pSegmentInfo |
 | 填充 | ✅ 纯色 / 线性 / 径向渐变 / 图片 / 平铺 / 图案 / 主题色变换 | ✅ 纯色 / 渐变 / 图片 |
 | 描边 | ✅ 虚线 / 线端箭头 / 端点 / 连接样式 | ✅ 虚线 / 箭头 |
@@ -154,7 +154,7 @@ st.search('关键词');            // → 命中的页索引数组
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1298 项断言 + 142 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1489 项断言 + 142 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -219,7 +219,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 9 个测试文件 × 全部页 × 两条文本路径 = 102 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 11 个测试文件 × 全部页 × 两条文本路径 = 142 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |

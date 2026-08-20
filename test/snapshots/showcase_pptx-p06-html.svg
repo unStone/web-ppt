@@ -5,12 +5,12 @@
 </marker>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>
-<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g data-el="479" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 714)">
 <path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="401" style="transform-box:fill-box;transform-origin:center">
+<g data-el="449" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(24 14)">
 <path d="M 0 0 L 700 0 L 700 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <foreignObject width="700" height="34" style="overflow:visible">
@@ -35,7 +35,7 @@
 <g data-el="610" style="transform-box:fill-box;transform-origin:center">
 <g transform="rotate(15 940 220) translate(680 90)">
 <g transform=" scale(2 2) translate(0 0)">
-<g data-el="398" style="transform-box:fill-box;transform-origin:center">
+<g data-el="446" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
 <path d="M 0 20 A 20 20 0 0 1 20 0 L 100 0 A 20 20 0 0 1 120 20 L 120 110 A 20 20 0 0 1 100 130 L 20 130 A 20 20 0 0 1 0 110 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 <foreignObject width="120" height="130" style="overflow:visible">
@@ -50,7 +50,7 @@
 <g data-el="611" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(140 10)">
 <g transform=" scale(2 2) translate(0 0)">
-<g data-el="399" style="transform-box:fill-box;transform-origin:center">
+<g data-el="447" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
 <path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 <foreignObject width="60" height="25" style="overflow:visible">
@@ -62,7 +62,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="400" style="transform-box:fill-box;transform-origin:center">
+<g data-el="448" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 30)">
 <path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 <foreignObject width="60" height="25" style="overflow:visible">
@@ -80,7 +80,7 @@
 </g>
 </g>
 </g>
-<g data-el="402" style="transform-box:fill-box;transform-origin:center">
+<g data-el="450" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(60 360)">
 <path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <foreignObject width="260" height="24" style="overflow:visible">
@@ -92,7 +92,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="403" style="transform-box:fill-box;transform-origin:center">
+<g data-el="451" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(360 360)">
 <path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <foreignObject width="260" height="24" style="overflow:visible">
@@ -104,7 +104,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="404" style="transform-box:fill-box;transform-origin:center">
+<g data-el="452" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(680 360)">
 <path d="M 0 0 L 520 0 L 520 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <foreignObject width="520" height="24" style="overflow:visible">
@@ -116,7 +116,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="405" style="transform-box:fill-box;transform-origin:center">
+<g data-el="453" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(60 410)">
 <path d="M 0 10 A 10 10 0 0 1 10 0 L 110 0 A 10 10 0 0 1 120 10 L 120 90 A 10 10 0 0 1 110 100 L 10 100 A 10 10 0 0 1 0 90 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <foreignObject width="120" height="100" style="overflow:visible">
@@ -128,7 +128,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="406" style="transform-box:fill-box;transform-origin:center">
+<g data-el="454" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(210 410)">
 <path d="M 0 25 A 25 25 0 0 1 25 0 L 95 0 A 25 25 0 0 1 120 25 L 120 75 A 25 25 0 0 1 95 100 L 25 100 A 25 25 0 0 1 0 75 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <foreignObject width="120" height="100" style="overflow:visible">
@@ -140,7 +140,7 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="407" style="transform-box:fill-box;transform-origin:center">
+<g data-el="455" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(360 410)">
 <path d="M 0 45 A 45 45 0 0 1 45 0 L 75 0 A 45 45 0 0 1 120 45 L 120 55 A 45 45 0 0 1 75 100 L 45 100 A 45 45 0 0 1 0 55 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <foreignObject width="120" height="100" style="overflow:visible">
@@ -152,47 +152,47 @@
 </foreignObject>
 </g>
 </g>
-<g data-el="408" style="transform-box:fill-box;transform-origin:center">
+<g data-el="456" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(540 410)">
 <path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 10 50 A 50 40 0 0 0 110 50 A 50 40 0 0 0 10 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="409" style="transform-box:fill-box;transform-origin:center">
+<g data-el="457" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(690 410)">
 <path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 30 50 A 30 20 0 0 0 90 50 A 30 20 0 0 0 30 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="410" style="transform-box:fill-box;transform-origin:center">
+<g data-el="458" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(840 410)">
 <path d="M 0 50 A 60 50 0 0 1 120 50 A 60 50 0 0 1 0 50 Z M 48 50 A 12 2 0 0 0 72 50 A 12 2 0 0 0 48 50 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="411" style="transform-box:fill-box;transform-origin:center">
+<g data-el="459" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(60 545)">
 <path d="M 60 55 L 120 55 A 60 55 0 0 1 60 110 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="412" style="transform-box:fill-box;transform-origin:center">
+<g data-el="460" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(210 545)">
 <path d="M 60 55 L 102.426 93.891 A 60 55 0 1 1 102.426 16.109 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="413" style="transform-box:fill-box;transform-origin:center">
+<g data-el="461" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(360 545)">
 <path d="M 60 55 L 0 55 A 60 55 0 0 1 60 0 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="414" style="transform-box:fill-box;transform-origin:center">
+<g data-el="462" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(540 545)">
 <path d="M 0 55 A 60 55 0 0 1 60 0 L 60 27.5 A 32.5 27.5 0 0 0 27.5 55 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="415" style="transform-box:fill-box;transform-origin:center">
+<g data-el="463" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(690 545)">
 <path d="M 17.574 16.109 A 60 55 0 1 1 17.574 93.891 L 37.019 74.445 A 32.5 27.5 0 1 0 37.019 35.555 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="416" style="transform-box:fill-box;transform-origin:center">
+<g data-el="464" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(60 665)">
 <path d="M 0 0 L 620 0 L 620 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <foreignObject width="620" height="24" style="overflow:visible">

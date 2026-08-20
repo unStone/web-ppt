@@ -21,7 +21,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1298 + 109 项断言、142 个快照 |
+| `npm test` | 全部测试：1489 + 109 项断言、142 个快照 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |
@@ -64,7 +64,7 @@
 EMF/WMF (GDI 流)  ─┘
 ```
 
-`src/geometry/` 是**格式无关的公共层**（163 个预设形状求值，零 import），两条链路共用。读 OOXML 的部分留在 `pptx/geometry.ts`。图表与图元文件解码器经 hook 注入，可 tree-shake。
+`src/geometry/` 是**格式无关的公共层**（ECMA-376 全部 187 个预设形状求值，零 import），两条链路共用。读 OOXML 的部分留在 `pptx/geometry.ts`。图表与图元文件解码器经 hook 注入，可 tree-shake。
 
 ## 发布
 

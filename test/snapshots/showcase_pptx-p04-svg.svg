@@ -6,12 +6,12 @@
 </linearGradient>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>
-<g data-el="431" style="transform-box:fill-box;transform-origin:center">
+<g data-el="479" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 714)">
 <path d="M 0 0 L 1280 0 L 1280 6 L 0 6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
 </g>
-<g data-el="384" style="transform-box:fill-box;transform-origin:center">
+<g data-el="432" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(24 14)">
 <path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
@@ -180,7 +180,7 @@
 </text>
 </g>
 </g>
-<g data-el="385" style="transform-box:fill-box;transform-origin:center">
+<g data-el="433" style="transform-box:fill-box;transform-origin:center">
 <g transform="rotate(30 90 555) translate(30 520)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
@@ -188,7 +188,7 @@
 </text>
 </g>
 </g>
-<g data-el="386" style="transform-box:fill-box;transform-origin:center">
+<g data-el="434" style="transform-box:fill-box;transform-origin:center">
 <g transform="rotate(-30 240 555) translate(180 520)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
@@ -196,7 +196,7 @@
 </text>
 </g>
 </g>
-<g data-el="387" style="transform-box:fill-box;transform-origin:center">
+<g data-el="435" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(330 520)">
 <g transform="translate(60 35) scale(-1 1) translate(-60 -35)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
@@ -206,7 +206,7 @@
 </text>
 </g>
 </g>
-<g data-el="388" style="transform-box:fill-box;transform-origin:center">
+<g data-el="436" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(480 520)">
 <g transform="translate(60 35) scale(1 -1) translate(-60 -35)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>

@@ -107,6 +107,10 @@ group('几何');
     'mathPlus', 'mathMultiply', 'mathNotEqual', 'leftBracket', 'bracePair', 'ribbon', 'wave',
     'wedgeEllipseCallout', 'cloudCallout', 'flowChartProcess', 'flowChartMagneticDrum',
     'flowChartSummingJunction', 'actionButtonSound', 'chartX', 'line', 'bentConnector3',
+    'bentUpArrow', 'leftUpArrow', 'leftCircularArrow', 'leftRightCircularArrow', 'swooshArrow',
+    'quadArrowCallout', 'upDownArrowCallout', 'pieWedge', 'ellipseRibbon', 'ellipseRibbon2',
+    'leftRightRibbon', 'cornerTabs', 'squareTabs', 'plaqueTabs', 'lineInv',
+    'flowChartOfflineStorage', 'accentCallout3', 'accentBorderCallout1', 'borderCallout3',
   ];
   const W = 200, H = 120;
   let bounded = 0;
@@ -138,6 +142,47 @@ group('几何');
 
   // 未知形状回退
   check('未知形状回退为矩形', geo.presetGeom('__nope__', 100, 50, {}).d.includes('M 0 0'));
+
+  // 规范全覆盖：presetGeom 对未知名字静默退化成矩形，不报错也不进 unsupported，
+  // 少一个预设就是无声画错。这里把 ECMA-376 的 187 个名字全列出来当闸门。
+  const SPEC_PRESETS = [
+    'accentBorderCallout1', 'accentBorderCallout2', 'accentBorderCallout3', 'accentCallout1', 'accentCallout2', 'accentCallout3',
+    'actionButtonBackPrevious', 'actionButtonBeginning', 'actionButtonBlank', 'actionButtonDocument', 'actionButtonEnd', 'actionButtonForwardNext',
+    'actionButtonHelp', 'actionButtonHome', 'actionButtonInformation', 'actionButtonMovie', 'actionButtonReturn', 'actionButtonSound',
+    'arc', 'bentArrow', 'bentConnector2', 'bentConnector3', 'bentConnector4', 'bentConnector5',
+    'bentUpArrow', 'bevel', 'blockArc', 'borderCallout1', 'borderCallout2', 'borderCallout3',
+    'bracePair', 'bracketPair', 'callout1', 'callout2', 'callout3', 'can',
+    'chartPlus', 'chartStar', 'chartX', 'chevron', 'chord', 'circularArrow',
+    'cloud', 'cloudCallout', 'corner', 'cornerTabs', 'cube', 'curvedConnector2',
+    'curvedConnector3', 'curvedConnector4', 'curvedConnector5', 'curvedDownArrow', 'curvedLeftArrow', 'curvedRightArrow',
+    'curvedUpArrow', 'decagon', 'diagStripe', 'diamond', 'dodecagon', 'donut',
+    'doubleWave', 'downArrow', 'downArrowCallout', 'ellipse', 'ellipseRibbon', 'ellipseRibbon2',
+    'flowChartAlternateProcess', 'flowChartCollate', 'flowChartConnector', 'flowChartDecision', 'flowChartDelay', 'flowChartDisplay',
+    'flowChartDocument', 'flowChartExtract', 'flowChartInputOutput', 'flowChartInternalStorage', 'flowChartMagneticDisk', 'flowChartMagneticDrum',
+    'flowChartMagneticTape', 'flowChartManualInput', 'flowChartManualOperation', 'flowChartMerge', 'flowChartMultidocument', 'flowChartOfflineStorage',
+    'flowChartOffpageConnector', 'flowChartOnlineStorage', 'flowChartOr', 'flowChartPredefinedProcess', 'flowChartPreparation', 'flowChartProcess',
+    'flowChartPunchedCard', 'flowChartPunchedTape', 'flowChartSort', 'flowChartSummingJunction', 'flowChartTerminator', 'foldedCorner',
+    'frame', 'funnel', 'gear6', 'gear9', 'halfFrame', 'heart',
+    'heptagon', 'hexagon', 'homePlate', 'horizontalScroll', 'irregularSeal1', 'irregularSeal2',
+    'leftArrow', 'leftArrowCallout', 'leftBrace', 'leftBracket', 'leftCircularArrow', 'leftRightArrow',
+    'leftRightArrowCallout', 'leftRightCircularArrow', 'leftRightRibbon', 'leftRightUpArrow', 'leftUpArrow', 'lightningBolt',
+    'line', 'lineInv', 'mathDivide', 'mathEqual', 'mathMinus', 'mathMultiply',
+    'mathNotEqual', 'mathPlus', 'moon', 'noSmoking', 'nonIsoscelesTrapezoid', 'notchedRightArrow',
+    'octagon', 'parallelogram', 'pentagon', 'pie', 'pieWedge', 'plaque',
+    'plaqueTabs', 'plus', 'quadArrow', 'quadArrowCallout', 'rect', 'ribbon',
+    'ribbon2', 'rightArrow', 'rightArrowCallout', 'rightBrace', 'rightBracket', 'round1Rect',
+    'round2DiagRect', 'round2SameRect', 'roundRect', 'rtTriangle', 'smileyFace', 'snip1Rect',
+    'snip2DiagRect', 'snip2SameRect', 'snipRoundRect', 'squareTabs', 'star10', 'star12',
+    'star16', 'star24', 'star32', 'star4', 'star5', 'star6',
+    'star7', 'star8', 'straightConnector1', 'stripedRightArrow', 'sun', 'swooshArrow',
+    'teardrop', 'trapezoid', 'triangle', 'upArrow', 'upArrowCallout', 'upDownArrow',
+    'upDownArrowCallout', 'uturnArrow', 'verticalScroll', 'wave', 'wedgeEllipseCallout', 'wedgeRectCallout',
+    'wedgeRoundRectCallout',
+  ];
+  {
+    const missing = SPEC_PRESETS.filter((nm) => !geo.isKnownPreset(nm));
+    check(`ECMA-376 预设形状全覆盖（${SPEC_PRESETS.length} 个）`, missing.length === 0, `缺 ${missing.join(' ')}`);
+  }
 
   // 模糊测试：调节值取自恶意区间（负数 / 超大 / 非整），直接压 presetGeom 的安全网。
   // .ppt 的 MSO 调节值不是 OOXML 的 100000 制，曾因此画出满屏飞线。

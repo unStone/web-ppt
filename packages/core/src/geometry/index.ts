@@ -1,7 +1,7 @@
 /**
  * 预设形状几何 —— 与文件格式无关的纯计算。
  *
- * 163 个 DrawingML 预设形状的 path 求值，不依赖 XML、DOM 或任何解析器：
+ * ECMA-376 全部 187 个 DrawingML 预设形状的 path 求值，不依赖 XML、DOM 或任何解析器：
  * .pptx 与 .ppt 两条链路都用它（ppt 侧把 MSO 的调节值换算成 100000 制后传入）。
  * 读 OOXML 的那部分（avLst / custGeom）留在 pptx/geometry.ts。
  *
@@ -167,6 +167,55 @@ function wedgeTail(w: number, h: number, a: Adj): Pt {
   return [w / 2 + w * av(a, 'adj1', -20833), h / 2 + h * av(a, 'adj2', 62500)];
 }
 
+/**
+ * 标注引线：文本框底边出发的 1-3 段折线。段数即形状名末尾的数字。
+ *
+ * 注意 accent* / 无 border 的变体在规范里文本框是「只填充不描边」的，
+ * 我们的路径统一描边，做不到分段区分——callout1 一直复用 borderCallout1 就是这个原因，
+ * 这里沿用同一处理，只保证段数与重音竖线正确。
+ */
+function calloutLeader(w: number, h: number, a: Adj, segs: number): string {
+  const pts: Pt[] = [[w * 0.15, h]];
+  if (segs === 1) {
+    pts.push([w * av(a, 'adj2', -8333), h + h * av(a, 'adj1', 18750)]);
+  } else {
+    pts.push([w * 0.05, h * 1.2]);
+    pts.push([w * av(a, 'adj4', -16667), h + h * av(a, 'adj3', 44444)]);
+    // 三段标注末段水平延伸，与 PowerPoint 一致
+    if (segs >= 3) pts.push([w * av(a, 'adj6', -16667) - w * 0.12, h + h * av(a, 'adj5', 44444)]);
+  }
+  // 折线必须走零面积描线：3 点以上的开放子路径会被 fill 补成实心楔形
+  return ' ' + seg(pts);
+}
+
+/** 标注：文本框 + 引线，accent 时在左边缘补一条重音竖线（规范里它就压在框的左边） */
+function callout(segs: number, accent: boolean): PathFn {
+  return (w, h, a) =>
+    poly([[0, 0], [w, 0], [w, h], [0, h]]) +
+    (accent ? ' ' + seg([[0, 0], [0, h]]) : '') +
+    calloutLeader(w, h, a, segs);
+}
+
+/** 四角装饰片：每个角一片，kind 决定圆角朝向（'q' 凸 / 'c' 凹 / 's' 方） */
+function tabs(kind: 'q' | 'c' | 's'): PathFn {
+  return (w, h) => {
+    // 规范用对角线长度的 1/20 定尺寸，与 w/h 比例无关
+    const d = Math.min(Math.hypot(w, h) / 20, Math.min(w, h) / 2);
+    const corner = (cx: number, cy: number, sx: number, sy: number): string => {
+      const [ax, ay] = [cx + sx * d, cy];
+      const [bx, by] = [cx, cy + sy * d];
+      if (kind === 's') return poly([[cx, cy], [ax, ay], [ax, by], [bx, by]]);
+      // 凸（cornerTabs）弧心在角点，凹（plaqueTabs）弧心在对角
+      const sweep = kind === 'q' ? (sx * sy > 0 ? 1 : 0) : (sx * sy > 0 ? 0 : 1);
+      return `M ${n(cx)} ${n(cy)} L ${n(ax)} ${n(ay)} A ${n(d)} ${n(d)} 0 0 ${sweep} ${n(bx)} ${n(by)} Z`;
+    };
+    return [
+      corner(0, 0, 1, 1), corner(w, 0, -1, 1),
+      corner(w, h, -1, -1), corner(0, h, 1, -1),
+    ].join(' ');
+  };
+}
+
 function waveEdge(y: number, w: number, amp: number, reverse: boolean): string {
   const q = w / 4;
   return reverse
@@ -178,29 +227,40 @@ function waveEdge(y: number, w: number, amp: number, reverse: boolean): string {
 /**
  * 弯曲箭头：环形扇区band + 端部箭头。
  * 角度按 DrawingML 约定（0°=右，顺时针为正）；sign 为 +1/-1 表示扫掠方向。
+ * both=true 时起点也长一个箭头（leftRightCircularArrow），此时两端各让出更少的角度，
+ * 否则短弧上两个箭头会啃到一起。
  */
 function curvedArrow(
   cx: number, cy: number, rx: number, ry: number,
-  t: number, head: number, startAng: number, endAng: number,
+  t: number, head: number, startAng: number, endAng: number, both = false,
 ): string {
   const sign = endAng >= startAng ? 1 : -1;
   // 箭头不能吃穿环带内侧，否则路径自交
   const hd = Math.max(1, Math.min(head, Math.min(rx, ry) - t - 1));
   const rMid = (rx + ry) / 2 - t / 2;
-  const headAng = Math.min(Math.abs(endAng - startAng) * 0.6, (hd / Math.max(rMid, 1)) * (180 / Math.PI));
+  const headAng = Math.min(Math.abs(endAng - startAng) * (both ? 0.35 : 0.6), (hd / Math.max(rMid, 1)) * (180 / Math.PI));
   const baseAng = endAng - sign * headAng;
-  const sweepOuter = baseAng - startAng;
+  const startBase = both ? startAng + sign * headAng : startAng;
+  const sweepOuter = baseAng - startBase;
 
-  const [ox, oy] = ep(cx, cy, rx, ry, startAng);
+  const [ox, oy] = ep(cx, cy, rx, ry, startBase);
   const [aOutX, aOutY] = ep(cx, cy, rx + hd, ry + hd, baseAng);
   const [tipX, tipY] = ep(cx, cy, rx - t / 2, ry - t / 2, endAng);
   const [aInX, aInY] = ep(cx, cy, rx - t - hd, ry - t - hd, baseAng);
   const [inX, inY] = ep(cx, cy, rx - t, ry - t, baseAng);
 
+  let tail = '';
+  if (both) {
+    const [bInX, bInY] = ep(cx, cy, rx - t - hd, ry - t - hd, startBase);
+    const [bTipX, bTipY] = ep(cx, cy, rx - t / 2, ry - t / 2, startAng);
+    const [bOutX, bOutY] = ep(cx, cy, rx + hd, ry + hd, startBase);
+    tail = `L ${n(bInX)} ${n(bInY)} L ${n(bTipX)} ${n(bTipY)} L ${n(bOutX)} ${n(bOutY)} `;
+  }
+
   return (
-    `M ${n(ox)} ${n(oy)} ${arcSeg(cx, cy, rx, ry, startAng, sweepOuter)} ` +
+    `M ${n(ox)} ${n(oy)} ${arcSeg(cx, cy, rx, ry, startBase, sweepOuter)} ` +
     `L ${n(aOutX)} ${n(aOutY)} L ${n(tipX)} ${n(tipY)} L ${n(aInX)} ${n(aInY)} ` +
-    `L ${n(inX)} ${n(inY)} ${arcSeg(cx, cy, rx - t, ry - t, baseAng, -sweepOuter)} Z`
+    `L ${n(inX)} ${n(inY)} ${arcSeg(cx, cy, rx - t, ry - t, baseAng, -sweepOuter)} ${tail}Z`
   );
 }
 
@@ -252,6 +312,10 @@ const PRESETS: Record<string, PathFn> = {
     );
   },
   bevel: (w, h, a) => bevelFrame(w, h, Math.min(w, h) * Math.min(av(a, 'adj', 12500), 0.5)),
+  // 四角装饰片：无调节值，尺寸由对角线长度决定
+  cornerTabs: tabs('q'),
+  squareTabs: tabs('s'),
+  plaqueTabs: tabs('c'),
   frame: (w, h, a) => {
     const t = Math.min(w, h) * Math.min(av(a, 'adj1', 12500), 0.5);
     return poly([[0, 0], [w, 0], [w, h], [0, h]]) + ' ' + poly([[t, t], [t, h - t], [w - t, h - t], [w - t, t]]);
@@ -371,6 +435,8 @@ const PRESETS: Record<string, PathFn> = {
     const [sx, sy] = ep(w / 2, h / 2, w / 2, h / 2, st);
     return `M ${n(w / 2)} ${n(h / 2)} L ${n(sx)} ${n(sy)} ${arcSeg(w / 2, h / 2, w / 2, h / 2, st, sweep)} Z`;
   },
+  // 固定 90° 扇形：圆心在右下角，从 180° 顺时针扫到 270°
+  pieWedge: (w, h) => `M 0 ${n(h)} ${arcSeg(w, h, w, h, 180, 90)} L ${n(w)} ${n(h)} Z`,
   chord: (w, h, a) => {
     const st = ang(a, 'adj1', 45 * 60000);
     const sweep = ((ang(a, 'adj2', 270 * 60000) - st) % 360 + 360) % 360;
@@ -529,6 +595,28 @@ const PRESETS: Record<string, PathFn> = {
       [head, yc - head], [head, yc - s], [cx - s, yc - s], [cx - s, head], [cx - head, head],
     ]);
   },
+  bentUpArrow: (w, h, a) => {
+    const t = Math.min(w, h) * Math.min(av(a, 'adj3', 25000), 0.6);
+    // 箭头半宽必须大于杆半厚，否则箭头缩进杆里，路径自交
+    const aw = Math.min(w / 2, Math.max(Math.min(w, h) * av(a, 'adj1', 25000), t * 0.6));
+    const ah = Math.min(h, Math.min(w, h) * av(a, 'adj2', 25000));
+    const cx = w - aw;
+    return poly([
+      [0, h], [cx + t / 2, h], [cx + t / 2, ah], [w, ah], [cx, 0], [cx - aw, ah],
+      [cx - t / 2, ah], [cx - t / 2, h - t], [0, h - t],
+    ]);
+  },
+  leftUpArrow: (w, h, a) => {
+    const ss = Math.min(w, h);
+    const t = ss * Math.min(av(a, 'adj1', 25000), 0.6);
+    const aw = Math.min(ss / 2, Math.max(ss * av(a, 'adj2', 25000), t * 0.6));
+    const ah = Math.min(ss, ss * av(a, 'adj3', 25000));
+    return poly([
+      [w - aw, 0], [w, ah], [w - aw + t / 2, ah], [w - aw + t / 2, h], [ah, h], [0, h - aw],
+      [ah, h - 2 * aw], [ah, h - aw - t / 2], [w - aw - t / 2, h - aw - t / 2],
+      [w - aw - t / 2, ah], [w - 2 * aw, ah],
+    ]);
+  },
   bentArrow: (w, h, a) => {
     const t = Math.min(w, h) * av(a, 'adj1', 25000);
     const head = Math.min(Math.min(w, h) * av(a, 'adj2', 25000), h / 2);
@@ -603,6 +691,31 @@ const PRESETS: Record<string, PathFn> = {
     const rOut = rad0 - head;
     return curvedArrow(w / 2, h / 2, rOut, rOut, t, head, 200, 450);
   },
+  leftCircularArrow: (w, h, a) => {
+    // circularArrow 的水平镜像：角度按 180-θ 映射，扫掠方向随之反转
+    const rad0 = Math.min(w, h) / 2;
+    const t = rad0 * Math.min(Math.max(av(a, 'adj1', 12500), 0.06), 0.35);
+    const head = t * 1.6;
+    return curvedArrow(w / 2, h / 2, rad0 - head, rad0 - head, t, head, -20, -270);
+  },
+  leftRightCircularArrow: (w, h, a) => {
+    const rad0 = Math.min(w, h) / 2;
+    const t = rad0 * Math.min(Math.max(av(a, 'adj1', 12500), 0.06), 0.35);
+    const head = t * 1.6;
+    return curvedArrow(w / 2, h / 2, rad0 - head, rad0 - head, t, head, 200, 430, true);
+  },
+  swooshArrow: (w, h, a) => {
+    // 甩尾箭头：外缘与内缘两条二次曲线共用尾点，天然收成尖尾
+    const ss = Math.min(w, h);
+    const t = ss * Math.min(Math.max(av(a, 'adj2', 16667), 0.04), 0.4);
+    const head = ss * Math.min(Math.max(av(a, 'adj1', 25000), 0.08), 0.6);
+    const k = t * 1.6;
+    return (
+      `M 0 ${n(h)} Q ${n(w * 0.65)} ${n(h * 0.95)} ${n(w - head * 1.2)} ${n(head * 0.1)} ` +
+      `L ${n(w)} 0 L ${n(w - head * 0.1)} ${n(head * 1.2)} ` +
+      `Q ${n(w * 0.65 - k)} ${n(h * 0.95 - k)} 0 ${n(h)} Z`
+    );
+  },
   rightArrowCallout: arrowCallout('r'),
   leftArrowCallout: arrowCallout('l'),
   upArrowCallout: arrowCallout('u'),
@@ -617,6 +730,40 @@ const PRESETS: Record<string, PathFn> = {
       [0, c], [head, 0], [head, c - shaft], [bx1, c - shaft], [bx1, 0], [bx2, 0], [bx2, c - shaft],
       [w - head, c - shaft], [w - head, 0], [w, c], [w - head, h], [w - head, c + shaft],
       [bx2, c + shaft], [bx2, h], [bx1, h], [bx1, c + shaft], [head, c + shaft], [head, h],
+    ]);
+  },
+
+  upDownArrowCallout: (w, h, a) => {
+    const shaft = (w * av(a, 'adj1', 18515)) / 2;
+    const hw = Math.min(w / 2, shaft + w * av(a, 'adj2', 18515));
+    const head = Math.min(h * 0.3, w * av(a, 'adj3', 18515));
+    // 文本框横贯整宽，但不能盖住箭头根部，否则上下两截退化成一条直边
+    const box = Math.max(0, Math.min(h * av(a, 'adj4', 48123), h - 2.4 * head));
+    const c = w / 2;
+    const by1 = (h - box) / 2, by2 = (h + box) / 2;
+    return poly([
+      [c, 0], [c + hw, head], [c + shaft, head], [c + shaft, by1], [w, by1], [w, by2],
+      [c + shaft, by2], [c + shaft, h - head], [c + hw, h - head], [c, h],
+      [c - hw, h - head], [c - shaft, h - head], [c - shaft, by2], [0, by2], [0, by1],
+      [c - shaft, by1], [c - shaft, head], [c - hw, head],
+    ]);
+  },
+  quadArrowCallout: (w, h, a) => {
+    const ss = Math.min(w, h);
+    const head = ss * av(a, 'adj3', 18515);
+    const s2 = (ss * av(a, 'adj2', 18515)) / 2;
+    // 中央方框必须包住箭杆又不能吃掉箭头，否则四条臂消失
+    const box = Math.min(Math.max((ss * av(a, 'adj4', 48123)) / 2, s2 * 1.2), ss / 2 - head);
+    const cx = w / 2, cy = h / 2;
+    return poly([
+      [cx, 0], [cx + head, head], [cx + s2, head], [cx + s2, cy - box], [cx + box, cy - box],
+      [cx + box, cy - s2], [w - head, cy - s2], [w - head, cy - head], [w, cy],
+      [w - head, cy + head], [w - head, cy + s2], [cx + box, cy + s2], [cx + box, cy + box],
+      [cx + s2, cy + box], [cx + s2, h - head], [cx + head, h - head], [cx, h],
+      [cx - head, h - head], [cx - s2, h - head], [cx - s2, cy + box], [cx - box, cy + box],
+      [cx - box, cy + s2], [head, cy + s2], [head, cy + head], [0, cy],
+      [head, cy - head], [head, cy - s2], [cx - box, cy - s2], [cx - box, cy - box],
+      [cx - s2, cy - box], [cx - s2, head], [cx - head, head],
     ]);
   },
 
@@ -736,6 +883,48 @@ const PRESETS: Record<string, PathFn> = {
     const right: Pt[] = [[w, h], [cx + wing, h], [cx + wing - t, h * 0.5], [cx + wing, 0], [w, 0], [w - t, h * 0.5]];
     return poly(mid) + ' ' + poly(left) + ' ' + poly(right);
   },
+  ellipseRibbon: (w, h, a) => {
+    // 弧形缎带：主带两端下沉 sag，两侧尾翼垂到底边并开 V 口
+    const t = h * Math.min(av(a, 'adj3', 12500) * 2, 0.5);
+    const sag = h * Math.min(av(a, 'adj1', 25000), 0.35);
+    const ww = w * Math.min(av(a, 'adj2', 50000) / 2, 0.3);
+    const notch = h * 0.12;
+    const band =
+      `M 0 ${n(sag)} Q ${n(w / 2)} ${n(-sag)} ${n(w)} ${n(sag)} ` +
+      `L ${n(w)} ${n(sag + t)} Q ${n(w / 2)} ${n(t - sag)} 0 ${n(sag + t)} Z`;
+    const tail = (x0: number): string =>
+      poly([[x0, sag + t * 0.2], [x0 + ww, sag + t * 0.2], [x0 + ww, h], [x0 + ww / 2, h - notch], [x0, h]]);
+    return `${band} ${tail(0)} ${tail(w - ww)}`;
+  },
+  ellipseRibbon2: (w, h, a) => {
+    // ellipseRibbon 的垂直镜像
+    const t = h * Math.min(av(a, 'adj3', 12500) * 2, 0.5);
+    const sag = h * Math.min(av(a, 'adj1', 25000), 0.35);
+    const ww = w * Math.min(av(a, 'adj2', 50000) / 2, 0.3);
+    const notch = h * 0.12;
+    const band =
+      `M 0 ${n(h - sag)} Q ${n(w / 2)} ${n(h + sag)} ${n(w)} ${n(h - sag)} ` +
+      `L ${n(w)} ${n(h - sag - t)} Q ${n(w / 2)} ${n(h + sag - t)} 0 ${n(h - sag - t)} Z`;
+    const tail = (x0: number): string =>
+      poly([[x0, h - sag - t * 0.2], [x0 + ww, h - sag - t * 0.2], [x0 + ww, 0], [x0 + ww / 2, notch], [x0, 0]]);
+    return `${band} ${tail(0)} ${tail(w - ww)}`;
+  },
+  leftRightRibbon: (w, h, a) => {
+    // 中央块 + 两端箭头臂；箭头外翻量取 s，故 s 上限为 h/4
+    const s = Math.min((h * Math.min(av(a, 'adj1', 50000), 1)) / 2, h / 4);
+    const cw = (w * Math.min(av(a, 'adj2', 50000), 0.9)) / 2;
+    // 箭头只能占臂长的一部分，否则中央块与箭头贴死、看不出是缎带
+    const head = Math.min((w / 2 - cw) * 0.6, Math.max(h * av(a, 'adj3', 16667) * 2, 1));
+    // 箭头外翻量必须小于中央块高度，否则两者顶边齐平、整体并成一个六边形
+    const fl = s * 1.8;
+    const cx = w / 2, cy = h / 2;
+    return poly([
+      [0, cy], [head, cy - fl], [head, cy - s], [cx - cw, cy - s], [cx - cw, 0], [cx + cw, 0],
+      [cx + cw, cy - s], [w - head, cy - s], [w - head, cy - fl], [w, cy],
+      [w - head, cy + fl], [w - head, cy + s], [cx + cw, cy + s], [cx + cw, h], [cx - cw, h],
+      [cx - cw, cy + s], [head, cy + s], [head, cy + fl],
+    ]);
+  },
   verticalScroll: (w, h, a) => {
     const t = Math.min(w, h) * Math.min(av(a, 'adj', 12500), 0.25);
     return (
@@ -794,21 +983,18 @@ const PRESETS: Record<string, PathFn> = {
     const cloud = (PRESETS.cloud as PathFn)(w, h * 0.8, {}) as string;
     return cloud + ' ' + ell(w * 0.36, h * 0.88, w * 0.045, h * 0.045) + ' ' + ell(tx, ty, w * 0.025, h * 0.025);
   },
-  borderCallout1: (w, h, a) => {
-    const tx = w * av(a, 'adj2', -8333);
-    const ty = h + h * av(a, 'adj1', 18750);
-    return poly([[0, 0], [w, 0], [w, h], [0, h]]) + ` M ${n(w * 0.15)} ${n(h)} L ${n(tx)} ${n(ty)}`;
-  },
-  borderCallout2: (w, h, a) => {
-    const tx = w * av(a, 'adj4', -16667);
-    const ty = h + h * av(a, 'adj3', 44444);
-    return (
-      poly([[0, 0], [w, 0], [w, h], [0, h]]) +
-      ` M ${n(w * 0.15)} ${n(h)} L ${n(w * 0.05)} ${n(h * 1.2)} L ${n(tx)} ${n(ty)}`
-    );
-  },
-  callout1: (w, h, a) => (PRESETS.borderCallout1 as PathFn)(w, h, a),
-  callout2: (w, h, a) => (PRESETS.borderCallout2 as PathFn)(w, h, a),
+  borderCallout1: callout(1, false),
+  borderCallout2: callout(2, false),
+  borderCallout3: callout(3, false),
+  callout1: callout(1, false),
+  callout2: callout(2, false),
+  callout3: callout(3, false),
+  accentCallout1: callout(1, true),
+  accentCallout2: callout(2, true),
+  accentCallout3: callout(3, true),
+  accentBorderCallout1: callout(1, true),
+  accentBorderCallout2: callout(2, true),
+  accentBorderCallout3: callout(3, true),
 
   // 流程图
   flowChartProcess: (w, h) => poly([[0, 0], [w, 0], [w, h], [0, h]]),
@@ -862,6 +1048,8 @@ const PRESETS: Record<string, PathFn> = {
   flowChartOnlineStorage: (w, h) =>
     `M ${n(w * 0.16)} 0 L ${n(w)} 0 A ${n(w * 0.16)} ${n(h / 2)} 0 0 0 ${n(w)} ${n(h)} L ${n(w * 0.16)} ${n(h)} ` +
     `A ${n(w * 0.16)} ${n(h / 2)} 0 0 1 ${n(w * 0.16)} 0 Z`,
+  flowChartOfflineStorage: (w, h) =>
+    poly([[0, 0], [w, 0], [w / 2, h]]) + ' ' + seg([[w * 0.1, h * 0.2], [w * 0.9, h * 0.2]]),
   flowChartMagneticTape: (w, h) =>
     ell(w / 2, h * 0.46, w / 2, h * 0.46) +
     ` M ${n(w * 0.5)} ${n(h * 0.92)} L ${n(w)} ${n(h * 0.92)} L ${n(w)} ${n(h)} L ${n(w * 0.5)} ${n(h)} Z`,
@@ -916,6 +1104,7 @@ const PRESETS: Record<string, PathFn> = {
   chartPlus: (w, h) => open(`M ${n(w / 2)} 0 L ${n(w / 2)} ${n(h)} M 0 ${n(h / 2)} L ${n(w)} ${n(h / 2)}`),
   chartStar: (w, h) => open(`M 0 0 L ${n(w)} ${n(h)} M ${n(w)} 0 L 0 ${n(h)} M ${n(w / 2)} 0 L ${n(w / 2)} ${n(h)}`),
   line: (w, h) => open(`M 0 0 L ${n(w)} ${n(h)}`),
+  lineInv: (w, h) => open(`M 0 ${n(h)} L ${n(w)} 0`),
   straightConnector1: (w, h) => open(`M 0 0 L ${n(w)} ${n(h)}`),
   bentConnector2: (w, h) => open(`M 0 0 L ${n(w)} 0 L ${n(w)} ${n(h)}`),
   bentConnector3: (w, h, a) => {

@@ -30,6 +30,9 @@ const SHAPES = [
   'flowChartPunchedTape', 'flowChartSummingJunction', 'flowChartOr', 'flowChartCollate', 'flowChartSort', 'flowChartExtract', 'flowChartMerge', 'flowChartOnlineStorage',
   'flowChartMagneticTape', 'flowChartMagneticDisk', 'flowChartMagneticDrum', 'flowChartDisplay', 'flowChartDelay', 'actionButtonHome', 'actionButtonForwardNext', 'actionButtonInformation',
   'actionButtonReturn', 'actionButtonSound', 'actionButtonMovie', 'actionButtonHelp', 'chartX', 'chartPlus', 'chartStar', 'gear9',
+  'bentUpArrow', 'leftUpArrow', 'leftCircularArrow', 'leftRightCircularArrow', 'swooshArrow', 'quadArrowCallout', 'upDownArrowCallout', 'pieWedge',
+  'ellipseRibbon', 'ellipseRibbon2', 'leftRightRibbon', 'cornerTabs', 'squareTabs', 'plaqueTabs', 'lineInv', 'flowChartOfflineStorage',
+  'callout3', 'borderCallout3', 'accentCallout1', 'accentCallout2', 'accentCallout3', 'accentBorderCallout1', 'accentBorderCallout2', 'accentBorderCallout3',
 ];
 
 const COLS = 16, CELL_W = 76, CELL_H = 62, SHAPE_W = 50, SHAPE_H = 34;
