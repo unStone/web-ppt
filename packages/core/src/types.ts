@@ -70,9 +70,16 @@ export interface SlideComment {
 }
 
 export type TransitionType =
+  // ECMA-376 原生
   | 'none' | 'fade' | 'cut' | 'push' | 'pull' | 'cover' | 'wipe' | 'split' | 'zoom'
   | 'dissolve' | 'checker' | 'blinds' | 'comb' | 'wheel' | 'circle' | 'diamond'
-  | 'plus' | 'wedge' | 'newsflash' | 'randomBar' | 'strips';
+  | 'plus' | 'wedge' | 'newsflash' | 'randomBar' | 'strips'
+  // PowerPoint 2010+ 扩展（p14 命名空间，共 19 种）
+  | 'vortex' | 'switch' | 'flip' | 'ripple' | 'honeycomb' | 'glitter' | 'warp'
+  | 'flythrough' | 'flash' | 'shred' | 'reveal' | 'wheelReverse' | 'ferris'
+  | 'gallery' | 'conveyor' | 'pan' | 'doors' | 'window' | 'prism'
+  // PowerPoint 2016+ 平滑变体（p159 命名空间）
+  | 'morph';
 
 export interface Transition {
   type: TransitionType;
@@ -81,6 +88,8 @@ export interface Transition {
   durationMs: number;
   /** 自动换片延迟（毫秒）；缺省表示需要手动触发 */
   advanceAfterMs?: number;
+  /** morph 的粒度（p159:morph@option）；按字/词拆分我们不做，一律按对象处理 */
+  morphBy?: 'byObject' | 'byWord' | 'byChar';
 }
 
 export type AnimEffect =

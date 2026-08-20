@@ -162,7 +162,7 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
 
 // ---------------- 切换 ----------------
 
-function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
+export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
   const d = t.dir ?? '';
   const shift = (x: string, y: string): string => `translate(${x}, ${y})`;
   const dirVec = (): [string, string] =>
@@ -211,6 +211,99 @@ function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       return incoming
         ? [{ opacity: 0, transform: 'scale(0.7)' }, { opacity: 1, transform: 'scale(1)' }]
         : [{ opacity: 1 }, { opacity: 0 }];
+
+    // ---- p14 扩展 ----
+    // 这些效果原版是 GPU 网格变形（蜂巢、碎纸、涡流…），DOM 里没有对等物。
+    // 取每种最有辨识度的那一维（旋转轴 / 缩放中心 / 裁剪形状）做近似，
+    // 保证"不同的效果看起来确实不同"，不追求逐帧还原。
+    case 'ripple':
+      return incoming
+        ? [{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)' }]
+        : [{ opacity: 1 }, { opacity: 1 }];
+    case 'vortex':
+      return incoming
+        ? [{ opacity: 0, transform: 'scale(0.2) rotate(-180deg)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    case 'honeycomb':
+      return incoming
+        ? [{ opacity: 0, transform: 'scale(0.85) rotate(-6deg)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.1)' }];
+    case 'glitter':
+      return incoming
+        ? [{ opacity: 0, clipPath: wipeClip(d || 'l', true) }, { opacity: 1, clipPath: wipeClip(d || 'l', false) }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    case 'shred':
+      return incoming
+        ? [{ opacity: 0, transform: 'scale(1.06)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scaleY(0.9)' }];
+    case 'flash':
+      // 闪白：拉高亮度再落回，比单纯淡入更贴近原效果
+      return incoming
+        ? [{ opacity: 0, filter: 'brightness(3)' }, { opacity: 1, filter: 'brightness(1)' }]
+        : [{ opacity: 1, filter: 'brightness(1)' }, { opacity: 0, filter: 'brightness(3)' }];
+    case 'reveal': {
+      const [x, y] = dirVec();
+      return incoming
+        ? [{ opacity: 0, transform: shift(x, y) }, { opacity: 1, transform: 'translate(0,0)' }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    }
+    case 'wheelReverse':
+      return incoming
+        ? [{ opacity: 0, transform: 'scale(1.3) rotate(20deg)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    case 'doors':
+      // 门从中间向两侧打开：新页由中缝向外展开
+      return incoming
+        ? [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0 0 0)' }]
+        : [{ opacity: 1 }, { opacity: 1 }];
+    case 'window':
+      return incoming
+        ? [{ clipPath: 'inset(50% 0 50% 0)' }, { clipPath: 'inset(0 0 0 0)' }]
+        : [{ opacity: 1 }, { opacity: 1 }];
+    case 'switch':
+    case 'flip':
+    case 'prism': {
+      const sign = t.type === 'flip' ? -1 : 1;
+      return incoming
+        ? [{ opacity: 0, transform: `perspective(1400px) rotateY(${sign * -80}deg)` },
+          { opacity: 1, transform: 'perspective(1400px) rotateY(0)' }]
+        : [{ opacity: 1, transform: 'perspective(1400px) rotateY(0)' },
+          { opacity: 0, transform: `perspective(1400px) rotateY(${sign * 80}deg)` }];
+    }
+    case 'ferris':
+      return incoming
+        ? [{ opacity: 0, transform: 'perspective(1400px) rotateX(70deg)' },
+          { opacity: 1, transform: 'perspective(1400px) rotateX(0)' }]
+        : [{ opacity: 1, transform: 'perspective(1400px) rotateX(0)' },
+          { opacity: 0, transform: 'perspective(1400px) rotateX(-70deg)' }];
+    case 'gallery':
+    case 'conveyor': {
+      const back = t.type === 'conveyor' ? 25 : 12;
+      const from = d.includes('l') ? '-100%' : '100%';
+      const to = d.includes('l') ? '100%' : '-100%';
+      return incoming
+        ? [{ transform: `perspective(1600px) translateX(${from}) rotateY(${back}deg)` },
+          { transform: 'perspective(1600px) translateX(0) rotateY(0)' }]
+        : [{ transform: 'perspective(1600px) translateX(0) rotateY(0)' },
+          { transform: `perspective(1600px) translateX(${to}) rotateY(${-back}deg)` }];
+    }
+    case 'pan': {
+      // 与 push 同构，只是 PowerPoint 里配的时长更长
+      const [x, y] = dirVec();
+      const inv = (v: string): string => (v === '0' ? '0' : `${-parseFloat(v)}%`);
+      return incoming
+        ? [{ transform: shift(x, y) }, { transform: 'translate(0,0)' }]
+        : [{ transform: 'translate(0,0)' }, { transform: shift(inv(x), inv(y)) }];
+    }
+    case 'flythrough':
+      return incoming
+        ? [{ opacity: 0, transform: 'perspective(1000px) scale(0.15)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'perspective(1000px) scale(2.2)' }];
+    case 'warp':
+      return incoming
+        ? [{ opacity: 0, transform: 'skewX(-18deg) scale(1.15)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'skewX(18deg) scale(0.9)' }];
+
     case 'blinds':
     case 'checker':
     case 'comb':
@@ -219,9 +312,86 @@ function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     case 'newsflash':
     case 'dissolve':
     case 'fade':
+    case 'morph':
     default:
       return incoming ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }];
   }
+}
+
+/**
+ * 等一组动画结束，但不无限等。
+ *
+ * 后台标签页的 document timeline 是暂停的，Animation.finished 永远不会 resolve；
+ * 配合自动换片就会让旧图层一层层堆着不被移除。超时后按已到终态处理。
+ */
+function settle(jobs: Promise<unknown>[], durationMs: number): Promise<void> {
+  const all = Promise.all(jobs.map((p) => p.catch(() => undefined))).then(() => undefined);
+  if (typeof setTimeout !== 'function') return all;
+  return Promise.race([all, new Promise<void>((r) => setTimeout(r, durationMs + 250))]);
+}
+
+/**
+ * morph：按 data-el（形状 id）在前后两页之间配对，配上的元素做几何补间，
+ * 其余淡入淡出。PowerPoint 的 morph 也是按形状 id 匹配的——morph 版面
+ * 基本都由「复制上一页再改」得来，id 天然一致。
+ *
+ * 配对成功的旧元素立刻置 0，新元素全程不透明，看起来才是"同一个东西在动"，
+ * 而不是两层叠化。option="byWord"/"byChar" 的细粒度拆分不做，一律按对象处理。
+ */
+export function morphPairs(
+  outgoing: Element, incoming: Element,
+): { node: HTMLElement; from: DOMRect; to: DOMRect }[] {
+  const outMap = new Map<string, DOMRect>();
+  outgoing.querySelectorAll('[data-el]').forEach((el) => {
+    const r = el.getBoundingClientRect();
+    // 无布局信息（Node / 未挂载）时不参与配对，退回淡化
+    if (r.width > 0 || r.height > 0) outMap.set(el.getAttribute('data-el') ?? '', r);
+  });
+  const pairs: { node: HTMLElement; from: DOMRect; to: DOMRect }[] = [];
+  incoming.querySelectorAll('[data-el]').forEach((el) => {
+    const from = outMap.get(el.getAttribute('data-el') ?? '');
+    if (!from) return;
+    const to = el.getBoundingClientRect();
+    if (to.width <= 0 && to.height <= 0) return;
+    pairs.push({ node: el as HTMLElement, from, to });
+  });
+  return pairs;
+}
+
+function playMorph(
+  outgoing: HTMLElement | null, incoming: HTMLElement, t: Transition,
+): Promise<void> {
+  if (!outgoing) return Promise.resolve();
+  const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
+  const pairs = morphPairs(outgoing, incoming);
+  const matched = new Set(pairs.map((p) => p.node.getAttribute('data-el')));
+  const jobs: Promise<unknown>[] = [];
+
+  const run = (node: HTMLElement, frames: Keyframe[]): void => {
+    try { jobs.push(node.animate(frames, opts).finished); } catch { /* 不支持则跳过 */ }
+  };
+
+  for (const { node, from, to } of pairs) {
+    const dx = from.left - to.left;
+    const dy = from.top - to.top;
+    const sx = to.width > 0 ? from.width / to.width : 1;
+    const sy = to.height > 0 ? from.height / to.height : 1;
+    run(node, [
+      { transformOrigin: 'left top', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+      { transformOrigin: 'left top', transform: 'none' },
+    ]);
+  }
+  // 配对上的旧元素直接隐掉，避免与补间中的新元素形成双影
+  outgoing.querySelectorAll('[data-el]').forEach((el) => {
+    const dup = matched.has(el.getAttribute('data-el'));
+    run(el as HTMLElement, dup ? [{ opacity: 0 }, { opacity: 0 }] : [{ opacity: 1 }, { opacity: 0 }]);
+  });
+  // 新页里没有对应旧元素的部分淡入；已配对的靠上面的补间，不参与整层淡化
+  incoming.querySelectorAll('[data-el]').forEach((el) => {
+    if (!matched.has(el.getAttribute('data-el'))) run(el as HTMLElement, [{ opacity: 0 }, { opacity: 1 }]);
+  });
+
+  return settle(jobs, t.durationMs).then(() => { outgoing.remove(); });
 }
 
 /**
@@ -237,6 +407,9 @@ export function playTransition(
     outgoing?.remove();
     return Promise.resolve();
   }
+  // morph 不能整层动画：它要逐元素配对补间
+  if (t.type === 'morph' && outgoing) return playMorph(outgoing, incoming, t);
+
   const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
   const jobs: Promise<unknown>[] = [];
   try {
@@ -246,9 +419,7 @@ export function playTransition(
     outgoing?.remove();
     return Promise.resolve();
   }
-  return Promise.all(jobs.map((p) => p.catch(() => undefined))).then(() => {
-    outgoing?.remove();
-  });
+  return settle(jobs, t.durationMs).then(() => { outgoing?.remove(); });
 }
 
 /** 幻灯片是否配置了自动换片 */

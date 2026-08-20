@@ -1,112 +1,27 @@
 # Web-PPT
 
 [![CI](https://github.com/unStone/web-ppt/actions/workflows/ci.yml/badge.svg)](https://github.com/unStone/web-ppt/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@web-ppt/core.svg)](https://www.npmjs.com/package/@web-ppt/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。零服务端依赖、零框架依赖（原生 TypeScript，可被 React / Vue 直接封装），唯一运行时依赖是 fflate。
+纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。
+零服务端依赖、零框架依赖（原生 TypeScript，可被 React / Vue 直接封装），唯一运行时依赖是 fflate。
 
-## 仓库结构
-
-```
-web-ppt/                     npm workspaces monorepo
-├── packages/
-│   ├── core/                web-ppt —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
-│   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
-│   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
-│   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
-├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
-├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          142 个渲染快照基线
-```
+**[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** —— 拖一个自己的文件进去，解析与渲染全在本机，文件不出浏览器。
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| `web-ppt` | 解析 / 渲染 / 导出 | fflate | 70KB |
-| `@web-ppt/viewer-core` | 导航 / 缩放 / 搜索 / 动画批次 | `web-ppt` | 5.2KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 68KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 6.7KB |
 
-`packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
-边界一旦被破坏，它们立刻编译失败。将来的编辑器作为 `apps/editor` 加入，
-Cordis 之类的应用框架只出现在那一层，不下沉到 core。
-
-### 为什么 viewer-core 是独立包
-
-`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），
-其余 200 多行是纯状态推进。拆开后：
-
-- **接任意 UI 框架**：React / Vue / Svelte 直接驱动 `PresentationState`，不必等官方封装
-- **可在 Node 里测**：状态逻辑不再需要 jsdom，用一份手写的最小文稿就能覆盖边界
-- **core 保持无 DOM**：`web-ppt` 现在完全不碰 `document`，Worker 里可整包运行
-
-抽出来的当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，
-`next()` 会落在最后一张**隐藏**页上。它能活那么久，是因为当时 9 个 fixture 里
-**没有一张隐藏页**——快照测试挡得住「变了」，挡不住「一开始就没测过」。
-现已补上 `sample-hidden.pptx` / `.ppt`，两种格式的隐藏页导航都进了回归。
-
-## 架构
-
-```mermaid
-flowchart LR
-    A[".pptx<br/>Zip + OOXML"] -->|"fflate + DOMParser"| S["统一 Schema<br/>src/types.ts"]
-    B[".ppt<br/>CFB + OfficeArt"] -->|"自研 CFB + Escher 解析"| S
-    M["EMF / WMF<br/>图元文件"] -->|"自研 GDI 解释器"| S
-    S --> H["HTML 文本渲染<br/>foreignObject"]
-    S --> V["SVG 文本渲染<br/>自实现断行"]
-    H --> P["屏幕预览<br/>可选中 · 动画 · 切换"]
-    V --> E["PNG / SVG / PDF 导出"]
-```
-
-解析层与渲染层完全解耦，渲染层只依赖 `src/types.ts`。格式按魔数识别：`PK` → pptx，`D0CF11E0` → ppt。
-
-图表与图元文件解码器经 hook 注入，可按需 tree-shake。注意 `chart/` **是第四条解析链路而非渲染插件**：
-它读 `ppt/charts/chart1.xml`（本身即 OOXML/DrawingML）并产出 `SlideElement[]`。
-hook 的作用是打破 `pptx/parser → chart → pptx/color` 的模块环并支持裁剪，
-不代表它与文件格式无关——`ChartEnv` 携带 `ColorCtx` / `ThemeFonts` 是正当复用。
-
-**两条文本渲染路径**：`foreignObject` + HTML 排版（屏幕预览、PNG 导出）——排版交给浏览器，文本可选中、支持分栏；
-原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）——因为 `foreignObject` 只有浏览器认，
-Inkscape / librsvg / 设计工具打开会整块丢失文本，交出去的文件必须自包含。
-
-Safari 系有个 [15 年未修的老 bug](https://bugs.webkit.org/show_bug.cgi?id=23113)：不给 `foreignObject` 里的 HTML 应用外层 SVG 的缩放。
-查看器运行时探测，中招就整页切到 `<text>` 路径。
-
-## 能力矩阵
-
-| 能力 | .pptx | .ppt |
-|---|---|---|
-| 预设几何 | ✅ 187 个预设（ECMA-376 全集） | ✅ MSOSPT 全表映射 |
-| 自定义几何 | ✅ custGeom + gdLst 公式求值 + arcTo | ✅ pVertices / pSegmentInfo |
-| 填充 | ✅ 纯色 / 线性 / 径向渐变 / 图片 / 平铺 / 图案 / 主题色变换 | ✅ 纯色 / 渐变 / 图片 |
-| 描边 | ✅ 虚线 / 线端箭头 / 端点 / 连接样式 | ✅ 虚线 / 箭头 |
-| 效果 | ✅ 外阴影 / 内阴影 / 发光 / 柔化边缘 / 倒影 | ⚠️ 忽略 |
-| 立体（3D） | ✅ 挤出 / 斜角 / 轮廓 / 材质 / 视角 | ⚠️ 忽略 |
-| 主题样式引用 | ✅ fillRef / lnRef / effectRef + phClr | — |
-| 文本 | ✅ 完整（见下）+ 艺术字变形 | ✅ 字号 / 颜色 / 粗斜下划线 / 对齐 / 项目符号 |
-| 样式继承 | ✅ 母版 → 版式 → 占位符 → 段落 → run | ✅ 母版 TxMasterStyle → 形状 |
-| 图片 | ✅ 裁剪（含形状填充）/ 裁进形状 / 透明度 / 灰度 | ✅ Pictures 流 + DEFLATE 解压 |
-| EMF / WMF | ✅ 解码为 SVG | ✅ 解码为 SVG |
-| 表格 | ✅ tableStyles / 条纹 / 合并 / 边框 / 垂直对齐 | ✅ 表格属性 + 网格启发式还原 |
-| 图表 | ✅ 柱/条/堆叠/折线/面积/饼/环/散点/雷达/气泡/股价/复合饼/曲面 · 次坐标轴 · 3D | ✅ 经内嵌 EMF 预览渲染 |
-| 媒体 · 墨迹 · 评论 · 节 | ✅ 封面帧+播放标识 / InkML 笔迹 / 结构化评论 / 分节 | ❌ |
-| SmartArt | ✅ 经 diagram drawing part | ❌ |
-| 组合 | ✅ 嵌套 + 子坐标系缩放 | ✅ 展平 + 坐标映射 |
-| 切换效果 | ✅ 20 种（淡入/推进/擦除/覆盖/分割/缩放…） | ✅ 经 SSSlideInfoAtom，实测 6 种 |
-| 元素动画 | ✅ 入场 / 退场 / 强调，按点击分批 | ✅ 同上，实测 5 步 |
-| 演讲者备注 · 超链接 | ✅ | ✅ |
-| 数学公式 OMML | ⚠️ 转为线性文本 | ❌ |
-| 隐藏页 | ✅ `sld@show="0"` | ✅ `SSSlideInfoAtom` F_HIDDEN |
-
-文本细项（pptx）：字号 / 字体 / 粗斜体 / 下划线 / 删除线 / 上下标 / 字间距 / 大小写 / 描边 / 渐变填充 / 高亮 / 竖排 / 分栏 / 自动缩放 / 字符与图片项目符号 / 自动编号 / 超链接 / 页码页脚域 / RTL / 15 种艺术字变形预设。
-
-## 安装
+## 快速开始
 
 ```bash
-npm i @web-ppt/core
+npm i @web-ppt/core @web-ppt/viewer-core
 ```
 
-## 使用
-
 ```ts
-import { parse, slideToPng, slideToSvgFile, presentationToPrintableHtml } from '@web-ppt/core';
+import { parse, slideToSvgFile, presentationToPrintableHtml } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 
 const pres = await parse(file);                       // File | Blob | ArrayBuffer | Uint8Array
@@ -147,35 +62,55 @@ st.search('关键词');            // → 命中的页索引数组
 
 图元文件解码器（约 15KB gzip）默认已接入；若要裁剪体积，可移除 `src/index.ts` 里的 `setMetafileDecoder` 调用。
 
-## 开发
+## 能力矩阵
 
-| 命令 | 说明 |
+| 能力 | .pptx | .ppt |
+|---|---|---|
+| 预设几何 | ✅ 187 个预设（ECMA-376 全集） | ✅ MSOSPT 全表映射 |
+| 自定义几何 | ✅ custGeom + gdLst 公式求值 + arcTo | ✅ pVertices / pSegmentInfo |
+| 填充 | ✅ 纯色 / 线性 / 径向渐变 / 图片 / 平铺 / 图案 / 主题色变换 | ✅ 纯色 / 渐变 / 图片 |
+| 描边 | ✅ 虚线 / 线端箭头 / 端点 / 连接样式 | ✅ 虚线 / 箭头 |
+| 效果 | ✅ 外阴影 / 内阴影 / 发光 / 柔化边缘 / 倒影 | ⚠️ 忽略 |
+| 立体（3D） | ✅ 挤出 / 斜角 / 轮廓 / 材质 / 视角 | ⚠️ 忽略 |
+| 主题样式引用 | ✅ fillRef / lnRef / effectRef + phClr | — |
+| 文本 | ✅ 完整（见下）+ 艺术字变形 | ✅ 字号 / 颜色 / 粗斜下划线 / 对齐 / 项目符号 |
+| 样式继承 | ✅ 母版 → 版式 → 占位符 → 段落 → run | ✅ 母版 TxMasterStyle → 形状 |
+| 图片 | ✅ 裁剪（含形状填充）/ 裁进形状 / 透明度 / 灰度 | ✅ Pictures 流 + DEFLATE 解压 |
+| EMF / WMF | ✅ 解码为 SVG | ✅ 解码为 SVG |
+| 表格 | ✅ tableStyles / 条纹 / 合并 / 边框 / 垂直对齐 | ✅ 表格属性 + 网格启发式还原 |
+| 图表 | ✅ 柱/条/堆叠/折线/面积/饼/环/散点/雷达/气泡/股价/复合饼/曲面 · 次坐标轴 · 3D | ✅ 经内嵌 EMF 预览渲染 |
+| 媒体 · 墨迹 · 评论 · 节 | ✅ 封面帧+播放标识 / InkML 笔迹 / 结构化评论 / 分节 | ❌ |
+| SmartArt | ✅ 经 diagram drawing part | ❌ |
+| 组合 | ✅ 嵌套 + 子坐标系缩放 | ✅ 展平 + 坐标映射 |
+| 切换效果 | ✅ 20 种（淡入/推进/擦除/覆盖/分割/缩放…） | ✅ 经 SSSlideInfoAtom，实测 6 种 |
+| 元素动画 | ✅ 入场 / 退场 / 强调 / 运动路径，按点击分批 | ✅ 入场 / 退场 / 强调，实测 5 步 |
+| 演讲者备注 · 超链接 | ✅ | ✅ |
+| 数学公式 OMML | ⚠️ 转为线性文本 | ❌ |
+| 隐藏页 | ✅ `sld@show="0"` | ✅ `SSSlideInfoAtom` F_HIDDEN |
+
+文本细项（pptx）：字号 / 字体 / 粗斜体 / 下划线 / 删除线 / 上下标 / 字间距 / 大小写 / 描边 / 渐变填充 / 高亮 / 竖排 / 分栏 / 自动缩放 / 字符与图片项目符号 / 自动编号 / 超链接 / 页码页脚域 / RTL / 15 种艺术字变形预设。
+
+## 架构
+
+```mermaid
+flowchart LR
+    A[".pptx<br/>Zip + OOXML"] -->|"fflate + DOMParser"| S["统一 Schema<br/>src/types.ts"]
+    B[".ppt<br/>CFB + OfficeArt"] -->|"自研 CFB + Escher 解析"| S
+    M["EMF / WMF<br/>图元文件"] -->|"自研 GDI 解释器"| S
+    S --> H["HTML 文本渲染<br/>foreignObject"]
+    S --> V["SVG 文本渲染<br/>自实现断行"]
+    H --> P["屏幕预览<br/>可选中 · 动画 · 切换"]
+    V --> E["PNG / SVG / PDF 导出"]
+```
+
+| 设计 | 理由 |
 |---|---|
-| `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
-| `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
-| `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1489 项断言 + 142 个渲染快照 |
-| `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
-| `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
-| `npm run check` | TypeScript 类型检查 |
-| `npm run build` | 构建 `web-ppt` + `@web-ppt/viewer-core` |
-| `npm run build:site` | 构建官网静态产物 |
-| `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
-| `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
-| `npm run bench` | 大文件性能基准 |
+| 解析层与渲染层完全解耦 | 渲染层只依赖 `src/types.ts`，加新输入格式不动它一行；格式按魔数识别（`PK` → pptx，`D0CF11E0` → ppt），不看扩展名 |
+| 两条文本渲染路径 | `foreignObject` + HTML 排版给屏幕预览与 PNG 导出（文本可选中、支持分栏）；原生 `<text>` + 自实现测量断行给独立 SVG 与打印 HTML——`foreignObject` 只有浏览器认，Inkscape / librsvg / 设计工具打开会整块丢失文本，交出去的文件必须自包含 |
+| Safari 运行时探测 | WebKit [15 年未修的老 bug](https://bugs.webkit.org/show_bug.cgi?id=23113) 不给 `foreignObject` 里的 HTML 应用外层 SVG 缩放；中招就整页切到 `<text>` 路径 |
+| 图表 / 图元解码器经 hook 注入 | 可按需 tree-shake。注意 `chart/` **是第四条解析链路而非渲染插件**——它读 `ppt/charts/chart1.xml`（本身即 OOXML/DrawingML）并产出 `SlideElement[]`；hook 只为打破 `pptx/parser → chart → pptx/color` 的模块环 |
 
-### 保真度基准
-
-渲染保真度不靠"看着差不多"判断，而是拿 **LibreOffice 的实际渲染做 ground truth 逐档比对**。例如主题色的 `shade`/`tint`：
-
-| 档位 | LibreOffice | sRGB 直乘（旧） | 线性 RGB（现） |
-|---|---|---|---|
-| shade 20% | rgb(33,56,97) | rgb(14,23,39) Δ69 | rgb(28,51,93) Δ8 |
-| tint 60% | rgb(176,187,222) | rgb(143,170,220) Δ37 | rgb(176,188,222) Δ1 |
-
-`npm run compare <file>` 可对任意文件生成并排/叠加对照页。
-
-### 性能
+## 性能
 
 浏览器实测，210 页 / 11280 元素：
 
@@ -187,8 +122,6 @@ st.search('关键词');            // → 命中的页索引数组
 | 缓存命中（重复访问同页） | 0ms |
 | JS 堆 | 40 MB（0.19 MB/页） |
 
-三项优化：
-
 | 优化 | 效果 |
 |---|---|
 | **惰性解析**（默认开启） | 每页首次访问时才解析，首屏 376ms → 42ms（**9×**） |
@@ -198,7 +131,7 @@ st.search('关键词');            // → 命中的页索引数组
 耗时分布（浏览器）：XML 解析 30%（原生 `DOMParser`）、Schema 构建 63%、解压 7%、渲染 <1%。
 **WebAssembly 在这条路径上帮不上**——XML 解析已是原生 C++，Schema 构建是 DOM 遍历 + 字符串 + 建对象，全是 WASM 的弱项，且跨边界封送成本会吃掉收益。
 
-#### Worker 用法
+### Worker 用法
 
 ```ts
 import { parseInWorker } from '@web-ppt/core';
@@ -210,6 +143,77 @@ const pres = await parseInWorker(worker, bytes);   // 主线程零阻塞
 Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动回退到自带的 `xml-lite`
 ——纯 JS，实测约为原生的 1.8×，与原生结构等价（测试逐节点比对了全部 slide XML）。
 图片不能跨线程传 blob URL，Worker 输出 `asset:N` 令牌 + 原始字节，主线程兑现成真实 URL。
+
+## 保真度基准
+
+渲染保真度不靠"看着差不多"判断，而是拿 **LibreOffice 的实际渲染做 ground truth 逐档比对**。例如主题色的 `shade`/`tint`：
+
+| 档位 | LibreOffice | sRGB 直乘（旧） | 线性 RGB（现） |
+|---|---|---|---|
+| shade 20% | rgb(33,56,97) | rgb(14,23,39) Δ69 | rgb(28,51,93) Δ8 |
+| tint 60% | rgb(176,187,222) | rgb(143,170,220) Δ37 | rgb(176,188,222) Δ1 |
+
+`npm run compare <file>` 可对任意文件生成并排/叠加对照页。
+
+## 已知限制
+
+| 项 | 说明 |
+|---|---|
+| .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
+| .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
+| .ppt SmartArt | 未实现（自动编号与嵌套组均已支持） |
+| OMML 公式 | 只取线性文本，不做 MathML 排版 |
+| 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
+| 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
+| EMF+ | 不处理。实测手上全部图元文件都是**双模式**——GDI 记录已承载完整绘制（`sample-metafile.pptx` 里 16125 条 GDI 记录 vs 3 条 EMF+ 注释），走 GDI 路径即可。只有纯 EMF+ 文件才需要，尚无样本 |
+| 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
+| chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）整条链路未实现。经典 16 种图表已全支持 |
+| Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
+| 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
+| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题，装上原字体或用嵌入字体即可对齐 |
+| 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
+| OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
+
+## 开发
+
+| 命令 | 说明 |
+|---|---|
+| `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
+| `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
+| `npm test` | 全部测试（核心 + 图元文件） |
+| `npm run test:core` | 核心解析 / 渲染，1518 项断言 + 142 个渲染快照 |
+| `npm run test:metafile` | EMF / WMF 解码器，109 项断言 + 模糊测试 |
+| `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
+| `npm run check` | TypeScript 类型检查 |
+| `npm run build` | 构建 `@web-ppt/core` + `@web-ppt/viewer-core` |
+| `npm run build:site` | 构建官网静态产物 |
+| `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
+| `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
+| `npm run bench` | 大文件性能基准 |
+
+约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**（对编码代理同样适用）。
+
+### 仓库结构
+
+```
+web-ppt/                     npm workspaces monorepo
+├── packages/
+│   ├── core/                @web-ppt/core —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
+│   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
+│   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
+│   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
+├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
+├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
+└── test/snapshots/          142 个渲染快照基线
+```
+
+`packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
+边界一旦被破坏，它们立刻编译失败。将来的编辑器作为 `apps/editor` 加入，
+Cordis 之类的应用框架只出现在那一层，不下沉到 core。
+
+**为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState` 不必等官方封装；状态逻辑不再需要 jsdom 就能在 Node 里测；`@web-ppt/core` 完全不碰 `document`，Worker 里可整包运行。
+
+> 抽出来的当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，`next()` 会落在最后一张**隐藏**页上。它能活那么久，是因为当时 9 个 fixture 里**没有一张隐藏页**——快照测试挡得住「变了」，挡不住「一开始就没测过」。现已补上 `sample-hidden.pptx` / `.ppt`。
 
 ### 测试策略
 
@@ -245,16 +249,9 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 
 > 快照只能发现「变化」，发现不了「一开始就是错的」——单元格边框那个 bug 就是被**外部 ground truth 对照**抓出来的，而非测试套件。两者互补，缺一不可。
 
-**调试页**
+### 测试文件
 
-| 页面 | 用途 |
-|---|---|
-| `/` | 查看器：缩略图（虚拟化）/ 缩放 / 搜索 / 备注 / 演示模式 / 导出 |
-| `/shapes.html` | 几何调试：全部预设形状实时渲染，可调调节值与宽高比 |
-
-演示模式（工具栏「演示」或 `F`）下才播放切换与动画：`→` 依次推进动画批次，播完再翻页；`Esc` 退出。
-
-**测试文件**（`npm run fixtures` 生成）
+`npm run fixtures` 生成，字节确定性：
 
 | 文件 | 覆盖内容 |
 |---|---|
@@ -269,30 +266,16 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | `sample-placeholder.pptx` | 占位符几何继承：图片占位符空 spPr / 图片自带 xfrm / 形状占位符 |
 | `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
 
-`.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run compare` 同款命令，或 `soffice --headless --convert-to ppt <file>`。
+`.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run ppt-samples`，或 `soffice --headless --convert-to ppt <file>`。
 
-## 已知限制
+### 调试页
 
-| 项 | 说明 |
+| 页面 | 用途 |
 |---|---|
-| .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
-| .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
-| .ppt SmartArt | 未实现（自动编号与嵌套组均已支持） |
-| OMML 公式 | 只取线性文本，不做 MathML 排版 |
-| 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
-| 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
-| EMF+ | 不处理。实测手上全部图元文件都是**双模式**——GDI 记录已承载完整绘制（`sample-metafile.pptx` 里 16125 条 GDI 记录 vs 3 条 EMF+ 注释），走 GDI 路径即可。只有纯 EMF+ 文件才需要，尚无样本 |
-| 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
-| chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）整条链路未实现。经典 16 种图表已全支持 |
-| Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
-| 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
-| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题，装上原字体或用嵌入字体即可对齐 |
-| 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
-| OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
+| `/` | 查看器：缩略图（虚拟化）/ 缩放 / 搜索 / 备注 / 演示模式 / 导出 |
+| `/shapes.html` | 几何调试：全部预设形状实时渲染，可调调节值与宽高比 |
 
-## 给编码代理
-
-约定、命令、架构约束与已知陷阱见 [AGENTS.md](AGENTS.md)。
+演示模式（工具栏「演示」或 `F`）下才播放切换与动画：`→` 依次推进动画批次，播完再翻页；`Esc` 退出。
 
 ## 交流
 
@@ -303,3 +286,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 
 微信群二维码 7 天失效，所以放在 Issue 里而不是直接贴进 README——
 换码只需编辑那条 Issue，README 和已发布的 npm 包都不用动。
+
+## 许可
+
+[MIT](LICENSE)

@@ -18,6 +18,14 @@ const TRANSITION_TAGS: Record<string, TransitionType> = {
   circle: 'circle', diamond: 'diamond', plus: 'plus', wedge: 'wedge',
   newsflash: 'newsflash', randomBar: 'randomBar', strips: 'strips',
   random: 'dissolve', fadeThroughBlack: 'fade',
+  // p14（PowerPoint 2010+）与 p159（morph）扩展。
+  // 解析层按 localName 匹配、与命名空间无关，findTransition 又会钻进
+  // mc:AlternateContent 的 Choice 分支，所以这里只需补名字即可命中。
+  vortex: 'vortex', switch: 'switch', flip: 'flip', ripple: 'ripple',
+  honeycomb: 'honeycomb', glitter: 'glitter', warp: 'warp', flythrough: 'flythrough',
+  flash: 'flash', shred: 'shred', reveal: 'reveal', wheelReverse: 'wheelReverse',
+  ferris: 'ferris', gallery: 'gallery', conveyor: 'conveyor', pan: 'pan',
+  doors: 'doors', window: 'window', prism: 'prism', morph: 'morph',
 };
 
 export function parseTransition(root: Element | null): Transition | undefined {
@@ -27,11 +35,16 @@ export function parseTransition(root: Element | null): Transition | undefined {
 
   let type: TransitionType = 'fade';
   let dir: string | undefined;
+  let morphBy: Transition['morphBy'];
   for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
     const mapped = TRANSITION_TAGS[c.localName];
     if (!mapped) continue;
     type = mapped;
     dir = attr(c, 'dir') ?? attr(c, 'orient') ?? undefined;
+    if (c.localName === 'morph') {
+      const opt = attr(c, 'option');
+      morphBy = opt === 'byWord' || opt === 'byChar' ? opt : 'byObject';
+    }
     if (c.localName === 'split') {
       const orient = attr(c, 'orient') ?? 'horz';
       const d = attr(c, 'dir') ?? 'out';
@@ -49,6 +62,7 @@ export function parseTransition(root: Element | null): Transition | undefined {
     dir,
     durationMs: Math.max(80, Math.min(5000, durationMs)),
     advanceAfterMs: advTm !== null && advTm !== undefined ? advTm : undefined,
+    morphBy,
   };
 }
 

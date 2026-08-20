@@ -385,15 +385,26 @@ const slide7WithTiming = slide7.replace('</p:sld>', `${ANIM_TIMING}</p:sld>`);
 
 // ---------- 骨架 ----------
 
+/**
+ * p14 / p159 扩展切换：PowerPoint 写成 mc:AlternateContent，
+ * Choice 里放新效果、Fallback 里放老版本能认的。解析必须取 Choice。
+ */
+const alt = (choice, requires, fallback) =>
+  `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+  `<mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" ` +
+  `xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="${requires}">` +
+  `<p:transition spd="slow" p14:dur="1400">${choice}</p:transition></mc:Choice>` +
+  `<mc:Fallback><p:transition spd="slow">${fallback}</p:transition></mc:Fallback></mc:AlternateContent>`;
+
 /** 每页配一种切换效果 */
 const TRANSITIONS = [
   '<p:transition spd="med"><p:fade/></p:transition>',
   '<p:transition spd="med"><p:push dir="l"/></p:transition>',
-  '<p:transition spd="med"><p:wipe dir="d"/></p:transition>',
-  '<p:transition spd="fast"><p:cover dir="u"/></p:transition>',
-  '<p:transition spd="med"><p:split orient="horz" dir="out"/></p:transition>',
+  alt('<p14:ripple/>', 'p14', '<p:circle/>'),
+  alt('<p159:morph option="byObject"/>', 'p159', '<p:fade/>'),
+  alt('<p14:conveyor dir="l"/>', 'p14', '<p:push dir="l"/>'),
   '<p:transition spd="med"><p:zoom dir="in"/></p:transition>',
-  '<p:transition spd="slow"><p:dissolve/></p:transition>',
+  alt('<p14:prism/>', 'p14', '<p:dissolve/>'),
 ];
 
 const SLIDES = [slide1, slide2, slide3, slide4, slide5, slide6, slide7WithTiming]

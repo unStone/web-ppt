@@ -497,6 +497,43 @@ group('动画 / 切换');
     check('切换类型多样', types.size >= 5, [...types].join(','));
     check('切换时长在合理区间', withTrans.every((s) => s.transition.durationMs >= 80 && s.transition.durationMs <= 5000));
 
+    // p14 / p159 扩展切换：PowerPoint 写在 mc:AlternateContent 里，
+    // Choice 放新效果、Fallback 放老版本能认的。取错分支就会静默退化成 fade。
+    const byType = new Map(withTrans.map((s) => [s.transition.type, s.transition]));
+    for (const want of ['ripple', 'conveyor', 'prism', 'morph']) {
+      check(`识别 p14/p159 切换 ${want}`, byType.has(want), [...byType.keys()].join(','));
+    }
+    check('取 Choice 分支而非 Fallback', byType.get('ripple')?.durationMs === 1400,
+      String(byType.get('ripple')?.durationMs));
+    eq('morph 粒度', byType.get('morph')?.morphBy, 'byObject');
+    eq('p14 切换保留方向', byType.get('conveyor')?.dir, 'l');
+
+    // 每种切换都必须能产出关键帧，且不含脏值——新增 20 个类型最容易在这里翻车
+    const ALL_TRANS = [
+      'none', 'fade', 'cut', 'push', 'pull', 'cover', 'wipe', 'split', 'zoom', 'dissolve',
+      'checker', 'blinds', 'comb', 'wheel', 'circle', 'diamond', 'plus', 'wedge',
+      'newsflash', 'randomBar', 'strips',
+      'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
+      'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
+      'doors', 'window', 'prism', 'morph',
+    ];
+    {
+      const tf = viewerLib.transitionFrames;
+      let ok = 0;
+      const seen = new Set();
+      for (const type of ALL_TRANS) {
+        for (const dir of ['l', 'r', 'u', 'd', 'horz-out', undefined]) {
+          const inF = JSON.stringify(tf({ type, dir, durationMs: 600 }, true));
+          const outF = JSON.stringify(tf({ type, dir, durationMs: 600 }, false));
+          if (!BAD.test(inF) && !BAD.test(outF) && inF.length > 4 && outF.length > 4) ok++;
+        }
+        seen.add(JSON.stringify(tf({ type, dir: 'l', durationMs: 600 }, true)));
+      }
+      eq('全部切换类型都产出关键帧', ok, ALL_TRANS.length * 6);
+      // 41 种效果若大量共用同一组关键帧，等于没实现
+      check('切换效果视觉上互不相同', seen.size >= 24, `仅 ${seen.size} 种不同关键帧`);
+    }
+
     const anim = pres.slides.find((s) => s.animations?.length);
     if (check('存在带动画的页', !!anim)) {
       const entr = anim.animations.filter((a) => a.kind === 'entrance');
@@ -1036,6 +1073,46 @@ group('播放引擎');
       eq(`播完 ${i} 批后隐藏 ${want} 个`, viewerLib.hiddenBefore(real, i).size, want);
     }
     check('运动路径元素始终可见', !viewerLib.hiddenBefore(real, 0).has(706));
+
+    // morph 按 data-el 在前后两页之间配对
+    {
+      const rect = (x, y, w, h) => ({ left: x, top: y, width: w, height: h });
+      const mkLayer = (defs) => ({
+        querySelectorAll: () => defs.map(([id, r]) => ({
+          getAttribute: () => id,
+          getBoundingClientRect: () => r,
+          style: {},
+          animate: () => ({ finished: Promise.resolve(), finish() {} }),
+        })),
+      });
+      const outL = mkLayer([['10', rect(0, 0, 100, 50)], ['11', rect(0, 0, 10, 10)], ['99', rect(5, 5, 20, 20)]]);
+      const inL = mkLayer([['10', rect(200, 100, 300, 150)], ['11', rect(0, 0, 0, 0)], ['12', rect(0, 0, 40, 40)]]);
+      const pairs = viewerLib.morphPairs(outL, inL);
+      eq('morph 只配对两页都有的元素', pairs.length, 1);
+      eq('morph 配对到正确的 id', pairs[0].node.getAttribute(), '10');
+      eq('morph 记下旧位置', pairs[0].from.left, 0);
+      eq('morph 记下新位置', pairs[0].to.left, 200);
+      // 无布局信息（宽高全 0）的元素不参与配对，否则会补间出 scale(Infinity)
+      check('零尺寸元素不参与配对', !pairs.some((p) => p.node.getAttribute() === '11'));
+      const empty = viewerLib.morphPairs(mkLayer([['1', rect(0, 0, 0, 0)]]), mkLayer([['1', rect(0, 0, 0, 0)]]));
+      eq('全无布局时不配对', empty.length, 0);
+    }
+
+    // 回归：后台标签页的 document timeline 是暂停的，Animation.finished 永不 resolve。
+    // 没有超时兜底就会让旧图层一层层堆着不被移除（自动换片时尤其明显）。
+    {
+      const never = { finished: new Promise(() => {}), finish() {} };
+      const mkNode = () => ({ style: {}, animate: () => never, querySelectorAll: () => [] });
+      let removed = false;
+      const outgoing = { ...mkNode(), remove: () => { removed = true; } };
+      const done = viewerLib.playTransition(outgoing, mkNode(), { type: 'fade', durationMs: 100 });
+      const raced = await Promise.race([
+        done.then(() => 'resolved'),
+        new Promise((r) => setTimeout(() => r('hung'), 2000)),
+      ]);
+      eq('动画永不结束时切换仍会收尾', raced, 'resolved');
+      check('超时后旧图层被移除', removed);
+    }
 
     // playGroup 必须把 motionPath 铺成多关键帧并走线性缓动，
     // 否则路径只会取首末两点连成直线、且被入场用的 ease 带偏速度
