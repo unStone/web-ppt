@@ -287,3 +287,53 @@ table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
   .thumbs { display: none; }
   .demo-body { height: 44vh; }
 }
+
+/* ── 疑难杂症 ─────────────────────────────────── */
+
+.hard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.hard-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 16px 12px;
+  background: var(--bg-soft);
+}
+
+.hard-card h3 { margin: 0 0 6px; font-size: 15px; }
+.hard-card p { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--fg-mute); }
+
+.hard-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.hard-pair figure { margin: 0; }
+
+/* 两侧统一 8:5，两边图形才有可比性 */
+.hard-pair .pane {
+  aspect-ratio: 8 / 5;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff;
+  color: #1f3864;
+}
+.hard-pair .pane > svg { width: 100%; height: 100%; display: block; }
+
+.hard-pair figcaption {
+  margin-top: 6px;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  text-align: center;
+}
+.hard-pair .bad .pane { outline: 1px solid color-mix(in srgb, var(--bad) 45%, transparent); }
+.hard-pair .good .pane { outline: 1px solid color-mix(in srgb, var(--good) 45%, transparent); }
+.hard-pair .bad figcaption { color: var(--bad); }
+.hard-pair .good figcaption { color: var(--good); }
+
+@media (max-width: 420px) {
+  .hard-pair { grid-template-columns: 1fr; }
+}

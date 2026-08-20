@@ -14,7 +14,7 @@ export default defineConfig({
       name: 'copy-demo-fixtures',
       buildStart() {
         mkdirSync('public/demo', { recursive: true });
-        for (const f of ['showcase.pptx', 'showcase.ppt', 'sample-chart.pptx']) {
+        for (const f of ['showcase.pptx', 'showcase.ppt', 'sample-chart.pptx', 'hardcases.pptx']) {
           copyFileSync(`../../fixtures/${f}`, `public/demo/${f}`);
         }
       },

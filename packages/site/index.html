@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <title>Web-PPT · 纯浏览器渲染 PPT</title>
-<meta name="description" content="纯浏览器渲染 PPT：打开 .pptx / .ppt 不需要后端，也不用装 Office，文件不离开浏览器。零服务端依赖、零框架依赖，唯一运行时依赖是 fflate。支持全部 187 个预设形状、图表、表格、EMF/WMF、动画与切换效果。" />
+<meta name="description" content="纯浏览器渲染 PPT：打开 .pptx / .ppt 不需要后端，也不用装 Office，文件不离开浏览器。零服务端依赖、零框架依赖，唯一运行时依赖是 fflate。支持全部 187 个预设形状、图表、表格、EMF/WMF/PICT、公式、动画与切换效果，并可打开设了密码的文件。" />
 <link rel="canonical" href="https://unstone.github.io/web-ppt/" />
 <meta name="author" content="unStone" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
@@ -75,6 +75,7 @@
     <a href="#matrix">能力</a>
     <a href="#start">上手</a>
     <a href="#arch">架构</a>
+    <a href="#hard">疑难杂症</a>
     <a href="#proof">保真 &amp; 性能</a>
     <a class="ghost" href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub ↗</a>
   </nav>
@@ -87,7 +88,7 @@
   <h1>纯浏览器渲染 PPT</h1>
   <p class="lede">
     打开 <code>.pptx</code> / <code>.ppt</code> 不需要任何后端，也不用装 Office。<br />
-    自研 OOXML、CFB/OfficeArt、EMF/WMF 解析，唯一运行时依赖是 fflate。
+    自研 OOXML、CFB/OfficeArt、EMF/WMF/PICT 解析，唯一运行时依赖是 fflate。
   </p>
   <div class="cta">
     <a class="btn primary" href="#demo">试一下 ↓</a>
@@ -97,9 +98,9 @@
 
   <ul class="stats">
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
-    <li><b>68<i>KB</i></b><span>gzip 核心包</span></li>
+    <li><b>84<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>1407</b><span>断言 + 142 快照</span></li>
+    <li><b>1819</b><span>断言 + 158 快照</span></li>
   </ul>
 </section>
 
@@ -157,16 +158,18 @@
         <tr><td>样式继承</td><td class="y">母版 → 版式 → 占位符 → 段落 → run</td><td class="y">TxMasterStyle → 形状</td></tr>
         <tr><td>文本</td><td class="y">完整 + 15 种艺术字变形</td><td class="y">字号 / 颜色 / 粗斜下划线 / 对齐 / 项目符号</td></tr>
         <tr><td>图片</td><td class="y">裁剪 / 裁进形状 / 透明度 / 灰度</td><td class="y">Pictures 流 + DEFLATE</td></tr>
-        <tr><td>EMF / WMF</td><td class="y">自研 GDI 解释器 → SVG</td><td class="y">自研 GDI 解释器 → SVG</td></tr>
+        <tr><td>EMF / WMF / PICT</td><td class="y">自研 GDI / QuickDraw 解释器 → SVG</td><td class="y">同左（PICT 为 Mac 版所存）</td></tr>
         <tr><td>表格</td><td class="y">tableStyles / 条纹 / 合并 / 边框</td><td class="y">表格属性 + 网格还原</td></tr>
         <tr><td>图表</td><td class="y">13 类 · 次坐标轴 · 3D</td><td class="y">经内嵌 EMF 预览</td></tr>
-        <tr><td>切换效果</td><td class="y">20 种</td><td class="y">经 SSSlideInfoAtom</td></tr>
-        <tr><td>元素动画</td><td class="y">入场 / 退场 / 强调，按点击分批</td><td class="y">同上</td></tr>
-        <tr><td>SmartArt</td><td class="y">经 diagram drawing part</td><td class="n">—</td></tr>
+        <tr><td>切换效果</td><td class="y">41 种（含 p14 扩展与 morph 逐元素形变）</td><td class="y">经 SSSlideInfoAtom</td></tr>
+        <tr><td>元素动画</td><td class="y">入场 / 退场 / 强调 / 运动路径，按点击分批</td><td class="y">同上</td></tr>
+        <tr><td>SmartArt</td><td class="y">缓存 drawing part；无缓存时按数据模型自行排布</td><td class="n">—</td></tr>
         <tr><td>媒体</td><td class="y">封面帧 + 播放标识，可选嵌真实播放器</td><td class="n">—</td></tr>
         <tr><td>墨迹 · 评论 · 节</td><td class="y">支持</td><td class="n">—</td></tr>
-        <tr><td>OLE 嵌入对象</td><td class="y">渲染 PowerPoint 存的预览图</td><td class="n">—</td></tr>
+        <tr><td>OLE 嵌入对象</td><td class="y">内嵌 p:pic 预览 / 旧式 VML 快照</td><td class="n">—</td></tr>
         <tr><td>隐藏页</td><td class="y">sld@show="0"</td><td class="y">SSSlideInfoAtom</td></tr>
+        <tr><td>数学公式 OMML</td><td class="y">分式 / 根式 / 上下标 / 大算符 / 矩阵 / 定界符</td><td class="n">—</td></tr>
+        <tr><td>加密文档</td><td class="y">标准 AES-ECB / 敏捷 AES-CBC</td><td class="y">RC4 CryptoAPI（40/56/128 位）</td></tr>
         <tr><td>备注 · 超链接</td><td class="y">支持</td><td class="y">支持</td></tr>
       </tbody>
     </table>
@@ -281,14 +284,21 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
   </div>
 </section>
 
+<section id="hard" class="section">
+  <h2>疑难杂症</h2>
+  <p class="sub">下面每一格都是实际踩过的坑，不是编出来的教学例子。左边是天真做法的结果，右边是本引擎实时渲染的同一份 <code>.pptx</code>。</p>
+  <div class="hard" id="hardGrid"></div>
+  <p class="note">语料来自 Apache POI 的 242 个公开测试文件。排除 22 个故意损坏的模糊测试样本后，真实文件成功率 <b>210/220</b>；余下 10 个是截断文件、空文件、PowerPoint 95/4.0 与未知口令的加密文件。</p>
+</section>
+
 <section class="section">
   <h2>包</h2>
   <div class="table-scroll">
     <table class="matrix pkgs">
       <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
       <tbody>
-        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>68KB gzip</td></tr>
-        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>5.1KB gzip</td></tr>
+        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>84KB gzip</td></tr>
+        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>6.8KB gzip</td></tr>
       </tbody>
     </table>
   </div>
