@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 24)">
+<path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(31,56,100);font-weight:700;">无 drawing · 竖排列表（linDir=fromT）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="505" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 100)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(121.33 0)">
+<path d="M 0 26.578 A 26.578 26.578 0 0 1 26.578 0 L 770.755 0 A 26.578 26.578 0 0 1 797.333 26.578 L 797.333 132.888 A 26.578 26.578 0 0 1 770.755 159.467 L 26.578 159.467 A 26.578 26.578 0 0 1 0 132.888 Z" fill="#2E75B6" fill-rule="nonzero"/>
+<foreignObject width="797.33" height="159.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:797.33px;height:159.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">第一条</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(121.33 180.27)">
+<path d="M 0 26.578 A 26.578 26.578 0 0 1 26.578 0 L 770.755 0 A 26.578 26.578 0 0 1 797.333 26.578 L 797.333 132.888 A 26.578 26.578 0 0 1 770.755 159.467 L 26.578 159.467 A 26.578 26.578 0 0 1 0 132.888 Z" fill="#A6A6A6" fill-rule="nonzero"/>
+<foreignObject width="797.33" height="159.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:797.33px;height:159.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">第二条</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(121.33 360.53)">
+<path d="M 0 26.578 A 26.578 26.578 0 0 1 26.578 0 L 770.755 0 A 26.578 26.578 0 0 1 797.333 26.578 L 797.333 132.888 A 26.578 26.578 0 0 1 770.755 159.467 L 26.578 159.467 A 26.578 26.578 0 0 1 0 132.888 Z" fill="#70AD47" fill-rule="nonzero"/>
+<foreignObject width="797.33" height="159.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:797.33px;height:159.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">第三条</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</svg>

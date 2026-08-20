@@ -12,6 +12,9 @@ import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseTiming, parseTransition } from './animation';
 import { custGeomPath, parseAdjustments, presetGeom } from './geometry';
 import { extractLstStyle, LevelStyles, parseTextBody, TextEnv, ThemeFonts } from './text';
+import {
+  buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
+} from './diagram';
 
 type Rels = Record<string, { type: string; target: string }>;
 
@@ -1035,15 +1038,17 @@ function parseDiagram(data: Element | null, xf: XfrmInfo, env: Env): GroupElemen
     }
   }
   if (!drawingPath) drawingPath = relByType(env.rels, '/diagramDrawing');
-  if (!drawingPath) return null;
+  // 没有缓存的 drawing part（python-pptx / Google Slides 导出常见）时，
+  // 退到自己按数据模型排布，总好过一个灰框
+  if (!drawingPath) return layoutDiagram(relIds, xf, env);
 
   const root = env.pkg.xml(drawingPath);
   const tree = kid(root, 'spTree');
-  if (!tree) return null;
+  if (!tree) return layoutDiagram(relIds, xf, env);
 
   const childEnv: Env = { ...env, rels: env.pkg.rels(drawingPath), partPath: drawingPath, layoutPh: [], masterPh: [] };
   const children = parseShapeTree(tree, childEnv, false);
-  if (!children.length) return null;
+  if (!children.length) return layoutDiagram(relIds, xf, env);
 
   // drawing 里的坐标是相对 frame 的绝对 EMU，用 group 的子坐标系归一
   return {
@@ -1052,6 +1057,49 @@ function parseDiagram(data: Element | null, xf: XfrmInfo, env: Env): GroupElemen
     children,
     name: 'SmartArt',
   };
+}
+
+/**
+ * 按数据模型自行排布 SmartArt。见 diagram.ts 顶部对「做到哪一步」的说明。
+ */
+function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {
+  const partOf = (a: string): Element | null => {
+    const rid = attr(relIds, a);
+    const target = rid ? env.rels[rid]?.target : null;
+    return target ? env.pkg.xml(target) : null;
+  };
+  const dataRoot = partOf('r:dm');
+  const pts = parseDataModel(dataRoot);
+  if (!pts.length) return null;
+
+  const layoutRoot = partOf('r:lo');
+  const colorsRoot = partOf('r:cs');
+
+  // 配色：先用 colors part 里的，取不到退到主题强调色
+  const raw = parseDiagramColors(colorsRoot);
+  const colors = (raw.length ? raw : ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'])
+    .map((v: string) => (/^[0-9a-fA-F]{6}$/.test(v) ? `#${v}` : `#${env.ctx.theme[env.ctx.clrMap[v] ?? v] ?? '4472C4'}`));
+
+  const textEnv: TextEnv = {
+    ctx: env.ctx,
+    fonts: env.theme.fonts,
+    chain: [env.docDefaults, env.masterStyles.other],
+    defaultColor: 'rgb(255,255,255)',
+    slideNum: env.slideNum,
+  };
+
+  const children = buildDiagram(pts, xf.w, xf.h, {
+    family: layoutFamily(layoutRoot),
+    vertical: isVertical(layoutRoot),
+    colors,
+    textOf: (id: string) => {
+      const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
+      // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
+      return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
+    },
+  });
+  if (!children.length) return null;
+  return wrapDiagram(children, { ...base(xf), name: 'SmartArt' });
 }
 
 // ---------------- 表格 ----------------

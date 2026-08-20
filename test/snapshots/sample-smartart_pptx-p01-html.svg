@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 24)">
+<path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(31,56,100);font-weight:700;">缓存 drawing part（直接读画好的图形）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="500" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 100)">
+<g transform=" scale(1 1) translate(0 0)">
+<g data-el="1" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(20 40)">
+<path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
+<foreignObject width="190" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">缓存A</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(230 40)">
+<path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<foreignObject width="190" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">缓存B</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="3" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(440 40)">
+<path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<foreignObject width="190" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">缓存C</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

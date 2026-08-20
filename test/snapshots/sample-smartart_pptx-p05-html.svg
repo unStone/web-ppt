@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 24)">
+<path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(31,56,100);font-weight:700;">无 drawing · 组织结构（hierRoot）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="504" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 100)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(252.2 140.4)">
+<path d="M 267.8 0 L 267.8 32.93333333333334 L 0 32.93333333333334 L 0 65.86666666666667" fill="none" fill-rule="nonzero" stroke="#2E75B6" stroke-width="1.5"/>
+</g>
+<g transform="translate(520 140.4)">
+<path d="M 0 0 L 0 32.93333333333334 L 267.79999999999995 32.93333333333334 L 267.79999999999995 65.86666666666667" fill="none" fill-rule="nonzero" stroke="#2E75B6" stroke-width="1.5"/>
+</g>
+<g transform="translate(252.2 313.73)">
+<path d="M 0 0 L 0 32.93333333333334 L 0 32.93333333333334 L 0 65.86666666666667" fill="none" fill-rule="nonzero" stroke="#2E75B6" stroke-width="1.5"/>
+</g>
+<g transform="translate(252.2 313.73)">
+<path d="M 0 0 L 0 32.93333333333334 L 535.5999999999999 32.93333333333334 L 535.5999999999999 65.86666666666667" fill="none" fill-rule="nonzero" stroke="#2E75B6" stroke-width="1.5"/>
+</g>
+<g transform="translate(0 32.93)">
+<path d="M 0 17.911 A 17.911 17.911 0 0 1 17.911 0 L 1022.089 0 A 17.911 17.911 0 0 1 1040 17.911 L 1040 89.555 A 17.911 17.911 0 0 1 1022.089 107.467 L 17.911 107.467 A 17.911 17.911 0 0 1 0 89.555 Z" fill="#2E75B6" fill-rule="nonzero"/>
+<foreignObject width="1040" height="107.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1040px;height:107.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">CEO</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 206.27)">
+<path d="M 0 17.911 A 17.911 17.911 0 0 1 17.911 0 L 486.489 0 A 17.911 17.911 0 0 1 504.4 17.911 L 504.4 89.555 A 17.911 17.911 0 0 1 486.489 107.467 L 17.911 107.467 A 17.911 17.911 0 0 1 0 89.555 Z" fill="#A6A6A6" fill-rule="nonzero"/>
+<foreignObject width="504.4" height="107.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:504.4px;height:107.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">研发</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(535.6 206.27)">
+<path d="M 0 17.911 A 17.911 17.911 0 0 1 17.911 0 L 486.489 0 A 17.911 17.911 0 0 1 504.4 17.911 L 504.4 89.555 A 17.911 17.911 0 0 1 486.489 107.467 L 17.911 107.467 A 17.911 17.911 0 0 1 0 89.555 Z" fill="#A6A6A6" fill-rule="nonzero"/>
+<foreignObject width="504.4" height="107.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:504.4px;height:107.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">市场</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 379.6)">
+<path d="M 0 17.911 A 17.911 17.911 0 0 1 17.911 0 L 486.489 0 A 17.911 17.911 0 0 1 504.4 17.911 L 504.4 89.555 A 17.911 17.911 0 0 1 486.489 107.467 L 17.911 107.467 A 17.911 17.911 0 0 1 0 89.555 Z" fill="#70AD47" fill-rule="nonzero"/>
+<foreignObject width="504.4" height="107.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:504.4px;height:107.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">前端</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(535.6 379.6)">
+<path d="M 0 17.911 A 17.911 17.911 0 0 1 17.911 0 L 486.489 0 A 17.911 17.911 0 0 1 504.4 17.911 L 504.4 89.555 A 17.911 17.911 0 0 1 486.489 107.467 L 17.911 107.467 A 17.911 17.911 0 0 1 0 89.555 Z" fill="#70AD47" fill-rule="nonzero"/>
+<foreignObject width="504.4" height="107.47" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:504.4px;height:107.47px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">后端</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</svg>

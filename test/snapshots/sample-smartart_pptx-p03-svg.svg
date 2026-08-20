@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 24)">
+<path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">无 drawing · 循环（cycle）</tspan>
+</text>
+</g>
+</g>
+<g data-el="502" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 100)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(431.6 0)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#2E75B6" fill-rule="nonzero"/>
+<text x="88.4" y="61.08" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">计划</tspan>
+</text>
+</g>
+<g transform="translate(863.2 205.19)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#A6A6A6" fill-rule="nonzero"/>
+<text x="88.4" y="61.08" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">执行</tspan>
+</text>
+</g>
+<g transform="translate(431.6 410.38)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#70AD47" fill-rule="nonzero"/>
+<text x="88.4" y="61.08" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">检查</tspan>
+</text>
+</g>
+<g transform="translate(0 205.19)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#FFC000" fill-rule="nonzero"/>
+<text x="88.4" y="61.08" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">改进</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

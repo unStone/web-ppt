@@ -15,7 +15,7 @@
     "test": "node tooling/test-core.mjs && node tooling/test-metafile.mjs",
     "test:core": "node tooling/test-core.mjs",
     "test:metafile": "node tooling/test-metafile.mjs",
-    "fixtures": "node tooling/make-fixture.mjs && node tooling/make-ppt-fixture.mjs && node tooling/make-showcase.mjs && node tooling/make-chart-fixture.mjs && node tooling/make-effects-fixture.mjs && node tooling/make-media-fixture.mjs && node tooling/make-metafile-fixture.mjs && node tooling/make-hidden-fixture.mjs && node tooling/make-autofit-fixture.mjs && node tooling/make-placeholder-fixture.mjs && node tooling/make-ole-fixture.mjs && node tooling/make-encrypted-fixture.mjs && node tooling/make-math-fixture.mjs",
+    "fixtures": "node tooling/make-fixture.mjs && node tooling/make-ppt-fixture.mjs && node tooling/make-showcase.mjs && node tooling/make-chart-fixture.mjs && node tooling/make-effects-fixture.mjs && node tooling/make-media-fixture.mjs && node tooling/make-metafile-fixture.mjs && node tooling/make-hidden-fixture.mjs && node tooling/make-autofit-fixture.mjs && node tooling/make-placeholder-fixture.mjs && node tooling/make-ole-fixture.mjs && node tooling/make-encrypted-fixture.mjs && node tooling/make-math-fixture.mjs && node tooling/make-smartart-fixture.mjs",
     "ppt-samples": "node tooling/make-ppt-samples.mjs",
     "compare": "node tooling/compare-libreoffice.mjs",
     "bench": "node --expose-gc tooling/bench.mjs",

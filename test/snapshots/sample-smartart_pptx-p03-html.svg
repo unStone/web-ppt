@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 24)">
+<path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="900" height="34" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(31,56,100);font-weight:700;">无 drawing · 循环（cycle）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="502" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(120 100)">
+<g transform=" scale(1 1) translate(0 0)">
+<g transform="translate(431.6 0)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#2E75B6" fill-rule="nonzero"/>
+<foreignObject width="176.8" height="109.62" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:176.8px;height:109.62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">计划</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(863.2 205.19)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#A6A6A6" fill-rule="nonzero"/>
+<foreignObject width="176.8" height="109.62" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:176.8px;height:109.62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">执行</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(431.6 410.38)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#70AD47" fill-rule="nonzero"/>
+<foreignObject width="176.8" height="109.62" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:176.8px;height:109.62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">检查</span>
+</div>
+</div>
+</foreignObject>
+</g>
+<g transform="translate(0 205.19)">
+<path d="M 0 54.808 A 88.4 54.808 0 0 1 176.8 54.808 A 88.4 54.808 0 0 1 0 54.808 Z" fill="#FFC000" fill-rule="nonzero"/>
+<foreignObject width="176.8" height="109.62" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:176.8px;height:109.62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:18.67px;color:rgb(255,255,255);">改进</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</svg>

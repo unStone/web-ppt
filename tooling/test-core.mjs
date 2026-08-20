@@ -256,6 +256,7 @@ const FIXTURES = [
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -584,6 +585,80 @@ group('动画 / 切换');
       const svg = lib.renderSlideToSvg(pres, anim);
       for (const a of anim.animations) {
         check(`动画目标 ${a.target} 在 SVG 中可定位`, svg.includes(`data-el="${a.target}"`));
+      }
+    }
+  }
+}
+
+// ---------------- 5.3 SmartArt ----------------
+
+group('SmartArt');
+{
+  const pres = parsed.get('sample-smartart.pptx');
+  if (pres) {
+    const groupOf = (i) => pres.slides[i].elements.find((e) => e.kind === 'group');
+    const textsOf = (g) => {
+      const out = [];
+      walkElements(g ? g.children : [], (e) => {
+        const t = e.text ? lib.slideText({ elements: [e] }).trim() : '';
+        if (t) out.push(t);
+      });
+      return out;
+    };
+
+    // 第 1 页有缓存 drawing part：必须走「直接读画好的图形」，
+    // 读成自研布局就说明优先级错了——缓存的保真度更高
+    const cached = groupOf(0);
+    if (check('缓存 drawing 页解析为 group', cached?.kind === 'group')) {
+      eq('缓存 drawing 的形状数', cached.children.length, 3);
+      eq('取的是缓存里的文本', textsOf(cached).join('|'), '缓存A|缓存B|缓存C');
+    }
+
+    // 第 2-6 页只有 data + layout，走自研布局回退
+    const WANT = [
+      [1, ['需求', '设计', '实现', '验收']],
+      [2, ['计划', '执行', '检查', '改进']],
+      [3, ['战略', '战术', '执行']],
+      [5, ['第一条', '第二条', '第三条']],
+    ];
+    for (const [idx, texts] of WANT) {
+      const g = groupOf(idx);
+      if (!check(`第 ${idx + 1} 页排出 group`, g?.kind === 'group')) continue;
+      eq(`第 ${idx + 1} 页节点文本`, textsOf(g).join('|'), texts.join('|'));
+      // 盒子不能重叠也不能跑出画框
+      const boxes = g.children.filter((e) => e.text);
+      check(`第 ${idx + 1} 页节点在画框内`,
+        boxes.every((b) => b.x >= -1 && b.y >= -1 && b.x + b.w <= g.w + 1 && b.y + b.h <= g.h + 1),
+        boxes.map((b) => `${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)}`).join(' '));
+      check(`第 ${idx + 1} 页节点尺寸有效`, boxes.every((b) => b.w > 1 && b.h > 1));
+      check(`第 ${idx + 1} 页节点各有配色`, new Set(boxes.map((b) => b.fill?.color)).size >= Math.min(boxes.length, 3));
+    }
+
+    // 层级布局：节点之外还要有父子连线，否则读不出层级
+    const org = groupOf(4);
+    if (check('组织结构页排出 group', org?.kind === 'group')) {
+      eq('组织结构节点文本', textsOf(org).join('|'), 'CEO|研发|市场|前端|后端');
+      const lines = org.children.filter((e) => e.openGeom);
+      eq('父子连线数', lines.length, 4);
+      check('连线只描边不填充', lines.every((l) => l.fill === null && l.stroke));
+      // CEO 在最上层
+      const boxes = org.children.filter((e) => e.text);
+      const ceo = boxes[0];
+      check('根节点在最上方', boxes.every((b) => b === ceo || b.y >= ceo.y), `${ceo.y}`);
+    }
+
+    // 数据模型里的 parTrans / sibTrans / presOf 是噪声，混进树里会让节点翻倍
+    for (let i = 1; i < 6; i++) {
+      const g = groupOf(i);
+      const boxes = g ? g.children.filter((e) => e.text) : [];
+      check(`第 ${i + 1} 页未混入 parTrans/presOf 幽灵节点`, boxes.length <= 5, `${boxes.length} 个节点`);
+    }
+
+    // 两条渲染路径都不能产生脏值
+    for (const mode of ['svg', 'html']) {
+      for (let i = 0; i < pres.slides.length; i++) {
+        const svg = lib.renderSlideToSvg(pres, pres.slides[i], { textMode: mode });
+        check(`${mode} 路径第 ${i + 1} 页渲染无脏值`, !BAD.test(svg));
       }
     }
   }
