@@ -363,6 +363,32 @@ export interface Paragraph {
   rtl?: boolean;
 }
 
+/**
+ * 数学公式树 —— 与文件格式无关，OMML 与将来的 MathML 都归一到这里。
+ * 渲染层据此做排版（需要文本测量，所以排版在渲染层而非解析层）。
+ */
+export type MathNode =
+  /** 普通文本；sty 决定字形，变量默认斜体是数学排版的惯例 */
+  | { kind: 'run'; text: string; sty?: 'p' | 'i' | 'b' | 'bi' }
+  /** 分式；bar=带横线，lin=写成 a/b，noBar=上下堆叠无线，skw=斜杠 */
+  | { kind: 'frac'; num: MathNode[]; den: MathNode[]; type?: 'bar' | 'noBar' | 'skw' | 'lin' }
+  /** 根式；deg 为空表示平方根 */
+  | { kind: 'rad'; deg: MathNode[]; base: MathNode[] }
+  /** 上标 / 下标 / 上下标 */
+  | { kind: 'script'; base: MathNode[]; sup?: MathNode[]; sub?: MathNode[] }
+  /** 大算符（∑ ∏ ∫ …）；limLoc 决定上下限在正上下还是右侧 */
+  | { kind: 'nary'; chr: string; sub: MathNode[]; sup: MathNode[]; base: MathNode[]; underOver: boolean }
+  /** 括号组；sep 为多参数之间的分隔符 */
+  | { kind: 'delim'; beg: string; end: string; sep: string; items: MathNode[][] }
+  /** 矩阵 */
+  | { kind: 'matrix'; rows: MathNode[][][] }
+  /** 重音符（帽 / 波浪 / 矢量 …）与上下划线 */
+  | { kind: 'acc'; chr: string; base: MathNode[]; below?: boolean }
+  /** 上下限（lim / max 之类），pos 表示极限在下还是在上 */
+  | { kind: 'lim'; base: MathNode[]; limit: MathNode[]; below: boolean }
+  /** 多行公式组 */
+  | { kind: 'stack'; rows: MathNode[][] };
+
 export interface TextRun {
   text: string;
   b: boolean;
@@ -390,4 +416,9 @@ export interface TextRun {
   underlineColor?: string | null;
   /** 文字阴影（CSS text-shadow） */
   shadow?: string | null;
+  /**
+   * 数学公式。非空时本 run 是一个不可断行的公式块，`text` 退化为线性文本，
+   * 仅用于搜索与导出纯文本，渲染一律走公式树。
+   */
+  math?: MathNode[];
 }

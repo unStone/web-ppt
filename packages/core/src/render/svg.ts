@@ -3,7 +3,7 @@ import type {
   Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody, TextRun,
   UnsupportedElement,
 } from '../types';
-import { autoFitScale, renderTextSvg, warpSupported } from './text-svg';
+import { autoFitScale, mathOf, renderTextSvg, warpSupported } from './text-svg';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -696,6 +696,16 @@ function runStyle(run: TextRun, scale: number): string {
 }
 
 function renderRun(run: TextRun, scale: number): string {
+  // 公式：排版成 SVG 后按内联块嵌进 HTML 流。用 vertical-align 把基线对上，
+  // 否则公式会按整个盒子的底边对齐，视觉上比正文低一大截。
+  if (run.math?.length) {
+    const m = mathOf(run, scale);
+    if (m && m.w > 0) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${r(m.w)}" height="${r(m.h + m.d)}"` +
+        ` viewBox="0 ${r(-m.h)} ${r(m.w)} ${r(m.h + m.d)}"` +
+        ` style="display:inline-block;vertical-align:${r(-m.d)}px;overflow:visible">${m.svg}</svg>`;
+    }
+  }
   const content = run.text ? esc(run.text).replace(/\n/g, '<br/>') : '&#160;';
   const span = `<span style="${runStyle(run, scale)}">${content}</span>`;
   if (run.link) {

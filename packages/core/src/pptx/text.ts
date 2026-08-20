@@ -1,6 +1,7 @@
 import type { Paragraph, TextBody, TextRun, TextVert, TextWarp } from '../types';
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
+import { mathPlainText, parseOmml } from './omml';
 
 /**
  * 文本样式继承链：
@@ -359,11 +360,14 @@ export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | 
         const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
         if (branch && depth > 0) collectRuns(branch, depth - 1);
       } else if (node.localName === 'oMathPara' || node.localName === 'oMath') {
-        // OMML 数学公式：完整渲染是另一个工程，这里至少把线性文本取出来，
-        // 否则公式会在预览里静默消失。
-        const text = mathText(node);
-        if (text) {
-          runs.push(finalizeRun(text, { ...merged.rp, i: true }, env));
+        // OMML：解析成格式无关的公式树，排版交给渲染层（排版要测文本宽度）。
+        // text 字段保留线性文本，搜索与纯文本导出仍然可用。
+        const math = parseOmml(node);
+        const text = math.length ? mathPlainText(math) : mathText(node);
+        if (math.length || text) {
+          const run = finalizeRun(text, { ...merged.rp, i: true }, env);
+          if (math.length) run.math = math;
+          runs.push(run);
           hasContent = true;
         }
       } else if (depth > 0 && (node.localName === 'Choice' || node.localName === 'Fallback')) {

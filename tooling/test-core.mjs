@@ -255,6 +255,7 @@ const FIXTURES = [
   { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 2, source: 'pptx' },
+  { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -410,7 +411,8 @@ group('段落内容');
   // 回归：OMML 公式曾被静默丢弃，整段只剩前半句
   const math = parse('<a:p><a:r><a:t>面积 = </a:t></a:r>' +
     '<m:oMath><m:sSup><m:e><m:r><m:t>πr</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath></a:p>');
-  eq('OMML 公式转为线性文本', flat(math)[0], '面积 = πr2');
+  // 线性文本带上 ^ / _ / √ 等结构标记，比单纯拼接 m:t 更可读，搜索也更准
+  eq('OMML 公式转为线性文本', flat(math)[0], '面积 = πr^2');
 
   // 回归：段落内的 mc:AlternateContent 曾整段跳过
   const alt = parse('<a:p><mc:AlternateContent><mc:Choice Requires="a14"><a:r><a:t>新版内容</a:t></a:r></mc:Choice>' +
@@ -583,6 +585,75 @@ group('动画 / 切换');
       for (const a of anim.animations) {
         check(`动画目标 ${a.target} 在 SVG 中可定位`, svg.includes(`data-el="${a.target}"`));
       }
+    }
+  }
+}
+
+// ---------------- 5.4 数学公式 ----------------
+
+group('数学公式 OMML');
+{
+  const pres = parsed.get('sample-math.pptx');
+  if (pres) {
+    const mathRuns = [];
+    walkElements(pres.slides[0].elements, (el) => {
+      for (const p of el.text?.paragraphs ?? []) {
+        for (const run of p.runs) if (run.math?.length) mathRuns.push([el.name, run]);
+      }
+    });
+    eq('公式 run 数', mathRuns.length, 14);
+
+    const byName = new Map(mathRuns.map(([n, r]) => [n, r]));
+    // 每种结构必须解析成对应的节点类型，退化成 run（纯文本）就说明解析没接住
+    const WANT = [
+      ['math-分式', 'frac'], ['math-根式', 'rad'], ['math-n 次根', 'rad'],
+      ['math-上下标', 'script'], ['math-求和', 'nary'], ['math-积分', 'nary'],
+      ['math-括号自适应', 'delim'], ['math-多参数括号', 'delim'], ['math-矩阵', 'delim'],
+      ['math-重音', 'acc'], ['math-极限', 'lim'], ['math-嵌套分式', 'frac'],
+    ];
+    for (const [name, kind] of WANT) {
+      const run = byName.get(name);
+      check(`${name} 解析为 ${kind}`, run?.math?.[0]?.kind === kind, run?.math?.[0]?.kind);
+    }
+
+    // 结构细节：这些是最容易解错又不容易看出来的地方
+    eq('degHide 时不产生根指数', byName.get('math-根式').math[0].deg.length, 0);
+    eq('n 次根保留根指数', byName.get('math-n 次根').math[0].deg.length, 1);
+    eq('求和上下限在正上下', byName.get('math-求和').math[0].underOver, true);
+    eq('积分上下限在右侧', byName.get('math-积分').math[0].underOver, false);
+    eq('多参数括号的参数个数', byName.get('math-多参数括号').math[0].items.length, 3);
+    eq('多参数括号的定界符', byName.get('math-多参数括号').math[0].beg, '[');
+    eq('矩阵行数', byName.get('math-矩阵').math[0].items[0][0].rows.length, 2);
+    eq('矩阵列数', byName.get('math-矩阵').math[0].items[0][0].rows[0].length, 2);
+    check('嵌套分式的分母里还有分式',
+      byName.get('math-嵌套分式').math[0].den.some((n) => n.kind === 'frac'));
+
+    // 线性文本仍然可搜索——公式不该让 slideText 变哑
+    const txt = lib.slideText(pres.slides[0]);
+    check('公式产出可搜索的线性文本', txt.includes('a+b/2c') && txt.includes('∑'), txt.slice(0, 60));
+
+    // 两条渲染路径都必须把公式画出来，且不含脏值
+    for (const mode of ['svg', 'html']) {
+      const svg = lib.renderSlideToSvg(pres, pres.slides[0], { textMode: mode });
+      check(`${mode} 路径渲染无脏值`, !BAD.test(svg));
+      // 分数线与上划线是 <rect>：分式 1 + 括号自适应 1 + 嵌套分式 2 + 重音上划线 1 = 5，
+      // 再加幻灯片底色 1。少于这个数说明有公式没排出来。
+      const rects = (svg.match(/<rect /g) || []).length;
+      check(`${mode} 路径画出分数线与上划线`, rects >= 6, `rect=${rects}`);
+      // 根号是描边不填充的折线：根式 + n 次根 + 行内根式 = 3
+      const radicals = (svg.match(/<path [^>]*fill="none"/g) || []).length;
+      check(`${mode} 路径画出根号`, radicals >= 3, `path=${radicals}`);
+      check(`${mode} 路径出现数学字体`, svg.includes('Cambria Math'));
+    }
+
+    // 行内混排：公式与正文在同一行，行高要被公式撑开
+    const inlineEl = [];
+    walkElements(pres.slides[0].elements, (el) => { if (el.name === 'inline') inlineEl.push(el); });
+    if (check('存在行内混排的形状', inlineEl.length === 1)) {
+      const runs = inlineEl[0].text.paragraphs[0].runs;
+      eq('行内段落的 run 数', runs.length, 5);
+      eq('行内公式数', runs.filter((r) => r.math?.length).length, 2);
+      check('公式两侧是普通文本', !runs[0].math && !runs[4].math);
     }
   }
 }

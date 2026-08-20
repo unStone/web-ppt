@@ -1,0 +1,420 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="113" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 20)">
+<path d="M 0 0 L 800 0 L 800 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="800" height="40" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:800px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:26.67px;color:rgb(31,56,100);font-weight:700;">OMML 数学公式（12 种结构）</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 90)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">分式</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="900" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 116)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="46.2" height="51.89" viewBox="0 -32.66 46.2 51.89" style="display:inline-block;vertical-align:-19.22px;overflow:visible">
+<text x="5.28" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="17.16" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
+<text x="29.04" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">b</text>
+<text x="11.22" y="14.47" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+<text x="23.1" y="14.47" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">c</text>
+<rect x="2.11" y="-6.72" width="41.98" height="1.32" fill="rgb(0,0,0)"/>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 90)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">根式</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="901" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 116)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="52.94" height="31.88" viewBox="0 -26.6 52.94 31.88" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<path d="M 0 -9.07 L 3.96 -4.28 L 8.18 5.28 L 13.2 -26.6 L 52.94 -26.6" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
+<text x="14.64" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="27.84" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
+<text x="41.52" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 90)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">n 次根</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="902" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 116)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="58.32" height="29.49" viewBox="0 -24.21 58.32 29.49" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<path d="M 2.64 -6.71 L 6.6 -2.71 L 10.82 5.28 L 15.84 -21.36 L 58.32 -21.36" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
+<text x="17.28" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="30.48" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
+<text x="43.68" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="0" y="-11.19" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:13.2px;" fill="rgb(0,0,0)" xml:space="preserve">3</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 90)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">上下标</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="903" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 116)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="23.66" height="31.6" viewBox="0 -22.52 23.66 31.6" style="display:inline-block;vertical-align:-9.08px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">A</text>
+<text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+<text x="13.68" y="5.28" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">i</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 240)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">求和</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="904" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 266)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="55.06" height="69.04" viewBox="0 -43.22 55.06 69.04" style="display:inline-block;vertical-align:-25.82px;overflow:visible">
+<text x="9.5" y="-30.78" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">n</text>
+<text x="4.69" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:34.8px;" fill="rgb(0,0,0)" xml:space="preserve">∑</text>
+<text x="0" y="22.02" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">i</text>
+<text x="9.5" y="22.02" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">=</text>
+<text x="19.01" y="22.02" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="31.39" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="45.07" y="5.28" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">i</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 240)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">积分</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="905" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 266)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="92.05" height="40.24" viewBox="0 -25.64 92.05 40.24" style="display:inline-block;vertical-align:-14.6px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:34.8px;" fill="rgb(0,0,0)" xml:space="preserve">∫</text>
+<text x="20.1" y="-13.2" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">∞</text>
+<text x="20.1" y="10.8" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">0</text>
+<text x="32.48" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">e</text>
+<text x="46.16" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">−</text>
+<text x="55.67" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="65.65" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">d</text>
+<text x="78.85" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 240)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">括号自适应</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="906" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 266)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="48.84" height="54.77" viewBox="0 -34.1 48.84 54.77" style="display:inline-block;vertical-align:-20.66px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(0 7.85) scale(1 2.43)">(</text>
+<text x="18.48" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="18.48" y="14.47" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">n</text>
+<rect x="15.31" y="-6.72" width="18.22" height="1.32" fill="rgb(0,0,0)"/>
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(35.64 7.85) scale(1 2.43)">)</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 240)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">多参数括号</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="907" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 266)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="92.4" height="25.44" viewBox="0 -18.72 92.4 25.44" style="display:inline-block;vertical-align:-6.72px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(0 0.77) scale(1 1.13)">[</text>
+<text x="13.2" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="26.4" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">,</text>
+<text x="39.6" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">b</text>
+<text x="52.8" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">,</text>
+<text x="66" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">c</text>
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(79.2 0.77) scale(1 1.13)">]</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 390)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">矩阵</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="908" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 416)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="64.8" height="56.4" viewBox="0 -34.92 64.8 56.4" style="display:inline-block;vertical-align:-21.48px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(0 8.28) scale(1 2.5)">(</text>
+<text x="13.2" y="-16.2" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="38.4" y="-16.2" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">b</text>
+<text x="13.2" y="14.76" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">c</text>
+<text x="38.4" y="14.76" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">d</text>
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve" transform="translate(51.6 8.28) scale(1 2.5)">)</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 390)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">重音</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="909" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(330 416)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="52.8" height="38.59" viewBox="0 -33.31 52.8 38.59" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">v</text>
+<text x="0.66" y="-17.76" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">→</text>
+<text x="13.2" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">·</text>
+<text x="26.4" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="39.6" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
+<rect x="26.4" y="-19.92" width="26.4" height="1.2" fill="rgb(0,0,0)"/>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="111" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 390)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">极限</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="910" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(630 416)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="76.46" height="40.72" viewBox="0 -17.28 76.46 40.72" style="display:inline-block;vertical-align:-23.44px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">lim</text>
+<text x="5.54" y="19.64" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">n</text>
+<text x="15.05" y="19.64" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">→</text>
+<text x="24.55" y="19.64" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">∞</text>
+<text x="39.6" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve"> </text>
+<text x="52.8" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="66.48" y="5.28" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">n</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="112" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 390)">
+<path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="280" height="24" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:13.33px;color:rgb(102,102,102);">嵌套分式</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="911" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(930 416)">
+<path d="M 0 0 L 280 0 L 280 104 L 0 104 Z" fill="none" fill-rule="nonzero" stroke="rgb(221,221,221)" stroke-width="1"/>
+<foreignObject width="280" height="104" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<svg xmlns="http://www.w3.org/2000/svg" width="54.52" height="78.28" viewBox="0 -32.66 54.52 78.28" style="display:inline-block;vertical-align:-45.62px;overflow:visible">
+<text x="21.32" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="5.28" y="28.32" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="17.16" y="28.32" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
+<text x="33.79" y="14.1" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:19.44px;" fill="rgb(0,0,0)" xml:space="preserve">1</text>
+<text x="33.79" y="41.34" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:19.44px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<rect x="30.94" y="22.27" width="16.39" height="1.19" fill="rgb(0,0,0)"/>
+<rect x="2.11" y="-6.72" width="50.29" height="1.32" fill="rgb(0,0,0)"/>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="990" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 560)">
+<path d="M 0 0 L 1220 0 L 1220 120 L 0 120 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1220" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1220px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(0,0,0);">行内混排：当 </span>
+<svg xmlns="http://www.w3.org/2000/svg" width="97.39" height="27.8" viewBox="0 -22.52 97.39 27.8" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+<text x="23.66" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
+<text x="36.86" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
+<text x="50.54" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+<text x="60.53" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">=</text>
+<text x="73.73" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">r</text>
+<text x="87.41" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+</svg>
+<span style="font-size:21.33px;color:rgb(0,0,0);"> 时，半径为 </span>
+<svg xmlns="http://www.w3.org/2000/svg" width="76.61" height="31.88" viewBox="0 -26.6 76.61 31.88" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<path d="M 0 -9.07 L 3.96 -4.28 L 8.18 5.28 L 13.2 -26.6 L 76.61 -26.6" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
+<text x="14.64" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="28.32" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+<text x="38.3" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
+<text x="51.5" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
+<text x="65.18" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+</svg>
+<span style="font-size:21.33px;color:rgb(0,0,0);"> ，这是圆的方程。</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

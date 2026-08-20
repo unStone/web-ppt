@@ -1,4 +1,9 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
+import { layoutMath } from './math-svg';
+import type { MathLayout } from './math-svg';
+
+/** 与 math-svg 内部一致的数学字体栈；测量与绘制必须用同一套 */
+const MATH_FAMILY = "'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif";
 
 /**
  * 纯 SVG <text> 排版：自己做文本测量与断行。
@@ -46,7 +51,33 @@ function fontSize(run: TextRun, scale: number): number {
   return run.baseline ? base * 0.65 : base;
 }
 
+/** 供公式排版用的测量函数：与正文共用同一个 2D 上下文，度量才一致 */
+function mathMeasure(text: string, size: number, italic: boolean, bold: boolean): number {
+  const g = ctx2d();
+  if (!g) return text.length * size * 0.55;
+  g.font = `${italic ? 'italic ' : ''}${bold ? '700 ' : '400 '}${size}px ${MATH_FAMILY}`;
+  return g.measureText(text).width;
+}
+
+/** 公式块的排版结果，按 run 与字号缓存——同一段文字会被测量多次（断行 + 自动缩放二分） */
+const mathCache = new Map<string, MathLayout>();
+
+export function mathOf(run: TextRun, scale: number): MathLayout | null {
+  if (!run.math?.length) return null;
+  const size = run.size * scale;
+  const key = `${size}|${run.color}|${JSON.stringify(run.math)}`;
+  let hit = mathCache.get(key);
+  if (!hit) {
+    hit = layoutMath(run.math, size, run.color, mathMeasure);
+    // 缓存无上限会在超长文稿里堆积，超过阈值整体清空即可（重算成本远低于内存压力）
+    if (mathCache.size > 512) mathCache.clear();
+    mathCache.set(key, hit);
+  }
+  return hit;
+}
+
 function measure(text: string, run: TextRun, scale: number): number {
+  if (run.math?.length) return mathOf(run, scale)?.w ?? 0;
   if (!text) return 0;
   const g = ctx2d();
   const size = fontSize(run, scale);
@@ -74,6 +105,11 @@ interface Token {
 function tokenize(runs: TextRun[], scale: number): Token[] {
   const out: Token[] = [];
   for (const run of runs) {
+    if (run.math?.length) {
+      // 公式整体不可断行
+      out.push({ text: run.text, run, width: measure(run.text, run, scale), br: false, space: false });
+      continue;
+    }
     const text = applyCaps(run.text, run);
     if (!text) continue;
     // 保留空格、按 CJK 逐字、按空白与拉丁词切分
@@ -112,7 +148,9 @@ function pushSeg(line: Line, token: Token): void {
     line.segs.push({ text: token.text, run: token.run, width: token.width });
   }
   line.width += token.width;
-  line.size = Math.max(line.size, token.run.size);
+  // 公式比正文高，行高得按它的实际高度算，否则上下行会咬在一起
+  const mh = token.run.math?.length ? mathOf(token.run, 1) : null;
+  line.size = Math.max(line.size, mh ? (mh.h + mh.d) / 1.2 : token.run.size);
 }
 
 function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: number): Line[] {
@@ -304,12 +342,31 @@ export function renderTextSvg(
           }
           cursor += seg.width;
         }
-        const tspans = line.segs.map((seg) => spanSvg(seg, scale, addDef)).join('');
-        out.push(
-          `<text x="${r(x)}" y="${r(baseline)}" text-anchor="${rtl ? flipAnchor(textAnchor) : textAnchor}"` +
-          (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-          ` xml:space="preserve">${tspans}</text>`,
-        );
+        if (line.segs.some((seg) => seg.run.math?.length)) {
+          // 公式是 <g>，塞不进 <text>。含公式的行改为按绝对 x 逐段输出，
+          // 纯文本行仍走单个 <text>，避免全仓快照因为这条支路整体漂移。
+          let cx = lineStart;
+          for (const seg of line.segs) {
+            const ml = seg.run.math?.length ? mathOf(seg.run, scale) : null;
+            if (ml) {
+              out.push(`<g transform="translate(${r(cx)} ${r(baseline)})">${ml.svg}</g>`);
+            } else {
+              out.push(
+                `<text x="${r(cx)}" y="${r(baseline)}" text-anchor="start"` +
+                (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
+                ` xml:space="preserve">${spanSvg(seg, scale, addDef)}</text>`,
+              );
+            }
+            cx += seg.width;
+          }
+        } else {
+          const tspans = line.segs.map((seg) => spanSvg(seg, scale, addDef)).join('');
+          out.push(
+            `<text x="${r(x)}" y="${r(baseline)}" text-anchor="${rtl ? flipAnchor(textAnchor) : textAnchor}"` +
+            (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
+            ` xml:space="preserve">${tspans}</text>`,
+          );
+        }
       }
       y += lh + (li === lp.lines.length - 1 ? lp.after : 0);
     }
