@@ -8,11 +8,12 @@
 |---|---|
 | `packages/core/` | `@web-ppt/core` —— 解析 / 渲染 / 导出，无框架无 DOM 依赖 |
 | `packages/viewer-core/` | `@web-ppt/viewer-core` —— headless 状态机 + 播放层 |
+| `packages/fonts/` | `@web-ppt/fonts` —— 字体替换表 + 按需加载器（可选，不含字体字节） |
 | `packages/viewer/` | 开箱即用查看器（private） |
 | `packages/site/` | 官网（private），含浏览器内实时 Demo |
 | `fixtures/` | 测试样本，**全部由 `tooling/make-*.mjs` 确定性生成** |
 | `tooling/` | 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准 |
-| `test/snapshots/` | 158 个渲染快照基线 |
+| `test/snapshots/` | 160 个渲染快照基线 |
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
@@ -21,7 +22,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1689 + 130 项断言、158 个快照 |
+| `npm test` | 全部测试：1848 + 130 项断言、160 个快照 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |
@@ -51,6 +52,7 @@
 | **画布污染只发生在 `blob:`** | 含 `foreignObject` 的 SVG 经 **blob: URL** 加载会让画布被判污染（`toBlob` 抛 `SecurityError`），换成 **`data:` URI 就不会**——实测 Chrome 148 仍是这样。Chromium 曾提案让 blob: 也不污染（原计划 M131），至今未生效，别依赖。所以 `slideToPng` 走 data: URI + `foreignObject`，排版与屏幕预览逐像素一致 |
 | **SVG-as-image 是隔离上下文** | 被 `<img>` 加载的 SVG 拿不到宿主页面的 `@font-face` / FontFace API 注册的字体（实测：未知字体名与页面已注册字体的渲染结果完全一致）。**系统已安装字体可用，其余必须把 `@font-face` 连同 base64 字体内联进 SVG 的 `<style>`**——`svg.ts` 的 `embeddedFonts` 就是干这个的，别把它优化掉 |
 | **WebKit 不给 `foreignObject` 应用 SVG 缩放** | [WebKit bug 23113](https://bugs.webkit.org/show_bug.cgi?id=23113)，2008 年至今，新的 LBSE 引擎才修。我们的幻灯片是 `viewBox` + `width:100%`，永远处于被缩放状态，受影响的 Safari / iOS 上 foreignObject 里的文本会按 1× 排版并错位。`viewer-core/foreign-object.ts` 做运行时探测，中招就整页切到原生 `<text>`（代价：文本不可选中）。**不要用 UA 判断，也不要照搬 marpit-svg-polyfill 的 `getScreenCTM()` 补偿**——那套要求 foreignObject 位于原点，而我们的嵌在每个形状各自的 translate/rotate 里 |
+| **嵌入字体不是 TTF** | `ppt/fonts/*.fntdata` 是 EOT 容器，而且实测**全部**开着 MTX 压缩（POI 语料 6/6、ORCID 样本 10/10）。把这段字节直接当 `font/ttf` 塞进 `@font-face`，浏览器只会报 `invalid sfntVersion` 然后整份丢掉。`font/eot.ts` 负责剥容器；MTX 解压走 `setFontDecoder` hook（官网接的是 `mtx-decompressor` 的 `eotToTtf`），core 本身仍然只依赖 fflate |
 | **量不到就得记住量不到** | `text-svg.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 
@@ -71,11 +73,16 @@ EMF/WMF (GDI 流)  ─┘
 版本号改完打 tag 即可，`release.yml` 走 npm Trusted Publishing（OIDC），**Secrets 里不存任何凭据**：
 
 ```bash
-# 两个包的 package.json 版本必须一致，否则流水线直接失败
-git tag -a v0.3.0 -m "v0.3.0" && git push origin v0.3.0
+# 三个包的 package.json 版本必须一致，否则流水线直接失败
+git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
 ```
 
-流水线：校验 tag 与包版本一致 → 类型检查 → 重生成固件 → 全部测试 → 构建 → 按 `core` → `viewer-core` 顺序发布（后者以前者为 peer 依赖）。
+流水线：校验 tag 与包版本一致 → 类型检查 → 重生成固件 → 全部测试 → 构建 →
+按 `core` → `viewer-core` → `fonts` 顺序发布（后两者以 `core` 为 peer 依赖）。
+
+⚠️ **新包的第一次发布走不了 OIDC**：npm 要求包已存在才能配置 Trusted Publishing，
+而包要先发布才会存在。新增包时得先在本地 `npm publish` 发一版，再去 npm 的包设置里
+配好 trusted publisher，之后才交给流水线。
 
 ## 约定
 

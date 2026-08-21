@@ -12,7 +12,8 @@
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 84KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 6.8KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
 ## 快速开始
 
@@ -171,8 +172,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
 | chartex 新图表 | 树状图 / 旭日 / 直方图 / 箱线 / 瀑布 / 漏斗 / 地图（Office 2016+ 的 `cx:chartSpace`）整条链路未实现。经典 16 种图表已全支持 |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
-| 嵌入字体 | 注入 `@font-face`，但部分文件的字体数据浏览器不接受 |
-| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题，装上原字体或用嵌入字体即可对齐 |
+| MTX 压缩的嵌入字体 | PowerPoint 的 `fntdata` 是 EOT 容器，绝大多数还开着 MTX 压缩。未压缩的容器 core 自己剥（含异或混淆），压缩的需要注入解码器：`setFontDecoder(eotToTtf)`（来自 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor)）。不注入就跳过这些字体，回退到替换字体，而不是塞一份浏览器注定拒绝的字节 |
+| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题——装原字体、用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](packages/fonts) 换成度量兼容的免费替代字体（Calibri→Carlito 这类，前进宽度逐字相等）都能对齐 |
+| 网络字体到达前的断行 | 原生 `<text>` 路径用 canvas 量字宽，而字体是异步加载的：首帧会按回退字体断行。`foreignObject` 路径由浏览器排版，不受影响 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
 
@@ -183,7 +185,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1689 项断言 + 158 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1848 项断言 + 160 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
@@ -206,7 +208,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          158 个渲染快照基线
+└── test/snapshots/          160 个渲染快照基线
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -225,7 +227,7 @@ Cordis 之类的应用框架只出现在那一层，不下沉到 core。
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 16 个测试文件 × 全部页 × 两条文本路径 = 158 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 17 个测试文件 × 全部页 × 两条文本路径 = 160 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |
@@ -267,6 +269,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | `sample-autofit.pptx` | 文本自动缩放五种情形：溢出/放得下 × 裸 normAutofit、无 autofit、显式 fontScale、缩到 25% 下限 |
 | `sample-placeholder.pptx` | 占位符几何继承：图片占位符空 spPr / 图片自带 xfrm / 形状占位符 |
 | `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
+| `sample-embedfont.pptx` | 嵌入字体的四种容器：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF |
 
 `.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run ppt-samples`，或 `soffice --headless --convert-to ppt <file>`。
 
