@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@web-ppt/core": "*",
-    "@web-ppt/viewer-core": "*"
+    "@web-ppt/viewer-core": "*",
+    "mtx-decompressor": "^1.6.0",
+    "@web-ppt/fonts": "*"
   }
 }

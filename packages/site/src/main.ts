@@ -1,6 +1,19 @@
-import { parse, renderSlideToSvg } from '@web-ppt/core';
+import { collectFonts, parse, renderSlideToSvg, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
+import { loadFontsFor, unloadFonts } from '@web-ppt/fonts';
+import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
+import { featuredOf, fetchSamples, type Sample } from './samples-index';
+import { fetchBytes, whyFailed } from './fetch-bytes';
+
+/**
+ * 接上嵌入字体解码器。
+ *
+ * PowerPoint 的 fntdata 是 MTX 压缩的 EOT，浏览器一个都不认；解开它需要
+ * LZCOMP + CTF 重建，体积不小，所以 core 只留 hook，由用得上的一方注入。
+ * 官网当然用得上——不接的话，凡是靠嵌入字体的文件全部回退成系统字体。
+ */
+setFontDecoder(eotToTtf);
 
 /* ── 元素 ─────────────────────────────────────── */
 const $ = <T extends Element>(sel: string): T => document.querySelector<T>(sel)!;
@@ -13,8 +26,17 @@ const meta = $<HTMLElement>('#meta');
 const prevBtn = $<HTMLButtonElement>('#prev');
 const nextBtn = $<HTMLButtonElement>('#next');
 const pick = $<HTMLInputElement>('#pick');
+const stageWrap = $<HTMLElement>('#stageWrap');
+const presentBtn = $<HTMLButtonElement>('#present');
+const downloadLink = $<HTMLAnchorElement>('#download');
+const linkToast = $<HTMLElement>('#linkToast');
+const presentBar = $<HTMLElement>('#presentBar');
+const pPager = $<HTMLElement>('#pPager');
+const cjkBtn = $<HTMLButtonElement>('#cjkFonts');
 
 let viewer: Viewer | null = null;
+/** 当前这份文件的字节，供「下载」直接用——已经在内存里，不必再走一次网络 */
+let currentUrl: string | null = null;
 
 /* ── 载入并渲染 ───────────────────────────────── */
 
@@ -37,6 +59,19 @@ function setProgress(got: number, total: number): void {
     `<div class="loading-bar"><i style="width:${total ? pct.toFixed(1) : 0}%"></i></div>` +
     `<div class="loading-note">下载完成后才开始解析，解析与渲染全在本地</div>` +
     `</div>`;
+}
+
+/**
+ * 把当前文件挂到「下载」按钮上。
+ *
+ * 字节已经在内存里，直接做成 blob URL 即可——再发一次请求既慢又可能拿不到
+ * （本地打开的文件根本没有地址）。旧的 URL 必须回收，否则每换一份就漏几 MB。
+ */
+function armDownload(bytes: ArrayBuffer, name: string): void {
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
+  currentUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }));
+  downloadLink.href = currentUrl;
+  downloadLink.download = /\.pptx?$/i.test(name) ? name : `${name}.pptx`;
 }
 
 /** netMs 为空表示本地文件，没有下载这一段 */
@@ -67,7 +102,20 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   viewer?.destroy();
   stage.innerHTML = '';
   viewer = new Viewer(stage, pres, { skipHidden: true });
-  viewer.onChange = sync;
+  // 每翻一页补一次字体：已经下过的切片是免费的，没下过的才是这一页真需要的
+  viewer.onChange = () => { sync(); void ensureFonts(pres); };
+  // 演示时超链接照常打开；嵌在页面里时不行——第 5 页那种整页链接的封面
+  // 会让任何一次点击都把人带走（orcid-ooxml-strict 就是这样）。
+  viewer.onLinkClick = (href) => {
+    if (presenting()) return false;
+    showLinkToast(href);
+    return true;
+  };
+  // 本地打开的文件不必再给一个「下载」——那是把人家自己的文件还回去
+  downloadLink.hidden = netMs === undefined;
+  if (netMs !== undefined) armDownload(bytes, label);
+
+  void ensureFonts(pres);
 
   const renderT0 = performance.now();
   buildThumbs(pres);
@@ -83,9 +131,60 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
     `解析 ${parseMs.toFixed(0)}ms · 首屏 ${(performance.now() - renderT0 + parseMs).toFixed(0)}ms`;
 }
 
+/**
+ * 中文字体替换的开关，记在 localStorage 里。
+ *
+ * 拉丁替换（Calibri→Carlito 这类）一个字重才十几 KB 且度量兼容，没有关的理由；
+ * 中文一页几百 KB，值不值得要看的人自己判断，所以只给中文做开关。
+ */
+const CJK_KEY = 'web-ppt:cjk-fonts';
+let cjkFonts = localStorage.getItem(CJK_KEY) !== '0';
+
+/**
+ * 补齐当前页缺的字体。
+ *
+ * **只看当前页**。中文切片一片三十来 KB，多问一页就多几十上百 KB，而 64 页的
+ * 文件里绝大多数页根本不会被翻到；翻到了再补，已下过的切片本来就是免费的。
+ *
+ * 字体到齐后必须**重渲当前页**：排版是同步的、加载是异步的，首帧一定是按
+ * 回退字体断的行。`refresh()` 只重渲，不动页码与动画进度。
+ */
+async function ensureFonts(pres: Presentation): Promise<void> {
+  const v = viewer;
+  if (!v) return;
+  const at = v.index;
+  const usages = collectFonts([pres.slides[at]]);
+  if (!usages.length) return;
+
+  const done = await loadFontsFor(usages, { cjk: cjkFonts });
+  // 期间换了文件或翻了页就作罢；一个都没换成替代字体也没必要重渲
+  if (viewer !== v || v.index !== at || !done.some((d) => d.status === 'substituted')) return;
+  v.refresh();
+}
+
+function syncCjkButton(): void {
+  cjkBtn.setAttribute('aria-pressed', String(cjkFonts));
+}
+syncCjkButton();
+
+cjkBtn.addEventListener('click', () => {
+  cjkFonts = !cjkFonts;
+  localStorage.setItem(CJK_KEY, cjkFonts ? '1' : '0');
+  syncCjkButton();
+  // 关掉时把已注入的中文 @font-face 撤回，页面立刻回到系统字体；
+  // 已下载的字节留在 HTTP 缓存里，再打开是免费的
+  if (!cjkFonts) {
+    unloadFonts({ cjkOnly: true });
+    viewer?.refresh();
+  } else if (viewer) {
+    void ensureFonts(viewer.presentation);
+  }
+});
+
 function sync(): void {
   if (!viewer) return;
   pager.textContent = `${viewer.index + 1} / ${viewer.count}`;
+  pPager.textContent = pager.textContent;
   prevBtn.disabled = viewer.index === 0;
   nextBtn.disabled = viewer.index === viewer.count - 1;
   thumbs.querySelectorAll('.thumb').forEach((t, i) => {
@@ -135,48 +234,13 @@ async function loadUrl(src: string, label: string): Promise<void> {
   setProgress(0, 0);
   meta.textContent = '下载中…';
   try {
-    const t0 = performance.now();
-    const res = await fetch(src);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    // Content-Length 可能没有（分块传输）：那就只报已下载量，不画百分比
-    const total = Number(res.headers.get('content-length')) || 0;
-    let bytes: ArrayBuffer;
-
-    if (!res.body) {
-      bytes = await res.arrayBuffer(); // 老浏览器没有流，退回一次性读取
-    } else {
-      const reader = res.body.getReader();
-      const chunks: Uint8Array[] = [];
-      let got = 0;
-      let painted = 0;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        got += value.length;
-        // 每 64KB 更新一次就够了，每个分块都重排 DOM 反而拖慢下载
-        if (got - painted > 65536) {
-          painted = got;
-          setProgress(got, total);
-        }
-      }
-      const merged = new Uint8Array(got);
-      let at = 0;
-      for (const c of chunks) {
-        merged.set(c, at);
-        at += c.length;
-      }
-      bytes = merged.buffer;
-    }
-
-    await show(bytes, label, performance.now() - t0);
+    const { bytes, ms } = await fetchBytes(src, setProgress);
+    await show(bytes, label, ms);
   } catch (e) {
-    // 样本取不到是网络或样本库的事，跟引擎无关。别把 HTTP 码甩给用户，
-    // 指一条还走得通的路：本地文件的解析压根不需要网络。
-    const why = e instanceof TypeError ? '网络不通' : e instanceof Error ? e.message : String(e);
+    // 样本取不到是网络或样本库的事，跟引擎无关。指一条还走得通的路：
+    // 本地文件的解析压根不需要网络。
     setStatus(
-      `示例载入失败（${why}）<br>把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。`,
+      `示例载入失败（${whyFailed(e)}）<br>把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。`,
       'err',
     );
     meta.textContent = '';
@@ -197,6 +261,62 @@ document.querySelectorAll<HTMLButtonElement>('.samples .chip').forEach((chip) =>
 
 prevBtn.addEventListener('click', () => viewer?.prev());
 nextBtn.addEventListener('click', () => viewer?.next());
+
+/* ── 幻灯片里的超链接 ─────────────────────────── */
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 把误点到的链接摆出来，让人自己决定去不去，而不是直接跳走 */
+function showLinkToast(href: string): void {
+  linkToast.textContent = '';
+  linkToast.append('这一处是超链接：');
+  const a = document.createElement('a');
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.textContent = href; // 外部文本，只走 textContent
+  linkToast.append(a);
+  linkToast.hidden = false;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { linkToast.hidden = true; }, 6000);
+}
+
+/* ── 全屏演示 ─────────────────────────────────── */
+
+const presenting = (): boolean => document.fullscreenElement === stageWrap;
+
+async function enterPresent(): Promise<void> {
+  if (!viewer || presenting()) return;
+  try {
+    await stageWrap.requestFullscreen();
+  } catch {
+    return; // 用户拒绝或环境不支持，保持原样即可
+  }
+  linkToast.hidden = true;
+  // 演示模式才播动画：嵌在页面里时逐批点击会让翻页变得很慢
+  viewer.setAnimate(true);
+  sync();
+}
+
+presentBtn.addEventListener('click', () => void enterPresent());
+$<HTMLButtonElement>('#pExit').addEventListener('click', () => void document.exitFullscreen());
+$<HTMLButtonElement>('#pPrev').addEventListener('click', () => viewer?.prev());
+$<HTMLButtonElement>('#pNext').addEventListener('click', () => viewer?.next());
+
+document.addEventListener('fullscreenchange', () => {
+  if (presenting()) return;
+  viewer?.setAnimate(false);
+  sync();
+});
+
+// 鼠标停下就把控制条收起来，别挡着幻灯片
+let barTimer: ReturnType<typeof setTimeout> | null = null;
+stageWrap.addEventListener('mousemove', () => {
+  if (!presenting()) return;
+  presentBar.classList.add('show');
+  if (barTimer) clearTimeout(barTimer);
+  barTimer = setTimeout(() => presentBar.classList.remove('show'), 2000);
+});
 
 async function openFile(file: File): Promise<void> {
   document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
@@ -223,12 +343,18 @@ demo.addEventListener('drop', (e) => {
   if (f) void openFile(f);
 });
 
-// demo 在视口内时方向键翻页
+// demo 在视口内时方向键翻页；全屏演示时不看位置——它已经占满屏幕了
 addEventListener('keydown', (e) => {
   if (!viewer) return;
-  const r = demo.getBoundingClientRect();
-  if (r.bottom < 80 || r.top > innerHeight - 80) return;
-  if (e.key === 'ArrowRight' || e.key === 'PageDown') { viewer.next(); e.preventDefault(); }
+  if (!presenting()) {
+    const r = demo.getBoundingClientRect();
+    if (r.bottom < 80 || r.top > innerHeight - 80) return;
+  }
+  // 空格/回车是演示时最顺手的「下一步」，但只在全屏里接管，
+  // 否则会把页面正常的滚动和按钮触发一起抢走
+  const forward = e.key === 'ArrowRight' || e.key === 'PageDown'
+    || (presenting() && (e.key === ' ' || e.key === 'Enter'));
+  if (forward) { viewer.next(); e.preventDefault(); }
   if (e.key === 'ArrowLeft' || e.key === 'PageUp') { viewer.prev(); e.preventDefault(); }
 });
 
@@ -293,7 +419,10 @@ function drawArch(): void {
 }
 
 drawArch();
-void loadUrl('demo/showcase.pptx', 'showcase.pptx');
+/** 样本页点过来时带的文件名；有它就别再渲染默认样本，省一次下载和一次闪烁 */
+const requested = new URLSearchParams(location.search).get('sample');
+if (requested) setStatus('', 'spin');
+else void loadUrl('demo/showcase.pptx', 'showcase.pptx');
 
 /* ── 远程样本库 ───────────────────────────────── */
 
@@ -304,79 +433,66 @@ void loadUrl('demo/showcase.pptx', 'showcase.pptx');
  * 首轮抓取能看到、JS 或远程仓库出事都不影响。远程样本纯属增补，取不到就
  * 安静跳过：不弹错、不留占位，用户根本察觉不到样本库挂了。
  *
- * 加新样本只改样本仓库的 index.json，官网这边一行都不用动。
+ * 示例栏只放 FEATURED 里点名的那几个。样本库会一直加，这条横栏不该跟着无限变长，
+ * 大文件也不适合摆在首屏——让人为了看一眼先等几十秒是劝退的。
+ * 其余的去 samples.html 挑：那儿有体积和看点，选完带着地址回来渲染。
  */
-const SAMPLES_INDEX = 'https://unstone.github.io/web-ppt-samples/index.json';
-
-/** 清单是别处来的数据，可以指向任意地址：把真正会去拉取的源钉死在这里 */
-const SAMPLE_ORIGINS = ['https://unstone.github.io', 'https://cdn.jsdelivr.net'];
-const MAX_REMOTE_SAMPLES = 24;
-
 async function loadRemoteSamples(): Promise<void> {
   const bar = document.querySelector('.samples');
   if (!bar) return;
 
-  let data: unknown;
-  try {
-    const res = await fetch(SAMPLES_INDEX);
-    if (!res.ok) return;
-    data = await res.json();
-  } catch {
-    return; // 样本库不可达不该影响基线，静默即可
-  }
+  const all = await fetchSamples();
+  if (!all.length) return;
 
-  const doc = data as { base?: unknown; samples?: unknown };
-  const base = typeof doc.base === 'string' ? doc.base : SAMPLES_INDEX;
-  const all = Array.isArray(doc.samples) ? doc.samples : [];
-
-  /** 清单条目 → chip；字段不合规或指向白名单外的源就返回 null */
-  const makeChip = (raw: unknown): HTMLButtonElement | null => {
-    const s = raw as { file?: unknown; title?: unknown; highlight?: unknown };
-    if (typeof s.file !== 'string' || typeof s.title !== 'string') return null;
-
-    let url: URL;
-    try { url = new URL(s.file, base); } catch { return null; }
-    if (!SAMPLE_ORIGINS.includes(url.origin)) return null;
-
+  const featured = featuredOf(all);
+  for (const s of featured) {
     const chip = document.createElement('button');
     chip.className = 'chip remote';
-    chip.dataset.src = url.href;
+    chip.dataset.src = s.url;
     chip.textContent = s.title; // 外部文本，只走 textContent
-    if (typeof s.highlight === 'string') chip.title = s.highlight;
+    if (s.highlight) chip.title = s.highlight;
     chip.addEventListener('click', () => selectChip(chip));
-    return chip;
-  };
-
-  // 只展示标了 demo 的精选。样本库会一直加，示例栏不该跟着无限变长；
-  // 大文件也不适合默认摆在这儿 —— 让人为了看一眼先等几十秒是劝退的。
-  // 整份清单一个都没标时退回全量，免得旧版清单把示例栏弄空。
-  const curated = all.filter((s) => (s as { demo?: unknown }).demo === true);
-  const shown = (curated.length ? curated : all).slice(0, MAX_REMOTE_SAMPLES);
-  const rest = curated.length ? all.filter((s) => !curated.includes(s)) : [];
-
-  for (const raw of shown) {
-    const chip = makeChip(raw);
-    if (chip) bar.appendChild(chip);
+    bar.appendChild(chip);
   }
 
-  if (!rest.length) return;
-
-  // 精选之外的不是藏起来，只是不默认占位：点开就地展开，不跳走
-  const more = document.createElement('button');
+  const rest = all.length - featured.length;
+  if (rest <= 0) return;
+  const more = document.createElement('a');
   more.className = 'chip more';
-  more.textContent = `更多 ${rest.length} 个`;
-  more.title = '样本库里还有这些，多为大文件或风格重复的';
-  more.addEventListener('click', () => {
-    for (const raw of rest.slice(0, MAX_REMOTE_SAMPLES)) {
-      const chip = makeChip(raw);
-      if (chip) bar.insertBefore(chip, more);
-    }
-    more.remove();
-  });
+  more.href = 'samples.html';
+  more.textContent = `更多 ${rest} 个`;
+  more.title = '样本库全部条目，逐个挑着看';
   bar.appendChild(more);
+
+  openRequestedSample(all, bar);
 }
 
 void loadRemoteSamples();
+
+/**
+ * 从样本页点过来时带着 `?sample=<文件名>`。
+ *
+ * 传文件名而不是地址：地址来自查询串就是外部输入，得再校验一遍来源；
+ * 文件名只用来在**已经校验过的**清单里查条目，拿不到就什么也不做。
+ */
+function openRequestedSample(all: Sample[], bar: Element): void {
+  const hit = requested ? all.find((s) => s.file === requested) : undefined;
+  if (!hit) return;
+
+  // 精选里已经有这一个就别再摆一遍
+  let chip = bar.querySelector<HTMLElement>(`.chip[data-src="${CSS.escape(hit.url)}"]`);
+  if (!chip) {
+    chip = document.createElement('button');
+    chip.className = 'chip remote';
+    chip.dataset.src = hit.url;
+    chip.textContent = hit.title; // 外部文本，只走 textContent
+    if (hit.highlight) chip.title = hit.highlight;
+    chip.addEventListener('click', () => selectChip(chip as HTMLElement));
+    bar.insertBefore(chip, bar.querySelector('.chip.more'));
+  }
+  selectChip(chip);
+  demo.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
 
 /* ── 疑难杂症 ─────────────────────────────────── */
 

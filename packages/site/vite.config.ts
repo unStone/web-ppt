@@ -1,5 +1,9 @@
 import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
+
+/** 多页站点：每加一个页面就在这儿登记，构建入口和 id 校验都从这里取 */
+const PAGES = ['index.html', 'samples.html'];
 
 // GitHub Pages 部署在 /web-ppt/ 子路径下；本地 dev 用根路径
 const base = process.env.SITE_BASE ?? '/';
@@ -7,7 +11,11 @@ const base = process.env.SITE_BASE ?? '/';
 export default defineConfig({
   base,
   server: { port: 5174 },
-  build: { outDir: 'dist', emptyOutDir: true },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: { input: Object.fromEntries(PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])) },
+  },
   plugins: [
     {
       // Demo 用的样本文件放在仓库根的 fixtures/，构建时挑几个带进产物
@@ -29,13 +37,15 @@ export default defineConfig({
        */
       name: 'assert-unique-ids',
       buildStart() {
-        const html = readFileSync('index.html', 'utf8');
-        const seen = new Map<string, number>();
-        for (const m of html.matchAll(/\bid="([^"]+)"/g)) {
-          seen.set(m[1], (seen.get(m[1]) ?? 0) + 1);
+        for (const page of PAGES) {
+          const html = readFileSync(page, 'utf8');
+          const seen = new Map<string, number>();
+          for (const m of html.matchAll(/\bid="([^"]+)"/g)) {
+            seen.set(m[1], (seen.get(m[1]) ?? 0) + 1);
+          }
+          const dup = [...seen].filter(([, n]) => n > 1).map(([id, n]) => `#${id}×${n}`);
+          if (dup.length) this.error(`${page} 存在重复 id：${dup.join('、')}`);
         }
-        const dup = [...seen].filter(([, n]) => n > 1).map(([id, n]) => `#${id}×${n}`);
-        if (dup.length) this.error(`index.html 存在重复 id：${dup.join('、')}`);
       },
     },
   ],

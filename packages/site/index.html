@@ -100,7 +100,7 @@
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
     <li><b>84<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>1819</b><span>断言 + 158 快照</span></li>
+    <li><b>1978</b><span>断言 + 160 快照</span></li>
   </ul>
 </section>
 
@@ -118,6 +118,8 @@
         <button class="chip" data-src="demo/hardcases.pptx">疑难杂症.pptx</button>
       </div>
       <div class="spacer"></div>
+      <button class="chip act toggle" id="cjkFonts" aria-pressed="true"
+        title="文件指定的中文字体本机没有时，下载思源黑体 / 宋体 / 霞鹜文楷替上。一页中文大约几百 KB，关掉则交给系统自带字体">中文字体替换</button>
       <label class="chip file">
         打开本地文件<input id="pick" type="file" accept=".pptx,.ppt" hidden />
       </label>
@@ -125,9 +127,16 @@
 
     <div class="demo-body">
       <aside class="thumbs" id="thumbs" aria-label="幻灯片缩略图"></aside>
-      <div class="stage-wrap">
+      <div class="stage-wrap" id="stageWrap">
         <div class="stage" id="stage"></div>
         <div class="drop-hint" id="dropHint"><span>松手即可渲染</span></div>
+        <!-- 全屏演示时才显示：翻页 + 退出，鼠标不动会自己淡掉 -->
+        <div class="present-bar" id="presentBar">
+          <button class="icon" id="pPrev" title="上一页" aria-label="上一页">‹</button>
+          <span class="pager" id="pPager">— / —</span>
+          <button class="icon" id="pNext" title="下一页" aria-label="下一页">›</button>
+          <button class="icon" id="pExit" title="退出全屏（Esc）" aria-label="退出全屏">⨯</button>
+        </div>
       </div>
     </div>
 
@@ -137,7 +146,11 @@
       <button class="icon" id="next" title="下一页" aria-label="下一页">›</button>
       <div class="spacer"></div>
       <span class="meta" id="meta">载入中…</span>
+      <button class="chip act" id="present" title="全屏播放，按文件里的动画逐步展开">全屏演示</button>
+      <a class="chip act" id="download" download>下载</a>
     </div>
+    <!-- 误点幻灯片里的超链接时在这儿提示，而不是直接把人带走 -->
+    <div class="link-toast" id="linkToast" hidden></div>
   </div>
   <p class="note">解析与渲染全部发生在你的设备上，没有任何网络请求把文件送出去。</p>
 </section>
@@ -354,7 +367,8 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
       <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
       <tbody>
         <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>84KB gzip</td></tr>
-        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>6.8KB gzip</td></tr>
+        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>7.4KB gzip</td></tr>
+        <tr><td><code>@web-ppt/fonts</code></td><td>字体替换与按需加载（可选）</td><td><code>@web-ppt/core</code></td><td>2.8KB gzip</td></tr>
       </tbody>
     </table>
   </div>
