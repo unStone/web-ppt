@@ -1,0 +1,56 @@
+{
+  "name": "@web-ppt/fonts",
+  "version": "0.4.0",
+  "description": "PPT 字体替换与按需加载：度量兼容的免费替代字体表 + unicode-range 切片加载器，零字节字体入包",
+  "keywords": [
+    "pptx",
+    "ppt",
+    "powerpoint",
+    "font",
+    "webfont",
+    "font-substitution",
+    "metric-compatible",
+    "unicode-range",
+    "subset",
+    "cjk",
+    "browser",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "unStone",
+  "homepage": "https://github.com/unStone/web-ppt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unStone/web-ppt.git",
+    "directory": "packages/fonts"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/fonts.js",
+  "module": "./dist/fonts.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fonts.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
+  },
+  "peerDependencies": {
+    "@web-ppt/core": "^0.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

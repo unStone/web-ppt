@@ -43,11 +43,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          for p in packages/core packages/viewer-core; do
+          for p in packages/core packages/viewer-core packages/fonts; do
             v=$(node -p "require('./$p/package.json').version")
             [ "$v" = "$tag" ] || { echo "::error::$p 版本 $v 与 tag $tag 不一致"; exit 1; }
           done
-          echo "tag $tag 与两个包版本一致"
+          echo "tag $tag 与三个包版本一致"
 
       - name: 类型检查
         run: npm run check
@@ -61,12 +61,12 @@ jobs:
       - name: 图元文件解码测试
         run: npm run test:metafile
 
-      # 两个包各自的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
+      # 各包的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
       # 万一构建失败，能在动 registry 之前就失败掉
       - name: 构建
         run: npm run build
 
-      # 顺序不能反：viewer-core 以 @web-ppt/core 为 peer 依赖。
+      # 顺序不能反：viewer-core 与 fonts 都以 @web-ppt/core 为 peer 依赖。
       # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
       # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。
       - name: 发布 @web-ppt/core
@@ -75,4 +75,11 @@ jobs:
 
       - name: 发布 @web-ppt/viewer-core
         working-directory: packages/viewer-core
+        run: npm publish
+
+      # 注意：npm 要求包已存在才能配置 Trusted Publishing，所以**新包的第一版
+      # 发不出去**（会报 ENEEDAUTH / 404）。新增包时先在本地手工发一版，
+      # 再去 npm 包设置里配好 trusted publisher，之后这一步才会通。
+      - name: 发布 @web-ppt/fonts
+        working-directory: packages/fonts
         run: npm publish
