@@ -13,7 +13,7 @@
 <foreignObject width="600" height="34" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">文字特性</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">文字特性</span>
 </div>
 </div>
 </foreignObject>
@@ -25,62 +25,62 @@
 <foreignObject width="600" height="400" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:400px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(0,0,0);">普通 </span>
-<span style="font-size:24px;color:rgb(0,0,0);font-weight:700;">加粗</span>
-<span style="font-size:24px;color:rgb(0,0,0);font-style:italic;"> 斜体</span>
-<span style="font-size:24px;color:rgb(0,0,0);text-decoration:underline;"> 下划线</span>
-<span style="font-size:24px;color:rgb(0,0,0);text-decoration:line-through;"> 删除线</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">普通 </span>
+<span style="font-size:24px;color:rgb(0,0,0);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">加粗</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-style:italic;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 斜体</span>
+<span style="font-size:24px;color:rgb(0,0,0);text-decoration:underline;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 下划线</span>
+<span style="font-size:24px;color:rgb(0,0,0);text-decoration:line-through;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 删除线</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(0,0,0);">化学式 H</span>
-<span style="font-size:24px;color:rgb(0,0,0);vertical-align:sub;font-size:15.6px;">2</span>
-<span style="font-size:24px;color:rgb(0,0,0);">O，数学 x</span>
-<span style="font-size:24px;color:rgb(0,0,0);vertical-align:super;font-size:15.6px;">2</span>
-<span style="font-size:24px;color:rgb(0,0,0);"> + y</span>
-<span style="font-size:24px;color:rgb(0,0,0);vertical-align:super;font-size:15.6px;">2</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">化学式 H</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;vertical-align:sub;font-size:15.6px;">2</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">O，数学 x</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;vertical-align:super;font-size:15.6px;">2</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> + y</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;vertical-align:super;font-size:15.6px;">2</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(0,0,0);letter-spacing:8px;">宽字间距文本</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:8px;">宽字间距文本</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(0,0,0);text-transform:uppercase;">all caps text</span>
-<span style="font-size:24px;color:rgb(0,0,0);">  |  </span>
-<span style="font-size:24px;color:rgb(0,0,0);font-variant:small-caps;">small caps text</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;text-transform:uppercase;">all caps text</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">  |  </span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-variant:small-caps;">small caps text</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:37.33px;color:rgb(255,255,255);font-weight:700;-webkit-text-stroke:1.33px rgb(68,114,196);">描边文字</span>
+<span style="font-size:37.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;-webkit-text-stroke:1.33px rgb(68,114,196);">描边文字</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:37.33px;background-image:linear-gradient(90deg,rgb(68,114,196) 0%,rgb(237,125,49) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;">渐变文字效果</span>
+<span style="font-size:37.33px;background-image:linear-gradient(90deg,rgb(68,114,196) 0%,rgb(237,125,49) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">渐变文字效果</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(0,0,0);background-color:rgb(255,241,118);">高亮标记的文字</span>
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background-color:rgb(255,241,118);">高亮标记的文字</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(0,0,0);">段落对齐：右对齐</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">段落对齐：右对齐</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(0,0,0);">段落对齐：居中</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">段落对齐：居中</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:22.4px;color:rgb(237,125,49);">●&#160;</span>
-<span style="font-size:18.67px;color:rgb(0,0,0);">一级项目符号</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">一级项目符号</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:60px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:17.33px;color:rgb(0,0,0);">◦&#160;</span>
-<span style="font-size:17.33px;color:rgb(0,0,0);">二级项目符号</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">二级项目符号</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:17.33px;color:rgb(0,0,0);">i.&#160;</span>
-<span style="font-size:17.33px;color:rgb(0,0,0);">罗马数字编号一</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">罗马数字编号一</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:17.33px;color:rgb(0,0,0);">ii.&#160;</span>
-<span style="font-size:17.33px;color:rgb(0,0,0);">罗马数字编号二</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">罗马数字编号二</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:17.33px;color:rgb(0,0,0);">(c)&#160;</span>
-<span style="font-size:17.33px;color:rgb(0,0,0);">带括号编号</span>
+<span style="font-size:17.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">带括号编号</span>
 </div>
 </div>
 </foreignObject>
@@ -92,7 +92,7 @@
 <foreignObject width="90" height="280" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:90px;height:280px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;writing-mode:vertical-rl;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(255,255,255);">竖排文字测试</span>
+<span style="font-size:21.33px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">竖排文字测试</span>
 </div>
 </div>
 </foreignObject>
@@ -104,19 +104,19 @@
 <foreignObject width="450" height="170" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:450px;height:170px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;column-count:2;column-gap:24px;display:block;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:14.67px;color:rgb(0,0,0);">双栏排版：左栏文本会自动流入右栏，用于验证 numCol 与 spcCol 的解析与渲染。</span>
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">双栏排版：左栏文本会自动流入右栏，用于验证 numCol 与 spcCol 的解析与渲染。</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:14.67px;color:rgb(0,0,0);">第二段继续填充，确保分栏高度计算正确。</span>
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第二段继续填充，确保分栏高度计算正确。</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:14.67px;color:rgb(0,0,0);">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</span>
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:14.67px;color:rgb(0,0,0);">再补一段把左栏彻底填满，剩余内容必须出现在右栏，否则这条分支等于没测。</span>
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">再补一段把左栏彻底填满，剩余内容必须出现在右栏，否则这条分支等于没测。</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:14.67px;color:rgb(0,0,0);">Latin filler keeps the column break deterministic because the headless text metric falls back to a per-character estimate that under-measures CJK; this sentence is long enough to overflow the left column under either measurement path.</span>
+<span style="font-size:14.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Latin filler keeps the column break deterministic because the headless text metric falls back to a per-character estimate that under-measures CJK; this sentence is long enough to overflow the left column under either measurement path.</span>
 </div>
 </div>
 </foreignObject>
@@ -128,7 +128,7 @@
 <foreignObject width="450" height="120" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:450px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.1;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(0,0,0);">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本框。</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本框。</span>
 </div>
 </div>
 </foreignObject>
@@ -141,12 +141,12 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <a href="https://example.com" target="_blank" rel="noopener noreferrer">
-<span style="font-size:18.67px;color:rgb(0,0,0);">外部超链接（example.com）</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">外部超链接（example.com）</span>
 </a>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <a data-slide="1" style="cursor:pointer;text-decoration:underline">
-<span style="font-size:18.67px;color:rgb(0,0,0);">跳转到第 1 页</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">跳转到第 1 页</span>
 </a>
 </div>
 </div>
@@ -159,7 +159,7 @@
 <foreignObject width="120" height="70" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(255,255,255);">rot=1800000</span>
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">rot=1800000</span>
 </div>
 </div>
 </foreignObject>
@@ -171,7 +171,7 @@
 <foreignObject width="120" height="70" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(255,255,255);">rot=-1800000</span>
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">rot=-1800000</span>
 </div>
 </div>
 </foreignObject>
@@ -185,7 +185,7 @@
 <foreignObject width="120" height="70" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(255,255,255);">flipH</span>
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">flipH</span>
 </div>
 </div>
 </foreignObject>
@@ -199,7 +199,7 @@
 <foreignObject width="120" height="70" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:120px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(255,255,255);">flipV</span>
+<span style="font-size:10.67px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">flipV</span>
 </div>
 </div>
 </foreignObject>

@@ -665,7 +665,27 @@ function renderUnsupported(el: UnsupportedElement): string {
 
 const ANCHOR_CSS: Record<TextBody['anchor'], string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
 
-const FONT_FALLBACK = `'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif`;
+const FONT_FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
+
+/**
+ * 字体栈：文件指定的字体在前，通用中文回退在后。
+ *
+ * 要去重——主题的 ea 字体经常正好就是回退列表里的那个（PingFang SC），
+ * 直接拼会拼出重复项。重复不致命，但栈是要被人读的。
+ */
+function stack(fonts: readonly string[], fallback: readonly string[]): string {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const f of fonts) {
+    const key = f.toLowerCase();
+    if (f && !seen.has(key)) { seen.add(key); out.push(`'${f}'`); }
+  }
+  for (const f of fallback) {
+    const key = f.replace(/'/g, '').toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(f); }
+  }
+  return out.join(',');
+}
 
 function runStyle(run: TextRun, scale: number): string {
   const size = run.size * scale;
@@ -682,7 +702,7 @@ function runStyle(run: TextRun, scale: number): string {
     css += `text-decoration:${deco.join(' ')};`;
     if (run.underlineColor) css += `text-decoration-color:${run.underlineColor};`;
   }
-  if (run.fonts.length) css += `font-family:${run.fonts.map((f) => `'${f}'`).join(',')},${FONT_FALLBACK};`;
+  if (run.fonts.length) css += `font-family:${stack(run.fonts, FONT_FALLBACK)};`;
   if (run.spacing) css += `letter-spacing:${r(run.spacing)}px;`;
   if (run.caps === 'all') css += 'text-transform:uppercase;';
   else if (run.caps === 'small') css += 'font-variant:small-caps;';
@@ -763,7 +783,7 @@ function renderText(
       } else if (p.bullet) {
         const bs = baseSize * (p.bulletSize ?? 1);
         const bc = p.bulletColor ?? first?.color ?? '#000';
-        const bf = p.bulletFont && !/wingdings|webdings|symbol/i.test(p.bulletFont) ? `font-family:'${p.bulletFont}',${FONT_FALLBACK};` : '';
+        const bf = p.bulletFont && !/wingdings|webdings|symbol/i.test(p.bulletFont) ? `font-family:${stack([p.bulletFont], FONT_FALLBACK)};` : '';
         bullet = `<span style="font-size:${r(bs)}px;color:${bc};${bf}">${esc(p.bullet)}&#160;</span>`;
       }
 

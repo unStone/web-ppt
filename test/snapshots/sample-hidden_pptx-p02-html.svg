@@ -8,10 +8,10 @@
 <foreignObject width="1200" height="640" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1200px;height:640px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:128px;color:rgb(255,255,255);font-weight:700;">2</span>
+<span style="font-size:128px;color:rgb(255,255,255);font-weight:700;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">2</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:32px;color:rgb(255,255,255);">隐藏页</span>
+<span style="font-size:32px;color:rgb(255,255,255);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">隐藏页</span>
 </div>
 </div>
 </foreignObject>
@@ -23,7 +23,7 @@
 <foreignObject width="400" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(255,255,255);">p:sld show=&quot;0&quot;</span>
+<span style="font-size:12px;color:rgb(255,255,255);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">p:sld show=&quot;0&quot;</span>
 </div>
 </div>
 </foreignObject>

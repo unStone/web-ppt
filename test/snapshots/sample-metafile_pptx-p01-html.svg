@@ -8,7 +8,7 @@
 <foreignObject width="800" height="34" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:800px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(0,0,0);font-weight:700;">EMF / WMF 矢量图元文件</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">EMF / WMF 矢量图元文件</span>
 </div>
 </div>
 </foreignObject>
@@ -25,7 +25,7 @@
 <foreignObject width="600" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">EMF（增强型图元文件）</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">EMF（增强型图元文件）</span>
 </div>
 </div>
 </foreignObject>
@@ -42,7 +42,7 @@
 <foreignObject width="600" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">WMF（Windows 图元文件）</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">WMF（Windows 图元文件）</span>
 </div>
 </div>
 </foreignObject>
@@ -54,7 +54,7 @@
 <foreignObject width="1220" height="60" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1220px;height:60px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:17.33px;color:rgb(255,255,255);">两张图都由浏览器端解码为 SVG，无服务端参与</span>
+<span style="font-size:17.33px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">两张图都由浏览器端解码为 SVG，无服务端参与</span>
 </div>
 </div>
 </foreignObject>

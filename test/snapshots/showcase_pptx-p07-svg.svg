@@ -20,7 +20,7 @@
 <g transform="translate(24 14)">
 <path d="M 0 0 L 700 0 L 700 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">立体效果 · 动画</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">立体效果 · 动画</tspan>
 </text>
 </g>
 </g>
@@ -57,7 +57,7 @@
 <g transform="translate(50 202)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 6pt</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 6pt</tspan>
 </text>
 </g>
 </g>
@@ -112,7 +112,7 @@
 <g transform="translate(310 202)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 12pt</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 12pt</tspan>
 </text>
 </g>
 </g>
@@ -165,7 +165,7 @@
 <g transform="translate(570 202)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 + 斜角</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 + 斜角</tspan>
 </text>
 </g>
 </g>
@@ -214,7 +214,7 @@
 <g transform="translate(50 402)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 + 轮廓</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">挤出 + 轮廓</tspan>
 </text>
 </g>
 </g>
@@ -273,7 +273,7 @@
 <g transform="translate(310 402)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">金属材质</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">金属材质</tspan>
 </text>
 </g>
 </g>
@@ -332,7 +332,7 @@
 <g transform="translate(570 402)">
 <path d="M 0 0 L 170 0 L 170 22 L 0 22 Z" fill="none" fill-rule="nonzero"/>
 <text x="85" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">旋转视角</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">旋转视角</tspan>
 </text>
 </g>
 </g>
@@ -340,7 +340,7 @@
 <g transform="translate(830 80)">
 <path d="M 0 0 L 400 0 L 400 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="200" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 5 个方块带入场动画（演示模式逐次点击）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）</tspan>
 </text>
 </g>
 </g>
@@ -348,7 +348,7 @@
 <g transform="translate(50 520)">
 <path d="M 0 0 L 400 0 L 400 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="200" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 2 个走运动路径（直线 / 三次曲线闭合）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">下面 2 个走运动路径（直线 / 三次曲线闭合）</tspan>
 </text>
 </g>
 </g>
@@ -356,7 +356,7 @@
 <g transform="translate(60 556)">
 <path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
 <text x="90" y="45.38" text-anchor="middle" xml:space="preserve">
-<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">直线路径</tspan>
+<tspan font-size="16" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">直线路径</tspan>
 </text>
 </g>
 </g>
@@ -364,7 +364,7 @@
 <g transform="translate(280 556)">
 <path d="M 0 40 A 90 40 0 0 1 180 40 A 90 40 0 0 1 0 40 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="90" y="45.38" text-anchor="middle" xml:space="preserve">
-<tspan font-size="16" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">曲线路径</tspan>
+<tspan font-size="16" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">曲线路径</tspan>
 </text>
 </g>
 </g>
@@ -372,7 +372,7 @@
 <g transform="translate(840 130)">
 <path d="M 0 12 A 12 12 0 0 1 12 0 L 368 0 A 12 12 0 0 1 380 12 L 380 60 A 12 12 0 0 1 368 72 L 12 72 A 12 12 0 0 1 0 60 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="190" y="42.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">飞入 ←</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">飞入 ←</tspan>
 </text>
 </g>
 </g>
@@ -380,7 +380,7 @@
 <g transform="translate(840 222)">
 <path d="M 0 12 A 12 12 0 0 1 12 0 L 368 0 A 12 12 0 0 1 380 12 L 380 60 A 12 12 0 0 1 368 72 L 12 72 A 12 12 0 0 1 0 60 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 <text x="190" y="42.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">淡入</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">淡入</tspan>
 </text>
 </g>
 </g>
@@ -388,7 +388,7 @@
 <g transform="translate(840 314)">
 <path d="M 0 12 A 12 12 0 0 1 12 0 L 368 0 A 12 12 0 0 1 380 12 L 380 60 A 12 12 0 0 1 368 72 L 12 72 A 12 12 0 0 1 0 60 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 <text x="190" y="42.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">擦除 ↓</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">擦除 ↓</tspan>
 </text>
 </g>
 </g>
@@ -396,7 +396,7 @@
 <g transform="translate(840 406)">
 <path d="M 0 12 A 12 12 0 0 1 12 0 L 368 0 A 12 12 0 0 1 380 12 L 380 60 A 12 12 0 0 1 368 72 L 12 72 A 12 12 0 0 1 0 60 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 <text x="190" y="42.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缩放</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缩放</tspan>
 </text>
 </g>
 </g>
@@ -404,7 +404,7 @@
 <g transform="translate(840 498)">
 <path d="M 0 12 A 12 12 0 0 1 12 0 L 368 0 A 12 12 0 0 1 380 12 L 380 60 A 12 12 0 0 1 368 72 L 12 72 A 12 12 0 0 1 0 60 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 <text x="190" y="42.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">旋转</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">旋转</tspan>
 </text>
 </g>
 </g>

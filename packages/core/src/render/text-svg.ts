@@ -17,7 +17,7 @@ const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const FALLBACK = `'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif`;
+const FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 let measureProbed = false;
@@ -42,8 +42,28 @@ function ctx2d(): CanvasRenderingContext2D | null {
   return measureCtx;
 }
 
+/**
+ * 字体栈：文件指定的字体在前，通用中文回退在后。
+ *
+ * 要去重——主题的 ea 字体经常正好就是回退列表里的那个（PingFang SC），
+ * 直接拼会拼出重复项。重复不致命，但栈是要被人读的。
+ */
+function stack(fonts: readonly string[], fallback: readonly string[]): string {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const f of fonts) {
+    const key = f.toLowerCase();
+    if (f && !seen.has(key)) { seen.add(key); out.push(`'${f}'`); }
+  }
+  for (const f of fallback) {
+    const key = f.replace(/'/g, '').toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(f); }
+  }
+  return out.join(',');
+}
+
 function fontFamily(run: TextRun): string {
-  return run.fonts.length ? `${run.fonts.map((f) => `'${f}'`).join(',')},${FALLBACK}` : `Helvetica,Arial,${FALLBACK}`;
+  return run.fonts.length ? stack(run.fonts, FALLBACK) : stack(['Helvetica', 'Arial'], FALLBACK);
 }
 
 function fontSize(run: TextRun, scale: number): number {

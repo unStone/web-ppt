@@ -11,6 +11,6 @@ export { Viewer } from './viewer';
 export { foreignObjectScalesCorrectly, resetForeignObjectProbe } from './foreign-object';
 export type { ViewerOptions } from './viewer';
 export { autoAdvanceMs, framesFor, morphPairs, playGroup, playTransition, transitionFrames } from './playback';
-// 这两个是对 AnimStep 的纯推导，实现已下沉到 core；此处转出以保持既有 API
-export { groupSteps, hiddenBefore } from '@web-ppt/core';
+// 这几个是对 AnimStep 的纯推导，实现已下沉到 core；此处转出以保持既有 API
+export { groupSteps, hiddenBefore, staticHidden } from '@web-ppt/core';
 export type { PlayHandle } from './playback';

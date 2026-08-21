@@ -21,8 +21,8 @@
 <g transform="translate(24 10)">
 <path d="M 0 0 L 900 0 L 900 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="28.06" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">艺术字变形 a:prstTxWarp（15 个预设）</tspan>
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(128,128,128)">   文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">艺术字变形 a:prstTxWarp（15 个预设）</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(128,128,128)">   文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染</tspan>
 </text>
 </g>
 </g>
@@ -32,7 +32,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s1" xlink:href="#s1" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -42,7 +42,7 @@
 <g transform="translate(15 226)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchUp</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchUp</tspan>
 </text>
 </g>
 </g>
@@ -52,7 +52,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s2" xlink:href="#s2" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -62,7 +62,7 @@
 <g transform="translate(265 226)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchDown</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchDown</tspan>
 </text>
 </g>
 </g>
@@ -72,7 +72,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s3" xlink:href="#s3" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -82,7 +82,7 @@
 <g transform="translate(515 226)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchUpPour</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchUpPour</tspan>
 </text>
 </g>
 </g>
@@ -92,7 +92,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s4" xlink:href="#s4" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -102,7 +102,7 @@
 <g transform="translate(765 226)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchDownPour</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textArchDownPour</tspan>
 </text>
 </g>
 </g>
@@ -112,7 +112,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s5" xlink:href="#s5" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -122,7 +122,7 @@
 <g transform="translate(1015 226)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCircle</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCircle</tspan>
 </text>
 </g>
 </g>
@@ -132,7 +132,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s6" xlink:href="#s6" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -142,7 +142,7 @@
 <g transform="translate(15 416)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textWave1</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textWave1</tspan>
 </text>
 </g>
 </g>
@@ -152,7 +152,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s7" xlink:href="#s7" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -162,7 +162,7 @@
 <g transform="translate(265 416)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textWave2</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textWave2</tspan>
 </text>
 </g>
 </g>
@@ -172,7 +172,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s8" xlink:href="#s8" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -182,7 +182,7 @@
 <g transform="translate(515 416)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCurveUp</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCurveUp</tspan>
 </text>
 </g>
 </g>
@@ -192,7 +192,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s9" xlink:href="#s9" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -202,7 +202,7 @@
 <g transform="translate(765 416)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCurveDown</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCurveDown</tspan>
 </text>
 </g>
 </g>
@@ -212,7 +212,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s10" xlink:href="#s10" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -222,7 +222,7 @@
 <g transform="translate(1015 416)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCanUp</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCanUp</tspan>
 </text>
 </g>
 </g>
@@ -232,7 +232,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s11" xlink:href="#s11" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -242,7 +242,7 @@
 <g transform="translate(15 606)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCanDown</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textCanDown</tspan>
 </text>
 </g>
 </g>
@@ -252,7 +252,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s12" xlink:href="#s12" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -262,7 +262,7 @@
 <g transform="translate(265 606)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textTriangle</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textTriangle</tspan>
 </text>
 </g>
 </g>
@@ -272,7 +272,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s13" xlink:href="#s13" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -282,7 +282,7 @@
 <g transform="translate(515 606)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textChevron</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textChevron</tspan>
 </text>
 </g>
 </g>
@@ -292,7 +292,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s14" xlink:href="#s14" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -302,7 +302,7 @@
 <g transform="translate(765 606)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textInflate</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textInflate</tspan>
 </text>
 </g>
 </g>
@@ -312,7 +312,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s15" xlink:href="#s15" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -322,7 +322,7 @@
 <g transform="translate(1015 606)">
 <path d="M 0 0 L 250 0 L 250 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="125" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textDeflate</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textDeflate</tspan>
 </text>
 </g>
 </g>

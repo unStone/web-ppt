@@ -5,7 +5,7 @@
 <g data-el="2" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(48 24)">
 <text x="9.6" y="46.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">媒体对象：封面帧 + 播放标识</tspan>
+<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">媒体对象：封面帧 + 播放标识</tspan>
 </text>
 </g>
 </g>
@@ -13,7 +13,7 @@
 <g transform="translate(60 128)">
 <path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="230" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">内嵌视频（mp4）· 封面帧来自 blipFill</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">内嵌视频（mp4）· 封面帧来自 blipFill</tspan>
 </text>
 </g>
 </g>
@@ -31,7 +31,7 @@
 <g transform="translate(560 128)">
 <path d="M 0 0 L 300 0 L 300 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="150" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">内嵌音频（wav）· 喇叭图标为封面</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">内嵌音频（wav）· 喇叭图标为封面</tspan>
 </text>
 </g>
 </g>
@@ -51,7 +51,7 @@
 <g transform="translate(860 128)">
 <path d="M 0 0 L 360 0 L 360 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="180" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">外链视频（r:link → https）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">外链视频（r:link → https）</tspan>
 </text>
 </g>
 </g>
@@ -69,7 +69,7 @@
 <g transform="translate(60 452)">
 <path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="230" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">无封面帧的媒体：深色底板 + 标识</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">无封面帧的媒体：深色底板 + 标识</tspan>
 </text>
 </g>
 </g>
@@ -87,7 +87,7 @@
 <g transform="translate(420 452)">
 <path d="M 0 0 L 460 0 L 460 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="230" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">无封面音频</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">无封面音频</tspan>
 </text>
 </g>
 </g>

@@ -103,8 +103,8 @@
 <foreignObject width="900" height="40" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">效果：外阴影 / 内阴影 / 发光 / 柔化边缘</span>
-<span style="font-size:14.67px;color:rgb(128,128,128);">   内阴影用 SVG filter 反转 alpha 实现</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">效果：外阴影 / 内阴影 / 发光 / 柔化边缘</span>
+<span style="font-size:14.67px;color:rgb(128,128,128);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">   内阴影用 SVG filter 反转 alpha 实现</span>
 </div>
 </div>
 </foreignObject>
@@ -121,7 +121,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">外阴影</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">外阴影</span>
 </div>
 </div>
 </foreignObject>
@@ -138,7 +138,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（右下）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影（右下）</span>
 </div>
 </div>
 </foreignObject>
@@ -155,7 +155,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（左上）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影（左上）</span>
 </div>
 </div>
 </foreignObject>
@@ -172,7 +172,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（无位移）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影（无位移）</span>
 </div>
 </div>
 </foreignObject>
@@ -189,7 +189,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（彩色）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影（彩色）</span>
 </div>
 </div>
 </foreignObject>
@@ -206,7 +206,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">发光</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">发光</span>
 </div>
 </div>
 </foreignObject>
@@ -223,7 +223,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">柔化边缘</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">柔化边缘</span>
 </div>
 </div>
 </foreignObject>
@@ -240,7 +240,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影 + 发光</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影 + 发光</span>
 </div>
 </div>
 </foreignObject>
@@ -257,7 +257,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影（渐变填充）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影（渐变填充）</span>
 </div>
 </div>
 </foreignObject>
@@ -269,7 +269,7 @@
 <foreignObject width="200" height="130" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:130px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;">Inner</span>
+<span style="font-size:21.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Inner</span>
 </div>
 </div>
 </foreignObject>
@@ -281,7 +281,7 @@
 <foreignObject width="200" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">内阴影 + 文字</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内阴影 + 文字</span>
 </div>
 </div>
 </foreignObject>

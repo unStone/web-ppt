@@ -22,7 +22,7 @@
 <foreignObject width="700" height="34" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:700px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">立体效果 · 动画</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">立体效果 · 动画</span>
 </div>
 </div>
 </foreignObject>
@@ -63,7 +63,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">挤出 6pt</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">挤出 6pt</span>
 </div>
 </div>
 </foreignObject>
@@ -122,7 +122,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">挤出 12pt</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">挤出 12pt</span>
 </div>
 </div>
 </foreignObject>
@@ -179,7 +179,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">挤出 + 斜角</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">挤出 + 斜角</span>
 </div>
 </div>
 </foreignObject>
@@ -232,7 +232,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">挤出 + 轮廓</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">挤出 + 轮廓</span>
 </div>
 </div>
 </foreignObject>
@@ -295,7 +295,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">金属材质</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">金属材质</span>
 </div>
 </div>
 </foreignObject>
@@ -358,7 +358,7 @@
 <foreignObject width="170" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:170px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">旋转视角</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">旋转视角</span>
 </div>
 </div>
 </foreignObject>
@@ -370,7 +370,7 @@
 <foreignObject width="400" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">下面 5 个方块带入场动画（演示模式逐次点击）</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）</span>
 </div>
 </div>
 </foreignObject>
@@ -382,7 +382,7 @@
 <foreignObject width="400" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">下面 2 个走运动路径（直线 / 三次曲线闭合）</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">下面 2 个走运动路径（直线 / 三次曲线闭合）</span>
 </div>
 </div>
 </foreignObject>
@@ -394,7 +394,7 @@
 <foreignObject width="180" height="80" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:180px;height:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;">直线路径</span>
+<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">直线路径</span>
 </div>
 </div>
 </foreignObject>
@@ -406,7 +406,7 @@
 <foreignObject width="180" height="80" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:180px;height:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;">曲线路径</span>
+<span style="font-size:16px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">曲线路径</span>
 </div>
 </div>
 </foreignObject>
@@ -418,7 +418,7 @@
 <foreignObject width="380" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">飞入 ←</span>
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">飞入 ←</span>
 </div>
 </div>
 </foreignObject>
@@ -430,7 +430,7 @@
 <foreignObject width="380" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">淡入</span>
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">淡入</span>
 </div>
 </div>
 </foreignObject>
@@ -442,7 +442,7 @@
 <foreignObject width="380" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">擦除 ↓</span>
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">擦除 ↓</span>
 </div>
 </div>
 </foreignObject>
@@ -454,7 +454,7 @@
 <foreignObject width="380" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">缩放</span>
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">缩放</span>
 </div>
 </div>
 </foreignObject>
@@ -466,7 +466,7 @@
 <foreignObject width="380" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;">旋转</span>
+<span style="font-size:18.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">旋转</span>
 </div>
 </div>
 </foreignObject>

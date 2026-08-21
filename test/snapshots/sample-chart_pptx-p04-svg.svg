@@ -5,7 +5,7 @@
 <g data-el="2" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(64 24)">
 <text x="9.6" y="51.54" text-anchor="start" xml:space="preserve">
-<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">饼图 + 环形图</tspan>
+<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">饼图 + 环形图</tspan>
 </text>
 </g>
 </g>
@@ -14,7 +14,7 @@
 <g transform=" scale(1 1) translate(0 0)">
 <g transform="translate(7.33 7.33)">
 <text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">区域收入分布（饼图）</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">区域收入分布（饼图）</tspan>
 </text>
 </g>
 <g transform="translate(71.01 93.87)">
@@ -34,27 +34,27 @@
 </g>
 <g transform="translate(444.67 178.63)">
 <text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">36%</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">36%</tspan>
 </text>
 </g>
 <g transform="translate(252.17 499.33)">
 <text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">27%</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">27%</tspan>
 </text>
 </g>
 <g transform="translate(20.31 318.18)">
 <text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
 </text>
 </g>
 <g transform="translate(78.67 127.27)">
 <text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
 </text>
 </g>
 <g transform="translate(185.14 66.66)">
 <text x="12" y="12.26" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8%</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8%</tspan>
 </text>
 </g>
 <g transform="translate(493.33 236.93)">
@@ -62,7 +62,7 @@
 </g>
 <g transform="translate(514 230.07)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
 </text>
 </g>
 <g transform="translate(493.33 260.27)">
@@ -70,7 +70,7 @@
 </g>
 <g transform="translate(514 253.4)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
 </text>
 </g>
 <g transform="translate(493.33 283.6)">
@@ -78,7 +78,7 @@
 </g>
 <g transform="translate(514 276.73)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
 </text>
 </g>
 <g transform="translate(493.33 306.93)">
@@ -86,7 +86,7 @@
 </g>
 <g transform="translate(514 300.07)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
 </text>
 </g>
 <g transform="translate(493.33 330.27)">
@@ -94,7 +94,7 @@
 </g>
 <g transform="translate(514 323.4)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
 </text>
 </g>
 </g>
@@ -105,7 +105,7 @@
 <g transform=" scale(1 1) translate(0 0)">
 <g transform="translate(7.33 7.33)">
 <text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">两年对比（环形图）</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">两年对比（环形图）</tspan>
 </text>
 </g>
 <g transform="translate(122.19 118.92)">
@@ -143,7 +143,7 @@
 </g>
 <g transform="translate(152.33 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
 </text>
 </g>
 <g transform="translate(191 520.2)">
@@ -151,7 +151,7 @@
 </g>
 <g transform="translate(211.67 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
 </text>
 </g>
 <g transform="translate(250.33 520.2)">
@@ -159,7 +159,7 @@
 </g>
 <g transform="translate(271 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
 </text>
 </g>
 <g transform="translate(309.67 520.2)">
@@ -167,7 +167,7 @@
 </g>
 <g transform="translate(330.33 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
 </text>
 </g>
 <g transform="translate(369 520.2)">
@@ -175,7 +175,7 @@
 </g>
 <g transform="translate(389.67 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
 </text>
 </g>
 </g>

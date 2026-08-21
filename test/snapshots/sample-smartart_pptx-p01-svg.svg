@@ -6,7 +6,7 @@
 <g transform="translate(40 24)">
 <path d="M 0 0 L 900 0 L 900 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">缓存 drawing part（直接读画好的图形）</tspan>
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">缓存 drawing part（直接读画好的图形）</tspan>
 </text>
 </g>
 </g>
@@ -17,7 +17,7 @@
 <g transform="translate(20 40)">
 <path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
 <text x="95" y="66.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存A</tspan>
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存A</tspan>
 </text>
 </g>
 </g>
@@ -25,7 +25,7 @@
 <g transform="translate(230 40)">
 <path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
 <text x="95" y="66.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存B</tspan>
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存B</tspan>
 </text>
 </g>
 </g>
@@ -33,7 +33,7 @@
 <g transform="translate(440 40)">
 <path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 <text x="95" y="66.27" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存C</tspan>
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700">缓存C</tspan>
 </text>
 </g>
 </g>

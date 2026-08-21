@@ -20,8 +20,8 @@
 <foreignObject width="900" height="40" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">降级与 RTL</span>
-<span style="font-size:14.67px;color:rgb(128,128,128);">   未实现的变形预设按普通排版渲染，不报错</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">降级与 RTL</span>
+<span style="font-size:14.67px;color:rgb(128,128,128);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">   未实现的变形预设按普通排版渲染，不报错</span>
 </div>
 </div>
 </foreignObject>
@@ -33,7 +33,7 @@
 <foreignObject width="260" height="90" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre;word-break:break-word;">
-<span style="font-size:24px;color:rgb(127,127,127);font-weight:700;">textStop</span>
+<span style="font-size:24px;color:rgb(127,127,127);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textStop</span>
 </div>
 </div>
 </foreignObject>
@@ -45,7 +45,7 @@
 <foreignObject width="260" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textStop（未实现 → 普通排版）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textStop（未实现 → 普通排版）</span>
 </div>
 </div>
 </foreignObject>
@@ -57,7 +57,7 @@
 <foreignObject width="260" height="90" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:0px 0px 0px 0px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre;word-break:break-word;">
-<span style="font-size:24px;color:rgb(127,127,127);font-weight:700;">textNoShape</span>
+<span style="font-size:24px;color:rgb(127,127,127);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textNoShape</span>
 </div>
 </div>
 </foreignObject>
@@ -69,7 +69,7 @@
 <foreignObject width="260" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:260px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textNoShape（无变形）</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textNoShape（无变形）</span>
 </div>
 </div>
 </foreignObject>
@@ -85,7 +85,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="21.12" xml:space="preserve">
 <textPath href="#s1" xlink:href="#s1" startOffset="50%">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">ARCH</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">ARCH</tspan>
 </textPath>
 </text>
 </g>
@@ -98,7 +98,7 @@
 <foreignObject width="300" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:300px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">变形 + 倒影</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">变形 + 倒影</span>
 </div>
 </div>
 </foreignObject>
@@ -110,7 +110,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s4" xlink:href="#s4" startOffset="50%">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">WAVE</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">WAVE</tspan>
 </textPath>
 </text>
 </g>
@@ -122,7 +122,7 @@
 <foreignObject width="280" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">变形 + 外阴影</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">变形 + 外阴影</span>
 </div>
 </div>
 </foreignObject>
@@ -134,13 +134,13 @@
 <foreignObject width="560" height="190" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:190px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;direction:rtl;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">مرحبا بالعالم 123 نص عربي</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">مرحبا بالعالم 123 نص عربي</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;direction:rtl;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">مرحبا بالعالم 123 نص عربي — طويل جدا نص للاختبار يلتف على عدة أسطر هنا</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">مرحبا بالعالم 123 نص عربي — طويل جدا نص للاختبار يلتف على عدة أسطر هنا</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;direction:rtl;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">مرحبا بالعالم 123 نص عربي</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">مرحبا بالعالم 123 نص عربي</span>
 </div>
 </div>
 </foreignObject>
@@ -152,7 +152,7 @@
 <foreignObject width="560" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">RTL：direction=rtl，前两段物理左对齐、第三段右对齐</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">RTL：direction=rtl，前两段物理左对齐、第三段右对齐</span>
 </div>
 </div>
 </foreignObject>
@@ -164,13 +164,13 @@
 <foreignObject width="560" height="190" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:190px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">Hello world 123 LTR text</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Hello world 123 LTR text</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">Hello world 123 — a longer line of text that wraps here</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Hello world 123 — a longer line of text that wraps here</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(26,26,26);">Hello world 123 LTR text</span>
+<span style="font-size:21.33px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Hello world 123 LTR text</span>
 </div>
 </div>
 </foreignObject>
@@ -182,7 +182,7 @@
 <foreignObject width="560" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">LTR 对照</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">LTR 对照</span>
 </div>
 </div>
 </foreignObject>

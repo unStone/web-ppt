@@ -17,7 +17,7 @@
 <foreignObject width="314.96" height="167.98" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:314.96px;height:167.98px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:26.67px;color:rgb(255,255,255);font-weight:700;">渐变圆角矩形</span>
+<span style="font-size:26.67px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">渐变圆角矩形</span>
 </div>
 </div>
 </foreignObject>
@@ -29,7 +29,7 @@
 <foreignObject width="241.47" height="167.98" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:241.47px;height:167.98px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(255,255,255);">椭圆+描边</span>
+<span style="font-size:21.33px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">椭圆+描边</span>
 </div>
 </div>
 </foreignObject>
@@ -57,26 +57,26 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:566.93px;height:356.96px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:24px;color:rgb(0,0,0);">•&#160;</span>
-<span style="font-size:24px;color:rgb(0,0,0);">字符项目符号第一条</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">字符项目符号第一条</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:30px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:24px;color:rgb(0,0,0);">•&#160;</span>
-<span style="font-size:24px;color:rgb(0,0,0);">第二条，带换行</span>
-<span style="font-size:24px;color:rgb(0,0,0);">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第二条，带换行</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
 <br/>
 </span>
-<span style="font-size:18.67px;color:rgb(0,0,0);">（软换行后的小字）</span>
+<span style="font-size:18.67px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">（软换行后的小字）</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:24px;color:rgb(0,0,0);">1.&#160;</span>
-<span style="font-size:24px;color:rgb(0,0,0);">自动编号一</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自动编号一</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:24px;color:rgb(0,0,0);">2.&#160;</span>
-<span style="font-size:24px;color:rgb(0,0,0);">自动编号二</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自动编号二</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(0,0,0);text-decoration:line-through;">右对齐删除线</span>
+<span style="font-size:21.33px;color:rgb(0,0,0);text-decoration:line-through;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">右对齐删除线</span>
 </div>
 </div>
 </foreignObject>

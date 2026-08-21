@@ -18,8 +18,8 @@
 <g transform="translate(24 10)">
 <path d="M 0 0 L 900 0 L 900 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="28.06" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">降级与 RTL</tspan>
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(128,128,128)">   未实现的变形预设按普通排版渲染，不报错</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">降级与 RTL</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(128,128,128)">   未实现的变形预设按普通排版渲染，不报错</tspan>
 </text>
 </g>
 </g>
@@ -27,7 +27,7 @@
 <g transform="translate(40 80)">
 <path d="M 0 0 L 260 0 L 260 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="53.06" text-anchor="middle" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">textStop</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">textStop</tspan>
 </text>
 </g>
 </g>
@@ -35,7 +35,7 @@
 <g transform="translate(40 176)">
 <path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textStop（未实现 → 普通排版）</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textStop（未实现 → 普通排版）</tspan>
 </text>
 </g>
 </g>
@@ -43,7 +43,7 @@
 <g transform="translate(330 80)">
 <path d="M 0 0 L 260 0 L 260 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="53.06" text-anchor="middle" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">textNoShape</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">textNoShape</tspan>
 </text>
 </g>
 </g>
@@ -51,7 +51,7 @@
 <g transform="translate(330 176)">
 <path d="M 0 0 L 260 0 L 260 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textNoShape（无变形）</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">textNoShape（无变形）</tspan>
 </text>
 </g>
 </g>
@@ -65,7 +65,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="21.12" xml:space="preserve">
 <textPath href="#s1" xlink:href="#s1" startOffset="50%">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">ARCH</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">ARCH</tspan>
 </textPath>
 </text>
 </g>
@@ -76,7 +76,7 @@
 <g transform="translate(640 200)">
 <path d="M 0 0 L 300 0 L 300 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="150" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">变形 + 倒影</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">变形 + 倒影</tspan>
 </text>
 </g>
 </g>
@@ -86,7 +86,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s4" xlink:href="#s4" startOffset="50%">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">WAVE</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">WAVE</tspan>
 </textPath>
 </text>
 </g>
@@ -96,7 +96,7 @@
 <g transform="translate(970 200)">
 <path d="M 0 0 L 280 0 L 280 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">变形 + 外阴影</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">变形 + 外阴影</tspan>
 </text>
 </g>
 </g>
@@ -104,16 +104,16 @@
 <g transform="translate(40 260)">
 <path d="M 0 0 L 560 0 L 560 190 L 0 190 Z" fill="rgb(238,243,251)" fill-rule="nonzero" stroke="rgb(192,200,216)" stroke-width="1"/>
 <text x="9.6" y="63.77" text-anchor="end" direction="rtl" unicode-bidi="embed" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي</tspan>
 </text>
 <text x="9.6" y="89.37" text-anchor="end" direction="rtl" unicode-bidi="embed" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي — طويل جدا نص </tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي — طويل جدا نص </tspan>
 </text>
 <text x="9.6" y="114.97" text-anchor="end" direction="rtl" unicode-bidi="embed" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">للاختبار يلتف على عدة أسطر هنا</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">للاختبار يلتف على عدة أسطر هنا</tspan>
 </text>
 <text x="550.4" y="140.57" text-anchor="start" direction="rtl" unicode-bidi="embed" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">مرحبا بالعالم 123 نص عربي</tspan>
 </text>
 </g>
 </g>
@@ -121,7 +121,7 @@
 <g transform="translate(40 456)">
 <path d="M 0 0 L 560 0 L 560 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="280" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">RTL：direction=rtl，前两段物理左对齐、第三段右对齐</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">RTL：direction=rtl，前两段物理左对齐、第三段右对齐</tspan>
 </text>
 </g>
 </g>
@@ -129,16 +129,16 @@
 <g transform="translate(640 260)">
 <path d="M 0 0 L 560 0 L 560 190 L 0 190 Z" fill="rgb(238,243,251)" fill-rule="nonzero" stroke="rgb(192,200,216)" stroke-width="1"/>
 <text x="9.6" y="63.77" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 LTR text</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 LTR text</tspan>
 </text>
 <text x="9.6" y="89.37" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 — a longer line of text that </tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 — a longer line of text that </tspan>
 </text>
 <text x="9.6" y="114.97" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">wraps here</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">wraps here</tspan>
 </text>
 <text x="550.4" y="140.57" text-anchor="end" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 LTR text</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">Hello world 123 LTR text</tspan>
 </text>
 </g>
 </g>
@@ -146,7 +146,7 @@
 <g transform="translate(640 456)">
 <path d="M 0 0 L 560 0 L 560 18 L 0 18 Z" fill="none" fill-rule="nonzero"/>
 <text x="280" y="14.78" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">LTR 对照</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(85,85,85)">LTR 对照</tspan>
 </text>
 </g>
 </g>

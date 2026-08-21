@@ -16,7 +16,7 @@
 <foreignObject width="1104" height="139.17" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1104px;height:139.17px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:53.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Web PPT 渲染引擎</span>
+<span style="font-size:53.33px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">Web PPT 渲染引擎</span>
 </div>
 </div>
 </foreignObject>
@@ -28,23 +28,23 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1104px;height:456.83px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:8px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:32px;color:rgb(26,26,26);">•&#160;</span>
-<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</span>
+<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</span>
 </div>
 <div style="margin:5.33px 0 0px 0;text-align:left;padding-left:78px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:26.67px;color:rgb(106,106,106);">–&#160;</span>
-<span style="font-size:26.67px;color:rgb(106,106,106);">形状 / 渐变 / 图片 / 表格 / 组合 / 母版继承</span>
+<span style="font-size:26.67px;color:rgb(106,106,106);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">形状 / 渐变 / 图片 / 表格 / 组合 / 母版继承</span>
 </div>
 <div style="margin:5.33px 0 0px 0;text-align:left;padding-left:78px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:26.67px;color:rgb(106,106,106);">–&#160;</span>
-<span style="font-size:26.67px;color:rgb(106,106,106);">统一 Schema，渲染层与解析层解耦</span>
+<span style="font-size:26.67px;color:rgb(106,106,106);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">统一 Schema，渲染层与解析层解耦</span>
 </div>
 <div style="margin:8px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:32px;color:rgb(26,26,26);">•&#160;</span>
-<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">混排：</span>
-<span style="font-size:32px;color:rgb(26,26,26);font-weight:700;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">加粗</span>
-<span style="font-size:32px;color:rgb(26,26,26);font-style:italic;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 斜体 </span>
-<span style="font-size:32px;color:rgb(237,125,49);text-decoration:underline;font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">主题色下划线</span>
-<span style="font-size:18.67px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 小字号</span>
+<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">混排：</span>
+<span style="font-size:32px;color:rgb(26,26,26);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">加粗</span>
+<span style="font-size:32px;color:rgb(26,26,26);font-style:italic;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 斜体 </span>
+<span style="font-size:32px;color:rgb(237,125,49);text-decoration:underline;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">主题色下划线</span>
+<span style="font-size:18.67px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 小字号</span>
 </div>
 </div>
 </foreignObject>

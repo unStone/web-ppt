@@ -15,7 +15,7 @@
 <g transform="translate(24 14)">
 <path d="M 0 0 L 600 0 L 600 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">文字特性</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">文字特性</tspan>
 </text>
 </g>
 </g>
@@ -23,69 +23,69 @@
 <g transform="translate(30 70)">
 <path d="M 0 0 L 600 0 L 600 400 L 0 400 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">普通 </tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">加粗</tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic"> 斜体</tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline"> 下划线</tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="line-through"> 删除线</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">普通 </tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">加粗</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic"> 斜体</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline"> 下划线</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="line-through"> 删除线</tspan>
 </text>
 <text x="9.6" y="56.06" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">化学式 H</tspan>
-<tspan font-size="15.6" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="3.9">2</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">化学式 H</tspan>
+<tspan font-size="15.6" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="3.9">2</tspan>
 <tspan dy="-3.9">
 </tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">O，数学 x</tspan>
-<tspan font-size="15.6" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="-7.02">2</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">O，数学 x</tspan>
+<tspan font-size="15.6" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="-7.02">2</tspan>
 <tspan dy="7.02">
 </tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> + y</tspan>
-<tspan font-size="15.6" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="-7.02">2</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> + y</tspan>
+<tspan font-size="15.6" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dy="-7.02">2</tspan>
 <tspan dy="7.02">
 </tspan>
 </text>
 <text x="9.6" y="84.86" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" letter-spacing="8">宽字间距文本</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" letter-spacing="8">宽字间距文本</tspan>
 </text>
 <text x="9.6" y="113.66" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">ALL CAPS TEXT</tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">  |  </tspan>
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">small caps text</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">ALL CAPS TEXT</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">  |  </tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">small caps text</tspan>
 </text>
 <text x="9.6" y="154.94" text-anchor="start" xml:space="preserve">
-<tspan font-size="37.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700" stroke="rgb(68,114,196)" stroke-width="1.33" paint-order="stroke">描边文字</tspan>
+<tspan font-size="37.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700" stroke="rgb(68,114,196)" stroke-width="1.33" paint-order="stroke">描边文字</tspan>
 </text>
 <text x="9.6" y="199.74" text-anchor="start" xml:space="preserve">
-<tspan font-size="37.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="url(#s1)" font-weight="700">渐变文字效果</tspan>
+<tspan font-size="37.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="url(#s1)" font-weight="700">渐变文字效果</tspan>
 </text>
 <rect x="9.6" y="212.07" width="82.13" height="23.89" fill="rgb(255,241,118)"/>
 <text x="9.6" y="229.57" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">高亮标记的文字</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">高亮标记的文字</tspan>
 </text>
 <text x="590.4" y="252.67" text-anchor="end" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">段落对齐：右对齐</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">段落对齐：右对齐</tspan>
 </text>
 <text x="300" y="275.07" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">段落对齐：居中</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">段落对齐：居中</tspan>
 </text>
 <text x="9.6" y="300.97" text-anchor="start" xml:space="preserve">
-<tspan font-size="22.4" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)">● </tspan>
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">一级项目符号</tspan>
+<tspan font-size="22.4" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)">● </tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">一级项目符号</tspan>
 </text>
 <text x="39.6" y="323.1" text-anchor="start" xml:space="preserve">
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">◦ </tspan>
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">二级项目符号</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">◦ </tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">二级项目符号</tspan>
 </text>
 <text x="9.6" y="343.9" text-anchor="start" xml:space="preserve">
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">i. </tspan>
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">罗马数字编号一</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">i. </tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">罗马数字编号一</tspan>
 </text>
 <text x="9.6" y="364.7" text-anchor="start" xml:space="preserve">
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">ii. </tspan>
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">罗马数字编号二</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">ii. </tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">罗马数字编号二</tspan>
 </text>
 <text x="9.6" y="385.5" text-anchor="start" xml:space="preserve">
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">(c) </tspan>
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">带括号编号</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">(c) </tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">带括号编号</tspan>
 </text>
 </g>
 </g>
@@ -94,7 +94,7 @@
 <path d="M 0 0 L 90 0 L 90 280 L 0 280 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 <g transform="translate(90 0) rotate(90)">
 <text x="140" y="52.17" text-anchor="middle" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">竖排文字测试</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">竖排文字测试</tspan>
 </text>
 </g>
 </g>
@@ -103,58 +103,58 @@
 <g transform="translate(800 70)">
 <path d="M 0 0 L 450 0 L 450 170 L 0 170 Z" fill="rgb(245,247,250)" fill-rule="nonzero"/>
 <text x="9.6" y="18.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">双栏排版：左栏文本会自动流入右栏，用于验证 </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">双栏排版：左栏文本会自动流入右栏，用于验证 </tspan>
 </text>
 <text x="9.6" y="36.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">numCol 与 spcCol 的解析与渲染。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">numCol 与 spcCol 的解析与渲染。</tspan>
 </text>
 <text x="9.6" y="53.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二段继续填充，确保分栏高度计算正确。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二段继续填充，确保分栏高度计算正确。</tspan>
 </text>
 <text x="9.6" y="71.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏</tspan>
 </text>
 <text x="9.6" y="88.93" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，分栏的断点计算与右栏的横向偏移才算被验证过。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，分栏的断点计算与右栏的横向偏移才算被验证过。</tspan>
 </text>
 <text x="9.6" y="106.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">再补一段把左栏彻底填满，剩余内容必须出现在右栏，否</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">再补一段把左栏彻底填满，剩余内容必须出现在右栏，否</tspan>
 </text>
 <text x="9.6" y="124.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">则这条分支等于没测。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">则这条分支等于没测。</tspan>
 </text>
 <text x="9.6" y="141.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">Latin filler keeps the </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">Latin filler keeps the </tspan>
 </text>
 <text x="9.6" y="159.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">column break </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">column break </tspan>
 </text>
 <text x="237" y="18.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">deterministic because the</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">deterministic because the</tspan>
 </text>
 <text x="237" y="36.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">headless text metric </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">headless text metric </tspan>
 </text>
 <text x="237" y="53.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">falls back to a </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">falls back to a </tspan>
 </text>
 <text x="237" y="71.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">per-character estimate </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">per-character estimate </tspan>
 </text>
 <text x="237" y="88.93" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">that under-measures CJK; </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">that under-measures CJK; </tspan>
 </text>
 <text x="237" y="106.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">this sentence is long </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">this sentence is long </tspan>
 </text>
 <text x="237" y="124.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">enough to overflow the </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">enough to overflow the </tspan>
 </text>
 <text x="237" y="141.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">left column under either </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">left column under either </tspan>
 </text>
 <text x="237" y="159.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">measurement path.</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">measurement path.</tspan>
 </text>
 </g>
 </g>
@@ -162,10 +162,10 @@
 <g transform="translate(800 270)">
 <path d="M 0 0 L 450 0 L 450 120 L 0 120 Z" fill="rgb(255,248,225)" fill-rule="nonzero"/>
 <text x="9.6" y="20.82" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本</tspan>
 </text>
 <text x="9.6" y="41.35" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">框。</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">框。</tspan>
 </text>
 </g>
 </g>
@@ -173,10 +173,10 @@
 <g transform="translate(680 420)">
 <path d="M 0 0 L 560 0 L 560 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="22.27" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">外部超链接（example.com）</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">外部超链接（example.com）</tspan>
 </text>
 <text x="9.6" y="44.67" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">跳转到第 1 页</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">跳转到第 1 页</tspan>
 </text>
 </g>
 </g>
@@ -184,7 +184,7 @@
 <g transform="rotate(30 90 555) translate(30 520)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">rot=1800000</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">rot=1800000</tspan>
 </text>
 </g>
 </g>
@@ -192,7 +192,7 @@
 <g transform="rotate(-30 240 555) translate(180 520)">
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">rot=-1800000</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">rot=-1800000</tspan>
 </text>
 </g>
 </g>
@@ -202,7 +202,7 @@
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
 </g>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">flipH</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">flipH</tspan>
 </text>
 </g>
 </g>
@@ -212,7 +212,7 @@
 <path d="M 0 0 L 85 0 L 120 35 L 85 70 L 0 70 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
 <text x="60" y="38.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">flipV</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">flipV</tspan>
 </text>
 </g>
 </g>

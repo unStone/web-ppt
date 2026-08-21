@@ -5,7 +5,7 @@
 <g data-el="2" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(48 24)">
 <text x="9.6" y="46.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">墨迹批注：InkML → SVG 路径</tspan>
+<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">墨迹批注：InkML → SVG 路径</tspan>
 </text>
 </g>
 </g>
@@ -13,7 +13,7 @@
 <g transform="translate(60 128)">
 <path d="M 0 0 L 560 0 L 560 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="280" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">p14:contentPart → InkML（含差分编码 trace）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">p14:contentPart → InkML（含差分编码 trace）</tspan>
 </text>
 </g>
 </g>
@@ -36,7 +36,7 @@
 <g transform="translate(680 128)">
 <path d="M 0 0 L 480 0 L 480 26 L 0 26 Z" fill="none" fill-rule="nonzero"/>
 <text x="240" y="17.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">InkML 缺失 → 回退 mc:Fallback 的位图</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(90,97,114)">InkML 缺失 → 回退 mc:Fallback 的位图</tspan>
 </text>
 </g>
 </g>
@@ -49,7 +49,7 @@
 <g transform="translate(680 440)">
 <path d="M 0 20 A 20 20 0 0 1 20 0 L 460 0 A 20 20 0 0 1 480 20 L 480 100 A 20 20 0 0 1 460 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(238,243,251)" fill-rule="nonzero" stroke="rgb(185,205,234)" stroke-width="1.33"/>
 <text x="240" y="64.48" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(60,71,89)">墨迹按整体包围盒等比映射进 contentPart 的框内，笔宽随之缩放</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(60,71,89)">墨迹按整体包围盒等比映射进 contentPart 的框内，笔宽随之缩放</tspan>
 </text>
 </g>
 </g>

@@ -169,8 +169,12 @@ ${body}
  *
  * 早期每个 make-*.mjs 都各抄一份这套骨架。新固件统一走这里；
  * 既有生成器保持原样不动，免得为了「统一」去动它们的产物、白白搅动快照。
+ *
+ * 可选的扩展点（全部默认空串 / 空数组，不传时产物字节与从前完全一致）：
+ * `presExtra` 插进 <p:presentation> 末尾，`presRels` 追加 presentation 的关系，
+ * `extraTypes` 追加 [Content_Types] 的 Override，`extraEntries` 追加任意部件。
  */
-export function deck({ name = 'Fixture', width, height, slides }) {
+export function deck({ name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '', extraEntries = [] }) {
   const slideOverrides = slides.map((_, i) =>
     `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
   const rel = (items) => `${XML}<Relationships xmlns="${NS.rel}">${items}</Relationships>`;
@@ -183,18 +187,19 @@ export function deck({ name = 'Fixture', width, height, slides }) {
 <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
 <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
 <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
-${slideOverrides}
+${slideOverrides}${extraTypes}
 <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
 </Types>`],
     ['_rels/.rels', rel(`<Relationship Id="rId1" Type="${REL}/officeDocument" Target="ppt/presentation.xml"/>`)],
     ['ppt/presentation.xml', `${XML}<p:presentation xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
 <p:sldIdLst>${slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join('')}</p:sldIdLst>
-<p:sldSz cx="${px(width)}" cy="${px(height)}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`],
+<p:sldSz cx="${px(width)}" cy="${px(height)}"/><p:notesSz cx="6858000" cy="9144000"/>${presExtra}</p:presentation>`],
     ['ppt/_rels/presentation.xml.rels', rel(
       `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="slideMasters/slideMaster1.xml"/>` +
       slides.map((_, i) => `<Relationship Id="rId${i + 2}" Type="${REL}/slide" Target="slides/slide${i + 1}.xml"/>`).join('') +
-      `<Relationship Id="rId${slides.length + 2}" Type="${REL}/theme" Target="theme/theme1.xml"/>`)],
+      `<Relationship Id="rId${slides.length + 2}" Type="${REL}/theme" Target="theme/theme1.xml"/>` +
+      presRels)],
     ['ppt/theme/theme1.xml', `${XML}<a:theme xmlns:a="${NS.a}" name="${name}">
 <a:themeElements>
 <a:clrScheme name="${name}">
@@ -243,6 +248,7 @@ ${slideOverrides}
     entries.push([`ppt/slides/slide${i + 1}.xml`, xml]);
     entries.push([`ppt/slides/_rels/slide${i + 1}.xml.rels`, slideRels]);
   });
+  entries.push(...extraEntries);
   return makeZip(entries);
 }
 

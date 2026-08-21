@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<style>@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:400;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:italic;}</style>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 40)">
+<path d="M 0 0 L 1160 0 L 1160 44 L 0 44 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1160" height="44" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:44px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:26.67px;color:rgb(31,56,100);font-weight:700;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">嵌入字体 · 四种容器形态</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 110)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1160" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:42.67px;color:rgb(0,0,0);font-family:'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">AAAA 未压缩 EOT</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 210)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1160" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:42.67px;color:rgb(0,0,0);font-weight:700;font-family:'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">AAAA 未压缩 EOT + 异或</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 310)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1160" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:42.67px;color:rgb(0,0,0);font-style:italic;font-family:'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">AAAA 标记为 MTX 压缩</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 410)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1160" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:42.67px;color:rgb(0,0,0);font-weight:700;font-style:italic;font-family:'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">AAAA 裸 TTF 无容器</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 540)">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 1140 0 A 20 20 0 0 1 1160 20 L 1160 100 A 20 20 0 0 1 1140 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(0,0,0)" fill-rule="nonzero"/>
+<foreignObject width="1160" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1160px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:14.67px;color:rgb(64,64,64);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">四段文字都指定 WebPPT Embedded；能不能真按它渲染，取决于容器有没有被还原成 sfnt</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

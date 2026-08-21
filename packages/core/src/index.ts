@@ -1,4 +1,4 @@
-import { groupSteps, hiddenBefore } from './anim-steps';
+import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 import { parseChart } from './chart';
 import { metafileToSvg } from './image';
 import { setChartParser } from './chart/hook';
@@ -14,10 +14,14 @@ import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
 export { renderSlideToSvg };
-export { groupSteps, hiddenBefore };
+export { groupSteps, hiddenBefore, staticHidden };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
+export { setFontDecoder, hasFontDecoder } from './font/eot';
+export type { FontDecoder } from './font/eot';
+export { collectFonts } from './font/collect';
+export type { FontUsage } from './font/collect';
 export { setDecryptor, setPptDecryptor, hasDecryptor } from './crypto/hook';
 export type { Decryptor, PptDecryptor } from './crypto/hook';
 export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
@@ -321,7 +325,8 @@ export async function presentationToPrintableHtml(
   for (const s of pres.slides) {
     const groups = opts.animationSteps ? groupSteps(s.animations) : [];
     if (!groups.length) {
-      jobs.push(slideToSvgFile(pres, s));
+      // 不展开批次时也要按终态渲染，否则退场元素会和它的替代内容叠在一起
+      jobs.push(slideToSvgFile(pres, s, [...staticHidden(s)]));
       continue;
     }
     // n 批点击 → n+1 个状态：初始态，以及每批播完后的样子

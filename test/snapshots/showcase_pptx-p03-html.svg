@@ -55,7 +55,7 @@
 <foreignObject width="600" height="34" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">线条 · 箭头 · 连接线</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">线条 · 箭头 · 连接线</span>
 </div>
 </div>
 </foreignObject>
@@ -72,7 +72,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">triangle</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">triangle</span>
 </div>
 </div>
 </foreignObject>
@@ -89,7 +89,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">stealth</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">stealth</span>
 </div>
 </div>
 </foreignObject>
@@ -106,7 +106,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">diamond</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">diamond</span>
 </div>
 </div>
 </foreignObject>
@@ -123,7 +123,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">oval</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">oval</span>
 </div>
 </div>
 </foreignObject>
@@ -140,7 +140,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">arrow</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">arrow</span>
 </div>
 </div>
 </foreignObject>
@@ -157,7 +157,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">none</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">none</span>
 </div>
 </div>
 </foreignObject>
@@ -174,7 +174,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">solid</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">solid</span>
 </div>
 </div>
 </foreignObject>
@@ -191,7 +191,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">dash</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">dash</span>
 </div>
 </div>
 </foreignObject>
@@ -208,7 +208,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">dot</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">dot</span>
 </div>
 </div>
 </foreignObject>
@@ -225,7 +225,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">dashDot</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">dashDot</span>
 </div>
 </div>
 </foreignObject>
@@ -242,7 +242,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">lgDash</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">lgDash</span>
 </div>
 </div>
 </foreignObject>
@@ -259,7 +259,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">lgDashDotDot</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">lgDashDotDot</span>
 </div>
 </div>
 </foreignObject>
@@ -276,7 +276,7 @@
 <foreignObject width="150" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">sysDash</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">sysDash</span>
 </div>
 </div>
 </foreignObject>
@@ -293,7 +293,7 @@
 <foreignObject width="200" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">bentConnector2</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">bentConnector2</span>
 </div>
 </div>
 </foreignObject>
@@ -310,7 +310,7 @@
 <foreignObject width="200" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">bentConnector3</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">bentConnector3</span>
 </div>
 </div>
 </foreignObject>
@@ -327,7 +327,7 @@
 <foreignObject width="200" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">curvedConnector3</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">curvedConnector3</span>
 </div>
 </div>
 </foreignObject>
@@ -344,7 +344,7 @@
 <foreignObject width="200" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:200px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">curvedConnector4</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">curvedConnector4</span>
 </div>
 </div>
 </foreignObject>
@@ -361,7 +361,7 @@
 <foreignObject width="220" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">cap=flat</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">cap=flat</span>
 </div>
 </div>
 </foreignObject>
@@ -378,7 +378,7 @@
 <foreignObject width="220" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">cap=rnd</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">cap=rnd</span>
 </div>
 </div>
 </foreignObject>
@@ -395,7 +395,7 @@
 <foreignObject width="220" height="22" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">cap=sq</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">cap=sq</span>
 </div>
 </div>
 </foreignObject>

@@ -6,7 +6,7 @@
 <g transform="translate(40 60)">
 <path d="M 0 0 L 1200 0 L 1200 60 L 0 60 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="40.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">溢出 + 裸 normAutofit → 应缩小</tspan>
+<tspan font-size="32" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">溢出 + 裸 normAutofit → 应缩小</tspan>
 </text>
 </g>
 </g>
@@ -14,19 +14,19 @@
 <g transform="translate(60 180)">
 <path d="M 0 0 L 420 0 L 420 140 L 0 140 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
 <text x="9.6" y="23.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢出，渲染器应</tspan>
+<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢出，渲染器应</tspan>
 </text>
 <text x="9.6" y="48.03" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">当自行计算缩放比例把它塞进框内，而不是让它溢出到版面之外。真实演讲文件里</tspan>
+<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">当自行计算缩放比例把它塞进框内，而不是让它溢出到版面之外。真实演讲文件里</tspan>
 </text>
 <text x="9.6" y="72.32" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">大量文本框只写了裸的 normAutofit 而不带 fontScale</tspan>
+<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">大量文本框只写了裸的 normAutofit 而不带 fontScale</tspan>
 </text>
 <text x="9.6" y="96.61" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，PowerPoint 与 LibreOffice 都会自行计算缩放；若</tspan>
+<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，PowerPoint 与 LibreOffice 都会自行计算缩放；若</tspan>
 </text>
 <text x="9.6" y="120.9" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">照标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</tspan>
+<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">照标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</tspan>
 </text>
 </g>
 </g>
@@ -34,7 +34,7 @@
 <g transform="translate(520 180)">
 <path d="M 0 0 L 400 0 L 400 140 L 0 140 Z" fill="none" fill-rule="nonzero"/>
 <text x="200" y="74.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(96,96,96)">左侧框 420×140，标称 20pt</tspan>
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(96,96,96)">左侧框 420×140，标称 20pt</tspan>
 </text>
 </g>
 </g>

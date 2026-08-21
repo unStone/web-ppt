@@ -343,7 +343,7 @@ const slide7 = slideXml(
     return sp({ x, y, w: 170, h: 110, prst, fill: solid(accent), effect: scene, name }) +
       sp({ x, y: y + 122, w: 170, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) });
   }).join('') +
-  sp({ x: 830, y: 80, w: 400, h: 26, prst: 'rect', fill: '<a:noFill/>', text: label('下面 5 个方块带入场动画（演示模式逐次点击）', 1000) }) +
+  sp({ x: 830, y: 80, w: 400, h: 26, prst: 'rect', fill: '<a:noFill/>', text: label('下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）', 1000) }) +
   sp({ x: 50, y: 520, w: 400, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('下面 2 个走运动路径（直线 / 三次曲线闭合）', 1000) }) +
   MOTION_SHAPES.map(([id, name, accent], i) =>
     `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="motion${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
@@ -379,6 +379,14 @@ ${[[706, 'M 0 0 L 0.25 -0.18 L 0.42 0.05 E'], [707, 'M 0 0 C 0.1 -0.22 0.3 -0.22
 <p:childTnLst>
 <p:animMotion origin="layout" path="${path}" pathEditMode="relative"><p:cBhvr><p:cTn id="${42 + i * 3}" dur="2000" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl><p:attrNameLst><p:attrName>ppt_x</p:attrName><p:attrName>ppt_y</p:attrName></p:attrNameLst></p:cBhvr></p:animMotion>
 </p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`).join('')}
+<p:par><p:cTn id="70" fill="hold" nodeType="clickEffect">
+<p:stCondLst><p:cond delay="indefinite"/></p:stCondLst>
+<p:childTnLst><p:par><p:cTn id="71" presetID="10" presetClass="exit" presetSubtype="0" fill="hold" nodeType="clickEffect">
+<p:stCondLst><p:cond delay="0"/></p:stCondLst>
+<p:childTnLst>
+<p:animEffect transition="out" filter="fade"><p:cBhvr><p:cTn id="72" dur="600"/><p:tgtEl><p:spTgt spid="705"/></p:tgtEl></p:cBhvr></p:animEffect>
+<p:set><p:cBhvr><p:cTn id="73" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="705"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="hidden"/></p:to></p:set>
+</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>
 </p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
 
 const slide7WithTiming = slide7.replace('</p:sld>', `${ANIM_TIMING}</p:sld>`);

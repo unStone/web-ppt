@@ -7,7 +7,7 @@
 <foreignObject width="1184" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1184px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">批注：解析成结构化数据（默认不渲染标记）</span>
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">批注：解析成结构化数据（默认不渲染标记）</span>
 </div>
 </div>
 </foreignObject>
@@ -19,7 +19,7 @@
 <foreignObject width="520" height="200" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:520px;height:200px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(107,78,18);">批注 1 锚点在这一块附近</span>
+<span style="font-size:16px;color:rgb(107,78,18);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">批注 1 锚点在这一块附近</span>
 </div>
 </div>
 </foreignObject>
@@ -31,7 +31,7 @@
 <foreignObject width="420" height="180" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:420px;height:180px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(35,74,52);">批注 2 锚点在这一块附近</span>
+<span style="font-size:16px;color:rgb(35,74,52);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">批注 2 锚点在这一块附近</span>
 </div>
 </div>
 </foreignObject>
@@ -43,7 +43,7 @@
 <foreignObject width="900" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">RenderOptions.showComments = true 时才画黄色气泡标记</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">RenderOptions.showComments = true 时才画黄色气泡标记</span>
 </div>
 </div>
 </foreignObject>

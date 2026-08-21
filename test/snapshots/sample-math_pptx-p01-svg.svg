@@ -6,7 +6,7 @@
 <g transform="translate(30 20)">
 <path d="M 0 0 L 800 0 L 800 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="29.76" text-anchor="start" xml:space="preserve">
-<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">OMML 数学公式（12 种结构）</tspan>
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">OMML 数学公式（12 种结构）</tspan>
 </text>
 </g>
 </g>
@@ -14,7 +14,7 @@
 <g transform="translate(30 90)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">分式</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">分式</tspan>
 </text>
 </g>
 </g>
@@ -35,7 +35,7 @@
 <g transform="translate(330 90)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">根式</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">根式</tspan>
 </text>
 </g>
 </g>
@@ -54,7 +54,7 @@
 <g transform="translate(630 90)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">n 次根</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">n 次根</tspan>
 </text>
 </g>
 </g>
@@ -74,7 +74,7 @@
 <g transform="translate(930 90)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">上下标</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">上下标</tspan>
 </text>
 </g>
 </g>
@@ -92,7 +92,7 @@
 <g transform="translate(30 240)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">求和</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">求和</tspan>
 </text>
 </g>
 </g>
@@ -114,7 +114,7 @@
 <g transform="translate(330 240)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">积分</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">积分</tspan>
 </text>
 </g>
 </g>
@@ -137,7 +137,7 @@
 <g transform="translate(630 240)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">括号自适应</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">括号自适应</tspan>
 </text>
 </g>
 </g>
@@ -157,7 +157,7 @@
 <g transform="translate(930 240)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">多参数括号</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">多参数括号</tspan>
 </text>
 </g>
 </g>
@@ -179,7 +179,7 @@
 <g transform="translate(30 390)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">矩阵</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">矩阵</tspan>
 </text>
 </g>
 </g>
@@ -200,7 +200,7 @@
 <g transform="translate(330 390)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">重音</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">重音</tspan>
 </text>
 </g>
 </g>
@@ -221,7 +221,7 @@
 <g transform="translate(630 390)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">极限</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">极限</tspan>
 </text>
 </g>
 </g>
@@ -243,7 +243,7 @@
 <g transform="translate(930 390)">
 <path d="M 0 0 L 280 0 L 280 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="140" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">嵌套分式</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(102,102,102)">嵌套分式</tspan>
 </text>
 </g>
 </g>
@@ -265,7 +265,7 @@
 <g transform="translate(30 560)">
 <path d="M 0 0 L 1220 0 L 1220 120 L 0 120 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="29.67" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">行内混排：当 </tspan>
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">行内混排：当 </tspan>
 </text>
 <g transform="translate(91.73 29.67)">
 <text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
@@ -278,7 +278,7 @@
 <text x="87.41" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </g>
 <text x="189.13" y="29.67" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> 时，半径为 </tspan>
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> 时，半径为 </tspan>
 </text>
 <g transform="translate(271.26 29.67)">
 <path d="M 0 -9.07 L 3.96 -4.28 L 8.18 5.28 L 13.2 -26.6 L 76.61 -26.6" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
@@ -289,7 +289,7 @@
 <text x="65.18" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </g>
 <text x="347.87" y="29.67" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> ，这是圆的方程。</tspan>
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> ，这是圆的方程。</tspan>
 </text>
 </g>
 </g>

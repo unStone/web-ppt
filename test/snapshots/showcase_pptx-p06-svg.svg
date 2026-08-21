@@ -14,7 +14,7 @@
 <g transform="translate(24 14)">
 <path d="M 0 0 L 700 0 L 700 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">自定义几何 · 组合嵌套 · 调节值</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">自定义几何 · 组合嵌套 · 调节值</tspan>
 </text>
 </g>
 </g>
@@ -35,7 +35,7 @@
 <g transform="translate(0 0)">
 <path d="M 0 20 A 20 20 0 0 1 20 0 L 100 0 A 20 20 0 0 1 120 20 L 120 110 A 20 20 0 0 1 100 130 L 20 130 A 20 20 0 0 1 0 110 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 <text x="60" y="69.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">外层 A</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">外层 A</tspan>
 </text>
 </g>
 </g>
@@ -46,7 +46,7 @@
 <g transform="translate(0 0)">
 <path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 <text x="30" y="15.64" text-anchor="middle" xml:space="preserve">
-<tspan font-size="9.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层1</tspan>
+<tspan font-size="9.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层1</tspan>
 </text>
 </g>
 </g>
@@ -54,7 +54,7 @@
 <g transform="translate(0 30)">
 <path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 <text x="30" y="15.64" text-anchor="middle" xml:space="preserve">
-<tspan font-size="9.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层2</tspan>
+<tspan font-size="9.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层2</tspan>
 </text>
 </g>
 </g>
@@ -68,7 +68,7 @@
 <g transform="translate(60 360)">
 <path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">custGeom + gdLst 公式</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">custGeom + gdLst 公式</tspan>
 </text>
 </g>
 </g>
@@ -76,7 +76,7 @@
 <g transform="translate(360 360)">
 <path d="M 0 0 L 260 0 L 260 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="130" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">custGeom arcTo + 箭头（开放路径）</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">custGeom arcTo + 箭头（开放路径）</tspan>
 </text>
 </g>
 </g>
@@ -84,7 +84,7 @@
 <g transform="translate(680 360)">
 <path d="M 0 0 L 520 0 L 520 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="260" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">嵌套组合 + 组旋转 + 子坐标系缩放</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">嵌套组合 + 组旋转 + 子坐标系缩放</tspan>
 </text>
 </g>
 </g>
@@ -92,7 +92,7 @@
 <g transform="translate(60 410)">
 <path d="M 0 10 A 10 10 0 0 1 10 0 L 110 0 A 10 10 0 0 1 120 10 L 120 90 A 10 10 0 0 1 110 100 L 10 100 A 10 10 0 0 1 0 90 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="60" y="53.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 10%</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 10%</tspan>
 </text>
 </g>
 </g>
@@ -100,7 +100,7 @@
 <g transform="translate(210 410)">
 <path d="M 0 25 A 25 25 0 0 1 25 0 L 95 0 A 25 25 0 0 1 120 25 L 120 75 A 25 25 0 0 1 95 100 L 25 100 A 25 25 0 0 1 0 75 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="60" y="53.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 25%</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 25%</tspan>
 </text>
 </g>
 </g>
@@ -108,7 +108,7 @@
 <g transform="translate(360 410)">
 <path d="M 0 45 A 45 45 0 0 1 45 0 L 75 0 A 45 45 0 0 1 120 45 L 120 55 A 45 45 0 0 1 75 100 L 45 100 A 45 45 0 0 1 0 55 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="60" y="53.58" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 45%</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">adj 45%</tspan>
 </text>
 </g>
 </g>
@@ -156,7 +156,7 @@
 <g transform="translate(60 665)">
 <path d="M 0 0 L 620 0 L 620 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="310" y="16.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">调节值：roundRect / donut / pie / blockArc</tspan>
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">调节值：roundRect / donut / pie / blockArc</tspan>
 </text>
 </g>
 </g>

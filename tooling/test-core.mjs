@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv, parseXml } from './lib/dom-env.mjs';
+import { makeTtf } from './lib/font.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,7 +42,7 @@ const group = (t) => console.log(`\n\x1b[36m▸ ${t}\x1b[0m`);
 
 // ---------------- 打包并载入 ----------------
 
-installDomEnv();
+const { blobs } = installDomEnv();
 
 const bundle = join(outDir, 'src-bundle.mjs');
 group('构建');
@@ -69,6 +70,15 @@ const crypto = await (async () => {
   execFileSync('npx', ['esbuild', join(root, 'packages/core/src/crypto/primitives.ts'), '--bundle', '--format=esm',
     '--platform=neutral', '--log-level=error', `--outfile=${c}`], { cwd: root, stdio: 'inherit' });
   return import(`file://${c}?t=${Date.now()}`);
+})();
+
+// fonts 是独立包，把 @web-ppt/core 重定向到刚打好的源码产物，避免依赖 dist
+const fontsLib = await (async () => {
+  const f = join(outDir, 'fonts-bundle.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/fonts/src/index.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error', `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+    `--outfile=${f}`], { cwd: root, stdio: 'inherit' });
+  return import(`file://${f}?t=${Date.now()}`);
 })();
 
 const colorMod = await (async () => {
@@ -263,6 +273,7 @@ const FIXTURES = [
   { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
+  { file: 'sample-embedfont.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -562,7 +573,7 @@ group('动画 / 切换');
       // 回归：slide(fromLeft) 的方向曾被映射反
       const fly = anim.animations.find((a) => a.effect === 'fly');
       check('飞入方向映射正确', fly && fly.dir === 'l', fly ? fly.dir : '无 fly');
-      check('逐次点击分批', anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4,5,6',
+      check('逐次点击分批', anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4,5,6,7',
         anim.animations.map((a) => a.clickGroup).join(','));
 
       // 运动路径
@@ -1171,6 +1182,18 @@ group('查看器');
       vf.destroy();
     }
 
+    // 缩略图是静态产物，没有后续的 applyVisibility，
+    // 隐藏状态只能在渲染时烘进 SVG——否则动画页的缩略图会把几帧叠在一起
+    {
+      const animIdx = pres.slides.findIndex((s) => s.animations?.some((a) => a.kind === 'exit'));
+      if (check('存在含退场动画的页', animIdx >= 0)) {
+        const vt = new viewerLib.Viewer(box, pres, {});
+        check('缩略图烘进终态隐藏', vt.renderSlide(animIdx).includes('visibility:hidden'));
+        check('主视图不烘隐藏（交给 applyVisibility）', !vt.slideSvg(animIdx).includes('visibility:hidden'));
+        vt.destroy();
+      }
+    }
+
     // 翻页与边界
     const v3 = new viewerLib.Viewer(box, pres, {});
     eq('初始页', v3.index, 0);
@@ -1344,16 +1367,37 @@ group('播放引擎');
   const anim = pres?.slides.find((s) => s.animations?.length);
   if (anim) {
     const real = viewerLib.groupSteps(anim.animations);
-    eq('真实文件分 7 批', real.length, 7);
+    eq('真实文件分 8 批', real.length, 8);
     const svg = lib.renderSlideToSvg(pres, anim);
     // 只有入场动画会在播放前隐藏元素；运动路径的形状一直可见，
-    // 因此隐藏数是「尚未播到的入场批次数」，不是「剩余批次数」
+    // 因此隐藏数是「尚未播到的入场批次数」+「已播的退场目标数」，不是「剩余批次数」
     const entrGroups = real.map((g) => g.some((x) => x.kind === 'entrance'));
+    const exitedBy = (upTo) =>
+      new Set(real.slice(0, upTo).flatMap((g) => g.filter((x) => x.kind === 'exit').map((x) => x.target)));
     for (let i = 0; i <= real.length; i++) {
-      const want = entrGroups.slice(i).filter(Boolean).length;
+      const want = entrGroups.slice(i).filter(Boolean).length + exitedBy(i).size;
       eq(`播完 ${i} 批后隐藏 ${want} 个`, viewerLib.hiddenBefore(real, i).size, want);
     }
     check('运动路径元素始终可见', !viewerLib.hiddenBefore(real, 0).has(706));
+
+    // 静态渲染取终态：入场元素全部现身，退场元素留在幕后。
+    // 直接摊开画会把不同时刻叠在一起——orcid-ooxml-strict 第 7 页三段文字就是这么糊掉的。
+    const stat = lib.staticHidden(anim);
+    eq('静态终态只隐藏退场的 705', [...stat].join(','), '705');
+    check('静态终态不隐藏入场元素', ![701, 702, 703, 704].some((id) => stat.has(id)));
+    check('无动画的页静态隐藏集为空', lib.staticHidden(pres.slides[0]).size === 0);
+    // 收尾页全员退场时终态是空白，那还不如全画出来
+    const allGone = {
+      elements: [{ kind: 'shape', id: 1 }, { kind: 'shape', id: 2 }],
+      animations: [
+        { target: 1, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
+        { target: 2, kind: 'exit', clickGroup: 1, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
+      ],
+    };
+    eq('终态清空整页时退回全部可见', lib.staticHidden(allGone).size, 0);
+    // 缩略图没有后续的 applyVisibility，隐藏状态必须烘进 SVG
+    check('缩略图渲染烘进终态隐藏',
+      lib.renderSlideToSvg(pres, anim, { hiddenElements: [...stat] }).includes('visibility:hidden'));
 
     // morph 按 data-el 在前后两页之间配对
     {
@@ -1425,6 +1469,206 @@ group('播放引擎');
   eq('读出自动换片延迟', viewerLib.autoAdvanceMs(withAdv), 3000);
   eq('无自动换片返回 null', viewerLib.autoAdvanceMs({ transition: { type: 'fade', durationMs: 500 } }), null);
   eq('无切换返回 null', viewerLib.autoAdvanceMs({}), null);
+}
+
+// ---------------- 14b. 嵌入字体 ----------------
+
+group('嵌入字体');
+{
+  // 固件里四个部件分别是：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF。
+  // 前两个与最后一个解析器自己就能还原，压缩的那个必须靠注入的解码器。
+  const pres = parsed.get('sample-embedfont.pptx');
+  if (check('嵌入字体固件已解析', !!pres)) {
+    const fonts = pres.embeddedFonts ?? [];
+    eq('未注入解码器时只还原得出 3 个', fonts.length, 3);
+    check('全部挂在同一个 typeface 上', fonts.every((f) => f.family === 'WebPPT Embedded'),
+      fonts.map((f) => f.family).join(','));
+    eq('丢掉的正是 MTX 压缩的那个（italic）',
+      fonts.map((f) => `${f.bold ? 'b' : '-'}${f.italic ? 'i' : '-'}`).join(' '), '-- b- bi');
+
+    // 还原出来的必须是真 sfnt：EOT 头剥干净了，异或也解开了
+    const raw = new Map(fonts.map((f) => [`${f.bold}|${f.italic}`, blobs.get(f.src)]));
+    for (const [key, blob] of raw) {
+      if (!check(`${key} 有 blob`, !!blob)) continue;
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      eq(`${key} 是 TrueType 魔数`, [...bytes.slice(0, 4)].join(','), '0,1,0,0');
+      eq(`${key} MIME`, blob.type, 'font/ttf');
+    }
+
+    // 异或那份要逐字节等于原始 TTF —— 只看魔数的话，解错了一半也发现不了
+    const bold = raw.get('true|false');
+    if (bold) {
+      const want = makeTtf({ family: 'WebPPT Embedded', style: 'Bold', bold: true, italic: false });
+      const got = new Uint8Array(await bold.arrayBuffer());
+      check('异或解开后与原始 TTF 逐字节一致',
+        got.length === want.length && got.every((b, i) => b === want[i]),
+        `${got.length}B vs ${want.length}B`);
+    }
+
+    // 注入解码器后压缩的那个才回来；解码器拿到的是**整份 EOT**，
+    // 不是切出来的载荷 —— mtx-decompressor 的 eotToTtf 才能直接注册
+    let handed = null;
+    check('默认没有字体解码器', lib.hasFontDecoder() === false);
+    lib.setFontDecoder((eot) => { handed = eot; return Uint8Array.of(0, 1, 0, 0, 1, 2, 3, 4); });
+    try {
+      check('注册后 hasFontDecoder 为真', lib.hasFontDecoder() === true);
+      const withDec = await lib.parse(load('sample-embedfont.pptx'));
+      eq('注入解码器后四个都在', (withDec.embeddedFonts ?? []).length, 4);
+      check('解码器收到的是完整 EOT 容器',
+        !!handed && handed[0] === 0x7c && handed[34] === 0x4c && handed[35] === 0x50,
+        handed ? `头 ${[...handed.slice(0, 4)].join(',')}，magic ${handed[34]},${handed[35]}` : '未被调用');
+
+      // 解码器抛错只该丢这一个字体，不该让整份文件解析失败
+      lib.setFontDecoder(() => { throw new Error('boom'); });
+      const thrown = await lib.parse(load('sample-embedfont.pptx'));
+      eq('解码器抛错时退回 3 个', (thrown.embeddedFonts ?? []).length, 3);
+    } finally {
+      lib.setFontDecoder(null);
+    }
+    check('注销后恢复无解码器', lib.hasFontDecoder() === false);
+
+    // 渲染层要为每个还原成功的字体写一条 @font-face
+    const svg = lib.renderSlideToSvg(pres, pres.slides[0]);
+    eq('@font-face 条数与字体数一致', (svg.match(/@font-face/g) ?? []).length, 3);
+    check('文本确实指定了嵌入字体', svg.includes("'WebPPT Embedded'"));
+  }
+}
+
+// ---------------- 14c. 字体统计 ----------------
+
+group('字体统计');
+{
+  const pres = parsed.get('showcase.pptx');
+  if (check('固件已解析', !!pres)) {
+    const all = lib.collectFonts(pres.slides);
+    check('统计得到字体', all.length > 0, `实际 ${all.length}`);
+    check('按用量从多到少排序', all.every((u, i) => i === 0 || all[i - 1].count >= u.count));
+    for (const u of all) {
+      check(`${u.family} 字符集非空`, u.chars.length > 0);
+      check(`${u.family} 字符已去重`, new Set(u.chars).size === u.chars.length);
+      check(`${u.family} 字符按码位升序`,
+        [...u.chars].every((c, i) => i === 0 || u.chars.codePointAt(i - 1) < c.codePointAt(0)));
+      check(`${u.family} 至少一种字重`, u.styles.length > 0);
+    }
+
+    // 逐页统计必须是整份统计的子集——查看器就是靠这个只加载当前页要的字体
+    const page1 = lib.collectFonts([pres.slides[0]]);
+    const whole = new Map(all.map((u) => [u.family, u.chars]));
+    check('单页统计是整份的子集',
+      page1.every((u) => whole.has(u.family) && [...u.chars].every((c) => whole.get(u.family).includes(c))));
+    check('单页字符数不多于整份', page1.every((u) => u.chars.length <= whole.get(u.family).length));
+
+    // run 里不写 a:latin 时要落到主题的 minorFont，而不是「没有字体」。
+    // 少了这一层，渲染会掉到 CSS 通用回退上，字宽和 PowerPoint 对不齐。
+    const svg = lib.renderSlideToSvg(pres, pres.slides[0]);
+    check('未指定字体的文本用上了主题字体', svg.includes("font-family:'Helvetica'"), svg.slice(0, 200));
+    check('字体栈不含重复项', !/font-family:([^;"]*)'PingFang SC'([^;"]*)'PingFang SC'/.test(svg));
+
+    eq('空页统计为空', lib.collectFonts([]).length, 0);
+  }
+}
+
+// ---------------- 14d. 字体替换 ----------------
+
+group('字体替换');
+{
+  // 拉丁一栏必须是度量兼容的那几个——它们的前进宽度与原字体逐字相等，
+  // 断行才会和 PowerPoint 对齐。挑错替代品的话，SSIM 看着还行，行尾全错。
+  const METRIC = [['Calibri', 'Carlito'], ['Cambria', 'Caladea'], ['Arial', 'Arimo'],
+    ['Times New Roman', 'Tinos'], ['Courier New', 'Cousine']];
+  for (const [from, to] of METRIC) {
+    const sub = fontsLib.substituteFor(from);
+    eq(`${from} → ${to}`, sub?.family, to);
+    check(`${from} 的替代是度量兼容的`, sub?.metricCompatible === true);
+  }
+
+  eq('大小写与空白无关', fontsLib.substituteFor('  ARIAL  ')?.family, 'Arimo');
+  eq('中文黑体系归到思源黑体', fontsLib.substituteFor('微软雅黑')?.family, 'Noto Sans SC');
+  eq('中文宋体系归到思源宋体', fontsLib.substituteFor('宋体')?.family, 'Noto Serif SC');
+  check('中文条目标了 cjk', fontsLib.substituteFor('宋体')?.cjk === true);
+  check('拉丁条目没标 cjk', fontsLib.substituteFor('Calibri')?.cjk === false);
+
+  // 符号字体不该找替代品：它们是私用区自定义映射，换字体只会得到另一套图形
+  for (const f of ['Wingdings', 'Wingdings 2', 'Webdings', 'Symbol']) {
+    check(`${f} 不做替换`, fontsLib.substituteFor(f) === null);
+  }
+  check('表里没有的字体返回 null', fontsLib.substituteFor('Some Unknown Face') === null);
+  eq('overrides 优先于内置表',
+    fontsLib.substituteFor('Calibri', { calibri: { family: 'X', metricCompatible: false, cjk: false } })?.family, 'X');
+
+  // 每个替代字体都得有对应的 fontsource 包，否则 loadFontsFor 会静默取不到
+  const targets = new Set(Object.values(fontsLib.SUBSTITUTIONS).map((s) => s.family));
+  for (const t of targets) {
+    check(`${t} 有钉死版本的来源`, !!fontsLib.PACKAGES[t], Object.keys(fontsLib.PACKAGES).join(','));
+    check(`${t} 版本号是精确值`, /^\d+\.\d+\.\d+$/.test(fontsLib.PACKAGES[t]?.version ?? ''),
+      fontsLib.PACKAGES[t]?.version);
+  }
+  check('CSS 地址按字重与斜体拼',
+    fontsLib.cssUrl('Carlito', 700, true) === 'https://cdn.jsdelivr.net/npm/@fontsource/carlito@5.3.0/700-italic.css',
+    fontsLib.cssUrl('Carlito', 700, true));
+  check('未知家族没有 CSS 地址', fontsLib.cssUrl('Nope', 400, false) === null);
+  check('自定义基址生效', fontsLib.cssUrl('Carlito', 400, false, 'https://x/y')?.startsWith('https://x/y/'));
+
+  // 字重要就近取包里真有的那一档：霞鹜文楷没有 400，直接请求会 404
+  check('霞鹜文楷 400 就近取到 300 或 500',
+    /\/(300|500)\.css$/.test(fontsLib.cssUrl('LXGW WenKai', 400, false) ?? ''),
+    fontsLib.cssUrl('LXGW WenKai', 400, false));
+  check('中文没有真斜体时退回正体',
+    fontsLib.cssUrl('Noto Sans SC', 400, true) === 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/400.css',
+    fontsLib.cssUrl('Noto Sans SC', 400, true));
+  check('拉丁有真斜体就用真斜体',
+    fontsLib.cssUrl('Tinos', 700, true)?.endsWith('/700-italic.css'), fontsLib.cssUrl('Tinos', 700, true));
+  // 拼出来的地址只能落在包声明的档位上，否则就是 404
+  for (const [family, p] of Object.entries(fontsLib.PACKAGES)) {
+    for (const want of [400, 700]) {
+      for (const italic of [false, true]) {
+        const url = fontsLib.cssUrl(family, want, italic);
+        const m = /\/(\d+)(-italic)?\.css$/.exec(url ?? '');
+        const list = m?.[2] ? p.italics : p.weights;
+        check(`${family} ${want}${italic ? 'i' : ''} 落在真实档位上`, !!m && list.includes(Number(m[1])), url);
+      }
+    }
+  }
+
+  // 中文默认也换——传进来的用量本来就该全部处理。要关得显式关，
+  // 关掉的理由是流量（实测一页 22 个不同汉字要跨 18 个切片、下 553KB）
+  {
+    const usage = [{ family: '微软雅黑', styles: [{ bold: false, italic: false }], chars: '汉字', count: 2 }];
+    const doc = globalThis.document;
+    const off = await fontsLib.loadFontsFor(usage, { document: doc, skipInstalled: false, cjk: false });
+    eq('显式关掉时跳过中文', off[0]?.status, 'skipped-cjk');
+    const latin = await fontsLib.loadFontsFor(
+      [{ family: 'Wingdings', styles: [{ bold: false, italic: false }], chars: 'ab', count: 2 }],
+      { document: doc, skipInstalled: false });
+    eq('符号字体不做替换', latin[0]?.status, 'unmapped');
+  }
+
+  // 注入的中文 @font-face 要能单独撤回，宿主才有「关掉替换」这个选项
+  {
+    const doc = globalThis.document;
+    const style = doc.createElement('style');
+    style.dataset.webPptFont = '微软雅黑';
+    style.dataset.webPptCjk = '1';
+    const keep = doc.createElement('style');
+    keep.dataset.webPptFont = 'Calibri';
+    doc.head.append(style, keep);
+
+    fontsLib.unloadFonts({ cjkOnly: true, document: doc });
+    eq('只撤中文那条', doc.querySelectorAll('style[data-web-ppt-font]').length, 1);
+    eq('留下的是拉丁那条', doc.querySelector('style[data-web-ppt-font]')?.dataset.webPptFont, 'Calibri');
+    fontsLib.unloadFonts({ document: doc });
+    eq('不带参数时全撤', doc.querySelectorAll('style[data-web-ppt-font]').length, 0);
+  }
+
+  // @font-face 改写：家族名换成原字体名、相对路径绝对化、src 前面补 local()
+  const css = `@font-face {\n  font-family: 'Noto Sans SC';\n  src: url(./files/a.woff2) format('woff2');\n` +
+    `  unicode-range: U+4e00-9fff;\n}`;
+  const out = fontsLib.rewriteFontFaceCss(css, '微软雅黑', 'https://cdn.example/npm/pkg@1.0.0/400.css');
+  check('家族名改写成原字体名', out.includes("font-family: '微软雅黑'"), out);
+  check('相对路径已绝对化', out.includes('url(https://cdn.example/npm/pkg@1.0.0/files/a.woff2)'), out);
+  check('src 以 local() 开头', /src:\s*local\('微软雅黑'\), url\(/.test(out), out);
+  check('unicode-range 原样保留', out.includes('unicode-range: U+4e00-9fff'), out);
+  check('改写不残留替代字体名', !out.includes('Noto Sans SC'), out);
 }
 
 // ---------------- 15. 渲染快照 ----------------
@@ -1558,7 +1802,8 @@ group('headless 状态机');
       st.finishAnimations();
       eq('finish 后播完全部', st.animationDone, total);
       check('finish 后无待播', st.hasPendingAnimation === false);
-      eq('finish 后无隐藏元素', st.hiddenElementIds.size, 0);
+      // 退场元素播完就该留在幕后，「播完 = 全部可见」是错的
+      eq('finish 后只剩退场元素隐藏', [...st.hiddenElementIds].join(','), '705');
       eq('播完后再推进返回 null', st.playNextAnimation(), null);
 
       // next() 优先消费动画，动画播完才翻页。
@@ -1576,7 +1821,8 @@ group('headless 状态机');
       const st3 = new St(animPres, { animate: true, index: animIdx });
       st3.setAnimate(false);
       eq('关闭动画后无批次', st3.animationTotal, 0);
-      eq('关闭动画后无隐藏元素', st3.hiddenElementIds.size, 0);
+      // 关掉动画不等于全部画出来：静态画面取动画终态
+      eq('关闭动画后仍隐藏退场元素', [...st3.hiddenElementIds].join(','), '705');
       st3.destroy();
     }
     st.destroy();

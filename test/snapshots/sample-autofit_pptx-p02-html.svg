@@ -8,7 +8,7 @@
 <foreignObject width="1200" height="60" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1200px;height:60px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;">放得下 + 裸 normAutofit → 不缩</span>
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">放得下 + 裸 normAutofit → 不缩</span>
 </div>
 </div>
 </foreignObject>
@@ -20,7 +20,7 @@
 <foreignObject width="420" height="140" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:420px;height:140px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:26.67px;color:rgb(0,0,0);">短文字，放得下</span>
+<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">短文字，放得下</span>
 </div>
 </div>
 </foreignObject>
@@ -32,7 +32,7 @@
 <foreignObject width="400" height="140" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:140px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(96,96,96);">左侧框 420×140，标称 20pt</span>
+<span style="font-size:12px;color:rgb(96,96,96);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">左侧框 420×140，标称 20pt</span>
 </div>
 </div>
 </foreignObject>

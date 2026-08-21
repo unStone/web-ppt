@@ -7,7 +7,7 @@
 <foreignObject width="1184" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1184px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">墨迹批注：InkML → SVG 路径</span>
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">墨迹批注：InkML → SVG 路径</span>
 </div>
 </div>
 </foreignObject>
@@ -19,7 +19,7 @@
 <foreignObject width="560" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">p14:contentPart → InkML（含差分编码 trace）</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">p14:contentPart → InkML（含差分编码 trace）</span>
 </div>
 </div>
 </foreignObject>
@@ -46,7 +46,7 @@
 <foreignObject width="480" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:480px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">InkML 缺失 → 回退 mc:Fallback 的位图</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">InkML 缺失 → 回退 mc:Fallback 的位图</span>
 </div>
 </div>
 </foreignObject>
@@ -63,7 +63,7 @@
 <foreignObject width="480" height="120" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:480px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(60,71,89);">墨迹按整体包围盒等比映射进 contentPart 的框内，笔宽随之缩放</span>
+<span style="font-size:13.33px;color:rgb(60,71,89);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">墨迹按整体包围盒等比映射进 contentPart 的框内，笔宽随之缩放</span>
 </div>
 </div>
 </foreignObject>

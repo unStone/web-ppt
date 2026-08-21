@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+<style>@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:400;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:italic;}</style>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 40)">
+<path d="M 0 0 L 1160 0 L 1160 44 L 0 44 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="30.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">嵌入字体 · 四种容器形态</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 110)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="59.34" text-anchor="start" xml:space="preserve">
+<tspan font-size="42.67" font-family="'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">AAAA 未压缩 EOT</tspan>
+</text>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 210)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="59.34" text-anchor="start" xml:space="preserve">
+<tspan font-size="42.67" font-family="'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">AAAA 未压缩 EOT + 异或</tspan>
+</text>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 310)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="59.34" text-anchor="start" xml:space="preserve">
+<tspan font-size="42.67" font-family="'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic">AAAA 标记为 MTX 压缩</tspan>
+</text>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 410)">
+<path d="M 0 0 L 1160 0 L 1160 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="59.34" text-anchor="start" xml:space="preserve">
+<tspan font-size="42.67" font-family="'WebPPT Embedded','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700" font-style="italic">AAAA 裸 TTF 无容器</tspan>
+</text>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 540)">
+<path d="M 0 20 A 20 20 0 0 1 20 0 L 1140 0 A 20 20 0 0 1 1160 20 L 1160 100 A 20 20 0 0 1 1140 120 L 20 120 A 20 20 0 0 1 0 100 Z" fill="rgb(0,0,0)" fill-rule="nonzero"/>
+<text x="580" y="64.93" text-anchor="middle" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">四段文字都指定 WebPPT Embedded；能不能真按它渲染，取决于容器有没有被还原成 sfnt</tspan>
+</text>
+</g>
+</g>
+</svg>

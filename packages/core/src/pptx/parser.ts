@@ -5,6 +5,7 @@ import type {
   TableElement, TableRow, TextBody, UnsupportedElement,
 } from '../types';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
+import { embeddedFontToSfnt } from '../font/eot';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
 import { ColorCtx, childColor } from './color';
@@ -90,29 +91,43 @@ class Pkg {
     return this.relsCache.get(partPath)!;
   }
 
-  blobUrl(path: string, mime: string): string | null {
-    const key = `${mime}|${path}`;
+  /** 把一段字节挂成可引用的地址：defer 下发令牌，否则建 blob URL */
+  private store(key: string, data: Uint8Array, mime: string): string {
     if (this.assetMode === 'defer') {
       let token = this.deferredIndex.get(key);
       if (token === undefined) {
-        const data = this.files[path];
-        if (!data) return null;
         token = `asset:${this.deferred.length}`;
         this.deferred.push({ mime, data });
         this.deferredIndex.set(key, token);
       }
       return token;
     }
-    if (!this.blobCache.has(key)) {
-      const data = this.files[path];
-      let url: string | null = null;
-      if (data) {
-        url = URL.createObjectURL(new Blob([data.slice().buffer], { type: mime }));
-        this.objectUrls.push(url);
-      }
+    let url = this.blobCache.get(key);
+    if (url === undefined) {
+      url = URL.createObjectURL(new Blob([data.slice().buffer], { type: mime }));
+      this.objectUrls.push(url);
       this.blobCache.set(key, url);
     }
-    return this.blobCache.get(key) ?? null;
+    return url!;
+  }
+
+  blobUrl(path: string, mime: string): string | null {
+    const data = this.files[path];
+    return data ? this.store(`${mime}|${path}`, data, mime) : null;
+  }
+
+  /**
+   * 嵌入字体的可用地址。
+   *
+   * fntdata 是 EOT 容器而不是裸 TTF，得先还原成 sfnt（见 font/eot.ts）。
+   * 还原不出来就返回 null —— 与其声明一个浏览器注定拒绝的 @font-face，
+   * 不如干脆不声明，让文本老实回退到替换字体。
+   */
+  fontUrl(path: string): string | null {
+    const raw = this.files[path];
+    if (!raw) return null;
+    const font = embeddedFontToSfnt(raw);
+    return font ? this.store(`font|${path}`, font.data, font.mime) : null;
   }
 
   /** 释放全部 blob URL，并清空缓存以便 zip 数据被回收 */
@@ -1354,8 +1369,6 @@ function parseSections(presRoot: Element, idToIndex: Map<number, number>): Secti
   return out;
 }
 
-const FONT_MIME = 'font/ttf';
-
 function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels): EmbeddedFont[] {
   const out: EmbeddedFont[] = [];
   for (const ef of kids(kid(presRoot, 'embeddedFontLst'), 'embeddedFont')) {
@@ -1364,7 +1377,7 @@ function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels): Embedd
     for (const [tag, bold, italic] of [['regular', false, false], ['bold', true, false], ['italic', false, true], ['boldItalic', true, true]] as const) {
       const rid = attr(kid(ef, tag), 'r:id');
       const target = rid ? presRels[rid]?.target : null;
-      const url = target ? pkg.blobUrl(target, FONT_MIME) : null;
+      const url = target ? pkg.fontUrl(target) : null;
       if (url) out.push({ family, src: url, bold, italic });
     }
   }

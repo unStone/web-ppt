@@ -7,7 +7,7 @@
 <foreignObject width="1184" height="72" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1184px;height:72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">媒体对象：封面帧 + 播放标识</span>
+<span style="font-size:32px;color:rgb(31,56,100);font-weight:700;font-family:'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">媒体对象：封面帧 + 播放标识</span>
 </div>
 </div>
 </foreignObject>
@@ -19,7 +19,7 @@
 <foreignObject width="460" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">内嵌视频（mp4）· 封面帧来自 blipFill</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内嵌视频（mp4）· 封面帧来自 blipFill</span>
 </div>
 </div>
 </foreignObject>
@@ -41,7 +41,7 @@
 <foreignObject width="300" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:300px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">内嵌音频（wav）· 喇叭图标为封面</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">内嵌音频（wav）· 喇叭图标为封面</span>
 </div>
 </div>
 </foreignObject>
@@ -65,7 +65,7 @@
 <foreignObject width="360" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:360px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">外链视频（r:link → https）</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">外链视频（r:link → https）</span>
 </div>
 </div>
 </foreignObject>
@@ -87,7 +87,7 @@
 <foreignObject width="460" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">无封面帧的媒体：深色底板 + 标识</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">无封面帧的媒体：深色底板 + 标识</span>
 </div>
 </div>
 </foreignObject>
@@ -109,7 +109,7 @@
 <foreignObject width="460" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:460px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(90,97,114);">无封面音频</span>
+<span style="font-size:13.33px;color:rgb(90,97,114);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">无封面音频</span>
 </div>
 </div>
 </foreignObject>

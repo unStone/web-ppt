@@ -5,7 +5,7 @@
 <g data-el="2" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(64 24)">
 <text x="9.6" y="51.54" text-anchor="start" xml:space="preserve">
-<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">簇状柱状图 · 数据标签 / 网格线 / 轴标题</tspan>
+<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">簇状柱状图 · 数据标签 / 网格线 / 轴标题</tspan>
 </text>
 </g>
 </g>
@@ -14,7 +14,7 @@
 <g transform=" scale(1 1) translate(0 0)">
 <g transform="translate(7.33 7.33)">
 <text x="552.67" y="22.41" text-anchor="middle" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">季度营收对比（簇状柱）</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">季度营收对比（簇状柱）</tspan>
 </text>
 </g>
 <g transform="translate(80.8 484.67)">
@@ -43,57 +43,57 @@
 </g>
 <g transform="translate(178.45 490.67)">
 <text x="30" y="11.96" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第一季度</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第一季度</tspan>
 </text>
 </g>
 <g transform="translate(433.75 490.67)">
 <text x="30" y="11.96" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第二季度</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第二季度</tspan>
 </text>
 </g>
 <g transform="translate(689.05 490.67)">
 <text x="30" y="11.96" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第三季度</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第三季度</tspan>
 </text>
 </g>
 <g transform="translate(944.35 490.67)">
 <text x="30" y="11.96" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第四季度</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第四季度</tspan>
 </text>
 </g>
 <g transform="translate(61.07 475.33)">
 <text x="13.73" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0</tspan>
 </text>
 </g>
 <g transform="translate(46.93 388.56)">
 <text x="27.87" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">500</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">500</tspan>
 </text>
 </g>
 <g transform="translate(35.87 301.79)">
 <text x="38.93" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,000</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,000</tspan>
 </text>
 </g>
 <g transform="translate(35.87 215.01)">
 <text x="38.93" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,500</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,500</tspan>
 </text>
 </g>
 <g transform="translate(35.87 128.24)">
 <text x="38.93" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,000</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,000</tspan>
 </text>
 </g>
 <g transform="translate(35.87 41.47)">
 <text x="38.93" y="13.63" text-anchor="end" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,500</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,500</tspan>
 </text>
 </g>
 <g transform="rotate(-90 23.67 267.73) translate(-193.27 257.93)">
 <text x="216.93" y="14.31" text-anchor="middle" xml:space="preserve">
-<tspan font-size="14" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">金额（万元）</tspan>
+<tspan font-size="14" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">金额（万元）</tspan>
 </text>
 </g>
 <g transform="translate(132.55 262.53)">
@@ -122,42 +122,42 @@
 </g>
 <g transform="translate(147.05 246.1)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,280</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,280</tspan>
 </text>
 </g>
 <g transform="translate(402.35 183.62)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,640</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,640</tspan>
 </text>
 </g>
 <g transform="translate(657.65 221.8)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,420</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,420</tspan>
 </text>
 </g>
 <g transform="translate(912.95 112.47)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,050</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,050</tspan>
 </text>
 </g>
 <g transform="translate(229.85 206.18)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,510</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,510</tspan>
 </text>
 </g>
 <g transform="translate(485.15 227.01)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,390</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,390</tspan>
 </text>
 </g>
 <g transform="translate(740.45 141.97)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,880</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1,880</tspan>
 </text>
 </g>
 <g transform="translate(995.75 58.67)">
 <text x="20" y="10.9" text-anchor="middle" xml:space="preserve">
-<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,360</tspan>
+<tspan font-size="10.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2,360</tspan>
 </text>
 </g>
 <g transform="translate(478.67 520.2)">
@@ -165,7 +165,7 @@
 </g>
 <g transform="translate(499.33 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2024 年</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2024 年</tspan>
 </text>
 </g>
 <g transform="translate(560 520.2)">
@@ -173,7 +173,7 @@
 </g>
 <g transform="translate(580.67 513.33)">
 <text x="0" y="15.96" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2025 年</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2025 年</tspan>
 </text>
 </g>
 </g>

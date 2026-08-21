@@ -6,7 +6,7 @@
 <g transform="translate(24 14)">
 <path d="M 0 0 L 800 0 L 800 34 L 0 34 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
-<tspan font-size="24" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">EMF / WMF 矢量图元文件</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">EMF / WMF 矢量图元文件</tspan>
 </text>
 </g>
 </g>
@@ -19,7 +19,7 @@
 <g transform="translate(30 405)">
 <path d="M 0 0 L 600 0 L 600 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="300" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">EMF（增强型图元文件）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">EMF（增强型图元文件）</tspan>
 </text>
 </g>
 </g>
@@ -32,7 +32,7 @@
 <g transform="translate(650 405)">
 <path d="M 0 0 L 600 0 L 600 24 L 0 24 Z" fill="none" fill-rule="nonzero"/>
 <text x="300" y="17.28" text-anchor="middle" xml:space="preserve">
-<tspan font-size="13.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">WMF（Windows 图元文件）</tspan>
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">WMF（Windows 图元文件）</tspan>
 </text>
 </g>
 </g>
@@ -40,7 +40,7 @@
 <g transform="translate(30 450)">
 <path d="M 0 10 A 10 10 0 0 1 10 0 L 1210 0 A 10 10 0 0 1 1220 10 L 1220 50 A 10 10 0 0 1 1210 60 L 10 60 A 10 10 0 0 1 0 50 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 <text x="610" y="35.82" text-anchor="middle" xml:space="preserve">
-<tspan font-size="17.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">两张图都由浏览器端解码为 SVG，无服务端参与</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">两张图都由浏览器端解码为 SVG，无服务端参与</tspan>
 </text>
 </g>
 </g>

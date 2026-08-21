@@ -5,7 +5,7 @@
 <g data-el="2" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(48 24)">
 <text x="9.6" y="46.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">曲面图：退化为俯视等高线网格</tspan>
+<tspan font-size="32" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">曲面图：退化为俯视等高线网格</tspan>
 </text>
 </g>
 </g>
@@ -14,7 +14,7 @@
 <g transform=" scale(1 1) translate(0 0)">
 <g transform="translate(6.97 6.97)">
 <text x="288.03" y="20.88" text-anchor="middle" xml:space="preserve">
-<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">反应转化率曲面（俯视等高线 · 自带色带）</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">反应转化率曲面（俯视等高线 · 自带色带）</tspan>
 </text>
 </g>
 <g transform="translate(57.63 432.92)">
@@ -40,7 +40,7 @@
 </g>
 <g transform="translate(6.97 471.69)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 334.08)">
@@ -66,7 +66,7 @@
 </g>
 <g transform="translate(6.97 372.86)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 235.24)">
@@ -92,7 +92,7 @@
 </g>
 <g transform="translate(6.97 274.02)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 136.4)">
@@ -118,7 +118,7 @@
 </g>
 <g transform="translate(6.97 175.18)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 37.57)">
@@ -144,42 +144,42 @@
 </g>
 <g transform="translate(6.97 76.35)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0.5h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0.5h</tspan>
 </text>
 </g>
 <g transform="translate(118.21 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1h</tspan>
 </text>
 </g>
 <g transform="translate(178.8 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2h</tspan>
 </text>
 </g>
 <g transform="translate(239.38 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4h</tspan>
 </text>
 </g>
 <g transform="translate(299.96 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8h</tspan>
 </text>
 </g>
 <g transform="translate(360.54 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12h</tspan>
 </text>
 </g>
 <g transform="translate(421.12 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24h</tspan>
 </text>
 </g>
 <g transform="translate(489.3 451.45)">
@@ -187,7 +187,7 @@
 </g>
 <g transform="translate(507.03 443.91)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
 </text>
 </g>
 <g transform="translate(489.3 395.85)">
@@ -195,7 +195,7 @@
 </g>
 <g transform="translate(507.03 388.32)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40</tspan>
 </text>
 </g>
 <g transform="translate(489.3 340.26)">
@@ -203,7 +203,7 @@
 </g>
 <g transform="translate(507.03 332.72)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60</tspan>
 </text>
 </g>
 <g transform="translate(489.3 284.66)">
@@ -211,7 +211,7 @@
 </g>
 <g transform="translate(507.03 277.12)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">80</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">80</tspan>
 </text>
 </g>
 <g transform="translate(489.3 229.06)">
@@ -219,7 +219,7 @@
 </g>
 <g transform="translate(507.03 221.53)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">100</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">100</tspan>
 </text>
 </g>
 <g transform="translate(489.3 173.47)">
@@ -227,7 +227,7 @@
 </g>
 <g transform="translate(507.03 165.93)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">120</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">120</tspan>
 </text>
 </g>
 <g transform="translate(489.3 117.87)">
@@ -235,7 +235,7 @@
 </g>
 <g transform="translate(507.03 110.34)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">140</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">140</tspan>
 </text>
 </g>
 <g transform="translate(489.3 62.28)">
@@ -243,7 +243,7 @@
 </g>
 <g transform="translate(507.03 54.74)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">160</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">160</tspan>
 </text>
 </g>
 </g>
@@ -254,7 +254,7 @@
 <g transform=" scale(1 1) translate(0 0)">
 <g transform="translate(6.97 6.97)">
 <text x="288.03" y="20.88" text-anchor="middle" xml:space="preserve">
-<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">无 bandFmts → 内置色带</tspan>
+<tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">无 bandFmts → 内置色带</tspan>
 </text>
 </g>
 <g transform="translate(57.63 432.92)">
@@ -280,7 +280,7 @@
 </g>
 <g transform="translate(6.97 471.69)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 334.08)">
@@ -306,7 +306,7 @@
 </g>
 <g transform="translate(6.97 372.86)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 235.24)">
@@ -332,7 +332,7 @@
 </g>
 <g transform="translate(6.97 274.02)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 136.4)">
@@ -358,7 +358,7 @@
 </g>
 <g transform="translate(6.97 175.18)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 37.57)">
@@ -384,42 +384,42 @@
 </g>
 <g transform="translate(6.97 76.35)">
 <text x="45.6" y="14.72" text-anchor="end" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60℃</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60℃</tspan>
 </text>
 </g>
 <g transform="translate(57.63 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0.5h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0.5h</tspan>
 </text>
 </g>
 <g transform="translate(118.21 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1h</tspan>
 </text>
 </g>
 <g transform="translate(178.8 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2h</tspan>
 </text>
 </g>
 <g transform="translate(239.38 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4h</tspan>
 </text>
 </g>
 <g transform="translate(299.96 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8h</tspan>
 </text>
 </g>
 <g transform="translate(360.54 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12h</tspan>
 </text>
 </g>
 <g transform="translate(421.12 531.75)">
 <text x="30.29" y="14.72" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24h</tspan>
+<tspan font-size="12.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24h</tspan>
 </text>
 </g>
 <g transform="translate(489.3 451.45)">
@@ -427,7 +427,7 @@
 </g>
 <g transform="translate(507.03 443.91)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
 </text>
 </g>
 <g transform="translate(489.3 395.85)">
@@ -435,7 +435,7 @@
 </g>
 <g transform="translate(507.03 388.32)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40</tspan>
 </text>
 </g>
 <g transform="translate(489.3 340.26)">
@@ -443,7 +443,7 @@
 </g>
 <g transform="translate(507.03 332.72)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60</tspan>
 </text>
 </g>
 <g transform="translate(489.3 284.66)">
@@ -451,7 +451,7 @@
 </g>
 <g transform="translate(507.03 277.12)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">80</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">80</tspan>
 </text>
 </g>
 <g transform="translate(489.3 229.06)">
@@ -459,7 +459,7 @@
 </g>
 <g transform="translate(507.03 221.53)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">100</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">100</tspan>
 </text>
 </g>
 <g transform="translate(489.3 173.47)">
@@ -467,7 +467,7 @@
 </g>
 <g transform="translate(507.03 165.93)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">120</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">120</tspan>
 </text>
 </g>
 <g transform="translate(489.3 117.87)">
@@ -475,7 +475,7 @@
 </g>
 <g transform="translate(507.03 110.34)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">140</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">140</tspan>
 </text>
 </g>
 <g transform="translate(489.3 62.28)">
@@ -483,7 +483,7 @@
 </g>
 <g transform="translate(507.03 54.74)">
 <text x="0" y="11" text-anchor="start" xml:space="preserve">
-<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">160</tspan>
+<tspan font-size="10.77" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">160</tspan>
 </text>
 </g>
 </g>

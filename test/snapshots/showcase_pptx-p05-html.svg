@@ -28,7 +28,7 @@
 <foreignObject width="600" height="34" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:600px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">表格 · 图片</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">表格 · 图片</span>
 </div>
 </div>
 </foreignObject>
@@ -41,7 +41,7 @@
 <foreignObject width="220" height="56" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:56px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;">功能模块</span>
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">功能模块</span>
 </div>
 </div>
 </foreignObject>
@@ -51,7 +51,7 @@
 <foreignObject width="160" height="56" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:56px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;">.pptx</span>
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">.pptx</span>
 </div>
 </div>
 </foreignObject>
@@ -61,7 +61,7 @@
 <foreignObject width="160" height="56" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:56px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;">.ppt</span>
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">.ppt</span>
 </div>
 </div>
 </foreignObject>
@@ -71,7 +71,7 @@
 <foreignObject width="160" height="56" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:56px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;">备注</span>
+<span style="font-size:17.33px;color:rgb(255,255,255);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">备注</span>
 </div>
 </div>
 </foreignObject>
@@ -81,7 +81,7 @@
 <foreignObject width="220" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">形状渲染</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">形状渲染</span>
 </div>
 </div>
 </foreignObject>
@@ -91,7 +91,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">完整</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">完整</span>
 </div>
 </div>
 </foreignObject>
@@ -101,7 +101,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">规划中</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">规划中</span>
 </div>
 </div>
 </foreignObject>
@@ -111,7 +111,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">140+ 预设几何</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">140+ 预设几何</span>
 </div>
 </div>
 </foreignObject>
@@ -121,7 +121,7 @@
 <foreignObject width="220" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">文本排版</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">文本排版</span>
 </div>
 </div>
 </foreignObject>
@@ -131,7 +131,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">完整</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">完整</span>
 </div>
 </div>
 </foreignObject>
@@ -141,7 +141,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">纯文本</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯文本</span>
 </div>
 </div>
 </foreignObject>
@@ -151,7 +151,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">含竖排/分栏</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">含竖排/分栏</span>
 </div>
 </div>
 </foreignObject>
@@ -161,7 +161,7 @@
 <foreignObject width="380" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:380px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">跨列合并演示</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">跨列合并演示</span>
 </div>
 </div>
 </foreignObject>
@@ -171,7 +171,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">自定义边框</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自定义边框</span>
 </div>
 </div>
 </foreignObject>
@@ -181,7 +181,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">粗橙边框</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">粗橙边框</span>
 </div>
 </div>
 </foreignObject>
@@ -191,7 +191,7 @@
 <foreignObject width="220" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">垂直居中</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">垂直居中</span>
 </div>
 </div>
 </foreignObject>
@@ -201,7 +201,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">垂直底部</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">垂直底部</span>
 </div>
 </div>
 </foreignObject>
@@ -211,7 +211,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">默认顶部</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">默认顶部</span>
 </div>
 </div>
 </foreignObject>
@@ -221,7 +221,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">对齐测试</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">对齐测试</span>
 </div>
 </div>
 </foreignObject>
@@ -231,7 +231,7 @@
 <foreignObject width="220" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:220px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">条纹行验证</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">条纹行验证</span>
 </div>
 </div>
 </foreignObject>
@@ -241,7 +241,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">band2</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">band2</span>
 </div>
 </div>
 </foreignObject>
@@ -251,7 +251,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">band1</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">band1</span>
 </div>
 </div>
 </foreignObject>
@@ -261,7 +261,7 @@
 <foreignObject width="160" height="50" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:160px;height:50px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:16px;color:rgb(26,26,26);">交替底色</span>
+<span style="font-size:16px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">交替底色</span>
 </div>
 </div>
 </foreignObject>
@@ -417,7 +417,7 @@
 <foreignObject width="140" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">原图</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">原图</span>
 </div>
 </div>
 </foreignObject>
@@ -436,7 +436,7 @@
 <foreignObject width="140" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">裁剪 25%</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁剪 25%</span>
 </div>
 </div>
 </foreignObject>
@@ -455,7 +455,7 @@
 <foreignObject width="140" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">裁进圆形</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁进圆形</span>
 </div>
 </div>
 </foreignObject>
@@ -474,7 +474,7 @@
 <foreignObject width="140" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:140px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">裁进星形</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裁进星形</span>
 </div>
 </div>
 </foreignObject>
@@ -496,7 +496,7 @@
 <foreignObject width="150" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:150px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:12px;color:rgb(64,64,64);">平铺+透明</span>
+<span style="font-size:12px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">平铺+透明</span>
 </div>
 </div>
 </foreignObject>
@@ -508,7 +508,7 @@
 <foreignObject width="700" height="30" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:700px;height:30px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);">表格样式：首行强调 + 条纹行 + 合并单元格 + 自定义边框 + 垂直对齐</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">表格样式：首行强调 + 条纹行 + 合并单元格 + 自定义边框 + 垂直对齐</span>
 </div>
 </div>
 </foreignObject>

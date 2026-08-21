@@ -444,11 +444,18 @@ function fieldText(type: string | null, env: TextEnv): string {
 }
 
 function finalizeRun(text: string, rp: RunProps, env: TextEnv): TextRun {
+  // run 里没写 a:latin 不等于「没有字体」——ECMA-376 的继承链走到最后落在
+  // 主题的 minorFont 上。不补这一层，渲染会掉到 CSS 的通用回退（Helvetica）
+  // 上，字宽与 PowerPoint 对不齐；collectFonts 也会以为这份文件没用字体。
+  const latin = rp.latin ?? env.fonts.minor.latin;
+  const ea = rp.ea ?? env.fonts.minor.ea;
+  const cs = rp.cs ?? env.fonts.minor.cs ?? null;
+
   // 字体栈按 latin → ea → cs 排，浏览器会逐个回退直到找到含该字形的字体
   const fonts: string[] = [];
-  if (rp.latin) fonts.push(rp.latin);
-  if (rp.ea && rp.ea !== rp.latin) fonts.push(rp.ea);
-  if (rp.cs && rp.cs !== rp.latin && rp.cs !== rp.ea) fonts.push(rp.cs);
+  if (latin) fonts.push(latin);
+  if (ea && ea !== latin) fonts.push(ea);
+  if (cs && cs !== latin && cs !== ea) fonts.push(cs);
   const size = pt100(rp.sz ?? 1800);
   return {
     text,

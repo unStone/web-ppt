@@ -8,7 +8,7 @@
 <foreignObject width="800" height="40" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:800px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:26.67px;color:rgb(31,56,100);font-weight:700;">OMML 数学公式（12 种结构）</span>
+<span style="font-size:26.67px;color:rgb(31,56,100);font-weight:700;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">OMML 数学公式（12 种结构）</span>
 </div>
 </div>
 </foreignObject>
@@ -20,7 +20,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">分式</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">分式</span>
 </div>
 </div>
 </foreignObject>
@@ -51,7 +51,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">根式</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">根式</span>
 </div>
 </div>
 </foreignObject>
@@ -80,7 +80,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">n 次根</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">n 次根</span>
 </div>
 </div>
 </foreignObject>
@@ -110,7 +110,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">上下标</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">上下标</span>
 </div>
 </div>
 </foreignObject>
@@ -138,7 +138,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">求和</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">求和</span>
 </div>
 </div>
 </foreignObject>
@@ -170,7 +170,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">积分</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">积分</span>
 </div>
 </div>
 </foreignObject>
@@ -203,7 +203,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">括号自适应</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">括号自适应</span>
 </div>
 </div>
 </foreignObject>
@@ -233,7 +233,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">多参数括号</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">多参数括号</span>
 </div>
 </div>
 </foreignObject>
@@ -265,7 +265,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">矩阵</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">矩阵</span>
 </div>
 </div>
 </foreignObject>
@@ -296,7 +296,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">重音</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">重音</span>
 </div>
 </div>
 </foreignObject>
@@ -327,7 +327,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">极限</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">极限</span>
 </div>
 </div>
 </foreignObject>
@@ -359,7 +359,7 @@
 <foreignObject width="280" height="24" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(102,102,102);">嵌套分式</span>
+<span style="font-size:13.33px;color:rgb(102,102,102);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">嵌套分式</span>
 </div>
 </div>
 </foreignObject>
@@ -391,7 +391,7 @@
 <foreignObject width="1220" height="120" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1220px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(0,0,0);">行内混排：当 </span>
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">行内混排：当 </span>
 <svg xmlns="http://www.w3.org/2000/svg" width="97.39" height="27.8" viewBox="0 -22.52 97.39 27.8" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
 <text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
 <text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
@@ -402,7 +402,7 @@
 <text x="73.73" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">r</text>
 <text x="87.41" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </svg>
-<span style="font-size:21.33px;color:rgb(0,0,0);"> 时，半径为 </span>
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 时，半径为 </span>
 <svg xmlns="http://www.w3.org/2000/svg" width="76.61" height="31.88" viewBox="0 -26.6 76.61 31.88" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
 <path d="M 0 -9.07 L 3.96 -4.28 L 8.18 5.28 L 13.2 -26.6 L 76.61 -26.6" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
 <text x="14.64" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
@@ -411,7 +411,7 @@
 <text x="51.5" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
 <text x="65.18" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </svg>
-<span style="font-size:21.33px;color:rgb(0,0,0);"> ，这是圆的方程。</span>
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> ，这是圆的方程。</span>
 </div>
 </div>
 </foreignObject>

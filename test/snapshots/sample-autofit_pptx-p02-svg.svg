@@ -6,7 +6,7 @@
 <g transform="translate(40 60)">
 <path d="M 0 0 L 1200 0 L 1200 60 L 0 60 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="40.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="32" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">放得下 + 裸 normAutofit → 不缩</tspan>
+<tspan font-size="32" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">放得下 + 裸 normAutofit → 不缩</tspan>
 </text>
 </g>
 </g>
@@ -14,7 +14,7 @@
 <g transform="translate(60 180)">
 <path d="M 0 0 L 420 0 L 420 140 L 0 140 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
 <text x="9.6" y="29.76" text-anchor="start" xml:space="preserve">
-<tspan font-size="26.67" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">短文字，放得下</tspan>
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">短文字，放得下</tspan>
 </text>
 </g>
 </g>
@@ -22,7 +22,7 @@
 <g transform="translate(520 180)">
 <path d="M 0 0 L 400 0 L 400 140 L 0 140 Z" fill="none" fill-rule="nonzero"/>
 <text x="200" y="74.03" text-anchor="middle" xml:space="preserve">
-<tspan font-size="12" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(96,96,96)">左侧框 420×140，标称 20pt</tspan>
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(96,96,96)">左侧框 420×140，标称 20pt</tspan>
 </text>
 </g>
 </g>

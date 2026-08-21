@@ -23,8 +23,8 @@
 <foreignObject width="900" height="40" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:900px;height:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;">艺术字变形 a:prstTxWarp（15 个预设）</span>
-<span style="font-size:14.67px;color:rgb(128,128,128);">   文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染</span>
+<span style="font-size:24px;color:rgb(31,56,100);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">艺术字变形 a:prstTxWarp（15 个预设）</span>
+<span style="font-size:14.67px;color:rgb(128,128,128);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">   文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染</span>
 </div>
 </div>
 </foreignObject>
@@ -36,7 +36,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s1" xlink:href="#s1" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -48,7 +48,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textArchUp</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textArchUp</span>
 </div>
 </div>
 </foreignObject>
@@ -60,7 +60,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s2" xlink:href="#s2" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -72,7 +72,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textArchDown</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textArchDown</span>
 </div>
 </div>
 </foreignObject>
@@ -84,7 +84,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s3" xlink:href="#s3" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -96,7 +96,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textArchUpPour</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textArchUpPour</span>
 </div>
 </div>
 </foreignObject>
@@ -108,7 +108,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s4" xlink:href="#s4" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -120,7 +120,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textArchDownPour</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textArchDownPour</span>
 </div>
 </div>
 </foreignObject>
@@ -132,7 +132,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" letter-spacing="19.36" xml:space="preserve">
 <textPath href="#s5" xlink:href="#s5" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -144,7 +144,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textCircle</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textCircle</span>
 </div>
 </div>
 </foreignObject>
@@ -156,7 +156,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s6" xlink:href="#s6" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -168,7 +168,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textWave1</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textWave1</span>
 </div>
 </div>
 </foreignObject>
@@ -180,7 +180,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s7" xlink:href="#s7" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -192,7 +192,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textWave2</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textWave2</span>
 </div>
 </div>
 </foreignObject>
@@ -204,7 +204,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s8" xlink:href="#s8" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -216,7 +216,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textCurveUp</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textCurveUp</span>
 </div>
 </div>
 </foreignObject>
@@ -228,7 +228,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s9" xlink:href="#s9" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -240,7 +240,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textCurveDown</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textCurveDown</span>
 </div>
 </div>
 </foreignObject>
@@ -252,7 +252,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s10" xlink:href="#s10" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,192,0)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -264,7 +264,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textCanUp</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textCanUp</span>
 </div>
 </div>
 </foreignObject>
@@ -276,7 +276,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s11" xlink:href="#s11" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(91,155,213)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -288,7 +288,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textCanDown</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textCanDown</span>
 </div>
 </div>
 </foreignObject>
@@ -300,7 +300,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s12" xlink:href="#s12" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,173,71)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -312,7 +312,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textTriangle</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textTriangle</span>
 </div>
 </div>
 </foreignObject>
@@ -324,7 +324,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s13" xlink:href="#s13" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(68,114,196)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -336,7 +336,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textChevron</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textChevron</span>
 </div>
 </div>
 </foreignObject>
@@ -348,7 +348,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s14" xlink:href="#s14" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -360,7 +360,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textInflate</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textInflate</span>
 </div>
 </div>
 </foreignObject>
@@ -372,7 +372,7 @@
 <g transform="translate(0 0)">
 <text text-anchor="middle" xml:space="preserve">
 <textPath href="#s15" xlink:href="#s15" startOffset="50%">
-<tspan font-size="29.33" font-family="Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
+<tspan font-size="29.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(127,127,127)" font-weight="700">Warp</tspan>
 </textPath>
 </text>
 </g>
@@ -384,7 +384,7 @@
 <foreignObject width="250" height="18" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:250px;height:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:10.67px;color:rgb(85,85,85);">textDeflate</span>
+<span style="font-size:10.67px;color:rgb(85,85,85);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">textDeflate</span>
 </div>
 </div>
 </foreignObject>

@@ -1,6 +1,6 @@
 import type { AnimStep, Presentation, Slide, Transition } from '@web-ppt/core';
 import { slideText } from '@web-ppt/core';
-import { groupSteps, hiddenBefore } from '@web-ppt/core';
+import { groupSteps, hiddenBefore, staticHidden } from '@web-ppt/core';
 import { autoAdvanceMs } from './playback';
 
 /**
@@ -83,9 +83,14 @@ export class PresentationState {
     return this.animate && this.cursor < this.groups.length;
   }
 
-  /** 当前批次下应当隐藏的元素 id —— UI 据此设置可见性 */
+  /**
+   * 当前应当隐藏的元素 id —— UI 据此设置可见性。
+   *
+   * 不播动画时不是「全部可见」，而是动画终态：入场与退场的元素属于不同时刻，
+   * 一起画出来就是几帧叠在一起（见 core 的 staticHidden）。
+   */
   get hiddenElementIds(): ReadonlySet<number> {
-    return this.animate ? hiddenBefore(this.groups, this.cursor) : new Set<number>();
+    return this.animate ? hiddenBefore(this.groups, this.cursor) : staticHidden(this.slide);
   }
 
   /** 本页的自动换片延迟（毫秒），未配置则为 null */

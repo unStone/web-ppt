@@ -1,5 +1,5 @@
 import type { Presentation, Slide } from '@web-ppt/core';
-import { renderSlideToSvg, slideToPng } from '@web-ppt/core';
+import { renderSlideToSvg, slideToPng, staticHidden } from '@web-ppt/core';
 import { foreignObjectScalesCorrectly } from './foreign-object';
 import { playGroup, playTransition, type PlayHandle } from './playback';
 import { PresentationState, type PresentationStateOptions } from './state';
@@ -111,8 +111,25 @@ export class Viewer {
 
   /** 不走缓存，用于缩略图等需要独立 defs id 的场景 */
   renderSlide(i: number): string {
-    // 缩略图不嵌播放器：既没意义，还会为每个缩略图各建一个媒体元素
-    return renderSlideToSvg(this.presentation, this.presentation.slides[i], { textMode: this.textMode });
+    const slide = this.presentation.slides[i];
+    return renderSlideToSvg(this.presentation, slide, {
+      // 缩略图不嵌播放器：既没意义，还会为每个缩略图各建一个媒体元素
+      textMode: this.textMode,
+      // 缩略图是静态产物，没有后续的 applyVisibility，隐藏状态只能烘进 SVG
+      hiddenElements: [...staticHidden(slide)],
+    });
+  }
+
+  /**
+   * 重渲当前页，页码与动画进度都不变。
+   *
+   * 给「渲染完之后世界才变」的情况用，最典型的是网络字体到货：原生 `<text>`
+   * 路径的断行是渲染时拿 canvas 量出来烘进 SVG 的，字体换了就必须重量一遍；
+   * `foreignObject` 路径由浏览器自己重排，重渲只是顺带把缓存换掉。
+   */
+  refresh(): void {
+    this.svgCache.delete(this.index);
+    this.paint();
   }
 
   exportPng(scale = 2, i = this.index): Promise<Blob> {
@@ -163,9 +180,12 @@ export class Viewer {
     this.applyVisibility();
   }
 
-  /** 按状态机给出的隐藏集合设置元素可见性 */
+  /**
+   * 按状态机给出的隐藏集合设置元素可见性。
+   *
+   * 不播动画时也要跑：静态画面取的是动画终态，退场元素同样得藏起来。
+   */
   private applyVisibility(): void {
-    if (!this.state.animate) return;
     const hidden = this.state.hiddenElementIds;
     this.container.querySelectorAll('[data-el]').forEach((node) => {
       const id = Number(node.getAttribute('data-el'));
