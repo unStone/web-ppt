@@ -84,8 +84,11 @@
 <g data-el="6147" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(680 70)">
 <path d="M 0 0 L 90 0 L 90 280 L 0 280 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
-<text x="45" y="146.17" text-anchor="middle" xml:space="preserve">
-<tspan font-size="21.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">竖排文字测试</tspan>
+<text x="45" y="133.37" text-anchor="middle" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">竖排文</tspan>
+</text>
+<text x="45" y="158.97" text-anchor="middle" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">字测试</tspan>
 </text>
 </g>
 </g>
@@ -93,17 +96,22 @@
 <g transform="translate(800 70)">
 <path d="M 0 0 L 450 0 L 450 170 L 0 170 Z" fill="rgb(245,247,250)" fill-rule="nonzero"/>
 <text x="7.2" y="17.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">双栏排版：左栏文本会自动流入右栏，用于验证 </tspan>
+<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 -7.33 0 0 0 0 0 0 0 0 0 0 0 -7.33 0 0 0 0">双栏排版：左栏文本会自动流入右栏，用于验证 </tspan>
 <tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">numCol </tspan>
 <tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">与 </tspan>
-<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">spcCol </tspan>
+<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">spcCol</tspan>
+</text>
+<text x="7.2" y="34.93" text-anchor="start" xml:space="preserve">
 <tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">的解析与渲染。</tspan>
 </text>
-<text x="7.2" y="36.93" text-anchor="start" xml:space="preserve">
+<text x="7.2" y="54.53" text-anchor="start" xml:space="preserve">
 <tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二段继续填充，确保分栏高度计算正确。</tspan>
 </text>
-<text x="7.2" y="56.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</tspan>
+<text x="7.2" y="74.13" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -7.33 0 0 0 0 0 0 -7.33 0 0 0">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断</tspan>
+</text>
+<text x="7.2" y="91.73" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">点计算与右栏的横向偏移才算被验证过。</tspan>
 </text>
 </g>
 </g>
@@ -112,13 +120,14 @@
 <path d="M 0 0 L 450 0 L 450 120 L 0 120 Z" fill="rgb(255,248,225)" fill-rule="nonzero"/>
 <text x="7.2" y="28.56" text-anchor="start" xml:space="preserve">
 <tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">normAutofit</tspan>
-<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">：字号缩放到 </tspan>
+<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 -13.33 0 0 0 0 0">：字号缩放到 </tspan>
 <tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">70%</tspan>
-<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，行距压缩 </tspan>
+<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 -13.33 0">，行距</tspan>
 </text>
 <text x="7.2" y="60.56" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">压缩 </tspan>
 <tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">10%</tspan>
-<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，用于验证自动适应文本框。</tspan>
+<tspan font-size="26.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 -13.33 0 0 0 0 0 0 0 0 0 0 0">，用于验证自动适应文本框。</tspan>
 </text>
 </g>
 </g>

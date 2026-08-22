@@ -3,7 +3,8 @@ import type {
   Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody, TextRun,
   UnsupportedElement,
 } from '../types';
-import { autoFitScale, mathOf, renderTextSvg, warpSupported } from './text-svg';
+import { isOpening, squeezeEm } from './cjk-punct';
+import { autoFitScale, mathOf, paraNeedsSqueeze, renderTextSvg, warpSupported } from './text-svg';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -715,7 +716,25 @@ function runStyle(run: TextRun, scale: number): string {
   return css;
 }
 
-function renderRun(run: TextRun, scale: number): string {
+/**
+ * 把全角标点的空半格用负边距收掉。
+ *
+ * 用负边距而不是 `font-feature-settings:'halt'`：后者要字体自带半角替换字形，
+ * 有的字体有、有的没有，同一份文件在不同机器上会排出不同结果。负边距与字体
+ * 无关，量多少就是多少，也和原生 <text> 路径的 dx 算的是同一笔账。
+ */
+function squeezedHtml(text: string): string {
+  let out = '';
+  for (const ch of text) {
+    if (ch === '\n') { out += '<br/>'; continue; }
+    const em = squeezeEm(ch);
+    if (!em) { out += esc(ch); continue; }
+    out += `<span style="margin-${isOpening(ch) ? 'left' : 'right'}:-${em}em">${esc(ch)}</span>`;
+  }
+  return out;
+}
+
+function renderRun(run: TextRun, scale: number, squeeze = false): string {
   // 公式：排版成 SVG 后按内联块嵌进 HTML 流。用 vertical-align 把基线对上，
   // 否则公式会按整个盒子的底边对齐，视觉上比正文低一大截。
   if (run.math?.length) {
@@ -726,7 +745,9 @@ function renderRun(run: TextRun, scale: number): string {
         ` style="display:inline-block;vertical-align:${r(-m.d)}px;overflow:visible">${m.svg}</svg>`;
     }
   }
-  const content = run.text ? esc(run.text).replace(/\n/g, '<br/>') : '&#160;';
+  const content = run.text
+    ? (squeeze ? squeezedHtml(run.text) : esc(run.text).replace(/\n/g, '<br/>'))
+    : '&#160;';
   const span = `<span style="${runStyle(run, scale)}">${content}</span>`;
   if (run.link) {
     const target = run.link.startsWith('slide:')
@@ -775,7 +796,11 @@ function renderText(
     .map((p) => {
       const first = p.runs[0];
       const baseSize = (first?.size ?? 18) * scale;
-      const runs = p.runs.map((run) => renderRun(run, scale)).join('');
+      // 全角标点的空半格：这一段按全角放不下、挤掉就放得下时才收，
+      // 放得下的段落保持全角，与 PowerPoint 一致（见 cjk-punct.ts）
+      const squeeze = t.wrap
+        && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true);
+      const runs = p.runs.map((run) => renderRun(run, scale, squeeze)).join('');
 
       let bullet = '';
       if (p.bulletImage) {

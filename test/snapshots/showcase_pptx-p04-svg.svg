@@ -57,7 +57,7 @@
 <text x="9.6" y="199.74" text-anchor="start" xml:space="preserve">
 <tspan font-size="37.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="url(#s1)" font-weight="700">渐变文字效果</tspan>
 </text>
-<rect x="9.6" y="212.07" width="82.13" height="23.89" fill="rgb(255,241,118)"/>
+<rect x="9.6" y="212.07" width="149.33" height="23.89" fill="rgb(255,241,118)"/>
 <text x="9.6" y="229.57" text-anchor="start" xml:space="preserve">
 <tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">高亮标记的文字</tspan>
 </text>
@@ -103,57 +103,72 @@
 <g transform="translate(800 70)">
 <path d="M 0 0 L 450 0 L 450 170 L 0 170 Z" fill="rgb(245,247,250)" fill-rule="nonzero"/>
 <text x="9.6" y="18.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">双栏排版：左栏文本会自动流入右栏，用于验证 </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 -7.33 0 0 0 0 0 0 0 0">双栏排版：左栏文本会自动流入</tspan>
 </text>
 <text x="9.6" y="36.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">numCol 与 spcCol 的解析与渲染。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">右栏，用于验证 numCol 与 </tspan>
 </text>
 <text x="9.6" y="53.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二段继续填充，确保分栏高度计算正确。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">spcCol 的解析与渲染。</tspan>
 </text>
 <text x="9.6" y="71.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左栏流进右栏：只有发生换栏</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 -7.33 0 0 0 0 0">第二段继续填充，确保分栏高度</tspan>
 </text>
 <text x="9.6" y="88.93" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，分栏的断点计算与右栏的横向偏移才算被验证过。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">计算正确。</tspan>
 </text>
 <text x="9.6" y="106.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">再补一段把左栏彻底填满，剩余内容必须出现在右栏，否</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文本要足够长才会真的溢出左</tspan>
 </text>
 <text x="9.6" y="124.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">则这条分支等于没测。</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 -7.33 0 0 0 0 0 0 -7.33">栏流进右栏：只有发生换栏，分</tspan>
 </text>
 <text x="9.6" y="141.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">Latin filler keeps the </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">栏的断点计算与右栏的横向偏</tspan>
 </text>
 <text x="9.6" y="159.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">column break </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">移才算被验证过。</tspan>
 </text>
 <text x="237" y="18.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">deterministic because the</tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 0 -7.33 0">再补一段把左栏彻底填满，剩余</tspan>
 </text>
 <text x="237" y="36.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">headless text metric </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 -7.33 0 0 0">内容必须出现在右栏，否则这条</tspan>
 </text>
 <text x="237" y="53.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">falls back to a </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">分支等于没测。</tspan>
 </text>
 <text x="237" y="71.33" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">per-character estimate </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">Latin filler keeps the </tspan>
 </text>
 <text x="237" y="88.93" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">that under-measures CJK; </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">column break </tspan>
 </text>
 <text x="237" y="106.53" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">this sentence is long </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">deterministic because the</tspan>
 </text>
 <text x="237" y="124.13" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">enough to overflow the </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">headless text metric </tspan>
 </text>
 <text x="237" y="141.73" text-anchor="start" xml:space="preserve">
-<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">left column under either </tspan>
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">falls back to a </tspan>
 </text>
 <text x="237" y="159.33" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">per-character estimate </tspan>
+</text>
+<text x="237" y="176.93" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">that under-measures CJK; </tspan>
+</text>
+<text x="237" y="194.53" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">this sentence is long </tspan>
+</text>
+<text x="237" y="212.13" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">enough to overflow the </tspan>
+</text>
+<text x="237" y="229.73" text-anchor="start" xml:space="preserve">
+<tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">left column under either </tspan>
+</text>
+<text x="237" y="247.33" text-anchor="start" xml:space="preserve">
 <tspan font-size="14.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">measurement path.</tspan>
 </text>
 </g>
@@ -162,10 +177,10 @@
 <g transform="translate(800 270)">
 <path d="M 0 0 L 450 0 L 450 120 L 0 120 Z" fill="rgb(255,248,225)" fill-rule="nonzero"/>
 <text x="9.6" y="20.82" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 0 -9.33 0 0 0 0 0 0 0 0 0 -9.33 0 0 0 0 0 0 0 0 -9.33 0">normAutofit：字号缩放到 70%，行距压缩 10%，用于</tspan>
 </text>
 <text x="9.6" y="41.35" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">框。</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">验证自动适应文本框。</tspan>
 </text>
 </g>
 </g>

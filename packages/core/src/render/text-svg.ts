@@ -1,4 +1,5 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
+import { isFullWidth, isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
 import { layoutMath } from './math-svg';
 import type { MathLayout } from './math-svg';
 
@@ -101,7 +102,13 @@ function measure(text: string, run: TextRun, scale: number): number {
   if (!text) return 0;
   const g = ctx2d();
   const size = fontSize(run, scale);
-  if (!g) return text.length * size * 0.55;
+  if (!g) {
+    // 量不到字时的估算。全角字符必须按整格算 —— 一律当 0.55em 会把中文
+    // 窄掉将近一半，断行位置全错，而 Node / jsdom 里恒走这条路。
+    let w = 0;
+    for (const ch of text) w += isFullWidth(ch) ? size : size * 0.55;
+    return w;
+  }
   g.font = `${run.i ? 'italic ' : ''}${run.b ? '700 ' : '400 '}${size}px ${fontFamily(run)}`;
   const w = g.measureText(text).width;
   return w + (run.spacing ?? 0) * text.length;
@@ -120,6 +127,8 @@ interface Token {
   /** 硬换行 */
   br: boolean;
   space: boolean;
+  /** 全角标点的空半格，放不下时可以挤掉（见 cjk-punct.ts） */
+  squeeze: number;
 }
 
 function tokenize(runs: TextRun[], scale: number): Token[] {
@@ -127,7 +136,7 @@ function tokenize(runs: TextRun[], scale: number): Token[] {
   for (const run of runs) {
     if (run.math?.length) {
       // 公式整体不可断行
-      out.push({ text: run.text, run, width: measure(run.text, run, scale), br: false, space: false });
+      out.push({ text: run.text, run, width: measure(run.text, run, scale), br: false, space: false, squeeze: 0 });
       continue;
     }
     const text = applyCaps(run.text, run);
@@ -141,6 +150,7 @@ function tokenize(runs: TextRun[], scale: number): Token[] {
         width: piece === '\n' ? 0 : measure(piece, run, scale),
         br: piece === '\n',
         space: /^[^\S\n]+$/.test(piece),
+        squeeze: squeezeTotal(piece) * fontSize(run, scale),
       });
     }
   }
@@ -157,7 +167,14 @@ interface Line {
   segs: Seg[];
   width: number;
   size: number;
+  /** 本行全角标点合计能挤掉多少 */
+  squeeze: number;
+  /** 本行确实挤了标点才放得下；渲染时要把位移做出来 */
+  squeezed: boolean;
 }
+
+/** 行的实际占位宽度。挤压过的行要按挤压后算，否则居中 / 右对齐会偏 */
+const lineWidth = (line: Line): number => (line.squeezed ? line.width - line.squeeze : line.width);
 
 function pushSeg(line: Line, token: Token): void {
   const last = line.segs[line.segs.length - 1];
@@ -168,6 +185,7 @@ function pushSeg(line: Line, token: Token): void {
     line.segs.push({ text: token.text, run: token.run, width: token.width });
   }
   line.width += token.width;
+  line.squeeze += token.squeeze;
   // 公式比正文高，行高得按它的实际高度算，否则上下行会咬在一起
   const mh = token.run.math?.length ? mathOf(token.run, 1) : null;
   line.size = Math.max(line.size, mh ? (mh.h + mh.d) / 1.2 : token.run.size);
@@ -175,12 +193,15 @@ function pushSeg(line: Line, token: Token): void {
 
 function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: number): Line[] {
   const lines: Line[] = [];
-  let line: Line = { segs: [], width: 0, size: 0 };
+  const blank = (): Line => ({ segs: [], width: 0, size: 0, squeeze: 0, squeezed: false });
+  let line: Line = blank();
   let limit = Math.max(1, maxWidth - Math.max(0, firstIndent));
 
   const flush = (): void => {
+    // 自然宽度放不下、挤掉标点的空半格才放得下 —— 那就挤
+    line.squeezed = line.width > limit && line.width - line.squeeze <= limit;
     lines.push(line);
-    line = { segs: [], width: 0, size: 0 };
+    line = blank();
     limit = Math.max(1, maxWidth);
   };
 
@@ -189,14 +210,27 @@ function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: n
       flush();
       continue;
     }
-    if (wrapOn && line.width > 0 && line.width + token.width > limit) {
+    // 挤压优先于断行：先看挤掉标点空半格后放不放得下，放不下才断
+    const fits = line.width + token.width - (line.squeeze + token.squeeze) <= limit;
+    if (wrapOn && line.width > 0 && !fits) {
       if (token.space) continue; // 行尾空格丢弃
       flush();
     }
     pushSeg(line, token);
   }
-  lines.push(line);
+  flush();
   return lines;
+}
+
+/**
+ * 这个段落在给定宽度下需要挤压标点才放得下吗。
+ *
+ * 供 HTML 路径使用：那条路的断行归浏览器管，我们只能**先判断**再决定要不要
+ * 输出挤压标记。判断复用这里的分词与断行，两条路径的结论因此一致。
+ */
+export function paraNeedsSqueeze(p: Paragraph, maxWidth: number, scale: number, wrapOn: boolean): boolean {
+  if (maxWidth <= 0 || !p.runs.some((run) => squeezeTotal(run.text) > 0)) return false;
+  return wrap(tokenize(p.runs, scale), maxWidth, wrapOn, p.indent).some((l) => l.squeezed);
 }
 
 // ---------------- 渲染 ----------------
@@ -350,7 +384,8 @@ export function renderTextSvg(
 
       if (line.segs.length) {
         // 高亮底色需要绝对位置：按对齐方式反推行首 x
-        const lineStart = textAnchor === 'middle' ? x - line.width / 2 : textAnchor === 'end' ? x - line.width : x;
+        const lw = lineWidth(line);
+        const lineStart = textAnchor === 'middle' ? x - lw / 2 : textAnchor === 'end' ? x - lw : x;
         let cursor = lineStart;
         for (const seg of line.segs) {
           if (seg.run.highlight) {
@@ -360,7 +395,7 @@ export function renderTextSvg(
               `height="${r(sz * 1.12)}" fill="${seg.run.highlight}"/>`,
             );
           }
-          cursor += seg.width;
+          cursor += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
         }
         if (line.segs.some((seg) => seg.run.math?.length)) {
           // 公式是 <g>，塞不进 <text>。含公式的行改为按绝对 x 逐段输出，
@@ -377,10 +412,12 @@ export function renderTextSvg(
                 ` xml:space="preserve">${spanSvg(seg, scale, addDef)}</text>`,
               );
             }
-            cx += seg.width;
+            cx += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
           }
         } else {
-          const tspans = line.segs.map((seg) => spanSvg(seg, scale, addDef)).join('');
+          const tspans = line.squeezed
+            ? squeezedSpans(line, scale, addDef)
+            : line.segs.map((seg) => spanSvg(seg, scale, addDef)).join('');
           out.push(
             `<text x="${r(x)}" y="${r(baseline)}" text-anchor="${rtl ? flipAnchor(textAnchor) : textAnchor}"` +
             (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
@@ -445,7 +482,40 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
   return `url(#${id})`;
 }
 
-function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string): string {
+/**
+ * 挤压过的行：用 `<tspan dx>` 把标点的空半格收掉。
+ *
+ * `dx` 是**逐字符**的位移列表，所以只要在该收的下标处放一个负值即可，
+ * 后面的字符会跟着整体左移。这样做与字体无关——不依赖字体是否提供
+ * `halt` 半角替换字形，量多少就是多少。
+ *
+ * 位移可能落在段与段的交界上（比如标点和它后面的字属于不同 run），
+ * 那就带到下一段的第一个字符上去。
+ */
+function squeezedSpans(line: Line, scale: number, addDef: (m: string) => string): string {
+  let carry = 0; // 位移落在段与段交界上时，带给下一段的第一个字符
+  return line.segs.map((seg) => {
+    const em = fontSize(seg.run, scale);
+    const chars = [...seg.text];
+    const dx = chars.map(() => 0);
+    let any = carry !== 0;
+    if (chars.length) dx[0] = carry;
+    carry = 0;
+
+    for (let i = 0; i < chars.length; i++) {
+      const amount = squeezeEm(chars[i]) * em;
+      if (!amount) continue;
+      any = true;
+      if (isOpening(chars[i])) dx[i] -= amount;              // 起始标点：自己左移
+      else if (i + 1 < chars.length) dx[i + 1] -= amount;    // 收尾标点：后面的字左移
+      else carry -= amount;                                  // 落在段末：带给下一段
+    }
+    return spanSvg(seg, scale, addDef, any ? dx : undefined);
+  }).join('');
+}
+
+/** `dx` 非空时按逐字符位移输出（标点挤压用，见 squeezedSpans） */
+function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: number[]): string {
   const run = seg.run;
   const size = fontSize(run, scale);
   const grad = run.gradient ? gradientFill(run.gradient, addDef) : null;
@@ -463,6 +533,7 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string): string
   if (deco.length) attrs.push(`text-decoration="${deco.join(' ')}"`);
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
   if (run.outline) attrs.push(`stroke="${run.outline.color}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
+  if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
   const span = `<tspan ${attrs.join(' ')}>${esc(seg.text)}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
   return run.baseline ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;

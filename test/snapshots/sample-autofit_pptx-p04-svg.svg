@@ -14,16 +14,19 @@
 <g transform="translate(60 180)">
 <path d="M 0 0 L 420 0 L 420 140 L 0 140 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
 <text x="9.6" y="17.28" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢出，渲染器应当自行计算缩放比例把它塞进框内，而不</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢</tspan>
 </text>
 <text x="9.6" y="33.28" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">是让它溢出到版面之外。真实演讲文件里大量文本框只写了裸的 normAutofit 而不带 fontScale</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 -6.67 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6.67 0 0 0 0 0 0 0 0">出，渲染器应当自行计算缩放比例把它塞进框内，而不是让它溢出到版</tspan>
 </text>
 <text x="9.6" y="49.28" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，PowerPoint 与 LibreOffice 都会自行计算缩放；若照标称字号渲染，整段文字会盖住下方内</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 -6.67 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">面之外。真实演讲文件里大量文本框只写了裸的 normAutofit 而不</tspan>
 </text>
 <text x="9.6" y="65.28" text-anchor="start" xml:space="preserve">
-<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">容甚至跑出版面。</tspan>
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 0 -6.67 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">带 fontScale，PowerPoint 与 LibreOffice 都会自行计算缩放；</tspan>
+</text>
+<text x="9.6" y="81.28" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">若照标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</tspan>
 </text>
 </g>
 </g>

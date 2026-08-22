@@ -174,6 +174,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
 | MTX 压缩的嵌入字体 | PowerPoint 的 `fntdata` 是 EOT 容器，绝大多数还开着 MTX 压缩。未压缩的容器 core 自己剥（含异或混淆），压缩的需要注入解码器：`setFontDecoder(eotToTtf)`（来自 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor)）。不注入就跳过这些字体，回退到替换字体，而不是塞一份浏览器注定拒绝的字节 |
 | 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题——装原字体、用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](packages/fonts) 换成度量兼容的免费替代字体（Calibri→Carlito 这类，前进宽度逐字相等）都能对齐 |
+| CJK 标点挤压 | 只做了「放不下才挤」这一条：一行按全角放不下、挤掉 `，` `。` 的空半格就放得下时才挤。PowerPoint 完整的挤压规则（连续标点、行首行尾各有不同处理）更细，但那些差异只影响标点周围的空隙，不改断行位置 |
 | 网络字体到达前的断行 | 原生 `<text>` 路径用 canvas 量字宽，而字体是异步加载的：首帧会按回退字体断行。`foreignObject` 路径由浏览器排版，不受影响 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
@@ -185,7 +186,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1848 项断言 + 160 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，1858 项断言 + 160 个渲染快照 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |

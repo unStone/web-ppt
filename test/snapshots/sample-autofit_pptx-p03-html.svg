@@ -20,7 +20,8 @@
 <foreignObject width="420" height="140" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:420px;height:140px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢出，渲染器应当自行计算缩放比例把它塞进框内，而不是让它溢出到版面之外。真实演讲文件里大量文本框只写了裸的 normAutofit 而不带 fontScale，PowerPoint 与 LibreOffice 都会自行计算缩放；若照标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</span>
+<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自动缩放回归<span style="margin-right:-0.5em">：</span>这一段文字在给定的文本框里按标称字号排版必定溢出<span style="margin-right:-0.5em">，</span>渲染器应当自行计算缩放比例把它塞进框内<span style="margin-right:-0.5em">，</span>而不是让它溢出到版面之外<span style="margin-right:-0.5em">。</span>真实演讲文件里大量文本框只写了裸的 normAutofit 而不带 fontScale<span style="margin-right:-0.5em">，</span>PowerPoint 与 LibreOffice 都会自行计算缩放<span style="margin-right:-0.5em">；</span>若照标称字号渲染<span style="margin-right:-0.5em">，</span>整段文字会盖住下方内容甚至跑出版面<span style="margin-right:-0.5em">。</span>
+</span>
 </div>
 </div>
 </foreignObject>

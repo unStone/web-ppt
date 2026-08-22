@@ -13,20 +13,23 @@
 <g data-el="102" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(60 180)">
 <path d="M 0 0 L 420 0 L 420 140 L 0 140 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
-<text x="9.6" y="23.75" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动缩放回归：这一段文字在给定的文本框里按标称字号排版必定溢出，渲染器应</tspan>
+<text x="9.6" y="19.98" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 -8.11 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">自动缩放回归：这一段文字在给定的文本框里按标称字号</tspan>
 </text>
-<text x="9.6" y="48.03" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">当自行计算缩放比例把它塞进框内，而不是让它溢出到版面之外。真实演讲文件里</tspan>
+<text x="9.6" y="39.45" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 -8.11 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">排版必定溢出，渲染器应当自行计算缩放比例把它塞进框</tspan>
 </text>
-<text x="9.6" y="72.32" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">大量文本框只写了裸的 normAutofit 而不带 fontScale</tspan>
+<text x="9.6" y="58.92" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 -8.11 0 0 0 0 0 0 0 0 0 0 0 0 -8.11 0 0 0 0 0 0 0 0 0">内，而不是让它溢出到版面之外。真实演讲文件里大量文</tspan>
 </text>
-<text x="9.6" y="96.61" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">，PowerPoint 与 LibreOffice 都会自行计算缩放；若</tspan>
+<text x="9.6" y="78.38" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">本框只写了裸的 normAutofit 而不带 fontScale，</tspan>
 </text>
-<text x="9.6" y="120.9" text-anchor="start" xml:space="preserve">
-<tspan font-size="20.24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">照标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</tspan>
+<text x="9.6" y="97.85" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -8.11 0">PowerPoint 与 LibreOffice 都会自行计算缩放；若照</tspan>
+</text>
+<text x="9.6" y="117.32" text-anchor="start" xml:space="preserve">
+<tspan font-size="16.22" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 -8.11 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">标称字号渲染，整段文字会盖住下方内容甚至跑出版面。</tspan>
 </text>
 </g>
 </g>

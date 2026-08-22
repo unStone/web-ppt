@@ -267,7 +267,7 @@
 <text x="9.6" y="29.67" text-anchor="start" xml:space="preserve">
 <tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">行内混排：当 </tspan>
 </text>
-<g transform="translate(91.73 29.67)">
+<g transform="translate(149.33 29.67)">
 <text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
 <text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 <text x="23.66" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;" fill="rgb(0,0,0)" xml:space="preserve">+</text>
@@ -277,10 +277,10 @@
 <text x="73.73" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">r</text>
 <text x="87.41" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </g>
-<text x="189.13" y="29.67" text-anchor="start" xml:space="preserve">
+<text x="246.73" y="29.67" text-anchor="start" xml:space="preserve">
 <tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> 时，半径为 </tspan>
 </text>
-<g transform="translate(271.26 29.67)">
+<g transform="translate(376.86 29.67)">
 <path d="M 0 -9.07 L 3.96 -4.28 L 8.18 5.28 L 13.2 -26.6 L 76.61 -26.6" fill="none" stroke="rgb(0,0,0)" stroke-width="1.2" stroke-linejoin="miter"/>
 <text x="14.64" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
 <text x="28.32" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
@@ -288,7 +288,7 @@
 <text x="51.5" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">y</text>
 <text x="65.18" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
 </g>
-<text x="347.87" y="29.67" text-anchor="start" xml:space="preserve">
+<text x="453.47" y="29.67" text-anchor="start" xml:space="preserve">
 <tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> ，这是圆的方程。</tspan>
 </text>
 </g>

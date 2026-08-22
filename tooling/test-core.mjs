@@ -1671,6 +1671,78 @@ group('字体替换');
   check('改写不残留替代字体名', !out.includes('Noto Sans SC'), out);
 }
 
+// ---------------- 14e. 标点挤压 ----------------
+
+group('CJK 标点挤压');
+{
+  // 汉字和全角标点都占一整格，一行放不下时 PowerPoint 会把标点的空半格挤掉。
+  // 不做这件事就会多断出一行 —— 换字体救不了，所有中文字体的格子一样大。
+  const box = globalThis.document.createElement('div');
+  globalThis.document.body.appendChild(box);
+
+  const mk = (text, w, size = 46.2) => ({
+    kind: 'shape', x: 0, y: 0, w, h: 200, rot: 0, flipH: false, flipV: false, path: null,
+    fill: null, stroke: null,
+    text: {
+      anchor: 'top', insets: [4.8, 9.6, 4.8, 9.6], wrap: true, fontScale: 1,
+      paragraphs: [{
+        align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null, lineHeight: null,
+        spaceBefore: 0, spaceAfter: 0,
+        runs: [{ text, b: false, i: false, u: false, strike: false, size, color: '#000', fonts: ['黑体'] }],
+      }],
+    },
+  });
+  const pres = { width: 1280, height: 720, source: 'pptx', slides: [] };
+  const html = (el) => lib.renderSlideToSvg(pres, { background: null, elements: [el] }, { textMode: 'html' });
+  const svgOf = (el) => lib.renderSlideToSvg(pres, { background: null, elements: [el] }, { textMode: 'svg' });
+
+  // 用户实际踩到的那一行：8 个全角字 = 369.6px，可用 353.8px，挤掉两个标点的
+  // 空半格省 46.2px 正好放得下（PowerPoint 存的 spAutoFit 框高也是一行）
+  {
+    const tight = html(mk('数一数，画一画。', 373));
+    check('放不下时收掉标点的空半格', (tight.match(/margin-right:-0\.5em/g) ?? []).length === 2, tight.slice(0, 400));
+  }
+  // 同一段文字给足宽度就不该动它 —— 放得下时保持全角，与 PowerPoint 一致
+  {
+    const loose = html(mk('数一数，画一画。', 900));
+    check('放得下时不挤', !loose.includes('margin-right:-0.5em'));
+  }
+  // 起始符号空的是左半格，收的是左边
+  {
+    const open = html(mk('（数一数）（画一画）（记一记）', 500));
+    check('起始符号收左边', open.includes('margin-left:-0.5em'), open.slice(0, 300));
+    check('收尾符号收右边', open.includes('margin-right:-0.5em'));
+  }
+  // 没有标点可挤时不该凭空产生标记
+  {
+    const none = html(mk('数一数画一画数一数画一画', 373));
+    check('无标点不产生挤压标记', !none.includes('margin-right:-0.5em'));
+  }
+  // 原生 <text> 路径用逐字符 dx 表达同一笔账，与字体无关
+  {
+    const native = svgOf(mk('数一数，画一画。', 373));
+    const dx = /dx="([^"]+)"/.exec(native);
+    check('原生路径输出 dx', !!dx, native.slice(0, 300));
+    if (dx) {
+      const vals = dx[1].split(' ').map(Number);
+      eq('dx 长度等于字符数', vals.length, 8);
+      // 逗号在下标 3，位移落在它后面那个字上；半格 = 46.2 / 2
+      near('逗号后的字左移半格', vals[4], -23.1, 0.1);
+      check('其余字符不动', vals.filter((v, i) => i !== 4).every((v) => v === 0), dx[1]);
+    }
+  }
+
+  // 量不到字时的回退估算：全角必须按整格算，否则中文窄掉将近一半、断行全错
+  {
+    const wide = svgOf(mk('数一数画一画', 200, 40));
+    const latin = svgOf(mk('nnnnnn', 200, 40));
+    // 同样 6 个字符，中文该比拉丁宽得多；宽度差异体现在断行上
+    check('中文按整格估算', (wide.match(/<text /g) ?? []).length >= (latin.match(/<text /g) ?? []).length,
+      `中文 ${(wide.match(/<text /g) ?? []).length} 行 vs 拉丁 ${(latin.match(/<text /g) ?? []).length} 行`);
+  }
+  box.remove();
+}
+
 // ---------------- 15. 渲染快照 ----------------
 
 group('headless 状态机');

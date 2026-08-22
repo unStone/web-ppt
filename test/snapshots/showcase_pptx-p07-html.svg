@@ -370,7 +370,8 @@
 <foreignObject width="400" height="26" style="overflow:visible">
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:400px;height:26px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）</span>
+<span style="font-size:13.33px;color:rgb(64,64,64);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">下面 5 个方块带入场动画<span style="margin-right:-0.5em">，</span>最后一个还会退场<span style="margin-left:-0.5em">（</span>演示模式逐次点击<span style="margin-right:-0.5em">）</span>
+</span>
 </div>
 </div>
 </foreignObject>
