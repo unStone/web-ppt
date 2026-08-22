@@ -1183,16 +1183,16 @@ group('查看器');
     }
 
     // 缩略图是静态产物，没有后续的 applyVisibility，隐藏状态只能在渲染时
-    // 烘进 SVG —— 否则动画页的缩略图会把几帧叠在一起。它显示的必须是
-    // **初始态**，跟主视图、跟进全屏后的第一帧是同一个画面
+    // 烘进 SVG —— 否则动画页的缩略图会把几帧叠在一起。它显示的是**终态**，
+    // 与主视图一致（也与 PowerPoint 的缩略图一致）
     {
-      const animIdx = pres.slides.findIndex((s) => s.animations?.length);
-      if (check('存在含动画的页', animIdx >= 0)) {
+      const animIdx = pres.slides.findIndex((s) => s.animations?.some((a) => a.kind === 'exit'));
+      if (check('存在含退场动画的页', animIdx >= 0)) {
         const vt = new viewerLib.Viewer(box, pres, {});
         const thumb = vt.renderSlide(animIdx);
-        check('缩略图烘进初始态隐藏', thumb.includes('visibility:hidden'));
+        check('缩略图烘进终态隐藏', thumb.includes('visibility:hidden'));
         for (const id of lib.staticHidden(pres.slides[animIdx])) {
-          check(`缩略图隐藏了入场元素 ${id}`,
+          check(`缩略图隐藏了退场元素 ${id}`,
             new RegExp(`data-el="${id}" style="visibility:hidden`).test(thumb), thumb.slice(0, 200));
         }
         check('主视图不烘隐藏（交给 applyVisibility）', !vt.slideSvg(animIdx).includes('visibility:hidden'));
@@ -1216,7 +1216,7 @@ group('查看器');
               path: 'M0 0L50 0L50 50Z', fill: { type: 'solid', color: '#000' }, stroke: null, text: null,
             }],
           }],
-          animations: [{ target: 7, kind: 'entrance', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
+          animations: [{ target: 7, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
         }],
       };
       const host = globalThis.document.createElement('div');
@@ -1418,29 +1418,33 @@ group('播放引擎');
     }
     check('运动路径元素始终可见', !viewerLib.hiddenBefore(real, 0).has(706));
 
-    // 静态渲染取**初始态**——翻到这一页时观众看到的第一眼。既不能把不同时刻的
-    // 元素叠在一起（orcid-ooxml-strict 第 7 页三段文字就是这么糊掉的），也必须与
-    // 演示模式的起点一致，否则一进全屏画面就跳一下。
+    // 静态渲染取**终态**——这一页演完的样子，与 PowerPoint 的普通视图一致。
+    // 演示模式从第一步建，所以进全屏会跳一次，那是预期行为。
+    // 不能简单摊开全画：入场与退场的元素属于不同时刻（orcid-ooxml-strict
+    // 第 7 页三段文字就是这么糊掉的）。
     const stat = lib.staticHidden(anim);
-    eq('静态初始态隐藏全部入场元素', [...stat].sort().join(','), '701,702,703,704,705');
-    check('未参与动画的元素照常可见', ![706, 707].some((id) => stat.has(id)));
-    check('与演示模式起点一致', [...stat].sort().join(',') === [...viewerLib.hiddenBefore(real, 0)].sort().join(','));
+    eq('静态终态只隐藏退场的 705', [...stat].join(','), '705');
+    check('入场元素在终态都现身', ![701, 702, 703, 704].some((id) => stat.has(id)));
+    check('与演示模式终点一致',
+      [...stat].sort().join(',') === [...viewerLib.hiddenBefore(real, real.length)].sort().join(','));
+    check('与演示模式起点不同（进全屏该跳一次）',
+      [...stat].sort().join(',') !== [...viewerLib.hiddenBefore(real, 0)].sort().join(','));
     check('无动画的页静态隐藏集为空', lib.staticHidden(pres.slides[0]).size === 0);
-    // 整页元素都带入场动画的封面页：初始态一片空白，那还不如全画出来
-    const allEnter = {
+    // 全员退场的收尾页：终态一片空白，那还不如全画出来
+    const allGone = {
       elements: [{ kind: 'shape', id: 1 }, { kind: 'shape', id: 2 }],
       animations: [
-        { target: 1, kind: 'entrance', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
-        { target: 2, kind: 'entrance', clickGroup: 1, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
+        { target: 1, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
+        { target: 2, kind: 'exit', clickGroup: 1, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
       ],
     };
-    eq('初始态清空整页时退回全部可见', lib.staticHidden(allEnter).size, 0);
-    // 只有退场动画的页：初始态就是全部可见
-    const onlyExit = {
+    eq('终态清空整页时退回全部可见', lib.staticHidden(allGone).size, 0);
+    // 只有入场动画的页（最常见）：终态就是全部可见
+    const onlyEnter = {
       elements: [{ kind: 'shape', id: 1 }, { kind: 'shape', id: 2 }],
-      animations: [{ target: 1, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
+      animations: [{ target: 1, kind: 'entrance', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
     };
-    eq('只有退场时初始态全可见', lib.staticHidden(onlyExit).size, 0);
+    eq('只有入场时终态全可见', lib.staticHidden(onlyEnter).size, 0);
     // 缩略图没有后续的 applyVisibility，隐藏状态必须烘进 SVG
     check('缩略图渲染烘进终态隐藏',
       lib.renderSlideToSvg(pres, anim, { hiddenElements: [...stat] }).includes('visibility:hidden'));
@@ -1965,8 +1969,8 @@ group('headless 状态机');
       const st3 = new St(animPres, { animate: true, index: animIdx });
       st3.setAnimate(false);
       eq('关闭动画后无批次', st3.animationTotal, 0);
-      // 关掉动画不等于全部画出来：静态画面取动画初始态，与演示起点一致
-      eq('关闭动画后隐藏入场元素', [...st3.hiddenElementIds].sort().join(','), '701,702,703,704,705');
+      // 关掉动画不等于全部画出来：静态画面取动画终态
+      eq('关闭动画后仍隐藏退场元素', [...st3.hiddenElementIds].join(','), '705');
       st3.destroy();
     }
     st.destroy();

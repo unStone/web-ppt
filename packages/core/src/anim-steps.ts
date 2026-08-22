@@ -39,20 +39,20 @@ export function hiddenBefore(groups: AnimStep[][], upTo: number): Set<number> {
 /**
  * 静态渲染（不播动画）时该隐藏哪些元素。
  *
- * 取动画的**初始态**，也就是「翻到这一页时观众看到的第一眼」。
+ * 取动画的**终态**，也就是「这一页演完的样子」——与 PowerPoint 的普通视图和
+ * 缩略图一致。演示模式则从第一步开始建，所以进全屏那一下画面会跳一次；
+ * 那不是 bug，PowerPoint 按 F5 也是这个行为。
  *
- * 两个理由。一是不能「全部可见」：一页里入场与退场的元素属于不同时刻，
- * 全画出来等于把几帧叠在一起——orcid-ooxml-strict 第 7 页三段文字本该逐条
- * 替换，叠起来一个字都读不出。二是必须与演示模式的起点一致：缩略图、
- * 主视图、进全屏后的第一帧是同一个画面，否则一进全屏就「跳一下」，
- * 看着像先把这页演完再从头演一遍。
+ * 不能简单「全部画出来」：一页里入场与退场的元素属于不同时刻，摊开画等于把
+ * 几帧叠在一起——orcid-ooxml-strict 第 7 页三段文字本该逐条替换，
+ * 叠起来一个字都读不出。
  *
- * 例外是整页元素都带入场动画的封面页：初始态一片空白，那还不如全画出来。
+ * 例外是全员退场的收尾页：终态一片空白，那还不如全画出来。
  */
 export function staticHidden(slide: Slide): Set<number> {
   const groups = groupSteps(slide.animations);
   if (!groups.length) return new Set();
-  const hidden = hiddenBefore(groups, 0);
+  const hidden = hiddenBefore(groups, groups.length);
   if (!hidden.size) return hidden;
 
   const ids: number[] = [];
@@ -63,6 +63,6 @@ export function staticHidden(slide: Slide): Set<number> {
     }
   };
   walk(slide.elements);
-  // 有 id 的元素全被藏光 → 初始态是空页，退回全部可见
+  // 有 id 的元素全被藏光 → 终态是空页，退回全部可见
   return ids.length && ids.every((id) => hidden.has(id)) ? new Set() : hidden;
 }
