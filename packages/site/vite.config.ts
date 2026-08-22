@@ -18,15 +18,13 @@ export default defineConfig({
       input: Object.fromEntries(PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])),
       output: {
         /**
-         * 共享 chunk 显式命名。
+         * 共享 chunk 与样式表显式命名。
          *
-         * 默认名取自 rollup 随手挑的某个内部模块，上一版叫 `fetch-bytes-*.js` ——
-         * 整个引擎都在这个 chunk 里，名字却像个埋点脚本，实测被浏览器拦截器
-         * 判成 ERR_BLOCKED_BY_CLIENT，一挡就是整站白屏。名字本来就没有含义，
-         * 不如钉一个中性的。
+         * 默认名取自 rollup 随手挑中的某个内部模块——上一版整个引擎所在的 chunk
+         * 叫 `fetch-bytes-*.js`，样式表也跟着叫这个。名字与内容毫无关系，
+         * 换个 import 顺序就会变，排查线上问题时纯属干扰。
          */
         chunkFileNames: 'assets/engine-[hash].js',
-        // 样式表同理：它的默认名也来自那个随机挑中的模块
         assetFileNames: (info) =>
           info.name?.endsWith('.css') ? 'assets/style-[hash][extname]' : 'assets/[name]-[hash][extname]',
       },
