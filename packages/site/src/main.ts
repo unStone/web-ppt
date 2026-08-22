@@ -336,16 +336,34 @@ function showLinkToast(href: string): void {
 
 const presenting = (): boolean => document.fullscreenElement === stageWrap;
 
+/**
+ * 等浏览器真的把当前 DOM 画出一帧。
+ *
+ * 改完 DOM 就立刻请求全屏是不够的：两件事在同一个任务里，中间一帧都没画，
+ * 全屏放大动画拿到的还是**上一帧的像素**。后台标签页里 rAF 不触发，
+ * 所以补一个定时器兜底，谁先到算谁。
+ */
+function nextPaint(): Promise<void> {
+  return new Promise((res) => {
+    let done = false;
+    const go = (): void => { if (!done) { done = true; res(); } };
+    requestAnimationFrame(() => requestAnimationFrame(go));
+    setTimeout(go, 60);
+  });
+}
+
 async function enterPresent(): Promise<void> {
   if (!viewer || presenting()) return;
 
-  // 顺序不能反：必须先切到动画初始态，再请求全屏。
-  // 反过来的话，浏览器全屏放大那两三百毫秒里画面还停在静态终态，
-  // 进去了才跳回第一步 —— 看着就是「先把这页演完，再从头演一遍」。
+  // 先切到动画初始态，**并且等它真的画出来**，再请求全屏。
+  // 少了这一步，全屏放大那两三百毫秒里显示的还是上一帧（静态终态），
+  // 进去之后才跳回第一步 —— 看着就是「先把这页演完，再从头演一遍」。
   // 演示模式才播动画：嵌在页面里时逐批点击会让翻页变得很慢。
   viewer.setAnimate(true);
   linkToast.hidden = true;
+  await nextPaint();
   try {
+    // 等一两帧不会丢掉用户手势授权（Chrome 的瞬时激活有 5 秒）
     await stageWrap.requestFullscreen();
   } catch {
     viewer.setAnimate(false); // 没进成全屏就退回静态终态，别把内嵌视图留在第 0 步

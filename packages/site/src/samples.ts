@@ -228,11 +228,18 @@ async function openSample(s: Sample): Promise<void> {
 q<HTMLButtonElement>('.preview-close').addEventListener('click', closePreview);
 q<HTMLButtonElement>('.preview-prev').addEventListener('click', () => viewer?.prev());
 q<HTMLButtonElement>('.preview-next').addEventListener('click', () => viewer?.next());
-q<HTMLButtonElement>('.preview-full').addEventListener('click', () => {
+q<HTMLButtonElement>('.preview-full').addEventListener('click', async () => {
   const v = viewer;
   if (!v) return;
-  // 先切初始态再进全屏，理由同首页：反过来会先把这页演完再从头演一遍
+  // 先切初始态、等它真的画出来，再进全屏。理由同首页：同一个任务里改完 DOM
+  // 就请求全屏的话，放大动画拿到的还是上一帧像素（静态终态）
   v.setAnimate(true);
+  await new Promise<void>((res) => {
+    let done = false;
+    const go = (): void => { if (!done) { done = true; res(); } };
+    requestAnimationFrame(() => requestAnimationFrame(go));
+    setTimeout(go, 60);
+  });
   pWrap.requestFullscreen().catch(() => v.setAnimate(false));
 });
 document.addEventListener('fullscreenchange', () => {
