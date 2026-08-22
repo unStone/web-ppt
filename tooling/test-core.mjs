@@ -268,7 +268,7 @@ const FIXTURES = [
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
-  { file: 'sample-autofit.pptx', minPages: 5, source: 'pptx' },
+  { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
@@ -1669,6 +1669,32 @@ group('字体替换');
   check('src 以 local() 开头', /src:\s*local\('微软雅黑'\), url\(/.test(out), out);
   check('unicode-range 原样保留', out.includes('unicode-range: U+4e00-9fff'), out);
   check('改写不残留替代字体名', !out.includes('Noto Sans SC'), out);
+}
+
+// ---------------- 14f. 行距 ----------------
+
+group('行距');
+{
+  // spcPct 是「单倍行距」的百分比，而单倍行距是**字体行高**（≈1.2em）不是字号。
+  // 把 150% 直接当 CSS 的 line-height:1.5 用，每行会矮两成 —— 实测一份课件里
+  // 150% 行距的文本框，PowerPoint 存的 spAutoFit 框高 164.7px，
+  // 按 1.5 算只有 137.6px，按 1.2×1.5 算是 163.2px。
+  const pres = parsed.get('sample-autofit.pptx');
+  if (check('行距固件已解析', !!pres && pres.slides.length >= 6)) {
+    const target = allElements(pres).find(
+      (el) => el.kind === 'shape' && el.text?.paragraphs.some((p) => /百分比行距/.test(p.runs?.[0]?.text ?? '')),
+    );
+    if (check('找到行距对照的文本框', !!target)) {
+      const [pct, pts] = target.text.paragraphs;
+      near('150% 换算成 1.2 × 1.5', pct.lineHeight, 1.8, 0.001);
+      // 绝对行距 24pt = 32px，字号 14pt = 18.67px → 倍数 1.714
+      near('24pt 绝对行距按字号折算', pts.lineHeight, 32 / (14 * (96 / 72)), 0.01);
+      check('两种行距换算结果不同', pct.lineHeight !== pts.lineHeight);
+
+      const svg = lib.renderSlideToSvg(pres, pres.slides[5]);
+      check('百分比行距写进 CSS', svg.includes('line-height:1.8'), svg.slice(0, 200));
+    }
+  }
 }
 
 // ---------------- 14e. 标点挤压 ----------------

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="116" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 60)">
+<path d="M 0 0 L 1200 0 L 1200 60 L 0 60 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="40.75" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">行距 150% (spcPct) 与 24pt (spcPts) 对照</tspan>
+</text>
+</g>
+</g>
+<g data-el="117" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 180)">
+<path d="M 0 0 L 420 0 L 420 140 L 0 140 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>
+<text x="9.6" y="31.01" text-anchor="start" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 0 -9.33 0 0 0 0 0 0 -9.33 0 0 0 0 0">百分比行距 150%：这一段有三行，用来验证行高</tspan>
+</text>
+<text x="9.6" y="64.61" text-anchor="start" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">的基准是字体行高而不是字号。</tspan>
+</text>
+<text x="9.6" y="96.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 -9.33 0 0 0 0 -9.33 0 0 0 0 0 0 0 0">绝对行距 24pt：同样三行，换算方式与百分比行</tspan>
+</text>
+<text x="9.6" y="128.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">距不同。</tspan>
+</text>
+</g>
+</g>
+<g data-el="118" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(520 180)">
+<path d="M 0 0 L 400 0 L 400 140 L 0 140 Z" fill="none" fill-rule="nonzero"/>
+<text x="200" y="74.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(96,96,96)">左侧框 420×140，标称 20pt</tspan>
+</text>
+</g>
+</g>
+</svg>

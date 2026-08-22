@@ -382,7 +382,11 @@ export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | 
     }
 
     const maxSize = Math.max(...runs.map((r) => r.size), 1);
-    let lineHeight: number | null = merged.lnPct ?? null;
+    // spcPct 是「单倍行距」的百分比，而单倍行距是**字体的行高**（≈1.2em），不是字号。
+    // 直接把 150% 当成 CSS 的 line-height:1.5 用，每行会矮两成。实测一份课件里
+    // 150% 行距的文本框：PowerPoint 存的 spAutoFit 框高 164.7px，按 1.5 算只有
+    // 137.6px，按 1.2×1.5 算是 163.2px —— 后者才对得上。
+    let lineHeight: number | null = merged.lnPct !== undefined ? merged.lnPct * DEFAULT_LINE_HEIGHT : null;
     if (lineHeight === null && merged.lnPx) lineHeight = merged.lnPx / maxSize;
     // normAutofit 的行距压缩对默认行距同样生效——早期只在显式设过行距时才减，
     // 导致大多数自动缩放文本框的压缩量被静默丢弃。

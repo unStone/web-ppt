@@ -30,6 +30,13 @@ const SHORT = '<a:p><a:r><a:rPr sz="2000"/><a:t>短文字，放得下</a:t></a:r
 
 const BOX = { x: 60, y: 180, w: 420, h: 140 };
 
+/** 两段同样的文字，一段 150% 百分比行距、一段 24pt 绝对行距 */
+const SPACED =
+  '<a:p><a:pPr><a:lnSpc><a:spcPct val="150000"/></a:lnSpc></a:pPr>'
+  + '<a:r><a:rPr sz="1400"/><a:t>百分比行距 150%：这一段有三行，用来验证行高的基准是字体行高而不是字号。</a:t></a:r></a:p>'
+  + '<a:p><a:pPr><a:lnSpc><a:spcPts val="2400"/></a:lnSpc></a:pPr>'
+  + '<a:r><a:rPr sz="1400"/><a:t>绝对行距 24pt：同样三行，换算方式与百分比行距不同。</a:t></a:r></a:p>';
+
 const page = (title, text, bodyPr) => slideXml(
   sp({
     x: 40, y: 60, w: W - 80, h: 60, prst: 'rect', fill: '<a:noFill/>',
@@ -51,6 +58,10 @@ const PAGES = [
   // 极端长文本：想塞进去需要缩到 25% 以下，用来验证下限确实生效
   ['远超容量 → 缩到 25% 下限为止', LONG.replace('</a:t>', '重复'.repeat(1500) + '</a:t>'),
     '<a:bodyPr><a:normAutofit/></a:bodyPr>'],
+  // 行距：spcPct 是「单倍行距」的百分比，而单倍行距是字体行高（≈1.2em）不是字号。
+  // 把 150% 直接当 CSS line-height:1.5 用，每行会矮两成；spcPts 则是绝对点值，
+  // 两条必须走不同的换算，放在一页里对照着看。
+  ['行距 150% (spcPct) 与 24pt (spcPts) 对照', SPACED, '<a:bodyPr/>'],
 ];
 const SLIDES = PAGES.map(([t, txt, bp]) => page(t, txt, bp));
 
