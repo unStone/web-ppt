@@ -220,8 +220,11 @@ q<HTMLButtonElement>('.preview-close').addEventListener('click', closePreview);
 q<HTMLButtonElement>('.preview-prev').addEventListener('click', () => viewer?.prev());
 q<HTMLButtonElement>('.preview-next').addEventListener('click', () => viewer?.next());
 q<HTMLButtonElement>('.preview-full').addEventListener('click', () => {
-  if (!viewer) return;
-  void pWrap.requestFullscreen().then(() => viewer?.setAnimate(true)).catch(() => undefined);
+  const v = viewer;
+  if (!v) return;
+  // 先切初始态再进全屏，理由同首页：反过来会先把这页演完再从头演一遍
+  v.setAnimate(true);
+  pWrap.requestFullscreen().catch(() => v.setAnimate(false));
 });
 document.addEventListener('fullscreenchange', () => {
   if (document.fullscreenElement !== pWrap) viewer?.setAnimate(false);

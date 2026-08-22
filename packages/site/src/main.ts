@@ -287,14 +287,19 @@ const presenting = (): boolean => document.fullscreenElement === stageWrap;
 
 async function enterPresent(): Promise<void> {
   if (!viewer || presenting()) return;
+
+  // 顺序不能反：必须先切到动画初始态，再请求全屏。
+  // 反过来的话，浏览器全屏放大那两三百毫秒里画面还停在静态终态，
+  // 进去了才跳回第一步 —— 看着就是「先把这页演完，再从头演一遍」。
+  // 演示模式才播动画：嵌在页面里时逐批点击会让翻页变得很慢。
+  viewer.setAnimate(true);
+  linkToast.hidden = true;
   try {
     await stageWrap.requestFullscreen();
   } catch {
-    return; // 用户拒绝或环境不支持，保持原样即可
+    viewer.setAnimate(false); // 没进成全屏就退回静态终态，别把内嵌视图留在第 0 步
+    return;
   }
-  linkToast.hidden = true;
-  // 演示模式才播动画：嵌在页面里时逐批点击会让翻页变得很慢
-  viewer.setAnimate(true);
   sync();
 }
 
