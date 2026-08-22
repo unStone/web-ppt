@@ -1,7 +1,7 @@
 {
   "name": "@web-ppt/core",
   "version": "0.4.3",
-  "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
+  "description": "Render .pptx and .ppt entirely in the browser — no server, no Office, no upload. OOXML and binary OfficeArt into one JSON schema, out as SVG.",
   "keywords": [
     "pptx",
     "ppt",

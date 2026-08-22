@@ -16,8 +16,10 @@ copyFileSync(join(root, 'LICENSE'), join(pkgDir, 'LICENSE'));
 // 更新日志两个包共用一份：装了包的人看不到 git log，只能靠它知道版本间的变化
 copyFileSync(join(root, 'CHANGELOG.md'), join(pkgDir, 'CHANGELOG.md'));
 
-// core 就是这个项目本体，直接用仓库根的 README；其余包各自维护
-if (name === 'core') copyFileSync(join(root, 'README.md'), join(pkgDir, 'README.md'));
+// core 就是这个项目本体，直接用仓库根的 README —— 取英文版。
+// npm 页面的读者以国际开发者为主，GitHub 首页则留给中文社区，两边各自面向
+// 自己的人群；两份 README 顶部互链，谁都不会走丢。
+if (name === 'core') copyFileSync(join(root, 'README.en.md'), join(pkgDir, 'README.md'));
 else if (!existsSync(join(pkgDir, 'README.md'))) {
   throw new Error(`${name} 缺少 README.md —— 发上去 npm 页面会是空白的`);
 }

@@ -1,51 +1,53 @@
 # @web-ppt/fonts
 
-PPT 里指定的字体，本机往往没有。这个包负责换一份**免费的、能自动按需下载的**替代字体，让文本仍然按接近原样的方式排版。
+**English** · [简体中文](https://github.com/unStone/web-ppt/blob/master/packages/fonts/README.zh-CN.md)
 
-包里**一个字节的字体都没有**（gzip 2.8KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
+The fonts a deck asks for usually aren't installed on the machine viewing it. This package swaps in a **free substitute that downloads on demand**, so the text still lays out close to the original.
+
+There is **not one byte of font data in the package** (2.8 KB gzip). Slices point at already-published [fontsource](https://fontsource.org/) versions served by jsDelivr; nothing downloads until it's actually rendered.
 
 ```bash
 npm i @web-ppt/fonts
 ```
 
-## 用法
+## Usage
 
 ```ts
 import { collectFonts } from '@web-ppt/core';
 import { loadFontsFor } from '@web-ppt/fonts';
 
-// 只统计当前页：翻到了再补，已下过的切片是免费的
+// Only the current slide: fill in on navigation, and slices already fetched are free
 const usages = collectFonts([pres.slides[viewer.index]]);
 await loadFontsFor(usages);
-viewer.refresh(); // 排版是同步的、加载是异步的，首帧一定按回退字体断的行
+viewer.refresh(); // layout is synchronous, loading is async — the first frame always breaks on the fallback
 ```
 
-`loadFontsFor` 做三件事，缺一不可：
+`loadFontsFor` does three things, none of them optional:
 
-| 步骤 | 为什么 |
+| Step | Why |
 |---|---|
-| 本机装了原字体就跳过 | 零下载永远优于任何加载策略 |
-| 取替代字体的 `@font-face`，**把家族名改写成原字体名** | 幻灯片里写的是「Calibri」，CSS 没有别名机制，只有让 `@font-face` 顶着这个名字，那段文字才会用上它 |
-| `src` 开头补一条 `local()` | 同名 `@font-face` 会**盖掉**系统里的同名字体，不补这条，装了原字体的人反而被拖去下载替代品 |
+| Skip families already installed locally | Zero download beats every loading strategy |
+| Fetch the substitute's `@font-face` and **rewrite the family name to the original's** | The slide says "Calibri". CSS has no aliasing mechanism, so the only way that text picks up the substitute is for the `@font-face` to carry that exact name |
+| Prepend `local()` to `src` | A same-named `@font-face` **shadows** the system font. Without this line, people who *do* have the original get dragged into downloading a substitute instead |
 
-按需下载完全交给 `unicode-range`——fontsource 的 CSS 自带切片划分，浏览器只取真正渲染到的那几片。
+On-demand loading is left entirely to `unicode-range` — fontsource's CSS ships the slice boundaries, and the browser fetches only the slices it actually renders.
 
-## 替换表
+## Substitution table
 
-**拉丁一栏全是度量兼容字体**：每个字符的前进宽度与原字体逐一相等，断行位置因此与 PowerPoint 逐字对齐。LibreOffice 用的就是这一套。
+**Every Latin entry is metric-compatible**: each character's advance width matches the original exactly, so line breaks land where PowerPoint puts them. This is the same set LibreOffice uses.
 
-| PPT 里的字体 | 替代 | 度量兼容 |
+| Font in the deck | Substitute | Metric-compatible |
 |---|---|---|
 | Calibri | Carlito | ✓ |
 | Cambria | Caladea | ✓ |
 | Arial / Helvetica | Arimo | ✓ |
 | Times New Roman | Tinos | ✓ |
 | Courier New | Cousine | ✓ |
-| Segoe UI / Tahoma / Verdana | Open Sans | ✗ 仅形近 |
+| Segoe UI / Tahoma / Verdana | Open Sans | ✗ similar shapes only |
 
-中文：微软雅黑 / 苹方 / 黑体 / 等线 → Noto Sans SC，宋体系 → Noto Serif SC，楷体 → 霞鹜文楷。
+Chinese: Microsoft YaHei / PingFang / SimHei / DengXian → Noto Sans SC, the SimSun family → Noto Serif SC, KaiTi → LXGW WenKai.
 
-只收**可再分发、可子集化**的字体（OFL / Apache）。MiSans、HarmonyOS Sans、阿里普惠这些「免费商用」的许可各自限制再分发与改字，不进内置表——要用就自己往 `overrides` 里加：
+Only **redistributable, subsettable** fonts are included (OFL / Apache). MiSans, HarmonyOS Sans and Alibaba PuHuiTi are "free for commercial use" but each restricts redistribution and modification, so they stay out of the built-in table — add them yourself through `overrides`:
 
 ```ts
 await loadFontsFor(usages, {
@@ -53,41 +55,41 @@ await loadFontsFor(usages, {
 });
 ```
 
-## 中文的代价要心里有数
+## Know what CJK costs
 
-中文默认也换——传进来的用量本来就该全部处理。但两边的账完全不同：
+CJK is substituted by default — the usage you pass in should all get handled, and silently dropping half of it would be the surprising behaviour. But the two sides have very different economics:
 
-| | 拉丁 | 中文 |
+| | Latin | CJK |
 |---|---|---|
-| 一页的代价 | ~30KB（一个切片） | **553KB**（22 个不同汉字跨 18 个切片） |
-| 换来什么 | 度量兼容，断行对齐 PowerPoint | 换个字形——汉字全角等宽，断行本来就不会变 |
-| 不换的后果 | 字宽不同，行尾全错 | 系统自带中文字体接住，看着没问题 |
+| Cost for one slide | ~30 KB (one slice) | **553 KB** (22 distinct hanzi spread across 18 slices) |
+| What you get | Metric compatibility; breaks match PowerPoint | A different glyph shape — hanzi are monospaced full-width, so breaks wouldn't move anyway |
+| Cost of not doing it | Different advance widths, every line ending wrong | The system CJK font catches it and looks fine |
 
-切片一片约 30KB、装约 160 个码位，用掉一两个也得整片下，整份中文文件收敛下来在 1MB 上下。**边际成本按切片算，不按字算**——「只用了 22 个汉字」反而是最亏的情形。
+A slice is ~30 KB and holds ~160 codepoints; using one character out of it still costs the whole slice. A full Chinese deck converges around 1 MB. **Marginal cost is per slice, not per character** — "it only uses 22 hanzi" is the worst case, not the best.
 
-流量敏感的场景可以关掉，或者做成用户可选（官网就是这么做的）：
+Bandwidth-sensitive contexts can turn it off, or make it a user setting (which is what the project's own site does):
 
 ```ts
 await loadFontsFor(usages, { cjk: false });
 
-// 用户中途关掉时把已注入的声明撤回，然后重渲当前页。
-// 只撤声明，已下载的字节留在 HTTP 缓存里，再打开是免费的
+// When the user turns it off mid-session, withdraw the injected declarations and re-render.
+// Only the declarations go — the downloaded bytes stay in the HTTP cache, so turning it back on is free
 unloadFonts({ cjkOnly: true });
 viewer.refresh();
 ```
 
-## 自托管
+## Self-hosting
 
-不想依赖 jsDelivr 就换基址，目录结构与 fontsource 的 npm 包一致：
+Don't want to depend on jsDelivr? Point at your own base; the directory layout matches fontsource's npm packages:
 
 ```ts
 await loadFontsFor(usages, { base: 'https://cdn.example.com/npm' });
 ```
 
-## 导出的另一半
+## The other half: exports
 
-`<img>` 加载的 SVG 是隔离文档，拿不到页面注册的字体。导出 PNG / 独立 SVG 时必须把命中的切片内联进去——`collectFonts` 给出的字符集就是为这个准备的。
+An SVG loaded through `<img>` is an isolated document and can't see fonts registered on the page. Exporting to PNG or standalone SVG means inlining the slices you hit — the character sets `collectFonts` returns exist for exactly this.
 
-## 许可
+## License
 
-MIT。替代字体本身各自遵循其原始许可（OFL-1.1 / Apache-2.0），本包不分发字体文件。
+MIT. The substitute fonts remain under their own licenses (OFL-1.1 / Apache-2.0); this package distributes no font files.

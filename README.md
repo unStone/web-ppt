@@ -4,10 +4,25 @@
 [![npm](https://img.shields.io/npm/v/@web-ppt/core.svg)](https://www.npmjs.com/package/@web-ppt/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**简体中文** · [English](README.en.md)
+
 纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。
 零服务端依赖、零框架依赖（原生 TypeScript，可被 React / Vue 直接封装），唯一运行时依赖是 fflate。
 
 **[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** —— 拖一个自己的文件进去，解析与渲染全在本机，文件不出浏览器。
+
+### 为什么做这个
+
+浏览器里显示 PPT，现有的每条路都要你放弃点什么：
+
+| 做法 | 代价 |
+|---|---|
+| Office Online `iframe` | 微软的预览要求**文件公网可达**——机密文件根本不能用 |
+| 服务端转换（LibreOffice / 无头 Office） | 要养一台常驻转换机并为它扩容；动画和逐步揭示被压平 |
+| 提前转 PDF / 图片 | 同样压平，还丢掉了文字选中与搜索 |
+| 现有前端库 | 不支持老的 `.ppt`；用量最大的那个 npm 包免费，但[源码需付费索取](https://github.com/501351981/pptx-preview) |
+
+Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT——**包括 1997–2003 的二进制 `.ppt`**，这个格式前端目前没有第二家解析。
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|

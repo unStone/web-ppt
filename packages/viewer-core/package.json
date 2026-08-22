@@ -1,7 +1,7 @@
 {
   "name": "@web-ppt/viewer-core",
   "version": "0.4.3",
-  "description": "Web-PPT 查看器的 headless 状态机与播放层：导航 / 缩放 / 搜索 / 动画批次，可被任意 UI 框架驱动",
+  "description": "Headless presentation state machine for Web-PPT: navigation, zoom, search and click-batched animation playback, drivable from any UI framework.",
   "keywords": [
     "pptx",
     "ppt",

@@ -1,7 +1,7 @@
 {
   "name": "@web-ppt/fonts",
   "version": "0.4.3",
-  "description": "PPT 字体替换与按需加载：度量兼容的免费替代字体表 + unicode-range 切片加载器，零字节字体入包",
+  "description": "Font substitution and on-demand web-font loading for PowerPoint decks: metric-compatible free substitutes plus a unicode-range slice loader. Zero font bytes in the package.",
   "keywords": [
     "pptx",
     "ppt",
