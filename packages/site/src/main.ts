@@ -33,6 +33,7 @@ const linkToast = $<HTMLElement>('#linkToast');
 const presentBar = $<HTMLElement>('#presentBar');
 const pPager = $<HTMLElement>('#pPager');
 const cjkBtn = $<HTMLButtonElement>('#cjkFonts');
+const shareBtn = $<HTMLButtonElement>('#share');
 
 let viewer: Viewer | null = null;
 /** 当前这份文件的字节，供「下载」直接用——已经在内存里，不必再走一次网络 */
@@ -103,7 +104,7 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   stage.innerHTML = '';
   viewer = new Viewer(stage, pres, { skipHidden: true });
   // 每翻一页补一次字体：已经下过的切片是免费的，没下过的才是这一页真需要的
-  viewer.onChange = () => { sync(); void ensureFonts(pres); };
+  viewer.onChange = () => { sync(); syncUrl(); void ensureFonts(pres); };
   // 演示时超链接照常打开；嵌在页面里时不行——第 5 页那种整页链接的封面
   // 会让任何一次点击都把人带走（orcid-ooxml-strict 就是这样）。
   viewer.onLinkClick = (href) => {
@@ -111,9 +112,16 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
     showLinkToast(href);
     return true;
   };
-  // 本地打开的文件不必再给一个「下载」——那是把人家自己的文件还回去
+  // 本地打开的文件不必再给一个「下载」——那是把人家自己的文件还回去；
+  // 也没有可分享的地址，别摆一个复制出去打不开的链接
   downloadLink.hidden = netMs === undefined;
+  shareBtn.hidden = netMs === undefined;
   if (netMs !== undefined) armDownload(bytes, label);
+
+  // 地址里带的页码只认一次，之后就归查看器自己管
+  if (pendingPage > 1) { viewer.goTo(Math.min(pendingPage, pres.slides.length) - 1); }
+  pendingPage = 1;
+  syncUrl();
 
   void ensureFonts(pres);
 
@@ -247,11 +255,54 @@ async function loadUrl(src: string, label: string): Promise<void> {
   }
 }
 
+/* ── 可分享地址 ───────────────────────────────── */
+
+/**
+ * 地址栏始终等于「现在正在看的东西」，复制出去就能分享。
+ *
+ * 参数里放的是**文件名**，不是地址：文件名只用来在两份白名单里查条目
+ * （HTML 里写死的内置样本、以及已经校验过来源的远程清单），
+ * 任何时候都不会去 fetch 查询串里的东西。
+ */
+const shareName = (src: string): string => src.slice(src.lastIndexOf('/') + 1);
+
+/**
+ * 把当前状态写回地址栏。用 replaceState：分享的是「此刻」，不该把历史堆满。
+ * `page` 显式传 1 用于「刚点了另一个样本、新查看器还没建好」的时刻——
+ * 这时 `viewer` 还是上一份文件的，读它的页码会写出个错的。
+ */
+function syncUrl(page = viewer ? viewer.index + 1 : 1): void {
+  const active = document.querySelector<HTMLElement>('.samples .chip.active');
+  const url = new URL(location.href);
+  url.search = '';
+  if (active?.dataset.src) {
+    url.searchParams.set('sample', shareName(active.dataset.src));
+    if (page > 1) url.searchParams.set('p', String(page)); // 首页不写，地址短一点
+  }
+  history.replaceState(null, '', url.pathname + url.search + url.hash);
+}
+
+shareBtn.addEventListener('click', async () => {
+  // 本地拖进来的文件没有可分享的地址，按钮本身也已经隐藏，这里只做兜底
+  try {
+    await navigator.clipboard.writeText(location.href);
+    shareBtn.textContent = '已复制';
+    shareBtn.classList.add('done');
+    setTimeout(() => { shareBtn.textContent = '复制链接'; shareBtn.classList.remove('done'); }, 1400);
+  } catch {
+    // 剪贴板被拒（非安全上下文 / 用户拒绝）：选中地址栏这件事我们做不到，
+    // 至少别假装成功
+    shareBtn.textContent = '复制失败';
+    setTimeout(() => { shareBtn.textContent = '复制链接'; }, 1400);
+  }
+});
+
 /* ── 交互 ─────────────────────────────────────── */
 
 function selectChip(chip: HTMLElement): void {
   document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
   chip.classList.add('active');
+  syncUrl(1);
   void loadUrl(chip.dataset.src!, chip.textContent!.trim());
 }
 
@@ -325,6 +376,7 @@ stageWrap.addEventListener('mousemove', () => {
 
 async function openFile(file: File): Promise<void> {
   document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
+  syncUrl(); // 本地文件分享不出去，把地址还原成干净的
   thumbs.innerHTML = '';
   setStatus('', 'spin');
   await show(await file.arrayBuffer(), file.name);
@@ -424,9 +476,24 @@ function drawArch(): void {
 }
 
 drawArch();
-/** 样本页点过来时带的文件名；有它就别再渲染默认样本，省一次下载和一次闪烁 */
-const requested = new URLSearchParams(location.search).get('sample');
-if (requested) setStatus('', 'spin');
+
+/**
+ * 地址里带的文件名与页码。
+ *
+ * 内置样本在 HTML 写死的 chip 里就能查到，不必等远程清单；查不到才留给
+ * `openRequestedSample` 去清单里找。两条都是白名单查表，不会去 fetch 查询串。
+ */
+const params = new URLSearchParams(location.search);
+const requested = params.get('sample');
+let pendingPage = Math.max(1, Math.trunc(Number(params.get('p'))) || 1);
+
+const builtinChip = requested
+  ? [...document.querySelectorAll<HTMLElement>('.samples .chip[data-src]')]
+    .find((c) => shareName(c.dataset.src!) === requested)
+  : undefined;
+
+if (builtinChip) selectChip(builtinChip);
+else if (requested) setStatus('', 'spin'); // 等远程清单到了再说，省一次下载和一次闪烁
 else void loadUrl('demo/showcase.pptx', 'showcase.pptx');
 
 /* ── 远程样本库 ───────────────────────────────── */

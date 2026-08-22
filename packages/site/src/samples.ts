@@ -157,6 +157,7 @@ function syncPager(): void {
 function closePreview(): void {
   if (document.fullscreenElement === pWrap) void document.exitFullscreen();
   overlay.hidden = true;
+  syncUrl();
   viewer?.destroy();
   viewer = null;
   if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
@@ -164,8 +165,16 @@ function closePreview(): void {
   pMeta.textContent = '';
 }
 
+/** 地址栏等于「正在预览哪一份」，复制出去就能分享 */
+function syncUrl(file?: string): void {
+  const url = new URL(location.href);
+  url.search = file ? `?sample=${encodeURIComponent(file)}` : '';
+  history.replaceState(null, '', url.pathname + url.search);
+}
+
 async function openSample(s: Sample): Promise<void> {
   overlay.hidden = false;
+  syncUrl(s.file);
   pTitle.textContent = s.title;
   pMeta.textContent = '下载中…';
   pPager.textContent = '— / —';
@@ -249,6 +258,12 @@ async function build(): Promise<void> {
   }
   status.remove();
   for (const s of all) grid.append(card(s));
+
+  // 带 ?sample= 进来的（别人分享的地址）直接把预览打开。
+  // 参数只用来在**已校验过来源的**清单里查条目，不会去 fetch 查询串本身。
+  const want = new URLSearchParams(location.search).get('sample');
+  const hit = want ? all.find((s) => s.file === want) : undefined;
+  if (hit) void openSample(hit);
 }
 
 void build();

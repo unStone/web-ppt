@@ -296,7 +296,12 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   background: var(--bg); border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;
 }
 .preview-title { font-size: 14px; font-weight: 620; }
-.preview-wrap { height: min(64vh, 520px); }
+/*
+ * 必须显式关掉 flex 伸缩：.preview-wrap 同时挂着 .stage-wrap，而后者是
+ * `flex: 1`（basis 0%）。在纵向 flex 容器里 flex-basis 压过 height，
+ * 舞台会直接塌成 0 高 —— 幻灯片还在 DOM 里，就是一点也看不见。
+ */
+.preview-wrap { flex: 0 0 auto; height: min(64vh, 520px); }
 .preview .demo-foot { justify-content: center; }
 
 /* ── 表格 ─────────────────────────────────────── */
