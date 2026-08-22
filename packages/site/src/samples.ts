@@ -98,6 +98,7 @@ overlay.innerHTML =
   '<strong class="preview-title"></strong>' +
   '<div class="spacer"></div>' +
   '<span class="meta preview-meta"></span>' +
+  '<button class="chip act preview-share">复制链接</button>' +
   '<a class="chip act preview-dl" download>下载</a>' +
   '<button class="chip act preview-full">全屏演示</button>' +
   '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>' +
@@ -117,6 +118,7 @@ const pStage = q<HTMLElement>('.preview-stage');
 const pWrap = q<HTMLElement>('.preview-wrap');
 const pPager = q<HTMLElement>('.preview-pager');
 const pDl = q<HTMLAnchorElement>('.preview-dl');
+const pShare = q<HTMLButtonElement>('.preview-share');
 
 function setStage(html: string, cls = ''): void {
   pStage.innerHTML = `<div class="${cls}">${html}</div>`;
@@ -224,6 +226,24 @@ async function openSample(s: Sample): Promise<void> {
     `下载 ${netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`} · ` +
     `解析 ${parseMs.toFixed(0)}ms`;
 }
+
+/**
+ * 复制当前预览的地址。
+ *
+ * 地址栏本来就等于「正在看哪一份」（openSample 打开时就写好了），所以直接
+ * 复制 `location.href` 即可 —— 不必再拼一遍，拼错了反而和地址栏对不上。
+ */
+pShare.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(location.href);
+    pShare.textContent = '已复制';
+    pShare.classList.add('done');
+  } catch {
+    // 剪贴板被拒（非安全上下文 / 用户拒绝）：别假装成功
+    pShare.textContent = '复制失败';
+  }
+  setTimeout(() => { pShare.textContent = '复制链接'; pShare.classList.remove('done'); }, 1400);
+});
 
 q<HTMLButtonElement>('.preview-close').addEventListener('click', closePreview);
 q<HTMLButtonElement>('.preview-prev').addEventListener('click', () => viewer?.prev());

@@ -234,6 +234,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 /* 动作型 chip：跟「选样本」的 chip 区分开——它们做的是事，不是切换 */
 .chip.act { font-family: var(--sans); font-size: 13px; text-decoration: none; }
 .chip.act:hover { color: var(--accent); border-color: var(--accent); }
+.chip.act.done { color: var(--good); border-color: var(--good); }
 
 /* 开关型 chip：按下态用实心，跟「做一件事」的 .act 区分开 */
 .chip.toggle[aria-pressed="true"] {
