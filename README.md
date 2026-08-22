@@ -308,6 +308,7 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 | 渠道 | 地址 |
 |---|---|
 | 问题反馈 / 需求 | [GitHub Issues](https://github.com/unStone/web-ppt/issues) |
+| 讨论 | [GitHub Discussions](https://github.com/unStone/web-ppt/discussions) |
 | 微信交流群 | [置顶 Issue 里的二维码](https://github.com/unStone/web-ppt/issues?q=is%3Aissue+label%3A%E4%BA%A4%E6%B5%81%E7%BE%A4) |
 
 微信群二维码 7 天失效，所以放在 Issue 里而不是直接贴进 README——

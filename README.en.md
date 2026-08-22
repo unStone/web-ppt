@@ -305,6 +305,7 @@ Transitions and animations only play in present mode (the "Present" toolbar butt
 | Channel | Where |
 |---|---|
 | Bugs / feature requests | [GitHub Issues](https://github.com/unStone/web-ppt/issues) |
+| Discussion | [GitHub Discussions](https://github.com/unStone/web-ppt/discussions) |
 | WeChat group (Chinese) | [QR code in the pinned issue](https://github.com/unStone/web-ppt/issues?q=is%3Aissue+label%3A%E4%BA%A4%E6%B5%81%E7%BE%A4) |
 
 ## License
