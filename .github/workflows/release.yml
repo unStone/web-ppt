@@ -69,17 +69,23 @@ jobs:
       # 顺序不能反：viewer-core 与 fonts 都以 @web-ppt/core 为 peer 依赖。
       # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
       # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。
+      #
+      # 每步先查 registry 上有没有这个版本，有就跳过。发布是三步串行的，
+      # 中间任一步挂掉都得重跑整个 job，没有这层守卫，前面已发成功的包会以
+      # EPUBLISHCONFLICT 把重跑再次弄红，真正的失败原因反而被埋掉。
+      # 新包第一版在本地手工发过的情况同理。
       - name: 发布 @web-ppt/core
         working-directory: packages/core
-        run: npm publish
+        run: bash ../../tooling/publish-if-new.sh
 
       - name: 发布 @web-ppt/viewer-core
         working-directory: packages/viewer-core
-        run: npm publish
+        run: bash ../../tooling/publish-if-new.sh
 
       # 注意：npm 要求包已存在才能配置 Trusted Publishing，所以**新包的第一版
-      # 发不出去**（会报 ENEEDAUTH / 404）。新增包时先在本地手工发一版，
-      # 再去 npm 包设置里配好 trusted publisher，之后这一步才会通。
+      # 走不了 OIDC**（scoped 包在无凭据时返回的是 404，不是 401，极难排查）。
+      # 新增包时先在本地 npm publish 发一版，再去 npm 包设置里配好
+      # trusted publisher，之后这一步才会通。
       - name: 发布 @web-ppt/fonts
         working-directory: packages/fonts
-        run: npm publish
+        run: bash ../../tooling/publish-if-new.sh
