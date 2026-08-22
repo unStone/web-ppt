@@ -11,6 +11,10 @@
 
 **[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** —— 拖一个自己的文件进去，解析与渲染全在本机，文件不出浏览器。
 
+![Web-PPT 渲染 showcase.pptx：144 个预设形状、切换效果、按点击分批播放的入场动画](docs/demo.gif)
+
+*上图是 `npm run demo-gif` 跑出来的——录的是仓库里的 `fixtures/showcase.pptx`，引擎改了重跑一遍就是新的。*
+
 ### 为什么做这个
 
 浏览器里显示 PPT，现有的每条路都要你放弃点什么：
@@ -210,6 +214,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
 | `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
 | `npm run bench` | 大文件性能基准 |
+| `npm run demo-gif` | 录 README 用的演示 GIF（需要 Chrome 与 ffmpeg） |
 
 约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**（对编码代理同样适用）。
 

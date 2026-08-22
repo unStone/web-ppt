@@ -12,6 +12,10 @@ No server, no framework, no Office install, no upload. Files never leave the tab
 
 **[▶ Live demo](https://unstone.github.io/web-ppt/)** — drop in one of your own decks; parsing and rendering happen on your machine.
 
+![Web-PPT rendering showcase.pptx: 144 preset shapes, slide transitions, and entrance animations played one click batch at a time](https://raw.githubusercontent.com/unStone/web-ppt/master/docs/demo.gif)
+
+*Recorded by `npm run demo-gif` from `fixtures/showcase.pptx` in this repo — change the engine, re-run it, and the GIF is current again.*
+
 ### Why this exists
 
 Every other browser-side option makes you give something up:
@@ -209,6 +213,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |
 | `npm run ppt-samples` | Convert the pptx fixtures to `.ppt` via LibreOffice (re-run after changing a pptx fixture) |
 | `npm run bench` | Large-file performance benchmark |
+| `npm run demo-gif` | Record the README demo GIF (needs Chrome and ffmpeg) |
 
 Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
 
