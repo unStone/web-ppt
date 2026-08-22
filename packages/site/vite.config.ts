@@ -14,7 +14,23 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: { input: Object.fromEntries(PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])) },
+    rollupOptions: {
+      input: Object.fromEntries(PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])),
+      output: {
+        /**
+         * 共享 chunk 显式命名。
+         *
+         * 默认名取自 rollup 随手挑的某个内部模块，上一版叫 `fetch-bytes-*.js` ——
+         * 整个引擎都在这个 chunk 里，名字却像个埋点脚本，实测被浏览器拦截器
+         * 判成 ERR_BLOCKED_BY_CLIENT，一挡就是整站白屏。名字本来就没有含义，
+         * 不如钉一个中性的。
+         */
+        chunkFileNames: 'assets/engine-[hash].js',
+        // 样式表同理：它的默认名也来自那个随机挑中的模块
+        assetFileNames: (info) =>
+          info.name?.endsWith('.css') ? 'assets/style-[hash][extname]' : 'assets/[name]-[hash][extname]',
+      },
+    },
   },
   plugins: [
     {
