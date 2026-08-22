@@ -22,7 +22,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1873 + 130 项断言、162 个快照 |
+| `npm test` | 全部测试：1876 + 130 项断言、162 个快照 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建两个发布包 |
 | `npm run dev` | 启动 viewer |
@@ -53,6 +53,7 @@
 | **SVG-as-image 是隔离上下文** | 被 `<img>` 加载的 SVG 拿不到宿主页面的 `@font-face` / FontFace API 注册的字体（实测：未知字体名与页面已注册字体的渲染结果完全一致）。**系统已安装字体可用，其余必须把 `@font-face` 连同 base64 字体内联进 SVG 的 `<style>`**——`svg.ts` 的 `embeddedFonts` 就是干这个的，别把它优化掉 |
 | **WebKit 不给 `foreignObject` 应用 SVG 缩放** | [WebKit bug 23113](https://bugs.webkit.org/show_bug.cgi?id=23113)，2008 年至今，新的 LBSE 引擎才修。我们的幻灯片是 `viewBox` + `width:100%`，永远处于被缩放状态，受影响的 Safari / iOS 上 foreignObject 里的文本会按 1× 排版并错位。`viewer-core/foreign-object.ts` 做运行时探测，中招就整页切到原生 `<text>`（代价：文本不可选中）。**不要用 UA 判断，也不要照搬 marpit-svg-polyfill 的 `getScreenCTM()` 补偿**——那套要求 foreignObject 位于原点，而我们的嵌在每个形状各自的 translate/rotate 里 |
 | **嵌入字体不是 TTF** | `ppt/fonts/*.fntdata` 是 EOT 容器，而且实测**全部**开着 MTX 压缩（POI 语料 6/6、ORCID 样本 10/10）。把这段字节直接当 `font/ttf` 塞进 `@font-face`，浏览器只会报 `invalid sfntVersion` 然后整份丢掉。`font/eot.ts` 负责剥容器；MTX 解压走 `setFontDecoder` hook（官网接的是 `mtx-decompressor` 的 `eotToTtf`），core 本身仍然只依赖 fflate |
+| **visibility 会被后代顶掉** | `visibility:hidden` 和 `display:none` 不一样：它虽然继承，但后代显式写 `visible` 会把祖先的 hidden 顶掉。所以按隐藏集设可见性时，不在集合里的必须**清空**声明而不是写 `visible` —— 动画目标是**组**时，组藏了、组里每个形状却各自写着 visible，整组白藏 |
 | **中文的宽度是一整格** | 汉字与全角标点都占 1em，任何中文字体量出来都一样——所以「换字体」修不了中文的断行问题。一行放不下时 PowerPoint 靠**标点挤压**（收掉 `，` `。` 的空半格）而不是缩字，`render/cjk-punct.ts` 做的就是这件事。同理，量不到字时的回退估算必须把全角按整格算，按 0.55em 估会窄掉将近一半，自动缩放跟着一起错 |
 | **行距的基准不是字号** | `lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是**字体行高**（我们取 1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，每行矮两成。`spcPts` 是绝对点值，走另一条换算，两者别混 |
 | **量不到就得记住量不到** | `text-svg.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |

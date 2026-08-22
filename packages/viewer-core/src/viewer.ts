@@ -189,7 +189,12 @@ export class Viewer {
     const hidden = this.state.hiddenElementIds;
     this.container.querySelectorAll('[data-el]').forEach((node) => {
       const id = Number(node.getAttribute('data-el'));
-      (node as HTMLElement).style.visibility = hidden.has(id) ? 'hidden' : 'visible';
+      // 不在隐藏集里的必须**清空**这条声明，不能写成 'visible'。
+      // visibility 虽然继承，但后代显式写 visible 会把祖先的 hidden 顶掉
+      // （和 display:none 不一样）。动画目标是**组**时就会中招：组藏了，
+      // 组里每个形状却各自写着 visible，整组白藏 —— swiss-grid-systems
+      // 第 1 页的标题就是这么漏出来的。
+      (node as HTMLElement).style.visibility = hidden.has(id) ? 'hidden' : '';
     });
   }
 

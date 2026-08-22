@@ -1200,6 +1200,38 @@ group('查看器');
       }
     }
 
+    // 动画目标是**组**时，组里的形状不能被显式写成 visible。
+    // visibility 虽然继承，但后代写 visible 会把祖先的 hidden 顶掉（和
+    // display:none 不同），组就白藏了 —— swiss-grid-systems 第 1 页的标题
+    // 就是这么漏出来的。
+    {
+      const grouped = {
+        width: 1280, height: 720, source: 'pptx',
+        slides: [{
+          background: null,
+          elements: [{
+            kind: 'group', id: 7, x: 0, y: 0, w: 100, h: 100, rot: 0, flipH: false, flipV: false,
+            children: [{
+              kind: 'shape', id: 5, x: 0, y: 0, w: 50, h: 50, rot: 0, flipH: false, flipV: false,
+              path: 'M0 0L50 0L50 50Z', fill: { type: 'solid', color: '#000' }, stroke: null, text: null,
+            }],
+          }],
+          animations: [{ target: 7, kind: 'entrance', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
+        }],
+      };
+      const host = globalThis.document.createElement('div');
+      globalThis.document.body.appendChild(host);
+      const vg = new viewerLib.Viewer(host, grouped, {});
+      const g = host.querySelector('[data-el="7"]');
+      const child = host.querySelector('[data-el="5"]');
+      if (check('组与组内形状都带 data-el', !!g && !!child)) {
+        eq('组被隐藏', g.style.visibility, 'hidden');
+        eq('组内形状不写 visible（否则顶掉祖先的 hidden）', child.style.visibility, '');
+      }
+      vg.destroy();
+      host.remove();
+    }
+
     // 翻页与边界
     const v3 = new viewerLib.Viewer(box, pres, {});
     eq('初始页', v3.index, 0);
