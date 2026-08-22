@@ -48,6 +48,7 @@
 | **固件覆盖盲区** | 加能力时**必须同时加固件**。隐藏页曾经零固件覆盖，让一个 `skipHidden` 的真 bug 在 986 项断言下活了很久 |
 | **LibreOffice 转换非确定性** | `.ppt` 样本由 LibreOffice 转出，字节不可重复。`make-ppt-samples.mjs` 因此按**渲染结果**而非字节比对，内容没变就保留原文件 |
 | **固件必须确定性** | `npm run fixtures` 重跑两次字节必须一致，CI 会验。写生成脚本时不要引入时间戳 / 随机数 |
+| **npm 认的 README 不一定是 README.md** | `@npmcli/package-json` 用 `{README,README.*}` 去 glob 再取第一个像 markdown 的命中——`README.zh-CN.md` 同样匹配，实测还排在 `README.md` 前面。结果是 tarball 里是英文版（`files` 挡住了别的），npm 页面显示的却是中文版，只有 `npm view <pkg> readme` 看得出来（0.4.4 就这么翻了车）。本地化 README 一律用连字符 `README-zh-CN.md`；`sync-package-docs.mjs` 里有守卫，别绕过 |
 | **package-lock 不能用镜像源** | 用 `--registry=npmmirror` 装依赖会把镜像 URL 烘进 lock，新版 npm 直接 `EALLOWREMOTE` 拒绝。装依赖一律用官方源；本机代理导致 TLS 失败时用 `env -u HTTP_PROXY -u HTTPS_PROXY npm i` 绕开 |
 | **画布污染只发生在 `blob:`** | 含 `foreignObject` 的 SVG 经 **blob: URL** 加载会让画布被判污染（`toBlob` 抛 `SecurityError`），换成 **`data:` URI 就不会**——实测 Chrome 148 仍是这样。Chromium 曾提案让 blob: 也不污染（原计划 M131），至今未生效，别依赖。所以 `slideToPng` 走 data: URI + `foreignObject`，排版与屏幕预览逐像素一致 |
 | **SVG-as-image 是隔离上下文** | 被 `<img>` 加载的 SVG 拿不到宿主页面的 `@font-face` / FontFace API 注册的字体（实测：未知字体名与页面已注册字体的渲染结果完全一致）。**系统已安装字体可用，其余必须把 `@font-face` 连同 base64 字体内联进 SVG 的 `<style>`**——`svg.ts` 的 `embeddedFonts` 就是干这个的，别把它优化掉 |

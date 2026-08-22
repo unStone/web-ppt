@@ -1,6 +1,6 @@
 # @web-ppt/fonts
 
-**English** · [简体中文](https://github.com/unStone/web-ppt/blob/master/packages/fonts/README.zh-CN.md)
+**English** · [简体中文](https://github.com/unStone/web-ppt/blob/master/packages/fonts/README-zh-CN.md)
 
 The fonts a deck asks for usually aren't installed on the machine viewing it. This package swaps in a **free substitute that downloads on demand**, so the text still lays out close to the original.
 

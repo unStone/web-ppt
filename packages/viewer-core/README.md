@@ -1,6 +1,6 @@
 # @web-ppt/viewer-core
 
-**English** · [简体中文](https://github.com/unStone/web-ppt/blob/master/packages/viewer-core/README.zh-CN.md)
+**English** · [简体中文](https://github.com/unStone/web-ppt/blob/master/packages/viewer-core/README-zh-CN.md)
 
 The headless layer of [Web-PPT](https://github.com/unStone/web-ppt).
 

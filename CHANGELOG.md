@@ -2,6 +2,21 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 0.4.5
+
+### 修复
+
+- **`@web-ppt/viewer-core` 与 `@web-ppt/fonts` 的 npm 页面在 0.4.4 里仍是中文**。
+  包内容是对的（tarball 里躺着英文版），错的是 npm 用来渲染页面的那份元数据。
+
+  原因是 npm 认哪个文件当 README 并不看「是不是叫 README.md」：
+  `@npmcli/package-json` 用 `{README,README.*}` 去 glob 再取第一个像 markdown
+  的命中，而 0.4.4 引入的 `README.zh-CN.md` 同样匹配 `README.*`，实测还排在
+  `README.md` 前面。`files` 只挡住了 tarball，挡不住元数据。
+
+  本地化 README 改用连字符（`README-zh-CN.md`），并在 `sync-package-docs.mjs`
+  里加了守卫：包目录里出现 `README.*` 旁支就直接让发布失败。
+
 ## 0.4.4
 
 本版没有代码改动，只动文档——但 npm 上看到的东西全变了，所以值得单独发一版。

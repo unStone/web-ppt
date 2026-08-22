@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/fonts",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Font substitution and on-demand web-font loading for PowerPoint decks: metric-compatible free substitutes plus a unicode-range slice loader. Zero font bytes in the package.",
   "keywords": [
     "pptx",

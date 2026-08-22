@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/viewer-core",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Headless presentation state machine for Web-PPT: navigation, zoom, search and click-batched animation playback, drivable from any UI framework.",
   "keywords": [
     "pptx",
