@@ -1,15 +1,32 @@
 import type {
   CellBorders, Effects, ElementBase, Fill, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
-  Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody, TextRun,
+  Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody,
   UnsupportedElement,
 } from '../types';
-import { isOpening, squeezeEm } from './cjk-punct';
-import { autoFitScale, mathOf, paraNeedsSqueeze, renderTextSvg, warpSupported } from './text-svg';
+import { renderTextBodyToHtml } from './text-html';
+import { resolveTextScale } from './text-layout';
+import { renderTextSvg } from './text-svg';
+import { warpSupported } from './text-warp-presets';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
 let uid = 0;
-const nextId = (p: string): string => `${p}${++uid}`;
+const nextGlobalId = (p: string): string => `${p}${++uid}`;
+
+/**
+ * SVG id 会同时出现在 XML 属性和 url(#...) 里，不能把调用方字符串原样拼进去。
+ * 只保留无歧义的安全字符，其余码点编码；下划线本身也编码，避免两个前缀归一后碰撞。
+ */
+function encodeIdPrefix(value: string): string {
+  let out = '';
+  let first = true;
+  for (const ch of value) {
+    const safe = first ? /[A-Za-z]/.test(ch) : /[A-Za-z0-9-]/.test(ch);
+    out += safe ? ch : `_u${ch.codePointAt(0)!.toString(16)}_`;
+    first = false;
+  }
+  return out;
+}
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
 
@@ -18,23 +35,26 @@ const esc = (s: string): string =>
 
 interface Ctx {
   defs: string[];
+  nextId: (prefix: string) => string;
   textMode: 'html' | 'svg';
   media: 'badge' | 'player';
   hidden: ReadonlySet<number> | null;
 }
 
-export interface RenderOptions {
-  /** 渲染演讲者备注为隐藏文本（便于搜索） */
-  includeNotes?: boolean;
+export interface RenderElementOptions {
+  /**
+   * SVG defs id 的显式命名空间。传入后计数器在每次渲染时从 1 开始，
+   * 因而相同前缀与相同元素会生成逐字节相同的结果，适合编辑器增量更新。
+   * 同一 SVG 中并排挂载的元素必须使用不同前缀；省略时继续使用全局唯一 id。
+   */
+  idPrefix?: string;
   /**
    * 文本渲染方式：
    * - 'html'（默认）：foreignObject + HTML 排版，屏幕效果最佳、文本可选中
    * - 'svg'：原生 <text> + 自实现断行，用于导出独立 SVG 文件
    *   （foreignObject 只有浏览器认，其他 SVG 渲染器会整块丢失文本）
-   */
+  */
   textMode?: 'html' | 'svg';
-  /** 画批注标记（Slide.comments），默认关闭 */
-  showComments?: boolean;
   /**
    * 直接渲染成隐藏的元素 id（`Slide.animations` 里的 target）。
    * 用于把「动画播到第 N 步」的状态固化进静态产物——播放时不要用它，
@@ -48,19 +68,54 @@ export interface RenderOptions {
    *
    * 'player' 靠 foreignObject 承载，只有浏览器认；而 textMode 为 'svg' 恰恰意味着
    * 产物要脱离浏览器使用（独立 SVG 文件 / 被光栅化），此时一律退回 badge。
-   */
+  */
   media?: 'badge' | 'player';
 }
 
-export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderOptions = {}): string {
+export interface RenderOptions extends RenderElementOptions {
+  /** 渲染演讲者备注为隐藏文本（便于搜索） */
+  includeNotes?: boolean;
+  /** 画批注标记（Slide.comments），默认关闭 */
+  showComments?: boolean;
+}
+
+export interface RenderElementResult {
+  /** 可直接放入现有页面 SVG 的元素节点；不包含 `<svg>` 包装 */
+  markup: string;
+  /** `markup` 引用的定义；调用方应在同一次更新中替换该元素自己的 defs 分区 */
+  defs: string;
+}
+
+function createCtx(opts: RenderElementOptions): Ctx {
   const textMode = opts.textMode ?? 'html';
-  const ctx: Ctx = {
+  let localUid = 0;
+  const localPrefix = opts.idPrefix === undefined ? null : encodeIdPrefix(opts.idPrefix);
+  return {
     defs: [],
+    nextId: localPrefix === null
+      ? nextGlobalId
+      : (prefix) => `${localPrefix}${prefix}${++localUid}`,
     textMode,
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
     hidden: opts.hiddenElements?.length ? new Set(opts.hiddenElements) : null,
   };
+}
+
+/**
+ * 渲染一个可独立替换的元素及其 defs。嵌入字体的 `@font-face` 属于页面级资源，
+ * 继续由 `renderSlideToSvg` 放在根 defs 中；元素更新只管理这里返回的局部定义。
+ */
+export function renderElementToSvg(
+  el: SlideElement,
+  opts: RenderElementOptions = {},
+): RenderElementResult {
+  const ctx = createCtx(opts);
+  return { markup: renderEl(el, ctx), defs: ctx.defs.join('') };
+}
+
+export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderOptions = {}): string {
+  const ctx = createCtx(opts);
   // 背景解析失败只该丢背景，不该丢整页
   let bgFill = '#fff';
   try {
@@ -112,7 +167,7 @@ function paint(fill: Fill, ctx: Ctx, w: number, h: number): string {
     case 'solid':
       return fill.color;
     case 'gradient': {
-      const id = nextId('g');
+      const id = ctx.nextId('g');
       const stops = fill.stops
         .map((s) => `<stop offset="${r(Math.max(0, Math.min(1, s.pos)) * 100)}%" stop-color="${s.color}"/>`)
         .join('');
@@ -130,7 +185,7 @@ function paint(fill: Fill, ctx: Ctx, w: number, h: number): string {
       return `url(#${id})`;
     }
     case 'image': {
-      const id = nextId('p');
+      const id = ctx.nextId('p');
       if (fill.tile) {
         const tw = Math.max(4, w * 0.25 * fill.tile.sx);
         const th = Math.max(4, h * 0.25 * fill.tile.sy);
@@ -160,7 +215,7 @@ function paint(fill: Fill, ctx: Ctx, w: number, h: number): string {
       return `url(#${id})`;
     }
     case 'pattern': {
-      const id = nextId('pt');
+      const id = ctx.nextId('pt');
       const size = PATTERN_SIZE[fill.preset] ?? 8;
       const d = PATTERN_DEFS[fill.preset] ?? PATTERN_DEFS.pct50;
       const stroked = /^[MLQT].*[ML]/.test(d) && !d.includes('h') && !d.includes('v');
@@ -221,7 +276,7 @@ function effectFilter(effects: Effects | undefined, ctx: Ctx): string {
     step(`<feComposite in="__IN__" in2="seMask" operator="in" result="__OUT__"/>`);
   }
   if (!parts.length) return '';
-  const id = nextId('f');
+  const id = ctx.nextId('f');
   ctx.defs.push(`<filter id="${id}" x="-30%" y="-30%" width="160%" height="160%">${parts.join('')}</filter>`);
   return ` filter="url(#${id})"`;
 }
@@ -242,8 +297,8 @@ function reflectionLayer(el: ElementBase, refId: string, ctx: Ctx): string {
   // 横向留出余量，避免溢出形状框的文字被遮罩裁掉
   const mx = -el.w * 0.25;
   const mw = el.w * 1.5;
-  const gid = nextId('rg');
-  const mid = nextId('rm');
+  const gid = ctx.nextId('rg');
+  const mid = ctx.nextId('rm');
   ctx.defs.push(
     `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="0" y1="${r(top)}" x2="0" y2="${r(top + band)}">` +
     `<stop offset="0" stop-color="#fff" stop-opacity="${r(alpha)}"/>` +
@@ -263,7 +318,7 @@ function reflectionLayer(el: ElementBase, refId: string, ctx: Ctx): string {
 function wrapEl(el: ElementBase, inner: string, ctx: Ctx): string {
   const filter = effectFilter(el.effects, ctx);
   if (!el.effects?.reflection) return `<g transform="${baseTransform(el)}"${filter}>${inner}</g>`;
-  const rid = nextId('rc');
+  const rid = ctx.nextId('rc');
   const body = `<g id="${rid}">${inner}</g>`;
   return (
     `<g transform="${baseTransform(el)}">` +
@@ -287,7 +342,7 @@ const END_PATHS: Record<LineEnd['type'], { d: string; fill: boolean }> = {
 function marker(end: LineEnd, color: string, ctx: Ctx, atStart: boolean): string {
   const spec = END_PATHS[end.type];
   if (!spec.d) return '';
-  const id = nextId('m');
+  const id = ctx.nextId('m');
   const mw = Math.max(1, end.h);
   const mh = Math.max(1, end.w);
   ctx.defs.push(
@@ -416,7 +471,7 @@ function bevelOverlay(el: ShapeElement, d3: Shape3D, baseColor: string, ctx: Ctx
   const light = mix(baseColor, '#fff', 0.5);
   const dark = mix(baseColor, '#000', 0.25);
   const w = Math.min(b * 2, Math.min(el.w, el.h) / 3);
-  const id = nextId('bv');
+  const id = ctx.nextId('bv');
   ctx.defs.push(`<clipPath id="${id}"><path d="${el.path}"/></clipPath>`);
   // 描边宽度的一半落在轮廓外，被裁掉后正好只剩内侧一圈
   return (
@@ -537,7 +592,7 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
   } else if (el.crop && (el.crop.l || el.crop.t || el.crop.r || el.crop.b)) {
     const iw = el.w / Math.max(1 - el.crop.l - el.crop.r, 0.01);
     const ih = el.h / Math.max(1 - el.crop.t - el.crop.b, 0.01);
-    const id = nextId('c');
+    const id = ctx.nextId('c');
     ctx.defs.push(`<clipPath id="${id}"><rect width="${r(el.w)}" height="${r(el.h)}"/></clipPath>`);
     img =
       `<g clip-path="url(#${id})"><image href="${esc(el.src)}" x="${r(-el.crop.l * iw)}" y="${r(-el.crop.t * ih)}"` +
@@ -547,7 +602,7 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
   }
 
   if (el.clipPath) {
-    const cid = nextId('cs');
+    const cid = ctx.nextId('cs');
     ctx.defs.push(`<clipPath id="${cid}"><path d="${el.clipPath}"/></clipPath>`);
     img = `<g clip-path="url(#${cid})">${img}</g>`;
   }
@@ -664,106 +719,6 @@ function renderUnsupported(el: UnsupportedElement): string {
 
 // ---------------- 文本 ----------------
 
-const ANCHOR_CSS: Record<TextBody['anchor'], string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
-
-const FONT_FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
-
-/**
- * 字体栈：文件指定的字体在前，通用中文回退在后。
- *
- * 要去重——主题的 ea 字体经常正好就是回退列表里的那个（PingFang SC），
- * 直接拼会拼出重复项。重复不致命，但栈是要被人读的。
- */
-function stack(fonts: readonly string[], fallback: readonly string[]): string {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const f of fonts) {
-    const key = f.toLowerCase();
-    if (f && !seen.has(key)) { seen.add(key); out.push(`'${f}'`); }
-  }
-  for (const f of fallback) {
-    const key = f.replace(/'/g, '').toLowerCase();
-    if (!seen.has(key)) { seen.add(key); out.push(f); }
-  }
-  return out.join(',');
-}
-
-function runStyle(run: TextRun, scale: number): string {
-  const size = run.size * scale;
-  let css = `font-size:${r(size)}px;`;
-  css += run.gradient
-    ? `background-image:${run.gradient};-webkit-background-clip:text;background-clip:text;color:transparent;`
-    : `color:${run.color};`;
-  if (run.b) css += 'font-weight:700;';
-  if (run.i) css += 'font-style:italic;';
-  const deco: string[] = [];
-  if (run.u) deco.push('underline');
-  if (run.strike) deco.push('line-through');
-  if (deco.length) {
-    css += `text-decoration:${deco.join(' ')};`;
-    if (run.underlineColor) css += `text-decoration-color:${run.underlineColor};`;
-  }
-  if (run.fonts.length) css += `font-family:${stack(run.fonts, FONT_FALLBACK)};`;
-  if (run.spacing) css += `letter-spacing:${r(run.spacing)}px;`;
-  if (run.caps === 'all') css += 'text-transform:uppercase;';
-  else if (run.caps === 'small') css += 'font-variant:small-caps;';
-  if (run.highlight) css += `background-color:${run.highlight};`;
-  if (run.outline) css += `-webkit-text-stroke:${r(run.outline.width)}px ${run.outline.color};`;
-  if (run.shadow) css += `text-shadow:${run.shadow};`;
-  if (run.baseline) {
-    css += `vertical-align:${run.baseline > 0 ? 'super' : 'sub'};font-size:${r(size * 0.65)}px;`;
-  }
-  return css;
-}
-
-/**
- * 把全角标点的空半格用负边距收掉。
- *
- * 用负边距而不是 `font-feature-settings:'halt'`：后者要字体自带半角替换字形，
- * 有的字体有、有的没有，同一份文件在不同机器上会排出不同结果。负边距与字体
- * 无关，量多少就是多少，也和原生 <text> 路径的 dx 算的是同一笔账。
- */
-function squeezedHtml(text: string): string {
-  let out = '';
-  for (const ch of text) {
-    if (ch === '\n') { out += '<br/>'; continue; }
-    const em = squeezeEm(ch);
-    if (!em) { out += esc(ch); continue; }
-    out += `<span style="margin-${isOpening(ch) ? 'left' : 'right'}:-${em}em">${esc(ch)}</span>`;
-  }
-  return out;
-}
-
-function renderRun(run: TextRun, scale: number, squeeze = false): string {
-  // 公式：排版成 SVG 后按内联块嵌进 HTML 流。用 vertical-align 把基线对上，
-  // 否则公式会按整个盒子的底边对齐，视觉上比正文低一大截。
-  if (run.math?.length) {
-    const m = mathOf(run, scale);
-    if (m && m.w > 0) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${r(m.w)}" height="${r(m.h + m.d)}"` +
-        ` viewBox="0 ${r(-m.h)} ${r(m.w)} ${r(m.h + m.d)}"` +
-        ` style="display:inline-block;vertical-align:${r(-m.d)}px;overflow:visible">${m.svg}</svg>`;
-    }
-  }
-  const content = run.text
-    ? (squeeze ? squeezedHtml(run.text) : esc(run.text).replace(/\n/g, '<br/>'))
-    : '&#160;';
-  const span = `<span style="${runStyle(run, scale)}">${content}</span>`;
-  if (run.link) {
-    const target = run.link.startsWith('slide:')
-      ? `data-slide="${esc(run.link.slice(6))}" style="cursor:pointer;text-decoration:underline"`
-      : `href="${esc(run.link)}" target="_blank" rel="noopener noreferrer"`;
-    return `<a ${target}>${span}</a>`;
-  }
-  return span;
-}
-
-const VERT_CSS: Record<string, string> = {
-  vert: 'writing-mode:vertical-rl;',
-  vert270: 'writing-mode:vertical-rl;transform:rotate(180deg);',
-  wordArtVert: 'writing-mode:vertical-rl;text-orientation:upright;',
-};
-
 function renderText(
   t: TextBody,
   w: number,
@@ -771,72 +726,27 @@ function renderText(
   ctx: Ctx,
   marginsOverride?: [number, number, number, number],
   vAlignOverride?: 'top' | 'middle' | 'bottom',
-  vertOverride?: string,
+  vertOverride?: TextBody['vert'],
 ): string {
-  // 艺术字变形无法用 HTML 排版表达，强制走 SVG 文本路径，保证屏幕与导出一致
-  // 裸 normAutofit：文件没写 fontScale，缩放要在这里算。两条文本路径共用同一个
-  // 结果，否则预览与导出会不一致。spAutoFit 是形状随文字增高，不该缩字。
-  if (t.autoFitCompute && !t.autoFitShape) {
-    const s = autoFitScale(t, w, h);
-    if (s < 1) t = { ...t, fontScale: t.fontScale * s };
-  }
-
+  // 艺术字变形无法用 HTML 排版表达，强制走 SVG 文本路径，保证屏幕与导出一致。
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
+    // HTML 公共入口内部也做这一步；这里仅为独立 SVG 路径保留同一语义。
+    if (t.autoFitCompute && !t.autoFitShape) {
+      const scale = resolveTextScale(t, w, h);
+      if (scale !== t.fontScale) t = { ...t, fontScale: scale };
+    }
     const addDef = (markup: string): string => {
-      const id = nextId('tg');
+      const id = ctx.nextId('tg');
       ctx.defs.push(markup.replace('__ID__', id));
       return id;
     };
     return renderTextSvg(t, w, h, addDef, marginsOverride, vAlignOverride);
   }
-  const [pt, pr, pb, pl] = marginsOverride ?? t.insets;
-  const scale = t.fontScale;
-
-  const paras = t.paragraphs
-    .map((p) => {
-      const first = p.runs[0];
-      const baseSize = (first?.size ?? 18) * scale;
-      // 全角标点的空半格：这一段按全角放不下、挤掉就放得下时才收，
-      // 放得下的段落保持全角，与 PowerPoint 一致（见 cjk-punct.ts）
-      const squeeze = t.wrap
-        && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true);
-      const runs = p.runs.map((run) => renderRun(run, scale, squeeze)).join('');
-
-      let bullet = '';
-      if (p.bulletImage) {
-        bullet = `<img src="${esc(p.bulletImage)}" style="height:${r(baseSize * 0.8)}px;vertical-align:middle;margin-right:4px"/>`;
-      } else if (p.bullet) {
-        const bs = baseSize * (p.bulletSize ?? 1);
-        const bc = p.bulletColor ?? first?.color ?? '#000';
-        const bf = p.bulletFont && !/wingdings|webdings|symbol/i.test(p.bulletFont) ? `font-family:${stack([p.bulletFont], FONT_FALLBACK)};` : '';
-        bullet = `<span style="font-size:${r(bs)}px;color:${bc};${bf}">${esc(p.bullet)}&#160;</span>`;
-      }
-
-      const style =
-        `margin:${r(p.spaceBefore)}px 0 ${r(p.spaceAfter)}px 0;` +
-        `text-align:${p.align};` +
-        `padding-left:${r(Math.max(0, p.marL))}px;` +
-        `text-indent:${r(p.indent)}px;` +
-        `line-height:${p.lineHeight !== null ? r(p.lineHeight) : '1.2'};` +
-        (p.rtl ? 'direction:rtl;' : '') +
-        `white-space:${t.wrap ? 'pre-wrap' : 'pre'};word-break:break-word;`;
-      return `<div style="${style}">${bullet}${runs}</div>`;
-    })
-    .join('');
-
-  const anchor = vAlignOverride ?? t.anchor;
-  const vert = vertOverride ?? t.vert;
-  const boxStyle =
-    `width:${r(w)}px;height:${r(h)}px;box-sizing:border-box;` +
-    `display:flex;flex-direction:column;justify-content:${ANCHOR_CSS[anchor]};` +
-    (t.anchorCtr ? 'align-items:center;' : '') +
-    `padding:${r(pt)}px ${r(pr)}px ${r(pb)}px ${r(pl)}px;` +
-    (t.columns ? `column-count:${t.columns};column-gap:${r(t.columnGap ?? 0)}px;display:block;` : '') +
-    (vert ? VERT_CSS[vert] ?? '' : '') +
-    'overflow:visible;';
-
-  return (
-    `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">` +
-    `<div xmlns="http://www.w3.org/1999/xhtml" style="${boxStyle}">${paras}</div></foreignObject>`
-  );
+  const html = renderTextBodyToHtml(t, w, h, {
+    insets: marginsOverride,
+    anchor: vAlignOverride,
+    vert: vertOverride,
+    includeEditMarkers: false,
+  });
+  return `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">${html}</foreignObject>`;
 }

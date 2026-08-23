@@ -7,6 +7,7 @@
 | 路径 | 说明 |
 |---|---|
 | `packages/core/` | `@web-ppt/core` —— 解析 / 渲染 / 导出，无框架无 DOM 依赖 |
+| `packages/edit-core/` | `@web-ppt/edit-core` —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖 |
 | `packages/viewer-core/` | `@web-ppt/viewer-core` —— headless 状态机 + 播放层 |
 | `packages/fonts/` | `@web-ppt/fonts` —— 字体替换表 + 按需加载器（可选，不含字体字节） |
 | `packages/viewer/` | 开箱即用查看器（private） |
@@ -22,9 +23,9 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1873 + 130 项断言、162 个快照 |
+| `npm test` | 全部测试：1987 + 89 + 130 项断言、162 个快照、194 对编辑等价指纹 |
 | `npm run fixtures` | 重新生成全部测试文件 |
-| `npm run build` | 构建两个发布包 |
+| `npm run build` | 构建四个发布包 |
 | `npm run dev` | 启动 viewer |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
 
@@ -57,7 +58,7 @@
 | **visibility 会被后代顶掉** | `visibility:hidden` 和 `display:none` 不一样：它虽然继承，但后代显式写 `visible` 会把祖先的 hidden 顶掉。所以按隐藏集设可见性时，不在集合里的必须**清空**声明而不是写 `visible` —— 动画目标是**组**时，组藏了、组里每个形状却各自写着 visible，整组白藏 |
 | **中文的宽度是一整格** | 汉字与全角标点都占 1em，任何中文字体量出来都一样——所以「换字体」修不了中文的断行问题。一行放不下时 PowerPoint 靠**标点挤压**（收掉 `，` `。` 的空半格）而不是缩字，`render/cjk-punct.ts` 做的就是这件事。同理，量不到字时的回退估算必须把全角按整格算，按 0.55em 估会窄掉将近一半，自动缩放跟着一起错 |
 | **行距的基准不是字号** | `lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是**字体行高**（我们取 1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，每行矮两成。`spcPts` 是绝对点值，走另一条换算，两者别混 |
-| **量不到就得记住量不到** | `text-svg.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
+| **量不到就得记住量不到** | `text-measure.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 
 ## 分层

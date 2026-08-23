@@ -6,8 +6,8 @@ import { attr, kid, kids, numAttr } from '../xml';
 import { ep, n, rad } from '../geometry';
 import type { Adj, Geom, Pt } from '../geometry';
 
-export { isKnownPreset, presetGeom } from '../geometry';
-export type { Adj, Geom, Pt } from '../geometry';
+export { isKnownPreset, presetGeom, resolveGeomPath } from '../geometry';
+export type { Adj, Geom, GeomSpec, Pt } from '../geometry';
 
 /** avLst → 调节值表（保留 100000 制原值） */
 export function parseAdjustments(avLst: Element | null): Adj {

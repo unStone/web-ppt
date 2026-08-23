@@ -430,6 +430,8 @@ interface Ctx {
   /** ___PPT9 里的逐段自动编号，与游标一起按文本对象顺序认领 */
   autoNums: (AutoNum | null)[];
   autoNumCursor: number;
+  /** 只在编辑入口保留格式无关的预设几何语义；旧格式没有 OOXML 回写锚点 */
+  edit: boolean;
 }
 
 /**
@@ -692,9 +694,11 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   }
   if (!path) {
     const prst = MSO_SHAPE[shapeType] ?? 'rect';
-    const g = presetGeom(prst, box.w, box.h, msoAdjusts(props, shapeType));
+    const adj = msoAdjusts(props, shapeType);
+    const g = presetGeom(prst, box.w, box.h, adj);
     path = g.d;
     openGeom = g.open;
+    if (ctx.edit) base.editInfo = { geom: { preset: prst, adj } };
   }
 
   // 文本
@@ -1193,6 +1197,7 @@ function parseMaster(dv: DataView, rec: Rec, shared: Shared): MasterInfo {
     styles, envStyles: shared.envStyles, links: new Map(), masterPass: true,
     levelCache: new Map(), slideIndex: 1, slideCount: 1,
     autoNums: collectAutoNums(dv, rec), autoNumCursor: 0,
+    edit: shared.edit,
   };
   const elements = drawing ? drawingElements(ctx, drawing) : [];
   return { scheme, styles, background, elements };
@@ -1228,9 +1233,10 @@ interface Shared {
   blobs: (string | null)[];
   scale: number;
   envStyles: MasterStyles;
+  edit: boolean;
 }
 
-export function parsePpt(bytes: Uint8Array, password?: string): Presentation {
+export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Presentation {
   const cfb = new Cfb(bytes);
 
   // 加密的 .pptx 已在 parse() 里被 EncryptedPackage 流拦下并解密，走不到这里
@@ -1303,7 +1309,7 @@ export function parsePpt(bytes: Uint8Array, password?: string): Presentation {
   };
   if (docRec) scan(docRec.start, docRec.start + docRec.len, 0);
 
-  const shared: Shared = { fonts, blobs, scale: MASTER_TO_PX, envStyles };
+  const shared: Shared = { fonts, blobs, scale: MASTER_TO_PX, envStyles, edit };
   const offsets = persistOffsets(dv, doc.length);
 
   // 幻灯片 / 母版 / 备注：优先按持久化目录的顺序，缺失时退回文档顺序
@@ -1488,6 +1494,7 @@ function parseSlide(dv: DataView, slideRec: Rec, shared: Shared, env: SlideEnv):
     styles: env.master?.styles ?? new Map(), envStyles: shared.envStyles, links,
     masterPass: false, levelCache: new Map(), slideIndex: env.index, slideCount: env.count,
     autoNums: collectAutoNums(dv, slideRec), autoNumCursor: 0,
+    edit: shared.edit,
   };
 
   // 母版图形垫在最底层，其次才是本页自己的图形

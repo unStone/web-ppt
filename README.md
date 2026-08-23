@@ -30,7 +30,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 84KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、编辑覆盖与高保真渲染投影，无框架无 DOM 依赖 | `@web-ppt/core` | 2.9KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -62,6 +63,67 @@ const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 P
 // 有动画的页按点击批次展开成多页，逐步揭示的结构不会被压平
 const stepped = await presentationToPrintableHtml(pres, { animationSteps: true });
 ```
+
+编辑器做增量更新或字符串比较时，可显式指定稳定的 SVG 命名空间：
+
+```ts
+import { renderSlideToSvg } from '@web-ppt/core';
+
+const svg = renderSlideToSvg(pres, pres.slides[0], { idPrefix: 'editor-slide-1-' });
+// 同一页 + 同一前缀的结果确定；同时挂载的每份 SVG 必须使用不同前缀。
+```
+
+编辑器需要回写锚点时，再显式开启编辑解析并交给无框架的 `EditDoc`；普通预览不会承担这些对象与原包的内存：
+
+```ts
+import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
+import { createDoc, disposeDoc, effectiveElement, invalidateElement, toSlide } from '@web-ppt/edit-core';
+
+const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
+const doc = createDoc(source);
+const slideId = doc.slideOrder[0];
+const elementId = doc.slides[slideId].children[0];
+
+doc.elements[elementId].ovr.x = 120;                 // src 不变，ovr 只记用户改动
+invalidateElement(doc, elementId);                  // 只失效该元素、组祖先和所属页
+const svg = renderSlideToSvg(source, toSlide(doc, slideId), { idPrefix: `${slideId}-` });
+
+// 交互时只渲染脏元素；同一 SVG 中每个元素必须使用独立、稳定的前缀。
+const part = renderElementToSvg(effectiveElement(doc, elementId), {
+  idPrefix: `${slideId}-${elementId}-`,
+});
+// part.markup 与 part.defs 应作为该元素自己的两个 DOM 分区一起替换。
+
+// 文本编辑层放在 SVG 外；它和 foreignObject 预览复用完全相同的 HTML/CSS。
+const element = effectiveElement(doc, elementId);
+if (element.kind === 'shape' && element.text) {
+  const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
+  textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h);
+  const editor = textLayer.firstElementChild as HTMLElement;
+  editor.contentEditable = 'true';
+  editor.spellcheck = false;
+
+  // 运行时探测到 Safari foreignObject 缩放缺陷时，改用 engine 模式命中光标。
+  const engineLayout = layoutText(element.text, element.w, element.h);
+  // engineLayout.lines[*].segments[*].carets 是 TextRun.text 的 UTF-16 偏移。
+}
+
+disposeDoc(doc);                                     // 同时释放被接管的原包
+```
+
+`renderTextBodyToHtml` 默认输出 `data-p` / `data-r`、空 run、项目符号和有效 autofit 比例标记，
+供 IME 结束后的 DOM 反解与选区还原；它不访问 DOM，也不会替调用方管理焦点。
+文本、属性和 CSS 边界会转义，`javascript:` / `file:` 等危险链接只保留为不可点击数据。
+
+`layoutText` 与原生 SVG `<text>` 共用断行、CJK 标点挤压、分栏、行距与 autofit 算法。
+它返回段落/run 身份、行盒和 UTF-16 光标停靠点；竖排坐标通过返回的 `transform` 映射到元素局部坐标，
+公式作为只允许首尾停靠的原子段。只要行盒、不做字符命中时传 `{ includeCarets: false }` 可跳过逐字测量。
+
+缩放预设形状时，投影会从保留的 `preset + adj` 自动重算路径。`doc.meta.readonly`
+会明确指出输入是否缺少可靠的保存上下文，避免用户编辑完才发现不能保存。
+保存链路可按需导入 `@web-ppt/edit-core/xml`：保留型树对未修改 part 逐字节回环，定点改属性时
+保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
+OOXML sequence 顺序表。它不进入默认 2.92KB gzip 的编辑模型入口。
 
 ### 接自己的 UI
 
@@ -204,16 +266,19 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
-| `npm test` | 全部测试（核心 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1873 项断言 + 162 个渲染快照 |
+| `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
+| `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML 树 89 项断言 + 22 份固件、194 对独立进程 SVG 指纹 |
+| `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
-| `npm run build` | 构建 `@web-ppt/core` + `@web-ppt/viewer-core` |
+| `npm run build` | 构建四个发布包（core / edit-core / viewer-core / fonts） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
 | `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
-| `npm run bench` | 大文件性能基准 |
+| `npm run bench` | 大文件只读性能基准；追加 `-- --edit` 测编辑投影 |
+| `npm run bench:edit` | 210 页独立进程对照，强制检查只读零状态、编辑内存与提交重渲预算 |
 | `npm run demo-gif` | 录 README 用的演示 GIF（需要 Chrome 与 ffmpeg） |
 
 约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**（对编码代理同样适用）。
@@ -224,7 +289,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 web-ppt/                     npm workspaces monorepo
 ├── packages/
 │   ├── core/                @web-ppt/core —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
+│   ├── edit-core/           @web-ppt/edit-core —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖
 │   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
+│   ├── fonts/               @web-ppt/fonts —— 字体替换与按需加载
 │   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
 │   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
@@ -233,8 +300,8 @@ web-ppt/                     npm workspaces monorepo
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
-边界一旦被破坏，它们立刻编译失败。将来的编辑器作为 `apps/editor` 加入，
-Cordis 之类的应用框架只出现在那一层，不下沉到 core。
+边界一旦被破坏，它们立刻编译失败。`edit-core` 只提供纯数据模型；后续可视编辑器与
+React / Vue 等适配只依赖它，框架运行时不下沉到 core 或 edit-core。
 
 **为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState` 不必等官方封装；状态逻辑不再需要 jsdom 就能在 Node 里测；`@web-ppt/core` 完全不碰 `document`，Worker 里可整包运行。
 

@@ -2,6 +2,40 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 未发布
+
+### 新增
+
+- `renderSlideToSvg` 新增 `RenderOptions.idPrefix`。指定后，同一页与同一前缀会生成
+  逐字节相同的 SVG，供编辑器增量更新和确定性比较使用；省略时仍维持全局唯一 id，
+  主视图与缩略图同时挂载不会发生 defs 冲突。
+- 新增 `renderElementToSvg(element, options) → { markup, defs }`。编辑器可用每元素唯一的
+  稳定 `idPrefix` 只重渲脏元素，并在同一次 DOM 更新中替换它自己的节点与 defs；
+  整页与元素入口复用同一分发和两条文本路径，不存在第二套近似渲染器。
+- 新增无 DOM 的 `renderTextBodyToHtml(text, width, height, options)`。屏幕预览和后续
+  contenteditable 覆盖层共用同一份段落、run、CJK 标点、分栏与 autofit 排版；默认输出
+  可反解的编辑标记，并隔离危险链接协议，原生 SVG 文本导出路径保持独立。
+- 新增纯函数 `layoutText(text, width, height, options)`。它与原生 `<text>` 输出共用断行、
+  CJK 挤压、分栏、行距及 autofit，并公开段落/run 身份、UTF-16 字符区间与光标停靠点，
+  供 Safari engine 模式命中选区；竖排返回仿射变换，公式保持原子，测量器可注入。
+- `parse` 新增完全可选的 `edit` / `keepPackage`：前者保留页与元素的 OOXML 回写锚点、
+  占位符身份，后者通过 `Presentation.package` 保留原始 ZIP 与解压 part。默认解析的
+  对象形状和资源生命周期不变；`dispose()` 会同时释放保留的原包。
+- `.pptx` 与 `.ppt` 的编辑解析会额外保留预设形状的 `preset + adj` 语义（OOXML 含
+  版式/母版继承），并新增纯函数 `resolveGeomPath`；编辑投影改变宽高后可重新求值路径，
+  不再复用解析期烘焙的几何。
+- 新增无 DOM、无框架的 `@web-ppt/edit-core`：把解析结果转换为带稳定身份与分数 z 序的
+  扁平 `EditDoc`，以 `src` / `ovr` 分离源值和用户改动，并通过 `toSlide` 投影回现有
+  渲染 Schema。元素、组祖先和页面缓存按修改路径精确失效；图表、SmartArt、OLE、
+  墨迹与媒体只开放框架级变换，内部派生节点不可误编辑。
+- 新增按需入口 `@web-ppt/edit-core/xml`：无 DOM 的保留型 XML 树支持 UTF-8 / UTF-16
+  字节回环、限定名与 namespace URI 查询、属性最小改写和 OOXML sequence 有序插入；声明、
+  注释、PI、前缀、属性顺序、自闭合形态及 `AlternateContent` 不被重建。默认编辑模型入口仍为
+  2.92KB gzip，保存期 XML 入口独立为 7.14KB gzip。
+- 新增 M0 自动门禁：22 份固件（含加密 OOXML、RC4 `.ppt` 与 hardcases）的只读链路和
+  编辑投影分别在独立进程渲染，两条文本路径共 194 对原始 SVG 指纹必须完全一致；
+  210 页基准同时强制检查默认路径零编辑状态、编辑常驻内存增量、文本行盒与提交重渲预算。
+
 ## 0.4.5
 
 ### 修复

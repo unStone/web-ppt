@@ -43,11 +43,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          for p in packages/core packages/viewer-core packages/fonts; do
+          for p in packages/core packages/edit-core packages/viewer-core packages/fonts; do
             v=$(node -p "require('./$p/package.json').version")
             [ "$v" = "$tag" ] || { echo "::error::$p 版本 $v 与 tag $tag 不一致"; exit 1; }
           done
-          echo "tag $tag 与三个包版本一致"
+          echo "tag $tag 与四个包版本一致"
 
       - name: 类型检查
         run: npm run check
@@ -58,6 +58,12 @@ jobs:
       - name: 核心解析 / 渲染测试
         run: npm run test:core
 
+      - name: 编辑模型 / 投影测试
+        run: npm run test:edit
+
+      - name: 编辑性能预算
+        run: npm run bench:edit
+
       - name: 图元文件解码测试
         run: npm run test:metafile
 
@@ -66,7 +72,7 @@ jobs:
       - name: 构建
         run: npm run build
 
-      # 顺序不能反：viewer-core 与 fonts 都以 @web-ppt/core 为 peer 依赖。
+      # 顺序不能反：edit-core、viewer-core 与 fonts 都以 @web-ppt/core 为 peer 依赖。
       # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
       # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。
       #
@@ -76,6 +82,12 @@ jobs:
       # 新包第一版在本地手工发过的情况同理。
       - name: 发布 @web-ppt/core
         working-directory: packages/core
+        run: bash ../../tooling/publish-if-new.sh
+
+      # 新包第一版仍须按仓库 AGENTS 的说明手工引导发布并配置 Trusted Publishing；
+      # registry 已存在后，后续版本才由这里接管。
+      - name: 发布 @web-ppt/edit-core
+        working-directory: packages/edit-core
         run: bash ../../tooling/publish-if-new.sh
 
       - name: 发布 @web-ppt/viewer-core

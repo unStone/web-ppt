@@ -1,16 +1,12 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
-import { isFullWidth, isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
-import { layoutMath } from './math-svg';
-import type { MathLayout } from './math-svg';
-
-/** 与 math-svg 内部一致的数学字体栈；测量与绘制必须用同一套 */
-const MATH_FAMILY = "'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif";
+import { isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
+import { layoutText } from './text-layout';
+import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
+import { warpSupported } from './text-warp-presets';
 
 /**
- * 纯 SVG <text> 排版：自己做文本测量与断行。
- * 用途：产出要脱离浏览器使用的 SVG（独立文件、打印 HTML）——<foreignObject> 只有浏览器认，
- * 别的 SVG 渲染器打开会整块丢失文本。屏幕渲染与 PNG 导出仍走 foreignObject，
- * 让浏览器自己排版，省掉第二套断行实现带来的偏差。
+ * 纯 SVG <text> 输出。断行和坐标统一由 text-layout 提供；这里仅负责 SVG 序列化、
+ * 字体样式、公式与艺术字路径，避免编辑命中与独立 SVG 形成两套布局结果。
  */
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
@@ -18,144 +14,16 @@ const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
+const ANCHOR: Record<Paragraph['align'], string> = {
+  left: 'start', center: 'middle', right: 'end', justify: 'start',
+};
 
-let measureCtx: CanvasRenderingContext2D | null = null;
-let measureProbed = false;
+/** RTL 段落：SVG 的 text-anchor 相对书写方向，翻转后才能保持与 HTML 一致的物理对齐 */
+const flipAnchor = (anchor: string): string =>
+  anchor === 'start' ? 'end' : anchor === 'end' ? 'start' : anchor;
 
-/**
- * 拿一个用来量文字宽度的 2D 上下文，拿不到就返回 null（调用方退到字符宽度估算）。
- *
- * 「拿不到」这件事必须只判一次：Node / jsdom / 反指纹浏览器里 getContext('2d')
- * 恒为 null，不缓存这个结论就会在每次测字时新建一个 <canvas>，一页文本能造出上千个。
- * 同时只认真的能测字的上下文——有些环境（测试替身、canvas 拦截插件）会给出残缺对象，
- * 直接调 measureText 会抛，而排版不该因为量不到字就整页失败。
- */
-function ctx2d(): CanvasRenderingContext2D | null {
-  if (measureProbed) return measureCtx;
-  measureProbed = true;
-  try {
-    const g = document.createElement('canvas').getContext('2d');
-    measureCtx = g && typeof g.measureText === 'function' ? g : null;
-  } catch {
-    measureCtx = null;
-  }
-  return measureCtx;
-}
-
-/**
- * 字体栈：文件指定的字体在前，通用中文回退在后。
- *
- * 要去重——主题的 ea 字体经常正好就是回退列表里的那个（PingFang SC），
- * 直接拼会拼出重复项。重复不致命，但栈是要被人读的。
- */
-function stack(fonts: readonly string[], fallback: readonly string[]): string {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const f of fonts) {
-    const key = f.toLowerCase();
-    if (f && !seen.has(key)) { seen.add(key); out.push(`'${f}'`); }
-  }
-  for (const f of fallback) {
-    const key = f.replace(/'/g, '').toLowerCase();
-    if (!seen.has(key)) { seen.add(key); out.push(f); }
-  }
-  return out.join(',');
-}
-
-function fontFamily(run: TextRun): string {
-  return run.fonts.length ? stack(run.fonts, FALLBACK) : stack(['Helvetica', 'Arial'], FALLBACK);
-}
-
-function fontSize(run: TextRun, scale: number): number {
-  const base = run.size * scale;
-  return run.baseline ? base * 0.65 : base;
-}
-
-/** 供公式排版用的测量函数：与正文共用同一个 2D 上下文，度量才一致 */
-function mathMeasure(text: string, size: number, italic: boolean, bold: boolean): number {
-  const g = ctx2d();
-  if (!g) return text.length * size * 0.55;
-  g.font = `${italic ? 'italic ' : ''}${bold ? '700 ' : '400 '}${size}px ${MATH_FAMILY}`;
-  return g.measureText(text).width;
-}
-
-/** 公式块的排版结果，按 run 与字号缓存——同一段文字会被测量多次（断行 + 自动缩放二分） */
-const mathCache = new Map<string, MathLayout>();
-
-export function mathOf(run: TextRun, scale: number): MathLayout | null {
-  if (!run.math?.length) return null;
-  const size = run.size * scale;
-  const key = `${size}|${run.color}|${JSON.stringify(run.math)}`;
-  let hit = mathCache.get(key);
-  if (!hit) {
-    hit = layoutMath(run.math, size, run.color, mathMeasure);
-    // 缓存无上限会在超长文稿里堆积，超过阈值整体清空即可（重算成本远低于内存压力）
-    if (mathCache.size > 512) mathCache.clear();
-    mathCache.set(key, hit);
-  }
-  return hit;
-}
-
-function measure(text: string, run: TextRun, scale: number): number {
-  if (run.math?.length) return mathOf(run, scale)?.w ?? 0;
-  if (!text) return 0;
-  const g = ctx2d();
-  const size = fontSize(run, scale);
-  if (!g) {
-    // 量不到字时的估算。全角字符必须按整格算 —— 一律当 0.55em 会把中文
-    // 窄掉将近一半，断行位置全错，而 Node / jsdom 里恒走这条路。
-    let w = 0;
-    for (const ch of text) w += isFullWidth(ch) ? size : size * 0.55;
-    return w;
-  }
-  g.font = `${run.i ? 'italic ' : ''}${run.b ? '700 ' : '400 '}${size}px ${fontFamily(run)}`;
-  const w = g.measureText(text).width;
-  return w + (run.spacing ?? 0) * text.length;
-}
-
-function applyCaps(text: string, run: TextRun): string {
-  return run.caps === 'all' ? text.toUpperCase() : text;
-}
-
-// ---------------- 断行 ----------------
-
-interface Token {
-  text: string;
-  run: TextRun;
-  width: number;
-  /** 硬换行 */
-  br: boolean;
-  space: boolean;
-  /** 全角标点的空半格，放不下时可以挤掉（见 cjk-punct.ts） */
-  squeeze: number;
-}
-
-function tokenize(runs: TextRun[], scale: number): Token[] {
-  const out: Token[] = [];
-  for (const run of runs) {
-    if (run.math?.length) {
-      // 公式整体不可断行
-      out.push({ text: run.text, run, width: measure(run.text, run, scale), br: false, space: false, squeeze: 0 });
-      continue;
-    }
-    const text = applyCaps(run.text, run);
-    if (!text) continue;
-    // 保留空格、按 CJK 逐字、按空白与拉丁词切分
-    const pieces = text.match(/\n|[^\S\n]+|[⺀-鿿가-퟿＀-｠　-〿]|[^\s⺀-鿿가-퟿＀-｠　-〿]+/g) ?? [];
-    for (const piece of pieces) {
-      out.push({
-        text: piece,
-        run,
-        width: piece === '\n' ? 0 : measure(piece, run, scale),
-        br: piece === '\n',
-        space: /^[^\S\n]+$/.test(piece),
-        squeeze: squeezeTotal(piece) * fontSize(run, scale),
-      });
-    }
-  }
-  return out;
-}
+const applyCaps = (text: string, run: TextRun): string =>
+  run.caps === 'all' ? text.toUpperCase() : text;
 
 interface Seg {
   text: string;
@@ -167,150 +35,9 @@ interface Line {
   segs: Seg[];
   width: number;
   size: number;
-  /** 本行全角标点合计能挤掉多少 */
   squeeze: number;
-  /** 本行确实挤了标点才放得下；渲染时要把位移做出来 */
   squeezed: boolean;
 }
-
-/** 行的实际占位宽度。挤压过的行要按挤压后算，否则居中 / 右对齐会偏 */
-const lineWidth = (line: Line): number => (line.squeezed ? line.width - line.squeeze : line.width);
-
-function pushSeg(line: Line, token: Token): void {
-  const last = line.segs[line.segs.length - 1];
-  if (last && last.run === token.run) {
-    last.text += token.text;
-    last.width += token.width;
-  } else {
-    line.segs.push({ text: token.text, run: token.run, width: token.width });
-  }
-  line.width += token.width;
-  line.squeeze += token.squeeze;
-  // 公式比正文高，行高得按它的实际高度算，否则上下行会咬在一起
-  const mh = token.run.math?.length ? mathOf(token.run, 1) : null;
-  line.size = Math.max(line.size, mh ? (mh.h + mh.d) / 1.2 : token.run.size);
-}
-
-function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: number): Line[] {
-  const lines: Line[] = [];
-  const blank = (): Line => ({ segs: [], width: 0, size: 0, squeeze: 0, squeezed: false });
-  let line: Line = blank();
-  let limit = Math.max(1, maxWidth - Math.max(0, firstIndent));
-
-  const flush = (): void => {
-    // 自然宽度放不下、挤掉标点的空半格才放得下 —— 那就挤
-    line.squeezed = line.width > limit && line.width - line.squeeze <= limit;
-    lines.push(line);
-    line = blank();
-    limit = Math.max(1, maxWidth);
-  };
-
-  for (const token of tokens) {
-    if (token.br) {
-      flush();
-      continue;
-    }
-    // 挤压优先于断行：先看挤掉标点空半格后放不放得下，放不下才断
-    const fits = line.width + token.width - (line.squeeze + token.squeeze) <= limit;
-    if (wrapOn && line.width > 0 && !fits) {
-      if (token.space) continue; // 行尾空格丢弃
-      flush();
-    }
-    pushSeg(line, token);
-  }
-  flush();
-  return lines;
-}
-
-/**
- * 这个段落在给定宽度下需要挤压标点才放得下吗。
- *
- * 供 HTML 路径使用：那条路的断行归浏览器管，我们只能**先判断**再决定要不要
- * 输出挤压标记。判断复用这里的分词与断行，两条路径的结论因此一致。
- */
-export function paraNeedsSqueeze(p: Paragraph, maxWidth: number, scale: number, wrapOn: boolean): boolean {
-  if (maxWidth <= 0 || !p.runs.some((run) => squeezeTotal(run.text) > 0)) return false;
-  return wrap(tokenize(p.runs, scale), maxWidth, wrapOn, p.indent).some((l) => l.squeezed);
-}
-
-// ---------------- 渲染 ----------------
-
-interface LaidPara {
-  lines: Line[];
-  para: Paragraph;
-  before: number;
-  after: number;
-  lineHeights: number[];
-}
-
-const ANCHOR: Record<Paragraph['align'], string> = {
-  left: 'start', center: 'middle', right: 'end', justify: 'start',
-};
-
-/** RTL 段落：SVG 的 text-anchor 相对书写方向，翻转后才能保持与 HTML 一致的物理对齐 */
-const flipAnchor = (a: string): string => (a === 'start' ? 'end' : a === 'end' ? 'start' : a);
-
-interface RenderItem {
-  lp: LaidPara;
-  line: LaidPara['lines'][number];
-  li: number;
-  /** 含段前/段后间距的整行占高，用于分栏时决定断点 */
-  h: number;
-  padTop: number;
-}
-
-/** 段落排版：把每段拆成行并算出行高。renderTextSvg 与自动缩放测量共用。 */
-function layout(t: TextBody, boxW: number, scale: number): LaidPara[] {
-  return t.paragraphs.map((p) => {
-    const first = p.runs[0];
-    const bulletRun: TextRun | null = p.bullet && first
-      ? { ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1), color: p.bulletColor ?? first.color, u: false, strike: false }
-      : null;
-    const runs = bulletRun ? [bulletRun, ...p.runs] : p.runs;
-    const avail = Math.max(1, boxW - Math.max(0, p.marL));
-    const lines = wrap(tokenize(runs, scale), avail, t.wrap, p.indent);
-    const lineHeights = lines.map((l) => {
-      const base = (l.size || first?.size || 18) * scale;
-      return base * (p.lineHeight ?? 1.2);
-    });
-    return { lines, para: p, before: p.spaceBefore, after: p.spaceAfter, lineHeights };
-  });
-}
-
-/** 给定缩放比例下文本占用的总高度 */
-function textHeight(t: TextBody, boxW: number, scale: number): number {
-  return layout(t, boxW, scale).reduce(
-    (sum, lp) => sum + lp.before + lp.after + lp.lineHeights.reduce((a, b) => a + b, 0),
-    0,
-  );
-}
-
-/**
- * `<a:normAutofit/>` 不带 fontScale 时由渲染器自行算缩放。
- *
- * PowerPoint 只在自己排过版后才把算好的 fontScale 写回文件；从其它工具存出、
- * 或缩放继承自版式的文件里，属性往往是缺的。此时若按标称字号渲染，文字会直接
- * 溢出版面——实测 8 个真实演讲文件共 229 处裸 normAutofit，仅 39 处带 fontScale。
- *
- * 二分求解而非按 PowerPoint 的离散档位（92.5% / 85% / …）：LibreOffice 用连续值，
- * 而它是本项目的保真基准。
- */
-export function autoFitScale(t: TextBody, w: number, h: number): number {
-  const [pt, pr, pb, pl] = t.insets;
-  const boxW = Math.max(1, w - pl - pr);
-  const boxH = Math.max(1, h - pt - pb);
-  if (textHeight(t, boxW, 1) <= boxH) return 1;
-
-  let lo = MIN_AUTOFIT, hi = 1;
-  for (let i = 0; i < 12; i++) {
-    const mid = (lo + hi) / 2;
-    if (textHeight(t, boxW, mid) <= boxH) lo = mid; else hi = mid;
-  }
-  return lo;
-}
-
-/** PowerPoint 的自动缩放下限也是 25% */
-const MIN_AUTOFIT = 0.25;
 
 export function renderTextSvg(
   t: TextBody,
@@ -332,127 +59,82 @@ export function renderTextSvg(
 
   const [pt, pr, pb, pl] = marginsOverride ?? t.insets;
   const scale = t.fontScale;
-  const boxW = Math.max(1, w - pl - pr);
-
   // 艺术字变形：整段排到路径上，成功则直接返回；不支持的预设退化为下面的普通排版
   const warped = renderWarp(t, w, h, addDef, [pt, pr, pb, pl], vAlignOverride ?? t.anchor);
   if (warped) return warped;
 
-  const laid = layout(t, boxW, scale);
-  const anchor = vAlignOverride ?? t.anchor;
+  const positioned = layoutText(t, w, h, {
+    insets: marginsOverride,
+    anchor: vAlignOverride,
+    vert: 'horz',
+    // 调用者已经解析过裸 normAutofit；显式传入防止重复缩放。
+    scale,
+    includeCarets: false,
+  });
+  const out: string[] = [];
 
-  /** 把排好的段落摊成「一行一项」，分栏时按行切列用得上 */
-  const flatten = (ls: LaidPara[]): RenderItem[] => {
-    const items: RenderItem[] = [];
-    ls.forEach((lp) => {
-      lp.lines.forEach((line, li) => {
-        items.push({
-          lp, line, li,
-          h: lp.lineHeights[li] + (li === 0 ? lp.before : 0)
-            + (li === lp.lines.length - 1 ? lp.after : 0),
-          padTop: li === 0 ? lp.before : 0,
-        });
-      });
+  for (const line of positioned.lines) {
+    const para = t.paragraphs[line.paragraphIndex];
+    const first = para.runs[0];
+    const segs: Seg[] = line.segments.map((segment) => {
+      const run = segment.runIndex >= 0
+        ? para.runs[segment.runIndex]
+        : { ...first, text: `${para.bullet} `, size: first.size * (para.bulletSize ?? 1),
+          color: para.bulletColor ?? first.color, u: false, strike: false };
+      return { text: segment.text, run, width: segment.naturalWidth };
     });
-    return items;
-  };
+    const renderLine: Line = {
+      segs,
+      width: line.naturalWidth,
+      size: 0,
+      squeeze: line.naturalWidth - line.width,
+      squeezed: line.squeezed,
+    };
+    if (!segs.length) continue;
 
-  const sum = (items: RenderItem[]): number => items.reduce((a, it) => a + it.h, 0);
+    // 高亮底色需要绝对位置：按对齐方式反推行首 x。
+    let cursor = line.x;
+    for (const seg of segs) {
+      if (seg.run.highlight) {
+        const size = fontSize(seg.run, scale);
+        out.push(
+          `<rect x="${r(cursor)}" y="${r(line.baseline - size * 0.82)}" width="${r(seg.width)}" ` +
+          `height="${r(size * 1.12)}" fill="${seg.run.highlight}"/>`,
+        );
+      }
+      cursor += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
+    }
 
-  /** 渲染一列：originX 是该列左边界，colW 是列宽 */
-  const paint = (items: RenderItem[], originX: number, colW: number): string => {
-    const colH = sum(items);
-    let y = pt;
-    if (anchor === 'middle') y = pt + Math.max(0, (h - pt - pb - colH) / 2);
-    else if (anchor === 'bottom') y = Math.max(pt, h - pb - colH);
-
-    const out: string[] = [];
-    for (const { lp, line, li, padTop } of items) {
-      y += padTop;
-      const lh = lp.lineHeights[li];
-      const baseline = y + lh * 0.78;
-      const indent = li === 0 ? lp.para.indent : 0;
-      const left = originX + Math.max(0, lp.para.marL) + indent;
-
-      let x: number;
-      // 物理对齐用于定位，写到属性上的 anchor 在 RTL 下需要翻转
-      const textAnchor = ANCHOR[lp.para.align];
-      const rtl = lp.para.rtl === true;
-      if (textAnchor === 'middle') x = originX + colW / 2;
-      else if (textAnchor === 'end') x = originX + colW;
-      else x = left;
-
-      if (line.segs.length) {
-        // 高亮底色需要绝对位置：按对齐方式反推行首 x
-        const lw = lineWidth(line);
-        const lineStart = textAnchor === 'middle' ? x - lw / 2 : textAnchor === 'end' ? x - lw : x;
-        let cursor = lineStart;
-        for (const seg of line.segs) {
-          if (seg.run.highlight) {
-            const sz = fontSize(seg.run, scale);
-            out.push(
-              `<rect x="${r(cursor)}" y="${r(baseline - sz * 0.82)}" width="${r(seg.width)}" ` +
-              `height="${r(sz * 1.12)}" fill="${seg.run.highlight}"/>`,
-            );
-          }
-          cursor += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
-        }
-        if (line.segs.some((seg) => seg.run.math?.length)) {
-          // 公式是 <g>，塞不进 <text>。含公式的行改为按绝对 x 逐段输出，
-          // 纯文本行仍走单个 <text>，避免全仓快照因为这条支路整体漂移。
-          let cx = lineStart;
-          for (const seg of line.segs) {
-            const ml = seg.run.math?.length ? mathOf(seg.run, scale) : null;
-            if (ml) {
-              out.push(`<g transform="translate(${r(cx)} ${r(baseline)})">${ml.svg}</g>`);
-            } else {
-              out.push(
-                `<text x="${r(cx)}" y="${r(baseline)}" text-anchor="start"` +
-                (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-                ` xml:space="preserve">${spanSvg(seg, scale, addDef)}</text>`,
-              );
-            }
-            cx += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
-          }
+    const textAnchor = ANCHOR[line.align];
+    if (segs.some((segment) => segment.run.math?.length)) {
+      // 公式是 <g>，塞不进 <text>。含公式的行按绝对 x 逐段输出。
+      let x = line.x;
+      for (const seg of segs) {
+        const math = seg.run.math?.length ? mathOf(seg.run, scale) : null;
+        if (math) {
+          out.push(`<g transform="translate(${r(x)} ${r(line.baseline)})">${math.svg}</g>`);
         } else {
-          const tspans = line.squeezed
-            ? squeezedSpans(line, scale, addDef)
-            : line.segs.map((seg) => spanSvg(seg, scale, addDef)).join('');
           out.push(
-            `<text x="${r(x)}" y="${r(baseline)}" text-anchor="${rtl ? flipAnchor(textAnchor) : textAnchor}"` +
-            (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-            ` xml:space="preserve">${tspans}</text>`,
+            `<text x="${r(x)}" y="${r(line.baseline)}" text-anchor="start"` +
+            (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
+            ` xml:space="preserve">${spanSvg(seg, scale, addDef)}</text>`,
           );
         }
+        x += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
       }
-      y += lh + (li === lp.lines.length - 1 ? lp.after : 0);
+    } else {
+      const tspans = line.squeezed
+        ? squeezedSpans(renderLine, scale, addDef)
+        : segs.map((segment) => spanSvg(segment, scale, addDef)).join('');
+      out.push(
+        `<text x="${r(line.anchorX)}" y="${r(line.baseline)}" ` +
+        `text-anchor="${line.rtl ? flipAnchor(textAnchor) : textAnchor}"` +
+        (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
+        ` xml:space="preserve">${tspans}</text>`,
+      );
     }
-    return out.join('');
-  };
-
-  const cols = Math.max(1, Math.min(Math.floor(t.columns ?? 1), 16));
-  if (cols === 1) return paint(flatten(laid), pl, boxW);
-
-  // 分栏：按列宽重新排版，再按可用高度把行依次装进各列。
-  // PowerPoint 在行边界断栏，最后一列装不下的部分溢出，与它一致。
-  const gap = t.columnGap ?? 0;
-  const colW = Math.max(1, (boxW - gap * (cols - 1)) / cols);
-  const colItems = flatten(layout(t, colW, scale));
-  const colH = Math.max(1, h - pt - pb);
-
-  const buckets: RenderItem[][] = [[]];
-  let used = 0;
-  for (const it of colItems) {
-    if (used > 0 && used + it.h > colH && buckets.length < cols) {
-      buckets.push([]);
-      used = 0;
-    }
-    buckets[buckets.length - 1].push(it);
-    used += it.h;
   }
-  return buckets
-    .map((items, i) => paint(items, pl + i * (colW + gap), colW))
-    .join('');
+  return out.join('');
 }
 
 /** "linear-gradient(90deg,#a 0%,#b 100%)" → SVG linearGradient，返回 url(#id) */
@@ -540,19 +222,6 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: nu
 }
 
 // ---------------- 艺术字变形（prstTxWarp） ----------------
-
-/**
- * 已实现曲线的预设；其余（含 textNoShape）退化为普通横排。
- * 说明：<textPath> 只能让基线弯曲，无法按位置缩放字形，
- * 因此 inflate / deflate / triangle / can 一类"包络型"预设只近似出弯曲方向。
- */
-const WARP_PRESETS = new Set([
-  'textArchUp', 'textArchDown', 'textArchUpPour', 'textArchDownPour', 'textCircle',
-  'textWave1', 'textWave2', 'textCurveUp', 'textCurveDown', 'textCanUp', 'textCanDown',
-  'textTriangle', 'textChevron', 'textInflate', 'textDeflate',
-]);
-
-export const warpSupported = (preset: string | undefined): boolean => !!preset && WARP_PRESETS.has(preset);
 
 interface WarpGeom {
   d: string;
@@ -693,7 +362,7 @@ function renderWarp(
     const segs: Seg[] = runs.map((run) => ({
       text: applyCaps(run.text, run).replace(/\n/g, ' '),
       run,
-      width: measure(run.text, run, scale),
+      width: measureTextWidth(run.text, run, scale),
     }));
     // 文字比路径长时整体缩字，避免绕出路径末端被截断
     const total = segs.reduce((sum, s) => sum + s.width, 0);

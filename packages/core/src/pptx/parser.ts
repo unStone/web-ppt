@@ -1,7 +1,7 @@
 import { unzipSync } from 'fflate';
 import type {
   CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, MediaInfo,
-  Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
+  OpcPackage, Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
   TableElement, TableRow, TextBody, UnsupportedElement,
 } from '../types';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
@@ -20,6 +20,7 @@ import {
 type Rels = Record<string, { type: string; target: string }>;
 
 const decoder = new TextDecoder();
+const EMPTY_BYTES = new Uint8Array(0);
 
 const MIME: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
@@ -53,10 +54,27 @@ class Pkg {
   private blobCache = new Map<string, string | null>();
   /** 已创建的 blob URL，供 dispose 回收 */
   private objectUrls: string[] = [];
+  private sourceBytes: Uint8Array | null = null;
+  private opcHandle: OpcPackage | undefined;
+  private isDisposed = false;
 
-  constructor(bytes: Uint8Array) {
+  constructor(bytes: Uint8Array, keepPackage = false) {
     this.files = unzipSync(bytes);
+    if (keepPackage) {
+      // 50MB 演示若再复制一份原包，会把编辑模式的内存预算直接吃掉；
+      // 按公开契约持有只读视图，File/Blob 路径本身已是解析器创建的独占缓冲。
+      this.sourceBytes = bytes;
+      const owner = this;
+      this.opcHandle = Object.freeze({
+        format: 'pptx' as const,
+        get bytes(): Uint8Array { return owner.sourceBytes ?? EMPTY_BYTES; },
+        get parts(): Readonly<Record<string, Uint8Array>> { return owner.files; },
+        get disposed(): boolean { return owner.isDisposed; },
+      });
+    }
   }
+
+  get opcPackage(): OpcPackage | undefined { return this.opcHandle; }
 
   xml(path: string): Element | null {
     if (!this.xmlCache.has(path)) {
@@ -144,6 +162,8 @@ class Pkg {
     this.xmlCache.clear();
     this.relsCache.clear();
     this.files = {};
+    this.sourceBytes = null;
+    this.isDisposed = true;
   }
 
   mediaUrl(path: string): string | null {
@@ -315,6 +335,30 @@ interface Env {
   tableStyles: Element | null;
   hiddenPh: Set<string>;
   slideIdMap: Record<string, number>;
+  edit: boolean;
+}
+
+function editInfoOf(
+  env: Env,
+  cNvPr: Element | null,
+  ph: Element | null = null,
+  geom?: NonNullable<ElementBase['editInfo']>['geom'],
+  editable?: NonNullable<ElementBase['editInfo']>['editable'],
+): Partial<Pick<ElementBase, 'editInfo'>> {
+  if (!env.edit) return {};
+  const spid = numAttr(cNvPr, 'id');
+  const editInfo: NonNullable<ElementBase['editInfo']> = {};
+  if (spid !== null) editInfo.origin = { part: env.partPath, spid };
+  if (ph) {
+    const idx = attr(ph, 'idx');
+    editInfo.placeholder = {
+      type: attr(ph, 'type') ?? 'obj',
+      ...(idx === null ? {} : { idx }),
+    };
+  }
+  if (geom) editInfo.geom = geom;
+  if (editable) editInfo.editable = editable;
+  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable ? { editInfo } : {};
 }
 
 function withPhClr(env: Env, phClr: string | null): Env {
@@ -474,7 +518,7 @@ function parseShapeTree(tree: Element | null, env: Env, skipPh: boolean): SlideE
     try {
       el = parseOneShape(node, env, skipPh);
     } catch (err) {
-      el = brokenShapePlaceholder(node, err);
+      el = brokenShapePlaceholder(node, err, env);
     }
     if (Array.isArray(el)) out.push(...el);
     else if (el) out.push(el);
@@ -524,17 +568,19 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
 }
 
 /** 解析失败时给一个可见但不打断阅读的占位，方便定位问题而不是整页丢失 */
-function brokenShapePlaceholder(node: Element, err: unknown): UnsupportedElement | null {
+function brokenShapePlaceholder(node: Element, err: unknown, env: Env): UnsupportedElement | null {
   const nv = kid(node, 'nvSpPr') ?? kid(node, 'nvPicPr') ?? kid(node, 'nvGrpSpPr')
     ?? kid(node, 'nvCxnSpPr') ?? kid(node, 'nvGraphicFramePr');
   const xf = parseXfrm(walk(node, 'spPr', 'xfrm') ?? walk(node, 'grpSpPr', 'xfrm') ?? kid(node, 'xfrm'));
   if (!xf || xf.w <= 0 || xf.h <= 0) return null;
-  const name = attr(kid(nv, 'cNvPr'), 'name') ?? node.localName;
+  const cNvPr = kid(nv, 'cNvPr');
+  const name = attr(cNvPr, 'name') ?? node.localName;
   const reason = err instanceof Error ? err.message : String(err);
   return {
     kind: 'unsupported',
     ...base(xf),
     label: `${name}（解析失败：${reason.slice(0, 40)}）`,
+    ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame'),
   };
 }
 
@@ -583,10 +629,14 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   const custGeom = kid(geomHost, 'custGeom');
   let path: string | null = null;
   let openGeom = false;
+  let editableGeom: NonNullable<ElementBase['editInfo']>['geom'] | undefined;
   if (prstGeom) {
-    const g = presetGeom(attr(prstGeom, 'prst') ?? 'rect', xf.w, xf.h, parseAdjustments(kid(prstGeom, 'avLst')));
+    const preset = attr(prstGeom, 'prst') ?? 'rect';
+    const adj = parseAdjustments(kid(prstGeom, 'avLst'));
+    const g = presetGeom(preset, xf.w, xf.h, adj);
     path = g.d;
     openGeom = g.open;
+    if (env.edit) editableGeom = { preset, adj };
   } else if (custGeom) {
     const g = custGeomPath(custGeom, xf.w, xf.h);
     if (g) {
@@ -647,6 +697,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
     link: hyperlinkOf(cNvPr, env),
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
+    ...editInfoOf(env, cNvPr, ph, editableGeom),
   };
 }
 
@@ -706,20 +757,43 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
   const label = attr(cNvPr, 'name') ?? '图片';
   const media = parseMedia(walk(pic, 'nvPicPr', 'nvPr'), env);
   // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
-  if (!src && !media) return { kind: 'unsupported', ...base(xf), label: `${label}（格式不支持）` };
+  if (!src && !media) {
+    return {
+      kind: 'unsupported', ...base(xf), label: `${label}（格式不支持）`,
+      link: hyperlinkOf(cNvPr, env),
+      name: attr(cNvPr, 'name') ?? undefined,
+      id: numAttr(cNvPr, 'id') ?? undefined,
+      ...editInfoOf(env, cNvPr, ph, undefined, 'frame'),
+    };
+  }
 
   const srcRect = kid(blipFill, 'srcRect');
   const frac = (name: string): number => (numAttr(srcRect, name) ?? 0) / 100000;
   const crop = srcRect ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : null;
 
-  // 非矩形轮廓 → 裁剪路径
+  // 非矩形轮廓 → 裁剪路径。默认预览仍只看图片自己的 spPr；编辑态另外记录继承语义。
   let clipPath: string | null = null;
   const prstGeom = kid(spPr, 'prstGeom');
   const custGeom = kid(spPr, 'custGeom');
-  if (prstGeom && (attr(prstGeom, 'prst') ?? 'rect') !== 'rect') {
-    clipPath = presetGeom(attr(prstGeom, 'prst')!, xf.w, xf.h, parseAdjustments(kid(prstGeom, 'avLst'))).d;
+  let editableGeom: NonNullable<ElementBase['editInfo']>['geom'] | undefined;
+  if (prstGeom) {
+    const preset = attr(prstGeom, 'prst') ?? 'rect';
+    const adj = parseAdjustments(kid(prstGeom, 'avLst'));
+    if (preset !== 'rect') clipPath = presetGeom(preset, xf.w, xf.h, adj).d;
+    if (env.edit) editableGeom = { preset, adj };
   } else if (custGeom) {
     clipPath = custGeomPath(custGeom, xf.w, xf.h)?.d ?? null;
+  } else if (env.edit && ph) {
+    const phType = attr(ph, 'type');
+    const phIdx = attr(ph, 'idx');
+    const inherited = walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'prstGeom')
+      ?? walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'prstGeom');
+    if (inherited) {
+      editableGeom = {
+        preset: attr(inherited, 'prst') ?? 'rect',
+        adj: parseAdjustments(kid(inherited, 'avLst')),
+      };
+    }
   }
 
   const alphaMod = numAttr(kid(kid(blipFill, 'blip'), 'alphaModFix'), 'amt');
@@ -734,6 +808,7 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
     media,
+    ...editInfoOf(env, cNvPr, ph, editableGeom, media ? 'frame' : undefined),
   };
 }
 
@@ -910,12 +985,14 @@ function parseContentPart(node: Element, env: Env): GroupElement | null {
     return null;
   }
   if (!children.length) return null;
+  const cNvPr = walk(node, 'nvContentPartPr', 'cNvPr');
   return {
     kind: 'group', ...base(xf),
     childX: 0, childY: 0, scaleX: 1, scaleY: 1,
     children,
-    name: attr(walk(node, 'nvContentPartPr', 'cNvPr'), 'name') ?? '墨迹',
-    id: numAttr(walk(node, 'nvContentPartPr', 'cNvPr'), 'id') ?? undefined,
+    name: attr(cNvPr, 'name') ?? '墨迹',
+    id: numAttr(cNvPr, 'id') ?? undefined,
+    ...editInfoOf(env, cNvPr, null, undefined, 'frame'),
   };
 }
 
@@ -925,6 +1002,7 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
   if (!xf) return null;
   const children = parseShapeTree(grp, env, skipPh);
   if (!children.length) return null;
+  const cNvPr = walk(grp, 'nvGrpSpPr', 'cNvPr');
   return {
     kind: 'group',
     ...base(xf),
@@ -934,8 +1012,9 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
     scaleY: xf.chH ? xf.h / xf.chH : 1,
     children,
     effects: parseEffects(kid(grpSpPr, 'effectLst'), env.ctx),
-    name: attr(walk(grp, 'nvGrpSpPr', 'cNvPr'), 'name') ?? undefined,
-    id: numAttr(walk(grp, 'nvGrpSpPr', 'cNvPr'), 'id') ?? undefined,
+    name: attr(cNvPr, 'name') ?? undefined,
+    id: numAttr(cNvPr, 'id') ?? undefined,
+    ...editInfoOf(env, cNvPr),
   };
 }
 
@@ -945,22 +1024,25 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
   const data = walk(frame, 'graphic', 'graphicData');
   const uri = attr(data, 'uri') ?? '';
   const frameCNvPr = walk(frame, 'nvGraphicFramePr', 'cNvPr');
+  const framePh = walk(frame, 'nvGraphicFramePr', 'nvPr', 'ph');
   const name = attr(frameCNvPr, 'name') ?? undefined;
   const frameId = numAttr(frameCNvPr, 'id') ?? undefined;
+  const frameEditInfo = editInfoOf(env, frameCNvPr, framePh);
+  const frameOnlyEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, 'frame');
 
   const tbl = kid(data, 'tbl');
-  if (tbl) return { ...parseTable(tbl, xf, env, name), id: frameId };
+  if (tbl) return { ...parseTable(tbl, xf, env, name), id: frameId, ...frameEditInfo };
 
   if (uri.endsWith('/chart')) {
     const chart = parseChartFrame(data, xf, env);
-    if (chart) return { ...chart, id: frameId };
-    return { kind: 'unsupported', ...base(xf), label: '图表', name, id: frameId };
+    if (chart) return { ...chart, id: frameId, ...frameOnlyEditInfo };
+    return { kind: 'unsupported', ...base(xf), label: '图表', name, id: frameId, ...frameOnlyEditInfo };
   }
 
   if (uri.endsWith('/diagram')) {
     const dgm = parseDiagram(data, xf, env);
-    if (dgm) return { ...dgm, id: frameId };
-    return { kind: 'unsupported', ...base(xf), label: 'SmartArt', name, id: frameId };
+    if (dgm) return { ...dgm, id: frameId, ...frameOnlyEditInfo };
+    return { kind: 'unsupported', ...base(xf), label: 'SmartArt', name, id: frameId, ...frameOnlyEditInfo };
   }
 
   // graphicData 的 URI 是 .../presentationml/2006/ole，不含 oleObject —— 原先的
@@ -975,17 +1057,17 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
         const img = parsePic(pic, env);
         // p:pic 自己的 xfrm 是相对 frame 的，位置以 frame 为准
         if (img && img.kind === 'image' && img.src) {
-          return { ...img, ...base(xf), name: name ?? img.name, id: frameId };
+          return { ...img, ...base(xf), name: name ?? img.name, id: frameId, ...frameOnlyEditInfo };
         }
       }
       const src = olePreview(oleObj, env);
-      if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId };
+      if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId, ...frameOnlyEditInfo };
     }
-    return { kind: 'unsupported', ...base(xf), label: 'OLE 对象', name, id: frameId };
+    return { kind: 'unsupported', ...base(xf), label: 'OLE 对象', name, id: frameId, ...frameOnlyEditInfo };
   }
 
   const label = uri.includes('/media') || uri.includes('video') ? '媒体对象' : '不支持的对象';
-  return { kind: 'unsupported', ...base(xf), label, name, id: frameId };
+  return { kind: 'unsupported', ...base(xf), label, name, id: frameId, ...frameOnlyEditInfo };
 }
 
 /**
@@ -1392,6 +1474,10 @@ export interface PptxParseOptions {
    * 或 `JSON.stringify` 整份演示文稿时更省心。
    */
   lazy?: boolean;
+  /** 为页与元素保留 OOXML 回写锚点和占位符身份；默认关闭 */
+  edit?: boolean;
+  /** 保留原始 ZIP 与解压 part，通过 `Presentation.package` 暴露；默认关闭 */
+  keepPackage?: boolean;
   /**
    * 资源产出方式。`defer` 下图片不建 blob URL，而是发 `asset:N` 令牌并把字节
    * 收进 `assets`，供 Worker 把结果传回主线程后再兑现成真实 URL。
@@ -1408,18 +1494,17 @@ export interface PptxParseResult {
 export function parsePptxDeferred(bytes: Uint8Array): PptxParseResult {
   const pkg = new Pkg(bytes);
   pkg.assetMode = 'defer';
-  const presentation = buildPresentation(pkg, bytes, { lazy: false, assets: 'defer' });
+  const presentation = buildPresentation(pkg, { lazy: false, assets: 'defer' });
   return { presentation, assets: pkg.deferred };
 }
 
 export function parsePptx(bytes: Uint8Array, opts: PptxParseOptions = {}): Presentation {
-  const pkg = new Pkg(bytes);
+  const pkg = new Pkg(bytes, opts.keepPackage === true);
   if (opts.assets === 'defer') pkg.assetMode = 'defer';
-  return buildPresentation(pkg, bytes, opts);
+  return buildPresentation(pkg, opts);
 }
 
-function buildPresentation(pkg: Pkg, bytes: Uint8Array, opts: PptxParseOptions): Presentation {
-  void bytes;
+function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   const presPath = 'ppt/presentation.xml';
   const presRoot = pkg.xml(presPath);
   if (!presRoot) throw new Error('无效的 .pptx：找不到 ppt/presentation.xml');
@@ -1463,11 +1548,14 @@ function buildPresentation(pkg: Pkg, bytes: Uint8Array, opts: PptxParseOptions):
       rot: 0, flipH: false, flipV: false,
       label: `第 ${i + 1} 页解析失败：${err instanceof Error ? err.message : String(err)}`,
     }],
+    ...(opts.edit ? { editInfo: { origin: { part: slidePaths[i] } } } : {}),
   });
 
   const buildSlide = (i: number): Slide => {
     try {
-      return parseSlide(pkg, slidePaths[i], i + 1, presRoot, docDefaults, tableStyles, slideIdMap, authors);
+      return parseSlide(
+        pkg, slidePaths[i], i + 1, presRoot, docDefaults, tableStyles, slideIdMap, authors, opts.edit === true,
+      );
     } catch (err) {
       return failed(i, err);
     }
@@ -1498,9 +1586,11 @@ function buildPresentation(pkg: Pkg, bytes: Uint8Array, opts: PptxParseOptions):
 
   const sections = parseSections(presRoot, idToIndex);
 
+  const opcPackage = pkg.opcPackage;
   return {
     width, height, slides, source: 'pptx',
     dispose: () => pkg.dispose(),
+    ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
     sections: sections.length ? sections : undefined,
   };
@@ -1515,6 +1605,7 @@ function parseSlide(
   tableStyles: Element | null,
   slideIdMap: Record<string, number>,
   authors: Map<string, AuthorInfo>,
+  edit: boolean,
 ): Slide {
   const slideRoot = pkg.xml(slidePath);
   const slideRels = pkg.rels(slidePath);
@@ -1575,6 +1666,7 @@ function parseSlide(
     tableStyles,
     hiddenPh,
     slideIdMap,
+    edit,
   });
 
   const elements: SlideElement[] = [];
@@ -1624,5 +1716,6 @@ function parseSlide(
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: parseTransition(slideRoot) ?? parseTransition(layoutRoot),
     animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
+    ...(edit ? { editInfo: { origin: { part: slidePath } } } : {}),
   };
 }

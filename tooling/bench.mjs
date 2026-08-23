@@ -1,7 +1,7 @@
 /**
  * 大文件性能基准。
  *
- *   node scripts/bench.mjs [页数倍数]
+ *   node tooling/bench.mjs [页数倍数] [--edit] [--json]
  *
  * 把 showcase.pptx 的页复制若干遍拼成大文件，测量解析与渲染耗时、内存占用。
  * 真实场景里 200 页 / 数十 MB 的演示文稿很常见，这里给出可复现的数量级参考。
@@ -19,11 +19,31 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 execFileSync('npx', ['esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error', `--outfile=${join(root, 'out/core/bench.mjs')}`], { cwd: root });
 const lib = await import(`file://${join(root, 'out/core/bench.mjs')}?t=${Date.now()}`);
+const editLib = EDIT_MODE() ? await (async () => {
+  const file = join(root, 'out/core/bench-edit.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/index.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error',
+    `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
+  return import(`file://${file}?t=${Date.now()}`);
+})() : null;
+const editXmlLib = EDIT_MODE() ? await (async () => {
+  const file = join(root, 'out/core/bench-edit-xml.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/xml/index.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error', `--outfile=${file}`], { cwd: root });
+  return import(`file://${file}?t=${Date.now()}`);
+})() : null;
+
+function EDIT_MODE() { return process.argv.includes('--edit'); }
+const JSON_MODE = process.argv.includes('--json');
+const report = (message) => { if (!JSON_MODE) console.log(message); };
 
 // 把 showcase 的页复制若干遍拼成大文件
 const src = unzipSync(new Uint8Array(readFileSync(join(root, 'fixtures/showcase.pptx'))));
 const dec = new TextDecoder();
-const REPEAT = Number(process.argv[2] ?? 30);
+const repeatArg = process.argv.slice(2).find((arg) => /^\d+$/.test(arg));
+const REPEAT = Number(repeatArg ?? 30);
+const EDIT = EDIT_MODE();
 const entries = [];
 const slideXmls = [];
 for (let i = 1; i <= 7; i++) slideXmls.push(dec.decode(src[`ppt/slides/slide${i}.xml`]));
@@ -58,37 +78,228 @@ entries.push(['[Content_Types].xml', ct]);
 
 const big = makeZip(entries);
 writeFileSync(join(root, 'out/core/big.pptx'), big);
-console.log(`大文件：${n} 页，${(big.length/1024/1024).toFixed(1)} MB`);
+report(`大文件：${n} 页，${(big.length/1024/1024).toFixed(1)} MB（${EDIT ? '编辑解析' : '只读解析'}）`);
 
 const t0 = Date.now();
-const p = await lib.parse(big);
+const p = await lib.parse(big, EDIT ? { edit: true, keepPackage: true } : undefined);
 const parseMs = Date.now() - t0;
 let els = 0;
-const walk = (l) => { for (const e of l) { els++; if (e.kind==='group') walk(e.children); } };
+let elementEditInfo = 0;
+const editableGeoms = [];
+const walk = (l) => { for (const e of l) {
+  els++;
+  if (e.editInfo) elementEditInfo++;
+  if (e.editInfo?.geom) editableGeoms.push([e.editInfo.geom, e.w, e.h]);
+  if (e.kind==='group') walk(e.children);
+} };
 for (const s of p.slides) walk(s.elements);
+const metrics = {
+  mode: EDIT ? 'edit' : 'readonly',
+  pages: p.slides.length,
+  elements: els,
+  inputBytes: big.length,
+  parseMs,
+  defaultState: {
+    slideEditInfo: p.slides.filter((slide) => !!slide.editInfo).length,
+    elementEditInfo,
+    package: !!p.package,
+  },
+};
+
+let editDoc = null;
+if (EDIT && editLib) {
+  const dt0 = performance.now();
+  editDoc = editLib.createDoc(p, { idPrefix: 'bench-' });
+  const createDocMs = performance.now() - dt0;
+  const pt0 = performance.now();
+  for (const slideId of editDoc.slideOrder) editLib.toSlide(editDoc, slideId);
+  const projectionMs = performance.now() - pt0;
+  const ct0 = performance.now();
+  for (const slideId of editDoc.slideOrder) editLib.toSlide(editDoc, slideId);
+  const cacheMs = performance.now() - ct0;
+  metrics.editDoc = { createDocMs, projectionMs, cacheMs };
+  report(`  EditDoc: 建模 ${createDocMs.toFixed(1)}ms · 冷投影 ${projectionMs.toFixed(1)}ms · 缓存 ${cacheMs.toFixed(2)}ms`);
+
+  // 保存只会解析脏 part；这里故意把 210 页的全部 XML 都过一遍，给 500ms 保存预算留足余量。
+  const xmlEntries = Object.entries(editDoc.package?.parts ?? {})
+    .filter(([path]) => /\.(?:xml|rels|vml)$/i.test(path));
+  let xmlRoundTripExact = 0;
+  let xmlRoundTripBytes = 0;
+  const xmlStart = performance.now();
+  for (const [, bytes] of xmlEntries) {
+    xmlRoundTripBytes += bytes.length;
+    const output = editXmlLib.serializeXmlTreeBytes(editXmlLib.parseXmlTree(bytes));
+    if (output.length === bytes.length && output.every((value, index) => value === bytes[index])) {
+      xmlRoundTripExact++;
+    }
+  }
+  const xmlRoundTripMs = performance.now() - xmlStart;
+  metrics.editDoc.xmlRoundTripParts = xmlEntries.length;
+  metrics.editDoc.xmlRoundTripExact = xmlRoundTripExact;
+  metrics.editDoc.xmlRoundTripBytes = xmlRoundTripBytes;
+  metrics.editDoc.xmlRoundTripMs = xmlRoundTripMs;
+  report(`  全部 XML 保留回环: ${xmlEntries.length} part / ${(xmlRoundTripBytes / 1024 / 1024).toFixed(1)}MB / ` +
+    `${xmlRoundTripMs.toFixed(1)}ms（逐字相同 ${xmlRoundTripExact}）`);
+  const target = Object.values(editDoc.elements).find((record) => record.meta.geom);
+  if (target) {
+    const slideId = editLib.slideOfElement(editDoc, target.id);
+    const elementPrefix = `bench-element-${target.id}-`;
+    const incrementalOps = 10000;
+    const originalX = target.src.x;
+    let incrementalChecksum = 0;
+    const it0 = performance.now();
+    for (let i = 0; i < incrementalOps; i++) {
+      target.ovr.x = originalX + (i & 1);
+      editLib.invalidateElement(editDoc, target.id);
+      const element = editLib.effectiveElement(editDoc, target.id);
+      const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
+      incrementalChecksum += part.markup.length + part.defs.length;
+    }
+    const incrementalMs = performance.now() - it0;
+    metrics.editDoc.elementCommitOps = incrementalOps;
+    metrics.editDoc.elementCommitRenderMs = incrementalMs;
+    metrics.editDoc.elementCommitRenderMsPerOp = incrementalMs / incrementalOps;
+    metrics.editDoc.elementChecksum = incrementalChecksum;
+    report(`  脏元素提交并渲染: ${incrementalOps} 次 / ${incrementalMs.toFixed(1)}ms  (${(incrementalMs / incrementalOps).toFixed(3)}ms/次)`);
+
+    // DOM 适配层会把每个元素的 defs 与 markup 作为同一分区替换；jsdom 比浏览器慢，
+    // 仍把这段纳入 16ms 硬门槛，避免字符串很快但真正上屏很慢的假优化。
+    const domOps = 500;
+    const host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const domStart = performance.now();
+    for (let i = 0; i < domOps; i++) {
+      target.ovr.x = originalX + (i & 1);
+      editLib.invalidateElement(editDoc, target.id);
+      const element = editLib.effectiveElement(editDoc, target.id);
+      const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
+      host.innerHTML = `<defs>${part.defs}</defs>${part.markup}`;
+    }
+    const domMs = performance.now() - domStart;
+    metrics.editDoc.elementDomOps = domOps;
+    metrics.editDoc.elementCommitDomMs = domMs;
+    metrics.editDoc.elementCommitDomMsPerOp = domMs / domOps;
+    metrics.editDoc.elementDomNodes = host.childNodes.length;
+    report(`  脏元素提交并替换 DOM: ${domOps} 次 / ${domMs.toFixed(1)}ms  (${(domMs / domOps).toFixed(3)}ms/次)`);
+
+    const commitOps = 2000;
+    const et0 = performance.now();
+    for (let i = 0; i < commitOps; i++) {
+      target.ovr.x = originalX + (i & 1);
+      editLib.invalidateElement(editDoc, target.id);
+      const slide = editLib.toSlide(editDoc, slideId);
+      lib.renderSlideToSvg(p, slide, { idPrefix: 'bench-commit-' });
+    }
+    const commitMs = performance.now() - et0;
+    delete target.ovr.x;
+    editLib.invalidateElement(editDoc, target.id);
+    metrics.editDoc.commitOps = commitOps;
+    metrics.editDoc.commitRenderMs = commitMs;
+    metrics.editDoc.commitRenderMsPerOp = commitMs / commitOps;
+    report(`  单元素提交并重渲: ${commitOps} 次 / ${commitMs.toFixed(1)}ms  (${(commitMs / commitOps).toFixed(3)}ms/次)`);
+  }
+
+  const textTarget = Object.values(editDoc.elements).find((record) =>
+    record.src.kind === 'shape' && record.src.text && !record.src.text.autoFitCompute)
+    ?? Object.values(editDoc.elements).find((record) => record.src.kind === 'shape' && record.src.text);
+  if (textTarget) {
+    const element = editLib.effectiveElement(editDoc, textTarget.id);
+    const text = element.kind === 'shape' ? element.text : null;
+    if (text) {
+      const textOps = 10000;
+      let checksum = 0;
+      const textStart = performance.now();
+      for (let i = 0; i < textOps; i++) {
+        checksum += lib.renderTextBodyToHtml(text, element.w, element.h).length;
+      }
+      const textMs = performance.now() - textStart;
+      metrics.editDoc.textHtmlOps = textOps;
+      metrics.editDoc.textHtmlRenderMs = textMs;
+      metrics.editDoc.textHtmlRenderMsPerOp = textMs / textOps;
+      metrics.editDoc.textHtmlChecksum = checksum;
+      report(`  文本编辑 HTML: ${textOps} 次 / ${textMs.toFixed(1)}ms  (${(textMs / textOps).toFixed(3)}ms/次)`);
+
+      // Safari / iOS 的 engine 模式按这个行盒做光标命中；默认路径必须包含逐字符 UTF-16 停靠点。
+      let layoutChecksum = 0;
+      const layoutStart = performance.now();
+      for (let i = 0; i < textOps; i++) {
+        const layout = lib.layoutText(text, element.w, element.h);
+        layoutChecksum += layout.lines.length;
+        for (const line of layout.lines) {
+          layoutChecksum += line.segments.length;
+          for (const segment of line.segments) layoutChecksum += segment.carets.length;
+        }
+      }
+      const layoutMs = performance.now() - layoutStart;
+      metrics.editDoc.textLayoutOps = textOps;
+      metrics.editDoc.textLayoutMs = layoutMs;
+      metrics.editDoc.textLayoutMsPerOp = layoutMs / textOps;
+      metrics.editDoc.textLayoutChecksum = layoutChecksum;
+      report(`  文本行盒与字符映射: ${textOps} 次 / ${layoutMs.toFixed(1)}ms  (${(layoutMs / textOps).toFixed(3)}ms/次)`);
+
+      // 按键后的真实上屏还包括 HTML 解析；用独立宿主反复替换覆盖层，守住 30ms 预算。
+      const textDomOps = 500;
+      const host = document.createElement('div');
+      const textDomStart = performance.now();
+      for (let i = 0; i < textDomOps; i++) {
+        host.innerHTML = lib.renderTextBodyToHtml(text, element.w, element.h);
+      }
+      const textDomMs = performance.now() - textDomStart;
+      metrics.editDoc.textHtmlDomOps = textDomOps;
+      metrics.editDoc.textHtmlDomMs = textDomMs;
+      metrics.editDoc.textHtmlDomMsPerOp = textDomMs / textDomOps;
+      metrics.editDoc.textHtmlDomNodes = host.childNodes.length;
+      report(`  文本编辑 HTML 并替换 DOM: ${textDomOps} 次 / ${textDomMs.toFixed(1)}ms  (${(textDomMs / textDomOps).toFixed(3)}ms/次)`);
+    }
+  }
+}
 
 const t1 = Date.now();
-for (const s of p.slides) lib.renderSlideToSvg(p, s);
+if (editDoc && editLib) {
+  for (const slideId of editDoc.slideOrder) lib.renderSlideToSvg(p, editLib.toSlide(editDoc, slideId));
+} else {
+  for (const s of p.slides) lib.renderSlideToSvg(p, s);
+}
 const renderAll = Date.now() - t1;
 
 const t2 = Date.now();
-lib.renderSlideToSvg(p, p.slides[0]);
+lib.renderSlideToSvg(p, editDoc && editLib ? editLib.toSlide(editDoc, editDoc.slideOrder[0]) : p.slides[0]);
 const renderOne = Date.now() - t2;
 
-console.log(`  解析 ${p.slides.length} 页 / ${els} 元素: ${parseMs}ms  (${(parseMs / p.slides.length).toFixed(1)}ms/页)`);
-console.log(`  全部渲染: ${renderAll}ms  (${(renderAll / p.slides.length).toFixed(1)}ms/页)`);
-console.log(`  单页渲染: ${renderOne}ms`);
+metrics.renderAllMs = renderAll;
+metrics.renderOneMs = renderOne;
+report(`  解析 ${p.slides.length} 页 / ${els} 元素: ${parseMs}ms  (${(parseMs / p.slides.length).toFixed(1)}ms/页)`);
+report(`  全部渲染: ${renderAll}ms  (${(renderAll / p.slides.length).toFixed(1)}ms/页)`);
+report(`  单页渲染: ${renderOne}ms`);
+
+if (editableGeoms.length) {
+  // 拉长到稳定可测的量级，避免 Date.now 的 1ms 分辨率掩盖单次重算成本。
+  const rounds = Math.ceil(50000 / editableGeoms.length);
+  const gt0 = performance.now();
+  let geomOps = 0, checksum = 0;
+  for (let round = 0; round < rounds; round++) {
+    for (const [geom, w, h] of editableGeoms) {
+      checksum += lib.resolveGeomPath(geom, w * 1.1, h * 0.9).d.length;
+      geomOps++;
+    }
+  }
+  const geomMs = performance.now() - gt0;
+  metrics.geometry = { operations: geomOps, totalMs: geomMs, microsecondsPerOp: geomMs / geomOps * 1000, checksum };
+  report(`  几何重算: ${geomOps} 次 / ${geomMs.toFixed(1)}ms  (${(geomMs / geomOps * 1000).toFixed(2)}µs/次，校验 ${checksum})`);
+}
 
 // 区分「峰值垃圾」与「真正驻留」：前者无害，后者才是大文件的隐患。
 // 需要 --expose-gc 才能强制回收；没有就只报峰值。
 const peak = process.memoryUsage().heapUsed;
+metrics.memory = { peakBytes: peak, retainedBytes: null };
 if (typeof global.gc === 'function') {
   global.gc();
   global.gc();
   const retained = process.memoryUsage().heapUsed;
-  console.log(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB · 回收后驻留 ${(retained / 1024 / 1024).toFixed(0)} MB` +
+  metrics.memory.retainedBytes = retained;
+  report(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB · 回收后驻留 ${(retained / 1024 / 1024).toFixed(0)} MB` +
     `  (${(retained / 1024 / 1024 / p.slides.length).toFixed(2)} MB/页)`);
 } else {
-  console.log(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB（加 --expose-gc 可测驻留量）`);
+  report(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB（加 --expose-gc 可测驻留量）`);
 }
-console.log('  注：Node 侧用 jsdom 解析 XML，内存显著高于浏览器原生 DOMParser，仅作趋势参考。');
+report('  注：Node 侧用 jsdom 解析 XML，内存显著高于浏览器原生 DOMParser，仅作趋势参考。');
+if (JSON_MODE) process.stdout.write(JSON.stringify(metrics));

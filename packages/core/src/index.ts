@@ -9,11 +9,21 @@ import { decryptOoxml } from './crypto/ooxml';
 import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
-import { renderSlideToSvg } from './render/svg';
+import { renderElementToSvg, renderSlideToSvg } from './render/svg';
+import { renderTextBodyToHtml } from './render/text-html';
+import { layoutText } from './render/text-layout';
+import { resolveGeomPath } from './geometry';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
-export { renderSlideToSvg };
+export { layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
+export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';
+export type { RenderTextBodyHtmlOptions } from './render/text-html';
+export type {
+  TextLayout, TextLayoutCaret, TextLayoutLine, TextLayoutOptions, TextLayoutSegment, TextMeasure,
+} from './render/text-layout';
+export { resolveGeomPath };
+export type { Adj, Geom, GeomSpec } from './geometry';
 export { groupSteps, hiddenBefore, staticHidden };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
@@ -40,6 +50,10 @@ export interface ParseOptions {
    * 需要把整份演示文稿 `structuredClone` 或序列化时，设为 false 更省心。
    */
   lazy?: boolean;
+  /** 为 OOXML 元素和幻灯片保留回写锚点、占位符身份等编辑元数据；默认关闭 */
+  edit?: boolean;
+  /** 保留原始 ZIP 字节与解压 part，并通过 `Presentation.package` 暴露；默认关闭 */
+  keepPackage?: boolean;
   /** 打开密码。文件加密时必填，密码错误抛 {@link WrongPasswordError} */
   password?: string;
 }
@@ -81,7 +95,7 @@ export async function parse(
       if (opts.password === undefined) throw new Error('该文件已加密，请通过 parse(input, { password }) 提供打开密码');
       return parsePptx(decrypt(enc.info, enc.pkg, opts.password), opts);
     }
-    return parsePpt(bytes, opts.password);
+    return parsePpt(bytes, opts.password, opts.edit === true);
   }
   throw new Error('无法识别的文件格式：既不是 .pptx（Zip）也不是 .ppt（CFB）');
 }

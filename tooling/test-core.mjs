@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { installDomEnv, parseXml } from './lib/dom-env.mjs';
 import { makeTtf } from './lib/font.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
+import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/core');
@@ -354,7 +355,8 @@ for (const [name, pres] of parsed) {
   check(`${name} 屏幕路径有 foreignObject 或纯图形`, true);
 }
 
-// 同一页渲染两次，id 不能重复（缩略图与主视图同时在 DOM 里的场景）
+// 默认模式下同一页渲染两次，id 不能重复（缩略图与主视图同时在 DOM 里的场景）；
+// 编辑器显式给命名空间后则必须可重复，才能对同一投影做字符串比较与增量 patch。
 {
   const pres = parsed.get('showcase.pptx');
   if (pres) {
@@ -363,9 +365,283 @@ for (const [name, pres] of parsed) {
     const idsA = new Set((a.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
     const idsB = (b.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1));
     const overlap = idsB.filter((id) => idsA.has(id));
+    check('重复渲染用例实际包含 defs id', idsA.size > 0);
     eq('重复渲染同一页不产生 id 冲突', overlap.length, 0);
+
+    const stableA = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'editor-slide-5-' });
+    const stableB = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'editor-slide-5-' });
+    eq('显式 idPrefix 让同一页渲染结果确定', stableB, stableA);
+    check('显式 idPrefix 进入全部 defs id',
+      (stableA.match(/\sid="([^"]+)"/g) || []).every((s) => s.startsWith(' id="editor-slide-5-')));
+
+    const thumb = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'thumb-slide-5-' });
+    const thumbIds = (thumb.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1));
+    const stableIds = new Set((stableA.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
+    eq('不同 idPrefix 的 SVG 可同时挂载', thumbIds.filter((id) => stableIds.has(id)).length, 0);
+
+    const hostile = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'x\"><script>' });
+    const { error } = parseXml(hostile);
+    check('idPrefix 任意字符不会破坏 SVG 结构', !error, error ?? '');
+    check('idPrefix 不能注入 SVG 标签', !hostile.includes('<script>'));
   }
 }
+
+// 元素输出必须能原样嵌回整页：编辑器只替换脏元素时不能走另一套渲染逻辑。
+group('元素级渲染');
+{
+  let total = 0, exact = 0, valid = 0, dangling = 0;
+  const kinds = new Set();
+  for (const [name, pres] of parsed) {
+    for (let page = 0; page < pres.slides.length; page++) {
+      const slide = pres.slides[page];
+      for (let index = 0; index < slide.elements.length; index++) {
+        const el = slide.elements[index];
+        kinds.add(el.kind);
+        for (const textMode of ['html', 'svg']) {
+          total++;
+          const opts = { textMode, idPrefix: `part-${name}-${page}-${index}-` };
+          const part = lib.renderElementToSvg(el, opts);
+          // 背景可能自己分配 defs id；清空后才能证明元素入口与页面内部元素分支逐字节同源。
+          const whole = lib.renderSlideToSvg(pres, { ...slide, background: null, elements: [el] }, opts);
+          const defsStart = whole.indexOf('<defs>') + '<defs>'.length;
+          const defsEnd = whole.indexOf('</defs>', defsStart);
+          const wholeDefs = whole.slice(defsStart, defsEnd);
+          if (whole.endsWith(`${part.markup}</svg>`) && wholeDefs.endsWith(part.defs)) exact++;
+
+          const fragment = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">` +
+            `<defs>${part.defs}</defs>${part.markup}</svg>`;
+          if (!parseXml(fragment).error) valid++;
+          const ids = new Set((fragment.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
+          for (const ref of fragment.match(/url\(#([^)]+)\)/g) || []) {
+            if (!ids.has(ref.slice(5, -1))) dangling++;
+          }
+        }
+      }
+    }
+  }
+  check('元素级覆盖全部类型', ['shape', 'image', 'group', 'table', 'unsupported']
+    .every((kind) => kinds.has(kind)), [...kinds].join(','));
+  check('元素级测试实际覆盖大量元素', total > 500, `实际 ${total}`);
+  eq('元素 markup/defs 原样组成单元素页面', exact, total);
+  eq('元素 fragment 全部是合法 SVG', valid, total);
+  eq('元素 fragment 无悬空 defs 引用', dangling, 0);
+
+  const pres = parsed.get('showcase.pptx');
+  const withDefs = pres?.slides.flatMap((slide) => slide.elements)
+    .find((el) => lib.renderElementToSvg(el, { idPrefix: 'probe-' }).defs.length > 0);
+  if (check('找到包含 defs 的元素', !!withDefs)) {
+    const stableA = lib.renderElementToSvg(withDefs, { idPrefix: 'editor-element-1-' });
+    const stableB = lib.renderElementToSvg(withDefs, { idPrefix: 'editor-element-1-' });
+    eq('元素相同前缀逐字节确定', JSON.stringify(stableB), JSON.stringify(stableA));
+    const other = lib.renderElementToSvg(withDefs, { idPrefix: 'editor-element-2-' });
+    const idsA = new Set((stableA.defs.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
+    const idsOther = (other.defs.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1));
+    eq('不同元素前缀可同时挂载', idsOther.filter((id) => idsA.has(id)).length, 0);
+    const globalA = lib.renderElementToSvg(withDefs);
+    const globalB = lib.renderElementToSvg(withDefs);
+    const globalIds = new Set((globalA.defs.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
+    eq('默认元素渲染仍用全局唯一 id',
+      (globalB.defs.match(/\sid="([^"]+)"/g) || []).filter((s) => globalIds.has(s.slice(5, -1))).length, 0);
+  }
+
+  const groupEl = pres?.slides.flatMap((slide) => slide.elements)
+    .find((el) => el.kind === 'group' && el.children.some((child) => child.id !== undefined));
+  if (check('找到带身份子节点的组', !!groupEl)) {
+    const target = groupEl.children.find((child) => child.id !== undefined);
+    const hidden = lib.renderElementToSvg(groupEl, { hiddenElements: [target.id], idPrefix: 'hidden-group-' });
+    check('元素级组渲染递归应用隐藏集', hidden.markup.includes(`data-el="${target.id}" style="visibility:hidden;`));
+  }
+
+  const mediaPres = parsed.get('sample-media.pptx');
+  let mediaEl = null;
+  for (const slide of mediaPres?.slides ?? []) {
+    walkElements(slide.elements, (el) => { if (!mediaEl && el.kind === 'image' && el.media?.src) mediaEl = el; });
+  }
+  if (check('找到可播放媒体元素', !!mediaEl)) {
+    const player = lib.renderElementToSvg(mediaEl, { media: 'player', textMode: 'html', idPrefix: 'player-' });
+    check('元素级屏幕路径可输出真实播放器', /<(?:video|audio)\b/.test(player.markup));
+    const portable = lib.renderElementToSvg(mediaEl, { media: 'player', textMode: 'svg', idPrefix: 'portable-' });
+    check('元素级可移植路径强制退回 badge', !portable.markup.includes('<foreignObject')
+      && !/<(?:video|audio)\b/.test(portable.markup));
+  }
+
+  const shape = pres?.slides.flatMap((slide) => slide.elements).find((el) => el.kind === 'shape');
+  if (shape) {
+    const bad = { ...shape };
+    Object.defineProperty(bad, 'path', { get() { throw new Error('元素入口隔离'); } });
+    check('元素级渲染保留错误隔离', lib.renderElementToSvg(bad).markup.includes('data-render-error="1"'));
+  }
+
+  if (pres?.slides[0]?.elements[0]) {
+    const oldDocument = globalThis.document;
+    globalThis.document = undefined;
+    try {
+      const part = lib.renderElementToSvg(pres.slides[0].elements[0], { idPrefix: 'worker-' });
+      check('元素级 API 不依赖 document', typeof part.markup === 'string' && typeof part.defs === 'string');
+    } finally {
+      globalThis.document = oldDocument;
+    }
+  }
+}
+
+// 文本编辑覆盖层必须直接复用预览的 HTML 生成器；只允许多出编辑身份标记，
+// 不能复制一套“看起来差不多”的 CSS，否则进入/退出编辑时一定会跳版。
+group('HTML 文本渲染');
+{
+  if (check('公开 renderTextBodyToHtml', typeof lib.renderTextBodyToHtml === 'function')) {
+    let bodies = 0, validBodies = 0, markedBodies = 0, previewCases = 0, exactPreview = 0;
+    const auditBody = (t, w, h, opts, previewMarkup) => {
+      bodies++;
+      const marked = lib.renderTextBodyToHtml(t, w, h, opts);
+      if (!parseXml(marked).error) validBodies++;
+      const runs = t.paragraphs.reduce((sum, p) => sum + p.runs.length, 0);
+      if ((marked.match(/\sdata-p="\d+"/g) || []).length === t.paragraphs.length
+        && (marked.match(/\sdata-r="\d+\.\d+"/g) || []).length === runs) markedBodies++;
+      if (!t.warp && previewMarkup.includes('<foreignObject')) {
+        previewCases++;
+        const plain = lib.renderTextBodyToHtml(t, w, h, { ...opts, includeEditMarkers: false });
+        if (previewMarkup.includes(plain)) exactPreview++;
+      }
+    };
+    for (const pres of parsed.values()) {
+      for (const el of allElements(pres)) {
+        if (el.kind === 'shape' && el.text) {
+          auditBody(el.text, el.w, el.h, {},
+            lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-audit-' }).markup);
+        } else if (el.kind === 'table') {
+          const tableMarkup = lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'cell-audit-' }).markup;
+          for (let ri = 0; ri < el.rows.length; ri++) {
+            const row = el.rows[ri];
+            for (let ci = 0; ci < row.cells.length; ci++) {
+              const cell = row.cells[ci];
+              if (cell.merged || !cell.text) continue;
+              const w = el.colWidths.slice(ci, ci + cell.colSpan).reduce((a, b) => a + b, 0)
+                || el.colWidths[ci] || 0;
+              const h = el.rows.slice(ri, ri + cell.rowSpan).reduce((a, b) => a + b.height, 0)
+                || row.height;
+              auditBody(cell.text, w, h, { insets: cell.margins, anchor: cell.vAlign, vert: cell.vert }, tableMarkup);
+            }
+          }
+        }
+      }
+    }
+    check('HTML 公共入口覆盖大量真实文本体', bodies > 200, `实际 ${bodies}`);
+    eq('全部真实文本体都是合法 XHTML', validBodies, bodies);
+    eq('全部真实文本体的段/run 身份完整', markedBodies, bodies);
+    check('逐字节预览复用覆盖大量 HTML 路径', previewCases > 200, `实际 ${previewCases}`);
+    eq('全部 HTML 预览逐字节复用公共入口', exactPreview, previewCases);
+    console.log(`  ${bodies} 个文本体 · ${previewCases} 个 HTML 预览逐字节同源`);
+
+    let textEl = null;
+    for (const pres of parsed.values()) {
+      textEl = allElements(pres).find((el) => el.kind === 'shape' && el.text
+        && lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-probe-' }).markup.includes('<foreignObject'));
+      if (textEl) break;
+    }
+
+    if (check('找到 HTML 路径文本元素', !!textEl)) {
+      const before = JSON.stringify(textEl.text);
+      const previewPart = lib.renderElementToSvg(textEl, { textMode: 'html', idPrefix: 'text-preview-' });
+      const plain = lib.renderTextBodyToHtml(textEl.text, textEl.w, textEl.h, { includeEditMarkers: false });
+      check('预览逐字节复用公开 HTML', previewPart.markup.includes(plain));
+      eq('HTML 渲染不修改 TextBody', JSON.stringify(textEl.text), before);
+
+      const editable = lib.renderTextBodyToHtml(textEl.text, textEl.w, textEl.h);
+      const runCount = textEl.text.paragraphs.reduce((sum, p) => sum + p.runs.length, 0);
+      eq('编辑 HTML 的段落身份完整', (editable.match(/\sdata-p="\d+"/g) || []).length,
+        textEl.text.paragraphs.length);
+      eq('编辑 HTML 的 run 身份完整', (editable.match(/\sdata-r="\d+\.\d+"/g) || []).length, runCount);
+      check('编辑 HTML 暴露有效 autofit 比例', /\sdata-font-scale="(?:0|[1-9]\d*)(?:\.\d+)?"/.test(editable));
+      check('编辑 HTML 标明 autofit 模式', /\sdata-autofit="(?:none|normal|shape)"/.test(editable));
+      check('编辑标记不改变排版 CSS',
+        editable.replace(/\sdata-(?:p|r|font-scale|autofit|empty|bullet)="[^"]*"|\scontenteditable="false"/g, '') === plain);
+
+      const columns = structuredClone(textEl.text);
+      columns.columns = 2;
+      columns.columnGap = 17;
+      const columnHtml = lib.renderTextBodyToHtml(columns, textEl.w, textEl.h);
+      check('HTML 文本保留分栏排版', columnHtml.includes('column-count:2;column-gap:17px;'));
+
+      const cjk = structuredClone(textEl.text);
+      cjk.wrap = true;
+      cjk.paragraphs = [{ ...cjk.paragraphs[0], marL: 0, indent: 0,
+        runs: [{ ...cjk.paragraphs[0].runs[0], text: '「中文，标点。」' }] }];
+      let squeezed = '';
+      for (let width = 20; width <= 240 && !squeezed.includes('margin-'); width++) {
+        squeezed = lib.renderTextBodyToHtml(cjk, width, textEl.h);
+      }
+      check('HTML 文本继续使用 CJK 标点挤压', squeezed.includes('margin-'), squeezed.slice(0, 240));
+
+      const empty = structuredClone(textEl.text);
+      empty.paragraphs = [{ ...empty.paragraphs[0], bullet: '•', bulletImage: null,
+        runs: [{ ...empty.paragraphs[0].runs[0], text: '' }] }];
+      const emptyHtml = lib.renderTextBodyToHtml(empty, textEl.w, textEl.h);
+      check('空 run 可与占位 NBSP 区分', emptyHtml.includes('data-empty="true"'));
+      check('项目符号与正文可被反解器区分且不可直接编辑',
+        emptyHtml.includes('data-bullet="true" contenteditable="false"'));
+
+      const hostile = structuredClone(empty);
+      hostile.paragraphs[0].bulletImage = 'x" onerror="globalThis.pwned=1';
+      hostile.paragraphs[0].bullet = null;
+      Object.assign(hostile.paragraphs[0].runs[0], {
+        text: '</span><script>globalThis.pwned=1</script>&',
+        fonts: ['Bad\"><img src=x onerror=globalThis.pwned=1>'],
+        color: 'red;" onmouseover="globalThis.pwned=1',
+        link: 'javascript:globalThis.pwned=1',
+      });
+      const safe = lib.renderTextBodyToHtml(hostile, textEl.w, textEl.h);
+      const safeParsed = parseXml(safe);
+      check('HTML 文本对任意模型字符串保持结构合法', !safeParsed.error, safeParsed.error ?? '');
+      check('文本与样式不能注入 HTML 节点', !safe.includes('<script>') && !safe.includes('<img src=x'));
+      check('危险协议不生成可点击链接',
+        ![...safeParsed.doc.getElementsByTagName('a')].some((a) => /^javascript:/i.test(a.getAttribute('href') ?? '')));
+      check('图片项目符号不能注入事件属性',
+        ![...safeParsed.doc.getElementsByTagName('*')].some((el) => el.hasAttribute('onerror')));
+
+      const oldDocument = globalThis.document;
+      globalThis.document = undefined;
+      try {
+        const workerHtml = lib.renderTextBodyToHtml(textEl.text, textEl.w, textEl.h);
+        check('HTML 文本 API 不依赖 document', typeof workerHtml === 'string' && workerHtml.length > 0);
+      } finally {
+        globalThis.document = oldDocument;
+      }
+    }
+
+    const table = parsed.get('showcase.pptx')?.slides.flatMap((slide) => slide.elements)
+      .find((el) => el.kind === 'table');
+    if (check('找到表格文本覆盖用例', !!table)) {
+      let cellCase = null;
+      for (let ri = 0; ri < table.rows.length && !cellCase; ri++) {
+        const row = table.rows[ri];
+        for (let ci = 0; ci < row.cells.length; ci++) {
+          const cell = row.cells[ci];
+          if (!cell.merged && cell.text) {
+            cellCase = {
+              cell,
+              w: table.colWidths.slice(ci, ci + cell.colSpan).reduce((a, b) => a + b, 0) || table.colWidths[ci] || 0,
+              h: table.rows.slice(ri, ri + cell.rowSpan).reduce((a, b) => a + b.height, 0) || row.height,
+            };
+            break;
+          }
+        }
+      }
+      if (check('找到有文本的表格单元格', !!cellCase)) {
+        const tablePart = lib.renderElementToSvg(table, { textMode: 'html', idPrefix: 'table-text-' });
+        const cellHtml = lib.renderTextBodyToHtml(cellCase.cell.text, cellCase.w, cellCase.h, {
+          insets: cellCase.cell.margins,
+          anchor: cellCase.cell.vAlign,
+          vert: cellCase.cell.vert,
+          includeEditMarkers: false,
+        });
+        check('表格单元格也逐字节复用公开 HTML', tablePart.markup.includes(cellHtml));
+      }
+    }
+  }
+}
+
+group('文本行盒');
+runTextLayoutContract({ lib, parsed, allElements, check, eq, near });
 
 // ---------------- 4. 文本样式继承 ----------------
 
@@ -1068,7 +1344,128 @@ group('惰性解析');
   }
 }
 
-// ---------------- 11c. Worker 用的 XML 解析器 ----------------
+// ---------------- 11c. 编辑解析契约 ----------------
+
+group('编辑解析');
+{
+  const bytes = load('sample-placeholder.pptx');
+  if (bytes) {
+    const plain = await lib.parse(bytes, { lazy: false });
+    const editable = await lib.parse(bytes, { edit: true, lazy: false });
+    const kept = await lib.parse(bytes, { keepPackage: true, lazy: false });
+    const combined = await lib.parse(bytes, { edit: true, keepPackage: true, lazy: false });
+
+    check('默认解析不暴露原包', !Object.hasOwn(plain, 'package'));
+    check('默认页不携带编辑元数据', plain.slides.every((s) => !Object.hasOwn(s, 'editInfo')));
+    check('默认元素不携带编辑元数据', allElements(plain).every((e) => !Object.hasOwn(e, 'editInfo')));
+
+    check('edit 模式不隐式保留原包', !Object.hasOwn(editable, 'package'));
+    check('edit 模式记录每页 part', editable.slides.every((s, i) =>
+      s.editInfo?.origin.part === `ppt/slides/slide${i + 1}.xml`));
+    const identified = allElements(editable).filter((e) => e.id !== undefined);
+    check('edit 模式记录全部有 id 元素的回写锚点', identified.length > 0
+      && identified.every((e) => e.editInfo?.origin?.spid === e.id && !!e.editInfo.origin.part));
+    check('edit 模式保留占位符身份', identified.some((e) => !!e.editInfo?.placeholder?.type));
+    const inheritedGeom = identified.find((e) => e.kind === 'shape'
+      && e.editInfo?.placeholder?.idx === '2');
+    eq('edit 模式保留占位符继承的预设几何', inheritedGeom?.editInfo?.geom?.preset, 'roundRect');
+    const inheritedPictureGeom = identified.find((e) => e.kind === 'image'
+      && e.editInfo?.placeholder?.idx === '1');
+    eq('edit 模式保留图片占位符继承的预设几何', inheritedPictureGeom?.editInfo?.geom?.preset, 'rect');
+
+    let renderSame = true;
+    for (let i = 0; i < plain.slides.length; i++) {
+      const opts = { textMode: 'svg', idPrefix: `edit-contract-${i}-` };
+      if (normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
+        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))) renderSame = false;
+    }
+    check('编辑元数据不改变预览结果', renderSame);
+
+    check('keepPackage 暴露只读 OPC 句柄', kept.package?.format === 'pptx');
+    check('keepPackage 零拷贝保留原始 ZIP 字节', kept.package?.bytes === bytes);
+    check('keepPackage 暴露解压 part', !!kept.package?.parts['ppt/presentation.xml']);
+    check('keepPackage 不隐式添加编辑元数据', allElements(kept).every((e) => !Object.hasOwn(e, 'editInfo')));
+    check('edit + keepPackage 可联合启用', combined.package?.format === 'pptx'
+      && combined.slides.every((s) => !!s.editInfo?.origin.part));
+    check('联合模式的元素锚点指向真实 part', allElements(combined)
+      .filter((e) => !!e.editInfo?.origin)
+      .every((e) => !!combined.package?.parts[e.editInfo.origin.part]));
+    const handle = kept.package;
+    kept.dispose?.();
+    check('dispose 标记 OPC 句柄已释放', handle?.disposed === true);
+    eq('dispose 释放原始 ZIP 字节', handle?.bytes.length, 0);
+    eq('dispose 释放解压 part', Object.keys(handle?.parts ?? {}).length, 0);
+    try { kept.dispose?.(); pass++; } catch (e) { failures.push(`dispose 可重复调用 — ${String(e)}`); }
+    combined.dispose?.();
+  }
+
+  const pptBytes = load('showcase.ppt');
+  if (pptBytes) {
+    const legacy = await lib.parse(pptBytes, { edit: true, keepPackage: true });
+    check('.ppt 不暴露伪 OPC 包', !Object.hasOwn(legacy, 'package'));
+    check('.ppt 不伪造 OOXML 回写锚点', allElements(legacy).every((e) => !e.editInfo?.origin));
+    const legacyShape = allElements(legacy)
+      .find((e) => e.kind === 'shape' && !!e.editInfo?.geom?.preset);
+    if (check('.ppt 编辑模式保留格式无关的预设几何', !!legacyShape)) {
+      eq('.ppt 的预设几何可由公共入口复现',
+        lib.resolveGeomPath(legacyShape.editInfo.geom, legacyShape.w, legacyShape.h).d,
+        legacyShape.path);
+    }
+    legacy.dispose?.();
+  }
+
+  let anchored = 0, missingAnchor = 0, missingPart = 0;
+  for (const fx of FIXTURES.filter((x) => x.source === 'pptx')) {
+    const fixtureBytes = load(fx.file);
+    if (!fixtureBytes) continue;
+    const pres = await lib.parse(fixtureBytes, { edit: true, keepPackage: true, lazy: false });
+    for (const el of allElements(pres)) {
+      if (el.id === undefined) continue;
+      anchored++;
+      const origin = el.editInfo?.origin;
+      if (!origin || origin.spid !== el.id) missingAnchor++;
+      else if (!pres.package?.parts[origin.part]) missingPart++;
+    }
+    pres.dispose?.();
+  }
+  check('全类型固件均产出元素锚点', anchored > 0);
+  eq('全类型固件没有缺失或错误 spid', missingAnchor, 0);
+  eq('全类型固件的 origin part 均真实存在', missingPart, 0);
+
+  const geomBytes = load('showcase.pptx');
+  if (geomBytes) {
+    const plain = await lib.parse(geomBytes, { lazy: false });
+    const editable = await lib.parse(geomBytes, { edit: true, lazy: false });
+    const shapes = allElements(editable).filter((e) => e.kind === 'shape');
+    const adjusted = shapes.find((e) => e.editInfo?.geom?.preset === 'roundRect'
+      && e.editInfo.geom.adj.adj === 10000);
+    if (check('edit 模式保留显式 preset + adj', !!adjusted)) {
+      const spec = adjusted.editInfo.geom;
+      const current = lib.resolveGeomPath(spec, adjusted.w, adjusted.h);
+      eq('resolveGeomPath 复现解析期路径', current.d, adjusted.path);
+      eq('resolveGeomPath 复现开放路径语义', current.open || undefined, adjusted.openGeom);
+      const resized = lib.resolveGeomPath(spec, adjusted.w * 1.75, adjusted.h * 0.6);
+      check('改变宽高会重算而非复用烘焙路径', resized.d !== adjusted.path);
+      eq('根入口与 geometry 子入口重算一致', resized.d,
+        geo.resolveGeomPath(spec, adjusted.w * 1.75, adjusted.h * 0.6).d);
+    }
+
+    const custom = shapes.find((e) => e.name === 'CustGeomFormula' || e.name === 'CustGeom');
+    check('自定义几何不冒充预设几何', !!custom && !custom.editInfo?.geom);
+
+    let renderSame = true;
+    for (let i = 0; i < plain.slides.length; i++) {
+      const opts = { textMode: 'svg', idPrefix: `edit-geom-${i}-` };
+      if (normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
+        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))) renderSame = false;
+    }
+    check('几何编辑元数据不改变全类型预览', renderSame);
+    plain.dispose?.();
+    editable.dispose?.();
+  }
+}
+
+// ---------------- 11d. Worker 用的 XML 解析器 ----------------
 
 group('xml-lite');
 {

@@ -14,6 +14,13 @@ export interface Geom {
 }
 
 export type Adj = Record<string, number>;
+
+/** 可跨文件格式重算的预设几何语义；调节值保持 OOXML 的原始计量口径。 */
+export interface GeomSpec {
+  preset: string;
+  adj: Adj;
+}
+
 type PathFn = (w: number, h: number, a: Adj) => string | Geom;
 export type Pt = [number, number];
 
@@ -1154,6 +1161,11 @@ export function presetGeom(name: string, w: number, h: number, adj: Adj): Geom {
     }
   }
   return geom;
+}
+
+/** 按当前尺寸求值编辑态几何，避免复用解析期已经烘焙的 path。 */
+export function resolveGeomPath(geom: GeomSpec, w: number, h: number): Geom {
+  return presetGeom(geom.preset, w, h, geom.adj);
 }
 
 export function isKnownPreset(name: string): boolean {

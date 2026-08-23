@@ -4,6 +4,8 @@
  * 注意：新增能力一律用可选字段，保证已有生产者（如图表模块）无需同步改动。
  */
 
+import type { GeomSpec } from './geometry';
+
 export interface Presentation {
   width: number;
   height: number;
@@ -17,8 +19,23 @@ export interface Presentation {
    * 调用后依赖这些 URL 的已渲染 SVG 将无法显示图片。
    */
   dispose?: () => void;
+  /**
+   * 原始 OOXML 包；仅 `parse(..., { keepPackage: true })` 时存在。
+   * 编辑器保存需要原始 ZIP 字节与解压 part；调用 `dispose()` 后句柄会变为空并标记已释放。
+   */
+  package?: OpcPackage;
   /** 节（p14:sectionLst），供缩略图分组 */
   sections?: Section[];
+}
+
+/** 编辑写回使用的只读 OPC 包句柄。字节视为只读，修改它们属于未定义行为。 */
+export interface OpcPackage {
+  readonly format: 'pptx';
+  /** 原始 ZIP 字节的零拷贝只读视图；`dispose()` 前调用方不得修改，释放后为空数组 */
+  readonly bytes: Uint8Array;
+  /** 解压后的包内 part，key 是不带前导 `/` 的 OPC 路径 */
+  readonly parts: Readonly<Record<string, Uint8Array>>;
+  readonly disposed: boolean;
 }
 
 /** 演示文稿的「节」 */
@@ -52,6 +69,12 @@ export interface Slide {
   animations?: AnimStep[];
   /** 批注（ppt/comments/*.xml），默认不渲染，由 RenderOptions 开关控制 */
   comments?: SlideComment[];
+  /** 仅 `parse(..., { edit: true })` 时存在，不参与渲染 */
+  editInfo?: SlideEditInfo;
+}
+
+export interface SlideEditInfo {
+  origin: { part: string };
 }
 
 /** 幻灯片批注 */
@@ -206,8 +229,21 @@ export interface ElementBase {
   name?: string;
   /** 形状 id（来自 cNvPr@id），动画以此定位目标 */
   id?: number;
+  /** 仅 `parse(..., { edit: true })` 时存在，不参与渲染 */
+  editInfo?: ElementEditInfo;
   /** 立体效果 */
   scene3d?: Shape3D;
+}
+
+export interface ElementEditInfo {
+  /** OOXML 回写锚点；畸形节点缺少 cNvPr@id 时可能不存在 */
+  origin?: { part: string; spid: number };
+  /** 占位符身份；type 是 ECMA-376 默认值展开后的语义值 */
+  placeholder?: { type: string; idx?: string };
+  /** 预设形状的可重算语义；继承自版式/母版时也保留，只在编辑解析中存在 */
+  geom?: GeomSpec;
+  /** 内部内容不可安全写回时只允许框架级变换；省略表示由元素类型推断为 full */
+  editable?: 'full' | 'frame' | 'none';
 }
 
 export type SlideElement =

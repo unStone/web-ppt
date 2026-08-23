@@ -32,6 +32,12 @@ jobs:
       - name: 核心解析 / 渲染测试
         run: npm run test:core
 
+      - name: 编辑模型 / 投影测试
+        run: npm run test:edit
+
+      - name: 编辑性能预算
+        run: npm run bench:edit
+
       - name: 图元文件解码测试
         run: npm run test:metafile
 
