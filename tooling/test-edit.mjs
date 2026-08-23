@@ -4,6 +4,9 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
+import { runCommandHistoryContract } from './lib/command-history-contract.mjs';
+import { runCommandPropertyContract } from './lib/command-property-contract.mjs';
+import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
 import { runOpcZipContract } from './lib/opc-zip-contract.mjs';
 
@@ -251,6 +254,9 @@ else {
 
 check('默认 edit-core 入口不捆绑保存期 XML 解析器', !('parseXmlTree' in edit));
 check('默认 edit-core 入口不捆绑保存期 ZIP 补丁器', !('patchOpcPackage' in edit));
+await runCommandHistoryContract({ edit, core, load, check, eq });
+await runCommandPropertyContract({ edit, core, load, check, eq });
+await runModelInvariantContract({ edit, core, load, check });
 runXmlTreeContract({ edit: editXml, check, eq, root });
 await runOpcZipContract({ opc: editOpc, core, load, check, eq });
 

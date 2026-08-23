@@ -28,10 +28,14 @@
   扁平 `EditDoc`，以 `src` / `ovr` 分离源值和用户改动，并通过 `toSlide` 投影回现有
   渲染 Schema。元素、组祖先和页面缓存按修改路径精确失效；图表、SmartArt、OLE、
   墨迹与媒体只开放框架级变换，内部派生节点不可误编辑。
+- `@web-ppt/edit-core` 新增无 DOM 的 `Editor`、可 JSON 序列化的 `SetXfrm` 与双向 patch。
+  事务失败整体回滚；撤销/重做恢复选区，同路径改动按 500ms 分组，远端 origin 不进入本地历史，
+  默认保留 200 组 / 8MB。固定种子 200 条命令通过撤销、重做与 JSON 回放全等，500 条非法命令
+  不污染文档；210 页实测 200 组撤销/重做含脏页重渲均约 0.5ms/次，历史约 64KB。
 - 新增按需入口 `@web-ppt/edit-core/xml`：无 DOM 的保留型 XML 树支持 UTF-8 / UTF-16
   字节回环、限定名与 namespace URI 查询、属性最小改写和 OOXML sequence 有序插入；声明、
-  注释、PI、前缀、属性顺序、自闭合形态及 `AlternateContent` 不被重建。默认编辑模型入口仍为
-  2.95KB gzip，保存期 XML 入口独立为 7.14KB gzip。
+  注释、PI、前缀、属性顺序、自闭合形态及 `AlternateContent` 不被重建。默认编辑模型入口为
+  8.28KB gzip，保存期 XML 入口独立为 7.14KB gzip。
 - 新增按需入口 `@web-ppt/edit-core/opc`：无修改保存复用原始字节；脏 part 定点重压，净条目的
   本地头、extra field 与压缩流逐字直通。新增/删除 part、重复保存和确定性输出均有契约；zip64、
   数据描述符、存档注释、加密条目、未知压缩与多磁盘格式会给出原因并整包重压。入口为 4.27KB gzip，

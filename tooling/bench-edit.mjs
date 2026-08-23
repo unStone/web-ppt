@@ -50,6 +50,18 @@ check('提交并整页重渲 ≤ 16ms', typeof commit === 'number' && commit <= 
 const elementCommit = editable.editDoc?.elementCommitRenderMsPerOp;
 check('脏元素提交并渲染 ≤ 8ms', typeof elementCommit === 'number' && elementCommit <= 8,
   `${typeof elementCommit === 'number' ? elementCommit.toFixed(3) : '缺失'}ms/次`);
+const undoRender = editable.editDoc?.undoRenderMsPerOp;
+const redoRender = editable.editDoc?.redoRenderMsPerOp;
+check('200 组撤销 / 重做 + 脏页重渲均 ≤ 50ms', typeof undoRender === 'number'
+  && typeof redoRender === 'number' && undoRender <= 50 && redoRender <= 50
+  && editable.editDoc.historyOps === 200 && editable.editDoc.historyChecksum > 0,
+  `undo ${typeof undoRender === 'number' ? undoRender.toFixed(3) : '缺失'}ms/次，` +
+  `redo ${typeof redoRender === 'number' ? redoRender.toFixed(3) : '缺失'}ms/次，` +
+  `历史 ${((editable.editDoc?.historyBytes ?? 0) / 1024).toFixed(1)}KB`);
+const historyRebase = editable.editDoc?.historyRebaseMsPerOp;
+check('200 组历史上的远端 rebase ≤ 8ms', typeof historyRebase === 'number'
+  && historyRebase <= 8 && editable.editDoc.historyRebaseOps === 1000,
+  `${typeof historyRebase === 'number' ? historyRebase.toFixed(3) : '缺失'}ms/次`);
 const elementDom = editable.editDoc?.elementCommitDomMsPerOp;
 check('脏元素提交并替换 DOM ≤ 16ms', typeof elementDom === 'number' && elementDom <= 16
   && editable.editDoc.elementDomNodes > 0,

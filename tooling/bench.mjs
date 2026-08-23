@@ -113,6 +113,7 @@ const metrics = {
 };
 
 let editDoc = null;
+let retainedHistoryEditor = null;
 if (EDIT && editLib) {
   const dt0 = performance.now();
   editDoc = editLib.createDoc(p, { idPrefix: 'bench-' });
@@ -170,17 +171,20 @@ if (EDIT && editLib) {
     report(`  50MB OPC 三页序列化并保存: ${(expanded.bytes.length / 1024 / 1024).toFixed(1)}MB / ` +
       `${saveMs.toFixed(1)}ms（直通 ${saved.preservedEntries}）`);
   }
-  const target = Object.values(editDoc.elements).find((record) => record.meta.geom);
+  const target = Object.values(editDoc.elements).find((record) => record.meta.geom
+    && record.meta.editable !== 'none');
   if (target) {
     const slideId = editLib.slideOfElement(editDoc, target.id);
     const elementPrefix = `bench-element-${target.id}-`;
     const incrementalOps = 10000;
     const originalX = target.src.x;
+    const commandEditor = new editLib.Editor(editDoc);
     let incrementalChecksum = 0;
     const it0 = performance.now();
     for (let i = 0; i < incrementalOps; i++) {
-      target.ovr.x = originalX + (i & 1);
-      editLib.invalidateElement(editDoc, target.id);
+      commandEditor.transaction((tx) => tx.exec(
+        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
+      ), '性能采样', { recordHistory: false });
       const element = editLib.effectiveElement(editDoc, target.id);
       const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
       incrementalChecksum += part.markup.length + part.defs.length;
@@ -198,8 +202,9 @@ if (EDIT && editLib) {
     const host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const domStart = performance.now();
     for (let i = 0; i < domOps; i++) {
-      target.ovr.x = originalX + (i & 1);
-      editLib.invalidateElement(editDoc, target.id);
+      commandEditor.transaction((tx) => tx.exec(
+        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
+      ), '性能采样', { recordHistory: false });
       const element = editLib.effectiveElement(editDoc, target.id);
       const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
       host.innerHTML = `<defs>${part.defs}</defs>${part.markup}`;
@@ -214,8 +219,9 @@ if (EDIT && editLib) {
     const commitOps = 2000;
     const et0 = performance.now();
     for (let i = 0; i < commitOps; i++) {
-      target.ovr.x = originalX + (i & 1);
-      editLib.invalidateElement(editDoc, target.id);
+      commandEditor.transaction((tx) => tx.exec(
+        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
+      ), '性能采样', { recordHistory: false });
       const slide = editLib.toSlide(editDoc, slideId);
       lib.renderSlideToSvg(p, slide, { idPrefix: 'bench-commit-' });
     }
@@ -226,6 +232,52 @@ if (EDIT && editLib) {
     metrics.editDoc.commitRenderMs = commitMs;
     metrics.editDoc.commitRenderMsPerOp = commitMs / commitOps;
     report(`  单元素提交并重渲: ${commitOps} 次 / ${commitMs.toFixed(1)}ms  (${(commitMs / commitOps).toFixed(3)}ms/次)`);
+
+    const historyOps = 200;
+    const historyEditor = new editLib.Editor(editDoc, { historyLimit: historyOps });
+    retainedHistoryEditor = historyEditor;
+    for (let i = 0; i < historyOps; i++) {
+      historyEditor.exec({ type: 'SetXfrm', id: target.id, x: originalX + i + 1 });
+    }
+    let historyChecksum = 0;
+    const undoStart = performance.now();
+    for (let i = 0; i < historyOps; i++) {
+      const change = historyEditor.undo();
+      for (const dirtySlide of change.dirtySlides) {
+        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide),
+          { idPrefix: 'bench-undo-' }).length;
+      }
+    }
+    const undoMs = performance.now() - undoStart;
+    const redoStart = performance.now();
+    for (let i = 0; i < historyOps; i++) {
+      const change = historyEditor.redo();
+      for (const dirtySlide of change.dirtySlides) {
+        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide),
+          { idPrefix: 'bench-redo-' }).length;
+      }
+    }
+    const redoMs = performance.now() - redoStart;
+    metrics.editDoc.historyOps = historyOps;
+    metrics.editDoc.undoRenderMsPerOp = undoMs / historyOps;
+    metrics.editDoc.redoRenderMsPerOp = redoMs / historyOps;
+    metrics.editDoc.historyBytes = historyEditor.history.byteSize;
+    metrics.editDoc.historyChecksum = historyChecksum;
+    report(`  200 组撤销/重做并重渲脏页: undo ${(undoMs / historyOps).toFixed(3)}ms/次 · ` +
+      `redo ${(redoMs / historyOps).toFixed(3)}ms/次 · 历史 ${(historyEditor.history.byteSize / 1024).toFixed(1)}KB`);
+
+    const rebaseOps = 1000;
+    const rebaseStart = performance.now();
+    for (let i = 0; i < rebaseOps; i++) {
+      historyEditor.transaction((tx) => tx.exec(
+        { type: 'SetXfrm', id: target.id, y: target.src.y + 1 + (i & 1) },
+      ), '远端性能采样', { origin: 'peer', recordHistory: false });
+    }
+    const rebaseMs = performance.now() - rebaseStart;
+    metrics.editDoc.historyRebaseOps = rebaseOps;
+    metrics.editDoc.historyRebaseMsPerOp = rebaseMs / rebaseOps;
+    report(`  200 组历史上的非冲突远端 rebase: ${rebaseOps} 次 / ` +
+      `${(rebaseMs / rebaseOps).toFixed(3)}ms/次`);
   }
 
   const textTarget = Object.values(editDoc.elements).find((record) =>
@@ -326,6 +378,7 @@ if (typeof global.gc === 'function') {
   global.gc();
   const retained = process.memoryUsage().heapUsed;
   metrics.memory.retainedBytes = retained;
+  metrics.memory.historyBytes = retainedHistoryEditor?.history.byteSize ?? 0;
   report(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB · 回收后驻留 ${(retained / 1024 / 1024).toFixed(0)} MB` +
     `  (${(retained / 1024 / 1024 / p.slides.length).toFixed(2)} MB/页)`);
 } else {

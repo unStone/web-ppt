@@ -12,30 +12,36 @@ npm i @web-ppt/core @web-ppt/edit-core
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, effectiveElement, invalidateElement, toSlide } from '@web-ppt/edit-core';
+import { createDoc, Editor } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
+const editor = new Editor(doc);
 const slideId = doc.slideOrder[0];
 const elementId = doc.slides[slideId].children[0];
 
-doc.elements[elementId].ovr.x = 120;
-invalidateElement(doc, elementId);
+const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 
-const slide = toSlide(doc, slideId);
+const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
-const dirty = renderElementToSvg(effectiveElement(doc, elementId), {
+const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
   idPrefix: `${slideId}-${elementId}-`,
 });
 // Replace this element's `dirty.markup` and `dirty.defs` partitions together.
+// change.dirtyElements 与 change.dirtySlides 给出精确失效范围。
 
-const element = effectiveElement(doc, elementId);
+editor.subscribe(({ dirtyElements, dirtySlides }) => updateView(dirtyElements, dirtySlides));
+editor.undo();
+editor.redo();
+editor.markSaved();
+
+const element = editor.effectiveElement(elementId);
 if (element.kind === 'shape' && element.text) {
   const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
   textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h);
-  const editor = textLayer.firstElementChild as HTMLElement;
-  editor.contentEditable = 'true';
-  editor.spellcheck = false;
+  const textEditor = textLayer.firstElementChild as HTMLElement;
+  textEditor.contentEditable = 'true';
+  textEditor.spellcheck = false;
 
   // Safari engine mode: map pointer x to UTF-16 caret offsets without editing inside SVG.
   const engineLayout = layoutText(element.text, element.w, element.h);
@@ -44,12 +50,18 @@ if (element.kind === 'shape' && element.text) {
 }
 ```
 
+Commands and patches are plain JSON. A transaction validates and commits atomically, creates one local undo
+unit, and restores selection on undo/redo. Repeated edits with the same `mergeKey` merge for at most 500ms;
+remote `origin` values apply without entering local history. `isDirty()` compares the current state with the
+last `markSaved()` checkpoint. React, Vue, Web Components, or vanilla adapters only need `subscribe()` and
+the two projection methods; none of their runtimes enter this package.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-Load the preserving OOXML tree only on the save path; the default editing-model entry stays 2.95 KB gzip:
+Load the preserving OOXML tree only on the save path; the default editing-model entry is 8.28 KB gzip:
 
 ```ts
 import {

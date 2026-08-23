@@ -30,11 +30,18 @@ function intrinsicEditable(el: SlideElement): EditableKind {
   return 'full';
 }
 
-function metaOf(el: SlideElement, inherited: EditableKind, source: Presentation['source']): ElementMeta {
+function metaOf(
+  el: SlideElement,
+  inherited: EditableKind,
+  source: Presentation['source'],
+  writablePart: string | null,
+): ElementMeta {
   const own = intrinsicEditable(el);
   const info = el.editInfo;
   const lacksWriteAnchor = source === 'pptx' && !info?.origin;
-  const editable = inherited === 'full' && !lacksWriteAnchor ? own : 'none';
+  // 普通编辑视图只能改 slide part；母版/版式投影虽然可见，却共享源锚点，必须留给对应专用视图。
+  const belongsToInheritedPart = source === 'pptx' && info?.origin?.part !== writablePart;
+  const editable = inherited === 'full' && !lacksWriteAnchor && !belongsToInheritedPart ? own : 'none';
   return {
     ...(info?.geom ? { geom: info.geom } : {}),
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
@@ -60,9 +67,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     source: SlideElement[],
     parent: SlideId | ElementId,
     inherited: EditableKind,
+    writablePart: string | null,
   ): ElementId[] => source.map((el, index) => {
     const id = `${prefix}e${(++elementSeq).toString(36)}`;
-    const meta = metaOf(el, inherited, pres.source);
+    const meta = metaOf(el, inherited, pres.source, writablePart);
     const record: ElementRecord = {
       id,
       parent,
@@ -72,7 +80,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       meta,
     };
     elements[id] = record;
-    if (el.kind === 'group') record.children = addElements(el.children, id, meta.editable);
+    if (el.kind === 'group') record.children = addElements(el.children, id, meta.editable, writablePart);
     return id;
   });
 
@@ -88,7 +96,22 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     };
     slides[id] = record;
     slideOrder.push(id);
-    record.children = addElements(slide.elements, id, 'full');
+    record.children = addElements(slide.elements, id, 'full', record.origin?.part ?? null);
+  }
+
+  if (pres.source === 'pptx') {
+    const origins = new Map<string, ElementRecord[]>();
+    for (const record of Object.values(elements)) {
+      if (!record.meta.origin) continue;
+      const key = `${record.meta.origin.part}\0${record.meta.origin.spid}`;
+      const owners = origins.get(key) ?? [];
+      owners.push(record);
+      origins.set(key, owners);
+    }
+    // 畸形文件可能复用 cNvPr@id；仅有 part+spid 时无法无歧义写回，宁可降级查看也不能改错节点。
+    for (const owners of origins.values()) {
+      if (owners.length > 1) for (const record of owners) record.meta.editable = 'none';
+    }
   }
 
   const pkg = pres.package ?? null;

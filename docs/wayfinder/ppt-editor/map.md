@@ -35,6 +35,7 @@ tracker: local-markdown
 - [公开带字符偏移的文本行盒](tickets/013-layout-text-api.md) — 原生 SVG 与公开纯函数共用行盒，UTF-16 光标映射覆盖 RTL/CJK/分栏/竖排/autofit/公式，默认映射仅 0.004ms/次。
 - [实现保留型 XML 树](tickets/006-preserving-xml-tree.md) — 保存期按需入口以最小词法改写、命名空间展开名和兼容分支感知的统一 sequence 插入守住 OOXML 写回边界，默认编辑包零增重。
 - [实现 ZIP 原始条目直通保存](tickets/007-zip-passthrough.md) — 保存期 OPC 入口以完整本地记录直通、可解释重压、连续包刷新与可释放生命周期守住 50MB 写回，三页完整保存 84.0ms。
+- [建立命令、事务与双向 Patch 历史](tickets/008-command-patch-history.md) — 无 DOM Editor 以纯数据命令、影响集不变量、选择恢复与远端路径 rebase 建立原子撤销内核，210 页撤销重渲约 0.5ms/次。
 
 ## Not yet specified
 
