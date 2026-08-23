@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Web-PPT Editor Browser Contract</title>
+  <style>
+    body { margin: 0; padding: 20px; font: 14px system-ui; background: #eef2f7; }
+    #mount { width: 960px; height: 540px; overflow: hidden; background: white; box-shadow: 0 8px 30px #1e293b30; }
+    #mount [data-ppt-stage] { transform-origin: 0 0; }
+    .contract-offscreen { position: absolute; left: -10000px; top: 0; width: 1280px; height: 720px; }
+    #report { white-space: pre-wrap; color: #166534; }
+  </style>
+</head>
+<body>
+  <h1>Web-PPT Editor Browser Contract</h1>
+  <pre id="report" role="status">RUNNING</pre>
+  <div id="mount"></div>
+  <div id="font-mount" class="contract-offscreen"></div>
+  <div id="perf-mount" class="contract-offscreen"></div>
+  <script type="module">
+    import { openEditor } from '/out/editor/editor.mjs';
+
+    const report = document.querySelector('#report');
+    const mount = document.querySelector('#mount');
+    const fontMount = document.querySelector('#font-mount');
+    const perfMount = document.querySelector('#perf-mount');
+    const load = async (name) => {
+      const response = await fetch(`/fixtures/${name}`);
+      if (!response.ok) throw new Error(`${name} HTTP ${response.status}`);
+      return response.arrayBuffer();
+    };
+    try {
+      const session = await openEditor(await load('sample-edit-basic.pptx'), { idPrefix: 'browser-contract-' });
+      const view = session.mount(mount, { mode: 'edit', zoom: 0.75 });
+      const staticLayer = mount.querySelector('[data-ppt-layer="static"]');
+      const roots = session.editor.doc.slides[view.slideId].children;
+      const [targetId, siblingId] = roots;
+      const targetBefore = staticLayer.querySelector(`[data-edit-id="${targetId}"]`);
+      const siblingBefore = staticLayer.querySelector(`[data-edit-id="${siblingId}"]`);
+      const svgBefore = staticLayer.querySelector('svg');
+      session.editor.exec({
+        type: 'SetXfrm', id: targetId, x: session.editor.doc.elements[targetId].src.x + 20,
+      });
+      const ok = mount.querySelectorAll('[data-ppt-layer]').length === 3
+        && staticLayer.querySelector(`[data-edit-id="${targetId}"]`) !== targetBefore
+        && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === siblingBefore
+        && staticLayer.querySelector('svg') === svgBefore
+        && staticLayer.querySelector('image')?.getAttribute('href')?.startsWith('blob:');
+      if (!ok) throw new Error('三层、增量 DOM 身份或图片资源断言失败');
+
+      const fontSession = await openEditor(await load('sample-embedfont.pptx'), { idPrefix: 'browser-font-' });
+      fontSession.mount(fontMount, { mode: 'view' });
+      const fontFaces = (fontMount.innerHTML.match(/@font-face/g) ?? []).length;
+      if (fontFaces < 3 || !fontMount.innerHTML.includes('src:url(blob:')) {
+        throw new Error(`嵌入字体没有进入源 Presentation 的 SVG：${fontFaces}`);
+      }
+
+      const perfSession = await openEditor(await load('sample-editor-60.pptx'), { idPrefix: 'browser-perf-' });
+      const perfView = perfSession.mount(perfMount);
+      const perfRoots = perfSession.editor.doc.slides[perfView.slideId].children;
+      const perfTarget = perfRoots[0];
+      const sourceX = perfSession.editor.doc.elements[perfTarget].src.x;
+      const samples = [];
+      for (let index = 0; index < 80; index++) {
+        const started = performance.now();
+        perfSession.editor.exec({ type: 'SetXfrm', id: perfTarget, x: sourceX + index % 2 + 1 });
+        samples.push(performance.now() - started);
+      }
+      samples.sort((left, right) => left - right);
+      const p95 = samples[Math.floor(samples.length * 0.95)];
+      if (perfRoots.length !== 60 || p95 > 16) throw new Error(`60 元素提交 p95 ${p95.toFixed(3)}ms`);
+
+      report.dataset.status = 'pass';
+      report.dataset.p95 = p95.toFixed(3);
+      report.dataset.fontFaces = String(fontFaces);
+      report.textContent = `PASS\n${roots.length} 个顶层元素\n目标增量替换、兄弟 DOM 保留、blob 图片可见\n`
+        + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms`;
+      globalThis.editorContract = { session, view, fontSession, perfSession };
+    } catch (error) {
+      report.style.color = '#b91c1c';
+      report.dataset.status = 'fail';
+      report.textContent = `FAIL\n${error instanceof Error ? error.stack : String(error)}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

@@ -89,6 +89,8 @@ export interface TransactionResult extends ProjectionInvalidation, CommandPatche
 export interface EditorChange extends ProjectionInvalidation {
   readonly source: 'transaction' | 'undo' | 'redo' | 'selection';
   readonly selection: Selection;
+  /** dirtyElements 含投影缓存祖先；DOM 增量分区必须以真正被 patch 的元素为准。 */
+  readonly touchedElements: Set<ElementId>;
 }
 
 export type EditorSubscriber = (change: EditorChange) => void;

@@ -11,6 +11,10 @@ import { effectiveElement, toSlide } from './projection';
 import { cloneSelection, normalizeSelection } from './selection';
 import type { EditDoc, ElementId, SlideId } from './types';
 
+function patchElements(patches: readonly Patch[]): Set<ElementId> {
+  return new Set(patches.map((patch) => patch.path[1]));
+}
+
 function reportSubscriberError(error: unknown): void {
   try {
     const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
@@ -81,7 +85,7 @@ export class Editor {
     if (JSON.stringify(next) === JSON.stringify(this.currentSelection)) return;
     this.currentSelection = next;
     this.historyStore.breakMerge();
-    this.emit('selection', new Set(), new Set());
+    this.emit('selection', new Set(), new Set(), new Set());
   }
 
   subscribe(subscriber: EditorSubscriber): () => void {
@@ -117,8 +121,13 @@ export class Editor {
     this.currentSelection = cloneSelection(entry.selectionBefore);
     this.historyStore.moveToRedo();
     this.currentState = this.currentState === entry.afterState ? entry.beforeState : this.nextState++;
-    const change = { source: 'undo' as const, selection: this.selection, ...dirty };
-    this.emit(change.source, change.dirtyElements, change.dirtySlides);
+    const change = {
+      source: 'undo' as const,
+      selection: this.selection,
+      touchedElements: patchElements(entry.inverse),
+      ...dirty,
+    };
+    this.emit(change.source, change.dirtyElements, change.dirtySlides, change.touchedElements);
     return change;
   }
 
@@ -129,8 +138,13 @@ export class Editor {
     this.currentSelection = cloneSelection(entry.selectionAfter);
     this.historyStore.moveToUndo();
     this.currentState = this.currentState === entry.beforeState ? entry.afterState : this.nextState++;
-    const change = { source: 'redo' as const, selection: this.selection, ...dirty };
-    this.emit(change.source, change.dirtyElements, change.dirtySlides);
+    const change = {
+      source: 'redo' as const,
+      selection: this.selection,
+      touchedElements: patchElements(entry.forward),
+      ...dirty,
+    };
+    this.emit(change.source, change.dirtyElements, change.dirtySlides, change.touchedElements);
     return change;
   }
 
@@ -147,6 +161,7 @@ export class Editor {
     const inverse: Patch[] = [];
     const dirtyElements = new Set<ElementId>();
     const dirtySlides = new Set<SlideId>();
+    const touchedElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
     const selectionBefore = this.selection;
     try {
@@ -155,6 +170,7 @@ export class Editor {
         const dirty = applyPatches(this.doc, patches.forward);
         for (const id of dirty.dirtyElements) dirtyElements.add(id);
         for (const id of dirty.dirtySlides) dirtySlides.add(id);
+        for (const patch of patches.forward) touchedElements.add(patch.path[1]);
         forward.push(...patches.forward);
         inverse.unshift(...patches.inverse);
       }
@@ -188,12 +204,17 @@ export class Editor {
     const selectionChanged = JSON.stringify(selectionBefore) !== JSON.stringify(selectionAfter);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      this.emit('transaction', dirtyElements, dirtySlides);
+      this.emit('transaction', dirtyElements, dirtySlides, touchedElements);
     }
     return { forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter };
   }
 
-  private emit(source: EditorChange['source'], elements: Set<ElementId>, slides: Set<SlideId>): void {
+  private emit(
+    source: EditorChange['source'],
+    elements: Set<ElementId>,
+    slides: Set<SlideId>,
+    touched: Set<ElementId>,
+  ): void {
     for (const subscriber of this.subscribers) {
       try {
         subscriber({
@@ -201,6 +222,7 @@ export class Editor {
           selection: this.selection,
           dirtyElements: new Set(elements),
           dirtySlides: new Set(slides),
+          touchedElements: new Set(touched),
         });
       } catch (error) {
         reportSubscriberError(error);

@@ -32,6 +32,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 9.7KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、查看/编辑模式与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 3.1KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -64,7 +65,21 @@ const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 P
 const stepped = await presentationToPrintableHtml(pres, { animationSteps: true });
 ```
 
-编辑器做增量更新或字符串比较时，可显式指定稳定的 SVG 命名空间：
+需要可视编辑时，`@web-ppt/editor` 会统一管理解析资源、headless Editor 与全部挂载视图：
+
+```ts
+import { openEditor } from '@web-ppt/editor';
+
+const session = await openEditor(file);
+const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
+const slideId = session.editor.doc.slideOrder[0];
+const elementId = session.editor.doc.slides[slideId].children[0];
+session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+slideView.setMode('view'); // 静态预览不重建，只隐藏交互层
+session.dispose();         // 释放全部视图、原包与 blob URL
+```
+
+直接开发编辑适配器、做增量更新或字符串比较时，可显式指定稳定的 SVG 命名空间：
 
 ```ts
 import { renderSlideToSvg } from '@web-ppt/core';
@@ -270,7 +285,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 243 项断言 + M1 11 项独立验收 + 25 份固件、206 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 244 项断言 + M1 11 项独立验收 + 26 份固件、208 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 17 项编辑会话 / 三层 DOM / 增量 defs / 资源释放断言 + 真实 Chrome 60 元素性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -278,7 +294,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
-| `npm run build` | 构建四个发布包（core / edit-core / viewer-core / fonts） |
+| `npm run build` | 构建五个发布包（core / edit-core / editor / viewer-core / fonts） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
 | `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |
@@ -300,6 +316,7 @@ web-ppt/                     npm workspaces monorepo
 ├── packages/
 │   ├── core/                @web-ppt/core —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
 │   ├── edit-core/           @web-ppt/edit-core —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖
+│   ├── editor/              @web-ppt/editor —— 编辑会话 + 三层增量 DOM 视图
 │   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
 │   ├── fonts/               @web-ppt/fonts —— 字体替换与按需加载
 │   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
@@ -310,8 +327,8 @@ web-ppt/                     npm workspaces monorepo
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
-边界一旦被破坏，它们立刻编译失败。`edit-core` 只提供纯数据模型；后续可视编辑器与
-React / Vue 等适配只依赖它，框架运行时不下沉到 core 或 edit-core。
+边界一旦被破坏，它们立刻编译失败。`edit-core` 只提供纯数据模型；`editor` 集中管理浏览器 DOM
+与资源生命周期，React / Vue 等适配只包它的公开 seam，框架运行时不下沉到任何基础包。
 
 **为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState` 不必等官方封装；状态逻辑不再需要 jsdom 就能在 Node 里测；`@web-ppt/core` 完全不碰 `document`，Worker 里可整包运行。
 

@@ -1,0 +1,54 @@
+{
+  "name": "@web-ppt/editor",
+  "version": "0.4.5",
+  "description": "Framework-agnostic browser editing session and DOM view for Web-PPT.",
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "editor",
+    "browser",
+    "svg",
+    "react",
+    "vue",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "unStone",
+  "homepage": "https://github.com/unStone/web-ppt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unStone/web-ppt.git",
+    "directory": "packages/editor"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/editor.js",
+  "module": "./dist/editor.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/editor.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
+  },
+  "peerDependencies": {
+    "@web-ppt/core": "^0.4.5",
+    "@web-ppt/edit-core": "^0.4.5",
+    "@web-ppt/viewer-core": "^0.4.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

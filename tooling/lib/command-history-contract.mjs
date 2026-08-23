@@ -122,7 +122,13 @@ export async function runCommandHistoryContract({ edit, core, load, check, eq })
       check('选择变化不占历史且事务只广播一次精确失效', editor.history.undoCount === historyCount + 1
         && events.filter((event) => event.source === 'selection').length === 2
         && events.filter((event) => event.source === 'transaction').length === 1
-        && events.at(-1).dirtyElements.has(target.id));
+        && events.at(-1).dirtyElements.has(target.id)
+        && events.at(-1).touchedElements.size === 1 && events.at(-1).touchedElements.has(target.id));
+      editor.exec({ type: 'SetXfrm', id: groupChild.id, x: groupChild.ovr.x + 1 });
+      check('订阅事件区分直接变更元素与投影失效祖先',
+        events.at(-1).touchedElements.size === 1 && events.at(-1).touchedElements.has(groupChild.id)
+        && !events.at(-1).touchedElements.has(group.id)
+        && events.at(-1).dirtyElements.has(groupChild.id) && events.at(-1).dirtyElements.has(group.id));
       const beforeFailedEvents = events.length;
       try { editor.exec({ type: 'SetXfrm', id: 'missing', x: 1 }); } catch { /* 预期 */ }
       eq('失败事务不广播半成品事件', events.length, beforeFailedEvents);

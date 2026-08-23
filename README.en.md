@@ -33,6 +33,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, edit overrides, and high-fidelity render projection. No framework, no DOM. | `@web-ppt/core` | 2.9 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, view/edit modes, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 3.1 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
 
@@ -65,7 +66,21 @@ const html = await presentationToPrintableHtml(pres); // print from the browser 
 const stepped = await presentationToPrintableHtml(pres, { animationSteps: true });
 ```
 
-When a caller needs byte-stable markup for reconciliation or incremental editing, render with an explicit namespace:
+For a visual editor, `@web-ppt/editor` owns parsed resources, the headless Editor, and every mounted view:
+
+```ts
+import { openEditor } from '@web-ppt/editor';
+
+const session = await openEditor(file);
+const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
+const slideId = session.editor.doc.slideOrder[0];
+const elementId = session.editor.doc.slides[slideId].children[0];
+session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+slideView.setMode('view'); // keeps the static preview DOM and hides interaction layers
+session.dispose();         // releases every view, source package, and blob URL
+```
+
+When building a custom adapter or needing byte-stable markup, render with an explicit namespace:
 
 ```ts
 import { renderSlideToSvg } from '@web-ppt/core';
@@ -272,13 +287,14 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 140 edit-model/preserving-XML/OPC assertions + 200 pairs of process-isolated SVG fingerprints across 23 fixtures |
+| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 208 process-isolated SVG fingerprint pairs across 26 fixtures |
+| `npm run test:editor` | 17 session/three-layer DOM/incremental defs/resource assertions + a real-Chrome 60-element performance gate |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
-| `npm run build` | Build all four publishable packages (core / edit-core / viewer-core / fonts) |
+| `npm run build` | Build all five publishable packages (core / edit-core / editor / viewer-core / fonts) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |
 | `npm run ppt-samples` | Convert the pptx fixtures to `.ppt` via LibreOffice (re-run after changing a pptx fixture) |
@@ -295,6 +311,7 @@ web-ppt/                     npm workspaces monorepo
 ├── packages/
 │   ├── core/                @web-ppt/core — parse / render / export, no framework, no DOM
 │   ├── edit-core/           @web-ppt/edit-core — editing document model + render projection, no framework, no DOM
+│   ├── editor/              @web-ppt/editor — editing session + incremental three-layer DOM
 │   ├── viewer-core/         @web-ppt/viewer-core — headless state machine + playback
 │   ├── fonts/               @web-ppt/fonts — font substitution and on-demand loading
 │   ├── viewer/              @web-ppt/viewer — batteries-included viewer, plain TS
@@ -304,7 +321,7 @@ web-ppt/                     npm workspaces monorepo
 └── test/snapshots/          162 render snapshot baselines
 ```
 
-`packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; the visual editor and React / Vue adapters build on it without pushing framework runtimes into core or edit-core.
+`packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
 
 **Why `viewer-core` is its own package**: only ~24 lines of `Viewer` actually touch the DOM (inject SVG, set visibility, kick off playback); the other 200-odd are pure state advancement. Split apart, React / Vue / Svelte can drive `PresentationState` directly instead of waiting for an official wrapper; the state logic tests in Node without jsdom; and `@web-ppt/core` never touches `document`, so it runs whole inside a Worker.
 
