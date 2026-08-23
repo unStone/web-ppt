@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
+import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -167,6 +168,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 
 await runNativeHitContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
+await runMoveGestureContract({ check, lib, root });
 
 console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
 {
@@ -251,7 +253,9 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
   const hitSamples = [];
   for (let index = 0; index < 80; index++) {
     const started = performance.now();
-    hitTargets[index % 2].dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, composed: true }));
+    const target = hitTargets[index % 2];
+    target.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, composed: true }));
+    target.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, composed: true }));
     hitSamples.push(performance.now() - started);
   }
   hitSamples.sort((left, right) => left - right);

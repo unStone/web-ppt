@@ -104,29 +104,119 @@ async function browserResult(webSocketDebuggerUrl) {
   });
   socket.on('error', rejectPending);
   socket.on('close', () => rejectPending(new Error('Chrome DevTools 连接提前关闭')));
-  const evaluate = (expression) => new Promise((resolveEvaluation, rejectEvaluation) => {
+  const request = (method, params) => new Promise((resolveRequest, rejectRequest) => {
     const id = ++serial;
     const timeout = setTimeout(() => {
       pending.delete(id);
-      rejectEvaluation(new Error('Chrome DevTools 请求超时'));
+      rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
     }, 5000);
-    pending.set(id, { resolve: resolveEvaluation, reject: rejectEvaluation, timeout });
-    socket.send(JSON.stringify({
-      id, method: 'Runtime.evaluate', params: { expression, returnByValue: true },
-    }));
+    pending.set(id, {
+      resolve: (message) => message.error
+        ? rejectRequest(new Error(`Chrome DevTools ${method}: ${message.error.message}`))
+        : resolveRequest(message),
+      reject: rejectRequest,
+      timeout,
+    });
+    socket.send(JSON.stringify({ id, method, params }));
   });
+  const evaluate = async (expression, awaitPromise = false) => {
+    const response = await request('Runtime.evaluate', { expression, returnByValue: true, awaitPromise });
+    if (response.result?.exceptionDetails) {
+      throw new Error(response.result.exceptionDetails.exception?.description ?? 'Chrome 页面脚本执行失败');
+    }
+    return response.result?.result?.value;
+  };
   try {
     for (let attempt = 0; attempt < 200; attempt++) {
-      const response = await evaluate(`(() => {
+      const result = await evaluate(`(() => {
         const report = document.querySelector('#report');
         return report ? { status: report.dataset.status ?? 'running', p95: report.dataset.p95,
           hitP95: report.dataset.hitP95, selectionP95: report.dataset.selectionP95,
           spaceError: report.dataset.spaceError, handleError: report.dataset.handleError,
-          fontFaces: report.dataset.fontFaces,
+          nestedDragError: report.dataset.nestedDragError,
+          dragP95: report.dataset.dragP95, fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
-      const result = response.result?.result?.value;
-      if (result?.status === 'pass' || result?.status === 'fail') return result;
+      if (result?.status === 'fail') return result;
+      if (result?.status === 'pass') {
+        const start = await evaluate(`(() => {
+          const { spaceView, perfSession } = globalThis.editorContract;
+          spaceView.destroy();
+          const mount = document.querySelector('#mount');
+          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const [id, siblingId] = perfSession.editor.doc.slides[view.slideId].children;
+          perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
+          const target = mount.querySelector('[data-edit-id="' + id + '"]');
+          const sibling = mount.querySelector('[data-edit-id="' + siblingId + '"]');
+          target.scrollIntoView({ block: 'center', inline: 'center' });
+          const rect = target.getBoundingClientRect();
+          globalThis.trustedDragContract = {
+            view, id, siblingId, target, sibling,
+            svg: mount.querySelector('[data-ppt-layer="static"] svg'),
+            defs: mount.querySelector('[data-ppt-layer="static"] defs'),
+            source: perfSession.editor.effectiveElement(id),
+            historyBefore: perfSession.editor.history.undoCount,
+          };
+          return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        })()`);
+        const end = { x: start.x + 30, y: start.y + 18 };
+        await request('Input.dispatchMouseEvent', {
+          type: 'mouseMoved', x: start.x, y: start.y, button: 'none', buttons: 0,
+        });
+        await request('Input.dispatchMouseEvent', {
+          type: 'mousePressed', x: start.x, y: start.y, button: 'left', buttons: 1, clickCount: 1,
+        });
+        await request('Input.dispatchMouseEvent', {
+          type: 'mouseMoved', x: end.x, y: end.y, button: 'left', buttons: 1,
+        });
+        await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
+        const during = await evaluate(`(() => {
+          const state = globalThis.trustedDragContract;
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          return {
+            captured: state.view.element.hasPointerCapture(1),
+            ghost: !!mount.querySelector('[data-edit-drag-ghost]'),
+            modelStable: perfSession.editor.effectiveElement(state.id).x === state.source.x,
+            targetStable: mount.querySelector('[data-edit-id="' + state.id + '"]') === state.target,
+            svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+            defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+          };
+        })()`);
+        await request('Input.dispatchMouseEvent', {
+          type: 'mouseReleased', x: end.x, y: end.y, button: 'left', buttons: 0, clickCount: 1,
+        });
+        const committed = await evaluate(`(() => {
+          const state = globalThis.trustedDragContract;
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          const moved = perfSession.editor.effectiveElement(state.id);
+          const result = {
+            captureReleased: !state.view.element.hasPointerCapture(1),
+            moved: Math.abs(moved.x - state.source.x - 40) < 1e-6
+              && Math.abs(moved.y - state.source.y - 24) < 1e-6,
+            oneHistory: perfSession.editor.history.undoCount === state.historyBefore + 1,
+            ghostGone: !mount.querySelector('[data-edit-drag-ghost]'),
+            targetPatched: mount.querySelector('[data-edit-id="' + state.id + '"]') !== state.target,
+            siblingStable: mount.querySelector('[data-edit-id="' + state.siblingId + '"]') === state.sibling,
+            svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+            defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+          };
+          perfSession.editor.undo();
+          result.undoRestored = Math.abs(perfSession.editor.effectiveElement(state.id).x - state.source.x) < 1e-6;
+          state.view.destroy();
+          delete globalThis.trustedDragContract;
+          return result;
+        })()`);
+        const trusted = Object.values(during).every(Boolean) && Object.values(committed).every(Boolean);
+        if (!trusted) throw new Error(`真实 pointer capture 拖动失败：${JSON.stringify({ during, committed })}`);
+        await evaluate(`(() => {
+          const report = document.querySelector('#report');
+          report.dataset.trustedDrag = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动与撤销通过';
+        })()`);
+        return { ...result, trustedDrag: 'pass' };
+      }
       await delay(100);
     }
     throw new Error('真实浏览器编辑契约执行超时');
@@ -161,6 +251,9 @@ try {
   console.log(`  Chrome · 点选反馈 p95 ${result.hitP95}ms · 60 元素提交 p95 ${result.p95}ms`
     + ` · 完整选择框 p95 ${result.selectionP95}ms · OBB/手柄最大偏差`
     + ` ${result.spaceError}/${result.handleError}px`
+    + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
+    + ` · 拖动帧 p95 ${result.dragP95}ms`
+    + ` · pointer capture ${result.trustedDrag}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

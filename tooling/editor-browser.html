@@ -71,7 +71,11 @@
         const target = document.elementFromPoint(clientX, clientY);
         if (!target) throw new Error(`命中点落在视口外：${x},${y}`);
         const accepted = target.dispatchEvent(new PointerEvent('pointerdown', {
-          bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', button: 0,
+          bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', isPrimary: true, button: 0,
+          clientX, clientY, ...init,
+        }));
+        target.dispatchEvent(new PointerEvent('pointerup', {
+          bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', isPrimary: true, button: 0,
           clientX, clientY, ...init,
         }));
         return { target, accepted, clientX, clientY };
@@ -118,12 +122,22 @@
       const ownedView = hitSession.mount(ownedMount, { mode: 'edit', textMode: 'svg' });
       const ownedTarget = ownedMount.querySelector(`[data-edit-id="${ids.solid}"]`);
       hitSession.editor.select({ kind: 'none' });
-      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true, composed: true, isPrimary: true,
+      }));
+      ownedTarget.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true, composed: true, isPrimary: true,
+      }));
       if (!selected(ids.solid)) throw new Error('共享会话的第二视图未提交选区');
       ownedView.destroy();
       document.body.append(ownedView.element);
       hitSession.editor.select({ kind: 'none' });
-      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true, composed: true, isPrimary: true,
+      }));
+      ownedTarget.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true, composed: true, isPrimary: true,
+      }));
       if (hitSession.editor.selection.kind !== 'none') throw new Error('已销毁视图仍然响应选择事件');
       ownedView.element.remove();
 
@@ -237,6 +251,43 @@
       }
       spaceView.setMode('edit');
 
+      spaceView.setZoom(1);
+      const nestedRecord = spaceRecords[2];
+      spaceSession.editor.select({
+        kind: 'elements', ids: [nestedRecord.id], enteredGroup: nestedRecord.parent,
+      });
+      const nestedTarget = mount.querySelector(`[data-edit-id="${nestedRecord.id}"]`);
+      const nestedBefore = nestedTarget.getBoundingClientRect();
+      const nestedStart = {
+        x: nestedBefore.left + nestedBefore.width / 2,
+        y: nestedBefore.top + nestedBefore.height / 2,
+      };
+      const nestedPointer = (type, x, y) => new PointerEvent(type, {
+        bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId: 72, isPrimary: true,
+        button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
+      });
+      nestedTarget.dispatchEvent(nestedPointer('pointerdown', nestedStart.x, nestedStart.y));
+      spaceView.element.dispatchEvent(nestedPointer('pointermove', nestedStart.x + 40, nestedStart.y + 20));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const nestedDuring = nestedTarget.getBoundingClientRect();
+      const nestedDragError = Math.hypot(
+        nestedDuring.left - nestedBefore.left - 40,
+        nestedDuring.top - nestedBefore.top - 20,
+      );
+      if (nestedDragError > 0.5 || mount.querySelector(`[data-edit-id="${nestedRecord.id}"]`) !== nestedTarget
+        || !mount.querySelector('[data-edit-drag-ghost]')
+        || spaceSession.editor.effectiveElement(nestedRecord.id).x !== nestedRecord.src.x) {
+        throw new Error(`嵌套组拖动幽灵屏幕偏差 ${nestedDragError.toFixed(3)}px`);
+      }
+      spaceView.element.dispatchEvent(nestedPointer('pointerup', nestedStart.x + 40, nestedStart.y + 20));
+      const nestedCommitted = spaceSession.editor.effectiveElement(nestedRecord.id);
+      if (Math.abs(nestedCommitted.x - 18.839745962155604) > 1e-6
+        || Math.abs(nestedCommitted.y - 20.669872981077802) > 1e-6
+        || spaceSession.editor.history.undoCount !== 1) {
+        throw new Error('嵌套组拖动没有单次提交父空间坐标');
+      }
+      spaceSession.editor.undo();
+
       const fontSession = await openEditor(await load('sample-embedfont.pptx'), { idPrefix: 'browser-font-' });
       fontSession.mount(fontMount, { mode: 'view' });
       const fontFaces = (fontMount.innerHTML.match(/@font-face/g) ?? []).length;
@@ -275,18 +326,92 @@
         throw new Error(`60 元素完整选择框反馈 p95 ${selectionP95.toFixed(3)}ms`);
       }
 
+      const dragTarget = perfMount.querySelector(`[data-edit-id="${perfTarget}"]`);
+      const dragSibling = perfMount.querySelector(`[data-edit-id="${perfRoots[1]}"]`);
+      const dragTargetBefore = dragTarget;
+      const dragStaticSvg = perfMount.querySelector('[data-ppt-layer="static"] svg');
+      const dragDefs = dragStaticSvg.querySelector('defs');
+      const dragSource = perfSession.editor.effectiveElement(perfTarget);
+      const dragHistoryBefore = perfSession.editor.history.undoCount;
+      const pendingFrames = new Map();
+      let frameSerial = 0;
+      const requestFrame = window.requestAnimationFrame;
+      const cancelFrame = window.cancelAnimationFrame;
+      window.requestAnimationFrame = (callback) => {
+        const id = ++frameSerial;
+        pendingFrames.set(id, callback);
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => pendingFrames.delete(id);
+      const dragPointer = (type, x, y) => new PointerEvent(type, {
+        bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId: 71, isPrimary: true,
+        button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
+      });
+      const flushDragFrame = () => {
+        const next = pendingFrames.entries().next().value;
+        if (!next || pendingFrames.size !== 1) throw new Error(`拖动帧队列失控：${pendingFrames.size}`);
+        pendingFrames.delete(next[0]);
+        const started = performance.now();
+        next[1](started);
+        return performance.now() - started;
+      };
+      const dragSamples = [];
+      let dragDuring;
+      let dragEnd = { x: 14, y: 10 };
+      try {
+        dragTarget.dispatchEvent(dragPointer('pointerdown', 10, 10));
+        perfView.element.dispatchEvent(dragPointer('pointermove', dragEnd.x, dragEnd.y));
+        dragSamples.push(flushDragFrame());
+        dragDuring = perfMount.querySelector('[data-edit-drag-ghost]')
+          && perfMount.querySelector(`[data-edit-id="${perfTarget}"]`) === dragTargetBefore
+          && perfMount.querySelector('[data-ppt-layer="static"] svg') === dragStaticSvg
+          && dragStaticSvg.querySelector('defs') === dragDefs
+          && perfSession.editor.effectiveElement(perfTarget).x === dragSource.x;
+        for (let index = 0; index < 80; index++) {
+          dragEnd = { x: 30 + index % 2, y: 24 + index % 3 };
+          perfView.element.dispatchEvent(dragPointer('pointermove', dragEnd.x, dragEnd.y));
+          dragSamples.push(flushDragFrame());
+        }
+        perfView.element.dispatchEvent(dragPointer('pointerup', dragEnd.x, dragEnd.y));
+      } finally {
+        window.requestAnimationFrame = requestFrame;
+        window.cancelAnimationFrame = cancelFrame;
+      }
+      dragSamples.sort((left, right) => left - right);
+      const dragP95 = dragSamples[Math.floor(dragSamples.length * 0.95)];
+      const dragMoved = perfSession.editor.effectiveElement(perfTarget);
+      if (!dragDuring || dragP95 > 8
+        || Math.abs(dragMoved.x - (dragSource.x + dragEnd.x - 10)) > 1e-6
+        || Math.abs(dragMoved.y - (dragSource.y + dragEnd.y - 10)) > 1e-6
+        || perfSession.editor.history.undoCount !== dragHistoryBefore + 1
+        || perfMount.querySelector('[data-edit-drag-ghost]')
+        || perfMount.querySelector(`[data-edit-id="${perfTarget}"]`) === dragTargetBefore
+        || perfMount.querySelector(`[data-edit-id="${perfRoots[1]}"]`) !== dragSibling
+        || perfMount.querySelector('[data-ppt-layer="static"] svg') !== dragStaticSvg
+        || dragStaticSvg.querySelector('defs') !== dragDefs) {
+        throw new Error(`60 元素拖动帧 p95 ${dragP95.toFixed(3)}ms`);
+      }
+      perfSession.editor.undo();
+      if (Math.abs(perfSession.editor.effectiveElement(perfTarget).x - dragSource.x) > 1e-6) {
+        throw new Error('Chrome 拖动撤销未恢复源位置');
+      }
+
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
       report.dataset.selectionP95 = selectionP95.toFixed(3);
       report.dataset.spaceError = spaceError.toFixed(3);
       report.dataset.handleError = handleError.toFixed(3);
+      report.dataset.nestedDragError = nestedDragError.toFixed(3);
+      report.dataset.dragP95 = dragP95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
+        + `嵌套组拖动幽灵偏差 ${nestedDragError.toFixed(3)}px\n`
         + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms\n`
-        + `60 元素完整选择框 p95 ${selectionP95.toFixed(3)}ms`;
+        + `60 元素完整选择框 p95 ${selectionP95.toFixed(3)}ms\n`
+        + `60 元素拖动帧 p95 ${dragP95.toFixed(3)}ms`;
       globalThis.editorContract = { session, hitSession, spaceSession, spaceView, fontSession, perfSession };
     } catch (error) {
       report.style.color = '#b91c1c';

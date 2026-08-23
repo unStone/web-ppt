@@ -5,6 +5,7 @@ import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { bindSlideIdentities, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
+import { MoveGestureController } from './move-gesture';
 import { renderSelectionOverlay } from './selection-overlay';
 import { sessionState } from './session-state';
 
@@ -57,22 +58,36 @@ class DomSlideEditor implements SlideEditor {
   private currentZoom: number;
   private currentSlide: SlideId;
   private readonly textMode: 'html' | 'svg';
+  private readonly moveGesture: MoveGestureController;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (this.currentMode !== 'edit') return;
+    if (this.currentMode !== 'edit' || event.button !== 0 || event.isPrimary === false) return;
     const candidates = this.hitCandidates(event.composedPath());
     const enteredGroup = this.session.editor.selection.kind === 'elements'
       ? this.session.editor.selection.enteredGroup : null;
     const id = event.altKey
       ? this.alternateCandidate(event.clientX, event.clientY, enteredGroup)
       : this.outermostCandidate(candidates, enteredGroup);
-    this.session.editor.select(id
-      ? { kind: 'elements', ids: [id], enteredGroup }
-      : { kind: 'none' });
+    const selection = this.session.editor.selection;
+    const keepsSelection = id && !event.altKey && selection.kind === 'elements'
+      && selection.ids.includes(id);
+    if (!keepsSelection) {
+      this.session.editor.select(id
+        ? { kind: 'elements', ids: [id], enteredGroup }
+        : { kind: 'none' });
+    }
+    const nextSelection = this.session.editor.selection;
+    if (id && !event.altKey && nextSelection.kind === 'elements'
+      && nextSelection.ids.every((selectedId) => this.isSelectable(selectedId))) {
+      this.moveGesture.begin(event, nextSelection.ids);
+    }
     event.preventDefault();
     this.element.focus({ preventScroll: true });
   };
+  private readonly onPointerMove = (event: PointerEvent): void => this.moveGesture.move(event);
+  private readonly onPointerUp = (event: PointerEvent): void => this.moveGesture.finish(event);
+  private readonly onPointerCancel = (event: PointerEvent): void => this.moveGesture.cancelPointer(event);
   private readonly onDoubleClick = (event: MouseEvent): void => {
     if (this.currentMode !== 'edit') return;
     const candidates = this.hitCandidates(event.composedPath());
@@ -88,6 +103,11 @@ class DomSlideEditor implements SlideEditor {
   };
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit' || event.key !== 'Escape') return;
+    if (this.moveGesture.isActive) {
+      this.moveGesture.cancel();
+      event.preventDefault();
+      return;
+    }
     const selection = this.session.editor.selection;
     if (selection.kind === 'elements' && selection.enteredGroup) {
       const groupId = selection.enteredGroup;
@@ -142,6 +162,15 @@ class DomSlideEditor implements SlideEditor {
     this.interactionLayer.style.pointerEvents = 'none';
     this.textLayer.style.pointerEvents = 'none';
 
+    this.moveGesture = new MoveGestureController({
+      root: this.element,
+      stage: this.stage,
+      staticLayer: this.staticLayer,
+      interactionLayer: this.interactionLayer,
+      editor: session.editor,
+      zoom: () => this.currentZoom,
+    });
+
     this.stage.append(this.staticLayer, this.interactionLayer, this.textLayer);
     this.element.append(this.stage);
     this.render();
@@ -149,6 +178,10 @@ class DomSlideEditor implements SlideEditor {
     this.setZoom(this.currentZoom);
     this.unsubscribe = session.editor.subscribe((change) => this.update(change));
     this.element.addEventListener('pointerdown', this.onPointerDown);
+    this.element.addEventListener('pointermove', this.onPointerMove);
+    this.element.addEventListener('pointerup', this.onPointerUp);
+    this.element.addEventListener('pointercancel', this.onPointerCancel);
+    this.element.addEventListener('lostpointercapture', this.onPointerCancel);
     this.element.addEventListener('dblclick', this.onDoubleClick);
     this.element.addEventListener('keydown', this.onKeyDown);
     try {
@@ -157,6 +190,10 @@ class DomSlideEditor implements SlideEditor {
     } catch (error) {
       this.unsubscribe();
       this.element.removeEventListener('pointerdown', this.onPointerDown);
+      this.element.removeEventListener('pointermove', this.onPointerMove);
+      this.element.removeEventListener('pointerup', this.onPointerUp);
+      this.element.removeEventListener('pointercancel', this.onPointerCancel);
+      this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
       this.element.removeEventListener('dblclick', this.onDoubleClick);
       this.element.removeEventListener('keydown', this.onKeyDown);
       this.element.remove();
@@ -171,8 +208,11 @@ class DomSlideEditor implements SlideEditor {
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
+    if (mode !== this.currentMode) this.moveGesture.cancel();
     this.currentMode = mode;
     this.element.dataset.mode = mode;
+    // Pointer Events 在按下前就按 touch-action 决定是否交给页面滚动；编辑态必须由画布拥有手势。
+    this.element.style.touchAction = mode === 'edit' ? 'none' : '';
     this.interactionLayer.toggleAttribute('hidden', mode === 'view');
     this.textLayer.toggleAttribute('hidden', mode === 'view');
     this.interactionLayer.style.display = mode === 'view' ? 'none' : '';
@@ -182,12 +222,14 @@ class DomSlideEditor implements SlideEditor {
   setSlide(slideId: SlideId): void {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
+    this.moveGesture.cancel();
     this.currentSlide = slideId;
     this.render();
   }
 
   setZoom(zoom: number): void {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
+    if (zoom !== this.currentZoom) this.moveGesture.cancel();
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.renderSelection(this.session.editor.selection);
@@ -196,8 +238,13 @@ class DomSlideEditor implements SlideEditor {
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
+    this.moveGesture.cancel();
     this.unsubscribe();
     this.element.removeEventListener('pointerdown', this.onPointerDown);
+    this.element.removeEventListener('pointermove', this.onPointerMove);
+    this.element.removeEventListener('pointerup', this.onPointerUp);
+    this.element.removeEventListener('pointercancel', this.onPointerCancel);
+    this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.element.removeEventListener('dblclick', this.onDoubleClick);
     this.element.removeEventListener('keydown', this.onKeyDown);
     sessionState(this.session).views.delete(this);
@@ -257,6 +304,7 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private update(change: EditorChange): void {
+    this.moveGesture.cancel();
     if (!change.dirtySlides.has(this.currentSlide)) {
       this.renderSelection(change.selection);
       return;

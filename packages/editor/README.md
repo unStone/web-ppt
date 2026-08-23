@@ -65,8 +65,15 @@ const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y
 ```
 
 These functions are DOM-free and include every ancestor group's rotation, flip, child offset, and child scale.
-Use `localPoint` for geometry and `parentPoint` for `x` / `y` movement. The visual handles intentionally do not
-bind drag gestures yet.
+Use `localPoint` for geometry and `parentPoint` for `x` / `y` movement.
+
+Dragging an element selects and moves it in one gesture; dragging any member of a multi-selection preserves and
+moves the whole selection. A 3-screen-pixel threshold separates clicks from moves. The view captures the primary
+pointer, coalesces preview updates with `requestAnimationFrame`, and translates temporary SVG wrappers plus the
+interaction overlay—no model, defs, or static element identity changes during the gesture. Pointer-up removes the
+ghosts before committing one `SetXfrm` transaction. `Escape`, pointer cancellation/loss, page or mode changes,
+and view destruction restore the original DOM without history. Nested rotated/flipped groups are converted into
+each element's parent coordinate space. Resize and rotation handles remain visual only for now.
 
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also

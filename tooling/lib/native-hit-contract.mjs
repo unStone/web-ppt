@@ -2,7 +2,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const pointerDown = () => new MouseEvent('pointerdown', { bubbles: true, composed: true });
+const pointerClick = (target, init = {}) => {
+  const options = { bubbles: true, composed: true, ...init };
+  const accepted = target.dispatchEvent(new MouseEvent('pointerdown', options));
+  target.dispatchEvent(new MouseEvent('pointerup', options));
+  return accepted;
+};
 
 export async function runNativeHitContract({ check, lib, root }) {
   console.log('\n\x1b[36m▸ 原生 SVG 点选与选择反馈\x1b[0m');
@@ -17,7 +22,7 @@ export async function runNativeHitContract({ check, lib, root }) {
     const target = staticLayer.querySelector(`[data-edit-id="${targetId}"]`);
     const svgBefore = staticLayer.querySelector('svg');
     const historyBefore = session.editor.history.undoCount;
-    target.dispatchEvent(pointerDown());
+    pointerClick(target);
     check('编辑模式点选通过稳定身份提交 headless 选区并只更新交互层',
       session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === targetId
@@ -31,7 +36,7 @@ export async function runNativeHitContract({ check, lib, root }) {
     const childId = session.editor.doc.elements[groupId].children[0];
     const group = staticLayer.querySelector(`[data-edit-id="${groupId}"]`);
     const child = staticLayer.querySelector(`[data-edit-id="${childId}"]`);
-    child.dispatchEvent(pointerDown());
+    pointerClick(child);
     const selectedOuterGroup = session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === groupId && session.editor.selection.enteredGroup === null;
     child.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
@@ -50,20 +55,20 @@ export async function runNativeHitContract({ check, lib, root }) {
     const groupRecord = session.editor.doc.elements[groupId];
     const childRecord = session.editor.doc.elements[childId];
     groupRecord.meta.locked = true;
-    child.dispatchEvent(pointerDown());
+    pointerClick(child);
     const lockedGroupSkipped = session.editor.selection.kind === 'none';
     groupRecord.meta.locked = false;
     groupRecord.meta.hiddenByUser = true;
-    child.dispatchEvent(pointerDown());
+    pointerClick(child);
     const hiddenGroupSkipped = session.editor.selection.kind === 'none';
     groupRecord.meta.hiddenByUser = false;
     childRecord.meta.editable = 'none';
-    child.dispatchEvent(pointerDown());
+    pointerClick(child);
     const uneditableLeafFallsBack = session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === groupId;
     groupRecord.meta.editable = 'none';
     childRecord.meta.editable = 'full';
-    child.dispatchEvent(pointerDown());
+    pointerClick(child);
     check('锁定、用户隐藏或不可编辑的组阻断后代，不可编辑叶子回退到可编辑父组', lockedGroupSkipped
       && hiddenGroupSkipped && uneditableLeafFallsBack && session.editor.selection.kind === 'none');
 
@@ -73,9 +78,7 @@ export async function runNativeHitContract({ check, lib, root }) {
     Object.defineProperty(document, 'elementsFromPoint', {
       configurable: true, value: () => [upper, lower],
     });
-    const altClick = () => lower.dispatchEvent(new MouseEvent('pointerdown', {
-      altKey: true, bubbles: true, composed: true, clientX: 120, clientY: 140,
-    }));
+    const altClick = () => pointerClick(lower, { altKey: true, clientX: 120, clientY: 140 });
     altClick();
     const topSelected = session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === upperId;
@@ -113,7 +116,7 @@ export async function runNativeHitContract({ check, lib, root }) {
     const unsubscribe = session.editor.subscribe((change) => {
       if (change.source === 'selection') selectionEvents++;
     });
-    secondTarget.dispatchEvent(pointerDown());
+    pointerClick(secondTarget);
     const sharedSelectionRendered = firstContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)
       && secondContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)
       && selectionEvents === 1;
@@ -121,10 +124,10 @@ export async function runNativeHitContract({ check, lib, root }) {
     const detachedTarget = secondTarget;
     second.destroy();
     document.body.append(second.element);
-    detachedTarget.dispatchEvent(pointerDown());
+    pointerClick(detachedTarget);
     const destroyedViewSilent = session.editor.selection.kind === 'none';
     first.setMode('edit');
-    firstTarget.dispatchEvent(pointerDown());
+    pointerClick(firstTarget);
     check('查看模式不拦截也不改选区，多视图同步反馈但各自拥有事件生命周期', viewDispatchAccepted
       && viewModeUnchanged && sharedSelectionRendered && destroyedViewSilent
       && session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === firstId
@@ -150,7 +153,7 @@ export async function runNativeHitContract({ check, lib, root }) {
     const innerId = byName('hit-inner-group');
     const leafId = byName('hit-nested-leaf');
     const leaf = container.querySelector(`[data-edit-id="${leafId}"]`);
-    leaf.dispatchEvent(pointerDown());
+    pointerClick(leaf);
     const selectedOuter = session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === outerId && session.editor.selection.enteredGroup === null;
     leaf.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));

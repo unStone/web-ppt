@@ -61,7 +61,13 @@ const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y
 ```
 
 这些函数不依赖 DOM，并包含所有祖先组的旋转、翻转、子坐标偏移与缩放；几何计算使用 `localPoint`，
-修改 `x` / `y` 使用 `parentPoint`。当前可视手柄刻意尚未绑定拖动手势。
+修改 `x` / `y` 使用 `parentPoint`。
+
+按住元素即可在一次手势中选中并移动；拖动当前多选中的任一成员会保留并整体移动选区。屏幕 3px 阈值
+区分点击与拖动。视图捕获主指针，以 `requestAnimationFrame` 合并预览帧，只平移临时 SVG wrapper
+和 interaction overlay——手势期间不改模型、defs 或静态元素身份。`pointerup` 先拆幽灵，再提交一个
+`SetXfrm` 事务；`Escape`、指针取消/丢失、切页、切模式或销毁视图都会无历史恢复原 DOM。
+旋转/翻转嵌套组会分别换算到元素父坐标。当前缩放和旋转手柄仍只负责可视反馈。
 
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走
