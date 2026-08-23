@@ -39,10 +39,11 @@ tracker: local-markdown
 - [把 SetXfrm 精确补丁写回 OOXML](tickets/009-set-xfrm-ooxml-patch.md) — 以命名空间感知的 spid 宿主定位、可克隆基线重建和包所有权刷新，实现形状、组、frame 与 p14 墨迹的可撤销增量保存。
 - [建立编辑会话与三层静态视图](tickets/014-editor-session-static-view.md) — 可发布的无框架会话统一资源所有权，以稳定身份、精确 markup/defs 分区和 30% 回退复用高保真预览，真实 Chrome 单元素提交 p95 为 0.100ms。
 - [实现原生 SVG 点选与组进入](tickets/015-native-hit-selection.md) — 单视图监听器把浏览器命中统一提交到 headless 选区，守住组进退、Alt z 序、view 无副作用与静态 DOM 身份，真实 Chrome 点选反馈 p95 为 0.100ms。
+- [统一画布坐标并绘制选择框手柄](tickets/016-selection-space-handles.md) — 纯仿射矩阵与 core 组变换严格对偶，单选 OBB、多选 AABB 和 9 个屏幕恒尺寸控件均只更新交互层，真实 Chrome 三档缩放最大偏差 0.000px、完整上屏 p95 0.100ms。
 
 ## Not yet specified
 
-- M2 的会话、三层静态视图与原生点选已落定；[统一画布坐标并绘制选择框手柄](tickets/016-selection-space-handles.md) 先固定组变换与可视操作点，拖动、吸附与框选再分票实现。
+- M2 的会话、原生点选、坐标与可视操作点已落定；[建立移动手势与拖动幽灵](tickets/017-drag-move-gesture.md) 先固定 pointer capture、父空间增量与单次提交边界，缩放、旋转、吸附和框选再分票实现。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

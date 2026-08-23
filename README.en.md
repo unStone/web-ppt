@@ -33,7 +33,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, edit overrides, and high-fidelity render projection. No framework, no DOM. | `@web-ppt/core` | 2.9 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 4.4 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, coordinate/handle overlay, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 5.9 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
 
@@ -79,6 +79,10 @@ session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 slideView.setMode('view'); // keeps the static preview DOM and hides interaction layers
 session.dispose();         // releases every view, source package, and blob URL
 ```
+
+In edit mode, the interaction SVG draws an exact OBB, eight resize handles, and a rotation handle for plain,
+rotated/flipped, and nested-group elements. Handle size stays constant in screen pixels. Pure functions for
+element-local, slide, and screen coordinates are exported so framework adapters never duplicate group math.
 
 When building a custom adapter or needing byte-stable markup, render with an explicit namespace:
 
@@ -287,8 +291,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 210 process-isolated SVG fingerprint pairs across 27 fixtures |
-| `npm run test:editor` | 24 session/incremental DOM/native selection/resource assertions + real-Chrome hit-testing and performance gates |
+| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 212 process-isolated SVG fingerprint pairs across 28 fixtures |
+| `npm run test:editor` | 30 session/incremental DOM/native selection/coordinate-and-handle/resource assertions + real-Chrome hit-testing, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

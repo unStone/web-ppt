@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
+import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,11 +130,18 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
     staticLayer.querySelector('svg') !== beforePageFallback
     && staticLayer.querySelectorAll('[data-edit-id]').length === stableIds.length);
   const firstSvg = staticLayer.querySelector('svg');
+  session.editor.select({ kind: 'elements', ids: [targetId], enteredGroup: null });
+  const selectedFrame = interactionLayer.querySelector('[data-edit-selection-frame]');
   const secondSlide = session.editor.doc.slideOrder[1];
   view.setSlide(secondSlide);
   check('切页只替换静态内容并保留三层视图实例', view.slideId === secondSlide
     && staticLayer.querySelector('svg') !== firstSvg
-    && container.querySelector('[data-ppt-stage]') === stage);
+    && container.querySelector('[data-ppt-stage]') === stage
+    && !interactionLayer.querySelector('[data-edit-selection-frame]'));
+  view.setSlide(session.editor.doc.slideOrder[0]);
+  check('切回选中元素所在页会以当前视图自己的 DOM 恢复选择框',
+    interactionLayer.querySelector('[data-edit-selection-frame]') !== selectedFrame
+    && interactionLayer.querySelector('[data-edit-selection-id]')?.getAttribute('data-edit-selection-id') === targetId);
   view.destroy();
   check('销毁视图只移除自己的 DOM，不释放共享会话', container.childElementCount === 0
     && session.disposed === false && session.editor.doc.package?.disposed === false
@@ -158,6 +166,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 }
 
 await runNativeHitContract({ check, lib, root });
+await runEditorSpaceContract({ check, lib, root });
 
 console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
 {
@@ -247,11 +256,13 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
   }
   hitSamples.sort((left, right) => left - right);
   const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
-  check('点选事件到交互层更新的 p95 不超过 8ms', hitP95 <= 8
+  check('点选事件到完整选择框与 9 个手柄上屏的 p95 不超过 8ms', hitP95 <= 8
     && staticLayer.querySelector('svg') === hitSvgBefore
-    && !!container.querySelector(`[data-edit-selection-id="${siblingId}"]`),
+    && !!container.querySelector(`[data-edit-selection-id="${siblingId}"]`)
+    && container.querySelectorAll('[data-edit-handle]').length === 9
+    && !!container.querySelector('[data-edit-selection-frame]'),
   `p95=${hitP95.toFixed(3)}ms`);
-  console.log(`  60 元素 · 点选反馈 p95 ${hitP95.toFixed(3)}ms`);
+  console.log(`  60 元素 · 完整选择框反馈 p95 ${hitP95.toFixed(3)}ms`);
   session.dispose();
 }
 

@@ -137,6 +137,106 @@
       const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
       if (hitP95 > 8) throw new Error(`点选反馈 p95 ${hitP95.toFixed(3)}ms`);
 
+      hitView.destroy();
+      const spaceSession = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-space-' });
+      const spaceView = spaceSession.mount(mount, { mode: 'edit', textMode: 'svg' });
+      const spaceByName = (name) => Object.values(spaceSession.editor.doc.elements)
+        .find((record) => record.src.name === name);
+      const spaceRecords = [
+        spaceByName('space-plain'),
+        spaceByName('space-rotated-flipped'),
+        spaceByName('space-nested-leaf'),
+      ];
+      if (spaceRecords.some((record) => !record)) throw new Error('坐标固件缺少稳定元素');
+      const polygonPoints = (polygon) => polygon.getAttribute('points').trim().split(/\s+/).map((pair) => {
+        const [x, y] = pair.split(',').map(Number);
+        return new DOMPoint(x, y);
+      });
+      const screenPoint = (point, matrix) => point.matrixTransform(matrix);
+      const midpoint = (left, right) => new DOMPoint((left.x + right.x) / 2, (left.y + right.y) / 2);
+      const frameError = (record, zoom) => {
+        spaceView.setZoom(zoom);
+        spaceSession.editor.select({ kind: 'elements', ids: [record.id], enteredGroup: null });
+        const target = mount.querySelector(`[data-edit-id="${record.id}"]`);
+        const base = target?.querySelector(':scope > g[transform]');
+        const polygon = mount.querySelector('[data-edit-selection-frame]');
+        const handle = mount.querySelector('[data-edit-handle="nw"]');
+        const targetMatrix = base?.getScreenCTM();
+        const overlayMatrix = polygon?.getScreenCTM();
+        if (!targetMatrix || !overlayMatrix || !handle) throw new Error(`无法取得 ${record.src.name} 的屏幕矩阵`);
+        const expected = [
+          new DOMPoint(0, 0), new DOMPoint(record.src.w, 0),
+          new DOMPoint(record.src.w, record.src.h), new DOMPoint(0, record.src.h),
+        ].map((point) => screenPoint(point, targetMatrix));
+        const actual = polygonPoints(polygon).map((point) => screenPoint(point, overlayMatrix));
+        const error = Math.max(...actual.map((point, index) =>
+          Math.hypot(point.x - expected[index].x, point.y - expected[index].y)));
+        const [nw, ne, se, sw] = expected;
+        const expectedScaleHandles = [
+          nw, midpoint(nw, ne), ne, midpoint(ne, se), se, midpoint(se, sw), sw, midpoint(sw, nw),
+        ];
+        const handleNames = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+        const handleRects = handleNames.map((name) =>
+          mount.querySelector(`[data-edit-handle="${name}"]`).getBoundingClientRect());
+        const handlePositionError = Math.max(...handleRects.map((rect, index) => Math.hypot(
+          rect.left + rect.width / 2 - expectedScaleHandles[index].x,
+          rect.top + rect.height / 2 - expectedScaleHandles[index].y,
+        )));
+        const top = midpoint(nw, ne);
+        const center = midpoint(nw, se);
+        const outwardX = top.x - center.x;
+        const outwardY = top.y - center.y;
+        const outwardLength = Math.hypot(outwardX, outwardY);
+        const expectedRotation = new DOMPoint(
+          top.x + outwardX / outwardLength * 24,
+          top.y + outwardY / outwardLength * 24,
+        );
+        const rotationRect = mount.querySelector('[data-edit-handle="rotate"]').getBoundingClientRect();
+        const actualRotation = new DOMPoint(
+          rotationRect.left + rotationRect.width / 2,
+          rotationRect.top + rotationRect.height / 2,
+        );
+        const rotationError = Math.hypot(
+          actualRotation.x - expectedRotation.x, actualRotation.y - expectedRotation.y,
+        );
+        const rotationDistanceError = Math.abs(Math.hypot(
+          actualRotation.x - top.x, actualRotation.y - top.y,
+        ) - 24);
+        const handleSizeError = Math.max(...[...handleRects, rotationRect]
+          .flatMap((rect) => [Math.abs(rect.width - 8), Math.abs(rect.height - 8)]));
+        return {
+          error,
+          handleError: Math.max(handlePositionError, rotationError, rotationDistanceError, handleSizeError),
+        };
+      };
+      const spaceChecks = [];
+      const staticSpaceSvg = mount.querySelector('[data-ppt-layer="static"] svg');
+      for (const zoom of [0.5, 1, 2]) {
+        for (const record of spaceRecords) spaceChecks.push(frameError(record, zoom));
+      }
+      const spaceError = Math.max(...spaceChecks.map((result) => result.error));
+      const handleError = Math.max(...spaceChecks.map((result) => result.handleError));
+      if (spaceError > 0.5 || handleError > 0.5
+        || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSpaceSvg) {
+        throw new Error(`选择框矩阵偏差 ${spaceError.toFixed(3)}px，手柄尺寸偏差 ${handleError.toFixed(3)}px`);
+      }
+      spaceView.setZoom(0.5);
+      spaceSession.editor.select({ kind: 'elements', ids: [spaceRecords[0].id], enteredGroup: null });
+      const firstFrame = mount.querySelector('[data-edit-selection-frame]');
+      const secondSpaceView = spaceSession.mount(ownedMount, { mode: 'edit', textMode: 'svg', zoom: 2 });
+      const secondFrame = ownedMount.querySelector('[data-edit-selection-frame]');
+      const firstWidth = Number(mount.querySelector('[data-edit-handle="nw"]')?.getAttribute('width'));
+      const secondWidth = Number(ownedMount.querySelector('[data-edit-handle="nw"]')?.getAttribute('width'));
+      if (firstFrame === secondFrame || firstWidth !== 16 || secondWidth !== 4) {
+        throw new Error(`多视图手柄未隔离：${firstWidth}/${secondWidth}`);
+      }
+      secondSpaceView.destroy();
+      spaceView.setMode('view');
+      if (getComputedStyle(mount.querySelector('[data-ppt-layer="interaction"]')).display !== 'none') {
+        throw new Error('查看模式不应显示选择框手柄');
+      }
+      spaceView.setMode('edit');
+
       const fontSession = await openEditor(await load('sample-embedfont.pptx'), { idPrefix: 'browser-font-' });
       fontSession.mount(fontMount, { mode: 'view' });
       const fontFaces = (fontMount.innerHTML.match(/@font-face/g) ?? []).length;
@@ -159,14 +259,35 @@
       const p95 = samples[Math.floor(samples.length * 0.95)];
       if (perfRoots.length !== 60 || p95 > 16) throw new Error(`60 元素提交 p95 ${p95.toFixed(3)}ms`);
 
+      const selectionSamples = [];
+      const perfStaticSvg = perfMount.querySelector('[data-ppt-layer="static"] svg');
+      for (let index = 0; index < 80; index++) {
+        const started = performance.now();
+        perfSession.editor.select({
+          kind: 'elements', ids: [perfRoots[index % 2]], enteredGroup: null,
+        });
+        selectionSamples.push(performance.now() - started);
+      }
+      selectionSamples.sort((left, right) => left - right);
+      const selectionP95 = selectionSamples[Math.floor(selectionSamples.length * 0.95)];
+      if (selectionP95 > 8 || perfMount.querySelectorAll('[data-edit-handle]').length !== 9
+        || perfMount.querySelector('[data-ppt-layer="static"] svg') !== perfStaticSvg) {
+        throw new Error(`60 元素完整选择框反馈 p95 ${selectionP95.toFixed(3)}ms`);
+      }
+
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
+      report.dataset.selectionP95 = selectionP95.toFixed(3);
+      report.dataset.spaceError = spaceError.toFixed(3);
+      report.dataset.handleError = handleError.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
-        + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms`;
-      globalThis.editorContract = { session, hitSession, hitView, fontSession, perfSession };
+        + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
+        + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms\n`
+        + `60 元素完整选择框 p95 ${selectionP95.toFixed(3)}ms`;
+      globalThis.editorContract = { session, hitSession, spaceSession, spaceView, fontSession, perfSession };
     } catch (error) {
       report.style.color = '#b91c1c';
       report.dataset.status = 'fail';

@@ -42,6 +42,32 @@ overlapping candidates in `elementsFromPoint` z-order. Locked, user-hidden, and 
 skipped. View mode does not intercept pointer events or mutate the shared headless selection. Selection changes
 replace only the interaction overlay, leaving the static preview DOM untouched.
 
+The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
+for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
+in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as
+the core renderer.
+
+Custom adapters can use the same pure coordinate seam without mounting another view:
+
+```ts
+import {
+  elementFrameToSlidePoint, screenToSlidePoint,
+  slideToElementFramePoint, slideToElementParentPoint,
+} from '@web-ppt/editor';
+
+const slidePoint = screenToSlidePoint(
+  { x: event.clientX, y: event.clientY },
+  { left: canvasRect.left, top: canvasRect.top, zoom: view.zoom },
+);
+const localPoint = slideToElementFramePoint(session.editor.doc, elementId, slidePoint);
+const parentPoint = slideToElementParentPoint(session.editor.doc, elementId, slidePoint);
+const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y: 0 });
+```
+
+These functions are DOM-free and include every ancestor group's rotation, flip, child offset, and child scale.
+Use `localPoint` for geometry and `parentPoint` for `x` / `y` movement. The visual handles intentionally do not
+bind drag gestures yet.
+
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also
 available. Full-slide renders and incremental element patches always use the same text mode.

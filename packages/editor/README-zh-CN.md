@@ -39,6 +39,30 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 用户隐藏和不可编辑的分支不会被选中。查看模式不拦截指针事件，也不改共享的 headless 选区；
 选择变化只替换交互层，静态预览 DOM 保持不变。
 
+单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
+1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
+core 渲染器的变换顺序。
+
+自定义适配器无需挂载额外视图，也能复用同一套纯坐标 seam：
+
+```ts
+import {
+  elementFrameToSlidePoint, screenToSlidePoint,
+  slideToElementFramePoint, slideToElementParentPoint,
+} from '@web-ppt/editor';
+
+const slidePoint = screenToSlidePoint(
+  { x: event.clientX, y: event.clientY },
+  { left: canvasRect.left, top: canvasRect.top, zoom: view.zoom },
+);
+const localPoint = slideToElementFramePoint(session.editor.doc, elementId, slidePoint);
+const parentPoint = slideToElementParentPoint(session.editor.doc, elementId, slidePoint);
+const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y: 0 });
+```
+
+这些函数不依赖 DOM，并包含所有祖先组的旋转、翻转、子坐标偏移与缩放；几何计算使用 `localPoint`，
+修改 `x` / `y` 使用 `parentPoint`。当前可视手柄刻意尚未绑定拖动手势。
+
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走
 同一文本模式，不会在提交后跳版。

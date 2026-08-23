@@ -5,10 +5,10 @@ import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { bindSlideIdentities, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
+import { renderSelectionOverlay } from './selection-overlay';
 import { sessionState } from './session-state';
 
 export type EditorMode = 'view' | 'edit';
-const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export interface SlideEditorOptions {
   slideId?: SlideId;
@@ -31,28 +31,6 @@ function layer(document: Document, name: string): HTMLDivElement {
 function elementsFromPath(path: EventTarget[], root: Element): Element[] {
   return path.filter((target): target is Element =>
     !!target && typeof target === 'object' && (target as Node).nodeType === 1 && root.contains(target as Node));
-}
-
-function stripInteractionIdentity(root: Element): void {
-  // 交互层与静态层共用一棵 document，复制 id 会让 DOM 查询与 SVG 引用指向不确定。
-  for (const element of [root, ...root.querySelectorAll('*')]) {
-    element.removeAttribute('id');
-    element.removeAttribute('data-edit-id');
-    element.removeAttribute('data-edit-root');
-  }
-}
-
-function selectionClone(target: SVGElement, svg: SVGSVGElement): Element {
-  // 组的变换留在祖先 <g>；只克隆目标会掉出当前画布位置。
-  let clone = target.cloneNode(true) as Element;
-  for (let parent = target.parentNode; parent && parent !== svg; parent = parent.parentNode) {
-    if ((parent as Node).nodeType !== 1) continue;
-    const shell = parent.cloneNode(false) as Element;
-    shell.append(clone);
-    clone = shell;
-  }
-  stripInteractionIdentity(clone);
-  return clone;
 }
 
 export interface SlideEditor {
@@ -212,6 +190,7 @@ class DomSlideEditor implements SlideEditor {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
+    this.renderSelection(this.session.editor.selection);
   }
 
   destroy(): void {
@@ -299,29 +278,9 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private renderSelection(selection: EditorChange['selection']): void {
-    this.interactionLayer.replaceChildren();
-    if (selection.kind !== 'elements') return;
-    const svg = this.staticLayer.querySelector<SVGSVGElement>('svg');
-    if (!svg) return;
-    for (const id of selection.ids) {
-      let record = this.session.editor.doc.elements[id];
-      if (!record) continue;
-      while (this.session.editor.doc.elements[record.parent]) {
-        record = this.session.editor.doc.elements[record.parent];
-      }
-      if (record.parent !== this.currentSlide) continue;
-      const target = [...this.staticLayer.querySelectorAll<SVGElement>('[data-edit-id]')]
-        .find((element) => element.dataset.editId === id);
-      if (!target) continue;
-      const marker = this.element.ownerDocument.createElementNS(SVG_NS, 'g');
-      marker.dataset.editSelectionId = id;
-      marker.setAttribute('aria-hidden', 'true');
-      marker.style.pointerEvents = 'none';
-      marker.style.filter = 'drop-shadow(0 0 2px #2563eb)';
-      marker.style.opacity = '0.78';
-      marker.append(selectionClone(target, svg));
-      this.interactionLayer.append(marker);
-    }
+    renderSelectionOverlay(
+      this.interactionLayer, this.session.editor.doc, selection, this.currentSlide, this.currentZoom,
+    );
   }
 }
 

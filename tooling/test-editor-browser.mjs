@@ -120,7 +120,9 @@ async function browserResult(webSocketDebuggerUrl) {
       const response = await evaluate(`(() => {
         const report = document.querySelector('#report');
         return report ? { status: report.dataset.status ?? 'running', p95: report.dataset.p95,
-          hitP95: report.dataset.hitP95, fontFaces: report.dataset.fontFaces,
+          hitP95: report.dataset.hitP95, selectionP95: report.dataset.selectionP95,
+          spaceError: report.dataset.spaceError, handleError: report.dataset.handleError,
+          fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
       const result = response.result?.result?.value;
@@ -157,6 +159,8 @@ try {
   const result = await browserResult(target.webSocketDebuggerUrl);
   if (result.status !== 'pass') throw new Error(`真实浏览器编辑契约未通过：${result.text}`);
   console.log(`  Chrome · 点选反馈 p95 ${result.hitP95}ms · 60 元素提交 p95 ${result.p95}ms`
+    + ` · 完整选择框 p95 ${result.selectionP95}ms · OBB/手柄最大偏差`
+    + ` ${result.spaceError}/${result.handleError}px`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {
