@@ -16,7 +16,8 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   const fields = ['x', 'y', 'w', 'h', 'rot'];
   for (let i = 0; i < 200; i++) {
     const target = editable[random() % editable.length];
-    const field = fields[random() % fields.length];
+    const allowedFields = target.meta.editable === 'frame' ? fields.slice(0, 4) : fields;
+    const field = allowedFields[random() % allowedFields.length];
     const current = edit.effectiveElement(doc, target.id)[field];
     let value = field === 'w' || field === 'h'
       ? (random() % 50000) / 100

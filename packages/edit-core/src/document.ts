@@ -125,6 +125,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     slideOrder,
     elements,
     package: pkg,
+    saveState: { baselines: Object.create(null) },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
   return doc;
@@ -142,6 +143,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     slideOrder: [],
     elements: {},
     package: null,
+    saveState: { baselines: Object.create(null) },
   };
 }
 
@@ -159,14 +161,36 @@ export function allocateElementId(doc: EditDoc): ElementId {
   }
 }
 
+function assignPackage(doc: EditDoc, pkg: EditDoc['package']): void {
+  const previous = doc.package;
+  (doc as { package: EditDoc['package'] }).package = pkg;
+  if (previous !== pkg) (previous as OwnedOpcPackage | null)?.dispose?.();
+}
+
+/** 采用外部完整包快照会建立新的保存基线；会话中常规保存应只调用 Editor.save。 */
+export function replaceDocPackage(doc: EditDoc, pkg: NonNullable<EditDoc['package']>): void {
+  if (pkg.disposed) throw new Error('不能采用已经释放的 OPC 包');
+  assignPackage(doc, pkg);
+  doc.saveState.baselines = Object.create(null);
+}
+
+/** 保存模块原子提交包与对应基线，不能拆成两个公开赋值。 */
+export function commitSavedPackage(
+  doc: EditDoc,
+  pkg: NonNullable<EditDoc['package']>,
+  baselines: Record<string, Uint8Array>,
+): void {
+  assignPackage(doc, pkg);
+  doc.saveState.baselines = baselines;
+}
+
 /** EditDoc 不内嵌函数，资源释放能力由 WeakMap 关联，因而文档本身仍可结构化克隆。 */
 export function disposeDoc(doc: EditDoc): void {
   if (disposed.has(doc)) return;
   disposed.add(doc);
-  const pkg = doc.package;
   disposers.get(doc)?.();
   disposers.delete(doc);
-  // dispose 是非枚举属性：分入口打包仍能释放最新包，同时不进入 structuredClone 结果。
-  (pkg as OwnedOpcPackage | null)?.dispose?.();
-  doc.package = null;
+  doc.saveState.baselines = Object.create(null);
+  // assignPackage 只释放保存模块创建的自有包；原始解析包由上面的 Presentation.dispose 释放。
+  assignPackage(doc, null);
 }

@@ -73,13 +73,19 @@ export interface EditIdentity {
   nextElement: number;
 }
 
+/** 只保存首次触碰的 XML part；必须随文档 structuredClone 才能在 Worker 中正确撤销后保存。 */
+export interface EditSaveState {
+  baselines: Record<string, Uint8Array>;
+}
+
 export interface EditDoc {
   meta: EditDocMeta;
   identity: EditIdentity;
   slides: Record<SlideId, SlideRecord>;
   slideOrder: SlideId[];
   elements: Record<ElementId, ElementRecord>;
-  package: OpcPackage | null;
+  readonly package: OpcPackage | null;
+  saveState: EditSaveState;
 }
 
 export interface CreateDocOptions {

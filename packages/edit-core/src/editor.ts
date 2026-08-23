@@ -6,6 +6,7 @@ import type {
 } from './commands/types';
 import { HistoryStore } from './history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
+import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
 import { cloneSelection, normalizeSelection } from './selection';
 import type { EditDoc, ElementId, SlideId } from './types';
@@ -58,6 +59,17 @@ export class Editor {
   get selection(): Selection { return cloneSelection(this.currentSelection); }
 
   isDirty(): boolean { return this.currentState !== this.savedState; }
+
+  async save(): Promise<Uint8Array> {
+    return (await this.saveDetailed()).bytes;
+  }
+
+  async saveDetailed(): Promise<OpcPatchResult> {
+    const { saveEditDoc } = await import('./save/index');
+    const result = saveEditDoc(this.doc);
+    this.markSaved();
+    return result;
+  }
 
   markSaved(): void {
     this.savedState = this.currentState;

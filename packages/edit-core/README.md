@@ -21,6 +21,7 @@ const slideId = doc.slideOrder[0];
 const elementId = doc.slides[slideId].children[0];
 
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+editor.exec({ type: 'SetFlip', id: elementId, h: true });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -33,7 +34,7 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 editor.subscribe(({ dirtyElements, dirtySlides }) => updateView(dirtyElements, dirtySlides));
 editor.undo();
 editor.redo();
-editor.markSaved();
+const pptxBytes = await editor.save(); // dynamically loads the OOXML/ZIP save path
 
 const element = editor.effectiveElement(elementId);
 if (element.kind === 'shape' && element.text) {
@@ -61,7 +62,17 @@ markers for a contenteditable overlay. The core function stays DOM-free; the edi
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-Load the preserving OOXML tree only on the save path; the default editing-model entry is 8.28 KB gzip:
+`Editor.save()` is the normal API: it writes current transform overrides, refreshes `doc.package` for the
+next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
+detailed method without changing lifecycle semantics:
+
+```ts
+const result = await editor.saveDetailed();
+// result.mode: identity | passthrough | repacked
+// result.fallbackReason explains why a package had to be rebuilt.
+```
+
+Load the lower-level preserving OOXML tree only when building another writer:
 
 ```ts
 import {
@@ -75,31 +86,31 @@ setXmlAttribute(off, 'x', String(Math.round(element.x * 9525)));
 const changedPart = serializeXmlTreeBytes(tree);
 ```
 
-Lazy-load the package patcher as well. Keep the returned `package` on the document so a second save reads
-the new compressed ranges rather than stale offsets:
+The lower-level OPC patcher remains available for standalone package transforms:
 
 ```ts
 import { disposeOpcPackage, patchOpcPackage } from '@web-ppt/edit-core/opc';
 
-const saved = patchOpcPackage(doc.package!, {
+const packageHandle = doc.package!;
+const saved = patchOpcPackage(packageHandle, {
   'ppt/slides/slide1.xml': changedPart,
 });
-doc.package = saved.package;
 const pptxBytes = saved.bytes;
 // saved.mode: identity | passthrough | repacked
 // A non-null fallbackReason lets the UI explain why this save rebuilt the archive.
 ```
 
-`disposeDoc(doc)` releases both the original package and the latest package assigned after saving. If
-you keep a save result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is no longer
-needed so large archive buffers can be reclaimed.
+Do not assign a low-level result to a live `EditDoc`: `Editor.save()` coordinates the package with its undo
+baseline. To intentionally adopt a complete external snapshot, call `replaceDocPackage(doc, saved.package)`;
+this explicitly resets that baseline. `disposeDoc(doc)` releases the current package. If you keep a save
+result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is no longer needed.
 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering. UTF-8
-and UTF-16 byte order/BOM are retained; the optional `xml` entry is 7.14 KB gzip. The 4.27 KB gzip `opc`
-entry copies clean local headers, extra fields, and compressed streams byte-for-byte. ZIP64, descriptors,
-archive comments, and encrypted entries return an explicit reason and deterministically repack. Both entries
-are DOM-free.
+and UTF-16 byte order/BOM are retained. Measured Vite output is 9.67 KB gzip for the initial editing entry,
+7.51 KB for `xml`, and 4.37 KB for `opc`; calling save after the main entry adds 13.74 KB on demand. Clean local
+headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
+and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 
 `doc.meta.readonly` is `true` when a `.pptx` was not parsed with the package and write-back metadata.
 Legacy `.ppt` documents remain editable through the future generated-save path; binary `.ppt` write-back is intentionally unsupported.

@@ -38,6 +38,10 @@
       "types": "./dist/opc/index.d.ts",
       "import": "./dist/opc.js"
     },
+    "./save": {
+      "types": "./dist/save/index.d.ts",
+      "import": "./dist/save.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

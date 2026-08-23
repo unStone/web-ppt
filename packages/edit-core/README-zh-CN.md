@@ -20,6 +20,7 @@ const slideId = doc.slideOrder[0];
 const elementId = doc.slides[slideId].children[0];
 
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+editor.exec({ type: 'SetFlip', id: elementId, h: true });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -32,7 +33,7 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 editor.subscribe(({ dirtyElements, dirtySlides }) => updateView(dirtyElements, dirtySlides));
 editor.undo();
 editor.redo();
-editor.markSaved();
+const pptxBytes = await editor.save(); // 动态加载 OOXML/ZIP 保存链路
 
 const element = editor.effectiveElement(elementId);
 if (element.kind === 'shape' && element.text) {
@@ -59,7 +60,16 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-保留型 OOXML 树只在保存时按需加载，默认编辑模型入口为 8.28KB gzip：
+常规调用只需 `Editor.save()`：它把当前变换覆盖写回 OOXML，刷新 `doc.package` 供下一次保存
+继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
+
+```ts
+const result = await editor.saveDetailed();
+// result.mode: identity | passthrough | repacked
+// result.fallbackReason 用于解释为什么本次需要整包重压。
+```
+
+只有扩展其它写回命令时才需要直接使用底层保留型 OOXML 树：
 
 ```ts
 import {
@@ -73,28 +83,29 @@ setXmlAttribute(off, 'x', String(Math.round(element.x * 9525)));
 const changedPart = serializeXmlTreeBytes(tree);
 ```
 
-把脏 part 合回原包同样按需加载；保存结果里的 `package` 必须放回文档，下一次保存才能继续使用
-最新的压缩区间：
+底层 OPC 补丁器仍可用于脱离编辑会话的独立包变换：
 
 ```ts
 import { disposeOpcPackage, patchOpcPackage } from '@web-ppt/edit-core/opc';
 
-const saved = patchOpcPackage(doc.package!, {
+const packageHandle = doc.package!;
+const saved = patchOpcPackage(packageHandle, {
   'ppt/slides/slide1.xml': changedPart,
 });
-doc.package = saved.package;
 const pptxBytes = saved.bytes;
 // saved.mode: identity | passthrough | repacked
 // saved.fallbackReason 非空时，UI 可说明为什么本次需要整包重压。
 ```
 
-`disposeDoc(doc)` 会同时释放原包与保存后放回文档的最新包。若保存结果没有交给 `EditDoc`
-管理，不再使用时调用 `disposeOpcPackage(saved.package)`，让大文件缓冲可被回收。
+不要把底层结果直接赋给仍在编辑的 `EditDoc`：`Editor.save()` 会同时维护包与撤销保存基线。若确实要
+采用一个完整的外部包快照，调用 `replaceDocPackage(doc, saved.package)`，它会显式重置该基线。
+`disposeDoc(doc)` 会释放当前包；独立保存结果不再使用时调用 `disposeOpcPackage(saved.package)`。
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence。UTF-8 / UTF-16 字节序和 BOM 均保留；可选的
-`xml` 入口为 7.14KB gzip。`opc` 入口为 4.27KB gzip：净条目的本地头、extra field 与压缩流逐字
-直通；zip64、数据描述符、存档注释、加密条目等会返回明确原因并确定性重压。两个入口都不依赖 DOM。
+实测 Vite 产物：编辑初始入口 9.67KB gzip，`xml` 为 7.51KB，`opc` 为 4.37KB；主入口加载后首次
+保存再按需增加 13.74KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。
 旧 `.ppt` 走后续的生成式 `.pptx` 保存路径，不支持写回二进制 `.ppt`。

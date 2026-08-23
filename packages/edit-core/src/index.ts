@@ -2,7 +2,7 @@
 export { Editor } from './editor';
 export { validateEditDoc } from './model-invariants';
 export { applyPatches } from './commands/patch';
-export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc } from './document';
+export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export {
   effectiveElement, invalidateAll, invalidateElement, invalidateSlide, slideOfElement, toSlide,
 } from './projection';
@@ -10,10 +10,11 @@ export {
   compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
 } from './fractional-index';
 export type {
-  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, ElementId, ElementMeta, ElementOverrides,
+  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, SlideId, SlideOverrides, SlideRecord, SlideSource,
 } from './types';
 export type {
   Command, CommandPatches, EditorChange, EditorOptions, EditorSubscriber, ElementXfrmPath, History, HistoryEntry, Patch, Selection,
-  SetXfrmCommand, TextPosition, Transaction, TransactionOptions, TransactionResult, XfrmField,
+  FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, TextPosition, Transaction, TransactionOptions,
+  TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';

@@ -8,10 +8,10 @@ interface StoredHistoryEntry extends HistoryEntry {
   readonly afterState: number;
 }
 
-const clonePatch = (patch: Patch): Patch => ({
+const clonePatch = <P extends Patch>(patch: P): P => ({
   ...patch,
-  path: [...patch.path] as unknown as Patch['path'],
-});
+  path: [...patch.path],
+} as P);
 
 export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {
   return {

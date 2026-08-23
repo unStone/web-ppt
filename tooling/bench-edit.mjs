@@ -88,7 +88,10 @@ check('210 页全部 XML 保留回环 ≤ 500ms', typeof xmlRoundTrip === 'numbe
 const opcSave = editable.editDoc?.opcSaveMs;
 check('200 页 / 50MB 修改并序列化 3 页后保存 ≤ 500ms', typeof opcSave === 'number' && opcSave <= 500
   && editable.editDoc.opcSaveInputBytes >= 50 * 1024 * 1024
-  && editable.editDoc.opcSaveDirtyParts === 3 && editable.editDoc.opcSavePreservedEntries > 3,
+  && editable.editDoc.opcSaveDirtyParts === 3 && editable.editDoc.opcSavePreservedEntries > 3
+  && JSON.stringify(editable.editDoc.opcSaveTargets) === JSON.stringify([
+    'ppt/slides/slide1.xml', 'ppt/slides/slide2.xml', 'ppt/slides/slide3.xml',
+  ]),
   `${typeof opcSave === 'number' ? opcSave.toFixed(1) : '缺失'}ms，` +
   `${((editable.editDoc?.opcSaveInputBytes ?? 0) / 1024 / 1024).toFixed(1)}MB，` +
   `直通 ${editable.editDoc?.opcSavePreservedEntries ?? 0} 条目`);

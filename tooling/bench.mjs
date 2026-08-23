@@ -39,6 +39,14 @@ const editOpcLib = EDIT_MODE() ? await (async () => {
     '--platform=browser', '--log-level=error', `--outfile=${file}`], { cwd: root });
   return import(`file://${file}?t=${Date.now()}`);
 })() : null;
+const editSaveLib = EDIT_MODE() ? await (async () => {
+  const file = join(root, 'out/core/bench-edit-save.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/save/index.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error',
+    `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
+  return import(`file://${file}?t=${Date.now()}`);
+})() : null;
 
 function EDIT_MODE() { return process.argv.includes('--edit'); }
 const JSON_MODE = process.argv.includes('--json');
@@ -148,24 +156,35 @@ if (EDIT && editLib) {
   report(`  全部 XML 保留回环: ${xmlEntries.length} part / ${(xmlRoundTripBytes / 1024 / 1024).toFixed(1)}MB / ` +
     `${xmlRoundTripMs.toFixed(1)}ms（逐字相同 ${xmlRoundTripExact}）`);
 
-  if (editOpcLib && editDoc.package) {
+  if (editOpcLib && editSaveLib && editDoc.package) {
     const padding = new Uint8Array(50 * 1024 * 1024);
     for (let offset = 0; offset < padding.length; offset += 4096) padding[offset] = offset >>> 12;
     const expanded = editOpcLib.patchOpcPackage(editDoc.package, { 'ppt/media/benchmark.mp4': padding });
-    const targets = ['ppt/slides/slide1.xml', 'ppt/slides/slide2.xml', 'ppt/slides/slide3.xml'];
-    const changes = {};
+    editLib.replaceDocPackage(editDoc, expanded.package);
+    const targetRecords = editDoc.slideOrder.slice(0, 3).map((slideId) => {
+      const pending = [...editDoc.slides[slideId].children];
+      while (pending.length) {
+        const record = editDoc.elements[pending.shift()];
+        if (record.meta.editable !== 'none' && record.meta.origin) return record;
+        pending.unshift(...(record.children ?? []));
+      }
+      return null;
+    });
+    const targets = targetRecords.map((record) => record?.meta.origin?.part ?? '');
+    const saveEditor = new editLib.Editor(editDoc);
     const saveStart = performance.now();
-    for (const name of targets) {
-      const source = expanded.package.parts[name];
-      const tree = editXmlLib.parseXmlTree(source);
-      editXmlLib.setXmlAttribute(tree.root, 'show', '1');
-      changes[name] = editXmlLib.serializeXmlTreeBytes(tree);
+    for (const record of targetRecords) {
+      if (!record) throw new Error('性能固件前三页缺少可写回元素');
+      saveEditor.transaction((tx) => tx.exec(
+        { type: 'SetXfrm', id: record.id, x: record.src.x + 1 },
+      ), '保存性能采样', { recordHistory: false });
     }
-    const saved = editOpcLib.patchOpcPackage(expanded.package, changes);
+    const saved = editSaveLib.saveEditDoc(editDoc);
     const saveMs = performance.now() - saveStart;
     metrics.editDoc.opcSaveInputBytes = expanded.bytes.length;
     metrics.editDoc.opcSaveOutputBytes = saved.bytes.length;
     metrics.editDoc.opcSaveDirtyParts = targets.length;
+    metrics.editDoc.opcSaveTargets = targets;
     metrics.editDoc.opcSavePreservedEntries = saved.preservedEntries;
     metrics.editDoc.opcSaveMs = saveMs;
     report(`  50MB OPC 三页序列化并保存: ${(expanded.bytes.length / 1024 / 1024).toFixed(1)}MB / ` +

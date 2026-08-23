@@ -2,6 +2,7 @@ export const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 export const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';
 export const DRAWINGML_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 export const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+export const POWERPOINT_2010_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 export const MARKUP_COMPATIBILITY_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 
 const ASCII_NCNAME = /^[A-Za-z_][A-Za-z0-9_.-]*$/;

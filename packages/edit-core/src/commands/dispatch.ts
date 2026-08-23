@@ -1,15 +1,36 @@
 import type { EditDoc } from '../types';
+import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
-import type { Command, CommandPatches } from './types';
-import { XFRM_FIELDS } from './xfrm';
+import type { Command, CommandPatches, SetFlipCommand, SetXfrmCommand } from './types';
+import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
-const SET_XFRM_KEYS = new Set<PropertyKey>(['type', 'id', ...XFRM_FIELDS]);
+interface CommandRegistration {
+  readonly keys: ReadonlySet<PropertyKey>;
+  readonly patches: (doc: EditDoc, command: Command, origin: string) => CommandPatches;
+}
+
+function register<C extends Command>(
+  fields: readonly PropertyKey[],
+  handler: (doc: EditDoc, command: C, origin: string) => CommandPatches,
+): CommandRegistration {
+  return {
+    keys: new Set(['type', 'id', ...fields]),
+    patches: (doc, command, origin) => handler(doc, command as C, origin),
+  };
+}
+
+const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
+  SetXfrm: register<SetXfrmCommand>(NUMERIC_XFRM_FIELDS, setXfrmPatches),
+  SetFlip: register<SetFlipCommand>(SET_FLIP_COMMAND_FIELDS, setFlipPatches),
+};
 
 function assertPureCommand(input: Command): void {
   if (!input || typeof input !== 'object') throw new Error('命令必须是纯数据对象');
+  const type = (input as Partial<Command>).type as Command['type'];
+  const allowed = COMMANDS[type]?.keys ?? new Set<PropertyKey>(['type', 'id']);
   for (const key of Reflect.ownKeys(input)) {
     const descriptor = Object.getOwnPropertyDescriptor(input, key);
-    if (!SET_XFRM_KEYS.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
+    if (!allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
       throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
     }
   }
@@ -18,8 +39,7 @@ function assertPureCommand(input: Command): void {
 
 export function commandPatches(doc: EditDoc, command: Command, origin: string): CommandPatches {
   assertPureCommand(command);
-  switch ((command as Partial<Command> | null)?.type) {
-    case 'SetXfrm': return setXfrmPatches(doc, command, origin);
-    default: throw new Error(`不支持的命令：${String((command as Partial<Command> | null)?.type)}`);
-  }
+  const registration = COMMANDS[command.type];
+  if (!registration) throw new Error(`不支持的命令：${String((command as Partial<Command>).type)}`);
+  return registration.patches(doc, command, origin);
 }

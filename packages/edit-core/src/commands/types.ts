@@ -1,7 +1,19 @@
 import type { ElementId, ProjectionInvalidation, SlideId } from '../types';
 
-export type XfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
-export type ElementXfrmPath = readonly ['elements', ElementId, 'ovr', XfrmField];
+export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
+export type FlipField = 'flipH' | 'flipV';
+export type XfrmField = NumericXfrmField | FlipField;
+export interface XfrmValueByField {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  flipH: boolean;
+  flipV: boolean;
+}
+export type ElementXfrmPath<F extends XfrmField = XfrmField> =
+  readonly ['elements', ElementId, 'ovr', F];
 
 export interface SetXfrmCommand {
   readonly type: 'SetXfrm';
@@ -13,11 +25,27 @@ export interface SetXfrmCommand {
   readonly rot?: number;
 }
 
-export type Command = SetXfrmCommand;
+export interface SetFlipCommand {
+  readonly type: 'SetFlip';
+  readonly id: ElementId;
+  readonly h?: boolean;
+  readonly v?: boolean;
+}
 
-export type Patch =
-  | { readonly op: 'set'; readonly path: ElementXfrmPath; readonly value: number; readonly origin: string }
-  | { readonly op: 'del'; readonly path: ElementXfrmPath; readonly origin: string };
+export type Command = SetXfrmCommand | SetFlipCommand;
+
+type SetXfrmPatch = { [F in XfrmField]: {
+  readonly op: 'set';
+  readonly path: ElementXfrmPath<F>;
+  readonly value: XfrmValueByField[F];
+  readonly origin: string;
+} }[XfrmField];
+type DeleteXfrmPatch = { [F in XfrmField]: {
+  readonly op: 'del';
+  readonly path: ElementXfrmPath<F>;
+  readonly origin: string;
+} }[XfrmField];
+export type Patch = SetXfrmPatch | DeleteXfrmPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

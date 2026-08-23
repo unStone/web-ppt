@@ -1,6 +1,6 @@
 import { invalidateElement } from '../projection';
 import type { EditDoc, ProjectionInvalidation } from '../types';
-import { applyXfrmPatch } from './set-xfrm';
+import { applyElementTransformPatch } from './element-transform';
 import type { Patch, XfrmField } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 
@@ -32,6 +32,6 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
   }
-  for (const patch of patches) applyXfrmPatch(doc, patch);
+  for (const patch of patches) applyElementTransformPatch(doc, patch);
   return { dirtyElements, dirtySlides };
 }
