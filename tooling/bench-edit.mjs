@@ -73,6 +73,13 @@ check('210 页全部 XML 保留回环 ≤ 500ms', typeof xmlRoundTrip === 'numbe
   && editable.editDoc.xmlRoundTripExact === editable.editDoc.xmlRoundTripParts,
   `${typeof xmlRoundTrip === 'number' ? xmlRoundTrip.toFixed(1) : '缺失'}ms，` +
   `${editable.editDoc?.xmlRoundTripExact ?? 0}/${editable.editDoc?.xmlRoundTripParts ?? 0} part`);
+const opcSave = editable.editDoc?.opcSaveMs;
+check('200 页 / 50MB 修改并序列化 3 页后保存 ≤ 500ms', typeof opcSave === 'number' && opcSave <= 500
+  && editable.editDoc.opcSaveInputBytes >= 50 * 1024 * 1024
+  && editable.editDoc.opcSaveDirtyParts === 3 && editable.editDoc.opcSavePreservedEntries > 3,
+  `${typeof opcSave === 'number' ? opcSave.toFixed(1) : '缺失'}ms，` +
+  `${((editable.editDoc?.opcSaveInputBytes ?? 0) / 1024 / 1024).toFixed(1)}MB，` +
+  `直通 ${editable.editDoc?.opcSavePreservedEntries ?? 0} 条目`);
 
 console.log('─'.repeat(60));
 if (failures.length) {

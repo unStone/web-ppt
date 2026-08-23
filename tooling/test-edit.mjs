@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
+import { runOpcZipContract } from './lib/opc-zip-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -25,6 +26,7 @@ const edit = await bundle(join(root, 'packages/edit-core/src/index.ts'), 'edit-c
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
 ]);
 const editXml = await bundle(join(root, 'packages/edit-core/src/xml/index.ts'), 'edit-xml');
+const editOpc = await bundle(join(root, 'packages/edit-core/src/opc/index.ts'), 'edit-opc');
 
 let passed = 0;
 const failures = [];
@@ -233,14 +235,24 @@ else {
   eq('图表、SmartArt、OLE 分别产出框架编辑对象', framedFiles, frameFiles.length);
   check('框架对象内部派生节点不可独立编辑', protectedChildren >= 2);
 
-  const handle = doc.package;
+  const originalHandle = doc.package;
+  const lifecyclePart = 'ppt/slides/slide1.xml';
+  const lifecycleBytes = new TextEncoder().encode(
+    `${new TextDecoder().decode(originalHandle.parts[lifecyclePart])}<!--lifecycle-->`,
+  );
+  const lifecycleSaved = editOpc.patchOpcPackage(originalHandle, { [lifecyclePart]: lifecycleBytes });
+  doc.package = lifecycleSaved.package;
   edit.disposeDoc(doc);
   edit.disposeDoc(doc);
-  check('释放 EditDoc 会释放接管的原包且幂等', handle?.disposed === true);
+  check('释放 EditDoc 会同时释放原包与最新保存包且幂等', originalHandle.disposed === true
+    && lifecycleSaved.package.disposed === true && lifecycleSaved.package.bytes.length === 0
+    && Object.keys(lifecycleSaved.package.parts).length === 0 && doc.package === null);
 }
 
 check('默认 edit-core 入口不捆绑保存期 XML 解析器', !('parseXmlTree' in edit));
+check('默认 edit-core 入口不捆绑保存期 ZIP 补丁器', !('patchOpcPackage' in edit));
 runXmlTreeContract({ edit: editXml, check, eq, root });
+await runOpcZipContract({ opc: editOpc, core, load, check, eq });
 
 console.log('\n' + '─'.repeat(60));
 if (failures.length) {

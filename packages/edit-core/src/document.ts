@@ -1,5 +1,6 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
 import { initialFractionalIndex } from './fractional-index';
+import type { OwnedOpcPackage } from './opc-owner-protocol';
 import type {
   CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
 } from './types';
@@ -139,6 +140,10 @@ export function allocateElementId(doc: EditDoc): ElementId {
 export function disposeDoc(doc: EditDoc): void {
   if (disposed.has(doc)) return;
   disposed.add(doc);
+  const pkg = doc.package;
   disposers.get(doc)?.();
   disposers.delete(doc);
+  // dispose 是非枚举属性：分入口打包仍能释放最新包，同时不进入 structuredClone 结果。
+  (pkg as OwnedOpcPackage | null)?.dispose?.();
+  doc.package = null;
 }

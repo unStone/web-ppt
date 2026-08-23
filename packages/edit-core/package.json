@@ -34,6 +34,10 @@
       "types": "./dist/xml/index.d.ts",
       "import": "./dist/xml.js"
     },
+    "./opc": {
+      "types": "./dist/opc/index.d.ts",
+      "import": "./dist/opc.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -49,6 +53,9 @@
   },
   "peerDependencies": {
     "@web-ppt/core": "^0.4.5"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
   },
   "publishConfig": {
     "access": "public"

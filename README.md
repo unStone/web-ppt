@@ -123,7 +123,9 @@ disposeDoc(doc);                                     // 同时释放被接管的
 会明确指出输入是否缺少可靠的保存上下文，避免用户编辑完才发现不能保存。
 保存链路可按需导入 `@web-ppt/edit-core/xml`：保留型树对未修改 part 逐字节回环，定点改属性时
 保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
-OOXML sequence 顺序表。它不进入默认 2.92KB gzip 的编辑模型入口。
+OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
+和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
+两者都不进入默认 2.95KB gzip 的编辑模型入口。
 
 ### 接自己的 UI
 
@@ -268,7 +270,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML 树 89 项断言 + 22 份固件、194 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC 140 项断言 + 23 份固件、200 对独立进程 SVG 指纹 |
+| `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |

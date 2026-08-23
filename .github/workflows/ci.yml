@@ -35,6 +35,12 @@ jobs:
       - name: 编辑模型 / 投影测试
         run: npm run test:edit
 
+      - name: 安装 LibreOffice
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress
+
+      - name: 补丁保存外部打开测试
+        run: npm run test:edit:libreoffice
+
       - name: 编辑性能预算
         run: npm run bench:edit
 

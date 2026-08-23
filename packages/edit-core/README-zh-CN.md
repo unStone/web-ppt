@@ -48,7 +48,7 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-保留型 OOXML 树只在保存时按需加载，默认编辑模型入口仍是 2.92KB gzip：
+保留型 OOXML 树只在保存时按需加载，默认编辑模型入口仍是 2.95KB gzip：
 
 ```ts
 import {
@@ -62,9 +62,28 @@ setXmlAttribute(off, 'x', String(Math.round(element.x * 9525)));
 const changedPart = serializeXmlTreeBytes(tree);
 ```
 
+把脏 part 合回原包同样按需加载；保存结果里的 `package` 必须放回文档，下一次保存才能继续使用
+最新的压缩区间：
+
+```ts
+import { disposeOpcPackage, patchOpcPackage } from '@web-ppt/edit-core/opc';
+
+const saved = patchOpcPackage(doc.package!, {
+  'ppt/slides/slide1.xml': changedPart,
+});
+doc.package = saved.package;
+const pptxBytes = saved.bytes;
+// saved.mode: identity | passthrough | repacked
+// saved.fallbackReason 非空时，UI 可说明为什么本次需要整包重压。
+```
+
+`disposeDoc(doc)` 会同时释放原包与保存后放回文档的最新包。若保存结果没有交给 `EditDoc`
+管理，不再使用时调用 `disposeOpcPackage(saved.package)`，让大文件缓冲可被回收。
+
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence。UTF-8 / UTF-16 字节序和 BOM 均保留；可选的
-`xml` 入口为 7.14KB gzip，同样不依赖 DOM。
+`xml` 入口为 7.14KB gzip。`opc` 入口为 4.27KB gzip：净条目的本地头、extra field 与压缩流逐字
+直通；zip64、数据描述符、存档注释、加密条目等会返回明确原因并确定性重压。两个入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。
 旧 `.ppt` 走后续的生成式 `.pptx` 保存路径，不支持写回二进制 `.ppt`。

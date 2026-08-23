@@ -49,7 +49,7 @@ markers for a contenteditable overlay. The core function stays DOM-free; the edi
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-Load the preserving OOXML tree only on the save path; the default editing-model entry stays 2.92 KB gzip:
+Load the preserving OOXML tree only on the save path; the default editing-model entry stays 2.95 KB gzip:
 
 ```ts
 import {
@@ -63,9 +63,31 @@ setXmlAttribute(off, 'x', String(Math.round(element.x * 9525)));
 const changedPart = serializeXmlTreeBytes(tree);
 ```
 
+Lazy-load the package patcher as well. Keep the returned `package` on the document so a second save reads
+the new compressed ranges rather than stale offsets:
+
+```ts
+import { disposeOpcPackage, patchOpcPackage } from '@web-ppt/edit-core/opc';
+
+const saved = patchOpcPackage(doc.package!, {
+  'ppt/slides/slide1.xml': changedPart,
+});
+doc.package = saved.package;
+const pptxBytes = saved.bytes;
+// saved.mode: identity | passthrough | repacked
+// A non-null fallbackReason lets the UI explain why this save rebuilt the archive.
+```
+
+`disposeDoc(doc)` releases both the original package and the latest package assigned after saving. If
+you keep a save result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is no longer
+needed so large archive buffers can be reclaimed.
+
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering. UTF-8
-and UTF-16 byte order/BOM are retained; the optional `xml` entry is 7.14 KB gzip and has no DOM dependency.
+and UTF-16 byte order/BOM are retained; the optional `xml` entry is 7.14 KB gzip. The 4.27 KB gzip `opc`
+entry copies clean local headers, extra fields, and compressed streams byte-for-byte. ZIP64, descriptors,
+archive comments, and encrypted entries return an explicit reason and deterministically repack. Both entries
+are DOM-free.
 
 `doc.meta.readonly` is `true` when a `.pptx` was not parsed with the package and write-back metadata.
 Legacy `.ppt` documents remain editable through the future generated-save path; binary `.ppt` write-back is intentionally unsupported.

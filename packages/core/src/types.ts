@@ -21,7 +21,7 @@ export interface Presentation {
   dispose?: () => void;
   /**
    * 原始 OOXML 包；仅 `parse(..., { keepPackage: true })` 时存在。
-   * 编辑器保存需要原始 ZIP 字节与解压 part；调用 `dispose()` 后句柄会变为空并标记已释放。
+   * 编辑器保存需要原始 ZIP 字节与解压 part；调用 `Presentation.dispose()` 后句柄会变为空并标记已释放。
    */
   package?: OpcPackage;
   /** 节（p14:sectionLst），供缩略图分组 */

@@ -126,8 +126,10 @@ When a preset shape is resized, projection recomputes its path from the retained
 `doc.meta.readonly` explicitly reports missing safe save context before the user starts editing.
 The save path can lazy-load `@web-ppt/edit-core/xml`. Its preserving tree round-trips untouched parts byte
 for byte and retains declarations, comments, PIs, namespace prefixes, attribute order, self-closing form,
-and `AlternateContent` around point edits. New nodes share one OOXML sequence table. None of this enters the
-default 2.92 KB gzip editing-model entry.
+and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
+`@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
+extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
+return an explainable fallback reason. Neither save-only entry enters the default 2.95 KB gzip editing-model entry.
 
 ### Bring your own UI
 
@@ -270,7 +272,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 89 edit-model/preserving-XML assertions + 194 pairs of process-isolated SVG fingerprints across 22 fixtures |
+| `npm run test:edit` | 140 edit-model/preserving-XML/OPC assertions + 200 pairs of process-isolated SVG fingerprints across 23 fixtures |
+| `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
