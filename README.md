@@ -270,8 +270,10 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 243 项断言 + 25 份固件、206 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 243 项断言 + M1 11 项独立验收 + 25 份固件、206 对独立进程 SVG 指纹 |
+| `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
+| `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
@@ -279,10 +281,15 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run build` | 构建四个发布包（core / edit-core / viewer-core / fonts） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
+| `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |
 | `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
 | `npm run bench` | 大文件只读性能基准；追加 `-- --edit` 测编辑投影 |
 | `npm run bench:edit` | 210 页独立进程对照，强制检查只读零状态、编辑内存与提交重渲预算 |
 | `npm run demo-gif` | 录 README 用的演示 GIF（需要 Chrome 与 ffmpeg） |
+
+PowerPoint 真机门禁只在装有桌面版 PowerPoint 的 Windows 环境运行：脚本通过
+[`Presentations.Open2007`](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentations.open2007)
+显式传入 `OpenAndRepair = false`，同时开启全部警告，让需要修复的文件以自动化错误失败；文件不会上传。
 
 约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**（对编码代理同样适用）。
 

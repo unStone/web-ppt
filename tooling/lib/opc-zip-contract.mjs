@@ -1,61 +1,8 @@
 import { unzipSync } from 'fflate';
+import { equalBytes } from './bytes.mjs';
+import { findEocd, localRecords, scanCentralEntries } from './zip-records.mjs';
 
 const decoder = new TextDecoder();
-
-function equalBytes(a, b) {
-  return !!a && !!b && a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
-function findEocd(bytes) {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  let end = bytes.length - 22;
-  while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
-  if (end < 0) throw new Error('测试 ZIP 缺少 EOCD');
-  return end;
-}
-
-/** 测试侧独立按 APPNOTE 固定字段扫描，避免用生产解析器验证自身。 */
-function scanCentralEntries(bytes) {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const end = findEocd(bytes);
-  const total = view.getUint16(end + 10, true);
-  let cursor = view.getUint32(end + 16, true);
-  const entries = [];
-  for (let index = 0; index < total; index++) {
-    if (view.getUint32(cursor, true) !== 0x02014b50) throw new Error('测试 ZIP 中央目录损坏');
-    const compressedSize = view.getUint32(cursor + 20, true);
-    const nameLength = view.getUint16(cursor + 28, true);
-    const extraLength = view.getUint16(cursor + 30, true);
-    const commentLength = view.getUint16(cursor + 32, true);
-    const localOffset = view.getUint32(cursor + 42, true);
-    const localNameLength = view.getUint16(localOffset + 26, true);
-    const localExtraLength = view.getUint16(localOffset + 28, true);
-    const name = decoder.decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
-    const localEnd = localOffset + 30 + localNameLength + localExtraLength + compressedSize;
-    entries.push({
-      name,
-      cursor,
-      localOffset,
-      localEnd,
-      nameLength,
-      extraLength,
-      commentLength,
-      localNameLength,
-      localExtraLength,
-    });
-    cursor += 46 + nameLength + extraLength + commentLength;
-  }
-  return entries;
-}
-
-/** 证明生产补丁器没有重建净条目的完整本地记录。 */
-function localRecords(bytes) {
-  const records = new Map();
-  for (const entry of scanCentralEntries(bytes)) {
-    records.set(entry.name, bytes.slice(entry.localOffset, entry.localEnd));
-  }
-  return records;
-}
 
 function entryMetadataBytes(bytes, wanted) {
   for (const entry of scanCentralEntries(bytes)) {

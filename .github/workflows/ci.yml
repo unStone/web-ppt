@@ -39,7 +39,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress
 
       - name: 补丁保存外部打开测试
-        run: npm run test:edit:libreoffice
+        # 复用上一阶段通过最小差异合约的同一份字节，避免各自生成不同样本。
+        run: npm run test:edit:libreoffice -- out/edit-save/single-move.pptx
 
       - name: 编辑性能预算
         run: npm run bench:edit

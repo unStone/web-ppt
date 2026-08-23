@@ -1,7 +1,6 @@
-const decoder = new TextDecoder();
+import { equalBytes } from './bytes.mjs';
 
-const equalBytes = (a, b) => !!a && !!b && a.length === b.length
-  && a.every((value, index) => value === b[index]);
+const decoder = new TextDecoder();
 const emu = (value) => String(Math.round(value * 9525));
 const angle = (value) => String(Math.round(value * 60000));
 
