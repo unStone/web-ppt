@@ -120,7 +120,8 @@ async function browserResult(webSocketDebuggerUrl) {
       const response = await evaluate(`(() => {
         const report = document.querySelector('#report');
         return report ? { status: report.dataset.status ?? 'running', p95: report.dataset.p95,
-          fontFaces: report.dataset.fontFaces, text: report.textContent } : { status: 'running' };
+          hitP95: report.dataset.hitP95, fontFaces: report.dataset.fontFaces,
+          text: report.textContent } : { status: 'running' };
       })()`);
       const result = response.result?.result?.value;
       if (result?.status === 'pass' || result?.status === 'fail') return result;
@@ -155,7 +156,8 @@ try {
   const target = await pageTarget(port, url);
   const result = await browserResult(target.webSocketDebuggerUrl);
   if (result.status !== 'pass') throw new Error(`真实浏览器编辑契约未通过：${result.text}`);
-  console.log(`  Chrome · 60 元素提交 p95 ${result.p95}ms · ${result.fontFaces} 个嵌入 @font-face`);
+  console.log(`  Chrome · 点选反馈 p95 ${result.hitP95}ms · 60 元素提交 p95 ${result.p95}ms`
+    + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {
     child.kill('SIGTERM');

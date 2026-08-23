@@ -31,7 +31,7 @@ function validateTextPosition(text: TextBody, position: TextPosition, label: str
   if (!run || position.off > run.text.length) throw new Error(`${label} 的 run 或 UTF-16 偏移越界`);
 }
 
-function isDescendantOf(doc: EditDoc, id: ElementId, ancestor: ElementId): boolean {
+export function isElementDescendantOf(doc: EditDoc, id: ElementId, ancestor: ElementId): boolean {
   let current = doc.elements[id];
   const seen = new Set<ElementId>();
   while (current && doc.elements[current.parent]) {
@@ -57,7 +57,7 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
       if (selection.enteredGroup !== null) {
         const group = doc.elements[selection.enteredGroup];
         if (!group || group.src.kind !== 'group') throw new Error('进入组必须指向现有组元素');
-        if (!selection.ids.every((id) => isDescendantOf(doc, id, selection.enteredGroup!))) {
+        if (!selection.ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))) {
           throw new Error('进入组后的选区只能包含该组后代');
         }
       }

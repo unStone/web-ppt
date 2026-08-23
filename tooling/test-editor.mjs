@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
+import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -156,6 +157,8 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
     && pkg.disposed === true);
 }
 
+await runNativeHitContract({ check, lib, root });
+
 console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
 {
   const bytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-edit-basic.pptx')));
@@ -232,6 +235,23 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
     && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === sibling,
   `p95=${p95.toFixed(3)}ms`);
   console.log(`  60 元素 · 单元素提交 p95 ${p95.toFixed(3)}ms`);
+
+  const hitTargets = [targetId, siblingId]
+    .map((id) => staticLayer.querySelector(`[data-edit-id="${id}"]`));
+  const hitSvgBefore = staticLayer.querySelector('svg');
+  const hitSamples = [];
+  for (let index = 0; index < 80; index++) {
+    const started = performance.now();
+    hitTargets[index % 2].dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, composed: true }));
+    hitSamples.push(performance.now() - started);
+  }
+  hitSamples.sort((left, right) => left - right);
+  const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
+  check('点选事件到交互层更新的 p95 不超过 8ms', hitP95 <= 8
+    && staticLayer.querySelector('svg') === hitSvgBefore
+    && !!container.querySelector(`[data-edit-selection-id="${siblingId}"]`),
+  `p95=${hitP95.toFixed(3)}ms`);
+  console.log(`  60 元素 · 点选反馈 p95 ${hitP95.toFixed(3)}ms`);
   session.dispose();
 }
 

@@ -34,6 +34,11 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 本页 30% 时才退回整页重渲。顶层和嵌套组节点都会得到稳定 `data-edit-id`，命中不依赖只在 OOXML part
 内有效的数字 id。
 
+编辑模式直接使用浏览器 SVG 原生命中：点击组内元素默认选最外层组，双击每次进入一层，
+`Escape` 每次退出一层；`Alt`+点击按 `elementsFromPoint` 的 z 序循环重叠候选。锁定、
+用户隐藏和不可编辑的分支不会被选中。查看模式不拦截指针事件，也不改共享的 headless 选区；
+选择变化只替换交互层，静态预览 DOM 保持不变。
+
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走
 同一文本模式，不会在提交后跳版。

@@ -19,6 +19,7 @@
   <div id="mount"></div>
   <div id="font-mount" class="contract-offscreen"></div>
   <div id="perf-mount" class="contract-offscreen"></div>
+  <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
     import { openEditor } from '/out/editor/editor.mjs';
 
@@ -26,6 +27,7 @@
     const mount = document.querySelector('#mount');
     const fontMount = document.querySelector('#font-mount');
     const perfMount = document.querySelector('#perf-mount');
+    const ownedMount = document.querySelector('#owned-mount');
     const load = async (name) => {
       const response = await fetch(`/fixtures/${name}`);
       if (!response.ok) throw new Error(`${name} HTTP ${response.status}`);
@@ -49,6 +51,91 @@
         && staticLayer.querySelector('svg') === svgBefore
         && staticLayer.querySelector('image')?.getAttribute('href')?.startsWith('blob:');
       if (!ok) throw new Error('三层、增量 DOM 身份或图片资源断言失败');
+
+      view.destroy();
+      const hitSession = await openEditor(await load('sample-editor-hit.pptx'), { idPrefix: 'browser-hit-' });
+      const hitView = hitSession.mount(mount, { mode: 'edit', zoom: 0.75, textMode: 'svg' });
+      mount.scrollIntoView({ block: 'start' });
+      const byName = (name) => Object.values(hitSession.editor.doc.elements)
+        .find((record) => record.src.name === name)?.id;
+      const ids = {
+        solid: byName('hit-solid'), outline: byName('hit-outline'),
+        lower: byName('hit-overlap-lower'), upper: byName('hit-overlap-upper'),
+        outer: byName('hit-outer-group'), inner: byName('hit-inner-group'), leaf: byName('hit-nested-leaf'),
+      };
+      if (Object.values(ids).some((id) => !id)) throw new Error('命中固件缺少稳定元素');
+      const hitAt = (x, y, init = {}) => {
+        const rect = mount.getBoundingClientRect();
+        const clientX = rect.left + x * 0.75;
+        const clientY = rect.top + y * 0.75;
+        const target = document.elementFromPoint(clientX, clientY);
+        if (!target) throw new Error(`命中点落在视口外：${x},${y}`);
+        const accepted = target.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', button: 0,
+          clientX, clientY, ...init,
+        }));
+        return { target, accepted, clientX, clientY };
+      };
+      const selected = (id, enteredGroup = null) => hitSession.editor.selection.kind === 'elements'
+        && hitSession.editor.selection.ids[0] === id
+        && hitSession.editor.selection.enteredGroup === enteredGroup;
+
+      hitAt(190, 170);
+      if (!selected(ids.solid)) throw new Error('实心 SVG 原生命中失败');
+      hitSession.editor.select({ kind: 'none' });
+      hitAt(470, 170);
+      if (hitSession.editor.selection.kind !== 'none') throw new Error('无填充形状的中心不应命中');
+      hitAt(363, 170);
+      if (!selected(ids.outline)) throw new Error('无填充形状的描边应可命中');
+      hitAt(820, 190);
+      if (!selected(ids.upper)) throw new Error('重叠形状未选中最上层');
+      hitAt(820, 190, { altKey: true });
+      const altReachedLower = selected(ids.lower);
+      hitAt(820, 190, { altKey: true });
+      if (!altReachedLower || !selected(ids.upper)) throw new Error('Alt 未按浏览器 z 序循环');
+
+      const nestedHit = hitAt(250, 470);
+      if (!selected(ids.outer)) throw new Error('组内点选未默认选外层组');
+      nestedHit.target.dispatchEvent(new MouseEvent('dblclick', {
+        bubbles: true, composed: true, cancelable: true,
+        clientX: nestedHit.clientX, clientY: nestedHit.clientY,
+      }));
+      if (!selected(ids.inner, ids.outer)) throw new Error('双击未进入外层组');
+      nestedHit.target.dispatchEvent(new MouseEvent('dblclick', {
+        bubbles: true, composed: true, cancelable: true,
+        clientX: nestedHit.clientX, clientY: nestedHit.clientY,
+      }));
+      if (!selected(ids.leaf, ids.inner)) throw new Error('双击未逐层进入内层组');
+      hitView.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (!selected(ids.inner, ids.outer)) throw new Error('Escape 未逐层退出内层组');
+
+      hitSession.editor.select({ kind: 'elements', ids: [ids.upper], enteredGroup: null });
+      hitView.setMode('view');
+      const viewEvent = hitAt(190, 170);
+      if (!viewEvent.accepted || !selected(ids.upper)) throw new Error('查看模式不应拦截或修改选区');
+      hitView.setMode('edit');
+
+      const ownedView = hitSession.mount(ownedMount, { mode: 'edit', textMode: 'svg' });
+      const ownedTarget = ownedMount.querySelector(`[data-edit-id="${ids.solid}"]`);
+      hitSession.editor.select({ kind: 'none' });
+      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      if (!selected(ids.solid)) throw new Error('共享会话的第二视图未提交选区');
+      ownedView.destroy();
+      document.body.append(ownedView.element);
+      hitSession.editor.select({ kind: 'none' });
+      ownedTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      if (hitSession.editor.selection.kind !== 'none') throw new Error('已销毁视图仍然响应选择事件');
+      ownedView.element.remove();
+
+      const hitSamples = [];
+      for (let index = 0; index < 80; index++) {
+        const started = performance.now();
+        hitAt(index % 2 ? 363 : 190, 170);
+        hitSamples.push(performance.now() - started);
+      }
+      hitSamples.sort((left, right) => left - right);
+      const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
+      if (hitP95 > 8) throw new Error(`点选反馈 p95 ${hitP95.toFixed(3)}ms`);
 
       const fontSession = await openEditor(await load('sample-embedfont.pptx'), { idPrefix: 'browser-font-' });
       fontSession.mount(fontMount, { mode: 'view' });
@@ -74,10 +161,12 @@
 
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
+      report.dataset.hitP95 = hitP95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
-      report.textContent = `PASS\n${roots.length} 个顶层元素\n目标增量替换、兄弟 DOM 保留、blob 图片可见\n`
+      report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
+        + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms`;
-      globalThis.editorContract = { session, view, fontSession, perfSession };
+      globalThis.editorContract = { session, hitSession, hitView, fontSession, perfSession };
     } catch (error) {
       report.style.color = '#b91c1c';
       report.dataset.status = 'fail';

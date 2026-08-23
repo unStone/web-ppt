@@ -32,7 +32,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 9.7KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、查看/编辑模式与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 3.1KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 4.4KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -285,8 +285,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 244 项断言 + M1 11 项独立验收 + 26 份固件、208 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 17 项编辑会话 / 三层 DOM / 增量 defs / 资源释放断言 + 真实 Chrome 60 元素性能门禁 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 244 项断言 + M1 11 项独立验收 + 27 份固件、210 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 24 项会话 / 增量 DOM / 原生选择 / 资源断言 + 真实 Chrome 命中与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

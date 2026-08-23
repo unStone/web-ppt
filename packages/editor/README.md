@@ -36,6 +36,12 @@ unchanged sibling DOM nodes keep their identity. If more than 30% of the slide's
 the view falls back to one full render. Stable `data-edit-id` values are assigned to top-level and nested group
 nodes, so DOM hit testing never depends on part-local OOXML ids.
 
+In edit mode, pointer selection uses the browser's native SVG hit testing. A click inside a group selects its
+outermost group; double-click enters one group level and `Escape` leaves one level. `Alt`+click cycles through
+overlapping candidates in `elementsFromPoint` z-order. Locked, user-hidden, and non-editable branches are
+skipped. View mode does not intercept pointer events or mutate the shared headless selection. Selection changes
+replace only the interaction overlay, leaving the static preview DOM untouched.
+
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also
 available. Full-slide renders and incremental element patches always use the same text mode.

@@ -33,7 +33,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, edit overrides, and high-fidelity render projection. No framework, no DOM. | `@web-ppt/core` | 2.9 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, view/edit modes, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 3.1 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 4.4 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
 
@@ -287,8 +287,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 208 process-isolated SVG fingerprint pairs across 26 fixtures |
-| `npm run test:editor` | 17 session/three-layer DOM/incremental defs/resource assertions + a real-Chrome 60-element performance gate |
+| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 210 process-isolated SVG fingerprint pairs across 27 fixtures |
+| `npm run test:editor` | 24 session/incremental DOM/native selection/resource assertions + real-Chrome hit-testing and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

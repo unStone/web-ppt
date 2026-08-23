@@ -1,6 +1,7 @@
 /** @web-ppt/edit-core —— 无 DOM 的编辑文档模型与高保真渲染投影。 */
 export { Editor } from './editor';
 export { validateEditDoc } from './model-invariants';
+export { isElementDescendantOf } from './selection';
 export { applyPatches } from './commands/patch';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export {
