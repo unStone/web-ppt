@@ -1,10 +1,10 @@
 import { effectiveElement, slideOfElement } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
+import { RESIZE_HANDLES, resizeHandleAfterFlip } from './resize-geometry';
 import { elementFrameToSlidePoint } from './space';
 import type { SpacePoint } from './space';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const SCALE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const;
 
 interface SelectionFrame {
   ids: ElementId[];
@@ -61,8 +61,74 @@ function rotationHandlePoint(corners: SelectionFrame['corners'], distance: numbe
   return { x: top.x + ux * distance, y: top.y + uy * distance };
 }
 
+function resizeCursor(point: SpacePoint, center: SpacePoint): string {
+  const degrees = Math.atan2(point.y - center.y, point.x - center.x) * 180 / Math.PI;
+  const direction = Math.round(((degrees % 180) + 180) % 180 / 45) % 4;
+  return ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][direction];
+}
+
 function svgElement<K extends keyof SVGElementTagNameMap>(document: Document, name: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, name);
+}
+
+function positionRect(rect: SVGRectElement, point: SpacePoint, size: number): void {
+  rect.setAttribute('x', String(point.x - size / 2));
+  rect.setAttribute('y', String(point.y - size / 2));
+  rect.setAttribute('width', String(size));
+  rect.setAttribute('height', String(size));
+}
+
+/** 手势帧只改已有属性，避免每次缩放都重建交互 DOM。 */
+export function updateSelectionOverlayFrame(
+  layer: SVGSVGElement,
+  corners: SelectionFrame['corners'],
+  zoom: number,
+  handleFlip: { horizontal: boolean; vertical: boolean } = { horizontal: false, vertical: false },
+): void {
+  const group = layer.querySelector<SVGGElement>('[data-edit-selection-ids]');
+  const outline = group?.querySelector<SVGPolygonElement>('[data-edit-selection-frame]');
+  if (!group || !outline) return;
+  const strokeWidth = 1.5 / zoom;
+  const handleSize = 8 / zoom;
+  const handleHitSize = 16 / zoom;
+  outline.setAttribute('points', corners.map((point) => `${point.x},${point.y}`).join(' '));
+  outline.setAttribute('stroke-width', String(strokeWidth));
+
+  const points = scaleHandlePoints(corners);
+  const center = midpoint(corners[0], corners[2]);
+  RESIZE_HANDLES.forEach((name) => {
+    const pointName = resizeHandleAfterFlip(name, handleFlip.horizontal, handleFlip.vertical);
+    const point = points[RESIZE_HANDLES.indexOf(pointName)];
+    const visual = group.querySelector<SVGRectElement>(`[data-edit-handle="${name}"]`);
+    const hit = group.querySelector<SVGRectElement>(`[data-edit-resize-handle="${name}"]`);
+    if (visual) {
+      positionRect(visual, point, handleSize);
+      visual.setAttribute('rx', String(1 / zoom));
+      visual.setAttribute('stroke-width', String(strokeWidth));
+    }
+    if (hit) {
+      positionRect(hit, point, handleHitSize);
+      hit.style.cursor = resizeCursor(point, center);
+    }
+  });
+
+  const top = midpoint(corners[0], corners[1]);
+  const rotation = rotationHandlePoint(corners, 24 / zoom);
+  const stem = group.querySelector<SVGLineElement>('[data-edit-rotation-stem]');
+  if (stem) {
+    stem.setAttribute('x1', String(top.x));
+    stem.setAttribute('y1', String(top.y));
+    stem.setAttribute('x2', String(rotation.x));
+    stem.setAttribute('y2', String(rotation.y));
+    stem.setAttribute('stroke-width', String(strokeWidth));
+  }
+  const rotate = group.querySelector<SVGCircleElement>('[data-edit-handle="rotate"]');
+  if (rotate) {
+    rotate.setAttribute('cx', String(rotation.x));
+    rotate.setAttribute('cy', String(rotation.y));
+    rotate.setAttribute('r', String(handleSize / 2));
+    rotate.setAttribute('stroke-width', String(strokeWidth));
+  }
 }
 
 export function renderSelectionOverlay(
@@ -83,51 +149,37 @@ export function renderSelectionOverlay(
   group.setAttribute('aria-hidden', 'true');
   group.style.pointerEvents = 'none';
 
-  const strokeWidth = 1.5 / zoom;
-  const handleSize = 8 / zoom;
   const outline = svgElement(document, 'polygon');
   outline.dataset.editSelectionFrame = '';
-  outline.setAttribute('points', frame.corners.map((point) => `${point.x},${point.y}`).join(' '));
   outline.setAttribute('fill', 'none');
   outline.setAttribute('stroke', '#2563eb');
-  outline.setAttribute('stroke-width', String(strokeWidth));
   group.append(outline);
 
-  const handlePoints = scaleHandlePoints(frame.corners);
-  handlePoints.forEach((point, index) => {
+  RESIZE_HANDLES.forEach((name) => {
+    const hit = svgElement(document, 'rect');
+    hit.dataset.editResizeHandle = name;
+    hit.setAttribute('fill', 'transparent');
+    // 根 SVG 不参与命中；只有显式放大的手柄区域接管编辑指针。
+    hit.style.pointerEvents = 'all';
+    group.append(hit);
+
     const handle = svgElement(document, 'rect');
-    handle.dataset.editHandle = SCALE_HANDLES[index];
-    handle.setAttribute('x', String(point.x - handleSize / 2));
-    handle.setAttribute('y', String(point.y - handleSize / 2));
-    handle.setAttribute('width', String(handleSize));
-    handle.setAttribute('height', String(handleSize));
-    handle.setAttribute('rx', String(1 / zoom));
+    handle.dataset.editHandle = name;
     handle.setAttribute('fill', '#fff');
     handle.setAttribute('stroke', '#2563eb');
-    handle.setAttribute('stroke-width', String(strokeWidth));
     group.append(handle);
   });
 
-  const top = midpoint(frame.corners[0], frame.corners[1]);
-  const rotation = rotationHandlePoint(frame.corners, 24 / zoom);
   const stem = svgElement(document, 'line');
   stem.dataset.editRotationStem = '';
-  stem.setAttribute('x1', String(top.x));
-  stem.setAttribute('y1', String(top.y));
-  stem.setAttribute('x2', String(rotation.x));
-  stem.setAttribute('y2', String(rotation.y));
   stem.setAttribute('stroke', '#2563eb');
-  stem.setAttribute('stroke-width', String(strokeWidth));
   group.append(stem);
 
   const rotateHandle = svgElement(document, 'circle');
   rotateHandle.dataset.editHandle = 'rotate';
-  rotateHandle.setAttribute('cx', String(rotation.x));
-  rotateHandle.setAttribute('cy', String(rotation.y));
-  rotateHandle.setAttribute('r', String(handleSize / 2));
   rotateHandle.setAttribute('fill', '#fff');
   rotateHandle.setAttribute('stroke', '#2563eb');
-  rotateHandle.setAttribute('stroke-width', String(strokeWidth));
   group.append(rotateHandle);
   layer.append(group);
+  updateSelectionOverlayFrame(layer, frame.corners, zoom);
 }

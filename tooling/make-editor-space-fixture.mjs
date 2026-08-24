@@ -12,6 +12,10 @@ const flipped = sp({
   x: 360, y: 80, w: 200, h: 140, rot: 1500000, flipH: true,
   fill: solid('accent3'), name: 'space-rotated-flipped',
 });
+const rotated45 = sp({
+  x: 80, y: 410, w: 200, h: 140, rot: 2700000,
+  fill: solid('accent4'), name: 'space-rotated-45',
+});
 const leaf = sp({
   x: 30, y: 20, w: 140, h: 80, rot: 900000, flipV: true,
   fill: solid('accent5'), name: 'space-nested-leaf',
@@ -33,7 +37,7 @@ ${inner}
 
 const bytes = deck({
   name: 'Editor Space', width: 1280, height: 720,
-  slides: [slideXml(plain + flipped + outer)],
+  slides: [slideXml(plain + flipped + rotated45 + outer)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 writeFileSync(join(root, 'fixtures/sample-editor-space.pptx'), bytes);

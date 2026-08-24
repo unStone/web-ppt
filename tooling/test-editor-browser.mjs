@@ -126,6 +126,27 @@ async function browserResult(webSocketDebuggerUrl) {
     }
     return response.result?.result?.value;
   };
+  const trustedMouseGesture = async (start, end, duringExpression, committedExpression) => {
+    await request('Input.dispatchMouseEvent', {
+      type: 'mouseMoved', x: start.x, y: start.y, button: 'none', buttons: 0,
+    });
+    await request('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: start.x, y: start.y, button: 'left', buttons: 1, clickCount: 1,
+    });
+    let during;
+    try {
+      await request('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: end.x, y: end.y, button: 'left', buttons: 1,
+      });
+      await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
+      during = await evaluate(duringExpression);
+    } finally {
+      await request('Input.dispatchMouseEvent', {
+        type: 'mouseReleased', x: end.x, y: end.y, button: 'left', buttons: 0, clickCount: 1,
+      });
+    }
+    return { during, committed: await evaluate(committedExpression) };
+  };
   try {
     for (let attempt = 0; attempt < 200; attempt++) {
       const result = await evaluate(`(() => {
@@ -134,7 +155,10 @@ async function browserResult(webSocketDebuggerUrl) {
           hitP95: report.dataset.hitP95, selectionP95: report.dataset.selectionP95,
           spaceError: report.dataset.spaceError, handleError: report.dataset.handleError,
           nestedDragError: report.dataset.nestedDragError,
-          dragP95: report.dataset.dragP95, fontFaces: report.dataset.fontFaces,
+          dragP95: report.dataset.dragP95, resizeError: report.dataset.resizeError,
+          resizeHitError: report.dataset.resizeHitError, resizeP95: report.dataset.resizeP95,
+          resizeSingularP95: report.dataset.resizeSingularP95,
+          fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
       if (result?.status === 'fail') return result;
@@ -160,17 +184,7 @@ async function browserResult(webSocketDebuggerUrl) {
           return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         })()`);
         const end = { x: start.x + 30, y: start.y + 18 };
-        await request('Input.dispatchMouseEvent', {
-          type: 'mouseMoved', x: start.x, y: start.y, button: 'none', buttons: 0,
-        });
-        await request('Input.dispatchMouseEvent', {
-          type: 'mousePressed', x: start.x, y: start.y, button: 'left', buttons: 1, clickCount: 1,
-        });
-        await request('Input.dispatchMouseEvent', {
-          type: 'mouseMoved', x: end.x, y: end.y, button: 'left', buttons: 1,
-        });
-        await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
-        const during = await evaluate(`(() => {
+        const dragResult = await trustedMouseGesture(start, end, `(() => {
           const state = globalThis.trustedDragContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -182,11 +196,7 @@ async function browserResult(webSocketDebuggerUrl) {
             svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
             defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
           };
-        })()`);
-        await request('Input.dispatchMouseEvent', {
-          type: 'mouseReleased', x: end.x, y: end.y, button: 'left', buttons: 0, clickCount: 1,
-        });
-        const committed = await evaluate(`(() => {
+        })()`, `(() => {
           const state = globalThis.trustedDragContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -208,14 +218,77 @@ async function browserResult(webSocketDebuggerUrl) {
           delete globalThis.trustedDragContract;
           return result;
         })()`);
-        const trusted = Object.values(during).every(Boolean) && Object.values(committed).every(Boolean);
-        if (!trusted) throw new Error(`真实 pointer capture 拖动失败：${JSON.stringify({ during, committed })}`);
+        const trusted = Object.values(dragResult.during).every(Boolean)
+          && Object.values(dragResult.committed).every(Boolean);
+        if (!trusted) throw new Error(`真实 pointer capture 拖动失败：${JSON.stringify(dragResult)}`);
+
+        const resizeStart = await evaluate(`(() => {
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const [id, siblingId] = perfSession.editor.doc.slides[view.slideId].children;
+          perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
+          const handle = mount.querySelector('[data-edit-resize-handle="se"]');
+          handle.scrollIntoView({ block: 'center', inline: 'center' });
+          const rect = handle.getBoundingClientRect();
+          globalThis.trustedResizeContract = {
+            view, id, siblingId,
+            target: mount.querySelector('[data-edit-id="' + id + '"]'),
+            sibling: mount.querySelector('[data-edit-id="' + siblingId + '"]'),
+            svg: mount.querySelector('[data-ppt-layer="static"] svg'),
+            defs: mount.querySelector('[data-ppt-layer="static"] defs'),
+            source: perfSession.editor.effectiveElement(id),
+            historyBefore: perfSession.editor.history.undoCount,
+          };
+          return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        })()`);
+        const resizeEnd = { x: resizeStart.x + 30, y: resizeStart.y + 18 };
+        const resizeResult = await trustedMouseGesture(resizeStart, resizeEnd, `(() => {
+          const state = globalThis.trustedResizeContract;
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          return {
+            captured: state.view.element.hasPointerCapture(1),
+            ghost: !!mount.querySelector('[data-edit-resize-ghost]'),
+            modelStable: perfSession.editor.effectiveElement(state.id).w === state.source.w,
+            targetStable: mount.querySelector('[data-edit-id="' + state.id + '"]') === state.target,
+            svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+            defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+          };
+        })()`, `(() => {
+          const state = globalThis.trustedResizeContract;
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          const resized = perfSession.editor.effectiveElement(state.id);
+          const result = {
+            captureReleased: !state.view.element.hasPointerCapture(1),
+            resized: Math.abs(resized.w - state.source.w - 40) < 1e-6
+              && Math.abs(resized.h - state.source.h - 24) < 1e-6
+              && Math.abs(resized.x - state.source.x) < 1e-6
+              && Math.abs(resized.y - state.source.y) < 1e-6,
+            oneHistory: perfSession.editor.history.undoCount === state.historyBefore + 1,
+            ghostGone: !mount.querySelector('[data-edit-resize-ghost]'),
+            targetPatched: mount.querySelector('[data-edit-id="' + state.id + '"]') !== state.target,
+            siblingStable: mount.querySelector('[data-edit-id="' + state.siblingId + '"]') === state.sibling,
+            svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+            defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+          };
+          perfSession.editor.undo();
+          result.undoRestored = Math.abs(perfSession.editor.effectiveElement(state.id).w - state.source.w) < 1e-6;
+          state.view.destroy();
+          delete globalThis.trustedResizeContract;
+          return result;
+        })()`);
+        const trustedResize = Object.values(resizeResult.during).every(Boolean)
+          && Object.values(resizeResult.committed).every(Boolean);
+        if (!trustedResize) throw new Error(`真实 pointer capture 缩放失败：${JSON.stringify(resizeResult)}`);
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
-          report.textContent += '\\n真实 pointer capture 拖动与撤销通过';
+          report.dataset.trustedResize = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动/缩放与撤销通过';
         })()`);
-        return { ...result, trustedDrag: 'pass' };
+        return { ...result, trustedDrag: 'pass', trustedResize: 'pass' };
       }
       await delay(100);
     }
@@ -253,7 +326,10 @@ try {
     + ` ${result.spaceError}/${result.handleError}px`
     + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
     + ` · 拖动帧 p95 ${result.dragP95}ms`
-    + ` · pointer capture ${result.trustedDrag}`
+    + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
+    + ` · 缩放帧 p95 ${result.resizeP95}ms`
+    + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
+    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

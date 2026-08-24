@@ -32,8 +32,12 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const record = elementRecord(doc, id);
   let out = { ...record.src, ...record.ovr } as SlideElement;
   if (out.kind === 'group') {
+    const source = record.src as GroupElement;
+    // chExt 不进入覆盖层；组 ext 改变时必须由源比例反推出新 scale，才能与保存重开后的解析结果一致。
+    const scaleX = source.w > 0 ? source.scaleX * out.w / source.w : source.scaleX;
+    const scaleY = source.h > 0 ? source.scaleY * out.h / source.h : source.scaleY;
     out = {
-      ...out,
+      ...out, scaleX, scaleY,
       children: (record.children ?? []).map((childId) => effectiveElement(doc, childId)),
     } as GroupElement;
   } else if (out.kind === 'shape' && record.meta.geom) {

@@ -1,10 +1,10 @@
 ---
 title: 绑定缩放手柄并提交尺寸
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
-assignee: null
+assignee: /root
 blocked_by:
   - ./017-drag-move-gesture.md
 ---
@@ -24,4 +24,24 @@ pointer capture 与幽灵帧状态机，在元素未旋转本地系中保持对�
 
 ## Resolution
 
-<!-- 完成时记录 8 柄状态机、旋转中心修正、修饰键、翻面语义、写回和 Chrome 证据。 -->
+interaction SVG 现在为 8 个可见柄各铺一层向外 4px 的透明命中区；可见尺寸、命中尺寸、描边和光标
+均按 zoom 反算为屏幕像素。四角改变双轴，四边只改变单轴；3px 阈值后，移动与缩放共用同一个
+`PointerGestureLifecycle`，统一拥有 pointer capture、rAF 合并、动态 Shift/Alt、光标、失败回滚和
+释放顺序，后续旋转无需复制第三套状态机。
+
+单元素先把屏幕指针逆映射到元素父空间，再绕原中心反旋转到未旋转系；由活动柄与对角锚点求规范化
+正尺寸，把新中心位移旋回父空间，从而让旋转/翻转元素和两层嵌套组的对角点保持不动。`Shift` 取共同
+比例，`Alt` 固定中心，两者可组合且能在手势中切换。过锚后活动柄按水平/垂直翻面换位，幽灵连续跟随
+指针，并在提交时用 `SetFlip` 切换 `flipH/flipV`。多选先变换共同世界系 AABB，再在各自父空间寻找
+完整有符号仿射轴误差最小、且 OOXML 正尺寸矩形可表达的 `rot/w/h` 分解；因此旋转 45° 和过锚时
+活动柄与不对称内容点都连续。直接缩放组会按源 chExt 派生实时子坐标比例；同构多选目标逐帧复用
+分解结果，祖先/后代同时入选时只提交最外层根。
+
+每帧只更新静态分区外的临时矩阵 wrapper 与既有 interaction 属性，EditDoc、静态节点、SVG 和 defs
+保持不变；`pointerup` 拆幽灵后把全部 `SetXfrm`/`SetFlip` 放进一个“缩放元素”事务。8 类取消路径
+均不写历史。Node 48 项公开 seam 覆盖 8 方向、修饰键、翻面连续性、旋转/45° 多选、嵌套组实时与
+保存重开一致、撤销及 OOXML 回环。
+真实 Chrome 在 0.5/1/2 zoom 下逐柄验证 8/16px 尺寸，并以 `getScreenCTM()` 验证锚点：最大误差
+`0.009px`；普通/60 个 45° 元素近奇异缩放帧 p95 为 `0.100/0.600ms`（预算 `8ms`），可信鼠标输入
+的 capture/释放与撤销通过。
+本票未绑定旋转柄，也未实现吸附、参考线、调节柄、裁剪柄或框选。

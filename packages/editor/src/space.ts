@@ -23,9 +23,17 @@ export interface SlideViewport {
   zoom: number;
 }
 
+export interface ElementFrameTransform {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+}
+
 const IDENTITY: AffineMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
-function multiply(left: AffineMatrix, right: AffineMatrix): AffineMatrix {
+export function composeSpaceMatrices(left: AffineMatrix, right: AffineMatrix): AffineMatrix {
   return {
     a: left.a * right.a + left.c * right.b,
     b: left.b * right.a + left.d * right.b,
@@ -45,26 +53,29 @@ function rotationAround(degrees: number, cx: number, cy: number): AffineMatrix {
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const rotation = { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
-  return multiply(translation(cx, cy), multiply(rotation, translation(-cx, -cy)));
+  return composeSpaceMatrices(translation(cx, cy), composeSpaceMatrices(rotation, translation(-cx, -cy)));
 }
 
-function frameToParent(element: ElementBase): AffineMatrix {
+export function elementFrameToParentMatrix(element: ElementFrameTransform): AffineMatrix {
   const position = translation(element.x, element.y);
-  return multiply(rotationAround(element.rot, element.x + element.w / 2, element.y + element.h / 2), position);
+  return composeSpaceMatrices(
+    rotationAround(element.rot, element.x + element.w / 2, element.y + element.h / 2),
+    position,
+  );
 }
 
 function flipInFrame(element: ElementBase): AffineMatrix {
   if (!element.flipH && !element.flipV) return IDENTITY;
   const cx = element.w / 2;
   const cy = element.h / 2;
-  return multiply(translation(cx, cy), multiply(
+  return composeSpaceMatrices(translation(cx, cy), composeSpaceMatrices(
     scaling(element.flipH ? -1 : 1, element.flipV ? -1 : 1),
     translation(-cx, -cy),
   ));
 }
 
 function childrenToGroupFrame(group: GroupElement): AffineMatrix {
-  return multiply(
+  return composeSpaceMatrices(
     scaling(group.scaleX || 1, group.scaleY || 1),
     translation(-group.childX, -group.childY),
   );
@@ -110,18 +121,21 @@ function parentToSlideMatrix(doc: EditDoc, chain: ElementId[]): AffineMatrix {
   let matrix = IDENTITY;
   for (let index = 0; index < chain.length - 1; index++) {
     const element = effectiveElement(doc, chain[index]);
-    matrix = multiply(matrix, frameToParent(element));
+    matrix = composeSpaceMatrices(matrix, elementFrameToParentMatrix(element));
     if (element.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${chain[index]}`);
-    matrix = multiply(matrix, multiply(flipInFrame(element), childrenToGroupFrame(element)));
+    matrix = composeSpaceMatrices(
+      matrix,
+      composeSpaceMatrices(flipInFrame(element), childrenToGroupFrame(element)),
+    );
   }
   return matrix;
 }
 
 export function elementFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
   const chain = elementChain(doc, id);
-  return multiply(
+  return composeSpaceMatrices(
     parentToSlideMatrix(doc, chain),
-    frameToParent(effectiveElement(doc, chain[chain.length - 1])),
+    elementFrameToParentMatrix(effectiveElement(doc, chain[chain.length - 1])),
   );
 }
 

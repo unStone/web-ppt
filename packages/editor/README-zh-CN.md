@@ -67,7 +67,13 @@ const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y
 区分点击与拖动。视图捕获主指针，以 `requestAnimationFrame` 合并预览帧，只平移临时 SVG wrapper
 和 interaction overlay——手势期间不改模型、defs 或静态元素身份。`pointerup` 先拆幽灵，再提交一个
 `SetXfrm` 事务；`Escape`、指针取消/丢失、切页、切模式或销毁视图都会无历史恢复原 DOM。
-旋转/翻转嵌套组会分别换算到元素父坐标。当前缩放和旋转手柄仍只负责可视反馈。
+旋转/翻转嵌套组会分别换算到元素父坐标。
+
+8 个缩放柄向外扩展 4 个屏幕像素的透明命中区；四角改双轴，四边只改单轴。`Shift` 保持宽高比，
+`Alt` 固定中心，手势过程中也可随时按下或释放修饰键。拖过对角锚点时，尺寸会规范成正数，活动手柄
+连续跟随指针并切换 `flipH` / `flipV`，不会跳边。单个旋转/翻转元素与嵌套组在各自父坐标里守住
+对角锚点；多选按共同世界系 AABB 缩放。预览复用移动手势的 pointer capture/rAF 生命周期，只改临时
+wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销单元。旋转柄当前仍只负责可视反馈。
 
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走

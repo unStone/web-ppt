@@ -6,6 +6,9 @@ import type { EditorSession } from './session';
 import { bindSlideIdentities, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
 import { MoveGestureController } from './move-gesture';
+import { ResizeGestureController } from './resize-gesture';
+import { isResizeHandle } from './resize-geometry';
+import type { ResizeHandle } from './resize-geometry';
 import { renderSelectionOverlay } from './selection-overlay';
 import { sessionState } from './session-state';
 
@@ -59,10 +62,24 @@ class DomSlideEditor implements SlideEditor {
   private currentSlide: SlideId;
   private readonly textMode: 'html' | 'svg';
   private readonly moveGesture: MoveGestureController;
+  private readonly resizeGesture: ResizeGestureController;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
   private readonly onPointerDown = (event: PointerEvent): void => {
     if (this.currentMode !== 'edit' || event.button !== 0 || event.isPrimary === false) return;
+    const resizeHandle = this.resizeHandle(event.target);
+    if (resizeHandle) {
+      const selection = this.session.editor.selection;
+      if (selection.kind === 'elements'
+        && selection.ids.every((selectedId) => this.isSelectable(selectedId))) {
+        this.moveGesture.cancel();
+        this.resizeGesture.begin(event, resizeHandle, selection.ids);
+      }
+      event.preventDefault();
+      this.element.focus({ preventScroll: true });
+      return;
+    }
+    this.resizeGesture.cancel();
     const candidates = this.hitCandidates(event.composedPath());
     const enteredGroup = this.session.editor.selection.kind === 'elements'
       ? this.session.editor.selection.enteredGroup : null;
@@ -85,9 +102,18 @@ class DomSlideEditor implements SlideEditor {
     event.preventDefault();
     this.element.focus({ preventScroll: true });
   };
-  private readonly onPointerMove = (event: PointerEvent): void => this.moveGesture.move(event);
-  private readonly onPointerUp = (event: PointerEvent): void => this.moveGesture.finish(event);
-  private readonly onPointerCancel = (event: PointerEvent): void => this.moveGesture.cancelPointer(event);
+  private readonly onPointerMove = (event: PointerEvent): void => {
+    this.resizeGesture.move(event);
+    this.moveGesture.move(event);
+  };
+  private readonly onPointerUp = (event: PointerEvent): void => {
+    this.resizeGesture.finish(event);
+    this.moveGesture.finish(event);
+  };
+  private readonly onPointerCancel = (event: PointerEvent): void => {
+    this.resizeGesture.cancelPointer(event);
+    this.moveGesture.cancelPointer(event);
+  };
   private readonly onDoubleClick = (event: MouseEvent): void => {
     if (this.currentMode !== 'edit') return;
     const candidates = this.hitCandidates(event.composedPath());
@@ -102,7 +128,14 @@ class DomSlideEditor implements SlideEditor {
     event.preventDefault();
   };
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (this.currentMode !== 'edit' || event.key !== 'Escape') return;
+    if (this.currentMode !== 'edit') return;
+    if (this.resizeGesture.modifier(event)) event.preventDefault();
+    if (event.key !== 'Escape') return;
+    if (this.resizeGesture.isActive) {
+      this.resizeGesture.cancel();
+      event.preventDefault();
+      return;
+    }
     if (this.moveGesture.isActive) {
       this.moveGesture.cancel();
       event.preventDefault();
@@ -119,6 +152,9 @@ class DomSlideEditor implements SlideEditor {
       this.session.editor.select({ kind: 'none' });
     }
     event.preventDefault();
+  };
+  private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (this.currentMode === 'edit' && this.resizeGesture.modifier(event)) event.preventDefault();
   };
 
   constructor(container: HTMLElement, session: EditorSession, options: SlideEditorOptions = {}) {
@@ -170,6 +206,14 @@ class DomSlideEditor implements SlideEditor {
       editor: session.editor,
       zoom: () => this.currentZoom,
     });
+    this.resizeGesture = new ResizeGestureController({
+      root: this.element,
+      stage: this.stage,
+      staticLayer: this.staticLayer,
+      interactionLayer: this.interactionLayer,
+      editor: session.editor,
+      zoom: () => this.currentZoom,
+    });
 
     this.stage.append(this.staticLayer, this.interactionLayer, this.textLayer);
     this.element.append(this.stage);
@@ -184,6 +228,7 @@ class DomSlideEditor implements SlideEditor {
     this.element.addEventListener('lostpointercapture', this.onPointerCancel);
     this.element.addEventListener('dblclick', this.onDoubleClick);
     this.element.addEventListener('keydown', this.onKeyDown);
+    this.element.addEventListener('keyup', this.onKeyUp);
     try {
       container.append(this.element);
       state.views.add(this);
@@ -196,6 +241,7 @@ class DomSlideEditor implements SlideEditor {
       this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
       this.element.removeEventListener('dblclick', this.onDoubleClick);
       this.element.removeEventListener('keydown', this.onKeyDown);
+      this.element.removeEventListener('keyup', this.onKeyUp);
       this.element.remove();
       throw error;
     }
@@ -208,7 +254,10 @@ class DomSlideEditor implements SlideEditor {
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
-    if (mode !== this.currentMode) this.moveGesture.cancel();
+    if (mode !== this.currentMode) {
+      this.moveGesture.cancel();
+      this.resizeGesture.cancel();
+    }
     this.currentMode = mode;
     this.element.dataset.mode = mode;
     // Pointer Events 在按下前就按 touch-action 决定是否交给页面滚动；编辑态必须由画布拥有手势。
@@ -223,13 +272,17 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
     this.moveGesture.cancel();
+    this.resizeGesture.cancel();
     this.currentSlide = slideId;
     this.render();
   }
 
   setZoom(zoom: number): void {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
-    if (zoom !== this.currentZoom) this.moveGesture.cancel();
+    if (zoom !== this.currentZoom) {
+      this.moveGesture.cancel();
+      this.resizeGesture.cancel();
+    }
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.renderSelection(this.session.editor.selection);
@@ -239,6 +292,7 @@ class DomSlideEditor implements SlideEditor {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     this.moveGesture.cancel();
+    this.resizeGesture.cancel();
     this.unsubscribe();
     this.element.removeEventListener('pointerdown', this.onPointerDown);
     this.element.removeEventListener('pointermove', this.onPointerMove);
@@ -247,6 +301,7 @@ class DomSlideEditor implements SlideEditor {
     this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.element.removeEventListener('dblclick', this.onDoubleClick);
     this.element.removeEventListener('keydown', this.onKeyDown);
+    this.element.removeEventListener('keyup', this.onKeyUp);
     sessionState(this.session).views.delete(this);
     this.element.remove();
   }
@@ -266,6 +321,14 @@ class DomSlideEditor implements SlideEditor {
     return elementsFromPath(path, this.staticLayer)
       .map((element) => (element as SVGElement).dataset.editId)
       .filter((id): id is ElementId => !!id && this.isSelectable(id));
+  }
+
+  private resizeHandle(target: EventTarget | null): ResizeHandle | null {
+    if (!target || typeof target !== 'object' || (target as Node).nodeType !== 1) return null;
+    const handle = (target as Element).closest<SVGRectElement>('[data-edit-resize-handle]');
+    if (!handle || !this.interactionLayer.contains(handle)) return null;
+    const value = handle.dataset.editResizeHandle;
+    return isResizeHandle(value) ? value : null;
   }
 
   private alternateCandidate(x: number, y: number, enteredGroup: ElementId | null): ElementId | undefined {
@@ -305,6 +368,7 @@ class DomSlideEditor implements SlideEditor {
 
   private update(change: EditorChange): void {
     this.moveGesture.cancel();
+    this.resizeGesture.cancel();
     if (!change.dirtySlides.has(this.currentSlide)) {
       this.renderSelection(change.selection);
       return;

@@ -22,6 +22,7 @@
   <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
     import { openEditor } from '/out/editor/editor.mjs';
+    import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -396,6 +397,8 @@
         throw new Error('Chrome 拖动撤销未恢复源位置');
       }
 
+      const resizeResult = await runEditorResizeBrowserContract({ openEditor, load });
+
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
@@ -404,6 +407,10 @@
       report.dataset.handleError = handleError.toFixed(3);
       report.dataset.nestedDragError = nestedDragError.toFixed(3);
       report.dataset.dragP95 = dragP95.toFixed(3);
+      report.dataset.resizeError = resizeResult.geometryError.toFixed(3);
+      report.dataset.resizeHitError = resizeResult.hitSizeError.toFixed(3);
+      report.dataset.resizeP95 = resizeResult.p95.toFixed(3);
+      report.dataset.resizeSingularP95 = resizeResult.singularP95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -411,7 +418,10 @@
         + `嵌套组拖动幽灵偏差 ${nestedDragError.toFixed(3)}px\n`
         + `${fontFaces} 个嵌入 @font-face\n60 元素提交 p95 ${p95.toFixed(3)}ms\n`
         + `60 元素完整选择框 p95 ${selectionP95.toFixed(3)}ms\n`
-        + `60 元素拖动帧 p95 ${dragP95.toFixed(3)}ms`;
+        + `60 元素拖动帧 p95 ${dragP95.toFixed(3)}ms\n`
+        + `三档缩放手柄/锚点偏差 ${resizeResult.geometryError.toFixed(3)} / `
+        + `${resizeResult.hitSizeError.toFixed(3)}px，缩放帧 p95 ${resizeResult.p95.toFixed(3)}ms\n`
+        + `60 个 45° 元素近奇异缩放帧 p95 ${resizeResult.singularP95.toFixed(3)}ms`;
       globalThis.editorContract = { session, hitSession, spaceSession, spaceView, fontSession, perfSession };
     } catch (error) {
       report.style.color = '#b91c1c';

@@ -73,7 +73,15 @@ pointer, coalesces preview updates with `requestAnimationFrame`, and translates 
 interaction overlay—no model, defs, or static element identity changes during the gesture. Pointer-up removes the
 ghosts before committing one `SetXfrm` transaction. `Escape`, pointer cancellation/loss, page or mode changes,
 and view destruction restore the original DOM without history. Nested rotated/flipped groups are converted into
-each element's parent coordinate space. Resize and rotation handles remain visual only for now.
+each element's parent coordinate space.
+
+The eight resize handles have a 4-screen-pixel outward hit margin. Corners resize both axes, edge handles resize
+one axis, `Shift` preserves aspect ratio, and `Alt` keeps the center fixed; modifiers can be pressed or released
+during the gesture. Crossing the opposite anchor normalizes positive dimensions, swaps the active handle without
+a visual jump, and toggles `flipH` / `flipV`. Single rotated/flipped and nested elements keep the opposite anchor
+fixed in their parent space; multi-selections resize from their shared world-space AABB. Preview frames reuse the
+same pointer-capture/rAF lifecycle as movement and touch only temporary wrappers plus the interaction overlay.
+Pointer-up commits every selected root in one undo unit. The rotation handle remains visual only for now.
 
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also
