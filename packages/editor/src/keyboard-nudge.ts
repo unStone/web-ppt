@@ -1,5 +1,6 @@
 import { slideOfElement } from '@web-ppt/edit-core';
-import type { Editor, SlideId } from '@web-ppt/edit-core';
+import type { KeyboardControllerOptions } from './keyboard-context';
+import { nativeControlOwnsKeyboard } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
 import { outermostSelectedElementIds } from './selection-roots';
 import { elementParentToSlideMatrix, inverseTransformSpaceVector } from './space';
@@ -11,42 +12,24 @@ const ARROW_DELTA: Readonly<Record<string, { x: number; y: number }>> = {
   ArrowDown: { x: 0, y: 1 },
 };
 
-function isTextEditingTarget(target: EventTarget | null): boolean {
-  if (!target || typeof target !== 'object' || (target as Node).nodeType !== 1) return false;
-  return !!(target as Element).closest(
-    'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
-  );
-}
-
-function textEditingOwns(event: KeyboardEvent): boolean {
-  const path = event.composedPath();
-  return (path.length ? path : [event.target]).some(isTextEditingTarget);
-}
-
-interface KeyboardNudgeOptions {
-  editor: Editor;
-  namespace: string;
-  slideId(): SlideId;
-  gestureActive(): boolean;
-}
-
 interface ActiveHold {
   id: number;
   time: number;
 }
 
 export class KeyboardNudgeController {
-  private readonly options: KeyboardNudgeOptions;
+  private readonly options: KeyboardControllerOptions;
   private readonly activeHolds = new Map<string, ActiveHold>();
   private nextHold = 0;
 
-  constructor(options: KeyboardNudgeOptions) {
+  constructor(options: KeyboardControllerOptions) {
     this.options = options;
   }
 
   keyDown(event: KeyboardEvent): boolean {
     const direction = ARROW_DELTA[event.key];
-    if (!direction || event.ctrlKey || event.metaKey || event.altKey || textEditingOwns(event)) return false;
+    if (!direction || event.ctrlKey || event.metaKey || event.altKey
+      || nativeControlOwnsKeyboard(event)) return false;
     if (this.options.gestureActive()) {
       event.preventDefault();
       return true;

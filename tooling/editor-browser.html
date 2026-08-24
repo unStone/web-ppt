@@ -27,6 +27,7 @@
     import { runEditorSnapBrowserContract } from '/tooling/lib/editor-snap-browser-contract.mjs';
     import { runEditorMarqueeBrowserContract } from '/tooling/lib/editor-marquee-browser-contract.mjs';
     import { runEditorKeyboardBrowserContract } from '/tooling/lib/editor-keyboard-browser-contract.mjs';
+    import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -406,6 +407,7 @@
       const snapResult = await runEditorSnapBrowserContract({ openEditor, load });
       const marqueeResult = await runEditorMarqueeBrowserContract({ openEditor, load });
       const keyboardResult = await runEditorKeyboardBrowserContract({ openEditor, load });
+      const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -437,6 +439,7 @@
       report.dataset.marqueeP95 = marqueeResult.p95.toFixed(3);
       report.dataset.keyboardError = keyboardResult.geometryError.toFixed(3);
       report.dataset.keyboardP95 = keyboardResult.p95.toFixed(3);
+      report.dataset.tabP95 = tabP95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -458,6 +461,7 @@
         + `${marqueeResult.p95.toFixed(3)}ms`;
       report.textContent += `\n三档缩放键盘微移偏差 ${keyboardResult.geometryError.toFixed(3)}px，`
         + `60 元素提交 p95 ${keyboardResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n60 元素 Tab 遍历 p95 ${tabP95.toFixed(3)}ms`;
       globalThis.editorContract = {
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,

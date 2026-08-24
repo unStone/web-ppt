@@ -4,7 +4,7 @@ import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { bindSlideIdentities, shouldRenderWholeSlide, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
-import { KeyboardNudgeController } from './keyboard-nudge';
+import { EditorKeyboardController } from './editor-keyboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
 import { ResizeGestureController } from './resize-gesture';
@@ -72,7 +72,7 @@ class DomSlideEditor implements SlideEditor {
   private currentSnapping: boolean;
   private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
-  private readonly keyboardNudge: KeyboardNudgeController;
+  private readonly keyboard: EditorKeyboardController;
   private readonly marqueeGesture: MarqueeGestureController;
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
@@ -177,7 +177,7 @@ class DomSlideEditor implements SlideEditor {
     if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
-    if (this.keyboardNudge.keyDown(event)) return;
+    if (this.keyboard.keyDown(event)) return;
     if (event.key !== 'Escape') return;
     if (this.cancelActiveGesture()) {
       event.preventDefault();
@@ -199,9 +199,9 @@ class DomSlideEditor implements SlideEditor {
     if (this.currentMode === 'edit' && this.moveGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.resizeGesture.modifier(event)) event.preventDefault();
-    if (this.keyboardNudge.keyUp(event)) event.preventDefault();
+    if (this.keyboard.keyUp(event)) event.preventDefault();
   };
-  private readonly onBlur = (): void => { this.keyboardNudge.breakSequence(); };
+  private readonly onBlur = (): void => { this.keyboard.breakSequence(); };
 
   constructor(container: HTMLElement, session: EditorSession, options: SlideEditorOptions = {}) {
     if (session.disposed) throw new Error('不能挂载已经释放的编辑会话');
@@ -249,7 +249,7 @@ class DomSlideEditor implements SlideEditor {
     this.interactionLayer.style.pointerEvents = 'none';
     this.textLayer.style.pointerEvents = 'none';
 
-    this.keyboardNudge = new KeyboardNudgeController({
+    this.keyboard = new EditorKeyboardController({
       editor: session.editor, namespace: this.idPrefix,
       slideId: () => this.currentSlide,
       gestureActive: () => this.hasActiveGesture(),
@@ -329,7 +329,7 @@ class DomSlideEditor implements SlideEditor {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
     if (mode !== this.currentMode) {
       this.cancelGestures();
-      this.keyboardNudge.breakSequence();
+      this.keyboard.breakSequence();
     }
     this.currentMode = mode;
     this.element.dataset.mode = mode;
@@ -345,7 +345,7 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
     this.cancelGestures();
-    this.keyboardNudge.breakSequence();
+    this.keyboard.breakSequence();
     this.currentSlide = slideId;
     this.render();
   }
@@ -354,7 +354,7 @@ class DomSlideEditor implements SlideEditor {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
     if (zoom !== this.currentZoom) {
       this.cancelGestures();
-      this.keyboardNudge.breakSequence();
+      this.keyboard.breakSequence();
     }
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
@@ -372,7 +372,7 @@ class DomSlideEditor implements SlideEditor {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     this.cancelGestures();
-    this.keyboardNudge.breakSequence();
+    this.keyboard.breakSequence();
     this.unsubscribe();
     this.unbindEvents();
     sessionState(this.session).views.delete(this);

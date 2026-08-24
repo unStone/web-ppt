@@ -48,6 +48,10 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 再按则分开；锁定、隐藏、不可编辑或跨页选区会整次拒绝。view 模式、活动 pointer 手势以及普通或
 Shadow DOM 内的表单/contenteditable 保留自己的方向键所有权。
 
+`Tab` / `Shift+Tab` 按当前页或已进入组的直属绘制顺序正向/反向循环选取可编辑元素；共享会话中的
+其它页面选区会从本视图首项/末项重新开始。遍历只改选区，不写历史、不重建静态预览；普通或
+Shadow DOM 内的表单/contenteditable 仍使用浏览器原生 Tab 焦点行为。
+
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
 core 渲染器的变换顺序。

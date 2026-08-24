@@ -12,6 +12,7 @@ import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
 import { runRotationGestureContract } from './lib/rotation-gesture-contract.mjs';
 import { runSnapGestureContract } from './lib/snap-gesture-contract.mjs';
+import { runTabSelectionContract } from './lib/tab-selection-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -179,6 +180,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 await runNativeHitContract({ check, lib, root });
 await runMarqueeGestureContract({ check, lib, root });
 await runKeyboardNudgeContract({ check, lib, root });
+await runTabSelectionContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });
 await runResizeGestureContract({ check, lib, root });

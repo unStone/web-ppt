@@ -7,6 +7,7 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contract.mjs';
+import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 
@@ -178,6 +179,7 @@ async function browserResult(webSocketDebuggerUrl) {
           marqueeP95: report.dataset.marqueeP95,
           keyboardError: report.dataset.keyboardError,
           keyboardP95: report.dataset.keyboardP95,
+          tabP95: report.dataset.tabP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -384,6 +386,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedSnapContract({ evaluate, trustedMouseGesture });
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await runTrustedKeyboardContract({ evaluate, dispatchKey });
+        await runTrustedTabContract({ evaluate, dispatchKey });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -392,11 +395,12 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedSnap = 'pass';
           report.dataset.trustedMarquee = 'pass';
           report.dataset.trustedKeyboard = 'pass';
+          report.dataset.trustedTab = 'pass';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
-          trustedMarquee: 'pass', trustedKeyboard: 'pass',
+          trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
         };
       }
       await delay(100);
@@ -445,9 +449,10 @@ try {
     + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
     + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
     + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
+    + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
-    + ` · trusted keyboard ${result.trustedKeyboard}`
+    + ` · trusted keyboard/tab ${result.trustedKeyboard}/${result.trustedTab}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

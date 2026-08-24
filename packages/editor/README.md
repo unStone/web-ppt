@@ -53,6 +53,11 @@ delta. Auto-repeat from one physical hold is one undo unit, while a press after 
 hidden, non-editable, or off-page member rejects the whole operation. View mode, active pointer gestures, and
 form/contenteditable controls in either regular or Shadow DOM keep ownership of their arrow keys.
 
+`Tab` and `Shift`+`Tab` cycle forward or backward through the direct selectable children of the current slide
+or entered group, in paint order and with wrap-around. A selection owned by another mounted page starts at this
+view's first or last candidate. The traversal changes selection only: it creates no history entry and preserves
+the static preview DOM. Form and contenteditable controls, including those in Shadow DOM, keep native Tab focus.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as
