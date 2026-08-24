@@ -1,6 +1,7 @@
 import type { EditDoc } from '../types';
 import { alignElementsPatches } from './align-elements';
 import { editTextPatches } from './edit-text';
+import { fitTextShapePatches } from './fit-text-shape';
 import { pasteElementsPatches } from './paste-elements';
 import { removeElementPatches } from './element-tree';
 import { setZPatches } from './set-z';
@@ -9,7 +10,7 @@ import { setParaPropsPatches } from './set-para-props';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import type {
-  AlignElementsCommand, Command, CommandPatches, EditTextCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
   SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -39,6 +40,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
+  FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
 };
 
 function assertPureCommand(input: Command): void {

@@ -271,6 +271,7 @@ const FIXTURES = [
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
+  { file: 'sample-editor-sp-autofit.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },

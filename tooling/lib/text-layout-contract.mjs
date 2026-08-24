@@ -116,6 +116,33 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   check('轻量行盒可跳过逐字停靠点', light.lines.every((line) =>
     line.segments.every((segment) => segment.carets.length === 0)));
 
+  if (check('公开无 DOM 的形状随文字改高求解器', typeof lib.fitTextShapeHeight === 'function')) {
+    const fit = structuredClone(synthetic);
+    fit.autoFitShape = true;
+    fit.insets = [2, 3, 4, 5];
+    fit.paragraphs[0].runs[0].caps = 'none';
+    fit.paragraphs[0].runs[0].size = 10;
+    fit.paragraphs[0].runs[0].text = 'A\nB';
+    const fitHeight = lib.fitTextShapeHeight(fit, 100, { measureText: monospace });
+    near('横排 spAutoFit 高度等于上下边距与全部行高之和', fitHeight, 26, 0.001);
+    check('公开行盒显式暴露改高求解使用的溢出判据',
+      lib.layoutText(fit, 100, 25.9, { measureText: monospace }).overflow === true
+        && lib.layoutText(fit, 100, 26, { measureText: monospace }).overflow === false);
+
+    const fitColumns = structuredClone(fit);
+    fitColumns.columns = 2;
+    fitColumns.columnGap = 10;
+    fitColumns.paragraphs[0].runs[0].text = 'A\nB\nC\nD';
+    near('两栏 spAutoFit 求可容纳有序行盒的最小高度',
+      lib.fitTextShapeHeight(fitColumns, 100, { measureText: monospace }), 26, 0.001);
+
+    const fitVertical = structuredClone(fit);
+    fitVertical.vert = 'vert';
+    fitVertical.paragraphs[0].runs[0].text = 'ABCD';
+    near('竖排 spAutoFit 以物理高度扩展逻辑行宽直到不溢出',
+      lib.fitTextShapeHeight(fitVertical, 16, { measureText: monospace }), 48, 0.001);
+  }
+
   const rtl = structuredClone(synthetic);
   rtl.paragraphs[0].rtl = true;
   rtl.paragraphs[0].runs[0].text = 'AB';

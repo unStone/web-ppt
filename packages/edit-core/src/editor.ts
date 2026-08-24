@@ -3,12 +3,14 @@ import { commandPatches } from './commands/dispatch';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
+import { fitTextShapePatches } from './commands/fit-text-shape';
 import { writableLayerSiblingIds } from './element-order';
 import type {
   Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, Transaction,
   TransactionOptions, TransactionResult,
 } from './commands/types';
 import { HistoryStore } from './history';
+import type { HistoryPatchLink } from './history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
@@ -37,6 +39,13 @@ function reportSubscriberError(error: unknown): void {
   } catch { /* 监听器与错误上报都不能把已提交事务伪装成失败。 */ }
 }
 
+function shapeTextCommandTarget(command: Command): ElementId | null {
+  if (command.type !== 'EditText' && command.type !== 'SetRunProps' && command.type !== 'SetParaProps') {
+    return null;
+  }
+  return command.cell === undefined ? command.id : null;
+}
+
 /** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
 function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): void {
   const layers = commands.filter((command) => command.type === 'SetZ');
@@ -54,6 +63,13 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
     throw new Error('同一事务不能重复删除同一元素');
   }
   const roots = removals.filter((command) => willRemoveElementStructure(doc.elements[command.id]));
+  const explicitFits = new Set(commands.flatMap((command) =>
+    command.type === 'FitTextShape' ? [command.id] : []));
+  const duplicatedFitId = commands.map(shapeTextCommandTarget)
+    .find((id): id is ElementId => !!id && explicitFits.has(id));
+  if (duplicatedFitId) {
+    throw new Error(`文字命令会自动派生 FitTextShape，同一事务不能重复指定：${duplicatedFitId}`);
+  }
   if (roots.length && layerRecords.length) {
     const layerCandidates = writableLayerSiblingIds(doc, layerRecords[0]);
     if (roots.some((root) => layerCandidates.some((id) => id === root.id
@@ -237,6 +253,8 @@ export class Editor {
     const renderElements = new Set<ElementId>();
     const reorderedElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
+    const autoFitTargets = new Set<ElementId>();
+    const historyLinks: HistoryPatchLink[] = [];
     const selectionBefore = this.selection;
     const identityBefore = { ...this.doc.identity };
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
@@ -255,7 +273,24 @@ export class Editor {
       if (commands.length && commands.every((command) => command.type === 'SetZ')) {
         applyCommandPatches(setZBatchPatches(this.doc, commands, origin));
       } else for (const command of commands) {
-        applyCommandPatches(commandPatches(this.doc, command, origin));
+        const patches = commandPatches(this.doc, command, origin);
+        applyCommandPatches(patches);
+        const textShapeId = shapeTextCommandTarget(command);
+        if (textShapeId
+          && patches.forward.some((patch) => patch.path.length === 4 && patch.path[3] === 'text')) {
+          autoFitTargets.add(textShapeId);
+        }
+      }
+      for (const id of autoFitTargets) {
+        const element = effectiveElement(this.doc, id);
+        if (element.kind === 'shape' && element.text?.autoFitShape) {
+          const fitted = fitTextShapePatches(this.doc, { type: 'FitTextShape', id }, origin);
+          if (fitted.forward.length) historyLinks.push({
+            trigger: ['elements', id, 'ovr', 'text'],
+            related: fitted.forward.map((patch) => patch.path),
+          });
+          applyCommandPatches(fitted);
+        }
       }
       const structural = forward.some((patch) => patch.path.length === 2);
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
@@ -291,7 +326,7 @@ export class Editor {
         ...(options.mergeKey ? { mergeKey: options.mergeKey } : {}),
         affectedSlides: [...dirtySlides],
       };
-      this.historyStore.push(entry, beforeState, this.currentState);
+      this.historyStore.push(entry, beforeState, this.currentState, historyLinks);
     } else if (forward.length) {
       this.historyStore.rebaseUnrecorded(forward, this.currentState, () => this.nextState++);
     }

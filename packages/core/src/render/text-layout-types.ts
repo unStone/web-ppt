@@ -74,5 +74,7 @@ export interface TextLayout {
   transform: readonly [number, number, number, number, number, number];
   /** 艺术字编辑时行盒是未变形形态，静态预览仍走 textPath。 */
   unwarped: boolean;
+  /** 逻辑行盒是否超出当前物理框；spAutoFit 用它求最小可容纳高度。 */
+  overflow: boolean;
   lines: TextLayoutLine[];
 }

@@ -7,6 +7,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 interface SelectionFrame {
   ids: ElementId[];
   corners: [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
+  handles: boolean;
 }
 
 const midpoint = (left: SpacePoint, right: SpacePoint): SpacePoint => ({
@@ -25,10 +26,14 @@ function elementCorners(doc: EditDoc, id: ElementId): SelectionFrame['corners'] 
 }
 
 function selectionFrame(doc: EditDoc, selection: Selection, slideId: SlideId): SelectionFrame | null {
+  if (selection.kind === 'text') {
+    if (!doc.elements[selection.id] || slideOfElement(doc, selection.id) !== slideId) return null;
+    return { ids: [selection.id], corners: elementCorners(doc, selection.id), handles: false };
+  }
   if (selection.kind !== 'elements' || !selection.ids.length) return null;
   const ids = selection.ids.filter((id) => doc.elements[id] && slideOfElement(doc, id) === slideId);
   if (!ids.length) return null;
-  if (ids.length === 1) return { ids, corners: elementCorners(doc, ids[0]) };
+  if (ids.length === 1) return { ids, corners: elementCorners(doc, ids[0]), handles: true };
 
   const points = ids.flatMap((id) => elementCorners(doc, id));
   const xs = points.map((point) => point.x);
@@ -37,7 +42,7 @@ function selectionFrame(doc: EditDoc, selection: Selection, slideId: SlideId): S
   const top = Math.min(...ys);
   const right = Math.max(...xs);
   const bottom = Math.max(...ys);
-  return { ids, corners: [
+  return { ids, handles: true, corners: [
     { x: left, y: top }, { x: right, y: top },
     { x: right, y: bottom }, { x: left, y: bottom },
   ] };
@@ -165,6 +170,12 @@ export function renderSelectionOverlay(
   outline.setAttribute('fill', 'none');
   outline.setAttribute('stroke', '#2563eb');
   group.append(outline);
+  layer.append(group);
+  if (!frame.handles) {
+    outline.setAttribute('stroke-dasharray', `${4 / zoom} ${3 / zoom}`);
+    updateSelectionOverlayFrame(layer, frame.corners, zoom);
+    return;
+  }
 
   RESIZE_HANDLES.forEach((name) => {
     const hit = svgElement(document, 'rect');
@@ -211,6 +222,5 @@ export function renderSelectionOverlay(
     rotationAngle.style.display = 'none';
     group.append(rotationAngle);
   }
-  layer.append(group);
   updateSelectionOverlayFrame(layer, frame.corners, zoom);
 }

@@ -6,6 +6,14 @@ const encoder = new TextEncoder();
 interface StoredHistoryEntry extends HistoryEntry {
   readonly beforeState: number;
   readonly afterState: number;
+  readonly links: readonly StoredPatchLink[];
+}
+
+interface StoredPatchLink { readonly trigger: string; readonly related: readonly string[] }
+
+export interface HistoryPatchLink {
+  readonly trigger: Patch['path'];
+  readonly related: readonly Patch['path'][];
 }
 
 const clonePatch = <P extends Patch>(patch: P): P => ({
@@ -56,6 +64,36 @@ function canMerge(previous: HistoryEntry, next: HistoryEntry): boolean {
   return next.forward.some((patch) => previousPaths.has(pathKey(patch)));
 }
 
+function storeLinks(links: readonly HistoryPatchLink[]): StoredPatchLink[] {
+  const byTrigger = new Map<string, Set<string>>();
+  for (const link of links) {
+    const trigger = JSON.stringify(link.trigger);
+    const related = byTrigger.get(trigger) ?? new Set<string>();
+    link.related.forEach((path) => related.add(JSON.stringify(path)));
+    byTrigger.set(trigger, related);
+  }
+  return [...byTrigger].map(([trigger, related]) => ({ trigger, related: [...related] }));
+}
+
+function mergeLinks(...groups: readonly (readonly StoredPatchLink[])[]): StoredPatchLink[] {
+  const byTrigger = new Map<string, Set<string>>();
+  for (const links of groups) for (const link of links) {
+    const related = byTrigger.get(link.trigger) ?? new Set<string>();
+    link.related.forEach((path) => related.add(path));
+    byTrigger.set(link.trigger, related);
+  }
+  return [...byTrigger].map(([trigger, related]) => ({ trigger, related: [...related] }));
+}
+
+function survivingLinks(links: readonly StoredPatchLink[], forward: readonly Patch[]): StoredPatchLink[] {
+  const paths = new Set(forward.map(pathKey));
+  return links.flatMap((link) => {
+    if (!paths.has(link.trigger)) return [];
+    const related = link.related.filter((path) => paths.has(path));
+    return related.length ? [{ trigger: link.trigger, related }] : [];
+  });
+}
+
 export class HistoryStore implements History {
   private readonly undoList: StoredHistoryEntry[] = [];
   private readonly redoList: StoredHistoryEntry[] = [];
@@ -92,13 +130,18 @@ export class HistoryStore implements History {
     const strip = (list: StoredHistoryEntry[]): void => {
       for (let index = list.length - 1; index >= 0; index--) {
         const entry = list[index];
-        const forward = entry.forward.filter((patch) => !paths.has(pathKey(patch)));
+        const linked = new Set(entry.links
+          .filter((link) => paths.has(link.trigger))
+          .flatMap((link) => link.related));
+        const conflicts = (patch: Patch): boolean => paths.has(pathKey(patch))
+          || linked.has(pathKey(patch));
+        const forward = entry.forward.filter((patch) => !conflicts(patch));
         if (forward.length === entry.forward.length) continue;
-        const inverse = entry.inverse.filter((patch) => !paths.has(pathKey(patch)));
+        const inverse = entry.inverse.filter((patch) => !conflicts(patch));
         this.bytes -= this.sizeOf(entry);
         if (!forward.length) list.splice(index, 1);
         else {
-          list[index] = { ...entry, forward, inverse };
+          list[index] = { ...entry, forward, inverse, links: survivingLinks(entry.links, forward) };
           this.bytes += this.sizeOf(list[index]);
         }
       }
@@ -120,8 +163,15 @@ export class HistoryStore implements History {
     this.breakMerge();
   }
 
-  push(entry: HistoryEntry, beforeState: number, afterState: number): void {
-    const next: StoredHistoryEntry = { ...cloneHistoryEntry(entry), beforeState, afterState };
+  push(
+    entry: HistoryEntry,
+    beforeState: number,
+    afterState: number,
+    links: readonly HistoryPatchLink[] = [],
+  ): void {
+    const next: StoredHistoryEntry = {
+      ...cloneHistoryEntry(entry), beforeState, afterState, links: storeLinks(links),
+    };
     const previous = this.peekUndo();
     if (!this.mergeBarrier && previous && canMerge(previous, next)) {
       const merged: StoredHistoryEntry = {
@@ -130,6 +180,7 @@ export class HistoryStore implements History {
         inverse: compactPatches([...next.inverse, ...previous.inverse]),
         selectionBefore: cloneSelection(previous.selectionBefore),
         beforeState: previous.beforeState,
+        links: mergeLinks(previous.links, next.links),
       };
       this.bytes -= this.sizeOf(previous);
       this.undoList[this.undoList.length - 1] = merged;
@@ -164,6 +215,10 @@ export class HistoryStore implements History {
   }
 
   private sizeOf(entry: HistoryEntry): number {
-    return encoder.encode(JSON.stringify(cloneHistoryEntry(entry))).length;
+    const stored = entry as Partial<StoredHistoryEntry>;
+    return encoder.encode(JSON.stringify({
+      ...cloneHistoryEntry(entry),
+      links: stored.links ?? [],
+    })).length;
   }
 }

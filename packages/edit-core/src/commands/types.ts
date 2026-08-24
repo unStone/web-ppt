@@ -171,8 +171,14 @@ export interface SetParaPropsCommand {
   readonly props: ParagraphPropertyOverrides;
 }
 
+export interface FitTextShapeCommand {
+  readonly type: 'FitTextShape';
+  readonly id: ElementId;
+}
+
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand;
+  | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | FitTextShapeCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

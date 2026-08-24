@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(45 70)">
+<path d="M 0 0 L 210 0 L 210 44 L 0 44 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<text x="6" y="26.46" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">顶部锚点</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(285 70)">
+<path d="M 0 0 L 210 0 L 210 44 L 0 44 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<text x="6" y="30.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">居中锚点</tspan>
+</text>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(525 70)">
+<path d="M 0 0 L 210 0 L 210 44 L 0 44 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<text x="6" y="33.66" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">底部锚点</tspan>
+</text>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(90 910 92) translate(805 70)">
+<path d="M 0 0 L 210 0 L 210 44 L 0 44 Z" fill="rgb(217,234,247)" fill-rule="nonzero"/>
+<text x="6" y="26.46" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">旋转锚点</tspan>
+</text>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(1060 70)">
+<g transform="translate(85 22) scale(1 -1) translate(-85 -22)">
+<path d="M 0 0 L 170 0 L 170 44 L 0 44 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+</g>
+<text x="6" y="26.46" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">翻转锚点</tspan>
+</text>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(45 330)">
+<path d="M 0 0 L 260 0 L 260 44 L 0 44 Z" fill="rgb(243,244,246)" fill-rule="nonzero"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">普通文本框</tspan>
+</text>
+</g>
+</g>
+</svg>

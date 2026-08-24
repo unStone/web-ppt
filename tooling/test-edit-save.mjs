@@ -7,6 +7,7 @@ import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runM1SaveContract } from './lib/m1-save-contract.mjs';
 import { runEngineTextSaveContract } from './lib/engine-text-save-contract.mjs';
 import { runTableCellTextSaveContract } from './lib/table-cell-text-save-contract.mjs';
+import { runShapeAutofitSaveContract } from './lib/shape-autofit-save-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-save');
@@ -78,6 +79,23 @@ await runEngineTextSaveContract({
 });
 
 await runTableCellTextSaveContract({
+  core, edit, load, check, eq,
+  saveArtifact: (name, bytes) => {
+    const path = join(out, name);
+    writeFileSync(path, bytes);
+    return path;
+  },
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
+
+await runShapeAutofitSaveContract({
   core, edit, load, check, eq,
   saveArtifact: (name, bytes) => {
     const path = join(out, name);

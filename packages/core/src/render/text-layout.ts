@@ -1,14 +1,13 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
-import { isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
+import { squeezeTotal } from './cjk-punct';
 import { fontSize, mathOf, measureTextWidth } from './text-measure';
 import type { TextMeasure } from './text-measure';
 import type {
   TextLayout,
-  TextLayoutCaret,
   TextLayoutLine,
   TextLayoutOptions,
-  TextLayoutSegment,
 } from './text-layout-types';
+import { publicSegments } from './text-layout-carets';
 import { warpSupported } from './text-warp-presets';
 
 export type {
@@ -22,7 +21,7 @@ export type { TextMeasure } from './text-measure';
 
 // ---------------- 断行 ----------------
 
-interface Token {
+export interface Token {
   text: string;
   run: TextRun;
   runIndex: number;
@@ -106,7 +105,7 @@ function tokenize(runs: IndexedRun[], scale: number, measurer?: TextMeasure): To
   return out;
 }
 
-interface Seg {
+export interface Seg {
   text: string;
   run: TextRun;
   runIndex?: number;
@@ -118,7 +117,7 @@ interface Seg {
   width: number;
 }
 
-interface Line {
+export interface Line {
   segs: Seg[];
   width: number;
   size: number;
@@ -322,104 +321,6 @@ function flattenLayout(paragraphs: LaidPara[]): RenderItem[] {
 
 const itemsHeight = (items: RenderItem[]): number => items.reduce((sum, item) => sum + item.h, 0);
 
-function sourceCharacters(token: Token): Array<{ from: number; to: number; display: string }> {
-  const out: Array<{ from: number; to: number; display: string }> = [];
-  const source = token.run.text;
-  for (let from = token.from; from < token.to;) {
-    const cp = source.codePointAt(from)!;
-    const value = String.fromCodePoint(cp);
-    const to = Math.min(token.to, from + value.length);
-    out.push({ from, to, display: token.run.caps === 'all' ? value.toUpperCase() : value });
-    from = to;
-  }
-  return out;
-}
-
-function tokenCarets(
-  token: Token,
-  startX: number,
-  squeezed: boolean,
-  scale: number,
-  measurer?: TextMeasure,
-): TextLayoutCaret[] {
-  const effectiveWidth = token.width - (squeezed ? token.squeeze : 0);
-  if (token.atomic) {
-    return [{ offset: token.from, x: startX }, { offset: token.to, x: startX + effectiveWidth }];
-  }
-  const chars = sourceCharacters(token);
-  if (!chars.length) return [{ offset: token.from, x: startX }];
-  const measured = chars.map((char) => measureTextWidth(char.display, token.run, scale, measurer));
-  const measuredTotal = measured.reduce((sum, width) => sum + width, 0);
-  const ratio = measuredTotal > 0 ? token.width / measuredTotal : 0;
-  const fallback = measuredTotal > 0 ? 0 : token.width / chars.length;
-  let x = startX;
-  const carets: TextLayoutCaret[] = [{ offset: chars[0].from, x }];
-  chars.forEach((char, index) => {
-    const amount = squeezed ? squeezeEm(char.display) * fontSize(token.run, scale) : 0;
-    if (amount && isOpening(char.display)) {
-      x -= amount;
-      carets[carets.length - 1].x = x;
-    }
-    x += measuredTotal > 0 ? measured[index] * ratio : fallback;
-    if (amount && !isOpening(char.display)) x -= amount;
-    carets.push({ offset: char.to, x });
-  });
-  // 浮点分摊只影响中间停靠点；末端必须与渲染器的行宽算法完全一致。
-  carets[carets.length - 1].x = startX + effectiveWidth;
-  return carets;
-}
-
-function publicSegments(
-  line: Line,
-  lineStart: number,
-  scale: number,
-  rtl: boolean,
-  includeCarets: boolean,
-  measurer?: TextMeasure,
-): TextLayoutSegment[] {
-  let cursor = lineStart;
-  const segments = line.segs.map((segment) => {
-    const width = segment.width
-      - (line.squeezed ? squeezeTotal(segment.text) * fontSize(segment.run, scale) : 0);
-    const carets: TextLayoutCaret[] = [];
-    let tokenX = cursor;
-    if (includeCarets && !segment.bullet) {
-      for (const token of segment.tokens ?? []) {
-        const stops = tokenCarets(token, tokenX, line.squeezed, scale, measurer);
-        if (carets.length && stops.length && carets[carets.length - 1].offset === stops[0].offset) stops.shift();
-        carets.push(...stops);
-        tokenX += token.width - (line.squeezed ? token.squeeze : 0);
-      }
-    }
-    const result: TextLayoutSegment = {
-      runIndex: segment.runIndex ?? -1,
-      from: segment.from ?? 0,
-      to: segment.to ?? 0,
-      text: segment.text,
-      x: cursor,
-      width,
-      naturalWidth: segment.width,
-      bullet: segment.bullet === true,
-      atomic: segment.atomic === true,
-      carets: segment.bullet ? [] : carets,
-    };
-    cursor += width;
-    return result;
-  });
-  if (!rtl) return segments;
-
-  const mirror = lineStart * 2 + lineWidth(line);
-  for (const segment of segments) {
-    if (segment.carets.length) {
-      segment.carets = segment.carets.map((caret) => ({ ...caret, x: mirror - caret.x }));
-      segment.x = Math.min(...segment.carets.map((caret) => caret.x));
-    } else {
-      segment.x = mirror - segment.x - segment.width;
-    }
-  }
-  return segments;
-}
-
 /**
  * 计算原生 SVG 文本路径实际使用的行盒与字符停靠点。
  *
@@ -444,6 +345,10 @@ export function layoutText(
       vert: 'horz',
       scale,
     });
+    const [, pr, , pl] = opts.insets ?? t.insets;
+    // 竖排的物理高度就是内部横排的逻辑宽度；不可断的长词即使只有一行也会溢出。
+    const overflowWidth = inner.lines.some((line) =>
+      line.x < pl - 1e-9 || line.x + line.width > h - pr + 1e-9);
     return {
       ...inner,
       width: w,
@@ -457,6 +362,7 @@ export function layoutText(
         ? [0, -1, 1, 0, 0, h]
         : [0, 1, -1, 0, w, 0],
       unwarped: warpSupported(t.warp?.preset),
+      overflow: inner.overflow || overflowWidth,
     };
   }
 
@@ -537,6 +443,7 @@ export function layoutText(
     vert,
     transform: [1, 0, 0, 1, 0, 0],
     unwarped: warpSupported(t.warp?.preset),
+    overflow: buckets.some((bucket) => itemsHeight(bucket) > h - pt - pb + 1e-9),
     lines,
   };
 }

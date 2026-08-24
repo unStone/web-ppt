@@ -25,6 +25,7 @@ import { runRichTextClipboardEditorContract } from './lib/rich-text-clipboard-ed
 import { runEngineTextEditorContract } from './lib/engine-text-editor-contract.mjs';
 import { runTableCellTextEditorContract } from './lib/table-cell-text-editor-contract.mjs';
 import { runAutofitTextEditorContract } from './lib/autofit-text-editor-contract.mjs';
+import { runShapeAutofitEditorContract } from './lib/shape-autofit-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -210,6 +211,7 @@ await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironm
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runAutofitTextEditorContract({ check, core, lib, root, window: domEnvironment.window });
+await runShapeAutofitEditorContract({ check, edit: lib, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

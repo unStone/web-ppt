@@ -11,12 +11,13 @@ import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
 import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
+import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
 import { resolveGeomPath } from './geometry';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
-export { layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
+export { fitTextShapeHeight, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
 export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';
 export type { RenderTextBodyHtmlOptions } from './render/text-html';
 export type {

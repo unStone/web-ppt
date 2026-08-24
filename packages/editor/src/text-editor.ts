@@ -212,6 +212,12 @@ export class TextEditorController {
     }
     if (change.renderElements.has(this.activeId)) {
       this.staticStale = true;
+      const active = this.activeText();
+      // spAutoFit 同一事务会改变 frame；静态形状若仍保留旧 frame，编辑层与点击轮廓会瞬间分叉。
+      if (active?.text.autoFitShape) {
+        this.options.syncStatic(this.activeId);
+        this.staticStale = false;
+      }
       this.render(change.selection, true);
     }
     else this.hideStaticText();

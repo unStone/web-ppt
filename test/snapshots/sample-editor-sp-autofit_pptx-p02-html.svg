@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(20 290 190) translate(70 70)">
+<g transform=" scale(1 1) translate(0 0)">
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 35)">
+<path d="M 0 0 L 280 0 L 280 44 L 0 44 Z" fill="rgb(236,253,245)" fill-rule="nonzero"/>
+<foreignObject width="280" height="44" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:280px;height:44px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;padding:4px 6px 4px 6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">组内底部锚点</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</g>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(570 80)">
+<path d="M 0 0 L 330 0 L 330 44 L 0 44 Z" fill="rgb(255,247,237)" fill-rule="nonzero"/>
+<foreignObject width="330" height="44" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:330px;height:44px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4px 6px 4px 6px;column-count:2;column-gap:16px;display:block;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">双栏文字</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(980 80)">
+<path d="M 0 0 L 95 0 L 95 70 L 0 70 Z" fill="rgb(245,243,255)" fill-rule="nonzero"/>
+<foreignObject width="95" height="70" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:95px;height:70px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4px 6px 4px 6px;writing-mode:vertical-rl;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">竖排</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>
