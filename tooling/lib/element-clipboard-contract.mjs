@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { runClipboardMaterializationContract } from './element-clipboard-materialization-contract.mjs';
 
 function worldBounds(edit, doc, ids) {
   const points = ids.flatMap((id) => {
@@ -29,6 +30,12 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
   const plain = byName('space-plain');
   const group = byName('space-outer-group');
   if (!check('基础固件含普通元素与嵌套组合根', !!plain && !!group?.children?.length)) return;
+
+  let nestedRootsRejected = false;
+  try { edit.copyElements(doc, [group.id, group.children[0]]); } catch (error) {
+    nestedRootsRejected = /祖先与其后代/.test(String(error));
+  }
+  check('复制 seam 拒绝重复表达同一子树的嵌套根', nestedRootsRejected);
 
   const payload = edit.copyElements(doc, [plain.id, group.id]);
   const json = JSON.stringify(payload);
@@ -61,6 +68,26 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     pastedIds.every((id) => !!doc.elements[id] && doc.slides[slideId].children.includes(id))
       && editor.selection.kind === 'elements' && editor.selection.ids.join(',') === pastedIds.join(',')
       && Math.abs(worldBounds(edit, doc, pastedIds).left - 500) < 1e-6);
+  const pastedGroupId = pastedIds.find((id) => doc.elements[id].src.kind === 'group');
+  const editedChildId = doc.elements[pastedGroupId].children[0];
+  const editedChildX = edit.effectiveElement(doc, editedChildId).x + 33;
+  editor.exec({ type: 'SetXfrm', id: editedChildId, x: editedChildX });
+  editor.exec({ type: 'RemoveElement', id: doc.elements[pastedGroupId].children[1] });
+  const repeatedPayload = edit.copyElements(doc, pastedIds);
+  editor.exec({
+    type: 'PasteElements', payload: repeatedPayload, at: { parentId: slideId, x: 700, y: 450 },
+  });
+  const repeatedSelection = editor.selection;
+  const repeatedIds = repeatedSelection.kind === 'elements' ? [...repeatedSelection.ids] : [];
+  const repeatedGroupId = repeatedIds.find((id) => doc.elements[id].src.kind === 'group');
+  const repeatedChildId = doc.elements[repeatedGroupId].children[0];
+  check('未保存的新树可立即再次复制并保留关系、层级与新身份',
+    repeatedIds.length === pastedIds.length
+      && repeatedIds.every((id) => !pastedIds.includes(id) && !!doc.elements[id])
+      && repeatedIds.some((id) => doc.elements[id].children?.length === group.children.length - 1)
+      && Math.abs(worldBounds(edit, doc, repeatedIds).left - 700) < 1e-6);
+  check('二次复制把未保存后代编辑物化进新插入片段',
+    Math.abs(edit.effectiveElement(doc, repeatedChildId).x - editedChildX) < 1e-6);
   const saved = await editor.save();
   const reopened = await core.parse(saved, { edit: true, keepPackage: true, lazy: false, assets: 'defer' });
   const reopenedDoc = edit.createDoc(reopened, { idPrefix: 'clipboard-basic-reopen-' });
@@ -68,12 +95,71 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     .filter((record) => record.src.name === plain.src.name || record.src.name === group.src.name);
   const reopenedPasted = pastedByName.slice(-2).map((record) => record.id);
   check('保存重开保留粘贴元素树与视觉落点',
-    pastedByName.length === 4 && reopenedPasted.length === 2
-      && Math.abs(worldBounds(edit, reopenedDoc, reopenedPasted).left - 500) < 1e-6
+    pastedByName.length === 6 && reopenedPasted.length === 2
+      && Math.abs(worldBounds(edit, reopenedDoc, reopenedPasted).left - 700) < 1e-6
       && pastedByName.some((record) => record.src.kind === 'group'
         && record.children?.length === group.children.length));
+  const reopenedEditedGroups = pastedByName.filter((record) => record.src.kind === 'group')
+    .filter((record) => record.children?.some((id) =>
+      Math.abs(edit.effectiveElement(reopenedDoc, id).x - editedChildX) < 1e-6));
+  const reopenedGroupSizes = pastedByName.filter((record) => record.src.kind === 'group')
+    .map((record) => record.children?.length ?? 0).sort();
+  check('后代编辑与删除经二次复制保存重开不回退或复活',
+    reopenedEditedGroups.length >= 2 && reopenedGroupSizes.join(',') === '1,1,2');
   edit.disposeDoc(reopenedDoc);
+
+  const readonlyPresentation = await core.parse(bytes, { edit: true, lazy: false, assets: 'defer' });
+  const readonlyDoc = edit.createDoc(readonlyPresentation, { idPrefix: 'clipboard-readonly-' });
+  const readonlyEditor = new edit.Editor(readonlyDoc);
+  const readonlyIdentity = readonlyDoc.identity.nextElement;
+  let readonlyRejected = false;
+  try {
+    readonlyEditor.exec({
+      type: 'PasteElements', payload,
+      at: { parentId: readonlyDoc.slideOrder[0], x: 10, y: 10 },
+    });
+  } catch (error) { readonlyRejected = /只读/.test(String(error)); }
+  check('只读文档在身份分配与历史之前拒绝粘贴',
+    readonlyRejected && readonlyDoc.identity.nextElement === readonlyIdentity
+      && readonlyEditor.history.undoCount === 0);
+  edit.disposeDoc(readonlyDoc);
   edit.disposeDoc(doc);
+
+  const flipPresentation = await core.parse(load('sample-editor-space.pptx'), {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const flipDoc = edit.createDoc(flipPresentation, { idPrefix: 'clipboard-flip-' });
+  const flipEditor = new edit.Editor(flipDoc);
+  const flipPlain = Object.values(flipDoc.elements).find((record) => record.src.name === 'space-plain');
+  const flippedGroup = Object.values(flipDoc.elements).find((record) => record.src.name === 'space-outer-group');
+  const flipPayload = edit.copyElements(flipDoc, [flipPlain.id]);
+  flipEditor.exec({
+    type: 'PasteElements', payload: flipPayload,
+    at: { parentId: flippedGroup.id, x: 760, y: 420 },
+  });
+  const flippedId = flipEditor.selection.kind === 'elements' ? flipEditor.selection.ids[0] : null;
+  check('粘入翻转组以根 flip 补偿手性并保持世界视觉落点',
+    !!flippedId && flipDoc.elements[flippedId].parent === flippedGroup.id
+      && flipDoc.elements[flippedId].ovr.flipH === !flipPlain.src.flipH
+      && Math.abs(worldBounds(edit, flipDoc, [flippedId]).left - 760) < 1e-6
+      && Math.abs(worldBounds(edit, flipDoc, [flippedId]).top - 420) < 1e-6);
+  const flipSaved = await flipEditor.save();
+  const flipReopened = await core.parse(flipSaved, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const flipReopenedDoc = edit.createDoc(flipReopened, { idPrefix: 'clipboard-flip-reopen-' });
+  const reopenedFlippedGroup = Object.values(flipReopenedDoc.elements)
+    .find((record) => record.src.name === 'space-outer-group');
+  const reopenedFlipped = Object.values(flipReopenedDoc.elements)
+    .find((record) => record.src.name === 'space-plain' && record.parent === reopenedFlippedGroup?.id);
+  const reopenedFlipBounds = reopenedFlipped ? worldBounds(edit, flipReopenedDoc, [reopenedFlipped.id]) : null;
+  check('翻转组内粘贴保存重开仍保持手性与视觉落点',
+    !!reopenedFlipped && reopenedFlipped.src.flipH === !flipPlain.src.flipH
+      && Math.abs(reopenedFlipBounds.left - 760) < 2e-4
+      && Math.abs(reopenedFlipBounds.top - 420) < 2e-4,
+    JSON.stringify({ flipH: reopenedFlipped?.src.flipH, bounds: reopenedFlipBounds }));
+  edit.disposeDoc(flipReopenedDoc);
+  edit.disposeDoc(flipDoc);
 
   const groupPresentation = await core.parse(load('sample-editor-layer.pptx'), {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
@@ -97,6 +183,11 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     at: { parentId: targetGroup.id, x: 100, y: 520 },
   });
   const regroupedIds = groupEditor.selection.kind === 'elements' ? [...groupEditor.selection.ids] : [];
+  groupEditor.exec({
+    type: 'PasteElements', payload: topPayload,
+    at: { parentId: groupDoc.slideOrder[1], x: 60, y: 70 },
+  });
+  const crossPageIds = groupEditor.selection.kind === 'elements' ? [...groupEditor.selection.ids] : [];
   check('嵌套根出组与顶层根入组都按幻灯片视觉坐标落位',
     unnestedIds.length === 2 && unnestedIds.every((id) => groupDoc.elements[id].parent === groupDoc.slideOrder[0])
       && Math.abs(worldBounds(edit, groupDoc, unnestedIds).left - 500) < 1e-6
@@ -104,6 +195,10 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
       && regroupedIds.length === 1 && groupDoc.elements[regroupedIds[0]].parent === targetGroup.id
       && Math.abs(worldBounds(edit, groupDoc, regroupedIds).left - 100) < 1e-6
       && Math.abs(worldBounds(edit, groupDoc, regroupedIds).top - 520) < 1e-6);
+  check('跨页粘贴改用目标 slide part 并保持视觉落点',
+    crossPageIds.length === 1 && groupDoc.elements[crossPageIds[0]].parent === groupDoc.slideOrder[1]
+      && Math.abs(worldBounds(edit, groupDoc, crossPageIds).left - 60) < 1e-6
+      && Math.abs(worldBounds(edit, groupDoc, crossPageIds).top - 70) < 1e-6);
   const groupSaved = await groupEditor.save();
   const groupReopened = await core.parse(groupSaved, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
@@ -117,8 +212,12 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     !!reopenedGroup && !!regrouped
       && Object.values(groupReopenedDoc.elements).filter((record) => record.src.name === 'layer-child-a').length === 2
       && Object.values(groupReopenedDoc.elements).filter((record) => record.src.name === 'layer-child-b').length === 2);
+  check('跨页粘贴保存重开仍属于目标页',
+    Object.values(groupReopenedDoc.elements).some((record) =>
+      record.src.name === 'layer-back' && record.parent === groupReopenedDoc.slideOrder[1]));
   edit.disposeDoc(groupReopenedDoc);
   edit.disposeDoc(groupDoc);
+  await runClipboardMaterializationContract({ edit, core, load, check });
 
   const complexPresentation = await core.parse(load('sample-smartart.pptx'), {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
@@ -132,10 +231,20 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
   const complexRelations = complexPayload.ooxml.roots[complexPayload.roots[0]].relationships ?? [];
   check('同包复杂对象载荷记录递归 OPC 闭包而不内联未知格式',
     complexRelations.length >= 4 && complexRelations.every((relationship) =>
-      relationship.packageTarget?.closure.length >= 1) && complexPayload.resources.length === 0);
+      /^[0-9a-f]{64}$/.test(relationship.packageTarget?.rootHash ?? '')
+        && /^[0-9a-f]{64}$/.test(relationship.packageTarget?.closureHash ?? '')
+        && !JSON.stringify(relationship.packageTarget).includes('ppt/'))
+      && complexPayload.resources.length === 0);
   complexEditor.exec({
     type: 'PasteElements', payload: complexPayload,
     at: { parentId: complexDoc.slideOrder[0], x: 120, y: 100 },
+  });
+  const insertedComplex = complexEditor.selection.kind === 'elements'
+    ? [...complexEditor.selection.ids] : [];
+  const repeatedComplexPayload = edit.copyElements(complexDoc, insertedComplex);
+  complexEditor.exec({
+    type: 'PasteElements', payload: repeatedComplexPayload,
+    at: { parentId: complexDoc.slideOrder[0], x: 360, y: 100 },
   });
   const complexSaved = await complexEditor.save();
   const complexReopened = await core.parse(complexSaved, {
@@ -144,7 +253,7 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
   const complexReopenedDoc = edit.createDoc(complexReopened, { idPrefix: 'clipboard-complex-reopen-' });
   check('同文档复杂对象复制保存重开仍解析为完整 SmartArt',
     Object.values(complexReopenedDoc.elements).filter((record) =>
-      record.src.name === 'SmartArt' && record.parent === complexReopenedDoc.slideOrder[0]).length === 2);
+      record.src.name === 'SmartArt' && record.parent === complexReopenedDoc.slideOrder[0]).length === 3);
   edit.disposeDoc(complexReopenedDoc);
 
   const rejectPresentation = await core.parse(load('sample-editor-layer.pptx'), {
@@ -170,7 +279,7 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
   edit.disposeDoc(complexDoc);
 
   const mediaPresentation = await core.parse(load('sample-editor-delete.pptx'), {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true, keepPackage: true, lazy: false,
   });
   const linkPresentation = await core.parse(load('sample-editor-layer.pptx'), {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
@@ -192,14 +301,47 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     mediaPayload.resources.length === 1 && /^[0-9a-f]{64}$/.test(resource?.hash ?? '')
       && resource?.hash === expectedHash
       && resource?.mime === 'image/png' && /^[A-Za-z0-9+/]+={0,2}$/.test(resource?.bytes ?? '')
-      && mediaPayload.ooxml.roots[mediaPayload.roots[0]].relationships?.length === 1);
+      && mediaPayload.ooxml.roots[mediaPayload.roots[0]].relationships?.length === 1
+      && !JSON.stringify(mediaPayload).includes('blob:')
+      && JSON.stringify(mediaPayload).includes(`web-ppt-resource:${resource.hash}`));
   check('外部超链接只携带关系、不复制伪资源',
     linkPayload.resources.length === 0
       && linkPayload.ooxml.roots[linkPayload.roots[0]].relationships?.[0]?.target
         === 'https://example.com/layer');
+  edit.disposeDoc(mediaDoc);
+  edit.disposeDoc(linkDoc);
 
   const destinationEditor = new edit.Editor(destinationDoc);
   const destinationSlide = destinationDoc.slideOrder[0];
+  const stressPayload = (count) => {
+    const value = JSON.parse(JSON.stringify(mediaPayload));
+    const root = value.roots[0];
+    const baseRelationship = value.ooxml.roots[root].relationships[0];
+    for (let index = 0; index < count; index++) {
+      const bytes = Buffer.from(`clipboard-resource-${index}`);
+      const hash = createHash('sha256').update(bytes).digest('hex');
+      value.resources.push({
+        hash, mime: 'image/png', extension: 'png', bytes: bytes.toString('base64'),
+      });
+      value.ooxml.roots[root].relationships.push({
+        sourceId: `rStress${index}`, type: baseRelationship.type, resourceHash: hash,
+      });
+    }
+    return value;
+  };
+  const resourcePayloadSizes = [64, 128, 256].map((count) => JSON.stringify(stressPayload(count)).length);
+  const manyResources = stressPayload(256);
+  destinationEditor.exec({
+    type: 'PasteElements', payload: manyResources,
+    at: { parentId: destinationSlide, x: 5, y: 5 },
+  });
+  const stressRoot = destinationEditor.selection.kind === 'elements'
+    ? destinationDoc.elements[destinationEditor.selection.ids[0]] : null;
+  check('多资源载荷按线性结构完整准备且大小线性增长',
+    stressRoot?.meta.insertion?.resources?.length === 257
+      && resourcePayloadSizes[1] < resourcePayloadSizes[0] * 2.2
+      && resourcePayloadSizes[2] < resourcePayloadSizes[1] * 2.2);
+  destinationEditor.undo();
   const malformed = JSON.parse(JSON.stringify(mediaPayload));
   malformed.resources[0].hash = '0'.repeat(64);
   const identityBeforeReject = destinationDoc.identity.nextElement;
@@ -217,12 +359,63 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     malformedRejected && destinationDoc.identity.nextElement === identityBeforeReject
       && Object.keys(destinationDoc.elements).length === countBeforeReject
       && destinationEditor.history.undoCount === 0);
+
+  const duplicateSpid = JSON.parse(JSON.stringify(payload));
+  const duplicateRoot = duplicateSpid.roots.find((root) => duplicateSpid.records[root].children.length);
+  const duplicateChild = duplicateSpid.records[duplicateRoot].children[0];
+  duplicateSpid.records[duplicateChild].meta.sourceSpid = duplicateSpid.records[duplicateRoot].meta.sourceSpid;
+  const duplicateIdentity = destinationDoc.identity.nextElement;
+  let duplicateRejected = false;
+  try {
+    destinationEditor.exec({
+      type: 'PasteElements', payload: duplicateSpid,
+      at: { parentId: destinationSlide, x: 20, y: 20 },
+    });
+  } catch (error) { duplicateRejected = /spid 重复/.test(String(error)); }
+  check('重复来源身份在分配 EditDoc id 前原子拒绝',
+    duplicateRejected && destinationDoc.identity.nextElement === duplicateIdentity
+      && destinationEditor.history.undoCount === 0);
+
+  const mixedSource = JSON.parse(JSON.stringify(mediaPayload));
+  mixedSource.records[mixedSource.roots[0]].meta.copyBatchId = 'f'.repeat(32);
+  const mixedIdentity = destinationDoc.identity.nextElement;
+  let mixedRejected = false;
+  try {
+    destinationEditor.exec({
+      type: 'PasteElements', payload: mixedSource,
+      at: { parentId: destinationSlide, x: 30, y: 30 },
+    });
+  } catch (error) { mixedRejected = /记录无效/.test(String(error)); }
+  check('跨复制来源拼接载荷在分配身份前原子拒绝',
+    mixedRejected && destinationDoc.identity.nextElement === mixedIdentity
+      && destinationEditor.history.undoCount === 0);
+
+  const lateFailure = JSON.parse(JSON.stringify(payload));
+  lateFailure.records[lateFailure.roots[0]].meta.geom = { invalid: () => undefined };
+  const lateIdentity = destinationDoc.identity.nextElement;
+  let lateRejected = false;
+  try {
+    destinationEditor.exec({
+      type: 'PasteElements', payload: lateFailure,
+      at: { parentId: destinationSlide, x: 40, y: 40 },
+    });
+  } catch { lateRejected = true; }
+  check('构造树阶段的晚失败也回滚身份分配与历史',
+    lateRejected && destinationDoc.identity.nextElement === lateIdentity
+      && destinationEditor.history.undoCount === 0);
   destinationEditor.exec({
     type: 'PasteElements', payload: JSON.parse(JSON.stringify(mediaPayload)),
     at: { parentId: destinationSlide, x: 760, y: 80 },
   });
+  const insertedMedia = destinationEditor.selection.kind === 'elements'
+    ? [...destinationEditor.selection.ids] : [];
+  const repeatedMediaPayload = edit.copyElements(destinationDoc, insertedMedia);
+  check('新粘贴图片再次复制只携带一份按哈希去重的线性资源',
+    repeatedMediaPayload.resources.length === 1
+      && repeatedMediaPayload.resources[0].hash === mediaPayload.resources[0].hash
+      && !JSON.stringify(repeatedMediaPayload).includes('data:image'));
   destinationEditor.exec({
-    type: 'PasteElements', payload: JSON.parse(JSON.stringify(mediaPayload)),
+    type: 'PasteElements', payload: repeatedMediaPayload,
     at: { parentId: destinationSlide, x: 760, y: 230 },
   });
   destinationEditor.exec({

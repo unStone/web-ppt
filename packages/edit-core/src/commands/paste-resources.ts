@@ -1,5 +1,5 @@
 import { base64ToBytes, sha256 } from '../clipboard-binary';
-import { relationshipPartFor, relativeTarget } from '../clipboard-source';
+import { relationshipPartFor, relativeTarget, resolvePackageTarget } from '../clipboard-source';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource,
 } from '../types';
@@ -58,14 +58,23 @@ function resourcePrefix(mime: string): string {
   return 'media';
 }
 
-function allocateMediaPart(used: Set<string>, prefix: string, extension: string): string {
-  for (let index = 1; ; index++) {
-    const part = `ppt/media/${prefix}${index}.${extension}`;
-    if (!used.has(part)) {
-      used.add(part);
-      return part;
-    }
+function mediaPartAllocator(used: Set<string>): (prefix: string, extension: string) => string {
+  const nextByKind = new Map<string, number>();
+  for (const part of used) {
+    const match = /^ppt\/media\/(image|audio|video|media)(\d+)\.([a-z0-9]+)$/.exec(part);
+    if (!match) continue;
+    const key = `${match[1]}|${match[3]}`;
+    nextByKind.set(key, Math.max(nextByKind.get(key) ?? 1, Number(match[2]) + 1));
   }
+  return (prefix, extension) => {
+    const key = `${prefix}|${extension}`;
+    let index = nextByKind.get(key) ?? 1;
+    let part = `ppt/media/${prefix}${index}.${extension}`;
+    while (used.has(part)) part = `ppt/media/${prefix}${++index}.${extension}`;
+    nextByKind.set(key, index + 1);
+    used.add(part);
+    return part;
+  };
 }
 
 /** 先验证完整闭包并分配所有目标名；调用返回前不得触碰 EditDoc。 */
@@ -102,6 +111,7 @@ export function prepareInsertionClosures(
     ...Object.keys(doc.package.parts),
     ...active.flatMap((closure) => closure.resources.map((resource) => resource.targetPart)),
   ]);
+  const allocateMediaPart = mediaPartAllocator(usedParts);
   const usedRelationshipIds = relationshipIds(doc, destinationPart);
   let relationshipSerial = 1;
   const allocateRelationshipId = (): string => {
@@ -115,6 +125,7 @@ export function prepareInsertionClosures(
   for (const root of roots) {
     const sourceRelationships = payload.ooxml.roots[root].relationships ?? [];
     const seenSourceIds = new Set<string>();
+    const includedResourceHashes = new Set<string>();
     const resources: ElementInsertionResource[] = [];
     const relationships: ElementInsertionRelationship[] = [];
     for (const relationship of sourceRelationships) {
@@ -139,21 +150,15 @@ export function prepareInsertionClosures(
       if (relationship.packageTarget) {
         const packageTarget = relationship.packageTarget;
         if (relationship.resourceHash || relationship.target || relationship.targetMode
-          || typeof packageTarget.part !== 'string' || !packageTarget.part
-          || !Array.isArray(packageTarget.closure) || !packageTarget.closure.length
-          || !packageTarget.closure.some((part) => part.part === packageTarget.part)) {
+          || !/^[0-9a-f]{64}$/.test(packageTarget.rootHash)
+          || !/^[0-9a-f]{64}$/.test(packageTarget.closureHash)) {
           throw new Error(`剪贴板同包关系无效：${relationship.sourceId}`);
         }
-        for (const part of packageTarget.closure) {
-          const bytes = doc.package.parts[part.part];
-          if (!part || typeof part.part !== 'string' || !part.part
-            || !/^[0-9a-f]{64}$/.test(part.hash) || !bytes || sha256(bytes) !== part.hash) {
-            throw new Error(`复杂对象只能粘贴到拥有相同 OPC 闭包的文档：${relationship.sourceId}`);
-          }
-        }
+        const targetPart = resolvePackageTarget(doc.package, packageTarget);
+        if (!targetPart) throw new Error(`复杂对象只能粘贴到拥有相同 OPC 闭包的文档：${relationship.sourceId}`);
         relationships.push({
           sourceId: relationship.sourceId, targetId, type: relationship.type,
-          target: relativeTarget(destinationPart, packageTarget.part),
+          target: relativeTarget(destinationPart, targetPart),
         });
         continue;
       }
@@ -164,13 +169,16 @@ export function prepareInsertionClosures(
       if (!source) throw new Error(`剪贴板关系缺少资源：${relationship.resourceHash}`);
       let targetPart = targetByHash.get(source.hash);
       if (!targetPart) {
-        targetPart = allocateMediaPart(usedParts, resourcePrefix(source.mime), source.extension);
+        targetPart = allocateMediaPart(resourcePrefix(source.mime), source.extension);
         targetByHash.set(source.hash, targetPart);
       }
       const prepared = {
         ...source, targetPart, created: !doc.package.parts[targetPart],
       };
-      if (!resources.some((candidate) => candidate.hash === prepared.hash)) resources.push(prepared);
+      if (!includedResourceHashes.has(prepared.hash)) {
+        includedResourceHashes.add(prepared.hash);
+        resources.push(prepared);
+      }
       relationships.push({
         sourceId: relationship.sourceId, targetId, type: relationship.type,
         target: relativeTarget(destinationPart, targetPart),

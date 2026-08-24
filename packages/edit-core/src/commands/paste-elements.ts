@@ -1,4 +1,5 @@
 import { allocateElementId } from '../document';
+import { createElementAssetHydrator } from '../clipboard-assets';
 import { elementOrder, elementParentChildren } from '../element-order';
 import { fractionalIndexBetween, initialFractionalIndex } from '../fractional-index';
 import {
@@ -21,6 +22,7 @@ function assertPayload(value: unknown): asserts value is ElementClipboardPayload
     || !payload.ooxml || typeof payload.ooxml.roots !== 'object'
     || !payload.bounds || !Number.isFinite(payload.bounds.left) || !Number.isFinite(payload.bounds.top)
     || !payload.source || !Number.isFinite(payload.source.width) || !Number.isFinite(payload.source.height)
+    || typeof payload.source.copyBatchId !== 'string' || !/^[0-9a-f]{32}$/.test(payload.source.copyBatchId)
     || !Array.isArray(payload.resources)) {
     throw new Error('元素剪贴板载荷无效或版本不受支持');
   }
@@ -29,7 +31,13 @@ function assertPayload(value: unknown): asserts value is ElementClipboardPayload
     if (reached.has(id)) throw new Error(`剪贴板元素树成环或重复：${id}`);
     const record = payload.records![id] as ClipboardElementRecord | undefined;
     if (!record || record.id !== id || record.parent !== parent || !record.src
-      || !record.meta || !Array.isArray(record.children)) {
+      || !record.meta || record.meta.copyBatchId !== payload.source!.copyBatchId
+      || !['full', 'frame', 'none'].includes(record.meta.editable)
+      || typeof record.meta.anchored !== 'boolean'
+      || (record.meta.anchored
+        ? !Number.isSafeInteger(record.meta.sourceSpid) || record.meta.sourceSpid! < 0
+        : record.meta.sourceSpid !== undefined)
+      || !Array.isArray(record.children)) {
       throw new Error(`剪贴板元素记录无效：${id}`);
     }
     reached.add(id);
@@ -46,9 +54,29 @@ function assertPayload(value: unknown): asserts value is ElementClipboardPayload
       || (xml.relationships !== undefined && !Array.isArray(xml.relationships))
       || !frame || !Object.values(frame).every(Number.isFinite);
   })) throw new Error('剪贴板载荷缺少 OOXML 根宿主');
+  for (const root of payload.roots) {
+    const hostSpids = payload.ooxml.roots[root].hostSpids;
+    const hostSpidSet = new Set(hostSpids);
+    if (hostSpidSet.size !== hostSpids.length
+      || hostSpids.some((spid) => !/^\d+$/.test(spid))) {
+      throw new Error(`剪贴板根 ${root} 的宿主 spid 无效`);
+    }
+    const anchored = new Set<number>();
+    const visitSpids = (id: string): void => {
+      const record = payload.records![id];
+      if (record.meta.anchored) {
+        const spid = record.meta.sourceSpid!;
+        if (anchored.has(spid)) throw new Error(`剪贴板来源 spid 重复：${spid}`);
+        if (!hostSpidSet.has(String(spid))) throw new Error(`剪贴板来源 spid 不属于根宿主：${spid}`);
+        anchored.add(spid);
+      }
+      for (const child of record.children) visitSpids(child);
+    };
+    visitSpids(root);
+  }
 }
 
-function target(doc: EditDoc, parentId: string): { parent: SlideId | ElementId; part: string } {
+function resolvePasteDestination(doc: EditDoc, parentId: string): { parent: SlideId | ElementId; part: string } {
   const slide = doc.slides[parentId];
   if (slide) {
     if (!slide.origin) throw new Error('目标幻灯片不可写回');
@@ -74,24 +102,31 @@ function translated(matrix: AffineMatrix, dx: number, dy: number): AffineMatrix 
 }
 
 function decomposePlacement(matrix: AffineMatrix, width: number, height: number) {
-  const scaleX = Math.hypot(matrix.a, matrix.b);
   const determinant = matrix.a * matrix.d - matrix.b * matrix.c;
-  const scaleY = determinant / scaleX;
-  const magnitude = Math.max(1, Math.abs(matrix.a), Math.abs(matrix.b), Math.abs(matrix.c), Math.abs(matrix.d));
-  const orthogonality = matrix.a * matrix.c + matrix.b * matrix.d;
+  const reflectH = determinant < 0;
+  const normalized = reflectH ? composeSpaceMatrices(matrix, {
+    a: -1, b: 0, c: 0, d: 1, e: width, f: 0,
+  }) : matrix;
+  const scaleX = Math.hypot(normalized.a, normalized.b);
+  const normalizedDeterminant = normalized.a * normalized.d - normalized.b * normalized.c;
+  const scaleY = normalizedDeterminant / scaleX;
+  const magnitude = Math.max(
+    1, Math.abs(normalized.a), Math.abs(normalized.b), Math.abs(normalized.c), Math.abs(normalized.d),
+  );
+  const orthogonality = normalized.a * normalized.c + normalized.b * normalized.d;
   if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || scaleX <= 1e-12 || scaleY <= 1e-12
     || Math.abs(orthogonality) > 1e-8 * magnitude * magnitude) {
-    throw new Error('来源与目标组合坐标系会产生 PPTX 无法表达的斜切或反射');
+    throw new Error('来源与目标组合坐标系会产生 PPTX 无法表达的斜切');
   }
-  const radians = Math.atan2(matrix.b, matrix.a);
+  const radians = Math.atan2(normalized.b, normalized.a);
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const w = width * scaleX;
   const h = height * scaleY;
   return {
-    x: matrix.e - w / 2 * (1 - cos) - h / 2 * sin,
-    y: matrix.f + w / 2 * sin - h / 2 * (1 - cos),
-    w, h, rot: radians * 180 / Math.PI,
+    x: normalized.e - w / 2 * (1 - cos) - h / 2 * sin,
+    y: normalized.f + w / 2 * sin - h / 2 * (1 - cos),
+    w, h, rot: radians * 180 / Math.PI, reflectH,
   };
 }
 
@@ -109,6 +144,7 @@ function sparsePlacement(
     ...(Math.abs(placement.h - source.src.h) > 1e-8 ? { h: placement.h } : {}),
     ...(source.meta.editable === 'full' && Math.abs(placement.rot - source.src.rot) > 1e-8
       ? { rot: placement.rot } : {}),
+    ...(placement.reflectH ? { flipH: !source.src.flipH } : {}),
   };
 }
 
@@ -124,9 +160,10 @@ export function pasteElementsPatches(
     || !Number.isFinite(command.at.x) || !Number.isFinite(command.at.y)) {
     throw new Error('PasteElements.at 必须包含目标父级与有限坐标');
   }
-  const destination = target(doc, command.at.parentId);
+  const destination = resolvePasteDestination(doc, command.at.parentId);
   const payload = command.payload;
   const closures = prepareInsertionClosures(doc, payload, payload.roots, destination.part);
+  const hydrateElementAssets = createElementAssetHydrator(payload.resources);
   const dx = command.at.x - payload.bounds.left;
   const dy = command.at.y - payload.bounds.top;
   const destinationMatrix: AffineMatrix = doc.slides[destination.parent]
@@ -162,7 +199,7 @@ export function pasteElementsPatches(
         }
         spids[String(copied.meta.sourceSpid)] = spid;
       }
-      const src = structuredClone(copied.src);
+      const src = hydrateElementAssets(copied.src);
       if (spid !== undefined) src.id = spid;
       const children = copied.children.map((child, childIndex) => visit(child, id, false, childIndex));
       const z = root

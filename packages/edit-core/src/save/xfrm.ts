@@ -1,5 +1,5 @@
 import type { ElementRecord } from '../types';
-import { isFrameXfrmField, XFRM_FIELDS } from '../commands/xfrm';
+import { isFrameSaveXfrmField, XFRM_FIELDS } from '../commands/xfrm';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlAttribute, findXmlChild, xmlElementChildren } from '../xml/query';
@@ -154,8 +154,8 @@ export function patchElementXfrm(document: XmlDocument, record: ElementRecord): 
   if (!hasXfrmOverrides(record)) return;
   if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可写回`);
   if (record.meta.editable === 'frame'
-    && XFRM_FIELDS.some((field) => own(record.ovr, field) && !isFrameXfrmField(field))) {
-    throw new Error(`框架对象 ${record.id} 只允许写回位置与尺寸`);
+    && XFRM_FIELDS.some((field) => own(record.ovr, field) && !isFrameSaveXfrmField(field))) {
+    throw new Error(`框架对象 ${record.id} 只允许写回位置、尺寸与粘贴补偿翻转`);
   }
   const { xfrm, created } = transformNode(document, record);
   if (created) materializeTransform(xfrm, record);

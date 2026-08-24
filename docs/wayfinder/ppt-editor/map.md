@@ -52,6 +52,7 @@ tracker: local-markdown
 - [实现元素删除与占位符两段式清空](tickets/026-element-delete.md) — RemoveElement 以稳定 z 序双向结构 patch 和最小 OOXML 写回接通 Delete/Backspace；未触碰兄弟保持 DOM 身份，Chrome 60 元素删除/撤销/重做 p95 3.4/1.5/0.9ms。
 - [实现元素层级调整与快捷键](tickets/027-element-layer-order.md) — SetZ 以链表终态规划、Fenwick 最小稀疏序和固定槽位接通四向层级、增量 DOM 与最小 OOXML 重排；Chrome 60 元素层级/撤销/重做 p95 1.3/0.3/0.2ms。
 - [实现元素视觉对齐](tickets/028-element-alignment.md) — AlignElements 以世界 AABB 和父空间逆变换统一六向对齐、原子历史、增量 DOM 与最小写回；Chrome 60/60 完整反馈 p95 1.5ms。
+- [实现元素复制剪切粘贴](tickets/029-element-clipboard.md) — 版本化纯 JSON 载荷以完整 OOXML/关系/资源物化接通跨页跨实例复制、可信剪贴板、原子历史与保存；Chrome 60 根完整反馈 p95 8.0ms。
 
 ## Not yet specified
 

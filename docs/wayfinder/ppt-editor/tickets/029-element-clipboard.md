@@ -1,6 +1,6 @@
 ---
 title: 实现元素复制剪切粘贴
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -45,4 +45,21 @@ TDD 只从三条既定公共 seam 验收：发布的 `copyElements` + `Editor.ex
 
 ## Resolution
 
-<!-- 完成后记录答案、证据与后续发现。 -->
+- `@web-ppt/edit-core` 公开版本化、纯 JSON 的 `copyElements` / `PasteElements`：复制只保留同父级最外层根，
+  载荷身份与会话 id、源 part 路径无关；粘贴为目标 part 原子分配新 EditDoc id、spid、层级和世界坐标落点。
+  嵌套组、翻转/旋转父空间、多选、跨页、连续再制与失败后的身份回滚共用一条 headless 命令路径。
+- OOXML 宿主、关系闭包和媒体以 SHA-256 + base64 迁移；同内容媒体复用 part，复杂 SmartArt 等对象以内容关系图
+  确认同包闭包，跨文档不能无损迁移时在落模前拒绝。解析期 blob/Worker asset 地址经公开 `OpcPackage.assets`
+  变成可跨编辑器和源文档释放后使用的资源 token；媒体 part 分配、资源水合、去重和宿主校验均为单次索引。
+- 保存、插入与再次复制复用统一的删除→嵌套插入→覆盖物化管线。原始组合的未保存后代修改与删除会进入副本；
+  新粘贴树删除后代虽不留 tombstone，仍会按插入时固化的 spid 差集剪除失活宿主。保存重开契约验证组合子数
+  `2/1/1`，无后代复活、spid 歧义或关系丢失。
+- `@web-ppt/editor` 接通同步 `ClipboardEvent` 的 MIME/text 双写、cut 单事务和 `Ctrl/Cmd+D`；edit 事件视图独占，
+  view、文本选区、表单/contenteditable、开放/封闭 Shadow DOM 与活动手势保留浏览器所有权。粘贴、撤销、重做
+  只更新影响分区，未触碰兄弟与 defs 保持 DOM 身份；React、Vue、Web Component 宿主可直接映射相同生命周期和命令。
+- 最终全量门禁通过：1987 项 core、352 项 edit-core、28 项 M1 保存、140 项 editor、162 个快照、37 份固件 /
+  132 页 / 264 对独立进程 SVG 指纹及 130 项图元文件；五个发布包构建成功。真实 Chrome 的 10/20/40 根载荷
+  体积保持线性，60 根可信剪贴板完整 DOM 反馈 p95 `8.0ms`，低于 `16ms` 预算。
+- LibreOffice 无修复打开 `out/edit-save/element-clipboard.pptx` 并导出 `33494-byte` PDF；最终构建实测
+  edit-core `16.56KB gzip`、editor `19.94KB gzip`。Spec 与 Standards 双轴审查发现的跨会话资源、完整子树
+  物化、负手性组合、事件所有权及平方级路径均已回归，最终均 clean。

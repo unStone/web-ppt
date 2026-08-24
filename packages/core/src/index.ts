@@ -35,6 +35,7 @@ export type { FontUsage } from './font/collect';
 export { setDecryptor, setPptDecryptor, hasDecryptor } from './crypto/hook';
 export type { Decryptor, PptDecryptor } from './crypto/hook';
 export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
+export { sha256 } from './crypto/primitives';
 export { metafileToSvg, detectMetafile } from './image';
 
 // 接入图表渲染器与图元文件解码器（解析器通过 hook 解耦调用）

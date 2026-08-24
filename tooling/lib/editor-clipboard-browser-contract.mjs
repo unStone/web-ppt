@@ -70,6 +70,16 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
       || session.editor.history.undoCount !== duplicateHistory + 1) {
       throw new Error('Ctrl/Cmd+D 未形成不触碰系统剪贴板的单历史再制');
     }
+    const duplicateAgainAccepted = view.element.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'd', code: 'KeyD', ctrlKey: true, bubbles: true, cancelable: true,
+    }));
+    const duplicatedAgain = session.editor.selection.kind === 'elements' ? session.editor.selection.ids : [];
+    if (duplicateAgainAccepted || duplicatedAgain.length !== 2
+      || duplicatedAgain.some((id) => duplicated.includes(id))
+      || session.editor.history.undoCount !== duplicateHistory + 2) {
+      throw new Error('新粘贴元素无法连续 Ctrl/Cmd+D 再制');
+    }
+    session.editor.undo();
     session.editor.undo();
 
     const textId = roots.find((id) => session.editor.doc.elements[id].src.kind === 'shape'
@@ -84,16 +94,38 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
       throw new Error('文本选区错误夺取元素粘贴所有权');
     }
 
+    session.editor.select({ kind: 'elements', ids: selected, enteredGroup: null });
     const input = document.createElement('input');
     view.element.append(input);
     const yieldedData = new DataTransfer();
     const yielded = input.dispatchEvent(clipboardEvent('copy', yieldedData));
     input.remove();
+    const shadowHost = document.createElement('div');
+    const shadowInput = shadowHost.attachShadow({ mode: 'closed' }).appendChild(document.createElement('input'));
+    view.element.append(shadowHost);
+    shadowInput.focus();
+    const shadowData = new DataTransfer();
+    const shadowYielded = shadowInput.dispatchEvent(clipboardEvent('copy', shadowData));
+    shadowHost.remove();
+    view.element.focus({ preventScroll: true });
+    const svgTarget = mount.querySelector('[data-edit-id]');
+    const svgInStage = !!svgTarget.closest('[data-ppt-stage]');
+    const svgData = new DataTransfer();
+    let svgError = null;
+    globalThis.reportError = (error) => { svgError = String(error); };
+    const svgOwned = svgTarget.dispatchEvent(clipboardEvent('copy', svgData));
+    globalThis.reportError = previousReporter;
     view.setMode('view');
     const viewData = new DataTransfer();
     const viewYielded = view.element.dispatchEvent(clipboardEvent('copy', viewData));
-    if (!yielded || yieldedData.types.length || !viewYielded || viewData.types.length) {
-      throw new Error('表单后代或 view 模式错误夺取剪贴板所有权');
+    if (!yielded || yieldedData.types.length || !shadowYielded || shadowData.types.length
+      || svgOwned || !svgData.getData(MIME) || !viewYielded || viewData.types.length) {
+      throw new Error(`表单/closed Shadow、SVG 画布或 view 模式的剪贴板所有权错误：${JSON.stringify({
+        yielded, yieldedTypes: [...yieldedData.types], shadowYielded,
+        shadowTypes: [...shadowData.types], svgOwned, svgTypes: [...svgData.types],
+        svgInStage, svgError, selection: session.editor.selection.kind,
+        viewYielded, viewTypes: [...viewData.types],
+      })}`);
     }
 
     const performanceMount = document.createElement('div');

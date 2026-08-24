@@ -16,7 +16,12 @@ export function shouldYieldKeyboardEvent(event: KeyboardEvent): boolean {
   return eventHasNativeControl(event);
 }
 
-/** SVG 后代仍属于画布；只有真正的表单/可编辑后代保留系统剪贴板。 */
+/** SVG 舞台属于画布；closed Shadow 隐藏内部表单时用焦点重定向识别宿主。 */
 export function shouldYieldClipboardEvent(event: ClipboardEvent): boolean {
-  return eventHasNativeControl(event);
+  if (eventHasNativeControl(event)) return true;
+  if (!event.currentTarget || !event.target || event.currentTarget === event.target) return false;
+  const target = event.target as Element;
+  if (target.closest?.('[data-ppt-stage]')) return false;
+  // closed Shadow 的 composedPath 看不到内部 input，但焦点会重定向到 host。
+  return target.matches?.(':focus, :focus-within') ?? false;
 }

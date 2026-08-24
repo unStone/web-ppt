@@ -1,4 +1,5 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
+import { registerClipboardAssets, releaseClipboardAssets } from './clipboard-assets';
 import { initialFractionalIndex } from './fractional-index';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
 import type {
@@ -130,6 +131,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     saveState: { baselines: Object.create(null), createdParts: [] },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
+  registerClipboardAssets(doc);
   return doc;
 }
 
@@ -196,6 +198,7 @@ export function disposeDoc(doc: EditDoc): void {
   disposed.add(doc);
   disposers.get(doc)?.();
   disposers.delete(doc);
+  releaseClipboardAssets(doc);
   doc.saveState.baselines = Object.create(null);
   doc.saveState.createdParts = [];
   // assignPackage 只释放保存模块创建的自有包；原始解析包由上面的 Presentation.dispose 释放。

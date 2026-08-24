@@ -5,8 +5,10 @@ export const FLIP_FIELDS: readonly FlipField[] = ['flipH', 'flipV'];
 export const XFRM_FIELDS: readonly XfrmField[] = [...NUMERIC_XFRM_FIELDS, ...FLIP_FIELDS];
 export const XFRM_FIELD_SET = new Set<XfrmField>(XFRM_FIELDS);
 const FRAME_XFRM_FIELD_SET = new Set<XfrmField>(['x', 'y', 'w', 'h']);
+const FRAME_SAVE_XFRM_FIELD_SET = new Set<XfrmField>(['x', 'y', 'w', 'h', 'flipH', 'flipV']);
 
 export const isFrameXfrmField = (field: XfrmField): boolean => FRAME_XFRM_FIELD_SET.has(field);
+export const isFrameSaveXfrmField = (field: XfrmField): boolean => FRAME_SAVE_XFRM_FIELD_SET.has(field);
 
 export function assertXfrmValue<F extends XfrmField>(
   field: F,

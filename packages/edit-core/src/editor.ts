@@ -238,6 +238,7 @@ export class Editor {
     const reorderedElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
     const selectionBefore = this.selection;
+    const identityBefore = { ...this.doc.identity };
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
       const dirty = applyPatches(this.doc, patches.forward);
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
@@ -270,6 +271,7 @@ export class Editor {
       else validateEditElements(this.doc, forward.map((patch) => patch.path[1]));
     } catch (error) {
       if (inverse.length) applyPatches(this.doc, inverse);
+      Object.assign(this.doc.identity, identityBefore);
       this.currentSelection = selectionBefore;
       throw error;
     }

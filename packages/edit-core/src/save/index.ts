@@ -4,11 +4,10 @@ import { patchOpcPackage } from '../opc/patch';
 import type { OpcPatchResult, OpcPartChanges } from '../opc/types';
 import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
-import { hasXfrmOverrides, patchElementXfrm } from './xfrm';
-import { patchRemovedElement } from './remove-element';
-import { hasTextOverrides, patchElementText } from './text';
-import { hasOrderOverride, patchElementOrders } from './order';
-import { patchInsertedElements } from './insertion';
+import { hasXfrmOverrides } from './xfrm';
+import { hasTextOverrides } from './text';
+import { hasOrderOverride } from './order';
+import { materializeElementTreeState } from './insertion';
 import {
   clipboardPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
 } from './clipboard-parts';
@@ -86,14 +85,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   for (const part of slideParts) {
     const source = nextBaselines[part];
     const tree = parseXmlTree(source);
-    for (const record of removals.get(part) ?? []) patchRemovedElement(tree, record);
     const records = grouped.get(part) ?? [];
-    patchInsertedElements(tree, doc, records);
-    patchElementOrders(tree, doc, part);
-    for (const record of records) {
-      patchElementXfrm(tree, record);
-      patchElementText(tree, record);
-    }
+    materializeElementTreeState(tree, doc, part, records, removals.get(part) ?? []);
     changes[part] = serializeXmlTreeBytes(tree);
   }
 

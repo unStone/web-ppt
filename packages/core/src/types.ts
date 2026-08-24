@@ -35,7 +35,14 @@ export interface OpcPackage {
   readonly bytes: Uint8Array;
   /** 解压后的包内 part，key 是不带前导 `/` 的 OPC 路径 */
   readonly parts: Readonly<Record<string, Uint8Array>>;
+  /** 解析期会话 URL → 原始资源；编辑器用它同步生成跨实例资源 token。 */
+  readonly assets?: Readonly<Record<string, OpcPackageAsset>>;
   readonly disposed: boolean;
+}
+
+export interface OpcPackageAsset {
+  readonly mime: string;
+  readonly bytes: Uint8Array;
 }
 
 /** 演示文稿的「节」 */

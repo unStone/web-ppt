@@ -20,7 +20,7 @@ const core = await import(`${pathToFileURL(corePath).href}?worker=${process.pid}
 const edit = await import(`${pathToFileURL(editPath).href}?worker=${process.pid}`);
 const bytes = new Uint8Array(readFileSync(file));
 const pres = await core.parse(bytes, {
-  edit: mode === 'projected', keepPackage: mode === 'projected', lazy: false, assets: 'defer',
+  edit: mode === 'projected', keepPackage: true, lazy: false, assets: 'defer',
 });
 let slide = pres.slides[0];
 let doc;
@@ -54,6 +54,19 @@ if (mode === 'projected') {
   else editor.exec({ type: 'SetXfrm', id: target.id, x: scenario.x });
   slide = editor.toSlide(doc.slideOrder[0]);
 }
+
+// blob:/asset: 都是解析会话身份；指纹比较必须先内联同一资源字节，才是在比视觉投影。
+const inlineAssets = (value) => {
+  if (typeof value === 'string') {
+    const asset = pres.package?.assets?.[value];
+    if (!asset) return value;
+    return `data:${asset.mime};base64,${Buffer.from(asset.bytes).toString('base64')}`;
+  }
+  if (!value || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(inlineAssets);
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, inlineAssets(child)]));
+};
+slide = inlineAssets(slide);
 
 const fingerprints = {};
 for (const textMode of ['html', 'svg']) {

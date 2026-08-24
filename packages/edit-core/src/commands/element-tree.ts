@@ -100,7 +100,8 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   const snapshot = patch.value;
   const siblings = elementParentChildren(doc, snapshot.parent);
   if (patch.op === 'remove') {
-    const index = siblings.indexOf(snapshot.root);
+    const index = siblings[siblings.length - 1] === snapshot.root
+      ? siblings.length - 1 : siblings.indexOf(snapshot.root);
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
     siblings.splice(index, 1);
     for (const id of Object.keys(snapshot.records)) delete doc.elements[id];
@@ -119,12 +120,23 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   delete doc.removedElements[snapshot.root];
   // 多根删除时，快照下标取自不断收缩的数组，不能作为跨进程回放的位置依据；z 才是稳定顺序。
   const rootZ = elementOrder(snapshot.records[snapshot.root]);
-  const index = siblings.findIndex((id) => {
-    const sibling = doc.elements[id];
-    if (!sibling) throw new Error(`父节点 children 引用了不存在的元素：${id}`);
-    return elementOrder(sibling) > rootZ;
-  });
-  siblings.splice(index < 0 ? siblings.length : index, 0, snapshot.root);
+  const last = siblings[siblings.length - 1];
+  const lastRecord = last ? doc.elements[last] : null;
+  if (last && !lastRecord) throw new Error(`父节点 children 引用了不存在的元素：${last}`);
+  if (!lastRecord || elementOrder(lastRecord) < rootZ) {
+    siblings.push(snapshot.root);
+    return;
+  }
+  let low = 0;
+  let high = siblings.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    const sibling = doc.elements[siblings[middle]];
+    if (!sibling) throw new Error(`父节点 children 引用了不存在的元素：${siblings[middle]}`);
+    if (elementOrder(sibling) > rootZ) high = middle;
+    else low = middle + 1;
+  }
+  siblings.splice(low, 0, snapshot.root);
 }
 
 export function elementTreeSlide(doc: EditDoc, snapshot: ElementTreeSnapshot): string {

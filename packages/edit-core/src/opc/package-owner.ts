@@ -3,6 +3,7 @@ import type { OwnedOpcPackage } from '../opc-owner-protocol';
 
 const EMPTY_BYTES = new Uint8Array();
 const EMPTY_PARTS = Object.freeze(Object.create(null)) as Readonly<Record<string, Uint8Array>>;
+const EMPTY_ASSETS = Object.freeze(Object.create(null)) as NonNullable<OpcPackage['assets']>;
 
 /** 返回可释放、但仍能 structuredClone 的纯数据句柄。 */
 export function createOwnedPackage(
@@ -16,6 +17,7 @@ export function createOwnedPackage(
     format: 'pptx' as const,
     get bytes(): Uint8Array { return currentBytes; },
     get parts(): Readonly<Record<string, Uint8Array>> { return currentParts; },
+    get assets(): OpcPackage['assets'] { return EMPTY_ASSETS; },
     get disposed(): boolean { return disposed; },
   } as OwnedOpcPackage;
   Object.defineProperty(handle, 'dispose', {

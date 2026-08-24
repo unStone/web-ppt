@@ -56,6 +56,8 @@ export interface AlignElementsCommand {
 }
 
 export interface ElementClipboardRecordMeta {
+  /** 同一次复制操作的来源证明；粘贴时用来拒绝拼接多个来源的伪造树。 */
+  readonly copyBatchId: string;
   readonly editable: EditableKind;
   readonly anchored: boolean;
   readonly sourceSpid?: number;
@@ -80,8 +82,9 @@ export interface ClipboardRelationship {
   readonly resourceHash?: string;
   /** 复杂 OOXML 对象只在目标包拥有同一闭包时复用，不把未知格式静默扁平化。 */
   readonly packageTarget?: {
-    readonly part: string;
-    readonly closure: readonly { readonly part: string; readonly hash: string }[];
+    /** 根内容与关系图都不包含 part 路径，目标包据此重新定位等价闭包。 */
+    readonly rootHash: string;
+    readonly closureHash: string;
   };
 }
 
@@ -103,7 +106,7 @@ export interface ClipboardResource {
 export interface ElementClipboardPayload {
   readonly format: 'web-ppt-elements';
   readonly version: 1;
-  readonly source: { readonly width: number; readonly height: number };
+  readonly source: { readonly width: number; readonly height: number; readonly copyBatchId: string };
   readonly bounds: { readonly left: number; readonly top: number };
   readonly roots: readonly string[];
   readonly records: Readonly<Record<string, ClipboardElementRecord>>;

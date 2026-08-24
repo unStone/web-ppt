@@ -16,6 +16,10 @@ import { extractLstStyle, LevelStyles, parseTextBody, TextEnv, ThemeFonts } from
 import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
+import { PackageAssetStore } from './asset-store';
+import type { AssetMode, DeferredAsset } from './asset-store';
+
+export type { AssetMode, DeferredAsset } from './asset-store';
 
 type Rels = Record<string, { type: string; target: string }>;
 
@@ -35,31 +39,18 @@ const MEDIA_MIME: Record<string, string> = {
   ogg: 'audio/ogg', oga: 'audio/ogg', aac: 'audio/aac', mid: 'audio/midi', midi: 'audio/midi',
 };
 
-/** 资源产出方式：主线程直接建 blob URL；Worker 里只能发令牌，由主线程兑现 */
-export type AssetMode = 'blob' | 'defer';
-
-export interface DeferredAsset {
-  mime: string;
-  data: Uint8Array;
-}
-
 class Pkg {
   files: Record<string, Uint8Array>;
-  assetMode: AssetMode = 'blob';
-  /** defer 模式下按 asset:N 的 N 顺序收集 */
-  readonly deferred: DeferredAsset[] = [];
-  private deferredIndex = new Map<string, string>();
+  private readonly assetStore: PackageAssetStore;
   private xmlCache = new Map<string, Element | null>();
   private relsCache = new Map<string, Rels>();
-  private blobCache = new Map<string, string | null>();
-  /** 已创建的 blob URL，供 dispose 回收 */
-  private objectUrls: string[] = [];
   private sourceBytes: Uint8Array | null = null;
   private opcHandle: OpcPackage | undefined;
   private isDisposed = false;
 
   constructor(bytes: Uint8Array, keepPackage = false) {
     this.files = unzipSync(bytes);
+    this.assetStore = new PackageAssetStore(keepPackage);
     if (keepPackage) {
       // 50MB 演示若再复制一份原包，会把编辑模式的内存预算直接吃掉；
       // 按公开契约持有只读视图，File/Blob 路径本身已是解析器创建的独占缓冲。
@@ -69,11 +60,16 @@ class Pkg {
         format: 'pptx' as const,
         get bytes(): Uint8Array { return owner.sourceBytes ?? EMPTY_BYTES; },
         get parts(): Readonly<Record<string, Uint8Array>> { return owner.files; },
+        get assets(): Readonly<Record<string, { mime: string; bytes: Uint8Array }>> {
+          return owner.assetStore.published;
+        },
         get disposed(): boolean { return owner.isDisposed; },
       });
     }
   }
 
+  set assetMode(value: AssetMode) { this.assetStore.mode = value; }
+  get deferred(): DeferredAsset[] { return this.assetStore.deferred; }
   get opcPackage(): OpcPackage | undefined { return this.opcHandle; }
 
   xml(path: string): Element | null {
@@ -109,29 +105,9 @@ class Pkg {
     return this.relsCache.get(partPath)!;
   }
 
-  /** 把一段字节挂成可引用的地址：defer 下发令牌，否则建 blob URL */
-  private store(key: string, data: Uint8Array, mime: string): string {
-    if (this.assetMode === 'defer') {
-      let token = this.deferredIndex.get(key);
-      if (token === undefined) {
-        token = `asset:${this.deferred.length}`;
-        this.deferred.push({ mime, data });
-        this.deferredIndex.set(key, token);
-      }
-      return token;
-    }
-    let url = this.blobCache.get(key);
-    if (url === undefined) {
-      url = URL.createObjectURL(new Blob([data.slice().buffer], { type: mime }));
-      this.objectUrls.push(url);
-      this.blobCache.set(key, url);
-    }
-    return url!;
-  }
-
   blobUrl(path: string, mime: string): string | null {
     const data = this.files[path];
-    return data ? this.store(`${mime}|${path}`, data, mime) : null;
+    return data ? this.assetStore.store(`${mime}|${path}`, data, mime) : null;
   }
 
   /**
@@ -145,20 +121,12 @@ class Pkg {
     const raw = this.files[path];
     if (!raw) return null;
     const font = embeddedFontToSfnt(raw);
-    return font ? this.store(`font|${path}`, font.data, font.mime) : null;
+    return font ? this.assetStore.store(`font|${path}`, font.data, font.mime) : null;
   }
 
   /** 释放全部 blob URL，并清空缓存以便 zip 数据被回收 */
   dispose(): void {
-    for (const url of this.objectUrls) {
-      try {
-        URL.revokeObjectURL(url);
-      } catch {
-        /* 已释放 */
-      }
-    }
-    this.objectUrls = [];
-    this.blobCache.clear();
+    this.assetStore.dispose();
     this.xmlCache.clear();
     this.relsCache.clear();
     this.files = {};
@@ -170,11 +138,10 @@ class Pkg {
     const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
     if (METAFILE_EXT.has(ext)) {
       const key = `mf|${path}`;
-      if (!this.blobCache.has(key)) {
+      return this.assetStore.cached(key, () => {
         const data = this.files[path];
-        this.blobCache.set(key, data ? metafileDataUrl(data) : null);
-      }
-      return this.blobCache.get(key) ?? null;
+        return data ? metafileDataUrl(data) : null;
+      });
     }
     const mime = MIME[ext];
     return mime ? this.blobUrl(path, mime) : null;

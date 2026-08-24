@@ -349,12 +349,12 @@ class PreservingXmlParser {
   }
 }
 
-function serializeNode(node: XmlNode): string {
+export function serializeXmlNode(node: XmlNode): string {
   const state = nodeState(node);
   if (!state.dirty || node.type !== 'element') return state.raw;
   const element = elementStates.get(node)!;
   const close = element.sourceSelfClosing && node.children.length ? `</${node.name}>` : element.closeRaw;
-  return serializeElementOpen(node) + node.children.map(serializeNode).join('') + close;
+  return serializeElementOpen(node) + node.children.map(serializeXmlNode).join('') + close;
 }
 
 /** 解析为可定点修改的保留型树；不依赖 DOM，可在 Worker 中运行。 */
@@ -370,7 +370,7 @@ export function parseXmlTree(source: string | Uint8Array): XmlDocument {
 export function serializeXmlTree(document: XmlDocument): string {
   const state = nodeState(document);
   if (!state.dirty) return state.raw;
-  return document.children.map(serializeNode).join('');
+  return document.children.map(serializeXmlNode).join('');
 }
 
 /** 按输入 part 的 UTF-8 / UTF-16 字节序与 BOM 编码；未修改时连原始字节也不重建。 */
