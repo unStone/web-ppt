@@ -9,6 +9,7 @@ import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
 import { runRotationGestureContract } from './lib/rotation-gesture-contract.mjs';
+import { runSnapGestureContract } from './lib/snap-gesture-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -67,7 +68,12 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
   const container = document.createElement('div');
   let invalidMountRejected = false;
   try { session.mount(container, { zoom: 0 }); } catch { invalidMountRejected = true; }
-  check('挂载校验失败不会遗留 DOM 或污染会话内视图集合', invalidMountRejected
+  let invalidMarginsRejected = false;
+  try {
+    session.mount(container, { snapMargins: { left: -1, right: 0, top: 0, bottom: 0 } });
+  } catch { invalidMarginsRejected = true; }
+  check('挂载校验失败不会遗留 DOM 或污染会话内视图集合',
+    invalidMountRejected && invalidMarginsRejected
     && container.childElementCount === 0 && !session.disposed);
   const view = session.mount(container, { mode: 'view', zoom: 1.25 });
   const rootElement = container.querySelector('[data-web-ppt-editor]');
@@ -173,6 +179,7 @@ await runEditorSpaceContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });
 await runResizeGestureContract({ check, lib, root });
 await runRotationGestureContract({ check, lib, root });
+await runSnapGestureContract({ check, lib, root });
 
 console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
 {

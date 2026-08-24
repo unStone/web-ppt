@@ -14,7 +14,7 @@ export async function runMoveGestureContract({ check, lib, root }) {
   const bytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-60.pptx')));
   const session = await lib.openEditor(bytes, { idPrefix: 'editor-move-' });
   const container = document.createElement('div');
-  const view = session.mount(container, { mode: 'edit', textMode: 'svg', zoom: 2 });
+  const view = session.mount(container, { mode: 'edit', textMode: 'svg', zoom: 2, snapping: false });
   const [targetId, siblingId] = session.editor.doc.slides[view.slideId].children;
   const target = container.querySelector(`[data-edit-id="${targetId}"]`);
   const sibling = container.querySelector(`[data-edit-id="${siblingId}"]`);
@@ -62,7 +62,7 @@ export async function runMoveGestureContract({ check, lib, root }) {
 
   const multiSession = await lib.openEditor(bytes, { idPrefix: 'editor-multi-move-' });
   const multiContainer = document.createElement('div');
-  const multiView = multiSession.mount(multiContainer, { mode: 'edit', textMode: 'svg' });
+  const multiView = multiSession.mount(multiContainer, { mode: 'edit', textMode: 'svg', snapping: false });
   const [firstId, secondId] = multiSession.editor.doc.slides[multiView.slideId].children;
   const firstSource = multiSession.editor.effectiveElement(firstId);
   const secondSource = multiSession.editor.effectiveElement(secondId);
@@ -95,7 +95,7 @@ export async function runMoveGestureContract({ check, lib, root }) {
   const nestedBytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-space.pptx')));
   const nestedSession = await lib.openEditor(nestedBytes, { idPrefix: 'editor-nested-move-' });
   const nestedContainer = document.createElement('div');
-  const nestedView = nestedSession.mount(nestedContainer, { mode: 'edit', textMode: 'svg' });
+  const nestedView = nestedSession.mount(nestedContainer, { mode: 'edit', textMode: 'svg', snapping: false });
   const nestedRecord = Object.values(nestedSession.editor.doc.elements)
     .find((record) => record.src.name === 'space-nested-leaf');
   nestedSession.editor.select({
@@ -132,7 +132,7 @@ export async function runMoveGestureContract({ check, lib, root }) {
   const cancelBytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-edit-basic.pptx')));
   const cancelSession = await lib.openEditor(cancelBytes, { idPrefix: 'editor-cancel-move-' });
   const cancelContainer = document.createElement('div');
-  const cancelView = cancelSession.mount(cancelContainer, { mode: 'edit', textMode: 'svg' });
+  const cancelView = cancelSession.mount(cancelContainer, { mode: 'edit', textMode: 'svg', snapping: false });
   const cancelId = cancelSession.editor.doc.slides[cancelView.slideId].children[0];
   const cancelSiblingId = cancelSession.editor.doc.slides[cancelView.slideId].children[1];
   const cancelSource = cancelSession.editor.effectiveElement(cancelId);

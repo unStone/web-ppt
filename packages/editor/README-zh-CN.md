@@ -13,7 +13,10 @@ npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
 import { openEditor } from '@web-ppt/editor';
 
 const session = await openEditor(file);
-const view = session.mount(container, { mode: 'edit', zoom: 1, textMode: 'auto' });
+const view = session.mount(container, {
+  mode: 'edit', zoom: 1, textMode: 'auto', snapping: true,
+  snapMargins: { left: 24, right: 24, top: 24, bottom: 24 }, // 可选，单位为幻灯片 px
+});
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -23,6 +26,7 @@ view.setMode('view');       // 静态预览 DOM 不重建，只隐藏交互层
 view.setMode('edit');
 view.setSlide(slideId);
 view.setZoom(1.5);
+view.setSnapping(false);   // 无需重新挂载即可切换
 
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
@@ -68,6 +72,11 @@ const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y
 和 interaction overlay——手势期间不改模型、defs 或静态元素身份。`pointerup` 先拆幽灵，再提交一个
 `SetXfrm` 事务；`Escape`、指针取消/丢失、切页、切模式或销毁视图都会无历史恢复原 DOM。
 旋转/翻转嵌套组会分别换算到元素父坐标。
+
+移动会在屏幕 6px 阈值内吸附到画布中线/边缘和同组直接兄弟的边缘/中线，等距时显示成对双向箭头。
+可选 `snapMargins` 由宿主以幻灯片 px 显式给出四侧页边距，不猜文档语义。两轴独立按稳定优先级裁决，
+候选重叠时不会随元素遍历顺序抖动。手势中按住 `Ctrl` 临时关闭吸附；`snapping: false` 或
+`view.setSnapping(false)` 可关闭整份视图。参考线只存在于 interaction SVG，所有取消路径都会清理且不改模型。
 
 8 个缩放柄向外扩展 4 个屏幕像素的透明命中区；四角改双轴，四边只改单轴。`Shift` 保持宽高比，
 `Alt` 固定中心，手势过程中也可随时按下或释放修饰键。拖过对角锚点时，尺寸会规范成正数，活动手柄

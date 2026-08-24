@@ -144,6 +144,9 @@ export async function runResizeGestureContract({ check, lib, root }) {
     .dispatchEvent(pointer('pointerdown', 350, 270));
   view.element.dispatchEvent(pointer('pointermove', 390, 300));
   const freeCorner = rectCenter(container.querySelector('[data-edit-handle="se"]'));
+  const controlIgnored = view.element.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Control', ctrlKey: true, bubbles: true, cancelable: true,
+  }));
   view.element.dispatchEvent(new KeyboardEvent('keydown', {
     key: 'Shift', shiftKey: true, bubbles: true,
   }));
@@ -152,7 +155,7 @@ export async function runResizeGestureContract({ check, lib, root }) {
   const releasedCorner = rectCenter(container.querySelector('[data-edit-handle="se"]'));
   view.element.dispatchEvent(pointer('pointercancel', 390, 300));
   check('手势中按下或释放 Shift 会立即切换等比预览且不提前写模型',
-    near(freeCorner.x, 390) && near(freeCorner.y, 300)
+    controlIgnored && near(freeCorner.x, 390) && near(freeCorner.y, 300)
     && near(constrainedCorner.x, 402) && near(constrainedCorner.y, 300)
     && near(releasedCorner.x, 390) && near(releasedCorner.y, 300)
     && near(session.editor.effectiveElement(targetId).w, 260)

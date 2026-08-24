@@ -14,7 +14,10 @@ npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
 import { openEditor } from '@web-ppt/editor';
 
 const session = await openEditor(file);
-const view = session.mount(container, { mode: 'edit', zoom: 1, textMode: 'auto' });
+const view = session.mount(container, {
+  mode: 'edit', zoom: 1, textMode: 'auto', snapping: true,
+  snapMargins: { left: 24, right: 24, top: 24, bottom: 24 }, // optional slide px
+});
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -24,6 +27,7 @@ view.setMode('view');       // same static preview DOM; interaction layers are h
 view.setMode('edit');
 view.setSlide(slideId);
 view.setZoom(1.5);
+view.setSnapping(false);   // can be changed without remounting
 
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
@@ -74,6 +78,13 @@ interaction overlay—no model, defs, or static element identity changes during 
 ghosts before committing one `SetXfrm` transaction. `Escape`, pointer cancellation/loss, page or mode changes,
 and view destruction restore the original DOM without history. Nested rotated/flipped groups are converted into
 each element's parent coordinate space.
+
+Movement snaps within a six-screen-pixel threshold to the slide center/edges and direct siblings' edges/centers;
+equal gaps are shown as paired bidirectional spacing arrows. Optional `snapMargins` add four host-defined slide
+guides without guessing a document margin. Candidates are resolved independently per axis in stable priority
+order, so overlapping choices do not jitter with element traversal order. Hold `Ctrl` to disable snapping during
+the current gesture, or use `snapping: false` / `view.setSnapping(false)` for the whole view. Guides exist only in
+the interaction SVG and every cancellation path removes them without changing the model.
 
 The eight resize handles have a 4-screen-pixel outward hit margin. Corners resize both axes, edge handles resize
 one axis, `Shift` preserves aspect ratio, and `Alt` keeps the center fixed; modifiers can be pressed or released

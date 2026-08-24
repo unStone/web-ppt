@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -161,6 +162,10 @@ async function browserResult(webSocketDebuggerUrl) {
           rotationNestedError: report.dataset.rotationNestedError,
           rotationMultiError: report.dataset.rotationMultiError,
           rotationP95: report.dataset.rotationP95,
+          snapThresholdError: report.dataset.snapThresholdError,
+          snapGroupError: report.dataset.snapGroupError,
+          snapSpacingError: report.dataset.snapSpacingError,
+          snapP95: report.dataset.snapP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -170,7 +175,9 @@ async function browserResult(webSocketDebuggerUrl) {
           const { spaceView, perfSession } = globalThis.editorContract;
           spaceView.destroy();
           const mount = document.querySelector('#mount');
-          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const view = perfSession.mount(mount, {
+            mode: 'edit', textMode: 'svg', zoom: 0.75, snapping: false,
+          });
           const [id, siblingId] = perfSession.editor.doc.slides[view.slideId].children;
           perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
           const target = mount.querySelector('[data-edit-id="' + id + '"]');
@@ -228,7 +235,9 @@ async function browserResult(webSocketDebuggerUrl) {
         const resizeStart = await evaluate(`(() => {
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
-          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const view = perfSession.mount(mount, {
+            mode: 'edit', textMode: 'svg', zoom: 0.75, snapping: false,
+          });
           const [id, siblingId] = perfSession.editor.doc.slides[view.slideId].children;
           perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
           const handle = mount.querySelector('[data-edit-resize-handle="se"]');
@@ -289,7 +298,9 @@ async function browserResult(webSocketDebuggerUrl) {
         const rotationPoints = await evaluate(`(() => {
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
-          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const view = perfSession.mount(mount, {
+            mode: 'edit', textMode: 'svg', zoom: 0.75, snapping: false,
+          });
           const ids = perfSession.editor.doc.slides[view.slideId].children;
           const [id, siblingId] = [ids[10], ids[11]];
           perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
@@ -357,14 +368,19 @@ async function browserResult(webSocketDebuggerUrl) {
         if (!trustedRotation) {
           throw new Error(`真实 pointer capture 旋转失败：${JSON.stringify(rotationResult)}`);
         }
+
+        await runTrustedSnapContract({ evaluate, trustedMouseGesture });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
           report.dataset.trustedResize = 'pass';
           report.dataset.trustedRotation = 'pass';
-          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转与撤销通过';
+          report.dataset.trustedSnap = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附与撤销通过';
         })()`);
-        return { ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass' };
+        return {
+          ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
+        };
       }
       await delay(100);
     }
@@ -407,7 +423,9 @@ try {
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
     + ` · 旋转嵌套/多选偏差 ${result.rotationNestedError}/${result.rotationMultiError}px`
     + ` · 旋转60 p95 ${result.rotationP95}ms`
-    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}`
+    + ` · 吸附阈值/组内/等距偏差 ${result.snapThresholdError}/${result.snapGroupError}/${result.snapSpacingError}px`
+    + ` · 吸附60 p95 ${result.snapP95}ms`
+    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/${result.trustedSnap}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

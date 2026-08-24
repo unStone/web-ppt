@@ -24,6 +24,7 @@
     import { openEditor } from '/out/editor/editor.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
+    import { runEditorSnapBrowserContract } from '/tooling/lib/editor-snap-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -155,7 +156,7 @@
 
       hitView.destroy();
       const spaceSession = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-space-' });
-      const spaceView = spaceSession.mount(mount, { mode: 'edit', textMode: 'svg' });
+      const spaceView = spaceSession.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
       const spaceByName = (name) => Object.values(spaceSession.editor.doc.elements)
         .find((record) => record.src.name === name);
       const spaceRecords = [
@@ -298,7 +299,7 @@
       }
 
       const perfSession = await openEditor(await load('sample-editor-60.pptx'), { idPrefix: 'browser-perf-' });
-      const perfView = perfSession.mount(perfMount);
+      const perfView = perfSession.mount(perfMount, { snapping: false });
       const perfRoots = perfSession.editor.doc.slides[perfView.slideId].children;
       const perfTarget = perfRoots[0];
       const sourceX = perfSession.editor.doc.elements[perfTarget].src.x;
@@ -400,6 +401,10 @@
 
       const resizeResult = await runEditorResizeBrowserContract({ openEditor, load });
       const rotationResult = await runEditorRotationBrowserContract({ openEditor, load });
+      const snapResult = await runEditorSnapBrowserContract({ openEditor, load });
+      const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
+        idPrefix: 'browser-trusted-snap-',
+      });
 
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
@@ -416,6 +421,10 @@
       report.dataset.rotationNestedError = rotationResult.nestedError.toFixed(3);
       report.dataset.rotationMultiError = rotationResult.multiError.toFixed(3);
       report.dataset.rotationP95 = rotationResult.p95.toFixed(3);
+      report.dataset.snapThresholdError = snapResult.thresholdError.toFixed(3);
+      report.dataset.snapGroupError = snapResult.groupError.toFixed(3);
+      report.dataset.snapSpacingError = snapResult.spacingError.toFixed(3);
+      report.dataset.snapP95 = snapResult.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -429,7 +438,12 @@
         + `60 个 45° 元素近奇异缩放帧 p95 ${resizeResult.singularP95.toFixed(3)}ms`;
       report.textContent += `\n嵌套/多选旋转偏差 ${rotationResult.nestedError.toFixed(3)} / `
         + `${rotationResult.multiError.toFixed(3)}px，60 元素旋转帧 p95 ${rotationResult.p95.toFixed(3)}ms`;
-      globalThis.editorContract = { session, hitSession, spaceSession, spaceView, fontSession, perfSession };
+      report.textContent += `\n三档缩放吸附/组内/等距参考线偏差 ${snapResult.thresholdError.toFixed(3)} / `
+        + `${snapResult.groupError.toFixed(3)} / ${snapResult.spacingError.toFixed(3)}px，`
+        + `60 元素吸附帧 p95 ${snapResult.p95.toFixed(3)}ms`;
+      globalThis.editorContract = {
+        session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
+      };
     } catch (error) {
       report.style.color = '#b91c1c';
       report.dataset.status = 'fail';

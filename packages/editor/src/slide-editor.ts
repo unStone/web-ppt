@@ -10,6 +10,8 @@ import { ResizeGestureController } from './resize-gesture';
 import { isResizeHandle } from './resize-geometry';
 import type { ResizeHandle } from './resize-geometry';
 import { RotationGestureController } from './rotation-gesture';
+import { normalizeSnapMargins } from './snap';
+import type { SnapMargins } from './snap';
 import { renderSelectionOverlay } from './selection-overlay';
 import { sessionState } from './session-state';
 
@@ -21,6 +23,10 @@ export interface SlideEditorOptions {
   zoom?: number;
   /** 默认 auto；受 WebKit foreignObject 缩放缺陷影响时自动切到原生 SVG 文本。 */
   textMode?: 'auto' | 'html' | 'svg';
+  /** 默认开启；false 使本视图的移动手势保留原始指针位移。 */
+  snapping?: boolean;
+  /** 文档没有通用形状页边距；需要时由宿主在幻灯片 px 中显式给出。 */
+  snapMargins?: SnapMargins;
 }
 
 let viewSerial = 0;
@@ -43,10 +49,12 @@ export interface SlideEditor {
   readonly mode: EditorMode;
   readonly slideId: SlideId;
   readonly zoom: number;
+  readonly snapping: boolean;
   readonly destroyed: boolean;
   setMode(mode: EditorMode): void;
   setSlide(slideId: SlideId): void;
   setZoom(zoom: number): void;
+  setSnapping(enabled: boolean): void;
   destroy(): void;
 }
 
@@ -61,6 +69,8 @@ class DomSlideEditor implements SlideEditor {
   private currentMode: EditorMode;
   private currentZoom: number;
   private currentSlide: SlideId;
+  private currentSnapping: boolean;
+  private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
@@ -147,6 +157,7 @@ class DomSlideEditor implements SlideEditor {
   };
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit') return;
+    if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
     if (event.key !== 'Escape') return;
@@ -178,6 +189,7 @@ class DomSlideEditor implements SlideEditor {
     event.preventDefault();
   };
   private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (this.currentMode === 'edit' && this.moveGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.resizeGesture.modifier(event)) event.preventDefault();
   };
@@ -191,6 +203,11 @@ class DomSlideEditor implements SlideEditor {
     this.currentSlide = slideId;
     this.currentMode = options.mode ?? 'edit';
     this.currentZoom = options.zoom ?? 1;
+    if (options.snapping !== undefined && typeof options.snapping !== 'boolean') {
+      throw new Error('吸附开关必须是布尔值');
+    }
+    this.currentSnapping = options.snapping ?? true;
+    this.snapMargins = normalizeSnapMargins(options.snapMargins, session.editor.doc.meta);
     const requestedTextMode = options.textMode ?? 'auto';
     this.textMode = requestedTextMode === 'auto'
       ? foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg'
@@ -230,6 +247,8 @@ class DomSlideEditor implements SlideEditor {
       interactionLayer: this.interactionLayer,
       editor: session.editor,
       zoom: () => this.currentZoom,
+      snapping: () => this.currentSnapping,
+      margins: () => this.snapMargins,
     });
     this.resizeGesture = new ResizeGestureController({
       root: this.element,
@@ -283,6 +302,7 @@ class DomSlideEditor implements SlideEditor {
   get mode(): EditorMode { return this.currentMode; }
   get slideId(): SlideId { return this.currentSlide; }
   get zoom(): number { return this.currentZoom; }
+  get snapping(): boolean { return this.currentSnapping; }
   get destroyed(): boolean { return this.isDestroyed; }
 
   setMode(mode: EditorMode): void {
@@ -322,6 +342,13 @@ class DomSlideEditor implements SlideEditor {
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.renderSelection(this.session.editor.selection);
+  }
+
+  setSnapping(enabled: boolean): void {
+    if (typeof enabled !== 'boolean') throw new Error('吸附开关必须是布尔值');
+    if (enabled === this.currentSnapping) return;
+    this.moveGesture.cancel();
+    this.currentSnapping = enabled;
   }
 
   destroy(): void {

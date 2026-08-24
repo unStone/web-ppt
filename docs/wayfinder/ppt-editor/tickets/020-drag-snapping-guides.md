@@ -1,10 +1,10 @@
 ---
 title: 实现移动吸附与智能参考线
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
-assignee: null
+assignee: /root
 blocked_by:
   - ./019-rotation-handle-gesture.md
 ---
@@ -25,4 +25,18 @@ blocked_by:
 
 ## Resolution
 
-<!-- 完成时记录候选与裁决规则、动态 Ctrl/全局开关、交互层参考线以及 Chrome 精度/性能证据。 -->
+移动先在幻灯片空间求选区世界 AABB，再把原始位移交给无 DOM `snapMove`。每轴以屏幕 `6px / zoom`
+为阈值，对画布中线/边、宿主显式四侧页边距和同组直接兄弟的边/中线、等距候选做一次线性扫描；
+裁决固定为画布中线 > 边 > 中线 > 等距，再按偏移、位置、稳定键打破平局。等距只收完全位于移动框
+前后的邻居，重叠背景不会占位；多选按共同 AABB，组内结果由世界位移反解回各自父坐标。
+
+手势开始时一次性建立 interaction SVG 的固定参考线槽位，之后每帧只改属性与显隐；对齐线及横纵
+双向等距箭头不进入模型或静态 SVG。`Ctrl` 可在进行中关闭/恢复吸附，`snapping` 与
+`setSnapping()` 控制整份视图，九类中断路径都清理幽灵/参考线且零提交，松手只产生一个可撤销事务。
+
+验收证据：确定性 `sample-editor-snap.pptx` 覆盖四侧页边距、完整优先级、兄弟反序、重叠背景、横纵
+等距、多选与缩放组；72 项 editor 断言通过。真实 Chrome 在 0.5/1/2 zoom 的阈值、组内和等距线
+最大误差均为 `0.000px`；强制读取更新后几何、计入布局的 60 元素吸附帧 p95 为 `0.200ms`，可信
+pointer capture、提交与撤销通过。全仓 `npm run check`、`npm test`、五包构建均通过；29 份固件
+116 页的两条文本路径共 232 对编辑投影指纹完全一致，editor 发布入口为 `15.87KB gzip`。两路复审
+确认线性选优、固定节点复用与性能计时修正后无剩余问题。

@@ -115,7 +115,9 @@ export class ResizeGestureController {
 
   move(event: PointerEvent): void { this.lifecycle.move(event); }
   finish(event: PointerEvent): void { this.lifecycle.finish(event); }
-  modifier(event: KeyboardEvent): boolean { return this.lifecycle.modifier(event); }
+  modifier(event: KeyboardEvent): boolean {
+    return (event.key === 'Shift' || event.key === 'Alt') && this.lifecycle.modifier(event);
+  }
   cancel(): void { this.lifecycle.cancel(); }
   cancelPointer(event: PointerEvent): void { this.lifecycle.cancelPointer(event); }
 

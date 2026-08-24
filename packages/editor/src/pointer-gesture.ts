@@ -5,6 +5,7 @@ const GESTURE_THRESHOLD = 3;
 export interface PointerGestureSnapshot {
   screen: SpacePoint;
   altKey: boolean;
+  ctrlKey: boolean;
   shiftKey: boolean;
 }
 
@@ -45,7 +46,9 @@ export class PointerGestureLifecycle {
     const screen = { x: event.clientX, y: event.clientY };
     this.active = {
       pointerId: pointerId(event), startScreen: screen,
-      snapshot: { screen, altKey: event.altKey, shiftKey: event.shiftKey },
+      snapshot: {
+        screen, altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
+      },
       gesture, started: false, frame: null, cursor: this.root.style.cursor,
     };
     try {
@@ -102,9 +105,9 @@ export class PointerGestureLifecycle {
 
   modifier(event: KeyboardEvent): boolean {
     const active = this.active;
-    if (!active || (event.key !== 'Shift' && event.key !== 'Alt')) return false;
+    if (!active || !['Shift', 'Alt', 'Control'].includes(event.key)) return false;
     active.snapshot = {
-      ...active.snapshot, altKey: event.altKey, shiftKey: event.shiftKey,
+      ...active.snapshot, altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
     };
     if (active.started) this.scheduleFrame(active);
     return true;
@@ -121,7 +124,7 @@ export class PointerGestureLifecycle {
   private updateSnapshot(active: ActivePointerGesture, event: PointerEvent): void {
     active.snapshot = {
       screen: { x: event.clientX, y: event.clientY },
-      altKey: event.altKey, shiftKey: event.shiftKey,
+      altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
     };
   }
 
