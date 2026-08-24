@@ -90,6 +90,29 @@ export function caretPointAt(container: HTMLElement, offset: number): { node: No
   return { node: container, offset: container.childNodes.length };
 }
 
+/** engine 行盒会把同一 run 拆成多个标记；边界优先落到下一视觉行，run 末尾才落前一段。 */
+export function domPointAt(root: HTMLElement, position: TextPosition): { node: Node; offset: number } | null {
+  const markers = [...root.querySelectorAll<HTMLElement>(`[data-r="${position.p}.${position.r}"]`)];
+  if (!markers.length) return null;
+  const ranged = markers.filter((marker) => marker.hasAttribute('data-from')
+    && marker.hasAttribute('data-to'));
+  const marker = ranged.find((candidate) => {
+    const from = Number(candidate.dataset.from);
+    const to = Number(candidate.dataset.to);
+    return position.off >= from && position.off < to;
+  }) ?? [...ranged].reverse().find((candidate) => position.off === Number(candidate.dataset.to))
+    ?? markers[0];
+  const from = Number(marker.dataset.from ?? 0);
+  const localOffset = Math.max(0, position.off - from);
+  if (marker.localName === 'svg') {
+    const parent = marker.parentNode;
+    if (!parent) return null;
+    const index = [...parent.childNodes].indexOf(marker);
+    return { node: parent, offset: index + (localOffset ? 1 : 0) };
+  }
+  return caretPointAt(marker, localOffset);
+}
+
 function changedRange(before: string, after: string): { from: number; to: number; text: string } {
   let prefix = 0;
   while (prefix < before.length && prefix < after.length && before[prefix] === after[prefix]) prefix++;

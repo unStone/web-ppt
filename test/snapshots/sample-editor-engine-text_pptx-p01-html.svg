@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 45)">
+<path d="M 0 0 L 390 0 L 390 270 L 0 270 Z" fill="rgb(248,250,252)" fill-rule="nonzero"/>
+<foreignObject width="390" height="270" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:390px;height:270px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">中文，EnglishWords 日本語 mixed run wraps here </span>
+<span style="font-size:26.67px;color:rgb(0,0,0);font-weight:700;font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第二格式跨越视觉行</span>
+<span style="font-size:26.67px;color:rgb(0,0,0);text-decoration:underline;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<br/>
+</span>
+<span style="font-size:26.67px;color:rgb(0,0,0);font-style:italic;font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">硬换行后😀</span>
+<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">&#160;</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">&#160;</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;direction:rtl;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">مرحبا RTL 右到左</span>
+</div>
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:24px;text-indent:-24px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);">•&#160;</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">项目符号不是正文字符</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(480 45)">
+<path d="M 0 0 L 190 0 L 190 270 L 0 270 Z" fill="rgb(255,247,237)" fill-rule="nonzero"/>
+<foreignObject width="190" height="270" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:190px;height:270px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;writing-mode:vertical-rl;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:25.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">竖排中文与ABC跨行编辑</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(710 45)">
+<path d="M 0 0 L 510 0 L 510 270 L 0 270 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<foreignObject width="510" height="270" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:510px;height:270px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;column-count:2;column-gap:18px;display:block;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:justify;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>第一列和第二列必须由同一份 engine 行盒决定<span style="margin-right:-0.5em">。</span>多栏文字在浏览器自动分栏时容易与原生 SVG 的断点不同<span style="margin-right:-0.5em">，</span>编辑面不能再次猜测<span style="margin-right:-0.5em">。</span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 360)">
+<path d="M 0 0 L 520 0 L 520 150 L 0 150 Z" fill="rgb(245,243,255)" fill-rule="nonzero"/>
+<foreignObject width="520" height="150" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:520px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:25.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">公式前</span>
+<svg xmlns="http://www.w3.org/2000/svg" width="22.44" height="51.89" viewBox="0 -32.66 22.44 51.89" style="display:inline-block;vertical-align:-19.22px;overflow:visible">
+<text x="5.28" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="5.28" y="14.47" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">b</text>
+<rect x="2.11" y="-6.72" width="18.22" height="1.32" fill="rgb(0,0,0)"/>
+</svg>
+<span style="font-size:25.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">公式后</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(610 360)">
+<path d="M 0 0 L 610 0 L 610 150 L 0 150 Z" fill="rgb(236,253,245)" fill-rule="nonzero"/>
+<foreignObject width="610" height="150" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:610px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:28.47px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裸 normAutofit 没有 fontScale<span style="margin-right:-0.5em">，</span>engine 编辑面必须与原生 SVG 共用实时求出的有效比例<span style="margin-right:-0.5em">，</span>不能进入编辑后突然恢复标称字号<span style="margin-right:-0.5em">。</span>这里放入足够长的中文与 English words 触发缩小<span style="margin-right:-0.5em">。</span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

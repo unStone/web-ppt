@@ -7,7 +7,8 @@
 
 import type { TextBody, TextRun, TextVert } from '../types';
 import { isOpening, squeezeEm } from './cjk-punct';
-import { paraNeedsSqueeze, resolveTextScale } from './text-layout';
+import { layoutText, paraNeedsSqueeze, resolveTextScale } from './text-layout';
+import type { TextLayoutLine } from './text-layout-types';
 import { mathOf } from './text-measure';
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
@@ -41,6 +42,8 @@ export interface RenderTextBodyHtmlOptions {
    * 预览内部关闭它以保持既有 SVG 逐字节不变；编辑覆盖层应保留默认值。
    */
   includeEditMarkers?: boolean;
+  /** browser 交给 CSS 断行；engine 按 layoutText 行盒绝对定位，供原生 SVG/Safari 编辑面使用。 */
+  layout?: 'browser' | 'engine';
 }
 
 /** 字体名放在 CSS 单引号字符串里，必须同时挡住 CSS 与外层 HTML 属性边界。 */
@@ -164,6 +167,167 @@ function fittedText(t: TextBody, w: number, h: number): TextBody {
   return scale === t.fontScale ? t : { ...t, fontScale: scale };
 }
 
+interface EngineLineState {
+  line: TextLayoutLine;
+  pieces: string[];
+}
+
+function engineRunMarker(
+  paragraphIndex: number,
+  runIndex: number,
+  from: number,
+  to: number,
+): string {
+  return ` data-r="${paragraphIndex}.${runIndex}" data-from="${from}" data-to="${to}"`;
+}
+
+function positionedEngineRun(
+  run: TextRun,
+  text: string,
+  scale: number,
+  squeeze: boolean,
+  marker: string,
+  left: number,
+  lineHeight: number,
+  semanticOnly = false,
+): string {
+  const body = renderRun({ ...run, text }, scale, squeeze, marker);
+  const style = `position:absolute;left:${r(left)}px;top:0;height:${r(lineHeight)}px;`
+    + `line-height:${r(lineHeight)}px;white-space:pre;`
+    + (semanticOnly ? 'width:0;overflow:hidden;opacity:0;' : 'overflow:visible;');
+  return `<span data-engine-${semanticOnly ? 'semantic' : 'segment'}="true" style="${esc(style)}">${body}</span>`;
+}
+
+function renderEngineParagraph(
+  text: TextBody,
+  paragraphIndex: number,
+  lines: readonly TextLayoutLine[],
+  scale: number,
+): string {
+  const paragraph = text.paragraphs[paragraphIndex];
+  const states: EngineLineState[] = lines.map((line) => ({ line, pieces: [] }));
+  if (!states.length) return `<div data-p="${paragraphIndex}"></div>`;
+  const cursors = paragraph.runs.map(() => 0);
+  const emittedEmpty = paragraph.runs.map(() => false);
+  let currentRun = 0;
+  let lastState = states[0];
+
+  const emitSemantic = (
+    runIndex: number,
+    from: number,
+    to: number,
+    state: EngineLineState,
+    x: number,
+  ): void => {
+    const run = paragraph.runs[runIndex];
+    const empty = !run.text.length;
+    if (to <= from && (!empty || emittedEmpty[runIndex])) return;
+    emittedEmpty[runIndex] ||= empty;
+    state.pieces.push(positionedEngineRun(
+      run,
+      run.text.slice(from, to),
+      scale,
+      state.line.squeezed,
+      engineRunMarker(paragraphIndex, runIndex, from, to),
+      x - state.line.x,
+      state.line.height,
+      true,
+    ));
+  };
+
+  const finishRun = (runIndex: number, state: EngineLineState, x: number): void => {
+    const run = paragraph.runs[runIndex];
+    emitSemantic(runIndex, cursors[runIndex], run.text.length, state, x);
+    cursors[runIndex] = run.text.length;
+  };
+
+  for (const state of states) {
+    lastState = state;
+    for (const segment of state.line.segments) {
+      if (segment.bullet) {
+        const first = paragraph.runs[0];
+        if (first) {
+          const bullet: TextRun = {
+            ...first,
+            text: segment.text,
+            size: first.size * (paragraph.bulletSize ?? 1),
+            color: paragraph.bulletColor ?? first.color,
+            u: false,
+            strike: false,
+          };
+          state.pieces.push(positionedEngineRun(
+            bullet, segment.text, scale, state.line.squeezed,
+            ' data-bullet="true" contenteditable="false"',
+            segment.x - state.line.x, state.line.height,
+          ));
+        }
+        continue;
+      }
+      while (currentRun < segment.runIndex) {
+        finishRun(currentRun, state, segment.x);
+        currentRun++;
+      }
+      const run = paragraph.runs[segment.runIndex];
+      if (!run) continue;
+      emitSemantic(segment.runIndex, cursors[segment.runIndex], segment.from, state, segment.x);
+      const atomic = !!run.math?.length;
+      const from = atomic ? 0 : segment.from;
+      const to = atomic ? 1 : segment.to;
+      state.pieces.push(positionedEngineRun(
+        run,
+        atomic ? run.text : run.text.slice(segment.from, segment.to),
+        scale,
+        state.line.squeezed,
+        engineRunMarker(paragraphIndex, segment.runIndex, from, to),
+        segment.x - state.line.x,
+        state.line.height,
+      ));
+      cursors[segment.runIndex] = segment.to;
+      currentRun = segment.runIndex;
+    }
+  }
+
+  const trailingX = lastState.line.x + lastState.line.width;
+  while (currentRun < paragraph.runs.length) {
+    finishRun(currentRun, lastState, trailingX);
+    currentRun++;
+  }
+
+  const lineMarkup = states.map(({ line, pieces }) => {
+    const style = `position:absolute;left:${r(line.x)}px;top:${r(line.y)}px;`
+      + `width:${r(Math.max(1, line.width))}px;height:${r(line.height)}px;`
+      + `line-height:${r(line.height)}px;white-space:pre;overflow:visible;`
+      + (line.rtl ? 'direction:rtl;unicode-bidi:plaintext;' : '');
+    return `<span data-engine-line="${paragraphIndex}.${line.lineIndex}" data-x="${r(line.x)}" `
+      + `data-y="${r(line.y)}" style="${esc(style)}">${pieces.join('')}</span>`;
+  }).join('');
+  return `<div data-p="${paragraphIndex}" style="position:absolute;inset:0">${lineMarkup}</div>`;
+}
+
+function renderEngineTextBodyToHtml(
+  source: TextBody,
+  w: number,
+  h: number,
+  opts: RenderTextBodyHtmlOptions,
+): string {
+  const layout = layoutText(source, w, h, {
+    insets: opts.insets,
+    anchor: opts.anchor,
+    vert: opts.vert,
+  });
+  const linesByParagraph = source.paragraphs.map((_, paragraphIndex) =>
+    layout.lines.filter((line) => line.paragraphIndex === paragraphIndex));
+  const paragraphs = source.paragraphs.map((_, paragraphIndex) =>
+    renderEngineParagraph(source, paragraphIndex, linesByParagraph[paragraphIndex], layout.scale)).join('');
+  const [a, b, c, d, e, f] = layout.transform;
+  const style = `position:relative;width:${r(layout.layoutWidth)}px;height:${r(layout.layoutHeight)}px;`
+    + 'box-sizing:border-box;white-space:pre;overflow:visible;transform-origin:0 0;'
+    + `transform:matrix(${r(a)},${r(b)},${r(c)},${r(d)},${r(e)},${r(f)});`;
+  return `<div data-layout="engine" data-font-scale="${r(layout.scale)}" `
+    + `data-autofit="${layout.autoFit}" xmlns="http://www.w3.org/1999/xhtml" `
+    + `style="${esc(style)}">${paragraphs}</div>`;
+}
+
 /**
  * 生成可直接作为 HTML 覆盖层内容的 XHTML 根 `<div>`；不包含 foreignObject，
  * 也不设置 contenteditable。调用方拥有焦点、IME 与生命周期，core 只负责确定性排版。
@@ -175,6 +339,7 @@ export function renderTextBodyToHtml(
   h: number,
   opts: RenderTextBodyHtmlOptions = {},
 ): string {
+  if (opts.layout === 'engine') return renderEngineTextBodyToHtml(source, w, h, opts);
   const t = fittedText(source, w, h);
   const [pt, pr, pb, pl] = opts.insets ?? t.insets;
   const scale = t.fontScale;

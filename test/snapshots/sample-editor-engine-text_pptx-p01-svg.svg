@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 45)">
+<path d="M 0 0 L 390 0 L 390 270 L 0 270 Z" fill="rgb(248,250,252)" fill-rule="nonzero"/>
+<text x="9.6" y="29.76" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">中文，EnglishWords 日本語 </tspan>
+</text>
+<text x="9.6" y="61.76" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">mixed run wraps here </tspan>
+<tspan font-size="26.67" font-family="'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">第二</tspan>
+</text>
+<text x="9.6" y="93.76" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">格式跨越视觉行</tspan>
+</text>
+<text x="9.6" y="125.76" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic">硬换行后😀</tspan>
+</text>
+<text x="380.4" y="184.06" text-anchor="start" direction="rtl" unicode-bidi="embed" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">مرحبا RTL 右到左</tspan>
+</text>
+<text x="9.6" y="212.86" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">• </tspan>
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">项目符号不是正文字符</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(480 45)">
+<path d="M 0 0 L 190 0 L 190 270 L 0 270 Z" fill="rgb(255,247,237)" fill-rule="nonzero"/>
+<g transform="translate(190 0) rotate(90)">
+<text x="135" y="88.31" text-anchor="middle" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">竖排中文与ABC跨行编</tspan>
+</text>
+<text x="135" y="118.71" text-anchor="middle" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">辑</tspan>
+</text>
+</g>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(710 45)">
+<path d="M 0 0 L 510 0 L 510 270 L 0 270 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第一列和第二列必须由同</tspan>
+</text>
+<text x="9.6" y="50.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">一份 engine 行盒决定。</tspan>
+</text>
+<text x="9.6" y="75.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">多栏文字在浏览器自动分</tspan>
+</text>
+<text x="9.6" y="101.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">栏时容易与原生 SVG 的</tspan>
+</text>
+<text x="9.6" y="127.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">断点不同，编辑面不能再</tspan>
+</text>
+<text x="9.6" y="152.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">次猜测。第一列和第二列</tspan>
+</text>
+<text x="9.6" y="178.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">必须由同一份 engine </tspan>
+</text>
+<text x="9.6" y="203.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">行盒决定。多栏文字在浏</tspan>
+</text>
+<text x="9.6" y="229.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">览器自动分栏时容易与原</tspan>
+</text>
+<text x="9.6" y="255.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">生 SVG 的断点不同，编</tspan>
+</text>
+<text x="264" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">辑面不能再次猜测。第一</tspan>
+</text>
+<text x="264" y="50.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">列和第二列必须由同一份</tspan>
+</text>
+<text x="264" y="75.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">engine 行盒决定。多栏</tspan>
+</text>
+<text x="264" y="101.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文字在浏览器自动分栏时</tspan>
+</text>
+<text x="264" y="127.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">容易与原生 SVG 的断点</tspan>
+</text>
+<text x="264" y="152.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">不同，编辑面不能再次猜</tspan>
+</text>
+<text x="264" y="178.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">测。第一列和第二列必须</tspan>
+</text>
+<text x="264" y="203.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">由同一份 engine 行盒</tspan>
+</text>
+<text x="264" y="229.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">决定。多栏文字在浏览器</tspan>
+</text>
+<text x="264" y="255.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动分栏时容易与原生 </tspan>
+</text>
+<text x="264" y="280.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 -10.67 0 0">SVG 的断点不同，编辑面</tspan>
+</text>
+<text x="264" y="306.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">不能再次猜测。第一列和</tspan>
+</text>
+<text x="264" y="331.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二列必须由同一份 </tspan>
+</text>
+<text x="264" y="357.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">engine 行盒决定。多栏</tspan>
+</text>
+<text x="264" y="383.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文字在浏览器自动分栏时</tspan>
+</text>
+<text x="264" y="408.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">容易与原生 SVG 的断点</tspan>
+</text>
+<text x="264" y="434.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">不同，编辑面不能再次猜</tspan>
+</text>
+<text x="264" y="459.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">测。第一列和第二列必须</tspan>
+</text>
+<text x="264" y="485.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">由同一份 engine 行盒</tspan>
+</text>
+<text x="264" y="511.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">决定。多栏文字在浏览器</tspan>
+</text>
+<text x="264" y="536.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动分栏时容易与原生 </tspan>
+</text>
+<text x="264" y="562.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 0 0 0 0 0 0 -10.67 0 0">SVG 的断点不同，编辑面</tspan>
+</text>
+<text x="264" y="587.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">不能再次猜测。第一列和</tspan>
+</text>
+<text x="264" y="613.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二列必须由同一份 </tspan>
+</text>
+<text x="264" y="639.17" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">engine 行盒决定。多栏</tspan>
+</text>
+<text x="264" y="664.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">文字在浏览器自动分栏时</tspan>
+</text>
+<text x="264" y="690.37" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">容易与原生 SVG 的断点</tspan>
+</text>
+<text x="264" y="715.97" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">不同，编辑面不能再次猜</tspan>
+</text>
+<text x="264" y="741.57" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">测。</tspan>
+</text>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(50 360)">
+<path d="M 0 0 L 520 0 L 520 150 L 0 150 Z" fill="rgb(245,243,255)" fill-rule="nonzero"/>
+<text x="172.78" y="89.53" text-anchor="start" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">公式前</tspan>
+</text>
+<g transform="translate(248.78 89.53)">
+<text x="5.28" y="-15.79" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">a</text>
+<text x="5.28" y="14.47" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:21.6px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">b</text>
+<rect x="2.11" y="-6.72" width="18.22" height="1.32" fill="rgb(0,0,0)"/>
+</g>
+<text x="271.22" y="89.53" text-anchor="start" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">公式后</tspan>
+</text>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(610 360)">
+<path d="M 0 0 L 610 0 L 610 150 L 0 150 Z" fill="rgb(236,253,245)" fill-rule="nonzero"/>
+<text x="9.6" y="31.45" text-anchor="start" xml:space="preserve">
+<tspan font-size="28.47" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">裸 normAutofit 没有 fontScale，engine </tspan>
+</text>
+<text x="9.6" y="65.61" text-anchor="start" xml:space="preserve">
+<tspan font-size="28.47" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">编辑面必须与原生 SVG 共用实时求出的有效比</tspan>
+</text>
+<text x="9.6" y="99.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="28.47" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 -14.23 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -14.23 0 0">例，不能进入编辑后突然恢复标称字号。这里放</tspan>
+</text>
+<text x="9.6" y="133.93" text-anchor="start" xml:space="preserve">
+<tspan font-size="28.47" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">入足够长的中文与 English words 触发缩小。</tspan>
+</text>
+</g>
+</g>
+</svg>

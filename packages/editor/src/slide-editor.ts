@@ -307,6 +307,7 @@ class DomSlideEditor implements SlideEditor {
       boundary: this.element,
       staticLayer: this.staticLayer,
       textLayer: this.textLayer,
+      textLayout: this.textMode === 'svg' ? 'engine' : 'browser',
       slideId: () => this.currentSlide,
       claim: () => claimTextEditing(this.session, this),
       release: () => releaseTextEditing(this.session, this),

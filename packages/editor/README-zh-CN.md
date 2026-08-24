@@ -161,14 +161,15 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 精确写回 OOXML 的 1/60000 度，全部取消路径都不提交。
 
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
-`foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走
-同一文本模式，不会在提交后跳版。
+`foreignObject` 时自动切到原生 SVG 文本，并让 SVG 外的 `contenteditable` 直接消费 core 的 engine
+绝对行盒；也可显式指定 `html` 或 `svg`。软换行不会进入模型，硬换行、空段、RTL、竖排、分栏和公式
+仍可按源 UTF-16 位置编辑。整页、元素增量更新和活动编辑面始终走同一模式，不会在提交后跳版。
 
 同一会话可以同时挂载主画布和缩略图。销毁单个视图不会误释放共享资源；销毁会话会清理全部剩余视图，
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 27.33KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 27.46KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

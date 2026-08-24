@@ -189,15 +189,17 @@ ghost wrappers; pointer-up writes OOXML's 1/60000-degree value in one transactio
 commits nothing.
 
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
-engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also
-available. Full-slide renders and incremental element patches always use the same text mode.
+engines to native SVG text when they fail to scale `foreignObject`. The out-of-SVG `contenteditable` then consumes
+the same absolute engine line boxes from core. Explicit `html` and `svg` modes are also available. Soft wraps stay
+out of the model while hard breaks, empty paragraphs, RTL, vertical text, columns, and math remain editable at
+source UTF-16 positions. Full-slide renders, incremental patches, and the active editor use one text mode.
 
 One session can mount several views (for example, the main canvas and a thumbnail). Destroying a view never
 releases shared resources; disposing the session destroys every remaining view and is idempotent. React, Vue,
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 27.33 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 27.46 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

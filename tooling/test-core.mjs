@@ -17,6 +17,7 @@ import { installDomEnv, parseXml } from './lib/dom-env.mjs';
 import { makeTtf } from './lib/font.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
+import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/core');
@@ -275,6 +276,7 @@ const FIXTURES = [
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-embedfont.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-editor-engine-text.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -642,6 +644,7 @@ group('HTML 文本渲染');
 
 group('文本行盒');
 runTextLayoutContract({ lib, parsed, allElements, check, eq, near });
+runEngineTextHtmlContract({ lib, parsed, check, eq, near });
 
 // ---------------- 4. 文本样式继承 ----------------
 

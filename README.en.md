@@ -129,7 +129,7 @@ const part = renderElementToSvg(effectiveElement(doc, elementId), {
 });
 // Replace this element's markup and defs DOM partitions together.
 
-// Keep text editing outside SVG while sharing the exact HTML/CSS used by the foreignObject preview.
+// Normal engines keep text editing outside SVG while sharing foreignObject's exact HTML/CSS.
 const element = effectiveElement(doc, elementId);
 if (element.kind === 'shape' && element.text) {
   const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
@@ -138,7 +138,10 @@ if (element.kind === 'shape' && element.text) {
   editor.contentEditable = 'true';
   editor.spellcheck = false;
 
-  // Switch hit testing to engine mode when the runtime probe finds Safari's foreignObject scaling bug.
+  // The Safari-safe path serializes the same absolute line boxes used by native SVG.
+  textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h, {
+    layout: 'engine',
+  });
   const engineLayout = layoutText(element.text, element.w, element.h);
   // engineLayout.lines[*].segments[*].carets use UTF-16 offsets into TextRun.text.
 }
@@ -150,6 +153,9 @@ disposeDoc(doc);                                     // also releases the retain
 autofit scale by default. Those markers support DOM decoding and selection restoration after IME composition.
 The function is DOM-free and leaves focus ownership to the caller. It escapes text, attributes, and CSS
 boundaries; unsafe schemes such as `javascript:` and `file:` are retained only as non-clickable data.
+`{ layout: 'engine' }` serializes `layoutText()` soft wraps as absolutely positioned segments with source UTF-16
+half-open ranges. Invisible semantic anchors retain hard breaks, empty runs/paragraphs, and atomic math, while
+`white-space: pre` prevents a second browser line-breaking pass.
 
 `layoutText` shares line breaking, CJK punctuation squeezing, columns, spacing, and autofit with native SVG
 `<text>` output. It returns paragraph/run identities, line boxes, and UTF-16 caret stops. Vertical text maps
@@ -305,9 +311,9 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 293 edit-core assertions + 19 M1 save assertions + 260 process-isolated SVG fingerprint pairs across 36 fixtures |
-| `npm run test:editor` | 136 session/incremental DOM/selection/keyboard/layer/delete/gesture/resource assertions + real-Chrome hit-testing, trusted keyboard, matrix, pointer-capture, and performance gates |
+| `npm run test:core` | Core parsing / rendering — 2,037 assertions + 164 render snapshots |
+| `npm run test:edit` | 403 edit-core assertions + 36 M1 save assertions + 270 process-isolated SVG fingerprint pairs across 40 fixtures |
+| `npm run test:editor` | 195 session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
@@ -337,7 +343,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site — the website, with the in-browser live demo
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          162 render snapshot baselines
+└── test/snapshots/          164 render snapshot baselines
 ```
 
 `packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
@@ -354,7 +360,7 @@ Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM an
 |---|---|
 | **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
 | **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 17 test files × every slide × both text paths = 162 normalized SVG baselines, compared byte for byte |
+| **Render snapshots** | 18 test files × every slide × both text paths = 164 normalized SVG baselines, compared byte for byte |
 | **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
 | **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
 | **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |

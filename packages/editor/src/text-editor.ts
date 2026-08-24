@@ -11,7 +11,7 @@ import type {
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import {
-  caretPointAt, compositionChangedRange, rangePositions, readEditableDom, rebaseRange,
+  compositionChangedRange, domPointAt, rangePositions, readEditableDom, rebaseRange,
 } from './text-dom';
 import { TextClipboardController } from './text-clipboard-controller';
 import type { ActiveText, CompositionSnapshot, TextEditorControllerOptions } from './text-editor-types';
@@ -226,7 +226,10 @@ export class TextEditorController {
     root.style.transform = `matrix(${matrix.a},${matrix.b},${matrix.c},${matrix.d},${matrix.e},${matrix.f})`;
     root.style.pointerEvents = 'auto';
     root.style.outline = 'none';
-    root.innerHTML = renderTextBodyToHtml(text, element.w, element.h, { includeEditMarkers: true });
+    root.innerHTML = renderTextBodyToHtml(text, element.w, element.h, {
+      includeEditMarkers: true,
+      layout: this.options.textLayout,
+    });
     for (const formula of root.querySelectorAll<HTMLElement>('svg[data-r]')) {
       formula.contentEditable = 'false';
     }
@@ -454,23 +457,10 @@ export class TextEditorController {
     return true;
   }
 
-  private domPoint(position: TextPosition): { node: Node; offset: number } | null {
-    if (!this.root) return null;
-    const marker = this.root.querySelector<HTMLElement>(`[data-r="${position.p}.${position.r}"]`);
-    if (!marker) return null;
-    if (marker.localName === 'svg') {
-      const parent = marker.parentNode;
-      if (!parent) return null;
-      const index = [...parent.childNodes].indexOf(marker);
-      return { node: parent, offset: index + (position.off ? 1 : 0) };
-    }
-    return caretPointAt(marker, position.off);
-  }
-
   private setSelection(anchor: TextPosition, focus: TextPosition): void {
     if (!this.root) return;
-    const start = this.domPoint(anchor);
-    const end = this.domPoint(focus);
+    const start = domPointAt(this.root, anchor);
+    const end = domPointAt(this.root, focus);
     const selection = this.root.ownerDocument.defaultView?.getSelection();
     if (!start || !end || !selection) return;
     const range = this.root.ownerDocument.createRange();

@@ -37,6 +37,10 @@
     import { runEditorTextBrowserContract } from '/tooling/lib/editor-text-browser-contract.mjs';
     import { runEditorParagraphBrowserContract } from '/tooling/lib/editor-paragraph-browser-contract.mjs';
     import { runEditorRichTextClipboardBrowserContract } from '/tooling/lib/editor-rich-text-clipboard-browser-contract.mjs';
+    import {
+      runEditorEngineAutoProbeBrowserContract,
+      runEditorEngineTextBrowserContract,
+    } from '/tooling/lib/editor-engine-text-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -49,6 +53,7 @@
       return response.arrayBuffer();
     };
     try {
+      await runEditorEngineAutoProbeBrowserContract();
       const session = await openEditor(await load('sample-edit-basic.pptx'), { idPrefix: 'browser-contract-' });
       const view = session.mount(mount, { mode: 'edit', zoom: 0.75 });
       const staticLayer = mount.querySelector('[data-ppt-layer="static"]');
@@ -426,6 +431,7 @@
       const textResult = await runEditorTextBrowserContract({ openEditor, load });
       const paragraphP95 = await runEditorParagraphBrowserContract({ openEditor, load });
       const richTextResult = await runEditorRichTextClipboardBrowserContract({ openEditor, load });
+      const engineTextResult = await runEditorEngineTextBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -478,6 +484,9 @@
       report.dataset.textP95 = textResult.p95.toFixed(3);
       report.dataset.paragraphP95 = paragraphP95.toFixed(3);
       report.dataset.richTextPasteP95 = richTextResult.p95.toFixed(3);
+      report.dataset.engineTextP95 = engineTextResult.p95.toFixed(3);
+      report.dataset.engineLineError = engineTextResult.positionError.toFixed(3);
+      report.dataset.engineAutoProbe = 'pass';
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -509,13 +518,16 @@
       report.textContent += `\n文字按键到上屏 p95 ${textResult.p95.toFixed(3)}ms`;
       report.textContent += `\n段落格式完整上屏 p95 ${paragraphP95.toFixed(3)}ms`;
       report.textContent += `\n2,000 字符富文本粘贴完整上屏 p95 ${richTextResult.p95.toFixed(3)}ms`;
+      report.textContent += `\nengine 2,000 字符完整上屏 p95 ${engineTextResult.p95.toFixed(3)}ms，`
+        + `行盒偏差 ${engineTextResult.positionError.toFixed(3)}px`;
+      report.textContent += '\nauto 能力探测降级同时驱动原生预览与 engine 编辑面';
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;
       globalThis.editorContract = {
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,
         trustedLayerSession,
-        textResult, richTextResult,
+        textResult, richTextResult, engineTextResult,
       };
     } catch (error) {
       report.style.color = '#b91c1c';

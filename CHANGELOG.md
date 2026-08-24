@@ -18,6 +18,12 @@
 - 新增纯函数 `layoutText(text, width, height, options)`。它与原生 `<text>` 输出共用断行、
   CJK 挤压、分栏、行距及 autofit，并公开段落/run 身份、UTF-16 字符区间与光标停靠点，
   供 Safari engine 模式命中选区；竖排返回仿射变换，公式保持原子，测量器可注入。
+- `renderTextBodyToHtml` 新增 `{ layout: 'engine' }`：直接把 `layoutText()` 的视觉行与源 UTF-16
+  半开区间序列化为绝对定位、禁止二次断行的可编辑 HTML。`@web-ppt/editor` 的 `textMode: 'svg'`
+  以及 `auto` Safari 降级现在让静态 SVG 与 `contenteditable` 共用这组行盒；硬换行、空 run/段、
+  项目符号、RTL、竖排、分栏、公式和裸 autofit 在进入、输入、提交与退出时保持同一布局。真实
+  Chrome 的 2,000 字符完整上屏多轮 p95 为 8.3–17.8ms、行盒最大偏差 0.009px；editor 入口为
+  27.46KB gzip。
 - `parse` 新增完全可选的 `edit` / `keepPackage`：前者保留页与元素的 OOXML 回写锚点、
   占位符身份，后者通过 `Presentation.package` 保留原始 ZIP 与解压 part。默认解析的
   对象形状和资源生命周期不变；`dispose()` 会同时释放保留的原包。

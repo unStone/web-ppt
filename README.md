@@ -147,7 +147,7 @@ const part = renderElementToSvg(effectiveElement(doc, elementId), {
 });
 // part.markup 与 part.defs 应作为该元素自己的两个 DOM 分区一起替换。
 
-// 文本编辑层放在 SVG 外；它和 foreignObject 预览复用完全相同的 HTML/CSS。
+// 文本编辑层放在 SVG 外；正常浏览器与 foreignObject 预览复用完全相同的 HTML/CSS。
 const element = effectiveElement(doc, elementId);
 if (element.kind === 'shape' && element.text) {
   const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
@@ -156,7 +156,10 @@ if (element.kind === 'shape' && element.text) {
   editor.contentEditable = 'true';
   editor.spellcheck = false;
 
-  // 运行时探测到 Safari foreignObject 缩放缺陷时，改用 engine 模式命中光标。
+  // Safari 安全路径不再让浏览器断行，而是直接序列化原生 SVG 共用的绝对行盒。
+  textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h, {
+    layout: 'engine',
+  });
   const engineLayout = layoutText(element.text, element.w, element.h);
   // engineLayout.lines[*].segments[*].carets 是 TextRun.text 的 UTF-16 偏移。
 }
@@ -167,6 +170,8 @@ disposeDoc(doc);                                     // 同时释放被接管的
 `renderTextBodyToHtml` 默认输出 `data-p` / `data-r`、空 run、项目符号和有效 autofit 比例标记，
 供 IME 结束后的 DOM 反解与选区还原；它不访问 DOM，也不会替调用方管理焦点。
 文本、属性和 CSS 边界会转义，`javascript:` / `file:` 等危险链接只保留为不可点击数据。
+`{ layout: 'engine' }` 会把 `layoutText()` 的软换行拆成带源 UTF-16 半开区间的绝对定位分段，
+同时以不可见锚点保留硬换行、空 run/段和公式原子；`white-space: pre` 确保浏览器不会二次断行。
 
 `layoutText` 与原生 SVG `<text>` 共用断行、CJK 标点挤压、分栏、行距与 autofit 算法。
 它返回段落/run 身份、行盒和 UTF-16 光标停靠点；竖排坐标通过返回的 `transform` 映射到元素局部坐标，
@@ -322,9 +327,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 文字与元素编辑 403 项断言 + M1 32 项独立验收 + 39 份固件、268 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 182 项会话 / 三层 DOM / 选择变换 / 文字与富文本剪贴板断言 + 真实 Chrome 可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:core` | 核心解析 / 渲染，2037 项断言 + 164 个渲染快照 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 文字与元素编辑 403 项断言 + M1 36 项独立验收 + 40 份固件、270 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 195 项会话 / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -361,7 +366,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          162 个渲染快照基线
+└── test/snapshots/          164 个渲染快照基线
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -380,7 +385,7 @@ web-ppt/                     npm workspaces monorepo
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 17 个测试文件 × 全部页 × 两条文本路径 = 162 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 18 个测试文件 × 全部页 × 两条文本路径 = 164 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |

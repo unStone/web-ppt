@@ -6,6 +6,7 @@ export interface TextEditorControllerOptions {
   boundary: HTMLElement;
   staticLayer: HTMLElement;
   textLayer: HTMLElement;
+  textLayout: 'browser' | 'engine';
   slideId: () => string;
   claim: () => void;
   release: () => void;
