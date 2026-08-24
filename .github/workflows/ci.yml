@@ -48,6 +48,7 @@ jobs:
           npm run test:edit:libreoffice -- out/edit-save/engine-text-editing.pptx
           npm run test:edit:libreoffice -- out/edit-save/table-cell-text-editing.pptx
           npm run test:edit:libreoffice -- out/edit-save/shape-autofit-text-editing.pptx
+          npm run test:edit:libreoffice -- out/edit-save/body-props-editing.pptx
 
       - name: 编辑性能预算
         run: npm run bench:edit

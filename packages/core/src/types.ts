@@ -355,7 +355,7 @@ export interface UnsupportedElement extends ElementBase {
 
 export type TextVert = 'horz' | 'vert' | 'vert270' | 'wordArtVert';
 
-export interface TextBody {
+export interface TextBodyLayoutProperties {
   anchor: 'top' | 'middle' | 'bottom';
   /** [上, 右, 下, 左] */
   insets: [number, number, number, number];
@@ -367,7 +367,8 @@ export interface TextBody {
    * PowerPoint 只在自己排过版后才写回该属性，实测真实文件里缺失的占多数。
    */
   autoFitCompute?: boolean;
-  paragraphs: Paragraph[];
+  /** bodyPr 含 normAutofit；显式 fontScale 时不需要动态求解，但仍属于 normal 模式。 */
+  autoFitNormal?: boolean;
   /** normAutofit 行距压缩，0-1 */
   lnSpcReduction?: number;
   /** 竖排 */
@@ -379,8 +380,34 @@ export interface TextBody {
   /** 分栏 */
   columns?: number;
   columnGap?: number;
+}
+
+export type TextBodyEditableProperty =
+  | 'anchor' | 'insets' | 'wrap' | 'vert' | 'anchorCtr' | 'columns' | 'columnGap' | 'autoFit';
+
+export const TEXT_BODY_PROPERTY_BITS: Readonly<Record<TextBodyEditableProperty, number>> = {
+  anchor: 1 << 0,
+  insets: 1 << 1,
+  wrap: 1 << 2,
+  vert: 1 << 3,
+  anchorCtr: 1 << 4,
+  columns: 1 << 5,
+  columnGap: 1 << 6,
+  autoFit: 1 << 7,
+};
+
+export interface TextBodyEditInfo {
+  /** 去掉当前形状 bodyPr 后，由版式、母版和 OOXML 默认值求出的结果。 */
+  inherited?: TextBodyLayoutProperties;
+  /** 当前形状 bodyPr 真正直设的字段位；紧凑表示避免空文字框批量历史膨胀。 */
+  direct: number;
+}
+
+export interface TextBody extends TextBodyLayoutProperties {
+  paragraphs: Paragraph[];
   /** 艺术字变形（bodyPr/prstTxWarp）；adj 为 avLst 里的 gd 名 → 数值 */
   warp?: TextWarp;
+  editInfo?: TextBodyEditInfo;
 }
 
 /** OOXML 的百分比行距以字体单倍行高而非字号为基准。 */

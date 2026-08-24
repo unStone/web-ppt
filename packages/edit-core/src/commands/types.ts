@@ -2,7 +2,7 @@ import type { GeomSpec, SlideElement } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
-  TableCellAddress,
+  TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
 import type { AffineMatrix } from '../space';
 
@@ -176,9 +176,15 @@ export interface FitTextShapeCommand {
   readonly id: ElementId;
 }
 
+export interface SetBodyPropsCommand {
+  readonly type: 'SetBodyProps';
+  readonly id: ElementId;
+  readonly props: TextBodyPropertyOverrides;
+}
+
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
-  | FitTextShapeCommand;
+  | FitTextShapeCommand | SetBodyPropsCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -285,6 +291,8 @@ export interface EditorChange extends ProjectionInvalidation {
   readonly touchedElements: Set<ElementId>;
   /** 需要重新生成 markup/defs 的元素；纯层级 patch 不进入这里。 */
   readonly renderElements: Set<ElementId>;
+  /** bodyPr 有效值变化；活动文字面必须同步刷新被延迟的静态分区。 */
+  readonly bodyPropsElements: Set<ElementId>;
   /** 只需移动既有 DOM 分区的元素；可与 renderElements 重叠。 */
   readonly reorderedElements: Set<ElementId>;
 }

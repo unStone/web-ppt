@@ -45,6 +45,7 @@
     import { runEditorTableCellTextBrowserContract } from '/tooling/lib/editor-table-cell-text-browser-contract.mjs';
     import { runEditorAutofitBrowserContract } from '/tooling/lib/editor-autofit-browser-contract.mjs';
     import { runEditorShapeAutofitBrowserContract } from '/tooling/lib/editor-shape-autofit-browser-contract.mjs';
+    import { runEditorBodyPropsBrowserContract } from '/tooling/lib/editor-body-props-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -439,6 +440,7 @@
       const tableCellTextResult = await runEditorTableCellTextBrowserContract({ openEditor, load });
       const autofitResult = await runEditorAutofitBrowserContract({ openEditor, load, layoutText });
       const shapeAutofitResult = await runEditorShapeAutofitBrowserContract({ openEditor, load });
+      const bodyPropsResult = await runEditorBodyPropsBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -502,6 +504,9 @@
       report.dataset.shapeAutofitBrowserP95 = shapeAutofitResult.browserP95.toFixed(3);
       report.dataset.shapeAutofitEngineP95 = shapeAutofitResult.engineP95.toFixed(3);
       report.dataset.shapeAutofitFrameError = shapeAutofitResult.frameError.toFixed(3);
+      report.dataset.bodyPropsBrowserP95 = bodyPropsResult.browserP95.toFixed(3);
+      report.dataset.bodyPropsEngineP95 = bodyPropsResult.engineP95.toFixed(3);
+      report.dataset.bodyPropsFrameError = bodyPropsResult.frameError.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`

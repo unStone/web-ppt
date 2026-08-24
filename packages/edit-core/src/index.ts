@@ -3,6 +3,7 @@ export { Editor } from './editor';
 export { copyElements } from './clipboard';
 export { queryRunProps } from './run-properties';
 export { queryParaProps } from './paragraph-properties';
+export { queryBodyProps } from './body-properties';
 export { validateEditDoc } from './model-invariants';
 export { tableCellKey } from './table-cell';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
@@ -28,12 +29,14 @@ export type {
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
+  TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from './types';
 export type {
   AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, Patch, RemoveElementCommand,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
+  SetBodyPropsCommand,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export {

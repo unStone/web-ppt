@@ -21,6 +21,10 @@ const EFFECT = a('effectLst', 'effectDag');
 const shapeProperties = [a('xfrm'), a('custGeom', 'prstGeom'), FILL, a('ln'), EFFECT,
   a('scene3d'), a('sp3d'), a('extLst')];
 const textBody = [a('bodyPr'), a('lstStyle'), a('p')];
+const textBodyProperties = [
+  a('prstTxWarp'), a('noAutofit', 'normAutofit', 'spAutoFit'),
+  a('scene3d'), a('sp3d'), a('flatTx'), a('extLst'),
+];
 
 /** ECMA-376 中编辑路径会触及的复杂类型 sequence；展开名允许任意前缀且不会误伤同名 XML。 */
 export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
@@ -47,6 +51,7 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
   [expandedName(DRAWINGML_NS, 'p')]: {
     groups: [a('pPr'), [...a('r', 'br', 'fld'), ...m('oMath', 'oMathPara')], a('endParaRPr')],
   },
+  [expandedName(DRAWINGML_NS, 'bodyPr')]: { groups: textBodyProperties },
   [expandedName(DRAWINGML_NS, 'txBody')]: { groups: textBody },
   [expandedName(PRESENTATIONML_NS, 'txBody')]: { groups: textBody },
   [expandedName(PRESENTATIONML_NS, 'sp')]: {

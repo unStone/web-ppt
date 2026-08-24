@@ -9,7 +9,7 @@ export type { EditorSession, OpenEditorOptions } from './session';
 export type { EditorMode, SlideEditor, SlideEditorOptions } from './slide-editor';
 export type {
   ElementClipboardPayload, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides,
-  RunPropertiesState, RunPropertyOverrides,
+  RunPropertiesState, RunPropertyOverrides, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

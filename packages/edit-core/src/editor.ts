@@ -17,7 +17,7 @@ import { effectiveElement, toSlide } from './projection';
 import {
   cloneSelection, isElementDescendantOf, normalizeSelection, selectionAfterStructure,
 } from './selection';
-import type { EditDoc, ElementId, SlideId } from './types';
+import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
 
 function patchElements(patches: readonly Patch[]): Set<ElementId> {
   return new Set(patches.map((patch) => patch.path[1]));
@@ -39,11 +39,35 @@ function reportSubscriberError(error: unknown): void {
   } catch { /* 监听器与错误上报都不能把已提交事务伪装成失败。 */ }
 }
 
+function bodyPropsPatchElements(
+  forward: readonly Patch[],
+  inverse: readonly Patch[],
+): Set<ElementId> {
+  const result = new Set<ElementId>();
+  const inverseByPath = new Map(inverse.map((patch) => [JSON.stringify(patch.path), patch]));
+  const textValue = (patch: Patch | undefined): TextOverride | null => {
+    if (!patch || patch.op !== 'set' || !patch.value || typeof patch.value !== 'object') return null;
+    const value = patch.value as unknown as TextOverride;
+    return value.kind === 'flat' || value.kind === 'empty' ? value : null;
+  };
+  for (const patch of forward) {
+    if (patch.path.length !== 4 || patch.path[0] !== 'elements' || patch.path[3] !== 'text') continue;
+    const before = inverseByPath.get(JSON.stringify(patch.path));
+    const forwardValue = textValue(patch);
+    const inverseValue = textValue(before);
+    if (JSON.stringify(forwardValue?.bodyOverrides) !== JSON.stringify(inverseValue?.bodyOverrides)) {
+      result.add(patch.path[1]);
+    }
+  }
+  return result;
+}
+
 function shapeTextCommandTarget(command: Command): ElementId | null {
-  if (command.type !== 'EditText' && command.type !== 'SetRunProps' && command.type !== 'SetParaProps') {
+  if (command.type !== 'EditText' && command.type !== 'SetRunProps'
+    && command.type !== 'SetParaProps' && command.type !== 'SetBodyProps') {
     return null;
   }
-  return command.cell === undefined ? command.id : null;
+  return !('cell' in command) || command.cell === undefined ? command.id : null;
 }
 
 /** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
@@ -203,12 +227,13 @@ export class Editor {
       selection: this.selection,
       touchedElements: patchElements(entry.inverse),
       renderElements: renderPatchElements(entry.inverse),
+      bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
       ...dirty,
     };
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements,
+      change.renderElements, change.reorderedElements, change.bodyPropsElements,
     );
     return change;
   }
@@ -225,12 +250,13 @@ export class Editor {
       selection: this.selection,
       touchedElements: patchElements(entry.forward),
       renderElements: renderPatchElements(entry.forward),
+      bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
       ...dirty,
     };
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements,
+      change.renderElements, change.reorderedElements, change.bodyPropsElements,
     );
     return change;
   }
@@ -252,6 +278,7 @@ export class Editor {
     const touchedElements = new Set<ElementId>();
     const renderElements = new Set<ElementId>();
     const reorderedElements = new Set<ElementId>();
+    const bodyPropsElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
     const autoFitTargets = new Set<ElementId>();
     const historyLinks: HistoryPatchLink[] = [];
@@ -331,9 +358,13 @@ export class Editor {
       this.historyStore.rebaseUnrecorded(forward, this.currentState, () => this.nextState++);
     }
     const selectionChanged = JSON.stringify(selectionBefore) !== JSON.stringify(selectionAfter);
+    for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      this.emit('transaction', dirtyElements, dirtySlides, touchedElements, renderElements, reorderedElements);
+      this.emit(
+        'transaction', dirtyElements, dirtySlides, touchedElements,
+        renderElements, reorderedElements, bodyPropsElements,
+      );
     }
     return { forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter };
   }
@@ -345,6 +376,7 @@ export class Editor {
     touched: Set<ElementId>,
     render: Set<ElementId>,
     reordered: Set<ElementId>,
+    bodyProps: Set<ElementId> = new Set(),
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -355,6 +387,7 @@ export class Editor {
           dirtySlides: new Set(slides),
           touchedElements: new Set(touched),
           renderElements: new Set(render),
+          bodyPropsElements: new Set(bodyProps),
           reorderedElements: new Set(reordered),
         });
       } catch (error) {

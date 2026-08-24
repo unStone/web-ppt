@@ -61,7 +61,7 @@ function savedShapeGeometry(bytes, name) {
   const fragment = from >= 0 && to >= 0 ? slide.slice(from, to + 7) : '';
   const xfrm = fragment.match(/<a:xfrm\b([^>]*)>[\s\S]*?<a:off x="(-?\d+)" y="(-?\d+)"\/><a:ext cx="(\d+)" cy="(\d+)"\/>/);
   const size = decode('ppt/presentation.xml').match(/<p:sldSz cx="(\d+)" cy="(\d+)"\/>/);
-  if (!xfrm || !size) throw new Error('无法从保存产物读取 spAutoFit 的 xfrm 或画布尺寸');
+  if (!xfrm || !size) throw new Error(`无法从保存产物读取 ${name} 的 xfrm 或画布尺寸`);
   return {
     x: Number(xfrm[2]), y: Number(xfrm[3]), w: Number(xfrm[4]), h: Number(xfrm[5]),
     rot: Number(xfrm[1].match(/\brot="(-?\d+)"/)?.[1] ?? 0) / 60000,
@@ -88,6 +88,54 @@ function expectedBounds(frame, viewW, viewH) {
   };
 }
 
+function pathBounds(pathTag) {
+  const pathData = pathTag?.match(/\bd="([^"]+)"/)?.[1];
+  const coordinates = pathData?.match(/-?[\d.]+/g)?.map(Number) ?? [];
+  if (coordinates.length < 8 || coordinates.length % 2) throw new Error('LibreOffice SVG path 坐标无效');
+  const xs = coordinates.filter((_, index) => index % 2 === 0);
+  const ys = coordinates.filter((_, index) => index % 2 === 1);
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+
+function geometryError(actual, expected) {
+  return Math.max(...Object.keys(actual).map((key) => Math.abs(actual[key] - expected[key])));
+}
+
+function shapeByFillAndFrame(markup, fill, expected) {
+  const tags = markup.match(/<path\b[^>]*>/g)?.filter((tag) =>
+    tag.replace(/\s+/g, '').toLowerCase().includes(`fill="rgb(${fill})"`)) ?? [];
+  const candidates = tags.map((tag) => ({ tag, bounds: pathBounds(tag) }));
+  candidates.sort((left, right) => geometryError(left.bounds, expected) - geometryError(right.bounds, expected));
+  if (!candidates.length) throw new Error(`LibreOffice SVG 缺少 fill=rgb(${fill}) 的目标形状`);
+  return candidates[0];
+}
+
+function followingText(markup, pathTag) {
+  const pathAt = markup.indexOf(pathTag);
+  const from = markup.indexOf('<text ', pathAt + pathTag.length);
+  const to = markup.indexOf('</text>', from);
+  if (from < 0 || to < 0) throw new Error('LibreOffice SVG 目标形状后缺少文字');
+  return markup.slice(from, to + 7);
+}
+
+function textPositions(textMarkup) {
+  return [...textMarkup.matchAll(/class="TextPosition" x="(-?[\d.]+)" y="(-?[\d.]+)"/g)]
+    .map((match) => ({ x: Number(match[1]), y: Number(match[2]) }));
+}
+
+function exportLibreOfficeSvg(label) {
+  const svg = join(out, `${basename(savedPath, extname(savedPath))}.svg`);
+  if (existsSync(svg)) unlinkSync(svg);
+  const exported = spawnSync(soffice, [
+    '--headless', '--norestore', '--convert-to', 'svg', '--outdir', out, savedPath,
+  ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
+  if (exported.error) throw exported.error;
+  if (exported.status !== 0 || !existsSync(svg)) {
+    throw new Error(`LibreOffice 未导出${label} SVG：${exported.stderr || exported.stdout}`);
+  }
+  return readFileSync(svg, 'utf8');
+}
+
 const pdf = join(out, `${basename(savedPath, extname(savedPath))}.pdf`);
 if (existsSync(pdf)) unlinkSync(pdf);
 const opened = spawnSync(soffice, [
@@ -106,39 +154,70 @@ if (!existsSync(pdf) || statSync(pdf).size === 0) throw new Error('LibreOffice �
 
 let geometryEvidence = '';
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
-  const svg = join(out, 'shape-autofit-text-editing.svg');
-  if (existsSync(svg)) unlinkSync(svg);
-  const exported = spawnSync(soffice, [
-    '--headless', '--norestore', '--convert-to', 'svg', '--outdir', out, savedPath,
-  ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
-  if (exported.error) throw exported.error;
-  if (exported.status !== 0 || !existsSync(svg)) {
-    throw new Error(`LibreOffice 未导出 spAutoFit 几何 SVG：${exported.stderr || exported.stdout}`);
-  }
-  const markup = readFileSync(svg, 'utf8');
+  const markup = exportLibreOfficeSvg(' spAutoFit 几何');
   const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
   const pathTag = markup.match(/<path\b[^>]*>/g)?.find((tag) => {
     const compact = tag.replace(/\s+/g, '').toLowerCase();
     return compact.includes('fill="rgb(217,234,247)"') || compact.includes('fill="#d9eaf7"');
   });
-  const pathData = pathTag?.match(/\bd="([^"]+)"/)?.[1];
-  if (!viewBox || !pathData) throw new Error('LibreOffice SVG 缺少唯一 spAutoFit 形状或 viewBox');
-  const coordinates = pathData.match(/-?[\d.]+/g)?.map(Number) ?? [];
-  if (coordinates.length < 8 || coordinates.length % 2) throw new Error('LibreOffice spAutoFit path 坐标无效');
-  const xs = coordinates.filter((_, index) => index % 2 === 0);
-  const ys = coordinates.filter((_, index) => index % 2 === 1);
-  const actual = {
-    left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys),
-  };
+  if (!viewBox || !pathTag) throw new Error('LibreOffice SVG 缺少唯一 spAutoFit 形状或 viewBox');
+  const actual = pathBounds(pathTag);
   const expected = expectedBounds(
     savedShapeGeometry(new Uint8Array(readFileSync(savedPath)), 'sp-autofit-rotated'),
     Number(viewBox[1]), Number(viewBox[2]),
   );
-  const error = Math.max(...Object.keys(actual)
-    .map((key) => Math.abs(actual[key] - expected[key])));
+  const error = geometryError(actual, expected);
   // LibreOffice 的 SVG 坐标是 1/100 mm 整数，旋转后四边各自会有约 2.5 unit 的量化误差。
   if (error > 3) throw new Error(`LibreOffice spAutoFit 渲染几何偏差 ${error.toFixed(3)} SVG unit`);
   geometryEvidence = `，spAutoFit frame 最大偏差 ${error.toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'body-props-editing.pptx') {
+  const markup = exportLibreOfficeSvg('文字框属性');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  if (!viewBox) throw new Error('LibreOffice 文字框属性 SVG 缺少 viewBox');
+  const viewW = Number(viewBox[1]);
+  const viewH = Number(viewBox[2]);
+  const bytes = new Uint8Array(readFileSync(savedPath));
+  const frame = (name) => expectedBounds(savedShapeGeometry(bytes, name), viewW, viewH);
+
+  const columnsExpected = frame('分栏与锚点');
+  const columnsShape = shapeByFillAndFrame(markup, '254,243,199', columnsExpected);
+  const columnsGeometryError = geometryError(columnsShape.bounds, columnsExpected);
+  const positions = textPositions(followingText(markup, columnsShape.tag));
+  const xs = [...new Set(positions.map((position) => position.x))].sort((left, right) => left - right);
+  const leftInsetExpected = columnsShape.bounds.left + 18 / 1280 * viewW;
+  const columnStrideExpected = 296 / 1280 * viewW;
+  const columnsError = xs.length === 2
+    ? Math.max(Math.abs(xs[0] - leftInsetExpected), Math.abs(xs[1] - xs[0] - columnStrideExpected))
+    : Infinity;
+  const maxY = Math.max(...positions.map((position) => position.y));
+  if (columnsGeometryError > 3 || columnsError > 30
+    || maxY < columnsShape.bounds.top + (columnsShape.bounds.bottom - columnsShape.bounds.top) * 0.65) {
+    throw new Error(`LibreOffice 分栏/边距/底部锚点偏差 geometry=${columnsGeometryError.toFixed(3)} layout=${columnsError.toFixed(3)}`);
+  }
+
+  const directionExpected = frame('文字方向-水平');
+  const directionShape = shapeByFillAndFrame(markup, '245,243,255', directionExpected);
+  const directionText = followingText(markup, directionShape.tag);
+  const directionPositions = textPositions(directionText);
+  const distinctY = new Set(directionPositions.map((position) => position.y)).size;
+  if (geometryError(directionShape.bounds, directionExpected) > 3
+    || /<text\b[^>]*\btransform=/.test(directionText) || distinctY < 4) {
+    throw new Error('LibreOffice 未按 wordArtVert 逐字竖排目标文字');
+  }
+
+  const growExpected = frame('自动适应-无');
+  const growShape = shapeByFillAndFrame(markup, '236,253,245', growExpected);
+  const growError = geometryError(growShape.bounds, growExpected);
+  const noneExpected = frame('自动适应-缩小');
+  const noneShape = shapeByFillAndFrame(markup, '236,253,245', noneExpected);
+  const noneMaxY = Math.max(...textPositions(followingText(markup, noneShape.tag))
+    .map((position) => position.y));
+  if (growError > 3 || noneMaxY < noneShape.bounds.bottom + viewH * 0.05) {
+    throw new Error(`LibreOffice autofit 模式证据无效：shape=${growError.toFixed(3)} noneOverflow=${(noneMaxY - noneShape.bounds.bottom).toFixed(3)}`);
+  }
+  geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
 }
 
 console.log(`\n\x1b[32m✓ LibreOffice 已打开 ${basename(savedPath)} 并导出 PDF（${statSync(pdf).size} bytes${geometryEvidence}）\x1b[0m`);

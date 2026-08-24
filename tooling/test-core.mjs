@@ -272,6 +272,7 @@ const FIXTURES = [
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-editor-sp-autofit.pptx', minPages: 2, source: 'pptx' },
+  { file: 'sample-editor-body-props.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
@@ -1493,6 +1494,31 @@ group('编辑解析');
     check('几何编辑元数据不改变全类型预览', renderSame);
     plain.dispose?.();
     editable.dispose?.();
+  }
+}
+
+{
+  const bytes = load('sample-editor-body-props.pptx');
+  if (bytes) {
+    const plain = await lib.parse(bytes, { lazy: false });
+    const editable = await lib.parse(bytes, { edit: true, lazy: false });
+    const named = (presentation, name) => allElements(presentation)
+      .find((element) => element.kind === 'shape' && element.name === name);
+    const plainInherited = named(plain, '继承文字框属性');
+    const editInherited = named(editable, '继承文字框属性');
+    const explicitNormal = named(plain, '自动适应-缩小');
+    check('默认解析不携带文字框编辑来源', !!plainInherited?.text
+      && !Object.hasOwn(plainInherited.text, 'editInfo'));
+    check('edit 解析用紧凑位集保留 bodyPr 直设与版式/母版回退',
+      editInherited?.text?.editInfo?.direct === 255
+        && editInherited.text.editInfo.inherited?.anchor === 'middle'
+        && JSON.stringify(editInherited.text.editInfo.inherited?.insets) === '[21,22,13,14]'
+        && editInherited.text.editInfo.inherited?.autoFitNormal === true);
+    check('显式 fontScale 的 normAutofit 仍投影为 normal 而不重复求解',
+      explicitNormal?.text?.autoFitNormal === true
+        && explicitNormal.text.autoFitCompute !== true
+        && explicitNormal.text.fontScale === 0.82
+        && lib.layoutText(explicitNormal.text, explicitNormal.w, explicitNormal.h).autoFit === 'normal');
   }
 }
 

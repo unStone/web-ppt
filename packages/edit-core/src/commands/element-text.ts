@@ -1,5 +1,5 @@
 import type { EditDoc } from '../types';
-import { validateFlatTextOverride } from '../text-override-validation';
+import { validateEmptyTextOverride, validateFlatTextOverride } from '../text-override-validation';
 import { tableCellKey } from '../table-cell';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 import { textTargetContext } from './text-target';
@@ -17,8 +17,15 @@ export function clearElementTextPatches(doc: EditDoc, id: string, origin: string
   const path = ['elements', id, 'ovr', 'text'] as const;
   const before = record.ovr.text;
   if (before?.kind === 'empty') return { forward: [], inverse: [] };
+  const value = before?.kind === 'flat'
+    ? {
+      kind: 'empty' as const,
+      body: before.body,
+      ...(before.bodyOverrides ? { bodyOverrides: before.bodyOverrides } : {}),
+    }
+    : { kind: 'empty' as const };
   return {
-    forward: [{ op: 'set', path, value: { kind: 'empty' }, origin }],
+    forward: [{ op: 'set', path, value, origin }],
     inverse: [own(record.ovr, 'text') && before
       ? { op: 'set', path, value: before, origin }
       : { op: 'del', path, origin }],
@@ -32,7 +39,8 @@ export function validateElementTextPatch(doc: EditDoc, patch: ElementTextPatch, 
   textTargetContext(doc, target);
   if (patch.op === 'set') {
     if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value);
-    else if (patch.value.kind !== 'empty') throw new Error(`Patch ${index} 的文本覆盖无效`);
+    else if (patch.value.kind === 'empty') validateEmptyTextOverride(patch.value);
+    else throw new Error(`Patch ${index} 的文本覆盖无效`);
   }
 }
 

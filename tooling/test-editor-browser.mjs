@@ -234,6 +234,9 @@ async function browserResult(webSocketDebuggerUrl) {
           shapeAutofitBrowserP95: report.dataset.shapeAutofitBrowserP95,
           shapeAutofitEngineP95: report.dataset.shapeAutofitEngineP95,
           shapeAutofitFrameError: report.dataset.shapeAutofitFrameError,
+          bodyPropsBrowserP95: report.dataset.bodyPropsBrowserP95,
+          bodyPropsEngineP95: report.dataset.bodyPropsEngineP95,
+          bodyPropsFrameError: report.dataset.bodyPropsFrameError,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -546,6 +549,8 @@ try {
     + ` · autofit browser/engine/cell ${result.autofitBrowserP95}/${result.autofitEngineP95}/${result.autofitCellP95}ms`
     + ` · spAutoFit browser/engine ${result.shapeAutofitBrowserP95}/${result.shapeAutofitEngineP95}ms`
     + `/frame ${result.shapeAutofitFrameError}px`
+    + ` · bodyProps browser/engine ${result.bodyPropsBrowserP95}/${result.bodyPropsEngineP95}ms`
+    + `/frame ${result.bodyPropsFrameError}px`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

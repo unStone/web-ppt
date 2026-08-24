@@ -337,7 +337,8 @@ export function layoutText(
   const scale = Number.isFinite(opts.scale) && opts.scale! > 0
     ? opts.scale!
     : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
-  const autoFit: TextLayout['autoFit'] = t.autoFitShape ? 'shape' : t.autoFitCompute ? 'normal' : 'none';
+  const autoFit: TextLayout['autoFit'] = t.autoFitShape ? 'shape'
+    : t.autoFitNormal || t.autoFitCompute ? 'normal' : 'none';
 
   if (vert === 'vert' || vert === 'wordArtVert' || vert === 'vert270') {
     const inner = layoutText({ ...t, vert: undefined }, h, w, {

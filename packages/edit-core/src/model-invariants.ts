@@ -2,7 +2,7 @@ import { effectiveElement } from './projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
-import { validateFlatTextOverride } from './text-override-validation';
+import { validateEmptyTextOverride, validateFlatTextOverride } from './text-override-validation';
 import type { EditDoc, ElementId, ElementRecord, SlideId, TextOverride } from './types';
 import { parseTableCellKey } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
@@ -42,11 +42,11 @@ function assertTextOverride(value: unknown, label: string): asserts value is Tex
   if (!value || typeof value !== 'object') throw new Error(`${label} 无效`);
   const kind = (value as { kind?: unknown }).kind;
   if (kind === 'empty') {
-    assertDataObject(value, ['kind'], label);
+    validateEmptyTextOverride(value as Extract<TextOverride, { kind: 'empty' }>);
     return;
   }
   if (kind !== 'flat') throw new Error(`${label} 类型无效`);
-  assertDataObject(value, ['kind', 'body', 'paragraphs'], label);
+  assertDataObject(value, ['kind', 'body', 'bodyOverrides', 'paragraphs'], label);
   validateFlatTextOverride(value as Extract<TextOverride, { kind: 'flat' }>);
 }
 

@@ -15,6 +15,7 @@ import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
 import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
+import { patchTextBodyProperties } from './text-body';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
@@ -372,8 +373,7 @@ function nonParagraphFormatProps(props: FlatTextParagraph['props']): object {
 
 function isFormatOnly(source: TextBody, flat: Extract<TextOverride, { kind: 'flat' }>): boolean {
   const baseline = flattenTextBody(source);
-  return JSON.stringify(flat.body) === JSON.stringify(baseline.body)
-    && flat.paragraphs.length === baseline.paragraphs.length
+  return flat.paragraphs.length === baseline.paragraphs.length
     && flat.paragraphs.every((paragraph, index) => {
       const original = baseline.paragraphs[index];
       return paragraph.text === original.text
@@ -437,6 +437,9 @@ function patchTextBody(
   source: TextBody,
   override: TextOverride,
 ): void {
+  const bodyProperties = findXmlChild(body, { localName: 'bodyPr', namespaceUri: DRAWINGML_NS });
+  if (!bodyProperties) throw new Error('文本体缺少必需的 a:bodyPr');
+  patchTextBodyProperties(bodyProperties, override.bodyOverrides);
   const sourceParagraphs = xmlElementChildren(body, { localName: 'p', namespaceUri: DRAWINGML_NS });
   if (override.kind === 'flat' && patchFormatOnly(sourceParagraphs, source, override)) return;
   for (const paragraph of sourceParagraphs) {

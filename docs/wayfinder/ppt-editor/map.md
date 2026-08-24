@@ -61,10 +61,11 @@ tracker: local-markdown
 - [实现表格单元格文字编辑闭环](tickets/035-table-cell-text-editing.md) — 稀疏单元格覆盖复用既有文字模型与保留型写回，browser/engine 共用编辑面；Chrome 20×10 表格上屏 p95 0.500ms。
 - [节流 normAutofit 文字输入重排](tickets/036-throttle-normal-autofit-text-input.md) — 同步模型提交与视图派生比例分离，持续输入最多每 100ms 以实际内容盒重排；Chrome 三路 p95 最慢 3.500ms。
 - [让 spAutoFit 文字形状随内容改高](tickets/037-grow-sp-autofit-text-shapes.md) — 共享行盒求解器与 entry 级因果历史让文字提交原子改高并保持局部锚点；Chrome browser/engine p95 4.2/4.1ms，LibreOffice 几何偏差小于 0.1px。
+- [实现文字框属性编辑闭环](tickets/038-edit-text-body-properties.md) — 继承感知的 `SetBodyProps`、选区 seam 与保留型 bodyPr 写回统一八类属性和三种 autofit；Chrome browser/engine p95 1.4/0.7ms，LibreOffice 分栏/方向 oracle 通过。
 
 ## Not yet specified
 
-- M3 的 `SetBodyProps` 及表格末格 Tab 新增行要分别沿保留型文字写回与 `InsertRow` 结构命令拆任务。
+- M3 的表格末格 Tab 新增行要沿 `InsertRow` 结构命令拆任务。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。

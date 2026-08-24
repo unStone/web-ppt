@@ -26,7 +26,8 @@ function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
 }
 
 export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: 'flat' }> {
-  const { paragraphs: _paragraphs, ...bodyProps } = body;
+  // editInfo 是只读来源事实；覆盖层只保存用户结果，防止历史与远端 patch 伪造继承来源。
+  const { paragraphs: _paragraphs, editInfo: _editInfo, ...bodyProps } = body;
   return {
     kind: 'flat',
     body: bodyProps,

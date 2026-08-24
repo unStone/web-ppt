@@ -18,6 +18,7 @@ import { runRichTextClipboardContract } from './lib/rich-text-clipboard-contract
 import { runTableCellTextContract } from './lib/table-cell-text-contract.mjs';
 import { runAutofitTextContract } from './lib/autofit-text-contract.mjs';
 import { runShapeAutofitEditContract } from './lib/shape-autofit-edit-contract.mjs';
+import { runBodyPropsEditContract } from './lib/body-props-edit-contract.mjs';
 import { runCommandPropertyContract } from './lib/command-property-contract.mjs';
 import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
@@ -85,6 +86,7 @@ await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runAutofitTextContract({ edit, core, load, check });
 await runShapeAutofitEditContract({ edit, core, load, check });
+await runBodyPropsEditContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

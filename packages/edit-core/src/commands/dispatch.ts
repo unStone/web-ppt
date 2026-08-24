@@ -9,9 +9,10 @@ import { setRunPropsPatches } from './set-run-props';
 import { setParaPropsPatches } from './set-para-props';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
+import { setBodyPropsPatches } from './set-body-props';
 import type {
   AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
-  SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
+  SetBodyPropsCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -41,6 +42,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
   FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
+  SetBodyProps: register<SetBodyPropsCommand>(['id', 'props'], setBodyPropsPatches),
 };
 
 function assertPureCommand(input: Command): void {

@@ -400,7 +400,8 @@ export function renderTextBodyToHtml(
     (t.columns ? `column-count:${t.columns};column-gap:${r(t.columnGap ?? 0)}px;display:block;` : '') +
     (vert ? VERT_CSS[vert] ?? '' : '') +
     'overflow:visible;';
-  const mode = t.autoFitShape ? 'shape' : source.autoFitCompute ? 'normal' : 'none';
+  const mode = t.autoFitShape ? 'shape'
+    : source.autoFitNormal || source.autoFitCompute ? 'normal' : 'none';
   const rootMarkers = markers
     ? ` data-font-scale="${r(scale)}" data-autofit="${mode}"`
     : '';

@@ -50,6 +50,7 @@ export class TextEditorController {
 
   get isActive(): boolean { return this.activeId !== null; }
   get activeElementId(): ElementId | null { return this.activeId; }
+  get isComposing(): boolean { return this.composing; }
 
   registerExternalUi(element: HTMLElement): () => void {
     this.externalUi.add(element);
@@ -213,8 +214,8 @@ export class TextEditorController {
     if (change.renderElements.has(this.activeId)) {
       this.staticStale = true;
       const active = this.activeText();
-      // spAutoFit 同一事务会改变 frame；静态形状若仍保留旧 frame，编辑层与点击轮廓会瞬间分叉。
-      if (active?.text.autoFitShape) {
+      // bodyPr 或 spAutoFit 会改变静态排版/frame；旧分区不能藏到退出文字态才补。
+      if (active && (change.bodyPropsElements.has(this.activeId) || active.text.autoFitShape)) {
         this.options.syncStatic(this.activeId);
         this.staticStale = false;
       }

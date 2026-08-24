@@ -70,6 +70,13 @@ if (mode === 'projected') {
         ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
       });
     }
+  } else if (scenario.type === 'bodyProps') {
+    for (const change of scenario.changes) {
+      const bodyTarget = Object.values(doc.elements)
+        .find((record) => record.src.name === change.targetName);
+      if (!bodyTarget) throw new Error(`M1 指纹固件缺少文字框目标：${change.targetName}`);
+      editor.exec({ type: 'SetBodyProps', id: bodyTarget.id, props: change.props });
+    }
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

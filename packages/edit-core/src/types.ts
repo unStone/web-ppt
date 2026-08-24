@@ -163,6 +163,30 @@ export interface ParagraphPropertiesState {
   readonly indent: RunPropertyState<number>;
 }
 
+export type TextBodyAutoFit = 'none' | 'normal' | 'shape';
+
+export interface TextBodyProperties {
+  readonly anchor: TextBody['anchor'];
+  readonly insets: readonly [number, number, number, number];
+  readonly wrap: boolean;
+  readonly vert: NonNullable<TextBody['vert']>;
+  readonly anchorCtr: boolean;
+  readonly columns: number;
+  readonly columnGap: number;
+  readonly autoFit: TextBodyAutoFit;
+}
+
+export interface TextBodyPropertyOverrides {
+  readonly anchor?: TextBodyProperties['anchor'] | null;
+  readonly insets?: TextBodyProperties['insets'] | null;
+  readonly wrap?: boolean | null;
+  readonly vert?: TextBodyProperties['vert'] | null;
+  readonly anchorCtr?: boolean | null;
+  readonly columns?: number | null;
+  readonly columnGap?: number | null;
+  readonly autoFit?: TextBodyAutoFit | null;
+}
+
 export interface FlatTextParagraph {
   readonly text: string;
   readonly props: Omit<Paragraph, 'runs'>;
@@ -176,9 +200,18 @@ export interface FlatTextParagraph {
   readonly directParagraphProps?: Readonly<Partial<Record<keyof ParagraphProperties, true>>>;
 }
 
-export type TextOverride = { readonly kind: 'empty' } | {
+export type TextBodyOverride = Omit<TextBody, 'paragraphs' | 'editInfo'>;
+
+export type TextOverride = {
+  readonly kind: 'empty';
+  /** 清空文字后仍保留 bodyPr 的有效值，属性面板不能因此失去编辑入口。 */
+  readonly body?: TextBodyOverride;
+  readonly bodyOverrides?: TextBodyPropertyOverrides;
+} | {
   readonly kind: 'flat';
-  readonly body: Omit<TextBody, 'paragraphs'>;
+  readonly body: TextBodyOverride;
+  /** 只记录用户触碰过的 bodyPr 字段；null 表示清除本层直设。 */
+  readonly bodyOverrides?: TextBodyPropertyOverrides;
   readonly paragraphs: readonly FlatTextParagraph[];
 };
 

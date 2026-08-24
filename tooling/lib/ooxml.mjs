@@ -174,7 +174,10 @@ ${body}
  * `presExtra` 插进 <p:presentation> 末尾，`presRels` 追加 presentation 的关系，
  * `extraTypes` 追加 [Content_Types] 的 Override，`extraEntries` 追加任意部件。
  */
-export function deck({ name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '', extraEntries = [] }) {
+export function deck({
+  name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '',
+  extraEntries = [], masterShapes = '', layoutShapes = '',
+}) {
   const slideOverrides = slides.map((_, i) =>
     `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
   const rel = (items) => `${XML}<Relationships xmlns="${NS.rel}">${items}</Relationships>`;
@@ -225,7 +228,7 @@ ${slideOverrides}${extraTypes}
     ['ppt/slideMasters/slideMaster1.xml', `${XML}<p:sldMaster xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld>
 <p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>
-<p:spTree>${nvGrp}</p:spTree></p:cSld>
+<p:spTree>${nvGrp}${masterShapes}</p:spTree></p:cSld>
 <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
 <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
 <p:txStyles>
@@ -238,7 +241,7 @@ ${slideOverrides}${extraTypes}
       `<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>` +
       `<Relationship Id="rId2" Type="${REL}/theme" Target="../theme/theme1.xml"/>`)],
     ['ppt/slideLayouts/slideLayout1.xml', `${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj">
-<p:cSld name="Blank"><p:spTree>${nvGrp}</p:spTree></p:cSld>
+<p:cSld name="Blank"><p:spTree>${nvGrp}${layoutShapes}</p:spTree></p:cSld>
 <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`],
     ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', rel(
       `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`)],

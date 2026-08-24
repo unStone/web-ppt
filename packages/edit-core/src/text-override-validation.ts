@@ -6,6 +6,7 @@ import {
   assertParagraphPropertyOverrides, PARAGRAPH_ALIGNMENTS, PARAGRAPH_PROPERTY_FIELDS,
 } from './paragraph-property-schema';
 import { TEXT_ATOM } from './text-position';
+import { assertTextBodyPropertyOverrides } from './body-property-schema';
 
 function validateParagraphOverrides(value: ParagraphPropertyOverrides): void {
   assertParagraphPropertyOverrides(value, '段落格式覆盖');
@@ -42,6 +43,9 @@ export function validateFlatTextOverride(
   if (!override.body || !Array.isArray(override.paragraphs) || !override.paragraphs.length) {
     throw new Error('扁平文本覆盖至少需要一个段落');
   }
+  if (override.bodyOverrides) {
+    assertTextBodyPropertyOverrides(override.bodyOverrides, '文字框属性覆盖');
+  }
   for (const paragraph of override.paragraphs) {
     if (!paragraph || typeof paragraph !== 'object'
       || typeof paragraph.text !== 'string' || !Array.isArray(paragraph.marks)) {
@@ -65,5 +69,15 @@ export function validateFlatTextOverride(
     if (offset !== paragraph.text.length || (!paragraph.marks.length && paragraph.text.length)) {
       throw new Error('文字格式区间没有完整覆盖段落');
     }
+  }
+}
+
+export function validateEmptyTextOverride(
+  override: Extract<TextOverride, { kind: 'empty' }>,
+): void {
+  assertDataObject(override, ['kind', 'body', 'bodyOverrides'], '空文字覆盖');
+  if (override.bodyOverrides && !override.body) throw new Error('空文字覆盖缺少文字框属性正文');
+  if (override.bodyOverrides) {
+    assertTextBodyPropertyOverrides(override.bodyOverrides, '文字框属性覆盖');
   }
 }

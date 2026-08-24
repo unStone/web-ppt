@@ -1,10 +1,11 @@
-import type { Paragraph, TextBody, TextRun, TextVert, TextWarp } from '../types';
+import type { Paragraph, TextBody, TextRun, TextWarp } from '../types';
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
 import { mathPlainText, parseOmml } from './omml';
 import {
   directParagraphProps, effectiveParagraphProps, mergeParagraphProps, resolveParagraphLevel,
 } from './paragraph-props';
+import { directTextBodyProperties, parseTextBodyLayout } from './text-body';
 
 /**
  * 文本样式继承链：
@@ -280,44 +281,15 @@ function parseWarp(bodyPrs: (Element | null)[]): TextWarp | undefined {
   return undefined;
 }
 
-const VERT: Record<string, TextVert> = { horz: 'horz', vert: 'vert', vert270: 'vert270', wordArtVert: 'wordArtVert', eaVert: 'vert', mongolianVert: 'vert' };
-
 export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty = false): TextBody | null {
   if (!txBody) return null;
   const bodyPr = kid(txBody, 'bodyPr');
   const bodyPrs = [bodyPr, ...(env.bodyPrFallbacks ?? [])];
-  const attrOf = (name: string): string | null => {
-    for (const b of bodyPrs) {
-      const v = attr(b, name);
-      if (v !== null) return v;
-    }
-    return null;
-  };
-  const anchorRaw = attrOf('anchor') ?? 't';
-  const anchor: TextBody['anchor'] = anchorRaw === 'ctr' ? 'middle' : anchorRaw === 'b' ? 'bottom' : 'top';
-  const ins = (name: string, dflt: number): number => {
-    const v = attrOf(name);
-    return v === null ? emu(dflt) : emu(Number(v));
-  };
-  const insets: TextBody['insets'] = [ins('tIns', 45720), ins('rIns', 91440), ins('bIns', 45720), ins('lIns', 91440)];
-  const wrap = attrOf('wrap') !== 'none';
-
-  let autofitEl: Element | null = null;
-  let spAutoFit = false;
-  for (const b of bodyPrs) {
-    if (!b) continue;
-    if (kid(b, 'normAutofit')) { autofitEl = kid(b, 'normAutofit'); break; }
-    if (kid(b, 'spAutoFit')) { spAutoFit = true; break; }
-  }
-  const explicitScale = autofitEl ? numAttr(autofitEl, 'fontScale') : null;
-  const fontScale = explicitScale !== null && explicitScale !== undefined ? explicitScale / 100000 : 1;
-  const autoFitCompute = !!autofitEl && (explicitScale === null || explicitScale === undefined);
-  const lnSpcReduction = autofitEl ? (numAttr(autofitEl, 'lnSpcReduction') ?? 0) / 100000 : 0;
-
-  const vert = VERT[attrOf('vert') ?? 'horz'] ?? 'horz';
-  const anchorCtr = attrOf('anchorCtr') === '1';
-  const numCol = Number(attrOf('numCol') ?? '1');
-  const spcCol = Number(attrOf('spcCol') ?? '0');
+  const layout = parseTextBodyLayout(bodyPrs);
+  const hasBodyFallback = (env.bodyPrFallbacks ?? []).some(Boolean);
+  // 普通预览是热路径；只有编辑清除直设时才需要单独求一次回退值。
+  const inheritedLayout = env.edit && hasBodyFallback
+    ? parseTextBodyLayout(bodyPrs.slice(1)) : undefined;
 
   const counters: number[] = [];
   const paragraphs: Paragraph[] = [];
@@ -378,7 +350,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     }
 
     const maxSize = Math.max(...runs.map((r) => r.size), 1);
-    const effective = effectiveParagraphProps(merged, maxSize, lnSpcReduction);
+    const effective = effectiveParagraphProps(merged, maxSize, layout.lnSpcReduction ?? 0);
 
     const buImage = merged.bullet?.kind === 'image' && env.resolveImage ? env.resolveImage(merged.bullet.rid) : null;
 
@@ -398,7 +370,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
       bulletImage: buImage,
       rtl: merged.rtl,
       ...(env.edit ? { editInfo: {
-        inheritedParagraphProps: effectiveParagraphProps(inherited, maxSize, lnSpcReduction),
+        inheritedParagraphProps: effectiveParagraphProps(inherited, maxSize, layout.lnSpcReduction ?? 0),
         directParagraphProps: directParagraphProps(direct),
       } } : {}),
     });
@@ -407,15 +379,13 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
   // 编辑解析必须保留空段落及 endParaRPr 的格式入口；普通查看仍把它收敛成 null，避免空形状生成 DOM。
   if (!hasContent && !includeEmpty) return null;
   return {
-    anchor, insets, wrap, fontScale, paragraphs,
-    ...(autoFitCompute ? { autoFitCompute: true } : {}),
-    lnSpcReduction: lnSpcReduction || undefined,
-    vert: vert !== 'horz' ? vert : undefined,
-    anchorCtr: anchorCtr || undefined,
-    autoFitShape: spAutoFit || undefined,
-    columns: numCol > 1 ? numCol : undefined,
-    columnGap: numCol > 1 ? emu(spcCol) : undefined,
+    ...layout,
+    paragraphs,
     warp: parseWarp(bodyPrs),
+    ...(env.edit ? { editInfo: {
+      direct: directTextBodyProperties(bodyPr),
+      ...(inheritedLayout ? { inherited: inheritedLayout } : {}),
+    } } : {}),
   };
 }
 

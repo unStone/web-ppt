@@ -1,4 +1,7 @@
-import type { EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunPropertiesState, RunPropertyOverrides, SlideId } from '@web-ppt/edit-core';
+import type {
+  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunPropertiesState,
+  RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
+} from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
@@ -21,6 +24,7 @@ import { claimTextEditing, releaseTextEditing, sessionState } from './session-st
 import { bindSlideEditorEvents } from './slide-editor-events';
 import { SlideDomRenderer } from './slide-dom-renderer';
 import { isRotationHandleAt, resizeHandleAt } from './selection-handles';
+import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
 
 export type EditorMode = 'view' | 'edit';
 
@@ -63,6 +67,8 @@ export interface SlideEditor {
   setRunProps(props: RunPropertyOverrides): boolean;
   queryParaProps(): ParagraphPropertiesState | null;
   setParaProps(props: ParagraphPropertyOverrides): boolean;
+  queryBodyProps(): TextBodyProperties | null;
+  setBodyProps(props: TextBodyPropertyOverrides): boolean;
   destroy(): void;
 }
 
@@ -401,6 +407,14 @@ class DomSlideEditor implements SlideEditor {
   setRunProps(props: RunPropertyOverrides): boolean { return this.textEditor.setRunProps(props); }
   queryParaProps(): ParagraphPropertiesState | null { return this.textEditor.queryParaProps(); }
   setParaProps(props: ParagraphPropertyOverrides): boolean { return this.textEditor.setParaProps(props); }
+  queryBodyProps(): TextBodyProperties | null {
+    return querySelectionBodyProps(this.session.editor, this.currentSlide);
+  }
+
+  setBodyProps(props: TextBodyPropertyOverrides): boolean {
+    if (this.currentMode !== 'edit' || this.textEditor.isComposing) return false;
+    return setSelectionBodyProps(this.session.editor, this.currentSlide, props);
+  }
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
