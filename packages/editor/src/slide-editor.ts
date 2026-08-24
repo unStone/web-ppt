@@ -2,8 +2,9 @@ import { renderSlideToSvg } from '@web-ppt/core';
 import type { EditorChange, ElementId, SlideId } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
-import { bindSlideIdentities, touchedElementPartitions } from './dom-identity';
+import { bindSlideIdentities, shouldRenderWholeSlide, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
+import { KeyboardNudgeController } from './keyboard-nudge';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
 import { ResizeGestureController } from './resize-gesture';
@@ -71,6 +72,7 @@ class DomSlideEditor implements SlideEditor {
   private currentSnapping: boolean;
   private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
+  private readonly keyboardNudge: KeyboardNudgeController;
   private readonly marqueeGesture: MarqueeGestureController;
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
@@ -175,24 +177,9 @@ class DomSlideEditor implements SlideEditor {
     if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
+    if (this.keyboardNudge.keyDown(event)) return;
     if (event.key !== 'Escape') return;
-    if (this.marqueeGesture.isActive) {
-      this.marqueeGesture.cancel();
-      event.preventDefault();
-      return;
-    }
-    if (this.rotationGesture.isActive) {
-      this.rotationGesture.cancel();
-      event.preventDefault();
-      return;
-    }
-    if (this.resizeGesture.isActive) {
-      this.resizeGesture.cancel();
-      event.preventDefault();
-      return;
-    }
-    if (this.moveGesture.isActive) {
-      this.moveGesture.cancel();
+    if (this.cancelActiveGesture()) {
       event.preventDefault();
       return;
     }
@@ -212,7 +199,9 @@ class DomSlideEditor implements SlideEditor {
     if (this.currentMode === 'edit' && this.moveGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.resizeGesture.modifier(event)) event.preventDefault();
+    if (this.keyboardNudge.keyUp(event)) event.preventDefault();
   };
+  private readonly onBlur = (): void => { this.keyboardNudge.breakSequence(); };
 
   constructor(container: HTMLElement, session: EditorSession, options: SlideEditorOptions = {}) {
     if (session.disposed) throw new Error('不能挂载已经释放的编辑会话');
@@ -259,6 +248,12 @@ class DomSlideEditor implements SlideEditor {
     this.textLayer = layer(document, 'text');
     this.interactionLayer.style.pointerEvents = 'none';
     this.textLayer.style.pointerEvents = 'none';
+
+    this.keyboardNudge = new KeyboardNudgeController({
+      editor: session.editor, namespace: this.idPrefix,
+      slideId: () => this.currentSlide,
+      gestureActive: () => this.hasActiveGesture(),
+    });
 
     this.marqueeGesture = new MarqueeGestureController({
       root: this.element,
@@ -312,19 +307,13 @@ class DomSlideEditor implements SlideEditor {
     this.element.addEventListener('dblclick', this.onDoubleClick);
     this.element.addEventListener('keydown', this.onKeyDown);
     this.element.addEventListener('keyup', this.onKeyUp);
+    this.element.addEventListener('blur', this.onBlur);
     try {
       container.append(this.element);
       state.views.add(this);
     } catch (error) {
       this.unsubscribe();
-      this.element.removeEventListener('pointerdown', this.onPointerDown);
-      this.element.removeEventListener('pointermove', this.onPointerMove);
-      this.element.removeEventListener('pointerup', this.onPointerUp);
-      this.element.removeEventListener('pointercancel', this.onPointerCancel);
-      this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
-      this.element.removeEventListener('dblclick', this.onDoubleClick);
-      this.element.removeEventListener('keydown', this.onKeyDown);
-      this.element.removeEventListener('keyup', this.onKeyUp);
+      this.unbindEvents();
       this.element.remove();
       throw error;
     }
@@ -338,7 +327,10 @@ class DomSlideEditor implements SlideEditor {
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
-    if (mode !== this.currentMode) this.cancelGestures();
+    if (mode !== this.currentMode) {
+      this.cancelGestures();
+      this.keyboardNudge.breakSequence();
+    }
     this.currentMode = mode;
     this.element.dataset.mode = mode;
     // Pointer Events 在按下前就按 touch-action 决定是否交给页面滚动；编辑态必须由画布拥有手势。
@@ -353,13 +345,17 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
     this.cancelGestures();
+    this.keyboardNudge.breakSequence();
     this.currentSlide = slideId;
     this.render();
   }
 
   setZoom(zoom: number): void {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
-    if (zoom !== this.currentZoom) this.cancelGestures();
+    if (zoom !== this.currentZoom) {
+      this.cancelGestures();
+      this.keyboardNudge.breakSequence();
+    }
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.renderSelection(this.session.editor.selection);
@@ -376,15 +372,9 @@ class DomSlideEditor implements SlideEditor {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     this.cancelGestures();
+    this.keyboardNudge.breakSequence();
     this.unsubscribe();
-    this.element.removeEventListener('pointerdown', this.onPointerDown);
-    this.element.removeEventListener('pointermove', this.onPointerMove);
-    this.element.removeEventListener('pointerup', this.onPointerUp);
-    this.element.removeEventListener('pointercancel', this.onPointerCancel);
-    this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
-    this.element.removeEventListener('dblclick', this.onDoubleClick);
-    this.element.removeEventListener('keydown', this.onKeyDown);
-    this.element.removeEventListener('keyup', this.onKeyUp);
+    this.unbindEvents();
     sessionState(this.session).views.delete(this);
     this.element.remove();
   }
@@ -449,7 +439,8 @@ class DomSlideEditor implements SlideEditor {
     const doc = this.session.editor.doc;
     const partitions = touchedElementPartitions(doc, this.currentSlide, change.touchedElements);
     const elementCount = doc.slides[this.currentSlide].children.length;
-    if (!partitions.ids.length || partitions.topLevelCount / Math.max(elementCount, 1) > 0.3) {
+    if (!partitions.ids.length
+      || shouldRenderWholeSlide(partitions.ids.length, partitions.topLevelCount, elementCount)) {
       this.render();
       return;
     }
@@ -473,6 +464,30 @@ class DomSlideEditor implements SlideEditor {
     this.moveGesture.cancel();
     this.resizeGesture.cancel();
     this.rotationGesture.cancel();
+  }
+
+  private cancelActiveGesture(): boolean {
+    const gesture = [this.marqueeGesture, this.rotationGesture, this.resizeGesture, this.moveGesture]
+      .find((candidate) => candidate.isActive);
+    gesture?.cancel();
+    return !!gesture;
+  }
+
+  private unbindEvents(): void {
+    this.element.removeEventListener('pointerdown', this.onPointerDown);
+    this.element.removeEventListener('pointermove', this.onPointerMove);
+    this.element.removeEventListener('pointerup', this.onPointerUp);
+    this.element.removeEventListener('pointercancel', this.onPointerCancel);
+    this.element.removeEventListener('lostpointercapture', this.onPointerCancel);
+    this.element.removeEventListener('dblclick', this.onDoubleClick);
+    this.element.removeEventListener('keydown', this.onKeyDown);
+    this.element.removeEventListener('keyup', this.onKeyUp);
+    this.element.removeEventListener('blur', this.onBlur);
+  }
+
+  private hasActiveGesture(): boolean {
+    return this.marqueeGesture.isActive || this.moveGesture.isActive
+      || this.resizeGesture.isActive || this.rotationGesture.isActive;
   }
 }
 

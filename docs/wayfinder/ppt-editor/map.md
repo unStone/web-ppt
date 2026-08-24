@@ -37,7 +37,7 @@ tracker: local-markdown
 - [实现 ZIP 原始条目直通保存](tickets/007-zip-passthrough.md) — 保存期 OPC 入口以完整本地记录直通、可解释重压、连续包刷新与可释放生命周期守住 50MB 写回，三页完整保存 84.0ms。
 - [建立命令、事务与双向 Patch 历史](tickets/008-command-patch-history.md) — 无 DOM Editor 以纯数据命令、影响集不变量、选择恢复与远端路径 rebase 建立原子撤销内核，210 页撤销重渲约 0.5ms/次。
 - [把 SetXfrm 精确补丁写回 OOXML](tickets/009-set-xfrm-ooxml-patch.md) — 以命名空间感知的 spid 宿主定位、可克隆基线重建和包所有权刷新，实现形状、组、frame 与 p14 墨迹的可撤销增量保存。
-- [建立编辑会话与三层静态视图](tickets/014-editor-session-static-view.md) — 可发布的无框架会话统一资源所有权，以稳定身份、精确 markup/defs 分区和 30% 回退复用高保真预览，真实 Chrome 单元素提交 p95 为 0.100ms。
+- [建立编辑会话与三层静态视图](tickets/014-editor-session-static-view.md) — 可发布的无框架会话统一资源所有权，以稳定身份、精确 markup/defs 分区和真实批量回退复用高保真预览，真实 Chrome 单元素提交 p95 为 0.100ms。
 - [实现原生 SVG 点选与组进入](tickets/015-native-hit-selection.md) — 单视图监听器把浏览器命中统一提交到 headless 选区，守住组进退、Alt z 序、view 无副作用与静态 DOM 身份，真实 Chrome 点选反馈 p95 为 0.100ms。
 - [统一画布坐标并绘制选择框手柄](tickets/016-selection-space-handles.md) — 纯仿射矩阵与 core 组变换严格对偶，单选 OBB、多选 AABB 和 9 个屏幕恒尺寸控件均只更新交互层，真实 Chrome 三档缩放最大偏差 0.000px、完整上屏 p95 0.100ms。
 - [建立移动手势与拖动幽灵](tickets/017-drag-move-gesture.md) — 3px 阈值后的主指针由视图捕获，单选/多选和嵌套组每帧只平移私有幽灵，松手形成一个可撤销写回事务；真实 Chrome rAF p95 0.100ms。
@@ -45,10 +45,11 @@ tracker: local-markdown
 - [绑定旋转柄并提交角度](tickets/019-rotation-handle-gesture.md) — 单选父空间与多选共同中心共用连续角状态机，父矩阵手性守住奇数祖先翻转，真实 Chrome 三档 zoom 嵌套/多选最大偏差 0.000/0.009px，60 元素帧 p95 0.300ms。
 - [实现移动吸附与智能参考线](tickets/020-drag-snapping-guides.md) — 无 DOM 线性求解器以屏幕 6px、稳定优先级和同组世界 AABB 驱动固定交互层参考线，真实 Chrome 三类误差均为 0.000px，含布局的 60 元素帧 p95 0.200ms。
 - [实现 PowerPoint 语义框选](tickets/021-marquee-selection.md) — 空白手势越过屏幕 3px 后才快照当前组直属候选，以世界 OBB 四角完全包含驱动 interaction SVG；Chrome 误差 0.000px，60 元素首帧/p95 0.900/0.200ms。
+- [实现方向键微移与连续撤销](tickets/022-keyboard-nudge.md) — 每个视图以物理按键 token 驱动 1/10px 世界位移，历史按路径压缩长按 patch；Chrome 三档 zoom 最大偏差 0.049px，60 元素连续 repeat p95 1.800ms。
 
 ## Not yet specified
 
-- M2 的会话、点选/框选、坐标、移动/缩放/旋转与吸附已落定；下一步把方向键移动、Tab 顺序与 Shift/Ctrl 增减选拆成独立任务。
+- M2 的会话、点选/框选、方向键、坐标、移动/缩放/旋转与吸附已落定；Tab 顺序与 Shift/Ctrl 增减选仍需各自拆票。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

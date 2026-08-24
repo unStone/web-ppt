@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 
@@ -149,6 +150,11 @@ async function browserResult(webSocketDebuggerUrl) {
     }
     return { during, committed: await evaluate(committedExpression) };
   };
+  const dispatchKey = async (key, code, virtualKeyCode) => {
+    const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode };
+    await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
+    await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
+  };
   try {
     for (let attempt = 0; attempt < 200; attempt++) {
       const result = await evaluate(`(() => {
@@ -170,6 +176,8 @@ async function browserResult(webSocketDebuggerUrl) {
           marqueeError: report.dataset.marqueeError,
           marqueeFirstFrame: report.dataset.marqueeFirstFrame,
           marqueeP95: report.dataset.marqueeP95,
+          keyboardError: report.dataset.keyboardError,
+          keyboardP95: report.dataset.keyboardP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -375,6 +383,7 @@ async function browserResult(webSocketDebuggerUrl) {
 
         await runTrustedSnapContract({ evaluate, trustedMouseGesture });
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
+        await runTrustedKeyboardContract({ evaluate, dispatchKey });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -382,11 +391,12 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedRotation = 'pass';
           report.dataset.trustedSnap = 'pass';
           report.dataset.trustedMarquee = 'pass';
-          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选通过';
+          report.dataset.trustedKeyboard = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
-          trustedMarquee: 'pass',
+          trustedMarquee: 'pass', trustedKeyboard: 'pass',
         };
       }
       await delay(100);
@@ -434,8 +444,10 @@ try {
     + ` · 吸附60 p95 ${result.snapP95}ms`
     + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
     + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
+    + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
+    + ` · trusted keyboard ${result.trustedKeyboard}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

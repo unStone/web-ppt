@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
+import { runKeyboardNudgeContract } from './lib/keyboard-nudge-contract.mjs';
 import { runMarqueeGestureContract } from './lib/marquee-gesture-contract.mjs';
 import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
@@ -135,9 +136,9 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
     for (const id of [targetId, siblingId]) {
       transaction.exec({ type: 'SetXfrm', id, x: session.editor.effectiveElement(id).x + 1 });
     }
-  }, '跨过整页阈值');
-  check('脏顶层元素超过本页 30% 时整页重渲并重新绑定稳定身份',
-    staticLayer.querySelector('svg') !== beforePageFallback
+  }, '小页面少量提交');
+  check('小页面少量脏元素不因比例失真而重建整页 SVG',
+    staticLayer.querySelector('svg') === beforePageFallback
     && staticLayer.querySelectorAll('[data-edit-id]').length === stableIds.length);
   const firstSvg = staticLayer.querySelector('svg');
   session.editor.select({ kind: 'elements', ids: [targetId], enteredGroup: null });
@@ -177,6 +178,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 
 await runNativeHitContract({ check, lib, root });
 await runMarqueeGestureContract({ check, lib, root });
+await runKeyboardNudgeContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });
 await runResizeGestureContract({ check, lib, root });
@@ -280,6 +282,16 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
     && !!container.querySelector('[data-edit-selection-frame]'),
   `p95=${hitP95.toFixed(3)}ms`);
   console.log(`  60 元素 · 完整选择框反馈 p95 ${hitP95.toFixed(3)}ms`);
+
+  const beforeBatch = staticLayer.querySelector('svg');
+  session.editor.transaction((transaction) => {
+    for (const id of roots.slice(0, 20)) {
+      transaction.exec({ type: 'SetXfrm', id, x: session.editor.effectiveElement(id).x + 1 });
+    }
+  }, '真实批量提交');
+  check('绝对数量和占比都超过阈值时只做一次整页重绘',
+    staticLayer.querySelector('svg') !== beforeBatch
+      && staticLayer.querySelectorAll('[data-edit-id]').length === roots.length);
   session.dispose();
 }
 

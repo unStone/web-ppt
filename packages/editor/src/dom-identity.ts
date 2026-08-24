@@ -72,3 +72,12 @@ export function touchedElementPartitions(
   }
   return { ids: [...partitions], topLevelCount: topLevel.size };
 }
+
+/** 百分比在小页面上会把一次局部修改误判成整页重绘；只有真实批量提交才考虑换整页。 */
+export function shouldRenderWholeSlide(
+  partitionCount: number,
+  topLevelCount: number,
+  slideTopLevelCount: number,
+): boolean {
+  return partitionCount > 8 && topLevelCount / Math.max(slideTopLevelCount, 1) > 0.3;
+}

@@ -28,6 +28,21 @@ export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {
 
 const pathKey = (patch: Patch): string => JSON.stringify(patch.path);
 
+/** Patch 是绝对 set/del；同一路径的连续编辑只需最终正向值与最初逆向值。 */
+function compactPatches(patches: readonly Patch[]): Patch[] {
+  const output: Patch[] = [];
+  const positions = new Map<string, number>();
+  for (const patch of patches) {
+    const key = pathKey(patch);
+    const position = positions.get(key);
+    if (position === undefined) {
+      positions.set(key, output.length);
+      output.push(clonePatch(patch));
+    } else output[position] = clonePatch(patch);
+  }
+  return output;
+}
+
 function canMerge(previous: HistoryEntry, next: HistoryEntry): boolean {
   if (!previous.mergeKey || previous.mergeKey !== next.mergeKey) return false;
   if (previous.affectedSlides.length !== 1 || next.affectedSlides.length !== 1) return false;
@@ -109,8 +124,8 @@ export class HistoryStore implements History {
     if (!this.mergeBarrier && previous && canMerge(previous, next)) {
       const merged: StoredHistoryEntry = {
         ...next,
-        forward: [...previous.forward, ...next.forward],
-        inverse: [...next.inverse, ...previous.inverse],
+        forward: compactPatches([...previous.forward, ...next.forward]),
+        inverse: compactPatches([...next.inverse, ...previous.inverse]),
         selectionBefore: cloneSelection(previous.selectionBefore),
         beforeState: previous.beforeState,
       };

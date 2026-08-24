@@ -36,15 +36,22 @@ session.dispose();          // destroys remaining views and releases ZIP bytes /
 
 `SlideEditor` owns three stacked layers: the existing SVG preview, an SVG interaction overlay, and an HTML
 text overlay. A headless `Editor` transaction replaces only the dirty element's markup and defs partition;
-unchanged sibling DOM nodes keep their identity. If more than 30% of the slide's top-level elements are dirty,
-the view falls back to one full render. Stable `data-edit-id` values are assigned to top-level and nested group
-nodes, so DOM hit testing never depends on part-local OOXML ids.
+unchanged sibling DOM nodes keep their identity. The view falls back to one full render only when more than eight
+partitions and over 30% of the slide's top-level elements are dirty, avoiding ratio distortion on small slides.
+Stable `data-edit-id` values are assigned to top-level and nested group nodes, so DOM hit testing never depends
+on part-local OOXML ids.
 
 In edit mode, pointer selection uses the browser's native SVG hit testing. A click inside a group selects its
 outermost group; double-click enters one group level and `Escape` leaves one level. `Alt`+click cycles through
 overlapping candidates in `elementsFromPoint` z-order. Locked, user-hidden, and non-editable branches are
 skipped. View mode does not intercept pointer events or mutate the shared headless selection. Selection changes
 replace only the interaction overlay, leaving the static preview DOM untouched.
+
+When an edit view has focus, arrow keys nudge in slide space by `1px`; `Shift`+arrow nudges by `10px`.
+Multi-selections and elements inside rotated, flipped, non-uniformly scaled groups receive the same world-space
+delta. Auto-repeat from one physical hold is one undo unit, while a press after key-up starts another. A locked,
+hidden, non-editable, or off-page member rejects the whole operation. View mode, active pointer gestures, and
+form/contenteditable controls in either regular or Shadow DOM keep ownership of their arrow keys.
 
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant

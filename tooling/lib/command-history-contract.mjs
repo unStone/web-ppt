@@ -83,6 +83,9 @@ export async function runCommandHistoryContract({ edit, core, load, check, eq })
     editor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: mergeStart + 2 }),
       '面板位置', { mergeKey: `x:${target.id}`, time: 1499 });
     eq('同页相邻属性在 500ms 内合并为一个撤销单元', editor.history.undoCount, 1);
+    check('合并历史按路径只保留最新 forward 与最早 inverse',
+      editor.history.undoEntries[0].forward.length === 1
+        && editor.history.undoEntries[0].inverse.length === 1);
     editor.undo();
     eq('合并事务撤销回到整组最早值', target.ovr.x, mergeStart);
     editor.redo();
