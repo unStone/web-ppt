@@ -121,7 +121,9 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
       && table.src.rows[1].cells[0].rowSpan === 2 && table.src.rows[2].cells[0].merged
       && table.src.rows[1].cells[1].vert === 'vert'
       && table.src.rows[1].cells[2].text.paragraphs[0].rtl
-      && table.src.rows[1].cells[3].text.autoFitCompute);
+      && table.src.rows[1].cells[3].text.autoFitCompute
+      && table.src.rows[1].cells[3].vert === 'vert270'
+      && table.src.rows[1].cells[3].margins.join(',') === '10,8,6,18');
   let mergedRejected = 0;
   for (const merged of [{ r: 0, c: 3 }, { r: 2, c: 0 }]) {
     try {

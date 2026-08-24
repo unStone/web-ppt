@@ -1214,6 +1214,20 @@ group('表格');
   if (check('表格编辑固件保留双向翻转', editorTable?.flipH && editorTable?.flipV)) {
     const markup = lib.renderElementToSvg(editorTable, { idPrefix: 'flipped-table-' }).markup;
     check('表格内容与其它元素一致应用自身翻转', markup.includes('scale(-1 -1)'));
+    const autofitCell = editorTable.rows[1].cells[3];
+    const cellW = editorTable.colWidths[3];
+    const cellH = editorTable.rows[1].height;
+    const scale = lib.layoutText(autofitCell.text, cellW, cellH, {
+      insets: autofitCell.margins, vert: autofitCell.vert, includeCarets: false,
+    }).scale;
+    const fontSize = Math.round(autofitCell.text.paragraphs[0].runs[0].size * scale * 100) / 100;
+    const svgMarkup = lib.renderElementToSvg(editorTable, {
+      textMode: 'svg', idPrefix: 'autofit-cell-',
+    }).markup;
+    check('竖排表格单元格的静态 SVG 与编辑面共用边距覆盖和有效缩放',
+      autofitCell.vert === 'vert270' && svgMarkup.includes('rotate(-90)')
+        && svgMarkup.includes(`font-size="${fontSize}"`),
+    `scale=${scale} fontSize=${fontSize}`);
   }
   // 回归：.ppt 的表格由「底色矩形 + 文字框」两层合并后再按网格还原
   const pp = parsed.get('showcase.ppt');

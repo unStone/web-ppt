@@ -257,10 +257,25 @@ function textHeight(t: TextBody, boxW: number, scale: number, measurer?: TextMea
  * 二分求解而非按 PowerPoint 的离散档位（92.5% / 85% / …）：LibreOffice 用连续值，
  * 而它是本项目的保真基准。
  */
-export function autoFitScale(t: TextBody, w: number, h: number, measurer?: TextMeasure): number {
-  const [pt, pr, pb, pl] = t.insets;
-  const boxW = Math.max(1, w - pl - pr);
-  const boxH = Math.max(1, h - pt - pb);
+interface TextScaleOverrides {
+  insets?: readonly [number, number, number, number];
+  vert?: TextBody['vert'];
+}
+
+export function autoFitScale(
+  t: TextBody,
+  w: number,
+  h: number,
+  measurer?: TextMeasure,
+  overrides: TextScaleOverrides = {},
+): number {
+  const [pt, pr, pb, pl] = overrides.insets ?? t.insets;
+  const vert = overrides.vert ?? t.vert ?? 'horz';
+  // 竖排先把行盒宽高交换；求解器必须使用与最终行盒相同的逻辑内容盒。
+  const layoutW = vert === 'vert' || vert === 'wordArtVert' || vert === 'vert270' ? h : w;
+  const layoutH = vert === 'vert' || vert === 'wordArtVert' || vert === 'vert270' ? w : h;
+  const boxW = Math.max(1, layoutW - pl - pr);
+  const boxH = Math.max(1, layoutH - pt - pb);
   if (textHeight(t, boxW, 1, measurer) <= boxH) return 1;
 
   let lo = MIN_AUTOFIT, hi = 1;
@@ -275,10 +290,16 @@ export function autoFitScale(t: TextBody, w: number, h: number, measurer?: TextM
 const MIN_AUTOFIT = 0.25;
 
 /** TextBody 的最终字号比例；HTML、SVG 和公共行盒共用。 */
-export function resolveTextScale(t: TextBody, w: number, h: number, measurer?: TextMeasure): number {
+export function resolveTextScale(
+  t: TextBody,
+  w: number,
+  h: number,
+  measurer?: TextMeasure,
+  overrides: TextScaleOverrides = {},
+): number {
   const base = Number.isFinite(t.fontScale) && t.fontScale > 0 ? t.fontScale : 1;
   if (!t.autoFitCompute || t.autoFitShape) return base;
-  return base * autoFitScale(t, w, h, measurer);
+  return base * autoFitScale(t, w, h, measurer, overrides);
 }
 
 function flattenLayout(paragraphs: LaidPara[]): RenderItem[] {
@@ -414,7 +435,7 @@ export function layoutText(
   const vert = opts.vert ?? t.vert ?? 'horz';
   const scale = Number.isFinite(opts.scale) && opts.scale! > 0
     ? opts.scale!
-    : resolveTextScale(t, w, h, opts.measureText);
+    : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
   const autoFit: TextLayout['autoFit'] = t.autoFitShape ? 'shape' : t.autoFitCompute ? 'normal' : 'none';
 
   if (vert === 'vert' || vert === 'wordArtVert' || vert === 'vert270') {

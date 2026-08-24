@@ -24,6 +24,7 @@ import { runParagraphFormatEditorContract } from './lib/paragraph-format-editor-
 import { runRichTextClipboardEditorContract } from './lib/rich-text-clipboard-editor-contract.mjs';
 import { runEngineTextEditorContract } from './lib/engine-text-editor-contract.mjs';
 import { runTableCellTextEditorContract } from './lib/table-cell-text-editor-contract.mjs';
+import { runAutofitTextEditorContract } from './lib/autofit-text-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -40,7 +41,13 @@ execFileSync('npx', [
   `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
   `--outfile=${bundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const coreBundle = join(out, 'core.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error', `--outfile=${coreBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
+const core = await import(`file://${coreBundle}?run=${Date.now()}`);
 
 let passed = 0;
 const failures = [];
@@ -202,6 +209,7 @@ await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironmen
 await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });
+await runAutofitTextEditorContract({ check, core, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

@@ -59,10 +59,11 @@ tracker: local-markdown
 - [实现文字剪贴板与富文本粘贴闭环](tickets/033-rich-text-clipboard.md) — 纯 JSON 富文本片段、清洗 HTML 与同步剪贴板事件统一 copy/cut/paste、纯文本快捷键和最小写回；Chrome 2,000 字符完整上屏 p95 5.6ms。
 - [让 Safari engine 行盒驱动文字编辑面](tickets/034-safari-engine-text-editing.md) — `textMode` 现在统一静态 SVG 与 SVG 外编辑面的排版决策，源 UTF-16 分段守住复杂文本 Range；Chrome 2,000 字符完整上屏最慢 p95 17.8ms、行盒偏差 0.009px。
 - [实现表格单元格文字编辑闭环](tickets/035-table-cell-text-editing.md) — 稀疏单元格覆盖复用既有文字模型与保留型写回，browser/engine 共用编辑面；Chrome 20×10 表格上屏 p95 0.500ms。
+- [节流 normAutofit 文字输入重排](tickets/036-throttle-normal-autofit-text-input.md) — 同步模型提交与视图派生比例分离，持续输入最多每 100ms 以实际内容盒重排；Chrome 三路 p95 最慢 3.500ms。
 
 ## Not yet specified
 
-- M3 剩余的 autofit 输入节流与 `spAutoFit` 改高以 034 固定的行盒/Range seam 分别拆任务；表格末格 Tab 新增行随 `InsertRow` 结构命令处理。
+- M3 剩余的 `spAutoFit` 改高以 034 固定的行盒/Range seam 独立拆任务；表格末格 Tab 新增行随 `InsertRow` 结构命令处理。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。

@@ -42,6 +42,13 @@ export async function runEngineTextSaveContract({
           to: { p: 0, r: 0, off: 2 }, text: '保存',
         }],
       },
+      {
+        targetName: 'Engine 裸自动缩放',
+        ops: [{
+          type: 'replace', from: { p: 0, r: 0, off: 10 },
+          to: { p: 0, r: 0, off: 10 }, text: '【节流保存】',
+        }],
+      },
     ],
   });
   const input = load(scenario.file);
@@ -71,6 +78,7 @@ export async function runEngineTextSaveContract({
   const columns = findNamed(reopened.slides[0].elements, 'Engine 分栏基准');
   const formula = findNamed(reopened.slides[0].elements, 'Engine 公式基准');
   const autofit = findNamed(reopened.slides[0].elements, 'Engine 裸自动缩放');
+  const slideXml = new TextDecoder().decode(reopened.package.parts['ppt/slides/slide1.xml']);
   check('engine 文字只重写目标页且重开保留硬换行、空段、RTL、公式、竖排、分栏和 autofit',
     saved.mode === 'passthrough'
       && diff.added.length === 0 && diff.removed.length === 0
@@ -83,7 +91,10 @@ export async function runEngineTextSaveContract({
       && formula.text.paragraphs[0].runs.some((run) => run.math?.length)
       && vertical.text.vert === 'vert'
       && columns.text.columns === 2
-      && autofit.text.autoFitCompute === true);
+      && plain(autofit, 0).includes('【节流保存】')
+      && autofit.text.autoFitCompute === true
+      && slideXml.includes('<a:normAutofit/>')
+      && !slideXml.includes('fontScale='));
   const projected = renderFingerprint(scenario.file, 'projected', scenario);
   const reparsed = renderFingerprint(artifact, 'saved', scenario);
   for (const textMode of ['html', 'svg']) {

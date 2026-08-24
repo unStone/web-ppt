@@ -87,6 +87,46 @@ export function runEngineTextHtmlContract({ lib, parsed, check, eq, near }) {
   autofitHost.innerHTML = lib.renderTextBodyToHtml(autofit.text, autofit.w, autofit.h, { layout: 'engine' });
   near('裸 normAutofit 的 engine HTML 与 SVG 行盒共用有效字号比例',
     Number(autofitHost.firstElementChild.dataset.fontScale), autofitLayout.scale, 0.005);
+  const fixedBrowser = document.createElement('div');
+  fixedBrowser.innerHTML = lib.renderTextBodyToHtml(
+    autofit.text, autofit.w, autofit.h, { layout: 'browser', scale: 0.61 },
+  );
+  const fixedEngine = document.createElement('div');
+  fixedEngine.innerHTML = lib.renderTextBodyToHtml(
+    autofit.text, autofit.w, autofit.h, { layout: 'engine', scale: 0.61 },
+  );
+  check('已解决的 autofit 比例让 browser/engine 跳过二次求解且保留 normal 身份',
+    fixedBrowser.firstElementChild.dataset.fontScale === '0.61'
+      && fixedBrowser.firstElementChild.dataset.autofit === 'normal'
+      && fixedEngine.firstElementChild.dataset.fontScale === '0.61'
+      && fixedEngine.firstElementChild.dataset.autofit === 'normal');
+
+  const overriddenText = {
+    ...autofit.text,
+    insets: [0, 0, 0, 0],
+    paragraphs: autofit.text.paragraphs.map((paragraph) => ({
+      ...paragraph,
+      runs: paragraph.runs.map((run) => ({ ...run, text: run.text.repeat(2) })),
+    })),
+  };
+  const overriddenOptions = { insets: [24, 18, 20, 16], vert: 'vert270' };
+  const sourceBoxScale = lib.layoutText(overriddenText, autofit.w, autofit.h).scale;
+  const effectiveBoxScale = lib.layoutText(
+    overriddenText, autofit.w, autofit.h, overriddenOptions,
+  ).scale;
+  const overrideBrowser = document.createElement('div');
+  overrideBrowser.innerHTML = lib.renderTextBodyToHtml(
+    overriddenText, autofit.w, autofit.h, { layout: 'browser', ...overriddenOptions },
+  );
+  const overrideEngine = document.createElement('div');
+  overrideEngine.innerHTML = lib.renderTextBodyToHtml(
+    overriddenText, autofit.w, autofit.h, { layout: 'engine', ...overriddenOptions },
+  );
+  check('自动缩放使用编辑面实际的边距与竖排内容盒',
+    effectiveBoxScale !== sourceBoxScale
+      && Math.abs(Number(overrideBrowser.firstElementChild.dataset.fontScale) - effectiveBoxScale) <= 0.005
+      && Math.abs(Number(overrideEngine.firstElementChild.dataset.fontScale) - effectiveBoxScale) <= 0.005,
+  `source=${sourceBoxScale} effective=${effectiveBoxScale} browser=${overrideBrowser.firstElementChild.dataset.fontScale} engine=${overrideEngine.firstElementChild.dataset.fontScale}`);
 
   const oldDocument = globalThis.document;
   globalThis.document = undefined;

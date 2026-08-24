@@ -46,7 +46,11 @@ const semantic = table({
       cell({ attrs: 'rowSpan="2"', text: '<a:p><a:r><a:rPr sz="1700"/><a:t>纵向合并起始格</a:t></a:r></a:p>', tcPr: `<a:tcPr anchor="b">${solid('FEF3C7')}</a:tcPr>` }),
       cell({ text: '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1700"/><a:t>竖排中文ABC</a:t></a:r></a:p>', tcPr: `<a:tcPr vert="vert" anchor="ctr">${solid('FAE8FF')}</a:tcPr>` }),
       cell({ text: '<a:p><a:pPr algn="r" rtl="1"/><a:r><a:rPr sz="1700"/><a:t>مرحبا RTL</a:t></a:r></a:p>', tcPr: `<a:tcPr anchor="ctr">${solid('ECFEFF')}</a:tcPr>` }),
-      cell({ bodyPr: '<a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr>', text: '<a:p><a:r><a:rPr sz="2200"/><a:t>裸 autofit 单元格需要实时计算比例，编辑面不能跳版。</a:t></a:r></a:p>', tcPr: `<a:tcPr>${solid('F5F3FF')}</a:tcPr>` }),
+      cell({
+        bodyPr: '<a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr>',
+        text: '<a:p><a:r><a:rPr sz="2200"/><a:t>裸 autofit 单元格需要实时计算比例，编辑面不能跳版。</a:t></a:r></a:p>',
+        tcPr: `<a:tcPr vert="vert270" marL="${px(18)}" marR="${px(8)}" marT="${px(10)}" marB="${px(6)}">${solid('F5F3FF')}</a:tcPr>`,
+      }),
     ],
     [
       cell({ attrs: 'vMerge="1"', text: '<a:p><a:r><a:t>不可见占位</a:t></a:r></a:p>' }),

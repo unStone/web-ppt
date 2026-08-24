@@ -7,6 +7,7 @@ export function createTextEditorRoot(
   document: Document,
   active: ActiveText,
   layout: 'browser' | 'engine',
+  scale?: number,
 ): HTMLDivElement {
   const root = document.createElement('div');
   root.dataset.pptTextEditor = active.id;
@@ -28,6 +29,7 @@ export function createTextEditorRoot(
   root.innerHTML = renderTextBodyToHtml(active.text, active.width, active.height, {
     includeEditMarkers: true,
     layout,
+    scale,
     ...(active.insets ? { insets: active.insets } : {}),
     ...(active.anchor ? { anchor: active.anchor } : {}),
     ...(active.vert ? { vert: active.vert } : {}),

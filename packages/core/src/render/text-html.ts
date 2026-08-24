@@ -44,6 +44,8 @@ export interface RenderTextBodyHtmlOptions {
   includeEditMarkers?: boolean;
   /** browser 交给 CSS 断行；engine 按 layoutText 行盒绝对定位，供原生 SVG/Safari 编辑面使用。 */
   layout?: 'browser' | 'engine';
+  /** 已解决的有效字号比例；编辑输入突发期用它避免重复求解 normAutofit。 */
+  scale?: number;
 }
 
 /** 字体名放在 CSS 单引号字符串里，必须同时挡住 CSS 与外层 HTML 属性边界。 */
@@ -162,8 +164,16 @@ function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string
   return run.link ? `<a ${linkAttrs(run.link)}>${span}</a>` : span;
 }
 
-function fittedText(t: TextBody, w: number, h: number): TextBody {
-  const scale = resolveTextScale(t, w, h);
+function fittedText(
+  t: TextBody,
+  w: number,
+  h: number,
+  opts: Pick<RenderTextBodyHtmlOptions, 'insets' | 'vert' | 'scale'>,
+): TextBody {
+  const fixedScale = opts.scale;
+  const scale = Number.isFinite(fixedScale) && fixedScale! > 0
+    ? fixedScale!
+    : resolveTextScale(t, w, h, undefined, { insets: opts.insets, vert: opts.vert });
   return scale === t.fontScale ? t : { ...t, fontScale: scale };
 }
 
@@ -314,6 +324,7 @@ function renderEngineTextBodyToHtml(
     insets: opts.insets,
     anchor: opts.anchor,
     vert: opts.vert,
+    scale: opts.scale,
   });
   const linesByParagraph = source.paragraphs.map((_, paragraphIndex) =>
     layout.lines.filter((line) => line.paragraphIndex === paragraphIndex));
@@ -340,7 +351,7 @@ export function renderTextBodyToHtml(
   opts: RenderTextBodyHtmlOptions = {},
 ): string {
   if (opts.layout === 'engine') return renderEngineTextBodyToHtml(source, w, h, opts);
-  const t = fittedText(source, w, h);
+  const t = fittedText(source, w, h, opts);
   const [pt, pr, pb, pl] = opts.insets ?? t.insets;
   const scale = t.fontScale;
   const markers = opts.includeEditMarkers !== false;

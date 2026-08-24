@@ -739,7 +739,10 @@ function renderText(
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
     // HTML 公共入口内部也做这一步；这里仅为独立 SVG 路径保留同一语义。
     if (t.autoFitCompute && !t.autoFitShape) {
-      const scale = resolveTextScale(t, w, h);
+      const scale = resolveTextScale(t, w, h, undefined, {
+        insets: marginsOverride,
+        vert: vertOverride,
+      });
       if (scale !== t.fontScale) t = { ...t, fontScale: scale };
     }
     const addDef = (markup: string): string => {
@@ -747,7 +750,10 @@ function renderText(
       ctx.defs.push(markup.replace('__ID__', id));
       return id;
     };
-    return renderTextSvg(t, w, h, addDef, marginsOverride, vAlignOverride);
+    return renderTextSvg(
+      vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
+      w, h, addDef, marginsOverride, vAlignOverride,
+    );
   }
   const html = renderTextBodyToHtml(t, w, h, {
     insets: marginsOverride,

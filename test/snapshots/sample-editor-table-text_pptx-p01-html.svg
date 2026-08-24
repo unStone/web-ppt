@@ -65,10 +65,9 @@
 <g transform="translate(810 170)">
 <rect width="270" height="170" fill="rgb(245,243,255)"/>
 <foreignObject width="270" height="170" style="overflow:visible">
-<div xmlns="http://www.w3.org/1999/xhtml" style="width:270px;height:170px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:270px;height:170px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:10px 8px 6px 18px;writing-mode:vertical-rl;transform:rotate(180deg);overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:29.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裸 autofit 单元格需要实时计算比例<span style="margin-right:-0.5em">，</span>编辑面不能跳版<span style="margin-right:-0.5em">。</span>
-</span>
+<span style="font-size:29.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">裸 autofit 单元格需要实时计算比例，编辑面不能跳版。</span>
 </div>
 </div>
 </foreignObject>

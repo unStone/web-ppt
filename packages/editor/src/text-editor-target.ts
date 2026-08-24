@@ -7,6 +7,15 @@ import type { ActiveText } from './text-editor-types';
 
 const translation = (x: number, y: number) => ({ a: 1, b: 0, c: 0, d: 1, e: x, f: y });
 
+export const sameTextCell = (
+  left: TableCellAddress | null | undefined,
+  right: TableCellAddress | null | undefined,
+): boolean => left?.r === right?.r && left?.c === right?.c && (!!left === !!right);
+
+export function textTargetFields(cell: TableCellAddress | null): { cell?: TableCellAddress } {
+  return cell ? { cell: { ...cell } } : {};
+}
+
 function tableCellFrame(table: TableElement, address: TableCellAddress) {
   const cell = table.rows[address.r]?.cells[address.c];
   const text = cell?.text ?? cell?.editInfo?.textTemplate;
