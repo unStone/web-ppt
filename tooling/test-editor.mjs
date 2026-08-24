@@ -8,6 +8,7 @@ import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
 import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
+import { runRotationGestureContract } from './lib/rotation-gesture-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -171,6 +172,7 @@ await runNativeHitContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });
 await runResizeGestureContract({ check, lib, root });
+await runRotationGestureContract({ check, lib, root });
 
 console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
 {

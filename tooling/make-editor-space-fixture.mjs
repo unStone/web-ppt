@@ -27,12 +27,17 @@ const inner = `<p:grpSp>
 <a:chExt cx="${px(140)}" cy="${px(80)}"/></a:xfrm></p:grpSpPr>
 ${leaf}
 </p:grpSp>`;
+const outerSibling = sp({
+  x: 170, y: 35, w: 50, h: 55, rot: 1800000,
+  fill: solid('accent2'), name: 'space-outer-sibling',
+});
 const outer = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="502" name="space-outer-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
 <p:grpSpPr><a:xfrm rot="1200000" flipV="1"><a:off x="${px(700)}" y="${px(330)}"/>
 <a:ext cx="${px(420)}" cy="${px(260)}"/><a:chOff x="${px(20)}" y="${px(10)}"/>
 <a:chExt cx="${px(210)}" cy="${px(130)}"/></a:xfrm></p:grpSpPr>
 ${inner}
+${outerSibling}
 </p:grpSp>`;
 
 const bytes = deck({

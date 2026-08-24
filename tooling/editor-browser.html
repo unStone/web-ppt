@@ -23,6 +23,7 @@
   <script type="module">
     import { openEditor } from '/out/editor/editor.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
+    import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -398,6 +399,7 @@
       }
 
       const resizeResult = await runEditorResizeBrowserContract({ openEditor, load });
+      const rotationResult = await runEditorRotationBrowserContract({ openEditor, load });
 
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
@@ -411,6 +413,9 @@
       report.dataset.resizeHitError = resizeResult.hitSizeError.toFixed(3);
       report.dataset.resizeP95 = resizeResult.p95.toFixed(3);
       report.dataset.resizeSingularP95 = resizeResult.singularP95.toFixed(3);
+      report.dataset.rotationNestedError = rotationResult.nestedError.toFixed(3);
+      report.dataset.rotationMultiError = rotationResult.multiError.toFixed(3);
+      report.dataset.rotationP95 = rotationResult.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -422,6 +427,8 @@
         + `三档缩放手柄/锚点偏差 ${resizeResult.geometryError.toFixed(3)} / `
         + `${resizeResult.hitSizeError.toFixed(3)}px，缩放帧 p95 ${resizeResult.p95.toFixed(3)}ms\n`
         + `60 个 45° 元素近奇异缩放帧 p95 ${resizeResult.singularP95.toFixed(3)}ms`;
+      report.textContent += `\n嵌套/多选旋转偏差 ${rotationResult.nestedError.toFixed(3)} / `
+        + `${rotationResult.multiError.toFixed(3)}px，60 元素旋转帧 p95 ${rotationResult.p95.toFixed(3)}ms`;
       globalThis.editorContract = { session, hitSession, spaceSession, spaceView, fontSession, perfSession };
     } catch (error) {
       report.style.color = '#b91c1c';

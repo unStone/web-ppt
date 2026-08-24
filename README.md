@@ -32,7 +32,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 9.7KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择、移动/缩放手势与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 11.4KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择、移动/缩放/旋转手势与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 13.0KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -82,7 +82,8 @@ session.dispose();         // 释放全部视图、原包与 blob URL
 编辑模式的 interaction SVG 会为普通、旋转/翻转及嵌套组元素绘制精确 OBB、8 个缩放柄和旋转柄；
 手柄始终保持屏幕像素尺寸。`@web-ppt/editor` 同时公开元素本地坐标、幻灯片坐标与屏幕坐标的纯函数，
 框架适配器无需复制组变换数学。元素和多选可直接移动；8 个缩放柄支持 Shift 等比、Alt 中心缩放与
-过锚翻面。移动/缩放帧只改幽灵 DOM，松手才形成一个可撤销、可保存的事务。
+过锚翻面。旋转柄支持连续跨越 ±180°、动态 Shift 15° 约束、嵌套翻转组与共同中心多选；变换帧只改
+幽灵 DOM，松手才形成一个可撤销、可保存的事务。
 
 直接开发编辑适配器、做增量更新或字符串比较时，可显式指定稳定的 SVG 命名空间：
 
@@ -291,7 +292,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
 | `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 244 项断言 + M1 11 项独立验收 + 28 份固件、214 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 48 项会话 / 增量 DOM / 原生选择 / 坐标、移动与缩放 / 资源断言 + 真实 Chrome 命中、矩阵、pointer capture 与性能门禁 |
+| `npm run test:editor` | 58 项会话 / 增量 DOM / 原生选择 / 坐标、移动、缩放与旋转 / 资源断言 + 真实 Chrome 命中、矩阵、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

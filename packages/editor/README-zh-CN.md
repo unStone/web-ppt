@@ -73,7 +73,12 @@ const origin = elementFrameToSlidePoint(session.editor.doc, elementId, { x: 0, y
 `Alt` 固定中心，手势过程中也可随时按下或释放修饰键。拖过对角锚点时，尺寸会规范成正数，活动手柄
 连续跟随指针并切换 `flipH` / `flipV`，不会跳边。单个旋转/翻转元素与嵌套组在各自父坐标里守住
 对角锚点；多选按共同世界系 AABB 缩放。预览复用移动手势的 pointer capture/rAF 生命周期，只改临时
-wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销单元。旋转柄当前仍只负责可视反馈。
+wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销单元。
+
+旋转柄也有 4 个屏幕像素的透明命中余量。单选把指针角度反解到元素父坐标，能穿过自身翻转与多层
+旋转/翻转组；多选围绕共同 AABB 中心同步更新每个选择根的中心和方向。角度跨越 ±180° 时连续累计，
+`Shift` 可在手势中动态吸附到 15°，单选旁实时显示角度。预览仍只改幽灵 wrapper；松手以一个事务
+精确写回 OOXML 的 1/60000 度，全部取消路径都不提交。
 
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本；也可显式指定 `html` 或 `svg`。整页与元素增量更新始终走

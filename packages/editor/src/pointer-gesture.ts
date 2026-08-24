@@ -12,6 +12,7 @@ export interface PointerGesture {
   cursor: string;
   dataset: { name: string; value: string };
   start(): void;
+  observePointer?(snapshot: PointerGestureSnapshot): void;
   frame(snapshot: PointerGestureSnapshot): void;
   finish(snapshot: PointerGestureSnapshot): (() => void) | null;
   clear(): void;
@@ -56,6 +57,12 @@ export class PointerGestureLifecycle {
     const active = this.active;
     if (!active || pointerId(event) !== active.pointerId) return;
     this.updateSnapshot(active, event);
+    try {
+      active.gesture.observePointer?.(active.snapshot);
+    } catch (error) {
+      this.clear(active);
+      throw error;
+    }
     if (!active.started) {
       const distance = Math.hypot(
         active.snapshot.screen.x - active.startScreen.x,
@@ -82,6 +89,7 @@ export class PointerGestureLifecycle {
     this.updateSnapshot(active, event);
     let commit: (() => void) | null;
     try {
+      active.gesture.observePointer?.(active.snapshot);
       commit = active.started ? active.gesture.finish(active.snapshot) : null;
     } catch (error) {
       this.clear(active);

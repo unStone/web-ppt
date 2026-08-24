@@ -129,6 +129,19 @@ export function updateSelectionOverlayFrame(
     rotate.setAttribute('r', String(handleSize / 2));
     rotate.setAttribute('stroke-width', String(strokeWidth));
   }
+  const rotateHit = group.querySelector<SVGCircleElement>('[data-edit-rotation-handle]');
+  if (rotateHit) {
+    rotateHit.setAttribute('cx', String(rotation.x));
+    rotateHit.setAttribute('cy', String(rotation.y));
+    rotateHit.setAttribute('r', String(handleHitSize / 2));
+  }
+  const angle = group.querySelector<SVGTextElement>('[data-edit-rotation-angle]');
+  if (angle) {
+    angle.setAttribute('x', String(rotation.x + 12 / zoom));
+    angle.setAttribute('y', String(rotation.y + 4 / zoom));
+    angle.setAttribute('font-size', String(12 / zoom));
+    angle.setAttribute('stroke-width', String(3 / zoom));
+  }
 }
 
 export function renderSelectionOverlay(
@@ -170,16 +183,36 @@ export function renderSelectionOverlay(
     group.append(handle);
   });
 
-  const stem = svgElement(document, 'line');
-  stem.dataset.editRotationStem = '';
-  stem.setAttribute('stroke', '#2563eb');
-  group.append(stem);
+  const canRotate = frame.ids.every((id) => doc.elements[id].meta.editable === 'full');
+  if (canRotate) {
+    const stem = svgElement(document, 'line');
+    stem.dataset.editRotationStem = '';
+    stem.setAttribute('stroke', '#2563eb');
+    group.append(stem);
 
-  const rotateHandle = svgElement(document, 'circle');
-  rotateHandle.dataset.editHandle = 'rotate';
-  rotateHandle.setAttribute('fill', '#fff');
-  rotateHandle.setAttribute('stroke', '#2563eb');
-  group.append(rotateHandle);
+    const rotateHit = svgElement(document, 'circle');
+    rotateHit.dataset.editRotationHandle = '';
+    rotateHit.setAttribute('fill', 'transparent');
+    rotateHit.style.pointerEvents = 'all';
+    rotateHit.style.cursor = 'grab';
+    group.append(rotateHit);
+
+    const rotateHandle = svgElement(document, 'circle');
+    rotateHandle.dataset.editHandle = 'rotate';
+    rotateHandle.setAttribute('fill', '#fff');
+    rotateHandle.setAttribute('stroke', '#2563eb');
+    group.append(rotateHandle);
+
+    const rotationAngle = svgElement(document, 'text');
+    rotationAngle.dataset.editRotationAngle = '';
+    rotationAngle.setAttribute('fill', '#1d4ed8');
+    rotationAngle.setAttribute('stroke', '#fff');
+    rotationAngle.setAttribute('paint-order', 'stroke');
+    rotationAngle.setAttribute('font-family', 'system-ui, sans-serif');
+    rotationAngle.setAttribute('aria-hidden', 'true');
+    rotationAngle.style.display = 'none';
+    group.append(rotationAngle);
+  }
   layer.append(group);
   updateSelectionOverlayFrame(layer, frame.corners, zoom);
 }

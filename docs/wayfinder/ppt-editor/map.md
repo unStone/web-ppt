@@ -42,10 +42,11 @@ tracker: local-markdown
 - [统一画布坐标并绘制选择框手柄](tickets/016-selection-space-handles.md) — 纯仿射矩阵与 core 组变换严格对偶，单选 OBB、多选 AABB 和 9 个屏幕恒尺寸控件均只更新交互层，真实 Chrome 三档缩放最大偏差 0.000px、完整上屏 p95 0.100ms。
 - [建立移动手势与拖动幽灵](tickets/017-drag-move-gesture.md) — 3px 阈值后的主指针由视图捕获，单选/多选和嵌套组每帧只平移私有幽灵，松手形成一个可撤销写回事务；真实 Chrome rAF p95 0.100ms。
 - [绑定缩放手柄并提交尺寸](tickets/018-resize-handle-gesture.md) — 8 柄以共享 pointer capture/rAF 状态机完成旋转嵌套、多选、Shift/Alt 和过锚翻面，真实 Chrome 三档 zoom 最大误差 0.009px；普通/60×45° 近奇异帧 p95 为 0.100/0.600ms。
+- [绑定旋转柄并提交角度](tickets/019-rotation-handle-gesture.md) — 单选父空间与多选共同中心共用连续角状态机，父矩阵手性守住奇数祖先翻转，真实 Chrome 三档 zoom 嵌套/多选最大偏差 0.000/0.009px，60 元素帧 p95 0.300ms。
 
 ## Not yet specified
 
-- M2 的会话、点选、坐标、移动与缩放已落定；[绑定旋转柄并提交角度](tickets/019-rotation-handle-gesture.md) 先实现单选/多选旋转与 15° 修饰键约束，吸附、框选和键盘操作再分票实现。
+- M2 的会话、点选、坐标与移动/缩放/旋转已落定；[实现移动吸附与智能参考线](tickets/020-drag-snapping-guides.md) 下一步固化 6px 屏幕阈值、同组候选、稳定优先级与交互层反馈；框选和键盘操作再分票实现。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

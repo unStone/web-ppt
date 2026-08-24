@@ -81,7 +81,14 @@ during the gesture. Crossing the opposite anchor normalizes positive dimensions,
 a visual jump, and toggles `flipH` / `flipV`. Single rotated/flipped and nested elements keep the opposite anchor
 fixed in their parent space; multi-selections resize from their shared world-space AABB. Preview frames reuse the
 same pointer-capture/rAF lifecycle as movement and touch only temporary wrappers plus the interaction overlay.
-Pointer-up commits every selected root in one undo unit. The rotation handle remains visual only for now.
+Pointer-up commits every selected root in one undo unit.
+
+The rotation handle has the same four-screen-pixel hit margin. A single selection converts pointer angles into
+the element's parent space through its own flip and every rotated/flipped ancestor; a multi-selection rotates all
+selected roots around the shared AABB center. Angles accumulate continuously across ±180°, `Shift` can snap to
+15° at any point in the gesture, and a live value appears beside a single selection. Preview still touches only
+ghost wrappers; pointer-up writes OOXML's 1/60000-degree value in one transaction, while every cancellation path
+commits nothing.
 
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`; explicit `html` and `svg` modes are also

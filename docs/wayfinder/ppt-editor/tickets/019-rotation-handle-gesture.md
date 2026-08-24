@@ -1,10 +1,10 @@
 ---
 title: 绑定旋转柄并提交角度
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
-assignee: null
+assignee: /root
 blocked_by:
   - ./018-resize-handle-gesture.md
 ---
@@ -24,4 +24,15 @@ blocked_by:
 
 ## Resolution
 
-<!-- 完成时记录角度连续性、父空间换算、多选中心、Shift 约束、写回和 Chrome 证据。 -->
+旋转柄已接入移动/缩放共用的 pointer capture、3px 阈值与 rAF 合并生命周期。指针原始样本连续累计
+跨 ±180° 角度，`Shift` 可在手势中动态切换 15° 约束；预览只把原静态分区移入临时 wrapper 并更新
+interaction overlay，模型、defs 和静态元素身份均保持不变。
+
+单选在元素父空间求角；多选在幻灯片空间围绕共同 AABB 中心刚性旋转，再通过父矩阵手性把方向轴反解回
+各自父空间。这使自身翻转、多层旋转/翻转组与奇数次祖先反射都按同一规则连续展开，不在 90°/270°
+跳转 360°。`editable: 'frame'` 或包含它的混合多选不暴露旋转柄，手势入口亦会拒绝，避免松手时才写回失败。
+
+松手只生成一个“旋转元素”事务，位置与 1/60000 度角度均通过保存/重开。新增确定性空间固件两次生成
+SHA-256 均为 `a33f1d624dbb68257441c094b27bcd8f4509f156d01c37915226756f9631ce20`；Node 端 58 项 editor 断言通过。
+真实 Chrome 在 0.5/1/2 zoom 下的嵌套/多选最大偏差为 0.000/0.009px，60 元素旋转帧 p95 为
+0.300ms，真实 pointer capture、单事务与撤销验收通过；八类中断路径均清理幽灵且不提交。

@@ -102,6 +102,34 @@ export function transformSpacePoint(matrix: AffineMatrix, point: SpacePoint): Sp
   };
 }
 
+export function transformSpaceVector(matrix: AffineMatrix, vector: SpacePoint): SpacePoint {
+  return {
+    x: matrix.a * vector.x + matrix.c * vector.y,
+    y: matrix.b * vector.x + matrix.d * vector.y,
+  };
+}
+
+/** 方向没有平移分量，单独求逆可避免误把父空间原点带进角度计算。 */
+export function inverseTransformSpaceVector(matrix: AffineMatrix, vector: SpacePoint): SpacePoint {
+  const determinant = matrix.a * matrix.d - matrix.b * matrix.c;
+  if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) {
+    throw new Error('元素方向变换不可逆');
+  }
+  return {
+    x: (matrix.d * vector.x - matrix.c * vector.y) / determinant,
+    y: (-matrix.b * vector.x + matrix.a * vector.y) / determinant,
+  };
+}
+
+/** 反射会让父空间里的正角方向与幻灯片空间相反；旋转连续性必须沿同一手性展开。 */
+export function spaceOrientationParity(matrix: AffineMatrix): 1 | -1 {
+  const determinant = matrix.a * matrix.d - matrix.b * matrix.c;
+  if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) {
+    throw new Error('元素方向变换不可逆');
+  }
+  return determinant > 0 ? 1 : -1;
+}
+
 export function invertSpaceMatrix(matrix: AffineMatrix): AffineMatrix {
   const determinant = matrix.a * matrix.d - matrix.b * matrix.c;
   if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) {

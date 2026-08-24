@@ -1,9 +1,11 @@
 import type { EditDoc, ElementId } from '@web-ppt/edit-core';
-import type { AffineMatrix, ElementFrameTransform, SpacePoint } from './space';
+import type { AffineMatrix, SpacePoint } from './space';
 import {
-  composeSpaceMatrices, elementFrameToParentMatrix, elementFrameToSlidePoint,
-  elementParentToSlideMatrix, invertSpaceMatrix, slideToElementParentPoint, transformSpacePoint,
+  elementFrameToSlidePoint, elementParentToSlideMatrix, inverseTransformSpaceVector,
+  slideToElementParentPoint,
 } from './space';
+import { MIN_FRAME_SIZE } from './transform-frame';
+import type { TransformFrame } from './transform-frame';
 
 export const RESIZE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const;
 export type ResizeHandle = typeof RESIZE_HANDLES[number];
@@ -12,17 +14,12 @@ export function isResizeHandle(value: string | undefined): value is ResizeHandle
   return RESIZE_HANDLES.some((handle) => handle === value);
 }
 
-export interface ResizeFrame extends ElementFrameTransform {
-  flipH: boolean;
-  flipV: boolean;
-}
-
 export interface ResizeModifiers {
   altKey: boolean;
   shiftKey: boolean;
 }
 
-export const MIN_RESIZE_SIZE = 1 / 9525;
+export const MIN_RESIZE_SIZE = MIN_FRAME_SIZE;
 const ROTATION_SEARCH_STEP = 0.25;
 const ROTATION_SEARCH_STEPS = 180 / ROTATION_SEARCH_STEP;
 export const RESIZE_HANDLE_AXES: Record<ResizeHandle, readonly [number, number]> = {
@@ -76,11 +73,11 @@ function normalizeAxis(min: number, size: number, direction: number, signedSize:
 }
 
 export function resizeElementFrame(
-  source: ResizeFrame,
+  source: TransformFrame,
   handle: ResizeHandle,
   pointerInParent: SpacePoint,
   modifiers: ResizeModifiers = { altKey: false, shiftKey: false },
-): ResizeFrame {
+): TransformFrame {
   const center = { x: source.x + source.w / 2, y: source.y + source.h / 2 };
   const localPointer = unrotate(pointerInParent, center, source.rot);
   const [horizontal, vertical] = RESIZE_HANDLE_AXES[handle];
@@ -117,9 +114,6 @@ export function resizeElementFrame(
   };
 }
 
-const scaleMatrix = (x: number, y: number): AffineMatrix => ({ a: x, b: 0, c: 0, d: y, e: 0, f: 0 });
-const translationMatrix = (x: number, y: number): AffineMatrix => ({ a: 1, b: 0, c: 0, d: 1, e: x, f: y });
-
 interface FrameWorldAxes {
   x: SpacePoint;
   y: SpacePoint;
@@ -140,7 +134,7 @@ function frameWorldAxes(parent: AffineMatrix, degrees: number): FrameWorldAxes {
 }
 
 function fitFrameSizeToScaledAabb(
-  source: ResizeFrame,
+  source: TransformFrame,
   sourceAxes: FrameWorldAxes,
   nextAxes: FrameWorldAxes,
   scale: SpacePoint,
@@ -163,7 +157,7 @@ function nearestEquivalentAngle(degrees: number, reference: number): number {
 }
 
 function frameFitError(
-  source: ResizeFrame,
+  source: TransformFrame,
   sourceAxes: FrameWorldAxes,
   nextAxes: FrameWorldAxes,
   scale: SpacePoint,
@@ -188,7 +182,7 @@ function frameFitError(
 
 /** 非等比变换会产生 shear；在守住共同 AABB 的可表达矩形中，选择与目标仿射轴误差最小的分解。 */
 function findNearestAabbPreservingFrame(
-  source: ResizeFrame,
+  source: TransformFrame,
   parent: AffineMatrix,
   scale: SpacePoint,
   orientationParity: number,
@@ -198,11 +192,7 @@ function findNearestAabbPreservingFrame(
     x: sourceAxes.x.x * scale.x,
     y: sourceAxes.x.y * scale.y * orientationParity,
   };
-  const determinant = parent.a * parent.d - parent.b * parent.c;
-  const parentX = {
-    x: (parent.d * desiredWorldX.x - parent.c * desiredWorldX.y) / determinant,
-    y: (-parent.b * desiredWorldX.x + parent.a * desiredWorldX.y) / determinant,
-  };
+  const parentX = inverseTransformSpaceVector(parent, desiredWorldX);
   const desiredRotation = nearestEquivalentAngle(
     Math.atan2(parentX.y, parentX.x) * 180 / Math.PI,
     source.rot,
@@ -256,11 +246,11 @@ function mapSelectionAxis(
 
 interface MultiResizeTarget {
   id: ElementId;
-  source: ResizeFrame;
+  source: TransformFrame;
 }
 
 function frameFitKey(
-  source: ResizeFrame,
+  source: TransformFrame,
   parent: AffineMatrix,
   scale: SpacePoint,
   orientationParity: number,
@@ -275,9 +265,9 @@ function frameFitKey(
 export function resizeMultiElementFrames(
   doc: EditDoc,
   targets: readonly MultiResizeTarget[],
-  selectionSource: ResizeFrame,
-  selectionNext: ResizeFrame,
-): ResizeFrame[] {
+  selectionSource: TransformFrame,
+  selectionNext: TransformFrame,
+): TransformFrame[] {
   const horizontalFlip = selectionSource.flipH !== selectionNext.flipH;
   const verticalFlip = selectionSource.flipV !== selectionNext.flipV;
   const scale = {
@@ -316,43 +306,4 @@ export function resizeMultiElementFrames(
       flipV: verticalFlip ? !source.flipV : source.flipV,
     };
   });
-}
-
-function flipDelta(source: ResizeFrame, next: ResizeFrame): AffineMatrix {
-  const x = source.flipH === next.flipH ? 1 : -1;
-  const y = source.flipV === next.flipV ? 1 : -1;
-  if (x === 1 && y === 1) return scaleMatrix(1, 1);
-  return composeSpaceMatrices(
-    translationMatrix(source.w / 2, source.h / 2),
-    composeSpaceMatrices(scaleMatrix(x, y), translationMatrix(-source.w / 2, -source.h / 2)),
-  );
-}
-
-/** 预览 wrapper 位于元素父空间；矩阵把旧渲染框直接映射到新框，不触碰静态 markup。 */
-export function resizePreviewMatrix(source: ResizeFrame, next: ResizeFrame): AffineMatrix {
-  return composeSpaceMatrices(
-    elementFrameToParentMatrix(next),
-    composeSpaceMatrices(
-      scaleMatrix(
-        next.w / Math.max(source.w, MIN_RESIZE_SIZE),
-        next.h / Math.max(source.h, MIN_RESIZE_SIZE),
-      ),
-      composeSpaceMatrices(flipDelta(source, next), invertSpaceMatrix(elementFrameToParentMatrix(source))),
-    ),
-  );
-}
-
-export function resizeFrameCorners(doc: EditDoc, id: ElementId, frame: ResizeFrame): [
-  SpacePoint, SpacePoint, SpacePoint, SpacePoint,
-] {
-  const matrix = composeSpaceMatrices(
-    elementParentToSlideMatrix(doc, id),
-    elementFrameToParentMatrix(frame),
-  );
-  return [
-    transformSpacePoint(matrix, { x: 0, y: 0 }),
-    transformSpacePoint(matrix, { x: frame.w, y: 0 }),
-    transformSpacePoint(matrix, { x: frame.w, y: frame.h }),
-    transformSpacePoint(matrix, { x: 0, y: frame.h }),
-  ];
 }

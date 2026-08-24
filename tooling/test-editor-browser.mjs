@@ -158,6 +158,9 @@ async function browserResult(webSocketDebuggerUrl) {
           dragP95: report.dataset.dragP95, resizeError: report.dataset.resizeError,
           resizeHitError: report.dataset.resizeHitError, resizeP95: report.dataset.resizeP95,
           resizeSingularP95: report.dataset.resizeSingularP95,
+          rotationNestedError: report.dataset.rotationNestedError,
+          rotationMultiError: report.dataset.rotationMultiError,
+          rotationP95: report.dataset.rotationP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -282,13 +285,86 @@ async function browserResult(webSocketDebuggerUrl) {
         const trustedResize = Object.values(resizeResult.during).every(Boolean)
           && Object.values(resizeResult.committed).every(Boolean);
         if (!trustedResize) throw new Error(`真实 pointer capture 缩放失败：${JSON.stringify(resizeResult)}`);
+
+        const rotationPoints = await evaluate(`(() => {
+          const { perfSession } = globalThis.editorContract;
+          const mount = document.querySelector('#mount');
+          const view = perfSession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75 });
+          const ids = perfSession.editor.doc.slides[view.slideId].children;
+          const [id, siblingId] = [ids[10], ids[11]];
+          perfSession.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
+          const handle = mount.querySelector('[data-edit-rotation-handle]');
+          handle.scrollIntoView({ block: 'center', inline: 'center' });
+          const handleRect = handle.getBoundingClientRect();
+          const frameRect = mount.querySelector('[data-edit-selection-frame]').getBoundingClientRect();
+          const start = { x: handleRect.left + handleRect.width / 2, y: handleRect.top + handleRect.height / 2 };
+          const center = { x: frameRect.left + frameRect.width / 2, y: frameRect.top + frameRect.height / 2 };
+          const vector = { x: start.x - center.x, y: start.y - center.y };
+          const end = {
+            x: center.x + (vector.x - vector.y) / Math.SQRT2,
+            y: center.y + (vector.x + vector.y) / Math.SQRT2,
+          };
+          globalThis.trustedRotationContract = {
+            view, id, siblingId,
+            target: mount.querySelector('[data-edit-id="' + id + '"]'),
+            sibling: mount.querySelector('[data-edit-id="' + siblingId + '"]'),
+            svg: mount.querySelector('[data-ppt-layer="static"] svg'),
+            defs: mount.querySelector('[data-ppt-layer="static"] defs'),
+            source: perfSession.editor.effectiveElement(id),
+            historyBefore: perfSession.editor.history.undoCount,
+          };
+          return { start, end };
+        })()`);
+        const rotationResult = await trustedMouseGesture(
+          rotationPoints.start, rotationPoints.end,
+          `(() => {
+            const state = globalThis.trustedRotationContract;
+            const { perfSession } = globalThis.editorContract;
+            const mount = document.querySelector('#mount');
+            return {
+              captured: state.view.element.hasPointerCapture(1),
+              ghost: !!mount.querySelector('[data-edit-rotation-ghost]'),
+              modelStable: perfSession.editor.effectiveElement(state.id).rot === state.source.rot,
+              targetStable: mount.querySelector('[data-edit-id="' + state.id + '"]') === state.target,
+              svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+              defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+            };
+          })()`,
+          `(() => {
+            const state = globalThis.trustedRotationContract;
+            const { perfSession } = globalThis.editorContract;
+            const mount = document.querySelector('#mount');
+            const rotated = perfSession.editor.effectiveElement(state.id);
+            const result = {
+              captureReleased: !state.view.element.hasPointerCapture(1),
+              rotated: Math.abs(rotated.rot - state.source.rot - 45) < 1e-6,
+              oneHistory: perfSession.editor.history.undoCount === state.historyBefore + 1,
+              ghostGone: !mount.querySelector('[data-edit-rotation-ghost]'),
+              targetPatched: mount.querySelector('[data-edit-id="' + state.id + '"]') !== state.target,
+              siblingStable: mount.querySelector('[data-edit-id="' + state.siblingId + '"]') === state.sibling,
+              svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
+              defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
+            };
+            perfSession.editor.undo();
+            result.undoRestored = Math.abs(perfSession.editor.effectiveElement(state.id).rot - state.source.rot) < 1e-6;
+            state.view.destroy();
+            delete globalThis.trustedRotationContract;
+            return result;
+          })()`,
+        );
+        const trustedRotation = Object.values(rotationResult.during).every(Boolean)
+          && Object.values(rotationResult.committed).every(Boolean);
+        if (!trustedRotation) {
+          throw new Error(`真实 pointer capture 旋转失败：${JSON.stringify(rotationResult)}`);
+        }
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
           report.dataset.trustedResize = 'pass';
-          report.textContent += '\\n真实 pointer capture 拖动/缩放与撤销通过';
+          report.dataset.trustedRotation = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转与撤销通过';
         })()`);
-        return { ...result, trustedDrag: 'pass', trustedResize: 'pass' };
+        return { ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass' };
       }
       await delay(100);
     }
@@ -329,7 +405,9 @@ try {
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
-    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}`
+    + ` · 旋转嵌套/多选偏差 ${result.rotationNestedError}/${result.rotationMultiError}px`
+    + ` · 旋转60 p95 ${result.rotationP95}ms`
+    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {
