@@ -269,7 +269,7 @@ class DomSlideEditor implements SlideEditor {
 
     this.keyboard = new EditorKeyboardController({
       editor: session.editor, namespace: this.idPrefix,
-      slideId: () => this.currentSlide,
+      slideId: () => this.currentSlide, revealSlide: (slideId) => this.setSlide(slideId),
       gestureActive: () => this.hasActiveGesture(),
     });
 

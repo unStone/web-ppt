@@ -7,6 +7,7 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contract.mjs';
+import { runTrustedHistoryContract } from './lib/editor-history-browser-contract.mjs';
 import { runTrustedModifierSelectionContract } from './lib/editor-multiselect-browser-contract.mjs';
 import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
@@ -154,8 +155,11 @@ async function browserResult(webSocketDebuggerUrl) {
     await dispatchTrustedMouse('mousePressed', point, modifiers, 1);
     await dispatchTrustedMouse('mouseReleased', point, modifiers, 0);
   };
-  const dispatchKey = async (key, code, virtualKeyCode) => {
-    const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode };
+  const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0) => {
+    const params = {
+      key, code, modifiers,
+      windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode,
+    };
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
   };
@@ -182,6 +186,8 @@ async function browserResult(webSocketDebuggerUrl) {
           marqueeP95: report.dataset.marqueeP95,
           keyboardError: report.dataset.keyboardError,
           keyboardP95: report.dataset.keyboardP95,
+          historyUndoP95: report.dataset.historyUndoP95,
+          historyRedoP95: report.dataset.historyRedoP95,
           tabP95: report.dataset.tabP95,
           multiselectClickP95: report.dataset.multiselectClickP95,
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
@@ -391,6 +397,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedSnapContract({ evaluate, trustedMouseGesture });
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await runTrustedKeyboardContract({ evaluate, dispatchKey });
+        await runTrustedHistoryContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await evaluate(`(() => {
@@ -401,6 +408,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedSnap = 'pass';
           report.dataset.trustedMarquee = 'pass';
           report.dataset.trustedKeyboard = 'pass';
+          report.dataset.trustedHistory = 'pass';
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
@@ -408,7 +416,7 @@ async function browserResult(webSocketDebuggerUrl) {
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
-          trustedModifierSelection: 'pass',
+          trustedModifierSelection: 'pass', trustedHistory: 'pass',
         };
       }
       await delay(100);
@@ -457,11 +465,12 @@ try {
     + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
     + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
     + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
+    + ` · 撤销/重做60 p95 ${result.historyUndoP95}/${result.historyRedoP95}ms`
     + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
-    + ` · trusted keyboard/tab ${result.trustedKeyboard}/${result.trustedTab}`
+    + ` · trusted keyboard/tab/history ${result.trustedKeyboard}/${result.trustedTab}/${result.trustedHistory}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {

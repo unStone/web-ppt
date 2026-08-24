@@ -4,5 +4,6 @@ export interface KeyboardControllerOptions {
   editor: Editor;
   namespace: string;
   slideId(): SlideId;
+  revealSlide(slideId: SlideId): void;
   gestureActive(): boolean;
 }

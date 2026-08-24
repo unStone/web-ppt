@@ -64,6 +64,11 @@ or entered group, in paint order and with wrap-around. A selection owned by anot
 view's first or last candidate. The traversal changes selection only: it creates no history entry and preserves
 the static preview DOM. Form and contenteditable controls, including those in Shadow DOM, keep native Tab focus.
 
+`Ctrl/Cmd+Z` undoes; `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redoes. If the restored selection belongs to another
+slide, only the edit view that received the shortcut reveals that slide; other shared views stay put. Active
+pointer previews and regular or Shadow DOM text controls retain keyboard ownership, while single-element history
+still replaces only that element's DOM partition.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as

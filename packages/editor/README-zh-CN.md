@@ -56,6 +56,10 @@ Shadow DOM 内的表单/contenteditable 保留自己的方向键所有权。
 其它页面选区会从本视图首项/末项重新开始。遍历只改选区，不写历史、不重建静态预览；普通或
 Shadow DOM 内的表单/contenteditable 仍使用浏览器原生 Tab 焦点行为。
 
+`Ctrl/Cmd+Z` 撤销，`Ctrl/Cmd+Shift+Z` 或 `Ctrl/Cmd+Y` 重做。恢复选区在其它页面时，只有收到事件的
+编辑视图切到结果页；其它共享视图保持原页。活动 pointer 预览与普通或 Shadow DOM 文本控件保留键盘
+所有权，单元素历史仍只替换自己的 DOM 分区。
+
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
 core 渲染器的变换顺序。
