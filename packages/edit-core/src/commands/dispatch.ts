@@ -11,8 +11,9 @@ import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import { setBodyPropsPatches } from './set-body-props';
 import { insertRowPatches } from './insert-row';
+import { addShapePatches } from './add-shape';
 import type {
-  AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  AddShapeCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
   InsertRowCommand, SetBodyPropsCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -39,6 +40,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
+  AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
@@ -57,7 +59,7 @@ function assertPureCommand(input: Command): void {
       throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
     }
   }
-  if (input.type !== 'AlignElements' && input.type !== 'PasteElements') {
+  if (input.type !== 'AlignElements' && input.type !== 'PasteElements' && input.type !== 'AddShape') {
     if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
   }
 }

@@ -1,5 +1,5 @@
 import type {
-  ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeElement, Slide,
+  ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide,
   SlideElement, TextBody, TextRun,
 } from '@web-ppt/core';
 
@@ -271,6 +271,8 @@ export interface SlideRecord {
   ovr: SlideOverrides;
   children: ElementId[];
   origin: { part: string } | null;
+  /** 解析期已在当前页主题/颜色映射上求值，新增形状无需理解 OOXML 主题。 */
+  defaultShape?: ShapeCreationDefaults;
 }
 
 export interface EditDocMeta {
@@ -286,6 +288,8 @@ export interface EditIdentity {
   prefix: string;
   nextSlide: number;
   nextElement: number;
+  /** part 内 cNvPr@id 分配状态；首次新增时才从保留 XML 求最大值。 */
+  nextSpid: Record<string, number>;
 }
 
 /** 只保存首次触碰的 XML part；必须随文档 structuredClone 才能在 Worker 中正确撤销后保存。 */

@@ -22,6 +22,10 @@ const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 session.editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
+session.editor.exec({
+  type: 'AddShape', slideId, preset: 'roundRect',
+  rect: { x: 360, y: 180, w: 280, h: 160 },
+});
 
 view.setMode('view');       // 静态预览 DOM 不重建，只隐藏交互层
 view.setMode('edit');
@@ -118,6 +122,10 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 替换真正移动的元素并刷新选择框。React、Vue、Web Component 与原生应用因此共用同一个集成面，
 框架运行时不会进入 editor 包。
 
+形状库也复用同一条无框架 seam：调用 `session.editor.exec({ type: 'AddShape', ... })`。所有挂载视图会
+同步插入新 SVG 分区，edit 视图显示选择框，双击继续打开既有文字编辑器。view 模式本身不提供创建手势；
+产品层决定何时展示命令，不需要导入 DOM 内部模块。
+
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
 core 渲染器的变换顺序。
@@ -173,7 +181,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 27.46KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 29.57KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

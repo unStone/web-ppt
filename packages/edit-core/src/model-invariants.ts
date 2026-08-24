@@ -152,6 +152,11 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('页面宽高必须是有限正数');
   }
   if (doc.package?.disposed) throw new Error('编辑文档持有的 OPC 包已经释放');
+  if (!doc.identity.nextSpid || typeof doc.identity.nextSpid !== 'object'
+    || Object.entries(doc.identity.nextSpid).some(([part, value]) =>
+      !part || !Number.isSafeInteger(value) || value <= 0)) {
+    throw new Error('编辑文档缺少有效的 part spid 分配状态');
+  }
   if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object'
     || !Array.isArray(doc.saveState.createdParts)) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');

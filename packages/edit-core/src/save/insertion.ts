@@ -1,4 +1,5 @@
-import { insertXmlChildUnchecked, removeXmlChild } from '../xml/nodes';
+import { removeXmlChild } from '../xml/nodes';
+import { insertXmlChild } from '../xml/order';
 import { findXmlAttribute, findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
 import { setXmlAttribute } from '../xml/mutate';
 import { parseXmlTree } from '../xml/tree';
@@ -170,6 +171,6 @@ export function patchInsertedElements(
       ancestor = parent.parent;
     }
     if (covered) continue;
-    insertXmlChildUnchecked(targetParent(document, doc, record), detachedHost(doc, record));
+    insertXmlChild(targetParent(document, doc, record), detachedHost(doc, record));
   }
 }

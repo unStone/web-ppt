@@ -57,6 +57,10 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
   [expandedName(PRESENTATIONML_NS, 'sp')]: {
     groups: [p('nvSpPr'), p('spPr'), p('style'), p('txBody')],
   },
+  [expandedName(PRESENTATIONML_NS, 'spTree')]: {
+    groups: [p('nvGrpSpPr'), p('grpSpPr'),
+      [...p('sp', 'grpSp', 'graphicFrame', 'cxnSp', 'pic'), ...p14('contentPart')], p('extLst')],
+  },
   [expandedName(PRESENTATIONML_NS, 'graphicFrame')]: {
     groups: [p('nvGraphicFramePr'), p('xfrm'), a('graphic'), p('extLst')],
   },

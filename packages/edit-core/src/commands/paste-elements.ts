@@ -12,6 +12,7 @@ import type {
   ElementTreeSnapshot, PasteElementsCommand,
 } from './types';
 import { prepareInsertionClosures } from './paste-resources';
+import { partSpidAllocator } from './spid';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
@@ -88,13 +89,6 @@ function resolvePasteDestination(doc: EditDoc, parentId: string): { parent: Slid
   }
   if (!group.meta.origin) throw new Error('粘贴目标组合缺少写回锚点');
   return { parent: parentId, part: group.meta.origin.part };
-}
-
-function nextSpid(doc: EditDoc, part: string): () => number {
-  const values = [...Object.values(doc.elements), ...Object.values(doc.removedElements)]
-    .flatMap((record) => record.meta.origin?.part === part ? [record.meta.origin.spid] : []);
-  let next = Math.max(0, ...values) + 1;
-  return () => next++;
 }
 
 function translated(matrix: AffineMatrix, dx: number, dy: number): AffineMatrix {
@@ -179,7 +173,7 @@ export function pasteElementsPatches(
   }));
   const idMap = new Map<string, ElementId>();
   for (const id of Object.keys(payload.records)) idMap.set(id, allocateElementId(doc));
-  const allocateSpid = nextSpid(doc, destination.part);
+  const allocateSpid = partSpidAllocator(doc, destination.part);
   const siblings = elementParentChildren(doc, destination.parent);
   let previousOrder = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
 

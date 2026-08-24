@@ -111,7 +111,7 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
   }
   const targetIds = (command: Command): readonly ElementId[] => {
     if (command.type === 'AlignElements') return Array.isArray(command.ids) ? command.ids : [];
-    if (command.type === 'PasteElements') return [];
+    if (command.type === 'PasteElements' || command.type === 'AddShape') return [];
     return [command.id];
   };
   for (const command of commands) {
@@ -283,7 +283,7 @@ export class Editor {
     const autoFitTargets = new Set<ElementId>();
     const historyLinks: HistoryPatchLink[] = [];
     const selectionBefore = this.selection;
-    const identityBefore = { ...this.doc.identity };
+    const identityBefore = structuredClone(this.doc.identity);
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
       const dirty = applyPatches(this.doc, patches.forward);
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
@@ -327,6 +327,11 @@ export class Editor {
         this.currentSelection = normalizeSelection(this.doc, {
           kind: 'elements', ids, enteredGroup: this.doc.slides[commands[0].at.parentId]
             ? null : commands[0].at.parentId,
+        });
+      } else if (commands.length === 1 && commands[0].type === 'AddShape') {
+        const id = forward.find((patch) => patch.path.length === 2 && patch.op === 'insert')?.path[1];
+        if (id) this.currentSelection = normalizeSelection(this.doc, {
+          kind: 'elements', ids: [id], enteredGroup: null,
         });
       } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
       if (structural) validateEditDoc(this.doc);

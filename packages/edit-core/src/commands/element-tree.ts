@@ -116,7 +116,15 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     }
     return;
   }
-  for (const [id, record] of Object.entries(snapshot.records)) doc.elements[id] = cloneRecord(record);
+  for (const [id, record] of Object.entries(snapshot.records)) {
+    doc.elements[id] = cloneRecord(record);
+    const anchor = record.meta.origin;
+    const next = anchor && doc.identity.nextSpid[anchor.part];
+    // 远端结构 patch 不经过本地分配器；已初始化的 part 计数仍必须越过它的 spid。
+    if (anchor && next !== undefined && next <= anchor.spid) {
+      doc.identity.nextSpid[anchor.part] = anchor.spid + 1;
+    }
+  }
   delete doc.removedElements[snapshot.root];
   // 多根删除时，快照下标取自不断收缩的数组，不能作为跨进程回放的位置依据；z 才是稳定顺序。
   const rootZ = elementOrder(snapshot.records[snapshot.root]);

@@ -13,7 +13,7 @@ import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
-import { resolveGeomPath } from './geometry';
+import { isKnownPreset, resolveGeomPath } from './geometry';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
@@ -23,7 +23,7 @@ export type { RenderTextBodyHtmlOptions } from './render/text-html';
 export type {
   TextLayout, TextLayoutCaret, TextLayoutLine, TextLayoutOptions, TextLayoutSegment, TextMeasure,
 } from './render/text-layout';
-export { resolveGeomPath };
+export { isKnownPreset, resolveGeomPath };
 export type { Adj, Geom, GeomSpec } from './geometry';
 export { groupSteps, hiddenBefore, staticHidden };
 export { setChartParser, setChartRenderer } from './chart/hook';

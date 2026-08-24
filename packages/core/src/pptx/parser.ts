@@ -484,6 +484,41 @@ function resolveStyleRefs(style: Element | null, env: Env): { fill: Fill | null;
   };
 }
 
+let creationShapeParts: { style: Element; text: Element } | null = null;
+const CREATION_SHAPE_STYLE = `<p:style><a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="50000"/></a:schemeClr></a:lnRef>
+<a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef><a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef>
+<a:fontRef idx="minor"><a:schemeClr val="lt1"/></a:fontRef></p:style>`;
+const CREATION_SHAPE_TEXT = `<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:endParaRPr lang="zh-CN"/></a:p></p:txBody>`;
+
+function defaultShapeParts(): { style: Element; text: Element } {
+  if (creationShapeParts) return creationShapeParts;
+  const root = parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+${CREATION_SHAPE_STYLE}
+${CREATION_SHAPE_TEXT}
+</root>`);
+  creationShapeParts = { style: kid(root, 'style')!, text: kid(root, 'txBody')! };
+  return creationShapeParts;
+}
+
+/** 与真正写入的 p:style/txBody 共用语义，在当前页主题上先求值供即时投影使用。 */
+function defaultShapeEditInfo(env: Env): NonNullable<Slide['editInfo']>['defaultShape'] {
+  const source = defaultShapeParts();
+  const style = resolveStyleRefs(source.style, env);
+  const textTemplate = parseTextBody(source.text, {
+    ctx: env.ctx,
+    fonts: env.theme.fonts,
+    chain: [env.docDefaults, extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts)],
+    defaultColor: style.fontColor,
+    slideNum: env.slideNum,
+    edit: true,
+  }, true);
+  if (!textTemplate) throw new Error('无法构造新增形状文字模板');
+  return {
+    fill: style.fill, stroke: style.stroke, textTemplate,
+    styleMarkup: CREATION_SHAPE_STYLE, textBodyMarkup: CREATION_SHAPE_TEXT,
+  };
+}
+
 // ---------------- 形状树 ----------------
 
 function parseShapeTree(tree: Element | null, env: Env, skipPh: boolean): SlideElement[] {
@@ -1745,6 +1780,8 @@ function parseSlide(
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: parseTransition(slideRoot) ?? parseTransition(layoutRoot),
     animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
-    ...(edit ? { editInfo: { origin: { part: slidePath } } } : {}),
+    ...(edit ? {
+      editInfo: { origin: { part: slidePath }, defaultShape: defaultShapeEditInfo(envFor(slidePath, true)) },
+    } : {}),
   };
 }

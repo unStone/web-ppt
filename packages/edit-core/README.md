@@ -23,6 +23,11 @@ const elementId = doc.slides[slideId].children[0];
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 editor.exec({ type: 'SetFlip', id: elementId, h: true });
 editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
+editor.exec({
+  type: 'AddShape', slideId, preset: 'roundRect',
+  rect: { x: 360, y: 180, w: 280, h: 160 },
+});
+const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -146,6 +151,12 @@ and recomputes `bandRow`, `lastRow`, and frame height. History stores one sparse
 editor.exec({ type: 'InsertRow', id: tableElementId });
 ```
 
+`AddShape { slideId, preset, rect }` inserts a top-level DrawingML preset shape into an existing writable
+slide. The command validates the preset and rectangle, allocates collision-free model/OOXML identities, selects
+the new shape, and enters history as one tree patch. It is immediately compatible with the existing transform
+and double-click text-editing paths. Toolbars in React, Vue, Svelte, Web Components, or vanilla code call this
+same JSON command; the headless package does not depend on their runtimes.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
@@ -198,8 +209,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 44.78 KB gzip for the editing entry,
-7.97 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
+Measured Vite output, including each entry's static shared chunks, is 54.45 KB gzip for the editing entry,
+8.07 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

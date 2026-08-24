@@ -22,6 +22,11 @@ const elementId = doc.slides[slideId].children[0];
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 editor.exec({ type: 'SetFlip', id: elementId, h: true });
 editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
+editor.exec({
+  type: 'AddShape', slideId, preset: 'roundRect',
+  rect: { x: 360, y: 180, w: 280, h: 160 },
+});
+const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -137,6 +142,11 @@ OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原�
 editor.exec({ type: 'InsertRow', id: tableElementId });
 ```
 
+`AddShape { slideId, preset, rect }` 会在现有可写页面顶层插入 DrawingML 预设形状。命令校验预设名与
+矩形，分配无冲突的模型/OOXML 身份，自动选中新形状，并以一个树 patch 进入历史；新增后立即复用已有
+变换和双击文字编辑路径。React、Vue、Svelte、Web Component 或原生工具栏都调用同一条 JSON 命令，
+headless 包不依赖任何框架运行时。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
@@ -186,8 +196,8 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 44.78KB gzip，`xml` 为
-7.97KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 54.45KB gzip，`xml` 为
+8.07KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

@@ -27,6 +27,7 @@ import { runTableCellTextEditorContract } from './lib/table-cell-text-editor-con
 import { runAutofitTextEditorContract } from './lib/autofit-text-editor-contract.mjs';
 import { runShapeAutofitEditorContract } from './lib/shape-autofit-editor-contract.mjs';
 import { runBodyPropsEditorContract } from './lib/body-props-editor-contract.mjs';
+import { runAddShapeEditorContract } from './lib/add-shape-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -214,6 +215,7 @@ await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.
 await runAutofitTextEditorContract({ check, core, lib, root, window: domEnvironment.window });
 await runShapeAutofitEditorContract({ check, edit: lib, lib, root, window: domEnvironment.window });
 await runBodyPropsEditorContract({ check, lib, root, window: domEnvironment.window });
+await runAddShapeEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

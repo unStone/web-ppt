@@ -82,6 +82,17 @@ export interface Slide {
 
 export interface SlideEditInfo {
   origin: { part: string };
+  /** 当前页主题与颜色映射求值后的新形状默认值；只在编辑解析中保留。 */
+  defaultShape?: ShapeCreationDefaults;
+}
+
+export interface ShapeCreationDefaults {
+  fill: Fill | null;
+  stroke: Stroke | null;
+  textTemplate: TextBody;
+  /** 写回宿主与上面已求值语义的共同来源，避免即时投影和 OOXML 默认值漂移。 */
+  styleMarkup: string;
+  textBodyMarkup: string;
 }
 
 /** 幻灯片批注 */

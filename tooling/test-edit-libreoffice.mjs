@@ -115,6 +115,28 @@ function pathBounds(pathTag) {
   return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
 }
 
+function roundRectOutlineError(pathTag) {
+  const data = pathTag?.match(/\bd="([^"]+)"/)?.[1] ?? '';
+  const commands = [...data.matchAll(/([MLCZ])\s*([^MLCZ]*)/g)].map((match) => ({
+    type: match[1], values: match[2].match(/-?[\d.]+/g)?.map(Number) ?? [],
+  }));
+  const curves = commands.filter((command) => command.type === 'C'
+    && command.values.length >= 6 && command.values.length % 6 === 0);
+  if (curves.length !== 4 || commands.at(-1)?.type !== 'Z') return Infinity;
+  const bounds = pathBounds(pathTag);
+  const radius = Math.min(bounds.right - bounds.left, bounds.bottom - bounds.top) / 6;
+  const endpoints = curves.map((curve) => curve.values.slice(-2));
+  const expected = [
+    [bounds.left + radius, bounds.top],
+    [bounds.right, bounds.top + radius],
+    [bounds.right - radius, bounds.bottom],
+    [bounds.left, bounds.bottom - radius],
+  ];
+  return Math.max(...endpoints.flatMap((point, index) => [
+    Math.abs(point[0] - expected[index][0]), Math.abs(point[1] - expected[index][1]),
+  ]));
+}
+
 function geometryError(actual, expected) {
   return Math.max(...Object.keys(actual).map((key) => Math.abs(actual[key] - expected[key])));
 }
@@ -236,6 +258,27 @@ if (basename(savedPath) === 'body-props-editing.pptx') {
     throw new Error(`LibreOffice autofit 模式证据无效：shape=${growError.toFixed(3)} noneOverflow=${(noneMaxY - noneShape.bounds.bottom).toFixed(3)}`);
   }
   geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'add-shape.pptx') {
+  const markup = exportLibreOfficeSvg('新增形状几何');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  if (!viewBox) throw new Error('LibreOffice 新增形状 SVG 缺少 viewBox');
+  const bytes = new Uint8Array(readFileSync(savedPath));
+  const parts = unzipSync(bytes);
+  const slideXml = new TextDecoder().decode(parts['ppt/slides/slide1.xml']);
+  const name = slideXml.match(/<p:cNvPr id="\d+" name="(形状 \d+)"/)?.[1];
+  if (!name) throw new Error('新增形状保存产物缺少确定性名称');
+  const expected = expectedBounds(
+    savedShapeGeometry(bytes, name), Number(viewBox[1]), Number(viewBox[2]),
+  );
+  const shape = shapeByFillAndFrame(markup, '217,79,112', expected);
+  const error = geometryError(shape.bounds, expected);
+  const outlineError = roundRectOutlineError(shape.tag);
+  if (error > 3 || outlineError > 3) {
+    throw new Error(`LibreOffice 新增圆角矩形偏差 frame=${error.toFixed(3)} outline=${outlineError.toFixed(3)} SVG unit`);
+  }
+  geometryEvidence += `，新增 roundRect frame/轮廓最大偏差 ${Math.max(error, outlineError).toFixed(3)} SVG unit`;
 }
 
 if (basename(savedPath) === 'table-row-insert.pptx') {

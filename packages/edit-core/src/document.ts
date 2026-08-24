@@ -96,6 +96,8 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       ovr: {},
       children: [] as ElementId[],
       origin: slide.editInfo?.origin ?? null,
+      ...(slide.editInfo?.defaultShape
+        ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
     };
     slides[id] = record;
     slideOrder.push(id);
@@ -123,7 +125,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     : true;
   const doc: EditDoc = {
     meta: { width: pres.width, height: pres.height, source: pres.source, readonly: !patchable },
-    identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1 },
+    identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1, nextSpid: {} },
     slides,
     slideOrder,
     elements,
@@ -143,7 +145,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
   const prefix = sessionPrefix(opts.idPrefix);
   return {
     meta: { width: opts.width, height: opts.height, source: 'pptx', readonly: false },
-    identity: { prefix, nextSlide: 1, nextElement: 1 },
+    identity: { prefix, nextSlide: 1, nextElement: 1, nextSpid: {} },
     slides: {},
     slideOrder: [],
     elements: {},

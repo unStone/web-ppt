@@ -124,6 +124,13 @@ export interface PasteElementsCommand {
   readonly at: { readonly parentId: SlideId | ElementId; readonly x: number; readonly y: number };
 }
 
+export interface AddShapeCommand {
+  readonly type: 'AddShape';
+  readonly slideId: SlideId;
+  readonly preset: string;
+  readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -189,7 +196,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {

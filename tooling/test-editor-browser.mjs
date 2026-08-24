@@ -238,6 +238,8 @@ async function browserResult(webSocketDebuggerUrl) {
           bodyPropsBrowserP95: report.dataset.bodyPropsBrowserP95,
           bodyPropsEngineP95: report.dataset.bodyPropsEngineP95,
           bodyPropsFrameError: report.dataset.bodyPropsFrameError,
+          addShapeError: report.dataset.addShapeError,
+          addShapeP95: report.dataset.addShapeP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -553,6 +555,7 @@ try {
     + `/frame ${result.shapeAutofitFrameError}px`
     + ` · bodyProps browser/engine ${result.bodyPropsBrowserP95}/${result.bodyPropsEngineP95}ms`
     + `/frame ${result.bodyPropsFrameError}px`
+    + ` · 新增形状偏差/p95 ${result.addShapeError}px/${result.addShapeP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

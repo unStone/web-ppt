@@ -23,6 +23,10 @@ const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 session.editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
+session.editor.exec({
+  type: 'AddShape', slideId, preset: 'roundRect',
+  rect: { x: 360, y: 180, w: 280, h: 160 },
+});
 
 view.setMode('view');       // same static preview DOM; interaction layers are hidden
 view.setMode('edit');
@@ -138,6 +142,11 @@ Product toolbars stay outside the base DOM package. Their six alignment actions 
 refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and
 vanilla applications without putting a framework runtime into the editor package.
 
+Shape palettes use the same framework-neutral seam: call `session.editor.exec({ type: 'AddShape', ... })`.
+Every mounted view inserts the new SVG partition synchronously, the edit view shows its selection frame, and a
+double-click opens the existing text editor. View mode exposes no creation gesture; product code decides when to
+offer the command without importing DOM internals.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as
@@ -204,7 +213,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 27.46 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 29.57 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

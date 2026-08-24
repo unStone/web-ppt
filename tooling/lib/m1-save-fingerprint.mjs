@@ -91,6 +91,18 @@ if (mode === 'projected') {
         to: { p: 0, r: 0, off: 0 }, text: scenario.text,
       }],
     });
+  } else if (scenario.type === 'addShape') {
+    editor.exec({
+      type: 'AddShape', slideId: doc.slideOrder[slideIndex], preset: scenario.preset, rect: scenario.rect,
+    });
+    const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+    if (!id) throw new Error('M1 指纹未得到新增形状选区');
+    editor.exec({
+      type: 'EditText', id,
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: scenario.text,
+      }],
+    });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

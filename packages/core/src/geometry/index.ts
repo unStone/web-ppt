@@ -1169,5 +1169,5 @@ export function resolveGeomPath(geom: GeomSpec, w: number, h: number): Geom {
 }
 
 export function isKnownPreset(name: string): boolean {
-  return name in PRESETS;
+  return Object.prototype.hasOwnProperty.call(PRESETS, name);
 }
