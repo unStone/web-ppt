@@ -14,6 +14,7 @@ import { runElementClipboardContract } from './lib/element-clipboard-contract.mj
 import { runTextEditContract } from './lib/text-edit-contract.mjs';
 import { runRunFormatContract } from './lib/run-format-contract.mjs';
 import { runParagraphFormatContract } from './lib/paragraph-format-contract.mjs';
+import { runRichTextClipboardContract } from './lib/rich-text-clipboard-contract.mjs';
 import { runCommandPropertyContract } from './lib/command-property-contract.mjs';
 import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
@@ -77,6 +78,7 @@ await runElementClipboardContract({ edit, core, load, check });
 await runTextEditContract({ edit, core, load, check });
 await runRunFormatContract({ edit, core, load, check });
 await runParagraphFormatContract({ edit, core, load, check });
+await runRichTextClipboardContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

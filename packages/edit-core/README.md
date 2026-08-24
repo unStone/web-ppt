@@ -112,6 +112,22 @@ const paragraphState = queryParaProps(editor.doc, elementId, range);
 // paragraphState.align: { value: 'center', mixed: false }
 ```
 
+`EditText` also accepts `replaceFragment`, a JSON-only rich-text splice for clipboard adapters. A fragment contains
+paragraph strings and contiguous half-open marks with only the six P0 character properties; DOM nodes, CSS, and
+OOXML source identities cannot cross this boundary. Unspecified fields inherit the replaced range's starting
+style, blocks create paragraphs, and embedded `\n` values remain hard line breaks. `textFragmentFromRange()`
+creates the inverse transport shape for copy/cut without exposing preservation metadata.
+
+```ts
+import { textFragmentFromRange } from '@web-ppt/edit-core';
+
+const fragment = textFragmentFromRange(editor.effectiveElement(elementId).text!, range);
+editor.exec({
+  type: 'EditText', id: elementId,
+  ops: [{ type: 'replaceFragment', ...range, fragment }],
+});
+```
+
 `copyElements(doc, ids)` returns a versioned, JSON-only `ElementClipboardPayload`. Paste it through
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })`; the command allocates fresh session
 and OOXML identities, preserves nested groups in slide coordinates, and enters history as one atomic unit.
@@ -171,7 +187,7 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 43.48 KB gzip for the editing entry,
+Measured Vite output, including each entry's static shared chunks, is 44.78 KB gzip for the editing entry,
 7.97 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.

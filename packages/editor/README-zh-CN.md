@@ -72,6 +72,13 @@ centerButton.addEventListener('pointerdown', (event) => {
 缩进的混合态。共享会话的全部视图都会刷新，已通过 `registerTextUi` 注册的外部工具栏不会抢走焦点或
 意外关闭文字编辑。
 
+文字态的 `Ctrl/Cmd+C`、`X`、`V` 直接使用浏览器同步剪贴板事件。复制和剪切会写入清洗后的 `text/plain` 与
+`text/html`；默认粘贴只保留字体、字号、粗体、斜体、下划线和删除线，`Ctrl/Cmd+Shift+V` 忽略 HTML。
+块节点映射为 PPT 段落，`<br>` 保持段内硬换行。外部 HTML 只在脱离页面的树中解析，绝不注入活动编辑面；脚本、
+样式表、链接目标、图片源、隐藏元数据和白名单外 CSS 都会丢弃。清洗后的 HTML 文本若与 `text/plain` 不一致，
+就退化为纯文本而不猜索引。每次粘贴或剪切只形成一个撤销单元。当前图片载荷会被安全拦截且不改 DOM，后续由
+`AddImage` 命令接管。
+
 编辑模式直接使用浏览器 SVG 原生命中：点击组内元素默认选最外层组，双击每次进入一层，
 `Escape` 每次退出一层；`Alt`+点击按 `elementsFromPoint` 的 z 序循环重叠候选。锁定、
 用户隐藏和不可编辑的分支不会被选中。查看模式不拦截指针事件，也不改共享的 headless 选区；
@@ -161,7 +168,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 24.76KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 27.33KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

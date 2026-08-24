@@ -346,7 +346,9 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         runs.push(finalizeRun(text, rp, env, merged.rp));
         if (text.trim()) hasContent = true;
       } else if (node.localName === 'br') {
-        runs.push(finalizeRun('\n', merged.rp, env, merged.rp));
+        // a:br 自带 rPr；忽略它会让带格式硬换行保存重开后退回段落默认字符格式。
+        const rp = mergeRun(merged.rp, parseRunProps(kid(node, 'rPr'), env.ctx, env.fonts));
+        runs.push(finalizeRun('\n', rp, env, merged.rp));
       } else if (node.localName === 'AlternateContent') {
         // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
         const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');

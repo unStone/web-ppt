@@ -26,7 +26,7 @@ export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
-  SlideRecord, SlideSource, TextMark, TextOverride,
+  SlideRecord, SlideSource, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
 } from './types';
 export type {
   AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
@@ -37,7 +37,7 @@ export type {
 } from './commands/types';
 export {
   applyParagraphProps, applyRunProps, applyTextEditOps, flattenTextBody, queryTextParagraphProps,
-  queryTextRunProps, textBodyFromOverride,
+  queryTextRunProps, textBodyFromOverride, textFragmentFromRange,
 } from './text-model';
 export {
   TEXT_ATOM, textBodyEditText, textPositionAtIndex, textPositionToIndex, textRunEditLength,

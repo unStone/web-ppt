@@ -308,6 +308,17 @@ export async function runM1SaveContract({
           to: { p: 0, r: 0, off: 0 }, text: '从空白开始编辑',
         }],
       },
+      {
+        targetName: '重复格式',
+        ops: [{
+          type: 'replaceFragment',
+          from: { p: 0, r: 2, off: 1 }, to: { p: 0, r: 2, off: 1 },
+          fragment: { paragraphs: [
+            { text: '富\n软', marks: [{ from: 0, to: 3, props: { font: 'Arial', b: true } }] },
+            { text: '新段', marks: [{ from: 0, to: 2, props: { i: true, strike: true } }] },
+          ] },
+        }],
+      },
     ],
     formats: [
       {
@@ -405,8 +416,14 @@ export async function runM1SaveContract({
         paragraph.spaceAfter === 11 && paragraph.marL === 19)
       && reopenedRich.text.paragraphs[5].runs[0].b
       && reopenedRich.text.paragraphs[5].runs[0].size === 28
-      && reopenedRepeated.text.paragraphs[0].runs.every((run) => run.fonts[0] === 'Noto Sans'
-        && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
+      && reopenedRepeated.text.paragraphs[0].runs.filter((run) => run.text.includes('同'))
+        .every((run) => run.fonts[0] === 'Noto Sans'
+          && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
+      && reopenedRepeated.text.paragraphs[0].runs.some((run) => run.text === '富'
+        && run.fonts[0] === 'Arial' && run.b)
+      && reopenedRepeated.text.paragraphs[0].runs.some((run) => run.text === '软'
+        && run.fonts[0] === 'Arial' && run.b)
+      && reopenedRepeated.text.paragraphs[1].runs.some((run) => run.text === '新段' && run.i && run.strike)
       && reopenedEmpty.text.paragraphs[0].runs[0].b === true
       && reopenedEmpty.text.paragraphs[0].runs.map((run) => run.text).join('') === '从空白开始编辑'
       && reopenedParagraphs.text.paragraphs.slice(0, 3).every((paragraph) => paragraph.align === 'left'

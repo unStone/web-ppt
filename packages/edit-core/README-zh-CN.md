@@ -106,6 +106,21 @@ const paragraphState = queryParaProps(editor.doc, elementId, range);
 // paragraphState.align 为 { value: 'center', mixed: false }
 ```
 
+`EditText` 还支持 `replaceFragment`，供剪贴板适配层提交纯 JSON 富文本片段。片段只包含段落字符串和连续的半开
+格式区间，区间只能携带六个 P0 字符属性；DOM、CSS 和 OOXML 来源身份都不能越过此边界。未声明属性继承被替换
+范围起点的格式，块生成段落，字符串里的 `\n` 保持段内硬换行。复制/剪切可用 `textFragmentFromRange()` 生成
+反向传输结构，而不会泄漏保存溯源元数据。
+
+```ts
+import { textFragmentFromRange } from '@web-ppt/edit-core';
+
+const fragment = textFragmentFromRange(editor.effectiveElement(elementId).text!, range);
+editor.exec({
+  type: 'EditText', id: elementId,
+  ops: [{ type: 'replaceFragment', ...range, fragment }],
+});
+```
+
 `copyElements(doc, ids)` 返回版本化、纯 JSON 的 `ElementClipboardPayload`。通过
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })` 粘贴时，会分配新的会话身份与
 OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原子历史单元提交。图片以 base64 + SHA-256
@@ -161,7 +176,7 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 43.48KB gzip，`xml` 为
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 44.78KB gzip，`xml` 为
 7.97KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 

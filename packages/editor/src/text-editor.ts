@@ -13,10 +13,12 @@ import { findElementPartition } from './dom-identity';
 import {
   caretPointAt, compositionChangedRange, rangePositions, readEditableDom, rebaseRange,
 } from './text-dom';
+import { TextClipboardController } from './text-clipboard-controller';
 import type { ActiveText, CompositionSnapshot, TextEditorControllerOptions } from './text-editor-types';
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
+  private readonly clipboard: TextClipboardController;
   private activeId: ElementId | null = null;
   private root: HTMLDivElement | null = null;
   private composing = false;
@@ -31,7 +33,15 @@ export class TextEditorController {
       && ![...this.externalUi].some((element) => element.contains(target))) this.close();
   };
 
-  constructor(options: TextEditorControllerOptions) { this.options = options; }
+  constructor(options: TextEditorControllerOptions) {
+    this.options = options;
+    this.clipboard = new TextClipboardController({
+      enabled: () => !this.composing,
+      context: () => this.textContext(),
+      pendingProps: () => this.pendingRunProps,
+      commit: (ops, nextIndex, label) => this.commit(ops, nextIndex, label),
+    });
+  }
 
   get isActive(): boolean { return this.activeId !== null; }
   get activeElementId(): ElementId | null { return this.activeId; }
@@ -137,6 +147,7 @@ export class TextEditorController {
     this.composition = null;
     this.pendingRunProps = {};
     this.staticStale = false;
+    this.clipboard.release();
     this.options.boundary.ownerDocument.removeEventListener('pointerdown', this.onDocumentPointerDown, true);
     this.root?.remove();
     this.root = null;
@@ -230,6 +241,7 @@ export class TextEditorController {
   }
 
   private bind(root: HTMLDivElement): void {
+    this.clipboard.bind(root);
     root.addEventListener('beforeinput', (event) => this.beforeInput(event as InputEvent));
     root.addEventListener('compositionstart', () => {
       this.composing = true;
@@ -272,6 +284,7 @@ export class TextEditorController {
 
   private beforeInput(event: InputEvent): void {
     if (this.composing || event.isComposing) return;
+    if (this.clipboard.beforeInput(event)) return;
     const context = this.textContext();
     if (!context) return;
     const { text, positions } = context;

@@ -16,6 +16,7 @@ import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 import { runTrustedClipboardContract } from './lib/editor-clipboard-trusted-contract.mjs';
 import { runTrustedTextContract } from './lib/editor-text-trusted-contract.mjs';
+import { runTrustedRichTextClipboardContract } from './lib/editor-rich-text-clipboard-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -219,6 +220,7 @@ async function browserResult(webSocketDebuggerUrl) {
           clipboardPasteP95: report.dataset.clipboardPasteP95,
           textP95: report.dataset.textP95,
           paragraphP95: report.dataset.paragraphP95,
+          richTextPasteP95: report.dataset.richTextPasteP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -431,6 +433,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await runTrustedClipboardContract({ evaluate, dispatchKey });
+        await runTrustedRichTextClipboardContract({ evaluate, dispatchKey });
         const trustedTextP95 = await runTrustedTextContract({ evaluate, request });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
@@ -446,6 +449,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
           report.dataset.trustedClipboard = 'pass';
+          report.dataset.trustedRichTextClipboard = 'pass';
           report.dataset.trustedText = 'pass';
           report.dataset.trustedTextP95 = '${trustedTextP95}';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
@@ -456,6 +460,7 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
           trustedLayer: 'pass',
           trustedClipboard: 'pass',
+          trustedRichTextClipboard: 'pass',
           trustedText: 'pass',
           trustedTextP95,
         };
@@ -515,6 +520,7 @@ try {
     + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
     + ` · 文字输入 p95 ${result.textP95}ms`
     + ` · 段落格式 p95 ${result.paragraphP95}ms`
+    + ` · 富文本2000 p95 ${result.richTextPasteP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
@@ -522,6 +528,7 @@ try {
     + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · trusted clipboard ${result.trustedClipboard}`
+    + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`
     + ` · trusted text/IME ${result.trustedText}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } catch (error) {

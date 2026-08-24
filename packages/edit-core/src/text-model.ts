@@ -2,7 +2,7 @@ import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
-  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextMark, TextOverride,
+  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
 
@@ -113,14 +113,28 @@ function normalizedParagraph(
 ): FlatTextParagraph {
   let text = '';
   const marks: TextMark[] = [];
-  for (const segment of segments) {
+  const normalizedSegments = segments.flatMap((segment): Segment[] => {
+    if (!segment.text.includes('\n')) return [segment];
+    const parts: Segment[] = [];
+    let start = 0;
+    for (let index = 0; index < segment.text.length; index++) {
+      if (segment.text[index] !== '\n') continue;
+      if (index > start) parts.push({ text: segment.text.slice(start, index), template: segment.template });
+      parts.push({ text: '\n', template: segment.template });
+      start = index + 1;
+    }
+    if (start < segment.text.length) parts.push({ text: segment.text.slice(start), template: segment.template });
+    return parts;
+  });
+  for (const segment of normalizedSegments) {
     if (!segment.text && segments.length > 1) continue;
     const from = text.length;
     text += segment.text;
     const next: TextMark = { ...segment.template, from, to: text.length };
     const previous = marks[marks.length - 1];
     if (previous && previous.to === next.from && sameStyle(previous, next)
-      && !previous.atomText && !next.atomText) {
+      && !previous.atomText && !next.atomText && segment.text !== '\n'
+      && text.slice(previous.from, previous.to) !== '\n') {
       marks[marks.length - 1] = { ...previous, to: next.to };
     } else if (next.to > next.from || segments.length === 1) marks.push(next);
   }
@@ -222,6 +236,32 @@ function splitParagraph(
   return [...paragraphs.slice(0, at.p), left, right, ...paragraphs.slice(at.p + 1)];
 }
 
+function replaceFragment(
+  paragraphs: readonly FlatTextParagraph[],
+  from: TextPosition,
+  to: TextPosition,
+  fragment: TextFragment,
+): FlatTextParagraph[] {
+  // 复用普通替换统一校验跨段与公式边界，再在同一插入点展开已清洗片段。
+  const offset = positionOffset(paragraphs[from.p], from);
+  const inherited = styleAt(paragraphs[from.p], offset);
+  const removed = replace(paragraphs, from, to, '');
+  const source = removed[from.p];
+  const prefix = sliceSegments(source, 0, offset);
+  const suffix = sliceSegments(source, offset, source.text.length);
+  const fragmentSegments = fragment.paragraphs.map((paragraph): Segment[] => paragraph.text.length
+    ? paragraph.marks.map((mark) => ({
+      text: paragraph.text.slice(mark.from, mark.to),
+      template: formattedMark(inherited, mark.props),
+    }))
+    : [{ text: '', template: inherited }]);
+  const inserted = fragmentSegments.map((segments, index) => normalizedParagraph(source, [
+    ...(index === 0 ? prefix : []), ...segments,
+    ...(index === fragmentSegments.length - 1 ? suffix : []),
+  ]));
+  return [...removed.slice(0, from.p), ...inserted, ...removed.slice(from.p + 1)];
+}
+
 export function applyTextEditOps(
   body: TextBody,
   ops: readonly TextEditOp[],
@@ -233,10 +273,51 @@ export function applyTextEditOps(
       ? replace(override.paragraphs, op.from, op.to, op.text)
       : op.type === 'splitParagraph'
         ? splitParagraph(override.paragraphs, op.at)
-        : replace(override.paragraphs, op.at, op.at, '\n', true);
+        : op.type === 'insertLineBreak'
+          ? replace(override.paragraphs, op.at, op.at, '\n', true)
+          : replaceFragment(override.paragraphs, op.from, op.to, op.fragment);
     override = { ...override, paragraphs };
   }
   return override;
+}
+
+/** 把有效文字选区降成可跨实例传输的格式白名单，不泄漏 OOXML 来源身份。 */
+export function textFragmentFromRange(body: TextBody, range: TextRange): TextFragment {
+  const paragraphs = flattenTextBody(body).paragraphs;
+  if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= paragraphs.length) {
+    throw new Error('文字片段选区段落范围无效');
+  }
+  const from = positionOffset(paragraphs[range.from.p], range.from);
+  const to = positionOffset(paragraphs[range.to.p], range.to);
+  if (range.from.p === range.to.p && to < from) throw new Error('文字片段选区起点不能晚于终点');
+  return {
+    paragraphs: paragraphs.slice(range.from.p, range.to.p + 1).map((paragraph, relativeIndex) => {
+      const index = range.from.p + relativeIndex;
+      const start = index === range.from.p ? from : 0;
+      const end = index === range.to.p ? to : paragraph.text.length;
+      assertAtomBoundary(paragraph, start);
+      assertAtomBoundary(paragraph, end);
+      let text = '';
+      const marks: TextFragment['paragraphs'][number]['marks'][number][] = [];
+      for (const mark of paragraph.marks) {
+        const selectedFrom = Math.max(start, mark.from);
+        const selectedTo = Math.min(end, mark.to);
+        if (selectedTo <= selectedFrom) continue;
+        const value = mark.atomText ?? paragraph.text.slice(selectedFrom, selectedTo);
+        const markFrom = text.length;
+        text += value;
+        const font = mark.props.fonts[0];
+        marks.push({
+          from: markFrom, to: text.length,
+          props: {
+            ...(font ? { font } : {}), size: mark.props.size,
+            b: mark.props.b, i: mark.props.i, u: mark.props.u, strike: mark.props.strike,
+          },
+        });
+      }
+      return { text, marks };
+    }),
+  };
 }
 
 function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {

@@ -10,20 +10,65 @@ import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlChild, xmlElementChildren } from '../xml/query';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
-import type { XmlDocument, XmlElement } from '../xml/types';
+import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
 import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
+const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'oMath', 'oMathPara', 'AlternateContent']);
 
 export function hasTextOverrides(record: ElementRecord): boolean {
   return record.ovr.text !== undefined;
 }
 
 function textUnits(paragraph: XmlElement): XmlElement[] {
-  return xmlElementChildren(paragraph).filter((child) =>
-    ['r', 'fld', 'br', 'oMath', 'oMathPara', 'AlternateContent'].includes(child.localName));
+  return xmlElementChildren(paragraph).filter((child) => TEXT_UNIT_NAMES.has(child.localName));
+}
+
+type PreservedNodesByRunGap = ReadonlyMap<number, readonly XmlNode[]>;
+
+function preservedNodesByRunGap(paragraph: XmlElement): PreservedNodesByRunGap {
+  const nodesByGap = new Map<number, XmlNode[]>();
+  let runIndex = 0;
+  for (const child of paragraph.children) {
+    if (child.type === 'element' && TEXT_UNIT_NAMES.has(child.localName)) {
+      runIndex++;
+      continue;
+    }
+    if (child.type === 'element' && ['pPr', 'endParaRPr'].includes(child.localName)) continue;
+    if (child.type === 'text' && !child.value.trim()) continue;
+    const nodes = nodesByGap.get(runIndex) ?? [];
+    nodes.push(child);
+    nodesByGap.set(runIndex, nodes);
+  }
+  return nodesByGap;
+}
+
+/** 来源 run 可能被拆到多个新段；每个未知节点只锚到仍包含其右邻来源 run 的那一段。 */
+function assignPreservedNodes(
+  sourceParagraphs: readonly XmlElement[],
+  paragraphs: readonly FlatTextParagraph[],
+): readonly PreservedNodesByRunGap[] {
+  const assigned = paragraphs.map(() => new Map<number, readonly XmlNode[]>());
+  sourceParagraphs.forEach((source, sourceIndex) => {
+    const nodesByGap = preservedNodesByRunGap(source);
+    const unitCount = textUnits(source).length;
+    for (const [gap, nodes] of nodesByGap) {
+      const candidates = paragraphs.map((paragraph, index) => ({
+        index,
+        runs: paragraph.marks.filter((mark) => mark.preserveSource
+          && mark.source?.paragraph === sourceIndex).map((mark) => mark.source!.run),
+      })).filter((candidate) => candidate.runs.length);
+      const candidate = gap < unitCount
+        ? candidates.find((entry) => entry.runs.some((run) => run >= gap))
+        : candidates[candidates.length - 1];
+      const target = candidate?.index ?? paragraphs.findIndex((paragraph) =>
+        paragraph.sourceParagraph === sourceIndex);
+      if (target >= 0) assigned[target].set(gap, nodes);
+    }
+  });
+  return assigned;
 }
 
 function sourceUnit(
@@ -281,6 +326,7 @@ function appendFlatParagraph(
   sourceParagraphs: readonly XmlElement[],
   flat: FlatTextParagraph,
   lnSpcReduction: number,
+  preservedNodes: PreservedNodesByRunGap,
 ): void {
   const paragraph = namespacedElement(body, DRAWINGML_NS, 'p');
   // 先挂入宿主，后续克隆的 pPr 才能从真实祖先继承命名空间；
@@ -292,9 +338,19 @@ function appendFlatParagraph(
     : null;
   if (pPr) insertXmlChildUnchecked(paragraph, cloneXmlNode(pPr));
   paragraphProperties(paragraph, flat, lnSpcReduction);
+  const remainingNodes = new Map(preservedNodes);
+  const appendPreservedNodes = (through = Number.POSITIVE_INFINITY): void => {
+    for (const [gap, nodes] of [...remainingNodes].sort(([left], [right]) => left - right)) {
+      if (gap > through) continue;
+      for (const node of nodes) insertXmlChildUnchecked(paragraph, cloneXmlNode(node));
+      remainingNodes.delete(gap);
+    }
+  };
   for (const mark of flat.marks) {
+    if (mark.preserveSource && mark.source) appendPreservedNodes(mark.source.run);
     appendMark(paragraph, mark, flat.text.slice(mark.from, mark.to), sourceUnit(sourceParagraphs, flat, mark));
   }
+  appendPreservedNodes();
   const end = sourceParagraph
     ? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS })
     : null;
@@ -390,8 +446,12 @@ export function patchElementText(document: XmlDocument, record: ElementRecord): 
     removeXmlChild(body, paragraph);
   }
   if (record.ovr.text.kind === 'flat') {
-    for (const paragraph of record.ovr.text.paragraphs) {
-      appendFlatParagraph(body, sourceParagraphs, paragraph, record.ovr.text.body.lnSpcReduction ?? 0);
+    const preservedNodes = assignPreservedNodes(sourceParagraphs, record.ovr.text.paragraphs);
+    for (const [index, paragraph] of record.ovr.text.paragraphs.entries()) {
+      appendFlatParagraph(
+        body, sourceParagraphs, paragraph, record.ovr.text.body.lnSpcReduction ?? 0,
+        preservedNodes[index],
+      );
     }
     return;
   }

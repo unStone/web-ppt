@@ -1,7 +1,7 @@
 import type { GeomSpec, SlideElement } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
-  RunPropertyOverrides, SlideId, TextOverride,
+  RunPropertyOverrides, SlideId, TextFragment, TextOverride,
 } from '../types';
 import type { AffineMatrix } from '../space';
 
@@ -129,8 +129,16 @@ export type TextEditOp = {
   readonly to: TextPosition;
   readonly text: string;
 } | {
-  readonly type: 'splitParagraph' | 'insertLineBreak';
+  readonly type: 'splitParagraph';
   readonly at: TextPosition;
+} | {
+  readonly type: 'insertLineBreak';
+  readonly at: TextPosition;
+} | {
+  readonly type: 'replaceFragment';
+  readonly from: TextPosition;
+  readonly to: TextPosition;
+  readonly fragment: TextFragment;
 };
 
 export interface EditTextCommand {

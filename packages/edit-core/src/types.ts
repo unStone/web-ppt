@@ -93,6 +93,22 @@ export interface RunPropertyOverrides {
   readonly strike?: boolean | null;
 }
 
+/** 外部富文本进入模型前的最小白名单；不允许携带 OOXML 来源或 DOM 身份。 */
+export interface TextFragmentMark {
+  readonly from: number;
+  readonly to: number;
+  readonly props: RunPropertyOverrides;
+}
+
+export interface TextFragmentParagraph {
+  readonly text: string;
+  readonly marks: readonly TextFragmentMark[];
+}
+
+export interface TextFragment {
+  readonly paragraphs: readonly TextFragmentParagraph[];
+}
+
 export interface RunPropertyState<T> {
   readonly value: T | null;
   readonly mixed: boolean;

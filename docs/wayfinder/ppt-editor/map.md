@@ -56,10 +56,11 @@ tracker: local-markdown
 - [实现基础文本输入与 IME 闭环](tickets/030-basic-text-editing.md) — 扁平 mark 模型、Range 锚定 IME 与保留型段落写回贯通输入到保存；动态字段/公式/RTL 保真，Chrome 可信输入 p95 0.400ms。
 - [实现文字字符格式编辑闭环](tickets/031-run-formatting.md) — `SetRunProps`、三态查询、Range/IME 与最小 OOXML 覆盖写回统一字符格式；公开工具栏 seam 可供任意 UI 框架直接消费。
 - [实现文字段落格式编辑闭环](tickets/032-paragraph-formatting.md) — `SetParaProps` 以继承感知稀疏覆盖统一六个段落属性、DOM Range、多视图与最小 `pPr` 写回；Chrome 完整提交 p95 0.4ms。
+- [实现文字剪贴板与富文本粘贴闭环](tickets/033-rich-text-clipboard.md) — 纯 JSON 富文本片段、清洗 HTML 与同步剪贴板事件统一 copy/cut/paste、纯文本快捷键和最小写回；Chrome 2,000 字符完整上屏 p95 5.6ms。
 
 ## Not yet specified
 
-- M3 的富文本粘贴、表格单元格、Safari engine 行盒与 autofit 节流，沿 030–032 固定的扁平模型、DOM Range 生命周期和格式命令 seam 拆成独立任务。
+- M3 的表格单元格、Safari engine 行盒与 autofit 节流继续沿 030–033 固定的 seam 拆成独立任务。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。

@@ -120,6 +120,14 @@ paragraph—including the current paragraph at a collapsed caret—in one undo u
 The command refreshes all views sharing the session; an external toolbar registered with `registerTextUi` does not
 steal focus or accidentally close text editing.
 
+Text-mode `Ctrl/Cmd+C`, `X`, and `V` use the same synchronous browser clipboard events as native editors. Copy and
+cut publish sanitized `text/plain` plus `text/html`; default paste keeps only font, size, bold, italic, underline,
+and strike-through, while `Ctrl/Cmd+Shift+V` ignores HTML. Blocks become PPT paragraphs and `<br>` remains a hard
+line break. External HTML is parsed in a detached tree and never injected into the live editor; scripts, style
+sheets, link targets, image sources, hidden metadata, and unsupported CSS are discarded. If sanitized HTML text
+does not equal `text/plain`, formatting is dropped instead of guessing offsets. A paste or cut is one undo unit.
+Image-only paste is currently blocked without mutating the DOM; it will route to the future `AddImage` command.
+
 Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
 `AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
 refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and
@@ -189,7 +197,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 24.76 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 27.33 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT
