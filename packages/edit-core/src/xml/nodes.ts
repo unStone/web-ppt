@@ -129,6 +129,28 @@ export function removeXmlChild(parent: XmlElement, child: XmlNode): boolean {
   return true;
 }
 
+/** 只替换指定既有节点占据的槽位；缩进文本与其它兼容性节点原地保留。 */
+export function reorderXmlChildren(parent: XmlElement, ordered: readonly XmlNode[]): boolean {
+  if (new Set(ordered).size !== ordered.length) throw new Error('XML 重排不能包含重复节点');
+  const children = parent.children as XmlNode[];
+  const targets = new Set(ordered);
+  for (const child of ordered) {
+    if (nodeState(child).parent !== parent) throw new Error('XML 重排节点不是目标父元素的直属子节点');
+  }
+  const slots: number[] = [];
+  const current: XmlNode[] = [];
+  children.forEach((child, index) => {
+    if (!targets.has(child)) return;
+    slots.push(index);
+    current.push(child);
+  });
+  if (current.length !== ordered.length) throw new Error('XML 重排节点集合与父元素不一致');
+  if (current.every((child, index) => child === ordered[index])) return false;
+  slots.forEach((slot, index) => { children[slot] = ordered[index]; });
+  markXmlDirty(parent);
+  return true;
+}
+
 /** 创建纯文本节点；序列化时按 XML 文本规则转义。 */
 export function createXmlText(value: string): XmlNode {
   const node = { type: 'text', value } as const;

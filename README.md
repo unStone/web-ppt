@@ -31,8 +31,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 11.9KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 点选/框选/增减选、键盘遍历/微移/删除与撤销重做、移动/缩放/旋转、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 18.9KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 14.2KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 点选/框选/增减选、键盘遍历/微移/层级/删除与撤销重做、移动/缩放/旋转、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 19.8KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -75,6 +75,7 @@ const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 slideView.setMode('view'); // 静态预览不重建，只隐藏交互层
 session.dispose();         // 释放全部视图、原包与 blob URL
 ```
@@ -99,6 +100,10 @@ session.dispose();         // 释放全部视图、原包与 blob URL
 框架对象只删除外框，不清理可能共享的关系或媒体。含内容占位符第一次只清空文字并保留框，第二次才删框。
 删除与撤销按稳定 z 序增量移除/插回 DOM，未触碰兄弟保持节点身份；表单、Shadow DOM、文本编辑焦点和
 活动 pointer 手势仍保留浏览器所有权。
+
+`Ctrl/Cmd+]` 上移一层，`Ctrl/Cmd+Shift+]` 置顶，`Ctrl/Cmd+[` 下移一层，`Ctrl/Cmd+Shift+[` 置底。
+多选保持内部相对顺序并只形成一个撤销单元；组内元素、超链接与 frame 对象沿用相同语义。DOM 只移动
+现有元素分区，不重建 markup/defs，边界操作也不会制造空历史。
 
 `Shift`、`Ctrl` 或 macOS `Cmd` 点击按当前页/组的绘制顺序加入或移除元素；与 `Alt` 组合时可继续穿透
 重叠对象。带修饰键框选会预览并提交既有选区与框中对象的对称差，空白修饰点击保留选区。所有这些操作
@@ -165,7 +170,7 @@ disposeDoc(doc);                                     // 同时释放被接管的
 保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
 OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
 和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
-两者都不进入默认 2.95KB gzip 的编辑模型入口。
+两者都不进入默认 14.19KB gzip 的编辑模型初始入口。
 
 ### 接自己的 UI
 
@@ -310,8 +315,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换与删除保存 268 项断言 + M1 15 项独立验收 + 35 份固件、256 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 128 项会话 / 增量 DOM / 点选、框选与删除 / 键盘遍历、微移与撤销重做 / 坐标、移动、缩放、旋转与吸附 / 资源断言 + 真实 Chrome 命中、矩阵、可信修饰键与键盘、pointer capture 与性能门禁 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换、层级与删除保存 293 项断言 + M1 19 项独立验收 + 36 份固件、260 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 136 项会话 / 增量 DOM / 点选、框选、层级与删除 / 键盘遍历、微移与撤销重做 / 坐标、移动、缩放、旋转与吸附 / 资源断言 + 真实 Chrome 命中、矩阵、可信修饰键与键盘、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

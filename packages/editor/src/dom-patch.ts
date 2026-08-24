@@ -132,3 +132,47 @@ export function insertElementPartition(
   else anchor.after(rendered.next);
   return true;
 }
+
+/** 按模型目标序倒序移动受影响分区；锚点标记保证末元素不会越过非元素装饰节点。 */
+export function reorderElementPartitions(
+  staticLayer: HTMLElement,
+  editor: Editor,
+  ids: ReadonlySet<ElementId>,
+): boolean {
+  const partitions = new Map(
+    [...staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')]
+      .map((node) => [node.dataset.editRoot!, node] as const),
+  );
+  const parents = new Map<string, ElementId[]>();
+  for (const id of ids) {
+    const record = editor.doc.elements[id];
+    if (!record) continue;
+    const moved = parents.get(record.parent) ?? [];
+    moved.push(id);
+    parents.set(record.parent, moved);
+  }
+  for (const [parentId, moved] of parents) {
+    const siblings = editor.doc.slides[parentId]?.children ?? editor.doc.elements[parentId]?.children;
+    if (!siblings) return false;
+    const nodes = siblings.map((id) => partitions.get(id) ?? null);
+    if (nodes.some((node) => !node)) return false;
+    const parent = nodes[0]?.parentNode;
+    if (!parent || nodes.some((node) => node!.parentNode !== parent)) return false;
+    const boundary = staticLayer.ownerDocument.createComment('web-ppt-order-boundary');
+    const nodeSet = new Set(nodes);
+    let currentLast: Node | null = null;
+    for (const child of parent.childNodes) {
+      if (nodeSet.has(child as SVGElement)) currentLast = child;
+    }
+    if (!currentLast) return false;
+    // 锚点必须跟在旧 DOM 的末节点后；目标置顶时，它在模型里已是末节点，但 DOM 里仍可能是首节点。
+    parent.insertBefore(boundary, currentLast.nextSibling);
+    const movedSet = new Set(moved);
+    for (let index = siblings.length - 1; index >= 0; index--) {
+      if (!movedSet.has(siblings[index])) continue;
+      parent.insertBefore(nodes[index]!, nodes[index + 1] ?? boundary);
+    }
+    boundary.remove();
+  }
+  return true;
+}

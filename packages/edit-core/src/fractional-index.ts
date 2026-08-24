@@ -14,7 +14,7 @@ function digit(ch: string): number {
   return value;
 }
 
-function assertKey(key: string): void {
+export function assertFractionalIndex(key: string): void {
   if (!key) throw new Error('分数序不能为空');
   for (const ch of key) digit(ch);
   // 最小字符结尾会产生没有可插入字符串的开区间，生成器永远不产这种键。
@@ -59,8 +59,8 @@ function midpointBetween(
   lower: FractionalIndex | null,
   upper: FractionalIndex | null,
 ): FractionalIndex {
-  if (lower !== null) assertKey(lower);
-  if (upper !== null) assertKey(upper);
+  if (lower !== null) assertFractionalIndex(lower);
+  if (upper !== null) assertFractionalIndex(upper);
   if (lower !== null && upper !== null && lower >= upper) {
     throw new Error(`分数序边界无效：${lower} >= ${upper}`);
   }

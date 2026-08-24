@@ -76,6 +76,12 @@ the second. Delete and undo remove or reinsert only the affected markup/defs par
 untouched sibling DOM identities survive. Form controls, contenteditable or Shadow DOM text, and active pointer
 gestures keep native keyboard ownership.
 
+`Ctrl/Cmd+]` moves forward, `Ctrl/Cmd+Shift+]` brings to front, `Ctrl/Cmd+[` moves backward, and
+`Ctrl/Cmd+Shift+[` sends to back. A multi-selection moves as one undo unit without reversing its internal order;
+group children and frame-only objects use the same semantics, and boundary operations create no empty history.
+Views move existing markup partitions in place, preserving defs, hyperlink wrappers, untouched siblings, and
+node identities in every shared view.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as
@@ -140,7 +146,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry is measured during the repository build. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 19.82 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

@@ -7,11 +7,12 @@ import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import { hasXfrmOverrides, patchElementXfrm } from './xfrm';
 import { patchRemovedElement } from './remove-element';
 import { hasTextOverrides, patchElementText } from './text';
+import { hasOrderOverride, patchElementOrders } from './order';
 
 function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   const grouped = new Map<string, ElementRecord[]>();
   for (const record of Object.values(doc.elements)) {
-    if (!hasXfrmOverrides(record) && !hasTextOverrides(record)) continue;
+    if (!hasXfrmOverrides(record) && !hasTextOverrides(record) && !hasOrderOverride(record)) continue;
     const origin = record.meta.origin;
     if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
     const records = grouped.get(origin.part) ?? [];
@@ -58,6 +59,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   for (const [part, source] of Object.entries(nextBaselines)) {
     const tree = parseXmlTree(source);
     for (const record of removals.get(part) ?? []) patchRemovedElement(tree, record);
+    patchElementOrders(tree, doc, part);
     const records = grouped.get(part) ?? [];
     for (const record of records) {
       patchElementXfrm(tree, record);

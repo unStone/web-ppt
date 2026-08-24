@@ -32,8 +32,8 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 11.9 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 18.9 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 14.2 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 19.8 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
 
@@ -76,6 +76,7 @@ const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 slideView.setMode('view'); // keeps the static preview DOM and hides interaction layers
 session.dispose();         // releases every view, source package, and blob URL
 ```
@@ -92,6 +93,11 @@ only transient ghost DOM; pointer-up creates one undoable, saveable transaction.
 SmartArt, OLE, and other frame-only objects retain potentially shared relationships and media. A populated
 placeholder clears its text first and removes its frame on the next deletion. Delete and undo update only the
 affected markup/defs partitions in stable z-order, preserving untouched sibling DOM identities.
+
+`Ctrl/Cmd+]` moves forward, `Ctrl/Cmd+Shift+]` brings to front, `Ctrl/Cmd+[` moves backward, and
+`Ctrl/Cmd+Shift+[` sends to back. Multi-selections retain internal order as one undo unit; group children,
+hyperlinks, and frame-only objects use the same semantics. Existing DOM partitions move in place without
+rebuilding markup/defs, and boundary operations create no empty history.
 
 When building a custom adapter or needing byte-stable markup, render with an explicit namespace:
 
@@ -157,7 +163,7 @@ for byte and retains declarations, comments, PIs, namespace prefixes, attribute 
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. Neither save-only entry enters the default 2.95 KB gzip editing-model entry.
+return an explainable fallback reason. Neither save-only entry enters the default 14.19 KB gzip initial editing-model entry.
 
 ### Bring your own UI
 
@@ -300,8 +306,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 268 edit-core assertions + 15 M1 save assertions + 256 process-isolated SVG fingerprint pairs across 35 fixtures |
-| `npm run test:editor` | 128 session/incremental DOM/selection/keyboard/delete/gesture/resource assertions + real-Chrome hit-testing, trusted keyboard, matrix, pointer-capture, and performance gates |
+| `npm run test:edit` | 293 edit-core assertions + 19 M1 save assertions + 260 process-isolated SVG fingerprint pairs across 36 fixtures |
+| `npm run test:editor` | 136 session/incremental DOM/selection/keyboard/layer/delete/gesture/resource assertions + real-Chrome hit-testing, trusted keyboard, matrix, pointer-capture, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

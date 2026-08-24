@@ -187,6 +187,18 @@ export function runXmlTreeContract({ edit, check, eq, root }) {
   eq('删除节点同时收掉它独占的缩进空白', edit.serializeXmlTree(removeTree),
     '<a:spPr>\n  <a:prstGeom/>\n  <a:ln/>\n</a:spPr>');
 
+  const reorderTree = edit.parseXmlTree(
+    '<p:spTree>\n  <p:sp name="a"/>\n  <p:extLst/>\n  <p:sp name="b"/>\n</p:spTree>',
+  );
+  const reorderElements = reorderTree.root.children.filter((node) => node.type === 'element');
+  const firstShape = reorderElements[0];
+  const secondShape = reorderElements[2];
+  const reordered = edit.reorderXmlChildren(reorderTree.root, [secondShape, firstShape]);
+  eq('既有节点重排只替换目标槽位并保留扩展节点与缩进', edit.serializeXmlTree(reorderTree),
+    '<p:spTree>\n  <p:sp name="b"/>\n  <p:extLst/>\n  <p:sp name="a"/>\n</p:spTree>');
+  check('XML 重排报告真实变化且重复执行为无操作', reordered
+    && edit.reorderXmlChildren(reorderTree.root, [secondShape, firstShape]) === false);
+
   let rejectedUnknown = false;
   try {
     edit.insertXmlInOrder(

@@ -5,7 +5,9 @@ import type { EditorSession } from './session';
 import {
   bindSlideIdentities, findElementPartition, shouldRenderWholeSlide, touchedElementPartitions,
 } from './dom-identity';
-import { insertElementPartition, patchElement, removeElementPartition } from './dom-patch';
+import {
+  insertElementPartition, patchElement, removeElementPartition, reorderElementPartitions,
+} from './dom-patch';
 import { EditorKeyboardController } from './editor-keyboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
@@ -439,12 +441,12 @@ class DomSlideEditor implements SlideEditor {
       return;
     }
     const doc = this.session.editor.doc;
-    const partitions = touchedElementPartitions(doc, this.currentSlide, change.touchedElements);
+    const partitions = touchedElementPartitions(doc, this.currentSlide, change.renderElements);
     const elementCount = doc.slides[this.currentSlide].children.length;
-    const removed = [...change.touchedElements].filter((id) => !doc.elements[id]
+    const removed = [...change.renderElements].filter((id) => !doc.elements[id]
       && !!findElementPartition(this.staticLayer, id));
     const changedCount = partitions.ids.length + removed.length;
-    if (!changedCount || shouldRenderWholeSlide(
+    if (changedCount && shouldRenderWholeSlide(
       changedCount, partitions.topLevelCount + removed.length, elementCount + removed.length,
     )) {
       this.render();
@@ -465,6 +467,11 @@ class DomSlideEditor implements SlideEditor {
         this.render();
         return;
       }
+    }
+    if (change.reorderedElements.size
+      && !reorderElementPartitions(this.staticLayer, this.session.editor, change.reorderedElements)) {
+      this.render();
+      return;
     }
     this.renderSelection(change.selection);
   }

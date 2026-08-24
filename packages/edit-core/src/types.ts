@@ -44,7 +44,10 @@ export interface ElementMeta {
 export interface ElementRecord {
   id: ElementId;
   parent: SlideId | ElementId;
+  /** 解析得到的来源绘制序；编辑命令不得修改 */
   z: FractionalIndex;
+  /** 仅当用户改变层级时存在；删除后重新落回来源序可以释放这份稀疏状态 */
+  order?: FractionalIndex;
   /** 解析得到的源值；编辑命令不得修改 */
   src: SlideElement;
   /** 仅保存用户明确改过的字段 */

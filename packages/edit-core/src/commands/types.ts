@@ -37,7 +37,15 @@ export interface RemoveElementCommand {
   readonly id: ElementId;
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand;
+export type ElementLayerTarget = 'front' | 'back' | 'forward' | 'backward';
+
+export interface SetZCommand {
+  readonly type: 'SetZ';
+  readonly id: ElementId;
+  readonly to: ElementLayerTarget;
+}
+
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -63,6 +71,17 @@ export type ElementTextPatch = {
   readonly origin: string;
 };
 
+export type ElementOrderPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'order'];
+  readonly value: string;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'order'];
+  readonly origin: string;
+};
+
 export interface ElementTreeSnapshot {
   readonly root: ElementId;
   readonly parent: SlideId | ElementId;
@@ -76,7 +95,7 @@ export type ElementTreePatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementTextPatch | ElementTreePatch;
+export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch | ElementTreePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -122,6 +141,10 @@ export interface EditorChange extends ProjectionInvalidation {
   readonly selection: Selection;
   /** dirtyElements 含投影缓存祖先；DOM 增量分区必须以真正被 patch 的元素为准。 */
   readonly touchedElements: Set<ElementId>;
+  /** 需要重新生成 markup/defs 的元素；纯层级 patch 不进入这里。 */
+  readonly renderElements: Set<ElementId>;
+  /** 只需移动既有 DOM 分区的元素；可与 renderElements 重叠。 */
+  readonly reorderedElements: Set<ElementId>;
 }
 
 export type EditorSubscriber = (change: EditorChange) => void;

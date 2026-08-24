@@ -2,6 +2,7 @@
 export { Editor } from './editor';
 export { validateEditDoc } from './model-invariants';
 export { isElementDescendantOf } from './selection';
+export { elementOrder, writableLayerSiblingIds } from './element-order';
 export { applyPatches } from './commands/patch';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export {
@@ -9,7 +10,7 @@ export {
   slideOfElement, toSlide,
 } from './projection';
 export {
-  compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
+  assertFractionalIndex, compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
 } from './fractional-index';
 export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementMeta, ElementOverrides,
@@ -17,8 +18,8 @@ export type {
   SlideRecord, SlideSource, TextOverride,
 } from './types';
 export type {
-  Command, CommandPatches, EditorChange, EditorOptions, EditorSubscriber, ElementTextPatch, ElementTransformPatch,
+  Command, CommandPatches, EditorChange, EditorOptions, EditorSubscriber, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, History, HistoryEntry, Patch, RemoveElementCommand,
-  Selection, FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, TextPosition, Transaction,
+  Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, SetZCommand, TextPosition, Transaction,
   TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';

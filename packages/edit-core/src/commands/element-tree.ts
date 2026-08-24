@@ -1,4 +1,5 @@
 import { slideOfElement } from '../projection';
+import { elementOrder, elementParentChildren } from '../element-order';
 import type { EditDoc, ElementId, ElementRecord } from '../types';
 import type {
   CommandPatches, ElementTreePatch, ElementTreeSnapshot, Patch, RemoveElementCommand,
@@ -14,12 +15,6 @@ export function isElementTreePatch(patch: Patch): patch is ElementTreePatch {
   return patch.path.length === 2;
 }
 
-function parentChildren(doc: EditDoc, parent: string): ElementId[] {
-  const children = doc.slides[parent]?.children ?? doc.elements[parent]?.children;
-  if (!children) throw new Error(`元素父节点不存在或不能包含子元素：${parent}`);
-  return children;
-}
-
 function cloneRecord(record: ElementRecord): ElementRecord {
   return structuredClone(record);
 }
@@ -27,7 +22,7 @@ function cloneRecord(record: ElementRecord): ElementRecord {
 function snapshotTree(doc: EditDoc, root: ElementId): ElementTreeSnapshot {
   const record = doc.elements[root];
   if (!record) throw new Error(`找不到元素：${root}`);
-  const siblings = parentChildren(doc, record.parent);
+  const siblings = elementParentChildren(doc, record.parent);
   if (!siblings.includes(root)) throw new Error(`元素 ${root} 不在父节点 children 中`);
   const records: Record<ElementId, ElementRecord> = Object.create(null);
   const visit = (id: ElementId): void => {
@@ -86,7 +81,7 @@ function assertSnapshot(snapshot: ElementTreeSnapshot, id: ElementId, label: str
 export function validateElementTreePatch(doc: EditDoc, patch: ElementTreePatch, index: number): void {
   const id = patch.path[1];
   assertSnapshot(patch.value, id, `Patch ${index}`);
-  const siblings = parentChildren(doc, patch.value.parent);
+  const siblings = elementParentChildren(doc, patch.value.parent);
   if (patch.op === 'remove') {
     if (!doc.elements[id] || !siblings.includes(id)) {
       throw new Error(`Patch ${index} 的删除元素与当前模型不一致`);
@@ -103,7 +98,7 @@ export function validateElementTreePatch(doc: EditDoc, patch: ElementTreePatch, 
 
 export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): void {
   const snapshot = patch.value;
-  const siblings = parentChildren(doc, snapshot.parent);
+  const siblings = elementParentChildren(doc, snapshot.parent);
   if (patch.op === 'remove') {
     const index = siblings.indexOf(snapshot.root);
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
@@ -120,11 +115,11 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   for (const [id, record] of Object.entries(snapshot.records)) doc.elements[id] = cloneRecord(record);
   delete doc.removedElements[snapshot.root];
   // 多根删除时，快照下标取自不断收缩的数组，不能作为跨进程回放的位置依据；z 才是稳定顺序。
-  const rootZ = snapshot.records[snapshot.root].z;
+  const rootZ = elementOrder(snapshot.records[snapshot.root]);
   const index = siblings.findIndex((id) => {
     const sibling = doc.elements[id];
     if (!sibling) throw new Error(`父节点 children 引用了不存在的元素：${id}`);
-    return sibling.z > rootZ;
+    return elementOrder(sibling) > rootZ;
   });
   siblings.splice(index < 0 ? siblings.length : index, 0, snapshot.root);
 }

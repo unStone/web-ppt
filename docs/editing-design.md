@@ -925,6 +925,7 @@ OOXML 的复杂类型是 **sequence**，顺序错了 PowerPoint 会报"需要修
 | `sample-edit-group.pptx` | 嵌套组 + 组带旋转与非等比缩放 |
 | `sample-edit-preserve.pptx` | 图表 + SmartArt + OLE + 宏 + 自定义 XML，验证保全 |
 | `sample-edit-order.pptx` | `a:spPr` 各子元素齐全，验证插入顺序 |
+| `sample-editor-layer.pptx` | 60 个可写顶层 + 组/frame/超链接/版式只读投影，验证层级、保存与真实浏览器性能 |
 
 ### 14.4 新增 tooling
 

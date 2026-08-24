@@ -144,4 +144,39 @@ export async function runM1SaveContract({
   }
   deleteReparsed.dispose?.();
   edit.disposeDoc(deleteDoc);
+
+  const layerScenario = Object.freeze({
+    type: 'order', file: 'sample-editor-layer.pptx', targetName: 'layer-back', to: 'front',
+  });
+  const layerInput = load(layerScenario.file);
+  const layerPres = await core.parse(layerInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const layerDoc = edit.createDoc(layerPres, { idPrefix: 'm1-layer-' });
+  const layerEditor = new edit.Editor(layerDoc);
+  const layerTarget = Object.values(layerDoc.elements)
+    .find((record) => record.src.name === layerScenario.targetName);
+  if (!check('元素层级指纹固件暴露稳定编辑锚点', !!layerTarget?.meta.origin)) {
+    edit.disposeDoc(layerDoc);
+    return;
+  }
+  layerEditor.exec({ type: 'SetZ', id: layerTarget.id, to: layerScenario.to });
+  const layerSaved = await layerEditor.saveDetailed();
+  const layerArtifact = saveArtifact('element-layer.pptx', layerSaved.bytes);
+  const layerDiff = diffPackageBytes(layerInput, layerSaved.bytes);
+  const layerReparsed = await core.parse(layerSaved.bytes, { lazy: false, assets: 'defer' });
+  check('元素层级保存只改目标页且重新解析后目标位于可写顶层末端',
+    layerSaved.mode === 'passthrough' && layerSaved.rewrittenEntries === 1
+      && layerDiff.changed.join(',') === layerTarget.meta.origin.part
+      && layerReparsed.slides[0].elements.at(-1)?.name === layerScenario.targetName);
+  const layerProjectedFingerprint = renderFingerprint(
+    layerScenario.file, 'projected', layerScenario,
+  );
+  const layerSavedFingerprint = renderFingerprint(layerArtifact, 'saved', layerScenario);
+  for (const textMode of ['html', 'svg']) {
+    eq(`元素层级保存产物 ${textMode} 指纹等于独立进程中的有效投影`,
+      layerSavedFingerprint[textMode], layerProjectedFingerprint[textMode]);
+  }
+  layerReparsed.dispose?.();
+  edit.disposeDoc(layerDoc);
 }

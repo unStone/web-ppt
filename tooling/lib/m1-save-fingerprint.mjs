@@ -29,6 +29,7 @@ if (mode === 'projected') {
   const target = Object.values(doc.elements).find((record) => record.src.name === scenario.targetName);
   if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
+  else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });
   else editor.exec({ type: 'SetXfrm', id: target.id, x: scenario.x });
   slide = editor.toSlide(doc.slideOrder[0]);
 }

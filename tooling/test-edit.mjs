@@ -7,6 +7,8 @@ import { installDomEnv } from './lib/dom-env.mjs';
 import { runCommandHistoryContract } from './lib/command-history-contract.mjs';
 import { runElementDeleteContract } from './lib/element-delete-contract.mjs';
 import { runElementDeleteSaveContract } from './lib/element-delete-save-contract.mjs';
+import { runElementLayerContract } from './lib/element-layer-contract.mjs';
+import { runElementLayerSaveContract } from './lib/element-layer-save-contract.mjs';
 import { runCommandPropertyContract } from './lib/command-property-contract.mjs';
 import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
@@ -64,6 +66,7 @@ const sourceCount = (pres) => {
 };
 
 await runElementDeleteContract({ edit, core, load, check });
+await runElementLayerContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {
@@ -270,6 +273,7 @@ runXmlTreeContract({ edit: editXml, check, eq, root });
 await runOpcZipContract({ opc: editOpc, core, load, check, eq });
 await runSetXfrmSaveContract({ edit, save: editSave, core, load, check, eq });
 await runElementDeleteSaveContract({ edit, core, load, check });
+await runElementLayerSaveContract({ edit, core, load, check });
 
 console.log('\n' + '─'.repeat(60));
 if (failures.length) {

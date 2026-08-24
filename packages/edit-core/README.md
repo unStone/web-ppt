@@ -62,12 +62,17 @@ For a populated placeholder, the first command writes an empty-text override and
 command removes it. Save patches only the owning OOXML host or paragraph list and intentionally retains media
 and relationships, which may be shared by other elements.
 
+`SetZ { id, to: 'front' | 'back' | 'forward' | 'backward' }` changes layer order within one parent and source
+part. Source `z` remains immutable; only moved elements carry a sparse `order`, so untouched objects pay no
+duplicated ordering state. Subscriber events separate `reorderedElements`, whose existing DOM partitions can
+move in place, from `renderElements`, which require new markup/defs.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-`Editor.save()` is the normal API: it writes current transforms, placeholder clears, and element removals, refreshes `doc.package` for the
+`Editor.save()` is the normal API: it writes current transforms, layer order, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 
@@ -111,9 +116,10 @@ this explicitly resets that baseline. `disposeDoc(doc)` releases the current pac
 result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is no longer needed.
 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
-and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering. UTF-8
-and UTF-16 byte order/BOM are retained. Measured Vite output is 11.84 KB gzip for the initial editing entry,
-7.52 KB for `xml`, and 4.37 KB for `opc`; calling save after the main entry adds 14.05 KB on demand. Clean local
+and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
+`reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
+Measured Vite output is 14.19 KB gzip for the initial editing entry, 7.72 KB for `xml`, and 4.37 KB for `opc`;
+calling save after the main entry adds 14.62 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

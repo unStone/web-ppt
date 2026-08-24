@@ -59,12 +59,17 @@ if (element.kind === 'shape' && element.text) {
 空文本覆盖并保留形状，下一次才删除。保存只补丁拥有该元素的 OOXML 宿主或段落列表，并刻意保留可能被
 其它元素共享的媒体与关系。
 
+`SetZ { id, to: 'front' | 'back' | 'forward' | 'backward' }` 在同一父级与来源 part 内调整层级。
+来源 `z` 保持不变，只有移动过的元素携带稀疏 `order`，因此大文档不会为未编辑元素复制顺序状态。
+订阅事件用 `reorderedElements` 区分只需移动现有 DOM 的层级 patch，`renderElements` 只包含需要重建
+markup/defs 的元素；框架适配层无需猜 patch 类型。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、占位符清空和元素删除写回 OOXML，刷新 `doc.package` 供下一次保存
+常规调用只需 `Editor.save()`：它把当前变换、层级、占位符清空和元素删除写回 OOXML，刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
 ```ts
@@ -106,9 +111,9 @@ const pptxBytes = saved.bytes;
 `disposeDoc(doc)` 会释放当前包；独立保存结果不再使用时调用 `disposeOpcPackage(saved.package)`。
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
-`insertXmlInOrder` 统一执行 OOXML sequence。UTF-8 / UTF-16 字节序和 BOM 均保留；可选的
-实测 Vite 产物：编辑初始入口 11.84KB gzip，`xml` 为 7.52KB，`opc` 为 4.37KB；主入口加载后首次
-保存再按需增加 14.05KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+`insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
+字节序和 BOM 均保留；可选的实测 Vite 产物：编辑初始入口 14.19KB gzip，`xml` 为 7.72KB，`opc`
+为 4.37KB；主入口加载后首次保存再按需增加 14.62KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

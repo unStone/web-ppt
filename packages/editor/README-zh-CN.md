@@ -65,6 +65,10 @@ Shadow DOM 内的表单/contenteditable 仍使用浏览器原生 Tab 焦点行�
 删除与撤销按稳定 z 序增量移除或插回 markup/defs 分区，未触碰兄弟保持 DOM 身份；表单、contenteditable、
 Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为。
 
+`Ctrl/Cmd+]` 上移一层，`Ctrl/Cmd+Shift+]` 置顶，`Ctrl/Cmd+[` 下移一层，`Ctrl/Cmd+Shift+[` 置底。
+多选作为一个撤销单元移动并保持内部相对顺序，组内元素和 frame 对象使用同一语义；边界操作不制造空历史。
+视图只移动既有 markup 分区，defs、超链接 wrapper、未触碰兄弟和共享视图中的节点身份都保持不变。
+
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
 core 渲染器的变换顺序。
@@ -119,7 +123,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口体积由仓库构建实测；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 19.82KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

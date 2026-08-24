@@ -44,35 +44,60 @@ function hostSpid(host: XmlElement, spec: HostSpec): number | null {
   return properties ? numericId(properties) : null;
 }
 
-interface LocatedHost {
+export interface LocatedHost {
   host: XmlElement;
   parent: XmlElement;
   spec: HostSpec;
 }
 
-function collectHosts(parent: XmlElement, spid: number, output: LocatedHost[]): void {
-  for (const child of xmlElementChildren(parent)) {
-    const spec = HOSTS[child.localName];
-    const supported = spec?.namespaceUri === child.namespaceUri ? spec : undefined;
-    if (supported && hostSpid(child, supported) === spid) output.push({ host: child, parent, spec: supported });
-    collectHosts(child, spid, output);
+/** 批量定位同一 part 的宿主只遍历 XML 一次，避免大页层级保存退化为节点数平方。 */
+export function locateElementHosts(
+  document: XmlDocument,
+  records: readonly Pick<ElementRecord, 'id' | 'meta'>[],
+): Map<string, LocatedHost> {
+  const wanted = new Map<number, Pick<ElementRecord, 'id' | 'meta'>[]>();
+  const matches = new Map<string, LocatedHost[]>();
+  for (const record of records) {
+    const origin = record.meta.origin;
+    if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
+    const owners = wanted.get(origin.spid) ?? [];
+    owners.push(record);
+    wanted.set(origin.spid, owners);
+    matches.set(record.id, []);
   }
+  const visit = (parent: XmlElement): void => {
+    for (const child of xmlElementChildren(parent)) {
+      const spec = HOSTS[child.localName];
+      const supported = spec?.namespaceUri === child.namespaceUri ? spec : undefined;
+      if (supported) {
+        const spid = hostSpid(child, supported);
+        for (const record of spid === null ? [] : wanted.get(spid) ?? []) {
+          matches.get(record.id)!.push({ host: child, parent, spec: supported });
+        }
+      }
+      visit(child);
+    }
+  };
+  visit(document.root);
+  const located = new Map<string, LocatedHost>();
+  for (const record of records) {
+    const found = matches.get(record.id)!;
+    if (found.length !== 1) {
+      const origin = record.meta.origin!;
+      throw new Error(found.length
+        ? `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中存在歧义`
+        : `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中不存在`);
+    }
+    located.set(record.id, found[0]);
+  }
+  return located;
 }
 
 export function locateElementHost(
   document: XmlDocument,
   record: Pick<ElementRecord, 'id' | 'meta'>,
 ): LocatedHost {
-  const origin = record.meta.origin;
-  if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
-  const matches: LocatedHost[] = [];
-  collectHosts(document.root, origin.spid, matches);
-  if (matches.length !== 1) {
-    throw new Error(matches.length
-      ? `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中存在歧义`
-      : `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中不存在`);
-  }
-  return matches[0];
+  return locateElementHosts(document, [record]).get(record.id)!;
 }
 
 function safeInteger(value: number, scale: number, label: string): string {

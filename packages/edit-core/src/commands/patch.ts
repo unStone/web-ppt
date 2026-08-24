@@ -1,6 +1,10 @@
+import { sortElementChildrenByOrder } from '../element-order';
 import { invalidateElement, invalidateElementStructure } from '../projection';
 import type { EditDoc, ProjectionInvalidation } from '../types';
 import { applyElementTransformPatch } from './element-transform';
+import {
+  applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
+} from './element-order';
 import { applyElementTreePatch, isElementTreePatch, validateElementTreePatch } from './element-tree';
 import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
 import type { ElementTransformPatch, ElementTreePatch, Patch, XfrmField } from './types';
@@ -21,6 +25,12 @@ function validatePatch(doc: EditDoc, input: Patch, index: number): void {
   if (Array.isArray(patch.path) && patch.path.length === 4 && patch.path[3] === 'text'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementTextPatch(doc, patch as import('./types').ElementTextPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 3
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'order'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementOrderPatch(doc, patch as import('./types').ElementOrderPatch, index);
     return;
   }
   if (!Array.isArray(patch.path) || patch.path.length !== 4
@@ -60,6 +70,7 @@ function validatePatchRelations(patches: readonly Patch[]): void {
 export function applyPatches(doc: EditDoc, patches: readonly Patch[]): ProjectionInvalidation {
   validatePatchRelations(patches);
   patches.forEach((patch, index) => validatePatch(doc, patch, index));
+  validateElementOrderPatchSet(doc, patches);
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
@@ -70,10 +81,13 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
   }
+  const orderParents = new Set<string>();
   for (const patch of patches) {
     if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
+    else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
+  for (const parent of orderParents) sortElementChildrenByOrder(doc, parent);
   return { dirtyElements, dirtySlides };
 }

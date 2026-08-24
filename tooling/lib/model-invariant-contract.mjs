@@ -31,6 +31,13 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
     const children = doc.slides[doc.slideOrder[0]].children;
     doc.elements[children[1]].z = doc.elements[children[0]].z;
   });
+  rejects('拒绝非法稀疏层级键', (doc) => { doc.elements[shape.id].order = 'bad-0'; });
+  rejects('拒绝 children 与有效层级键顺序不一致', (doc) => {
+    const children = doc.slides[doc.slideOrder[0]].children;
+    doc.elements[children[0]].order = edit.fractionalIndexBetween(
+      doc.elements[children.at(-1)].z, null, children[0],
+    );
+  });
   rejects('拒绝为零的组子坐标范围', (doc) => { doc.elements[group.id].src.scaleX = 0; });
   rejects('拒绝没有段落的文本体', (doc) => { doc.elements[shape.id].src.text.paragraphs = []; });
   rejects('拒绝同一 part 内重复的可写 spid', (doc) => {

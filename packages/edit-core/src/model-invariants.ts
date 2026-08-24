@@ -1,6 +1,10 @@
 import { effectiveElement } from './projection';
+import { elementOrder } from './element-order';
+import { assertFractionalIndex } from './fractional-index';
 import type { EditDoc, ElementId, ElementRecord, SlideId } from './types';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
+
+const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
   const effective = effectiveElement(doc, record.id);
@@ -12,6 +16,11 @@ function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
       || effective.scaleX === 0 || effective.scaleY === 0)) {
     throw new Error(`组 ${record.id} 的子坐标范围不能为零`);
   }
+}
+
+function assertElementOrder(record: ElementRecord): void {
+  assertFractionalIndex(record.z);
+  if (own(record, 'order')) assertFractionalIndex(record.order!);
 }
 
 function assertTextBodies(record: ElementRecord): void {
@@ -62,8 +71,9 @@ function assertChildren(
     if (!child) throw new Error(`父节点 ${parentId} 引用了不存在的元素：${childId}`);
     if (referenced.has(childId)) throw new Error(`元素 ${childId} 被多个父节点引用`);
     if (child.parent !== parentId) throw new Error(`元素 ${childId} 的 parent 与父节点 children 不一致`);
-    if (previousZ !== null && previousZ >= child.z) throw new Error(`父节点 ${parentId} 的 z 顺序不严格递增`);
-    previousZ = child.z;
+    const order = elementOrder(child);
+    if (previousZ !== null && previousZ >= order) throw new Error(`父节点 ${parentId} 的 z 顺序不严格递增`);
+    previousZ = order;
     referenced.set(childId, parentId);
   }
 }
@@ -100,6 +110,7 @@ export function validateEditDoc(doc: EditDoc): void {
 
   for (const [id, record] of Object.entries(doc.elements)) {
     if (record.id !== id) throw new Error(`元素 key 与 id 不一致：${id}`);
+    assertElementOrder(record);
     if (record.src.kind === 'group' && !record.children) throw new Error(`组 ${id} 缺少 children`);
     if (record.src.kind !== 'group' && record.children) throw new Error(`非组元素 ${id} 不能拥有 children`);
     if (record.children) assertChildren(doc, id, record.children, referenced);

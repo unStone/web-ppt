@@ -1,6 +1,9 @@
 import { applyPatches } from './commands/patch';
 import { commandPatches } from './commands/dispatch';
 import { willRemoveElementStructure } from './commands/element-tree';
+import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
+import { isElementOrderPatch } from './commands/element-order';
+import { writableLayerSiblingIds } from './element-order';
 import type {
   Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, Transaction,
   TransactionOptions, TransactionResult,
@@ -18,6 +21,14 @@ function patchElements(patches: readonly Patch[]): Set<ElementId> {
   return new Set(patches.map((patch) => patch.path[1]));
 }
 
+function renderPatchElements(patches: readonly Patch[]): Set<ElementId> {
+  return new Set(patches.filter((patch) => !isElementOrderPatch(patch)).map((patch) => patch.path[1]));
+}
+
+function reorderedPatchElements(patches: readonly Patch[]): Set<ElementId> {
+  return new Set(patches.filter(isElementOrderPatch).map((patch) => patch.path[1]));
+}
+
 function reportSubscriberError(error: unknown): void {
   try {
     const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
@@ -28,11 +39,28 @@ function reportSubscriberError(error: unknown): void {
 
 /** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
 function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): void {
+  const layers = commands.filter((command) => command.type === 'SetZ');
+  const layerRecords = layers.map((command) => assertSetZCommand(doc, command));
+  if (layerRecords.length > 1) {
+    const parent = layerRecords[0].parent;
+    const part = layerRecords[0].meta.origin?.part ?? null;
+    if (layerRecords.some((record) => record.parent !== parent
+      || (record.meta.origin?.part ?? null) !== part)) {
+      throw new Error('同一层级事务只能调整同一父级、同一来源 part 的元素');
+    }
+  }
   const removals = commands.filter((command) => command.type === 'RemoveElement');
   if (new Set(removals.map((command) => command.id)).size !== removals.length) {
     throw new Error('同一事务不能重复删除同一元素');
   }
   const roots = removals.filter((command) => willRemoveElementStructure(doc.elements[command.id]));
+  if (roots.length && layerRecords.length) {
+    const layerCandidates = writableLayerSiblingIds(doc, layerRecords[0]);
+    if (roots.some((root) => layerCandidates.some((id) => id === root.id
+      || isElementDescendantOf(doc, id, root.id)))) {
+      throw new Error('同一事务不能删除可能承担层级覆盖的兄弟子树');
+    }
+  }
   for (let left = 0; left < roots.length; left++) {
     for (let right = left + 1; right < roots.length; right++) {
       if (isElementDescendantOf(doc, roots[left].id, roots[right].id)
@@ -112,7 +140,7 @@ export class Editor {
     if (JSON.stringify(next) === JSON.stringify(this.currentSelection)) return;
     this.currentSelection = next;
     this.historyStore.breakMerge();
-    this.emit('selection', new Set(), new Set(), new Set());
+    this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set());
   }
 
   subscribe(subscriber: EditorSubscriber): () => void {
@@ -152,9 +180,14 @@ export class Editor {
       source: 'undo' as const,
       selection: this.selection,
       touchedElements: patchElements(entry.inverse),
+      renderElements: renderPatchElements(entry.inverse),
+      reorderedElements: reorderedPatchElements(entry.inverse),
       ...dirty,
     };
-    this.emit(change.source, change.dirtyElements, change.dirtySlides, change.touchedElements);
+    this.emit(
+      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
+      change.renderElements, change.reorderedElements,
+    );
     return change;
   }
 
@@ -169,9 +202,14 @@ export class Editor {
       source: 'redo' as const,
       selection: this.selection,
       touchedElements: patchElements(entry.forward),
+      renderElements: renderPatchElements(entry.forward),
+      reorderedElements: reorderedPatchElements(entry.forward),
       ...dirty,
     };
-    this.emit(change.source, change.dirtyElements, change.dirtySlides, change.touchedElements);
+    this.emit(
+      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
+      change.renderElements, change.reorderedElements,
+    );
     return change;
   }
 
@@ -190,17 +228,27 @@ export class Editor {
     const dirtyElements = new Set<ElementId>();
     const dirtySlides = new Set<SlideId>();
     const touchedElements = new Set<ElementId>();
+    const renderElements = new Set<ElementId>();
+    const reorderedElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
     const selectionBefore = this.selection;
+    const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
+      const dirty = applyPatches(this.doc, patches.forward);
+      for (const id of dirty.dirtyElements) dirtyElements.add(id);
+      for (const id of dirty.dirtySlides) dirtySlides.add(id);
+      for (const patch of patches.forward) {
+        touchedElements.add(patch.path[1]);
+        if (isElementOrderPatch(patch)) reorderedElements.add(patch.path[1]);
+        else renderElements.add(patch.path[1]);
+      }
+      forward.push(...patches.forward);
+      inverse.unshift(...patches.inverse);
+    };
     try {
-      for (const command of commands) {
-        const patches = commandPatches(this.doc, command, origin);
-        const dirty = applyPatches(this.doc, patches.forward);
-        for (const id of dirty.dirtyElements) dirtyElements.add(id);
-        for (const id of dirty.dirtySlides) dirtySlides.add(id);
-        for (const patch of patches.forward) touchedElements.add(patch.path[1]);
-        forward.push(...patches.forward);
-        inverse.unshift(...patches.inverse);
+      if (commands.length && commands.every((command) => command.type === 'SetZ')) {
+        applyCommandPatches(setZBatchPatches(this.doc, commands, origin));
+      } else for (const command of commands) {
+        applyCommandPatches(commandPatches(this.doc, command, origin));
       }
       const structural = forward.some((patch) => patch.path.length === 2);
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
@@ -235,7 +283,7 @@ export class Editor {
     const selectionChanged = JSON.stringify(selectionBefore) !== JSON.stringify(selectionAfter);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      this.emit('transaction', dirtyElements, dirtySlides, touchedElements);
+      this.emit('transaction', dirtyElements, dirtySlides, touchedElements, renderElements, reorderedElements);
     }
     return { forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter };
   }
@@ -245,6 +293,8 @@ export class Editor {
     elements: Set<ElementId>,
     slides: Set<SlideId>,
     touched: Set<ElementId>,
+    render: Set<ElementId>,
+    reordered: Set<ElementId>,
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -254,6 +304,8 @@ export class Editor {
           dirtyElements: new Set(elements),
           dirtySlides: new Set(slides),
           touchedElements: new Set(touched),
+          renderElements: new Set(render),
+          reorderedElements: new Set(reordered),
         });
       } catch (error) {
         reportSubscriberError(error);

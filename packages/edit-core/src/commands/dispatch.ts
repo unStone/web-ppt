@@ -1,9 +1,10 @@
 import type { EditDoc } from '../types';
 import { removeElementPatches } from './element-tree';
+import { setZPatches } from './set-z';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import type {
-  Command, CommandPatches, RemoveElementCommand, SetFlipCommand, SetXfrmCommand,
+  Command, CommandPatches, RemoveElementCommand, SetFlipCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -26,6 +27,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetXfrm: register<SetXfrmCommand>(NUMERIC_XFRM_FIELDS, setXfrmPatches),
   SetFlip: register<SetFlipCommand>(SET_FLIP_COMMAND_FIELDS, setFlipPatches),
   RemoveElement: register<RemoveElementCommand>([], removeElementPatches),
+  SetZ: register<SetZCommand>(['to'], setZPatches),
 };
 
 function assertPureCommand(input: Command): void {
