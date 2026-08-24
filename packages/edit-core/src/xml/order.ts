@@ -1,6 +1,8 @@
 import { namespaceUriOnAttach } from './namespace';
 import { insertXmlChildUnchecked } from './nodes';
-import { DRAWINGML_NS, MARKUP_COMPATIBILITY_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from './qname';
+import {
+  DRAWINGML_NS, MARKUP_COMPATIBILITY_NS, OFFICE_MATH_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS,
+} from './qname';
 import type { XmlElement, XmlNode } from './types';
 
 type OrderGroups = readonly (readonly string[])[];
@@ -13,6 +15,7 @@ const group = (namespaceUri: string, ...names: string[]): readonly string[] =>
 const a = (...names: string[]): readonly string[] => group(DRAWINGML_NS, ...names);
 const p = (...names: string[]): readonly string[] => group(PRESENTATIONML_NS, ...names);
 const p14 = (...names: string[]): readonly string[] => group(POWERPOINT_2010_NS, ...names);
+const m = (...names: string[]): readonly string[] => group(OFFICE_MATH_NS, ...names);
 const FILL = a('noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill');
 const EFFECT = a('effectLst', 'effectDag');
 const shapeProperties = [a('xfrm'), a('custGeom', 'prstGeom'), FILL, a('ln'), EFFECT,
@@ -40,6 +43,9 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
     groups: [a('lnSpc'), a('spcBef'), a('spcAft'), a('buClrTx', 'buClr'),
       a('buSzTx', 'buSzPct', 'buSzPts'), a('buFontTx', 'buFont'),
       a('buNone', 'buAutoNum', 'buChar', 'buBlip'), a('tabLst'), a('defRPr'), a('extLst')],
+  },
+  [expandedName(DRAWINGML_NS, 'p')]: {
+    groups: [a('pPr'), [...a('r', 'br', 'fld'), ...m('oMath', 'oMathPara')], a('endParaRPr')],
   },
   [expandedName(DRAWINGML_NS, 'txBody')]: { groups: textBody },
   [expandedName(PRESENTATIONML_NS, 'txBody')]: { groups: textBody },

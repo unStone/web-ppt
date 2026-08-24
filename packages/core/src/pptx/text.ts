@@ -2,6 +2,9 @@ import type { Paragraph, TextBody, TextRun, TextVert, TextWarp } from '../types'
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
 import { mathPlainText, parseOmml } from './omml';
+import {
+  directParagraphProps, effectiveParagraphProps, mergeParagraphProps, resolveParagraphLevel,
+} from './paragraph-props';
 
 /**
  * 文本样式继承链：
@@ -205,17 +208,6 @@ function resolveFont(tf: string | null, fonts: ThemeFonts): string | null {
 }
 
 const mergeRun = (base: RunProps, over: RunProps): RunProps => ({ ...base, ...over });
-const mergePara = (base: ParaProps, over: ParaProps): ParaProps => ({ ...base, ...over, rp: mergeRun(base.rp, over.rp) });
-
-function resolveLevel(chain: LevelStyles[], lvl: number): ParaProps {
-  let acc: ParaProps = { rp: {} };
-  for (const style of chain) {
-    if (style.def) acc = mergePara(acc, style.def);
-    const l = style.lvls[lvl];
-    if (l) acc = mergePara(acc, l);
-  }
-  return acc;
-}
 
 /** Wingdings / Symbol 常见项目符号字符映射到通用 Unicode */
 const SYMBOL_BULLETS: Record<string, string> = {
@@ -288,10 +280,6 @@ function parseWarp(bodyPrs: (Element | null)[]): TextWarp | undefined {
   return undefined;
 }
 
-/** 未显式指定行距时的倍数，与渲染层保持一致 */
-export const DEFAULT_LINE_HEIGHT = 1.2;
-
-const ALIGN: Record<string, Paragraph['align']> = { l: 'left', ctr: 'center', r: 'right', just: 'justify', dist: 'justify' };
 const VERT: Record<string, TextVert> = { horz: 'horz', vert: 'vert', vert270: 'vert270', wordArtVert: 'wordArtVert', eaVert: 'vert', mongolianVert: 'vert' };
 
 export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty = false): TextBody | null {
@@ -338,7 +326,9 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
   for (const p of kids(txBody, 'p')) {
     const pPr = kid(p, 'pPr');
     const lvl = numAttr(pPr, 'lvl') ?? 0;
-    const merged = mergePara(resolveLevel(env.chain, lvl), parseParaProps(pPr, env.ctx, env.fonts));
+    const inherited = resolveParagraphLevel(env.chain, lvl);
+    const direct = parseParaProps(pPr, env.ctx, env.fonts);
+    const merged = mergeParagraphProps(inherited, direct);
 
     const runs: TextRun[] = [];
     const collectRuns = (parent: Element, depth: number): void => {
@@ -386,33 +376,29 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     }
 
     const maxSize = Math.max(...runs.map((r) => r.size), 1);
-    // spcPct 是「单倍行距」的百分比，而单倍行距是**字体的行高**（≈1.2em），不是字号。
-    // 直接把 150% 当成 CSS 的 line-height:1.5 用，每行会矮两成。实测一份课件里
-    // 150% 行距的文本框：PowerPoint 存的 spAutoFit 框高 164.7px，按 1.5 算只有
-    // 137.6px，按 1.2×1.5 算是 163.2px —— 后者才对得上。
-    let lineHeight: number | null = merged.lnPct !== undefined ? merged.lnPct * DEFAULT_LINE_HEIGHT : null;
-    if (lineHeight === null && merged.lnPx) lineHeight = merged.lnPx / maxSize;
-    // normAutofit 的行距压缩对默认行距同样生效——早期只在显式设过行距时才减，
-    // 导致大多数自动缩放文本框的压缩量被静默丢弃。
-    if (lnSpcReduction) lineHeight = Math.max(0.5, (lineHeight ?? DEFAULT_LINE_HEIGHT) - lnSpcReduction);
+    const effective = effectiveParagraphProps(merged, maxSize, lnSpcReduction);
 
     const buImage = merged.bullet?.kind === 'image' && env.resolveImage ? env.resolveImage(merged.bullet.rid) : null;
 
     paragraphs.push({
-      align: ALIGN[merged.algn ?? 'l'] ?? 'left',
+      align: effective.align,
       lvl,
-      marL: merged.marL ?? 0,
-      indent: merged.indent ?? 0,
+      marL: effective.marginLeft,
+      indent: effective.indent,
       bullet: bulletText(merged.bullet, counters, lvl),
-      lineHeight,
-      spaceBefore: merged.spcBef ?? 0,
-      spaceAfter: merged.spcAft ?? 0,
+      lineHeight: effective.lineHeight,
+      spaceBefore: effective.spaceBefore,
+      spaceAfter: effective.spaceAfter,
       runs,
       bulletColor: merged.buColor ?? null,
       bulletFont: merged.buFont ?? null,
       bulletSize: merged.buSizePct ?? null,
       bulletImage: buImage,
       rtl: merged.rtl,
+      ...(env.edit ? { editInfo: {
+        inheritedParagraphProps: effectiveParagraphProps(inherited, maxSize, lnSpcReduction),
+        directParagraphProps: directParagraphProps(direct),
+      } } : {}),
     });
   }
 

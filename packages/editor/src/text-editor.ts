@@ -1,40 +1,19 @@
 import { renderTextBodyToHtml } from '@web-ppt/core';
-import type { ShapeElement, TextBody } from '@web-ppt/core';
+import type { TextBody } from '@web-ppt/core';
 import {
   applyRunProps, applyTextEditOps, elementFrameToSlideMatrix, slideOfElement,
-  queryRunProps, textBodyEditText, textBodyFromOverride, textPositionAtIndex, textPositionToIndex,
+  queryParaProps as queryHeadlessParaProps, queryRunProps, textBodyEditText, textBodyFromOverride,
+  textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
-  Editor, EditorChange, ElementId, RunPropertiesState, RunPropertyOverrides, Selection, TextEditOp, TextPosition,
+  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides,
+  RunPropertiesState, RunPropertyOverrides, Selection, TextEditOp, TextPosition,
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import {
   caretPointAt, compositionChangedRange, rangePositions, readEditableDom, rebaseRange,
 } from './text-dom';
-
-interface TextEditorControllerOptions {
-  editor: Editor;
-  boundary: HTMLElement;
-  staticLayer: HTMLElement;
-  textLayer: HTMLElement;
-  slideId: () => string;
-  claim: () => void;
-  release: () => void;
-  syncStatic: (id: ElementId) => void;
-}
-
-interface CompositionSnapshot {
-  domText: string;
-  modelText: string;
-  from: number;
-  to: number;
-}
-
-interface ActiveText {
-  id: ElementId;
-  element: ShapeElement;
-  text: TextBody;
-}
+import type { ActiveText, CompositionSnapshot, TextEditorControllerOptions } from './text-editor-types';
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
@@ -72,6 +51,26 @@ export class TextEditorController {
       const pending = this.pendingRunProps[field as keyof RunPropertyOverrides];
       return [field, pending === undefined ? value : { value: pending, mixed: false }];
     })) as unknown as RunPropertiesState;
+  }
+
+  queryParaProps(): ParagraphPropertiesState | null {
+    const context = this.textContext();
+    return context ? queryHeadlessParaProps(this.options.editor.doc, context.id, context.positions) : null;
+  }
+
+  setParaProps(props: ParagraphPropertyOverrides): boolean {
+    const context = this.textContext();
+    if (!context || this.composing) return false;
+    this.options.editor.transaction((transaction) => {
+      transaction.exec({ type: 'SetParaProps', id: context.id, range: context.positions, props });
+      transaction.select({
+        kind: 'text', id: context.id,
+        anchor: context.positions.from, focus: context.positions.to,
+      });
+    }, '设置段落格式');
+    this.root?.focus({ preventScroll: true });
+    this.setSelection(context.positions.from, context.positions.to);
+    return true;
   }
 
   setRunProps(props: RunPropertyOverrides): boolean {

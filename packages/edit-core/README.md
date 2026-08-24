@@ -95,6 +95,23 @@ const state = queryRunProps(editor.doc, elementId, range);
 // state.b: { value: true, mixed: false }; each property reports mixed state independently.
 ```
 
+`SetParaProps` applies paragraph formatting to every paragraph touched by a range, including empty paragraphs.
+A collapsed range formats its current paragraph immediately. The P0 property set is alignment, effective line-height
+multiplier, spacing before/after in slide pixels, left margin in slide pixels, and signed first-line indent in slide
+pixels. `null` removes only that direct `pPr` field and reveals its inherited level style; clearing a field that was
+never direct is a strict no-op. `queryParaProps` reports an independent `{ value, mixed }` state for every property.
+
+```ts
+import { queryParaProps } from '@web-ppt/edit-core';
+
+editor.exec({
+  type: 'SetParaProps', id: elementId, range,
+  props: { align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12 },
+});
+const paragraphState = queryParaProps(editor.doc, elementId, range);
+// paragraphState.align: { value: 'center', mixed: false }
+```
+
 `copyElements(doc, ids)` returns a versioned, JSON-only `ElementClipboardPayload`. Paste it through
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })`; the command allocates fresh session
 and OOXML identities, preserves nested groups in slide coordinates, and enters history as one atomic unit.
@@ -107,7 +124,7 @@ markers for a contenteditable overlay. The core function stays DOM-free; the edi
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-`Editor.save()` is the normal API: it writes current transforms, layer order, text and character formatting,
+`Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
 placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
@@ -154,8 +171,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 41.55 KB gzip for the editing entry,
-7.90 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
+Measured Vite output, including each entry's static shared chunks, is 43.48 KB gzip for the editing entry,
+7.97 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

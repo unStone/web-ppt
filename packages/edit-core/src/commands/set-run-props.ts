@@ -1,40 +1,13 @@
 import { applyRunProps, flattenTextBody, queryTextRunProps, textBodyFromOverride } from '../text-model';
 import { textPositionToIndex } from '../text-position';
+import { assertDataObject, assertTextRange, own } from '../data-validation';
 import type { EditDoc, TextOverride } from '../types';
-import type { CommandPatches, SetRunPropsCommand, TextPosition } from './types';
-
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
-
-function assertPlainObject(value: unknown, fields: readonly string[], label: string): asserts value is object {
-  if (!value || typeof value !== 'object'
-    || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
-    throw new Error(`${label} 必须是纯数据对象`);
-  }
-  const allowed = new Set(fields);
-  for (const key of Reflect.ownKeys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (typeof key !== 'string' || !allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
-      throw new Error(`${label} 包含未知或不可序列化字段：${String(key)}`);
-    }
-  }
-}
-
-function assertPosition(value: unknown, label: string): asserts value is TextPosition {
-  assertPlainObject(value, ['p', 'r', 'off'], label);
-  for (const field of ['p', 'r', 'off'] as const) {
-    if (!Number.isInteger((value as Record<string, unknown>)[field])
-      || Number((value as Record<string, unknown>)[field]) < 0) {
-      throw new Error(`${label}.${field} 必须是非负整数`);
-    }
-  }
-}
+import type { CommandPatches, SetRunPropsCommand } from './types';
 
 function validate(command: SetRunPropsCommand): void {
-  assertPlainObject(command.range, ['from', 'to'], 'SetRunProps.range');
-  assertPosition(command.range.from, 'SetRunProps.range.from');
-  assertPosition(command.range.to, 'SetRunProps.range.to');
+  assertTextRange(command.range, 'SetRunProps.range');
   const fields = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
-  assertPlainObject(command.props, fields, 'SetRunProps.props');
+  assertDataObject(command.props, fields, 'SetRunProps.props');
   if (!fields.some((field) => own(command.props, field))) throw new Error('SetRunProps.props 不能为空');
   if (own(command.props, 'font') && command.props.font !== null
     && (typeof command.props.font !== 'string' || !command.props.font.trim()

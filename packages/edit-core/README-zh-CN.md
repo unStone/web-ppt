@@ -90,6 +90,22 @@ const state = queryRunProps(editor.doc, elementId, range);
 // state.b 为 { value: true, mixed: false }；每个属性独立报告 mixed 状态。
 ```
 
+`SetParaProps` 会设置选区触及的全部段落，空段也包含在内；折叠选区立即作用于当前段。P0 属性包括
+对齐、有效行高倍数、段前/段后间距（幻灯片 px）、左边距（幻灯片 px）和可为负的首行缩进（幻灯片 px）。
+属性传 `null` 只删除对应的直接 `pPr` 字段并恢复级别样式继承；原本没有直设字段时是严格 no-op。
+`queryParaProps` 为每个属性独立返回 `{ value, mixed }`。
+
+```ts
+import { queryParaProps } from '@web-ppt/edit-core';
+
+editor.exec({
+  type: 'SetParaProps', id: elementId, range,
+  props: { align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12 },
+});
+const paragraphState = queryParaProps(editor.doc, elementId, range);
+// paragraphState.align 为 { value: 'center', mixed: false }
+```
+
 `copyElements(doc, ids)` 返回版本化、纯 JSON 的 `ElementClipboardPayload`。通过
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })` 粘贴时，会分配新的会话身份与
 OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原子历史单元提交。图片以 base64 + SHA-256
@@ -101,7 +117,7 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字与字符格式、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
@@ -145,8 +161,8 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 41.55KB gzip，`xml` 为
-7.90KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 43.48KB gzip，`xml` 为
+7.97KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

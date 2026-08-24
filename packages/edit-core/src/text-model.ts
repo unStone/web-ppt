@@ -1,8 +1,8 @@
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
-  FlatTextParagraph, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextMark,
-  TextOverride,
+  FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
+  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextMark, TextOverride,
 } from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
 
@@ -21,7 +21,7 @@ function runProps(run: TextRun): Omit<TextRun, 'text'> {
 }
 
 function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
-  const { runs: _runs, ...props } = paragraph;
+  const { runs: _runs, editInfo: _editInfo, ...props } = paragraph;
   return props;
 }
 
@@ -57,6 +57,8 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
       return {
         text: paragraph.runs.map((run) => run.math?.length ? TEXT_ATOM : run.text).join(''),
         props: paragraphProps(paragraph), marks, sourceParagraph: paragraphIndex,
+        inheritedParagraphProps: paragraph.editInfo?.inheritedParagraphProps,
+        directParagraphProps: paragraph.editInfo?.directParagraphProps,
       };
     }),
   };
@@ -325,6 +327,84 @@ export function applyRunProps(
   return { ...override, paragraphs };
 }
 
+export function applyParagraphProps(
+  body: TextBody,
+  range: TextRange,
+  props: ParagraphPropertyOverrides,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): TextOverride {
+  const override = initial ?? flattenTextBody(body);
+  queryTextRunProps(body, range, override);
+  const own = (field: keyof ParagraphPropertyOverrides): boolean =>
+    Object.prototype.hasOwnProperty.call(props, field);
+  const current = (paragraph: FlatTextParagraph): ParagraphProperties => ({
+    align: paragraph.props.align, lineHeight: paragraph.props.lineHeight,
+    spaceBefore: paragraph.props.spaceBefore, spaceAfter: paragraph.props.spaceAfter,
+    marginLeft: paragraph.props.marL, indent: paragraph.props.indent,
+  });
+  const formatted = (paragraph: FlatTextParagraph): ParagraphProperties => {
+    const before = current(paragraph);
+    const inherited = paragraph.inheritedParagraphProps ?? before;
+    return {
+      align: own('align') ? props.align ?? inherited.align : before.align,
+      lineHeight: own('lineHeight') ? props.lineHeight ?? inherited.lineHeight : before.lineHeight,
+      spaceBefore: own('spaceBefore') ? props.spaceBefore ?? inherited.spaceBefore : before.spaceBefore,
+      spaceAfter: own('spaceAfter') ? props.spaceAfter ?? inherited.spaceAfter : before.spaceAfter,
+      marginLeft: own('marginLeft') ? props.marginLeft ?? inherited.marginLeft : before.marginLeft,
+      indent: own('indent') ? props.indent ?? inherited.indent : before.indent,
+    };
+  };
+  const overrides = (paragraph: FlatTextParagraph): ParagraphPropertyOverrides => {
+    const next: Record<string, ParagraphPropertyOverrides[keyof ParagraphPropertyOverrides]> = {
+      ...paragraph.paragraphOverrides,
+    };
+    const before = current(paragraph);
+    for (const field of Object.keys(props) as (keyof ParagraphPropertyOverrides)[]) {
+      if (Object.is(props[field], before[field])) continue;
+      if (props[field] === null && !paragraph.directParagraphProps?.[field]) delete next[field];
+      else next[field] = props[field];
+    }
+    return next;
+  };
+  return {
+    ...override,
+    paragraphs: override.paragraphs.map((paragraph, index) => {
+      if (index < range.from.p || index > range.to.p) return paragraph;
+      const next = formatted(paragraph);
+      const nextOverrides = overrides(paragraph);
+      const { paragraphOverrides: _previous, ...base } = paragraph;
+      return {
+        ...base,
+        props: {
+          ...paragraph.props,
+          align: next.align, lineHeight: next.lineHeight,
+          spaceBefore: next.spaceBefore, spaceAfter: next.spaceAfter,
+          marL: next.marginLeft, indent: next.indent,
+        },
+        ...(Object.keys(nextOverrides).length ? { paragraphOverrides: nextOverrides } : {}),
+      };
+    }),
+  };
+}
+
+export function queryTextParagraphProps(
+  body: TextBody,
+  range: TextRange,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): ParagraphPropertiesState {
+  const override = initial ?? flattenTextBody(body);
+  queryTextRunProps(body, range, override);
+  const paragraphs = override.paragraphs.slice(range.from.p, range.to.p + 1);
+  return {
+    align: state(paragraphs.map((paragraph) => paragraph.props.align)),
+    lineHeight: state(paragraphs.map((paragraph) => paragraph.props.lineHeight)),
+    spaceBefore: state(paragraphs.map((paragraph) => paragraph.props.spaceBefore)),
+    spaceAfter: state(paragraphs.map((paragraph) => paragraph.props.spaceAfter)),
+    marginLeft: state(paragraphs.map((paragraph) => paragraph.props.marL)),
+    indent: state(paragraphs.map((paragraph) => paragraph.props.indent)),
+  };
+}
+
 function state<T>(values: readonly (T | null)[]): RunPropertyState<T> {
   const first = values[0] ?? null;
   return { value: first, mixed: values.some((value) => !Object.is(value, first)) };
@@ -370,32 +450,4 @@ export function queryTextRunProps(
     u: state(selected.map((mark) => mark.props.u)),
     strike: state(selected.map((mark) => mark.props.strike)),
   };
-}
-
-export function validateFlatTextOverride(
-  override: Extract<TextOverride, { kind: 'flat' }>,
-): void {
-  if (!override.body || !Array.isArray(override.paragraphs) || !override.paragraphs.length) {
-    throw new Error('扁平文本覆盖至少需要一个段落');
-  }
-  for (const paragraph of override.paragraphs) {
-    if (typeof paragraph.text !== 'string' || !Array.isArray(paragraph.marks)) {
-      throw new Error('扁平文本段落无效');
-    }
-    let offset = 0;
-    for (const mark of paragraph.marks) {
-      if (!Number.isInteger(mark.from) || !Number.isInteger(mark.to)
-        || mark.from !== offset || mark.to < mark.from || mark.to > paragraph.text.length) {
-        throw new Error('文字格式区间必须连续覆盖段落');
-      }
-      if (mark.atomText !== undefined
-        && (mark.to - mark.from !== 1 || paragraph.text.slice(mark.from, mark.to) !== TEXT_ATOM)) {
-        throw new Error('公式标记必须覆盖单个原子');
-      }
-      offset = mark.to;
-    }
-    if (offset !== paragraph.text.length || (!paragraph.marks.length && paragraph.text.length)) {
-      throw new Error('文字格式区间没有完整覆盖段落');
-    }
-  }
 }

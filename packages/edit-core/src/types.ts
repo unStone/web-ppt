@@ -107,11 +107,44 @@ export interface RunPropertiesState {
   readonly strike: RunPropertyState<boolean>;
 }
 
+export interface ParagraphPropertyOverrides {
+  readonly align?: Paragraph['align'] | null;
+  readonly lineHeight?: number | null;
+  readonly spaceBefore?: number | null;
+  readonly spaceAfter?: number | null;
+  readonly marginLeft?: number | null;
+  readonly indent?: number | null;
+}
+
+export interface ParagraphProperties {
+  readonly align: Paragraph['align'];
+  readonly lineHeight: number | null;
+  readonly spaceBefore: number;
+  readonly spaceAfter: number;
+  readonly marginLeft: number;
+  readonly indent: number;
+}
+
+export interface ParagraphPropertiesState {
+  readonly align: RunPropertyState<Paragraph['align']>;
+  readonly lineHeight: RunPropertyState<number>;
+  readonly spaceBefore: RunPropertyState<number>;
+  readonly spaceAfter: RunPropertyState<number>;
+  readonly marginLeft: RunPropertyState<number>;
+  readonly indent: RunPropertyState<number>;
+}
+
 export interface FlatTextParagraph {
   readonly text: string;
   readonly props: Omit<Paragraph, 'runs'>;
   readonly marks: readonly TextMark[];
   readonly sourceParagraph?: number;
+  /** 用户对来源 pPr 的稀疏覆盖；null 表示删除直接格式、回到继承。 */
+  readonly paragraphOverrides?: ParagraphPropertyOverrides;
+  /** 删除直接段落格式后恢复的继承有效值。 */
+  readonly inheritedParagraphProps?: ParagraphProperties;
+  /** 来源 pPr 的直接字段集合，用于区分“删除直设”与严格 no-op。 */
+  readonly directParagraphProps?: Readonly<Partial<Record<keyof ParagraphProperties, true>>>;
 }
 
 export type TextOverride = { readonly kind: 'empty' } | {

@@ -20,6 +20,7 @@ import { runSnapGestureContract } from './lib/snap-gesture-contract.mjs';
 import { runTabSelectionContract } from './lib/tab-selection-contract.mjs';
 import { runTextEditorContract } from './lib/text-editor-contract.mjs';
 import { runRunFormatEditorContract } from './lib/run-format-editor-contract.mjs';
+import { runParagraphFormatEditorContract } from './lib/paragraph-format-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -194,6 +195,7 @@ await runKeyboardNudgeContract({ check, lib, root });
 await runTabSelectionContract({ check, lib, root });
 await runTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runRunFormatEditorContract({ check, lib, root, window: domEnvironment.window });
+await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

@@ -135,13 +135,13 @@ export const nextShapeId = () => ++shapeId;
 
 /** 便捷形状构造 */
 /** `bodyPr` 覆盖 txBody 的默认 <a:bodyPr anchor="ctr"/>，用于测自动缩放等文本框属性 */
-export function sp({ x, y, w, h, prst = 'rect', avLst = '', fill = '', ln = '', effect = '', text = '', rot, flipH, flipV, name = 'sp', bodyPr = '' }) {
+export function sp({ x, y, w, h, prst = 'rect', avLst = '', fill = '', ln = '', effect = '', text = '', rot, flipH, flipV, name = 'sp', bodyPr = '', lstStyle = '' }) {
   const xfrmAttrs = [rot ? ` rot="${rot}"` : '', flipH ? ' flipH="1"' : '', flipV ? ' flipV="1"' : ''].join('');
   return `<p:sp>
 <p:nvSpPr><p:cNvPr id="${nextShapeId()}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm${xfrmAttrs}><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm>
 <a:prstGeom prst="${prst}"><a:avLst>${avLst}</a:avLst></a:prstGeom>${fill}${ln}${effect}</p:spPr>
-<p:txBody>${bodyPr || '<a:bodyPr anchor="ctr"/>'}<a:lstStyle/>${text || '<a:p><a:endParaRPr/></a:p>'}</p:txBody>
+<p:txBody>${bodyPr || '<a:bodyPr anchor="ctr"/>'}${lstStyle || '<a:lstStyle/>'}${text || '<a:p><a:endParaRPr/></a:p>'}</p:txBody>
 </p:sp>`;
 }
 

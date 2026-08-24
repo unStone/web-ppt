@@ -1,5 +1,5 @@
 import type { EditDoc } from '../types';
-import { validateFlatTextOverride } from '../text-model';
+import { validateFlatTextOverride } from '../text-override-validation';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);

@@ -218,6 +218,7 @@ async function browserResult(webSocketDebuggerUrl) {
           clipboardPaste: report.dataset.clipboardPaste,
           clipboardPasteP95: report.dataset.clipboardPasteP95,
           textP95: report.dataset.textP95,
+          paragraphP95: report.dataset.paragraphP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -513,6 +514,7 @@ try {
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
     + ` · 文字输入 p95 ${result.textP95}ms`
+    + ` · 段落格式 p95 ${result.paragraphP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

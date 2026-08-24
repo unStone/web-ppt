@@ -2,6 +2,7 @@
 export { Editor } from './editor';
 export { copyElements } from './clipboard';
 export { queryRunProps } from './run-properties';
+export { queryParaProps } from './paragraph-properties';
 export { validateEditDoc } from './model-invariants';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
 export { elementOrder, writableLayerSiblingIds } from './element-order';
@@ -24,17 +25,20 @@ export {
 export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
-  FlatTextParagraph, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
+  FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideRecord, SlideSource, TextMark, TextOverride,
 } from './types';
 export type {
   AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, History, HistoryEntry, Patch, RemoveElementCommand,
-  PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
+  PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
-export { applyRunProps, applyTextEditOps, flattenTextBody, queryTextRunProps, textBodyFromOverride } from './text-model';
+export {
+  applyParagraphProps, applyRunProps, applyTextEditOps, flattenTextBody, queryTextParagraphProps,
+  queryTextRunProps, textBodyFromOverride,
+} from './text-model';
 export {
   TEXT_ATOM, textBodyEditText, textPositionAtIndex, textPositionToIndex, textRunEditLength,
 } from './text-position';

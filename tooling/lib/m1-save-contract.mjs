@@ -328,6 +328,28 @@ export async function runM1SaveContract({
         props: { u: true },
       },
     ],
+    paragraphFormats: [
+      {
+        targetName: '段落格式',
+        range: { from: { p: 0, r: 0, off: 1 }, to: { p: 2, r: 0, off: 0 } },
+        props: {
+          align: 'left', lineHeight: 2.1, spaceBefore: 14, spaceAfter: 7,
+          marginLeft: 30, indent: -12,
+        },
+      },
+      {
+        targetName: '文本综合',
+        range: { from: { p: 0, r: 0, off: 1 }, to: { p: 0, r: 0, off: 1 } },
+        // bodyPr 有 8% 行距压缩；有效 1.72 写回后应成为 150% 单倍行距。
+        props: { lineHeight: 1.72 },
+      },
+      {
+        targetName: '文本综合',
+        // 覆盖 Enter 新拆出的共享来源段、空段、公式与字段，验证重建路径逐段克隆 pPr。
+        range: { from: { p: 1, r: 0, off: 1 }, to: { p: 5, r: 0, off: 1 } },
+        props: { spaceAfter: 11, marginLeft: 19 },
+      },
+    ],
   });
   const textInput = load(textScenario.file);
   const textPres = await core.parse(textInput, {
@@ -335,7 +357,7 @@ export async function runM1SaveContract({
   });
   const textDoc = edit.createDoc(textPres, { idPrefix: 'm1-text-' });
   const textEditor = new edit.Editor(textDoc);
-  const textTargets = [...textScenario.edits, ...textScenario.formats]
+  const textTargets = [...textScenario.edits, ...textScenario.formats, ...textScenario.paragraphFormats]
     .map((change) => Object.values(textDoc.elements)
       .find((record) => record.src.name === change.targetName));
   if (!check('文字指纹固件暴露复杂文本与空文本框写回锚点',
@@ -355,6 +377,13 @@ export async function runM1SaveContract({
       type: 'SetRunProps', id: target.id, range: change.range, props: change.props,
     });
   });
+  textScenario.paragraphFormats.forEach((change) => {
+    const target = Object.values(textDoc.elements)
+      .find((record) => record.src.name === change.targetName);
+    textEditor.exec({
+      type: 'SetParaProps', id: target.id, range: change.range, props: change.props,
+    });
+  });
   const textSaved = await textEditor.saveDetailed();
   const textArtifact = saveArtifact('basic-text-editing.pptx', textSaved.bytes);
   const textDiff = diffPackageBytes(textInput, textSaved.bytes);
@@ -364,20 +393,34 @@ export async function runM1SaveContract({
   const reopenedRich = findNamed(textReparsed.slides[0].elements, '文本综合');
   const reopenedEmpty = findNamed(textReparsed.slides[0].elements, '空文本框');
   const reopenedRepeated = findNamed(textReparsed.slides[0].elements, '重复格式');
+  const reopenedParagraphs = findNamed(textReparsed.slides[0].elements, '段落格式');
   const slideXml = new TextDecoder().decode(textReparsed.package.parts['ppt/slides/slide1.xml']);
   check('文字保存只改目标页并保留拆段 RTL、公式、字段、字符格式和空文本框继承格式',
     textSaved.mode === 'passthrough' && textDiff.changed.join(',') === 'ppt/slides/slide1.xml'
       && reopenedRich.text.paragraphs.slice(1, 3).every((paragraph) => paragraph.rtl)
       && reopenedRich.text.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.math?.length))
       && reopenedRich.text.paragraphs[3].runs[0].u
+      && Math.abs(reopenedRich.text.paragraphs[0].lineHeight - 1.72) < 1e-9
+      && reopenedRich.text.paragraphs.slice(1).every((paragraph) =>
+        paragraph.spaceAfter === 11 && paragraph.marL === 19)
       && reopenedRich.text.paragraphs[5].runs[0].b
       && reopenedRich.text.paragraphs[5].runs[0].size === 28
       && reopenedRepeated.text.paragraphs[0].runs.every((run) => run.fonts[0] === 'Noto Sans'
         && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
       && reopenedEmpty.text.paragraphs[0].runs[0].b === true
       && reopenedEmpty.text.paragraphs[0].runs.map((run) => run.text).join('') === '从空白开始编辑'
+      && reopenedParagraphs.text.paragraphs.slice(0, 3).every((paragraph) => paragraph.align === 'left'
+        && paragraph.lineHeight === 2.1 && paragraph.spaceBefore === 14
+        && paragraph.spaceAfter === 7 && paragraph.marL === 30 && paragraph.indent === -12)
+      && reopenedParagraphs.text.paragraphs[3].align === 'right'
       && slideXml.includes('<a:fld')
       && slideXml.includes('<?format keep?>') && slideXml.includes('<!--paragraph-format-sentinel-->')
+      && slideXml.includes('<?paragraph  keep = "yes"?>')
+      && slideXml.includes('<!--paragraph-props:  keep-->')
+      && slideXml.includes('<!--unselected-ppr:  keep-->')
+      && slideXml.includes('<?unselected-ppr  keep = "yes"?>')
+      && slideXml.includes('x:keep="spacing"')
+      && slideXml.includes('<a:spcPct val="150000"')
       && (slideXml.match(/typeface="Noto Sans"/g) ?? []).length === 9);
   const textProjectedFingerprint = renderFingerprint(textScenario.file, 'projected', textScenario);
   const textSavedFingerprint = renderFingerprint(textArtifact, 'saved', textScenario);

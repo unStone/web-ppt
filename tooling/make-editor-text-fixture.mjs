@@ -7,7 +7,8 @@ import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MATH_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/math';
 
-const richText = `<a:p><a:pPr algn="l"/>
+const richText = `<a:p><a:pPr algn="l"><a:lnSpc>
+<a:spcPct val="100000" xmlns:x="urn:web-ppt:test" x:keep="spacing"/></a:lnSpc></a:pPr>
 <a:r><a:rPr sz="1800"><a:solidFill><a:srgbClr val="1F2937"/></a:solidFill></a:rPr><a:t xml:space="preserve"> 前导 </a:t></a:r>
 <a:r><a:rPr sz="1800" b="1"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:rPr><a:t>中文</a:t></a:r>
 <a:r><a:rPr sz="1800" i="1"/><a:t>日本語</a:t></a:r>
@@ -59,9 +60,28 @@ const splitFormat = sp({
 <?split-after   keep="two"?><!--split-after:  keep--></a:p>`,
 });
 
+const paragraphFormat = sp({
+  x: 90, y: 620, w: 1040, h: 85, prst: 'rect', fill: solid('F0FDFA'), name: '段落格式',
+  bodyPr: '<a:bodyPr anchor="ctr"/>',
+  lstStyle: `<a:lstStyle><a:lvl1pPr algn="r" marL="190500" indent="-95250">
+<a:lnSpc><a:spcPct val="125000"/></a:lnSpc>
+<a:spcBef><a:spcPts val="600"/></a:spcBef><a:spcAft><a:spcPts val="300"/></a:spcAft>
+</a:lvl1pPr></a:lstStyle>`,
+  text: `<a:p><a:pPr algn="ctr" marL="381000" indent="-190500">
+<a:lnSpc><a:spcPts val="2400"/></a:lnSpc>
+<a:spcBef><a:spcPts val="900"/></a:spcBef><a:spcAft><a:spcPts val="450"/></a:spcAft>
+<?paragraph  keep = "yes"?><!--paragraph-props:  keep-->
+<a:extLst><a:ext uri="{8A5E6F70-1234-4321-ABCD-1234567890AB}"><x:keep xmlns:x="urn:web-ppt:test" value="yes"/></a:ext></a:extLst>
+</a:pPr><a:r><a:rPr sz="1500"/><a:t>直接段落</a:t></a:r></a:p>
+<a:p><a:r><a:rPr sz="1500"/><a:t>继承段落</a:t></a:r></a:p>
+<a:p><a:endParaRPr sz="1500"/></a:p>
+<a:p><a:pPr><!--unselected-ppr:  keep--><?unselected-ppr  keep = "yes"?></a:pPr>
+<a:r><a:rPr sz="1500"/><a:t>未选中段落</a:t></a:r></a:p>`,
+});
+
 const bytes = deck({
   name: 'Editor Text', width: 1280, height: 720,
-  slides: [slideXml(rich + empty + rotated + repeated + splitFormat)],
+  slides: [slideXml(rich + empty + rotated + repeated + splitFormat + paragraphFormat)],
 });
 
 mkdirSync(join(root, 'fixtures'), { recursive: true });

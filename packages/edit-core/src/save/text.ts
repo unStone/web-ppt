@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_LINE_HEIGHT } from '@web-ppt/core';
 import type { ElementRecord } from '../types';
 import type { FlatTextParagraph, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
@@ -12,6 +13,9 @@ import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement } from '../xml/types';
 import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
+
+const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
 
 export function hasTextOverrides(record: ElementRecord): boolean {
   return record.ovr.text !== undefined;
@@ -86,13 +90,98 @@ function patchSourceRunProperties(source: XmlElement, mark: TextMark): void {
     insertXmlChildUnchecked(source, properties, xmlElementChildren(source)[0] ?? null);
   }
   applyRunOverrides(properties, mark);
-  if (!hasRunProperties(properties)) removeXmlChild(source, properties);
+  if (!hasPropertyContent(properties)) removeXmlChild(source, properties);
 }
 
-function hasRunProperties(properties: XmlElement): boolean {
+function hasPropertyContent(properties: XmlElement): boolean {
   return properties.attributes.some((attribute) => !attribute.name.startsWith('xmlns'))
-    || properties.children.some((child) => child.type === 'element'
-      || (child.type === 'text' && !!child.value.trim()));
+    || properties.children.some((child) => child.type !== 'text' || !!child.value.trim());
+}
+
+function replaceSpacing(
+  properties: XmlElement,
+  containerName: 'lnSpc' | 'spcBef' | 'spcAft',
+  valueName: 'spcPct' | 'spcPts',
+  value: number | null,
+): void {
+  let container = findXmlChild(properties, { localName: containerName, namespaceUri: DRAWINGML_NS });
+  if (value === null) {
+    if (container) removeXmlChild(properties, container);
+    return;
+  }
+  if (!container) {
+    container = namespacedElement(properties, DRAWINGML_NS, containerName);
+    insertXmlInOrder(properties, container);
+  }
+  let spacing: XmlElement | null = null;
+  for (const child of xmlElementChildren(container)) {
+    if (child.namespaceUri !== DRAWINGML_NS || !['spcPct', 'spcPts'].includes(child.localName)) continue;
+    if (child.localName === valueName && !spacing) spacing = child;
+    else removeXmlChild(container, child);
+  }
+  if (!spacing) {
+    spacing = namespacedElement(container, DRAWINGML_NS, valueName);
+    insertXmlChildUnchecked(container, spacing);
+  }
+  setXmlAttribute(spacing, 'val', String(Math.round(value)));
+}
+
+function applyParagraphOverrides(
+  properties: XmlElement,
+  paragraph: FlatTextParagraph,
+  lnSpcReduction: number,
+): void {
+  const overrides = paragraph.paragraphOverrides;
+  if (!overrides) return;
+  if (own(overrides, 'align')) {
+    const value = overrides.align;
+    if (value === undefined) throw new Error('段落对齐覆盖无效');
+    if (value === null) removeXmlAttribute(properties, 'algn');
+    else setXmlAttribute(properties, 'algn', ALIGN[value]);
+  }
+  for (const [field, attribute] of [['marginLeft', 'marL'], ['indent', 'indent']] as const) {
+    if (!own(overrides, field)) continue;
+    const value = overrides[field];
+    if (value === undefined) throw new Error(`段落格式 ${field} 覆盖无效`);
+    if (value === null) removeXmlAttribute(properties, attribute);
+    else setXmlAttribute(properties, attribute, String(Math.round(value * 9525)));
+  }
+  if (own(overrides, 'lineHeight')) {
+    const value = overrides.lineHeight;
+    if (value === undefined) throw new Error('段落行高覆盖无效');
+    const percentage = value === null ? null
+      : (value + lnSpcReduction) / DEFAULT_TEXT_LINE_HEIGHT * 100000;
+    replaceSpacing(properties, 'lnSpc', 'spcPct', percentage);
+  }
+  for (const [field, container] of [
+    ['spaceBefore', 'spcBef'], ['spaceAfter', 'spcAft'],
+  ] as const) {
+    if (!own(overrides, field)) continue;
+    const value = overrides[field];
+    if (value === undefined) throw new Error(`段落格式 ${field} 覆盖无效`);
+    replaceSpacing(properties, container, 'spcPts', value === null ? null : value * 75);
+  }
+}
+
+function paragraphProperties(
+  paragraph: XmlElement,
+  flat: FlatTextParagraph,
+  lnSpcReduction: number,
+): XmlElement | null {
+  let properties = findXmlChild(paragraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS });
+  if (!flat.paragraphOverrides) return properties;
+  if (!properties) {
+    properties = namespacedElement(paragraph, DRAWINGML_NS, 'pPr');
+    insertXmlInOrder(paragraph, properties);
+  }
+  if (properties) {
+    applyParagraphOverrides(properties, flat, lnSpcReduction);
+    if (!hasPropertyContent(properties)) {
+      removeXmlChild(paragraph, properties);
+      return null;
+    }
+  }
+  return properties;
 }
 
 function appendCopiedRunProperties(
@@ -133,7 +222,7 @@ function appendCopiedRunProperties(
     }
   }
   applyRunOverrides(properties, mark);
-  if (hasRunProperties(properties)) insertXmlChildUnchecked(run, properties);
+  if (hasPropertyContent(properties)) insertXmlChildUnchecked(run, properties);
 }
 
 function appendTextRun(paragraph: XmlElement, source: XmlElement | null, mark: TextMark, text: string): void {
@@ -170,7 +259,7 @@ function appendMark(
       }
       if (properties) {
         applyRunOverrides(properties, mark);
-        if (!hasRunProperties(properties)) removeXmlChild(field, properties);
+        if (!hasPropertyContent(properties)) removeXmlChild(field, properties);
       }
       insertXmlChildUnchecked(paragraph, field);
       return;
@@ -191,13 +280,18 @@ function appendFlatParagraph(
   body: XmlElement,
   sourceParagraphs: readonly XmlElement[],
   flat: FlatTextParagraph,
+  lnSpcReduction: number,
 ): void {
   const paragraph = namespacedElement(body, DRAWINGML_NS, 'p');
+  // 先挂入宿主，后续克隆的 pPr 才能从真实祖先继承命名空间；
+  // detached 节点没有父级 xmlns，按 namespaceUri 查找会把同一个 pPr 误判为缺失。
+  insertXmlInOrder(body, paragraph);
   const sourceParagraph = flat.sourceParagraph === undefined ? null : sourceParagraphs[flat.sourceParagraph];
   const pPr = sourceParagraph
     ? findXmlChild(sourceParagraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS })
     : null;
   if (pPr) insertXmlChildUnchecked(paragraph, cloneXmlNode(pPr));
+  paragraphProperties(paragraph, flat, lnSpcReduction);
   for (const mark of flat.marks) {
     appendMark(paragraph, mark, flat.text.slice(mark.from, mark.to), sourceUnit(sourceParagraphs, flat, mark));
   }
@@ -207,7 +301,14 @@ function appendFlatParagraph(
   const nextEnd = end ? cloneXmlNode(end) : namespacedElement(paragraph, DRAWINGML_NS, 'endParaRPr');
   if (!flat.text.length && flat.marks[0]) applyRunOverrides(nextEnd, flat.marks[0]);
   insertXmlChildUnchecked(paragraph, nextEnd);
-  insertXmlInOrder(body, paragraph);
+}
+
+function nonParagraphFormatProps(props: FlatTextParagraph['props']): object {
+  const {
+    align: _align, marL: _marL, indent: _indent, lineHeight: _lineHeight,
+    spaceBefore: _spaceBefore, spaceAfter: _spaceAfter, ...rest
+  } = props;
+  return rest;
 }
 
 function isFormatOnly(record: ElementRecord, flat: Extract<ElementRecord['ovr']['text'], { kind: 'flat' }>): boolean {
@@ -220,7 +321,8 @@ function isFormatOnly(record: ElementRecord, flat: Extract<ElementRecord['ovr'][
       const original = baseline.paragraphs[index];
       return paragraph.text === original.text
         && paragraph.sourceParagraph === index
-        && JSON.stringify(paragraph.props) === JSON.stringify(original.props)
+        && JSON.stringify(nonParagraphFormatProps(paragraph.props))
+          === JSON.stringify(nonParagraphFormatProps(original.props))
         && paragraph.marks.every((mark) => mark.preserveSource && mark.source?.paragraph === index);
     });
 }
@@ -233,11 +335,12 @@ function patchFormatOnly(
 ): boolean {
   if (!isFormatOnly(record, flat) || sourceParagraphs.length !== flat.paragraphs.length) return false;
   flat.paragraphs.forEach((paragraph, paragraphIndex) => {
+    const sourceParagraph = sourceParagraphs[paragraphIndex];
+    paragraphProperties(sourceParagraph, paragraph, flat.body.lnSpcReduction ?? 0);
     const changed = new Set(paragraph.marks
       .filter((mark) => mark.runOverrides)
       .map((mark) => mark.source!.run));
     if (!changed.size) return;
-    const sourceParagraph = sourceParagraphs[paragraphIndex];
     const units = textUnits(sourceParagraph);
     if (!paragraph.text.length) {
       const mark = paragraph.marks[0];
@@ -288,7 +391,7 @@ export function patchElementText(document: XmlDocument, record: ElementRecord): 
   }
   if (record.ovr.text.kind === 'flat') {
     for (const paragraph of record.ovr.text.paragraphs) {
-      appendFlatParagraph(body, sourceParagraphs, paragraph);
+      appendFlatParagraph(body, sourceParagraphs, paragraph, record.ovr.text.body.lnSpcReduction ?? 0);
     }
     return;
   }

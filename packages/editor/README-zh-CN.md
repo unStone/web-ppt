@@ -59,8 +59,18 @@ boldButton.addEventListener('pointerdown', (event) => {
   const state = view.queryRunProps();
   if (state) view.setRunProps({ b: state.b.mixed || state.b.value !== true });
 });
+centerButton.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  const state = view.queryParaProps();
+  if (state) view.setParaProps({ align: 'center' });
+});
 // 工具栏不再属于本视图时调用 unregister()。
 ```
+
+段落控件复用同一条实时 DOM Range，且不绑定框架。`setParaProps` 把所有触及段落（包括折叠光标所在段）
+作为一个撤销单元提交，然后恢复浏览器 Range；`queryParaProps` 分别报告对齐、有效行高、间距、边距和
+缩进的混合态。共享会话的全部视图都会刷新，已通过 `registerTextUi` 注册的外部工具栏不会抢走焦点或
+意外关闭文字编辑。
 
 编辑模式直接使用浏览器 SVG 原生命中：点击组内元素默认选最外层组，双击每次进入一层，
 `Escape` 每次退出一层；`Alt`+点击按 `elementsFromPoint` 的 z 序循环重叠候选。锁定、
@@ -151,7 +161,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 24.65KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 24.76KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

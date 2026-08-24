@@ -381,6 +381,9 @@ export interface TextBody {
   warp?: TextWarp;
 }
 
+/** OOXML 的百分比行距以字体单倍行高而非字号为基准。 */
+export const DEFAULT_TEXT_LINE_HEIGHT = 1.2;
+
 export interface TextWarp {
   /** 预设名，如 textArchUp / textWave1 */
   preset: string;
@@ -408,6 +411,22 @@ export interface Paragraph {
   bulletImage?: string | null;
   /** 从右到左 */
   rtl?: boolean;
+  /** 只在 edit 解析保留；删除直接 pPr 时恢复继承链，而不是把有效值摊平。 */
+  editInfo?: {
+    inheritedParagraphProps: {
+      align: Paragraph['align'];
+      lineHeight: number | null;
+      spaceBefore: number;
+      spaceAfter: number;
+      marginLeft: number;
+      indent: number;
+    };
+    /** 来源 pPr 直接声明过的字段；清除不存在的直设格式必须保持严格 no-op。 */
+    directParagraphProps: Partial<Record<
+      'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent',
+      true
+    >>;
+  };
 }
 
 /**

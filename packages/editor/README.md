@@ -106,8 +106,19 @@ boldButton.addEventListener('pointerdown', (event) => {
   const state = view.queryRunProps();
   if (state) view.setRunProps({ b: state.b.mixed || state.b.value !== true });
 });
+centerButton.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  const state = view.queryParaProps();
+  if (state) view.setParaProps({ align: 'center' });
+});
 // unregister() when this toolbar no longer belongs to the view.
 ```
+
+Paragraph controls use the same live DOM Range and remain framework-neutral. `setParaProps` formats every touched
+paragraph—including the current paragraph at a collapsed caret—in one undo unit, then restores the browser Range.
+`queryParaProps` returns per-property mixed state for alignment, effective line height, spacing, margin, and indent.
+The command refreshes all views sharing the session; an external toolbar registered with `registerTextUi` does not
+steal focus or accidentally close text editing.
 
 Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
 `AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
@@ -178,7 +189,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 24.65 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 24.76 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

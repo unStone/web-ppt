@@ -25,6 +25,7 @@ const byName = (name) => Object.values(doc.elements).find((record) => record.src
 const rich = byName('文本综合');
 const empty = byName('空文本框');
 const repeated = byName('重复格式');
+const paragraphs = byName('段落格式');
 editor.exec({
   type: 'EditText', id: rich.id,
   ops: [
@@ -43,6 +44,19 @@ editor.exec({
   props: { b: true, size: 28 },
 });
 editor.exec({
+  type: 'SetParaProps', id: rich.id,
+  range: { from: { p: 1, r: 0, off: 1 }, to: { p: 5, r: 0, off: 1 } },
+  props: { spaceAfter: 11, marginLeft: 19 },
+});
+editor.exec({
+  type: 'SetParaProps', id: paragraphs.id,
+  range: { from: { p: 0, r: 0, off: 1 }, to: { p: 2, r: 0, off: 0 } },
+  props: {
+    align: 'left', lineHeight: 2.1, spaceBefore: 14, spaceAfter: 7,
+    marginLeft: 30, indent: -12,
+  },
+});
+editor.exec({
   type: 'EditText', id: empty.id,
   ops: [{
     type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: '从空白开始编辑',
@@ -57,13 +71,22 @@ const plain = (element) => element.text?.paragraphs
 const reopenedRich = reopened.slides[0].elements.find((element) => element.name === '文本综合');
 const reopenedEmpty = reopened.slides[0].elements.find((element) => element.name === '空文本框');
 const reopenedRepeated = reopened.slides[0].elements.find((element) => element.name === '重复格式');
+const reopenedParagraphs = reopened.slides[0].elements.find((element) => element.name === '段落格式');
 const slideXml = new TextDecoder().decode(reopened.package.parts['ppt/slides/slide1.xml']);
 if (!plain(reopenedRich).includes('纯 Web') || plain(reopenedEmpty) !== '从空白开始编辑'
   || !reopenedRich.text.paragraphs.slice(1, 3).every((paragraph) => paragraph.rtl)
   || !reopenedRich.text.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.math?.length))
+  || !reopenedRich.text.paragraphs.slice(1).every((paragraph) =>
+    paragraph.spaceAfter === 11 && paragraph.marL === 19)
+  || !reopenedParagraphs.text.paragraphs.slice(0, 3).every((paragraph) => paragraph.align === 'left'
+    && paragraph.lineHeight === 2.1 && paragraph.spaceBefore === 14 && paragraph.spaceAfter === 7
+    && paragraph.marL === 30 && paragraph.indent === -12)
+  || reopenedParagraphs.text.paragraphs[3].align !== 'right'
   || !reopenedRepeated.text.paragraphs[0].runs.every((run) => run.fonts[0] === 'Noto Sans'
     && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
   || !reopenedRich.text.paragraphs[5].runs[0].b || reopenedRich.text.paragraphs[5].runs[0].size !== 28
+  || !slideXml.includes('x:keep="spacing"')
+  || !slideXml.includes('<!--unselected-ppr:  keep-->')
   || !slideXml.includes('<a:fld') || (slideXml.match(/typeface="Noto Sans"/g) ?? []).length !== 9) {
   throw new Error('基础文字编辑产物保存重开不一致');
 }

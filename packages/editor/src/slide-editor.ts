@@ -1,4 +1,4 @@
-import type { EditorChange, ElementId, RunPropertiesState, RunPropertyOverrides, SlideId } from '@web-ppt/edit-core';
+import type { EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunPropertiesState, RunPropertyOverrides, SlideId } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
@@ -60,6 +60,8 @@ export interface SlideEditor {
   registerTextUi(element: HTMLElement): () => void;
   queryRunProps(): RunPropertiesState | null;
   setRunProps(props: RunPropertyOverrides): boolean;
+  queryParaProps(): ParagraphPropertiesState | null;
+  setParaProps(props: ParagraphPropertyOverrides): boolean;
   destroy(): void;
 }
 
@@ -394,6 +396,8 @@ class DomSlideEditor implements SlideEditor {
   registerTextUi(element: HTMLElement): () => void { return this.textEditor.registerExternalUi(element); }
   queryRunProps(): RunPropertiesState | null { return this.textEditor.queryRunProps(); }
   setRunProps(props: RunPropertyOverrides): boolean { return this.textEditor.setRunProps(props); }
+  queryParaProps(): ParagraphPropertiesState | null { return this.textEditor.queryParaProps(); }
+  setParaProps(props: ParagraphPropertyOverrides): boolean { return this.textEditor.setParaProps(props); }
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
