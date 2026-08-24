@@ -1,14 +1,22 @@
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
-import type { TextEditOp, TextPosition } from './commands/types';
-import type { FlatTextParagraph, TextMark, TextOverride } from './types';
+import type { TextEditOp, TextPosition, TextRange } from './commands/types';
+import type {
+  FlatTextParagraph, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextMark,
+  TextOverride,
+} from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
 
 const DEFAULT_RUN: Omit<TextRun, 'text'> = {
   b: false, i: false, u: false, strike: false, size: 18, color: '#000000', fonts: [],
 };
 
+const DEFAULT_PROPERTIES: RunProperties = {
+  font: null, size: DEFAULT_RUN.size, b: DEFAULT_RUN.b, i: DEFAULT_RUN.i,
+  u: DEFAULT_RUN.u, strike: DEFAULT_RUN.strike,
+};
+
 function runProps(run: TextRun): Omit<TextRun, 'text'> {
-  const { text: _text, ...props } = run;
+  const { text: _text, editInfo: _editInfo, ...props } = run;
   return props;
 }
 
@@ -30,6 +38,17 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
         offset += text.length;
         return {
           from, to: offset, props: runProps(run),
+          inheritedProps: run.editInfo?.inheritedRunProps
+            ? {
+              font: run.editInfo.inheritedRunProps.fonts[0] ?? null,
+              size: run.editInfo.inheritedRunProps.size,
+              b: run.editInfo.inheritedRunProps.b,
+              i: run.editInfo.inheritedRunProps.i,
+              u: run.editInfo.inheritedRunProps.u,
+              strike: run.editInfo.inheritedRunProps.strike,
+            }
+            : undefined,
+          inheritedFonts: run.editInfo?.inheritedRunProps.fonts,
           ...(run.math?.length ? { atomText: run.text } : {}),
           source: { paragraph: paragraphIndex, run: runIndex },
           preserveSource: true,
@@ -58,11 +77,26 @@ export function textBodyFromOverride(override: Extract<TextOverride, { kind: 'fl
   };
 }
 
+const RUN_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+
+function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
+  return RUN_PROPERTY_FIELDS.every((field) => Object.prototype.hasOwnProperty.call(left ?? {}, field)
+    === Object.prototype.hasOwnProperty.call(right ?? {}, field)
+    && Object.is(left?.[field], right?.[field]));
+}
+
+function sameInherited(left?: RunProperties, right?: RunProperties): boolean {
+  return RUN_PROPERTY_FIELDS.every((field) => Object.is(left?.[field], right?.[field]));
+}
+
 function sameStyle(left: TextMark, right: TextMark): boolean {
   return left.atomText === right.atomText
     && JSON.stringify(left.props) === JSON.stringify(right.props)
     && left.preserveSource === right.preserveSource
-    // flat 层保留来源边界给 OOXML 保存；公开投影再合并相邻同格式普通 run。
+    && sameRunOverrides(left.runOverrides, right.runOverrides)
+    && sameInherited(left.inheritedProps, right.inheritedProps)
+    && JSON.stringify(left.inheritedFonts) === JSON.stringify(right.inheritedFonts)
+    // 不跨来源合并字段/超链接身份；同一来源被区间操作切开的片段仍会归一。
     && JSON.stringify(left.source) === JSON.stringify(right.source);
 }
 
@@ -201,6 +235,141 @@ export function applyTextEditOps(
     override = { ...override, paragraphs };
   }
   return override;
+}
+
+function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
+  const inherited = mark.inheritedProps ?? DEFAULT_PROPERTIES;
+  const font = props.font === null ? inherited.font : props.font;
+  const size = props.size === null ? inherited.size : props.size;
+  const b = props.b === null ? inherited.b : props.b;
+  const i = props.i === null ? inherited.i : props.i;
+  const u = props.u === null ? inherited.u : props.u;
+  const strike = props.strike === null ? inherited.strike : props.strike;
+  return {
+    ...mark,
+    props: {
+      ...mark.props,
+      ...(font !== undefined
+        ? { fonts: props.font === null ? [...(mark.inheritedFonts ?? (font ? [font] : []))] : font ? [font] : [] }
+        : {}),
+      ...(size !== undefined ? { size } : {}),
+      ...(b !== undefined ? { b } : {}),
+      ...(i !== undefined ? { i } : {}),
+      ...(u !== undefined ? { u } : {}),
+      ...(strike !== undefined ? { strike } : {}),
+    },
+    runOverrides: { ...mark.runOverrides, ...props },
+  };
+}
+
+function formatParagraph(
+  paragraph: FlatTextParagraph,
+  from: number,
+  to: number,
+  props: RunPropertyOverrides,
+  includeEmpty = false,
+): FlatTextParagraph {
+  assertAtomBoundary(paragraph, from);
+  assertAtomBoundary(paragraph, to);
+  if (includeEmpty && !paragraph.text.length && paragraph.marks.length === 1) {
+    return { ...paragraph, marks: [{ ...formattedMark(paragraph.marks[0], props), from: 0, to: 0 }] };
+  }
+  const segments: Segment[] = [];
+  for (const mark of paragraph.marks) {
+    const selectedFrom = Math.max(from, mark.from);
+    const selectedTo = Math.min(to, mark.to);
+    if (selectedTo <= selectedFrom || mark.atomText !== undefined) {
+      segments.push({ text: paragraph.text.slice(mark.from, mark.to), template: mark });
+      continue;
+    }
+    if (mark.from < selectedFrom) {
+      segments.push({ text: paragraph.text.slice(mark.from, selectedFrom), template: mark });
+    }
+    segments.push({
+      text: paragraph.text.slice(selectedFrom, selectedTo),
+      template: formattedMark(mark, props),
+    });
+    if (selectedTo < mark.to) {
+      segments.push({ text: paragraph.text.slice(selectedTo, mark.to), template: mark });
+    }
+  }
+  return normalizedParagraph(paragraph, segments);
+}
+
+export function applyRunProps(
+  body: TextBody,
+  range: TextRange,
+  props: RunPropertyOverrides,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): TextOverride {
+  const override = initial ?? flattenTextBody(body);
+  if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= override.paragraphs.length) {
+    throw new Error('字符格式选区段落范围无效');
+  }
+  const first = override.paragraphs[range.from.p];
+  const last = override.paragraphs[range.to.p];
+  const from = positionOffset(first, range.from);
+  const to = positionOffset(last, range.to);
+  if (range.from.p === range.to.p && to < from) throw new Error('字符格式选区起点不能晚于终点');
+  if (range.from.p === range.to.p && to === from) return override;
+  const paragraphs = [...override.paragraphs];
+  for (let index = range.from.p; index <= range.to.p; index++) {
+    const paragraph = paragraphs[index];
+    const start = index === range.from.p ? from : 0;
+    const end = index === range.to.p ? to : paragraph.text.length;
+    paragraphs[index] = formatParagraph(
+      paragraph, start, end, props,
+      range.from.p !== range.to.p && !paragraph.text.length,
+    );
+  }
+  return { ...override, paragraphs };
+}
+
+function state<T>(values: readonly (T | null)[]): RunPropertyState<T> {
+  const first = values[0] ?? null;
+  return { value: first, mixed: values.some((value) => !Object.is(value, first)) };
+}
+
+function fontState(marks: readonly TextMark[]): RunPropertyState<string> {
+  const first = marks[0]?.props.fonts[0] ?? null;
+  const signature = JSON.stringify(marks[0]?.props.fonts ?? []);
+  return {
+    value: first,
+    // 面板只显示主字体，但 eastAsia / complexScript 回退不同仍属于真实混合格式。
+    mixed: marks.some((mark) => JSON.stringify(mark.props.fonts) !== signature),
+  };
+}
+
+export function queryTextRunProps(
+  body: TextBody,
+  range: TextRange,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): RunPropertiesState {
+  const override = initial ?? flattenTextBody(body);
+  if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= override.paragraphs.length) {
+    throw new Error('字符格式查询段落范围无效');
+  }
+  const first = override.paragraphs[range.from.p];
+  const last = override.paragraphs[range.to.p];
+  const from = positionOffset(first, range.from);
+  const to = positionOffset(last, range.to);
+  if (range.from.p === range.to.p && to < from) throw new Error('字符格式查询起点不能晚于终点');
+  const selected: TextMark[] = [];
+  for (let index = range.from.p; index <= range.to.p; index++) {
+    const paragraph = override.paragraphs[index];
+    const start = index === range.from.p ? from : 0;
+    const end = index === range.to.p ? to : paragraph.text.length;
+    selected.push(...paragraph.marks.filter((mark) => mark.to > start && mark.from < end));
+  }
+  if (!selected.length) selected.push(styleAt(first, from));
+  return {
+    font: fontState(selected),
+    size: state(selected.map((mark) => mark.props.size)),
+    b: state(selected.map((mark) => mark.props.b)),
+    i: state(selected.map((mark) => mark.props.i)),
+    u: state(selected.map((mark) => mark.props.u)),
+    strike: state(selected.map((mark) => mark.props.strike)),
+  };
 }
 
 export function validateFlatTextOverride(

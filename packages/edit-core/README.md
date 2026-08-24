@@ -74,6 +74,27 @@ flipped/non-uniformly scaled groups, and frame-only objects share the same world
 is one undo unit; already aligned targets create no empty history. A React, Vue, Web Component, or vanilla toolbar
 can map its six buttons directly to this JSON command without importing DOM internals.
 
+`SetRunProps` applies sparse character-format overrides to a half-open text range. It supports font family,
+font size in slide pixels, bold, italic, underline, and strike-through across run and paragraph boundaries.
+Use `null` to remove a direct override and reveal the inherited OOXML value; formulas remain indivisible,
+format-preserving atoms while dynamic fields retain their field identity on save. A collapsed headless range is intentionally a no-op—
+pending typing style belongs to the mounted input adapter, so the document never stores zero-width OOXML runs.
+
+```ts
+import { queryRunProps } from '@web-ppt/edit-core';
+
+const range = {
+  from: { p: 0, r: 0, off: 2 },
+  to: { p: 1, r: 0, off: 4 },
+};
+editor.exec({
+  type: 'SetRunProps', id: elementId, range,
+  props: { font: 'Inter', size: 24, b: true },
+});
+const state = queryRunProps(editor.doc, elementId, range);
+// state.b: { value: true, mixed: false }; each property reports mixed state independently.
+```
+
 `copyElements(doc, ids)` returns a versioned, JSON-only `ElementClipboardPayload`. Paste it through
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })`; the command allocates fresh session
 and OOXML identities, preserves nested groups in slide coordinates, and enters history as one atomic unit.
@@ -86,7 +107,8 @@ markers for a contenteditable overlay. The core function stays DOM-free; the edi
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-`Editor.save()` is the normal API: it writes current transforms, layer order, placeholder clears, and element removals, refreshes `doc.package` for the
+`Editor.save()` is the normal API: it writes current transforms, layer order, text and character formatting,
+placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 
@@ -132,8 +154,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output is 14.19 KB gzip for the initial editing entry, 7.72 KB for `xml`, and 4.37 KB for `opc`;
-calling save after the main entry adds 14.62 KB on demand. Clean local
+Measured Vite output, including each entry's static shared chunks, is 41.55 KB gzip for the editing entry,
+7.90 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

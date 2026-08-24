@@ -167,7 +167,15 @@ async function browserResult(webSocketDebuggerUrl) {
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params, ...(commands ? { commands } : {}) });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
   };
-  const origin = await evaluate('location.origin');
+  let origin = null;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    origin = await evaluate('location.origin');
+    if (typeof origin === 'string' && origin.startsWith('http://127.0.0.1:')) break;
+    await delay(50);
+  }
+  if (typeof origin !== 'string' || !origin.startsWith('http://127.0.0.1:')) {
+    throw new Error(`Chrome 测试页没有完成导航：${String(origin)}`);
+  }
   await request('Browser.grantPermissions', {
     origin, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
   });

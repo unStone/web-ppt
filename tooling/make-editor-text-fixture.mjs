@@ -44,14 +44,24 @@ const repeated = sp({
   x: 770, y: 510, w: 360, h: 100, prst: 'rect', fill: solid('F5F3FF'), name: '重复格式',
   bodyPr: '<a:bodyPr anchor="ctr"/>',
   text: `<a:p><a:pPr algn="ctr"/>
-<a:r><a:rPr sz="2000"><a:solidFill><a:srgbClr val="DC2626"/></a:solidFill></a:rPr><a:t>同</a:t></a:r>
-<a:r><a:rPr sz="2000" b="1"><a:solidFill><a:srgbClr val="16A34A"/></a:solidFill></a:rPr><a:t>同</a:t></a:r>
+<a:r><a:rPr sz="2000"><?format keep?><a:solidFill><a:srgbClr val="DC2626"/></a:solidFill></a:rPr><a:t>同</a:t></a:r>
+<!--paragraph-format-sentinel-->
+<a:r><a:rPr sz="2000" b="1"><a:solidFill><a:srgbClr val="16A34A"/></a:solidFill><a:latin typeface="Courier New"/><a:ea typeface="Courier New"/><a:cs typeface="Courier New"/></a:rPr><a:t>同</a:t></a:r>
 <a:r><a:rPr sz="2000" i="1"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:rPr><a:t>同</a:t></a:r></a:p>`,
+});
+
+const splitFormat = sp({
+  x: 90, y: 510, w: 620, h: 100, prst: 'rect', fill: solid('EFF6FF'), name: '中段格式',
+  bodyPr: '<a:bodyPr anchor="ctr"/>',
+  text: `<a:p><a:pPr algn="ctr"/>
+<!--split-before:  keep--><?split-format  keep = "yes"?>
+<a:r><a:rPr sz="2000"><a:solidFill><a:srgbClr val="0F766E"/></a:solidFill></a:rPr><a:t>ABCDE</a:t></a:r>
+<?split-after   keep="two"?><!--split-after:  keep--></a:p>`,
 });
 
 const bytes = deck({
   name: 'Editor Text', width: 1280, height: 720,
-  slides: [slideXml(rich + empty + rotated + repeated)],
+  slides: [slideXml(rich + empty + rotated + repeated + splitFormat)],
 });
 
 mkdirSync(join(root, 'fixtures'), { recursive: true });

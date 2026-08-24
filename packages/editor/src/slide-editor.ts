@@ -1,4 +1,4 @@
-import type { EditorChange, ElementId, SlideId } from '@web-ppt/edit-core';
+import type { EditorChange, ElementId, RunPropertiesState, RunPropertyOverrides, SlideId } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
@@ -56,6 +56,10 @@ export interface SlideEditor {
   setSlide(slideId: SlideId): void;
   setZoom(zoom: number): void;
   setSnapping(enabled: boolean): void;
+  /** 注册外置工具栏，使其 pointer 交互不结束当前文字编辑。 */
+  registerTextUi(element: HTMLElement): () => void;
+  queryRunProps(): RunPropertiesState | null;
+  setRunProps(props: RunPropertyOverrides): boolean;
   destroy(): void;
 }
 
@@ -387,6 +391,9 @@ class DomSlideEditor implements SlideEditor {
   get destroyed(): boolean { return this.isDestroyed; }
 
   releaseTextEditing(): void { this.textEditor.releaseTextEditing(); }
+  registerTextUi(element: HTMLElement): () => void { return this.textEditor.registerExternalUi(element); }
+  queryRunProps(): RunPropertiesState | null { return this.textEditor.queryRunProps(); }
+  setRunProps(props: RunPropertyOverrides): boolean { return this.textEditor.setRunProps(props); }
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);

@@ -76,6 +76,8 @@ export interface TextEnv {
   /** 页脚 / 日期占位符文本 */
   footerText?: string;
   dateText?: string;
+  /** 编辑模式才保留继承格式元数据，普通解析与渲染零增量。 */
+  edit?: boolean;
 }
 
 export function extractLstStyle(el: Element | null, ctx: ColorCtx, fonts: ThemeFonts): LevelStyles {
@@ -351,10 +353,10 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         }
         let text = kid(node, 't')?.textContent ?? '';
         if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
-        runs.push(finalizeRun(text, rp, env));
+        runs.push(finalizeRun(text, rp, env, merged.rp));
         if (text.trim()) hasContent = true;
       } else if (node.localName === 'br') {
-        runs.push(finalizeRun('\n', merged.rp, env));
+        runs.push(finalizeRun('\n', merged.rp, env, merged.rp));
       } else if (node.localName === 'AlternateContent') {
         // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
         const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
@@ -365,7 +367,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         const math = parseOmml(node);
         const text = math.length ? mathPlainText(math) : mathText(node);
         if (math.length || text) {
-          const run = finalizeRun(text, { ...merged.rp, i: true }, env);
+          const run = finalizeRun(text, { ...merged.rp, i: true }, env, merged.rp);
           if (math.length) run.math = math;
           runs.push(run);
           hasContent = true;
@@ -378,7 +380,9 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     collectRuns(p, 4);
     if (runs.length === 0) {
       const endRPr = kid(p, 'endParaRPr');
-      runs.push(finalizeRun('', mergeRun(merged.rp, parseRunProps(endRPr, env.ctx, env.fonts)), env));
+      runs.push(finalizeRun(
+        '', mergeRun(merged.rp, parseRunProps(endRPr, env.ctx, env.fonts)), env, merged.rp,
+      ));
     }
 
     const maxSize = Math.max(...runs.map((r) => r.size), 1);
@@ -448,7 +452,7 @@ function fieldText(type: string | null, env: TextEnv): string {
   return '';
 }
 
-function finalizeRun(text: string, rp: RunProps, env: TextEnv): TextRun {
+function effectiveFonts(rp: RunProps, env: TextEnv): string[] {
   // run 里没写 a:latin 不等于「没有字体」——ECMA-376 的继承链走到最后落在
   // 主题的 minorFont 上。不补这一层，渲染会掉到 CSS 的通用回退（Helvetica）
   // 上，字宽与 PowerPoint 对不齐；collectFonts 也会以为这份文件没用字体。
@@ -461,6 +465,22 @@ function finalizeRun(text: string, rp: RunProps, env: TextEnv): TextRun {
   if (latin) fonts.push(latin);
   if (ea && ea !== latin) fonts.push(ea);
   if (cs && cs !== latin && cs !== ea) fonts.push(cs);
+  return fonts;
+}
+
+function inheritedRunProps(rp: RunProps, env: TextEnv): NonNullable<TextRun['editInfo']>['inheritedRunProps'] {
+  return {
+    b: rp.b ?? false,
+    i: rp.i ?? false,
+    u: rp.u ?? false,
+    strike: rp.strike ?? false,
+    size: pt100(rp.sz ?? 1800),
+    fonts: effectiveFonts(rp, env),
+  };
+}
+
+function finalizeRun(text: string, rp: RunProps, env: TextEnv, inherited?: RunProps): TextRun {
+  const fonts = effectiveFonts(rp, env);
   const size = pt100(rp.sz ?? 1800);
   return {
     text,
@@ -479,5 +499,6 @@ function finalizeRun(text: string, rp: RunProps, env: TextEnv): TextRun {
     link: rp.link,
     highlight: rp.highlight ?? null,
     underlineColor: rp.uColor ?? null,
+    ...(env.edit && inherited ? { editInfo: { inheritedRunProps: inheritedRunProps(inherited, env) } } : {}),
   };
 }

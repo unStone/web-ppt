@@ -70,6 +70,26 @@ markup/defs 的元素；框架适配层无需猜 patch 类型。
 同一套世界坐标到父坐标换算；一个命令只生成一个撤销单元，已经对齐时不制造空历史。React、Vue、
 Web Component 或原生工具栏可把六个按钮直接映射到这条 JSON 命令，无需依赖 DOM 包内部结构。
 
+`SetRunProps` 给半开文字区间写入稀疏字符格式覆盖，支持跨 run、跨段落设置字体、幻灯片像素字号、
+粗体、斜体、下划线和删除线。属性传 `null` 会删除直接格式并恢复 OOXML 继承值；公式保持不可拆且保留格式的原子，
+动态字段保存后仍是原字段。headless 的折叠选区刻意不写模型——待输入格式属于挂载的输入适配层，
+从而避免向 OOXML 制造零宽 run。
+
+```ts
+import { queryRunProps } from '@web-ppt/edit-core';
+
+const range = {
+  from: { p: 0, r: 0, off: 2 },
+  to: { p: 1, r: 0, off: 4 },
+};
+editor.exec({
+  type: 'SetRunProps', id: elementId, range,
+  props: { font: 'Inter', size: 24, b: true },
+});
+const state = queryRunProps(editor.doc, elementId, range);
+// state.b 为 { value: true, mixed: false }；每个属性独立报告 mixed 状态。
+```
+
 `copyElements(doc, ids)` 返回版本化、纯 JSON 的 `ElementClipboardPayload`。通过
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })` 粘贴时，会分配新的会话身份与
 OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原子历史单元提交。图片以 base64 + SHA-256
@@ -81,7 +101,8 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、占位符清空和元素删除写回 OOXML，刷新 `doc.package` 供下一次保存
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字与字符格式、占位符清空和元素删除写回 OOXML，
+刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
 ```ts
@@ -124,8 +145,8 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；可选的实测 Vite 产物：编辑初始入口 14.19KB gzip，`xml` 为 7.72KB，`opc`
-为 4.37KB；主入口加载后首次保存再按需增加 14.62KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 41.55KB gzip，`xml` 为
+7.90KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

@@ -48,6 +48,23 @@ export function createXmlElement(name: string, options: CreateXmlElementOptions 
   return element;
 }
 
+/** 克隆到未挂载树；元素会重建，叶节点保留原始词法，避免丢失注释、CDATA 与处理指令。 */
+export function cloneXmlNode(source: XmlElement): XmlElement;
+export function cloneXmlNode(source: XmlNode): XmlNode;
+export function cloneXmlNode(source: XmlNode): XmlNode {
+  if (source.type !== 'element') {
+    const clone = { ...source } as XmlNode;
+    nodeStates.set(clone, { raw: nodeState(source).raw, parent: null, dirty: false });
+    return clone;
+  }
+  const clone = createXmlElement(source.name, {
+    selfClosing: source.selfClosing,
+    attributes: source.attributes.map((attribute) => [attribute.name, attribute.value, attribute.quote]),
+  });
+  for (const child of source.children) insertXmlChildUnchecked(clone, cloneXmlNode(child));
+  return clone;
+}
+
 function assertCanAttach(parent: XmlElement, child: XmlNode): void {
   const childState = nodeState(child);
   if (childState.parent) throw new Error('XML 节点已经属于另一棵树；请先显式移除');
@@ -127,6 +144,26 @@ export function removeXmlChild(parent: XmlElement, child: XmlNode): boolean {
     elementStates.get(parent)!.sourceSelfClosing && children.length === 0;
   markXmlDirty(parent);
   return true;
+}
+
+/** 原槽位替换为零到多个节点；相邻未知节点与格式化空白均保持原位。 */
+export function replaceXmlChildren(
+  parent: XmlElement,
+  current: XmlNode,
+  replacements: readonly XmlNode[],
+): void {
+  if (new Set(replacements).size !== replacements.length) throw new Error('XML 替换不能包含重复节点');
+  const children = parent.children as XmlNode[];
+  const index = children.indexOf(current);
+  if (index < 0 || nodeState(current).parent !== parent) throw new Error('XML 替换目标不是父元素的直属子节点');
+  for (const replacement of replacements) assertCanAttach(parent, replacement);
+  children.splice(index, 1, ...replacements);
+  nodeState(current).parent = null;
+  for (const replacement of replacements) {
+    adoptNamespaces(parent, replacement);
+    nodeState(replacement).parent = parent;
+  }
+  markXmlDirty(parent);
 }
 
 /** 只替换指定既有节点占据的槽位；缩进文本与其它兼容性节点原地保留。 */

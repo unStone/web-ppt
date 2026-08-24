@@ -24,12 +24,23 @@ const editor = new edit.Editor(doc);
 const byName = (name) => Object.values(doc.elements).find((record) => record.src.name === name);
 const rich = byName('文本综合');
 const empty = byName('空文本框');
+const repeated = byName('重复格式');
 editor.exec({
   type: 'EditText', id: rich.id,
   ops: [
     { type: 'replace', from: { p: 0, r: 1, off: 0 }, to: { p: 0, r: 1, off: 2 }, text: '纯 Web' },
     { type: 'splitParagraph', at: { p: 1, r: 0, off: 5 } },
   ],
+});
+editor.exec({
+  type: 'SetRunProps', id: repeated.id,
+  range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 2, off: 1 } },
+  props: { font: 'Noto Sans', size: 31.2, b: true, i: true, u: true, strike: true },
+});
+editor.exec({
+  type: 'SetRunProps', id: rich.id,
+  range: { from: { p: 5, r: 0, off: 0 }, to: { p: 5, r: 0, off: 1 } },
+  props: { b: true, size: 28 },
 });
 editor.exec({
   type: 'EditText', id: empty.id,
@@ -45,10 +56,15 @@ const plain = (element) => element.text?.paragraphs
   .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 const reopenedRich = reopened.slides[0].elements.find((element) => element.name === '文本综合');
 const reopenedEmpty = reopened.slides[0].elements.find((element) => element.name === '空文本框');
+const reopenedRepeated = reopened.slides[0].elements.find((element) => element.name === '重复格式');
+const slideXml = new TextDecoder().decode(reopened.package.parts['ppt/slides/slide1.xml']);
 if (!plain(reopenedRich).includes('纯 Web') || plain(reopenedEmpty) !== '从空白开始编辑'
   || !reopenedRich.text.paragraphs.slice(1, 3).every((paragraph) => paragraph.rtl)
   || !reopenedRich.text.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.math?.length))
-  || !new TextDecoder().decode(reopened.package.parts['ppt/slides/slide1.xml']).includes('<a:fld')) {
+  || !reopenedRepeated.text.paragraphs[0].runs.every((run) => run.fonts[0] === 'Noto Sans'
+    && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
+  || !reopenedRich.text.paragraphs[5].runs[0].b || reopenedRich.text.paragraphs[5].runs[0].size !== 28
+  || !slideXml.includes('<a:fld') || (slideXml.match(/typeface="Noto Sans"/g) ?? []).length !== 9) {
   throw new Error('基础文字编辑产物保存重开不一致');
 }
 edit.disposeDoc(doc);

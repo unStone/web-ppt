@@ -309,6 +309,25 @@ export async function runM1SaveContract({
         }],
       },
     ],
+    formats: [
+      {
+        targetName: '重复格式',
+        range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 2, off: 1 } },
+        props: { font: 'Noto Sans', size: 31.2, b: true, i: true, u: true, strike: true },
+      },
+      {
+        targetName: '文本综合',
+        // 上面的拆段会把字段段落从 p4 移到 p5。
+        range: { from: { p: 5, r: 0, off: 0 }, to: { p: 5, r: 0, off: 1 } },
+        props: { b: true, size: 28 },
+      },
+      {
+        targetName: '文本综合',
+        // 跨过拆段后的空 p3，验证 endParaRPr 与普通 run 共用同一格式语义。
+        range: { from: { p: 2, r: 0, off: 0 }, to: { p: 4, r: 0, off: 1 } },
+        props: { u: true },
+      },
+    ],
   });
   const textInput = load(textScenario.file);
   const textPres = await core.parse(textInput, {
@@ -316,16 +335,26 @@ export async function runM1SaveContract({
   });
   const textDoc = edit.createDoc(textPres, { idPrefix: 'm1-text-' });
   const textEditor = new edit.Editor(textDoc);
-  const textTargets = textScenario.edits.map((change) => Object.values(textDoc.elements)
-    .find((record) => record.src.name === change.targetName));
+  const textTargets = [...textScenario.edits, ...textScenario.formats]
+    .map((change) => Object.values(textDoc.elements)
+      .find((record) => record.src.name === change.targetName));
   if (!check('文字指纹固件暴露复杂文本与空文本框写回锚点',
     textTargets.every((record) => !!record?.meta.origin))) {
     edit.disposeDoc(textDoc);
     return;
   }
-  textScenario.edits.forEach((change, index) => textEditor.exec({
-    type: 'EditText', id: textTargets[index].id, ops: change.ops,
-  }));
+  textScenario.edits.forEach((change) => {
+    const target = Object.values(textDoc.elements)
+      .find((record) => record.src.name === change.targetName);
+    textEditor.exec({ type: 'EditText', id: target.id, ops: change.ops });
+  });
+  textScenario.formats.forEach((change) => {
+    const target = Object.values(textDoc.elements)
+      .find((record) => record.src.name === change.targetName);
+    textEditor.exec({
+      type: 'SetRunProps', id: target.id, range: change.range, props: change.props,
+    });
+  });
   const textSaved = await textEditor.saveDetailed();
   const textArtifact = saveArtifact('basic-text-editing.pptx', textSaved.bytes);
   const textDiff = diffPackageBytes(textInput, textSaved.bytes);
@@ -334,14 +363,22 @@ export async function runM1SaveContract({
   });
   const reopenedRich = findNamed(textReparsed.slides[0].elements, '文本综合');
   const reopenedEmpty = findNamed(textReparsed.slides[0].elements, '空文本框');
+  const reopenedRepeated = findNamed(textReparsed.slides[0].elements, '重复格式');
   const slideXml = new TextDecoder().decode(textReparsed.package.parts['ppt/slides/slide1.xml']);
-  check('文字保存只改目标页并保留拆段 RTL、公式、字段和空文本框继承格式',
+  check('文字保存只改目标页并保留拆段 RTL、公式、字段、字符格式和空文本框继承格式',
     textSaved.mode === 'passthrough' && textDiff.changed.join(',') === 'ppt/slides/slide1.xml'
       && reopenedRich.text.paragraphs.slice(1, 3).every((paragraph) => paragraph.rtl)
       && reopenedRich.text.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.math?.length))
+      && reopenedRich.text.paragraphs[3].runs[0].u
+      && reopenedRich.text.paragraphs[5].runs[0].b
+      && reopenedRich.text.paragraphs[5].runs[0].size === 28
+      && reopenedRepeated.text.paragraphs[0].runs.every((run) => run.fonts[0] === 'Noto Sans'
+        && Math.abs(run.size - 31.2) < 1e-9 && run.b && run.i && run.u && run.strike)
       && reopenedEmpty.text.paragraphs[0].runs[0].b === true
       && reopenedEmpty.text.paragraphs[0].runs.map((run) => run.text).join('') === '从空白开始编辑'
-      && slideXml.includes('<a:fld'));
+      && slideXml.includes('<a:fld')
+      && slideXml.includes('<?format keep?>') && slideXml.includes('<!--paragraph-format-sentinel-->')
+      && (slideXml.match(/typeface="Noto Sans"/g) ?? []).length === 9);
   const textProjectedFingerprint = renderFingerprint(textScenario.file, 'projected', textScenario);
   const textSavedFingerprint = renderFingerprint(textArtifact, 'saved', textScenario);
   for (const textMode of ['html', 'svg']) {

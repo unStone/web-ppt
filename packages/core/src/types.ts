@@ -468,4 +468,17 @@ export interface TextRun {
    * 仅用于搜索与导出纯文本，渲染一律走公式树。
    */
   math?: MathNode[];
+  /** 仅编辑解析保留；删除直接字符格式时用它恢复继承链的有效值。 */
+  editInfo?: TextRunEditInfo;
+}
+
+export interface TextRunEditInfo {
+  readonly inheritedRunProps: {
+    readonly b: boolean;
+    readonly i: boolean;
+    readonly u: boolean;
+    readonly strike: boolean;
+    readonly size: number;
+    readonly fonts: string[];
+  };
 }

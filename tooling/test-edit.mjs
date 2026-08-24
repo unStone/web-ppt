@@ -12,6 +12,7 @@ import { runElementLayerSaveContract } from './lib/element-layer-save-contract.m
 import { runElementAlignContract } from './lib/element-align-contract.mjs';
 import { runElementClipboardContract } from './lib/element-clipboard-contract.mjs';
 import { runTextEditContract } from './lib/text-edit-contract.mjs';
+import { runRunFormatContract } from './lib/run-format-contract.mjs';
 import { runCommandPropertyContract } from './lib/command-property-contract.mjs';
 import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
@@ -73,6 +74,7 @@ await runElementLayerContract({ edit, core, load, check });
 await runElementAlignContract({ edit, core, load, check });
 await runElementClipboardContract({ edit, core, load, check });
 await runTextEditContract({ edit, core, load, check });
+await runRunFormatContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

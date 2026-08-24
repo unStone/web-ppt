@@ -7,6 +7,8 @@ export {
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
 export type { EditorMode, SlideEditor, SlideEditorOptions } from './slide-editor';
-export type { ElementClipboardPayload } from '@web-ppt/edit-core';
+export type {
+  ElementClipboardPayload, RunPropertiesState, RunPropertyOverrides,
+} from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

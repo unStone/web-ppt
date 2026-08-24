@@ -45,6 +45,23 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 view 模式、活动 pointer 手势、文本/表格选区及表单/contenteditable 后代保留浏览器所有权。小批量只
 插入新增 markup/defs 分区，大批量才使用既有的有界整页回退。
 
+双击可编辑形状会打开 HTML 文字层，直接使用浏览器原生选区与 IME。选中文字后，`Ctrl/Cmd+B`、`I`、
+`U` 及对应 `beforeinput` 格式事件会作为一个撤销单元提交；折叠光标下则只更新本视图的待输入格式，
+下一次插入与格式合成一个历史单元，不制造零宽模型 run。实时 DOM Range 会发布到
+`session.editor.selection`；非折叠选区可直接调用 headless `SetRunProps` / `queryRunProps`，折叠光标的
+待输入格式则通过下方视图 seam 留在拥有输入权的视图。所有挂载视图同步刷新，同时活动浏览器选区保持
+不丢。切到 view 模式会关闭输入层并保留同一份高保真静态预览。
+
+```ts
+const unregister = view.registerTextUi(toolbarElement);
+boldButton.addEventListener('pointerdown', (event) => {
+  event.preventDefault(); // 保住原生选区与焦点
+  const state = view.queryRunProps();
+  if (state) view.setRunProps({ b: state.b.mixed || state.b.value !== true });
+});
+// 工具栏不再属于本视图时调用 unregister()。
+```
+
 编辑模式直接使用浏览器 SVG 原生命中：点击组内元素默认选最外层组，双击每次进入一层，
 `Escape` 每次退出一层；`Alt`+点击按 `elementsFromPoint` 的 z 序循环重叠候选。锁定、
 用户隐藏和不可编辑的分支不会被选中。查看模式不拦截指针事件，也不改共享的 headless 选区；
@@ -134,7 +151,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 19.82KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 24.65KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

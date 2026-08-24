@@ -4,11 +4,12 @@ import { editTextPatches } from './edit-text';
 import { pasteElementsPatches } from './paste-elements';
 import { removeElementPatches } from './element-tree';
 import { setZPatches } from './set-z';
+import { setRunPropsPatches } from './set-run-props';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import type {
   AlignElementsCommand, Command, CommandPatches, EditTextCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
-  SetXfrmCommand, SetZCommand,
+  SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -35,6 +36,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
   EditText: register<EditTextCommand>(['id', 'ops'], editTextPatches),
+  SetRunProps: register<SetRunPropsCommand>(['id', 'range', 'props'], setRunPropsPatches),
 };
 
 function assertPureCommand(input: Command): void {

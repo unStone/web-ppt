@@ -67,6 +67,44 @@ export interface TextMark {
   readonly source?: { readonly paragraph: number; readonly run: number };
   /** 只有来源内容本身能克隆 fld/公式；新输入只借 source 继承 rPr。 */
   readonly preserveSource?: true;
+  /** 用户对来源 rPr 的稀疏覆盖；null 表示删除直接格式、回到继承。 */
+  readonly runOverrides?: RunPropertyOverrides;
+  /** 删除直接格式后用于恢复继承所得的有效值；只含字符格式 P0 字段。 */
+  readonly inheritedProps?: RunProperties;
+  /** 继承字体可能分别含 latin/ea/cs，不能为面板的单字体值而丢掉回退栈。 */
+  readonly inheritedFonts?: readonly string[];
+}
+
+export interface RunProperties {
+  readonly font: string | null;
+  readonly size: number;
+  readonly b: boolean;
+  readonly i: boolean;
+  readonly u: boolean;
+  readonly strike: boolean;
+}
+
+export interface RunPropertyOverrides {
+  readonly font?: string | null;
+  readonly size?: number | null;
+  readonly b?: boolean | null;
+  readonly i?: boolean | null;
+  readonly u?: boolean | null;
+  readonly strike?: boolean | null;
+}
+
+export interface RunPropertyState<T> {
+  readonly value: T | null;
+  readonly mixed: boolean;
+}
+
+export interface RunPropertiesState {
+  readonly font: RunPropertyState<string>;
+  readonly size: RunPropertyState<number>;
+  readonly b: RunPropertyState<boolean>;
+  readonly i: RunPropertyState<boolean>;
+  readonly u: RunPropertyState<boolean>;
+  readonly strike: RunPropertyState<boolean>;
 }
 
 export interface FlatTextParagraph {

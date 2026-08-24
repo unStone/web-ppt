@@ -90,6 +90,25 @@ selection by 10 slide pixels without changing the system clipboard. View mode, a
 text/table selections, and form/contenteditable descendants retain browser ownership. Small pastes insert only
 new markup/defs partitions; large batches may use the existing bounded full-slide fallback.
 
+Double-clicking an editable shape opens the HTML text layer with native selection and IME composition. Selected
+text responds to `Ctrl/Cmd+B`, `I`, and `U` as one undo unit; the equivalent `beforeinput` format events are also
+handled. At a collapsed caret these shortcuts update view-local pending typing style, and the next insertion plus
+its format commit as one history unit without creating a zero-width model run. The live DOM range is published as
+`session.editor.selection`; non-collapsed ranges can use headless `SetRunProps` / `queryRunProps` directly. A mounted
+toolbar uses the view seam below so collapsed-caret typing style stays with the owning input view. Every mounted
+view refreshes while the active browser range is preserved. Switching to view mode closes the input layer and keeps
+the high-fidelity static preview.
+
+```ts
+const unregister = view.registerTextUi(toolbarElement);
+boldButton.addEventListener('pointerdown', (event) => {
+  event.preventDefault(); // keep native selection/focus stable
+  const state = view.queryRunProps();
+  if (state) view.setRunProps({ b: state.b.mixed || state.b.value !== true });
+});
+// unregister() when this toolbar no longer belongs to the view.
+```
+
 Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
 `AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
 refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and
@@ -159,7 +178,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 19.82 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 24.65 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

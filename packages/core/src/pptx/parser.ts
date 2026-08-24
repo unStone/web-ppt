@@ -664,6 +664,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
         const t = env.rels[rid]?.target;
         return t ? env.pkg.mediaUrl(t) : null;
       },
+      edit: env.edit,
     };
     text = parseTextBody(txBody, textEnv);
     if (!text && env.edit) {

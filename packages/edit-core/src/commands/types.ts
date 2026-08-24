@@ -1,5 +1,7 @@
 import type { GeomSpec, SlideElement } from '@web-ppt/core';
-import type { EditableKind, ElementId, ElementRecord, ProjectionInvalidation, SlideId, TextOverride } from '../types';
+import type {
+  EditableKind, ElementId, ElementRecord, ProjectionInvalidation, RunPropertyOverrides, SlideId, TextOverride,
+} from '../types';
 import type { AffineMatrix } from '../space';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
@@ -137,8 +139,20 @@ export interface EditTextCommand {
   readonly ops: readonly TextEditOp[];
 }
 
+export interface TextRange {
+  readonly from: TextPosition;
+  readonly to: TextPosition;
+}
+
+export interface SetRunPropsCommand {
+  readonly type: 'SetRunProps';
+  readonly id: ElementId;
+  readonly range: TextRange;
+  readonly props: RunPropertyOverrides;
+}
+
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | EditTextCommand;
+  | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
