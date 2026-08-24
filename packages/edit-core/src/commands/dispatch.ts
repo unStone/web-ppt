@@ -1,11 +1,13 @@
 import type { EditDoc } from '../types';
 import { alignElementsPatches } from './align-elements';
+import { pasteElementsPatches } from './paste-elements';
 import { removeElementPatches } from './element-tree';
 import { setZPatches } from './set-z';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import type {
-  AlignElementsCommand, Command, CommandPatches, RemoveElementCommand, SetFlipCommand, SetXfrmCommand, SetZCommand,
+  AlignElementsCommand, Command, CommandPatches, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -30,6 +32,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
+  PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
 };
 
 function assertPureCommand(input: Command): void {
@@ -42,7 +45,7 @@ function assertPureCommand(input: Command): void {
       throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
     }
   }
-  if (input.type !== 'AlignElements') {
+  if (input.type !== 'AlignElements' && input.type !== 'PasteElements') {
     if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
   }
 }

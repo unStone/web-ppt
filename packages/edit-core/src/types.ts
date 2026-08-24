@@ -7,6 +7,33 @@ export type SlideId = string;
 export type FractionalIndex = string;
 export type EditableKind = 'full' | 'frame' | 'none';
 
+export interface ElementInsertionSource {
+  readonly markup: string;
+  readonly namespaces: Readonly<Record<string, string>>;
+  /** 来源 spid 字符串 → 目标 part 新 spid。 */
+  readonly spids: Readonly<Record<string, number>>;
+  readonly relationships?: readonly ElementInsertionRelationship[];
+  readonly resources?: readonly ElementInsertionResource[];
+}
+
+export interface ElementInsertionRelationship {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly type: string;
+  readonly target: string;
+  readonly targetMode?: 'External';
+}
+
+export interface ElementInsertionResource {
+  readonly targetPart: string;
+  readonly hash: string;
+  readonly mime: string;
+  readonly extension: string;
+  readonly bytes: string;
+  /** true 表示该 part 由本编辑会话生成，撤销后保存必须删除。 */
+  readonly created: boolean;
+}
+
 export type SlideSource = Omit<Slide, 'elements' | 'editInfo'>;
 export type SlideOverrides = Partial<SlideSource>;
 
@@ -39,6 +66,10 @@ export interface ElementMeta {
   locked?: boolean;
   /** 来源文件只禁止移动；与宿主设置的通用 locked 分开，避免误伤其他编辑。 */
   moveLocked?: boolean;
+  /** 会话中新建的元素没有保存基线宿主；撤销时不能把它误记成来源删除。 */
+  created?: boolean;
+  /** 仅新建树根携带；保存从初始基线重建时据此重新插入宿主。 */
+  insertion?: ElementInsertionSource;
   hiddenByUser?: boolean;
   editable: EditableKind;
 }
@@ -92,6 +123,7 @@ export interface EditIdentity {
 /** 只保存首次触碰的 XML part；必须随文档 structuredClone 才能在 Worker 中正确撤销后保存。 */
 export interface EditSaveState {
   baselines: Record<string, Uint8Array>;
+  createdParts: string[];
 }
 
 export interface EditDoc {

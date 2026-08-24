@@ -74,6 +74,13 @@ flipped/non-uniformly scaled groups, and frame-only objects share the same world
 is one undo unit; already aligned targets create no empty history. A React, Vue, Web Component, or vanilla toolbar
 can map its six buttons directly to this JSON command without importing DOM internals.
 
+`copyElements(doc, ids)` returns a versioned, JSON-only `ElementClipboardPayload`. Paste it through
+`Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })`; the command allocates fresh session
+and OOXML identities, preserves nested groups in slide coordinates, and enters history as one atomic unit.
+Images are embedded as base64 plus SHA-256 and deduplicated against the destination package. Hyperlinks receive
+new relationships. Complex objects such as SmartArt can reuse a verified same-package OPC closure; a different
+package is rejected before any model identity is allocated instead of receiving a degraded preview.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.

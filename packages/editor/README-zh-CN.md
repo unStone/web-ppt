@@ -39,6 +39,12 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 超过 8 个且覆盖本页 30% 以上时才退回整页重渲，避免小页面的比例失真。顶层和嵌套组节点都会得到
 稳定 `data-edit-id`，命中不依赖只在 OOXML part 内有效的数字 id。
 
+聚焦的 edit 视图通过同步 `ClipboardEvent` 支持原生 `Ctrl/Cmd+C/X/V`，同时写入
+`application/x-web-ppt-elements+json` 与 `text/plain`，不会调用需要权限的 `navigator.clipboard`。
+多元素树粘贴只形成一个撤销单元；`Ctrl/Cmd+D` 不改系统剪贴板，直接按幻灯片坐标偏移 10px 再制。
+view 模式、活动 pointer 手势、文本/表格选区及表单/contenteditable 后代保留浏览器所有权。小批量只
+插入新增 markup/defs 分区，大批量才使用既有的有界整页回退。
+
 编辑模式直接使用浏览器 SVG 原生命中：点击组内元素默认选最外层组，双击每次进入一层，
 `Escape` 每次退出一层；`Alt`+点击按 `elementsFromPoint` 的 z 序循环重叠候选。锁定、
 用户隐藏和不可编辑的分支不会被选中。查看模式不拦截指针事件，也不改共享的 headless 选区；

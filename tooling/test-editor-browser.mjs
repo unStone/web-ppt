@@ -14,6 +14,7 @@ import { runTrustedModifierSelectionContract } from './lib/editor-multiselect-br
 import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
+import { runTrustedClipboardContract } from './lib/editor-clipboard-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -117,7 +118,7 @@ async function browserResult(webSocketDebuggerUrl) {
     const timeout = setTimeout(() => {
       pending.delete(id);
       rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
-    }, 5000);
+    }, 15000);
     pending.set(id, {
       resolve: (message) => message.error
         ? rejectRequest(new Error(`Chrome DevTools ${method}: ${message.error.message}`))
@@ -157,14 +158,18 @@ async function browserResult(webSocketDebuggerUrl) {
     await dispatchTrustedMouse('mousePressed', point, modifiers, 1);
     await dispatchTrustedMouse('mouseReleased', point, modifiers, 0);
   };
-  const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0) => {
+  const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0, commands = undefined) => {
     const params = {
       key, code, modifiers,
       windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode,
     };
-    await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
+    await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params, ...(commands ? { commands } : {}) });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
   };
+  const origin = await evaluate('location.origin');
+  await request('Browser.grantPermissions', {
+    origin, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+  });
   try {
     for (let attempt = 0; attempt < 200; attempt++) {
       const result = await evaluate(`(() => {
@@ -201,6 +206,8 @@ async function browserResult(webSocketDebuggerUrl) {
           tabP95: report.dataset.tabP95,
           multiselectClickP95: report.dataset.multiselectClickP95,
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
+          clipboardPaste: report.dataset.clipboardPaste,
+          clipboardPasteP95: report.dataset.clipboardPasteP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -412,6 +419,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedLayerContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
+        await runTrustedClipboardContract({ evaluate, dispatchKey });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -425,6 +433,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedLayer = 'pass';
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
+          report.dataset.trustedClipboard = 'pass';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
@@ -432,6 +441,7 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
           trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
           trustedLayer: 'pass',
+          trustedClipboard: 'pass',
         };
       }
       await delay(100);
@@ -486,11 +496,13 @@ try {
     + ` · 层级/撤销/重做60 p95 ${result.layerP95}/${result.layerUndoP95}/${result.layerRedoP95}ms`
     + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
+    + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
     + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
+    + ` · trusted clipboard ${result.trustedClipboard}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

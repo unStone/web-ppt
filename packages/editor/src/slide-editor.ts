@@ -9,6 +9,7 @@ import {
   insertElementPartition, patchElement, removeElementPartition, reorderElementPartitions,
 } from './dom-patch';
 import { EditorKeyboardController } from './editor-keyboard';
+import { ElementClipboardController } from './element-clipboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
 import { ResizeGestureController } from './resize-gesture';
@@ -78,6 +79,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
   private readonly keyboard: EditorKeyboardController;
+  private readonly clipboard: ElementClipboardController;
   private readonly marqueeGesture: MarqueeGestureController;
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
@@ -198,7 +200,7 @@ class DomSlideEditor implements SlideEditor {
     if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
-    if (this.keyboard.keyDown(event)) return;
+    if (this.clipboard.duplicate(event) || this.keyboard.keyDown(event)) return;
     if (event.key !== 'Escape') return;
     if (this.cancelActiveGesture()) {
       event.preventDefault();
@@ -224,6 +226,9 @@ class DomSlideEditor implements SlideEditor {
     if (this.keyboard.keyUp(event)) event.preventDefault();
   };
   private readonly onBlur = (): void => { this.keyboard.breakSequence(); };
+  private readonly onCopy = (event: ClipboardEvent): void => { this.clipboard.copy(event); };
+  private readonly onCut = (event: ClipboardEvent): void => { this.clipboard.cut(event); };
+  private readonly onPaste = (event: ClipboardEvent): void => { this.clipboard.paste(event); };
 
   constructor(container: HTMLElement, session: EditorSession, options: SlideEditorOptions = {}) {
     if (session.disposed) throw new Error('不能挂载已经释放的编辑会话');
@@ -274,6 +279,12 @@ class DomSlideEditor implements SlideEditor {
     this.keyboard = new EditorKeyboardController({
       editor: session.editor, namespace: this.idPrefix,
       slideId: () => this.currentSlide, revealSlide: (slideId) => this.setSlide(slideId),
+      gestureActive: () => this.hasActiveGesture(),
+    });
+    this.clipboard = new ElementClipboardController({
+      editor: session.editor,
+      slideId: () => this.currentSlide,
+      editable: () => this.currentMode === 'edit',
       gestureActive: () => this.hasActiveGesture(),
     });
 
@@ -330,6 +341,9 @@ class DomSlideEditor implements SlideEditor {
     this.element.addEventListener('keydown', this.onKeyDown);
     this.element.addEventListener('keyup', this.onKeyUp);
     this.element.addEventListener('blur', this.onBlur);
+    this.element.addEventListener('copy', this.onCopy);
+    this.element.addEventListener('cut', this.onCut);
+    this.element.addEventListener('paste', this.onPaste);
     try {
       container.append(this.element);
       state.views.add(this);
@@ -506,6 +520,9 @@ class DomSlideEditor implements SlideEditor {
     this.element.removeEventListener('keydown', this.onKeyDown);
     this.element.removeEventListener('keyup', this.onKeyUp);
     this.element.removeEventListener('blur', this.onBlur);
+    this.element.removeEventListener('copy', this.onCopy);
+    this.element.removeEventListener('cut', this.onCut);
+    this.element.removeEventListener('paste', this.onPaste);
   }
 
   private hasActiveGesture(): boolean {

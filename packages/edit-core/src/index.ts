@@ -1,5 +1,6 @@
 /** @web-ppt/edit-core —— 无 DOM 的编辑文档模型与高保真渲染投影。 */
 export { Editor } from './editor';
+export { copyElements } from './clipboard';
 export { validateEditDoc } from './model-invariants';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
 export { elementOrder, writableLayerSiblingIds } from './element-order';
@@ -14,20 +15,21 @@ export {
 } from './fractional-index';
 export {
   composeSpaceMatrices, elementFrameToParentMatrix, elementFrameToSlideMatrix,
-  elementFrameToSlidePoint, elementParentToSlideMatrix, elementParentToSlidePoint,
+  elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix, elementParentToSlidePoint,
   inverseTransformSpaceVector, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, spaceOrientationParity, transformSpacePoint,
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementMeta, ElementOverrides,
+  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   SlideRecord, SlideSource, TextOverride,
 } from './types';
 export type {
-  AlignEdge, AlignElementsCommand, Command, CommandPatches, EditorChange, EditorOptions, EditorSubscriber, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
+  AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditorChange,
+  EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, History, HistoryEntry, Patch, RemoveElementCommand,
-  Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, SetZCommand, TextPosition, Transaction,
+  PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, SetZCommand, TextPosition, Transaction,
   TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type { AffineMatrix, ElementFrameTransform, SlideViewport, SpacePoint } from './space';

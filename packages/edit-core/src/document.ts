@@ -127,7 +127,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     elements,
     removedElements: {},
     package: pkg,
-    saveState: { baselines: Object.create(null) },
+    saveState: { baselines: Object.create(null), createdParts: [] },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
   return doc;
@@ -146,7 +146,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     elements: {},
     removedElements: {},
     package: null,
-    saveState: { baselines: Object.create(null) },
+    saveState: { baselines: Object.create(null), createdParts: [] },
   };
 }
 
@@ -175,6 +175,7 @@ export function replaceDocPackage(doc: EditDoc, pkg: NonNullable<EditDoc['packag
   if (pkg.disposed) throw new Error('不能采用已经释放的 OPC 包');
   assignPackage(doc, pkg);
   doc.saveState.baselines = Object.create(null);
+  doc.saveState.createdParts = [];
 }
 
 /** 保存模块原子提交包与对应基线，不能拆成两个公开赋值。 */
@@ -182,9 +183,11 @@ export function commitSavedPackage(
   doc: EditDoc,
   pkg: NonNullable<EditDoc['package']>,
   baselines: Record<string, Uint8Array>,
+  createdParts: string[],
 ): void {
   assignPackage(doc, pkg);
   doc.saveState.baselines = baselines;
+  doc.saveState.createdParts = createdParts;
 }
 
 /** EditDoc 不内嵌函数，资源释放能力由 WeakMap 关联，因而文档本身仍可结构化克隆。 */
@@ -194,6 +197,7 @@ export function disposeDoc(doc: EditDoc): void {
   disposers.get(doc)?.();
   disposers.delete(doc);
   doc.saveState.baselines = Object.create(null);
+  doc.saveState.createdParts = [];
   // assignPackage 只释放保存模块创建的自有包；原始解析包由上面的 Presentation.dispose 释放。
   assignPackage(doc, null);
 }

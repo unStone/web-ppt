@@ -148,6 +148,16 @@ export function elementParentToSlideMatrix(doc: EditDoc, id: ElementId): AffineM
   return parentToSlideMatrix(doc, elementChain(doc, id));
 }
 
+/** 组的子坐标系包含自身 frame、翻转及 chOff/chExt 缩放，不能等同于组所在父坐标系。 */
+export function elementChildrenToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const element = effectiveElement(doc, id);
+  if (element.kind !== 'group') throw new Error(`非组元素没有子坐标系：${id}`);
+  return composeSpaceMatrices(
+    elementFrameToSlideMatrix(doc, id),
+    composeSpaceMatrices(flipInFrame(element), childrenToGroupFrame(element)),
+  );
+}
+
 export function elementFrameToSlidePoint(doc: EditDoc, id: ElementId, point: SpacePoint): SpacePoint {
   return transformSpacePoint(elementFrameToSlideMatrix(doc, id), point);
 }

@@ -5,6 +5,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
 import { installDomEnv } from './dom-env.mjs';
 
 const [corePath, editPath, file, mode, scenarioJson] = process.argv.slice(2);
@@ -27,8 +28,22 @@ if (mode === 'projected') {
   doc = edit.createDoc(pres, { idPrefix: 'm1-fingerprint-' });
   const editor = new edit.Editor(doc);
   const target = Object.values(doc.elements).find((record) => record.src.name === scenario.targetName);
-  if (!target) throw new Error('M1 指纹固件缺少编辑目标');
-  if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
+  if (scenario.type === 'clipboard') {
+    const sourceBytes = new Uint8Array(readFileSync(join(dirname(file), scenario.sourceFile)));
+    const sourcePres = await core.parse(sourceBytes, {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const sourceDoc = edit.createDoc(sourcePres, { idPrefix: 'm1-fingerprint-source-' });
+    const sourceTarget = Object.values(sourceDoc.elements)
+      .find((record) => record.src.name === scenario.targetName);
+    if (!sourceTarget) throw new Error('M1 指纹固件缺少剪贴板来源目标');
+    editor.exec({
+      type: 'PasteElements', payload: edit.copyElements(sourceDoc, [sourceTarget.id]),
+      at: { parentId: doc.slideOrder[0], x: scenario.x, y: scenario.y },
+    });
+    edit.disposeDoc(sourceDoc);
+  } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
+  else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });
   else if (scenario.type === 'align') {
     const ids = scenario.targetNames.map((name) => Object.values(doc.elements)

@@ -1,0 +1,182 @@
+import { base64ToBytes, sha256 } from '../clipboard-binary';
+import { relationshipPartFor, relativeTarget } from '../clipboard-source';
+import type {
+  EditDoc, ElementInsertionRelationship, ElementInsertionResource,
+} from '../types';
+import { findXmlAttribute, xmlElementChildren } from '../xml/query';
+import { parseXmlTree } from '../xml/tree';
+import type { ElementClipboardPayload } from './types';
+
+export interface PreparedInsertionClosure {
+  relationships: ElementInsertionRelationship[];
+  resources: ElementInsertionResource[];
+}
+
+const mediaHashes = new WeakMap<object, Map<string, string>>();
+
+function packageMedia(doc: EditDoc): Map<string, string> {
+  const pkg = doc.package!;
+  const cached = mediaHashes.get(pkg);
+  if (cached) return new Map(cached);
+  const result = new Map<string, string>();
+  for (const [part, bytes] of Object.entries(pkg.parts)) {
+    if (part.startsWith('ppt/media/')) result.set(sha256(bytes), part);
+  }
+  mediaHashes.set(pkg, result);
+  return new Map(result);
+}
+
+function activeClosures(doc: EditDoc, part: string): PreparedInsertionClosure[] {
+  return Object.values(doc.elements).flatMap((record) => {
+    const insertion = record.meta.origin?.part === part && record.meta.insertion;
+    return insertion ? [{
+      relationships: [...(insertion.relationships ?? [])],
+      resources: [...(insertion.resources ?? [])],
+    }] : [];
+  });
+}
+
+function relationshipIds(doc: EditDoc, part: string): Set<string> {
+  const used = new Set<string>();
+  const bytes = doc.package!.parts[relationshipPartFor(part)];
+  if (bytes) {
+    for (const node of xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })) {
+      const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
+      if (id) used.add(id);
+    }
+  }
+  for (const closure of activeClosures(doc, part)) {
+    for (const relationship of closure.relationships) used.add(relationship.targetId);
+  }
+  return used;
+}
+
+function resourcePrefix(mime: string): string {
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('audio/')) return 'audio';
+  if (mime.startsWith('video/')) return 'video';
+  return 'media';
+}
+
+function allocateMediaPart(used: Set<string>, prefix: string, extension: string): string {
+  for (let index = 1; ; index++) {
+    const part = `ppt/media/${prefix}${index}.${extension}`;
+    if (!used.has(part)) {
+      used.add(part);
+      return part;
+    }
+  }
+}
+
+/** 先验证完整闭包并分配所有目标名；调用返回前不得触碰 EditDoc。 */
+export function prepareInsertionClosures(
+  doc: EditDoc,
+  payload: ElementClipboardPayload,
+  roots: readonly string[],
+  destinationPart: string,
+): Map<string, PreparedInsertionClosure> {
+  if (!doc.package) throw new Error('粘贴关系资源需要可写 OPC 包');
+  const resourceByHash = new Map<string, ElementInsertionResource>();
+  for (const resource of payload.resources) {
+    if (!resource || !/^[0-9a-f]{64}$/.test(resource.hash)
+      || typeof resource.mime !== 'string' || !resource.mime
+      || !/^[a-z0-9]+$/.test(resource.extension)
+      || typeof resource.bytes !== 'string') {
+      throw new Error('剪贴板资源描述无效');
+    }
+    if (resourceByHash.has(resource.hash)) throw new Error(`剪贴板资源哈希重复：${resource.hash}`);
+    let bytes: Uint8Array;
+    try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error('剪贴板资源不是有效 Base64'); }
+    if (sha256(bytes) !== resource.hash) throw new Error(`剪贴板资源哈希不匹配：${resource.hash}`);
+    resourceByHash.set(resource.hash, {
+      ...resource, targetPart: '', created: false,
+    });
+  }
+
+  const targetByHash = packageMedia(doc);
+  const active = activeClosures(doc, destinationPart);
+  for (const closure of active) {
+    for (const resource of closure.resources) targetByHash.set(resource.hash, resource.targetPart);
+  }
+  const usedParts = new Set([
+    ...Object.keys(doc.package.parts),
+    ...active.flatMap((closure) => closure.resources.map((resource) => resource.targetPart)),
+  ]);
+  const usedRelationshipIds = relationshipIds(doc, destinationPart);
+  let relationshipSerial = 1;
+  const allocateRelationshipId = (): string => {
+    while (usedRelationshipIds.has(`rId${relationshipSerial}`)) relationshipSerial++;
+    const id = `rId${relationshipSerial++}`;
+    usedRelationshipIds.add(id);
+    return id;
+  };
+
+  const result = new Map<string, PreparedInsertionClosure>();
+  for (const root of roots) {
+    const sourceRelationships = payload.ooxml.roots[root].relationships ?? [];
+    const seenSourceIds = new Set<string>();
+    const resources: ElementInsertionResource[] = [];
+    const relationships: ElementInsertionRelationship[] = [];
+    for (const relationship of sourceRelationships) {
+      if (!relationship || typeof relationship.sourceId !== 'string' || !relationship.sourceId
+        || typeof relationship.type !== 'string' || !relationship.type
+        || seenSourceIds.has(relationship.sourceId)) {
+        throw new Error(`剪贴板根 ${root} 的关系描述无效`);
+      }
+      seenSourceIds.add(relationship.sourceId);
+      const targetId = allocateRelationshipId();
+      if (relationship.targetMode === 'External') {
+        if (typeof relationship.target !== 'string' || !relationship.target || relationship.resourceHash
+          || relationship.packageTarget) {
+          throw new Error(`剪贴板外部关系无效：${relationship.sourceId}`);
+        }
+        relationships.push({
+          sourceId: relationship.sourceId, targetId, type: relationship.type,
+          target: relationship.target, targetMode: 'External',
+        });
+        continue;
+      }
+      if (relationship.packageTarget) {
+        const packageTarget = relationship.packageTarget;
+        if (relationship.resourceHash || relationship.target || relationship.targetMode
+          || typeof packageTarget.part !== 'string' || !packageTarget.part
+          || !Array.isArray(packageTarget.closure) || !packageTarget.closure.length
+          || !packageTarget.closure.some((part) => part.part === packageTarget.part)) {
+          throw new Error(`剪贴板同包关系无效：${relationship.sourceId}`);
+        }
+        for (const part of packageTarget.closure) {
+          const bytes = doc.package.parts[part.part];
+          if (!part || typeof part.part !== 'string' || !part.part
+            || !/^[0-9a-f]{64}$/.test(part.hash) || !bytes || sha256(bytes) !== part.hash) {
+            throw new Error(`复杂对象只能粘贴到拥有相同 OPC 闭包的文档：${relationship.sourceId}`);
+          }
+        }
+        relationships.push({
+          sourceId: relationship.sourceId, targetId, type: relationship.type,
+          target: relativeTarget(destinationPart, packageTarget.part),
+        });
+        continue;
+      }
+      if (!relationship.resourceHash || relationship.target || relationship.targetMode) {
+        throw new Error(`剪贴板内部关系无效：${relationship.sourceId}`);
+      }
+      const source = resourceByHash.get(relationship.resourceHash);
+      if (!source) throw new Error(`剪贴板关系缺少资源：${relationship.resourceHash}`);
+      let targetPart = targetByHash.get(source.hash);
+      if (!targetPart) {
+        targetPart = allocateMediaPart(usedParts, resourcePrefix(source.mime), source.extension);
+        targetByHash.set(source.hash, targetPart);
+      }
+      const prepared = {
+        ...source, targetPart, created: !doc.package.parts[targetPart],
+      };
+      if (!resources.some((candidate) => candidate.hash === prepared.hash)) resources.push(prepared);
+      relationships.push({
+        sourceId: relationship.sourceId, targetId, type: relationship.type,
+        target: relativeTarget(destinationPart, targetPart),
+      });
+    }
+    result.set(root, { relationships, resources });
+  }
+  return result;
+}

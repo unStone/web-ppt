@@ -55,7 +55,6 @@ tracker: local-markdown
 
 ## Not yet specified
 
-- M2 下一前沿是复制粘贴；拆票时必须把身份分配、关系表、媒体去重与跨文档降级分别定界。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

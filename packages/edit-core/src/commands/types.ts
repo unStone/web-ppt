@@ -1,4 +1,6 @@
-import type { ElementId, ElementRecord, ProjectionInvalidation, SlideId, TextOverride } from '../types';
+import type { GeomSpec, SlideElement } from '@web-ppt/core';
+import type { EditableKind, ElementId, ElementRecord, ProjectionInvalidation, SlideId, TextOverride } from '../types';
+import type { AffineMatrix } from '../space';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -53,7 +55,70 @@ export interface AlignElementsCommand {
   readonly edge: AlignEdge;
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | AlignElementsCommand;
+export interface ElementClipboardRecordMeta {
+  readonly editable: EditableKind;
+  readonly anchored: boolean;
+  readonly sourceSpid?: number;
+  readonly geom?: GeomSpec;
+  /** 复制时根元素的 frame → slide 视觉矩阵；后代不需要重复携带。 */
+  readonly frameToSlide?: AffineMatrix;
+}
+
+export interface ClipboardXmlRoot {
+  readonly markup: string;
+  readonly namespaces: Readonly<Record<string, string>>;
+  readonly hostSpids: readonly string[];
+  readonly relationships?: readonly ClipboardRelationship[];
+}
+
+export interface ClipboardRelationship {
+  /** 宿主片段中原始的 r:id / r:embed / r:link 值。 */
+  readonly sourceId: string;
+  readonly type: string;
+  readonly target?: string;
+  readonly targetMode?: 'External';
+  readonly resourceHash?: string;
+  /** 复杂 OOXML 对象只在目标包拥有同一闭包时复用，不把未知格式静默扁平化。 */
+  readonly packageTarget?: {
+    readonly part: string;
+    readonly closure: readonly { readonly part: string; readonly hash: string }[];
+  };
+}
+
+export interface ClipboardElementRecord {
+  readonly id: string;
+  readonly parent: string | null;
+  readonly src: SlideElement;
+  readonly meta: ElementClipboardRecordMeta;
+  readonly children: readonly string[];
+}
+
+export interface ClipboardResource {
+  readonly hash: string;
+  readonly mime: string;
+  readonly extension: string;
+  readonly bytes: string;
+}
+
+export interface ElementClipboardPayload {
+  readonly format: 'web-ppt-elements';
+  readonly version: 1;
+  readonly source: { readonly width: number; readonly height: number };
+  readonly bounds: { readonly left: number; readonly top: number };
+  readonly roots: readonly string[];
+  readonly records: Readonly<Record<string, ClipboardElementRecord>>;
+  readonly ooxml: { readonly roots: Readonly<Record<string, ClipboardXmlRoot>> };
+  readonly resources: readonly ClipboardResource[];
+}
+
+export interface PasteElementsCommand {
+  readonly type: 'PasteElements';
+  readonly payload: ElementClipboardPayload;
+  readonly at: { readonly parentId: SlideId | ElementId; readonly x: number; readonly y: number };
+}
+
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
+  | AlignElementsCommand | PasteElementsCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

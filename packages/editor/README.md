@@ -83,6 +83,13 @@ group children and frame-only objects use the same semantics, and boundary opera
 Views move existing markup partitions in place, preserving defs, hyperlink wrappers, untouched siblings, and
 node identities in every shared view.
 
+Focused edit views support native `Ctrl/Cmd+C`, `X`, and `V` through synchronous `ClipboardEvent` handling.
+The view writes `application/x-web-ppt-elements+json` and `text/plain`, never calls permission-gated
+`navigator.clipboard`, and pastes multiple element trees as one undo unit. `Ctrl/Cmd+D` duplicates the current
+selection by 10 slide pixels without changing the system clipboard. View mode, active pointer gestures,
+text/table selections, and form/contenteditable descendants retain browser ownership. Small pastes insert only
+new markup/defs partitions; large batches may use the existing bounded full-slide fallback.
+
 Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
 `AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
 refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and

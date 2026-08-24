@@ -85,13 +85,18 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('页面宽高必须是有限正数');
   }
   if (doc.package?.disposed) throw new Error('编辑文档持有的 OPC 包已经释放');
-  if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object') {
+  if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object'
+    || !Array.isArray(doc.saveState.createdParts)) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');
   }
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
     if (!(bytes instanceof Uint8Array) || (doc.package && !doc.package.parts[part])) {
       throw new Error(`保存基线无效：${part}`);
     }
+  }
+  if (new Set(doc.saveState.createdParts).size !== doc.saveState.createdParts.length
+    || doc.saveState.createdParts.some((part) => typeof part !== 'string' || !part)) {
+    throw new Error('会话生成的 OPC part 状态无效');
   }
   if (new Set(doc.slideOrder).size !== doc.slideOrder.length) throw new Error('slideOrder 不能包含重复页');
   if (doc.slideOrder.length !== Object.keys(doc.slides).length) throw new Error('slideOrder 必须恰好包含全部幻灯片');

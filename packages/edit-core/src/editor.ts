@@ -69,9 +69,11 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
       }
     }
   }
-  const targetIds = (command: Command): readonly ElementId[] => command.type === 'AlignElements'
-    ? Array.isArray(command.ids) ? command.ids : []
-    : [command.id];
+  const targetIds = (command: Command): readonly ElementId[] => {
+    if (command.type === 'AlignElements') return Array.isArray(command.ids) ? command.ids : [];
+    if (command.type === 'PasteElements') return [];
+    return [command.id];
+  };
   for (const command of commands) {
     if (command.type === 'RemoveElement') continue;
     const conflict = targetIds(command).find((id) => roots.some((root) => id === root.id
@@ -256,7 +258,14 @@ export class Editor {
       }
       const structural = forward.some((patch) => patch.path.length === 2);
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
-      else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
+      else if (commands.length === 1 && commands[0].type === 'PasteElements') {
+        const ids = forward.filter((patch) => patch.path.length === 2 && patch.op === 'insert')
+          .map((patch) => patch.path[1]);
+        this.currentSelection = normalizeSelection(this.doc, {
+          kind: 'elements', ids, enteredGroup: this.doc.slides[commands[0].at.parentId]
+            ? null : commands[0].at.parentId,
+        });
+      } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
       if (structural) validateEditDoc(this.doc);
       else validateEditElements(this.doc, forward.map((patch) => patch.path[1]));
     } catch (error) {

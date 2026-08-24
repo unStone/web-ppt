@@ -234,4 +234,57 @@ export async function runM1SaveContract({
     equalBytes(alignRestored.package.parts[alignPart], alignSourcePart) && !alignEditor.isDirty());
   edit.disposeDoc(alignReparsedDoc);
   edit.disposeDoc(alignDoc);
+
+  const clipboardScenario = Object.freeze({
+    type: 'clipboard', file: 'sample-editor-layer.pptx', sourceFile: 'sample-editor-delete.pptx',
+    targetName: 'delete-picture', x: 760, y: 80,
+  });
+  const clipboardInput = load(clipboardScenario.file);
+  const clipboardSourcePres = await core.parse(load(clipboardScenario.sourceFile), {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const clipboardTargetPres = await core.parse(clipboardInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const clipboardSourceDoc = edit.createDoc(clipboardSourcePres, { idPrefix: 'm1-clipboard-source-' });
+  const clipboardDoc = edit.createDoc(clipboardTargetPres, { idPrefix: 'm1-clipboard-target-' });
+  const clipboardTarget = Object.values(clipboardSourceDoc.elements)
+    .find((record) => record.src.name === clipboardScenario.targetName);
+  if (!check('元素剪贴板指纹固件暴露图片与来源关系', !!clipboardTarget?.meta.origin)) {
+    edit.disposeDoc(clipboardDoc);
+    edit.disposeDoc(clipboardSourceDoc);
+    return;
+  }
+  const clipboardEditor = new edit.Editor(clipboardDoc);
+  clipboardEditor.exec({
+    type: 'PasteElements', payload: edit.copyElements(clipboardSourceDoc, [clipboardTarget.id]),
+    at: {
+      parentId: clipboardDoc.slideOrder[0], x: clipboardScenario.x, y: clipboardScenario.y,
+    },
+  });
+  const clipboardSaved = await clipboardEditor.saveDetailed();
+  const clipboardArtifact = saveArtifact('element-clipboard.pptx', clipboardSaved.bytes);
+  const clipboardDiff = diffPackageBytes(clipboardInput, clipboardSaved.bytes);
+  const clipboardReparsed = await core.parse(clipboardSaved.bytes, { lazy: false, assets: 'defer' });
+  check('跨文档图片粘贴只新增媒体并改目标页、关系与 Content Types',
+    clipboardSaved.mode === 'passthrough'
+      && clipboardDiff.added.join(',') === 'ppt/media/image1.png'
+      && clipboardDiff.removed.length === 0
+      && clipboardDiff.changed.join(',') === [
+        '[Content_Types].xml', 'ppt/slides/_rels/slide1.xml.rels', 'ppt/slides/slide1.xml',
+      ].join(',')
+      && findNamed(clipboardReparsed.slides[0].elements, clipboardScenario.targetName)?.kind === 'image');
+  const clipboardProjectedFingerprint = renderFingerprint(
+    clipboardScenario.file, 'projected', clipboardScenario,
+  );
+  const clipboardSavedFingerprint = renderFingerprint(
+    clipboardArtifact, 'saved', clipboardScenario,
+  );
+  for (const textMode of ['html', 'svg']) {
+    eq(`元素剪贴板保存产物 ${textMode} 指纹等于独立进程中的有效投影`,
+      clipboardSavedFingerprint[textMode], clipboardProjectedFingerprint[textMode]);
+  }
+  clipboardReparsed.dispose?.();
+  edit.disposeDoc(clipboardDoc);
+  edit.disposeDoc(clipboardSourceDoc);
 }

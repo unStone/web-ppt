@@ -105,11 +105,14 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     siblings.splice(index, 1);
     for (const id of Object.keys(snapshot.records)) delete doc.elements[id];
     const root = snapshot.records[snapshot.root];
-    doc.removedElements[snapshot.root] = {
-      id: root.id,
-      parent: root.parent,
-      meta: structuredClone(root.meta),
-    };
+    if (root.meta.created) delete doc.removedElements[snapshot.root];
+    else {
+      doc.removedElements[snapshot.root] = {
+        id: root.id,
+        parent: root.parent,
+        meta: structuredClone(root.meta),
+      };
+    }
     return;
   }
   for (const [id, record] of Object.entries(snapshot.records)) doc.elements[id] = cloneRecord(record);
