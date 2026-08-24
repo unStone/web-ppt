@@ -86,9 +86,9 @@ export class PointerGestureLifecycle {
     this.scheduleFrame(active);
   }
 
-  finish(event: PointerEvent): void {
+  finish(event: PointerEvent): 'ignored' | 'click' | 'gesture' {
     const active = this.active;
-    if (!active || pointerId(event) !== active.pointerId) return;
+    if (!active || pointerId(event) !== active.pointerId) return 'ignored';
     this.updateSnapshot(active, event);
     let commit: (() => void) | null;
     try {
@@ -101,6 +101,7 @@ export class PointerGestureLifecycle {
     this.clear(active);
     commit?.();
     if (commit) event.preventDefault();
+    return active.started ? 'gesture' : 'click';
   }
 
   modifier(event: KeyboardEvent): boolean {

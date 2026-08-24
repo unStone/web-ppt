@@ -25,6 +25,7 @@
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
     import { runEditorSnapBrowserContract } from '/tooling/lib/editor-snap-browser-contract.mjs';
+    import { runEditorMarqueeBrowserContract } from '/tooling/lib/editor-marquee-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -402,8 +403,12 @@
       const resizeResult = await runEditorResizeBrowserContract({ openEditor, load });
       const rotationResult = await runEditorRotationBrowserContract({ openEditor, load });
       const snapResult = await runEditorSnapBrowserContract({ openEditor, load });
+      const marqueeResult = await runEditorMarqueeBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
+      });
+      const trustedMarqueeSession = await openEditor(await load('sample-editor-marquee.pptx'), {
+        idPrefix: 'browser-trusted-marquee-',
       });
 
       report.dataset.status = 'pass';
@@ -425,6 +430,9 @@
       report.dataset.snapGroupError = snapResult.groupError.toFixed(3);
       report.dataset.snapSpacingError = snapResult.spacingError.toFixed(3);
       report.dataset.snapP95 = snapResult.p95.toFixed(3);
+      report.dataset.marqueeError = marqueeResult.geometryError.toFixed(3);
+      report.dataset.marqueeFirstFrame = marqueeResult.firstFrame.toFixed(3);
+      report.dataset.marqueeP95 = marqueeResult.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -441,8 +449,12 @@
       report.textContent += `\n三档缩放吸附/组内/等距参考线偏差 ${snapResult.thresholdError.toFixed(3)} / `
         + `${snapResult.groupError.toFixed(3)} / ${snapResult.spacingError.toFixed(3)}px，`
         + `60 元素吸附帧 p95 ${snapResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n三档缩放框选边界偏差 ${marqueeResult.geometryError.toFixed(3)}px，`
+        + `60 元素框选首帧/p95 ${marqueeResult.firstFrame.toFixed(3)} / `
+        + `${marqueeResult.p95.toFixed(3)}ms`;
       globalThis.editorContract = {
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
+        trustedMarqueeSession,
       };
     } catch (error) {
       report.style.color = '#b91c1c';

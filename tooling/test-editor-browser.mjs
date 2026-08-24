@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -166,6 +167,9 @@ async function browserResult(webSocketDebuggerUrl) {
           snapGroupError: report.dataset.snapGroupError,
           snapSpacingError: report.dataset.snapSpacingError,
           snapP95: report.dataset.snapP95,
+          marqueeError: report.dataset.marqueeError,
+          marqueeFirstFrame: report.dataset.marqueeFirstFrame,
+          marqueeP95: report.dataset.marqueeP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -370,16 +374,19 @@ async function browserResult(webSocketDebuggerUrl) {
         }
 
         await runTrustedSnapContract({ evaluate, trustedMouseGesture });
+        await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
           report.dataset.trustedResize = 'pass';
           report.dataset.trustedRotation = 'pass';
           report.dataset.trustedSnap = 'pass';
-          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附与撤销通过';
+          report.dataset.trustedMarquee = 'pass';
+          report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选通过';
         })()`);
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
+          trustedMarquee: 'pass',
         };
       }
       await delay(100);
@@ -425,7 +432,10 @@ try {
     + ` · 旋转60 p95 ${result.rotationP95}ms`
     + ` · 吸附阈值/组内/等距偏差 ${result.snapThresholdError}/${result.snapGroupError}/${result.snapSpacingError}px`
     + ` · 吸附60 p95 ${result.snapP95}ms`
-    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/${result.trustedSnap}`
+    + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
+    + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
+    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
+    + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

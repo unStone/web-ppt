@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
+import { runMarqueeGestureContract } from './lib/marquee-gesture-contract.mjs';
 import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
@@ -175,6 +176,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 }
 
 await runNativeHitContract({ check, lib, root });
+await runMarqueeGestureContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });
 await runResizeGestureContract({ check, lib, root });

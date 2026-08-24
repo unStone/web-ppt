@@ -1,10 +1,10 @@
 import { renderSlideToSvg } from '@web-ppt/core';
-import { isElementDescendantOf } from '@web-ppt/edit-core';
 import type { EditorChange, ElementId, SlideId } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { bindSlideIdentities, touchedElementPartitions } from './dom-identity';
 import { patchElement } from './dom-patch';
+import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
 import { ResizeGestureController } from './resize-gesture';
 import { isResizeHandle } from './resize-geometry';
@@ -12,6 +12,10 @@ import type { ResizeHandle } from './resize-geometry';
 import { RotationGestureController } from './rotation-gesture';
 import { normalizeSnapMargins } from './snap';
 import type { SnapMargins } from './snap';
+import {
+  directSelectableChildIds, enteredGroupOnSlide, isSelectable,
+  outermostHitCandidate, selectableElementIdsFromPath,
+} from './selection-hit';
 import { renderSelectionOverlay } from './selection-overlay';
 import { sessionState } from './session-state';
 
@@ -37,11 +41,6 @@ function layer(document: Document, name: string): HTMLDivElement {
   element.style.position = 'absolute';
   element.style.inset = '0';
   return element;
-}
-
-function elementsFromPath(path: EventTarget[], root: Element): Element[] {
-  return path.filter((target): target is Element =>
-    !!target && typeof target === 'object' && (target as Node).nodeType === 1 && root.contains(target as Node));
 }
 
 export interface SlideEditor {
@@ -72,6 +71,7 @@ class DomSlideEditor implements SlideEditor {
   private currentSnapping: boolean;
   private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
+  private readonly marqueeGesture: MarqueeGestureController;
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
   private readonly rotationGesture: RotationGestureController;
@@ -82,9 +82,10 @@ class DomSlideEditor implements SlideEditor {
     if (this.rotationHandle(event.target)) {
       const selection = this.session.editor.selection;
       if (selection.kind === 'elements'
-        && selection.ids.every((selectedId) => this.isSelectable(selectedId))) {
+        && selection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
         this.moveGesture.cancel();
         this.resizeGesture.cancel();
+        this.marqueeGesture.cancel();
         this.rotationGesture.begin(event, selection.ids);
       }
       event.preventDefault();
@@ -96,8 +97,9 @@ class DomSlideEditor implements SlideEditor {
     if (resizeHandle) {
       const selection = this.session.editor.selection;
       if (selection.kind === 'elements'
-        && selection.ids.every((selectedId) => this.isSelectable(selectedId))) {
+        && selection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
         this.moveGesture.cancel();
+        this.marqueeGesture.cancel();
         this.resizeGesture.begin(event, resizeHandle, selection.ids);
       }
       event.preventDefault();
@@ -106,38 +108,51 @@ class DomSlideEditor implements SlideEditor {
     }
     this.resizeGesture.cancel();
     const candidates = this.hitCandidates(event.composedPath());
-    const enteredGroup = this.session.editor.selection.kind === 'elements'
-      ? this.session.editor.selection.enteredGroup : null;
+    const enteredGroup = enteredGroupOnSlide(
+      this.session.editor.doc,
+      this.session.editor.selection.kind === 'elements'
+        ? this.session.editor.selection.enteredGroup : null,
+      this.currentSlide,
+    );
     const id = event.altKey
       ? this.alternateCandidate(event.clientX, event.clientY, enteredGroup)
       : this.outermostCandidate(candidates, enteredGroup);
     const selection = this.session.editor.selection;
     const keepsSelection = id && !event.altKey && selection.kind === 'elements'
       && selection.ids.includes(id);
+    if (!id) {
+      this.moveGesture.cancel();
+      this.marqueeGesture.begin(event, enteredGroup);
+      event.preventDefault();
+      this.element.focus({ preventScroll: true });
+      return;
+    }
+    this.marqueeGesture.cancel();
     if (!keepsSelection) {
-      this.session.editor.select(id
-        ? { kind: 'elements', ids: [id], enteredGroup }
-        : { kind: 'none' });
+      this.session.editor.select({ kind: 'elements', ids: [id], enteredGroup });
     }
     const nextSelection = this.session.editor.selection;
     if (id && !event.altKey && nextSelection.kind === 'elements'
-      && nextSelection.ids.every((selectedId) => this.isSelectable(selectedId))) {
+      && nextSelection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
       this.moveGesture.begin(event, nextSelection.ids);
     }
     event.preventDefault();
     this.element.focus({ preventScroll: true });
   };
   private readonly onPointerMove = (event: PointerEvent): void => {
+    this.marqueeGesture.move(event);
     this.rotationGesture.move(event);
     this.resizeGesture.move(event);
     this.moveGesture.move(event);
   };
   private readonly onPointerUp = (event: PointerEvent): void => {
+    this.marqueeGesture.finish(event);
     this.rotationGesture.finish(event);
     this.resizeGesture.finish(event);
     this.moveGesture.finish(event);
   };
   private readonly onPointerCancel = (event: PointerEvent): void => {
+    this.marqueeGesture.cancelPointer(event);
     this.rotationGesture.cancelPointer(event);
     this.resizeGesture.cancelPointer(event);
     this.moveGesture.cancelPointer(event);
@@ -161,6 +176,11 @@ class DomSlideEditor implements SlideEditor {
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
     if (event.key !== 'Escape') return;
+    if (this.marqueeGesture.isActive) {
+      this.marqueeGesture.cancel();
+      event.preventDefault();
+      return;
+    }
     if (this.rotationGesture.isActive) {
       this.rotationGesture.cancel();
       event.preventDefault();
@@ -240,6 +260,17 @@ class DomSlideEditor implements SlideEditor {
     this.interactionLayer.style.pointerEvents = 'none';
     this.textLayer.style.pointerEvents = 'none';
 
+    this.marqueeGesture = new MarqueeGestureController({
+      root: this.element,
+      stage: this.stage,
+      interactionLayer: this.interactionLayer,
+      editor: session.editor,
+      zoom: () => this.currentZoom,
+      candidateIds: (enteredGroup) => directSelectableChildIds(
+        session.editor.doc, this.currentSlide, enteredGroup,
+      ),
+    });
+
     this.moveGesture = new MoveGestureController({
       root: this.element,
       stage: this.stage,
@@ -307,11 +338,7 @@ class DomSlideEditor implements SlideEditor {
 
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
-    if (mode !== this.currentMode) {
-      this.moveGesture.cancel();
-      this.resizeGesture.cancel();
-      this.rotationGesture.cancel();
-    }
+    if (mode !== this.currentMode) this.cancelGestures();
     this.currentMode = mode;
     this.element.dataset.mode = mode;
     // Pointer Events 在按下前就按 touch-action 决定是否交给页面滚动；编辑态必须由画布拥有手势。
@@ -325,20 +352,14 @@ class DomSlideEditor implements SlideEditor {
   setSlide(slideId: SlideId): void {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
-    this.moveGesture.cancel();
-    this.resizeGesture.cancel();
-    this.rotationGesture.cancel();
+    this.cancelGestures();
     this.currentSlide = slideId;
     this.render();
   }
 
   setZoom(zoom: number): void {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
-    if (zoom !== this.currentZoom) {
-      this.moveGesture.cancel();
-      this.resizeGesture.cancel();
-      this.rotationGesture.cancel();
-    }
+    if (zoom !== this.currentZoom) this.cancelGestures();
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.renderSelection(this.session.editor.selection);
@@ -354,9 +375,7 @@ class DomSlideEditor implements SlideEditor {
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
-    this.moveGesture.cancel();
-    this.resizeGesture.cancel();
-    this.rotationGesture.cancel();
+    this.cancelGestures();
     this.unsubscribe();
     this.element.removeEventListener('pointerdown', this.onPointerDown);
     this.element.removeEventListener('pointermove', this.onPointerMove);
@@ -382,9 +401,7 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private hitCandidates(path: EventTarget[]): ElementId[] {
-    return elementsFromPath(path, this.staticLayer)
-      .map((element) => (element as SVGElement).dataset.editId)
-      .filter((id): id is ElementId => !!id && this.isSelectable(id));
+    return selectableElementIdsFromPath(this.session.editor.doc, path, this.staticLayer);
   }
 
   private resizeHandle(target: EventTarget | null): ResizeHandle | null {
@@ -419,27 +436,12 @@ class DomSlideEditor implements SlideEditor {
     return candidates[currentIndex < 0 ? 0 : (currentIndex + 1) % candidates.length];
   }
 
-  private isSelectable(id: ElementId): boolean {
-    let record = this.session.editor.doc.elements[id];
-    if (!record) return false;
-    while (record) {
-      if (record.meta.locked || record.meta.hiddenByUser || record.meta.editable === 'none') return false;
-      record = this.session.editor.doc.elements[record.parent];
-    }
-    return true;
-  }
-
   private outermostCandidate(candidates: ElementId[], enteredGroup: ElementId | null): ElementId | undefined {
-    if (!enteredGroup) return candidates[candidates.length - 1];
-    const descendants = candidates.filter((id) => id !== enteredGroup
-      && isElementDescendantOf(this.session.editor.doc, id, enteredGroup));
-    return descendants[descendants.length - 1];
+    return outermostHitCandidate(this.session.editor.doc, candidates, enteredGroup);
   }
 
   private update(change: EditorChange): void {
-    this.moveGesture.cancel();
-    this.resizeGesture.cancel();
-    this.rotationGesture.cancel();
+    this.cancelGestures();
     if (!change.dirtySlides.has(this.currentSlide)) {
       this.renderSelection(change.selection);
       return;
@@ -464,6 +466,13 @@ class DomSlideEditor implements SlideEditor {
     renderSelectionOverlay(
       this.interactionLayer, this.session.editor.doc, selection, this.currentSlide, this.currentZoom,
     );
+  }
+
+  private cancelGestures(): void {
+    this.marqueeGesture.cancel();
+    this.moveGesture.cancel();
+    this.resizeGesture.cancel();
+    this.rotationGesture.cancel();
   }
 }
 
