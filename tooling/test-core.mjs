@@ -277,6 +277,7 @@ const FIXTURES = [
   { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-embedfont.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-editor-engine-text.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-editor-table-text.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },
   { file: 'showcase.ppt', minPages: 6, source: 'ppt' },
   { file: 'sample-chart.ppt', minPages: 9, source: 'ppt' },
@@ -1187,6 +1188,12 @@ group('表格');
       check('表头加粗来自 tableStyles', t.rows[0].cells[0].text.paragraphs[0].runs[0].b === true);
       check('存在合并单元格', t.rows.some((r) => r.cells.some((c) => c.merged || c.colSpan > 1)));
       check('单元格有边距', Array.isArray(t.rows[0].cells[0].margins));
+      const plainMarkup = lib.renderElementToSvg(t, { idPrefix: 'plain-table-' }).markup;
+      const editMarkup = lib.renderElementToSvg(t, {
+        idPrefix: 'edit-table-', includeEditMarkers: true,
+      }).markup;
+      check('单元格命中身份仅由编辑调用显式开启且不污染普通预览',
+        !plainMarkup.includes('data-table-cell=') && editMarkup.includes('data-table-cell="0:0"'));
 
       // 回归：DrawingML 的单元格边框覆盖标签是 a:lnL/lnR/lnT/lnB，
       // 曾误拼成 lnLeft/lnRight 导致该分支从不触发，自定义边框被静默丢弃。
@@ -1201,6 +1208,12 @@ group('表格');
       const thick = allCells.some((c) => [c.borders?.l, c.borders?.r, c.borders?.t, c.borders?.b].some((s) => s && s.width > 1.6));
       check('自定义边框线宽已生效', thick);
     }
+  }
+  const editorTablePres = parsed.get('sample-editor-table-text.pptx');
+  const editorTable = editorTablePres ? collect(editorTablePres)[0] : null;
+  if (check('表格编辑固件保留双向翻转', editorTable?.flipH && editorTable?.flipV)) {
+    const markup = lib.renderElementToSvg(editorTable, { idPrefix: 'flipped-table-' }).markup;
+    check('表格内容与其它元素一致应用自身翻转', markup.includes('scale(-1 -1)'));
   }
   // 回归：.ppt 的表格由「底色矩形 + 文字框」两层合并后再按网格还原
   const pp = parsed.get('showcase.ppt');

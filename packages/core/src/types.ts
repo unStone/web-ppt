@@ -344,6 +344,8 @@ export interface TableCell {
   vAlign?: 'top' | 'middle' | 'bottom';
   /** 竖排文字方向 */
   vert?: TextVert;
+  /** 仅编辑解析保留空单元格的段落与 endParaRPr 格式入口；不参与普通渲染。 */
+  editInfo?: { textTemplate?: TextBody };
 }
 
 export interface UnsupportedElement extends ElementBase {

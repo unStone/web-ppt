@@ -24,7 +24,9 @@ export class SlideDomRenderer {
     const { presentation, editor, staticLayer, idPrefix, textMode } = this.options;
     const slideId = this.options.slideId();
     staticLayer.innerHTML = renderSlideToSvg(
-      presentation, editor.toSlide(slideId), { textMode, idPrefix: `${idPrefix}${slideId}-` },
+      presentation, editor.toSlide(slideId), {
+        textMode, idPrefix: `${idPrefix}${slideId}-`, includeEditMarkers: true,
+      },
     );
     bindSlideIdentities(staticLayer, editor.doc, slideId);
     this.renderSelection(selection);

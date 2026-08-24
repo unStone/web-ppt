@@ -39,6 +39,7 @@ interface Ctx {
   textMode: 'html' | 'svg';
   media: 'badge' | 'player';
   hidden: ReadonlySet<number> | null;
+  includeEditMarkers: boolean;
 }
 
 export interface RenderElementOptions {
@@ -70,6 +71,8 @@ export interface RenderElementOptions {
    * 产物要脱离浏览器使用（独立 SVG 文件 / 被光栅化），此时一律退回 badge。
   */
   media?: 'badge' | 'player';
+  /** 编辑器命中所需的稳定结构标记；普通预览与导出默认不携带交互元数据。 */
+  includeEditMarkers?: boolean;
 }
 
 export interface RenderOptions extends RenderElementOptions {
@@ -99,6 +102,7 @@ function createCtx(opts: RenderElementOptions): Ctx {
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
     hidden: opts.hiddenElements?.length ? new Set(opts.hiddenElements) : null,
+    includeEditMarkers: opts.includeEditMarkers === true,
   };
 }
 
@@ -654,7 +658,7 @@ function renderTable(el: TableElement, ctx: Ctx): string {
       const b: CellBorders = cell.borders ?? {};
 
       parts.push(
-        `<g transform="translate(${r(x)} ${r(y)})">` +
+        `<g${ctx.includeEditMarkers ? ` data-table-cell="${ri}:${ci}"` : ''} transform="translate(${r(x)} ${r(y)})">` +
         `<rect width="${r(cw)}" height="${r(ch)}" fill="${fillVal}"/>` +
         (cell.text ? renderText(cell.text, cw, ch, ctx, cell.margins, cell.vAlign, cell.vert) : '') +
         '</g>',
@@ -672,7 +676,10 @@ function renderTable(el: TableElement, ctx: Ctx): string {
     });
     y += row.height;
   });
-  return wrapEl(el, parts.join('') + lines.join(''), ctx);
+  const content = parts.join('') + lines.join('');
+  return wrapEl(el, el.flipH || el.flipV
+    ? `<g transform="${flipTransform(el)}">${content}</g>`
+    : content, ctx);
 }
 
 // ---------------- 批注标记 ----------------

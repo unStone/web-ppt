@@ -8,9 +8,10 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
   const base = edit.createDoc(pres, { idPrefix: 'invariant-' });
   const records = Object.values(base.elements);
   const shape = records.find((record) => record.src.name === '普通形状');
+  const table = records.find((record) => record.src.kind === 'table');
   const group = records.find((record) => record.src.kind === 'group');
   const frame = records.find((record) => record.meta.editable === 'frame');
-  if (!check('不变量固件元素身份完整', !!shape && !!group && !!frame)) return;
+  if (!check('不变量固件元素身份完整', !!shape && !!table && !!group && !!frame)) return;
 
   const rejects = (name, mutate) => {
     const candidate = structuredClone(base);
@@ -40,6 +41,20 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
   });
   rejects('拒绝为零的组子坐标范围', (doc) => { doc.elements[group.id].src.scaleX = 0; });
   rejects('拒绝没有段落的文本体', (doc) => { doc.elements[shape.id].src.text.paragraphs = []; });
+  rejects('拒绝非表格元素携带单元格覆盖', (doc) => {
+    doc.elements[shape.id].ovr.tableCells = { '0:0': { text: { kind: 'empty' } } };
+  });
+  rejects('拒绝空的单元格稀疏覆盖容器', (doc) => {
+    doc.elements[table.id].ovr.tableCells = {};
+  });
+  rejects('拒绝越界或非规范单元格覆盖坐标', (doc) => {
+    doc.elements[table.id].ovr.tableCells = { '00:99': { text: { kind: 'empty' } } };
+  });
+  rejects('拒绝缺字段或非法文本模型的单元格覆盖', (doc) => {
+    doc.elements[table.id].ovr.tableCells = {
+      '0:0': { text: { kind: 'flat', body: {}, paragraphs: [] } },
+    };
+  });
   rejects('拒绝同一 part 内重复的可写 spid', (doc) => {
     doc.elements[frame.id].meta.origin = { ...doc.elements[shape.id].meta.origin };
   });

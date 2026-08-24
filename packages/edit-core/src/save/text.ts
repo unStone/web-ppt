@@ -1,14 +1,16 @@
 import { DEFAULT_TEXT_LINE_HEIGHT } from '@web-ppt/core';
-import type { ElementRecord } from '../types';
+import type { TextBody } from '@web-ppt/core';
+import type { ElementRecord, TextOverride } from '../types';
 import type { FlatTextParagraph, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
+import { parseTableCellKey } from '../table-cell';
 import {
   cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild,
   replaceXmlChildren,
 } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
-import { findXmlChild, xmlElementChildren } from '../xml/query';
+import { findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
 import { locateElementHost } from './xfrm';
@@ -19,7 +21,8 @@ const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const
 const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'oMath', 'oMathPara', 'AlternateContent']);
 
 export function hasTextOverrides(record: ElementRecord): boolean {
-  return record.ovr.text !== undefined;
+  return record.ovr.text !== undefined || Object.values(record.ovr.tableCells ?? {})
+    .some((cell) => cell.text !== undefined);
 }
 
 function textUnits(paragraph: XmlElement): XmlElement[] {
@@ -367,9 +370,7 @@ function nonParagraphFormatProps(props: FlatTextParagraph['props']): object {
   return rest;
 }
 
-function isFormatOnly(record: ElementRecord, flat: Extract<ElementRecord['ovr']['text'], { kind: 'flat' }>): boolean {
-  const source = record.src.kind === 'shape' ? record.src.text ?? record.meta.textTemplate : null;
-  if (!source) return false;
+function isFormatOnly(source: TextBody, flat: Extract<TextOverride, { kind: 'flat' }>): boolean {
   const baseline = flattenTextBody(source);
   return JSON.stringify(flat.body) === JSON.stringify(baseline.body)
     && flat.paragraphs.length === baseline.paragraphs.length
@@ -386,10 +387,10 @@ function isFormatOnly(record: ElementRecord, flat: Extract<ElementRecord['ovr'][
 /** 纯格式操作只替换受影响 run 的原槽位；段落、未知节点与其它 run 保持原树身份。 */
 function patchFormatOnly(
   sourceParagraphs: readonly XmlElement[],
-  record: ElementRecord,
-  flat: Extract<ElementRecord['ovr']['text'], { kind: 'flat' }>,
+  source: TextBody,
+  flat: Extract<TextOverride, { kind: 'flat' }>,
 ): boolean {
-  if (!isFormatOnly(record, flat) || sourceParagraphs.length !== flat.paragraphs.length) return false;
+  if (!isFormatOnly(source, flat) || sourceParagraphs.length !== flat.paragraphs.length) return false;
   flat.paragraphs.forEach((paragraph, paragraphIndex) => {
     const sourceParagraph = sourceParagraphs[paragraphIndex];
     paragraphProperties(sourceParagraph, paragraph, flat.body.lnSpcReduction ?? 0);
@@ -431,25 +432,21 @@ function patchFormatOnly(
 }
 
 /** 只替换段落序列；bodyPr、lstStyle、命名空间与宿主身份全部原样保留。 */
-export function patchElementText(document: XmlDocument, record: ElementRecord): void {
-  if (!record.ovr.text) return;
-  if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
-    throw new Error(`元素 ${record.id} 不能写回文本`);
-  }
-  const { host } = locateElementHost(document, record);
-  const body = findXmlChild(host, { localName: 'txBody', namespaceUri: PRESENTATIONML_NS });
-  if (!body) throw new Error(`文本形状 ${record.id} 缺少 p:txBody`);
+function patchTextBody(
+  body: XmlElement,
+  source: TextBody,
+  override: TextOverride,
+): void {
   const sourceParagraphs = xmlElementChildren(body, { localName: 'p', namespaceUri: DRAWINGML_NS });
-  if (record.ovr.text.kind === 'flat'
-    && patchFormatOnly(sourceParagraphs, record, record.ovr.text)) return;
+  if (override.kind === 'flat' && patchFormatOnly(sourceParagraphs, source, override)) return;
   for (const paragraph of sourceParagraphs) {
     removeXmlChild(body, paragraph);
   }
-  if (record.ovr.text.kind === 'flat') {
-    const preservedNodes = assignPreservedNodes(sourceParagraphs, record.ovr.text.paragraphs);
-    for (const [index, paragraph] of record.ovr.text.paragraphs.entries()) {
+  if (override.kind === 'flat') {
+    const preservedNodes = assignPreservedNodes(sourceParagraphs, override.paragraphs);
+    for (const [index, paragraph] of override.paragraphs.entries()) {
       appendFlatParagraph(
-        body, sourceParagraphs, paragraph, record.ovr.text.body.lnSpcReduction ?? 0,
+        body, sourceParagraphs, paragraph, override.body.lnSpcReduction ?? 0,
         preservedNodes[index],
       );
     }
@@ -459,4 +456,39 @@ export function patchElementText(document: XmlDocument, record: ElementRecord): 
   insertXmlInOrder(body, paragraph);
   const end = namespacedElement(paragraph, DRAWINGML_NS, 'endParaRPr');
   insertXmlChildUnchecked(paragraph, end);
+}
+
+/** 形状与表格只在宿主定位上不同，段落保留算法必须共用。 */
+export function patchElementText(document: XmlDocument, record: ElementRecord): void {
+  if (!hasTextOverrides(record)) return;
+  if (record.meta.editable !== 'full') throw new Error(`元素 ${record.id} 不能写回文本`);
+  const { host } = locateElementHost(document, record);
+  if (record.ovr.text) {
+    if (record.src.kind !== 'shape') throw new Error(`元素 ${record.id} 的形状文本覆盖无效`);
+    const source = record.src.text ?? record.meta.textTemplate;
+    const body = findXmlChild(host, { localName: 'txBody', namespaceUri: PRESENTATIONML_NS });
+    if (!source || !body) throw new Error(`文本形状 ${record.id} 缺少 p:txBody`);
+    patchTextBody(body, source, record.ovr.text);
+  }
+  if (!record.ovr.tableCells || !Object.keys(record.ovr.tableCells).length) return;
+  if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的单元格文本覆盖无效`);
+  const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
+  if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
+  const rows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
+  for (const [key, cellOverride] of Object.entries(record.ovr.tableCells)) {
+    if (!cellOverride.text) continue;
+    const address = parseTableCellKey(key);
+    if (!address) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
+    const { r, c } = address;
+    const source = record.src.rows[r]?.cells[c];
+    const sourceText = source?.text ?? source?.editInfo?.textTemplate;
+    const cell = rows[r] && xmlElementChildren(
+      rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS },
+    )[c];
+    const body = cell && findXmlChild(cell, { localName: 'txBody', namespaceUri: DRAWINGML_NS });
+    if (!sourceText || source?.merged || !body) {
+      throw new Error(`表格 ${record.id} 的单元格不可写回：${r},${c}`);
+    }
+    patchTextBody(body, sourceText, cellOverride.text);
+  }
 }

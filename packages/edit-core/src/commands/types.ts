@@ -2,6 +2,7 @@ import type { GeomSpec, SlideElement } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
+  TableCellAddress,
 } from '../types';
 import type { AffineMatrix } from '../space';
 
@@ -144,6 +145,7 @@ export type TextEditOp = {
 export interface EditTextCommand {
   readonly type: 'EditText';
   readonly id: ElementId;
+  readonly cell?: TableCellAddress;
   /** 操作按数组顺序作用于前一个操作的结果，便于 beforeinput 批量提交。 */
   readonly ops: readonly TextEditOp[];
 }
@@ -156,6 +158,7 @@ export interface TextRange {
 export interface SetRunPropsCommand {
   readonly type: 'SetRunProps';
   readonly id: ElementId;
+  readonly cell?: TableCellAddress;
   readonly range: TextRange;
   readonly props: RunPropertyOverrides;
 }
@@ -163,6 +166,7 @@ export interface SetRunPropsCommand {
 export interface SetParaPropsCommand {
   readonly type: 'SetParaProps';
   readonly id: ElementId;
+  readonly cell?: TableCellAddress;
   readonly range: TextRange;
   readonly props: ParagraphPropertyOverrides;
 }
@@ -191,6 +195,15 @@ export type ElementTextPatch = {
 } | {
   readonly op: 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
+  readonly origin: string;
+} | {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', number, number, 'text'];
+  readonly value: TextOverride;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', number, number, 'text'];
   readonly origin: string;
 };
 
@@ -234,7 +247,7 @@ export interface TextPosition {
 export type Selection =
   | { readonly kind: 'none' }
   | { readonly kind: 'elements'; readonly ids: readonly ElementId[]; readonly enteredGroup: ElementId | null }
-  | { readonly kind: 'text'; readonly id: ElementId; readonly anchor: TextPosition; readonly focus: TextPosition }
+  | { readonly kind: 'text'; readonly id: ElementId; readonly cell?: TableCellAddress; readonly anchor: TextPosition; readonly focus: TextPosition }
   | { readonly kind: 'table'; readonly id: ElementId; readonly cells: readonly { r: number; c: number }[] };
 
 export interface HistoryEntry extends CommandPatches {

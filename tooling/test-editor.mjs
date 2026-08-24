@@ -23,6 +23,7 @@ import { runRunFormatEditorContract } from './lib/run-format-editor-contract.mjs
 import { runParagraphFormatEditorContract } from './lib/paragraph-format-editor-contract.mjs';
 import { runRichTextClipboardEditorContract } from './lib/rich-text-clipboard-editor-contract.mjs';
 import { runEngineTextEditorContract } from './lib/engine-text-editor-contract.mjs';
+import { runTableCellTextEditorContract } from './lib/table-cell-text-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -200,6 +201,7 @@ await runRunFormatEditorContract({ check, lib, root, window: domEnvironment.wind
 await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironment.window });
 await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
+await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

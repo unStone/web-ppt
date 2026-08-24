@@ -53,7 +53,7 @@ function renderElementParts(
   textMode: 'html' | 'svg',
 ): { next: SVGElement; nextDefs: SVGElement[] } | null {
   const rendered = renderElementToSvg(editor.effectiveElement(id), {
-    textMode, idPrefix: `${idPrefix}${id}-`,
+    textMode, idPrefix: `${idPrefix}${id}-`, includeEditMarkers: true,
   });
   const markup = svgChildren(staticLayer.ownerDocument, rendered.markup);
   if (markup.length !== 1) return null;

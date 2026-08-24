@@ -8,6 +8,13 @@ export type SlideId = string;
 export type FractionalIndex = string;
 export type EditableKind = 'full' | 'frame' | 'none';
 
+export interface TableCellAddress {
+  readonly r: number;
+  readonly c: number;
+}
+
+export type TableCellKey = `${number}:${number}`;
+
 export interface ElementInsertionSource {
   readonly markup: string;
   readonly namespaces: Readonly<Record<string, string>>;
@@ -55,7 +62,13 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   alpha?: ImageElement['alpha'];
   filter?: ImageElement['filter'];
   text?: TextOverride;
+  /** 表格不是元素树；单元格文字按坐标稀疏覆盖，避免伪造 SlideElement 身份。 */
+  tableCells?: Record<TableCellKey, TableCellOverrides>;
 };
+
+export interface TableCellOverrides {
+  text?: TextOverride;
+}
 
 export interface TextMark {
   readonly from: number;

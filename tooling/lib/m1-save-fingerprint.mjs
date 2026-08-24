@@ -47,14 +47,18 @@ if (mode === 'projected') {
       const textTarget = Object.values(doc.elements)
         .find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少文字目标：${change.targetName}`);
-      editor.exec({ type: 'EditText', id: textTarget.id, ops: change.ops });
+      editor.exec({
+        type: 'EditText', id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}), ops: change.ops,
+      });
     }
     for (const change of scenario.formats ?? []) {
       const textTarget = Object.values(doc.elements)
         .find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少格式目标：${change.targetName}`);
       editor.exec({
-        type: 'SetRunProps', id: textTarget.id, range: change.range, props: change.props,
+        type: 'SetRunProps', id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
       });
     }
     for (const change of scenario.paragraphFormats ?? []) {
@@ -62,7 +66,8 @@ if (mode === 'projected') {
         .find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少段落格式目标：${change.targetName}`);
       editor.exec({
-        type: 'SetParaProps', id: textTarget.id, range: change.range, props: change.props,
+        type: 'SetParaProps', id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
       });
     }
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');

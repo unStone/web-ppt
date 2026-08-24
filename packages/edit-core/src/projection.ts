@@ -1,7 +1,8 @@
 import { resolveGeomPath } from '@web-ppt/core/geometry';
-import type { GroupElement, ImageElement, ShapeElement, Slide, SlideElement } from '@web-ppt/core';
+import type { GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { textBodyFromOverride } from './text-model';
+import { tableCellKey } from './table-cell';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -31,11 +32,27 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
-  let out = { ...record.src, ...record.ovr } as unknown as SlideElement;
+  const { tableCells, ...overrides } = record.ovr;
+  let out = { ...record.src, ...overrides } as unknown as SlideElement;
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
     out = { ...out, text: textBodyFromOverride(record.ovr.text) } as ShapeElement;
+  } else if (out.kind === 'table' && tableCells) {
+    const rows = out.rows.map((row, r) => {
+      let changed = false;
+      const cells = row.cells.map((cell, c) => {
+        const override = tableCells[tableCellKey({ r, c })]?.text;
+        if (!override) return cell;
+        changed = true;
+        return {
+          ...cell,
+          text: override.kind === 'empty' ? null : textBodyFromOverride(override),
+        };
+      });
+      return changed ? { ...row, cells } : row;
+    });
+    out = { ...out, rows } as TableElement;
   }
   if (out.kind === 'group') {
     const source = record.src as GroupElement;

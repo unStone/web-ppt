@@ -18,6 +18,7 @@ import { runTrustedClipboardContract } from './lib/editor-clipboard-trusted-cont
 import { runTrustedTextContract } from './lib/editor-text-trusted-contract.mjs';
 import { runTrustedEngineTextContract } from './lib/editor-engine-text-trusted-contract.mjs';
 import { runTrustedRichTextClipboardContract } from './lib/editor-rich-text-clipboard-trusted-contract.mjs';
+import { runTrustedTableCellTextContract } from './lib/editor-table-cell-text-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -225,6 +226,8 @@ async function browserResult(webSocketDebuggerUrl) {
           engineTextP95: report.dataset.engineTextP95,
           engineLineError: report.dataset.engineLineError,
           engineAutoProbe: report.dataset.engineAutoProbe,
+          tableCellTextP95: report.dataset.tableCellTextP95,
+          tableCellGeometryError: report.dataset.tableCellGeometryError,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -440,6 +443,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedRichTextClipboardContract({ evaluate, dispatchKey });
         const trustedTextP95 = await runTrustedTextContract({ evaluate, request });
         await runTrustedEngineTextContract({ evaluate, request });
+        await runTrustedTableCellTextContract({ evaluate, request });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -457,6 +461,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedRichTextClipboard = 'pass';
           report.dataset.trustedText = 'pass';
           report.dataset.trustedEngineText = 'pass';
+          report.dataset.trustedTableCellText = 'pass';
           report.dataset.trustedTextP95 = '${trustedTextP95}';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
@@ -469,6 +474,7 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedRichTextClipboard: 'pass',
           trustedText: 'pass',
           trustedEngineText: 'pass',
+          trustedTableCellText: 'pass',
           trustedTextP95,
         };
       }
@@ -530,6 +536,7 @@ try {
     + ` · 富文本2000 p95 ${result.richTextPasteP95}ms`
     + ` · engine2000 p95 ${result.engineTextP95}ms/行盒偏差 ${result.engineLineError}px`
     + ` · auto engine ${result.engineAutoProbe}`
+    + ` · table20×10 ${result.tableCellTextP95}ms/贴合偏差 ${result.tableCellGeometryError}px`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
@@ -540,6 +547,7 @@ try {
     + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`
     + ` · trusted text/IME ${result.trustedText}`
     + ` · trusted engine text/IME ${result.trustedEngineText}`
+    + ` · trusted table cell text/IME ${result.trustedTableCellText}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } catch (error) {
   console.error(error instanceof Error ? error.stack : String(error));

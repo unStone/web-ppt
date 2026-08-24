@@ -144,6 +144,12 @@ export function elementFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMa
   );
 }
 
+/** 元素内容坐标还要经过自身翻转；frame 几何本身不含这一步。 */
+export function elementContentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const element = effectiveElement(doc, id);
+  return composeSpaceMatrices(elementFrameToSlideMatrix(doc, id), flipInFrame(element));
+}
+
 export function elementParentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
   return parentToSlideMatrix(doc, elementChain(doc, id));
 }

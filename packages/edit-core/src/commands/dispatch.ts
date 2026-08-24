@@ -36,9 +36,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
-  EditText: register<EditTextCommand>(['id', 'ops'], editTextPatches),
-  SetRunProps: register<SetRunPropsCommand>(['id', 'range', 'props'], setRunPropsPatches),
-  SetParaProps: register<SetParaPropsCommand>(['id', 'range', 'props'], setParaPropsPatches),
+  EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
+  SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
+  SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
 };
 
 function assertPureCommand(input: Command): void {

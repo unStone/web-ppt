@@ -14,6 +14,7 @@ import { combineSelectionIds, selectionModifierActive } from './selection-combin
 import {
   alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
   outermostHitCandidate, selectableElementIdsFromPath,
+  tableCellAddressFromPath,
 } from './selection-hit';
 import { TextEditorController } from './text-editor';
 import { claimTextEditing, releaseTextEditing, sessionState } from './session-state';
@@ -198,7 +199,8 @@ class DomSlideEditor implements SlideEditor {
       this.currentSlide,
     );
     const textId = this.outermostCandidate(candidates, enteredGroup);
-    if (textId && this.textEditor.enter(textId)) {
+    const cell = tableCellAddressFromPath(event.composedPath(), this.staticLayer);
+    if (textId && (cell ? this.textEditor.enterCell(textId, cell) : this.textEditor.enter(textId))) {
       event.preventDefault();
       return;
     }

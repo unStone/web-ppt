@@ -1,8 +1,12 @@
 import { effectiveElement } from './projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex } from './fractional-index';
-import type { EditDoc, ElementId, ElementRecord, SlideId } from './types';
+import { assertDataObject } from './data-validation';
+import { validateFlatTextOverride } from './text-override-validation';
+import type { EditDoc, ElementId, ElementRecord, SlideId, TextOverride } from './types';
+import { parseTableCellKey } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
+import { textTargetContext } from './commands/text-target';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -27,10 +31,46 @@ function assertTextBodies(record: ElementRecord): void {
   const bodies = record.src.kind === 'shape'
     ? [record.src.text]
     : record.src.kind === 'table'
-      ? record.src.rows.flatMap((row) => row.cells.map((cell) => cell.text))
+      ? record.src.rows.flatMap((row) => row.cells.map((cell) => cell.text ?? cell.editInfo?.textTemplate ?? null))
       : [];
   if (bodies.some((body) => body !== null && body.paragraphs.length === 0)) {
     throw new Error(`元素 ${record.id} 的文本体至少需要一个段落`);
+  }
+}
+
+function assertTextOverride(value: unknown, label: string): asserts value is TextOverride {
+  if (!value || typeof value !== 'object') throw new Error(`${label} 无效`);
+  const kind = (value as { kind?: unknown }).kind;
+  if (kind === 'empty') {
+    assertDataObject(value, ['kind'], label);
+    return;
+  }
+  if (kind !== 'flat') throw new Error(`${label} 类型无效`);
+  assertDataObject(value, ['kind', 'body', 'paragraphs'], label);
+  validateFlatTextOverride(value as Extract<TextOverride, { kind: 'flat' }>);
+}
+
+/** 稀疏文字覆盖是公开模型入口；不能只依赖命令曾经正确地产生过它。 */
+function assertTextOverrides(doc: EditDoc, record: ElementRecord): void {
+  if (record.ovr.text !== undefined) {
+    textTargetContext(doc, { id: record.id });
+    assertTextOverride(record.ovr.text, `元素 ${record.id} 的文字覆盖`);
+  }
+  const cells = record.ovr.tableCells;
+  if (cells === undefined) return;
+  if (record.src.kind !== 'table') throw new Error(`非表格元素 ${record.id} 不能包含单元格覆盖`);
+  assertDataObject(cells, Object.keys(cells), `表格 ${record.id} 的单元格覆盖`);
+  const entries = Object.entries(cells);
+  if (!entries.length) throw new Error(`表格 ${record.id} 的单元格覆盖不能为空`);
+  for (const [key, value] of entries) {
+    const cell = parseTableCellKey(key);
+    if (!cell) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
+    textTargetContext(doc, { id: record.id, cell });
+    assertDataObject(value, ['text'], `表格 ${record.id} 的单元格覆盖 ${key}`);
+    if (!own(value, 'text') || value.text === undefined) {
+      throw new Error(`表格 ${record.id} 的单元格覆盖 ${key} 不能为空`);
+    }
+    assertTextOverride(value.text, `表格 ${record.id} 的单元格文字覆盖 ${key}`);
   }
 }
 
@@ -54,6 +94,7 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     const record = doc.elements[id];
     if (!record) throw new Error(`元素不存在：${id}`);
     assertParentChain(doc, id);
+    assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
   }
@@ -135,6 +176,7 @@ export function validateEditDoc(doc: EditDoc): void {
 
   const spids = new Set<string>();
   for (const [id, record] of Object.entries(doc.elements)) {
+    assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
     if (record.meta.origin) {

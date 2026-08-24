@@ -1,25 +1,35 @@
-import { renderTextBodyToHtml } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import {
-  applyRunProps, applyTextEditOps, elementFrameToSlideMatrix, slideOfElement,
+  applyRunProps, applyTextEditOps, slideOfElement, tableCellKey,
   queryParaProps as queryHeadlessParaProps, queryRunProps, textBodyEditText, textBodyFromOverride,
   textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
   EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides,
-  RunPropertiesState, RunPropertyOverrides, Selection, TextEditOp, TextPosition,
+  RunPropertiesState, RunPropertyOverrides, Selection, TableCellAddress, TextEditOp, TextPosition,
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import {
-  compositionChangedRange, domPointAt, rangePositions, readEditableDom, rebaseRange,
+  compositionChangedRange, rangePositions, readEditableDom, rebaseRange,
 } from './text-dom';
 import { TextClipboardController } from './text-clipboard-controller';
 import type { ActiveText, CompositionSnapshot, TextEditorControllerOptions } from './text-editor-types';
+import { nextEditableTableCell, resolveActiveText } from './text-editor-target';
+import { createTextEditorRoot, setTextDomSelection } from './text-editor-view';
+import { planTextInput } from './text-input-plan';
+
+const sameCell = (left: TableCellAddress | null | undefined, right: TableCellAddress | null | undefined): boolean =>
+  left?.r === right?.r && left?.c === right?.c && (!!left === !!right);
+
+function targetFields(cell: TableCellAddress | null): { cell?: TableCellAddress } {
+  return cell ? { cell: { ...cell } } : {};
+}
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
   private readonly clipboard: TextClipboardController;
   private activeId: ElementId | null = null;
+  private activeCell: TableCellAddress | null = null;
   private root: HTMLDivElement | null = null;
   private composing = false;
   private composition: CompositionSnapshot | null = null;
@@ -54,7 +64,9 @@ export class TextEditorController {
   queryRunProps(): RunPropertiesState | null {
     const context = this.textContext();
     if (!context) return null;
-    const state = queryRunProps(this.options.editor.doc, context.id, context.positions);
+    const state = queryRunProps(
+      this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
+    );
     if (textPositionToIndex(context.text, context.positions.from)
       !== textPositionToIndex(context.text, context.positions.to)) return state;
     return Object.fromEntries(Object.entries(state).map(([field, value]) => {
@@ -65,16 +77,23 @@ export class TextEditorController {
 
   queryParaProps(): ParagraphPropertiesState | null {
     const context = this.textContext();
-    return context ? queryHeadlessParaProps(this.options.editor.doc, context.id, context.positions) : null;
+    return context
+      ? queryHeadlessParaProps(
+        this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
+      )
+      : null;
   }
 
   setParaProps(props: ParagraphPropertyOverrides): boolean {
     const context = this.textContext();
     if (!context || this.composing) return false;
     this.options.editor.transaction((transaction) => {
-      transaction.exec({ type: 'SetParaProps', id: context.id, range: context.positions, props });
+      transaction.exec({
+        type: 'SetParaProps', id: context.id, ...targetFields(context.cell),
+        range: context.positions, props,
+      });
       transaction.select({
-        kind: 'text', id: context.id,
+        kind: 'text', id: context.id, ...targetFields(context.cell),
         anchor: context.positions.from, focus: context.positions.to,
       });
     }, '设置段落格式');
@@ -89,14 +108,15 @@ export class TextEditorController {
     const from = textPositionToIndex(context.text, context.positions.from);
     const to = textPositionToIndex(context.text, context.positions.to);
     const command = {
-      type: 'SetRunProps' as const, id: context.id, range: context.positions, props,
+      type: 'SetRunProps' as const, id: context.id, ...targetFields(context.cell),
+      range: context.positions, props,
     };
     if (from === to) {
       // headless no-op 仍负责统一校验；视图只保存不能进入 OOXML 的待输入状态。
       this.options.editor.exec(command);
       this.pendingRunProps = { ...this.pendingRunProps, ...props };
       this.options.editor.select({
-        kind: 'text', id: context.id,
+        kind: 'text', id: context.id, ...targetFields(context.cell),
         anchor: context.positions.from, focus: context.positions.to,
       });
     } else {
@@ -104,7 +124,7 @@ export class TextEditorController {
       this.options.editor.transaction((transaction) => {
         transaction.exec(command);
         transaction.select({
-          kind: 'text', id: context.id,
+          kind: 'text', id: context.id, ...targetFields(context.cell),
           anchor: context.positions.from, focus: context.positions.to,
         });
       }, '设置字符格式');
@@ -119,19 +139,27 @@ export class TextEditorController {
   }
 
   enter(id: ElementId): boolean {
-    const record = this.options.editor.doc.elements[id];
-    const element = record && this.options.editor.effectiveElement(id);
-    const text = record && element.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
-    if (!record || record.meta.editable !== 'full' || element.kind !== 'shape' || !text
-      || slideOfElement(this.options.editor.doc, id) !== this.options.slideId()) return false;
+    return this.enterTarget(id, null);
+  }
+
+  enterCell(id: ElementId, cell: TableCellAddress): boolean {
+    return this.enterTarget(id, cell);
+  }
+
+  private enterTarget(id: ElementId, cell: TableCellAddress | null): boolean {
+    const active = resolveActiveText(this.options.editor, id, cell);
+    if (!active || slideOfElement(this.options.editor.doc, id) !== this.options.slideId()) return false;
     this.options.claim();
     this.activeId = id;
+    this.activeCell = cell ? { ...cell } : null;
     this.pendingRunProps = {};
     this.staticStale = false;
     this.render();
     this.options.boundary.ownerDocument.addEventListener('pointerdown', this.onDocumentPointerDown, true);
-    const end = textPositionAtIndex(text, textBodyEditText(text).length);
-    this.options.editor.select({ kind: 'text', id, anchor: end, focus: end });
+    const end = textPositionAtIndex(active.text, textBodyEditText(active.text).length);
+    this.options.editor.select({
+      kind: 'text', id, ...targetFields(this.activeCell), anchor: end, focus: end,
+    });
     this.root?.focus({ preventScroll: true });
     this.setCaret(end);
     return true;
@@ -143,6 +171,7 @@ export class TextEditorController {
     const id = this.activeId;
     const syncStatic = this.staticStale;
     this.activeId = null;
+    this.activeCell = null;
     this.composing = false;
     this.composition = null;
     this.pendingRunProps = {};
@@ -166,6 +195,19 @@ export class TextEditorController {
       this.close(false);
       return;
     }
+    if (!sameCell(change.selection.cell, this.activeCell)) {
+      if (this.composing) return this.close(false);
+      this.restoreStaticText();
+      if (this.staticStale || change.renderElements.has(this.activeId)) {
+        this.options.syncStatic(this.activeId);
+      }
+      this.staticStale = false;
+      this.activeCell = change.selection.cell ? { ...change.selection.cell } : null;
+      this.pendingRunProps = {};
+      if (!this.activeText()) return this.close(false);
+      this.render(change.selection);
+      return;
+    }
     if (this.composing) {
       this.staticStale ||= change.renderElements.has(this.activeId);
       return;
@@ -186,6 +228,7 @@ export class TextEditorController {
 
   private textContext(): {
     id: ElementId;
+    cell: TableCellAddress | null;
     text: TextBody;
     positions: { from: TextPosition; to: TextPosition };
   } | null {
@@ -194,45 +237,25 @@ export class TextEditorController {
     const dom = rangePositions(this.root, active.text);
     const selection = this.options.editor.selection;
     const positions = dom ?? (selection.kind === 'text' && selection.id === active.id
+      && sameCell(selection.cell, active.cell)
       ? { from: selection.anchor, to: selection.focus } : null);
-    return positions ? { id: active.id, text: active.text, positions } : null;
+    return positions
+      ? { id: active.id, cell: active.cell ? { ...active.cell } : null, text: active.text, positions }
+      : null;
   }
 
   private activeText(): ActiveText | null {
     if (!this.activeId) return null;
-    const record = this.options.editor.doc.elements[this.activeId];
-    const element = record && this.options.editor.effectiveElement(this.activeId);
-    const text = element?.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
-    return element?.kind === 'shape' && text ? { id: this.activeId, element, text } : null;
+    return resolveActiveText(this.options.editor, this.activeId, this.activeCell);
   }
 
   private render(selection?: Selection): void {
     const active = this.activeText();
     if (!active) return this.close(false);
-    const { id, element, text } = active;
-    const root = this.options.textLayer.ownerDocument.createElement('div');
-    root.dataset.pptTextEditor = id;
-    root.setAttribute('contenteditable', 'true');
-    root.setAttribute('role', 'textbox');
-    root.setAttribute('aria-multiline', 'true');
-    root.spellcheck = false;
-    root.style.position = 'absolute';
-    root.style.left = '0';
-    root.style.top = '0';
-    root.style.width = `${element.w}px`;
-    root.style.height = `${element.h}px`;
-    root.style.transformOrigin = '0 0';
-    const matrix = elementFrameToSlideMatrix(this.options.editor.doc, id);
-    root.style.transform = `matrix(${matrix.a},${matrix.b},${matrix.c},${matrix.d},${matrix.e},${matrix.f})`;
-    root.style.pointerEvents = 'auto';
-    root.style.outline = 'none';
-    root.innerHTML = renderTextBodyToHtml(text, element.w, element.h, {
-      includeEditMarkers: true,
-      layout: this.options.textLayout,
-    });
-    for (const formula of root.querySelectorAll<HTMLElement>('svg[data-r]')) {
-      formula.contentEditable = 'false';
-    }
+    const { id, cell } = active;
+    const root = createTextEditorRoot(
+      this.options.textLayer.ownerDocument, active, this.options.textLayout,
+    );
     this.bind(root);
     const restoreFocus = this.root?.ownerDocument.activeElement === this.root;
     this.root?.replaceWith(root);
@@ -240,7 +263,9 @@ export class TextEditorController {
     this.root = root;
     if (restoreFocus) root.focus({ preventScroll: true });
     this.hideStaticText();
-    if (selection?.kind === 'text') this.setSelection(selection.anchor, selection.focus);
+    if (selection?.kind === 'text' && selection.id === id && sameCell(selection.cell, cell)) {
+      this.setSelection(selection.anchor, selection.focus);
+    }
   }
 
   private bind(root: HTMLDivElement): void {
@@ -268,6 +293,12 @@ export class TextEditorController {
         this.close();
         return;
       }
+      if (event.key === 'Tab' && this.activeCell) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.navigateTableCell(event.shiftKey);
+        return;
+      }
       if (event.altKey || (!event.ctrlKey && !event.metaKey)) return;
       const field = ({ b: 'b', i: 'i', u: 'u' } as const)[event.key.toLowerCase() as 'b' | 'i' | 'u'];
       if (!field || !this.formatSelection(field)) return;
@@ -276,11 +307,34 @@ export class TextEditorController {
     });
   }
 
+  private navigateTableCell(reverse: boolean): void {
+    if (!this.activeId || !this.activeCell || this.composing) return;
+    const element = this.options.editor.effectiveElement(this.activeId);
+    if (element.kind !== 'table') return;
+    const next = nextEditableTableCell(element, this.activeCell, reverse);
+    // 末格新增行必须走后续 InsertRow 结构命令；当前阶段只守住焦点所有权。
+    if (!next) return;
+    this.restoreStaticText();
+    if (this.staticStale) this.options.syncStatic(this.activeId);
+    this.staticStale = false;
+    this.activeCell = { ...next };
+    this.pendingRunProps = {};
+    const active = this.activeText();
+    if (!active) return this.close(false);
+    this.render();
+    const end = textPositionAtIndex(active.text, textBodyEditText(active.text).length);
+    this.options.editor.select({
+      kind: 'text', id: active.id, cell: { ...next }, anchor: end, focus: end,
+    });
+    this.root?.focus({ preventScroll: true });
+    this.setCaret(end);
+  }
+
   private syncSelection(): void {
     if (this.composing) return;
     const context = this.textContext();
     if (context) this.options.editor.select({
-      kind: 'text', id: context.id,
+      kind: 'text', id: context.id, ...targetFields(context.cell),
       anchor: context.positions.from, focus: context.positions.to,
     });
   }
@@ -290,64 +344,17 @@ export class TextEditorController {
     if (this.clipboard.beforeInput(event)) return;
     const context = this.textContext();
     if (!context) return;
-    const { text, positions } = context;
-    const formatField = ({
-      formatBold: 'b', formatItalic: 'i', formatUnderline: 'u',
-    } as const)[event.inputType as 'formatBold' | 'formatItalic' | 'formatUnderline'];
-    if (formatField) {
-      event.preventDefault();
-      this.formatSelection(formatField, positions);
-      return;
-    }
-    let fromIndex = textPositionToIndex(text, positions.from);
-    let toIndex = textPositionToIndex(text, positions.to);
-    let ops: TextEditOp[] = [];
-    let nextIndex = fromIndex;
-    let insertedFrom: number | null = null;
-    let label = '文字输入';
-    if (event.inputType === 'insertText') {
-      const text = event.data ?? '';
-      ops = [{ type: 'replace', ...positions, text }];
-      insertedFrom = fromIndex;
-      nextIndex += text.length;
-    } else if (event.inputType === 'deleteContentBackward') {
-      if (fromIndex === toIndex) fromIndex = Math.max(0, fromIndex - 1);
-      ops = [{ type: 'replace', from: textPositionAtIndex(text, fromIndex), to: positions.to, text: '' }];
-      nextIndex = fromIndex;
-    } else if (event.inputType === 'deleteContentForward') {
-      if (fromIndex === toIndex) toIndex = Math.min(textBodyEditText(text).length, toIndex + 1);
-      ops = [{ type: 'replace', from: positions.from, to: textPositionAtIndex(text, toIndex), text: '' }];
-    } else if (event.inputType === 'insertParagraph') {
-      label = '新建段落';
-      let at = positions.from;
-      if (fromIndex !== toIndex) {
-        const remove: TextEditOp = { type: 'replace', ...positions, text: '' };
-        const interim = applyTextEditOps(text, [remove]);
-        if (interim.kind !== 'flat') return;
-        at = textPositionAtIndex(textBodyFromOverride(interim), fromIndex);
-        ops.push(remove);
-      }
-      ops.push({ type: 'splitParagraph', at });
-      nextIndex++;
-    } else if (event.inputType === 'insertLineBreak') {
-      label = '插入换行';
-      let at = positions.from;
-      if (fromIndex !== toIndex) {
-        const remove: TextEditOp = { type: 'replace', ...positions, text: '' };
-        const interim = applyTextEditOps(text, [remove]);
-        if (interim.kind !== 'flat') return;
-        at = textPositionAtIndex(textBodyFromOverride(interim), fromIndex);
-        ops.push(remove);
-      }
-      ops.push({ type: 'insertLineBreak', at });
-      nextIndex++;
-    } else if (event.inputType === 'historyUndo') {
-      event.preventDefault(); this.options.editor.undo(); return;
-    } else if (event.inputType === 'historyRedo') {
-      event.preventDefault(); this.options.editor.redo(); return;
-    } else return;
+    const plan = planTextInput(context.text, context.positions, event.inputType, event.data);
+    if (!plan) return;
     event.preventDefault();
-    this.commit(ops, nextIndex, label, insertedFrom);
+    if (plan.type === 'format') {
+      this.formatSelection(plan.field, context.positions);
+    } else if (plan.type === 'history') {
+      if (plan.direction === 'undo') this.options.editor.undo();
+      else this.options.editor.redo();
+    } else {
+      this.commit(plan.ops, plan.nextIndex, plan.label, plan.insertedFrom);
+    }
   }
 
   private commit(
@@ -358,8 +365,11 @@ export class TextEditorController {
   ): void {
     const active = this.activeText();
     if (!active) return;
-    const { id, text } = active;
-    const currentOverride = this.options.editor.doc.elements[id].ovr.text;
+    const { id, cell, text } = active;
+    const record = this.options.editor.doc.elements[id];
+    const currentOverride = cell
+      ? record.ovr.tableCells?.[tableCellKey(cell)]?.text
+      : record.ovr.text;
     // 选区必须按命令实际使用的 flat mark 身份预测；从投影重新 flatten 会丢失来源边界。
     const predicted = applyTextEditOps(
       text, ops, currentOverride?.kind === 'flat' ? currentOverride : undefined,
@@ -378,19 +388,21 @@ export class TextEditorController {
     if (formatted.kind !== 'flat') return;
     const caret = textPositionAtIndex(textBodyFromOverride(formatted), nextIndex);
     const selection: Selection = {
-      kind: 'text', id, anchor: caret, focus: caret,
+      kind: 'text', id, ...targetFields(cell ?? null), anchor: caret, focus: caret,
     };
     this.options.editor.transaction((transaction) => {
-      transaction.exec({ type: 'EditText', id, ops });
+      transaction.exec({ type: 'EditText', id, ...targetFields(cell ?? null), ops });
       if (formatRange) {
         transaction.exec({
-          type: 'SetRunProps', id,
+          type: 'SetRunProps', id, ...targetFields(cell ?? null),
           range: formatRange,
           props: this.pendingRunProps,
         });
       }
       transaction.select(selection);
-    }, label, label === '文字输入' ? { mergeKey: `text:${id}` } : {});
+    }, label, label === '文字输入'
+      ? { mergeKey: `text:${id}${cell ? `:${cell.r}:${cell.c}` : ''}` }
+      : {});
     this.setCaret(caret);
   }
 
@@ -435,13 +447,16 @@ export class TextEditorController {
     if (!context || !positions) return false;
     const from = textPositionToIndex(context.text, positions.from);
     const to = textPositionToIndex(context.text, positions.to);
-    const state = queryRunProps(this.options.editor.doc, this.activeId, positions)[field];
+    const state = queryRunProps(
+      this.options.editor.doc, this.activeId, positions, this.activeCell ?? undefined,
+    )[field];
     const pending = this.pendingRunProps[field];
     const current = from === to && typeof pending === 'boolean'
       ? pending : !state.mixed && state.value === true;
     const value = !current;
     const selection: Selection = {
-      kind: 'text', id: this.activeId, anchor: positions.from, focus: positions.to,
+      kind: 'text', id: this.activeId, ...targetFields(this.activeCell),
+      anchor: positions.from, focus: positions.to,
     };
     if (from === to) {
       return this.setRunProps({ [field]: value });
@@ -450,7 +465,8 @@ export class TextEditorController {
     const labels = { b: '粗体', i: '斜体', u: '下划线' } as const;
     this.options.editor.transaction((transaction) => {
       transaction.exec({
-        type: 'SetRunProps', id: this.activeId!, range: positions, props: { [field]: value },
+        type: 'SetRunProps', id: this.activeId!, ...targetFields(this.activeCell),
+        range: positions, props: { [field]: value },
       });
       transaction.select(selection);
     }, `设置${labels[field]}`);
@@ -458,16 +474,7 @@ export class TextEditorController {
   }
 
   private setSelection(anchor: TextPosition, focus: TextPosition): void {
-    if (!this.root) return;
-    const start = domPointAt(this.root, anchor);
-    const end = domPointAt(this.root, focus);
-    const selection = this.root.ownerDocument.defaultView?.getSelection();
-    if (!start || !end || !selection) return;
-    const range = this.root.ownerDocument.createRange();
-    range.setStart(start.node, start.offset);
-    range.setEnd(end.node, end.offset);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    if (this.root) setTextDomSelection(this.root, anchor, focus);
   }
 
   private setCaret(position: TextPosition): void { this.setSelection(position, position); }
@@ -477,7 +484,11 @@ export class TextEditorController {
     if (!this.activeId) return;
     const partition = findElementPartition(this.options.staticLayer, this.activeId);
     if (!partition) return;
-    for (const node of partition.querySelectorAll<HTMLElement | SVGElement>('foreignObject, text')) {
+    const owner = this.activeCell
+      ? partition.querySelector<SVGElement>(`[data-table-cell="${this.activeCell.r}:${this.activeCell.c}"]`)
+      : partition;
+    if (!owner) return;
+    for (const node of owner.querySelectorAll<HTMLElement | SVGElement>('foreignObject, text')) {
       this.hidden.set(node, node.style.visibility);
       node.style.visibility = 'hidden';
     }

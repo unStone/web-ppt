@@ -22,7 +22,8 @@ function validatePatch(doc: EditDoc, input: Patch, index: number): void {
     validateElementTreePatch(doc, patch as ElementTreePatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4 && patch.path[3] === 'text'
+  if (Array.isArray(patch.path) && ((patch.path.length === 4 && patch.path[3] === 'text')
+    || (patch.path.length === 7 && patch.path[3] === 'tableCells' && patch.path[6] === 'text'))
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementTextPatch(doc, patch as import('./types').ElementTextPatch, index);
     return;

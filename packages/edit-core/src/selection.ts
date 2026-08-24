@@ -3,6 +3,7 @@ import { effectiveElement, slideOfElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 import type { Selection, TextPosition } from './commands/types';
 import { textRunEditLength } from './text-position';
+import { assertTableCellAddress } from './table-cell';
 
 const clonePosition = (position: TextPosition): TextPosition => ({ ...position });
 
@@ -12,6 +13,7 @@ export function cloneSelection(selection: Selection): Selection {
     case 'elements': return { kind: 'elements', ids: [...selection.ids], enteredGroup: selection.enteredGroup };
     case 'text': return {
       kind: 'text', id: selection.id,
+      ...(selection.cell !== undefined ? { cell: { ...selection.cell } } : {}),
       anchor: clonePosition(selection.anchor), focus: clonePosition(selection.focus),
     };
     case 'table': return { kind: 'table', id: selection.id, cells: selection.cells.map((cell) => ({ ...cell })) };
@@ -83,12 +85,24 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
     }
     case 'text': {
       const record = doc.elements[selection.id];
-      if (!record || record.src.kind !== 'shape' || (!record.src.text && !record.meta.textTemplate)) {
-        throw new Error('文本选区必须指向文本形状');
+      if (!record || record.meta.editable !== 'full') {
+        throw new Error('文本选区必须指向可完整编辑的元素');
       }
       const element = effectiveElement(doc, selection.id);
-      const text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
-      if (!text) throw new Error('文本选区必须指向有效文本形状');
+      let text: TextBody | null = null;
+      if (selection.cell !== undefined) {
+        assertTableCellAddress(selection.cell, '单元格文本选区 cell');
+        if (element.kind !== 'table') throw new Error('单元格文本选区必须指向有效表格');
+        const cell = element.rows[selection.cell.r]?.cells[selection.cell.c];
+        if (!cell || cell.merged) throw new Error('单元格文本选区不能指向越界或合并占位格');
+        text = cell.text ?? cell.editInfo?.textTemplate ?? null;
+      } else {
+        if (record.src.kind !== 'shape' || (!record.src.text && !record.meta.textTemplate)) {
+          throw new Error('文本选区必须指向文本形状');
+        }
+        text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate ?? null : null;
+      }
+      if (!text) throw new Error('文本选区必须指向有效文本体');
       validateTextPosition(text, selection.anchor, '文本选区 anchor');
       validateTextPosition(text, selection.focus, '文本选区 focus');
       return cloneSelection(selection);

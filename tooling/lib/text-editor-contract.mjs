@@ -283,4 +283,22 @@ export async function runTextEditorContract({ check, lib, root, window }) {
   emptyView.destroy();
   fixtureSession.dispose();
   emptyContainer.remove();
+
+  const flipSession = await lib.openEditor(bytes, { idPrefix: 'editor-text-flip-' });
+  const flipRecord = Object.values(flipSession.editor.doc.elements).find((candidate) =>
+    candidate.src.kind === 'shape' && shapeText(candidate.src) === '可编辑');
+  flipSession.editor.exec({ type: 'SetFlip', id: flipRecord.id, h: true });
+  const flipContainer = document.createElement('div');
+  document.body.append(flipContainer);
+  const flipView = flipSession.mount(flipContainer, { mode: 'edit' });
+  flipContainer.querySelector(`[data-edit-id="${flipRecord.id}"]`)
+    .dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true, composed: true }));
+  const flipEditable = flipContainer.querySelector(`[data-ppt-text-editor="${flipRecord.id}"]`);
+  const frameMatrix = lib.elementFrameToSlideMatrix(flipSession.editor.doc, flipRecord.id);
+  check('普通翻转形状的文字编辑面保持正向且不跳位',
+    flipEditable?.style.transform
+      === `matrix(${frameMatrix.a},${frameMatrix.b},${frameMatrix.c},${frameMatrix.d},${frameMatrix.e},${frameMatrix.f})`);
+  flipView.destroy();
+  flipSession.dispose();
+  flipContainer.remove();
 }

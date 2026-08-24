@@ -83,7 +83,8 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     session.editor.undo();
 
     const textId = roots.find((id) => session.editor.doc.elements[id].src.kind === 'shape'
-      && session.editor.doc.elements[id].src.text);
+      && session.editor.doc.elements[id].src.text
+      && session.editor.doc.elements[id].meta.editable === 'full');
     const countBeforeTextPaste = Object.keys(session.editor.doc.elements).length;
     session.editor.select({
       kind: 'text', id: textId,

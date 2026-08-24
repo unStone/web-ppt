@@ -1,10 +1,18 @@
 import { isElementDescendantOf } from '@web-ppt/edit-core';
-import type { EditDoc, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
+import type { EditDoc, ElementId, Selection, SlideId, TableCellAddress } from '@web-ppt/edit-core';
 
 function elementsFromPath(path: EventTarget[], root: Element): Element[] {
   return path.filter((target): target is Element =>
     !!target && typeof target === 'object'
       && (target as Node).nodeType === 1 && root.contains(target as Node));
+}
+
+export function tableCellAddressFromPath(path: EventTarget[], root: Element): TableCellAddress | null {
+  const value = elementsFromPath(path, root)
+    .map((element) => (element as SVGElement).dataset.tableCell)
+    .find((candidate) => candidate !== undefined);
+  const match = value && /^(\d+):(\d+)$/.exec(value);
+  return match ? { r: Number(match[1]), c: Number(match[2]) } : null;
 }
 
 export function isSelectable(doc: EditDoc, id: ElementId): boolean {

@@ -4,6 +4,7 @@ export { copyElements } from './clipboard';
 export { queryRunProps } from './run-properties';
 export { queryParaProps } from './paragraph-properties';
 export { validateEditDoc } from './model-invariants';
+export { tableCellKey } from './table-cell';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
 export { elementOrder, writableLayerSiblingIds } from './element-order';
 export { applyPatches } from './commands/patch';
@@ -16,7 +17,7 @@ export {
   assertFractionalIndex, compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
 } from './fractional-index';
 export {
-  composeSpaceMatrices, elementFrameToParentMatrix, elementFrameToSlideMatrix,
+  composeSpaceMatrices, elementContentToSlideMatrix, elementFrameToParentMatrix, elementFrameToSlideMatrix,
   elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix, elementParentToSlidePoint,
   inverseTransformSpaceVector, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, spaceOrientationParity, transformSpacePoint,
@@ -26,7 +27,7 @@ export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
-  SlideRecord, SlideSource, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
+  SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
 } from './types';
 export type {
   AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,

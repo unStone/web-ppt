@@ -1,5 +1,5 @@
-import type { ShapeElement, TextBody } from '@web-ppt/core';
-import type { Editor, ElementId } from '@web-ppt/edit-core';
+import type { TextBody, TextVert } from '@web-ppt/core';
+import type { AffineMatrix, Editor, ElementId, TableCellAddress } from '@web-ppt/edit-core';
 
 export interface TextEditorControllerOptions {
   editor: Editor;
@@ -22,6 +22,12 @@ export interface CompositionSnapshot {
 
 export interface ActiveText {
   id: ElementId;
-  element: ShapeElement;
+  cell?: TableCellAddress;
   text: TextBody;
+  width: number;
+  height: number;
+  matrix: AffineMatrix;
+  insets?: readonly [number, number, number, number];
+  anchor?: TextBody['anchor'];
+  vert?: TextVert;
 }

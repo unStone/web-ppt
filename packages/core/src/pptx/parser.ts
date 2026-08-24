@@ -1311,16 +1311,24 @@ function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableE
           if (side) borders[key] = parseLnElement(side, env, null);
         }
 
-        const text = parseTextBody(kid(tc, 'txBody'), {
+        const txBody = kid(tc, 'txBody');
+        const textEnv: Parameters<typeof parseTextBody>[1] = {
           ctx: env.ctx,
           fonts: env.theme.fonts,
           chain: [env.docDefaults],
           slideNum: env.slideNum,
           defaultColor: color,
           resolveLink: (rid, action) => resolveLink(env, rid, action),
-        });
-        if (text && bold) {
-          for (const p of text.paragraphs) for (const r of p.runs) r.b = true;
+          edit: env.edit,
+        };
+        const text = parseTextBody(txBody, textEnv);
+        const textTemplate = !text && env.edit
+          ? parseTextBody(txBody, textEnv, true) ?? undefined
+          : undefined;
+        if (bold) {
+          for (const body of [text, textTemplate]) {
+            if (body) for (const p of body.paragraphs) for (const r of p.runs) r.b = true;
+          }
         }
 
         const mar = (n2: string, dflt: number): number => {
@@ -1338,6 +1346,7 @@ function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableE
           margins: [mar('marT', 45720), mar('marR', 91440), mar('marB', 45720), mar('marL', 91440)],
           vAlign: attr(tcPr, 'anchor') === 'ctr' ? 'middle' : attr(tcPr, 'anchor') === 'b' ? 'bottom' : 'top',
           vert: attr(tcPr, 'vert') === 'vert' ? 'vert' : attr(tcPr, 'vert') === 'vert270' ? 'vert270' : undefined,
+          ...(textTemplate ? { editInfo: { textTemplate } } : {}),
         };
       }),
     };

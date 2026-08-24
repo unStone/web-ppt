@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(2 620 335) translate(80 80)">
+<g transform="translate(540 255) scale(-1 -1) translate(-540 -255)">
+<g transform="translate(0 0)">
+<rect width="270" height="170" fill="rgb(255,241,242)"/>
+<text x="18" y="82.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(220,38,38)" font-weight="700"> 前导 </tspan>
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(37,99,235)" font-weight="700">中文</tspan>
+</text>
+<text x="140" y="108.57" text-anchor="middle" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700" font-style="italic">第二段</tspan>
+</text>
+</g>
+<g transform="translate(270 0)">
+<rect width="270" height="170" fill="rgb(240,253,244)"/>
+</g>
+<g transform="translate(540 0)">
+<rect width="540" height="170" fill="rgb(239,246,255)"/>
+<text x="9.6" y="26.02" text-anchor="start" xml:space="preserve">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">横向合并起始格</tspan>
+</text>
+</g>
+<g transform="translate(0 170)">
+<rect width="270" height="340" fill="rgb(254,243,199)"/>
+<text x="9.6" y="329.22" text-anchor="start" xml:space="preserve">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">纵向合并起始格</tspan>
+</text>
+</g>
+<g transform="translate(270 170)">
+<rect width="270" height="170" fill="rgb(250,232,255)"/>
+<text x="135" y="92.62" text-anchor="middle" xml:space="preserve">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">竖排中文ABC</tspan>
+</text>
+</g>
+<g transform="translate(540 170)">
+<rect width="270" height="170" fill="rgb(236,254,255)"/>
+<text x="260.4" y="92.62" text-anchor="start" direction="rtl" unicode-bidi="embed" xml:space="preserve">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">مرحبا RTL</tspan>
+</text>
+</g>
+<g transform="translate(810 170)">
+<rect width="270" height="170" fill="rgb(245,243,255)"/>
+<text x="9.6" y="32.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="29.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">裸 autofit 单元</tspan>
+</text>
+<text x="9.6" y="67.46" text-anchor="start" xml:space="preserve">
+<tspan font-size="29.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">格需要实时计算比</tspan>
+</text>
+<text x="9.6" y="102.66" text-anchor="start" xml:space="preserve">
+<tspan font-size="29.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 -14.67 0 0 0 0 0 0">例，编辑面不能跳版</tspan>
+</text>
+<text x="9.6" y="137.86" text-anchor="start" xml:space="preserve">
+<tspan font-size="29.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">。</tspan>
+</text>
+</g>
+<g transform="translate(270 340)">
+<rect width="270" height="170" fill="none"/>
+<text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">末行一</tspan>
+</text>
+</g>
+<g transform="translate(540 340)">
+<rect width="270" height="170" fill="none"/>
+<text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline">末行二</tspan>
+</text>
+</g>
+<g transform="translate(810 340)">
+<rect width="270" height="170" fill="none"/>
+<text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">末格</tspan>
+</text>
+</g>
+<g transform="translate(0 0)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(270 0)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(540 0)">
+<line x1="0" y1="0" x2="540" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="540" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="540" y1="0" x2="540" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 170)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="340" x2="270" y2="340" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="340" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="340" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(270 170)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(540 170)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(810 170)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(270 340)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(540 340)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(810 340)">
+<line x1="0" y1="0" x2="270" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="170" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="270" y1="0" x2="270" y2="170" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+</g>
+</g>
+</g>
+</svg>

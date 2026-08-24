@@ -41,6 +41,7 @@
       runEditorEngineAutoProbeBrowserContract,
       runEditorEngineTextBrowserContract,
     } from '/tooling/lib/editor-engine-text-browser-contract.mjs';
+    import { runEditorTableCellTextBrowserContract } from '/tooling/lib/editor-table-cell-text-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -432,6 +433,7 @@
       const paragraphP95 = await runEditorParagraphBrowserContract({ openEditor, load });
       const richTextResult = await runEditorRichTextClipboardBrowserContract({ openEditor, load });
       const engineTextResult = await runEditorEngineTextBrowserContract({ openEditor, load });
+      const tableCellTextResult = await runEditorTableCellTextBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -487,6 +489,8 @@
       report.dataset.engineTextP95 = engineTextResult.p95.toFixed(3);
       report.dataset.engineLineError = engineTextResult.positionError.toFixed(3);
       report.dataset.engineAutoProbe = 'pass';
+      report.dataset.tableCellTextP95 = tableCellTextResult.p95.toFixed(3);
+      report.dataset.tableCellGeometryError = tableCellTextResult.geometryError.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -521,13 +525,15 @@
       report.textContent += `\nengine 2,000 字符完整上屏 p95 ${engineTextResult.p95.toFixed(3)}ms，`
         + `行盒偏差 ${engineTextResult.positionError.toFixed(3)}px`;
       report.textContent += '\nauto 能力探测降级同时驱动原生预览与 engine 编辑面';
+      report.textContent += `\n20×10 表格单元格输入 p95 ${tableCellTextResult.p95.toFixed(3)}ms，`
+        + `旋转格贴合偏差 ${tableCellTextResult.geometryError.toFixed(3)}px`;
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;
       globalThis.editorContract = {
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,
         trustedLayerSession,
-        textResult, richTextResult, engineTextResult,
+        textResult, richTextResult, engineTextResult, tableCellTextResult,
       };
     } catch (error) {
       report.style.color = '#b91c1c';
