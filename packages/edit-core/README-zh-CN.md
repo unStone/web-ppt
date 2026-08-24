@@ -55,12 +55,16 @@ if (element.kind === 'shape' && element.text) {
 状态与最近一次 `markSaved()` 保存点。React、Vue、Web Component 或原生适配层只需订阅 `subscribe()`
 并调用两个投影方法，任何框架运行时都不会进入本包。
 
+`RemoveElement` 会递归移除元素树，逆 patch 保留稳定 parent/z 身份。有内容的占位符第一次执行时只写入
+空文本覆盖并保留形状，下一次才删除。保存只补丁拥有该元素的 OOXML 宿主或段落列表，并刻意保留可能被
+其它元素共享的媒体与关系。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换覆盖写回 OOXML，刷新 `doc.package` 供下一次保存
+常规调用只需 `Editor.save()`：它把当前变换、占位符清空和元素删除写回 OOXML，刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
 ```ts
@@ -103,8 +107,8 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence。UTF-8 / UTF-16 字节序和 BOM 均保留；可选的
-实测 Vite 产物：编辑初始入口 9.67KB gzip，`xml` 为 7.51KB，`opc` 为 4.37KB；主入口加载后首次
-保存再按需增加 13.74KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+实测 Vite 产物：编辑初始入口 11.84KB gzip，`xml` 为 7.52KB，`opc` 为 4.37KB；主入口加载后首次
+保存再按需增加 14.05KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

@@ -31,8 +31,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 88KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 9.7KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 点选/框选/增减选、键盘遍历/微移与撤销重做、移动/缩放/旋转、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 18.4KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 11.9KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 点选/框选/增减选、键盘遍历/微移/删除与撤销重做、移动/缩放/旋转、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 18.9KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.4KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.8KB |
 
@@ -94,6 +94,11 @@ session.dispose();         // 释放全部视图、原包与 blob URL
 `Ctrl/Cmd+Z` 撤销，`Ctrl/Cmd+Shift+Z` 或 `Ctrl/Cmd+Y` 重做；恢复的选区属于其它页面时，仅收到
 快捷键的视图自动切到结果页，其它共享视图不跳页。活动 pointer 预览和文本控件继续拥有自己的快捷键，
 单元素撤销重做仍只更新目标 DOM 分区。
+
+`Delete` / `Backspace` 把当前元素选区作为一个事务删除；组合会递归删除，图表、SmartArt、OLE 等
+框架对象只删除外框，不清理可能共享的关系或媒体。含内容占位符第一次只清空文字并保留框，第二次才删框。
+删除与撤销按稳定 z 序增量移除/插回 DOM，未触碰兄弟保持节点身份；表单、Shadow DOM、文本编辑焦点和
+活动 pointer 手势仍保留浏览器所有权。
 
 `Shift`、`Ctrl` 或 macOS `Cmd` 点击按当前页/组的绘制顺序加入或移除元素；与 `Alt` 组合时可继续穿透
 重叠对象。带修饰键框选会预览并提交既有选区与框中对象的对称差，空白修饰点击保留选区。所有这些操作
@@ -305,8 +310,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，1987 项断言 + 162 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换保存 245 项断言 + M1 11 项独立验收 + 34 份固件、252 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 121 项会话 / 增量 DOM / 点选与框选增减 / 键盘遍历、微移与撤销重做 / 坐标、移动、缩放、旋转与吸附 / 资源断言 + 真实 Chrome 命中、矩阵、可信修饰键与键盘、pointer capture 与性能门禁 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 变换与删除保存 268 项断言 + M1 15 项独立验收 + 35 份固件、256 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 128 项会话 / 增量 DOM / 点选、框选与删除 / 键盘遍历、微移与撤销重做 / 坐标、移动、缩放、旋转与吸附 / 资源断言 + 真实 Chrome 命中、矩阵、可信修饰键与键盘、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

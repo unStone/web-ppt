@@ -1,12 +1,11 @@
 import type { ElementRecord } from '../types';
 import { isFrameXfrmField, XFRM_FIELDS } from '../commands/xfrm';
-import { createXmlElement } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlAttribute, findXmlChild, xmlElementChildren } from '../xml/query';
-import { elementState } from '../xml/state';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement } from '../xml/types';
+import { namespacedElement } from './xml-element';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -45,40 +44,35 @@ function hostSpid(host: XmlElement, spec: HostSpec): number | null {
   return properties ? numericId(properties) : null;
 }
 
-function collectHosts(parent: XmlElement, spid: number, output: XmlElement[]): void {
+interface LocatedHost {
+  host: XmlElement;
+  parent: XmlElement;
+  spec: HostSpec;
+}
+
+function collectHosts(parent: XmlElement, spid: number, output: LocatedHost[]): void {
   for (const child of xmlElementChildren(parent)) {
     const spec = HOSTS[child.localName];
     const supported = spec?.namespaceUri === child.namespaceUri ? spec : undefined;
-    if (supported && hostSpid(child, supported) === spid) output.push(child);
+    if (supported && hostSpid(child, supported) === spid) output.push({ host: child, parent, spec: supported });
     collectHosts(child, spid, output);
   }
 }
 
-function locateHost(document: XmlDocument, record: ElementRecord): { host: XmlElement; spec: HostSpec } {
+export function locateElementHost(
+  document: XmlDocument,
+  record: Pick<ElementRecord, 'id' | 'meta'>,
+): LocatedHost {
   const origin = record.meta.origin;
   if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
-  const matches: XmlElement[] = [];
+  const matches: LocatedHost[] = [];
   collectHosts(document.root, origin.spid, matches);
   if (matches.length !== 1) {
     throw new Error(matches.length
       ? `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中存在歧义`
       : `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中不存在`);
   }
-  return { host: matches[0], spec: HOSTS[matches[0].localName] };
-}
-
-function namespacedElement(parent: XmlElement, namespaceUri: string, localName: string): XmlElement {
-  const namespaces = elementState(parent).namespaces;
-  const bound = [...namespaces].find(([, uri]) => uri === namespaceUri)?.[0];
-  if (bound !== undefined) return createXmlElement(bound ? `${bound}:${localName}` : localName);
-
-  const base = namespaceUri === DRAWINGML_NS ? 'a' : namespaceUri === PRESENTATIONML_NS ? 'p' : 'ns';
-  let prefix = base;
-  let serial = 1;
-  while (namespaces.has(prefix)) prefix = `${base}${serial++}`;
-  return createXmlElement(`${prefix}:${localName}`, {
-    attributes: [[`xmlns:${prefix}`, namespaceUri]],
-  });
+  return matches[0];
 }
 
 function safeInteger(value: number, scale: number, label: string): string {
@@ -112,7 +106,7 @@ function materializeTransform(xfrm: XmlElement, record: ElementRecord): void {
 }
 
 function transformNode(document: XmlDocument, record: ElementRecord): { xfrm: XmlElement; created: boolean } {
-  const { host, spec } = locateHost(document, record);
+  const { host, spec } = locateElementHost(document, record);
   const container = spec.properties
     ? findXmlChild(host, { localName: spec.properties, namespaceUri: spec.namespaceUri })
     : host;

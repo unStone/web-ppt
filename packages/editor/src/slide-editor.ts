@@ -2,8 +2,10 @@ import { renderSlideToSvg } from '@web-ppt/core';
 import type { EditorChange, ElementId, SlideId } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
-import { bindSlideIdentities, shouldRenderWholeSlide, touchedElementPartitions } from './dom-identity';
-import { patchElement } from './dom-patch';
+import {
+  bindSlideIdentities, findElementPartition, shouldRenderWholeSlide, touchedElementPartitions,
+} from './dom-identity';
+import { insertElementPartition, patchElement, removeElementPartition } from './dom-patch';
 import { EditorKeyboardController } from './editor-keyboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
@@ -439,13 +441,27 @@ class DomSlideEditor implements SlideEditor {
     const doc = this.session.editor.doc;
     const partitions = touchedElementPartitions(doc, this.currentSlide, change.touchedElements);
     const elementCount = doc.slides[this.currentSlide].children.length;
-    if (!partitions.ids.length
-      || shouldRenderWholeSlide(partitions.ids.length, partitions.topLevelCount, elementCount)) {
+    const removed = [...change.touchedElements].filter((id) => !doc.elements[id]
+      && !!findElementPartition(this.staticLayer, id));
+    const changedCount = partitions.ids.length + removed.length;
+    if (!changedCount || shouldRenderWholeSlide(
+      changedCount, partitions.topLevelCount + removed.length, elementCount + removed.length,
+    )) {
       this.render();
       return;
     }
+    for (const id of removed) {
+      if (!removeElementPartition(this.staticLayer, id)) {
+        this.render();
+        return;
+      }
+    }
     for (const id of partitions.ids) {
-      if (!patchElement(this.staticLayer, this.session.editor, id, this.idPrefix, this.textMode)) {
+      const exists = !!findElementPartition(this.staticLayer, id);
+      const updated = exists
+        ? patchElement(this.staticLayer, this.session.editor, id, this.idPrefix, this.textMode)
+        : insertElementPartition(this.staticLayer, this.session.editor, id, this.idPrefix, this.textMode);
+      if (!updated) {
         this.render();
         return;
       }

@@ -60,6 +60,11 @@ Shadow DOM 内的表单/contenteditable 仍使用浏览器原生 Tab 焦点行�
 编辑视图切到结果页；其它共享视图保持原页。活动 pointer 预览与普通或 Shadow DOM 文本控件保留键盘
 所有权，单元素历史仍只替换自己的 DOM 分区。
 
+`Delete` / `Backspace` 把当前元素选区作为一个撤销单元删除。组合递归删除；图表、SmartArt、OLE 等
+框架对象只移除外框，不回收可能共享的关系或媒体。有内容的占位符第一次只清空文字，第二次才删除框。
+删除与撤销按稳定 z 序增量移除或插回 markup/defs 分区，未触碰兄弟保持 DOM 身份；表单、contenteditable、
+Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为。
+
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用
 core 渲染器的变换顺序。

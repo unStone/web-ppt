@@ -32,8 +32,8 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, edit overrides, and high-fidelity render projection. No framework, no DOM. | `@web-ppt/core` | 2.9 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 13.0 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 11.9 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 18.9 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
 
@@ -87,6 +87,11 @@ Elements and multi-selections can be moved directly. Eight resize handles suppor
 centered Alt resizing, and flips across the opposite anchor. Rotation stays continuous across ±180°, supports
 dynamic 15° Shift constraints, nested flipped groups, and shared-center multi-selection. Transform frames touch
 only transient ghost DOM; pointer-up creates one undoable, saveable transaction.
+
+`Delete` or `Backspace` removes the current selection as one transaction. Groups are recursive, while charts,
+SmartArt, OLE, and other frame-only objects retain potentially shared relationships and media. A populated
+placeholder clears its text first and removes its frame on the next deletion. Delete and undo update only the
+affected markup/defs partitions in stable z-order, preserving untouched sibling DOM identities.
 
 When building a custom adapter or needing byte-stable markup, render with an explicit namespace:
 
@@ -295,8 +300,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 1,987 assertions + 162 render snapshots |
-| `npm run test:edit` | 244 edit-core assertions + 11 M1 save assertions + 214 process-isolated SVG fingerprint pairs across 28 fixtures |
-| `npm run test:editor` | 58 session/incremental DOM/native selection/coordinate/move/resize/rotate/resource assertions + real-Chrome hit-testing, matrix, pointer-capture, and performance gates |
+| `npm run test:edit` | 268 edit-core assertions + 15 M1 save assertions + 256 process-isolated SVG fingerprint pairs across 35 fixtures |
+| `npm run test:editor` | 128 session/incremental DOM/selection/keyboard/delete/gesture/resource assertions + real-Chrome hit-testing, trusted keyboard, matrix, pointer-capture, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

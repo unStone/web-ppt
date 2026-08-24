@@ -69,6 +69,13 @@ slide, only the edit view that received the shortcut reveals that slide; other s
 pointer previews and regular or Shadow DOM text controls retain keyboard ownership, while single-element history
 still replaces only that element's DOM partition.
 
+`Delete` or `Backspace` removes the current element selection as one undo unit. Groups are recursive; frame-only
+objects such as charts, SmartArt, and OLE lose their outer frame without garbage-collecting potentially shared
+relationships or media. A populated placeholder clears its text on the first deletion and removes its frame on
+the second. Delete and undo remove or reinsert only the affected markup/defs partitions in stable z-order, so
+untouched sibling DOM identities survive. Form controls, contenteditable or Shadow DOM text, and active pointer
+gestures keep native keyboard ownership.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as

@@ -30,7 +30,10 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
-  let out = { ...record.src, ...record.ovr } as SlideElement;
+  let out = { ...record.src, ...record.ovr } as unknown as SlideElement;
+  if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
+    out = { ...out, text: null } as ShapeElement;
+  }
   if (out.kind === 'group') {
     const source = record.src as GroupElement;
     // chExt 不进入覆盖层；组 ext 改变时必须由源比例反推出新 scale，才能与保存重开后的解析结果一致。
@@ -105,6 +108,21 @@ export function invalidateSlide(doc: EditDoc, id: SlideId): ProjectionInvalidati
   if (!doc.slides[id]) throw new Error(`找不到幻灯片：${id}`);
   cacheOf(doc).slides.delete(id);
   return { dirtyElements: new Set(), dirtySlides: new Set([id]) };
+}
+
+/** 结构 patch 的根可能尚不存在；以外部父节点失效并清掉整棵树的旧投影缓存。 */
+export function invalidateElementStructure(
+  doc: EditDoc,
+  ids: readonly ElementId[],
+  parent: SlideId | ElementId,
+): ProjectionInvalidation {
+  const cache = cacheOf(doc);
+  for (const id of ids) cache.elements.delete(id);
+  const dirty = doc.slides[parent]
+    ? invalidateSlide(doc, parent as SlideId)
+    : invalidateElement(doc, parent as ElementId);
+  for (const id of ids) dirty.dirtyElements.add(id);
+  return dirty;
 }
 
 export function invalidateAll(doc: EditDoc): ProjectionInvalidation {

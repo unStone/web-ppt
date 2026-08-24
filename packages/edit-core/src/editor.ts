@@ -1,5 +1,6 @@
 import { applyPatches } from './commands/patch';
 import { commandPatches } from './commands/dispatch';
+import { willRemoveElementStructure } from './commands/element-tree';
 import type {
   Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, Transaction,
   TransactionOptions, TransactionResult,
@@ -8,7 +9,9 @@ import { HistoryStore } from './history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
-import { cloneSelection, normalizeSelection } from './selection';
+import {
+  cloneSelection, isElementDescendantOf, normalizeSelection, selectionAfterStructure,
+} from './selection';
 import type { EditDoc, ElementId, SlideId } from './types';
 
 function patchElements(patches: readonly Patch[]): Set<ElementId> {
@@ -21,6 +24,30 @@ function reportSubscriberError(error: unknown): void {
     if (reporter) reporter(error);
     else console.error('Editor 订阅者执行失败', error);
   } catch { /* 监听器与错误上报都不能把已提交事务伪装成失败。 */ }
+}
+
+/** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
+function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): void {
+  const removals = commands.filter((command) => command.type === 'RemoveElement');
+  if (new Set(removals.map((command) => command.id)).size !== removals.length) {
+    throw new Error('同一事务不能重复删除同一元素');
+  }
+  const roots = removals.filter((command) => willRemoveElementStructure(doc.elements[command.id]));
+  for (let left = 0; left < roots.length; left++) {
+    for (let right = left + 1; right < roots.length; right++) {
+      if (isElementDescendantOf(doc, roots[left].id, roots[right].id)
+        || isElementDescendantOf(doc, roots[right].id, roots[left].id)) {
+        throw new Error('同一事务的删除根不能互为祖先与后代');
+      }
+    }
+  }
+  for (const command of commands) {
+    if (command.type === 'RemoveElement') continue;
+    if (roots.some((root) => command.id === root.id
+      || isElementDescendantOf(doc, command.id, root.id))) {
+      throw new Error(`同一事务不能先修改再删除同一子树：${command.id}`);
+    }
+  }
 }
 
 class TransactionCollector implements Transaction {
@@ -157,6 +184,7 @@ export class Editor {
     label: string,
     options: TransactionOptions,
   ): TransactionResult {
+    validateCommandRelations(this.doc, commands);
     const forward: Patch[] = [];
     const inverse: Patch[] = [];
     const dirtyElements = new Set<ElementId>();
@@ -174,8 +202,11 @@ export class Editor {
         forward.push(...patches.forward);
         inverse.unshift(...patches.inverse);
       }
+      const structural = forward.some((patch) => patch.path.length === 2);
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
-      validateEditElements(this.doc, forward.map((patch) => patch.path[1]));
+      else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
+      if (structural) validateEditDoc(this.doc);
+      else validateEditElements(this.doc, forward.map((patch) => patch.path[1]));
     } catch (error) {
       if (inverse.length) applyPatches(this.doc, inverse);
       this.currentSelection = selectionBefore;

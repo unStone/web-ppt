@@ -83,3 +83,17 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
     }
   }
 }
+
+/** 结构编辑后过滤已删除身份；普通属性事务仍走严格 normalizeSelection。 */
+export function selectionAfterStructure(doc: EditDoc, selection: Selection): Selection {
+  if (selection.kind === 'none') return { kind: 'none' };
+  if (selection.kind === 'text' || selection.kind === 'table') {
+    return doc.elements[selection.id] ? normalizeSelection(doc, selection) : { kind: 'none' };
+  }
+  const ids = selection.ids.filter((id) => !!doc.elements[id]);
+  if (!ids.length) return { kind: 'none' };
+  const enteredGroup = selection.enteredGroup && doc.elements[selection.enteredGroup]?.src.kind === 'group'
+    && ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))
+    ? selection.enteredGroup : null;
+  return normalizeSelection(doc, { kind: 'elements', ids, enteredGroup });
+}

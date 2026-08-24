@@ -1,4 +1,4 @@
-import type { ElementId, ProjectionInvalidation, SlideId } from '../types';
+import type { ElementId, ElementRecord, ProjectionInvalidation, SlideId, TextOverride } from '../types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -32,7 +32,12 @@ export interface SetFlipCommand {
   readonly v?: boolean;
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand;
+export interface RemoveElementCommand {
+  readonly type: 'RemoveElement';
+  readonly id: ElementId;
+}
+
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -45,7 +50,33 @@ type DeleteXfrmPatch = { [F in XfrmField]: {
   readonly path: ElementXfrmPath<F>;
   readonly origin: string;
 } }[XfrmField];
-export type Patch = SetXfrmPatch | DeleteXfrmPatch;
+export type ElementTransformPatch = SetXfrmPatch | DeleteXfrmPatch;
+
+export type ElementTextPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
+  readonly value: TextOverride;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
+  readonly origin: string;
+};
+
+export interface ElementTreeSnapshot {
+  readonly root: ElementId;
+  readonly parent: SlideId | ElementId;
+  readonly records: Readonly<Record<ElementId, ElementRecord>>;
+}
+
+export type ElementTreePatch = {
+  readonly op: 'remove' | 'insert';
+  readonly path: readonly ['elements', ElementId];
+  readonly value: ElementTreeSnapshot;
+  readonly origin: string;
+};
+
+export type Patch = ElementTransformPatch | ElementTextPatch | ElementTreePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

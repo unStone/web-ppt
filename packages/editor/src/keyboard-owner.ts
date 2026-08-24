@@ -5,8 +5,9 @@ function isNativeControl(target: EventTarget | null): boolean {
   );
 }
 
-/** composedPath 保留开放 Shadow DOM 内的真实输入目标，event.target 会被重定向到宿主。 */
-export function nativeControlOwnsKeyboard(event: KeyboardEvent): boolean {
+/** closed Shadow 会隐藏真实目标；画布只拥有直接发往视图根的键盘事件，全部后代都应让位。 */
+export function shouldYieldKeyboardEvent(event: KeyboardEvent): boolean {
+  if (event.currentTarget && event.target && event.currentTarget !== event.target) return true;
   const path = event.composedPath();
   return (path.length ? path : [event.target]).some(isNativeControl);
 }

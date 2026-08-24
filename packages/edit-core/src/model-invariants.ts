@@ -109,6 +109,14 @@ export function validateEditDoc(doc: EditDoc): void {
     assertParentChain(doc, id);
   }
 
+  for (const [id, record] of Object.entries(doc.removedElements)) {
+    if (record.id !== id || doc.elements[id]) throw new Error(`已删除元素状态冲突：${id}`);
+    if (record.meta.editable === 'none') throw new Error(`不可编辑元素不能进入删除集：${id}`);
+    if (record.meta.origin && doc.package && !doc.package.parts[record.meta.origin.part]) {
+      throw new Error(`已删除元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
+    }
+  }
+
   const spids = new Set<string>();
   for (const [id, record] of Object.entries(doc.elements)) {
     assertFiniteTransform(record, doc);

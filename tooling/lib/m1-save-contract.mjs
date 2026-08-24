@@ -112,4 +112,36 @@ export async function runM1SaveContract({
     && repeated.bytes === saved.bytes && repeated.package === saved.package && !editor.isDirty());
   reparsed.dispose?.();
   edit.disposeDoc(doc);
+
+  const deleteScenario = Object.freeze({
+    type: 'remove', file: 'sample-editor-delete.pptx', targetName: 'delete-peer',
+  });
+  const deleteInput = load(deleteScenario.file);
+  const deletePres = await core.parse(deleteInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const deleteDoc = edit.createDoc(deletePres, { idPrefix: 'm1-delete-' });
+  const deleteEditor = new edit.Editor(deleteDoc);
+  const deleteTarget = Object.values(deleteDoc.elements)
+    .find((record) => record.src.name === deleteScenario.targetName);
+  if (!check('元素删除指纹固件暴露稳定编辑锚点', !!deleteTarget?.meta.origin)) {
+    edit.disposeDoc(deleteDoc);
+    return;
+  }
+  deleteEditor.exec({ type: 'RemoveElement', id: deleteTarget.id });
+  const deleteSaved = await deleteEditor.saveDetailed();
+  const deleteArtifact = saveArtifact('element-delete.pptx', deleteSaved.bytes);
+  const deleteReparsed = await core.parse(deleteSaved.bytes, { lazy: false, assets: 'defer' });
+  check('元素删除保存后重新解析不再包含目标',
+    !findNamed(deleteReparsed.slides[0].elements, deleteScenario.targetName));
+  const deleteProjectedFingerprint = renderFingerprint(
+    deleteScenario.file, 'projected', deleteScenario,
+  );
+  const deleteSavedFingerprint = renderFingerprint(deleteArtifact, 'saved', deleteScenario);
+  for (const textMode of ['html', 'svg']) {
+    eq(`元素删除保存产物 ${textMode} 指纹等于独立进程中的有效投影`,
+      deleteSavedFingerprint[textMode], deleteProjectedFingerprint[textMode]);
+  }
+  deleteReparsed.dispose?.();
+  edit.disposeDoc(deleteDoc);
 }

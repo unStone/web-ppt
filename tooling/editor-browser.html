@@ -28,6 +28,7 @@
     import { runEditorMarqueeBrowserContract } from '/tooling/lib/editor-marquee-browser-contract.mjs';
     import { runEditorKeyboardBrowserContract } from '/tooling/lib/editor-keyboard-browser-contract.mjs';
     import { runEditorHistoryBrowserContract } from '/tooling/lib/editor-history-browser-contract.mjs';
+    import { runEditorDeleteBrowserContract } from '/tooling/lib/editor-delete-browser-contract.mjs';
     import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
     import { runEditorMultiselectBrowserContract } from '/tooling/lib/editor-multiselect-browser-contract.mjs';
 
@@ -410,6 +411,7 @@
       const marqueeResult = await runEditorMarqueeBrowserContract({ openEditor, load });
       const keyboardResult = await runEditorKeyboardBrowserContract({ openEditor, load });
       const historyResult = await runEditorHistoryBrowserContract({ openEditor, load });
+      const deleteResult = await runEditorDeleteBrowserContract({ openEditor, load });
       const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const multiselectResult = await runEditorMultiselectBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
@@ -445,6 +447,9 @@
       report.dataset.keyboardP95 = keyboardResult.p95.toFixed(3);
       report.dataset.historyUndoP95 = historyResult.undoP95.toFixed(3);
       report.dataset.historyRedoP95 = historyResult.redoP95.toFixed(3);
+      report.dataset.deleteP95 = deleteResult.deleteP95.toFixed(3);
+      report.dataset.deleteUndoP95 = deleteResult.undoP95.toFixed(3);
+      report.dataset.deleteRedoP95 = deleteResult.redoP95.toFixed(3);
       report.dataset.tabP95 = tabP95.toFixed(3);
       report.dataset.multiselectClickP95 = multiselectResult.clickP95.toFixed(3);
       report.dataset.multiselectMarqueeP95 = multiselectResult.marqueeP95.toFixed(3);

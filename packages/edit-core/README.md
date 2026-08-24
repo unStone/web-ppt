@@ -57,12 +57,17 @@ remote `origin` values apply without entering local history. `isDirty()` compare
 last `markSaved()` checkpoint. React, Vue, Web Components, or vanilla adapters only need `subscribe()` and
 the two projection methods; none of their runtimes enter this package.
 
+`RemoveElement` recursively removes an element tree while its inverse patch retains stable parent/z identity.
+For a populated placeholder, the first command writes an empty-text override and keeps the shape; the next
+command removes it. Save patches only the owning OOXML host or paragraph list and intentionally retains media
+and relationships, which may be shared by other elements.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
-`Editor.save()` is the normal API: it writes current transform overrides, refreshes `doc.package` for the
+`Editor.save()` is the normal API: it writes current transforms, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 
@@ -107,8 +112,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering. UTF-8
-and UTF-16 byte order/BOM are retained. Measured Vite output is 9.67 KB gzip for the initial editing entry,
-7.51 KB for `xml`, and 4.37 KB for `opc`; calling save after the main entry adds 13.74 KB on demand. Clean local
+and UTF-16 byte order/BOM are retained. Measured Vite output is 11.84 KB gzip for the initial editing entry,
+7.52 KB for `xml`, and 4.37 KB for `opc`; calling save after the main entry adds 14.05 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

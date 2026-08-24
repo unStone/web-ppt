@@ -26,7 +26,11 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   crop?: ImageElement['crop'];
   alpha?: ImageElement['alpha'];
   filter?: ImageElement['filter'];
+  text?: TextOverride;
 };
+
+/** M3 会在同一字段扩展扁平段落；当前 empty 已足够表达占位符“清内容不删框”。 */
+export type TextOverride = { readonly kind: 'empty' };
 
 export interface ElementMeta {
   geom?: GeomSpec;
@@ -48,6 +52,13 @@ export interface ElementRecord {
   meta: ElementMeta;
   /** 只有 group 存在；顺序与 z 严格一致 */
   children?: ElementId[];
+}
+
+/** 已删除根只保留最小写回锚点；完整子树由历史 patch 持有，避免模型重复占用内存。 */
+export interface RemovedElementRecord {
+  id: ElementId;
+  parent: SlideId | ElementId;
+  meta: ElementMeta;
 }
 
 export interface SlideRecord {
@@ -84,6 +95,7 @@ export interface EditDoc {
   slides: Record<SlideId, SlideRecord>;
   slideOrder: SlideId[];
   elements: Record<ElementId, ElementRecord>;
+  removedElements: Record<ElementId, RemovedElementRecord>;
   readonly package: OpcPackage | null;
   saveState: EditSaveState;
 }

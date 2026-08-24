@@ -320,7 +320,7 @@ sequenceDiagram
 | 缩放 | `SetXfrm{ id, x,y,w,h }` | `a:off` + `a:ext` | 8 手柄；Shift 等比；Alt 从中心；旋转下的数学见 §8.2 | P0 |
 | 旋转 | `SetXfrm{ id, rot }` | `a:xfrm@rot`（1/60000 度） | Shift 吸附 15°；手柄在上方 | P0 |
 | 翻转 | `SetFlip{ id, h, v }` | `@flipH` / `@flipV` | — | P1 |
-| 删除 | `RemoveElement{ id }` | 删对应 `p:sp` / `p:pic` / `p:graphicFrame`；**不删媒体字节**（可能被复用） | 占位符删除应只清内容不删节点（PowerPoint 语义） | P0 |
+| 删除 | `RemoveElement{ id }` | 删对应 `p:sp` / `p:pic` / `p:graphicFrame`；**不删媒体字节**（可能被复用） | 有内容占位符第一次只清内容，第二次才删节点（PowerPoint 语义） | P0 |
 | 复制/粘贴 | `PasteElements{ payload, at }` | 新建节点 + 新 spid + 媒体去重 | 剪贴板载荷用自有 JSON + `text/plain` 双写；跨实例可用 | P0 |
 | 层级 | `SetZ{ id, to }` | 重排 `p:spTree` 子节点顺序 | 置顶/置底/上移/下移 | P0 |
 | 组合/解组 | `Group{ ids }` / `Ungroup{ id }` | 新建 `p:grpSp` + 计算 `a:chOff/a:chExt` | 见 §8.5 | P1 |

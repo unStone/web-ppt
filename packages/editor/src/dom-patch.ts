@@ -45,6 +45,25 @@ function initialDefs(defs: SVGDefsElement, current: Element): Element[] {
   return [...remove];
 }
 
+function renderElementParts(
+  staticLayer: HTMLElement,
+  editor: Editor,
+  id: ElementId,
+  idPrefix: string,
+  textMode: 'html' | 'svg',
+): { next: SVGElement; nextDefs: SVGElement[] } | null {
+  const rendered = renderElementToSvg(editor.effectiveElement(id), {
+    textMode, idPrefix: `${idPrefix}${id}-`,
+  });
+  const markup = svgChildren(staticLayer.ownerDocument, rendered.markup);
+  if (markup.length !== 1) return null;
+  const next = markup[0];
+  bindElementIdentities(next, editor.doc, [id]);
+  const nextDefs = svgChildren(staticLayer.ownerDocument, rendered.defs);
+  for (const node of nextDefs) node.dataset.editDefs = id;
+  return { next, nextDefs };
+}
+
 /** markup 与它引用的 defs 在同一同步提交中换代，浏览器没有机会绘制半个状态。 */
 export function patchElement(
   staticLayer: HTMLElement,
@@ -58,19 +77,58 @@ export function patchElement(
   const defs = svg?.querySelector<SVGDefsElement>('defs');
   if (!current || !svg || !defs) return false;
 
-  const rendered = renderElementToSvg(editor.effectiveElement(id), {
-    textMode, idPrefix: `${idPrefix}${id}-`,
-  });
-  const markup = svgChildren(staticLayer.ownerDocument, rendered.markup);
-  if (markup.length !== 1) return false;
-  const next = markup[0];
-  bindElementIdentities(next, editor.doc, [id]);
-  const nextDefs = svgChildren(staticLayer.ownerDocument, rendered.defs);
-  for (const node of nextDefs) node.dataset.editDefs = id;
+  const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode);
+  if (!rendered) return false;
 
   const staleDefs = new Set([...ownedDefs(defs, id), ...initialDefs(defs, current)]);
   for (const node of staleDefs) node.remove();
-  defs.append(...nextDefs);
-  current.replaceWith(next);
+  defs.append(...rendered.nextDefs);
+  current.replaceWith(rendered.next);
+  return true;
+}
+
+/** 删除结构节点时只移除其 markup/defs 分区，未触碰兄弟必须保留 DOM 身份。 */
+export function removeElementPartition(staticLayer: HTMLElement, id: ElementId): boolean {
+  const current = findElementPartition(staticLayer, id);
+  const defs = staticLayer.querySelector<SVGDefsElement>('svg defs');
+  if (!current || !defs) return false;
+  const staleDefs = new Set([...ownedDefs(defs, id), ...initialDefs(defs, current)]);
+  for (const node of staleDefs) node.remove();
+  current.remove();
+  return true;
+}
+
+/** 撤销删除时以模型兄弟 z 序寻找稳定锚点；空父容器交给整页回退。 */
+export function insertElementPartition(
+  staticLayer: HTMLElement,
+  editor: Editor,
+  id: ElementId,
+  idPrefix: string,
+  textMode: 'html' | 'svg',
+): boolean {
+  const record = editor.doc.elements[id];
+  const siblings = editor.doc.slides[record?.parent]?.children
+    ?? editor.doc.elements[record?.parent]?.children;
+  if (!record || !siblings) return false;
+  const index = siblings.indexOf(id);
+  if (index < 0) return false;
+  let anchor: SVGElement | null = null;
+  let before = true;
+  for (let at = index + 1; at < siblings.length && !anchor; at++) {
+    anchor = findElementPartition(staticLayer, siblings[at]);
+  }
+  if (!anchor) {
+    before = false;
+    for (let at = index - 1; at >= 0 && !anchor; at--) {
+      anchor = findElementPartition(staticLayer, siblings[at]);
+    }
+  }
+  const defs = staticLayer.querySelector<SVGDefsElement>('svg defs');
+  if (!anchor || !defs) return false;
+  const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode);
+  if (!rendered) return false;
+  defs.append(...rendered.nextDefs);
+  if (before) anchor.before(rendered.next);
+  else anchor.after(rendered.next);
   return true;
 }

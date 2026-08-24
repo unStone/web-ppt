@@ -49,6 +49,7 @@ tracker: local-markdown
 - [实现 Tab 元素遍历与焦点所有权](tickets/023-tab-selection-order.md) — 当前页或已进入组以直属绘制顺序双向循环，事件视图隔离跨页共享选区；Chrome 60 元素完整反馈 p95 0.200ms，可信 Tab 焦点不外逃。
 - [实现修饰键点选与框选增减选](tickets/024-modifier-multiselect.md) — Shift/Ctrl/Meta 以当前页或组直属绘制顺序做对称差，Alt 可穿透增减；Chrome 60 元素点选/框选 p95 0.700/0.400ms，可信三种修饰键均通过。
 - [接通撤销重做快捷键与跨页回显](tickets/025-history-shortcuts.md) — Ctrl/Cmd+Z/Y/Shift+Z 直连 headless 历史并只让事件视图回显结果页；Chrome 60 元素撤销/重做 p95 1.200/1.100ms，可信 Ctrl/Meta 通过。
+- [实现元素删除与占位符两段式清空](tickets/026-element-delete.md) — RemoveElement 以稳定 z 序双向结构 patch 和最小 OOXML 写回接通 Delete/Backspace；未触碰兄弟保持 DOM 身份，Chrome 60 元素删除/撤销/重做 p95 3.4/1.5/0.9ms。
 
 ## Not yet specified
 

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contract.mjs';
 import { runTrustedHistoryContract } from './lib/editor-history-browser-contract.mjs';
+import { runTrustedDeleteContract } from './lib/editor-delete-browser-contract.mjs';
 import { runTrustedModifierSelectionContract } from './lib/editor-multiselect-browser-contract.mjs';
 import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
@@ -188,6 +189,9 @@ async function browserResult(webSocketDebuggerUrl) {
           keyboardP95: report.dataset.keyboardP95,
           historyUndoP95: report.dataset.historyUndoP95,
           historyRedoP95: report.dataset.historyRedoP95,
+          deleteP95: report.dataset.deleteP95,
+          deleteUndoP95: report.dataset.deleteUndoP95,
+          deleteRedoP95: report.dataset.deleteRedoP95,
           tabP95: report.dataset.tabP95,
           multiselectClickP95: report.dataset.multiselectClickP95,
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
@@ -398,6 +402,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await runTrustedKeyboardContract({ evaluate, dispatchKey });
         await runTrustedHistoryContract({ evaluate, dispatchKey });
+        await runTrustedDeleteContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await evaluate(`(() => {
@@ -409,6 +414,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedMarquee = 'pass';
           report.dataset.trustedKeyboard = 'pass';
           report.dataset.trustedHistory = 'pass';
+          report.dataset.trustedDelete = 'pass';
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
@@ -416,7 +422,7 @@ async function browserResult(webSocketDebuggerUrl) {
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
-          trustedModifierSelection: 'pass', trustedHistory: 'pass',
+          trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
         };
       }
       await delay(100);
@@ -466,11 +472,13 @@ try {
     + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
     + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
     + ` · 撤销/重做60 p95 ${result.historyUndoP95}/${result.historyRedoP95}ms`
+    + ` · 删除/撤销/重做60 p95 ${result.deleteP95}/${result.deleteUndoP95}/${result.deleteRedoP95}ms`
     + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
-    + ` · trusted keyboard/tab/history ${result.trustedKeyboard}/${result.trustedTab}/${result.trustedHistory}`
+    + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
+    + `${result.trustedHistory}/${result.trustedDelete}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {

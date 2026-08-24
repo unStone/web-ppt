@@ -124,6 +124,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     slides,
     slideOrder,
     elements,
+    removedElements: {},
     package: pkg,
     saveState: { baselines: Object.create(null) },
   };
@@ -142,6 +143,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     slides: {},
     slideOrder: [],
     elements: {},
+    removedElements: {},
     package: null,
     saveState: { baselines: Object.create(null) },
   };

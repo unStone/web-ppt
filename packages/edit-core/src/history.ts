@@ -11,6 +11,8 @@ interface StoredHistoryEntry extends HistoryEntry {
 const clonePatch = <P extends Patch>(patch: P): P => ({
   ...patch,
   path: [...patch.path],
+  ...('value' in patch && typeof patch.value === 'object'
+    ? { value: structuredClone(patch.value) } : {}),
 } as P);
 
 export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {

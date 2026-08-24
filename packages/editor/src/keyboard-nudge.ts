@@ -1,6 +1,6 @@
 import { slideOfElement } from '@web-ppt/edit-core';
 import type { KeyboardControllerOptions } from './keyboard-context';
-import { nativeControlOwnsKeyboard } from './keyboard-owner';
+import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
 import { outermostSelectedElementIds } from './selection-roots';
 import { elementParentToSlideMatrix, inverseTransformSpaceVector } from './space';
@@ -29,7 +29,7 @@ export class KeyboardNudgeController {
   keyDown(event: KeyboardEvent): boolean {
     const direction = ARROW_DELTA[event.key];
     if (!direction || event.ctrlKey || event.metaKey || event.altKey
-      || nativeControlOwnsKeyboard(event)) return false;
+      || shouldYieldKeyboardEvent(event)) return false;
     if (this.options.gestureActive()) {
       event.preventDefault();
       return true;
