@@ -46,6 +46,7 @@ function metaOf(
     ...(info?.geom ? { geom: info.geom } : {}),
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
     ...(info?.origin ? { origin: info.origin } : {}),
+    ...(info?.moveLocked ? { moveLocked: true } : {}),
     editable,
   };
 }

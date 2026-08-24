@@ -1,13 +1,11 @@
-import type { Editor, ElementId } from '@web-ppt/edit-core';
+import { outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint } from '@web-ppt/edit-core';
+import type { Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
-import { outermostSelectedElementIds } from './selection-roots';
 import { snapMove } from './snap';
 import type { SnapBounds, SnapMargins, SnapTarget } from './snap';
 import { createSnapGuideLayer, renderSnapGuides } from './snap-guides';
-import { screenToSlidePoint, slideToElementParentPoint } from './space';
-import type { SpacePoint } from './space';
 import { transformFrameCorners } from './transform-frame';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';

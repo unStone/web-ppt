@@ -1,10 +1,11 @@
 import type { EditDoc } from '../types';
+import { alignElementsPatches } from './align-elements';
 import { removeElementPatches } from './element-tree';
 import { setZPatches } from './set-z';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import type {
-  Command, CommandPatches, RemoveElementCommand, SetFlipCommand, SetXfrmCommand, SetZCommand,
+  AlignElementsCommand, Command, CommandPatches, RemoveElementCommand, SetFlipCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -18,16 +19,17 @@ function register<C extends Command>(
   handler: (doc: EditDoc, command: C, origin: string) => CommandPatches,
 ): CommandRegistration {
   return {
-    keys: new Set(['type', 'id', ...fields]),
+    keys: new Set(['type', ...fields]),
     patches: (doc, command, origin) => handler(doc, command as C, origin),
   };
 }
 
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
-  SetXfrm: register<SetXfrmCommand>(NUMERIC_XFRM_FIELDS, setXfrmPatches),
-  SetFlip: register<SetFlipCommand>(SET_FLIP_COMMAND_FIELDS, setFlipPatches),
-  RemoveElement: register<RemoveElementCommand>([], removeElementPatches),
-  SetZ: register<SetZCommand>(['to'], setZPatches),
+  SetXfrm: register<SetXfrmCommand>(['id', ...NUMERIC_XFRM_FIELDS], setXfrmPatches),
+  SetFlip: register<SetFlipCommand>(['id', ...SET_FLIP_COMMAND_FIELDS], setFlipPatches),
+  RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
+  SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
+  AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
 };
 
 function assertPureCommand(input: Command): void {
@@ -40,7 +42,9 @@ function assertPureCommand(input: Command): void {
       throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
     }
   }
-  if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
+  if (input.type !== 'AlignElements') {
+    if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
+  }
 }
 
 export function commandPatches(doc: EditDoc, command: Command, origin: string): CommandPatches {

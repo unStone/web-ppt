@@ -179,4 +179,59 @@ export async function runM1SaveContract({
   }
   layerReparsed.dispose?.();
   edit.disposeDoc(layerDoc);
+
+  const alignScenario = Object.freeze({
+    type: 'align', file: 'sample-editor-align.pptx', targetName: 'align-plain',
+    targetNames: ['align-plain', 'align-rotated', 'align-frame'], edge: 'left',
+  });
+  const alignInput = load(alignScenario.file);
+  const alignPres = await core.parse(alignInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const alignDoc = edit.createDoc(alignPres, { idPrefix: 'm1-align-' });
+  const alignEditor = new edit.Editor(alignDoc);
+  const alignTargets = alignScenario.targetNames.map((name) => Object.values(alignDoc.elements)
+    .find((record) => record.src.name === name));
+  if (!check('元素对齐指纹固件暴露普通、旋转与 frame 写回锚点',
+    alignTargets.every((record) => !!record?.meta.origin))) {
+    edit.disposeDoc(alignDoc);
+    return;
+  }
+  const alignPart = alignTargets[0].meta.origin.part;
+  const alignSourcePart = alignDoc.package.parts[alignPart].slice();
+  alignEditor.exec({
+    type: 'AlignElements', ids: alignTargets.map((record) => record.id), edge: alignScenario.edge,
+  });
+  const alignSaved = await alignEditor.saveDetailed();
+  const alignArtifact = saveArtifact('element-align.pptx', alignSaved.bytes);
+  const alignDiff = diffPackageBytes(alignInput, alignSaved.bytes);
+  const alignReparsed = await core.parse(alignSaved.bytes, { lazy: false, assets: 'defer' });
+  const alignReparsedDoc = edit.createDoc(alignReparsed, { idPrefix: 'm1-align-reopen-' });
+  const reopenedBounds = alignScenario.targetNames.map((name) => {
+    const record = Object.values(alignReparsedDoc.elements).find((candidate) => candidate.src.name === name);
+    const element = edit.effectiveElement(alignReparsedDoc, record.id);
+    const points = [
+      { x: 0, y: 0 }, { x: element.w, y: 0 },
+      { x: element.w, y: element.h }, { x: 0, y: element.h },
+    ].map((point) => edit.elementFrameToSlidePoint(alignReparsedDoc, record.id, point));
+    return Math.min(...points.map((point) => point.x));
+  });
+  check('元素对齐保存只改目标页且重开后的视觉左边误差不超过一个 EMU',
+    alignSaved.mode === 'passthrough' && alignSaved.rewrittenEntries === 1
+      && alignDiff.changed.join(',') === alignPart
+      && Math.max(...reopenedBounds.map((left) => Math.abs(left - reopenedBounds[0]))) <= 1 / 9525);
+  const alignProjectedFingerprint = renderFingerprint(
+    alignScenario.file, 'projected', alignScenario,
+  );
+  const alignSavedFingerprint = renderFingerprint(alignArtifact, 'saved', alignScenario);
+  for (const textMode of ['html', 'svg']) {
+    eq(`元素对齐保存产物 ${textMode} 指纹等于独立进程中的有效投影`,
+      alignSavedFingerprint[textMode], alignProjectedFingerprint[textMode]);
+  }
+  alignEditor.undo();
+  const alignRestored = await alignEditor.saveDetailed();
+  check('对齐保存后撤销从首次触碰基线恢复原 slide part',
+    equalBytes(alignRestored.package.parts[alignPart], alignSourcePart) && !alignEditor.isDirty());
+  edit.disposeDoc(alignReparsedDoc);
+  edit.disposeDoc(alignDoc);
 }

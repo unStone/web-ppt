@@ -1,10 +1,8 @@
-import { effectiveElement } from '@web-ppt/edit-core';
-import type { Editor, ElementId } from '@web-ppt/edit-core';
+import { effectiveElement, screenToSlidePoint } from '@web-ppt/edit-core';
+import type { Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
 import { combineSelectionIds, selectionModifierActive } from './selection-combine';
-import { screenToSlidePoint } from './space';
-import type { SpacePoint } from './space';
 import { transformFrameCorners } from './transform-frame';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';

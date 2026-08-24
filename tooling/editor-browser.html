@@ -30,6 +30,7 @@
     import { runEditorHistoryBrowserContract } from '/tooling/lib/editor-history-browser-contract.mjs';
     import { runEditorDeleteBrowserContract } from '/tooling/lib/editor-delete-browser-contract.mjs';
     import { runEditorLayerBrowserContract } from '/tooling/lib/editor-layer-browser-contract.mjs';
+    import { runEditorAlignBrowserContract } from '/tooling/lib/editor-align-browser-contract.mjs';
     import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
     import { runEditorMultiselectBrowserContract } from '/tooling/lib/editor-multiselect-browser-contract.mjs';
 
@@ -414,6 +415,7 @@
       const historyResult = await runEditorHistoryBrowserContract({ openEditor, load });
       const deleteResult = await runEditorDeleteBrowserContract({ openEditor, load });
       const layerResult = await runEditorLayerBrowserContract({ openEditor, load });
+      const alignResult = await runEditorAlignBrowserContract({ openEditor, load });
       const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const multiselectResult = await runEditorMultiselectBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
@@ -458,6 +460,8 @@
       report.dataset.layerP95 = layerResult.layerP95.toFixed(3);
       report.dataset.layerUndoP95 = layerResult.undoP95.toFixed(3);
       report.dataset.layerRedoP95 = layerResult.redoP95.toFixed(3);
+      report.dataset.alignError = alignResult.geometryError.toFixed(3);
+      report.dataset.alignP95 = alignResult.p95.toFixed(3);
       report.dataset.tabP95 = tabP95.toFixed(3);
       report.dataset.multiselectClickP95 = multiselectResult.clickP95.toFixed(3);
       report.dataset.multiselectMarqueeP95 = multiselectResult.marqueeP95.toFixed(3);
@@ -484,6 +488,8 @@
         + `60 元素提交 p95 ${keyboardResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素撤销/重做 p95 ${historyResult.undoP95.toFixed(3)} / `
         + `${historyResult.redoP95.toFixed(3)}ms`;
+      report.textContent += `\n旋转/组合视觉对齐偏差 ${alignResult.geometryError.toFixed(3)}px，`
+        + `60 元素页 10 选对齐 p95 ${alignResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素 Tab 遍历 p95 ${tabP95.toFixed(3)}ms`;
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;

@@ -43,6 +43,22 @@ export function isElementDescendantOf(doc: EditDoc, id: ElementId, ancestor: Ele
   return false;
 }
 
+/** 选区根只沿每个元素的父链查找，避免大选区用两两后代判断退化为平方复杂度。 */
+export function outermostSelectedElementIds(doc: EditDoc, ids: readonly ElementId[]): ElementId[] {
+  const selected = new Set(ids);
+  return ids.filter((id) => {
+    let current = doc.elements[id];
+    const seen = new Set<ElementId>();
+    while (current && doc.elements[current.parent]) {
+      if (seen.has(current.id)) throw new Error(`元素父链成环：${current.id}`);
+      seen.add(current.id);
+      if (selected.has(current.parent)) return false;
+      current = doc.elements[current.parent];
+    }
+    return true;
+  });
+}
+
 export function normalizeSelection(doc: EditDoc, selection: Selection): Selection {
   switch (selection.kind) {
     case 'none': return { kind: 'none' };

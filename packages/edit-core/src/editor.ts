@@ -69,11 +69,15 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
       }
     }
   }
+  const targetIds = (command: Command): readonly ElementId[] => command.type === 'AlignElements'
+    ? Array.isArray(command.ids) ? command.ids : []
+    : [command.id];
   for (const command of commands) {
     if (command.type === 'RemoveElement') continue;
-    if (roots.some((root) => command.id === root.id
-      || isElementDescendantOf(doc, command.id, root.id))) {
-      throw new Error(`同一事务不能先修改再删除同一子树：${command.id}`);
+    const conflict = targetIds(command).find((id) => roots.some((root) => id === root.id
+      || isElementDescendantOf(doc, id, root.id)));
+    if (conflict) {
+      throw new Error(`同一事务不能先修改再删除同一子树：${conflict}`);
     }
   }
 }

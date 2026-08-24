@@ -45,7 +45,15 @@ export interface SetZCommand {
   readonly to: ElementLayerTarget;
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand;
+export type AlignEdge = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
+
+export interface AlignElementsCommand {
+  readonly type: 'AlignElements';
+  readonly ids: readonly ElementId[];
+  readonly edge: AlignEdge;
+}
+
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | AlignElementsCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

@@ -21,6 +21,7 @@ const view = session.mount(container, {
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+session.editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
 
 view.setMode('view');       // 静态预览 DOM 不重建，只隐藏交互层
 view.setMode('edit');
@@ -68,6 +69,10 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 `Ctrl/Cmd+]` 上移一层，`Ctrl/Cmd+Shift+]` 置顶，`Ctrl/Cmd+[` 下移一层，`Ctrl/Cmd+Shift+[` 置底。
 多选作为一个撤销单元移动并保持内部相对顺序，组内元素和 frame 对象使用同一语义；边界操作不制造空历史。
 视图只移动既有 markup 分区，defs、超链接 wrapper、未触碰兄弟和共享视图中的节点身份都保持不变。
+
+产品工具栏不进入基础 DOM 包。六个对齐按钮直接调用 headless `AlignElements` 命令，已挂载视图会同步
+替换真正移动的元素并刷新选择框。React、Vue、Web Component 与原生应用因此共用同一个集成面，
+框架运行时不会进入 editor 包。
 
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用

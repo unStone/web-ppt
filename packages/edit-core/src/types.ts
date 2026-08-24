@@ -37,6 +37,8 @@ export interface ElementMeta {
   ph?: { type: string; idx?: string };
   origin?: { part: string; spid: number };
   locked?: boolean;
+  /** 来源文件只禁止移动；与宿主设置的通用 locked 分开，避免误伤其他编辑。 */
+  moveLocked?: boolean;
   hiddenByUser?: boolean;
   editable: EditableKind;
 }

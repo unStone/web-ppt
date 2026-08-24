@@ -244,6 +244,8 @@ export interface ElementEditInfo {
   geom?: GeomSpec;
   /** 内部内容不可安全写回时只允许框架级变换；省略表示由元素类型推断为 full */
   editable?: 'full' | 'frame' | 'none';
+  /** OOXML `noMove` 约束；只禁止改变位置，不扩大成通用编辑锁。 */
+  moveLocked?: boolean;
 }
 
 export type SlideElement =

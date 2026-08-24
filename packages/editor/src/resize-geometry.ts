@@ -1,9 +1,8 @@
-import type { EditDoc, ElementId } from '@web-ppt/edit-core';
-import type { AffineMatrix, SpacePoint } from './space';
 import {
   elementFrameToSlidePoint, elementParentToSlideMatrix, inverseTransformSpaceVector,
   slideToElementParentPoint,
-} from './space';
+} from '@web-ppt/edit-core';
+import type { AffineMatrix, EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { MIN_FRAME_SIZE } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 

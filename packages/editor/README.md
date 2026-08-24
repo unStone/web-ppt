@@ -22,6 +22,7 @@ const view = session.mount(container, {
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
+session.editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
 
 view.setMode('view');       // same static preview DOM; interaction layers are hidden
 view.setMode('edit');
@@ -81,6 +82,11 @@ gestures keep native keyboard ownership.
 group children and frame-only objects use the same semantics, and boundary operations create no empty history.
 Views move existing markup partitions in place, preserving defs, hyperlink wrappers, untouched siblings, and
 node identities in every shared view.
+
+Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
+`AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
+refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and
+vanilla applications without putting a framework runtime into the editor package.
 
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant

@@ -1,9 +1,9 @@
-import { slideOfElement } from '@web-ppt/edit-core';
+import {
+  elementParentToSlideMatrix, inverseTransformSpaceVector, outermostSelectedElementIds, slideOfElement,
+} from '@web-ppt/edit-core';
 import type { KeyboardControllerOptions } from './keyboard-context';
 import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
-import { outermostSelectedElementIds } from './selection-roots';
-import { elementParentToSlideMatrix, inverseTransformSpaceVector } from './space';
 
 const ARROW_DELTA: Readonly<Record<string, { x: number; y: number }>> = {
   ArrowLeft: { x: -1, y: 0 },

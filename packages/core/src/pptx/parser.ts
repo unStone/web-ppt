@@ -338,12 +338,21 @@ interface Env {
   edit: boolean;
 }
 
+function movementLocked(nv: Element | null): boolean {
+  const props = kid(nv, 'cNvSpPr') ?? kid(nv, 'cNvCxnSpPr') ?? kid(nv, 'cNvPicPr')
+    ?? kid(nv, 'cNvGrpSpPr') ?? kid(nv, 'cNvGraphicFramePr');
+  const locks = kid(props, 'spLocks') ?? kid(props, 'cxnSpLocks') ?? kid(props, 'picLocks')
+    ?? kid(props, 'grpSpLocks') ?? kid(props, 'graphicFrameLocks');
+  return boolAttr(locks, 'noMove');
+}
+
 function editInfoOf(
   env: Env,
   cNvPr: Element | null,
   ph: Element | null = null,
   geom?: NonNullable<ElementBase['editInfo']>['geom'],
   editable?: NonNullable<ElementBase['editInfo']>['editable'],
+  moveLocked = false,
 ): Partial<Pick<ElementBase, 'editInfo'>> {
   if (!env.edit) return {};
   const spid = numAttr(cNvPr, 'id');
@@ -358,7 +367,9 @@ function editInfoOf(
   }
   if (geom) editInfo.geom = geom;
   if (editable) editInfo.editable = editable;
-  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable ? { editInfo } : {};
+  if (moveLocked) editInfo.moveLocked = true;
+  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable || editInfo.moveLocked
+    ? { editInfo } : {};
 }
 
 function withPhClr(env: Env, phClr: string | null): Env {
@@ -580,7 +591,7 @@ function brokenShapePlaceholder(node: Element, err: unknown, env: Env): Unsuppor
     kind: 'unsupported',
     ...base(xf),
     label: `${name}（解析失败：${reason.slice(0, 40)}）`,
-    ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame'),
+    ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame', movementLocked(nv)),
   };
 }
 
@@ -605,8 +616,9 @@ function resolveLink(env: Env, rid: string, action: string | null): string | nul
 
 function parseSp(sp: Element, env: Env): ShapeElement | null {
   const nvName = sp.localName === 'cxnSp' ? 'nvCxnSpPr' : 'nvSpPr';
-  const cNvPr = walk(sp, nvName, 'cNvPr');
-  const ph = walk(sp, nvName, 'nvPr', 'ph');
+  const nv = kid(sp, nvName);
+  const cNvPr = kid(nv, 'cNvPr');
+  const ph = walk(nv, 'nvPr', 'ph');
   const phType = attr(ph, 'type');
   const phIdx = attr(ph, 'idx');
   const spPr = kid(sp, 'spPr');
@@ -697,7 +709,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
     link: hyperlinkOf(cNvPr, env),
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(env, cNvPr, ph, editableGeom),
+    ...editInfoOf(env, cNvPr, ph, editableGeom, undefined, movementLocked(nv)),
   };
 }
 
@@ -739,10 +751,11 @@ function parseMedia(nvPr: Element | null, env: Env): MediaInfo | undefined {
 }
 
 function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | null {
+  const nv = kid(pic, 'nvPicPr');
   const spPr = kid(pic, 'spPr');
   // 内容占位符里放的图片常常是空 <p:spPr/>，位置尺寸全靠版式/母版继承。
   // 不做这一步整张图会被丢掉——真实文件里这种写法很常见。
-  const ph = walk(pic, 'nvPicPr', 'nvPr', 'ph');
+  const ph = walk(nv, 'nvPr', 'ph');
   let xf = parseXfrm(kid(spPr, 'xfrm'));
   if (!xf && ph) {
     const phType = attr(ph, 'type');
@@ -751,11 +764,11 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
       ?? parseXfrm(walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'xfrm'));
   }
   if (!xf) return null;
-  const cNvPr = walk(pic, 'nvPicPr', 'cNvPr');
+  const cNvPr = kid(nv, 'cNvPr');
   const blipFill = kid(pic, 'blipFill');
   const src = blipUrl(blipFill, env);
   const label = attr(cNvPr, 'name') ?? '图片';
-  const media = parseMedia(walk(pic, 'nvPicPr', 'nvPr'), env);
+  const media = parseMedia(kid(nv, 'nvPr'), env);
   // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
   if (!src && !media) {
     return {
@@ -763,7 +776,7 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
       link: hyperlinkOf(cNvPr, env),
       name: attr(cNvPr, 'name') ?? undefined,
       id: numAttr(cNvPr, 'id') ?? undefined,
-      ...editInfoOf(env, cNvPr, ph, undefined, 'frame'),
+      ...editInfoOf(env, cNvPr, ph, undefined, 'frame', movementLocked(nv)),
     };
   }
 
@@ -808,7 +821,7 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
     media,
-    ...editInfoOf(env, cNvPr, ph, editableGeom, media ? 'frame' : undefined),
+    ...editInfoOf(env, cNvPr, ph, editableGeom, media ? 'frame' : undefined, movementLocked(nv)),
   };
 }
 
@@ -997,12 +1010,13 @@ function parseContentPart(node: Element, env: Env): GroupElement | null {
 }
 
 function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | null {
+  const nv = kid(grp, 'nvGrpSpPr');
   const grpSpPr = kid(grp, 'grpSpPr');
   const xf = parseXfrm(kid(grpSpPr, 'xfrm'));
   if (!xf) return null;
   const children = parseShapeTree(grp, env, skipPh);
   if (!children.length) return null;
-  const cNvPr = walk(grp, 'nvGrpSpPr', 'cNvPr');
+  const cNvPr = kid(nv, 'cNvPr');
   return {
     kind: 'group',
     ...base(xf),
@@ -1014,21 +1028,24 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
     effects: parseEffects(kid(grpSpPr, 'effectLst'), env.ctx),
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(env, cNvPr),
+    ...editInfoOf(env, cNvPr, null, undefined, undefined, movementLocked(nv)),
   };
 }
 
 function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElement[] | null {
+  const nv = kid(frame, 'nvGraphicFramePr');
   const xf = parseXfrm(kid(frame, 'xfrm'));
   if (!xf) return null;
   const data = walk(frame, 'graphic', 'graphicData');
   const uri = attr(data, 'uri') ?? '';
-  const frameCNvPr = walk(frame, 'nvGraphicFramePr', 'cNvPr');
-  const framePh = walk(frame, 'nvGraphicFramePr', 'nvPr', 'ph');
+  const frameCNvPr = kid(nv, 'cNvPr');
+  const framePh = walk(nv, 'nvPr', 'ph');
   const name = attr(frameCNvPr, 'name') ?? undefined;
   const frameId = numAttr(frameCNvPr, 'id') ?? undefined;
-  const frameEditInfo = editInfoOf(env, frameCNvPr, framePh);
-  const frameOnlyEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, 'frame');
+  const frameEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, undefined, movementLocked(nv));
+  const frameOnlyEditInfo = editInfoOf(
+    env, frameCNvPr, framePh, undefined, 'frame', movementLocked(nv),
+  );
 
   const tbl = kid(data, 'tbl');
   if (tbl) return { ...parseTable(tbl, xf, env, name), id: frameId, ...frameEditInfo };

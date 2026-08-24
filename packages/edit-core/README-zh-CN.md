@@ -21,6 +21,7 @@ const elementId = doc.slides[slideId].children[0];
 
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 editor.exec({ type: 'SetFlip', id: elementId, h: true });
+editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -63,6 +64,11 @@ if (element.kind === 'shape' && element.text) {
 来源 `z` 保持不变，只有移动过的元素携带稀疏 `order`，因此大文档不会为未编辑元素复制顺序状态。
 订阅事件用 `reorderedElements` 区分只需移动现有 DOM 的层级 patch，`renderElements` 只包含需要重建
 markup/defs 的元素；框架适配层无需猜 patch 类型。
+
+`AlignElements { ids, edge: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' }` 把单元素对齐到
+幻灯片，多元素对齐到旋转后视觉 AABB 的并集。旋转对象、翻转/非均匀缩放组合内元素和框架对象都走
+同一套世界坐标到父坐标换算；一个命令只生成一个撤销单元，已经对齐时不制造空历史。React、Vue、
+Web Component 或原生工具栏可把六个按钮直接映射到这条 JSON 命令，无需依赖 DOM 包内部结构。
 
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。

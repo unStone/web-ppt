@@ -1,8 +1,7 @@
-import { slideOfElement } from '@web-ppt/edit-core';
+import { outermostSelectedElementIds, slideOfElement } from '@web-ppt/edit-core';
 import type { KeyboardControllerOptions } from './keyboard-context';
 import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
-import { outermostSelectedElementIds } from './selection-roots';
 
 /** 删除键只组合公开命令；占位符清空与递归删除语义由 headless RemoveElement 决定。 */
 export class DeleteKeyboardController {

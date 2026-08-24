@@ -1,35 +1,13 @@
-import { effectiveElement } from '@web-ppt/edit-core';
-import type { EditDoc, ElementId } from '@web-ppt/edit-core';
 import type { ElementBase, GroupElement } from '@web-ppt/core';
+import { effectiveElement } from './projection';
+import type { EditDoc, ElementId } from './types';
 
-export interface SpacePoint {
-  x: number;
-  y: number;
-}
+export interface SpacePoint { x: number; y: number }
 
 /** SVG 同口径仿射矩阵：x' = ax + cy + e，y' = bx + dy + f。 */
-export interface AffineMatrix {
-  a: number;
-  b: number;
-  c: number;
-  d: number;
-  e: number;
-  f: number;
-}
-
-export interface SlideViewport {
-  left: number;
-  top: number;
-  zoom: number;
-}
-
-export interface ElementFrameTransform {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rot: number;
-}
+export interface AffineMatrix { a: number; b: number; c: number; d: number; e: number; f: number }
+export interface SlideViewport { left: number; top: number; zoom: number }
+export interface ElementFrameTransform { x: number; y: number; w: number; h: number; rot: number }
 
 const IDENTITY: AffineMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
@@ -57,10 +35,9 @@ function rotationAround(degrees: number, cx: number, cy: number): AffineMatrix {
 }
 
 export function elementFrameToParentMatrix(element: ElementFrameTransform): AffineMatrix {
-  const position = translation(element.x, element.y);
   return composeSpaceMatrices(
     rotationAround(element.rot, element.x + element.w / 2, element.y + element.h / 2),
-    position,
+    translation(element.x, element.y),
   );
 }
 

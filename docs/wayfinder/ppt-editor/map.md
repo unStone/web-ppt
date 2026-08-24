@@ -51,9 +51,11 @@ tracker: local-markdown
 - [接通撤销重做快捷键与跨页回显](tickets/025-history-shortcuts.md) — Ctrl/Cmd+Z/Y/Shift+Z 直连 headless 历史并只让事件视图回显结果页；Chrome 60 元素撤销/重做 p95 1.200/1.100ms，可信 Ctrl/Meta 通过。
 - [实现元素删除与占位符两段式清空](tickets/026-element-delete.md) — RemoveElement 以稳定 z 序双向结构 patch 和最小 OOXML 写回接通 Delete/Backspace；未触碰兄弟保持 DOM 身份，Chrome 60 元素删除/撤销/重做 p95 3.4/1.5/0.9ms。
 - [实现元素层级调整与快捷键](tickets/027-element-layer-order.md) — SetZ 以链表终态规划、Fenwick 最小稀疏序和固定槽位接通四向层级、增量 DOM 与最小 OOXML 重排；Chrome 60 元素层级/撤销/重做 p95 1.3/0.3/0.2ms。
+- [实现元素视觉对齐](tickets/028-element-alignment.md) — AlignElements 以世界 AABB 和父空间逆变换统一六向对齐、原子历史、增量 DOM 与最小写回；Chrome 60/60 完整反馈 p95 1.5ms。
 
 ## Not yet specified
 
+- M2 下一前沿是复制粘贴；拆票时必须把身份分配、关系表、媒体去重与跨文档降级分别定界。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

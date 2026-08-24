@@ -1,9 +1,8 @@
-import type { EditDoc, ElementId } from '@web-ppt/edit-core';
 import {
   elementFrameToSlidePoint, elementParentToSlideMatrix, inverseTransformSpaceVector,
   slideToElementParentPoint, spaceOrientationParity, transformSpaceVector,
-} from './space';
-import type { SpacePoint } from './space';
+} from '@web-ppt/edit-core';
+import type { EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import type { TransformFrame } from './transform-frame';
 
 export const ROTATION_SNAP_DEGREES = 15;

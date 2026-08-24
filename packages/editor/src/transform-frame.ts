@@ -1,9 +1,10 @@
-import type { EditDoc, ElementId } from '@web-ppt/edit-core';
-import type { AffineMatrix, ElementFrameTransform, SpacePoint } from './space';
 import {
   composeSpaceMatrices, elementFrameToParentMatrix, elementParentToSlideMatrix,
   invertSpaceMatrix, transformSpacePoint,
-} from './space';
+} from '@web-ppt/edit-core';
+import type {
+  AffineMatrix, EditDoc, ElementFrameTransform, ElementId, SpacePoint,
+} from '@web-ppt/edit-core';
 
 export const MIN_FRAME_SIZE = 1 / 9525;
 

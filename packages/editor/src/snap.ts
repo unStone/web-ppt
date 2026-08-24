@@ -1,4 +1,4 @@
-import type { SpacePoint } from './space';
+import type { SpacePoint } from '@web-ppt/edit-core';
 
 export interface SnapBounds {
   left: number;

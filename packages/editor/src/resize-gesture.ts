@@ -1,4 +1,7 @@
-import type { Editor, ElementId } from '@web-ppt/edit-core';
+import {
+  outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint,
+} from '@web-ppt/edit-core';
+import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
@@ -6,10 +9,7 @@ import {
   MIN_RESIZE_SIZE, resizeElementFrame, resizeMultiElementFrames,
 } from './resize-geometry';
 import type { ResizeHandle } from './resize-geometry';
-import { outermostSelectedElementIds } from './selection-roots';
 import { updateSelectionOverlayFrame } from './selection-overlay';
-import { screenToSlidePoint, slideToElementParentPoint } from './space';
-import type { AffineMatrix, SpacePoint } from './space';
 import { transformFrameCorners, transformPreviewMatrix } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 

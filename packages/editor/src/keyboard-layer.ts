@@ -1,9 +1,8 @@
-import { slideOfElement, writableLayerSiblingIds } from '@web-ppt/edit-core';
+import { outermostSelectedElementIds, slideOfElement, writableLayerSiblingIds } from '@web-ppt/edit-core';
 import type { ElementId, ElementLayerTarget } from '@web-ppt/edit-core';
 import type { KeyboardControllerOptions } from './keyboard-context';
 import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
-import { outermostSelectedElementIds } from './selection-roots';
 
 function bracketKey(event: KeyboardEvent): '[' | ']' | null {
   if (event.code === 'BracketLeft') return '[';

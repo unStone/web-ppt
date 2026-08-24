@@ -1,8 +1,6 @@
-import { effectiveElement, slideOfElement } from '@web-ppt/edit-core';
-import type { EditDoc, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
+import { effectiveElement, elementFrameToSlidePoint, slideOfElement } from '@web-ppt/edit-core';
+import type { EditDoc, ElementId, Selection, SlideId, SpacePoint } from '@web-ppt/edit-core';
 import { RESIZE_HANDLES, resizeHandleAfterFlip } from './resize-geometry';
-import { elementFrameToSlidePoint } from './space';
-import type { SpacePoint } from './space';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

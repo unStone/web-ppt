@@ -22,6 +22,7 @@ const elementId = doc.slides[slideId].children[0];
 
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 editor.exec({ type: 'SetFlip', id: elementId, h: true });
+editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -66,6 +67,12 @@ and relationships, which may be shared by other elements.
 part. Source `z` remains immutable; only moved elements carry a sparse `order`, so untouched objects pay no
 duplicated ordering state. Subscriber events separate `reorderedElements`, whose existing DOM partitions can
 move in place, from `renderElements`, which require new markup/defs.
+
+`AlignElements { ids, edge: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' }` aligns one
+element to the slide or multiple elements to their visual AABB union. Rotated objects, nested elements in
+flipped/non-uniformly scaled groups, and frame-only objects share the same world-to-parent transform. One command
+is one undo unit; already aligned targets create no empty history. A React, Vue, Web Component, or vanilla toolbar
+can map its six buttons directly to this JSON command without importing DOM internals.
 
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.

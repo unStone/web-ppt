@@ -196,6 +196,8 @@ async function browserResult(webSocketDebuggerUrl) {
           layerP95: report.dataset.layerP95,
           layerUndoP95: report.dataset.layerUndoP95,
           layerRedoP95: report.dataset.layerRedoP95,
+          alignError: report.dataset.alignError,
+          alignP95: report.dataset.alignP95,
           tabP95: report.dataset.tabP95,
           multiselectClickP95: report.dataset.multiselectClickP95,
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
@@ -468,6 +470,7 @@ try {
     + ` ${result.spaceError}/${result.handleError}px`
     + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
     + ` · 拖动帧 p95 ${result.dragP95}ms`
+    + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
