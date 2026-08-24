@@ -1,6 +1,6 @@
 /** M1 只从发布入口取证，避免保存器内部 helper 与测试共享同一个错误。 */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
@@ -12,10 +12,19 @@ import { runBodyPropsSaveContract } from './lib/body-props-save-contract.mjs';
 import { runTableRowInsertSaveContract } from './lib/table-row-insert-save-contract.mjs';
 import { runAddShapeSaveContract } from './lib/add-shape-save-contract.mjs';
 import { runAddSlideSaveContract } from './lib/add-slide-save-contract.mjs';
+import {
+  EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
+} from './lib/edit-save-office-artifacts.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-save');
 mkdirSync(out, { recursive: true });
+const manifestPath = join(out, EDIT_SAVE_OFFICE_MANIFEST);
+for (const { file } of EDIT_SAVE_OFFICE_ARTIFACTS) {
+  const path = join(out, file);
+  if (existsSync(path)) unlinkSync(path);
+}
+if (existsSync(manifestPath)) unlinkSync(manifestPath);
 
 const aliases = [
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
@@ -32,6 +41,13 @@ const edit = await bundleBrowser({
 const fixturesDir = join(root, 'fixtures');
 const load = (name) => new Uint8Array(readFileSync(join(fixturesDir, name)));
 const fixtureNames = readdirSync(fixturesDir).sort();
+const savedArtifactNames = new Set();
+const saveArtifact = (name, bytes) => {
+  const path = join(out, name);
+  writeFileSync(path, bytes);
+  savedArtifactNames.add(name);
+  return path;
+};
 
 const failures = [];
 let passed = 0;
@@ -50,11 +66,7 @@ await runM1SaveContract({
   load,
   check,
   eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -67,11 +79,7 @@ await runM1SaveContract({
 
 await runEngineTextSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -84,11 +92,7 @@ await runEngineTextSaveContract({
 
 await runTableCellTextSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -101,11 +105,7 @@ await runTableCellTextSaveContract({
 
 await runShapeAutofitSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -118,11 +118,7 @@ await runShapeAutofitSaveContract({
 
 await runBodyPropsSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -135,11 +131,7 @@ await runBodyPropsSaveContract({
 
 await runTableRowInsertSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -152,11 +144,7 @@ await runTableRowInsertSaveContract({
 
 await runAddShapeSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -169,11 +157,7 @@ await runAddShapeSaveContract({
 
 await runAddSlideSaveContract({
   core, edit, load, check, eq,
-  saveArtifact: (name, bytes) => {
-    const path = join(out, name);
-    writeFileSync(path, bytes);
-    return path;
-  },
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
@@ -184,11 +168,19 @@ await runAddSlideSaveContract({
   },
 });
 
+const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();
+check('真实 Office 门禁覆盖本轮全部保存产物',
+  [...savedArtifactNames].sort().join('\n') === expectedArtifactNames.join('\n'));
+
 console.log('\n' + '─'.repeat(60));
 if (failures.length) {
   console.error(`\x1b[31m✗ ${failures.length} 项 M1 保存验收失败\x1b[0m`);
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exitCode = 1;
 } else {
+  writeFileSync(manifestPath, `${JSON.stringify({
+    version: 1,
+    artifacts: EDIT_SAVE_OFFICE_ARTIFACTS,
+  }, null, 2)}\n`);
   console.log(`\x1b[32m✓ M1 保存验收全部通过（${passed} 项断言）\x1b[0m`);
 }

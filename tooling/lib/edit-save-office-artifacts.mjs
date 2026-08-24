@@ -1,0 +1,20 @@
+/** 真实 Office 门禁只消费本轮保存测试生成的确定性产物，避免通配符夹带陈旧文件。 */
+export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
+  Object.freeze({ file: 'single-move.pptx', slides: 1 }),
+  Object.freeze({ file: 'element-delete.pptx', slides: 2 }),
+  Object.freeze({ file: 'element-layer.pptx', slides: 2 }),
+  Object.freeze({ file: 'element-align.pptx', slides: 2 }),
+  Object.freeze({ file: 'element-clipboard.pptx', slides: 2 }),
+  Object.freeze({ file: 'basic-text-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'engine-text-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'table-cell-text-editing.pptx', slides: 3 }),
+  Object.freeze({ file: 'shape-autofit-text-editing.pptx', slides: 2 }),
+  Object.freeze({ file: 'body-props-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'table-row-insert.pptx', slides: 2 }),
+  Object.freeze({ file: 'table-row-insert-styles.pptx', slides: 3 }),
+  Object.freeze({ file: 'add-shape.pptx', slides: 1 }),
+  Object.freeze({ file: 'add-slide.pptx', slides: 3 }),
+  Object.freeze({ file: 'add-slide-first.pptx', slides: 2 }),
+]);
+
+export const EDIT_SAVE_OFFICE_MANIFEST = 'office-artifacts.json';

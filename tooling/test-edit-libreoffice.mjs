@@ -38,6 +38,10 @@ async function generateSavedPath() {
 }
 
 const requested = process.argv[2];
+const requestedPages = process.argv[3] === undefined ? undefined : Number(process.argv[3]);
+if (requestedPages !== undefined && (!Number.isInteger(requestedPages) || requestedPages < 1)) {
+  throw new Error(`预期页数无效：${process.argv[3]}`);
+}
 const savedPath = requested
   ? (isAbsolute(requested) ? requested : resolve(root, requested))
   : await generateSavedPath();
@@ -195,6 +199,10 @@ if (/\b(repair(?:ed)?|recover(?:ed|y)?|corrupt(?:ed)?|damaged)\b/i.test(diagnost
   throw new Error(`LibreOffice 报告修复或恢复：${diagnostics.trim()}`);
 }
 if (!existsSync(pdf) || statSync(pdf).size === 0) throw new Error('LibreOffice 未生成有效 PDF');
+const pages = pdfPageCount(pdf);
+if (requestedPages !== undefined && pages !== requestedPages) {
+  throw new Error(`LibreOffice 打开 ${basename(savedPath)} 得到 ${pages} 页，预期 ${requestedPages} 页`);
+}
 
 let geometryEvidence = '';
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
@@ -313,7 +321,6 @@ if (basename(savedPath) === 'table-row-insert.pptx') {
 if (basename(savedPath) === 'add-slide.pptx' || basename(savedPath) === 'add-slide-first.pptx') {
   const first = basename(savedPath) === 'add-slide-first.pptx';
   const expectedPages = first ? 2 : 3;
-  const pages = pdfPageCount(pdf);
   if (pages !== expectedPages) throw new Error(`LibreOffice 新增页 PDF 页数 ${pages}，预期 ${expectedPages}`);
   const markup = exportLibreOfficeSvg('新增页版式');
   const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);

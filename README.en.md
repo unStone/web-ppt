@@ -313,7 +313,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,120 assertions + 176 render snapshots |
-| `npm run test:edit` | 499 edit-core assertions + 89 M1 save assertions + 286 process-isolated SVG fingerprint pairs across 45 fixtures |
+| `npm run test:edit` | 499 edit-core assertions + 90 M1 save assertions + 286 process-isolated SVG fingerprint pairs across 45 fixtures |
 | `npm run test:editor` | 250 session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |

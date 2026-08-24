@@ -328,7 +328,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2120 项断言 + 176 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 文字与元素编辑 499 项断言 + M1 89 项独立验收 + 45 份固件、286 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 文字与元素编辑 499 项断言 + M1 90 项独立验收 + 45 份固件、286 对独立进程 SVG 指纹 |
 | `npm run test:editor` | 250 项会话 / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
