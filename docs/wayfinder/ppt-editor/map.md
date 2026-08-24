@@ -47,10 +47,10 @@ tracker: local-markdown
 - [实现 PowerPoint 语义框选](tickets/021-marquee-selection.md) — 空白手势越过屏幕 3px 后才快照当前组直属候选，以世界 OBB 四角完全包含驱动 interaction SVG；Chrome 误差 0.000px，60 元素首帧/p95 0.900/0.200ms。
 - [实现方向键微移与连续撤销](tickets/022-keyboard-nudge.md) — 每个视图以物理按键 token 驱动 1/10px 世界位移，历史按路径压缩长按 patch；Chrome 三档 zoom 最大偏差 0.049px，60 元素连续 repeat p95 1.800ms。
 - [实现 Tab 元素遍历与焦点所有权](tickets/023-tab-selection-order.md) — 当前页或已进入组以直属绘制顺序双向循环，事件视图隔离跨页共享选区；Chrome 60 元素完整反馈 p95 0.200ms，可信 Tab 焦点不外逃。
+- [实现修饰键点选与框选增减选](tickets/024-modifier-multiselect.md) — Shift/Ctrl/Meta 以当前页或组直属绘制顺序做对称差，Alt 可穿透增减；Chrome 60 元素点选/框选 p95 0.700/0.400ms，可信三种修饰键均通过。
 
 ## Not yet specified
 
-- M2 的会话、点选/框选、方向键、坐标、移动/缩放/旋转与吸附已落定；Shift/Ctrl 增减选仍需独立拆票。
 - M3 的文本 API 已固定；浏览器 contenteditable、Safari engine、扁平格式区间与 IME 事务仍要等 M2 的编辑器生命周期和选择事件形状落定后拆票。
 - M4 的新增页、图片、形状和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。

@@ -7,6 +7,7 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contract.mjs';
+import { runTrustedModifierSelectionContract } from './lib/editor-multiselect-browser-contract.mjs';
 import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
@@ -130,26 +131,28 @@ async function browserResult(webSocketDebuggerUrl) {
     }
     return response.result?.result?.value;
   };
-  const trustedMouseGesture = async (start, end, duringExpression, committedExpression) => {
-    await request('Input.dispatchMouseEvent', {
-      type: 'mouseMoved', x: start.x, y: start.y, button: 'none', buttons: 0,
-    });
-    await request('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: start.x, y: start.y, button: 'left', buttons: 1, clickCount: 1,
-    });
+  const dispatchTrustedMouse = (type, point, modifiers, buttons) => request('Input.dispatchMouseEvent', {
+    type, x: point.x, y: point.y,
+    button: type === 'mouseMoved' && buttons === 0 ? 'none' : 'left',
+    buttons, ...(type === 'mouseMoved' ? {} : { clickCount: 1 }), modifiers,
+  });
+  const trustedMouseGesture = async (start, end, duringExpression, committedExpression, modifiers = 0) => {
+    await dispatchTrustedMouse('mouseMoved', start, modifiers, 0);
+    await dispatchTrustedMouse('mousePressed', start, modifiers, 1);
     let during;
     try {
-      await request('Input.dispatchMouseEvent', {
-        type: 'mouseMoved', x: end.x, y: end.y, button: 'left', buttons: 1,
-      });
+      await dispatchTrustedMouse('mouseMoved', end, modifiers, 1);
       await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
       during = await evaluate(duringExpression);
     } finally {
-      await request('Input.dispatchMouseEvent', {
-        type: 'mouseReleased', x: end.x, y: end.y, button: 'left', buttons: 0, clickCount: 1,
-      });
+      await dispatchTrustedMouse('mouseReleased', end, modifiers, 0);
     }
     return { during, committed: await evaluate(committedExpression) };
+  };
+  const trustedClick = async (point, modifiers = 0) => {
+    await dispatchTrustedMouse('mouseMoved', point, modifiers, 0);
+    await dispatchTrustedMouse('mousePressed', point, modifiers, 1);
+    await dispatchTrustedMouse('mouseReleased', point, modifiers, 0);
   };
   const dispatchKey = async (key, code, virtualKeyCode) => {
     const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode };
@@ -180,6 +183,8 @@ async function browserResult(webSocketDebuggerUrl) {
           keyboardError: report.dataset.keyboardError,
           keyboardP95: report.dataset.keyboardP95,
           tabP95: report.dataset.tabP95,
+          multiselectClickP95: report.dataset.multiselectClickP95,
+          multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -387,6 +392,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await runTrustedKeyboardContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
+        await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -396,11 +402,13 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedMarquee = 'pass';
           report.dataset.trustedKeyboard = 'pass';
           report.dataset.trustedTab = 'pass';
+          report.dataset.trustedModifierSelection = 'pass';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
+          trustedModifierSelection: 'pass',
         };
       }
       await delay(100);
@@ -450,9 +458,11 @@ try {
     + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
     + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
     + ` · Tab60 p95 ${result.tabP95}ms`
+    + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · trusted keyboard/tab ${result.trustedKeyboard}/${result.trustedTab}`
+    + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
 } finally {
   if (browserRunning()) {

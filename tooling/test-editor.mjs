@@ -7,6 +7,7 @@ import { installDomEnv } from './lib/dom-env.mjs';
 import { runEditorSpaceContract } from './lib/editor-space-contract.mjs';
 import { runKeyboardNudgeContract } from './lib/keyboard-nudge-contract.mjs';
 import { runMarqueeGestureContract } from './lib/marquee-gesture-contract.mjs';
+import { runModifierSelectionContract } from './lib/modifier-selection-contract.mjs';
 import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
 import { runNativeHitContract } from './lib/native-hit-contract.mjs';
 import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
@@ -178,6 +179,7 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
 }
 
 await runNativeHitContract({ check, lib, root });
+await runModifierSelectionContract({ check, lib, root });
 await runMarqueeGestureContract({ check, lib, root });
 await runKeyboardNudgeContract({ check, lib, root });
 await runTabSelectionContract({ check, lib, root });

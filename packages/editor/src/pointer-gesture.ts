@@ -6,6 +6,7 @@ export interface PointerGestureSnapshot {
   screen: SpacePoint;
   altKey: boolean;
   ctrlKey: boolean;
+  metaKey: boolean;
   shiftKey: boolean;
 }
 
@@ -47,7 +48,8 @@ export class PointerGestureLifecycle {
     this.active = {
       pointerId: pointerId(event), startScreen: screen,
       snapshot: {
-        screen, altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
+        screen, altKey: event.altKey, ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey, shiftKey: event.shiftKey,
       },
       gesture, started: false, frame: null, cursor: this.root.style.cursor,
     };
@@ -106,9 +108,10 @@ export class PointerGestureLifecycle {
 
   modifier(event: KeyboardEvent): boolean {
     const active = this.active;
-    if (!active || !['Shift', 'Alt', 'Control'].includes(event.key)) return false;
+    if (!active || !['Shift', 'Alt', 'Control', 'Meta'].includes(event.key)) return false;
     active.snapshot = {
-      ...active.snapshot, altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
+      ...active.snapshot, altKey: event.altKey, ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey, shiftKey: event.shiftKey,
     };
     if (active.started) this.scheduleFrame(active);
     return true;
@@ -125,7 +128,8 @@ export class PointerGestureLifecycle {
   private updateSnapshot(active: ActivePointerGesture, event: PointerEvent): void {
     active.snapshot = {
       screen: { x: event.clientX, y: event.clientY },
-      altKey: event.altKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey,
+      altKey: event.altKey, ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey, shiftKey: event.shiftKey,
     };
   }
 

@@ -13,8 +13,9 @@ import type { ResizeHandle } from './resize-geometry';
 import { RotationGestureController } from './rotation-gesture';
 import { normalizeSnapMargins } from './snap';
 import type { SnapMargins } from './snap';
+import { combineSelectionIds, selectionModifierActive } from './selection-combine';
 import {
-  directSelectableChildIds, enteredGroupOnSlide, isSelectable,
+  alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
   outermostHitCandidate, selectableElementIdsFromPath,
 } from './selection-hit';
 import { renderSelectionOverlay } from './selection-overlay';
@@ -116,11 +117,19 @@ class DomSlideEditor implements SlideEditor {
         ? this.session.editor.selection.enteredGroup : null,
       this.currentSlide,
     );
+    const togglesSelection = selectionModifierActive(event);
     const id = event.altKey
-      ? this.alternateCandidate(event.clientX, event.clientY, enteredGroup)
+      ? alternateSelectableElementId(
+        this.session.editor.doc,
+        this.element.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
+        this.staticLayer,
+        enteredGroup,
+        this.session.editor.selection,
+        togglesSelection,
+      )
       : this.outermostCandidate(candidates, enteredGroup);
     const selection = this.session.editor.selection;
-    const keepsSelection = id && !event.altKey && selection.kind === 'elements'
+    const keepsSelection = id && !event.altKey && !togglesSelection && selection.kind === 'elements'
       && selection.ids.includes(id);
     if (!id) {
       this.moveGesture.cancel();
@@ -131,10 +140,17 @@ class DomSlideEditor implements SlideEditor {
     }
     this.marqueeGesture.cancel();
     if (!keepsSelection) {
-      this.session.editor.select({ kind: 'elements', ids: [id], enteredGroup });
+      const scope = directSelectableChildIds(this.session.editor.doc, this.currentSlide, enteredGroup);
+      const ids = combineSelectionIds(
+        scope, selection.kind === 'elements' ? selection.ids : [], [id], togglesSelection,
+      );
+      this.session.editor.select(ids.length
+        ? { kind: 'elements', ids, enteredGroup }
+        : { kind: 'none' });
     }
     const nextSelection = this.session.editor.selection;
-    if (id && !event.altKey && nextSelection.kind === 'elements'
+    if (id && (!event.altKey || togglesSelection) && nextSelection.kind === 'elements'
+      && nextSelection.ids.includes(id)
       && nextSelection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
       this.moveGesture.begin(event, nextSelection.ids);
     }
@@ -174,6 +190,7 @@ class DomSlideEditor implements SlideEditor {
   };
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit') return;
+    if (this.marqueeGesture.modifier(event)) event.preventDefault();
     if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.resizeGesture.modifier(event)) event.preventDefault();
@@ -196,6 +213,7 @@ class DomSlideEditor implements SlideEditor {
     event.preventDefault();
   };
   private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (this.currentMode === 'edit' && this.marqueeGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.moveGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.rotationGesture.modifier(event)) event.preventDefault();
     if (this.currentMode === 'edit' && this.resizeGesture.modifier(event)) event.preventDefault();
@@ -406,24 +424,6 @@ class DomSlideEditor implements SlideEditor {
     if (!target || typeof target !== 'object' || (target as Node).nodeType !== 1) return false;
     const handle = (target as Element).closest<SVGCircleElement>('[data-edit-rotation-handle]');
     return !!handle && this.interactionLayer.contains(handle);
-  }
-
-  private alternateCandidate(x: number, y: number, enteredGroup: ElementId | null): ElementId | undefined {
-    const elements = this.element.ownerDocument.elementsFromPoint?.(x, y) ?? [];
-    const candidates: ElementId[] = [];
-    for (const element of elements) {
-      if (!this.staticLayer.contains(element)) continue;
-      const path: EventTarget[] = [];
-      for (let current: Element | null = element; current && current !== this.staticLayer; current = current.parentElement) {
-        path.push(current);
-      }
-      const id = this.outermostCandidate(this.hitCandidates(path), enteredGroup);
-      if (id && !candidates.includes(id)) candidates.push(id);
-    }
-    const selection = this.session.editor.selection;
-    const currentId = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
-    const currentIndex = currentId ? candidates.indexOf(currentId) : -1;
-    return candidates[currentIndex < 0 ? 0 : (currentIndex + 1) % candidates.length];
   }
 
   private outermostCandidate(candidates: ElementId[], enteredGroup: ElementId | null): ElementId | undefined {

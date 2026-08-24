@@ -47,6 +47,12 @@ overlapping candidates in `elementsFromPoint` z-order. Locked, user-hidden, and 
 skipped. View mode does not intercept pointer events or mutate the shared headless selection. Selection changes
 replace only the interaction overlay, leaving the static preview DOM untouched.
 
+`Shift`, `Ctrl`, or macOS `Command`+click toggles a direct selectable child in the current slide or entered
+group. Combining the selection modifier with `Alt` still reaches an unselected object behind the current stack.
+A modified marquee previews and commits the symmetric difference between the valid prior selection and fully
+contained objects; a modified blank click preserves the selection. Results follow paint order, create no history,
+and never rebuild the static preview.
+
 When an edit view has focus, arrow keys nudge in slide space by `1px`; `Shift`+arrow nudges by `10px`.
 Multi-selections and elements inside rotated, flipped, non-uniformly scaled groups receive the same world-space
 delta. Auto-repeat from one physical hold is one undo unit, while a press after key-up starts another. A locked,

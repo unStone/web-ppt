@@ -2,6 +2,7 @@ import { effectiveElement } from '@web-ppt/edit-core';
 import type { Editor, ElementId } from '@web-ppt/edit-core';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
+import { combineSelectionIds, selectionModifierActive } from './selection-combine';
 import { screenToSlidePoint } from './space';
 import type { SpacePoint } from './space';
 import { transformFrameCorners } from './transform-frame';
@@ -19,6 +20,7 @@ interface MarqueeSession {
   start: SpacePoint;
   enteredGroup: ElementId | null;
   candidates: MarqueeCandidate[];
+  priorIds: ElementId[];
   selected: ElementId[];
   layer: SVGGElement | null;
   frame: SVGRectElement | null;
@@ -48,10 +50,12 @@ export class MarqueeGestureController {
 
   begin(event: PointerEvent, enteredGroup: ElementId | null): void {
     this.cancel();
+    const selection = this.options.editor.selection;
     const session: MarqueeSession = {
       start: this.toSlide({ x: event.clientX, y: event.clientY }),
       enteredGroup,
       candidates: [],
+      priorIds: selection.kind === 'elements' ? [...selection.ids] : [],
       selected: [], layer: null, frame: null, priorOverlay: null,
     };
     this.session = session;
@@ -65,9 +69,13 @@ export class MarqueeGestureController {
   }
 
   move(event: PointerEvent): void { this.lifecycle.move(event); }
+  modifier(event: KeyboardEvent): boolean {
+    return ['Shift', 'Control', 'Meta'].includes(event.key) && this.lifecycle.modifier(event);
+  }
   finish(event: PointerEvent): void {
+    const preservesSelection = selectionModifierActive(event);
     const result = this.lifecycle.finish(event);
-    if (result === 'click') this.options.editor.select({ kind: 'none' });
+    if (result === 'click' && !preservesSelection) this.options.editor.select({ kind: 'none' });
     if (result !== 'ignored') this.session = null;
   }
   cancel(): void {
@@ -147,7 +155,7 @@ export class MarqueeGestureController {
     session.frame?.setAttribute('width', String(rectangle.right - rectangle.left));
     session.frame?.setAttribute('height', String(rectangle.bottom - rectangle.top));
     session.frame?.setAttribute('stroke-width', String(strokeWidth));
-    session.selected = this.selectionAt(session, snapshot);
+    session.selected = this.combinedSelectionAt(session, snapshot);
     const selected = new Set(session.selected);
     for (const candidate of session.candidates) {
       candidate.preview?.setAttribute('stroke-width', String(strokeWidth));
@@ -156,10 +164,22 @@ export class MarqueeGestureController {
   }
 
   private commit(session: MarqueeSession, snapshot: PointerGestureSnapshot): () => void {
-    const ids = this.selectionAt(session, snapshot);
+    const ids = this.combinedSelectionAt(session, snapshot);
     return () => this.options.editor.select(ids.length
       ? { kind: 'elements', ids, enteredGroup: session.enteredGroup }
       : { kind: 'none' });
+  }
+
+  private combinedSelectionAt(
+    session: MarqueeSession,
+    snapshot: PointerGestureSnapshot,
+  ): ElementId[] {
+    return combineSelectionIds(
+      session.candidates.map((candidate) => candidate.id),
+      session.priorIds,
+      this.selectionAt(session, snapshot),
+      selectionModifierActive(snapshot),
+    );
   }
 
   private clearPreview(session: MarqueeSession): void {
