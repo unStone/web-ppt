@@ -42,6 +42,13 @@ if (mode === 'projected') {
       at: { parentId: doc.slideOrder[0], x: scenario.x, y: scenario.y },
     });
     edit.disposeDoc(sourceDoc);
+  } else if (scenario.type === 'text') {
+    for (const change of scenario.edits) {
+      const textTarget = Object.values(doc.elements)
+        .find((record) => record.src.name === change.targetName);
+      if (!textTarget) throw new Error(`M1 指纹固件缺少文字目标：${change.targetName}`);
+      editor.exec({ type: 'EditText', id: textTarget.id, ops: change.ops });
+    }
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

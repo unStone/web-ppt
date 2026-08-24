@@ -1,4 +1,5 @@
 import type { EditDoc } from '../types';
+import { validateFlatTextOverride } from '../text-model';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
@@ -25,7 +26,10 @@ export function validateElementTextPatch(doc: EditDoc, patch: ElementTextPatch, 
   const record = doc.elements[patch.path[1]];
   if (!record || record.src.kind !== 'shape') throw new Error(`Patch ${index} 指向非文本形状`);
   if (record.meta.editable !== 'full') throw new Error(`Patch ${index} 指向不可编辑文本`);
-  if (patch.op === 'set' && patch.value.kind !== 'empty') throw new Error(`Patch ${index} 的文本覆盖无效`);
+  if (patch.op === 'set') {
+    if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value);
+    else if (patch.value.kind !== 'empty') throw new Error(`Patch ${index} 的文本覆盖无效`);
+  }
 }
 
 export function applyElementTextPatch(doc: EditDoc, patch: ElementTextPatch): void {

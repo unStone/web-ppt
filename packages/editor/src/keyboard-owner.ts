@@ -25,3 +25,7 @@ export function shouldYieldClipboardEvent(event: ClipboardEvent): boolean {
   // closed Shadow 的 composedPath 看不到内部 input，但焦点会重定向到 host。
   return target.matches?.(':focus, :focus-within') ?? false;
 }
+
+export function shouldYieldPointerEvent(event: PointerEvent): boolean {
+  return eventHasNativeControl(event);
+}

@@ -292,7 +292,7 @@ export const DEFAULT_LINE_HEIGHT = 1.2;
 const ALIGN: Record<string, Paragraph['align']> = { l: 'left', ctr: 'center', r: 'right', just: 'justify', dist: 'justify' };
 const VERT: Record<string, TextVert> = { horz: 'horz', vert: 'vert', vert270: 'vert270', wordArtVert: 'wordArtVert', eaVert: 'vert', mongolianVert: 'vert' };
 
-export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | null {
+export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty = false): TextBody | null {
   if (!txBody) return null;
   const bodyPr = kid(txBody, 'bodyPr');
   const bodyPrs = [bodyPr, ...(env.bodyPrFallbacks ?? [])];
@@ -412,7 +412,8 @@ export function parseTextBody(txBody: Element | null, env: TextEnv): TextBody | 
     });
   }
 
-  if (!hasContent) return null;
+  // 编辑解析必须保留空段落及 endParaRPr 的格式入口；普通查看仍把它收敛成 null，避免空形状生成 DOM。
+  if (!hasContent && !includeEmpty) return null;
   return {
     anchor, insets, wrap, fontScale, paragraphs,
     ...(autoFitCompute ? { autoFitCompute: true } : {}),

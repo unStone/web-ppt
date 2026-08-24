@@ -15,6 +15,7 @@ import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
 import { runTrustedSnapContract } from './lib/editor-snap-trusted-contract.mjs';
 import { runTrustedClipboardContract } from './lib/editor-clipboard-trusted-contract.mjs';
+import { runTrustedTextContract } from './lib/editor-text-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -208,6 +209,7 @@ async function browserResult(webSocketDebuggerUrl) {
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
           clipboardPaste: report.dataset.clipboardPaste,
           clipboardPasteP95: report.dataset.clipboardPasteP95,
+          textP95: report.dataset.textP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -420,6 +422,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await runTrustedClipboardContract({ evaluate, dispatchKey });
+        const trustedTextP95 = await runTrustedTextContract({ evaluate, request });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -434,6 +437,8 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
           report.dataset.trustedClipboard = 'pass';
+          report.dataset.trustedText = 'pass';
+          report.dataset.trustedTextP95 = '${trustedTextP95}';
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
@@ -442,6 +447,8 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
           trustedLayer: 'pass',
           trustedClipboard: 'pass',
+          trustedText: 'pass',
+          trustedTextP95,
         };
       }
       await delay(100);
@@ -497,13 +504,19 @@ try {
     + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
+    + ` · 文字输入 p95 ${result.textP95}ms`
+    + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
     + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · trusted clipboard ${result.trustedClipboard}`
+    + ` · trusted text/IME ${result.trustedText}`
     + ` · ${result.fontFaces} 个嵌入 @font-face`);
+} catch (error) {
+  console.error(error instanceof Error ? error.stack : String(error));
+  throw error;
 } finally {
   if (browserRunning()) {
     child.kill('SIGTERM');

@@ -1,7 +1,8 @@
 import type { TextBody } from '@web-ppt/core';
-import { slideOfElement } from './projection';
+import { effectiveElement, slideOfElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 import type { Selection, TextPosition } from './commands/types';
+import { textRunEditLength } from './text-position';
 
 const clonePosition = (position: TextPosition): TextPosition => ({ ...position });
 
@@ -28,7 +29,8 @@ function validateTextPosition(text: TextBody, position: TextPosition, label: str
     return;
   }
   const run = paragraph.runs[position.r];
-  if (!run || position.off > run.text.length) throw new Error(`${label} 的 run 或 UTF-16 偏移越界`);
+  const length = run ? textRunEditLength(run) : undefined;
+  if (!run || position.off > length!) throw new Error(`${label} 的 run 或 UTF-16 偏移越界`);
 }
 
 export function isElementDescendantOf(doc: EditDoc, id: ElementId, ancestor: ElementId): boolean {
@@ -81,9 +83,14 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
     }
     case 'text': {
       const record = doc.elements[selection.id];
-      if (!record || record.src.kind !== 'shape' || !record.src.text) throw new Error('文本选区必须指向文本形状');
-      validateTextPosition(record.src.text, selection.anchor, '文本选区 anchor');
-      validateTextPosition(record.src.text, selection.focus, '文本选区 focus');
+      if (!record || record.src.kind !== 'shape' || (!record.src.text && !record.meta.textTemplate)) {
+        throw new Error('文本选区必须指向文本形状');
+      }
+      const element = effectiveElement(doc, selection.id);
+      const text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
+      if (!text) throw new Error('文本选区必须指向有效文本形状');
+      validateTextPosition(text, selection.anchor, '文本选区 anchor');
+      validateTextPosition(text, selection.focus, '文本选区 focus');
       return cloneSelection(selection);
     }
     case 'table': {

@@ -1,5 +1,6 @@
 import type {
-  ElementBase, GeomSpec, ImageElement, OpcPackage, Presentation, ShapeElement, Slide, SlideElement,
+  ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeElement, Slide,
+  SlideElement, TextBody, TextRun,
 } from '@web-ppt/core';
 
 export type ElementId = string;
@@ -56,8 +57,30 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   text?: TextOverride;
 };
 
-/** M3 会在同一字段扩展扁平段落；当前 empty 已足够表达占位符“清内容不删框”。 */
-export type TextOverride = { readonly kind: 'empty' };
+export interface TextMark {
+  readonly from: number;
+  readonly to: number;
+  readonly props: Omit<TextRun, 'text'>;
+  /** 公式在编辑字符串里只占一个原子，线性文本另存用于投影与导出。 */
+  readonly atomText?: string;
+  /** 来源身份让保存层尽量复用原始 rPr / fld / 公式节点。 */
+  readonly source?: { readonly paragraph: number; readonly run: number };
+  /** 只有来源内容本身能克隆 fld/公式；新输入只借 source 继承 rPr。 */
+  readonly preserveSource?: true;
+}
+
+export interface FlatTextParagraph {
+  readonly text: string;
+  readonly props: Omit<Paragraph, 'runs'>;
+  readonly marks: readonly TextMark[];
+  readonly sourceParagraph?: number;
+}
+
+export type TextOverride = { readonly kind: 'empty' } | {
+  readonly kind: 'flat';
+  readonly body: Omit<TextBody, 'paragraphs'>;
+  readonly paragraphs: readonly FlatTextParagraph[];
+};
 
 export interface ElementMeta {
   geom?: GeomSpec;
@@ -66,6 +89,8 @@ export interface ElementMeta {
   locked?: boolean;
   /** 来源文件只禁止移动；与宿主设置的通用 locked 分开，避免误伤其他编辑。 */
   moveLocked?: boolean;
+  /** 空文字形状的编辑格式入口；首次输入后由 flat override 接管。 */
+  textTemplate?: TextBody;
   /** 会话中新建的元素没有保存基线宿主；撤销时不能把它误记成来源删除。 */
   created?: boolean;
   /** 仅新建树根携带；保存从初始基线重建时据此重新插入宿主。 */

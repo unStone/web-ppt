@@ -641,6 +641,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
 
   const txBody = kid(sp, 'txBody');
   let text: TextBody | null = null;
+  let textTemplate: TextBody | undefined;
   if (txBody) {
     const chain: LevelStyles[] = [env.docDefaults];
     if (ph) {
@@ -665,9 +666,14 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
       },
     };
     text = parseTextBody(txBody, textEnv);
+    if (!text && env.edit) {
+      textTemplate = parseTextBody(txBody, textEnv, true) ?? undefined;
+    }
   }
 
-  if (!path && !text) return null;
+  if (!path && !text && !textTemplate) return null;
+  const editing = editInfoOf(env, cNvPr, ph, editableGeom, undefined, movementLocked(nv));
+  if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
   return {
     kind: 'shape', ...base(xf), path, fill, stroke, text,
     openGeom: openGeom || undefined,
@@ -676,7 +682,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
     link: hyperlinkOf(cNvPr, env),
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(env, cNvPr, ph, editableGeom, undefined, movementLocked(nv)),
+    ...editing,
   };
 }
 

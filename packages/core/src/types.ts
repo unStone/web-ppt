@@ -253,6 +253,8 @@ export interface ElementEditInfo {
   editable?: 'full' | 'frame' | 'none';
   /** OOXML `noMove` 约束；只禁止改变位置，不扩大成通用编辑锁。 */
   moveLocked?: boolean;
+  /** 编辑解析保留空 txBody 的段落与默认 run 格式；不参与普通渲染。 */
+  textTemplate?: TextBody;
 }
 
 export type SlideElement =

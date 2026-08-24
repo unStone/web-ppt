@@ -18,6 +18,7 @@ import { runResizeGestureContract } from './lib/resize-gesture-contract.mjs';
 import { runRotationGestureContract } from './lib/rotation-gesture-contract.mjs';
 import { runSnapGestureContract } from './lib/snap-gesture-contract.mjs';
 import { runTabSelectionContract } from './lib/tab-selection-contract.mjs';
+import { runTextEditorContract } from './lib/text-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -190,6 +191,7 @@ await runDeleteKeyboardContract({ check, lib, root });
 await runLayerKeyboardContract({ check, lib, root });
 await runKeyboardNudgeContract({ check, lib, root });
 await runTabSelectionContract({ check, lib, root });
+await runTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

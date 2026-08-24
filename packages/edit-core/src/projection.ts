@@ -1,6 +1,7 @@
 import { resolveGeomPath } from '@web-ppt/core/geometry';
 import type { GroupElement, ImageElement, ShapeElement, Slide, SlideElement } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
+import { textBodyFromOverride } from './text-model';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -33,6 +34,8 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   let out = { ...record.src, ...record.ovr } as unknown as SlideElement;
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
+  } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
+    out = { ...out, text: textBodyFromOverride(record.ovr.text) } as ShapeElement;
   }
   if (out.kind === 'group') {
     const source = record.src as GroupElement;

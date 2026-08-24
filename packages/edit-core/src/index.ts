@@ -23,13 +23,17 @@ export {
 export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
-  SlideRecord, SlideSource, TextOverride,
+  FlatTextParagraph, SlideRecord, SlideSource, TextMark, TextOverride,
 } from './types';
 export type {
-  AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditorChange,
+  AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, History, HistoryEntry, Patch, RemoveElementCommand,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetXfrmCommand, SetZCommand, TextPosition, Transaction,
-  TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
+  TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
+export { applyTextEditOps, flattenTextBody, textBodyFromOverride } from './text-model';
+export {
+  TEXT_ATOM, textBodyEditText, textPositionAtIndex, textPositionToIndex, textRunEditLength,
+} from './text-position';
 export type { AffineMatrix, ElementFrameTransform, SlideViewport, SpacePoint } from './space';

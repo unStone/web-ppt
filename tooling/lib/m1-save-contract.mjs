@@ -287,4 +287,67 @@ export async function runM1SaveContract({
   clipboardReparsed.dispose?.();
   edit.disposeDoc(clipboardDoc);
   edit.disposeDoc(clipboardSourceDoc);
+
+  const textScenario = Object.freeze({
+    type: 'text', file: 'sample-editor-text.pptx', targetName: '文本综合',
+    edits: [
+      {
+        targetName: '文本综合',
+        ops: [
+          {
+            type: 'replace', from: { p: 0, r: 1, off: 0 },
+            to: { p: 0, r: 1, off: 2 }, text: '纯 Web',
+          },
+          { type: 'splitParagraph', at: { p: 1, r: 0, off: 5 } },
+        ],
+      },
+      {
+        targetName: '空文本框',
+        ops: [{
+          type: 'replace', from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 }, text: '从空白开始编辑',
+        }],
+      },
+    ],
+  });
+  const textInput = load(textScenario.file);
+  const textPres = await core.parse(textInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const textDoc = edit.createDoc(textPres, { idPrefix: 'm1-text-' });
+  const textEditor = new edit.Editor(textDoc);
+  const textTargets = textScenario.edits.map((change) => Object.values(textDoc.elements)
+    .find((record) => record.src.name === change.targetName));
+  if (!check('文字指纹固件暴露复杂文本与空文本框写回锚点',
+    textTargets.every((record) => !!record?.meta.origin))) {
+    edit.disposeDoc(textDoc);
+    return;
+  }
+  textScenario.edits.forEach((change, index) => textEditor.exec({
+    type: 'EditText', id: textTargets[index].id, ops: change.ops,
+  }));
+  const textSaved = await textEditor.saveDetailed();
+  const textArtifact = saveArtifact('basic-text-editing.pptx', textSaved.bytes);
+  const textDiff = diffPackageBytes(textInput, textSaved.bytes);
+  const textReparsed = await core.parse(textSaved.bytes, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const reopenedRich = findNamed(textReparsed.slides[0].elements, '文本综合');
+  const reopenedEmpty = findNamed(textReparsed.slides[0].elements, '空文本框');
+  const slideXml = new TextDecoder().decode(textReparsed.package.parts['ppt/slides/slide1.xml']);
+  check('文字保存只改目标页并保留拆段 RTL、公式、字段和空文本框继承格式',
+    textSaved.mode === 'passthrough' && textDiff.changed.join(',') === 'ppt/slides/slide1.xml'
+      && reopenedRich.text.paragraphs.slice(1, 3).every((paragraph) => paragraph.rtl)
+      && reopenedRich.text.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.math?.length))
+      && reopenedEmpty.text.paragraphs[0].runs[0].b === true
+      && reopenedEmpty.text.paragraphs[0].runs.map((run) => run.text).join('') === '从空白开始编辑'
+      && slideXml.includes('<a:fld'));
+  const textProjectedFingerprint = renderFingerprint(textScenario.file, 'projected', textScenario);
+  const textSavedFingerprint = renderFingerprint(textArtifact, 'saved', textScenario);
+  for (const textMode of ['html', 'svg']) {
+    eq(`文字保存产物 ${textMode} 指纹等于独立进程中的有效投影`,
+      textSavedFingerprint[textMode], textProjectedFingerprint[textMode]);
+  }
+  textReparsed.dispose?.();
+  edit.disposeDoc(textDoc);
 }

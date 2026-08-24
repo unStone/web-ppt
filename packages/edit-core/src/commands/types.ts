@@ -120,8 +120,25 @@ export interface PasteElementsCommand {
   readonly at: { readonly parentId: SlideId | ElementId; readonly x: number; readonly y: number };
 }
 
+export type TextEditOp = {
+  readonly type: 'replace';
+  readonly from: TextPosition;
+  readonly to: TextPosition;
+  readonly text: string;
+} | {
+  readonly type: 'splitParagraph' | 'insertLineBreak';
+  readonly at: TextPosition;
+};
+
+export interface EditTextCommand {
+  readonly type: 'EditText';
+  readonly id: ElementId;
+  /** 操作按数组顺序作用于前一个操作的结果，便于 beforeinput 批量提交。 */
+  readonly ops: readonly TextEditOp[];
+}
+
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand;
+  | AlignElementsCommand | PasteElementsCommand | EditTextCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

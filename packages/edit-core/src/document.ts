@@ -48,6 +48,7 @@ function metaOf(
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
     ...(info?.origin ? { origin: info.origin } : {}),
     ...(info?.moveLocked ? { moveLocked: true } : {}),
+    ...(info?.textTemplate ? { textTemplate: info.textTemplate } : {}),
     editable,
   };
 }

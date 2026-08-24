@@ -34,6 +34,7 @@
     import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
     import { runEditorMultiselectBrowserContract } from '/tooling/lib/editor-multiselect-browser-contract.mjs';
     import { runEditorClipboardBrowserContract } from '/tooling/lib/editor-clipboard-browser-contract.mjs';
+    import { runEditorTextBrowserContract } from '/tooling/lib/editor-text-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -420,6 +421,7 @@
       const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const multiselectResult = await runEditorMultiselectBrowserContract({ openEditor, load });
       const clipboardResult = await runEditorClipboardBrowserContract({ openEditor, load });
+      const textResult = await runEditorTextBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -469,6 +471,7 @@
       report.dataset.multiselectMarqueeP95 = multiselectResult.marqueeP95.toFixed(3);
       report.dataset.clipboardPaste = clipboardResult.pasteTime.toFixed(3);
       report.dataset.clipboardPasteP95 = clipboardResult.pasteP95.toFixed(3);
+      report.dataset.textP95 = textResult.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -497,12 +500,14 @@
       report.textContent += `\n60 元素 Tab 遍历 p95 ${tabP95.toFixed(3)}ms`;
       report.textContent += `\n元素剪贴板小批量粘贴 ${clipboardResult.pasteTime.toFixed(3)}ms`;
       report.textContent += `，60 元素 p95 ${clipboardResult.pasteP95.toFixed(3)}ms`;
+      report.textContent += `\n文字按键到上屏 p95 ${textResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;
       globalThis.editorContract = {
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,
         trustedLayerSession,
+        textResult,
       };
     } catch (error) {
       report.style.color = '#b91c1c';
