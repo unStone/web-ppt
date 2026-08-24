@@ -1022,7 +1022,16 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
   );
 
   const tbl = kid(data, 'tbl');
-  if (tbl) return { ...parseTable(tbl, xf, env, name), id: frameId, ...frameEditInfo };
+  if (tbl) {
+    const parsed = parseTable(tbl, xf, env, name);
+    const editInfo = env.edit
+      ? { ...parsed.editInfo, ...frameEditInfo.editInfo }
+      : undefined;
+    return {
+      ...parsed, id: frameId, ...frameEditInfo,
+      ...(editInfo ? { editInfo } : {}),
+    };
+  }
 
   if (uri.endsWith('/chart')) {
     const chart = parseChartFrame(data, xf, env);
@@ -1273,9 +1282,9 @@ function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableE
   const colWidths = kids(kid(tbl, 'tblGrid'), 'gridCol').map((c) => emu(numAttr(c, 'w')));
   const trs = kids(tbl, 'tr');
 
-  const rows: TableRow[] = trs.map((tr, ri) => {
+  const parseRow = (tr: Element, ri: number, rowCount: number): TableRow => {
     const isFirst = firstRowOn && ri === 0;
-    const isLast = lastRowOn && ri === trs.length - 1;
+    const isLast = lastRowOn && ri === rowCount - 1;
     const bandIdx = bandRow ? (firstRowOn ? ri - 1 : ri) : -1;
     return {
       height: emu(numAttr(tr, 'h')),
@@ -1350,9 +1359,29 @@ function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableE
         };
       }),
     };
-  });
+  };
 
-  return { kind: 'table', ...base(xf), colWidths, rows, name };
+  const rows = trs.map((tr, ri) => parseRow(tr, ri, trs.length));
+  let editInfo: TableElement['editInfo'];
+  const template = trs[trs.length - 1];
+  if (env.edit && template) {
+    const next = trs.length;
+    editInfo = {
+      tableRowAppend: {
+        ...(next === 1 ? { previousLast: parseRow(template, 0, 2) } : {}),
+        regular: [
+          parseRow(template, next, next + 2),
+          parseRow(template, next + 1, next + 3),
+        ],
+        last: [
+          parseRow(template, next, next + 1),
+          parseRow(template, next + 1, next + 2),
+        ],
+      },
+    };
+  }
+
+  return { kind: 'table', ...base(xf), colWidths, rows, name, ...(editInfo ? { editInfo } : {}) };
 }
 
 // ---------------- 幻灯片 ----------------

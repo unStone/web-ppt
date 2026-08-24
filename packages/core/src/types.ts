@@ -255,6 +255,8 @@ export interface ElementEditInfo {
   moveLocked?: boolean;
   /** 编辑解析保留空 txBody 的段落与默认 run 格式；不参与普通渲染。 */
   textTemplate?: TextBody;
+  /** 仅编辑模式保留追加行的表样式投影；普通预览不承担结构编辑状态。 */
+  tableRowAppend?: TableRowAppendEditInfo;
 }
 
 export type SlideElement =
@@ -322,6 +324,15 @@ export interface TableElement extends ElementBase {
 export interface TableRow {
   height: number;
   cells: TableCell[];
+}
+
+export interface TableRowAppendEditInfo {
+  /** 单行表的原末行同时是 firstRow，追加后不能用普通条纹模板替代。 */
+  previousLast?: TableRow;
+  /** 非末行按条纹奇偶交替使用；第二项也精确对应原末行失去 lastRow 后的样式。 */
+  regular: readonly [TableRow, TableRow];
+  /** 未启用 lastRow 时末行仍参与行条纹，因此也必须保留奇偶两态。 */
+  last: readonly [TableRow, TableRow];
 }
 
 export interface CellBorders {

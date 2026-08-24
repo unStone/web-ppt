@@ -52,11 +52,38 @@ export async function runTrustedTableCellTextContract({ evaluate, request }) {
       tab: !!tab && tab.isTrusted && tab.defaultPrevented,
       inserted: text.endsWith('真中文'), trustedInput, composition, events: state.events,
     };
-    state.view.destroy(); state.session.dispose(); state.mount.remove();
     return output;
   })()`);
   if (!stable || !stableUpdate || !result.tab || !result.inserted
     || !result.trustedInput || !result.composition) {
     throw new Error(`真实单元格 Tab/IME 失败：${JSON.stringify({ stable, stableUpdate, ...result })}`);
   }
+  await evaluate(`(() => {
+    const state = globalThis.editorContract.tableCellTextResult;
+    state.mount.querySelector('[data-ppt-text-editor]').dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape', bubbles: true, composed: true, cancelable: true,
+    }));
+    state.mount.querySelector('[data-table-cell="9:19"]').dispatchEvent(new MouseEvent('dblclick', {
+      bubbles: true, composed: true, cancelable: true,
+    }));
+    state.tabEvent = null;
+    state.mount.querySelector('[data-ppt-text-editor]').focus({ preventScroll: true });
+  })()`);
+  await request('Input.dispatchKeyEvent', {
+    type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+  });
+  await request('Input.dispatchKeyEvent', {
+    type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+  });
+  const appended = await evaluate(`(() => {
+    const state = globalThis.editorContract.tableCellTextResult;
+    const table = state.session.editor.effectiveElement(state.id);
+    const tab = state.tabEvent;
+    const output = table.rows.length === 11
+      && state.mount.querySelector('[data-ppt-text-editor]')?.dataset.pptTextCell === '10:0'
+      && !!tab && tab.isTrusted && tab.defaultPrevented;
+    state.view.destroy(); state.session.dispose(); state.mount.remove();
+    return output;
+  })()`);
+  if (!appended) throw new Error('真实末格 Tab 没有追加新行并保持焦点所有权');
 }

@@ -12,7 +12,7 @@ export function setBodyPropsPatches(
 ): CommandPatches {
   assertTextBodyPropertyOverrides(command.props, 'SetBodyProps.props');
   const target = { id: command.id };
-  const { record, body: source, before } = textTargetContext(doc, target);
+  const { record, body: source, before, patchTarget } = textTargetContext(doc, target);
   const sourceBaseline = flattenTextBody(source);
   const baseline = before?.kind === 'flat' ? before : before?.body
     ? { ...sourceBaseline, body: before.body, ...(before.bodyOverrides ? { bodyOverrides: before.bodyOverrides } : {}) }
@@ -29,7 +29,7 @@ export function setBodyPropsPatches(
     : applied;
   if (JSON.stringify(value) === JSON.stringify(before ?? baseline)) return { forward: [], inverse: [] };
   return {
-    forward: [setTextPatch(target, value, origin)],
-    inverse: [inverseTextPatch(target, before, origin)],
+    forward: [setTextPatch(patchTarget, value, origin)],
+    inverse: [inverseTextPatch(patchTarget, before, origin)],
   };
 }

@@ -1,5 +1,5 @@
 import {
-  applyRunProps, applyTextEditOps, slideOfElement, tableCellKey,
+  applyRunProps, applyTextEditOps, slideOfElement, tableCellOverrideKey,
   queryParaProps as queryHeadlessParaProps, queryRunProps, textBodyEditText, textBodyFromOverride,
   textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
@@ -316,8 +316,20 @@ export class TextEditorController {
     const element = this.options.editor.effectiveElement(this.activeId);
     if (element.kind !== 'table') return;
     const next = nextEditableTableCell(element, this.activeCell, reverse);
-    // 末格新增行必须走后续 InsertRow 结构命令；当前阶段只守住焦点所有权。
-    if (!next) return;
+    if (!next && reverse) return;
+    if (!next) {
+      const id = this.activeId;
+      const cell = { r: element.rows.length, c: 0 };
+      const caret = { p: 0, r: 0, off: 0 };
+      this.restoreStaticText();
+      this.options.editor.transaction((transaction) => {
+        transaction.exec({ type: 'InsertRow', id });
+        transaction.select({ kind: 'text', id, cell, anchor: caret, focus: caret });
+      }, '追加表格行');
+      this.root?.focus({ preventScroll: true });
+      this.setCaret(caret);
+      return;
+    }
     this.restoreStaticText();
     if (this.staticStale) this.options.syncStatic(this.activeId);
     this.staticStale = false;
@@ -373,7 +385,7 @@ export class TextEditorController {
     const { id, cell, text } = active;
     const record = this.options.editor.doc.elements[id];
     const currentOverride = cell
-      ? record.ovr.tableCells?.[tableCellKey(cell)]?.text
+      ? record.ovr.tableCells?.[tableCellOverrideKey(record, cell)]?.text
       : record.ovr.text;
     // 选区必须按命令实际使用的 flat mark 身份预测；从投影重新 flatten 会丢失来源边界。
     const predicted = applyTextEditOps(

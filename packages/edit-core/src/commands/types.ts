@@ -182,9 +182,15 @@ export interface SetBodyPropsCommand {
   readonly props: TextBodyPropertyOverrides;
 }
 
+/** 当前公开语义是尾部追加；指定位置插行要先解决纵向合并与坐标重基。 */
+export interface InsertRowCommand {
+  readonly type: 'InsertRow';
+  readonly id: ElementId;
+}
+
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
-  | FitTextShapeCommand | SetBodyPropsCommand;
+  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -210,12 +216,12 @@ export type ElementTextPatch = {
   readonly origin: string;
 } | {
   readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', number, number, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, number, 'text'];
   readonly value: TextOverride;
   readonly origin: string;
 } | {
   readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', number, number, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, number, 'text'];
   readonly origin: string;
 };
 
@@ -243,7 +249,14 @@ export type ElementTreePatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch | ElementTreePatch;
+export type TableRowPatch = {
+  readonly op: 'insert' | 'remove';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableRows', string];
+  readonly value: import('../types').TableRowInsertion;
+  readonly origin: string;
+};
+
+export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch | ElementTreePatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

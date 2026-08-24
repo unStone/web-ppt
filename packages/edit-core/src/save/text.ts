@@ -3,7 +3,8 @@ import type { TextBody } from '@web-ppt/core';
 import type { ElementRecord, TextOverride } from '../types';
 import type { FlatTextParagraph, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
-import { parseTableCellKey } from '../table-cell';
+import { tableCellKeyResolver } from '../table-cell';
+import { tableRowsWithoutTextOverrides } from '../table-rows';
 import {
   cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild,
   replaceXmlChildren,
@@ -478,12 +479,14 @@ export function patchElementText(document: XmlDocument, record: ElementRecord): 
   const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
   if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
   const rows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
+  const sourceRows = tableRowsWithoutTextOverrides(record);
+  const resolveCell = tableCellKeyResolver(record);
   for (const [key, cellOverride] of Object.entries(record.ovr.tableCells)) {
     if (!cellOverride.text) continue;
-    const address = parseTableCellKey(key);
+    const address = resolveCell(key);
     if (!address) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
     const { r, c } = address;
-    const source = record.src.rows[r]?.cells[c];
+    const source = sourceRows[r]?.cells[c];
     const sourceText = source?.text ?? source?.editInfo?.textTemplate;
     const cell = rows[r] && xmlElementChildren(
       rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS },

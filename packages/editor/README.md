@@ -65,6 +65,11 @@ or entered group, in paint order and with wrap-around. A selection owned by anot
 view's first or last candidate. The traversal changes selection only: it creates no history entry and preserves
 the static preview DOM. Form and contenteditable controls, including those in Shadow DOM, keep native Tab focus.
 
+After a table cell is opened in the same text editor, `Tab` and `Shift`+`Tab` move only between visible merge-start
+cells. `Tab` in the final cell runs one `InsertRow` transaction and enters the first cell of the new blank row.
+Table style, frame height, static preview, selection box, and caret update together without losing focus. View mode
+never emits the structural command.
+
 `Ctrl/Cmd+Z` undoes; `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redoes. If the restored selection belongs to another
 slide, only the edit view that received the shortcut reveals that slide; other shared views stay put. Active
 pointer previews and regular or Shadow DOM text controls retain keyboard ownership, while single-element history

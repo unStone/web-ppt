@@ -22,7 +22,8 @@ const bytes = new Uint8Array(readFileSync(file));
 const pres = await core.parse(bytes, {
   edit: mode === 'projected', keepPackage: true, lazy: false, assets: 'defer',
 });
-let slide = pres.slides[0];
+const slideIndex = scenario.slideIndex ?? 0;
+let slide = pres.slides[slideIndex];
 let doc;
 if (mode === 'projected') {
   doc = edit.createDoc(pres, { idPrefix: 'm1-fingerprint-' });
@@ -77,6 +78,19 @@ if (mode === 'projected') {
       if (!bodyTarget) throw new Error(`M1 指纹固件缺少文字框目标：${change.targetName}`);
       editor.exec({ type: 'SetBodyProps', id: bodyTarget.id, props: change.props });
     }
+  } else if (scenario.type === 'insertRow') {
+    const rowTarget = target?.src.kind === 'table' ? target
+      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    if (!rowTarget) throw new Error('M1 指纹固件缺少追加行表格');
+    editor.exec({ type: 'InsertRow', id: rowTarget.id });
+    const row = editor.effectiveElement(rowTarget.id).rows.length - 1;
+    editor.exec({
+      type: 'EditText', id: rowTarget.id, cell: { r: row, c: scenario.cell ?? 0 },
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 }, text: scenario.text,
+      }],
+    });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });
@@ -87,7 +101,7 @@ if (mode === 'projected') {
     editor.exec({ type: 'AlignElements', ids, edge: scenario.edge });
   }
   else editor.exec({ type: 'SetXfrm', id: target.id, x: scenario.x });
-  slide = editor.toSlide(doc.slideOrder[0]);
+  slide = editor.toSlide(doc.slideOrder[slideIndex]);
 }
 
 // blob:/asset: 都是解析会话身份；指纹比较必须先内联同一资源字节，才是在比视觉投影。

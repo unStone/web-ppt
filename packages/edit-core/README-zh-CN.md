@@ -55,6 +55,8 @@ if (element.kind === 'shape' && element.text) {
 同一 `mergeKey` 的连续编辑最多合并 500ms；远端 `origin` 会应用但不进入本地历史。`isDirty()` 比较当前
 状态与最近一次 `markSaved()` 保存点。React、Vue、Web Component 或原生适配层只需订阅 `subscribe()`
 并调用两个投影方法，任何框架运行时都不会进入本包。
+协同客户端必须传入跨客户端唯一且稳定的 `origin`；追加行身份会包含它，两个 structuredClone 出来的
+文档并发追加时才不会占用同一条 patch 路径。
 
 `RemoveElement` 会递归移除元素树，逆 patch 保留稳定 parent/z 身份。有内容的占位符第一次执行时只写入
 空文本覆盖并保留形状，下一次才删除。保存只补丁拥有该元素的 OOXML 宿主或段落列表，并刻意保留可能被
@@ -127,12 +129,20 @@ OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原�
 携带并在目标包去重，超链接重建关系；SmartArt 等复杂对象只复用经过闭包哈希验证的同包 OPC part，
 跨文档无法无损迁移时会在分配身份前明确拒绝，不会静默变成截图。
 
+`InsertRow` 当前有意只提供表格尾部追加语义，供末格 Tab 和“在末尾添加行”按钮共用；它没有一个对
+纵向合并表格并不安全的 `at` 参数。新行保留原末行高度、直接格式、输入格式和横向合并拓扑，清空内容，
+并重新计算 `bandRow` / `lastRow` 与 frame 高度。命令只生成稳定行身份的稀疏 patch，不把整张表复制进历史。
+
+```ts
+editor.exec({ type: 'InsertRow', id: tableElementId });
+```
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 

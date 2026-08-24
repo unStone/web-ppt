@@ -110,9 +110,10 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
     case 'table': {
       const record = doc.elements[selection.id];
       if (!record || record.src.kind !== 'table') throw new Error('表格选区必须指向表格元素');
+      const table = effectiveElement(doc, selection.id);
       for (const cell of selection.cells) {
         if (!Number.isInteger(cell.r) || !Number.isInteger(cell.c) || cell.r < 0 || cell.c < 0
-          || cell.r >= record.src.rows.length || cell.c >= record.src.colWidths.length) {
+          || table.kind !== 'table' || cell.r >= table.rows.length || cell.c >= table.colWidths.length) {
           throw new Error(`表格选区单元格越界：${cell.r},${cell.c}`);
         }
       }

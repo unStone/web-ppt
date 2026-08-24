@@ -57,6 +57,8 @@ unit, and restores selection on undo/redo. Repeated edits with the same `mergeKe
 remote `origin` values apply without entering local history. `isDirty()` compares the current state with the
 last `markSaved()` checkpoint. React, Vue, Web Components, or vanilla adapters only need `subscribe()` and
 the two projection methods; none of their runtimes enter this package.
+Collaborative clients must pass a stable, client-unique `origin`; appended-row identities include it so two
+structured-cloned documents can merge concurrent appends without sharing a path.
 
 `RemoveElement` recursively removes an element tree while its inverse patch retains stable parent/z identity.
 For a populated placeholder, the first command writes an empty-text override and keeps the shape; the next
@@ -135,13 +137,22 @@ Images are embedded as base64 plus SHA-256 and deduplicated against the destinat
 new relationships. Complex objects such as SmartArt can reuse a verified same-package OPC closure; a different
 package is rejected before any model identity is allocated instead of receiving a degraded preview.
 
+`InsertRow` intentionally exposes append-only table semantics for now, shared by last-cell Tab and an
+“add row at end” control. It does not accept an `at` value that would be unsafe across vertical merges. The new row
+keeps the former last row's height, direct/input formatting, and horizontal merge topology, clears its content,
+and recomputes `bandRow`, `lastRow`, and frame height. History stores one sparse stable-row patch, not a table copy.
+
+```ts
+editor.exec({ type: 'InsertRow', id: tableElementId });
+```
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
-placeholder clears, and element removals, refreshes `doc.package` for the
+appended table rows, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 

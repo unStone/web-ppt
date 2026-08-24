@@ -81,5 +81,38 @@ export async function runEditorTableCellTextBrowserContract({ openEditor, load }
   if (p95 > 30 || cellText(session.editor.effectiveElement(performanceTable.id), 5, 10) !== original) {
     throw new Error(`20×10 表格输入完整上屏 p95 ${p95.toFixed(3)}ms`);
   }
-  return { session, view, mount, id: performanceTable.id, cell: targetCell, p95, geometryError };
+  mount.querySelector('[data-ppt-text-editor]').dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Escape', bubbles: true, composed: true, cancelable: true,
+  }));
+  mount.querySelector(`[data-edit-id="${performanceTable.id}"] [data-table-cell="9:19"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
+  const insertSamples = [];
+  for (let index = 0; index < 30; index++) {
+    editable = mount.querySelector('[data-ppt-text-editor]');
+    const started = performance.now();
+    editable.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Tab', bubbles: true, composed: true, cancelable: true,
+    }));
+    mount.querySelector('[data-ppt-text-editor]').getBoundingClientRect();
+    insertSamples.push(performance.now() - started);
+    if (session.editor.effectiveElement(performanceTable.id).rows.length !== 11
+      || mount.querySelector('[data-ppt-text-editor]')?.dataset.pptTextCell !== '10:0') {
+      throw new Error('20×10 表格末格 Tab 没有完整追加并进入新行');
+    }
+    session.editor.undo();
+  }
+  insertSamples.sort((left, right) => left - right);
+  const insertRowP95 = insertSamples[Math.floor(insertSamples.length * 0.95)];
+  if (insertRowP95 > 30 || session.editor.effectiveElement(performanceTable.id).rows.length !== 10) {
+    throw new Error(`20×10 表格末格追加完整上屏 p95 ${insertRowP95.toFixed(3)}ms`);
+  }
+  mount.querySelector('[data-ppt-text-editor]').dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Escape', bubbles: true, composed: true, cancelable: true,
+  }));
+  mount.querySelector(`[data-edit-id="${performanceTable.id}"] [data-table-cell="5:10"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
+  return {
+    session, view, mount, id: performanceTable.id, cell: targetCell,
+    p95, insertRowP95, geometryError,
+  };
 }

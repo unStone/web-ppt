@@ -5,7 +5,7 @@ export { queryRunProps } from './run-properties';
 export { queryParaProps } from './paragraph-properties';
 export { queryBodyProps } from './body-properties';
 export { validateEditDoc } from './model-invariants';
-export { tableCellKey } from './table-cell';
+export { tableCellKey, tableCellOverrideKey } from './table-cell';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
 export { elementOrder, writableLayerSiblingIds } from './element-order';
 export { applyPatches } from './commands/patch';
@@ -28,15 +28,15 @@ export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
-  SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
+  SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
   TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from './types';
 export type {
   AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
-  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, Patch, RemoveElementCommand,
+  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, Patch, RemoveElementCommand,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
-  SetBodyPropsCommand,
+  SetBodyPropsCommand, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export {

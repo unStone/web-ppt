@@ -227,6 +227,7 @@ async function browserResult(webSocketDebuggerUrl) {
           engineLineError: report.dataset.engineLineError,
           engineAutoProbe: report.dataset.engineAutoProbe,
           tableCellTextP95: report.dataset.tableCellTextP95,
+          tableInsertRowP95: report.dataset.tableInsertRowP95,
           tableCellGeometryError: report.dataset.tableCellGeometryError,
           autofitBrowserP95: report.dataset.autofitBrowserP95,
           autofitEngineP95: report.dataset.autofitEngineP95,
@@ -545,7 +546,8 @@ try {
     + ` · 富文本2000 p95 ${result.richTextPasteP95}ms`
     + ` · engine2000 p95 ${result.engineTextP95}ms/行盒偏差 ${result.engineLineError}px`
     + ` · auto engine ${result.engineAutoProbe}`
-    + ` · table20×10 ${result.tableCellTextP95}ms/贴合偏差 ${result.tableCellGeometryError}px`
+    + ` · table20×10 ${result.tableCellTextP95}ms/末格追加 ${result.tableInsertRowP95}ms`
+    + `/贴合偏差 ${result.tableCellGeometryError}px`
     + ` · autofit browser/engine/cell ${result.autofitBrowserP95}/${result.autofitEngineP95}/${result.autofitCellP95}ms`
     + ` · spAutoFit browser/engine ${result.shapeAutofitBrowserP95}/${result.shapeAutofitEngineP95}ms`
     + `/frame ${result.shapeAutofitFrameError}px`

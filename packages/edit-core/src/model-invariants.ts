@@ -1,12 +1,13 @@
 import { effectiveElement } from './projection';
 import { elementOrder } from './element-order';
-import { assertFractionalIndex } from './fractional-index';
+import { assertFractionalIndex, initialFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
 import { validateEmptyTextOverride, validateFlatTextOverride } from './text-override-validation';
 import type { EditDoc, ElementId, ElementRecord, SlideId, TextOverride } from './types';
-import { parseTableCellKey } from './table-cell';
+import { tableCellKeyResolver } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
 import { textTargetContext } from './commands/text-target';
+import { tableRowsWithoutTextOverrides } from './table-rows';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -31,10 +32,33 @@ function assertTextBodies(record: ElementRecord): void {
   const bodies = record.src.kind === 'shape'
     ? [record.src.text]
     : record.src.kind === 'table'
-      ? record.src.rows.flatMap((row) => row.cells.map((cell) => cell.text ?? cell.editInfo?.textTemplate ?? null))
+      ? tableRowsWithoutTextOverrides(record)
+        .flatMap((row) => row.cells.map((cell) => cell.text ?? cell.editInfo?.textTemplate ?? null))
       : [];
   if (bodies.some((body) => body !== null && body.paragraphs.length === 0)) {
     throw new Error(`元素 ${record.id} 的文本体至少需要一个段落`);
+  }
+}
+
+function assertTableRows(record: ElementRecord): void {
+  const rows = record.ovr.tableRows;
+  if (rows === undefined) return;
+  if (record.src.kind !== 'table' || !record.src.rows.length) {
+    throw new Error(`非表格元素 ${record.id} 不能包含追加行`);
+  }
+  assertDataObject(rows, Object.keys(rows), `表格 ${record.id} 的追加行`);
+  const entries = Object.entries(rows);
+  if (!entries.length) throw new Error(`表格 ${record.id} 的追加行不能为空`);
+  const orders = new Set<string>();
+  const sourceLast = initialFractionalIndex(record.src.rows.length - 1);
+  for (const [id, insertion] of entries) {
+    if (!id) throw new Error(`表格 ${record.id} 的追加行身份不能为空`);
+    assertDataObject(insertion, ['order'], `表格 ${record.id} 的追加行 ${id}`);
+    if (typeof insertion.order !== 'string') throw new Error(`表格 ${record.id} 的追加行顺序无效`);
+    assertFractionalIndex(insertion.order);
+    if (insertion.order <= sourceLast) throw new Error(`表格 ${record.id} 的追加行不在来源行之后`);
+    if (orders.has(insertion.order)) throw new Error(`表格 ${record.id} 的追加行顺序重复`);
+    orders.add(insertion.order);
   }
 }
 
@@ -62,8 +86,9 @@ function assertTextOverrides(doc: EditDoc, record: ElementRecord): void {
   assertDataObject(cells, Object.keys(cells), `表格 ${record.id} 的单元格覆盖`);
   const entries = Object.entries(cells);
   if (!entries.length) throw new Error(`表格 ${record.id} 的单元格覆盖不能为空`);
+  const resolveCell = tableCellKeyResolver(record);
   for (const [key, value] of entries) {
-    const cell = parseTableCellKey(key);
+    const cell = resolveCell(key);
     if (!cell) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
     textTargetContext(doc, { id: record.id, cell });
     assertDataObject(value, ['text'], `表格 ${record.id} 的单元格覆盖 ${key}`);
@@ -94,6 +119,7 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     const record = doc.elements[id];
     if (!record) throw new Error(`元素不存在：${id}`);
     assertParentChain(doc, id);
+    assertTableRows(record);
     assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
@@ -176,6 +202,7 @@ export function validateEditDoc(doc: EditDoc): void {
 
   const spids = new Set<string>();
   for (const [id, record] of Object.entries(doc.elements)) {
+    assertTableRows(record);
     assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);

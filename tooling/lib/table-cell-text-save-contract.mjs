@@ -59,8 +59,8 @@ export async function runTableCellTextSaveContract({
   const doc = edit.createDoc(presentation, { idPrefix: 'table-cell-save-' });
   const editor = new edit.Editor(doc);
   const record = Object.values(doc.elements).find((candidate) => candidate.src.name === scenario.targetName);
-  if (!check('表格保存固件含可写复杂表格和独立第二页性能表',
-    record?.src.kind === 'table' && record.meta.origin && doc.slideOrder.length === 2)) {
+  if (!check('表格保存固件含可写复杂表格、独立性能表和追加行样式表',
+    record?.src.kind === 'table' && record.meta.origin && doc.slideOrder.length === 3)) {
     edit.disposeDoc(doc); return;
   }
   for (const change of scenario.edits) editor.exec({

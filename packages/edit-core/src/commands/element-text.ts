@@ -1,14 +1,17 @@
-import type { EditDoc } from '../types';
+import type { EditDoc, TableRowInsertion } from '../types';
 import { validateEmptyTextOverride, validateFlatTextOverride } from '../text-override-validation';
-import { tableCellKey } from '../table-cell';
+import { tableCellAddressFromRowRef, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
-import { textTargetContext } from './text-target';
+import { textTargetContextForRecord } from './text-target';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 export function isElementTextPatch(patch: Patch): patch is ElementTextPatch {
-  return (patch.path.length === 4 && patch.path[3] === 'text')
-    || (patch.path.length === 7 && patch.path[3] === 'tableCells' && patch.path[6] === 'text');
+  return patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'ovr'
+    && ((patch.path.length === 4 && patch.path[3] === 'text')
+      || (patch.path.length === 7 && patch.path[3] === 'tableCells'
+        && (typeof patch.path[4] === 'number' || typeof patch.path[4] === 'string')
+        && typeof patch.path[5] === 'number' && patch.path[6] === 'text'));
 }
 
 export function clearElementTextPatches(doc: EditDoc, id: string, origin: string): CommandPatches {
@@ -32,11 +35,22 @@ export function clearElementTextPatches(doc: EditDoc, id: string, origin: string
   };
 }
 
-export function validateElementTextPatch(doc: EditDoc, patch: ElementTextPatch, index: number): void {
-  const target = patch.path.length === 4
-    ? { id: patch.path[1] }
-    : { id: patch.path[1], cell: { r: patch.path[4], c: patch.path[5] } };
-  textTargetContext(doc, target);
+export function validateElementTextPatch(
+  doc: EditDoc,
+  patch: ElementTextPatch,
+  index: number,
+  stagedTableRows?: Record<string, TableRowInsertion>,
+): void {
+  const sourceRecord = doc.elements[patch.path[1]];
+  const record = sourceRecord && stagedTableRows
+    ? { ...sourceRecord, ovr: { ...sourceRecord.ovr, tableRows: stagedTableRows } }
+    : sourceRecord;
+  const cell = patch.path.length === 7 && record
+    ? tableCellAddressFromRowRef(record, patch.path[4], patch.path[5]) : null;
+  if (patch.path.length === 7 && !cell) throw new Error(`Patch ${index} 的表格行身份或列坐标无效`);
+  const target = patch.path.length === 4 ? { id: patch.path[1] } : { id: patch.path[1], cell: cell! };
+  if (!record) throw new Error(`Patch ${index} 指向不存在的元素`);
+  textTargetContextForRecord(record, target);
   if (patch.op === 'set') {
     if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value);
     else if (patch.value.kind === 'empty') validateEmptyTextOverride(patch.value);
@@ -52,7 +66,7 @@ export function applyElementTextPatch(doc: EditDoc, patch: ElementTextPatch): vo
     else delete record.ovr.text;
     return;
   }
-  const key = tableCellKey({ r: patch.path[4], c: patch.path[5] });
+  const key = tableCellOverrideKeyFromRowRef(patch.path[4], patch.path[5]);
   if (patch.op === 'set') {
     const cells = record.ovr.tableCells ?? (record.ovr.tableCells = Object.create(null));
     const cell = cells[key] ?? (cells[key] = {});

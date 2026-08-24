@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(140 90)">
+<g transform="translate(0 0)">
+<rect width="220" height="90" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">标题一</tspan>
+</text>
+</g>
+<g transform="translate(220 0)">
+<rect width="220" height="90" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">标题二</tspan>
+</text>
+</g>
+<g transform="translate(440 0)">
+<rect width="220" height="90" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">标题三</tspan>
+</text>
+</g>
+<g transform="translate(660 0)">
+<rect width="220" height="90" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">标题四</tspan>
+</text>
+</g>
+<g transform="translate(0 90)">
+<rect width="220" height="90" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹一</tspan>
+</text>
+</g>
+<g transform="translate(220 90)">
+<rect width="220" height="90" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹二</tspan>
+</text>
+</g>
+<g transform="translate(440 90)">
+<rect width="220" height="90" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹三</tspan>
+</text>
+</g>
+<g transform="translate(660 90)">
+<rect width="220" height="90" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹四</tspan>
+</text>
+</g>
+<g transform="translate(0 180)">
+<rect width="440" height="90" fill="rgb(252,231,243)"/>
+<text x="9.6" y="31.01" text-anchor="start" xml:space="preserve">
+<tspan font-size="28" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">末行合并</tspan>
+</text>
+</g>
+<g transform="translate(440 180)">
+<rect width="220" height="90" fill="rgb(252,231,243)"/>
+<text x="9.6" y="28.51" text-anchor="start" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">末行三</tspan>
+</text>
+</g>
+<g transform="translate(660 180)">
+<rect width="220" height="90" fill="rgb(252,231,243)"/>
+<text x="9.6" y="28.51" text-anchor="start" xml:space="preserve">
+<tspan font-size="25.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">末格</tspan>
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">兼容旧字</tspan>
+</text>
+</g>
+<g transform="translate(0 0)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(220 0)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(440 0)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(660 0)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 90)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(220 90)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(440 90)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(660 90)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 180)">
+<line x1="0" y1="0" x2="440" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="440" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="440" y1="0" x2="440" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(440 180)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(660 180)">
+<line x1="0" y1="0" x2="220" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="90" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="220" y1="0" x2="220" y2="90" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(140 430)">
+<g transform="translate(0 0)">
+<rect width="260" height="70" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">条纹标题一</tspan>
+</text>
+</g>
+<g transform="translate(260 0)">
+<rect width="260" height="70" fill="rgb(219,234,254)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">条纹标题二</tspan>
+</text>
+</g>
+<g transform="translate(0 70)">
+<rect width="260" height="70" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹起点一</tspan>
+</text>
+</g>
+<g transform="translate(260 70)">
+<rect width="260" height="70" fill="rgb(220,252,231)"/>
+<text x="9.6" y="27.26" text-anchor="start" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">条纹起点二</tspan>
+</text>
+</g>
+<g transform="translate(0 0)">
+<line x1="0" y1="0" x2="260" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="70" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="260" y1="0" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(260 0)">
+<line x1="0" y1="0" x2="260" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="70" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="260" y1="0" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(0 70)">
+<line x1="0" y1="0" x2="260" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="70" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="260" y1="0" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+<g transform="translate(260 70)">
+<line x1="0" y1="0" x2="260" y2="0" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="70" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="0" y1="0" x2="0" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+<line x1="260" y1="0" x2="260" y2="70" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+</g>
+</g>
+</g>
+</svg>

@@ -13,7 +13,9 @@ export interface TableCellAddress {
   readonly c: number;
 }
 
-export type TableCellKey = `${number}:${number}`;
+/** 来源行沿用坐标；新增行把稳定 rowId 编进 key，避免并发追加改变文字归属。 */
+export type TableCellKey = `${number}:${number}` | `@${number}:${string}:${number}`;
+export type TableCellRowRef = number | TableRowId;
 
 export interface ElementInsertionSource {
   readonly markup: string;
@@ -62,12 +64,20 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   alpha?: ImageElement['alpha'];
   filter?: ImageElement['filter'];
   text?: TextOverride;
-  /** 表格不是元素树；单元格文字按坐标稀疏覆盖，避免伪造 SlideElement 身份。 */
+  /** 来源格按坐标、新增格按稳定行身份稀疏覆盖，避免结构 rebase 迁移文字。 */
   tableCells?: Record<TableCellKey, TableCellOverrides>;
+  /** 表格行使用稳定身份稀疏追加；不复制整张 rows，未来可沿同一身份扩展中间插入。 */
+  tableRows?: Record<TableRowId, TableRowInsertion>;
 };
 
 export interface TableCellOverrides {
   text?: TextOverride;
+}
+
+export type TableRowId = string;
+
+export interface TableRowInsertion {
+  readonly order: FractionalIndex;
 }
 
 export interface TextMark {

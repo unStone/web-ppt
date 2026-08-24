@@ -112,9 +112,13 @@ export async function runTableCellTextEditorContract({ check, lib, root, window 
     key: 'Tab', bubbles: true, composed: true, cancelable: true,
   });
   container.querySelector('[data-ppt-text-editor]').dispatchEvent(lastTab);
-  check('末格 Tab 在 InsertRow 命令落地前保持当前格且不让浏览器带走焦点',
+  check('末格 Tab 通过 InsertRow 追加空行并把同一编辑面移到新行首格',
     lastTab.defaultPrevented
-      && container.querySelector('[data-ppt-text-editor]').dataset.pptTextCell === '0:1');
+      && container.querySelector('[data-ppt-text-editor]').dataset.pptTextCell === '1:0'
+      && session.editor.effectiveElement(record.id).rows.length === 2
+      && session.editor.selection.kind === 'text'
+      && session.editor.selection.cell?.r === 1 && session.editor.selection.cell?.c === 0
+      && container.querySelector('[data-table-cell="1:0"]'));
 
   view.destroy(); session.dispose(); container.remove();
 

@@ -67,7 +67,7 @@ export function editTextPatches(
 ): CommandPatches {
   assertOps(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
-  const { body: source, before } = textTargetContext(doc, target);
+  const { body: source, before, patchTarget } = textTargetContext(doc, target);
   const body = before?.kind === 'flat' ? textBodyFromOverride(before) : source;
   const value: TextOverride = applyTextEditOps(
     body, command.ops, before?.kind === 'flat' ? before : undefined,
@@ -75,7 +75,7 @@ export function editTextPatches(
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) return { forward: [], inverse: [] };
   return {
-    forward: [setTextPatch(target, value, origin)],
-    inverse: [inverseTextPatch(target, before, origin)],
+    forward: [setTextPatch(patchTarget, value, origin)],
+    inverse: [inverseTextPatch(patchTarget, before, origin)],
   };
 }

@@ -55,6 +55,40 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
       '0:0': { text: { kind: 'flat', body: {}, paragraphs: [] } },
     };
   });
+  rejects('拒绝非表格元素携带追加行', (doc) => {
+    doc.elements[shape.id].ovr.tableRows = {
+      row: { order: edit.fractionalIndexBetween(edit.initialFractionalIndex(0), null, 'row') },
+    };
+  });
+  rejects('拒绝空的追加行稀疏容器', (doc) => {
+    doc.elements[table.id].ovr.tableRows = {};
+  });
+  rejects('拒绝不在来源末行之后的追加行顺序', (doc) => {
+    doc.elements[table.id].ovr.tableRows = {
+      row: { order: edit.initialFractionalIndex(table.src.rows.length - 1) },
+    };
+  });
+  rejects('拒绝重复的追加行顺序', (doc) => {
+    const order = edit.fractionalIndexBetween(
+      edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row-a',
+    );
+    doc.elements[table.id].ovr.tableRows = {
+      'row-a': { order },
+      'row-b': { order },
+    };
+  });
+  rejects('拒绝用数字坐标覆盖新增行单元格', (doc) => {
+    doc.elements[table.id].ovr.tableRows = {
+      row: {
+        order: edit.fractionalIndexBetween(
+          edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row',
+        ),
+      },
+    };
+    doc.elements[table.id].ovr.tableCells = {
+      [`${table.src.rows.length}:0`]: { text: { kind: 'empty' } },
+    };
+  });
   rejects('拒绝同一 part 内重复的可写 spid', (doc) => {
     doc.elements[frame.id].meta.origin = { ...doc.elements[shape.id].meta.origin };
   });

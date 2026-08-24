@@ -2,7 +2,10 @@ import { resolveGeomPath } from '@web-ppt/core/geometry';
 import type { GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { textBodyFromOverride } from './text-model';
-import { tableCellKey } from './table-cell';
+import { tableCellOverrideKeyFromRowRef } from './table-cell';
+import {
+  orderedTableRowInsertions, tableRowHeightDelta, tableRowsWithoutTextOverrides,
+} from './table-rows';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -32,17 +35,23 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
-  const { tableCells, ...overrides } = record.ovr;
+  const { tableCells, tableRows, ...overrides } = record.ovr;
   let out = { ...record.src, ...overrides } as unknown as SlideElement;
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
     out = { ...out, text: textBodyFromOverride(record.ovr.text) } as ShapeElement;
-  } else if (out.kind === 'table' && tableCells) {
-    const rows = out.rows.map((row, r) => {
+  } else if (out.kind === 'table' && (tableCells || tableRows)) {
+    if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
+    const baseRows = tableRows ? tableRowsWithoutTextOverrides(record) : out.rows;
+    const insertions = tableRows ? orderedTableRowInsertions(record) : [];
+    const sourceRowCount = record.src.rows.length;
+    const rows = baseRows.map((row, r) => {
       let changed = false;
       const cells = row.cells.map((cell, c) => {
-        const override = tableCells[tableCellKey({ r, c })]?.text;
+        const rowRef = r < sourceRowCount ? r : insertions[r - sourceRowCount]?.id;
+        const override = rowRef === undefined
+          ? undefined : tableCells?.[tableCellOverrideKeyFromRowRef(rowRef, c)]?.text;
         if (!override) return cell;
         changed = true;
         return {
@@ -52,7 +61,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       });
       return changed ? { ...row, cells } : row;
     });
-    out = { ...out, rows } as TableElement;
+    out = { ...out, rows, h: out.h + tableRowHeightDelta(record) } as TableElement;
   }
   if (out.kind === 'group') {
     const source = record.src as GroupElement;

@@ -97,6 +97,10 @@ Shadow DOM 内的表单/contenteditable 保留自己的方向键所有权。
 其它页面选区会从本视图首项/末项重新开始。遍历只改选区，不写历史、不重建静态预览；普通或
 Shadow DOM 内的表单/contenteditable 仍使用浏览器原生 Tab 焦点行为。
 
+双击表格单元格进入同一文字编辑面后，`Tab` / `Shift+Tab` 只在非合并占位格之间移动；最后一格按
+`Tab` 会用一个 `InsertRow` 事务追加空行并进入新行首格。表样式、frame 高度、静态预览、选择框与
+caret 同步更新，焦点不会逃到页面其它控件；view 模式不会触发结构命令。
+
 `Ctrl/Cmd+Z` 撤销，`Ctrl/Cmd+Shift+Z` 或 `Ctrl/Cmd+Y` 重做。恢复选区在其它页面时，只有收到事件的
 编辑视图切到结果页；其它共享视图保持原页。活动 pointer 预览与普通或 Shadow DOM 文本控件保留键盘
 所有权，单元素历史仍只替换自己的 DOM 分区。

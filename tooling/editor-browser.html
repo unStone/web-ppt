@@ -497,6 +497,7 @@
       report.dataset.engineLineError = engineTextResult.positionError.toFixed(3);
       report.dataset.engineAutoProbe = 'pass';
       report.dataset.tableCellTextP95 = tableCellTextResult.p95.toFixed(3);
+      report.dataset.tableInsertRowP95 = tableCellTextResult.insertRowP95.toFixed(3);
       report.dataset.tableCellGeometryError = tableCellTextResult.geometryError.toFixed(3);
       report.dataset.autofitBrowserP95 = autofitResult.browserP95.toFixed(3);
       report.dataset.autofitEngineP95 = autofitResult.engineP95.toFixed(3);
@@ -542,6 +543,7 @@
         + `行盒偏差 ${engineTextResult.positionError.toFixed(3)}px`;
       report.textContent += '\nauto 能力探测降级同时驱动原生预览与 engine 编辑面';
       report.textContent += `\n20×10 表格单元格输入 p95 ${tableCellTextResult.p95.toFixed(3)}ms，`
+        + `末格追加 p95 ${tableCellTextResult.insertRowP95.toFixed(3)}ms，`
         + `旋转格贴合偏差 ${tableCellTextResult.geometryError.toFixed(3)}px`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`

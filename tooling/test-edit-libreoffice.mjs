@@ -69,6 +69,24 @@ function savedShapeGeometry(bytes, name) {
   };
 }
 
+function savedFrameGeometry(bytes, name, slidePart = 'ppt/slides/slide1.xml') {
+  const parts = unzipSync(bytes);
+  const decode = (part) => new TextDecoder().decode(parts[part]);
+  const slide = decode(slidePart);
+  const named = slide.indexOf(`name="${name}"`);
+  const from = slide.lastIndexOf('<p:graphicFrame>', named);
+  const to = slide.indexOf('</p:graphicFrame>', named);
+  const fragment = from >= 0 && to >= 0 ? slide.slice(from, to + 17) : '';
+  const xfrm = fragment.match(/<p:xfrm\b([^>]*)>[\s\S]*?<a:off x="(-?\d+)" y="(-?\d+)"\/><a:ext cx="(\d+)" cy="(\d+)"\/>/);
+  const size = decode('ppt/presentation.xml').match(/<p:sldSz cx="(\d+)" cy="(\d+)"\/>/);
+  if (!xfrm || !size) throw new Error(`无法从保存产物读取 ${name} 的 graphicFrame 或画布尺寸`);
+  return {
+    x: Number(xfrm[2]), y: Number(xfrm[3]), w: Number(xfrm[4]), h: Number(xfrm[5]),
+    rot: Number(xfrm[1].match(/\brot="(-?\d+)"/)?.[1] ?? 0) / 60000,
+    slideW: Number(size[1]), slideH: Number(size[2]),
+  };
+}
+
 function expectedBounds(frame, viewW, viewH) {
   const radians = frame.rot * Math.PI / 180;
   const cos = Math.cos(radians);
@@ -218,6 +236,31 @@ if (basename(savedPath) === 'body-props-editing.pptx') {
     throw new Error(`LibreOffice autofit 模式证据无效：shape=${growError.toFixed(3)} noneOverflow=${(noneMaxY - noneShape.bounds.bottom).toFixed(3)}`);
   }
   geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'table-row-insert.pptx') {
+  const markup = exportLibreOfficeSvg('表格追加行几何');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const textAt = markup.indexOf('>新增格</tspan>');
+  const tableAt = markup.lastIndexOf('<g class="com.sun.star.drawing.TableShape">', textAt);
+  const fragment = tableAt >= 0 && textAt >= 0 ? markup.slice(tableAt, textAt + 64) : '';
+  const bounds = fragment.match(/<rect class="BoundingBox"[^>]* x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/);
+  const position = fragment.match(/class="TextPosition" x="([\d.]+)" y="([\d.]+)"[^>]*><tspan[^>]*>新增格/);
+  if (!viewBox || !bounds || !position) throw new Error('LibreOffice SVG 缺少追加行表格几何或文字');
+  const actual = {
+    left: Number(bounds[1]), top: Number(bounds[2]),
+    right: Number(bounds[1]) + Number(bounds[3]),
+    bottom: Number(bounds[2]) + Number(bounds[4]),
+  };
+  const expected = expectedBounds(
+    savedFrameGeometry(new Uint8Array(readFileSync(savedPath)), '测试表格'),
+    Number(viewBox[1]), Number(viewBox[2]),
+  );
+  const error = geometryError(actual, expected);
+  if (error > 70 || Number(position[2]) < expected.top + (expected.bottom - expected.top) / 2) {
+    throw new Error(`LibreOffice 表格追加行几何偏差 ${error.toFixed(3)} SVG unit`);
+  }
+  geometryEvidence += `，追加行 frame 最大偏差 ${error.toFixed(3)} SVG unit`;
 }
 
 console.log(`\n\x1b[32m✓ LibreOffice 已打开 ${basename(savedPath)} 并导出 PDF（${statSync(pdf).size} bytes${geometryEvidence}）\x1b[0m`);
