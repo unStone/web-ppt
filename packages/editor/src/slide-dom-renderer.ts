@@ -5,6 +5,7 @@ import { bindSlideIdentities, findElementPartition } from './dom-identity';
 import { insertElementPartition, patchElement } from './dom-patch';
 import { patchSlideDom } from './slide-dom-update';
 import { renderSelectionOverlay } from './selection-overlay';
+import { renderPlaceholderOverlay } from './placeholder-overlay';
 
 interface SlideDomRendererOptions {
   presentation: Presentation;
@@ -15,6 +16,7 @@ interface SlideDomRendererOptions {
   zoom: () => number;
   idPrefix: string;
   textMode: 'html' | 'svg';
+  editable: () => boolean;
 }
 
 export class SlideDomRenderer {
@@ -50,6 +52,10 @@ export class SlideDomRenderer {
   }
 
   renderSelection(selection: Selection): void {
+    renderPlaceholderOverlay(
+      this.options.interactionLayer, this.options.editor.doc, this.options.slideId(),
+      this.options.zoom(), this.options.editable(),
+    );
     renderSelectionOverlay(
       this.options.interactionLayer, this.options.editor.doc, selection,
       this.options.slideId(), this.options.zoom(),

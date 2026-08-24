@@ -3,6 +3,7 @@ import { commandPatches } from './commands/dispatch';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
+import { slidePatchSets } from './commands/slide-tree';
 import { fitTextShapePatches } from './commands/fit-text-shape';
 import { writableLayerSiblingIds } from './element-order';
 import type {
@@ -20,11 +21,13 @@ import {
 import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
 
 function patchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.map((patch) => patch.path[1]));
+  return new Set(patches.filter((patch) => patch.path[0] === 'elements')
+    .map((patch) => patch.path[1]));
 }
 
 function renderPatchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter((patch) => !isElementOrderPatch(patch)).map((patch) => patch.path[1]));
+  return new Set(patches.filter((patch) => patch.path[0] === 'elements' && !isElementOrderPatch(patch))
+    .map((patch) => patch.path[1]));
 }
 
 function reorderedPatchElements(patches: readonly Patch[]): Set<ElementId> {
@@ -111,7 +114,7 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
   }
   const targetIds = (command: Command): readonly ElementId[] => {
     if (command.type === 'AlignElements') return Array.isArray(command.ids) ? command.ids : [];
-    if (command.type === 'PasteElements' || command.type === 'AddShape') return [];
+    if (command.type === 'PasteElements' || command.type === 'AddShape' || command.type === 'AddSlide') return [];
     return [command.id];
   };
   for (const command of commands) {
@@ -186,7 +189,7 @@ export class Editor {
     if (JSON.stringify(next) === JSON.stringify(this.currentSelection)) return;
     this.currentSelection = next;
     this.historyStore.breakMerge();
-    this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set());
+    this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set());
   }
 
   subscribe(subscriber: EditorSubscriber): () => void {
@@ -229,11 +232,13 @@ export class Editor {
       renderElements: renderPatchElements(entry.inverse),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
+      ...slidePatchSets(entry.inverse),
       ...dirty,
     };
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
+      change.createdSlides, change.removedSlides,
     );
     return change;
   }
@@ -252,11 +257,13 @@ export class Editor {
       renderElements: renderPatchElements(entry.forward),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
+      ...slidePatchSets(entry.forward),
       ...dirty,
     };
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
+      change.createdSlides, change.removedSlides,
     );
     return change;
   }
@@ -289,6 +296,7 @@ export class Editor {
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
       for (const id of dirty.dirtySlides) dirtySlides.add(id);
       for (const patch of patches.forward) {
+        if (patch.path[0] !== 'elements') continue;
         touchedElements.add(patch.path[1]);
         if (isElementOrderPatch(patch)) reorderedElements.add(patch.path[1]);
         else renderElements.add(patch.path[1]);
@@ -335,9 +343,16 @@ export class Editor {
         });
       } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
       if (structural) validateEditDoc(this.doc);
-      else validateEditElements(this.doc, forward.map((patch) => patch.path[1]));
+      else validateEditElements(this.doc, forward
+        .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
     } catch (error) {
       if (inverse.length) applyPatches(this.doc, inverse);
+      // AddSlide 会惰性创建 OPC 水位；只 Object.assign 会把失败事务新增的字段残留在文档中。
+      for (const key of Object.keys(this.doc.identity)) {
+        if (!Object.prototype.hasOwnProperty.call(identityBefore, key)) {
+          delete (this.doc.identity as unknown as Record<string, unknown>)[key];
+        }
+      }
       Object.assign(this.doc.identity, identityBefore);
       this.currentSelection = selectionBefore;
       throw error;
@@ -366,12 +381,17 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
+      const slides = slidePatchSets(forward);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
+        slides.createdSlides, slides.removedSlides,
       );
     }
-    return { forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter };
+    return {
+      forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter,
+      ...slidePatchSets(forward),
+    };
   }
 
   private emit(
@@ -382,6 +402,8 @@ export class Editor {
     render: Set<ElementId>,
     reordered: Set<ElementId>,
     bodyProps: Set<ElementId> = new Set(),
+    createdSlides: Set<SlideId> = new Set(),
+    removedSlides: Set<SlideId> = new Set(),
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -394,6 +416,8 @@ export class Editor {
           renderElements: new Set(render),
           bodyPropsElements: new Set(bodyProps),
           reorderedElements: new Set(reordered),
+          createdSlides: new Set(createdSlides),
+          removedSlides: new Set(removedSlides),
         });
       } catch (error) {
         reportSubscriberError(error);

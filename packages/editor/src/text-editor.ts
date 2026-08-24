@@ -178,7 +178,7 @@ export class TextEditorController {
     this.options.boundary.ownerDocument.removeEventListener('pointerdown', this.onDocumentPointerDown, true);
     this.root?.remove();
     this.root = null;
-    if (syncStatic && id) this.options.syncStatic(id);
+    if (syncStatic && id && this.options.editor.doc.elements[id]) this.options.syncStatic(id);
     this.restoreStaticText();
     this.options.release();
     if (selectElement && id && this.options.editor.doc.elements[id]) {

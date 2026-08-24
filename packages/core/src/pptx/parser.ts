@@ -8,20 +8,22 @@ import { METAFILE_EXT, metafileDataUrl } from '../metafile';
 import { embeddedFontToSfnt } from '../font/eot';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
-import { ColorCtx, childColor } from './color';
+import { childColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseTiming, parseTransition } from './animation';
 import { custGeomPath, parseAdjustments, presetGeom } from './geometry';
-import { extractLstStyle, LevelStyles, parseTextBody, TextEnv, ThemeFonts } from './text';
+import { extractLstStyle, LevelStyles, parseTextBody, TextEnv } from './text';
 import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
 import { PackageAssetStore } from './asset-store';
 import type { AssetMode, DeferredAsset } from './asset-store';
+import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
+import {
+  Env, findPh, PH_EQUIV, relByType, Rels, slideInheritance, SlideInheritance,
+} from './slide-inheritance';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
-
-type Rels = Record<string, { type: string; target: string }>;
 
 const decoder = new TextDecoder();
 const EMPTY_BYTES = new Uint8Array(0);
@@ -158,100 +160,6 @@ function resolvePath(baseDir: string, target: string): string {
   return out.join('/');
 }
 
-function relByType(rels: Rels, suffix: string): string | null {
-  for (const r of Object.values(rels)) if (r.type.endsWith(suffix)) return r.target;
-  return null;
-}
-
-// ---------------- 主题 ----------------
-
-interface Theme {
-  colors: Record<string, string>;
-  fonts: ThemeFonts;
-  fillStyles: Element[];
-  lnStyles: Element[];
-  effectStyles: Element[];
-  bgFillStyles: Element[];
-}
-
-function parseTheme(root: Element | null): Theme {
-  const colors: Record<string, string> = {};
-  const scheme = walk(root, 'themeElements', 'clrScheme');
-  if (scheme) {
-    for (let c = scheme.firstElementChild; c; c = c.nextElementSibling) {
-      const clr = c.firstElementChild;
-      if (!clr) continue;
-      colors[c.localName] = clr.localName === 'srgbClr'
-        ? (attr(clr, 'val') ?? '000000')
-        : (attr(clr, 'lastClr') ?? (attr(clr, 'val') === 'window' ? 'FFFFFF' : '000000'));
-    }
-  }
-  const fontScheme = walk(root, 'themeElements', 'fontScheme');
-  const pick = (name: string): { latin: string | null; ea: string | null; cs: string | null } => {
-    const f = kid(fontScheme, name);
-    return {
-      latin: attr(kid(f, 'latin'), 'typeface') || null,
-      ea: attr(kid(f, 'ea'), 'typeface') || null,
-      cs: attr(kid(f, 'cs'), 'typeface') || null,
-    };
-  };
-  const fmt = walk(root, 'themeElements', 'fmtScheme');
-  const listOf = (name: string): Element[] => {
-    const parent = kid(fmt, name);
-    const out: Element[] = [];
-    for (let c = parent?.firstElementChild ?? null; c; c = c.nextElementSibling) out.push(c);
-    return out;
-  };
-  return {
-    colors,
-    fonts: { major: pick('majorFont'), minor: pick('minorFont') },
-    fillStyles: listOf('fillStyleLst'),
-    lnStyles: listOf('lnStyleLst'),
-    effectStyles: listOf('effectStyleLst'),
-    bgFillStyles: listOf('bgFillStyleLst'),
-  };
-}
-
-// ---------------- 占位符 ----------------
-
-interface PhInfo {
-  type: string | null;
-  idx: string | null;
-  sp: Element;
-}
-
-function collectPh(spTree: Element | null): PhInfo[] {
-  const out: PhInfo[] = [];
-  for (const sp of kids(spTree, 'sp')) {
-    const ph = walk(sp, 'nvSpPr', 'nvPr', 'ph');
-    if (ph) out.push({ type: attr(ph, 'type'), idx: attr(ph, 'idx'), sp });
-  }
-  return out;
-}
-
-const PH_EQUIV: Record<string, string[]> = {
-  title: ['title', 'ctrTitle'],
-  ctrTitle: ['ctrTitle', 'title'],
-  body: ['body', 'subTitle', 'obj'],
-  subTitle: ['subTitle', 'body'],
-  obj: ['obj', 'body'],
-};
-
-function findPh(list: PhInfo[], type: string | null, idx: string | null): Element | null {
-  if (idx !== null) {
-    const m = list.find((p) => p.idx === idx);
-    if (m) return m.sp;
-  }
-  if (type) {
-    for (const t of PH_EQUIV[type] ?? [type]) {
-      const m = list.find((p) => p.type === t);
-      if (m) return m.sp;
-    }
-  }
-  if (!type && idx === null) return list.find((p) => p.type === 'body')?.sp ?? null;
-  return null;
-}
-
 // ---------------- 变换 ----------------
 
 interface XfrmInfo extends ElementBase {
@@ -285,25 +193,6 @@ function parseXfrm(x: Element | null): XfrmInfo | null {
 const base = (xf: XfrmInfo): ElementBase => ({
   x: xf.x, y: xf.y, w: xf.w, h: xf.h, rot: xf.rot, flipH: xf.flipH, flipV: xf.flipV,
 });
-
-// ---------------- 解析环境 ----------------
-
-interface Env {
-  pkg: Pkg;
-  ctx: ColorCtx;
-  theme: Theme;
-  rels: Rels;
-  partPath: string;
-  docDefaults: LevelStyles;
-  masterStyles: { title: LevelStyles; body: LevelStyles; other: LevelStyles };
-  layoutPh: PhInfo[];
-  masterPh: PhInfo[];
-  slideNum: number;
-  tableStyles: Element | null;
-  hiddenPh: Set<string>;
-  slideIdMap: Record<string, number>;
-  edit: boolean;
-}
 
 function movementLocked(nv: Element | null): boolean {
   const props = kid(nv, 'cNvSpPr') ?? kid(nv, 'cNvCxnSpPr') ?? kid(nv, 'cNvPicPr')
@@ -604,15 +493,17 @@ function hyperlinkOf(cNvPr: Element | null, env: Env): string | undefined {
 }
 
 function resolveLink(env: Env, rid: string, action: string | null): string | null {
-  if (action?.includes('nextslide')) return `slide:${env.slideNum + 1}`;
-  if (action?.includes('previousslide')) return `slide:${env.slideNum - 1}`;
-  if (action?.includes('firstslide')) return 'slide:1';
+  if (action?.includes('nextslide')) return env.edit ? 'slide:next' : `slide:${env.slideNum + 1}`;
+  if (action?.includes('previousslide')) return env.edit ? 'slide:previous' : `slide:${env.slideNum - 1}`;
+  if (action?.includes('firstslide')) return env.edit ? 'slide:first' : 'slide:1';
   if (action?.includes('lastslide')) return 'slide:last';
   const rel = env.rels[rid];
   if (!rel) return null;
   if (/^https?:|^mailto:/i.test(rel.target)) return rel.target;
   const idx = env.slideIdMap[rel.target];
-  if (idx !== undefined) return `slide:${idx}`;
+  if (idx !== undefined) return env.edit
+    ? `slide-part:${encodeURIComponent(rel.target)}`
+    : `slide:${idx}`;
   return null;
 }
 
@@ -1649,6 +1540,9 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   }
 
   const sections = parseSections(presRoot, idToIndex);
+  const layouts = opts.edit
+    ? parseLayoutCatalog(pkg, presRoot, presRels, docDefaults, tableStyles, slideIdMap)
+    : undefined;
 
   const opcPackage = pkg.opcPackage;
   return {
@@ -1657,7 +1551,81 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
     ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
     sections: sections.length ? sections : undefined,
+    ...(layouts ? { editInfo: { layouts } } : {}),
   };
+}
+
+function resolvedSlideBackground(
+  slideRoot: Element | null,
+  slidePath: string | null,
+  inheritance: SlideInheritance,
+): Fill | null {
+  const { layoutRoot, layoutPath, masterRoot, masterPath, envFor } = inheritance;
+  for (const [root, path] of [[slideRoot, slidePath], [layoutRoot, layoutPath], [masterRoot, masterPath]] as const) {
+    const bg = walk(root, 'cSld', 'bg');
+    if (!bg || !path) continue;
+    const env = envFor(path, false);
+    const bgPr = kid(bg, 'bgPr');
+    if (bgPr) {
+      const fill = parseFillProps(bgPr, env);
+      if (fill) return fill;
+      continue;
+    }
+    const bgRef = kid(bg, 'bgRef');
+    if (!bgRef) continue;
+    const idx = Number(attr(bgRef, 'idx') ?? '0');
+    const phClr = childColor(bgRef, env.ctx);
+    const styleEl = env.theme.bgFillStyles[Math.min(idx, env.theme.bgFillStyles.length) - 1] ?? null;
+    const fill = styleEl
+      ? parseFillElement(styleEl, withPhClr(env, phClr))
+      : (phClr ? { type: 'solid' as const, color: phClr } : null);
+    if (fill) return fill;
+  }
+  return null;
+}
+
+function parseLayoutCatalog(
+  pkg: Pkg,
+  presRoot: Element,
+  presRels: Rels,
+  docDefaults: LevelStyles,
+  tableStyles: Element | null,
+  slideIdMap: Record<string, number>,
+): NonNullable<Presentation['editInfo']>['layouts'] {
+  const layoutPaths = layoutCatalogPaths(
+    presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path),
+  );
+  return layoutPaths.flatMap((layoutPath) => {
+    const inheritance = slideInheritance(
+      pkg, null, layoutPath, presRoot, docDefaults, tableStyles, slideIdMap, 1, true,
+    );
+    if (!inheritance.layoutRoot || !inheritance.masterPath) return [];
+    const staticElements: SlideElement[] = [];
+    if (boolAttr(inheritance.layoutRoot, 'showMasterSp', true)) {
+      staticElements.push(...parseShapeTree(
+        inheritance.masterTree, inheritance.envFor(inheritance.masterPath, false), true,
+      ));
+    }
+    // showMasterSp 只屏蔽母版图形；版式自身的背景图形始终属于该版式。
+    staticElements.push(...parseShapeTree(
+      inheritance.layoutTree, inheritance.envFor(layoutPath, false), true,
+    ));
+    const placeholders = parseShapeTree(
+      inheritance.layoutTree, inheritance.envFor(layoutPath, true), false,
+    ).flatMap((element) => {
+      const template = layoutPlaceholderTemplate(element);
+      return template ? [template] : [];
+    });
+    return [{
+      id: layoutPath,
+      name: attr(walk(inheritance.layoutRoot, 'cSld'), 'name') ?? layoutPath,
+      origin: { part: layoutPath, masterPart: inheritance.masterPath },
+      background: resolvedSlideBackground(null, null, inheritance),
+      elements: [...staticElements, ...placeholders],
+      transition: parseTransition(inheritance.layoutRoot) ?? undefined,
+      defaultShape: defaultShapeEditInfo(inheritance.envFor(layoutPath, true))!,
+    }];
+  });
 }
 
 function parseSlide(
@@ -1674,93 +1642,21 @@ function parseSlide(
   const slideRoot = pkg.xml(slidePath);
   const slideRels = pkg.rels(slidePath);
   const layoutPath = relByType(slideRels, '/slideLayout');
-  const layoutRoot = layoutPath ? pkg.xml(layoutPath) : null;
-  const layoutRels = layoutPath ? pkg.rels(layoutPath) : {};
-  const masterPath = layoutPath ? relByType(layoutRels, '/slideMaster') : null;
-  const masterRoot = masterPath ? pkg.xml(masterPath) : null;
-  const masterRels = masterPath ? pkg.rels(masterPath) : {};
-  const themePath = masterPath ? relByType(masterRels, '/theme') : null;
-  const theme = parseTheme(themePath ? pkg.xml(themePath) : null);
-
-  const clrMap: Record<string, string> = {};
-  const clrMapEl = kid(masterRoot, 'clrMap');
-  if (clrMapEl) for (const a of Array.from(clrMapEl.attributes)) clrMap[a.localName] = a.value;
-  const ovr = walk(slideRoot, 'clrMapOvr', 'overrideClrMapping') ?? walk(layoutRoot, 'clrMapOvr', 'overrideClrMapping');
-  if (ovr) for (const a of Array.from(ovr.attributes)) clrMap[a.localName] = a.value;
-  const ctx: ColorCtx = { theme: theme.colors, clrMap };
-
-  if (!docDefaults.def && !docDefaults.lvls.length) {
-    const d = extractLstStyle(kid(presRoot, 'defaultTextStyle'), ctx, theme.fonts);
-    docDefaults.def = d.def;
-    docDefaults.lvls = d.lvls;
-  }
-
-  const txStyles = kid(masterRoot, 'txStyles');
-  const masterStyles = {
-    title: extractLstStyle(kid(txStyles, 'titleStyle'), ctx, theme.fonts),
-    body: extractLstStyle(kid(txStyles, 'bodyStyle'), ctx, theme.fonts),
-    other: extractLstStyle(kid(txStyles, 'otherStyle'), ctx, theme.fonts),
-  };
-
-  const masterTree = walk(masterRoot, 'cSld', 'spTree');
-  const layoutTree = walk(layoutRoot, 'cSld', 'spTree');
+  const inheritance = slideInheritance(
+    pkg, slideRoot, layoutPath, presRoot, docDefaults, tableStyles, slideIdMap, slideNum, edit,
+  );
+  const { layoutRoot, masterPath, masterTree, layoutTree, envFor } = inheritance;
   const slideTree = walk(slideRoot, 'cSld', 'spTree');
-  const layoutPh = collectPh(layoutTree);
-  const masterPh = collectPh(masterTree);
-
-  // 页眉页脚显隐
-  const hiddenPh = new Set<string>();
-  const hf = kid(layoutRoot, 'hf') ?? kid(masterRoot, 'hf');
-  if (hf) {
-    if (attr(hf, 'sldNum') === '0') hiddenPh.add('sldNum');
-    if (attr(hf, 'ftr') === '0') hiddenPh.add('ftr');
-    if (attr(hf, 'dt') === '0') hiddenPh.add('dt');
-    if (attr(hf, 'hdr') === '0') hiddenPh.add('hdr');
-  }
-
-  const envFor = (partPath: string | null, phAware: boolean): Env => ({
-    pkg, ctx, theme,
-    rels: partPath ? pkg.rels(partPath) : {},
-    partPath: partPath ?? '',
-    docDefaults,
-    masterStyles,
-    layoutPh: phAware ? layoutPh : [],
-    masterPh: phAware ? masterPh : [],
-    slideNum,
-    tableStyles,
-    hiddenPh,
-    slideIdMap,
-    edit,
-  });
 
   const elements: SlideElement[] = [];
   const showMaster = boolAttr(slideRoot, 'showMasterSp', true) && boolAttr(layoutRoot, 'showMasterSp', true);
   if (showMaster && masterPath) {
     elements.push(...parseShapeTree(masterTree, envFor(masterPath, false), true));
-    elements.push(...parseShapeTree(layoutTree, envFor(layoutPath, false), true));
   }
+  elements.push(...parseShapeTree(layoutTree, envFor(layoutPath, false), true));
   elements.push(...parseShapeTree(slideTree, envFor(slidePath, true), false));
 
-  // 背景：幻灯片 → 版式 → 母版
-  let background: Fill | null = null;
-  for (const [root, path] of [[slideRoot, slidePath], [layoutRoot, layoutPath], [masterRoot, masterPath]] as const) {
-    const bg = walk(root, 'cSld', 'bg');
-    if (!bg || !path) continue;
-    const env = envFor(path, false);
-    const bgPr = kid(bg, 'bgPr');
-    if (bgPr) {
-      background = parseFillProps(bgPr, env);
-    } else {
-      const bgRef = kid(bg, 'bgRef');
-      if (bgRef) {
-        const idx = Number(attr(bgRef, 'idx') ?? '0');
-        const phClr = childColor(bgRef, ctx);
-        const styleEl = theme.bgFillStyles[Math.min(idx, theme.bgFillStyles.length) - 1] ?? null;
-        background = styleEl ? parseFillElement(styleEl, withPhClr(env, phClr)) : (phClr ? { type: 'solid', color: phClr } : null);
-      }
-    }
-    if (background) break;
-  }
+  const background = resolvedSlideBackground(slideRoot, slidePath, inheritance);
 
   // 运动路径的坐标是幻灯片尺寸的比例，解析时就得换算成 px
   const sz = kid(presRoot, 'sldSz');
@@ -1781,7 +1677,10 @@ function parseSlide(
     transition: parseTransition(slideRoot) ?? parseTransition(layoutRoot),
     animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
     ...(edit ? {
-      editInfo: { origin: { part: slidePath }, defaultShape: defaultShapeEditInfo(envFor(slidePath, true)) },
+      editInfo: {
+        origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
+        defaultShape: defaultShapeEditInfo(envFor(slidePath, true)),
+      },
     } : {}),
   };
 }

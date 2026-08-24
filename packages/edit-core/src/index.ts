@@ -11,7 +11,7 @@ export { elementOrder, writableLayerSiblingIds } from './element-order';
 export { applyPatches } from './commands/patch';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export {
-  effectiveElement, invalidateAll, invalidateElement, invalidateElementStructure, invalidateSlide,
+  effectiveElement, invalidateAll, invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideStructure,
   slideOfElement, toSlide,
 } from './projection';
 export {
@@ -28,13 +28,13 @@ export type {
   CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
-  SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
+  SlideCreation, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
   TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from './types';
 export type {
-  AddShapeCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
+  AddShapeCommand, AddSlideCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
-  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, Patch, RemoveElementCommand,
+  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, Patch, RemoveElementCommand, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   SetBodyPropsCommand, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,

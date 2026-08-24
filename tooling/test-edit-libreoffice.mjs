@@ -176,6 +176,10 @@ function exportLibreOfficeSvg(label) {
   return readFileSync(svg, 'utf8');
 }
 
+function pdfPageCount(path) {
+  return readFileSync(path).toString('latin1').match(/\/Type\s*\/Page\b/g)?.length ?? 0;
+}
+
 const pdf = join(out, `${basename(savedPath, extname(savedPath))}.pdf`);
 if (existsSync(pdf)) unlinkSync(pdf);
 const opened = spawnSync(soffice, [
@@ -304,6 +308,50 @@ if (basename(savedPath) === 'table-row-insert.pptx') {
     throw new Error(`LibreOffice 表格追加行几何偏差 ${error.toFixed(3)} SVG unit`);
   }
   geometryEvidence += `，追加行 frame 最大偏差 ${error.toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'add-slide.pptx' || basename(savedPath) === 'add-slide-first.pptx') {
+  const first = basename(savedPath) === 'add-slide-first.pptx';
+  const expectedPages = first ? 2 : 3;
+  const pages = pdfPageCount(pdf);
+  if (pages !== expectedPages) throw new Error(`LibreOffice 新增页 PDF 页数 ${pages}，预期 ${expectedPages}`);
+  const markup = exportLibreOfficeSvg('新增页版式');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const metaSlides = [...markup.matchAll(/id="ooo:meta_slide_(\d+)"[^>]*ooo:display-name="([^"]+)"/g)]
+    .map((match) => match[2]);
+  const expectedNames = first
+    ? ['LibreOffice新增页', '现有页面']
+    : ['现有页面', '浏览器新增页面', 'Slide 3'];
+  if (!viewBox || metaSlides.length !== expectedPages
+    || expectedNames.some((name, index) => metaSlides[index] !== name)) {
+    throw new Error(`LibreOffice 新增页顺序无效：${metaSlides.join(' → ')}`);
+  }
+  const viewW = Number(viewBox[1]);
+  const viewH = Number(viewBox[2]);
+  const title = first ? ['LibreOffice', '新增页'] : ['浏览器新增页面'];
+  if (title.some((part) => !markup.includes(`>${part}</tspan>`))
+    || !markup.includes(`>${first ? '1' : '2'}</tspan>`)
+    || /添加标题|添加正文|单击此处/.test(markup)) {
+    throw new Error('LibreOffice 新增页文字/页码字段未物化，或空占位符泄露了提示文本');
+  }
+  const topBand = shapeByFillAndFrame(markup, '217,79,112', {
+    left: 0, right: viewW, top: 0, bottom: 18 / 720 * viewH,
+  });
+  let error = geometryError(topBand.bounds, {
+    left: 0, right: viewW, top: 0, bottom: 18 / 720 * viewH,
+  });
+  if (!first) {
+    const blankAccent = shapeByFillAndFrame(markup, '217,79,112', {
+      left: 32 / 1280 * viewW, right: 212 / 1280 * viewW,
+      top: 648 / 720 * viewH, bottom: 680 / 720 * viewH,
+    });
+    error = Math.max(error, geometryError(blankAccent.bounds, {
+      left: 32 / 1280 * viewW, right: 212 / 1280 * viewW,
+      top: 648 / 720 * viewH, bottom: 680 / 720 * viewH,
+    }));
+  }
+  if (error > 3) throw new Error(`LibreOffice 新增页版式静态形状偏差 ${error.toFixed(3)} SVG unit`);
+  geometryEvidence += `，新增页 ${pages} 页/顺序/文字/版式最大偏差 ${error.toFixed(3)} SVG unit`;
 }
 
 console.log(`\n\x1b[32m✓ LibreOffice 已打开 ${basename(savedPath)} 并导出 PDF（${statSync(pdf).size} bytes${geometryEvidence}）\x1b[0m`);

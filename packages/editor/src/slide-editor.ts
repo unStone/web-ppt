@@ -308,6 +308,7 @@ class DomSlideEditor implements SlideEditor {
       staticLayer: this.staticLayer, interactionLayer: this.interactionLayer,
       slideId: () => this.currentSlide, zoom: () => this.currentZoom,
       idPrefix: this.idPrefix, textMode: this.textMode,
+      editable: () => this.currentMode === 'edit',
     });
 
     this.textEditor = new TextEditorController({
@@ -431,6 +432,7 @@ class DomSlideEditor implements SlideEditor {
     this.textLayer.toggleAttribute('hidden', mode === 'view');
     this.interactionLayer.style.display = mode === 'view' ? 'none' : '';
     this.textLayer.style.display = mode === 'view' ? 'none' : '';
+    this.domRenderer.renderSelection(this.session.editor.selection);
   }
 
   setSlide(slideId: SlideId): void {
@@ -479,7 +481,10 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private hitCandidates(path: EventTarget[]): ElementId[] {
-    return selectableElementIdsFromPath(this.session.editor.doc, path, this.staticLayer);
+    const seen = new Set<ElementId>();
+    return [this.interactionLayer, this.staticLayer].flatMap((root) =>
+      selectableElementIdsFromPath(this.session.editor.doc, path, root))
+      .filter((id) => !seen.has(id) && !!seen.add(id));
   }
 
   private outermostCandidate(candidates: ElementId[], enteredGroup: ElementId | null): ElementId | undefined {
@@ -488,6 +493,15 @@ class DomSlideEditor implements SlideEditor {
 
   private update(change: EditorChange): void {
     this.cancelGestures();
+    if (!this.session.editor.doc.slides[this.currentSlide]) {
+      this.keyboard.breakSequence();
+      this.textEditor.close(false);
+      const fallback = this.session.editor.doc.slideOrder[0];
+      if (!fallback) return;
+      this.currentSlide = fallback;
+      this.render();
+      return;
+    }
     this.domRenderer.update(change, this.textEditor.activeElementId);
     this.textEditor.update(change);
   }

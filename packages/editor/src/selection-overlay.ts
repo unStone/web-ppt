@@ -154,7 +154,9 @@ export function renderSelectionOverlay(
   slideId: SlideId,
   zoom: number,
 ): void {
-  layer.replaceChildren();
+  for (const child of [...layer.children]) {
+    if ((child as SVGElement).dataset.editSelectionIds !== undefined) child.remove();
+  }
   const frame = selectionFrame(doc, selection, slideId);
   if (!frame) return;
 

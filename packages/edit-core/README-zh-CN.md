@@ -27,6 +27,9 @@ editor.exec({
   rect: { x: 360, y: 180, w: 280, h: 160 },
 });
 const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+const layoutId = doc.layoutOrder[0];
+const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
+const newSlideId = [...added.createdSlides][0];
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -147,12 +150,18 @@ editor.exec({ type: 'InsertRow', id: tableElementId });
 变换和双击文字编辑路径。React、Vue、Svelte、Web Component 或原生工具栏都调用同一条 JSON 命令，
 headless 包不依赖任何框架运行时。
 
+`doc.layoutOrder` 与 `doc.layouts` 只在编辑模式公开源文件的真实版式目录。
+`AddSlide { layoutId, at: { after } }` 按选定版式创建一页，不复制其它幻灯片；返回的
+`createdSlides` 集合就是 React、Vue、Svelte、Web Component 或原生页面导航的稳定交接面，订阅事件也会
+收到同一集合。空标题/正文占位符继承版式几何与文字样式，但不复制提示文字；日期、页脚和页码仍保存为
+OOXML 字段。撤销/重做恢复同一份模型与 OPC 身份；保存只追加必要的包引用，不重建未触碰 part。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
@@ -196,8 +205,8 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 54.45KB gzip，`xml` 为
-8.07KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 6.21KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 59.47KB gzip，`xml` 为
+8.07KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 8.30KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。

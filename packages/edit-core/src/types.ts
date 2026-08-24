@@ -1,6 +1,6 @@
 import type {
   ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide,
-  SlideElement, TextBody, TextRun,
+  SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
 
 export type ElementId = string;
@@ -270,9 +270,25 @@ export interface SlideRecord {
   src: SlideSource;
   ovr: SlideOverrides;
   children: ElementId[];
+  /** 页序变化时只需失效这些动态字段及祖先，避免把页尾全部元素推给视图订阅者。 */
+  dynamicSlideNumbers: ElementId[];
+  /** 相对页序动作或稳定 part 跳转；插页后由投影层重新解析目标序号。 */
+  dynamicSlideLinks: ElementId[];
   origin: { part: string } | null;
+  layoutId?: string;
+  /** 仅会话中新页存在；保存层据此物化 OPC part 与 presentation 引用。 */
+  creation?: SlideCreation;
   /** 解析期已在当前页主题/颜色映射上求值，新增形状无需理解 OOXML 主题。 */
   defaultShape?: ShapeCreationDefaults;
+}
+
+export interface SlideCreation {
+  readonly layoutPart: string;
+  readonly layoutRelationshipId: string;
+  readonly presentationSlideId: number;
+  readonly presentationRelationshipId: string;
+  /** 锚点页在 presentation.xml 中的数值 id；section 写回以它定位。 */
+  readonly sectionAfterSlideId?: number;
 }
 
 export interface EditDocMeta {
@@ -290,6 +306,10 @@ export interface EditIdentity {
   nextElement: number;
   /** part 内 cNvPr@id 分配状态；首次新增时才从保留 XML 求最大值。 */
   nextSpid: Record<string, number>;
+  /** 三项均惰性初始化，未使用新增页能力时不扫描任何保存期身份。 */
+  nextSlidePart?: number;
+  nextPresentationSlideId?: number;
+  nextPresentationRelationship?: number;
 }
 
 /** 只保存首次触碰的 XML part；必须随文档 structuredClone 才能在 Worker 中正确撤销后保存。 */
@@ -303,6 +323,8 @@ export interface EditDoc {
   identity: EditIdentity;
   slides: Record<SlideId, SlideRecord>;
   slideOrder: SlideId[];
+  layouts: Record<string, SlideLayoutTemplate>;
+  layoutOrder: string[];
   elements: Record<ElementId, ElementRecord>;
   removedElements: Record<ElementId, RemovedElementRecord>;
   readonly package: OpcPackage | null;

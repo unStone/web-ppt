@@ -26,6 +26,24 @@ export interface Presentation {
   package?: OpcPackage;
   /** 节（p14:sectionLst），供缩略图分组 */
   sections?: Section[];
+  /** 仅 `parse(..., { edit: true })` 时存在，不参与渲染。 */
+  editInfo?: PresentationEditInfo;
+}
+
+export interface PresentationEditInfo {
+  /** 演示文稿内可用于新增页的真实版式；id 使用 OPC part，跨解析保持稳定。 */
+  layouts: SlideLayoutTemplate[];
+}
+
+export interface SlideLayoutTemplate {
+  id: string;
+  name: string;
+  origin: { part: string; masterPart: string };
+  background: Fill | null;
+  /** 母版/版式静态图形在前，已清空普通提示文字的占位符模板在后。 */
+  elements: SlideElement[];
+  transition?: Transition;
+  defaultShape: ShapeCreationDefaults;
 }
 
 /** 编辑写回使用的只读 OPC 包句柄。字节视为只读，修改它们属于未定义行为。 */
@@ -82,6 +100,8 @@ export interface Slide {
 
 export interface SlideEditInfo {
   origin: { part: string };
+  /** 当前页引用的版式 OPC part；仅 PPTX 编辑解析存在。 */
+  layoutId?: string;
   /** 当前页主题与颜色映射求值后的新形状默认值；只在编辑解析中保留。 */
   defaultShape?: ShapeCreationDefaults;
 }
@@ -508,6 +528,8 @@ export type MathNode =
 
 export interface TextRun {
   text: string;
+  /** 动态字段类型（如 slidenum）；显示文字只是跨应用缓存，字段身份不能被抹平。 */
+  field?: string;
   b: boolean;
   i: boolean;
   u: boolean;

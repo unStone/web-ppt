@@ -48,6 +48,9 @@ function relationshipIds(doc: EditDoc, part: string): Set<string> {
   for (const closure of activeClosures(doc, part)) {
     for (const relationship of closure.relationships) used.add(relationship.targetId);
   }
+  const createdSlide = Object.values(doc.slides).find((slide) =>
+    slide.origin?.part === part && slide.creation);
+  if (createdSlide?.creation) used.add(createdSlide.creation.layoutRelationshipId);
   return used;
 }
 

@@ -22,7 +22,7 @@ const bytes = new Uint8Array(readFileSync(file));
 const pres = await core.parse(bytes, {
   edit: mode === 'projected', keepPackage: true, lazy: false, assets: 'defer',
 });
-const slideIndex = scenario.slideIndex ?? 0;
+const slideIndex = scenario.resultSlideIndex ?? scenario.slideIndex ?? 0;
 let slide = pres.slides[slideIndex];
 let doc;
 if (mode === 'projected') {
@@ -102,6 +102,25 @@ if (mode === 'projected') {
       ops: [{
         type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: scenario.text,
       }],
+    });
+  } else if (scenario.type === 'addSlide') {
+    const layout = (name) => doc.layoutOrder.find((id) => doc.layouts[id].name === name);
+    const first = doc.slideOrder[0];
+    const titleResult = editor.exec({
+      type: 'AddSlide', layoutId: layout(scenario.titleLayoutName), at: { after: first },
+    });
+    const titleSlide = [...titleResult.createdSlides][0];
+    const title = doc.slides[titleSlide].children.map((id) => doc.elements[id])
+      .find((record) => record.meta.ph?.type === 'title');
+    editor.exec({
+      type: 'EditText', id: title.id,
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 }, text: scenario.text,
+      }],
+    });
+    editor.exec({
+      type: 'AddSlide', layoutId: layout(scenario.blankLayoutName), at: { after: titleSlide },
     });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });

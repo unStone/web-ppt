@@ -236,11 +236,15 @@ export class PresentationState {
     return hits;
   }
 
-  /** 解析内部跳转目标（`slide:3` / `slide:last`）为页索引；外部链接返回 null */
+  /** 解析绝对或相对内部跳转；相对动作保留到点击时，页序变化后仍指向正确目标。 */
   resolveLink(href: string): number | null {
     if (!href.startsWith('slide:')) return null;
     const raw = href.slice(6);
-    const n = raw === 'last' ? this.count : Number(raw);
+    const n = raw === 'next' ? this.idx + 2
+      : raw === 'previous' ? this.idx
+      : raw === 'first' ? 1
+      : raw === 'last' ? this.count
+      : Number(raw);
     return Number.isFinite(n) ? this.clamp(n - 1) : null;
   }
 

@@ -5,6 +5,7 @@ import type {
   CommandPatches, ElementTreePatch, ElementTreeSnapshot, Patch, RemoveElementCommand,
 } from './types';
 import { clearElementTextPatches } from './element-text';
+import { hasDynamicSlideLink } from '../dynamic-slide-fields';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -12,7 +13,7 @@ export function willRemoveElementStructure(record: ElementRecord | undefined): b
 }
 
 export function isElementTreePatch(patch: Patch): patch is ElementTreePatch {
-  return patch.path.length === 2;
+  return patch.path.length === 2 && patch.path[0] === 'elements';
 }
 
 function cloneRecord(record: ElementRecord): ElementRecord {
@@ -98,6 +99,11 @@ export function validateElementTreePatch(doc: EditDoc, patch: ElementTreePatch, 
 
 export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): void {
   const snapshot = patch.value;
+  const slide = doc.slides[elementTreeSlide(doc, snapshot)];
+  const dynamicIds = Object.values(snapshot.records)
+    .filter((record) => record.meta.ph?.type === 'sldNum').map((record) => record.id);
+  const dynamicLinkIds = Object.values(snapshot.records)
+    .filter((record) => hasDynamicSlideLink(record.src)).map((record) => record.id);
   const siblings = elementParentChildren(doc, snapshot.parent);
   if (patch.op === 'remove') {
     const index = siblings[siblings.length - 1] === snapshot.root
@@ -105,6 +111,14 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
     siblings.splice(index, 1);
     for (const id of Object.keys(snapshot.records)) delete doc.elements[id];
+    if (dynamicIds.length) {
+      const removed = new Set(dynamicIds);
+      slide.dynamicSlideNumbers = slide.dynamicSlideNumbers.filter((id) => !removed.has(id));
+    }
+    if (dynamicLinkIds.length) {
+      const removed = new Set(dynamicLinkIds);
+      slide.dynamicSlideLinks = slide.dynamicSlideLinks.filter((id) => !removed.has(id));
+    }
     const root = snapshot.records[snapshot.root];
     if (root.meta.created) delete doc.removedElements[snapshot.root];
     else {
@@ -124,6 +138,14 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     if (anchor && next !== undefined && next <= anchor.spid) {
       doc.identity.nextSpid[anchor.part] = anchor.spid + 1;
     }
+  }
+  if (dynamicIds.length) {
+    const known = new Set(slide.dynamicSlideNumbers);
+    slide.dynamicSlideNumbers.push(...dynamicIds.filter((id) => !known.has(id)));
+  }
+  if (dynamicLinkIds.length) {
+    const known = new Set(slide.dynamicSlideLinks);
+    slide.dynamicSlideLinks.push(...dynamicLinkIds.filter((id) => !known.has(id)));
   }
   delete doc.removedElements[snapshot.root];
   // 多根删除时，快照下标取自不断收缩的数组，不能作为跨进程回放的位置依据；z 才是稳定顺序。

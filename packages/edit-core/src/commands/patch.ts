@@ -1,5 +1,7 @@
 import { sortElementChildrenByOrder } from '../element-order';
-import { invalidateElement, invalidateElementStructure } from '../projection';
+import {
+  invalidateElement, invalidateElementStructure, invalidateSlideSequence, invalidateSlideStructure,
+} from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type { EditDoc, ProjectionInvalidation, TableRowInsertion } from '../types';
 import { applyElementTransformPatch } from './element-transform';
@@ -9,6 +11,7 @@ import {
 import { applyElementTreePatch, isElementTreePatch, validateElementTreePatch } from './element-tree';
 import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
 import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
+import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
 import type { ElementTransformPatch, ElementTreePatch, Patch, XfrmField } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 
@@ -27,6 +30,12 @@ function validatePatch(
     && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
     && (patch.op === 'remove' || patch.op === 'insert')) {
     validateElementTreePatch(doc, patch as ElementTreePatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 2
+    && patch.path[0] === 'slides' && typeof patch.path[1] === 'string'
+    && (patch.op === 'remove' || patch.op === 'insert')) {
+    validateSlideTreePatch(doc, patch as import('./types').SlideTreePatch, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path[0] === 'elements'
@@ -91,7 +100,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
         tableOrders.set(order, index);
       }
     }
-    if (!isElementTreePatch(patch)) return;
+    if (!isElementTreePatch(patch) && !isSlideTreePatch(patch)) return;
     for (const id of Object.keys(patch.value.records)) {
       const previous = owner.get(id);
       if (previous !== undefined) {
@@ -125,7 +134,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
     }
   }
   patches.forEach((patch, index) => {
-    if (isElementTreePatch(patch)) return;
+    if (isElementTreePatch(patch) || isSlideTreePatch(patch)) return;
     const tree = owner.get(patch.path[1]);
     if (tree !== undefined) {
       throw new Error(`Patch ${index} 与 Patch ${tree} 同时修改将被移除的元素：${patch.path[1]}`);
@@ -150,7 +159,17 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
   const dirtySlides = new Set<string>();
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
   for (const patch of patches) {
-    const dirty = isElementTreePatch(patch)
+    if (isSlideTreePatch(patch)) {
+      const start = patch.op === 'insert'
+        ? (patch.value.after === null ? 0 : doc.slideOrder.indexOf(patch.value.after) + 1)
+        : doc.slideOrder.indexOf(patch.path[1]) + 1;
+      const sequence = invalidateSlideSequence(doc, start);
+      for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
+      for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
+    }
+    const dirty = isSlideTreePatch(patch)
+      ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
+      : isElementTreePatch(patch)
       ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
       : invalidateElement(doc, patch.path[1]);
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
@@ -158,7 +177,8 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
   }
   const orderParents = new Set<string>();
   for (const patch of patches) {
-    if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
+    if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
+    else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));

@@ -1,6 +1,9 @@
 import { resolveGeomPath } from '@web-ppt/core/geometry';
-import type { GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement } from '@web-ppt/core';
+import type {
+  GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TextBody,
+} from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
+import { isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRowRef } from './table-cell';
 import {
@@ -27,6 +30,82 @@ function elementRecord(doc: EditDoc, id: ElementId) {
   const record = doc.elements[id];
   if (!record) throw new Error(`找不到元素：${id}`);
   return record;
+}
+
+function dynamicSlideNumber(doc: EditDoc, id: ElementId, element: ShapeElement): ShapeElement {
+  const record = elementRecord(doc, id);
+  if (record.meta.ph?.type !== 'sldNum' || record.ovr.text || !element.text) return element;
+  const number = doc.slideOrder.indexOf(slideOfElement(doc, id)) + 1;
+  let changed = false;
+  const paragraphs = element.text.paragraphs.map((paragraph) => ({
+    ...paragraph,
+    runs: paragraph.runs.map((run) => {
+      if (run.field?.toLowerCase() !== 'slidenum') return run;
+      changed = true;
+      return { ...run, text: String(number) };
+    }),
+  }));
+  if (!changed) return element;
+  return {
+    ...element,
+    text: { ...element.text, paragraphs },
+  };
+}
+
+function resolvedSlideLink(doc: EditDoc, id: ElementId, link: string | undefined): string | undefined {
+  if (!isDynamicSlideLink(link)) return link;
+  const current = doc.slideOrder.indexOf(slideOfElement(doc, id));
+  let target: number | undefined;
+  if (link === 'slide:next') target = current + 2;
+  else if (link === 'slide:previous') target = current;
+  else if (link === 'slide:first') target = 1;
+  else if (link === 'slide:last') target = doc.slideOrder.length;
+  else if (link?.startsWith('slide-part:')) {
+    try {
+      const part = decodeURIComponent(link.slice('slide-part:'.length));
+      const index = doc.slideOrder.findIndex((slideId) => doc.slides[slideId].origin?.part === part);
+      if (index >= 0) target = index + 1;
+    } catch { return link; }
+  }
+  return target === undefined ? link : `slide:${target}`;
+}
+
+function projectedTextLinks(doc: EditDoc, id: ElementId, text: TextBody | null): TextBody | null {
+  if (!text) return null;
+  let changed = false;
+  const paragraphs = text.paragraphs.map((paragraph) => ({
+    ...paragraph,
+    runs: paragraph.runs.map((run) => {
+      const link = resolvedSlideLink(doc, id, run.link);
+      if (link === run.link) return run;
+      changed = true;
+      return { ...run, link };
+    }),
+  }));
+  return changed ? { ...text, paragraphs } : text;
+}
+
+function projectedSlideLinks(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {
+  let out = element;
+  const link = resolvedSlideLink(doc, id, out.link);
+  if (link !== out.link) out = { ...out, link } as SlideElement;
+  if (out.kind === 'shape') {
+    const text = projectedTextLinks(doc, id, out.text);
+    if (text !== out.text) out = { ...out, text };
+  } else if (out.kind === 'table') {
+    let changed = false;
+    const rows = out.rows.map((row) => ({
+      ...row,
+      cells: row.cells.map((cell) => {
+        const text = projectedTextLinks(doc, id, cell.text);
+        if (text === cell.text) return cell;
+        changed = true;
+        return { ...cell, text };
+      }),
+    }));
+    if (changed) out = { ...out, rows };
+  }
+  return out;
 }
 
 export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
@@ -82,6 +161,8 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       clipPath: record.meta.geom.preset === 'rect' ? null : geom.d,
     } as ImageElement;
   }
+  if (out.kind === 'shape') out = dynamicSlideNumber(doc, id, out);
+  out = projectedSlideLinks(doc, id, out);
   cache.elements.set(id, out);
   return out;
 }
@@ -137,6 +218,48 @@ export function invalidateSlide(doc: EditDoc, id: SlideId): ProjectionInvalidati
   if (!doc.slides[id]) throw new Error(`找不到幻灯片：${id}`);
   cacheOf(doc).slides.delete(id);
   return { dirtyElements: new Set(), dirtySlides: new Set([id]) };
+}
+
+/** 页面树 patch 发生在页面存在性变化之前，不能要求目标页已经在模型中。 */
+export function invalidateSlideStructure(
+  doc: EditDoc,
+  id: SlideId,
+  elements: readonly ElementId[],
+): ProjectionInvalidation {
+  const cache = cacheOf(doc);
+  cache.slides.delete(id);
+  for (const element of elements) cache.elements.delete(element);
+  return { dirtyElements: new Set(elements), dirtySlides: new Set([id]) };
+}
+
+/** 插页只改变页码字段；沿字段父链失效，避免框架订阅者收到整段页尾的元素更新。 */
+export function invalidateSlideSequence(doc: EditDoc, start: number): ProjectionInvalidation {
+  const cache = cacheOf(doc);
+  const dirtyElements = new Set<ElementId>();
+  const dirtySlides = new Set<SlideId>();
+  const invalidate = (slideId: SlideId, id: ElementId): void => {
+    let current = doc.elements[id];
+    if (!current) return;
+    dirtySlides.add(slideId);
+    cache.slides.delete(slideId);
+    for (;;) {
+      dirtyElements.add(current.id);
+      cache.elements.delete(current.id);
+      if (doc.slides[current.parent]) break;
+      current = doc.elements[current.parent as ElementId];
+      if (!current) break;
+    }
+  };
+  for (const slideId of doc.slideOrder.slice(Math.max(0, start))) {
+    const slide = doc.slides[slideId];
+    for (const id of slide?.dynamicSlideNumbers ?? []) {
+      if (!doc.elements[id]?.ovr.text) invalidate(slideId, id);
+    }
+  }
+  for (const slideId of doc.slideOrder) {
+    for (const id of doc.slides[slideId]?.dynamicSlideLinks ?? []) invalidate(slideId, id);
+  }
+  return { dirtyElements, dirtySlides };
 }
 
 /** 结构 patch 的根可能尚不存在；以外部父节点失效并清掉整棵树的旧投影缓存。 */

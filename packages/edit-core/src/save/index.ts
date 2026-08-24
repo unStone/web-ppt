@@ -12,6 +12,23 @@ import { materializeElementTreeState } from './insertion';
 import {
   clipboardPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
 } from './clipboard-parts';
+import {
+  createdSlideRelationships, createdSlides, emptySlideXml, patchPresentationRelationships,
+  patchPresentationSlides, patchSlideContentTypes, patchSlideNumberFields,
+} from './slide-parts';
+
+function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
+  const parts = new Map<string, number>();
+  doc.slideOrder.forEach((slideId, index) => {
+    const slide = doc.slides[slideId];
+    const part = slide.origin?.part;
+    if (part && slide.dynamicSlideNumbers.some((id) => {
+      const record = doc.elements[id];
+      return record?.meta.origin?.part === part && !record.ovr.text;
+    })) parts.set(part, index + 1);
+  });
+  return parts;
+}
 
 function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   const grouped = new Map<string, ElementRecord[]>();
@@ -52,12 +69,17 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const grouped = recordsByPart(doc);
   const removals = removalsByPart(doc);
   const clipboard = clipboardPackageParts(doc);
+  const activeCreatedSlides = createdSlides(doc);
   const nextBaselines: Record<string, Uint8Array> = Object.assign(
     Object.create(null), doc.saveState.baselines,
   );
   const nextCreatedParts = new Set(doc.saveState.createdParts);
-  for (const part of new Set([...grouped.keys(), ...removals.keys()])) {
+  const hasSlideHistory = activeCreatedSlides.length > 0
+    || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
+  const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
+  for (const part of new Set([...grouped.keys(), ...removals.keys(), ...slideNumbers.keys()])) {
     if (nextBaselines[part]) continue;
+    if (activeCreatedSlides.some((slide) => slide.origin?.part === part)) continue;
     const source = doc.package.parts[part];
     if (!source) throw new Error(`找不到待写回的 OPC part：${part}`);
     nextBaselines[part] = source.slice();
@@ -70,29 +92,48 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     else nextCreatedParts.add(relsPart);
   }
   const contentTypesPart = '[Content_Types].xml';
-  if (clipboard.resources.size && !nextBaselines[contentTypesPart]) {
+  const presentationPart = 'ppt/presentation.xml';
+  const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
+  if ((clipboard.resources.size || hasSlideHistory) && !nextBaselines[contentTypesPart]) {
     const source = doc.package.parts[contentTypesPart];
     if (!source) throw new Error('PPTX 缺少 [Content_Types].xml');
     nextBaselines[contentTypesPart] = source.slice();
+  }
+  if (hasSlideHistory) for (const part of [presentationPart, presentationRelsPart]) {
+    if (nextBaselines[part]) continue;
+    const source = doc.package.parts[part];
+    if (!source) throw new Error(`PPTX 缺少 ${part}`);
+    nextBaselines[part] = source.slice();
+  }
+  for (const slide of activeCreatedSlides) {
+    const part = slide.origin!.part;
+    nextCreatedParts.add(part);
+    nextCreatedParts.add(relationshipPartFor(part));
   }
   for (const resource of clipboard.resources.values()) {
     if (resource.created) nextCreatedParts.add(resource.targetPart);
   }
 
   const changes: Record<string, Uint8Array | null> = Object.create(null);
+  for (const part of nextCreatedParts) changes[part] = null;
   const slideParts = new Set(doc.slideOrder.flatMap((id) => {
-    const part = doc.slides[id].origin?.part;
-    return part && nextBaselines[part] ? [part] : [];
+    const slide = doc.slides[id];
+    const part = slide.origin?.part;
+    return part && (nextBaselines[part] || slide.creation || slideNumbers.has(part)) ? [part] : [];
   }));
   for (const part of slideParts) {
-    const source = nextBaselines[part];
+    const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === part);
+    const source = nextBaselines[part] ?? (slide ? emptySlideXml() : undefined);
+    if (!source) throw new Error(`找不到页面保存基线：${part}`);
     const tree = parseXmlTree(source);
     const records = grouped.get(part) ?? [];
     materializeElementTreeState(tree, doc, part, records, removals.get(part) ?? []);
-    changes[part] = serializeXmlTreeBytes(tree);
+    const bytes = serializeXmlTreeBytes(tree);
+    changes[part] = slideNumbers.has(part)
+      ? patchSlideNumberFields(bytes, slideNumbers.get(part)!)
+      : bytes;
   }
 
-  for (const part of nextCreatedParts) changes[part] = null;
   const activeRelationshipParts = new Set<string>();
   for (const [sourcePart, relationships] of clipboard.relationships) {
     const relsPart = relationshipPartFor(sourcePart);
@@ -106,8 +147,24 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }
   for (const [part, resource] of clipboard.resources) changes[part] = resourceBytes(resource);
   if (nextBaselines[contentTypesPart]) {
-    changes[contentTypesPart] = patchContentTypes(
+    const resourceTypes = patchContentTypes(
       nextBaselines[contentTypesPart], [...clipboard.resources.values()],
+    );
+    changes[contentTypesPart] = patchSlideContentTypes(resourceTypes, doc);
+  }
+  for (const slide of activeCreatedSlides) {
+    const relsPart = relationshipPartFor(slide.origin!.part);
+    const relationships = changes[relsPart];
+    changes[relsPart] = createdSlideRelationships(
+      slide, relationships instanceof Uint8Array ? relationships : undefined,
+    );
+  }
+  if (nextBaselines[presentationPart] && nextBaselines[presentationRelsPart]) {
+    changes[presentationPart] = patchPresentationSlides(
+      nextBaselines[presentationPart], nextBaselines[presentationRelsPart], doc,
+    );
+    changes[presentationRelsPart] = patchPresentationRelationships(
+      nextBaselines[presentationRelsPart], doc,
     );
   }
 

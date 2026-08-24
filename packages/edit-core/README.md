@@ -28,6 +28,9 @@ editor.exec({
   rect: { x: 360, y: 180, w: 280, h: 160 },
 });
 const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+const layoutId = doc.layoutOrder[0];
+const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
+const newSlideId = [...added.createdSlides][0];
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -157,13 +160,20 @@ the new shape, and enters history as one tree patch. It is immediately compatibl
 and double-click text-editing paths. Toolbars in React, Vue, Svelte, Web Components, or vanilla code call this
 same JSON command; the headless package does not depend on their runtimes.
 
+`doc.layoutOrder` and `doc.layouts` expose the source deck's real layout catalog only in edit mode.
+`AddSlide { layoutId, at: { after } }` creates one page from that layout without cloning another slide. The
+returned `createdSlides` set is the stable hand-off to any React, Vue, Svelte, Web Component, or vanilla page
+navigator; subscribers receive the same set. Empty title/body placeholders keep layout geometry and text style
+but not prompt content, while date/footer/page-number placeholders remain OOXML fields. Undo/redo restores the
+same model and OPC identities; save adds the required package references without rebuilding untouched parts.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
-appended table rows, placeholder clears, and element removals, refreshes `doc.package` for the
+appended table rows, new shapes/pages, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 
@@ -209,8 +219,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 54.45 KB gzip for the editing entry,
-8.07 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 6.21 KB on demand. Clean local
+Measured Vite output, including each entry's static shared chunks, is 59.47 KB gzip for the editing entry,
+8.07 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 8.30 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

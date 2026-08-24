@@ -4,7 +4,10 @@ import type { EditDoc } from '../types';
 
 function maxSourceSpid(doc: EditDoc, part: string): number {
   const bytes = doc.saveState.baselines[part] ?? doc.package?.parts[part];
-  if (!bytes) throw new Error(`无法读取元素目标 part：${part}`);
+  if (!bytes) {
+    if (Object.values(doc.slides).some((slide) => slide.creation && slide.origin?.part === part)) return 0;
+    throw new Error(`无法读取元素目标 part：${part}`);
+  }
   let maximum = 0;
   const visit = (element: XmlElement): void => {
     if (element.localName === 'cNvPr') {

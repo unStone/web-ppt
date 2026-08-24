@@ -2343,6 +2343,10 @@ group('headless 状态机');
     // 内部跳转链接解析
     eq('slide:3 解析为索引 2', st.resolveLink('slide:3'), 2);
     eq('slide:last 解析为末页', st.resolveLink('slide:last'), st.count - 1);
+    eq('slide:next 按点击时的当前页解析', st.resolveLink('slide:next'), 1);
+    st.goTo(2);
+    eq('slide:previous 按点击时的当前页解析', st.resolveLink('slide:previous'), 1);
+    eq('slide:first 解析为首页', st.resolveLink('slide:first'), 0);
     eq('外链返回 null', st.resolveLink('https://example.com'), null);
 
     st.destroy();

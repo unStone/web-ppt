@@ -1,4 +1,4 @@
-import { effectiveElement } from './projection';
+import { effectiveElement, slideOfElement } from './projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex, initialFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
@@ -8,6 +8,7 @@ import { tableCellKeyResolver } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
 import { textTargetContext } from './commands/text-target';
 import { tableRowsWithoutTextOverrides } from './table-rows';
+import { hasDynamicSlideLink } from './dynamic-slide-fields';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -172,6 +173,17 @@ export function validateEditDoc(doc: EditDoc): void {
   }
   if (new Set(doc.slideOrder).size !== doc.slideOrder.length) throw new Error('slideOrder 不能包含重复页');
   if (doc.slideOrder.length !== Object.keys(doc.slides).length) throw new Error('slideOrder 必须恰好包含全部幻灯片');
+  if (!doc.layouts || !Array.isArray(doc.layoutOrder)
+    || new Set(doc.layoutOrder).size !== doc.layoutOrder.length
+    || doc.layoutOrder.length !== Object.keys(doc.layouts).length
+    || doc.layoutOrder.some((id) => doc.layouts[id]?.id !== id)) {
+    throw new Error('版式目录与 layoutOrder 不一致');
+  }
+
+  const createdParts = new Set(Object.values(doc.slides)
+    .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));
+  const creationSlideIds = new Set<number>();
+  const creationRelationshipIds = new Set<string>();
 
   const referenced = new Map<ElementId, SlideId | ElementId>();
   for (const slideId of doc.slideOrder) {
@@ -179,8 +191,24 @@ export function validateEditDoc(doc: EditDoc): void {
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
     if (slide.id !== slideId) throw new Error(`幻灯片 key 与 id 不一致：${slideId}`);
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
-    if (slide.origin && doc.package && !doc.package.parts[slide.origin.part]) {
+    if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation) {
       throw new Error(`幻灯片 ${slideId} 的源 part 不存在：${slide.origin.part}`);
+    }
+    if (slide.creation) {
+      if (!slide.origin || slide.creation.layoutPart !== slide.layoutId
+        || !doc.layouts[slide.creation.layoutPart]
+        || !/^rId\d+$/.test(slide.creation.layoutRelationshipId)
+        || !Number.isSafeInteger(slide.creation.presentationSlideId)
+        || slide.creation.presentationSlideId < 256
+        || !/^rId\d+$/.test(slide.creation.presentationRelationshipId)) {
+        throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份无效`);
+      }
+      if (creationSlideIds.has(slide.creation.presentationSlideId)
+        || creationRelationshipIds.has(slide.creation.presentationRelationshipId)) {
+        throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份重复`);
+      }
+      creationSlideIds.add(slide.creation.presentationSlideId);
+      creationRelationshipIds.add(slide.creation.presentationRelationshipId);
     }
     assertChildren(doc, slideId, slide.children, referenced);
   }
@@ -195,6 +223,40 @@ export function validateEditDoc(doc: EditDoc): void {
   for (const id of Object.keys(doc.elements)) {
     if (!referenced.has(id)) throw new Error(`存在孤儿元素：${id}`);
     assertParentChain(doc, id);
+  }
+  const indexedSlideNumbers = new Set<ElementId>();
+  const indexedSlideLinks = new Set<ElementId>();
+  for (const slideId of doc.slideOrder) {
+    const ids = doc.slides[slideId].dynamicSlideNumbers;
+    if (!Array.isArray(ids) || new Set(ids).size !== ids.length) {
+      throw new Error(`幻灯片 ${slideId} 的动态页码索引无效`);
+    }
+    for (const id of ids) {
+      const record = doc.elements[id];
+      if (!record || record.meta.ph?.type !== 'sldNum' || slideOfElement(doc, id) !== slideId) {
+        throw new Error(`幻灯片 ${slideId} 的动态页码索引指向无效元素：${id}`);
+      }
+      indexedSlideNumbers.add(id);
+    }
+    const links = doc.slides[slideId].dynamicSlideLinks;
+    if (!Array.isArray(links) || new Set(links).size !== links.length) {
+      throw new Error(`幻灯片 ${slideId} 的动态跳转索引无效`);
+    }
+    for (const id of links) {
+      const record = doc.elements[id];
+      if (!record || !hasDynamicSlideLink(record.src) || slideOfElement(doc, id) !== slideId) {
+        throw new Error(`幻灯片 ${slideId} 的动态跳转索引指向无效元素：${id}`);
+      }
+      indexedSlideLinks.add(id);
+    }
+  }
+  for (const record of Object.values(doc.elements)) {
+    if (record.meta.ph?.type === 'sldNum' && !indexedSlideNumbers.has(record.id)) {
+      throw new Error(`动态页码元素未进入所属页索引：${record.id}`);
+    }
+    if (hasDynamicSlideLink(record.src) && !indexedSlideLinks.has(record.id)) {
+      throw new Error(`动态跳转元素未进入所属页索引：${record.id}`);
+    }
   }
 
   for (const [id, record] of Object.entries(doc.removedElements)) {
@@ -218,7 +280,8 @@ export function validateEditDoc(doc: EditDoc): void {
         if (spids.has(key)) throw new Error(`同一 part 内 spid 重复：${record.meta.origin.part}#${record.meta.origin.spid}`);
         spids.add(key);
       }
-      if (doc.package && !doc.package.parts[record.meta.origin.part]) {
+      if (doc.package && !doc.package.parts[record.meta.origin.part]
+        && !(record.meta.created && createdParts.has(record.meta.origin.part))) {
         throw new Error(`元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
       }
     }

@@ -2,7 +2,7 @@ import type { GeomSpec, SlideElement } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
-  TableCellAddress, TextBodyPropertyOverrides,
+  SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
 import type { AffineMatrix } from '../space';
 
@@ -131,6 +131,13 @@ export interface AddShapeCommand {
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
+export interface AddSlideCommand {
+  readonly type: 'AddSlide';
+  readonly layoutId: string;
+  /** null 表示插入到第一位；稳定页身份比瞬时数组下标更适合框架与协同边界。 */
+  readonly at: { readonly after: SlideId | null };
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -196,7 +203,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
@@ -256,6 +263,19 @@ export type ElementTreePatch = {
   readonly origin: string;
 };
 
+export interface SlideTreeSnapshot {
+  readonly slide: SlideRecord;
+  readonly after: SlideId | null;
+  readonly records: Readonly<Record<ElementId, ElementRecord>>;
+}
+
+export type SlideTreePatch = {
+  readonly op: 'remove' | 'insert';
+  readonly path: readonly ['slides', SlideId];
+  readonly value: SlideTreeSnapshot;
+  readonly origin: string;
+};
+
 export type TableRowPatch = {
   readonly op: 'insert' | 'remove';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableRows', string];
@@ -263,7 +283,8 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch | ElementTreePatch | TableRowPatch;
+export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch
+  | ElementTreePatch | SlideTreePatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -302,11 +323,15 @@ export interface History {
 
 export interface TransactionResult extends ProjectionInvalidation, CommandPatches {
   readonly selection: Selection;
+  readonly createdSlides: Set<SlideId>;
+  readonly removedSlides: Set<SlideId>;
 }
 
 export interface EditorChange extends ProjectionInvalidation {
   readonly source: 'transaction' | 'undo' | 'redo' | 'selection';
   readonly selection: Selection;
+  readonly createdSlides: Set<SlideId>;
+  readonly removedSlides: Set<SlideId>;
   /** dirtyElements 含投影缓存祖先；DOM 增量分区必须以真正被 patch 的元素为准。 */
   readonly touchedElements: Set<ElementId>;
   /** 需要重新生成 markup/defs 的元素；纯层级 patch 不进入这里。 */

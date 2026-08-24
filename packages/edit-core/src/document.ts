@@ -1,6 +1,7 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
 import { registerClipboardAssets, releaseClipboardAssets } from './clipboard-assets';
 import { initialFractionalIndex } from './fractional-index';
+import { hasDynamicSlideLink } from './dynamic-slide-fields';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
 import type {
   CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
@@ -31,7 +32,7 @@ function intrinsicEditable(el: SlideElement): EditableKind {
   return 'full';
 }
 
-function metaOf(
+export function elementMetaOf(
   el: SlideElement,
   inherited: EditableKind,
   source: Presentation['source'],
@@ -71,9 +72,11 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     parent: SlideId | ElementId,
     inherited: EditableKind,
     writablePart: string | null,
+    dynamicSlideNumbers: ElementId[],
+    dynamicSlideLinks: ElementId[],
   ): ElementId[] => source.map((el, index) => {
     const id = `${prefix}e${(++elementSeq).toString(36)}`;
-    const meta = metaOf(el, inherited, pres.source, writablePart);
+    const meta = elementMetaOf(el, inherited, pres.source, writablePart);
     const record: ElementRecord = {
       id,
       parent,
@@ -83,25 +86,38 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       meta,
     };
     elements[id] = record;
-    if (el.kind === 'group') record.children = addElements(el.children, id, meta.editable, writablePart);
+    if (meta.ph?.type === 'sldNum') dynamicSlideNumbers.push(id);
+    if (hasDynamicSlideLink(el)) dynamicSlideLinks.push(id);
+    if (el.kind === 'group') {
+      record.children = addElements(
+        el.children, id, meta.editable, writablePart, dynamicSlideNumbers, dynamicSlideLinks,
+      );
+    }
     return id;
   });
 
   // 访问每一项会固化惰性 getter；EditDoc 自身最终只有普通对象和数组。
   for (const slide of pres.slides) {
     const id = `${prefix}s${(++slideSeq).toString(36)}`;
+    const dynamicSlideNumbers: ElementId[] = [];
+    const dynamicSlideLinks: ElementId[] = [];
     const record = {
       id,
       src: slideSource(slide),
       ovr: {},
       children: [] as ElementId[],
+      dynamicSlideNumbers,
+      dynamicSlideLinks,
       origin: slide.editInfo?.origin ?? null,
+      ...(slide.editInfo?.layoutId ? { layoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.defaultShape
         ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
     };
     slides[id] = record;
     slideOrder.push(id);
-    record.children = addElements(slide.elements, id, 'full', record.origin?.part ?? null);
+    record.children = addElements(
+      slide.elements, id, 'full', record.origin?.part ?? null, dynamicSlideNumbers, dynamicSlideLinks,
+    );
   }
 
   if (pres.source === 'pptx') {
@@ -128,6 +144,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1, nextSpid: {} },
     slides,
     slideOrder,
+    layouts: Object.fromEntries((pres.editInfo?.layouts ?? []).map((layout) => [
+      layout.id, structuredClone(layout),
+    ])),
+    layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
     elements,
     removedElements: {},
     package: pkg,
@@ -148,6 +168,8 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     identity: { prefix, nextSlide: 1, nextElement: 1, nextSpid: {} },
     slides: {},
     slideOrder: [],
+    layouts: {},
+    layoutOrder: [],
     elements: {},
     removedElements: {},
     package: null,

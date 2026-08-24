@@ -315,7 +315,10 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         }
         let text = kid(node, 't')?.textContent ?? '';
         if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
-        runs.push(finalizeRun(text, rp, env, merged.rp));
+        const run = finalizeRun(text, rp, env, merged.rp);
+        runs.push(node.localName === 'fld'
+          ? { ...run, field: attr(node, 'type') ?? 'unknown' }
+          : run);
         if (text.trim()) hasContent = true;
       } else if (node.localName === 'br') {
         // a:br 自带 rPr；忽略它会让带格式硬换行保存重开后退回段落默认字符格式。

@@ -31,11 +31,11 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 88 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 14.2 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 19.8 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.4 KB |
-| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.8 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 89.77 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 59.47 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 30.53 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.43 KB |
+| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.75 KB |
 
 ## Quick start
 
@@ -169,7 +169,8 @@ for byte and retains declarations, comments, PIs, namespace prefixes, attribute 
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. Neither save-only entry enters the default 14.19 KB gzip initial editing-model entry.
+return an explainable fallback reason. The main editing graph is 59.47 KB gzip including static shared chunks;
+the first save adds 8.30 KB on demand.
 
 ### Bring your own UI
 
@@ -311,9 +312,9 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,037 assertions + 164 render snapshots |
-| `npm run test:edit` | 403 edit-core assertions + 36 M1 save assertions + 270 process-isolated SVG fingerprint pairs across 40 fixtures |
-| `npm run test:editor` | 195 session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:core` | Core parsing / rendering — 2,120 assertions + 176 render snapshots |
+| `npm run test:edit` | 499 edit-core assertions + 89 M1 save assertions + 286 process-isolated SVG fingerprint pairs across 45 fixtures |
+| `npm run test:editor` | 250 session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
@@ -343,7 +344,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site — the website, with the in-browser live demo
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          164 render snapshot baselines
+└── test/snapshots/          176 render snapshot baselines
 ```
 
 `packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
@@ -360,7 +361,7 @@ Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM an
 |---|---|
 | **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
 | **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 18 test files × every slide × both text paths = 164 normalized SVG baselines, compared byte for byte |
+| **Render snapshots** | 21 test files × every slide × both text paths = 176 normalized SVG baselines, compared byte for byte |
 | **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
 | **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
 | **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |
