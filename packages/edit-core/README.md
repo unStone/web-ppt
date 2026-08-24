@@ -28,6 +28,11 @@ editor.exec({
   rect: { x: 360, y: 180, w: 280, h: 160 },
 });
 const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+const imageBytes = new Uint8Array(await imageFile.arrayBuffer());
+editor.exec({
+  type: 'AddImage', slideId, bytes: imageBytes, mime: 'image/png',
+  rect: { x: 420, y: 180, w: 320, h: 220 },
+});
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
@@ -160,6 +165,14 @@ the new shape, and enters history as one tree patch. It is immediately compatibl
 and double-click text-editing paths. Toolbars in React, Vue, Svelte, Web Components, or vanilla code call this
 same JSON command; the headless package does not depend on their runtimes.
 
+`AddImage { slideId, bytes, mime, rect, placeholderId? }` recognizes complete PNG, JPEG, GIF, and WebP
+containers from magic bytes, copies caller-owned bytes, and inserts one immediately renderable `ImageElement`.
+SHA-256 deduplicates media already in the source package or inserted elsewhere in the session; each picture still
+gets its own collision-free relationship and `p:pic` identity. Supplying an empty picture `placeholderId` replaces
+the placeholder atomically. One tree-patch group owns element, relationship, media, Content Types, selection,
+undo/redo, and minimal save semantics; the model stores one hash token instead of duplicating Base64 in `src`.
+SVG input is deliberately excluded until its external references and scripts have a separate sanitizer contract.
+
 `doc.layoutOrder` and `doc.layouts` expose the source deck's real layout catalog only in edit mode.
 `AddSlide { layoutId, at: { after } }` creates one page from that layout without cloning another slide. The
 returned `createdSlides` set is the stable hand-off to any React, Vue, Svelte, Web Component, or vanilla page
@@ -219,7 +232,7 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 59.47 KB gzip for the editing entry,
+Measured Vite output, including each entry's static shared chunks, is 62.33 KB gzip for the editing entry,
 8.07 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 8.30 KB on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.

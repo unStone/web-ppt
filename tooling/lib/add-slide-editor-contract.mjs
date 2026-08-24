@@ -29,16 +29,20 @@ export async function runAddSlideEditorContract({ check, lib, root, window }) {
       && editMount.querySelector('[data-ppt-layer="static"]').textContent
         === viewMount.querySelector('[data-ppt-layer="static"]').textContent
       && editMount.querySelector('[data-edit-id]') && viewMount.querySelector('[data-edit-id]'));
-  check('编辑模式只在 interaction 层显示两个空占位符提示，view 模式没有辅助节点',
+  check('编辑模式只在 interaction 层显示三个空占位符提示，view 模式没有辅助节点',
     placeholders.length === 2
-      && editInteraction.querySelectorAll('[data-edit-placeholder-id]').length === 2
+      && editInteraction.querySelectorAll('[data-edit-placeholder-id]').length === 3
       && !viewInteraction.querySelector('[data-edit-placeholder-id]')
       && viewInteraction.style.display === 'none'
       && !editMount.querySelector('[data-ppt-layer="static"] [data-edit-placeholder-id]'));
-  check('未实现的图片占位符不伪装成会进入文字编辑器的操作入口',
-    !!mediaPlaceholder
-      && !editInteraction.querySelector(`[data-edit-placeholder-id="${mediaPlaceholder.id}"]`)
-      && !editInteraction.textContent.includes('添加图片'));
+  const pictureHit = editInteraction.querySelector(`[data-edit-placeholder-id="${mediaPlaceholder.id}"]`);
+  pictureHit.dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true, composed: true }));
+  const pictureInput = editMount.querySelector('[data-web-ppt-image-input]');
+  check('图片占位符打开受限文件选择器而不伪装成文字入口',
+    !!mediaPlaceholder && pictureHit?.dataset.editPlaceholderType === 'pic'
+      && editInteraction.textContent.includes('添加图片') && !!pictureInput
+      && !editMount.querySelector(`[data-ppt-text-editor="${mediaPlaceholder.id}"]`));
+  pictureInput?.dispatchEvent(new window.Event('cancel'));
 
   const title = placeholders.find((record) => record.meta.ph.type === 'title');
   const hintBefore = editInteraction.querySelector('[data-edit-placeholder-layer]');

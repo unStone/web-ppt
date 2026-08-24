@@ -65,10 +65,11 @@ tracker: local-markdown
 - [让表格末格 Tab 追加可编辑行](tickets/039-append-table-row-on-tab.md) — 稳定 rowId、稀疏投影与保留型 `a:tr` 写回贯通并发安全的追加/输入/撤销/保存；Chrome 20×10 完整上屏 p95 9.500ms，LibreOffice 几何 oracle 通过。
 - [新增可立即编辑的预设形状](tickets/040-add-preset-shape.md) — 主题求值与写回共用默认源，part 级 spid 和有序 `p:spTree` 插入接通 AddShape、交互、历史与保留型保存；Chrome 60 元素 p95 0.500ms，LibreOffice 圆角轮廓 oracle 通过。
 - [按现有版式新增可立即编辑的页面](tickets/041-add-slide-from-layout.md) — edit-only 版式目录与原子 SlideTreePatch 接通新增页、占位符输入、动态页码/跳页、撤销重做和最小 OPC 保存；Chrome 21 页 p95 3.3ms，LibreOffice oracle 通过。
+- [插入可预览可保存的图片](tickets/042-add-image.md) — SHA-256 文档级媒体闭包与原子 AddImage 接通文件选择、图片占位符、粘贴、变换、撤销和最小保存；Chrome 60 元素 p95 0.500ms，LibreOffice 像素 oracle 通过。
 
 ## Not yet specified
 
-- M4 的图片和表格要在 OPC 关系与有序 XML 插入能力完成后拆成独立任务。
+- M4 的表格要在图片插入闭环稳定后拆成独立任务。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。

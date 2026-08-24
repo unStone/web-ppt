@@ -26,9 +26,9 @@ function packageMedia(doc: EditDoc): Map<string, string> {
   return new Map(result);
 }
 
-function activeClosures(doc: EditDoc, part: string): PreparedInsertionClosure[] {
+function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[] {
   return Object.values(doc.elements).flatMap((record) => {
-    const insertion = record.meta.origin?.part === part && record.meta.insertion;
+    const insertion = (part === undefined || record.meta.origin?.part === part) && record.meta.insertion;
     return insertion ? [{
       relationships: [...(insertion.relationships ?? [])],
       resources: [...(insertion.resources ?? [])],
@@ -86,6 +86,7 @@ export function prepareInsertionClosures(
   payload: ElementClipboardPayload,
   roots: readonly string[],
   destinationPart: string,
+  options: { readonly preverifiedResourceHashes?: ReadonlySet<string> } = {},
 ): Map<string, PreparedInsertionClosure> {
   if (!doc.package) throw new Error('粘贴关系资源需要可写 OPC 包');
   const resourceByHash = new Map<string, ElementInsertionResource>();
@@ -97,16 +98,18 @@ export function prepareInsertionClosures(
       throw new Error('剪贴板资源描述无效');
     }
     if (resourceByHash.has(resource.hash)) throw new Error(`剪贴板资源哈希重复：${resource.hash}`);
-    let bytes: Uint8Array;
-    try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error('剪贴板资源不是有效 Base64'); }
-    if (sha256(bytes) !== resource.hash) throw new Error(`剪贴板资源哈希不匹配：${resource.hash}`);
+    if (!options.preverifiedResourceHashes?.has(resource.hash)) {
+      let bytes: Uint8Array;
+      try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error('剪贴板资源不是有效 Base64'); }
+      if (sha256(bytes) !== resource.hash) throw new Error(`剪贴板资源哈希不匹配：${resource.hash}`);
+    }
     resourceByHash.set(resource.hash, {
       ...resource, targetPart: '', created: false,
     });
   }
 
   const targetByHash = packageMedia(doc);
-  const active = activeClosures(doc, destinationPart);
+  const active = activeClosures(doc);
   for (const closure of active) {
     for (const resource of closure.resources) targetByHash.set(resource.hash, resource.targetPart);
   }

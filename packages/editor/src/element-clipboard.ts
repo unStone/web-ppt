@@ -11,6 +11,7 @@ interface ElementClipboardOptions {
   slideId(): SlideId;
   editable(): boolean;
   gestureActive(): boolean;
+  insertImage(file: File): Promise<ElementId>;
 }
 
 function reportClipboardError(error: unknown): void {
@@ -30,7 +31,14 @@ export class ElementClipboardController {
   paste(event: ClipboardEvent): void {
     if (this.shouldYieldBase(event)) return;
     const json = event.clipboardData?.getData(ELEMENT_CLIPBOARD_MIME);
-    if (!json) return;
+    if (!json) {
+      const image = [...(event.clipboardData?.files ?? [])].find((file) =>
+        file.type.startsWith('image/'));
+      if (!image) return;
+      event.preventDefault();
+      void this.options.insertImage(image).catch(reportClipboardError);
+      return;
+    }
     event.preventDefault();
     try {
       const payload = JSON.parse(json) as ElementClipboardPayload;

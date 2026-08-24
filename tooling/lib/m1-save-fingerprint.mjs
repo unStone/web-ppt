@@ -103,6 +103,16 @@ if (mode === 'projected') {
         type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: scenario.text,
       }],
     });
+  } else if (scenario.type === 'addImage') {
+    for (const image of scenario.images) {
+      const imageBytes = image.part
+        ? pres.package.parts[image.part]
+        : Uint8Array.from(Buffer.from(image.base64, 'base64'));
+      editor.exec({
+        type: 'AddImage', slideId: doc.slideOrder[slideIndex],
+        bytes: imageBytes, mime: image.mime, rect: image.rect,
+      });
+    }
   } else if (scenario.type === 'addSlide') {
     const layout = (name) => doc.layoutOrder.find((id) => doc.layouts[id].name === name);
     const first = doc.slideOrder[0];

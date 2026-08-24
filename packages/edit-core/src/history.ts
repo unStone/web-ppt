@@ -24,9 +24,11 @@ const clonePatch = <P extends Patch>(patch: P): P => ({
 } as P);
 
 export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {
+  // 一对结构 patch 共用同一快照；一次 structuredClone 才能保留资源闭包的共享身份。
+  const patches = structuredClone({ forward: entry.forward, inverse: entry.inverse });
   return {
-    forward: entry.forward.map(clonePatch),
-    inverse: entry.inverse.map(clonePatch),
+    forward: patches.forward,
+    inverse: patches.inverse,
     selectionBefore: cloneSelection(entry.selectionBefore),
     selectionAfter: cloneSelection(entry.selectionAfter),
     label: entry.label,
@@ -216,9 +218,15 @@ export class HistoryStore implements History {
 
   private sizeOf(entry: HistoryEntry): number {
     const stored = entry as Partial<StoredHistoryEntry>;
+    const seen = new WeakSet<object>();
     return encoder.encode(JSON.stringify({
       ...cloneHistoryEntry(entry),
       links: stored.links ?? [],
+    }, (_key, value) => {
+      if (!value || typeof value !== 'object') return value;
+      if (seen.has(value)) return null;
+      seen.add(value);
+      return value;
     })).length;
   }
 }

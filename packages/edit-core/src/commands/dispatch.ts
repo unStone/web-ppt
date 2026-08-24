@@ -12,9 +12,10 @@ import { setXfrmPatches } from './set-xfrm';
 import { setBodyPropsPatches } from './set-body-props';
 import { insertRowPatches } from './insert-row';
 import { addShapePatches } from './add-shape';
+import { addImagePatches } from './add-image';
 import { addSlidePatches } from './add-slide';
 import type {
-  AddShapeCommand, AddSlideCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
   InsertRowCommand, SetBodyPropsCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -42,6 +43,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
   AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches),
+  AddImage: register<AddImageCommand>(['slideId', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches),
   AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
@@ -62,7 +64,7 @@ function assertPureCommand(input: Command): void {
     }
   }
   if (input.type !== 'AlignElements' && input.type !== 'PasteElements'
-    && input.type !== 'AddShape' && input.type !== 'AddSlide') {
+    && input.type !== 'AddShape' && input.type !== 'AddImage' && input.type !== 'AddSlide') {
     if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
   }
 }

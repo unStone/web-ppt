@@ -3,6 +3,7 @@ import type {
   GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TextBody,
 } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
+import { hydrateElementInsertionAssets } from './clipboard-assets';
 import { isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRowRef } from './table-cell';
@@ -116,6 +117,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const record = elementRecord(doc, id);
   const { tableCells, tableRows, ...overrides } = record.ovr;
   let out = { ...record.src, ...overrides } as unknown as SlideElement;
+  if (record.meta.insertion?.resources?.length) {
+    out = hydrateElementInsertionAssets(out, record.meta.insertion.resources);
+  }
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {

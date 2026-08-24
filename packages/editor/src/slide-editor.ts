@@ -5,7 +5,6 @@ import type {
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
-import { shouldYieldPointerEvent } from './keyboard-owner';
 import { ElementClipboardController } from './element-clipboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
@@ -13,18 +12,17 @@ import { ResizeGestureController } from './resize-gesture';
 import { RotationGestureController } from './rotation-gesture';
 import { normalizeSnapMargins } from './snap';
 import type { SnapMargins } from './snap';
-import { combineSelectionIds, selectionModifierActive } from './selection-combine';
 import {
-  alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
-  outermostHitCandidate, selectableElementIdsFromPath,
-  tableCellAddressFromPath,
+  directSelectableChildIds, selectableElementIdsFromPath,
 } from './selection-hit';
 import { TextEditorController } from './text-editor';
 import { claimTextEditing, releaseTextEditing, sessionState } from './session-state';
 import { bindSlideEditorEvents } from './slide-editor-events';
 import { SlideDomRenderer } from './slide-dom-renderer';
-import { isRotationHandleAt, resizeHandleAt } from './selection-handles';
 import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
+import { ImageInsertionController } from './image-insertion';
+import type { ImageInsertOptions } from './image-insertion';
+import { SlidePointerController } from './slide-pointer-controller';
 
 export type EditorMode = 'view' | 'edit';
 
@@ -69,6 +67,8 @@ export interface SlideEditor {
   setParaProps(props: ParagraphPropertyOverrides): boolean;
   queryBodyProps(): TextBodyProperties | null;
   setBodyProps(props: TextBodyPropertyOverrides): boolean;
+  insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
+  chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
   destroy(): void;
 }
 
@@ -94,132 +94,11 @@ class DomSlideEditor implements SlideEditor {
   private readonly rotationGesture: RotationGestureController;
   private readonly domRenderer: SlideDomRenderer;
   private readonly textEditor: TextEditorController;
+  private readonly imageInsertion: ImageInsertionController;
+  private readonly pointer: SlidePointerController;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
   private readonly unbindEvents: () => void;
-  private readonly onPointerDown = (event: PointerEvent): void => {
-    if (this.currentMode !== 'edit' || event.button !== 0 || event.isPrimary === false) return;
-    if (shouldYieldPointerEvent(event)) return;
-    if (this.textEditor.owns(event.target)) return;
-    if (this.textEditor.isActive) this.textEditor.close(false);
-    if (isRotationHandleAt(event.target, this.interactionLayer)) {
-      const selection = this.session.editor.selection;
-      if (selection.kind === 'elements'
-        && selection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
-        this.moveGesture.cancel();
-        this.resizeGesture.cancel();
-        this.marqueeGesture.cancel();
-        this.rotationGesture.begin(event, selection.ids);
-      }
-      event.preventDefault();
-      this.element.focus({ preventScroll: true });
-      return;
-    }
-    this.rotationGesture.cancel();
-    const resizeHandle = resizeHandleAt(event.target, this.interactionLayer);
-    if (resizeHandle) {
-      const selection = this.session.editor.selection;
-      if (selection.kind === 'elements'
-        && selection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
-        this.moveGesture.cancel();
-        this.marqueeGesture.cancel();
-        this.resizeGesture.begin(event, resizeHandle, selection.ids);
-      }
-      event.preventDefault();
-      this.element.focus({ preventScroll: true });
-      return;
-    }
-    this.resizeGesture.cancel();
-    const candidates = this.hitCandidates(event.composedPath());
-    const enteredGroup = enteredGroupOnSlide(
-      this.session.editor.doc,
-      this.session.editor.selection.kind === 'elements'
-        ? this.session.editor.selection.enteredGroup : null,
-      this.currentSlide,
-    );
-    const togglesSelection = selectionModifierActive(event);
-    const id = event.altKey
-      ? alternateSelectableElementId(
-        this.session.editor.doc,
-        this.element.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
-        this.staticLayer,
-        enteredGroup,
-        this.session.editor.selection,
-        togglesSelection,
-      )
-      : this.outermostCandidate(candidates, enteredGroup);
-    const selection = this.session.editor.selection;
-    const keepsSelection = id && !event.altKey && !togglesSelection && selection.kind === 'elements'
-      && selection.ids.includes(id);
-    if (!id) {
-      this.moveGesture.cancel();
-      this.marqueeGesture.begin(event, enteredGroup);
-      event.preventDefault();
-      this.element.focus({ preventScroll: true });
-      return;
-    }
-    this.marqueeGesture.cancel();
-    if (!keepsSelection) {
-      const scope = directSelectableChildIds(this.session.editor.doc, this.currentSlide, enteredGroup);
-      const ids = combineSelectionIds(
-        scope, selection.kind === 'elements' ? selection.ids : [], [id], togglesSelection,
-      );
-      this.session.editor.select(ids.length
-        ? { kind: 'elements', ids, enteredGroup }
-        : { kind: 'none' });
-    }
-    const nextSelection = this.session.editor.selection;
-    if (id && (!event.altKey || togglesSelection) && nextSelection.kind === 'elements'
-      && nextSelection.ids.includes(id)
-      && nextSelection.ids.every((selectedId) => isSelectable(this.session.editor.doc, selectedId))) {
-      this.moveGesture.begin(event, nextSelection.ids);
-    }
-    event.preventDefault();
-    this.element.focus({ preventScroll: true });
-  };
-  private readonly onPointerMove = (event: PointerEvent): void => {
-    this.marqueeGesture.move(event);
-    this.rotationGesture.move(event);
-    this.resizeGesture.move(event);
-    this.moveGesture.move(event);
-  };
-  private readonly onPointerUp = (event: PointerEvent): void => {
-    this.marqueeGesture.finish(event);
-    this.rotationGesture.finish(event);
-    this.resizeGesture.finish(event);
-    this.moveGesture.finish(event);
-  };
-  private readonly onPointerCancel = (event: PointerEvent): void => {
-    this.marqueeGesture.cancelPointer(event);
-    this.rotationGesture.cancelPointer(event);
-    this.resizeGesture.cancelPointer(event);
-    this.moveGesture.cancelPointer(event);
-  };
-  private readonly onDoubleClick = (event: MouseEvent): void => {
-    if (this.currentMode !== 'edit') return;
-    const candidates = this.hitCandidates(event.composedPath());
-    const enteredGroup = enteredGroupOnSlide(
-      this.session.editor.doc,
-      this.session.editor.selection.kind === 'elements'
-        ? this.session.editor.selection.enteredGroup : null,
-      this.currentSlide,
-    );
-    const textId = this.outermostCandidate(candidates, enteredGroup);
-    const cell = tableCellAddressFromPath(event.composedPath(), this.staticLayer);
-    if (textId && (cell ? this.textEditor.enterCell(textId, cell) : this.textEditor.enter(textId))) {
-      event.preventDefault();
-      return;
-    }
-    const selected = this.session.editor.selection;
-    if (selected.kind !== 'elements' || selected.ids.length !== 1) return;
-    const groupId = selected.ids[0];
-    const groupIndex = candidates.indexOf(groupId);
-    if (groupIndex < 1 || this.session.editor.doc.elements[groupId]?.src.kind !== 'group') return;
-    const id = this.outermostCandidate(candidates.slice(0, groupIndex), groupId);
-    if (!id) return;
-    this.session.editor.select({ kind: 'elements', ids: [id], enteredGroup: groupId });
-    event.preventDefault();
-  };
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit') return;
     if (this.textEditor.owns(event.target)) return;
@@ -323,6 +202,12 @@ class DomSlideEditor implements SlideEditor {
       syncStatic: (id) => this.domRenderer.syncElement(id),
     });
 
+    this.imageInsertion = new ImageInsertionController({
+      editor: session.editor, root: this.element,
+      slideId: () => this.currentSlide,
+      editable: () => this.currentMode === 'edit',
+    });
+
     this.keyboard = new EditorKeyboardController({
       editor: session.editor, namespace: this.idPrefix,
       slideId: () => this.currentSlide, revealSlide: (slideId) => this.setSlide(slideId),
@@ -333,6 +218,7 @@ class DomSlideEditor implements SlideEditor {
       slideId: () => this.currentSlide,
       editable: () => this.currentMode === 'edit',
       gestureActive: () => this.hasActiveGesture(),
+      insertImage: (file) => this.imageInsertion.insert(file),
     });
 
     this.marqueeGesture = new MarqueeGestureController({
@@ -372,6 +258,15 @@ class DomSlideEditor implements SlideEditor {
       editor: session.editor,
       zoom: () => this.currentZoom,
     });
+    this.pointer = new SlidePointerController({
+      editor: session.editor, root: this.element,
+      staticLayer: this.staticLayer, interactionLayer: this.interactionLayer,
+      textEditor: this.textEditor, imageInsertion: this.imageInsertion,
+      marquee: this.marqueeGesture, move: this.moveGesture,
+      resize: this.resizeGesture, rotation: this.rotationGesture,
+      editable: () => this.currentMode === 'edit', slideId: () => this.currentSlide,
+      hitCandidates: (path) => this.hitCandidates(path),
+    });
 
     this.stage.append(this.staticLayer, this.interactionLayer, this.textLayer);
     this.element.append(this.stage);
@@ -380,9 +275,9 @@ class DomSlideEditor implements SlideEditor {
     this.setZoom(this.currentZoom);
     this.unsubscribe = session.editor.subscribe((change) => this.update(change));
     this.unbindEvents = bindSlideEditorEvents(this.element, {
-      pointerdown: this.onPointerDown, pointermove: this.onPointerMove,
-      pointerup: this.onPointerUp, pointercancel: this.onPointerCancel,
-      dblclick: this.onDoubleClick, keydown: this.onKeyDown, keyup: this.onKeyUp,
+      pointerdown: this.pointer.down, pointermove: this.pointer.move,
+      pointerup: this.pointer.up, pointercancel: this.pointer.cancel,
+      dblclick: this.pointer.doubleClick, keydown: this.onKeyDown, keyup: this.onKeyUp,
       blur: this.onBlur, copy: this.onCopy, cut: this.onCut, paste: this.onPaste,
     });
     try {
@@ -415,6 +310,14 @@ class DomSlideEditor implements SlideEditor {
   setBodyProps(props: TextBodyPropertyOverrides): boolean {
     if (this.currentMode !== 'edit' || this.textEditor.isComposing) return false;
     return setSelectionBodyProps(this.session.editor, this.currentSlide, props);
+  }
+
+  insertImage(file: Blob, options: ImageInsertOptions = {}): Promise<ElementId> {
+    return this.imageInsertion.insert(file, options);
+  }
+
+  chooseImage(options: ImageInsertOptions = {}): Promise<ElementId | null> {
+    return this.imageInsertion.choose(options);
   }
 
   setMode(mode: EditorMode): void {
@@ -469,6 +372,7 @@ class DomSlideEditor implements SlideEditor {
     this.cancelGestures();
     this.keyboard.breakSequence();
     this.textEditor.destroy();
+    this.imageInsertion.destroy();
     this.unsubscribe();
     this.unbindEvents();
     sessionState(this.session).views.delete(this);
@@ -485,10 +389,6 @@ class DomSlideEditor implements SlideEditor {
     return [this.interactionLayer, this.staticLayer].flatMap((root) =>
       selectableElementIdsFromPath(this.session.editor.doc, path, root))
       .filter((id) => !seen.has(id) && !!seen.add(id));
-  }
-
-  private outermostCandidate(candidates: ElementId[], enteredGroup: ElementId | null): ElementId | undefined {
-    return outermostHitCandidate(this.session.editor.doc, candidates, enteredGroup);
   }
 
   private update(change: EditorChange): void {

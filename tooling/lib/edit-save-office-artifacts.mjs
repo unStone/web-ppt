@@ -13,6 +13,7 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'table-row-insert.pptx', slides: 2 }),
   Object.freeze({ file: 'table-row-insert-styles.pptx', slides: 3 }),
   Object.freeze({ file: 'add-shape.pptx', slides: 1 }),
+  Object.freeze({ file: 'add-image.pptx', slides: 1 }),
   Object.freeze({ file: 'add-slide.pptx', slides: 3 }),
   Object.freeze({ file: 'add-slide-first.pptx', slides: 2 }),
 ]);

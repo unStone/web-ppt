@@ -27,6 +27,11 @@ editor.exec({
   rect: { x: 360, y: 180, w: 280, h: 160 },
 });
 const newShapeId = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+const imageBytes = new Uint8Array(await imageFile.arrayBuffer());
+editor.exec({
+  type: 'AddImage', slideId, bytes: imageBytes, mime: 'image/png',
+  rect: { x: 420, y: 180, w: 320, h: 220 },
+});
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
@@ -150,6 +155,12 @@ editor.exec({ type: 'InsertRow', id: tableElementId });
 变换和双击文字编辑路径。React、Vue、Svelte、Web Component 或原生工具栏都调用同一条 JSON 命令，
 headless 包不依赖任何框架运行时。
 
+`AddImage { slideId, bytes, mime, rect, placeholderId? }` 按魔数字节识别完整 PNG、JPEG、GIF、WebP
+容器，复制调用者拥有的字节，并立即投影为可渲染 `ImageElement`。SHA-256 会复用源包或本会话中相同内容的
+媒体 part，但每张图片仍分配无冲突的独立关系和 `p:pic` 身份。传入空图片 `placeholderId` 时会原子替换
+占位符；元素、关系、媒体、Content Types、选区、撤销重做与最小保存由同一个树 patch 组拥有。模型用一枚
+哈希 token 代替在 `src` 中再次复制 Base64。SVG 在外部引用与脚本清洗形成独立安全契约前不会伪装成支持。
+
 `doc.layoutOrder` 与 `doc.layouts` 只在编辑模式公开源文件的真实版式目录。
 `AddSlide { layoutId, at: { after } }` 按选定版式创建一页，不复制其它幻灯片；返回的
 `createdSlides` 集合就是 React、Vue、Svelte、Web Component 或原生页面导航的稳定交接面，订阅事件也会
@@ -205,7 +216,7 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 59.47KB gzip，`xml` 为
+字节序和 BOM 均保留；实测 Vite 产物（含各入口静态共享 chunk）：编辑入口 62.33KB gzip，`xml` 为
 8.07KB，`opc` 为 4.38KB；主入口加载后首次保存再按需增加 8.30KB。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 

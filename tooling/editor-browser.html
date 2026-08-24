@@ -47,6 +47,9 @@
     import { runEditorShapeAutofitBrowserContract } from '/tooling/lib/editor-shape-autofit-browser-contract.mjs';
     import { runEditorBodyPropsBrowserContract } from '/tooling/lib/editor-body-props-browser-contract.mjs';
     import { runEditorAddShapeBrowserContract } from '/tooling/lib/editor-add-shape-browser-contract.mjs';
+    import {
+      runEditorAddImageBrowserContract, runEditorAddImagePerformanceContract,
+    } from '/tooling/lib/editor-add-image-browser-contract.mjs';
     import { runEditorAddSlideBrowserContract } from '/tooling/lib/editor-add-slide-browser-contract.mjs';
 
     const report = document.querySelector('#report');
@@ -444,6 +447,8 @@
       const shapeAutofitResult = await runEditorShapeAutofitBrowserContract({ openEditor, load });
       const bodyPropsResult = await runEditorBodyPropsBrowserContract({ openEditor, load });
       const addShapeResult = await runEditorAddShapeBrowserContract({ openEditor, load });
+      const addImageResult = await runEditorAddImageBrowserContract({ openEditor, load });
+      const addImagePerformance = await runEditorAddImagePerformanceContract({ openEditor, load });
       const addSlideResult = await runEditorAddSlideBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
@@ -514,6 +519,8 @@
       report.dataset.bodyPropsFrameError = bodyPropsResult.frameError.toFixed(3);
       report.dataset.addShapeError = addShapeResult.geometryError.toFixed(3);
       report.dataset.addShapeP95 = addShapeResult.p95.toFixed(3);
+      report.dataset.addImageError = addImageResult.geometryError.toFixed(3);
+      report.dataset.addImageP95 = addImagePerformance.p95.toFixed(3);
       report.dataset.addSlideError = addSlideResult.geometryError.toFixed(3);
       report.dataset.addSlideP95 = addSlideResult.p95.toFixed(3);
       report.dataset.addSlidePages = String(addSlideResult.pageCount);

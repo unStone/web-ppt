@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { unzipSync } from 'fflate';
+import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -91,6 +91,24 @@ function savedFrameGeometry(bytes, name, slidePart = 'ppt/slides/slide1.xml') {
   };
 }
 
+function savedPictureGeometry(bytes, name, slidePart = 'ppt/slides/slide1.xml') {
+  const parts = unzipSync(bytes);
+  const decode = (part) => new TextDecoder().decode(parts[part]);
+  const slide = decode(slidePart);
+  const named = slide.indexOf(`name="${name}"`);
+  const from = slide.lastIndexOf('<p:pic>', named);
+  const to = slide.indexOf('</p:pic>', named);
+  const fragment = from >= 0 && to >= 0 ? slide.slice(from, to + 8) : '';
+  const xfrm = fragment.match(/<a:xfrm\b([^>]*)>[\s\S]*?<a:off x="(-?\d+)" y="(-?\d+)"\/><a:ext cx="(\d+)" cy="(\d+)"\/>/);
+  const size = decode('ppt/presentation.xml').match(/<p:sldSz cx="(\d+)" cy="(\d+)"\/>/);
+  if (!xfrm || !size) throw new Error(`无法从保存产物读取 ${name} 的 picture xfrm 或画布尺寸`);
+  return {
+    x: Number(xfrm[2]), y: Number(xfrm[3]), w: Number(xfrm[4]), h: Number(xfrm[5]),
+    rot: Number(xfrm[1].match(/\brot="(-?\d+)"/)?.[1] ?? 0) / 60000,
+    slideW: Number(size[1]), slideH: Number(size[2]),
+  };
+}
+
 function expectedBounds(frame, viewW, viewH) {
   const radians = frame.rot * Math.PI / 180;
   const cos = Math.cos(radians);
@@ -165,6 +183,31 @@ function followingText(markup, pathTag) {
 function textPositions(textMarkup) {
   return [...textMarkup.matchAll(/class="TextPosition" x="(-?[\d.]+)" y="(-?[\d.]+)"/g)]
     .map((match) => ({ x: Number(match[1]), y: Number(match[2]) }));
+}
+
+function firstRgbPixelFromPngDataUrl(fragment) {
+  const base64 = fragment.match(/xlink:href="data:image\/png;base64,([^"]+)"/)?.[1];
+  if (!base64) throw new Error('LibreOffice SVG 图片没有内联 PNG 像素');
+  const bytes = new Uint8Array(Buffer.from(base64, 'base64'));
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  const colorType = bytes[25];
+  const chunks = [];
+  for (let offset = 8; offset + 12 <= bytes.length;) {
+    const length = view.getUint32(offset);
+    const type = new TextDecoder().decode(bytes.subarray(offset + 4, offset + 8));
+    if (type === 'IDAT') chunks.push(bytes.subarray(offset + 8, offset + 8 + length));
+    offset += length + 12;
+  }
+  const compressed = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
+  let at = 0;
+  for (const chunk of chunks) { compressed.set(chunk, at); at += chunk.length; }
+  const raw = unzlibSync(compressed);
+  if (width !== 1 || height !== 1 || colorType !== 2 || raw[0] !== 0 || raw.length < 4) {
+    throw new Error(`LibreOffice SVG 像素格式无效：${width}×${height} type=${colorType}`);
+  }
+  return [...raw.subarray(1, 4)];
 }
 
 function exportLibreOfficeSvg(label) {
@@ -291,6 +334,41 @@ if (basename(savedPath) === 'add-shape.pptx') {
     throw new Error(`LibreOffice 新增圆角矩形偏差 frame=${error.toFixed(3)} outline=${outlineError.toFixed(3)} SVG unit`);
   }
   geometryEvidence += `，新增 roundRect frame/轮廓最大偏差 ${Math.max(error, outlineError).toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'add-image.pptx') {
+  const markup = exportLibreOfficeSvg('新增图片几何与像素');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  if (!viewBox) throw new Error('LibreOffice 新增图片 SVG 缺少 viewBox');
+  const bytes = new Uint8Array(readFileSync(savedPath));
+  const parts = unzipSync(bytes);
+  const slideXml = new TextDecoder().decode(parts['ppt/slides/slide1.xml']);
+  const names = [...slideXml.matchAll(/<p:cNvPr id="\d+" name="(图片 \d+)"/g)]
+    .map((match) => match[1]);
+  if (names.length !== 3) throw new Error(`新增图片保存产物身份数量无效：${names.join(',')}`);
+  const graphics = [...markup.matchAll(/<g class="Graphic">\s*<g>\s*<rect class="BoundingBox"[^>]* x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"\/>([\s\S]*?)<\/g>\s*<\/g>/g)]
+    .map((match) => ({
+      bounds: {
+        left: Number(match[1]), top: Number(match[2]),
+        right: Number(match[1]) + Number(match[3]), bottom: Number(match[2]) + Number(match[4]),
+      },
+      body: match[5],
+    }));
+  const matched = names.map((name) => {
+    const expected = expectedBounds(
+      savedPictureGeometry(bytes, name), Number(viewBox[1]), Number(viewBox[2]),
+    );
+    return graphics.map((graphic) => ({ graphic, error: geometryError(graphic.bounds, expected) }))
+      .sort((left, right) => left.error - right.error)[0];
+  });
+  const error = Math.max(...matched.map((candidate) => candidate?.error ?? Infinity));
+  const pixel = firstRgbPixelFromPngDataUrl(matched[1].graphic.body);
+  if (error > 3 || matched[0].graphic.body.includes('<image')
+    || !matched[0].graphic.body.includes('<use')
+    || pixel.join(',') !== '255,0,0' || !matched[2].graphic.body.includes('<use')) {
+    throw new Error(`LibreOffice 新增图片偏差 frame=${error.toFixed(3)} pixel=${pixel.join(',')}`);
+  }
+  geometryEvidence += `，新增图片 frame 最大偏差 ${error.toFixed(3)} SVG unit，WebP 像素 ${pixel.join('/')}`;
 }
 
 if (basename(savedPath) === 'table-row-insert.pptx') {

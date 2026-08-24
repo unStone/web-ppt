@@ -12,7 +12,15 @@ interface DocAsset {
 }
 
 const docAssets = new WeakMap<EditDoc, Map<string, DocAsset>>();
-const insertionAssetIndexes = new WeakMap<object, ReadonlyMap<string, string>>();
+interface InsertionAssetIndex {
+  readonly hashByDataUrl: ReadonlyMap<string, string>;
+  readonly hashes: ReadonlySet<string>;
+}
+
+const insertionAssetIndexes = new WeakMap<object, InsertionAssetIndex>();
+const insertionHydrators = new WeakMap<object, (source: SlideElement) => SlideElement>();
+
+export const insertionResourceToken = (hash: string): string => `${RESOURCE_TOKEN}${hash}`;
 
 function walkStrings(value: unknown, visit: (value: string) => string, mutate: boolean): unknown {
   if (typeof value === 'string') return visit(value);
@@ -59,13 +67,22 @@ export function tokenizeElementAssets(
   const clone = structuredClone(source);
   let inserted = insertionAssetIndexes.get(insertionResources);
   if (!inserted) {
-    inserted = new Map(insertionResources.map((resource) => [
-      `data:${resource.mime};base64,${resource.bytes}`, resource.hash,
-    ]));
+    inserted = {
+      hashByDataUrl: new Map(insertionResources.map((resource) => [
+        `data:${resource.mime};base64,${resource.bytes}`, resource.hash,
+      ])),
+      hashes: new Set(insertionResources.map((resource) => resource.hash)),
+    };
     insertionAssetIndexes.set(insertionResources, inserted);
   }
   return walkStrings(clone, (value) => {
-    const insertedHash = inserted.get(value);
+    if (value.startsWith(RESOURCE_TOKEN)) {
+      const hash = value.slice(RESOURCE_TOKEN.length);
+      if (!inserted!.hashes.has(hash)) throw new Error(`元素投影缺少插入资源：${hash}`);
+      used.add(hash);
+      return value;
+    }
+    const insertedHash = inserted!.hashByDataUrl.get(value);
     if (insertedHash) {
       used.add(insertedHash);
       return `${RESOURCE_TOKEN}${insertedHash}`;
@@ -96,4 +113,17 @@ export function createElementAssetHydrator(
     }
     return url;
   }, true) as SlideElement;
+}
+
+/** EditDoc 保留小型资源 token；只有有效投影需要付出 data URI 的字符串成本。 */
+export function hydrateElementInsertionAssets(
+  source: SlideElement,
+  resources: readonly ClipboardResource[],
+): SlideElement {
+  let hydrate = insertionHydrators.get(resources);
+  if (!hydrate) {
+    hydrate = createElementAssetHydrator(resources);
+    insertionHydrators.set(resources, hydrate);
+  }
+  return hydrate(source);
 }

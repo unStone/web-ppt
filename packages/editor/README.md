@@ -31,6 +31,9 @@ const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
 
+await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
+// Or from a toolbar click: const imageId = await view.chooseImage();
+
 view.setMode('view');       // same static preview DOM; interaction layers are hidden
 view.setMode('edit');
 view.setSlide(slideId);
@@ -138,7 +141,8 @@ and strike-through, while `Ctrl/Cmd+Shift+V` ignores HTML. Blocks become PPT par
 line break. External HTML is parsed in a detached tree and never injected into the live editor; scripts, style
 sheets, link targets, image sources, hidden metadata, and unsupported CSS are discarded. If sanitized HTML text
 does not equal `text/plain`, formatting is dropped instead of guessing offsets. A paste or cut is one undo unit.
-Image-only paste is currently blocked without mutating the DOM; it will route to the future `AddImage` command.
+Image-only paste on the canvas routes through the same `AddImage` command and creates one undo unit. Text/table
+selections still retain their native paste ownership.
 
 Product toolbars stay outside the base DOM package. Their six alignment actions call the headless
 `AlignElements` command directly; the mounted view synchronously patches only elements that actually moved and
@@ -149,6 +153,13 @@ Shape palettes use the same framework-neutral seam: call `session.editor.exec({ 
 Every mounted view inserts the new SVG partition synchronously, the edit view shows its selection frame, and a
 double-click opens the existing text editor. View mode exposes no creation gesture; product code decides when to
 offer the command without importing DOM internals.
+
+Image buttons can call `view.chooseImage()` for the built-in local file input or `view.insertImage(file, options)`
+when a React, Vue, Web Component, or vanilla toolbar already owns a `File`/`Blob`. PNG, JPEG, GIF, and WebP are
+recognized from their bytes rather than the filename or browser MIME. Files stay local; the default 5MB limit
+keeps the insertion inside the standard 8MB undo budget and can be changed explicitly. While bytes are read the
+view exposes `aria-busy="true"`; failures reject the promise and dispatch `webpptimageerror`. Double-clicking an
+empty picture placeholder uses the same path and replaces that placeholder plus the image in one undo unit.
 
 Page navigators use the equivalent `AddSlide` seam shown above. The headless result identifies the new page;
 each mounted edit or view surface switches with its existing `setSlide` method, so a toolbar never mutates DOM
@@ -221,7 +232,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 30.53 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 32.71 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

@@ -1,5 +1,6 @@
 /** @web-ppt/edit-core —— 无 DOM 的编辑文档模型与高保真渲染投影。 */
 export { Editor } from './editor';
+export { detectImageMime } from './commands/image-format';
 export { copyElements } from './clipboard';
 export { queryRunProps } from './run-properties';
 export { queryParaProps } from './paragraph-properties';
@@ -32,7 +33,7 @@ export type {
   TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from './types';
 export type {
-  AddShapeCommand, AddSlideCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, Patch, RemoveElementCommand, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,

@@ -18,6 +18,7 @@ import { runRichTextClipboardContract } from './lib/rich-text-clipboard-contract
 import { runTableCellTextContract } from './lib/table-cell-text-contract.mjs';
 import { runTableRowInsertContract } from './lib/table-row-insert-contract.mjs';
 import { runAddShapeContract } from './lib/add-shape-contract.mjs';
+import { runAddImageContract } from './lib/add-image-contract.mjs';
 import { runAddSlideContract } from './lib/add-slide-contract.mjs';
 import { runAutofitTextContract } from './lib/autofit-text-contract.mjs';
 import { runShapeAutofitEditContract } from './lib/shape-autofit-edit-contract.mjs';
@@ -89,6 +90,7 @@ await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runTableRowInsertContract({ edit, core, load, check });
 await runAddShapeContract({ edit, core, load, check, eq });
+await runAddImageContract({ edit, core, load, check });
 await runAddSlideContract({ edit, core, load, check, eq });
 await runAutofitTextContract({ edit, core, load, check });
 await runShapeAutofitEditContract({ edit, core, load, check });

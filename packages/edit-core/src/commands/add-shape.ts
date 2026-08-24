@@ -1,28 +1,13 @@
 import { isKnownPreset, resolveGeomPath } from '@web-ppt/core/geometry';
 import type { ShapeCreationDefaults, ShapeElement } from '@web-ppt/core';
 import { allocateElementId } from '../document';
-import { assertDataObject } from '../data-validation';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import type { AddShapeCommand, CommandPatches, ElementTreePatch } from './types';
+import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
-
-const EMU_PER_PX = 9525;
-// ECMA-376 的 long 范围更宽，但 PowerPoint 实际只接受 32 位 signed/positive coordinate。
-const MIN_COORDINATE_EMU = -2147483648;
-const MAX_COORDINATE_EMU = 2147483647;
-
-const pxToEmu = (value: number): number => Math.round(value * EMU_PER_PX);
-const isCoordinate = (value: number): boolean => {
-  const emu = pxToEmu(value);
-  return Number.isSafeInteger(emu) && emu >= MIN_COORDINATE_EMU && emu <= MAX_COORDINATE_EMU;
-};
-const isPositiveCoordinate = (value: number): boolean => {
-  const emu = pxToEmu(value);
-  return Number.isSafeInteger(emu) && emu > 0 && emu <= MAX_COORDINATE_EMU;
-};
 
 function shapeMarkup(
   spid: number,
@@ -82,13 +67,7 @@ function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   if (typeof command.preset !== 'string' || !isKnownPreset(command.preset)) {
     throw new Error(`未知预设形状：${String(command.preset)}`);
   }
-  const rect = command.rect;
-  assertDataObject(rect, ['x', 'y', 'w', 'h'], 'AddShape.rect');
-  if (!Number.isFinite(rect.x) || !Number.isFinite(rect.y) || !isCoordinate(rect.x) || !isCoordinate(rect.y)
-    || !Number.isFinite(rect.w) || rect.w <= 0 || !isPositiveCoordinate(rect.w)
-    || !Number.isFinite(rect.h) || rect.h <= 0 || !isPositiveCoordinate(rect.h)) {
-    throw new Error('AddShape.rect 必须是 PowerPoint 可表示的有限坐标与有限正尺寸');
-  }
+  assertInsertionRect(command.rect, 'AddShape.rect');
   return slide;
 }
 

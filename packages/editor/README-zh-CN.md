@@ -30,6 +30,9 @@ const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
 
+await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
+// 或在工具栏点击中调用：const imageId = await view.chooseImage();
+
 view.setMode('view');       // 静态预览 DOM 不重建，只隐藏交互层
 view.setMode('edit');
 view.setSlide(slideId);
@@ -129,6 +132,13 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 同步插入新 SVG 分区，edit 视图显示选择框，双击继续打开既有文字编辑器。view 模式本身不提供创建手势；
 产品层决定何时展示命令，不需要导入 DOM 内部模块。
 
+图片按钮可调用 `view.chooseImage()` 使用内置本地文件选择器；React、Vue、Web Component 或原生工具栏
+已经拿到 `File` / `Blob` 时，直接调用 `view.insertImage(file, options)`。PNG、JPEG、GIF、WebP 按字节
+而不是扩展名或浏览器 MIME 识别，文件不离开本机；默认 5MB 上限保证插入仍落在标准 8MB 撤销预算内，
+也可显式调整。读取期间视图暴露 `aria-busy="true"`，失败会拒绝 Promise 并派发 `webpptimageerror`。
+双击空图片占位符走同一入口，占位符与新图片在一个撤销单元内原子替换；画布上的系统图片粘贴也复用
+同一 `AddImage` 命令，文本/表格选区仍保留原生粘贴所有权。
+
 页面导航同样使用上方的 `AddSlide` seam。headless 返回值直接给出新页身份，每个 edit/view 挂载面继续调用
 既有 `setSlide` 切换，因此工具栏不用修改 DOM，也不用扫描生成 ID。edit 视图只在 interaction 层绘制空版式
 占位符，双击复用现有文字编辑器；view 视图以及导出、保存产物都不含这些辅助 UI。
@@ -188,7 +198,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 30.53KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 32.71KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

@@ -6,7 +6,7 @@ import type { EditDoc, ElementId, SlideId, SpacePoint } from '@web-ppt/edit-core
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const LABELS: Readonly<Record<string, string>> = {
   title: '添加标题', ctrTitle: '添加标题', subTitle: '添加副标题',
-  body: '添加正文', obj: '添加内容',
+  body: '添加正文', obj: '添加内容', pic: '添加图片',
 };
 const TEXT_PLACEHOLDERS = new Set(Object.keys(LABELS));
 
@@ -25,6 +25,7 @@ function corners(doc: EditDoc, id: ElementId): [SpacePoint, SpacePoint, SpacePoi
 
 interface PlaceholderEntry {
   readonly id: ElementId;
+  readonly type: string;
   readonly points: readonly [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
 }
 
@@ -37,7 +38,7 @@ function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
       && record.meta.editable === 'full' && !record.meta.hiddenByUser) {
       const element = effectiveElement(doc, id);
       if (element.kind === 'shape' && element.text === null && element.w > 0 && element.h > 0) {
-        entries.push({ id, points: corners(doc, id) });
+        entries.push({ id, type: record.meta.ph.type, points: corners(doc, id) });
       }
     }
     for (const child of record.children ?? []) visit(child);
@@ -70,10 +71,11 @@ export function renderPlaceholderOverlay(
   group.dataset.editPlaceholderSignature = signature;
   group.setAttribute('aria-hidden', 'true');
   group.style.pointerEvents = 'none';
-  for (const { id, points } of entries) {
+  for (const { id, type, points } of entries) {
     const record = doc.elements[id];
     const hit = svg(document, 'polygon');
     hit.dataset.editPlaceholderId = id;
+    hit.dataset.editPlaceholderType = type;
     hit.dataset.editId = id;
     hit.setAttribute('points', points.map((point) => `${point.x},${point.y}`).join(' '));
     hit.setAttribute('fill', 'rgba(37,99,235,0.025)');
@@ -81,7 +83,7 @@ export function renderPlaceholderOverlay(
     hit.setAttribute('stroke-width', String(1.25 / zoom));
     hit.setAttribute('stroke-dasharray', `${5 / zoom} ${4 / zoom}`);
     hit.style.pointerEvents = 'all';
-    hit.style.cursor = 'text';
+    hit.style.cursor = type === 'pic' ? 'pointer' : 'text';
     group.append(hit);
 
     const label = svg(document, 'text');

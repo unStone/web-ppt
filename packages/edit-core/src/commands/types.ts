@@ -131,6 +131,16 @@ export interface AddShapeCommand {
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
+export interface AddImageCommand {
+  readonly type: 'AddImage';
+  readonly slideId: SlideId;
+  /** 空图片占位符可由同一历史单元原子替换。 */
+  readonly placeholderId?: ElementId;
+  readonly bytes: Uint8Array;
+  readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+  readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+}
+
 export interface AddSlideCommand {
   readonly type: 'AddSlide';
   readonly layoutId: string;
@@ -203,7 +213,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
