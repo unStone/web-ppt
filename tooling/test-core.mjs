@@ -2419,6 +2419,16 @@ group('headless 状态机');
     eq('空查询返回空', st.search('   ').length, 0);
     eq('无匹配返回空', st.search('zzz_不存在的词_zzz').length, 0);
 
+    const notesPresentation = await lib.parse(load('sample-editor-notes.pptx'), {
+      lazy: false, assets: 'defer',
+    });
+    const notesState = new St(notesPresentation, {});
+    check('viewer 投影逐字公开备注并可全文搜索',
+      notesState.slide.notes === '来源第一段\n\n来源第三段\n'
+        && notesState.search('来源第三段').join(',') === '0'
+        && notesState.search('页脚不得进入备注正文').length === 0);
+    notesPresentation.dispose?.();
+
     // 内部跳转链接解析
     eq('slide:3 解析为索引 2', st.resolveLink('slide:3'), 2);
     eq('slide:last 解析为末页', st.resolveLink('slide:last'), st.count - 1);

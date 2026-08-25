@@ -24,3 +24,10 @@ blocked_by:
 已有 notesSlide 只修补 body 占位符的 `a:txBody`，保留 notesMaster 关系、slide 回指、其它占位符、格式、外链、图片和未知扩展。原来没有 notesSlide 时，第一次写入才确定性分配 notes part、slide 关系、Content Types Override 与必要回指；清空或撤销不能留下重复关系或在连续保存中持续新建 part。畸形共享 notes 不能被一页编辑而污染另一页：要先获得独立身份或明确拒绝，不能原位改共享 part。未编辑页及其 notes 字节继续直通。
 
 确定性固件覆盖已有多段备注、空备注、无 notes part、新增页、复制页、非规范 part/rId、共享 notes、notesMaster/外链/未知扩展和页面重排。Node 验证命令、混合态、订阅、历史、保存幂等与重开文本；viewer 搜索/备注展示继续读取同一投影。真实 Chrome 验证双编辑视图与 view 只读边界，2,000 字符输入提交 p95 小于 16ms；LibreOffice 验证页面—notes 归属和文本 roundtrip，产物进入统一 PowerPoint 清单。
+
+## Outcome
+
+- parser 逐段提取 body 占位符，空段落与尾随段落不再被 `trim`/折叠；viewer 搜索读取同一备注投影。
+- 保存按段落槽位保留 `pPr`/`rPr`/扩展，新增 run 严格位于 `endParaRPr` 前并继承其字符属性；备注图片、关系、notesMaster、外链和未知扩展逐字直通。撤销到来源值直接恢复原始 part 字节。
+- `sample-editor-notes.pptx` SHA-256 为 `44749a4e6fa9def0f7a9ff57f2f91487b1210b898306835223eca39583f3936c`，全固件树连续生成哈希均为 `5ebfcd44a06dbffc4bd1c6dd219f896564f588db787a6c639aacf54c405d413b`。
+- 精确执行 `npm run check && npm test && npm run build`：core 2131、edit-core 741、保存 307、PowerPoint 证据 9、editor 288、61 份固件 / 186 页 / 372 对 SVG 指纹、metafile 130 全绿，162 个快照一致，五个发布包构建成功。Chrome 2,000 字符提交 p95 `0.100ms`，LibreOffice 已验证 4 页 notes 正文与归属 roundtrip。

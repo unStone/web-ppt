@@ -1,5 +1,6 @@
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
 import type { Patch, SlideChangeSets, SlideTreePatch, SlideTreeSnapshot } from './types';
+import { isSlideNotesPatch } from './slide-notes';
 import { isSlideOrderPatch } from './slide-order';
 
 export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
@@ -77,8 +78,7 @@ export function slidePatchSets(doc: EditDoc, patches: readonly Patch[]): SlideCh
   const notesSlides = new Set<SlideId>();
   const removals = new Map<SlideId, SlideTreeSnapshot>();
   for (const patch of patches) {
-    if (patch.path[0] === 'slides' && (patch.path.length === 3 && patch.path[2] === 'notes'
-      || patch.path.length === 4 && patch.path[2] === 'ovr' && patch.path[3] === 'notes')) {
+    if (isSlideNotesPatch(patch)) {
       notesSlides.add(patch.path[1]);
     }
     if (isSlideOrderPatch(patch)) {

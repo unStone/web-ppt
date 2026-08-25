@@ -17,7 +17,7 @@ export async function runSlideNotesSaveContract({ core, edit, load, check, saveA
   const notesRelsPart = 'ppt/notesSlides/_rels/notesSlide1.xml.rels';
   const sourceRels = presentation.package.parts[notesRelsPart];
 
-  editor.exec({ type: 'SetNotes', id: slideId, text: '第一段\n第二段' });
+  editor.exec({ type: 'SetNotes', id: slideId, text: '第一段\n\n第三段\n' });
   const saved = await editor.saveDetailed();
   saveArtifact('slide-notes.pptx', saved.bytes);
   const diff = diffPackageBytes(input, saved.bytes);
@@ -28,15 +28,31 @@ export async function runSlideNotesSaveContract({ core, edit, load, check, saveA
       && saved.package.parts[notesRelsPart] === sourceRels
       && saved.package.parts[slidePart] === presentation.package.parts[slidePart],
   `changed=${diff.changed}`);
-  check('多行纯文本映射为段落并保留来源 body 占位符与直接格式',
+  check('多行纯文本逐段映射并保留每段各自的格式',
     notesXml.includes('<p:ph type="body" idx="1"/>')
       && notesXml.includes('<a:rPr sz="1200"/>')
+      && notesXml.includes('<a:pPr algn="ctr"/>')
+      && notesXml.includes('<a:rPr sz="1400"/>')
+      && notesXml.includes('<a:pPr algn="r"/>')
+      && notesXml.includes('<a:rPr sz="1800" b="1"/>')
+      && notesXml.includes('<a:pPr algn="just"/>')
+      && notesXml.includes('<a:rPr sz="1600"/>')
+      && notesXml.includes('<a:endParaRPr sz="1600"/>')
       && notesXml.includes('<a:t>第一段</a:t>')
-      && notesXml.includes('<a:t>第二段</a:t>')
+      && notesXml.includes('<a:t>第三段</a:t>')
       && notesXml.includes('页脚不得进入备注正文')
       && notesXml.includes('unknown-extension'));
+  const trailingParagraph = notesXml.match(/<a:p><a:pPr algn="just"\/>[\s\S]*?<\/a:p>/)?.[0] ?? '';
+  check('新增 run 位于 endParaRPr 之前，保持 DrawingML 段落子节点顺序',
+    trailingParagraph.indexOf('<a:r>') >= 0
+      && trailingParagraph.indexOf('<a:r>') < trailingParagraph.indexOf('<a:endParaRPr'));
+  check('备注图片及其关系在正文编辑后逐字直通',
+    notesXml.includes('name="备注图片"') && notesXml.includes('r:embed="image-ref"')
+      && decoder.decode(saved.package.parts[notesRelsPart]).includes(
+        'Id="image-ref" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"',
+      ));
   const reopened = await core.parse(saved.bytes, { edit: true, lazy: false, assets: 'defer' });
-  check('保存重开恢复两段备注', reopened.slides[0].notes === '第一段\n第二段');
+  check('保存重开逐字恢复空行与尾随段落', reopened.slides[0].notes === '第一段\n\n第三段\n');
 
   const identity = await editor.saveDetailed();
   check('备注连续保存进入包 identity', identity.mode === 'identity' && identity.bytes === saved.bytes);

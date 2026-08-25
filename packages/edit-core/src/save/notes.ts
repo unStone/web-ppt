@@ -1,5 +1,6 @@
 import { relativeTarget, resolveRelationshipTarget } from '../clipboard-source';
 import { own } from '../data-validation';
+import { isNotesPart } from '../notes-part';
 import type { EditDoc, SlideRecord } from '../types';
 import { cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild } from '../xml/nodes';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
@@ -11,7 +12,6 @@ import { patchRelationshipPart, relationshipPartFor } from './clipboard-parts';
 
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
 const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
-const NOTES_PART = /^ppt\/notesSlides\/[^/]+\.xml$/;
 
 function notesTextBody(root: XmlElement): XmlElement {
   const shapeTree = findXmlDescendant(root, {
@@ -51,10 +51,24 @@ function paragraphFromTemplate(template: XmlElement | null, value: string): XmlE
   // 克隆节点脱离原树时尚未重新绑定命名空间，只能先按 localName 定位。
   let text = findXmlDescendant(paragraph, { localName: 't' });
   if (!text) {
-    const run = createXmlElement('a:r', { selfClosing: false });
-    text = createXmlElement('a:t', { selfClosing: false });
+    const prefix = paragraph.prefix ? `${paragraph.prefix}:` : '';
+    const run = createXmlElement(`${prefix}r`, { selfClosing: false });
+    const endProperties = xmlElementChildren(paragraph)
+      .find((child) => child.localName === 'endParaRPr');
+    if (endProperties) {
+      const properties = createXmlElement(`${prefix}rPr`);
+      for (const attribute of endProperties.attributes) {
+        setXmlAttribute(properties, attribute.name, attribute.value, attribute.quote);
+      }
+      for (const child of endProperties.children) {
+        insertXmlChildUnchecked(properties, cloneXmlNode(child));
+      }
+      insertXmlChildUnchecked(run, properties);
+    }
+    text = createXmlElement(`${prefix}t`, { selfClosing: false });
     insertXmlChildUnchecked(run, text);
-    insertXmlChildUnchecked(paragraph, run);
+    // endParaRPr 在 CT_TextParagraph 中必须收尾；放到它后面会触发 Office 修复。
+    insertXmlChildUnchecked(paragraph, run, endProperties ?? null);
   }
   setElementText(text, value);
   let found = false;
@@ -77,9 +91,9 @@ export function patchNotesText(source: Uint8Array, value: string): Uint8Array {
   const paragraphs = xmlElementChildren(body, {
     localName: 'p', namespaceUri: DRAWINGML_NS,
   });
-  const template = paragraphs[0] ?? null;
   for (const paragraph of paragraphs) removeXmlChild(body, paragraph);
-  for (const line of value.split('\n')) {
+  for (const [index, line] of value.split('\n').entries()) {
+    const template = paragraphs[index] ?? paragraphs[paragraphs.length - 1] ?? null;
     insertXmlChildUnchecked(body, paragraphFromTemplate(template, line));
   }
   return serializeXmlTreeBytes(tree);
@@ -214,7 +228,7 @@ export function prepareNotesSave(
   baselines: Record<string, Uint8Array>,
   createdParts: Set<string>,
 ): NotesSavePlan {
-  const trackedParts = new Set([...createdParts].filter((part) => NOTES_PART.test(part)));
+  const trackedParts = new Set([...createdParts].filter(isNotesPart));
   for (const slide of Object.values(doc.slides)) {
     const binding = slide.notes;
     if (!binding) continue;
@@ -279,7 +293,8 @@ export function materializeNotesParts(
       || !!current && (current.length !== baseline.length
         || current.some((byte, index) => byte !== baseline[index]));
     if (!changed) continue;
-    const value = own(slide.ovr, 'notes') ? slide.ovr.notes! : slide.src.notes ?? '';
-    changes[binding.targetPart] = patchNotesText(baseline, value);
+    changes[binding.targetPart] = own(slide.ovr, 'notes')
+      ? patchNotesText(baseline, slide.ovr.notes!)
+      : baseline;
   }
 }

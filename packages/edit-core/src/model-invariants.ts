@@ -24,6 +24,7 @@ import {
 } from './commands/slide-property';
 import { assertLinkOverride } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
+import { isNotesPart } from './notes-part';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -268,15 +269,14 @@ export function validateEditDoc(doc: EditDoc): void {
     }
     if (slide.notes) {
       const binding = slide.notes;
-      const validPart = (part: string): boolean => /^ppt\/notesSlides\/[^/]+\.xml$/.test(part);
       const packageUnavailable = doc.meta.readonly && !doc.package;
       const sourceExists = packageUnavailable || binding.sourcePart === undefined
         || !!doc.package?.parts[binding.sourcePart] || !!doc.saveState.baselines[binding.sourcePart];
       const targetExists = packageUnavailable || !!doc.package?.parts[binding.targetPart]
         || !!doc.saveState.baselines[binding.targetPart];
-      if (!validPart(binding.targetPart)
+      if (!isNotesPart(binding.targetPart)
         || typeof binding.relationshipId !== 'string' || !binding.relationshipId
-        || binding.sourcePart !== undefined && !validPart(binding.sourcePart)
+        || binding.sourcePart !== undefined && !isNotesPart(binding.sourcePart)
         || !sourceExists
         || !targetExists && binding.sourcePart === undefined && !own(slide.ovr, 'notes')) {
         throw new Error(`幻灯片 ${slideId} 的备注 OPC 身份无效`);

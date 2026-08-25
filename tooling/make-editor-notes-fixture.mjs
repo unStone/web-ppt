@@ -1,4 +1,4 @@
-/** 演讲者备注固件：正文、多占位符、回指、外链、notesMaster 与未知扩展共存。 */
+/** 演讲者备注固件：空行、异构段落、图片、多占位符与复杂关系共存。 */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +13,13 @@ const files = unzipSync(readFileSync(join(root, 'fixtures/sample-editor-remove-s
 
 files['ppt/notesSlides/notesSlide1.xml'] = encoder.encode(`${XML}<p:notes xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld><p:spTree>${nvGrp}
-<p:sp><p:nvSpPr><p:cNvPr id="2" name="备注正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1200"/><a:t>来源第一段</a:t></a:r></a:p><a:p><a:r><a:rPr sz="1200"/><a:t>来源第二段</a:t></a:r></a:p></p:txBody></p:sp>
+<p:sp><p:nvSpPr><p:cNvPr id="2" name="备注正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/>
+<a:p><a:r><a:rPr sz="1200"/><a:t>来源第一段</a:t></a:r></a:p>
+<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1400"/><a:t></a:t></a:r></a:p>
+<a:p><a:pPr algn="r"/><a:r><a:rPr sz="1800" b="1"/><a:t>来源第三段</a:t></a:r></a:p>
+<a:p><a:pPr algn="just"/><a:endParaRPr sz="1600"/></a:p>
+</p:txBody></p:sp>
+<p:pic><p:nvPicPr><p:cNvPr id="5" name="备注图片"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="image-ref"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>
 <p:sp><p:nvSpPr><p:cNvPr id="3" name="页脚"/><p:cNvSpPr/><p:nvPr><p:ph type="ftr" idx="2"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>页脚不得进入备注正文</a:t></a:r></a:p></p:txBody></p:sp>
 <p:sp><p:nvSpPr><p:cNvPr id="4" name="页码"/><p:cNvSpPr/><p:nvPr><p:ph type="sldNum" idx="3"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{NOTES-PAGE-FIELD}" type="slidenum"><a:t>1</a:t></a:fld></a:p></p:txBody></p:sp>
 </p:spTree></p:cSld><p:extLst><p:ext uri="{WEB-PPT-NOTES-KEEP}"><fixture:keep xmlns:fixture="urn:web-ppt:notes" value="unknown-extension"/></p:ext></p:extLst>
@@ -21,10 +27,19 @@ files['ppt/notesSlides/notesSlide1.xml'] = encoder.encode(`${XML}<p:notes xmlns:
 
 files['ppt/notesSlides/_rels/notesSlide1.xml.rels'] = encoder.encode(`${XML}<Relationships xmlns="${NS.rel}">
 <Relationship Id="external-link" Type="${REL}/hyperlink" Target="https://example.com/speaker-notes" TargetMode="External"/>
+<Relationship Id="image-ref" Type="${REL}/image" Target="../media/shared.png"/>
 <Relationship Id="master-ref" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/>
 <Relationship Id="slide-back" Type="${REL}/slide" Target="../slides/slide1.xml"/>
 <Relationship Id="unknown-ref" Type="urn:web-ppt:notes:unknown" Target="../../customXml/keep.xml"/>
 </Relationships>`);
+
+const emptyNotes = decoder.decode(files['ppt/notesSlides/notesSlide4.xml'])
+  .replace(
+    '<a:p><a:r><a:rPr sz="1200"/><a:t>页面 4 的独立备注</a:t></a:r></a:p>',
+    '<a:p/>',
+  );
+if (emptyNotes.includes('页面 4 的独立备注')) throw new Error('空备注页替换失败');
+files['ppt/notesSlides/notesSlide4.xml'] = encoder.encode(emptyNotes);
 
 const output = makeZip(Object.entries(files));
 writeFileSync(join(root, 'fixtures/sample-editor-notes.pptx'), output);

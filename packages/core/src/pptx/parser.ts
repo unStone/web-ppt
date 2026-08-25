@@ -1383,7 +1383,19 @@ function extractNotesText(root: Element | null): string {
   const tree = walk(root, 'cSld', 'spTree');
   for (const shape of kids(tree, 'sp')) {
     const placeholder = walk(kid(shape, 'nvSpPr'), 'nvPr', 'ph');
-    if (attr(placeholder, 'type') === 'body') return extractText(kid(shape, 'txBody'));
+    if (attr(placeholder, 'type') !== 'body') continue;
+    const body = kid(shape, 'txBody');
+    return kids(body, 'p').map((paragraph) => {
+      const text: string[] = [];
+      const descendants = paragraph.getElementsByTagName('*');
+      for (let index = 0; index < descendants.length; index++) {
+        const node = descendants[index];
+        if (node.localName === 't') text.push(node.textContent ?? '');
+        else if (node.localName === 'br') text.push('\n');
+        else if (node.localName === 'tab') text.push('\t');
+      }
+      return text.join('');
+    }).join('\n');
   }
   return '';
 }

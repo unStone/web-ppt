@@ -77,7 +77,7 @@ tracker: local-markdown
 - [编辑页面矢量背景与隐藏状态](tickets/051-edit-slide-background-hidden.md) — 稳定页身份与来源恢复语义贯通背景/隐藏命令、查询、多视图、历史和保留型保存；Chrome 200 页预算及 28 份 LibreOffice 工件通过。
 - [上传并裁剪页面图片背景](tickets/052-slide-image-background.md) — 内容寻址媒体闭包与页面级来源物化贯通图片背景上传/裁剪、多视图、历史和保留型 `blipFill` 写回；Chrome 200 页预算及 30 份 LibreOffice 工件通过。
 - [为既有页面切换版式并保持内容](tickets/053-change-slide-layout.md) — 稀疏 `SetLayout` 与继承感知占位符重绑贯通多视图、历史和最小 slideLayout 关系写回；Chrome 200 页完整上屏及 31 份 LibreOffice 工件通过。
-- [编辑并保存演讲者备注](tickets/054-edit-speaker-notes.md) — `SetNotes` 与来源感知查询贯通纯文本、共享身份分叉、新旧页面、复制页、零画布重绘和最小 OPC 闭包；Chrome 2,000 字符提交 p95 0.100ms，32 份 LibreOffice 工件通过。
+- [编辑并保存演讲者备注](tickets/054-edit-speaker-notes.md) — `SetNotes` 与来源感知查询贯通精确段落、共享身份分叉、新旧页面、复制页、零画布重绘和最小 OPC 闭包；异构格式、空行、图片及未知扩展保留，Chrome 2,000 字符提交 p95 0.100ms，32 份 LibreOffice 工件通过。
 
 ## Not yet specified
 

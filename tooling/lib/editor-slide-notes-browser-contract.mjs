@@ -23,7 +23,7 @@ export async function runEditorSlideNotesBrowserContract({ openEditor, load }) {
   const staticSlides = mounts.map((mount) =>
     mount.querySelector('[data-ppt-layer="static"] svg'));
   const source = first.queryNotes();
-  if (source.value !== '来源第一段\n来源第二段' || source.direct
+  if (source.value !== '来源第一段\n\n来源第三段\n' || source.direct
     || second.queryNotes().value !== source.value || view.queryNotes().value !== source.value) {
     throw new Error('Chrome 多视图备注初始查询不一致');
   }

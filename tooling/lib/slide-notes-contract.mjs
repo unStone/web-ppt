@@ -6,10 +6,12 @@ export async function runSlideNotesContract({ edit, core, load, check }) {
   console.log('\n\x1b[36m▸ 演讲者备注纯文本编辑\x1b[0m');
   if (!check('发布入口公开备注查询', typeof edit.querySlideNotes === 'function')) return;
   const notesPresentation = await core.parse(load('sample-editor-notes.pptx'), {
-    lazy: false, assets: 'defer',
+    edit: true, lazy: false, assets: 'defer',
   });
-  check('预览解析只读取 body 占位符并保留正文段落边界',
-    notesPresentation.slides[0].notes === '来源第一段\n来源第二段'
+  check('预览解析逐字保留空段落与尾随段落，只读取 body 占位符',
+    notesPresentation.slides[0].notes === '来源第一段\n\n来源第三段\n'
+      && notesPresentation.slides[3].notes === undefined
+      && notesPresentation.slides[3].editInfo?.notes?.part === 'ppt/notesSlides/notesSlide4.xml'
       && !notesPresentation.slides[0].notes.includes('页脚不得进入'));
   notesPresentation.dispose?.();
   const presentation = await core.parse(load('sample-editor-remove-slide.pptx'), {
@@ -56,6 +58,53 @@ export async function runSlideNotesContract({ edit, core, load, check }) {
       && editor.history.undoCount === batchHistory + 1
       && editor.history.undoEntries.at(-1)?.affectedSlides.length === 2);
   editor.undo();
+
+  const notesBinding = structuredClone(doc.slides[first].notes);
+  editor.exec({ type: 'MoveSlide', id: first, at: { after: second } });
+  check('页面移动后备注继续绑定稳定页身份',
+    doc.slideOrder[1] === first && editor.toSlide(first).notes === '页面 1 的独立备注'
+      && JSON.stringify(doc.slides[first].notes) === JSON.stringify(notesBinding));
+  editor.undo();
+
+  const duplicated = editor.exec({ type: 'DuplicateSlide', id: first });
+  const duplicatedId = [...duplicated.createdSlides][0];
+  const duplicateSource = editor.toSlide(first).notes;
+  editor.exec({ type: 'SetNotes', id: duplicatedId, text: '副本自己的备注' });
+  check('复制页继承文本但获得独立 notes 身份，后续编辑不污染来源',
+    duplicateSource === '页面 1 的独立备注'
+      && editor.toSlide(first).notes === duplicateSource
+      && editor.toSlide(duplicatedId).notes === '副本自己的备注'
+      && doc.slides[first].notes.targetPart !== doc.slides[duplicatedId].notes.targetPart);
+  editor.undo();
+  editor.undo();
+
+  editor.exec({ type: 'RemoveSlide', id: first });
+  const restoredNotes = editor.undo();
+  check('删除再撤销恢复同一页身份、备注正文与 OPC 绑定',
+    restoredNotes?.createdSlides.has(first)
+      && editor.toSlide(first).notes === '页面 1 的独立备注'
+      && JSON.stringify(doc.slides[first].notes) === JSON.stringify(notesBinding));
+
+  editor.markSaved();
+  editor.exec({ type: 'SetNotes', id: first, text: '保存点之后' });
+  const dirtyAfterEdit = editor.isDirty();
+  editor.undo();
+  check('备注历史准确回到保存点', dirtyAfterEdit && !editor.isDirty()
+    && editor.toSlide(first).notes === '页面 1 的独立备注');
+
+  const layoutPresentation = await core.parse(load('sample-editor-change-layout.pptx'), {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const layoutDoc = edit.createDoc(layoutPresentation, { idPrefix: 'slide-notes-layout-' });
+  const layoutEditor = new edit.Editor(layoutDoc);
+  const layoutSlide = layoutDoc.slideOrder[0];
+  const targetLayout = layoutDoc.layoutOrder.find((id) => layoutDoc.layouts[id].name === '重点内容');
+  const layoutNotesBinding = structuredClone(layoutDoc.slides[layoutSlide].notes);
+  layoutEditor.exec({ type: 'SetLayout', id: layoutSlide, layoutId: targetLayout });
+  check('换版式不改变备注正文与 OPC 身份',
+    layoutEditor.toSlide(layoutSlide).notes === '换版式必须保留备注'
+      && JSON.stringify(layoutDoc.slides[layoutSlide].notes) === JSON.stringify(layoutNotesBinding));
+  edit.disposeDoc(layoutDoc);
 
   const sharedPresentation = await core.parse(load('sample-editor-remove-slide-shared-notes.pptx'), {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
