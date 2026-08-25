@@ -6,7 +6,7 @@ import type {
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
 import type {
-  SetBackgroundCommand, SetHiddenCommand, SlidePropertyPatch,
+  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type {
@@ -14,7 +14,7 @@ export type {
   ClipboardTextLink, ClipboardXmlRoot, ElementClipboardPayload, ElementClipboardRecordMeta,
 } from './clipboard-types';
 export type {
-  SetBackgroundCommand, SetHiddenCommand, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
+  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
@@ -236,7 +236,9 @@ export interface InsertRowCommand {
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
-  | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetHiddenCommand;
+  | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
+  | SetBackgroundImageCommand
+  | SetHiddenCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

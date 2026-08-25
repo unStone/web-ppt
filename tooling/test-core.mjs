@@ -18,6 +18,7 @@ import { makeTtf } from './lib/font.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
+import { makeBmp, makeExifJpeg, makePng } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/core');
@@ -778,6 +779,54 @@ group('主题色变换');
 
 group('图片与资源');
 {
+  const pngMetadata = lib.readImageMetadata(makePng(96, 54, () => [1, 2, 3], 120));
+  const bmpMetadata = lib.readImageMetadata(makeBmp(24, 12, () => [4, 5, 6], 144));
+  const jpegMetadata = lib.readImageMetadata(makeExifJpeg(600, 300, 300, 150));
+  check('图片元数据按魔数读取 PNG/BMP 像素与物理分辨率',
+    pngMetadata?.width === 96 && pngMetadata.height === 54
+      && Math.abs(pngMetadata.dpiX - 120) < 0.02
+      && bmpMetadata?.width === 24 && bmpMetadata.height === 12
+      && Math.abs(bmpMetadata.dpiX - 144) < 0.02);
+  check('无 JFIF 的 JPEG 从 EXIF TIFF IFD 读取双轴物理分辨率',
+    jpegMetadata?.width === 600 && jpegMetadata.height === 300
+      && jpegMetadata.dpiX === 300 && jpegMetadata.dpiY === 150);
+  const imageSource = 'data:image/png;base64,AA==';
+  const stretchSlide = { background: { type: 'image', src: imageSource }, elements: [] };
+  const stretchSvg = lib.renderSlideToSvg({
+    width: 160, height: 90, slides: [stretchSlide], source: 'pptx',
+  }, stretchSlide);
+  check('图片拉伸填充不擅自保持宽高比',
+    /<image[^>]*preserveAspectRatio="none"/.test(stretchSvg)
+      && !stretchSvg.includes('preserveAspectRatio="xMidYMid slice"'));
+  const tiledSlide = {
+    background: {
+      type: 'image', src: imageSource, crop: { l: 0.2, t: 0.1, r: 0.1, b: 0.2 },
+      tile: { sx: 0.5, sy: 0.75, flip: 'xy' },
+    }, elements: [],
+  };
+  const tiledSvg = lib.renderSlideToSvg({
+    width: 160, height: 90, slides: [tiledSlide], source: 'pptx',
+  }, tiledSlide);
+  check('平铺图片逐格应用裁剪并按 x/y 交替翻转',
+    /<image[^>]*x="-/.test(tiledSvg)
+      && tiledSvg.includes('scale(-1 1)')
+      && tiledSvg.includes('scale(1 -1)')
+      && tiledSvg.includes('scale(-1 -1)'));
+  const physicalTileSlide = {
+    background: {
+      type: 'image', src: imageSource,
+      tile: {
+        sx: 0.65, sy: 0.8, flip: 'xy', tx: 10, ty: -2, algn: 'ctr',
+        sourceWidth: 96, sourceHeight: 54,
+      },
+    }, elements: [],
+  };
+  const physicalTileSvg = lib.renderSlideToSvg({
+    width: 1280, height: 720, slides: [physicalTileSlide], source: 'pptx',
+  }, physicalTileSlide, { idPrefix: 'physical-tile-' });
+  check('平铺首块按来源图片物理尺寸、对齐和 EMU 偏移定位',
+    /<pattern\b[^>]*\bx="618\.8"[^>]*\by="336\.4"[^>]*\bwidth="124\.8"[^>]*\bheight="86\.4"/.test(physicalTileSvg));
+
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     // 回归：srcRect 早期只在 p:pic 上生效，形状的图片填充不裁剪

@@ -1,6 +1,7 @@
 import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 import { parseChart } from './chart';
 import { metafileToSvg } from './image';
+import { readImageMetadata } from './image-metadata';
 import { setChartParser } from './chart/hook';
 import { setMetafileDecoder } from './metafile';
 import { Cfb } from './ppt/cfb';
@@ -38,6 +39,8 @@ export type { Decryptor, PptDecryptor } from './crypto/hook';
 export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
 export { sha256 } from './crypto/primitives';
 export { metafileToSvg, detectMetafile } from './image';
+export { readImageMetadata };
+export type { ImageMetadata } from './image-metadata';
 
 // 接入图表渲染器与图元文件解码器（解析器通过 hook 解耦调用）
 setChartParser(parseChart);

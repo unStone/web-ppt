@@ -118,20 +118,47 @@ export function resolvePackageTarget(pkg: OpcPackage, identity: PackageTargetIde
   return candidates.find((part) => packageTargetIdentity(pkg, part).closureHash === identity.closureHash) ?? null;
 }
 
-function contentType(pkg: OpcPackage, part: string, extension: string): string {
+interface PackageContentTypes {
+  readonly overrides: ReadonlyMap<string, string>;
+  readonly defaults: ReadonlyMap<string, string>;
+}
+const packageContentTypes = new WeakMap<object, PackageContentTypes>();
+
+function contentTypes(pkg: OpcPackage): PackageContentTypes {
+  const cached = packageContentTypes.get(pkg);
+  if (cached) return cached;
   const bytes = pkg.parts['[Content_Types].xml'];
   if (!bytes) throw new Error('PPTX 缺少 [Content_Types].xml');
   const root = parseXmlTree(bytes).root;
-  const override = xmlElementChildren(root, { localName: 'Override' }).find((node) =>
-    findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value === `/${part}`);
-  const direct = override && findXmlAttribute(override, { localName: 'ContentType', namespaceUri: null })?.value;
+  const overrides = new Map<string, string>();
+  const defaults = new Map<string, string>();
+  for (const node of xmlElementChildren(root, { localName: 'Override' })) {
+    const part = findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value;
+    const mime = findXmlAttribute(node, { localName: 'ContentType', namespaceUri: null })?.value;
+    if (part && mime) overrides.set(part, mime);
+  }
+  for (const node of xmlElementChildren(root, { localName: 'Default' })) {
+    const extension = findXmlAttribute(node, { localName: 'Extension', namespaceUri: null })?.value;
+    const mime = findXmlAttribute(node, { localName: 'ContentType', namespaceUri: null })?.value;
+    if (extension && mime) defaults.set(extension.toLowerCase(), mime);
+  }
+  const result = { overrides, defaults };
+  packageContentTypes.set(pkg, result);
+  return result;
+}
+
+export function packageContentType(pkg: OpcPackage, part: string, extension: string): string {
+  const index = contentTypes(pkg);
+  const direct = index.overrides.get(`/${part}`);
   if (direct) return direct;
-  const fallback = xmlElementChildren(root, { localName: 'Default' }).find((node) =>
-    findXmlAttribute(node, { localName: 'Extension', namespaceUri: null })?.value.toLowerCase()
-      === extension.toLowerCase());
-  const value = fallback && findXmlAttribute(fallback, { localName: 'ContentType', namespaceUri: null })?.value;
+  const value = index.defaults.get(extension.toLowerCase());
   if (!value) throw new Error(`资源缺少 Content-Type：${part}`);
   return value;
+}
+
+/** 新 part 尚未有字节，仍必须尊重包中预先存在的精确 Override。 */
+export function packageContentTypeOverride(pkg: OpcPackage, part: string): string | undefined {
+  return contentTypes(pkg).overrides.get(`/${part}`);
 }
 
 function relationshipIds(host: XmlElement): string[] {
@@ -264,7 +291,7 @@ export function clipboardClosure(
     const hash = sha256(bytes);
     appendClipboardRelationship(pkg, {
       sourceId, type, targetPart,
-      resource: { hash, extension, mime: contentType(pkg, targetPart, extension), bytes: bytesToBase64(bytes) },
+      resource: { hash, extension, mime: packageContentType(pkg, targetPart, extension), bytes: bytesToBase64(bytes) },
     }, relationships, resources);
   }
   return { relationships, resources: [...resources.values()] };

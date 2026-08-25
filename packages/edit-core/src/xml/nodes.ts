@@ -65,6 +65,19 @@ export function cloneXmlNode(source: XmlNode): XmlNode {
   return clone;
 }
 
+/** 子树离开来源祖先时，把有效前缀物化到新根，避免未知扩展序列化成未绑定 QName。 */
+export function cloneXmlNodeWithNamespaceClosure(source: XmlElement): XmlElement {
+  const clone = cloneXmlNode(source);
+  const declared = new Set(clone.attributes
+    .filter((attribute) => attribute.name === 'xmlns' || attribute.name.startsWith('xmlns:'))
+    .map((attribute) => attribute.name === 'xmlns' ? '' : attribute.name.slice(6)));
+  for (const [prefix, uri] of elementStates.get(source)!.namespaces) {
+    if (prefix === 'xml' || declared.has(prefix)) continue;
+    setXmlAttribute(clone, prefix ? `xmlns:${prefix}` : 'xmlns', uri);
+  }
+  return clone;
+}
+
 function assertCanAttach(parent: XmlElement, child: XmlNode): void {
   const childState = nodeState(child);
   if (childState.parent) throw new Error('XML 节点已经属于另一棵树；请先显式移除');

@@ -46,8 +46,33 @@ export async function runAddImageContract({ edit, core, load, check }) {
   bytes.fill(0);
   check('提交后修改调用者字节不会改变编辑文档',
     editor.effectiveElement(id).src === `data:image/png;base64,${PNG_1PX}`);
+  const remoteTree = structuredClone(result.forward[0]);
   editor.undo();
   check('撤销移除图片并恢复提交前选区', !doc.elements[id] && editor.selection.kind === 'none');
+  const occupiedPart = 'ppt/media/occupied.png';
+  doc.package.parts[occupiedPart] = makePng(2, 2, (x, y) => [220 - x * 41, 10 + y * 89, 73]);
+  const remoteResource = remoteTree.value.records[id].meta.insertion.resources[0];
+  remoteResource.targetPart = occupiedPart;
+  remoteResource.created = true;
+  remoteTree.value.records[id].meta.insertion.relationships[0].target = '../media/occupied.png';
+  const remoteBefore = JSON.stringify({
+    identity: doc.identity, children: doc.slides[slideId].children,
+    elements: doc.elements, removed: doc.removedElements,
+  });
+  let remoteTreeRejected = false;
+  try { edit.applyPatches(doc, [remoteTree]); } catch { remoteTreeRejected = true; }
+  if (!remoteTreeRejected) edit.applyPatches(doc, [{ ...remoteTree, op: 'remove' }]);
+  const unboundTree = structuredClone(result.forward[0]);
+  unboundTree.value.records[id].meta.insertion.relationships[0].target = '../media/unbound.png';
+  let unboundTreeRejected = false;
+  try { edit.applyPatches(doc, [unboundTree]); } catch { unboundTreeRejected = true; }
+  if (!unboundTreeRejected) edit.applyPatches(doc, [{ ...unboundTree, op: 'remove' }]);
+  delete doc.package.parts[occupiedPart];
+  check('远端元素树内嵌媒体与关系闭包必须完整验真，不能以 created 覆写原包目标',
+    remoteTreeRejected && unboundTreeRejected && JSON.stringify({
+      identity: doc.identity, children: doc.slides[slideId].children,
+      elements: doc.elements, removed: doc.removedElements,
+    }) === remoteBefore);
   editor.redo();
   check('重做恢复同一图片身份与像素来源', doc.elements[id]?.meta.origin?.spid === record.meta.origin.spid
     && editor.effectiveElement(id).src === `data:image/png;base64,${PNG_1PX}`

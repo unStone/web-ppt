@@ -560,6 +560,8 @@
       report.dataset.hyperlinkRouteP95 = hyperlinkResult.routeP95.toFixed(3);
       report.dataset.slidePropertiesBatchP95 = slidePropertiesResult.batchP95.toFixed(3);
       report.dataset.slidePropertiesRenderP95 = slidePropertiesResult.renderP95.toFixed(3);
+      report.dataset.slideImageBackgroundP95 = slidePropertiesResult.imageRenderP95.toFixed(3);
+      report.dataset.slideImageBackgroundModelP95 = slidePropertiesResult.imageModelP95.toFixed(3);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
@@ -602,6 +604,9 @@
         + `${hyperlinkResult.commitP95.toFixed(3)} / ${hyperlinkResult.routeP95.toFixed(3)}ms`;
       report.textContent += `\n200 页属性批量/单页背景上屏 p95 `
         + `${slidePropertiesResult.batchP95.toFixed(3)} / ${slidePropertiesResult.renderP95.toFixed(3)}ms`;
+      report.textContent += `\n200 页图片背景裁剪模型/完整上屏 p95 `
+        + `${slidePropertiesResult.imageModelP95.toFixed(3)} / `
+        + `${slidePropertiesResult.imageRenderP95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;

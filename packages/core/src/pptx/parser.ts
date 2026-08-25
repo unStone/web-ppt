@@ -1,12 +1,14 @@
 import { unzipSync } from 'fflate';
 import { parseSafeExternalUrl } from '../types';
 import type {
-  CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, MediaInfo,
+  CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
   OpcPackage, Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
   TableCreationDefaults,
   TableElement, TableRow, TextBody, UnsupportedElement,
 } from '../types';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
+import { readImageMetadata } from '../image-metadata';
+import type { ImageMetadata } from '../image-metadata';
 import { embeddedFontToSfnt } from '../font/eot';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
@@ -36,6 +38,10 @@ const MIME: Record<string, string> = {
   bmp: 'image/bmp', webp: 'image/webp', svg: 'image/svg+xml', tif: 'image/tiff', tiff: 'image/tiff',
 };
 
+const METAFILE_MIME: Record<string, string> = {
+  emf: 'image/x-emf', wmf: 'image/x-wmf', pict: 'image/x-pict', pct: 'image/x-pict', pic: 'image/x-pict',
+};
+
 /** 音视频容器 → MIME；未知扩展名按媒体类型给个兜底值 */
 const MEDIA_MIME: Record<string, string> = {
   mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
@@ -49,6 +55,7 @@ class Pkg {
   private readonly assetStore: PackageAssetStore;
   private xmlCache = new Map<string, Element | null>();
   private relsCache = new Map<string, Rels>();
+  private imageMetadataCache = new Map<string, ImageMetadata | null>();
   private sourceBytes: Uint8Array | null = null;
   private opcHandle: OpcPackage | undefined;
   private isDisposed = false;
@@ -134,6 +141,7 @@ class Pkg {
     this.assetStore.dispose();
     this.xmlCache.clear();
     this.relsCache.clear();
+    this.imageMetadataCache.clear();
     this.files = {};
     this.sourceBytes = null;
     this.isDisposed = true;
@@ -143,13 +151,24 @@ class Pkg {
     const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
     if (METAFILE_EXT.has(ext)) {
       const key = `mf|${path}`;
-      return this.assetStore.cached(key, () => {
+      const result = this.assetStore.cached(key, () => {
         const data = this.files[path];
         return data ? metafileDataUrl(data) : null;
       });
+      const data = this.files[path];
+      if (result && data) this.assetStore.publish(result, data, METAFILE_MIME[ext] ?? 'application/octet-stream');
+      return result;
     }
     const mime = MIME[ext];
     return mime ? this.blobUrl(path, mime) : null;
+  }
+
+  imageMetadata(path: string): ImageMetadata | null {
+    if (!this.imageMetadataCache.has(path)) {
+      const bytes = this.files[path];
+      this.imageMetadataCache.set(path, bytes ? readImageMetadata(bytes) : null);
+    }
+    return this.imageMetadataCache.get(path) ?? null;
   }
 }
 
@@ -241,6 +260,7 @@ function withPhClr(env: Env, phClr: string | null): Env {
 // ---------------- 填充 / 描边 ----------------
 
 const FILL_TAGS = ['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill'];
+const TILE_ALIGNMENTS = new Set<ImageTileAlignment>(['tl', 't', 'tr', 'l', 'ctr', 'r', 'bl', 'b', 'br']);
 
 function parseFillProps(container: Element | null, env: Env): Fill | null {
   if (!container) return null;
@@ -276,13 +296,32 @@ function parseFillElement(el: Element | null, env: Env): Fill | null {
       // srcRect 不只出现在 p:pic 上——形状的图片填充同样可以裁剪
       const srcRect = kid(el, 'srcRect');
       const frac = (name: string): number => (numAttr(srcRect, name) ?? 0) / 100000;
+      const hasCrop = !!srcRect && ['l', 't', 'r', 'b'].some((name) => attr(srcRect, name) !== null);
+      const target = blipTarget(el, env);
+      const metadata = target && !/^https?:/i.test(target) ? env.pkg.imageMetadata(target) : null;
+      const dpi = numAttr(el, 'dpi') ?? 0;
+      const physical = metadata ? {
+        sourceWidth: metadata.width * 96 / (dpi > 0 ? dpi : metadata.dpiX),
+        sourceHeight: metadata.height * 96 / (dpi > 0 ? dpi : metadata.dpiY),
+      } : {};
+      const alignment = attr(tileEl, 'algn');
+      const tileAlignment = TILE_ALIGNMENTS.has(alignment as ImageTileAlignment)
+        ? alignment as ImageTileAlignment : 'tl';
       return {
         type: 'image',
         src,
         alpha: alphaMod !== null ? alphaMod / 100000 : undefined,
-        crop: srcRect ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : undefined,
+        crop: hasCrop ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : undefined,
         tile: tileEl
-          ? { sx: (numAttr(tileEl, 'sx') ?? 100000) / 100000, sy: (numAttr(tileEl, 'sy') ?? 100000) / 100000, flip: attr(tileEl, 'flip') ?? 'none' }
+          ? {
+            sx: (numAttr(tileEl, 'sx') ?? 100000) / 100000,
+            sy: (numAttr(tileEl, 'sy') ?? 100000) / 100000,
+            flip: attr(tileEl, 'flip') ?? 'none',
+            tx: emu(numAttr(tileEl, 'tx') ?? 0),
+            ty: emu(numAttr(tileEl, 'ty') ?? 0),
+            algn: tileAlignment,
+            ...physical,
+          }
           : undefined,
       };
     }
@@ -299,10 +338,14 @@ function parseFillElement(el: Element | null, env: Env): Fill | null {
   return null;
 }
 
-function blipUrl(blipFill: Element | null, env: Env): string | null {
+function blipTarget(blipFill: Element | null, env: Env): string | null {
   const blip = kid(blipFill, 'blip');
   const rid = attr(blip, 'r:embed') ?? attr(blip, 'r:link');
-  const target = rid ? env.rels[rid]?.target : null;
+  return rid ? env.rels[rid]?.target ?? null : null;
+}
+
+function blipUrl(blipFill: Element | null, env: Env): string | null {
+  const target = blipTarget(blipFill, env);
   if (!target) return null;
   if (/^https?:/i.test(target)) return target;
   return env.pkg.mediaUrl(target);

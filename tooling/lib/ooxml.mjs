@@ -25,7 +25,7 @@ function chunk(type, data) {
   return out;
 }
 
-export function makePng(w, h, pixelFn) {
+export function makePng(w, h, pixelFn, dpi) {
   const raw = new Uint8Array(h * (1 + w * 3));
   for (let y = 0; y < h; y++) {
     const row = y * (1 + w * 3);
@@ -37,12 +37,107 @@ export function makePng(w, h, pixelFn) {
   dv.setUint32(0, w);
   dv.setUint32(4, h);
   ihdr.set([8, 2, 0, 0, 0], 8);
+  const physical = dpi === undefined ? [] : [chunk('pHYs', (() => {
+    const data = new Uint8Array(9);
+    const view = new DataView(data.buffer);
+    const pixelsPerMeter = Math.round(dpi / 0.0254);
+    view.setUint32(0, pixelsPerMeter);
+    view.setUint32(4, pixelsPerMeter);
+    data[8] = 1;
+    return data;
+  })())];
   return concat([
     new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk('IHDR', ihdr),
+    ...physical,
     chunk('IDAT', zlibSync(raw, { level: 9 })),
     chunk('IEND', new Uint8Array(0)),
   ]);
+}
+
+/** 24-bit BI_RGB；PPTX 来源格式回归不能只覆盖上传入口允许的 Web 图片。 */
+export function makeBmp(w, h, pixelFn, dpi = 96) {
+  const stride = Math.ceil((w * 3) / 4) * 4;
+  const pixels = new Uint8Array(stride * h);
+  for (let y = 0; y < h; y++) {
+    const row = (h - 1 - y) * stride;
+    for (let x = 0; x < w; x++) {
+      const [r, g, b] = pixelFn(x, y);
+      pixels.set([b, g, r], row + x * 3);
+    }
+  }
+  const out = new Uint8Array(54 + pixels.length);
+  const view = new DataView(out.buffer);
+  out.set([0x42, 0x4d]);
+  view.setUint32(2, out.length, true);
+  view.setUint32(10, 54, true);
+  view.setUint32(14, 40, true);
+  view.setInt32(18, w, true);
+  view.setInt32(22, h, true);
+  view.setUint16(26, 1, true);
+  view.setUint16(28, 24, true);
+  view.setUint32(34, pixels.length, true);
+  const pixelsPerMeter = Math.round(dpi / 0.0254);
+  view.setInt32(38, pixelsPerMeter, true);
+  view.setInt32(42, pixelsPerMeter, true);
+  out.set(pixels, 54);
+  return out;
+}
+
+/** 8-bit PCM；未知扩展关系需要真实媒体字节，不能用空占位伪造闭包。 */
+export function makeWav(seconds = 0.05, rate = 8000) {
+  const samples = Math.floor(seconds * rate);
+  const out = new Uint8Array(44 + samples);
+  const view = new DataView(out.buffer);
+  const ascii = (offset, value) => out.set([...value].map((char) => char.charCodeAt(0)), offset);
+  ascii(0, 'RIFF');
+  view.setUint32(4, 36 + samples, true);
+  ascii(8, 'WAVE');
+  ascii(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  ascii(36, 'data');
+  view.setUint32(40, samples, true);
+  for (let index = 0; index < samples; index++) out[44 + index] = 128 + Math.round(24 * Math.sin(index / 11));
+  return out;
+}
+
+/** 只承载 EXIF/SOF 的确定性 JPEG 头，专门验证无 JFIF 文件的物理尺寸元数据。 */
+export function makeExifJpeg(width, height, dpiX, dpiY) {
+  const tiff = new Uint8Array(66);
+  const view = new DataView(tiff.buffer);
+  tiff.set([0x49, 0x49]);
+  view.setUint16(2, 42, true);
+  view.setUint32(4, 8, true);
+  view.setUint16(8, 3, true);
+  const entry = (offset, tag, type, value) => {
+    view.setUint16(offset, tag, true);
+    view.setUint16(offset + 2, type, true);
+    view.setUint32(offset + 4, 1, true);
+    if (type === 3) view.setUint16(offset + 8, value, true);
+    else view.setUint32(offset + 8, value, true);
+  };
+  entry(10, 0x011a, 5, 50);
+  entry(22, 0x011b, 5, 58);
+  entry(34, 0x0128, 3, 2);
+  view.setUint32(50, dpiX, true);
+  view.setUint32(54, 1, true);
+  view.setUint32(58, dpiY, true);
+  view.setUint32(62, 1, true);
+  const exif = concat([new TextEncoder().encode('Exif\0\0'), tiff]);
+  const app1 = new Uint8Array(4 + exif.length);
+  app1.set([0xff, 0xe1]);
+  new DataView(app1.buffer).setUint16(2, exif.length + 2);
+  app1.set(exif, 4);
+  const sof = new Uint8Array([
+    0xff, 0xc0, 0, 11, 8, height >>> 8, height & 0xff, width >>> 8, width & 0xff, 1, 1, 0x11, 0,
+  ]);
+  return concat([new Uint8Array([0xff, 0xd8]), app1, sof, new Uint8Array([0xff, 0xd9])]);
 }
 
 export function concat(arrs) {

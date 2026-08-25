@@ -12,12 +12,12 @@ export type {
   EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
 } from './slide-editor-types';
 export type { ImageInsertOptions } from './image-insertion';
-export type { ImageReplaceOptions } from './image-insertion';
+export type { ImageBackgroundOptions, ImageReplaceOptions } from './image-insertion';
 export type { TableInsertOptions } from './table-insertion';
 export type {
   AddImageCommand, AddShapeCommand, AddTableCommand, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, SlideBackgroundState, SlideHiddenState,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
-  ReplaceImageCommand, SetBackgroundCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
+  ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
 } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

@@ -3,7 +3,7 @@ import type {
   GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TableRow, TextBody,
 } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
-import { hydrateElementInsertionAssets } from './clipboard-assets';
+import { hydrateElementInsertionAssets, hydrateInsertionResourceSource } from './session-assets';
 import { own } from './data-validation';
 import { renderLinkTarget } from './hyperlink';
 import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
@@ -261,11 +261,24 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
   if (cached) return cached;
   const record = doc.slides[id];
   if (!record) throw new Error(`找不到幻灯片：${id}`);
-  const slide: Slide = {
+  let slide: Slide = {
     ...record.src,
     ...record.ovr,
     elements: record.children.map((elementId) => effectiveElement(doc, elementId)),
   };
+  if (record.backgroundImage) {
+    const resource = doc.imageResources[record.backgroundImage.resourceHash];
+    if (!resource || slide.background?.type !== 'image') {
+      throw new Error(`幻灯片 ${id} 的图片背景资源不存在`);
+    }
+    slide = {
+      ...slide,
+      background: {
+        ...slide.background,
+        src: hydrateInsertionResourceSource(slide.background.src, resource),
+      },
+    };
+  }
   cache.slides.set(id, slide);
   return slide;
 }

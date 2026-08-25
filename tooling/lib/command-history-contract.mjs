@@ -111,6 +111,30 @@ export async function runCommandHistoryContract({ edit, core, load, check, eq })
     check('公开 patch 回放整批预校验，非法尾项不会留下前半段修改', invalidPatchRejected
       && JSON.stringify(target.ovr) === JSON.stringify(beforePatchBatch));
 
+    const originalSlides = doc.slides;
+    const originalImageResources = doc.imageResources;
+    const remoteX = target.ovr.x + 1;
+    let transformAvoidedSlideScan = false;
+    try {
+      doc.slides = new Proxy(originalSlides, {
+        ownKeys() { throw new Error('普通变换 Patch 枚举了全部页面'); },
+      });
+      doc.imageResources = new Proxy(originalImageResources, {
+        ownKeys() { throw new Error('普通变换 Patch 枚举了全部媒体资源'); },
+      });
+      edit.applyPatches(doc, [{
+        op: 'set', path: path('x'), value: remoteX, origin: 'remote-transform-probe',
+      }]);
+      transformAvoidedSlideScan = true;
+    } catch { /* 失败由断言报告。 */ }
+    doc.slides = originalSlides;
+    doc.imageResources = originalImageResources;
+    if (transformAvoidedSlideScan) edit.applyPatches(doc, [{
+      op: 'set', path: path('x'), value: beforePatchBatch.x, origin: 'remote-transform-cleanup',
+    }]);
+    check('普通变换 Patch 只检查目标元素，不枚举全部页面或媒体资源',
+      transformAvoidedSlideScan);
+
     if (check('公开细粒度订阅入口', typeof editor.subscribe === 'function')) {
       const events = [];
       const unsubscribe = editor.subscribe((event) => events.push(event));

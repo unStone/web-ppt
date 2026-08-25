@@ -125,7 +125,7 @@ editor.exec({ type: 'SetFill', id: elementId, fill: null }); // 恢复继承填�
 const stroke = queryElementStroke(editor.doc, selectedIds);
 ```
 
-图片填充上传/裁剪、效果、文字颜色和单元格边框是独立能力，不会被塞进这两条命令。
+图片填充编辑、效果、文字颜色和单元格边框是独立能力，不会被塞进这两条命令。
 
 页面属性也只使用稳定页身份。`SetBackground { id, fill }` 接受同一套矢量填充，
 `SetHidden { id, v }` 修改页面目录中的隐藏标记；两者传 `null` 都表示恢复解析来源。
@@ -137,11 +137,17 @@ import { querySlideBackground, querySlideHidden } from '@web-ppt/edit-core';
 
 const background = querySlideBackground(editor.doc, selectedSlideIds);
 editor.exec({ type: 'SetBackground', id: slideId, fill: { type: 'solid', color: '#0F172A' } });
+editor.exec({
+  type: 'SetBackgroundImage', id: slideId, bytes: imageBytes, mime: 'image/png',
+  crop: { l: 0.1, t: 0.05, r: 0.1, b: 0.05 }, alpha: 0.85,
+});
+editor.exec({ type: 'SetBackgroundCrop', id: slideId, crop: null }); // 清除裁剪，保留图片
 editor.exec({ type: 'SetHidden', id: slideId, v: true });
 const hidden = querySlideHidden(editor.doc, selectedSlideIds);
 ```
 
-图片背景仍是独立的资源工作流，不会被编码进矢量填充命令。
+图片背景按内容寻址：多页上传相同字节只保存一份媒体；来源页或版式继承的图片背景也可直接裁剪，
+不会修改共享版式或母版。
 
 超链接使用稳定领域目标，不向 UI 泄漏页码或 OOXML action。`SetLink` 编辑形状/图片链接；文字区间通过
 `SetRunProps` 的同名 `link` 字段编辑。`{ kind: 'none' }` 表示显式移除，`null` 表示恢复解析来源。

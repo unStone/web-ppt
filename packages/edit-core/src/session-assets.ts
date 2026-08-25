@@ -1,7 +1,7 @@
 import type { SlideElement } from '@web-ppt/core';
 import { sha256 } from './clipboard-binary';
 import type { ClipboardResource } from './commands/types';
-import type { EditDoc } from './types';
+import type { EditDoc, ElementInsertionResource } from './types';
 
 const RESOURCE_TOKEN = 'web-ppt-resource:';
 
@@ -40,7 +40,7 @@ function walkStrings(value: unknown, visit: (value: string) => string, mutate: b
 }
 
 /** 保存会替换 doc.package；解析期 URL 与字节的对应关系必须在建模时保留下来。 */
-export function registerClipboardAssets(doc: EditDoc): void {
+export function registerSessionAssets(doc: EditDoc): void {
   const pkg = doc.package;
   if (!pkg) return;
   const assets = new Map<string, DocAsset>();
@@ -51,10 +51,11 @@ export function registerClipboardAssets(doc: EditDoc): void {
     return value;
   };
   for (const record of Object.values(doc.elements)) walkStrings(record.src, capture, false);
+  for (const record of Object.values(doc.slides)) walkStrings(record.src, capture, false);
   docAssets.set(doc, assets);
 }
 
-export function releaseClipboardAssets(doc: EditDoc): void {
+export function releaseSessionAssets(doc: EditDoc): void {
   docAssets.delete(doc);
 }
 
@@ -126,4 +127,14 @@ export function hydrateElementInsertionAssets(
     insertionHydrators.set(resources, hydrate);
   }
   return hydrate(source);
+}
+
+export function hydrateInsertionResourceSource(
+  source: string,
+  resource: ElementInsertionResource,
+): string {
+  if (source !== insertionResourceToken(resource.hash)) {
+    throw new Error(`图片资源 token 与资源哈希不一致：${resource.hash}`);
+  }
+  return `data:${resource.mime};base64,${resource.bytes}`;
 }

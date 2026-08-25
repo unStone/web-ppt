@@ -12,8 +12,10 @@
 <pattern id="s4" patternUnits="userSpaceOnUse" width="150" height="120">
 <image href="blob:<runtime>" x="-50" y="-40" width="250" height="200" preserveAspectRatio="none"/>
 </pattern>
-<pattern id="s5" patternUnits="userSpaceOnUse" width="11.25" height="9">
-<image href="blob:<runtime>" width="11.25" height="9" preserveAspectRatio="none" opacity="0.45"/>
+<pattern id="s5" patternUnits="userSpaceOnUse" x="0" y="0" width="36" height="27">
+<svg x="0" y="0" width="36" height="27" overflow="hidden">
+<image href="blob:<runtime>" x="0" y="0" width="36" height="27" preserveAspectRatio="none" opacity="0.45"/>
+</svg>
 </pattern>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>

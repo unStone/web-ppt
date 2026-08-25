@@ -1,8 +1,8 @@
 import type {
-  ElementId, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
+  ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
-import type { ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
+import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
 import type { TableInsertOptions } from './table-insertion';
 
@@ -57,6 +57,9 @@ export interface SlideEditor {
   chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
   replaceImage(file: Blob, options?: ImageReplaceOptions): Promise<ElementId>;
   chooseReplacementImage(options?: ImageReplaceOptions): Promise<ElementId | null>;
+  setBackgroundImage(file: Blob, options?: ImageBackgroundOptions): Promise<SlideId>;
+  chooseBackgroundImage(options?: ImageBackgroundOptions): Promise<SlideId | null>;
+  setBackgroundCrop(crop: ImageCrop | null): boolean;
   insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
   /** 双击图片之外的框架无关入口；省略 id 时使用当前单选图片。 */
   startImageCrop(id?: ElementId): boolean;

@@ -131,8 +131,8 @@ editor.exec({ type: 'SetFill', id: elementId, fill: null }); // restore inherite
 const stroke = queryElementStroke(editor.doc, selectedIds);
 ```
 
-Image-fill upload/crop, effects, text color, and table-cell borders are separate capabilities rather than
-overloaded variants of these two commands.
+Image-fill editing, effects, text color, and table-cell borders are separate capabilities rather than overloaded
+variants of these two commands.
 
 Slide property controls use stable page ids too. `SetBackground { id, fill }` accepts the same vector fills;
 `SetHidden { id, v }` edits the slide-directory flag. In both commands `null` restores the parsed source.
@@ -145,11 +145,17 @@ import { querySlideBackground, querySlideHidden } from '@web-ppt/edit-core';
 
 const background = querySlideBackground(editor.doc, selectedSlideIds);
 editor.exec({ type: 'SetBackground', id: slideId, fill: { type: 'solid', color: '#0F172A' } });
+editor.exec({
+  type: 'SetBackgroundImage', id: slideId, bytes: imageBytes, mime: 'image/png',
+  crop: { l: 0.1, t: 0.05, r: 0.1, b: 0.05 }, alpha: 0.85,
+});
+editor.exec({ type: 'SetBackgroundCrop', id: slideId, crop: null }); // clear crop, keep image
 editor.exec({ type: 'SetHidden', id: slideId, v: true });
 const hidden = querySlideHidden(editor.doc, selectedSlideIds);
 ```
 
-Image backgrounds remain a separate resource workflow; they are not encoded into a vector-fill command.
+Image backgrounds use content-addressed media resources. Uploading identical bytes across pages stores one media
+part; source and inherited image backgrounds can be cropped without editing the shared layout or master.
 
 Hyperlinks use stable domain targets instead of page indexes or OOXML actions. `SetLink` edits shape/image links;
 `SetRunProps` uses the same `link` field for a text range. `{ kind: 'none' }` explicitly removes a link, while

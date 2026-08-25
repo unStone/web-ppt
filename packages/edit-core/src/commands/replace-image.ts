@@ -1,4 +1,4 @@
-import { insertionResourceToken } from '../clipboard-assets';
+import { insertionResourceToken } from '../session-assets';
 import type { ImageElement } from '@web-ppt/core';
 import { sha256 } from '../clipboard-binary';
 import { resolveRelationshipTarget } from '../clipboard-source';

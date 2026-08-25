@@ -1,5 +1,5 @@
 import type { ImageElement } from '@web-ppt/core';
-import { insertionResourceToken } from '../clipboard-assets';
+import { insertionResourceToken } from '../session-assets';
 import { allocateElementId } from '../document';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';

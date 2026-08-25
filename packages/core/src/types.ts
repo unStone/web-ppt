@@ -222,7 +222,20 @@ export interface ImageTile {
   sx: number;
   sy: number;
   flip: string;
+  /** 首块相对对齐锚点的额外偏移，单位为 Schema 的 CSS px。 */
+  tx?: number;
+  ty?: number;
+  /** OOXML ST_RectAlignment；缺省语义是左上角。 */
+  algn?: ImageTileAlignment;
+  /** srcRect 与 sx/sy 作用前，按 blipFill@dpi 求得的图片物理尺寸。 */
+  sourceWidth?: number;
+  sourceHeight?: number;
 }
+
+export type ImageTileAlignment = 'tl' | 't' | 'tr' | 'l' | 'ctr' | 'r' | 'bl' | 'b' | 'br';
+
+/** 编辑命令只接受用户可控的放置语义；图片物理尺寸始终从字节推导。 */
+export type ImageTilePlacement = Omit<ImageTile, 'sourceWidth' | 'sourceHeight'>;
 
 export interface GradientStop {
   /** 0-1 */

@@ -55,6 +55,14 @@ export interface ElementImageReplacement {
   readonly suppressedRelationshipId?: string;
 }
 
+/** 页面背景会克隆未知扩展；因此除主图片外还要持有扩展引用的完整关系/资源闭包。 */
+export interface SlideImageBackground extends ElementImageReplacement {
+  readonly imageRelationshipId: string;
+  readonly resourceHashes: readonly string[];
+  /** 存在时必须能回证为当前页的真实 OPC 背景来源；是否保留 DPI 由此推导。 */
+  readonly sourcePart?: string;
+}
+
 export type SlideSource = Omit<Slide, 'elements' | 'editInfo'>;
 export type SlideOverrides = Partial<SlideSource>;
 
@@ -371,6 +379,8 @@ export interface SlideRecord {
   id: SlideId;
   src: SlideSource;
   ovr: SlideOverrides;
+  /** 大字节留在 imageResources；页面历史只持有这个关系闭包与哈希。 */
+  backgroundImage?: SlideImageBackground;
   children: ElementId[];
   /** 页序变化时只需失效这些动态字段及祖先，避免把页尾全部元素推给视图订阅者。 */
   dynamicSlideNumbers: ElementId[];

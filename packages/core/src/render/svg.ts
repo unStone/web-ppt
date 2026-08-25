@@ -1,6 +1,6 @@
 import type {
-  CellBorders, Effects, ElementBase, Fill, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
-  Shape3D, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody,
+  CellBorders, ElementBase, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
+  ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody,
   UnsupportedElement,
 } from '../types';
 import { renderTextBodyToHtml } from './text-html';
@@ -8,6 +8,9 @@ import { resolveTextScale } from './text-layout';
 import { renderTextSvg } from './text-svg';
 import { withHyperlink } from './hyperlink';
 import { warpSupported } from './text-warp-presets';
+import { paint } from './fill';
+import { effectFilter, reflectionLayer } from './effect-svg';
+import { bevelOverlay, extrusionLayers, mixShapeColor } from './shape-3d';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -176,177 +179,6 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
   );
 }
 
-// ---------------- 填充 ----------------
-
-const PATTERN_DEFS: Record<string, string> = {
-  pct5: 'M0 0h1v1H0z', pct10: 'M0 0h1v1H0z', pct20: 'M0 0h2v2H0z', pct25: 'M0 0h2v2H0z',
-  pct30: 'M0 0h2v2H0zM2 2h2v2H2z', pct40: 'M0 0h2v2H0zM2 2h2v2H2z', pct50: 'M0 0h2v2H0zM2 2h2v2H2z',
-  pct60: 'M0 0h3v3H0z', pct70: 'M0 0h3v3H0z', pct75: 'M0 0h3v3H0z', pct80: 'M0 0h4v4H0z', pct90: 'M0 0h4v4H0z',
-  ltHorz: 'M0 2h8v1H0z', horz: 'M0 2h8v2H0z', dkHorz: 'M0 1h8v3H0z',
-  ltVert: 'M2 0h1v8H0z', vert: 'M2 0h2v8H2z', dkVert: 'M1 0h3v8H1z',
-  ltUpDiag: 'M0 8L8 0M-2 2L2 -2M6 10L10 6', upDiag: 'M0 8L8 0M-2 2L2 -2M6 10L10 6',
-  ltDnDiag: 'M0 0L8 8M-2 6L2 10M6 -2L10 2', dnDiag: 'M0 0L8 8M-2 6L2 10M6 -2L10 2',
-  smGrid: 'M0 0h8v1H0zM0 0h1v8H0z', lgGrid: 'M0 0h8v1H0zM0 0h1v8H0z',
-  cross: 'M0 3h8v2H0zM3 0h2v8H3z', diagCross: 'M0 0L8 8M8 0L0 8',
-  trellis: 'M0 0L8 8M8 0L0 8', wave: 'M0 4Q2 2 4 4T8 4',
-};
-
-const PATTERN_SIZE: Record<string, number> = { pct5: 8, pct10: 6, pct20: 5, pct25: 4, pct30: 4, pct40: 4, pct50: 4, pct60: 4, pct70: 4, pct75: 4, pct80: 5, pct90: 5 };
-
-function paint(fill: Fill, ctx: Ctx, w: number, h: number): string {
-  switch (fill.type) {
-    case 'none':
-      return 'none';
-    case 'solid':
-      return fill.color;
-    case 'gradient': {
-      const id = ctx.nextId('g');
-      const stops = fill.stops
-        .map((s) => `<stop offset="${r(Math.max(0, Math.min(1, s.pos)) * 100)}%" stop-color="${s.color}"/>`)
-        .join('');
-      if (fill.radial) {
-        ctx.defs.push(`<radialGradient id="${id}" cx="50%" cy="50%" r="70%">${stops}</radialGradient>`);
-      } else {
-        // DrawingML 0° 指向右，顺时针为正
-        const rad = (fill.angle * Math.PI) / 180;
-        const dx = Math.cos(rad) / 2;
-        const dy = Math.sin(rad) / 2;
-        ctx.defs.push(
-          `<linearGradient id="${id}" x1="${r(0.5 - dx)}" y1="${r(0.5 - dy)}" x2="${r(0.5 + dx)}" y2="${r(0.5 + dy)}">${stops}</linearGradient>`,
-        );
-      }
-      return `url(#${id})`;
-    }
-    case 'image': {
-      const id = ctx.nextId('p');
-      if (fill.tile) {
-        const tw = Math.max(4, w * 0.25 * fill.tile.sx);
-        const th = Math.max(4, h * 0.25 * fill.tile.sy);
-        ctx.defs.push(
-          `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${r(tw)}" height="${r(th)}">` +
-          `<image href="${esc(fill.src)}" width="${r(tw)}" height="${r(th)}" preserveAspectRatio="none"` +
-          (fill.alpha !== undefined ? ` opacity="${r(fill.alpha)}"` : '') + '/></pattern>',
-        );
-      } else if (fill.crop && (fill.crop.l || fill.crop.t || fill.crop.r || fill.crop.b)) {
-        // srcRect 裁剪：把原图放大到裁剪后正好铺满，再用 pattern 视口裁掉四周
-        const c = fill.crop;
-        const iw = w / Math.max(1 - c.l - c.r, MIN_CROP_FRACTION);
-        const ih = h / Math.max(1 - c.t - c.b, MIN_CROP_FRACTION);
-        ctx.defs.push(
-          `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${r(w)}" height="${r(h)}">` +
-          `<image href="${esc(fill.src)}" x="${r(-c.l * iw)}" y="${r(-c.t * ih)}" ` +
-          `width="${r(iw)}" height="${r(ih)}" preserveAspectRatio="none"` +
-          (fill.alpha !== undefined ? ` opacity="${r(fill.alpha)}"` : '') + '/></pattern>',
-        );
-      } else {
-        ctx.defs.push(
-          `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${r(w)}" height="${r(h)}">` +
-          `<image href="${esc(fill.src)}" width="${r(w)}" height="${r(h)}" preserveAspectRatio="xMidYMid slice"` +
-          (fill.alpha !== undefined ? ` opacity="${r(fill.alpha)}"` : '') + '/></pattern>',
-        );
-      }
-      return `url(#${id})`;
-    }
-    case 'pattern': {
-      const id = ctx.nextId('pt');
-      const size = PATTERN_SIZE[fill.preset] ?? 8;
-      const d = PATTERN_DEFS[fill.preset] ?? PATTERN_DEFS.pct50;
-      const stroked = /^[MLQT].*[ML]/.test(d) && !d.includes('h') && !d.includes('v');
-      ctx.defs.push(
-        `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${size}" height="${size}">` +
-        `<rect width="${size}" height="${size}" fill="${fill.bg}"/>` +
-        `<path d="${d}" ${stroked ? `stroke="${fill.fg}" stroke-width="1" fill="none"` : `fill="${fill.fg}"`}/>` +
-        '</pattern>',
-      );
-      return `url(#${id})`;
-    }
-  }
-}
-
-// ---------------- 效果 ----------------
-
-function effectFilter(effects: Effects | undefined, ctx: Ctx): string {
-  if (!effects) return '';
-  const parts: string[] = [];
-  // 逐级串联：__IN__ 为上一级输出，__OUT__ 为本级命名结果
-  let last = 'SourceGraphic';
-  let seq = 0;
-  const step = (markup: string): void => {
-    const out = `e${++seq}`;
-    parts.push(markup.replace(/__IN__/g, last).replace(/__OUT__/g, out));
-    last = out;
-  };
-
-  if (effects.glow) {
-    step(
-      `<feDropShadow in="__IN__" dx="0" dy="0" stdDeviation="${r(effects.glow.radius / 2)}" ` +
-      `flood-color="${effects.glow.color}" flood-opacity="1" result="__OUT__"/>`,
-    );
-  }
-  const s = effects.shadow;
-  if (s && !s.inner) {
-    step(`<feDropShadow in="__IN__" dx="${r(s.dx)}" dy="${r(s.dy)}" stdDeviation="${r(s.blur / 2)}" flood-color="${s.color}" result="__OUT__"/>`);
-  }
-  if (s && s.inner) {
-    // 内阴影：反转 SourceAlpha → 模糊 → 位移 → 与原 alpha 相交 → 上色 → 叠回本体
-    const p = `is${seq}`;
-    parts.push(
-      `<feComponentTransfer in="SourceAlpha" result="${p}a"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>` +
-      `<feGaussianBlur in="${p}a" stdDeviation="${r(s.blur / 2)}" result="${p}b"/>` +
-      `<feOffset in="${p}b" dx="${r(s.dx)}" dy="${r(s.dy)}" result="${p}c"/>` +
-      `<feComposite in="${p}c" in2="SourceAlpha" operator="in" result="${p}d"/>` +
-      `<feFlood flood-color="${s.color}" result="${p}e"/>` +
-      `<feComposite in="${p}e" in2="${p}d" operator="in" result="${p}f"/>`,
-    );
-    step(`<feComposite in="${p}f" in2="__IN__" operator="over" result="__OUT__"/>`);
-  }
-  if (effects.softEdge) {
-    // 只羽化 alpha 通道，主体与文字保持锐利
-    parts.push(
-      `<feGaussianBlur in="SourceAlpha" stdDeviation="${r(effects.softEdge / 2)}" result="se"/>` +
-      `<feComponentTransfer in="se" result="seMask"><feFuncA type="linear" slope="2.2" intercept="-0.6"/></feComponentTransfer>`,
-    );
-    step(`<feComposite in="__IN__" in2="seMask" operator="in" result="__OUT__"/>`);
-  }
-  if (!parts.length) return '';
-  const id = ctx.nextId('f');
-  ctx.defs.push(`<filter id="${id}" x="-30%" y="-30%" width="160%" height="160%">${parts.join('')}</filter>`);
-  return ` filter="url(#${id})"`;
-}
-
-/**
- * 倒影：把本体内容用 <use> 引出一份，沿底边镜像后向下平移 distance，
- * 再用线性渐变遮罩从 alpha 渐隐到 0；size 决定可见高度占本体的比例。
- * 倒影绘制在本体之前（层级更低），且不参与本体的滤镜。
- */
-function reflectionLayer(el: ElementBase, refId: string, ctx: Ctx): string {
-  const refl = el.effects?.reflection;
-  if (!refl) return '';
-  const alpha = Math.max(0, Math.min(1, refl.alpha));
-  if (alpha <= 0 || el.h <= 0) return '';
-  const dist = Math.max(0, refl.distance);
-  const top = el.h + dist;
-  const band = Math.max(1, el.h * Math.max(0.02, Math.min(1, refl.size)));
-  // 横向留出余量，避免溢出形状框的文字被遮罩裁掉
-  const mx = -el.w * 0.25;
-  const mw = el.w * 1.5;
-  const gid = ctx.nextId('rg');
-  const mid = ctx.nextId('rm');
-  ctx.defs.push(
-    `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="0" y1="${r(top)}" x2="0" y2="${r(top + band)}">` +
-    `<stop offset="0" stop-color="#fff" stop-opacity="${r(alpha)}"/>` +
-    `<stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>`,
-  );
-  ctx.defs.push(
-    `<mask id="${mid}" maskUnits="userSpaceOnUse" x="${r(mx)}" y="${r(top)}" width="${r(mw)}" height="${r(band)}">` +
-    `<rect x="${r(mx)}" y="${r(top)}" width="${r(mw)}" height="${r(band)}" fill="url(#${gid})"/></mask>`,
-  );
-  return (
-    `<g mask="url(#${mid})" aria-hidden="true">` +
-    `<use href="#${refId}" xlink:href="#${refId}" transform="translate(0 ${r(2 * el.h + dist)}) scale(1 -1)"/></g>`
-  );
-}
-
 /** 元素外层包装：定位 + 效果滤镜 + 倒影 */
 function wrapEl(el: ElementBase, inner: string, ctx: Ctx): string {
   const filter = effectFilter(el.effects, ctx);
@@ -465,67 +297,6 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
   return withHyperlink(out, ctx.resolveLink(el.link));
 }
 
-/** 沿挤出方向复制若干层路径，形成等轴测风格的立体侧面 */
-function extrusionLayers(el: ShapeElement, d3: Shape3D, baseColor: string): string {
-  const depth = Math.min(d3.extrusion ?? 0, Math.max(el.w, el.h));
-  if (depth <= 0.5) return '';
-  const rotY = d3.rotY ?? 0;
-  const rotX = d3.rotX ?? 0;
-  // 观察角决定偏移方向：默认略微右下
-  const ang = ((rotY || 35) * Math.PI) / 180;
-  const dx = Math.cos(ang) * depth;
-  const dy = Math.sin(((rotX || 20) * Math.PI) / 180) * depth;
-  const side = d3.extrusionColor ?? mix(baseColor, '#000', 0.32);
-  const steps = Math.max(2, Math.min(14, Math.round(depth)));
-  const out: string[] = [];
-  for (let i = steps; i >= 1; i--) {
-    const t = i / steps;
-    out.push(
-      `<g transform="translate(${r(dx * t)} ${r(dy * t)})">` +
-      `<path d="${el.path}" fill="${side}" fill-rule="nonzero"/></g>`,
-    );
-  }
-  return out.join('');
-}
-
-/** 顶部斜角：沿轮廓内侧叠一圈浅色描边模拟受光边，裁进形状避免溢出 */
-function bevelOverlay(el: ShapeElement, d3: Shape3D, baseColor: string, ctx: Ctx): string {
-  const b = d3.bevelTop ?? 0;
-  if (b <= 0.3 || !el.path) return '';
-  const light = mix(baseColor, '#fff', 0.5);
-  const dark = mix(baseColor, '#000', 0.25);
-  const w = Math.min(b * 2, Math.min(el.w, el.h) / 3);
-  const id = ctx.nextId('bv');
-  ctx.defs.push(`<clipPath id="${id}"><path d="${el.path}"/></clipPath>`);
-  // 描边宽度的一半落在轮廓外，被裁掉后正好只剩内侧一圈
-  return (
-    `<g clip-path="url(#${id})">` +
-    `<path d="${el.path}" fill="none" stroke="${light}" stroke-width="${r(w)}" stroke-linejoin="round" opacity="0.55"/>` +
-    `<path d="${el.path}" fill="none" stroke="${dark}" stroke-width="${r(w / 3)}" stroke-linejoin="round" opacity="0.35" transform="translate(0 ${r(w / 3)})"/>` +
-    '</g>'
-  );
-}
-
-/** 颜色混合：css 颜色 + 目标色，ratio 为目标色占比 */
-function mix(color: string, target: string, ratio: number): string {
-  const parse = (c: string): [number, number, number] => {
-    const m = c.match(/rgba?\(([^)]+)\)/);
-    if (m) {
-      const p = m[1].split(',').map((v) => Number(v.trim()));
-      return [p[0] || 0, p[1] || 0, p[2] || 0];
-    }
-    const hex = c.replace('#', '');
-    if (hex.length >= 6) {
-      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
-    }
-    return [128, 128, 128];
-  };
-  const a = parse(color);
-  const b = parse(target);
-  const out = a.map((v, i) => Math.round(v * (1 - ratio) + b[i] * ratio));
-  return `rgb(${out[0]},${out[1]},${out[2]})`;
-}
-
 function renderShape(el: ShapeElement, ctx: Ctx): string {
   let inner = '';
   if (el.path) {
@@ -539,7 +310,7 @@ function renderShape(el: ShapeElement, ctx: Ctx): string {
     if (d3) inner += extrusionLayers(el, d3, solidBase);
 
     const contour = d3?.contourWidth
-      ? ` stroke="${d3.contourColor ?? mix(solidBase, '#000', 0.45)}" stroke-width="${r(d3.contourWidth)}"`
+      ? ` stroke="${d3.contourColor ?? mixShapeColor(solidBase, '#000', 0.45)}" stroke-width="${r(d3.contourWidth)}"`
       : strokeAttrs(el.stroke, ctx);
     const pathEl = `<path d="${el.path}" fill="${fillVal}" fill-rule="nonzero"${contour}/>`;
     const flip = flipTransform(el);

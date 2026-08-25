@@ -1,3 +1,5 @@
+import { detectMetafile, readImageMetadata } from '@web-ppt/core';
+
 export type SupportedImageMime = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
 
 const bytesEqual = (bytes: Uint8Array, offset: number, expected: readonly number[]): boolean =>
@@ -185,4 +187,36 @@ export function validateImageFormat(
     throw new Error(`${command}.bytes 与声明格式 ${mime} 不一致或容器不完整`);
   }
   return { extension: format.extension };
+}
+
+/** 模型资源还会复用 OPC 已有图片；它比上传白名单宽，但仍按字节验证真实容器。 */
+export function validateStoredImageFormat(
+  bytes: Uint8Array,
+  mime: unknown,
+  extension: unknown,
+  label: string,
+  allowPackageSource = false,
+): boolean {
+  if (typeof mime !== 'string' || typeof extension !== 'string') {
+    throw new Error(`${label} 的 MIME 或扩展名无效`);
+  }
+  if (Object.prototype.hasOwnProperty.call(FORMATS, mime)) {
+    const detected = detectImageMime(bytes);
+    const allowed = mime === 'image/jpeg' ? new Set(['jpg', 'jpeg'])
+      : new Set([FORMATS[mime as SupportedImageMime].extension]);
+    if (detected !== mime || !allowed.has(extension)) throw new Error(`${label} 的图片容器或扩展名不匹配`);
+    return false;
+  }
+  if (!allowPackageSource) throw new Error(`${label} 的图片格式不在上传白名单内`);
+  const metadata = readImageMetadata(bytes);
+  const metafile = detectMetafile(bytes);
+  const valid = (mime === 'image/bmp' && extension === 'bmp' && asciiAt(bytes, 0, 'BM') && !!metadata)
+    || (mime === 'image/svg+xml' && extension === 'svg' && !!metadata)
+    || (mime === 'image/tiff' && ['tif', 'tiff'].includes(extension) && !!metadata)
+    || (['image/x-emf', 'image/emf'].includes(mime) && extension === 'emf' && metafile === 'emf')
+    || (['image/x-wmf', 'image/wmf'].includes(mime) && extension === 'wmf' && metafile === 'wmf')
+    || (['image/x-pict', 'image/pict'].includes(mime)
+      && ['pict', 'pct', 'pic'].includes(extension) && metafile === 'pict');
+  if (!valid) throw new Error(`${label} 的来源图片容器或扩展名不匹配`);
+  return true;
 }

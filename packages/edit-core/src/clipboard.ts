@@ -1,6 +1,6 @@
 import type { SlideElement, TableRowAppendEditInfo } from '@web-ppt/core';
 import { elementOrder } from './element-order';
-import { tokenizeElementAssets } from './clipboard-assets';
+import { tokenizeElementAssets } from './session-assets';
 import { effectiveElement } from './projection';
 import { orderedTableRowInsertions } from './table-rows';
 import { outermostSelectedElementIds } from './selection';

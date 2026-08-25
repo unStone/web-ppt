@@ -15,8 +15,14 @@ import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
 import { assertImageCrop, isEditablePicture } from './image-content';
-import { assertImageReplacement, assertImageResource } from './commands/element-image-content';
+import {
+  assertImageReplacement, assertImageResource, assertImageResourceTargets,
+} from './commands/element-image-content';
+import {
+  assertSlideImageBackground, assertSlideImageBackgroundDimensions, assertSlideImageFill,
+} from './commands/slide-property';
 import { assertLinkOverride } from './hyperlink';
+import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -176,9 +182,10 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('编辑文档缺少图片资源表');
   }
   for (const [hash, resource] of Object.entries(doc.imageResources)) {
-    assertImageResource(resource, `图片资源 ${hash}`);
+    assertImageResource(resource, `图片资源 ${hash}`, doc);
     if (resource.hash !== hash) throw new Error(`图片资源 key 与哈希不一致：${hash}`);
   }
+  assertImageResourceTargets(doc, doc.imageResources);
   const detachedBaselines = detachedSlideBaselineParts(doc);
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
     // 删除整页后基线是撤销时复原已移除 OPC part 的唯一来源，因此不要求当前包仍含该 part。
@@ -218,7 +225,25 @@ export function validateEditDoc(doc: EditDoc): void {
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
     if (own(slide.ovr, 'background')) {
       if (slide.ovr.background === null) throw new Error(`幻灯片 ${slideId} 的直接背景不能是 null`);
-      assertVectorFill(slide.ovr.background, `幻灯片 ${slideId} 的背景覆盖`);
+      if (slide.ovr.background?.type === 'image') {
+        assertSlideImageFill(slide.ovr.background, `幻灯片 ${slideId} 的背景覆盖`);
+      } else assertVectorFill(slide.ovr.background, `幻灯片 ${slideId} 的背景覆盖`);
+    }
+    if (slide.backgroundImage) {
+      if (!slide.origin || slide.ovr.background?.type !== 'image'
+        || slide.ovr.background.src !== slide.backgroundImage.src) {
+        throw new Error(`幻灯片 ${slideId} 的图片背景与资源闭包不一致`);
+      }
+      assertSlideImageBackground(
+        slide.backgroundImage, slide, doc.imageResources,
+        `幻灯片 ${slideId} 的图片背景资源`, doc,
+      );
+      assertSlideImageBackgroundDimensions(
+        doc, slide, slide.ovr.background, slide.backgroundImage, doc.imageResources,
+        `幻灯片 ${slideId} 的图片背景资源`,
+      );
+    } else if (slide.ovr.background?.type === 'image') {
+      throw new Error(`幻灯片 ${slideId} 的图片背景缺少资源闭包`);
     }
     if (own(slide.ovr, 'hidden') && typeof slide.ovr.hidden !== 'boolean') {
       throw new Error(`幻灯片 ${slideId} 的隐藏覆盖必须是布尔值`);
@@ -345,6 +370,7 @@ export function validateEditDoc(doc: EditDoc): void {
     }
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
+    assertElementInsertionSource(doc, record);
     if (own(record.ovr, 'fill')) {
       if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不能包含填充覆盖`);
@@ -396,4 +422,5 @@ export function validateEditDoc(doc: EditDoc): void {
       }
     }
   }
+  assertActiveRelationshipTargets(doc);
 }

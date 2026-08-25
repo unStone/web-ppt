@@ -254,6 +254,8 @@ async function browserResult(webSocketDebuggerUrl) {
           hyperlinkRouteP95: report.dataset.hyperlinkRouteP95,
           slidePropertiesBatchP95: report.dataset.slidePropertiesBatchP95,
           slidePropertiesRenderP95: report.dataset.slidePropertiesRenderP95,
+          slideImageBackgroundP95: report.dataset.slideImageBackgroundP95,
+          slideImageBackgroundModelP95: report.dataset.slideImageBackgroundModelP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -508,7 +510,12 @@ async function browserResult(webSocketDebuggerUrl) {
     }
     throw new Error('真实浏览器编辑契约执行超时');
   } finally {
-    socket.close();
+    if (socket.readyState !== WebSocket.CLOSED) {
+      const closed = new Promise((resolveClose) => socket.once('close', resolveClose));
+      // DevTools 会在 Chrome 退出时留下半关闭连接；测试进程必须先销毁它再回收浏览器。
+      socket.terminate();
+      await closed;
+    }
   }
 }
 
@@ -577,6 +584,8 @@ try {
     + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`
     + ` · 超链接提交/路由 p95 ${result.hyperlinkCommitP95}/${result.hyperlinkRouteP95}ms`
     + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`
+    + ` · 页面图片背景200页模型/完整上屏 p95 `
+    + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
@@ -600,6 +609,9 @@ try {
       await waitForBrowserExit(2000);
     }
   }
+  // Chrome crashpad 可能继承 stderr；Chrome 本体退出后若不销毁读端，嵌套 npm 脚本仍不会结束。
+  child?.stderr?.destroy();
+  child?.unref();
   if (server.listening) {
     server.closeAllConnections();
     await new Promise((resolveClose) => server.close(resolveClose));

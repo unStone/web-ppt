@@ -1,8 +1,11 @@
 import { detectImageMime, MAX_REPLACE_IMAGE_BYTES } from '@web-ppt/edit-core';
-import type { AddImageCommand, Editor, ElementId, SlideId } from '@web-ppt/edit-core';
+import type {
+  AddImageCommand, Editor, ElementId, SetBackgroundImageCommand, SlideId,
+} from '@web-ppt/edit-core';
 
 const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
 const DEFAULT_MAX_BYTES = MAX_REPLACE_IMAGE_BYTES;
+type DetectedImageMime = NonNullable<ReturnType<typeof detectImageMime>>;
 
 export interface ImageInsertOptions {
   readonly rect?: AddImageCommand['rect'];
@@ -16,6 +19,13 @@ export interface ImageReplaceOptions {
   readonly maxBytes?: number;
 }
 
+export interface ImageBackgroundOptions {
+  readonly crop?: SetBackgroundImageCommand['crop'];
+  readonly alpha?: SetBackgroundImageCommand['alpha'];
+  readonly tile?: SetBackgroundImageCommand['tile'];
+  readonly maxBytes?: number;
+}
+
 interface InternalImageInsertOptions extends ImageInsertOptions {
   readonly placeholderId?: ElementId;
 }
@@ -25,6 +35,14 @@ interface ImageInsertionControllerOptions {
   readonly root: HTMLElement;
   slideId(): SlideId;
   editable(): boolean;
+}
+
+interface ImageReadRequest {
+  readonly blob: Blob;
+  readonly maxBytes?: number;
+  readonly slideId: SlideId;
+  readonly action: string;
+  readonly emptyMessage: string;
 }
 
 function assertMaxBytes(value: number | undefined): number {
@@ -84,17 +102,18 @@ export class ImageInsertionController {
 
   constructor(options: ImageInsertionControllerOptions) { this.options = options; }
 
-  async insert(blob: Blob, options: InternalImageInsertOptions = {}): Promise<ElementId> {
-    if (this.destroyed) throw new Error('不能通过已销毁视图插入图片');
-    if (!this.options.editable()) throw new Error('查看模式不能插入图片');
-    const slideId = this.options.slideId();
+  private async withImageBytes<T>(
+    request: ImageReadRequest,
+    use: (image: { bytes: Uint8Array; mime: DetectedImageMime }) => T | Promise<T>,
+  ): Promise<T> {
     let reading = false;
     try {
+      const { blob, slideId } = request;
       if (!blob || typeof blob.arrayBuffer !== 'function' || !Number.isFinite(blob.size)) {
-        throw new Error('插入图片必须提供 File 或 Blob');
+        throw new Error(`${request.action}必须提供 File 或 Blob`);
       }
-      const maximum = assertMaxBytes(options.maxBytes);
-      if (blob.size <= 0) throw new Error('图片文件不能为空');
+      const maximum = assertMaxBytes(request.maxBytes);
+      if (blob.size <= 0) throw new Error(request.emptyMessage);
       if (blob.size > maximum) {
         throw new Error(`图片大小不能超过 ${formatByteLimit(maximum)}，以保证本地撤销可用`);
       }
@@ -104,6 +123,22 @@ export class ImageInsertionController {
       this.assertContext(slideId, '读取');
       const mime = detectImageMime(bytes);
       if (!mime) throw new Error('只支持完整的 PNG、JPEG、GIF 或 WebP 图片');
+      return await use({ bytes, mime });
+    } catch (error) {
+      this.report(error);
+      throw error;
+    } finally {
+      if (reading) this.setReading(false);
+    }
+  }
+
+  async insert(blob: Blob, options: InternalImageInsertOptions = {}): Promise<ElementId> {
+    if (this.destroyed) throw new Error('不能通过已销毁视图插入图片');
+    if (!this.options.editable()) throw new Error('查看模式不能插入图片');
+    const slideId = this.options.slideId();
+    return this.withImageBytes({
+      blob, maxBytes: options.maxBytes, slideId, action: '插入图片', emptyMessage: '图片文件不能为空',
+    }, async ({ bytes, mime }) => {
       const size = await decodedSize(blob, this.options.root.ownerDocument);
       this.assertContext(slideId, '解码');
       let placement = options.rect;
@@ -123,43 +158,20 @@ export class ImageInsertionController {
         throw new Error('图片命令没有返回新元素身份');
       }
       return id;
-    } catch (error) {
-      this.report(error);
-      throw error;
-    } finally {
-      if (reading) this.setReading(false);
-    }
+    });
   }
 
   async replace(id: ElementId, blob: Blob, options: ImageReplaceOptions = {}): Promise<ElementId> {
     if (this.destroyed) throw new Error('不能通过已销毁视图替换图片');
     if (!this.options.editable()) throw new Error('查看模式不能替换图片');
     const slideId = this.options.slideId();
-    let reading = false;
-    try {
-      if (!blob || typeof blob.arrayBuffer !== 'function' || !Number.isFinite(blob.size)) {
-        throw new Error('替换图片必须提供 File 或 Blob');
-      }
-      const maximum = assertMaxBytes(options.maxBytes);
-      if (blob.size <= 0) throw new Error('图片文件不能为空');
-      if (blob.size > maximum) {
-        throw new Error(`图片大小不能超过 ${formatByteLimit(maximum)}，以保证本地撤销可用`);
-      }
-      this.setReading(true);
-      reading = true;
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      this.assertContext(slideId, '读取');
-      const mime = detectImageMime(bytes);
-      if (!mime) throw new Error('只支持完整的 PNG、JPEG、GIF 或 WebP 图片');
+    return this.withImageBytes({
+      blob, maxBytes: options.maxBytes, slideId, action: '替换图片', emptyMessage: '图片文件不能为空',
+    }, ({ bytes, mime }) => {
       this.assertContext(slideId, '提交');
       this.options.editor.exec({ type: 'ReplaceImage', id, bytes, mime });
       return id;
-    } catch (error) {
-      this.report(error);
-      throw error;
-    } finally {
-      if (reading) this.setReading(false);
-    }
+    });
   }
 
   choose(options: InternalImageInsertOptions = {}): Promise<ElementId | null> {
@@ -172,11 +184,36 @@ export class ImageInsertionController {
     );
   }
 
-  private chooseFile(
+  async setBackground(blob: Blob, options: ImageBackgroundOptions = {}): Promise<SlideId> {
+    if (this.destroyed) throw new Error('不能通过已销毁视图设置页面背景');
+    if (!this.options.editable()) throw new Error('查看模式不能设置页面背景');
+    const slideId = this.options.slideId();
+    return this.withImageBytes({
+      blob, maxBytes: options.maxBytes, slideId, action: '页面背景', emptyMessage: '页面背景图片不能为空',
+    }, ({ bytes, mime }) => {
+      this.assertContext(slideId, '提交');
+      this.options.editor.exec({
+        type: 'SetBackgroundImage', id: slideId, bytes, mime,
+        ...(options.crop ? { crop: options.crop } : {}),
+        ...(options.alpha !== undefined ? { alpha: options.alpha } : {}),
+        ...(options.tile ? { tile: options.tile } : {}),
+      });
+      return slideId;
+    });
+  }
+
+  chooseBackground(options: ImageBackgroundOptions = {}): Promise<SlideId | null> {
+    return this.chooseFile(
+      '选择页面背景图片', 'webPptBackgroundImageInput',
+      (file) => this.setBackground(file, options),
+    );
+  }
+
+  private chooseFile<T extends string>(
     label: string,
-    marker: 'webPptImageInput' | 'webPptImageReplacementInput',
-    commit: (file: File) => Promise<ElementId>,
-  ): Promise<ElementId | null> {
+    marker: 'webPptImageInput' | 'webPptImageReplacementInput' | 'webPptBackgroundImageInput',
+    commit: (file: File) => Promise<T>,
+  ): Promise<T | null> {
     if (this.destroyed) return Promise.reject(new Error('不能通过已销毁视图选择图片'));
     if (!this.options.editable()) return Promise.reject(new Error('查看模式不能选择图片'));
     if (this.cancelChooser) return Promise.reject(new Error('已有图片文件选择正在进行'));
@@ -192,9 +229,9 @@ export class ImageInsertionController {
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
     this.options.root.append(input);
-    return new Promise<ElementId | null>((resolve, reject) => {
+    return new Promise<T | null>((resolve, reject) => {
       let settled = false;
-      const finish = (value: ElementId | null, error?: unknown): void => {
+      const finish = (value: T | null, error?: unknown): void => {
         if (settled) return;
         settled = true;
         this.cancelChooser = null;

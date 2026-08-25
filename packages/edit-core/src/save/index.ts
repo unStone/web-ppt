@@ -20,7 +20,7 @@ import {
 import type { HyperlinkSaveContext } from './hyperlink';
 import { materializeElementTreeState } from './insertion';
 import {
-  clipboardPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
+  mediaPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
 } from './clipboard-parts';
 import {
   createdSlideRelationships, createdSlides, emptySlideXml, patchPresentationRelationships,
@@ -103,7 +103,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const explicitHyperlinkParts = new Set([...grouped].flatMap(([part, records]) =>
     records.some(hasHyperlinkOverrides) ? [part] : []));
   const removals = removalsByPart(doc);
-  const clipboard = clipboardPackageParts(doc);
+  const media = mediaPackageParts(doc);
   const activeCreatedSlides = createdSlides(doc);
   const duplicateNotes = duplicateNotesParts(activeCreatedSlides);
   const duplicateNotesBySlide = new Map(duplicateNotes.map((notes) => [notes.slidePart, notes]));
@@ -155,7 +155,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (!source) throw new Error(`找不到待写回的 OPC part：${part}`);
     nextBaselines[part] = source.slice();
   }
-  for (const sourcePart of clipboard.relationships.keys()) {
+  for (const sourcePart of media.relationships.keys()) {
     const relsPart = relationshipPartFor(sourcePart);
     if (nextBaselines[relsPart] || nextCreatedParts.has(relsPart)) continue;
     const source = doc.package.parts[relsPart];
@@ -174,7 +174,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const source = doc.package.parts[part];
     if (source) nextBaselines[part] = source.slice();
   }
-  if ((clipboard.resources.size || hasCreatedSlideHistory || hasRemovedSlideHistory)
+  if ((media.resources.size || hasCreatedSlideHistory || hasRemovedSlideHistory)
     && !nextBaselines[contentTypesPart]) {
     const source = doc.package.parts[contentTypesPart];
     if (!source) throw new Error('PPTX 缺少 [Content_Types].xml');
@@ -197,7 +197,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     nextCreatedParts.add(notes.targetPart);
     nextCreatedParts.add(relationshipPartFor(notes.targetPart));
   }
-  for (const resource of clipboard.resources.values()) {
+  for (const resource of media.resources.values()) {
     if (resource.created) nextCreatedParts.add(resource.targetPart);
   }
 
@@ -225,7 +225,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined);
     const links = hyperlinkParts.has(part)
       ? createHyperlinkSaveContext(
-        doc, part, relationSource, clipboard.relationships.get(part) ?? [],
+        doc, part, relationSource, media.relationships.get(part) ?? [],
       ) : undefined;
     if (links) hyperlinkContexts.set(part, links);
     links?.removeDanglingHyperlinks(tree);
@@ -233,7 +233,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
     ], { links });
     const slideRecord = slideProperties.get(part);
-    if (slideRecord) patchSlideProperties(tree, slideRecord);
+    if (slideRecord) patchSlideProperties(tree, doc, slideRecord);
     const bytes = serializeXmlTreeBytes(tree);
     changes[part] = slideNumbers.has(part)
       ? patchSlideNumberFields(bytes, slideNumbers.get(part)!)
@@ -242,9 +242,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
 
   const activeRelationshipParts = new Set<string>();
   for (const sourcePart of new Set([
-    ...clipboard.relationships.keys(), ...hyperlinkContexts.keys(),
+    ...media.relationships.keys(), ...hyperlinkContexts.keys(),
   ])) {
-    const relationships = clipboard.relationships.get(sourcePart) ?? [];
+    const relationships = media.relationships.get(sourcePart) ?? [];
     const relsPart = relationshipPartFor(sourcePart);
     activeRelationshipParts.add(relsPart);
     const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === sourcePart);
@@ -261,10 +261,10 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       changes[part] = patchRelationshipPart(source, []);
     }
   }
-  for (const [part, resource] of clipboard.resources) changes[part] = resourceBytes(resource);
+  for (const [part, resource] of media.resources) changes[part] = resourceBytes(resource);
   if (nextBaselines[contentTypesPart]) {
     const resourceTypes = patchContentTypes(
-      nextBaselines[contentTypesPart], [...clipboard.resources.values()],
+      nextBaselines[contentTypesPart], [...media.resources.values()],
     );
     changes[contentTypesPart] = patchSlideContentTypes(
       resourceTypes, doc, removedSlideParts.contentTypeParts,

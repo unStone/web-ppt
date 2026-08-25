@@ -1,5 +1,5 @@
 import { allocateElementId } from '../document';
-import { createElementAssetHydrator } from '../clipboard-assets';
+import { createElementAssetHydrator } from '../session-assets';
 import { elementOrder, elementParentChildren } from '../element-order';
 import { fractionalIndexBetween, initialFractionalIndex } from '../fractional-index';
 import {

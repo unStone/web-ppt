@@ -1,5 +1,5 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
-import { registerClipboardAssets, releaseClipboardAssets } from './clipboard-assets';
+import { registerSessionAssets, releaseSessionAssets } from './session-assets';
 import { initialFractionalIndex } from './fractional-index';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
@@ -161,7 +161,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
-  registerClipboardAssets(doc);
+  registerSessionAssets(doc);
   return doc;
 }
 
@@ -232,7 +232,7 @@ export function disposeDoc(doc: EditDoc): void {
   disposed.add(doc);
   disposers.get(doc)?.();
   disposers.delete(doc);
-  releaseClipboardAssets(doc);
+  releaseSessionAssets(doc);
   doc.saveState.baselines = Object.create(null);
   doc.saveState.createdParts = [];
   doc.saveState.sourceSlideParts = [];

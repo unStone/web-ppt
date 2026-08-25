@@ -1,5 +1,5 @@
 import type {
-  EditorChange, ElementId, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
+  EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
@@ -21,8 +21,7 @@ import { bindSlideEditorEditEvents, bindSlideEditorLinkEvent } from './slide-edi
 import { SlideDomRenderer } from './slide-dom-renderer';
 import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
 import { ImageInsertionController } from './image-insertion';
-import type { ImageInsertOptions } from './image-insertion';
-import type { ImageReplaceOptions } from './image-insertion';
+import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import { SlidePointerController } from './slide-pointer-controller';
 import { insertTable } from './table-insertion';
 import type { TableInsertOptions } from './table-insertion';
@@ -321,6 +320,18 @@ class DomSlideEditor implements SlideEditor {
   chooseReplacementImage(options: ImageReplaceOptions = {}): Promise<ElementId | null> {
     const id = this.selectedImageId(options.id);
     return this.imageInsertion.chooseReplacement(id, options);
+  }
+
+  setBackgroundImage(file: Blob, options: ImageBackgroundOptions = {}): Promise<SlideId> {
+    return this.imageInsertion.setBackground(file, options);
+  }
+  chooseBackgroundImage(options: ImageBackgroundOptions = {}): Promise<SlideId | null> {
+    return this.imageInsertion.chooseBackground(options);
+  }
+  setBackgroundCrop(crop: ImageCrop | null): boolean {
+    if (this.isDestroyed || this.currentMode !== 'edit') return false;
+    this.session.editor.exec({ type: 'SetBackgroundCrop', id: this.currentSlide, crop });
+    return true;
   }
 
   insertTable(rows: number, cols: number, options: TableInsertOptions = {}): ElementId {

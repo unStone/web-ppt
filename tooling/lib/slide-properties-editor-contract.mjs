@@ -24,6 +24,14 @@ export async function runSlidePropertiesEditorContract({ check, lib, root }) {
   const editBefore = editStatic.querySelector('svg');
   const viewBefore = viewStatic.querySelector('svg');
   const otherBefore = otherStatic.querySelector('svg');
+  check('SlideEditor 公开页面背景文件与裁剪入口',
+    typeof editView.setBackgroundImage === 'function'
+      && typeof editView.chooseBackgroundImage === 'function'
+      && typeof editView.setBackgroundCrop === 'function');
+  let viewBackgroundRejected = false;
+  try { await viewView.setBackgroundImage(new Blob()); } catch { viewBackgroundRejected = true; }
+  check('查看模式拒绝页面背景文件和裁剪副作用',
+    viewBackgroundRejected && viewView.setBackgroundCrop(null) === false);
   session.editor.exec({
     type: 'SetBackground', id: first,
     fill: {

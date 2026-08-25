@@ -220,6 +220,24 @@ if (mode === 'projected') {
       { type: 'SetBackground', id: added, fill: scenario.backgrounds[2] },
       { type: 'SetHidden', id: added, v: true },
     );
+  } else if (scenario.type === 'slideImageBackground') {
+    const [stretch, tile, inherited] = doc.slideOrder;
+    editor.exec({ type: 'SetBackgroundCrop', id: stretch, crop: scenario.crops[0] });
+    editor.exec({
+      type: 'SetBackgroundImage', id: tile,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      crop: scenario.crops[1], alpha: scenario.alpha, tile: scenario.tile,
+    });
+    editor.exec({ type: 'SetBackgroundCrop', id: inherited, crop: scenario.crops[2] });
+    editor.exec({ type: 'DuplicateSlide', id: inherited });
+    const added = [...editor.exec({
+      type: 'AddSlide', layoutId: doc.layoutOrder[0], at: { after: doc.slideOrder.at(-1) },
+    }).createdSlides][0];
+    editor.exec({
+      type: 'SetBackgroundImage', id: added,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      crop: scenario.addedCrop,
+    });
   } else if (scenario.type === 'shapeEffects') {
     const named = (name) => Object.values(doc.elements)
       .find((record) => record.src.name === name);

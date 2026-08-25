@@ -1,4 +1,4 @@
-import { applyPatches } from './commands/patch';
+import { applyLocalPatches, applyPatches } from './commands/patch';
 import { commandPatches, commandSelectsInsertedElement, commandTargetIds } from './commands/dispatch';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
@@ -98,7 +98,9 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
   const removedSlideIds = new Set(commands.flatMap((command) =>
     command.type === 'RemoveSlide' ? [command.id] : []));
   const slidePropertyConflict = commands.flatMap((command) =>
-    command.type === 'SetBackground' || command.type === 'SetHidden' ? [command.id] : [])
+    command.type === 'SetBackground' || command.type === 'SetBackgroundImage'
+      || command.type === 'SetBackgroundCrop'
+      || command.type === 'SetHidden' ? [command.id] : [])
     .find((id) => removedSlideIds.has(id));
   // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
   if (slidePropertyConflict) {
@@ -251,6 +253,7 @@ export class Editor {
   undo(): EditorChange | null {
     const entry = this.historyStore.peekUndo();
     if (!entry) return null;
+    // 历史创建后可能已有远端 Patch 改变模型；重放必须重新在完整暂存模型上验真。
     const dirty = applyPatches(this.doc, entry.inverse);
     this.refreshActiveImageResources(entry.inverse);
     this.currentSelection = cloneSelection(entry.selectionBefore);
@@ -279,6 +282,7 @@ export class Editor {
   redo(): EditorChange | null {
     const entry = this.historyStore.peekRedo();
     if (!entry) return null;
+    // redo 尤其可能与远端新增的 OPC 身份相撞，不能沿用命令事务内的可信快速路径。
     const dirty = applyPatches(this.doc, entry.forward);
     this.refreshActiveImageResources(entry.forward);
     this.currentSelection = cloneSelection(entry.selectionAfter);
@@ -329,7 +333,7 @@ export class Editor {
     const selectionBefore = this.selection;
     const identityBefore = structuredClone(this.doc.identity);
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
-      const dirty = applyPatches(this.doc, patches.forward);
+      const dirty = applyLocalPatches(this.doc, patches.forward);
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
       for (const id of dirty.dirtySlides) dirtySlides.add(id);
       if (affectsSlideSequence(patches.forward)) {
@@ -387,7 +391,7 @@ export class Editor {
       else validateEditElements(this.doc, forward
         .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
     } catch (error) {
-      if (inverse.length) applyPatches(this.doc, inverse);
+      if (inverse.length) applyLocalPatches(this.doc, inverse);
       // AddSlide 会惰性创建 OPC 水位；只 Object.assign 会把失败事务新增的字段残留在文档中。
       for (const key of Object.keys(this.doc.identity)) {
         if (!Object.prototype.hasOwnProperty.call(identityBefore, key)) {

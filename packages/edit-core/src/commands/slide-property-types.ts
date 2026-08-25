@@ -1,11 +1,29 @@
-import type { Fill } from '@web-ppt/core';
-import type { SlideId } from '../types';
+import type { Fill, ImageTilePlacement } from '@web-ppt/core';
+import type { ImageCrop, SlideId, SlideImageBackground } from '../types';
 
 export interface SetBackgroundCommand {
   readonly type: 'SetBackground';
   readonly id: SlideId;
   /** null 恢复来源；显式无背景使用 { type: 'none' }。 */
   readonly fill: Exclude<Fill, { type: 'image' }> | null;
+}
+
+export interface SetBackgroundImageCommand {
+  readonly type: 'SetBackgroundImage';
+  readonly id: SlideId;
+  readonly bytes: Uint8Array;
+  readonly mime: string;
+  readonly crop?: ImageCrop;
+  readonly alpha?: number;
+  /** 缺少 tile 表示拉伸铺满页面。 */
+  readonly tile?: ImageTilePlacement;
+}
+
+export interface SetBackgroundCropCommand {
+  readonly type: 'SetBackgroundCrop';
+  readonly id: SlideId;
+  /** null 只清除裁剪，仍保留当前图片背景。 */
+  readonly crop: ImageCrop | null;
 }
 
 export interface SetHiddenCommand {
@@ -18,11 +36,22 @@ export interface SetHiddenCommand {
 export type SlideBackgroundPatch = {
   readonly op: 'set';
   readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
-  readonly value: Exclude<Fill, { type: 'image' }>;
+  readonly value: Fill;
   readonly origin: string;
 } | {
   readonly op: 'del';
   readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
+  readonly origin: string;
+};
+
+export type SlideBackgroundImagePatch = {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'backgroundImage'];
+  readonly value: SlideImageBackground;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'backgroundImage'];
   readonly origin: string;
 };
 
@@ -37,4 +66,4 @@ export type SlideHiddenPatch = {
   readonly origin: string;
 };
 
-export type SlidePropertyPatch = SlideBackgroundPatch | SlideHiddenPatch;
+export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch;

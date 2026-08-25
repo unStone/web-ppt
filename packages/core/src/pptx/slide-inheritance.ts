@@ -2,6 +2,7 @@ import { attr, kid, walk } from '../xml';
 import type { ColorCtx } from './color';
 import { extractLstStyle } from './text';
 import type { LevelStyles, ThemeFonts } from './text';
+import type { ImageMetadata } from '../image-metadata';
 
 export type Rels = Record<string, { type: string; target: string }>;
 
@@ -10,6 +11,7 @@ export interface PptxPackageReader {
   rels(partPath: string): Rels;
   blobUrl(path: string, mime: string): string | null;
   mediaUrl(path: string): string | null;
+  imageMetadata(path: string): ImageMetadata | null;
 }
 
 export interface Theme {

@@ -39,7 +39,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideBackgroundState, SlideHiddenState,
+  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideBackgroundState, SlideHiddenState, SlideImageBackground,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideCreation, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -48,7 +48,7 @@ export type {
 export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementLinkPatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
-  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetBackgroundCommand, SetHiddenCommand, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
+  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLinkCommand, SetStrokeCommand, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,

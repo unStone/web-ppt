@@ -10,6 +10,9 @@ import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libr
 import { runShapeEffectsLibreOfficeContract } from './lib/shape-effects-libreoffice-contract.mjs';
 import { runImageContentLibreOfficeContract } from './lib/image-content-libreoffice-contract.mjs';
 import { runSlidePropertiesLibreOfficeContract } from './lib/slide-properties-libreoffice-contract.mjs';
+import {
+  runSlideImageBackgroundLibreOfficeContract, runSlideImageTileOracleLibreOfficeContract,
+} from './lib/slide-image-background-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -228,6 +231,19 @@ function exportLibreOfficeSvg(label) {
   return readFileSync(svg, 'utf8');
 }
 
+function exportLibreOfficePng(label) {
+  const png = join(out, `${basename(savedPath, extname(savedPath))}.png`);
+  if (existsSync(png)) unlinkSync(png);
+  const exported = spawnSync(soffice, [
+    '--headless', '--norestore', '--convert-to', 'png', '--outdir', out, savedPath,
+  ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
+  if (exported.error) throw exported.error;
+  if (exported.status !== 0 || !existsSync(png)) {
+    throw new Error(`LibreOffice 未导出${label} PNG：${exported.stderr || exported.stdout}`);
+  }
+  return new Uint8Array(readFileSync(png));
+}
+
 function pdfPageCount(path) {
   return readFileSync(path).toString('latin1').match(/\/Type\s*\/Page\b/g)?.length ?? 0;
 }
@@ -256,6 +272,16 @@ let geometryEvidence = '';
 if (basename(savedPath) === 'slide-properties.pptx') {
   geometryEvidence = runSlidePropertiesLibreOfficeContract({
     savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg,
+  });
+}
+if (basename(savedPath) === 'slide-image-background.pptx') {
+  geometryEvidence = runSlideImageBackgroundLibreOfficeContract({
+    savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
+  });
+}
+if (basename(savedPath) === 'slide-image-background-tile-oracle.pptx') {
+  geometryEvidence = runSlideImageTileOracleLibreOfficeContract({
+    exportSvg: exportLibreOfficeSvg,
   });
 }
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {

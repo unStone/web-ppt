@@ -10,6 +10,28 @@ const descendants = (doc, slideId) => {
   return result;
 };
 
+const remapSlideTreeIds = (patch, suffix) => {
+  const remote = structuredClone(patch);
+  const sourceSlideId = remote.path[1];
+  const slideId = `${sourceSlideId}-${suffix}`;
+  const elementIds = new Map(Object.keys(remote.value.records)
+    .map((id) => [id, `${id}-${suffix}`]));
+  const remap = (id) => elementIds.get(id) ?? id;
+  remote.path[1] = slideId;
+  remote.value.slide.id = slideId;
+  remote.value.slide.children = remote.value.slide.children.map(remap);
+  remote.value.slide.dynamicSlideNumbers = remote.value.slide.dynamicSlideNumbers.map(remap);
+  remote.value.slide.dynamicSlideLinks = remote.value.slide.dynamicSlideLinks.map(remap);
+  remote.value.records = Object.fromEntries(Object.entries(remote.value.records).map(([id, record]) => {
+    const mapped = structuredClone(record);
+    mapped.id = remap(id);
+    mapped.parent = record.parent === sourceSlideId ? slideId : remap(record.parent);
+    if (mapped.children) mapped.children = mapped.children.map(remap);
+    return [mapped.id, mapped];
+  }));
+  return remote;
+};
+
 /** DuplicateSlide 的公开模型 seam：守住紧邻副本、内容、身份隔离与原子历史。 */
 export async function runDuplicateSlideContract({ edit, core, load, check }) {
   console.log('\n\x1b[36m▸ DuplicateSlide 独立身份、投影与历史\x1b[0m');
@@ -87,6 +109,48 @@ export async function runDuplicateSlideContract({ edit, core, load, check }) {
       && redo?.createdSlides.has(duplicateId)
       && descendants(doc, duplicateId).join(',') === duplicateTree.join(',')
       && editor.history.undoCount === historyBefore + 1);
+
+  const conflictPresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const conflictDoc = edit.createDoc(conflictPresentation, { idPrefix: 'duplicate-conflict-' });
+  const conflictEditor = new edit.Editor(conflictDoc);
+  const conflictSourceId = conflictDoc.slideOrder[1];
+  const pending = conflictEditor.exec({ type: 'DuplicateSlide', id: conflictSourceId });
+  const pendingId = [...pending.createdSlides][0];
+  conflictEditor.undo();
+  const redoEntry = conflictEditor.history.redoEntries[0];
+  const remote = remapSlideTreeIds(redoEntry.forward[0], 'remote');
+  edit.applyPatches(conflictDoc, [remote]);
+  const remoteId = remote.path[1];
+  const beforeConflictingRedo = {
+    order: conflictDoc.slideOrder.join(','),
+    slides: Object.keys(conflictDoc.slides).sort().join(','),
+    elements: Object.keys(conflictDoc.elements).sort().join(','),
+    selection: JSON.stringify(conflictEditor.selection),
+    undo: conflictEditor.history.undoCount,
+    redo: conflictEditor.history.redoCount,
+  };
+  let conflictingRedoRejected = false;
+  try { conflictEditor.redo(); } catch { conflictingRedoRejected = true; }
+  check('远端页面占用待重做 OPC 身份时，重做原子拒绝且历史仍可恢复',
+    conflictingRedoRejected
+      && !conflictDoc.slides[pendingId] && !!conflictDoc.slides[remoteId]
+      && conflictDoc.slideOrder.join(',') === beforeConflictingRedo.order
+      && Object.keys(conflictDoc.slides).sort().join(',') === beforeConflictingRedo.slides
+      && Object.keys(conflictDoc.elements).sort().join(',') === beforeConflictingRedo.elements
+      && JSON.stringify(conflictEditor.selection) === beforeConflictingRedo.selection
+      && conflictEditor.history.undoCount === beforeConflictingRedo.undo
+      && conflictEditor.history.redoCount === beforeConflictingRedo.redo
+      && (() => { try { edit.validateEditDoc(conflictDoc); return true; } catch { return false; } })());
+  if (conflictingRedoRejected) {
+    edit.applyPatches(conflictDoc, [{ ...remote, op: 'remove' }]);
+    const recovered = conflictEditor.redo();
+    check('冲突远端页移除后，原本的重做记录仍恢复同一页面身份',
+      recovered?.createdSlides.has(pendingId) && !!conflictDoc.slides[pendingId]
+        && (() => { try { edit.validateEditDoc(conflictDoc); return true; } catch { return false; } })());
+  }
+  edit.disposeDoc(conflictDoc);
 
   editor.undo();
   const batchHistory = editor.history.undoCount;

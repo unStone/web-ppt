@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { runClipboardMaterializationContract } from './element-clipboard-materialization-contract.mjs';
+import { makePng } from './ooxml.mjs';
 
 function worldBounds(edit, doc, ids) {
   const points = ids.flatMap((id) => {
@@ -318,10 +319,10 @@ export async function runElementClipboardContract({ edit, core, load, check }) {
     const root = value.roots[0];
     const baseRelationship = value.ooxml.roots[root].relationships[0];
     for (let index = 0; index < count; index++) {
-      const bytes = Buffer.from(`clipboard-resource-${index}`);
+      const bytes = makePng(1, 1, () => [index & 255, index >>> 8, 255 - (index & 255)]);
       const hash = createHash('sha256').update(bytes).digest('hex');
       value.resources.push({
-        hash, mime: 'image/png', extension: 'png', bytes: bytes.toString('base64'),
+        hash, mime: 'image/png', extension: 'png', bytes: Buffer.from(bytes).toString('base64'),
       });
       value.ooxml.roots[root].relationships.push({
         sourceId: `rStress${index}`, type: baseRelationship.type, resourceHash: hash,

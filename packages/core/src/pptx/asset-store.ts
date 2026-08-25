@@ -53,6 +53,11 @@ export class PackageAssetStore {
     return this.urlCache.get(key) ?? null;
   }
 
+  /** 转码后的 URL 仍指回 OPC 原始字节，编辑命令才能无损复用 EMF/WMF 等来源。 */
+  publish(url: string, data: Uint8Array, mime: string): void {
+    if (this.publishAssets) this.packageAssets[url] = { mime, bytes: data };
+  }
+
   /** 只撤销本模块创建的 blob URL；data URI 与 Worker 令牌无需释放。 */
   dispose(): void {
     for (const url of this.objectUrls) {

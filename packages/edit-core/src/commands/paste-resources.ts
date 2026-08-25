@@ -1,11 +1,16 @@
 import { base64ToBytes, sha256 } from '../clipboard-binary';
-import { relationshipPartFor, relativeTarget, resolvePackageTarget } from '../clipboard-source';
+import {
+  packageContentType, packageContentTypeOverride, relationshipPartFor, relativeTarget,
+  resolvePackageTarget, resolveRelationshipTarget,
+} from '../clipboard-source';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource,
 } from '../types';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
 import { parseXmlTree } from '../xml/tree';
 import type { ElementClipboardPayload } from './types';
+import type { ClipboardClosure } from '../clipboard-source';
+import type { OpcPackage } from '@web-ppt/core';
 
 export interface PreparedInsertionClosure {
   relationships: ElementInsertionRelationship[];
@@ -27,7 +32,7 @@ function packageMedia(doc: EditDoc): Map<string, string> {
 }
 
 function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[] {
-  return Object.values(doc.elements).flatMap((record) => {
+  const elements = Object.values(doc.elements).flatMap((record) => {
     if (part !== undefined && record.meta.origin?.part !== part) return [];
     const insertion = record.meta.insertion ? [{
       relationships: [...(record.meta.insertion.relationships ?? [])],
@@ -39,6 +44,14 @@ function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[]
       relationships: [...replacement.relationships], resources: [resource],
     }] : [])];
   });
+  const backgrounds = Object.values(doc.slides).flatMap((record) => {
+    if (part !== undefined && record.origin?.part !== part) return [];
+    const image = record.backgroundImage;
+    const resources = image?.resourceHashes.map((hash) => doc.imageResources[hash]).filter(Boolean) ?? [];
+    return image && resources.length === image.resourceHashes.length
+      ? [{ relationships: [...image.relationships], resources }] : [];
+  });
+  return [...elements, ...backgrounds];
 }
 
 function relationshipIds(doc: EditDoc, part: string): Set<string> {
@@ -114,6 +127,29 @@ function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => s
   };
 }
 
+function directMediaTarget(
+  doc: EditDoc,
+  source: Omit<ElementInsertionResource, 'targetPart' | 'created'>,
+): string {
+  const retained = doc.imageResources[source.hash];
+  if (retained) return retained.targetPart;
+  const pkg = doc.package!;
+  const stem = `web-ppt-${source.hash}`;
+  const session = sha256(new TextEncoder().encode(doc.identity.prefix)).slice(0, 10);
+  for (let serial = 0; ; serial++) {
+    const suffix = serial === 0 ? '' : serial === 1 ? `-${session}` : `-${session}-${serial}`;
+    const targetPart = `ppt/media/${stem}${suffix}.${source.extension}`;
+    const override = packageContentTypeOverride(pkg, targetPart);
+    if (override && override !== source.mime) continue;
+    const bytes = pkg.parts[targetPart];
+    if (!bytes) return targetPart;
+    try {
+      if (sha256(bytes) === source.hash
+        && packageContentType(pkg, targetPart, source.extension) === source.mime) return targetPart;
+    } catch { /* 同名 part 的类型不可信时换一个确定候选。 */ }
+  }
+}
+
 /** 图片替换与剪贴板共用目标 part/关系分配，避免命令伪造一棵空剪贴板树。 */
 export function prepareMediaResourceClosure(
   doc: EditDoc,
@@ -123,9 +159,8 @@ export function prepareMediaResourceClosure(
   source: Omit<ElementInsertionResource, 'targetPart' | 'created'>,
 ): PreparedInsertionClosure {
   if (!doc.package) throw new Error('媒体关系资源需要可写 OPC 包');
-  const { targetByHash, allocateMediaPart } = mediaAllocation(doc);
-  const targetPart = targetByHash.get(source.hash)
-    ?? allocateMediaPart(resourcePrefix(source.mime), source.extension);
+  // 上传与替换已经计算内容哈希；内容寻址名让热路径只检查一个候选，不扫描整包媒体。
+  const targetPart = directMediaTarget(doc, source);
   const resource = { ...source, targetPart, created: !doc.package.parts[targetPart] };
   return {
     relationships: [{
@@ -134,6 +169,106 @@ export function prepareMediaResourceClosure(
     }],
     resources: [resource],
   };
+}
+
+/** 继承背景来自当前包的已知宿主；按关系闭包逐项改写，不能为一次裁剪扫描整包媒体。 */
+export function prepareTrustedSourceClosure(
+  doc: EditDoc,
+  pkg: OpcPackage,
+  source: ClipboardClosure,
+  sourcePart: string,
+  destinationPart: string,
+): PreparedInsertionClosure {
+  if (!doc.package) throw new Error('继承背景关系需要可写 OPC 包');
+  const bytes = pkg.parts[relationshipPartFor(sourcePart)];
+  if (!bytes) throw new Error(`继承背景来源缺少关系 part：${sourcePart}`);
+  const nodes = new Map(xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })
+    .flatMap((node) => {
+      const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
+      return id ? [[id, node] as const] : [];
+    }));
+  const sourceResources = new Map(source.resources.map((resource) => [resource.hash, resource]));
+  const resources = new Map<string, ElementInsertionResource>();
+  const allocateRelationshipId = relationshipIdAllocator(doc, destinationPart);
+  const relationships = source.relationships.map((relationship) => {
+    const node = nodes.get(relationship.sourceId);
+    const type = node && findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
+    const target = node && findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
+    const targetMode = node
+      && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
+    if (!node || type !== relationship.type || !target) {
+      throw new Error(`继承背景来源关系已失配：${relationship.sourceId}`);
+    }
+    const targetId = allocateRelationshipId();
+    if (relationship.targetMode === 'External') {
+      if (targetMode !== 'External' || target !== relationship.target
+        || relationship.resourceHash || relationship.packageTarget) {
+        throw new Error(`继承背景外部关系已失配：${relationship.sourceId}`);
+      }
+      return { sourceId: relationship.sourceId, targetId, type, target, targetMode: 'External' as const };
+    }
+    if (targetMode !== undefined) throw new Error(`继承背景内部关系已失配：${relationship.sourceId}`);
+    let targetPart = resolveRelationshipTarget(sourcePart, target);
+    if (relationship.resourceHash) {
+      const sourceResource = sourceResources.get(relationship.resourceHash);
+      if (!sourceResource) throw new Error(`继承背景媒体关系缺少资源：${relationship.sourceId}`);
+      const retained = resources.get(sourceResource.hash);
+      if (retained) targetPart = retained.targetPart;
+      else {
+        if (!pkg.parts[targetPart]) throw new Error(`继承背景媒体目标不存在：${targetPart}`);
+        resources.set(sourceResource.hash, {
+          ...sourceResource, targetPart, created: false,
+        });
+      }
+    } else if (!relationship.packageTarget || !pkg.parts[targetPart]) {
+      throw new Error(`继承背景包关系目标不存在：${relationship.sourceId}`);
+    }
+    return {
+      sourceId: relationship.sourceId, targetId, type,
+      target: relativeTarget(destinationPart, targetPart),
+    };
+  });
+  return { relationships, resources: [...resources.values()] };
+}
+
+/** 来源与目标是同一 slide 时复用现有关系，裁剪不应制造未引用的新 rId。 */
+export function prepareExistingSourceClosure(
+  pkg: OpcPackage,
+  source: ClipboardClosure,
+  sourcePart: string,
+): PreparedInsertionClosure {
+  const relBytes = pkg.parts[relationshipPartFor(sourcePart)];
+  if (!relBytes) throw new Error(`来源背景缺少关系 part：${sourcePart}`);
+  const nodes = xmlElementChildren(parseXmlTree(relBytes).root, { localName: 'Relationship' });
+  const sourceResources = new Map(source.resources.map((resource) => [resource.hash, resource]));
+  const resources = new Map<string, ElementInsertionResource>();
+  const relationships = source.relationships.map((relationship) => {
+    const node = nodes.find((candidate) =>
+      findXmlAttribute(candidate, { localName: 'Id', namespaceUri: null })?.value === relationship.sourceId);
+    const type = node && findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
+    const target = node && findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
+    const targetMode = node
+      && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
+    if (!node || type !== relationship.type || !target
+      || (targetMode !== undefined && targetMode !== 'External')) {
+      throw new Error(`来源背景关系已失配：${relationship.sourceId}`);
+    }
+    if (relationship.resourceHash) {
+      const resource = sourceResources.get(relationship.resourceHash);
+      if (!resource || targetMode) throw new Error(`来源背景媒体关系无效：${relationship.sourceId}`);
+      resources.set(resource.hash, {
+        ...resource, targetPart: resolveRelationshipTarget(sourcePart, target), created: false,
+      });
+    }
+    return {
+      sourceId: relationship.sourceId,
+      targetId: relationship.sourceId,
+      type,
+      target,
+      ...(targetMode === 'External' ? { targetMode: 'External' as const } : {}),
+    };
+  });
+  return { relationships, resources: [...resources.values()] };
 }
 
 /** 先验证完整闭包并分配所有目标名；调用返回前不得触碰 EditDoc。 */
