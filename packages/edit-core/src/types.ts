@@ -1,5 +1,5 @@
 import type {
-  ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
+  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
@@ -83,6 +83,13 @@ export interface ElementStrokeState {
   readonly value: Stroke | null;
   readonly mixed: boolean;
   /** 任一目标存在直接覆盖时为 true；显式无描边同样属于直接覆盖。 */
+  readonly direct: boolean;
+}
+
+export interface ElementEffectsState {
+  readonly value: Effects;
+  readonly mixed: boolean;
+  /** 空对象也是直接效果：它用于屏蔽版式或主题继承。 */
   readonly direct: boolean;
 }
 

@@ -38,6 +38,10 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
     groups: [FILL, a('prstDash', 'custDash'), a('round', 'bevel', 'miter'),
       a('headEnd'), a('tailEnd'), a('extLst')],
   },
+  [expandedName(DRAWINGML_NS, 'effectLst')]: {
+    groups: [a('blur'), a('fillOverlay'), a('glow'), a('innerShdw'), a('outerShdw'),
+      a('prstShdw'), a('reflection'), a('softEdge')],
+  },
   [expandedName(DRAWINGML_NS, 'rPr')]: {
     groups: [a('ln'), FILL, EFFECT, a('highlight'), a('uLnTx', 'uLn'),
       a('uFillTx', 'uFill'), a('latin'), a('ea'), a('cs'), a('sym'),

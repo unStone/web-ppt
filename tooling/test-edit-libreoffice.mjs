@@ -7,6 +7,7 @@ import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffice-contract.mjs';
 import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libreoffice-contract.mjs';
+import { runShapeEffectsLibreOfficeContract } from './lib/shape-effects-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -346,6 +347,12 @@ if (basename(savedPath) === 'shape-format.pptx') {
     })}`);
   }
   geometryEvidence += `，形状格式 ${gradients} 个渐变/${patterns} 个图案、图片填充描边、线宽/虚线/端点与新增形状`;
+}
+
+if (basename(savedPath) === 'shape-effects.pptx') {
+  geometryEvidence += runShapeEffectsLibreOfficeContract({
+    savedPath, out, soffice, exportSvg: exportLibreOfficeSvg,
+  });
 }
 
 if (basename(savedPath) === 'add-shape.pptx') {

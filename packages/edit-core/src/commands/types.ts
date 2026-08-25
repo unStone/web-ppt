@@ -1,4 +1,4 @@
-import type { Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
+import type { Effects, Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
@@ -189,6 +189,13 @@ export interface SetStrokeCommand {
   readonly stroke: Stroke | { readonly type: 'none' } | null;
 }
 
+export interface SetEffectsCommand {
+  readonly type: 'SetEffects';
+  readonly id: ElementId;
+  /** null 恢复继承；空对象明确写出无效果。 */
+  readonly effects: Effects | null;
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -255,7 +262,8 @@ export interface InsertRowCommand {
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
-  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand;
+  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
+  | SetEffectsCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -289,6 +297,17 @@ export type ElementStrokePatch = {
 } | {
   readonly op: 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
+  readonly origin: string;
+};
+
+export type ElementEffectsPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
+  readonly value: Effects;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
   readonly origin: string;
 };
 
@@ -365,7 +384,7 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementTextPatch | ElementOrderPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementTextPatch | ElementOrderPatch
   | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
 
 export interface CommandPatches {

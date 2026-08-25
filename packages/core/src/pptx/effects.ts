@@ -42,7 +42,8 @@ export function parseEffects(effectLst: Element | null, ctx: ColorCtx): Effects 
     };
   }
 
-  return Object.keys(out).length ? out : undefined;
+  // 显式空 effectLst 会屏蔽主题 effectRef；缺失与空列表的继承语义不同。
+  return Object.keys(out).length || effectLst.localName === 'effectLst' ? out : undefined;
 }
 
 const END_TYPES: Record<string, LineEndType> = {

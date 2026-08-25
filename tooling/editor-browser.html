@@ -58,6 +58,7 @@
       runEditorAddTableBrowserContract, runEditorAddTablePerformanceContract,
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
+    import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -463,6 +464,7 @@
       const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
+      await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });

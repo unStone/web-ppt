@@ -13,6 +13,7 @@ import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fiel
 import { detachedSlideBaselineParts } from './save/remove-slide-parts';
 import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
+import { assertEffects } from './shape-effects';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -331,6 +332,13 @@ export function validateEditDoc(doc: EditDoc): void {
         throw new Error(`元素 ${id} 不能包含描边覆盖`);
       }
       if (record.ovr.stroke !== null) assertStroke(record.ovr.stroke, `元素 ${id} 的描边覆盖`);
+    }
+    if (own(record.ovr, 'effects')) {
+      if (!['shape', 'image', 'group'].includes(record.src.kind)
+        || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不支持二维效果覆盖`);
+      }
+      assertEffects(record.ovr.effects, `元素 ${id} 的二维效果覆盖`);
     }
     if (record.meta.origin) {
       // 母版元素会按页投影成多个只读记录，但仍共享同一个 OOXML 锚点；只有可写节点必须独占锚点。

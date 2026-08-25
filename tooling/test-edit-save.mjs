@@ -18,6 +18,7 @@ import { runMoveSlideSaveContract } from './lib/move-slide-save-contract.mjs';
 import { runRemoveSlideSaveContract } from './lib/remove-slide-save-contract.mjs';
 import { runDuplicateSlideSaveContract } from './lib/duplicate-slide-save-contract.mjs';
 import { runShapeFormatSaveContract } from './lib/shape-format-save-contract.mjs';
+import { runShapeEffectsSaveContract } from './lib/shape-effects-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -238,6 +239,18 @@ await runDuplicateSlideSaveContract({
 });
 
 await runShapeFormatSaveContract({
+  core, edit, load, check, eq, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
+
+await runShapeEffectsSaveContract({
   core, edit, load, check, eq, saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);

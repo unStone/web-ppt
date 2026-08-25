@@ -7,6 +7,7 @@ export { queryParaProps } from './paragraph-properties';
 export { queryBodyProps } from './body-properties';
 export { queryElementFill, SHAPE_PATTERN_PRESETS } from './shape-fill';
 export { queryElementStroke } from './shape-stroke';
+export { queryElementEffects } from './shape-effects';
 export type { VectorFill } from './shape-fill';
 export type { StrokeCommandValue } from './shape-stroke';
 export { validateEditDoc } from './model-invariants';
@@ -31,7 +32,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementFillState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides, ElementStrokeState,
+  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementEffectsState, ElementFillState, ElementId, ElementInsertionSource, ElementMeta, ElementOverrides, ElementStrokeState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideCreation, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -39,10 +40,10 @@ export type {
 } from './types';
 export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, EditorChange,
-  EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementFillPatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
+  EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementEffectsPatch, ElementFillPatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SlideChangeSets, SlideOrderPatch, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
-  SetBodyPropsCommand, SetFillCommand, SetStrokeCommand, TableRowPatch,
+  SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetStrokeCommand, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export {

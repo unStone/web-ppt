@@ -7,6 +7,7 @@ import type { EditDoc, ProjectionInvalidation, TableRowInsertion } from '../type
 import { applyElementTransformPatch } from './element-transform';
 import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
 import { applyElementStrokePatch, isElementStrokePatch, validateElementStrokePatch } from './element-stroke';
+import { applyElementEffectsPatch, isElementEffectsPatch, validateElementEffectsPatch } from './element-effects';
 import {
   applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
 } from './element-order';
@@ -82,6 +83,13 @@ function validatePatch(
     && patch.path[2] === 'ovr' && patch.path[3] === 'fill'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementFillPatch(doc, patch as import('./types').ElementFillPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'effects'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementEffectsPatch(doc, patch as import('./types').ElementEffectsPatch, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -213,6 +221,7 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
+    else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));

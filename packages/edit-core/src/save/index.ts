@@ -10,6 +10,7 @@ import { hasXfrmOverrides } from './xfrm';
 import { hasTextOverrides } from './text';
 import { hasOrderOverride } from './order';
 import { hasShapeFormatOverrides } from './shape-format';
+import { hasEffectsOverride } from './effects';
 import { hasTableRowOverrides } from './table';
 import { materializeElementTreeState } from './insertion';
 import {
@@ -44,6 +45,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   for (const record of Object.values(doc.elements)) {
     if (!hasXfrmOverrides(record) && !hasTextOverrides(record) && !hasOrderOverride(record)
       && !hasShapeFormatOverrides(record)
+      && !hasEffectsOverride(record)
       && !hasTableRowOverrides(record)
       && !record.meta.insertion) continue;
     const origin = record.meta.origin;
