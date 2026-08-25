@@ -5,6 +5,7 @@ import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
 import { slidePatchSets } from './commands/slide-tree';
 import { fitTextShapePatches } from './commands/fit-text-shape';
+import { isImageResourcePatch } from './commands/element-image-content';
 import { writableLayerSiblingIds } from './element-order';
 import type {
   Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
@@ -12,6 +13,9 @@ import type {
 } from './commands/types';
 import { HistoryStore } from './history';
 import type { HistoryPatchLink } from './history';
+import {
+  activeImageResourceHashes, historyImageResourceHashes, imageReachabilityMayChange,
+} from './image-resource-history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
@@ -160,13 +164,19 @@ export class Editor {
   private currentState = 0;
   private savedState = 0;
   private nextState = 1;
+  private activeImageResources: Set<string>;
 
   constructor(doc: EditDoc, options: EditorOptions = {}) {
     validateEditDoc(doc);
     this.doc = doc;
     this.origin = options.origin ?? 'local';
-    this.historyStore = new HistoryStore(options.historyLimit, options.historyByteLimit);
+    this.activeImageResources = activeImageResourceHashes(doc);
+    this.historyStore = new HistoryStore(options.historyLimit, options.historyByteLimit, {
+      externalByteSize: (entries) => this.historyImageResourceBytes(entries),
+      changed: (entries) => this.pruneImageResources(entries),
+    });
     this.history = this.historyStore;
+    this.pruneImageResources([]);
   }
 
   get selection(): Selection { return cloneSelection(this.currentSelection); }
@@ -227,6 +237,7 @@ export class Editor {
     const entry = this.historyStore.peekUndo();
     if (!entry) return null;
     const dirty = applyPatches(this.doc, entry.inverse);
+    this.refreshActiveImageResources(entry.inverse);
     this.currentSelection = cloneSelection(entry.selectionBefore);
     this.historyStore.moveToRedo();
     this.currentState = this.currentState === entry.afterState ? entry.beforeState : this.nextState++;
@@ -252,6 +263,7 @@ export class Editor {
     const entry = this.historyStore.peekRedo();
     if (!entry) return null;
     const dirty = applyPatches(this.doc, entry.forward);
+    this.refreshActiveImageResources(entry.forward);
     this.currentSelection = cloneSelection(entry.selectionAfter);
     this.historyStore.moveToUndo();
     this.currentState = this.currentState === entry.beforeState ? entry.afterState : this.nextState++;
@@ -367,13 +379,17 @@ export class Editor {
     }
 
     const selectionAfter = this.selection;
+    this.refreshActiveImageResources(forward);
     const beforeState = this.currentState;
     if (forward.length) this.currentState = this.nextState++;
     const recordsHistory = forward.length && options.recordHistory !== false && origin === this.origin;
     if (recordsHistory) {
+      // 资源表是按哈希寻址的会话缓存；撤销只切换元素引用，避免新旧 Base64 同时挤占历史预算。
+      const historyForward = forward.filter((patch) => !isImageResourcePatch(patch));
+      const historyInverse = inverse.filter((patch) => !isImageResourcePatch(patch));
       const entry: HistoryEntry = {
-        forward,
-        inverse,
+        forward: historyForward,
+        inverse: historyInverse,
         selectionBefore,
         selectionAfter,
         label,
@@ -434,6 +450,30 @@ export class Editor {
       } catch (error) {
         reportSubscriberError(error);
       }
+    }
+  }
+
+  private refreshActiveImageResources(patches: readonly Patch[]): void {
+    if (imageReachabilityMayChange(patches)) {
+      this.activeImageResources = activeImageResourceHashes(this.doc);
+    }
+  }
+
+  private historyImageResourceBytes(entries: readonly HistoryEntry[]): number {
+    let bytes = 0;
+    for (const hash of historyImageResourceHashes(entries)) {
+      if (this.activeImageResources.has(hash)) continue;
+      const resource = this.doc.imageResources[hash];
+      if (resource) bytes += resource.bytes.length + 256;
+    }
+    return bytes;
+  }
+
+  private pruneImageResources(entries: readonly HistoryEntry[]): void {
+    const retained = historyImageResourceHashes(entries);
+    this.activeImageResources.forEach((hash) => retained.add(hash));
+    for (const hash of Object.keys(this.doc.imageResources)) {
+      if (!retained.has(hash)) delete this.doc.imageResources[hash];
     }
   }
 }

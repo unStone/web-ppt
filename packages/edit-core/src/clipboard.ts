@@ -82,7 +82,11 @@ function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>): SlideEl
   const effective = effectiveElement(doc, id);
   const source = effective.kind === 'group' ? { ...effective, children: [] } : effective;
   const portable = tokenizeElementAssets(
-    doc, source, assets, insertionOwner(doc, id)?.meta.insertion?.resources,
+    doc, source, assets, [
+      ...(insertionOwner(doc, id)?.meta.insertion?.resources ?? []),
+      ...(doc.elements[id].meta.imageReplacement
+        ? [doc.imageResources[doc.elements[id].meta.imageReplacement!.resourceHash]!] : []),
+    ],
   );
   let tableRowAppend: TableRowAppendEditInfo | undefined;
   if (portable.kind === 'table' && portable.editInfo?.tableRowAppend) {
@@ -188,8 +192,16 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     const declarations = namespaces(document);
     for (const id of ids) hosts.set(id, { host: located.get(id)!.host, namespaces: declarations });
   }
-  const insertions = Object.values(doc.elements).flatMap((record) =>
-    record.meta.origin?.part === sourcePart && record.meta.insertion ? [record.meta.insertion] : []);
+  const insertions = Object.values(doc.elements).flatMap((record) => {
+    if (record.meta.origin?.part !== sourcePart) return [];
+    return [
+      ...(record.meta.insertion ? [record.meta.insertion] : []),
+      ...(record.meta.imageReplacement ? [{
+        relationships: record.meta.imageReplacement.relationships,
+        resources: [doc.imageResources[record.meta.imageReplacement.resourceHash]!],
+      }] : []),
+    ];
+  });
   const xmlRoots: Record<string, ClipboardXmlRoot> = Object.create(null);
   const resources = new Map<string, ClipboardResource>();
   roots.forEach((id, index) => {

@@ -1,5 +1,7 @@
 const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+const WEBP_1PX = 'UklGRhwAAABXRUJQVlA4TA8AAAAvAAAAAAcQ/Y/+ByKi/wEA';
 const bytesOf = () => Uint8Array.from(atob(PNG_1PX), (char) => char.charCodeAt(0));
+const webpBytes = () => Uint8Array.from(atob(WEBP_1PX), (char) => char.charCodeAt(0));
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -78,6 +80,20 @@ export async function runEditorAddImageBrowserContract({ openEditor, load }) {
     session.editor.redo();
     if (!session.editor.doc.elements[imageId] || session.editor.selection.ids[0] !== imageId) {
       throw new Error('重做没有恢复同一图片与自动选区');
+    }
+
+    session.editor.exec({
+      type: 'SetCrop', id: imageId, crop: { l: 0.1, t: 0.05, r: 0.15, b: 0.08 },
+    });
+    const replaceBefore = session.editor.effectiveElement(imageId);
+    const viewImageBefore = viewMount.querySelector(`[data-edit-id="${imageId}"]`);
+    await editView.replaceImage(new Blob([webpBytes()], { type: 'application/octet-stream' }));
+    const replaced = session.editor.effectiveElement(imageId);
+    if (!replaced.src.startsWith('data:image/webp;base64,')
+      || JSON.stringify(replaced.crop) !== JSON.stringify(replaceBefore.crop)
+      || replaced.x !== replaceBefore.x || replaced.y !== replaceBefore.y
+      || viewMount.querySelector(`[data-edit-id="${imageId}"]`) === viewImageBefore) {
+      throw new Error('Blob 图片替换没有保留几何/裁剪或同步 view 视图');
     }
 
     const historyBeforeCancel = session.editor.history.undoCount;

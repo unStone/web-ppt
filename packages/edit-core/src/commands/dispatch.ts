@@ -21,8 +21,10 @@ import { duplicateSlidePatches } from './duplicate-slide';
 import { setFillPatches } from './set-fill';
 import { setStrokePatches } from './set-stroke';
 import { setEffectsPatches } from './set-effects';
+import { setCropPatches } from './set-crop';
+import { replaceImagePatches } from './replace-image';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, SetFlipCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
   InsertRowCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -58,6 +60,8 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     { target: 'none', selectInserted: true }),
   AddImage: register<AddImageCommand>(['slideId', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches,
     { target: 'none', selectInserted: true }),
+  ReplaceImage: register<ReplaceImageCommand>(['id', 'bytes', 'mime'], replaceImagePatches),
+  SetCrop: register<SetCropCommand>(['id', 'crop'], setCropPatches),
   AddTable: register<AddTableCommand>(['slideId', 'rows', 'cols', 'rect', 'placeholderId'], addTablePatches,
     { target: 'none', selectInserted: true }),
   AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches, { target: 'none' }),

@@ -59,6 +59,9 @@
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
+    import {
+      publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
+    } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -465,6 +468,8 @@
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
+      const imageCropResult = await runEditorImageCropBrowserContract({ openEditor, load });
+      publishEditorImageCropBrowserResult(report, imageCropResult);
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });

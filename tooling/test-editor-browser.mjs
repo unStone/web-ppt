@@ -242,6 +242,7 @@ async function browserResult(webSocketDebuggerUrl) {
           addShapeP95: report.dataset.addShapeP95,
           addImageError: report.dataset.addImageError,
           addImageP95: report.dataset.addImageP95,
+          imageCropReport: report.dataset.imageCropReport,
           addSlideError: report.dataset.addSlideError,
           addSlideP95: report.dataset.addSlideP95,
           addSlidePages: report.dataset.addSlidePages,
@@ -566,6 +567,7 @@ try {
     + `/frame ${result.bodyPropsFrameError}px`
     + ` · 新增形状偏差/p95 ${result.addShapeError}px/${result.addShapeP95}ms`
     + ` · 新增图片偏差/p95 ${result.addImageError}px/${result.addImageP95}ms`
+    + ` · ${result.imageCropReport}`
     + ` · 新增页${result.addSlidePages}页偏差/p95 ${result.addSlideError}px/${result.addSlideP95}ms`
     + ` · 重排页${result.moveSlidePages}页 p95 ${result.moveSlideP95}ms`
     + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`

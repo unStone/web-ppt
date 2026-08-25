@@ -28,11 +28,16 @@ function packageMedia(doc: EditDoc): Map<string, string> {
 
 function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[] {
   return Object.values(doc.elements).flatMap((record) => {
-    const insertion = (part === undefined || record.meta.origin?.part === part) && record.meta.insertion;
-    return insertion ? [{
-      relationships: [...(insertion.relationships ?? [])],
-      resources: [...(insertion.resources ?? [])],
+    if (part !== undefined && record.meta.origin?.part !== part) return [];
+    const insertion = record.meta.insertion ? [{
+      relationships: [...(record.meta.insertion.relationships ?? [])],
+      resources: [...(record.meta.insertion.resources ?? [])],
     }] : [];
+    const replacement = record.meta.imageReplacement;
+    const resource = replacement && doc.imageResources[replacement.resourceHash];
+    return [...insertion, ...(replacement && resource ? [{
+      relationships: [...replacement.relationships], resources: [resource],
+    }] : [])];
   });
 }
 
@@ -80,6 +85,57 @@ function mediaPartAllocator(used: Set<string>): (prefix: string, extension: stri
   };
 }
 
+function mediaAllocation(doc: EditDoc): {
+  targetByHash: Map<string, string>;
+  allocateMediaPart: (prefix: string, extension: string) => string;
+} {
+  const active = activeClosures(doc);
+  const retained = Object.values(doc.imageResources);
+  const targetByHash = packageMedia(doc);
+  for (const resource of [...active.flatMap((closure) => closure.resources), ...retained]) {
+    targetByHash.set(resource.hash, resource.targetPart);
+  }
+  const usedParts = new Set([
+    ...Object.keys(doc.package!.parts),
+    ...active.flatMap((closure) => closure.resources.map((resource) => resource.targetPart)),
+    ...retained.map((resource) => resource.targetPart),
+  ]);
+  return { targetByHash, allocateMediaPart: mediaPartAllocator(usedParts) };
+}
+
+function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => string {
+  const used = relationshipIds(doc, destinationPart);
+  let serial = 1;
+  return () => {
+    while (used.has(`rId${serial}`)) serial++;
+    const id = `rId${serial++}`;
+    used.add(id);
+    return id;
+  };
+}
+
+/** 图片替换与剪贴板共用目标 part/关系分配，避免命令伪造一棵空剪贴板树。 */
+export function prepareMediaResourceClosure(
+  doc: EditDoc,
+  destinationPart: string,
+  sourceId: string,
+  type: string,
+  source: Omit<ElementInsertionResource, 'targetPart' | 'created'>,
+): PreparedInsertionClosure {
+  if (!doc.package) throw new Error('媒体关系资源需要可写 OPC 包');
+  const { targetByHash, allocateMediaPart } = mediaAllocation(doc);
+  const targetPart = targetByHash.get(source.hash)
+    ?? allocateMediaPart(resourcePrefix(source.mime), source.extension);
+  const resource = { ...source, targetPart, created: !doc.package.parts[targetPart] };
+  return {
+    relationships: [{
+      sourceId, targetId: relationshipIdAllocator(doc, destinationPart)(), type,
+      target: relativeTarget(destinationPart, targetPart),
+    }],
+    resources: [resource],
+  };
+}
+
 /** 先验证完整闭包并分配所有目标名；调用返回前不得触碰 EditDoc。 */
 export function prepareInsertionClosures(
   doc: EditDoc,
@@ -108,24 +164,8 @@ export function prepareInsertionClosures(
     });
   }
 
-  const targetByHash = packageMedia(doc);
-  const active = activeClosures(doc);
-  for (const closure of active) {
-    for (const resource of closure.resources) targetByHash.set(resource.hash, resource.targetPart);
-  }
-  const usedParts = new Set([
-    ...Object.keys(doc.package.parts),
-    ...active.flatMap((closure) => closure.resources.map((resource) => resource.targetPart)),
-  ]);
-  const allocateMediaPart = mediaPartAllocator(usedParts);
-  const usedRelationshipIds = relationshipIds(doc, destinationPart);
-  let relationshipSerial = 1;
-  const allocateRelationshipId = (): string => {
-    while (usedRelationshipIds.has(`rId${relationshipSerial}`)) relationshipSerial++;
-    const id = `rId${relationshipSerial++}`;
-    usedRelationshipIds.add(id);
-    return id;
-  };
+  const { targetByHash, allocateMediaPart } = mediaAllocation(doc);
+  const allocateRelationshipId = relationshipIdAllocator(doc, destinationPart);
 
   const result = new Map<string, PreparedInsertionClosure>();
   for (const root of roots) {

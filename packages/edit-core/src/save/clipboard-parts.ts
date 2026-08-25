@@ -1,5 +1,5 @@
 import { base64ToBytes } from '../clipboard-binary';
-import { relationshipPartFor } from '../clipboard-source';
+import { relationshipPartFor, resolveRelationshipTarget } from '../clipboard-source';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource,
 } from '../types';
@@ -19,18 +19,30 @@ export function clipboardPackageParts(doc: EditDoc): ClipboardPackageParts {
   const relationships = new Map<string, ElementInsertionRelationship[]>();
   const resources = new Map<string, ElementInsertionResource>();
   for (const record of Object.values(doc.elements)) {
-    const insertion = record.meta.insertion;
     const part = record.meta.origin?.part;
-    if (!insertion || !part) continue;
-    const current = relationships.get(part) ?? [];
-    current.push(...(insertion.relationships ?? []));
-    relationships.set(part, current);
-    for (const resource of insertion.resources ?? []) {
-      const previous = resources.get(resource.targetPart);
-      if (previous && (previous.hash !== resource.hash || previous.bytes !== resource.bytes)) {
-        throw new Error(`多个剪贴板资源争用目标 part：${resource.targetPart}`);
+    if (!part) continue;
+    const replacement = record.meta.imageReplacement;
+    const closures = [record.meta.insertion, replacement ? {
+      relationships: replacement.relationships,
+      resources: [doc.imageResources[replacement.resourceHash]!],
+    } : undefined];
+    for (const closure of closures) {
+      if (!closure) continue;
+      const activeRelationships = (closure.relationships ?? []).filter((relationship) =>
+        relationship.targetId !== record.meta.imageReplacement?.suppressedRelationshipId);
+      const current = relationships.get(part) ?? [];
+      current.push(...activeRelationships);
+      relationships.set(part, current);
+      for (const resource of closure.resources ?? []) {
+        const referenced = activeRelationships.some((relationship) => !relationship.targetMode
+          && resolveRelationshipTarget(part, relationship.target) === resource.targetPart);
+        if (!referenced) continue;
+        const previous = resources.get(resource.targetPart);
+        if (previous && (previous.hash !== resource.hash || previous.bytes !== resource.bytes)) {
+          throw new Error(`多个剪贴板资源争用目标 part：${resource.targetPart}`);
+        }
+        resources.set(resource.targetPart, resource);
       }
-      resources.set(resource.targetPart, resource);
     }
   }
   return { relationships, resources };

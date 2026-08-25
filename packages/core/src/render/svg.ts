@@ -29,6 +29,8 @@ function encodeIdPrefix(value: string): string {
 }
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
+// DrawingML srcRect 以十万分数存储；合法编辑值最小可见比例是 1/100000，不能擅自钳到 1%。
+const MIN_CROP_FRACTION = 1 / 100000;
 
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -201,8 +203,8 @@ function paint(fill: Fill, ctx: Ctx, w: number, h: number): string {
       } else if (fill.crop && (fill.crop.l || fill.crop.t || fill.crop.r || fill.crop.b)) {
         // srcRect 裁剪：把原图放大到裁剪后正好铺满，再用 pattern 视口裁掉四周
         const c = fill.crop;
-        const iw = w / Math.max(1 - c.l - c.r, 0.01);
-        const ih = h / Math.max(1 - c.t - c.b, 0.01);
+        const iw = w / Math.max(1 - c.l - c.r, MIN_CROP_FRACTION);
+        const ih = h / Math.max(1 - c.t - c.b, MIN_CROP_FRACTION);
         ctx.defs.push(
           `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${r(w)}" height="${r(h)}">` +
           `<image href="${esc(fill.src)}" x="${r(-c.l * iw)}" y="${r(-c.t * ih)}" ` +
@@ -594,8 +596,8 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
     // 媒体对象没有封面帧时给个深色底板，播放标识才有依托
     img = `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgb(38,42,48)"/>`;
   } else if (el.crop && (el.crop.l || el.crop.t || el.crop.r || el.crop.b)) {
-    const iw = el.w / Math.max(1 - el.crop.l - el.crop.r, 0.01);
-    const ih = el.h / Math.max(1 - el.crop.t - el.crop.b, 0.01);
+    const iw = el.w / Math.max(1 - el.crop.l - el.crop.r, MIN_CROP_FRACTION);
+    const ih = el.h / Math.max(1 - el.crop.t - el.crop.b, MIN_CROP_FRACTION);
     const id = ctx.nextId('c');
     ctx.defs.push(`<clipPath id="${id}"><rect width="${r(el.w)}" height="${r(el.h)}"/></clipPath>`);
     img =

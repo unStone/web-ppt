@@ -45,6 +45,16 @@ export interface ElementInsertionResource {
   readonly created: boolean;
 }
 
+/** 图片替换与新增元素共用关系/媒体闭包，但不伪装成一棵新插入 XML 树。 */
+export interface ElementImageReplacement {
+  readonly src: string;
+  readonly relationships: readonly ElementInsertionRelationship[];
+  /** 大字节只在文档资源表存一份；历史 Patch 仅携带哈希引用。 */
+  readonly resourceHash: string;
+  /** 新建/粘贴图片的来源关系已被新 blip 取代；保存时不能继续把它当活跃引用。 */
+  readonly suppressedRelationshipId?: string;
+}
+
 export type SlideSource = Omit<Slide, 'elements' | 'editInfo'>;
 export type SlideOverrides = Partial<SlideSource>;
 
@@ -90,6 +100,15 @@ export interface ElementEffectsState {
   readonly value: Effects;
   readonly mixed: boolean;
   /** 空对象也是直接效果：它用于屏蔽版式或主题继承。 */
+  readonly direct: boolean;
+}
+
+export type ImageCrop = NonNullable<ImageElement['crop']>;
+
+export interface ElementCropState {
+  readonly value: ImageElement['crop'];
+  readonly mixed: boolean;
+  /** 全零裁剪仍是直接格式；只有 SetCrop(null) 才恢复来源。 */
   readonly direct: boolean;
 }
 
@@ -261,6 +280,8 @@ export interface ElementMeta {
   created?: boolean;
   /** 仅新建树根携带；保存从初始基线重建时据此重新插入宿主。 */
   insertion?: ElementInsertionSource;
+  /** 只承载当前有效替换资源；历史中的旧闭包不会污染活跃 OPC 图。 */
+  imageReplacement?: ElementImageReplacement;
   hiddenByUser?: boolean;
   editable: EditableKind;
 }
@@ -362,6 +383,8 @@ export interface EditDoc {
   layoutOrder: string[];
   elements: Record<ElementId, ElementRecord>;
   removedElements: Record<ElementId, RemovedElementRecord>;
+  /** 会话图片按内容寻址；未被当前元素引用的条目仍可供历史逆向 Patch 恢复。 */
+  imageResources: Record<string, ElementInsertionResource>;
   readonly package: OpcPackage | null;
   saveState: EditSaveState;
 }

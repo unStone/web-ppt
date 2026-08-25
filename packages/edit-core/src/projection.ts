@@ -165,8 +165,20 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const record = elementRecord(doc, id);
   const { tableCells, tableRows, ...overrides } = record.ovr;
   let out = { ...record.src, ...overrides } as unknown as SlideElement;
-  if (record.meta.insertion?.resources?.length) {
-    out = hydrateElementInsertionAssets(out, record.meta.insertion.resources);
+  if (record.meta.imageReplacement && out.kind === 'image') {
+    out = { ...out, src: record.meta.imageReplacement.src };
+  }
+  const replacementResource = record.meta.imageReplacement
+    ? doc.imageResources[record.meta.imageReplacement.resourceHash] : undefined;
+  if (record.meta.imageReplacement && !replacementResource) {
+    throw new Error(`图片替换资源不存在：${record.meta.imageReplacement.resourceHash}`);
+  }
+  const resources = [
+    ...(record.meta.insertion?.resources ?? []),
+    ...(replacementResource ? [replacementResource] : []),
+  ];
+  if (resources.length) {
+    out = hydrateElementInsertionAssets(out, resources);
   }
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;

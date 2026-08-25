@@ -1,12 +1,18 @@
-import { detectImageMime } from '@web-ppt/edit-core';
+import { detectImageMime, MAX_REPLACE_IMAGE_BYTES } from '@web-ppt/edit-core';
 import type { AddImageCommand, Editor, ElementId, SlideId } from '@web-ppt/edit-core';
 
 const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
-const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
+const DEFAULT_MAX_BYTES = MAX_REPLACE_IMAGE_BYTES;
 
 export interface ImageInsertOptions {
   readonly rect?: AddImageCommand['rect'];
   /** 默认 5MB：留足默认 8MB 历史预算所需的 Base64 开销，保证插入后仍可撤销。 */
+  readonly maxBytes?: number;
+}
+
+export interface ImageReplaceOptions {
+  /** 默认使用当前单选图片。 */
+  readonly id?: ElementId;
   readonly maxBytes?: number;
 }
 
@@ -125,15 +131,60 @@ export class ImageInsertionController {
     }
   }
 
+  async replace(id: ElementId, blob: Blob, options: ImageReplaceOptions = {}): Promise<ElementId> {
+    if (this.destroyed) throw new Error('不能通过已销毁视图替换图片');
+    if (!this.options.editable()) throw new Error('查看模式不能替换图片');
+    const slideId = this.options.slideId();
+    let reading = false;
+    try {
+      if (!blob || typeof blob.arrayBuffer !== 'function' || !Number.isFinite(blob.size)) {
+        throw new Error('替换图片必须提供 File 或 Blob');
+      }
+      const maximum = assertMaxBytes(options.maxBytes);
+      if (blob.size <= 0) throw new Error('图片文件不能为空');
+      if (blob.size > maximum) {
+        throw new Error(`图片大小不能超过 ${formatByteLimit(maximum)}，以保证本地撤销可用`);
+      }
+      this.setReading(true);
+      reading = true;
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      this.assertContext(slideId, '读取');
+      const mime = detectImageMime(bytes);
+      if (!mime) throw new Error('只支持完整的 PNG、JPEG、GIF 或 WebP 图片');
+      this.assertContext(slideId, '提交');
+      this.options.editor.exec({ type: 'ReplaceImage', id, bytes, mime });
+      return id;
+    } catch (error) {
+      this.report(error);
+      throw error;
+    } finally {
+      if (reading) this.setReading(false);
+    }
+  }
+
   choose(options: InternalImageInsertOptions = {}): Promise<ElementId | null> {
+    return this.chooseFile('选择要插入的图片', 'webPptImageInput', (file) => this.insert(file, options));
+  }
+
+  chooseReplacement(id: ElementId, options: ImageReplaceOptions = {}): Promise<ElementId | null> {
+    return this.chooseFile(
+      '选择替换图片', 'webPptImageReplacementInput', (file) => this.replace(id, file, options),
+    );
+  }
+
+  private chooseFile(
+    label: string,
+    marker: 'webPptImageInput' | 'webPptImageReplacementInput',
+    commit: (file: File) => Promise<ElementId>,
+  ): Promise<ElementId | null> {
     if (this.destroyed) return Promise.reject(new Error('不能通过已销毁视图选择图片'));
     if (!this.options.editable()) return Promise.reject(new Error('查看模式不能选择图片'));
     if (this.cancelChooser) return Promise.reject(new Error('已有图片文件选择正在进行'));
     const input = this.options.root.ownerDocument.createElement('input');
     input.type = 'file';
     input.accept = ACCEPT;
-    input.dataset.webPptImageInput = '';
-    input.setAttribute('aria-label', '选择要插入的图片');
+    input.dataset[marker] = '';
+    input.setAttribute('aria-label', label);
     input.tabIndex = -1;
     input.style.position = 'absolute';
     input.style.width = '1px';
@@ -159,7 +210,7 @@ export class ImageInsertionController {
           return;
         }
         input.remove();
-        void this.insert(file, options).then((id) => finish(id), (error) => finish(null, error));
+        void commit(file).then((id) => finish(id), (error) => finish(null, error));
       }, { once: true });
       try { input.click(); } catch (error) { finish(null, error); }
     });

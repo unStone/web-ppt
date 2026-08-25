@@ -16,6 +16,13 @@ export interface HistoryPatchLink {
   readonly related: readonly Patch['path'][];
 }
 
+export interface HistoryStoreHooks {
+  /** 不复制进 Patch、但仅因历史可达而常驻的外部资源字节。 */
+  readonly externalByteSize?: (entries: readonly HistoryEntry[]) => number;
+  /** 历史驱逐/清空后通知资源所有者做可达性回收。 */
+  readonly changed?: (entries: readonly HistoryEntry[]) => void;
+}
+
 const clonePatch = <P extends Patch>(patch: P): P => ({
   ...patch,
   path: [...patch.path],
@@ -101,19 +108,22 @@ export class HistoryStore implements History {
   private readonly redoList: StoredHistoryEntry[] = [];
   private readonly limit: number;
   private readonly byteLimit: number;
+  private readonly hooks: HistoryStoreHooks;
   private bytes = 0;
+  private externalBytes = 0;
   private mergeBarrier = false;
 
-  constructor(limit = 200, byteLimit = 8 * 1024 * 1024) {
+  constructor(limit = 200, byteLimit = 8 * 1024 * 1024, hooks: HistoryStoreHooks = {}) {
     if (!Number.isInteger(limit) || limit < 0) throw new Error('历史深度必须是非负整数');
     if (!Number.isInteger(byteLimit) || byteLimit < 0) throw new Error('历史字节上限必须是非负整数');
     this.limit = limit;
     this.byteLimit = byteLimit;
+    this.hooks = hooks;
   }
 
   get undoCount(): number { return this.undoList.length; }
   get redoCount(): number { return this.redoList.length; }
-  get byteSize(): number { return this.bytes; }
+  get byteSize(): number { return this.bytes + this.externalBytes; }
   get undoEntries(): readonly HistoryEntry[] { return this.undoList.map(cloneHistoryEntry); }
   get redoEntries(): readonly HistoryEntry[] { return this.redoList.map(cloneHistoryEntry); }
 
@@ -121,6 +131,8 @@ export class HistoryStore implements History {
     this.undoList.length = 0;
     this.redoList.length = 0;
     this.bytes = 0;
+    this.externalBytes = 0;
+    this.hooks.changed?.([]);
   }
 
   breakMerge(): void { this.mergeBarrier = true; }
@@ -162,6 +174,7 @@ export class HistoryStore implements History {
       this.redoList[index] = { ...this.redoList[index], beforeState: state, afterState };
       state = afterState;
     }
+    this.rebudget();
     this.breakMerge();
   }
 
@@ -194,11 +207,7 @@ export class HistoryStore implements History {
     this.mergeBarrier = false;
     for (const redo of this.redoList) this.bytes -= this.sizeOf(redo);
     this.redoList.length = 0;
-    while (this.undoList.length > this.limit || this.bytes > this.byteLimit) {
-      const removed = this.undoList.shift();
-      if (!removed) break;
-      this.bytes -= this.sizeOf(removed);
-    }
+    this.rebudget();
   }
 
   peekUndo(): StoredHistoryEntry | null { return this.undoList[this.undoList.length - 1] ?? null; }
@@ -207,13 +216,35 @@ export class HistoryStore implements History {
   moveToRedo(): void {
     const entry = this.undoList.pop();
     if (entry) this.redoList.push(entry);
+    this.rebudget();
     this.breakMerge();
   }
 
   moveToUndo(): void {
     const entry = this.redoList.pop();
     if (entry) this.undoList.push(entry);
+    this.rebudget();
     this.breakMerge();
+  }
+
+  private entries(): readonly StoredHistoryEntry[] {
+    return [...this.undoList, ...this.redoList];
+  }
+
+  private rebudget(): void {
+    const measure = (): void => {
+      const value = this.hooks.externalByteSize?.(this.entries()) ?? 0;
+      this.externalBytes = Number.isFinite(value) && value > 0 ? Math.ceil(value) : 0;
+    };
+    measure();
+    while (this.undoList.length + this.redoList.length > this.limit
+      || this.bytes + this.externalBytes > this.byteLimit) {
+      const removed = this.undoList.shift() ?? this.redoList.shift();
+      if (!removed) break;
+      this.bytes -= this.sizeOf(removed);
+      measure();
+    }
+    this.hooks.changed?.(this.entries());
   }
 
   private sizeOf(entry: HistoryEntry): number {

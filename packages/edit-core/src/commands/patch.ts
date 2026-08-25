@@ -3,11 +3,16 @@ import {
   invalidateElement, invalidateElementStructure, invalidateSlideSequence, invalidateSlideStructure,
 } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
-import type { EditDoc, ProjectionInvalidation, TableRowInsertion } from '../types';
+import type { EditDoc, ElementInsertionResource, ProjectionInvalidation, TableRowInsertion } from '../types';
 import { applyElementTransformPatch } from './element-transform';
 import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
 import { applyElementStrokePatch, isElementStrokePatch, validateElementStrokePatch } from './element-stroke';
 import { applyElementEffectsPatch, isElementEffectsPatch, validateElementEffectsPatch } from './element-effects';
+import {
+  applyElementCropPatch, applyElementImageReplacementPatch, applyImageResourcePatch,
+  assertImageReplacement, isElementCropPatch, isElementImageReplacementPatch, isImageResourcePatch,
+  validateElementCropPatch, validateElementImageReplacementPatch, validateImageResourcePatch,
+} from './element-image-content';
 import {
   applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
 } from './element-order';
@@ -26,12 +31,16 @@ function validatePatch(
   input: Patch,
   index: number,
   stagedTableRows: ReadonlyMap<string, Record<string, TableRowInsertion>>,
+  stagedImageResources: Readonly<Record<string, ElementInsertionResource>>,
 ): void {
   const patch = input as Partial<Patch> & { path?: unknown; value?: unknown };
   if (!['set', 'del', 'remove', 'insert', 'move'].includes(String(patch.op))) {
     throw new Error(`Patch ${index} 的 op 不受支持`);
   }
   if (typeof patch.origin !== 'string' || !patch.origin) throw new Error(`Patch ${index} 缺少 origin`);
+  if (isImageResourcePatch(input)) {
+    return;
+  }
   if (Array.isArray(patch.path) && patch.path.length === 2
     && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
     && (patch.op === 'remove' || patch.op === 'insert')) {
@@ -83,6 +92,22 @@ function validatePatch(
     && patch.path[2] === 'ovr' && patch.path[3] === 'fill'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementFillPatch(doc, patch as import('./types').ElementFillPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'crop'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementCropPatch(doc, patch as import('./types').ElementCropPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'meta' && patch.path[3] === 'imageReplacement'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementImageReplacementPatch(
+      doc, patch as import('./types').ElementImageReplacementPatch, index, stagedImageResources,
+    );
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -177,9 +202,16 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
 
 export function applyPatches(doc: EditDoc, patches: readonly Patch[]): ProjectionInvalidation {
   validatePatchRelations(doc, patches);
+  const stagedImageResources = { ...doc.imageResources };
+  patches.forEach((patch, index) => {
+    if (!isImageResourcePatch(patch)) return;
+    validateImageResourcePatch(patch, index);
+    if (patch.op === 'set') stagedImageResources[patch.path[1]] = patch.value;
+    else delete stagedImageResources[patch.path[1]];
+  });
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   patches.forEach((patch, index) => {
-    validatePatch(doc, patch, index, stagedTableRows);
+    validatePatch(doc, patch, index, stagedTableRows, stagedImageResources);
     if (!isTableRowPatch(patch)) return;
     const current = stagedTableRows.get(patch.path[1])
       ?? { ...doc.elements[patch.path[1]]?.ovr.tableRows };
@@ -187,11 +219,28 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     else delete current[patch.path[4]];
     stagedTableRows.set(patch.path[1], current);
   });
+  const resourceHashes = new Set(patches.filter(isImageResourcePatch).map((patch) => patch.path[1]));
+  if (resourceHashes.size) {
+    for (const record of Object.values(doc.elements)) {
+      let replacement = record.meta.imageReplacement;
+      for (const patch of patches) {
+        if (!isElementImageReplacementPatch(patch) || patch.path[1] !== record.id) continue;
+        replacement = patch.op === 'set' ? patch.value : undefined;
+      }
+      if (replacement && resourceHashes.has(replacement.resourceHash) && record.meta.origin) {
+        assertImageReplacement(
+          replacement, record.meta.origin.part, stagedImageResources,
+          `元素 ${record.id} 的最终图片替换资源`,
+        );
+      }
+    }
+  }
   validateElementOrderPatchSet(doc, patches);
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
   for (const patch of patches) {
+    if (isImageResourcePatch(patch)) continue;
     if (isSlideOrderPatch(patch)) {
       const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
       for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
@@ -222,6 +271,9 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
     else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
+    else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
+    else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
+    else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));

@@ -12,6 +12,7 @@ import {
   outermostHitCandidate, tableCellAddressFromPath,
 } from './selection-hit';
 import type { TextEditorController } from './text-editor';
+import type { ImageCropGestureController } from './image-crop-gesture';
 
 interface SlidePointerControllerOptions {
   readonly editor: Editor;
@@ -24,6 +25,7 @@ interface SlidePointerControllerOptions {
   readonly move: MoveGestureController;
   readonly resize: ResizeGestureController;
   readonly rotation: RotationGestureController;
+  readonly crop: ImageCropGestureController;
   editable(): boolean;
   slideId(): SlideId;
   hitCandidates(path: EventTarget[]): ElementId[];
@@ -40,6 +42,14 @@ export class SlidePointerController {
     if (!o.editable() || event.button !== 0 || event.isPrimary === false) return;
     if (shouldYieldPointerEvent(event) || o.textEditor.owns(event.target)) return;
     if (o.textEditor.isActive) o.textEditor.close(false);
+    const cropHandle = o.crop.handleAt(event.target);
+    if (cropHandle) {
+      o.move.cancel(); o.resize.cancel(); o.rotation.cancel(); o.marquee.cancel();
+      o.crop.begin(event, cropHandle);
+      event.preventDefault();
+      o.root.focus({ preventScroll: true });
+      return;
+    }
     if (isRotationHandleAt(event.target, o.interactionLayer)) {
       const selection = o.editor.selection;
       if (selection.kind === 'elements'
@@ -69,6 +79,14 @@ export class SlidePointerController {
     }
     o.resize.cancel();
     const candidates = o.hitCandidates(event.composedPath());
+    if (o.crop.activeId) {
+      if (candidates.includes(o.crop.activeId)) {
+        event.preventDefault();
+        o.root.focus({ preventScroll: true });
+        return;
+      }
+      o.crop.exit();
+    }
     const selection = o.editor.selection;
     const enteredGroup = enteredGroupOnSlide(
       o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
@@ -115,6 +133,7 @@ export class SlidePointerController {
     this.options.marquee.move(event);
     this.options.rotation.move(event);
     this.options.resize.move(event);
+    this.options.crop.move(event);
     this.options.move.move(event);
   };
 
@@ -122,6 +141,7 @@ export class SlidePointerController {
     this.options.marquee.finish(event);
     this.options.rotation.finish(event);
     this.options.resize.finish(event);
+    this.options.crop.finish(event);
     this.options.move.finish(event);
   };
 
@@ -129,6 +149,7 @@ export class SlidePointerController {
     this.options.marquee.cancelPointer(event);
     this.options.rotation.cancelPointer(event);
     this.options.resize.cancelPointer(event);
+    this.options.crop.cancelPointer(event);
     this.options.move.cancelPointer(event);
   };
 
@@ -151,6 +172,12 @@ export class SlidePointerController {
         placeholderId: picture.id,
         rect: { x: element.x, y: element.y, w: element.w, h: element.h },
       }).catch(() => { /* 错误已作为 webpptimageerror 事件交给宿主。 */ });
+      event.preventDefault();
+      return;
+    }
+    const image = textId && o.editor.doc.elements[textId]?.src.kind === 'image'
+      ? o.editor.doc.elements[textId] : null;
+    if (image && o.crop.enter(image.id)) {
       event.preventDefault();
       return;
     }

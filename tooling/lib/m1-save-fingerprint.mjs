@@ -224,6 +224,22 @@ if (mode === 'projected') {
       type: 'PasteElements', payload: edit.copyElements(doc, [copied.id]),
       at: { parentId: doc.slideOrder[slideIndex], x: scenario.copied.x, y: scenario.copied.y },
     });
+  } else if (scenario.type === 'imageContent') {
+    if (!target) throw new Error(`M1 指纹固件缺少图片目标：${scenario.targetName}`);
+    editor.exec({ type: 'SetCrop', id: target.id, crop: scenario.crop });
+    editor.exec({
+      type: 'ReplaceImage', id: target.id,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+    });
+    editor.exec({
+      type: 'AddImage', slideId: doc.slideOrder[slideIndex],
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      rect: scenario.add,
+    });
+    editor.exec({
+      type: 'PasteElements', payload: edit.copyElements(doc, [target.id]),
+      at: { parentId: doc.slideOrder[slideIndex], ...scenario.copy },
+    });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

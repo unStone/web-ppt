@@ -1,5 +1,4 @@
 import type { ImageElement } from '@web-ppt/core';
-import { bytesToBase64, sha256 } from '../clipboard-binary';
 import { insertionResourceToken } from '../clipboard-assets';
 import { allocateElementId } from '../document';
 import { elementOrder } from '../element-order';
@@ -11,7 +10,7 @@ import { removeElementPatches } from './element-tree';
 import type {
   AddImageCommand, ClipboardResource, CommandPatches, ElementClipboardPayload, ElementTreePatch,
 } from './types';
-import { validateImageFormat } from './image-format';
+import { createImageResource } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 
@@ -19,21 +18,8 @@ const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relatio
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const SOURCE_RID = 'rIdImage';
 
-function copiedBytes(value: unknown): Uint8Array {
-  if (!ArrayBuffer.isView(value) || Object.prototype.toString.call(value) !== '[object Uint8Array]') {
-    throw new Error('AddImage.bytes 必须是 Uint8Array');
-  }
-  const view = value as Uint8Array;
-  if (!view.byteLength) throw new Error('AddImage.bytes 不能为空');
-  return new Uint8Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
-}
-
 function imageResource(command: AddImageCommand): ClipboardResource {
-  const bytes = copiedBytes(command.bytes);
-  const format = validateImageFormat(bytes, command.mime);
-  return {
-    hash: sha256(bytes), mime: command.mime, extension: format.extension, bytes: bytesToBase64(bytes),
-  };
+  return createImageResource(command.bytes, command.mime, 'AddImage');
 }
 
 function pictureMarkup(spid: number, name: string, rect: AddImageCommand['rect']): string {

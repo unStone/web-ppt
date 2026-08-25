@@ -193,7 +193,7 @@ export function clipboardClosure(
   pkg: OpcPackage,
   sourcePart: string,
   host: XmlElement,
-  insertions: readonly ElementInsertionSource[] = [],
+  insertions: readonly Pick<ElementInsertionSource, 'relationships' | 'resources'>[] = [],
 ): ClipboardClosure {
   const ids = relationshipIds(host);
   if (!ids.length) return { relationships: [], resources: [] };

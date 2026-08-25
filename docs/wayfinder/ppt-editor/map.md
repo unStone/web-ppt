@@ -72,6 +72,7 @@ tracker: local-markdown
 - [复制页面并重建独立 OPC 身份](tickets/046-duplicate-slide.md) — 稳定页面树副本与 baseline 驱动的独立 slide/notes 闭包接通多视图、历史、section 和最小保存；Chrome 性能预算与 LibreOffice oracle 均通过。
 - [编辑形状的矢量填充与描边](tickets/047-shape-fill-stroke.md) — 规范化直接格式命令与查询 seam 接通矢量填充、形状/图片描边、多视图、历史和保留型保存；Chrome 预算与 LibreOffice 线宽/虚线/端点 oracle 均通过。
 - [编辑形状与图片的二维效果](tickets/048-shape-effects.md) — `SetEffects` 以直接空列表/恢复来源的双语义接通形状、图片和组的四类效果、增量多视图与保留型保存；四项 Chrome 独立预算及 LibreOffice 像素/重存 oracle 均通过。
+- [替换并裁剪图片内容](tickets/049-replace-crop-image.md) — `ReplaceImage`、`SetCrop` 与双矩形手势接通文件替换、来源裁剪、历史资源回收、共享媒体闭包和最小保存；Chrome 60 图片提交/帧 p95 0.5/0.1ms，LibreOffice 非对称像素 oracle 通过。
 
 ## Not yet specified
 

@@ -24,7 +24,8 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'remove-slide.pptx', slides: 3 }),
   Object.freeze({ file: 'duplicate-slide.pptx', slides: 5 }),
   Object.freeze({ file: 'shape-format.pptx', slides: 1 }),
-  Object.freeze({ file: 'shape-effects.pptx', slides: 1 }),
+  Object.freeze({ file: 'shape-effects.pptx', slides: 2 }),
+  Object.freeze({ file: 'image-content.pptx', slides: 1 }),
 ]);
 
 export const EDIT_SAVE_OFFICE_MANIFEST = 'office-artifacts.json';

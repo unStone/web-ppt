@@ -172,13 +172,17 @@ export function detectImageMime(bytes: Uint8Array): SupportedImageMime | null {
   return null;
 }
 
-export function validateImageFormat(bytes: Uint8Array, mime: unknown): { extension: string } {
+export function validateImageFormat(
+  bytes: Uint8Array,
+  mime: unknown,
+  command = 'AddImage',
+): { extension: string } {
   if (typeof mime !== 'string' || !Object.prototype.hasOwnProperty.call(FORMATS, mime)) {
-    throw new Error(`AddImage.mime 不支持：${String(mime)}`);
+    throw new Error(`${command}.mime 不支持：${String(mime)}`);
   }
   const format = FORMATS[mime as SupportedImageMime];
   if (detectImageMime(bytes) !== mime) {
-    throw new Error(`AddImage.bytes 与声明格式 ${mime} 不一致或容器不完整`);
+    throw new Error(`${command}.bytes 与声明格式 ${mime} 不一致或容器不完整`);
   }
   return { extension: format.extension };
 }

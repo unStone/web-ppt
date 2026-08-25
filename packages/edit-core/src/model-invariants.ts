@@ -14,6 +14,8 @@ import { detachedSlideBaselineParts } from './save/remove-slide-parts';
 import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
+import { assertImageCrop, isEditablePicture } from './image-content';
+import { assertImageReplacement, assertImageResource } from './commands/element-image-content';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -167,6 +169,13 @@ export function validateEditDoc(doc: EditDoc): void {
   if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object'
     || !Array.isArray(doc.saveState.createdParts) || !Array.isArray(doc.saveState.sourceSlideParts)) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');
+  }
+  if (!doc.imageResources || typeof doc.imageResources !== 'object') {
+    throw new Error('编辑文档缺少图片资源表');
+  }
+  for (const [hash, resource] of Object.entries(doc.imageResources)) {
+    assertImageResource(resource, `图片资源 ${hash}`);
+    if (resource.hash !== hash) throw new Error(`图片资源 key 与哈希不一致：${hash}`);
   }
   const detachedBaselines = detachedSlideBaselineParts(doc);
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
@@ -339,6 +348,23 @@ export function validateEditDoc(doc: EditDoc): void {
         throw new Error(`元素 ${id} 不支持二维效果覆盖`);
       }
       assertEffects(record.ovr.effects, `元素 ${id} 的二维效果覆盖`);
+    }
+    if (own(record.ovr, 'crop')) {
+      if (record.src.kind !== 'image' || !isEditablePicture(record.src)
+        || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不支持图片裁剪覆盖`);
+      }
+      assertImageCrop(record.ovr.crop, `元素 ${id} 的图片裁剪覆盖`);
+    }
+    if (record.meta.imageReplacement) {
+      if (record.src.kind !== 'image' || !isEditablePicture(record.src)
+        || record.meta.editable !== 'full' || !record.meta.origin) {
+        throw new Error(`元素 ${id} 不支持图片替换资源`);
+      }
+      assertImageReplacement(
+        record.meta.imageReplacement, record.meta.origin.part, doc.imageResources,
+        `元素 ${id} 的图片替换资源`,
+      );
     }
     if (record.meta.origin) {
       // 母版元素会按页投影成多个只读记录，但仍共享同一个 OOXML 锚点；只有可写节点必须独占锚点。

@@ -152,6 +152,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
     elements,
     removedElements: {},
+    imageResources: {},
     package: pkg,
     saveState: {
       baselines: Object.create(null), createdParts: [],
@@ -177,6 +178,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     layoutOrder: [],
     elements: {},
     removedElements: {},
+    imageResources: {},
     package: null,
     saveState: { baselines: Object.create(null), createdParts: [], sourceSlideParts: [] },
   };
@@ -233,6 +235,7 @@ export function disposeDoc(doc: EditDoc): void {
   doc.saveState.baselines = Object.create(null);
   doc.saveState.createdParts = [];
   doc.saveState.sourceSlideParts = [];
+  doc.imageResources = {};
   // assignPackage 只释放保存模块创建的自有包；原始解析包由上面的 Presentation.dispose 释放。
   assignPackage(doc, null);
 }

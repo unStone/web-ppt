@@ -22,9 +22,11 @@ import { SlideDomRenderer } from './slide-dom-renderer';
 import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
 import { ImageInsertionController } from './image-insertion';
 import type { ImageInsertOptions } from './image-insertion';
+import type { ImageReplaceOptions } from './image-insertion';
 import { SlidePointerController } from './slide-pointer-controller';
 import { insertTable } from './table-insertion';
 import type { TableInsertOptions } from './table-insertion';
+import { ImageCropGestureController } from './image-crop-gesture';
 
 export type EditorMode = 'view' | 'edit';
 
@@ -71,7 +73,12 @@ export interface SlideEditor {
   setBodyProps(props: TextBodyPropertyOverrides): boolean;
   insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
   chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
+  replaceImage(file: Blob, options?: ImageReplaceOptions): Promise<ElementId>;
+  chooseReplacementImage(options?: ImageReplaceOptions): Promise<ElementId | null>;
   insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
+  /** 双击图片之外的框架无关入口；省略 id 时使用当前单选图片。 */
+  startImageCrop(id?: ElementId): boolean;
+  endImageCrop(): void;
   destroy(): void;
 }
 
@@ -95,6 +102,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly moveGesture: MoveGestureController;
   private readonly resizeGesture: ResizeGestureController;
   private readonly rotationGesture: RotationGestureController;
+  private readonly imageCropGesture: ImageCropGestureController;
   private readonly domRenderer: SlideDomRenderer;
   private readonly textEditor: TextEditorController;
   private readonly imageInsertion: ImageInsertionController;
@@ -105,6 +113,17 @@ class DomSlideEditor implements SlideEditor {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit') return;
     if (this.textEditor.owns(event.target)) return;
+    if (this.imageCropGesture.activeId && event.key === 'Enter') {
+      this.imageCropGesture.commitGesture();
+      this.imageCropGesture.exit();
+      event.preventDefault();
+      return;
+    }
+    if (this.imageCropGesture.activeId && event.key === 'Escape') {
+      this.imageCropGesture.exit();
+      event.preventDefault();
+      return;
+    }
     if (this.marqueeGesture.modifier(event)) event.preventDefault();
     if (this.moveGesture.modifier(event)) event.preventDefault();
     if (this.rotationGesture.modifier(event)) event.preventDefault();
@@ -261,12 +280,18 @@ class DomSlideEditor implements SlideEditor {
       editor: session.editor,
       zoom: () => this.currentZoom,
     });
+    this.imageCropGesture = new ImageCropGestureController({
+      root: this.element, stage: this.stage, interactionLayer: this.interactionLayer,
+      editor: session.editor, editable: () => this.currentMode === 'edit',
+      slideId: () => this.currentSlide, zoom: () => this.currentZoom,
+      renderSelection: () => this.domRenderer.renderSelection(this.session.editor.selection),
+    });
     this.pointer = new SlidePointerController({
       editor: session.editor, root: this.element,
       staticLayer: this.staticLayer, interactionLayer: this.interactionLayer,
       textEditor: this.textEditor, imageInsertion: this.imageInsertion,
       marquee: this.marqueeGesture, move: this.moveGesture,
-      resize: this.resizeGesture, rotation: this.rotationGesture,
+      resize: this.resizeGesture, rotation: this.rotationGesture, crop: this.imageCropGesture,
       editable: () => this.currentMode === 'edit', slideId: () => this.currentSlide,
       hitCandidates: (path) => this.hitCandidates(path),
     });
@@ -323,18 +348,41 @@ class DomSlideEditor implements SlideEditor {
     return this.imageInsertion.choose(options);
   }
 
+  replaceImage(file: Blob, options: ImageReplaceOptions = {}): Promise<ElementId> {
+    const id = this.selectedImageId(options.id);
+    return this.imageInsertion.replace(id, file, options);
+  }
+
+  chooseReplacementImage(options: ImageReplaceOptions = {}): Promise<ElementId | null> {
+    const id = this.selectedImageId(options.id);
+    return this.imageInsertion.chooseReplacement(id, options);
+  }
+
   insertTable(rows: number, cols: number, options: TableInsertOptions = {}): ElementId {
     if (this.isDestroyed) throw new Error('不能通过已销毁视图插入表格');
     if (this.currentMode !== 'edit') throw new Error('查看模式不能插入表格');
     return insertTable(this.session.editor, this.currentSlide, rows, cols, options);
   }
 
+  startImageCrop(id?: ElementId): boolean {
+    if (this.isDestroyed || this.currentMode !== 'edit') return false;
+    const selection = this.session.editor.selection;
+    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1
+      ? selection.ids[0] : undefined);
+    return !!target && this.imageCropGesture.enter(target);
+  }
+
+  endImageCrop(): void { this.imageCropGesture.exit(); }
+
   setMode(mode: EditorMode): void {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
     if (mode !== this.currentMode) {
       this.cancelGestures();
       this.keyboard.breakSequence();
-      if (mode === 'view') this.textEditor.close(false);
+      if (mode === 'view') {
+        this.textEditor.close(false);
+        this.imageCropGesture.exit();
+      }
     }
     this.currentMode = mode;
     this.element.dataset.mode = mode;
@@ -351,6 +399,7 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
     this.cancelGestures();
+    this.imageCropGesture.exit();
     this.keyboard.breakSequence();
     this.textEditor.close(false);
     this.currentSlide = slideId;
@@ -366,6 +415,7 @@ class DomSlideEditor implements SlideEditor {
     this.currentZoom = zoom;
     this.stage.style.transform = `scale(${zoom})`;
     this.domRenderer.renderSelection(this.session.editor.selection);
+    this.imageCropGesture.sync(this.session.editor.selection);
   }
 
   setSnapping(enabled: boolean): void {
@@ -382,6 +432,7 @@ class DomSlideEditor implements SlideEditor {
     this.keyboard.breakSequence();
     this.textEditor.destroy();
     this.imageInsertion.destroy();
+    this.imageCropGesture.destroy();
     this.unsubscribe();
     this.unbindEvents();
     sessionState(this.session).views.delete(this);
@@ -390,6 +441,7 @@ class DomSlideEditor implements SlideEditor {
 
   private render(): void {
     this.domRenderer.render(this.session.editor.selection);
+    this.imageCropGesture.sync(this.session.editor.selection);
     this.textEditor.refreshStatic();
   }
 
@@ -398,6 +450,16 @@ class DomSlideEditor implements SlideEditor {
     return [this.interactionLayer, this.staticLayer].flatMap((root) =>
       selectableElementIdsFromPath(this.session.editor.doc, path, root))
       .filter((id) => !seen.has(id) && !!seen.add(id));
+  }
+
+  private selectedImageId(explicit?: ElementId): ElementId {
+    const selection = this.session.editor.selection;
+    const id = explicit ?? (selection.kind === 'elements' && selection.ids.length === 1
+      ? selection.ids[0] : undefined);
+    if (!id || this.session.editor.doc.elements[id]?.src.kind !== 'image') {
+      throw new Error('替换图片需要指定图片或先单选一张图片');
+    }
+    return id;
   }
 
   private update(change: EditorChange): void {
@@ -414,6 +476,7 @@ class DomSlideEditor implements SlideEditor {
     }
     this.domRenderer.update(change, this.textEditor.activeElementId);
     this.textEditor.update(change);
+    this.imageCropGesture.sync(change.selection);
   }
 
   private cancelGestures(): void {
@@ -421,9 +484,14 @@ class DomSlideEditor implements SlideEditor {
     this.moveGesture.cancel();
     this.resizeGesture.cancel();
     this.rotationGesture.cancel();
+    this.imageCropGesture.cancelGesture();
   }
 
   private cancelActiveGesture(): boolean {
+    if (this.imageCropGesture.isGestureActive) {
+      this.imageCropGesture.cancelGesture();
+      return true;
+    }
     const gesture = [this.marqueeGesture, this.rotationGesture, this.resizeGesture, this.moveGesture]
       .find((candidate) => candidate.isActive);
     gesture?.cancel();
@@ -432,7 +500,8 @@ class DomSlideEditor implements SlideEditor {
 
   private hasActiveGesture(): boolean {
     return this.marqueeGesture.isActive || this.moveGesture.isActive
-      || this.resizeGesture.isActive || this.rotationGesture.isActive;
+      || this.resizeGesture.isActive || this.rotationGesture.isActive
+      || this.imageCropGesture.isGestureActive;
   }
 }
 

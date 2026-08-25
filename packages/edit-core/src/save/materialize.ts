@@ -6,6 +6,7 @@ import { patchElementXfrm } from './xfrm';
 import { patchTableGeometry, patchTableRows } from './table';
 import { patchElementShapeFormat } from './shape-format';
 import { patchElementEffects } from './effects';
+import { patchElementImageContent } from './image-content';
 
 /** 插入片段与整页保存必须经过同一条覆盖物化管线，避免二次复制丢失编辑。 */
 export function materializeElementOverrides(
@@ -23,6 +24,7 @@ export function materializeElementOverrides(
     patchElementXfrm(document, record);
     patchElementShapeFormat(document, record);
     patchElementEffects(document, record);
+    patchElementImageContent(document, record);
     if (!structuralContentAlreadyMaterialized.has(record.id)) patchTableRows(document, record);
     patchTableGeometry(document, record);
     patchElementText(document, record);

@@ -1,6 +1,6 @@
 import type { Effects, Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
 import type {
-  EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
+  EditableKind, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
@@ -141,6 +141,20 @@ export interface AddImageCommand {
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
+export interface ReplaceImageCommand {
+  readonly type: 'ReplaceImage';
+  readonly id: ElementId;
+  readonly bytes: Uint8Array;
+  readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+}
+
+export interface SetCropCommand {
+  readonly type: 'SetCrop';
+  readonly id: ElementId;
+  /** null 恢复来源；全零对象明确写出不裁剪。 */
+  readonly crop: ImageCrop | null;
+}
+
 export interface AddTableCommand {
   readonly type: 'AddTable';
   readonly slideId: SlideId;
@@ -261,7 +275,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand;
 
@@ -308,6 +322,39 @@ export type ElementEffectsPatch = {
 } | {
   readonly op: 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
+  readonly origin: string;
+};
+
+export type ElementCropPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
+  readonly value: ImageCrop;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
+  readonly origin: string;
+};
+
+export type ElementImageReplacementPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
+  readonly value: ElementImageReplacement;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
+  readonly origin: string;
+};
+
+export type ImageResourcePatch = {
+  readonly op: 'set';
+  readonly path: readonly ['imageResources', string];
+  readonly value: ElementInsertionResource;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['imageResources', string];
   readonly origin: string;
 };
 
@@ -384,7 +431,7 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementTextPatch | ElementOrderPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
   | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
 
 export interface CommandPatches {

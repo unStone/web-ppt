@@ -106,6 +106,22 @@ export class PointerGestureLifecycle {
     return active.started ? 'gesture' : 'click';
   }
 
+  /** 键盘确认使用最后一次指针快照；先清理 capture/rAF，再执行提交，避免订阅回调重入活动手势。 */
+  commit(): boolean {
+    const active = this.active;
+    if (!active) return false;
+    let commit: (() => void) | null = null;
+    try {
+      commit = active.started ? active.gesture.finish(active.snapshot) : null;
+    } catch (error) {
+      this.clear(active);
+      throw error;
+    }
+    this.clear(active);
+    commit?.();
+    return active.started;
+  }
+
   modifier(event: KeyboardEvent): boolean {
     const active = this.active;
     if (!active || !['Shift', 'Alt', 'Control', 'Meta'].includes(event.key)) return false;
