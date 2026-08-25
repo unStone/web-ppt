@@ -33,6 +33,30 @@ export async function runFrameworkAdapterContract({ lib, load, check }) {
   adapter.setView({ mode: 'view', zoom: 1.25, textMode: 'svg', snapping: false });
   check('相同受控属性不制造订阅更新', snapshots === snapshotsBeforeNoop);
 
+  const recoverySource = load('sample-edit-xfrm.pptx');
+  const recoverySeed = await lib.openEditor(recoverySource, { idPrefix: 'adapter-recovery-' });
+  const recoveryFrames = [];
+  const stopRecovery = recoverySeed.editor.subscribeRecovery((frame) => recoveryFrames.push(frame));
+  const recoverySlide = recoverySeed.editor.doc.slideOrder[0];
+  const recoveryElement = recoverySeed.editor.doc.slides[recoverySlide].children[0];
+  const recoveryX = recoverySeed.editor.effectiveElement(recoveryElement).x + 19;
+  recoverySeed.editor.exec({ type: 'SetXfrm', id: recoveryElement, x: recoveryX });
+  stopRecovery();
+  recoverySeed.dispose();
+  const recoveryAdapter = lib.createWebPptAdapter();
+  recoveryAdapter.attach(document.createElement('div'));
+  const unrecoveredSession = await recoveryAdapter.setDocument({
+    source: recoverySource, openOptions: { idPrefix: 'adapter-recovery-' },
+  });
+  const recoveredSession = await recoveryAdapter.setDocument({
+    source: recoverySource,
+    openOptions: { idPrefix: 'adapter-recovery-', recoveryFrames },
+  });
+  check('同源文件新增恢复日志时 adapter 重开并在挂载前恢复',
+    recoveredSession !== unrecoveredSession && unrecoveredSession.disposed
+      && recoveredSession.editor.effectiveElement(recoveryElement).x === recoveryX);
+  recoveryAdapter.dispose();
+
   adapter.setView({ mode: 'edit', zoom: 0.75 });
   const slideId = first.editor.doc.slideOrder[0];
   const elementId = first.editor.doc.slides[slideId].children[0];

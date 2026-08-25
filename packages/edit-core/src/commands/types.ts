@@ -491,4 +491,6 @@ export interface EditorOptions {
   readonly origin?: string;
   readonly historyLimit?: number;
   readonly historyByteLimit?: number;
+  /** 新解析文档的恢复日志；构造期间原子回放，不进入历史或再次广播。 */
+  readonly recoveryFrames?: readonly import('../recovery-types').RecoveryFrame[];
 }

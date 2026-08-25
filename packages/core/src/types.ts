@@ -53,6 +53,14 @@ export interface Presentation {
 export interface PresentationEditInfo {
   /** 演示文稿内可用于新增页的真实版式；id 使用 OPC part，跨解析保持稳定。 */
   layouts: SlideLayoutTemplate[];
+  /** 非 OPC 输入在 edit 模式保留会话 URL 的原字节，供复制、转换与崩溃恢复同步取用。 */
+  assets?: PresentationEditAsset[];
+}
+
+export interface PresentationEditAsset {
+  readonly url: string;
+  readonly mime: string;
+  readonly bytes: Uint8Array;
 }
 
 export interface SlideLayoutTemplate {

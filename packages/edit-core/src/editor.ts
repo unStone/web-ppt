@@ -22,6 +22,8 @@ import {
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
+import { RecoveryJournal, restoreRecoveryFrames } from './recovery';
+import type { RecoveryFrameSource, RecoverySubscriber } from './recovery-types';
 import {
   cloneSelection, isElementDescendantOf, normalizeSelection, selectionAfterStructure,
 } from './selection';
@@ -180,6 +182,7 @@ export class Editor {
   private readonly historyStore: HistoryStore;
   private readonly origin: string;
   private readonly subscribers = new Set<EditorSubscriber>();
+  private readonly recoveryJournal: RecoveryJournal;
   private currentSelection: Selection = { kind: 'none' };
   private currentState = 0;
   private savedState = 0;
@@ -190,6 +193,15 @@ export class Editor {
     validateEditDoc(doc);
     this.doc = doc;
     this.origin = options.origin ?? 'local';
+    const recovered = options.recoveryFrames?.length
+      ? restoreRecoveryFrames(doc, options.recoveryFrames)
+      : { selection: { kind: 'none' } as const, dirty: false, sequence: 0 };
+    this.currentSelection = cloneSelection(recovered.selection);
+    if (recovered.dirty) {
+      this.currentState = 1;
+      this.nextState = 2;
+    }
+    this.recoveryJournal = new RecoveryJournal(recovered.sequence);
     this.activeImageResources = activeImageResourceHashes(doc);
     this.historyStore = new HistoryStore(options.historyLimit, options.historyByteLimit, {
       externalByteSize: (entries) => this.historyImageResourceBytes(entries),
@@ -215,8 +227,10 @@ export class Editor {
   }
 
   markSaved(): void {
+    const changed = this.isDirty();
     this.savedState = this.currentState;
     this.historyStore.breakMerge();
+    if (changed) this.emitRecovery('savepoint', [], '保存点');
   }
 
   select(selection: Selection): void {
@@ -224,6 +238,7 @@ export class Editor {
     if (JSON.stringify(next) === JSON.stringify(this.currentSelection)) return;
     this.currentSelection = next;
     this.historyStore.breakMerge();
+    this.emitRecovery('selection', [], '选择');
     this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set(), new Set());
   }
 
@@ -231,6 +246,10 @@ export class Editor {
     if (typeof subscriber !== 'function') throw new Error('订阅者必须是函数');
     this.subscribers.add(subscriber);
     return () => { this.subscribers.delete(subscriber); };
+  }
+
+  subscribeRecovery(subscriber: RecoverySubscriber): () => void {
+    return this.recoveryJournal.subscribe(subscriber);
   }
 
   exec(...commands: Command[]): TransactionResult {
@@ -273,6 +292,7 @@ export class Editor {
       ...slidePatchSets(this.doc, entry.inverse),
       ...dirty,
     };
+    this.emitRecovery('undo', entry.inverse, entry.label);
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
@@ -302,6 +322,7 @@ export class Editor {
       ...slidePatchSets(this.doc, entry.forward),
       ...dirty,
     };
+    this.emitRecovery('redo', entry.forward, entry.label);
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
@@ -321,6 +342,8 @@ export class Editor {
     options: TransactionOptions,
   ): TransactionResult {
     validateCommandRelations(this.doc, commands);
+    const operationTime = options.time ?? Date.now();
+    if (!Number.isFinite(operationTime)) throw new Error('事务时间必须是有限数字');
     const forward: Patch[] = [];
     const inverse: Patch[] = [];
     const dirtyElements = new Set<ElementId>();
@@ -423,7 +446,7 @@ export class Editor {
         selectionBefore,
         selectionAfter,
         label,
-        time: options.time ?? Date.now(),
+        time: operationTime,
         ...(options.mergeKey ? { mergeKey: options.mergeKey } : {}),
         affectedSlides: [...new Set([...dirtySlides, ...slideChanges.notesSlides])],
       };
@@ -435,6 +458,7 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
+      this.emitRecovery(forward.length ? 'transaction' : 'selection', forward, label, operationTime);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
@@ -446,6 +470,24 @@ export class Editor {
       forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
       ...slideChanges,
     };
+  }
+
+  private emitRecovery(
+    source: RecoveryFrameSource,
+    patches: readonly Patch[],
+    label: string,
+    time = Date.now(),
+  ): void {
+    this.recoveryJournal.emit({
+      source,
+      patches,
+      doc: this.doc,
+      identity: this.doc.identity,
+      selection: this.currentSelection,
+      dirty: this.isDirty(),
+      label,
+      time,
+    });
   }
 
   private emit(

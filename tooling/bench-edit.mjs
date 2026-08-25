@@ -62,6 +62,16 @@ const historyRebase = editable.editDoc?.historyRebaseMsPerOp;
 check('200 组历史上的远端 rebase ≤ 8ms', typeof historyRebase === 'number'
   && historyRebase <= 8 && editable.editDoc.historyRebaseOps === 1000,
   `${typeof historyRebase === 'number' ? historyRebase.toFixed(3) : '缺失'}ms/次`);
+const recoveryMs = editable.editDoc?.recoveryMs;
+const recoverySerializeMs = editable.editDoc?.recoverySerializeMs;
+check('50MB 原包 / 1,000 帧 JSON 恢复 ≤ 500ms', typeof recoveryMs === 'number'
+  && typeof recoverySerializeMs === 'number' && recoveryMs <= 500 && recoverySerializeMs <= 100
+  && editable.editDoc.recoveryFrames === 1000
+  && editable.editDoc.recoveryInputBytes >= 50 * 1024 * 1024
+  && editable.editDoc.recoveryBytes > 0 && editable.editDoc.recoveryChecksum > 0,
+  `序列化 ${typeof recoverySerializeMs === 'number' ? recoverySerializeMs.toFixed(1) : '缺失'}ms，`
+    + `回放 ${typeof recoveryMs === 'number' ? recoveryMs.toFixed(1) : '缺失'}ms，`
+    + `日志 ${((editable.editDoc?.recoveryBytes ?? 0) / 1024).toFixed(1)}KB`);
 const elementDom = editable.editDoc?.elementCommitDomMsPerOp;
 check('脏元素提交并替换 DOM ≤ 16ms', typeof elementDom === 'number' && elementDom <= 16
   && editable.editDoc.elementDomNodes > 0,

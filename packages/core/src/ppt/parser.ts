@@ -1372,7 +1372,22 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
   }
 
   if (!slides.length) throw new Error('.ppt 中未找到幻灯片');
-  return { width, height, slides, source: 'ppt' };
+  const editAssets = edit ? blobs.flatMap((url, index) => {
+    const blip = url?.startsWith('blob:') ? blips[index] : undefined;
+    return url && blip ? [{ url, mime: blip.mime, bytes: blip.data.slice() }] : [];
+  }) : [];
+  let disposed = false;
+  return {
+    width, height, slides, source: 'ppt',
+    ...(edit ? { editInfo: { layouts: [], assets: editAssets } } : {}),
+    dispose: () => {
+      if (disposed) return;
+      disposed = true;
+      for (const url of blobs) if (url?.startsWith('blob:')) {
+        try { URL.revokeObjectURL(url); } catch { /* data URI 与已释放 URL 无需处理。 */ }
+      }
+    },
+  };
 }
 
 /**

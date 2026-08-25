@@ -6,6 +6,13 @@
 
 ### 新增
 
+- `@web-ppt/edit-core` 新增版本化 `RecoveryFrame`、`Editor.subscribeRecovery()` 与
+  `restoreRecoveryFrames()`：事务、撤销/重做、非历史写入、选区、保存点、图片资源和身份水位都能按
+  严格序号写成纯 JSON。会话图片 URL 在 patch 中先变成保留 token，资源闭包缺失会原子拒绝；回放先在
+  写时复制模型上完整验真，并拒绝身份水位倒退，坏尾帧不会污染目标；恢复保留选区与脏状态，
+  但不伪造旧历史。未订阅时普通编辑零日志深拷贝。210 页 / 50MB 基准中，1,000 帧为 316.3KB，
+  JSON 往返 1.6ms、回放 269.9ms；`@web-ppt/editor.openEditor()` 可在挂载前透传同一日志。
+
 - `renderSlideToSvg` 新增 `RenderOptions.idPrefix`。指定后，同一页与同一前缀会生成
   逐字节相同的 SVG，供编辑器增量更新和确定性比较使用；省略时仍维持全局唯一 id，
   主视图与缩略图同时挂载不会发生 defs 冲突。

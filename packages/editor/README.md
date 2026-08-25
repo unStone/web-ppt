@@ -53,6 +53,13 @@ view.destroy();             // destroys only this mounted view
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs
 ```
 
+`openEditor()` also accepts `idPrefix` plus `recoveryFrames` from `@web-ppt/edit-core`. The prefix must be the
+one stored with those frames; replay finishes atomically before the session or any DOM view becomes observable.
+The package intentionally does not choose an IndexedDB schema, source fingerprint, retention policy, or recovery
+prompt for its host application. Framework adapters treat `openOptions` as immutable input: replace the
+`recoveryFrames` array reference when loading a different journal, so the same source is reopened without hashing
+the entire log on every framework render.
+
 ## Framework adapter contract
 
 `createWebPptAdapter()` is the lifecycle boundary used by `@web-ppt/react` and `@web-ppt/vue`; Svelte, Web

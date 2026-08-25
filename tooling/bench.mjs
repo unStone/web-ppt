@@ -135,6 +135,43 @@ if (EDIT && editLib) {
   metrics.editDoc = { createDocMs, projectionMs, cacheMs };
   report(`  EditDoc: 建模 ${createDocMs.toFixed(1)}ms · 冷投影 ${projectionMs.toFixed(1)}ms · 缓存 ${cacheMs.toFixed(2)}ms`);
 
+  const recoverySource = editLib.createDoc(p, { idPrefix: 'bench-recovery-' });
+  const recoveryBase = editLib.createDoc(p, { idPrefix: 'bench-recovery-' });
+  const recoveryTarget = Object.values(recoverySource.elements).find((record) =>
+    record.meta.editable !== 'none' && Number.isFinite(record.src.x));
+  if (!recoveryTarget || !recoveryBase.package) throw new Error('恢复性能基准缺少可编辑元素或原包');
+  const recoveryFrames = [];
+  const recoveryEditor = new editLib.Editor(recoverySource);
+  const unsubscribeRecovery = recoveryEditor.subscribeRecovery((frame) => recoveryFrames.push(frame));
+  const recoveryOps = 1000;
+  for (let index = 0; index < recoveryOps; index++) {
+    recoveryEditor.transaction((tx) => tx.exec({
+      type: 'SetXfrm', id: recoveryTarget.id, x: recoveryTarget.src.x + 1 + (index & 1),
+    }), '恢复性能采样', { recordHistory: false });
+  }
+  unsubscribeRecovery();
+  const recoverySerializeStart = performance.now();
+  const recoveryJson = JSON.stringify(recoveryFrames);
+  const recoveryPersisted = JSON.parse(recoveryJson);
+  const recoverySerializeMs = performance.now() - recoverySerializeStart;
+  const recoveryPaddingPart = 'ppt/media/recovery-benchmark.bin';
+  recoveryBase.package.parts[recoveryPaddingPart] = new Uint8Array(50 * 1024 * 1024);
+  const recoveryInputBytes = Object.values(recoveryBase.package.parts)
+    .reduce((sum, bytes) => sum + bytes.length, 0);
+  const recoveryStart = performance.now();
+  const restoredEditor = new editLib.Editor(recoveryBase, { recoveryFrames: recoveryPersisted });
+  const recoveryMs = performance.now() - recoveryStart;
+  delete recoveryBase.package.parts[recoveryPaddingPart];
+  metrics.editDoc.recoveryFrames = recoveryFrames.length;
+  metrics.editDoc.recoveryBytes = recoveryJson.length;
+  metrics.editDoc.recoveryInputBytes = recoveryInputBytes;
+  metrics.editDoc.recoverySerializeMs = recoverySerializeMs;
+  metrics.editDoc.recoveryMs = recoveryMs;
+  metrics.editDoc.recoveryChecksum = editLib.effectiveElement(recoveryBase, recoveryTarget.id).x
+    + restoredEditor.history.undoCount;
+  report(`  50MB 原包 / ${recoveryFrames.length} 帧恢复: JSON ${(recoveryJson.length / 1024).toFixed(1)}KB / `
+    + `序列化 ${recoverySerializeMs.toFixed(1)}ms / 回放 ${recoveryMs.toFixed(1)}ms`);
+
   // 保存只会解析脏 part；这里故意把 210 页的全部 XML 都过一遍，给 500ms 保存预算留足余量。
   const xmlEntries = Object.entries(editDoc.package?.parts ?? {})
     .filter(([path]) => /\.(?:xml|rels|vml)$/i.test(path));

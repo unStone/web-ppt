@@ -84,6 +84,31 @@ the two projection methods; none of their runtimes enter this package.
 Collaborative clients must pass a stable, client-unique `origin`; appended-row identities include it so two
 structured-cloned documents can merge concurrent appends without sharing a path.
 
+For crash recovery, subscribe to the separate JSON journal. It reports the patches that actually took effect—
+including undo, redo, non-history writes, selection changes, savepoints, image resources, and allocator
+watermarks. With no subscriber, commits do not clone recovery data. Persist frames in sequence order and keep the
+first frame's `identity.prefix` beside the source-file key; construct the fresh document with that same prefix:
+
+```ts
+import { createDoc, Editor, type RecoveryFrame } from '@web-ppt/edit-core';
+
+const frames: RecoveryFrame[] = [];
+const stop = editor.subscribeRecovery((frame) => frames.push(frame));
+
+// After reopening and parsing the same source file:
+const recoveredDoc = createDoc(reopenedSource, { idPrefix: frames[0].identity.prefix });
+const recovered = new Editor(recoveredDoc, {
+  recoveryFrames: JSON.parse(JSON.stringify(frames)),
+});
+```
+
+Replay validates the version, ordering, source prefix, every patch, selection, and the complete final model on a
+copy before swapping it into the target document. A bad tail therefore cannot leave a half-restored document.
+The recovered current state and dirty checkpoint are preserved; the old undo stack deliberately is not. Use
+`restoreRecoveryFrames()` directly only on a freshly parsed document before exposing it to views. Session-only
+image URLs are replaced by reserved patch tokens; replay requires a one-to-one asset sidecar and either rebinds
+the source OPC part or restores embedded legacy `.ppt` bytes. A missing sidecar fails closed.
+
 `RemoveElement` recursively removes an element tree while its inverse patch retains stable parent/z identity.
 For a populated placeholder, the first command writes an empty-text override and keeps the shape; the next
 command removes it. Save patches only the owning OOXML host or paragraph list and intentionally retains media

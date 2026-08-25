@@ -82,6 +82,29 @@ if (element.kind === 'shape' && element.text) {
 协同客户端必须传入跨客户端唯一且稳定的 `origin`；追加行身份会包含它，两个 structuredClone 出来的
 文档并发追加时才不会占用同一条 patch 路径。
 
+崩溃恢复使用独立的纯 JSON 日志订阅。它记录真正生效的 patch，覆盖撤销、重做、非历史写入、选区、
+保存点、图片资源与全部身份水位；没有订阅者时，普通提交不会为恢复数据做深拷贝。持久化层应按序号
+追加帧，并把首帧的 `identity.prefix` 与源文件 key 一起保存；重开同一源文件时用同一前缀建模：
+
+```ts
+import { createDoc, Editor, type RecoveryFrame } from '@web-ppt/edit-core';
+
+const frames: RecoveryFrame[] = [];
+const stop = editor.subscribeRecovery((frame) => frames.push(frame));
+
+// 重新打开并解析同一源文件后：
+const recoveredDoc = createDoc(reopenedSource, { idPrefix: frames[0].identity.prefix });
+const recovered = new Editor(recoveredDoc, {
+  recoveryFrames: JSON.parse(JSON.stringify(frames)),
+});
+```
+
+回放会在副本上校验版本、顺序、源前缀、每组 patch、选区和最终完整模型，全部通过后才交换到目标文档；
+坏尾帧不会留下半恢复状态。恢复会保留当前内容与脏保存点，但有意不伪造旧撤销栈。直接调用
+`restoreRecoveryFrames()` 时，也只能用于尚未暴露给视图的新解析文档。仅会话有效的图片 URL 会先变成
+保留 patch token；回放要求资源 sidecar 与 token 一一对应，再按 OPC part 重绑，或恢复旧 `.ppt` 内嵌字节。
+sidecar 缺失时直接拒绝，不能留下失效 URL。
+
 `RemoveElement` 会递归移除元素树，逆 patch 保留稳定 parent/z 身份。有内容的占位符第一次执行时只写入
 空文本覆盖并保留形状，下一次才删除。保存只补丁拥有该元素的 OOXML 宿主或段落列表，并刻意保留可能被
 其它元素共享的媒体与关系。

@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { runCommandHistoryContract } from './lib/command-history-contract.mjs';
+import { runRecoveryJournalContract } from './lib/recovery-journal-contract.mjs';
 import { runElementDeleteContract } from './lib/element-delete-contract.mjs';
 import { runElementDeleteSaveContract } from './lib/element-delete-save-contract.mjs';
 import { runElementLayerContract } from './lib/element-layer-contract.mjs';
@@ -117,6 +118,7 @@ await runAutofitTextContract({ edit, core, load, check });
 await runShapeAutofitEditContract({ edit, core, load, check });
 await runBodyPropsEditContract({ edit, core, load, check });
 await runHyperlinkContract({ edit, core, load, check });
+await runRecoveryJournalContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

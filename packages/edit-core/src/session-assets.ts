@@ -1,4 +1,4 @@
-import type { SlideElement } from '@web-ppt/core';
+import type { PresentationEditAsset, SlideElement } from '@web-ppt/core';
 import { sha256 } from './clipboard-binary';
 import type { ClipboardResource } from './commands/types';
 import type { EditDoc, ElementInsertionResource } from './types';
@@ -8,6 +8,7 @@ const RESOURCE_TOKEN = 'web-ppt-resource:';
 interface DocAsset {
   readonly mime: string;
   readonly bytes: Uint8Array;
+  readonly sourcePart?: string;
   hash?: string;
 }
 
@@ -40,19 +41,25 @@ function walkStrings(value: unknown, visit: (value: string) => string, mutate: b
 }
 
 /** 保存会替换 doc.package；解析期 URL 与字节的对应关系必须在建模时保留下来。 */
-export function registerSessionAssets(doc: EditDoc): void {
+export function registerSessionAssets(
+  doc: EditDoc,
+  editAssets: readonly PresentationEditAsset[] = [],
+): void {
   const pkg = doc.package;
-  if (!pkg) return;
-  const assets = new Map<string, DocAsset>();
+  const assets = new Map<string, DocAsset>(editAssets.map((asset) => [asset.url, { ...asset }]));
   const capture = (value: string): string => {
     if (!value.startsWith('blob:') && !value.startsWith('asset:')) return value;
-    const asset = pkg.assets?.[value];
+    const asset = pkg?.assets?.[value];
     if (asset) assets.set(value, { ...asset });
     return value;
   };
   for (const record of Object.values(doc.elements)) walkStrings(record.src, capture, false);
   for (const record of Object.values(doc.slides)) walkStrings(record.src, capture, false);
   docAssets.set(doc, assets);
+}
+
+export function sessionAsset(doc: EditDoc, url: string): DocAsset | undefined {
+  return docAssets.get(doc)?.get(url) ?? doc.package?.assets?.[url];
 }
 
 export function releaseSessionAssets(doc: EditDoc): void {

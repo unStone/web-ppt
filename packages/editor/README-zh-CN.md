@@ -52,6 +52,11 @@ view.destroy();             // 只销毁这一份视图
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 ```
 
+`openEditor()` 同样接受 `@web-ppt/edit-core` 的 `idPrefix` 与 `recoveryFrames`。前缀必须使用日志旁保存的
+原值；回放会在会话和任何 DOM 视图对外可见前原子完成。本包有意不替产品决定 IndexedDB schema、
+源文件指纹、保留策略或恢复提示。框架 adapter 把 `openOptions` 当作不可变输入；切换日志时应替换
+`recoveryFrames` 数组引用，这样同源文件会重开，又不必在每次框架 render 时哈希整份日志。
+
 ## 框架适配契约
 
 `createWebPptAdapter()` 是 `@web-ppt/react` 与 `@web-ppt/vue` 共用的生命周期边界；Svelte、Web

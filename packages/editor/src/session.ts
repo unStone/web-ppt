@@ -60,6 +60,7 @@ export async function openEditor(
       origin: options.origin,
       historyLimit: options.historyLimit,
       historyByteLimit: options.historyByteLimit,
+      recoveryFrames: options.recoveryFrames,
     }), presentation);
   } catch (error) {
     presentation.dispose?.();

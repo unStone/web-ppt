@@ -178,7 +178,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
-  registerSessionAssets(doc);
+  registerSessionAssets(doc, pres.editInfo?.assets);
   return doc;
 }
 

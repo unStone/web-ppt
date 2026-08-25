@@ -115,6 +115,28 @@ console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
   session.dispose();
   session.dispose();
   check('会话释放幂等并释放原包', session.disposed === true && pkg.disposed === true);
+
+  const seed = await lib.openEditor(bytes, { idPrefix: 'editor-recovery-' });
+  const frames = [];
+  const stop = seed.editor.subscribeRecovery((frame) => frames.push(frame));
+  const seedSlide = seed.editor.doc.slideOrder[0];
+  const seedElement = seed.editor.doc.slides[seedSlide].children[0];
+  const recoveredX = seed.editor.effectiveElement(seedElement).x + 17;
+  seed.editor.transaction((transaction) => {
+    transaction.exec({ type: 'SetXfrm', id: seedElement, x: recoveredX });
+    transaction.select({ kind: 'elements', ids: [seedElement], enteredGroup: null });
+  }, '会话恢复探针');
+  stop();
+  seed.dispose();
+  const restored = await lib.openEditor(bytes, {
+    idPrefix: 'editor-recovery-', recoveryFrames: JSON.parse(JSON.stringify(frames)),
+  });
+  check('openEditor 在任何 DOM 视图可见前透传并完成恢复日志',
+    restored.editor.effectiveElement(seedElement).x === recoveredX
+      && restored.editor.selection.kind === 'elements'
+      && restored.editor.selection.ids[0] === seedElement
+      && restored.editor.isDirty());
+  restored.dispose();
 }
 
 console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');

@@ -1510,7 +1510,18 @@ group('编辑解析');
         lib.resolveGeomPath(legacyShape.editInfo.geom, legacyShape.w, legacyShape.h).d,
         legacyShape.path);
     }
+    const legacyBlobImages = allElements(legacy)
+      .filter((element) => element.kind === 'image' && element.src.startsWith('blob:'));
+    const legacyAssets = legacy.editInfo?.assets ?? [];
+    check('.ppt 编辑模式保留栅格图的 URL、类型与原始字节', legacyBlobImages.length > 0
+      && legacyAssets.length > 0
+      && legacyBlobImages.every((image) => legacyAssets.some((asset) =>
+        asset.url === image.src && asset.mime.startsWith('image/') && asset.bytes.length > 0)));
+    const legacyUrls = legacyAssets.map((asset) => asset.url);
+    check('.ppt 位图 URL 在释放前有效', legacyUrls.every((url) => blobs.has(url)));
     legacy.dispose?.();
+    check('.ppt dispose 释放全部位图 URL', legacyUrls.every((url) => !blobs.has(url)));
+    try { legacy.dispose?.(); pass++; } catch (e) { failures.push(`.ppt dispose 可重复调用 — ${String(e)}`); }
   }
 
   let anchored = 0, missingAnchor = 0, missingPart = 0;

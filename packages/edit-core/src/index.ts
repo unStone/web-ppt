@@ -1,5 +1,6 @@
 /** @web-ppt/edit-core —— 无 DOM 的编辑文档模型与高保真渲染投影。 */
 export { Editor } from './editor';
+export { EDITOR_RECOVERY_VERSION, restoreRecoveryFrames } from './recovery';
 export { detectImageMime } from './commands/image-format';
 export { MAX_REPLACE_IMAGE_BYTES } from './commands/image-resource';
 export { copyElements } from './clipboard';
@@ -47,6 +48,9 @@ export type {
   SlideCreation, SlideNotesBinding, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
   TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
 } from './types';
+export type {
+  RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
+} from './recovery-types';
 export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementLinkPatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,

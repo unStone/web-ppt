@@ -103,6 +103,19 @@ const DEFAULT_VIEW = Object.freeze({
   mode: 'edit' as const, zoom: 1, textMode: 'auto' as const, snapping: true,
 });
 
+const recoveryLogKeys = new WeakMap<object, number>();
+let nextRecoveryLogKey = 1;
+
+function recoveryLogKey(frames: OpenEditorOptions['recoveryFrames']): number {
+  if (!frames) return 0;
+  let key = recoveryLogKeys.get(frames);
+  if (key === undefined) {
+    key = nextRecoveryLogKey++;
+    recoveryLogKeys.set(frames, key);
+  }
+  return key;
+}
+
 export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
   status: 'idle', progress: 0, error: null, session: null, view: null,
   mode: DEFAULT_VIEW.mode, slideId: null, zoom: DEFAULT_VIEW.zoom, snapping: DEFAULT_VIEW.snapping,
@@ -133,6 +146,8 @@ function openOptionsKey(options: OpenEditorOptions | undefined): string {
   return JSON.stringify({
     password: options?.password, idPrefix: options?.idPrefix, origin: options?.origin,
     historyLimit: options?.historyLimit, historyByteLimit: options?.historyByteLimit,
+    // 恢复日志可能很大；框架 props 采用不可变引用语义，O(1) 身份键避免每次 render 重扫全部 patch。
+    recoveryLog: recoveryLogKey(options?.recoveryFrames),
   });
 }
 
