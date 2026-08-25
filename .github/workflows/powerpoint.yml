@@ -1,0 +1,44 @@
+name: PowerPoint 真实软件门禁
+
+# 安装了桌面 Office 的自托管机器不执行 PR 代码；只从可信分支手动取证。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: powerpoint-desktop-gate
+  cancel-in-progress: false
+
+jobs:
+  powerpoint:
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: [self-hosted, Windows, X64, powerpoint]
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.3.0
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 用 PowerPoint 未修复打开全部编辑产物
+        run: npm run test:edit:powerpoint
+
+      - name: 上传 PowerPoint 证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerpoint-evidence-${{ github.sha }}
+          path: |
+            out/edit-save/office-artifacts.json
+            out/edit-save/powerpoint-report.json
+            out/edit-save/*.pptx
+          if-no-files-found: warn
+          retention-days: 30
