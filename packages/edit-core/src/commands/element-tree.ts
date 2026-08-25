@@ -5,7 +5,7 @@ import type {
   CommandPatches, ElementTreePatch, ElementTreeSnapshot, Patch, RemoveElementCommand,
 } from './types';
 import { clearElementTextPatches } from './element-text';
-import { hasDynamicSlideLink } from '../dynamic-slide-fields';
+import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -101,7 +101,7 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   const snapshot = patch.value;
   const slide = doc.slides[elementTreeSlide(doc, snapshot)];
   const dynamicIds = Object.values(snapshot.records)
-    .filter((record) => record.meta.ph?.type === 'sldNum').map((record) => record.id);
+    .filter((record) => hasDynamicSlideNumber(record.src)).map((record) => record.id);
   const dynamicLinkIds = Object.values(snapshot.records)
     .filter((record) => hasDynamicSlideLink(record.src)).map((record) => record.id);
   const siblings = elementParentChildren(doc, snapshot.parent);

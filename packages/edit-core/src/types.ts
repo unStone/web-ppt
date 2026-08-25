@@ -319,6 +319,8 @@ export interface EditIdentity {
 export interface EditSaveState {
   baselines: Record<string, Uint8Array>;
   createdParts: string[];
+  /** 首次打开时的页 part 顺序；用 O(n) 纯数据比较识别页序编辑，不让普通保存解析 presentation.xml。 */
+  sourceSlideParts: string[];
 }
 
 export interface EditDoc {

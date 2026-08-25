@@ -9,7 +9,7 @@ import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
 import { textTargetContext } from './commands/text-target';
 import { tableRowsWithoutTextOverrides } from './table-rows';
 import { assertTableRowAppendEditInfo } from './table-row-append-validation';
-import { hasDynamicSlideLink } from './dynamic-slide-fields';
+import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -161,7 +161,7 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('编辑文档缺少有效的 part spid 分配状态');
   }
   if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object'
-    || !Array.isArray(doc.saveState.createdParts)) {
+    || !Array.isArray(doc.saveState.createdParts) || !Array.isArray(doc.saveState.sourceSlideParts)) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');
   }
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
@@ -172,6 +172,10 @@ export function validateEditDoc(doc: EditDoc): void {
   if (new Set(doc.saveState.createdParts).size !== doc.saveState.createdParts.length
     || doc.saveState.createdParts.some((part) => typeof part !== 'string' || !part)) {
     throw new Error('会话生成的 OPC part 状态无效');
+  }
+  if (new Set(doc.saveState.sourceSlideParts).size !== doc.saveState.sourceSlideParts.length
+    || doc.saveState.sourceSlideParts.some((part) => typeof part !== 'string' || !part)) {
+    throw new Error('来源页面 part 顺序无效');
   }
   if (new Set(doc.slideOrder).size !== doc.slideOrder.length) throw new Error('slideOrder 不能包含重复页');
   if (doc.slideOrder.length !== Object.keys(doc.slides).length) throw new Error('slideOrder 必须恰好包含全部幻灯片');
@@ -235,7 +239,7 @@ export function validateEditDoc(doc: EditDoc): void {
     }
     for (const id of ids) {
       const record = doc.elements[id];
-      if (!record || record.meta.ph?.type !== 'sldNum' || slideOfElement(doc, id) !== slideId) {
+      if (!record || !hasDynamicSlideNumber(record.src) || slideOfElement(doc, id) !== slideId) {
         throw new Error(`幻灯片 ${slideId} 的动态页码索引指向无效元素：${id}`);
       }
       indexedSlideNumbers.add(id);
@@ -253,7 +257,7 @@ export function validateEditDoc(doc: EditDoc): void {
     }
   }
   for (const record of Object.values(doc.elements)) {
-    if (record.meta.ph?.type === 'sldNum' && !indexedSlideNumbers.has(record.id)) {
+    if (hasDynamicSlideNumber(record.src) && !indexedSlideNumbers.has(record.id)) {
       throw new Error(`动态页码元素未进入所属页索引：${record.id}`);
     }
     if (hasDynamicSlideLink(record.src) && !indexedSlideLinks.has(record.id)) {

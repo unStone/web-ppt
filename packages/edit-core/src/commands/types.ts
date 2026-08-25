@@ -158,6 +158,13 @@ export interface AddSlideCommand {
   readonly at: { readonly after: SlideId | null };
 }
 
+export interface MoveSlideCommand {
+  readonly type: 'MoveSlide';
+  readonly id: SlideId;
+  /** null 表示置首；稳定身份锚点避免页下标在插入后漂移。 */
+  readonly at: { readonly after: SlideId | null };
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -223,7 +230,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
@@ -296,6 +303,13 @@ export type SlideTreePatch = {
   readonly origin: string;
 };
 
+export type SlideOrderPatch = {
+  readonly op: 'move';
+  readonly path: readonly ['slideOrder', SlideId];
+  readonly value: { readonly after: SlideId | null };
+  readonly origin: string;
+};
+
 export type TableRowPatch = {
   readonly op: 'insert' | 'remove';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableRows', string];
@@ -304,7 +318,7 @@ export type TableRowPatch = {
 };
 
 export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch
-  | ElementTreePatch | SlideTreePatch | TableRowPatch;
+  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -341,17 +355,19 @@ export interface History {
   clear(): void;
 }
 
-export interface TransactionResult extends ProjectionInvalidation, CommandPatches {
-  readonly selection: Selection;
+export interface SlideChangeSets {
   readonly createdSlides: Set<SlideId>;
   readonly removedSlides: Set<SlideId>;
+  readonly movedSlides: Set<SlideId>;
 }
 
-export interface EditorChange extends ProjectionInvalidation {
+export interface TransactionResult extends ProjectionInvalidation, CommandPatches, SlideChangeSets {
+  readonly selection: Selection;
+}
+
+export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
   readonly source: 'transaction' | 'undo' | 'redo' | 'selection';
   readonly selection: Selection;
-  readonly createdSlides: Set<SlideId>;
-  readonly removedSlides: Set<SlideId>;
   /** dirtyElements 含投影缓存祖先；DOM 增量分区必须以真正被 patch 的元素为准。 */
   readonly touchedElements: Set<ElementId>;
   /** 需要重新生成 markup/defs 的元素；纯层级 patch 不进入这里。 */

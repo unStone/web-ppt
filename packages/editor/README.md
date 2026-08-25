@@ -30,6 +30,7 @@ session.editor.exec({
 const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
+session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();
@@ -171,6 +172,10 @@ Page navigators use the equivalent `AddSlide` seam shown above. The headless res
 each mounted edit or view surface switches with its existing `setSlide` method, so a toolbar never mutates DOM
 or scans for generated ids. An edit surface draws empty layout placeholders only in its interaction layer and
 double-click opens the existing text editor; view surfaces and exported/saved output contain no helper UI.
+
+Reordering uses the adjacent `MoveSlide { id, at: { after } }` seam. Subscribe to `movedSlides`, then read the
+final `session.editor.doc.slideOrder`; mounted view/edit canvases keep their stable `slideId` and only derived
+page-number or relative-link partitions are refreshed. Framework adapters never need a shadow page-order model.
 
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant

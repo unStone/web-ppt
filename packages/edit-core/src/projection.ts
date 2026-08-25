@@ -5,7 +5,7 @@ import type {
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { hydrateElementInsertionAssets } from './clipboard-assets';
 import { own } from './data-validation';
-import { isDynamicSlideLink } from './dynamic-slide-fields';
+import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRowRef } from './table-cell';
 import {
@@ -66,24 +66,39 @@ function elementRecord(doc: EditDoc, id: ElementId) {
   return record;
 }
 
-function dynamicSlideNumber(doc: EditDoc, id: ElementId, element: ShapeElement): ShapeElement {
-  const record = elementRecord(doc, id);
-  if (record.meta.ph?.type !== 'sldNum' || record.ovr.text || !element.text) return element;
-  const number = doc.slideOrder.indexOf(slideOfElement(doc, id)) + 1;
+function projectedSlideNumberText(text: TextBody | null, value: string): TextBody | null {
+  if (!text) return text;
   let changed = false;
-  const paragraphs = element.text.paragraphs.map((paragraph) => ({
+  const paragraphs = text.paragraphs.map((paragraph) => ({
     ...paragraph,
     runs: paragraph.runs.map((run) => {
       if (run.field?.toLowerCase() !== 'slidenum') return run;
       changed = true;
-      return { ...run, text: String(number) };
+      return { ...run, text: value };
     }),
   }));
-  if (!changed) return element;
-  return {
-    ...element,
-    text: { ...element.text, paragraphs },
-  };
+  return changed ? { ...text, paragraphs } : text;
+}
+
+function dynamicSlideNumber(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {
+  if (!hasDynamicSlideNumber(element)) return element;
+  const value = String(doc.slideOrder.indexOf(slideOfElement(doc, id)) + 1);
+  if (element.kind === 'shape') {
+    const text = projectedSlideNumberText(element.text, value);
+    return text === element.text ? element : { ...element, text };
+  }
+  if (element.kind !== 'table') return element;
+  let changed = false;
+  const rows = element.rows.map((row) => ({
+    ...row,
+    cells: row.cells.map((cell) => {
+      const text = projectedSlideNumberText(cell.text, value);
+      if (text === cell.text) return cell;
+      changed = true;
+      return { ...cell, text };
+    }),
+  }));
+  return changed ? { ...element, rows } : element;
 }
 
 function resolvedSlideLink(doc: EditDoc, id: ElementId, link: string | undefined): string | undefined {
@@ -156,7 +171,8 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
-    out = { ...out, text: textBodyFromOverride(record.ovr.text) } as ShapeElement;
+    const source = record.src.kind === 'shape' ? record.src.text : null;
+    out = { ...out, text: textBodyFromOverride(record.ovr.text, source) } as ShapeElement;
   } else if (out.kind === 'table' && (tableCells || tableRows)) {
     if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
     const baseRows = tableRows ? tableRowsWithoutTextOverrides(record) : out.rows;
@@ -172,7 +188,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
         changed = true;
         return {
           ...cell,
-          text: override.kind === 'empty' ? null : textBodyFromOverride(override),
+          text: override.kind === 'empty' ? null : textBodyFromOverride(override, cell.text),
         };
       });
       return changed ? { ...row, cells } : row;
@@ -212,7 +228,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       clipPath: record.meta.geom.preset === 'rect' ? null : geom.d,
     } as ImageElement;
   }
-  if (out.kind === 'shape') out = dynamicSlideNumber(doc, id, out);
+  out = dynamicSlideNumber(doc, id, out);
   out = projectedSlideLinks(doc, id, out);
   cache.elements.set(id, out);
   return out;
@@ -304,7 +320,7 @@ export function invalidateSlideSequence(doc: EditDoc, start: number): Projection
   for (const slideId of doc.slideOrder.slice(Math.max(0, start))) {
     const slide = doc.slides[slideId];
     for (const id of slide?.dynamicSlideNumbers ?? []) {
-      if (!doc.elements[id]?.ovr.text) invalidate(slideId, id);
+      if (hasDynamicSlideNumber(effectiveElement(doc, id))) invalidate(slideId, id);
     }
   }
   for (const slideId of doc.slideOrder) {

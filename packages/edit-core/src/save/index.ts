@@ -1,6 +1,8 @@
 import { commitSavedPackage } from '../document';
+import { hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { validateEditDoc } from '../model-invariants';
 import { patchOpcPackage } from '../opc/patch';
+import { effectiveElement } from '../projection';
 import type { OpcPatchResult, OpcPartChanges } from '../opc/types';
 import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
@@ -24,7 +26,8 @@ function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
     const part = slide.origin?.part;
     if (part && slide.dynamicSlideNumbers.some((id) => {
       const record = doc.elements[id];
-      return record?.meta.origin?.part === part && !record.ovr.text;
+      return record?.meta.origin?.part === part
+        && hasDynamicSlideNumber(effectiveElement(doc, id));
     })) parts.set(part, index + 1);
   });
   return parts;
@@ -74,8 +77,21 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     Object.create(null), doc.saveState.baselines,
   );
   const nextCreatedParts = new Set(doc.saveState.createdParts);
-  const hasSlideHistory = activeCreatedSlides.length > 0
+  const contentTypesPart = '[Content_Types].xml';
+  const presentationPart = 'ppt/presentation.xml';
+  const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
+  const hasCreatedSlideHistory = activeCreatedSlides.length > 0
     || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
+  const currentSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
+  const presentationOrderChanged = currentSlideParts.length !== doc.saveState.sourceSlideParts.length
+    || currentSlideParts.some((part, index) => part !== doc.saveState.sourceSlideParts[index]);
+  const hasSlideHistory = hasCreatedSlideHistory || presentationOrderChanged
+    || !!nextBaselines[presentationPart];
+  if (presentationOrderChanged && !nextBaselines[presentationPart]) {
+    const source = doc.package.parts[presentationPart];
+    if (!source) throw new Error('PPTX 缺少 ppt/presentation.xml');
+    nextBaselines[presentationPart] = source.slice();
+  }
   const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
   for (const part of new Set([...grouped.keys(), ...removals.keys(), ...slideNumbers.keys()])) {
     if (nextBaselines[part]) continue;
@@ -91,15 +107,12 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (source) nextBaselines[relsPart] = source.slice();
     else nextCreatedParts.add(relsPart);
   }
-  const contentTypesPart = '[Content_Types].xml';
-  const presentationPart = 'ppt/presentation.xml';
-  const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
-  if ((clipboard.resources.size || hasSlideHistory) && !nextBaselines[contentTypesPart]) {
+  if ((clipboard.resources.size || hasCreatedSlideHistory) && !nextBaselines[contentTypesPart]) {
     const source = doc.package.parts[contentTypesPart];
     if (!source) throw new Error('PPTX 缺少 [Content_Types].xml');
     nextBaselines[contentTypesPart] = source.slice();
   }
-  if (hasSlideHistory) for (const part of [presentationPart, presentationRelsPart]) {
+  if (hasCreatedSlideHistory) for (const part of [presentationPart, presentationRelsPart]) {
     if (nextBaselines[part]) continue;
     const source = doc.package.parts[part];
     if (!source) throw new Error(`PPTX 缺少 ${part}`);
@@ -159,10 +172,15 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       slide, relationships instanceof Uint8Array ? relationships : undefined,
     );
   }
-  if (nextBaselines[presentationPart] && nextBaselines[presentationRelsPart]) {
+  if (nextBaselines[presentationPart]) {
+    const relationships = nextBaselines[presentationRelsPart]
+      ?? doc.package.parts[presentationRelsPart];
+    if (!relationships) throw new Error('PPTX 缺少 ppt/_rels/presentation.xml.rels');
     changes[presentationPart] = patchPresentationSlides(
-      nextBaselines[presentationPart], nextBaselines[presentationRelsPart], doc,
+      nextBaselines[presentationPart], relationships, doc,
     );
+  }
+  if (nextBaselines[presentationRelsPart]) {
     changes[presentationRelsPart] = patchPresentationRelationships(
       nextBaselines[presentationRelsPart], doc,
     );

@@ -39,6 +39,7 @@ editor.exec({
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
+editor.exec({ type: 'MoveSlide', id: newSlideId, at: { after: null } });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -48,7 +49,10 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 // 把该元素自己的 dirty.markup 与 dirty.defs 两个 DOM 分区一起替换。
 // change.dirtyElements 与 change.dirtySlides 给出精确失效范围。
 
-editor.subscribe(({ dirtyElements, dirtySlides }) => updateView(dirtyElements, dirtySlides));
+editor.subscribe(({ dirtyElements, dirtySlides, movedSlides }) => {
+  updateView(dirtyElements, dirtySlides);
+  if (movedSlides.size) updatePageNavigator(doc.slideOrder);
+});
 editor.undo();
 editor.redo();
 const pptxBytes = await editor.save(); // 动态加载 OOXML/ZIP 保存链路
@@ -175,6 +179,11 @@ headless 包不依赖任何框架运行时。
 `createdSlides` 集合就是 React、Vue、Svelte、Web Component 或原生页面导航的稳定交接面，订阅事件也会
 收到同一集合。空标题/正文占位符继承版式几何与文字样式，但不复制提示文字；日期、页脚和页码仍保存为
 OOXML 字段。撤销/重做恢复同一份模型与 OPC 身份；保存只追加必要的包引用，不重建未触碰 part。
+
+`MoveSlide { id, at: { after } }` 用稳定页身份重排已有页或会话中新页，`null` 表示置首。订阅事件只报告
+`movedSlides`，不会伪装成删除再新增，因此 React、Vue、Svelte、Web Component 与原生缩略图导航只需读取
+最终 `doc.slideOrder`，已挂载画布仍停留在自己的 `SlideId`。撤销重做、页码字段、相对跳页、section 归属、
+备注和最小 OOXML 保存共用同一顺序语义。
 
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。

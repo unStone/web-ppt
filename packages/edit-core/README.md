@@ -40,6 +40,7 @@ editor.exec({
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
+editor.exec({ type: 'MoveSlide', id: newSlideId, at: { after: null } });
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -49,7 +50,10 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 // Replace this element's `dirty.markup` and `dirty.defs` partitions together.
 // change.dirtyElements 与 change.dirtySlides 给出精确失效范围。
 
-editor.subscribe(({ dirtyElements, dirtySlides }) => updateView(dirtyElements, dirtySlides));
+editor.subscribe(({ dirtyElements, dirtySlides, movedSlides }) => {
+  updateView(dirtyElements, dirtySlides);
+  if (movedSlides.size) updatePageNavigator(doc.slideOrder);
+});
 editor.undo();
 editor.redo();
 const pptxBytes = await editor.save(); // dynamically loads the OOXML/ZIP save path
@@ -189,6 +193,12 @@ returned `createdSlides` set is the stable hand-off to any React, Vue, Svelte, W
 navigator; subscribers receive the same set. Empty title/body placeholders keep layout geometry and text style
 but not prompt content, while date/footer/page-number placeholders remain OOXML fields. Undo/redo restores the
 same model and OPC identities; save adds the required package references without rebuilding untouched parts.
+
+`MoveSlide { id, at: { after } }` reorders an existing or newly created page by stable identities; `null` moves
+it to the front. It emits `movedSlides` without pretending the page was removed and re-created, so React, Vue,
+Svelte, Web Component, and vanilla navigators can read the final `doc.slideOrder` while mounted canvases keep
+their current `SlideId`. Undo/redo, page-number fields, relative links, section membership, notes, and minimal
+OOXML save all follow the same order.
 
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.

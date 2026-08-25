@@ -156,6 +156,12 @@ if (mode === 'projected') {
     editor.exec({
       type: 'AddSlide', layoutId: layout(scenario.blankLayoutName), at: { after: titleSlide },
     });
+  } else if (scenario.type === 'moveSlide') {
+    const slideByPart = (part) => doc.slideOrder.find((id) => doc.slides[id].origin?.part === part);
+    for (const move of scenario.moves) editor.exec({
+      type: 'MoveSlide', id: slideByPart(move.part),
+      at: { after: move.afterPart === null ? null : slideByPart(move.afterPart) },
+    });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

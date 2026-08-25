@@ -29,6 +29,7 @@ session.editor.exec({
 const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
+session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();
@@ -147,6 +148,10 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 页面导航同样使用上方的 `AddSlide` seam。headless 返回值直接给出新页身份，每个 edit/view 挂载面继续调用
 既有 `setSlide` 切换，因此工具栏不用修改 DOM，也不用扫描生成 ID。edit 视图只在 interaction 层绘制空版式
 占位符，双击复用现有文字编辑器；view 视图以及导出、保存产物都不含这些辅助 UI。
+
+页面重排使用相邻的 `MoveSlide { id, at: { after } }` seam。适配层订阅 `movedSlides` 后读取最终
+`session.editor.doc.slideOrder` 即可；已挂载的 view/edit 画布保持稳定 `slideId`，只增量刷新页码或相对跳页
+等派生分区。React、Vue、Web Component 等框架无需维护第二份页序状态。
 
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用

@@ -29,6 +29,7 @@ import { runShapeAutofitEditorContract } from './lib/shape-autofit-editor-contra
 import { runBodyPropsEditorContract } from './lib/body-props-editor-contract.mjs';
 import { runAddShapeEditorContract } from './lib/add-shape-editor-contract.mjs';
 import { runAddSlideEditorContract } from './lib/add-slide-editor-contract.mjs';
+import { runMoveSlideEditorContract } from './lib/move-slide-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -218,6 +219,7 @@ await runShapeAutofitEditorContract({ check, edit: lib, lib, root, window: domEn
 await runBodyPropsEditorContract({ check, lib, root, window: domEnvironment.window });
 await runAddShapeEditorContract({ check, lib, root, window: domEnvironment.window });
 await runAddSlideEditorContract({ check, lib, root, window: domEnvironment.window });
+await runMoveSlideEditorContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

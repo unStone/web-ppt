@@ -12,6 +12,9 @@ import { applyElementTreePatch, isElementTreePatch, validateElementTreePatch } f
 import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
 import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
 import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
+import {
+  applySlideOrderPatch, isSlideOrderPatch, slideOrderPatchStart, validateSlideOrderPatch,
+} from './slide-order';
 import type { ElementTransformPatch, ElementTreePatch, Patch, XfrmField } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 
@@ -22,7 +25,7 @@ function validatePatch(
   stagedTableRows: ReadonlyMap<string, Record<string, TableRowInsertion>>,
 ): void {
   const patch = input as Partial<Patch> & { path?: unknown; value?: unknown };
-  if (!['set', 'del', 'remove', 'insert'].includes(String(patch.op))) {
+  if (!['set', 'del', 'remove', 'insert', 'move'].includes(String(patch.op))) {
     throw new Error(`Patch ${index} 的 op 不受支持`);
   }
   if (typeof patch.origin !== 'string' || !patch.origin) throw new Error(`Patch ${index} 缺少 origin`);
@@ -30,6 +33,12 @@ function validatePatch(
     && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
     && (patch.op === 'remove' || patch.op === 'insert')) {
     validateElementTreePatch(doc, patch as ElementTreePatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 2
+    && patch.path[0] === 'slideOrder' && typeof patch.path[1] === 'string'
+    && patch.op === 'move') {
+    validateSlideOrderPatch(doc, patch as import('./types').SlideOrderPatch, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 2
@@ -159,6 +168,12 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
   const dirtySlides = new Set<string>();
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
   for (const patch of patches) {
+    if (isSlideOrderPatch(patch)) {
+      const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
+      for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
+      for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
+      continue;
+    }
     if (isSlideTreePatch(patch)) {
       const start = patch.op === 'insert'
         ? (patch.value.after === null ? 0 : doc.slideOrder.indexOf(patch.value.after) + 1)
@@ -177,7 +192,8 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
   }
   const orderParents = new Set<string>();
   for (const patch of patches) {
-    if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
+    if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
+    else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);

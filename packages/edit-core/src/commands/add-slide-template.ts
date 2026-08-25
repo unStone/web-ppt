@@ -1,7 +1,7 @@
 import type { ShapeElement, SlideElement, SlideLayoutTemplate } from '@web-ppt/core';
 import { allocateElementId, elementMetaOf } from '../document';
 import { initialFractionalIndex } from '../fractional-index';
-import { hasDynamicSlideLink } from '../dynamic-slide-fields';
+import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import type {
   EditDoc, EditableKind, ElementId, ElementInsertionSource, ElementRecord, SlideId,
 } from '../types';
@@ -113,7 +113,7 @@ export function layoutTemplateRecords(
       id, parent, z: initialFractionalIndex(index), src: source, ovr: {}, meta,
     };
     records[id] = record;
-    if (meta.ph?.type === 'sldNum') dynamicSlideNumbers.push(id);
+    if (hasDynamicSlideNumber(source)) dynamicSlideNumbers.push(id);
     if (hasDynamicSlideLink(source)) dynamicSlideLinks.push(id);
     if (source.kind === 'group') {
       record.children = source.children.map((child, childIndex) =>

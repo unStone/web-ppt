@@ -7,7 +7,7 @@ import { slidePatchSets } from './commands/slide-tree';
 import { fitTextShapePatches } from './commands/fit-text-shape';
 import { writableLayerSiblingIds } from './element-order';
 import type {
-  Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, Transaction,
+  Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
   TransactionOptions, TransactionResult,
 } from './commands/types';
 import { HistoryStore } from './history';
@@ -25,9 +25,19 @@ function patchElements(patches: readonly Patch[]): Set<ElementId> {
     .map((patch) => patch.path[1]));
 }
 
-function renderPatchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter((patch) => patch.path[0] === 'elements' && !isElementOrderPatch(patch))
+function affectsSlideSequence(patches: readonly Patch[]): boolean {
+  return patches.some((patch) => patch.path[0] === 'slides' || patch.path[0] === 'slideOrder');
+}
+
+function renderPatchElements(
+  patches: readonly Patch[], dirtyElements: ReadonlySet<ElementId> = new Set(),
+): Set<ElementId> {
+  const result = new Set(patches
+    .filter((patch) => patch.path[0] === 'elements' && !isElementOrderPatch(patch))
     .map((patch) => patch.path[1]));
+  // 页树与页序会改变字段投影，却没有元素属性 patch；必须把派生脏元素交给 DOM 增量层。
+  if (affectsSlideSequence(patches)) for (const id of dirtyElements) result.add(id);
+  return result;
 }
 
 function reorderedPatchElements(patches: readonly Patch[]): Set<ElementId> {
@@ -184,7 +194,7 @@ export class Editor {
     if (JSON.stringify(next) === JSON.stringify(this.currentSelection)) return;
     this.currentSelection = next;
     this.historyStore.breakMerge();
-    this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set());
+    this.emit('selection', new Set(), new Set(), new Set(), new Set(), new Set(), new Set());
   }
 
   subscribe(subscriber: EditorSubscriber): () => void {
@@ -224,7 +234,7 @@ export class Editor {
       source: 'undo' as const,
       selection: this.selection,
       touchedElements: patchElements(entry.inverse),
-      renderElements: renderPatchElements(entry.inverse),
+      renderElements: renderPatchElements(entry.inverse, dirty.dirtyElements),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
       ...slidePatchSets(entry.inverse),
@@ -233,7 +243,7 @@ export class Editor {
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change.createdSlides, change.removedSlides,
+      change,
     );
     return change;
   }
@@ -249,7 +259,7 @@ export class Editor {
       source: 'redo' as const,
       selection: this.selection,
       touchedElements: patchElements(entry.forward),
-      renderElements: renderPatchElements(entry.forward),
+      renderElements: renderPatchElements(entry.forward, dirty.dirtyElements),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
       ...slidePatchSets(entry.forward),
@@ -258,7 +268,7 @@ export class Editor {
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change.createdSlides, change.removedSlides,
+      change,
     );
     return change;
   }
@@ -290,6 +300,9 @@ export class Editor {
       const dirty = applyPatches(this.doc, patches.forward);
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
       for (const id of dirty.dirtySlides) dirtySlides.add(id);
+      if (affectsSlideSequence(patches.forward)) {
+        for (const id of dirty.dirtyElements) renderElements.add(id);
+      }
       for (const patch of patches.forward) {
         if (patch.path[0] !== 'elements') continue;
         touchedElements.add(patch.path[1]);
@@ -380,7 +393,7 @@ export class Editor {
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
-        slides.createdSlides, slides.removedSlides,
+        slides,
       );
     }
     return {
@@ -397,8 +410,9 @@ export class Editor {
     render: Set<ElementId>,
     reordered: Set<ElementId>,
     bodyProps: Set<ElementId> = new Set(),
-    createdSlides: Set<SlideId> = new Set(),
-    removedSlides: Set<SlideId> = new Set(),
+    slideChanges: SlideChangeSets = {
+      createdSlides: new Set(), removedSlides: new Set(), movedSlides: new Set(),
+    },
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -411,8 +425,9 @@ export class Editor {
           renderElements: new Set(render),
           bodyPropsElements: new Set(bodyProps),
           reorderedElements: new Set(reordered),
-          createdSlides: new Set(createdSlides),
-          removedSlides: new Set(removedSlides),
+          createdSlides: new Set(slideChanges.createdSlides),
+          removedSlides: new Set(slideChanges.removedSlides),
+          movedSlides: new Set(slideChanges.movedSlides),
         });
       } catch (error) {
         reportSubscriberError(error);

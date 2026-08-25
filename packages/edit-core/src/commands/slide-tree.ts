@@ -1,5 +1,6 @@
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
-import type { Patch, SlideTreePatch, SlideTreeSnapshot } from './types';
+import type { Patch, SlideChangeSets, SlideTreePatch, SlideTreeSnapshot } from './types';
+import { isSlideOrderPatch } from './slide-order';
 
 export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
   return patch.path.length === 2 && patch.path[0] === 'slides';
@@ -68,16 +69,18 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   doc.slideOrder.splice(index, 0, slide.id);
 }
 
-export function slidePatchSets(patches: readonly Patch[]): {
-  createdSlides: Set<SlideId>;
-  removedSlides: Set<SlideId>;
-} {
+export function slidePatchSets(patches: readonly Patch[]): SlideChangeSets {
   const createdSlides = new Set<SlideId>();
   const removedSlides = new Set<SlideId>();
+  const movedSlides = new Set<SlideId>();
   for (const patch of patches) {
+    if (isSlideOrderPatch(patch)) {
+      movedSlides.add(patch.path[1]);
+      continue;
+    }
     if (!isSlideTreePatch(patch)) continue;
     if (patch.op === 'insert') createdSlides.add(patch.path[1]);
     else removedSlides.add(patch.path[1]);
   }
-  return { createdSlides, removedSlides };
+  return { createdSlides, removedSlides, movedSlides };
 }

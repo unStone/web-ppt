@@ -1,7 +1,7 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
 import { registerClipboardAssets, releaseClipboardAssets } from './clipboard-assets';
 import { initialFractionalIndex } from './fractional-index';
-import { hasDynamicSlideLink } from './dynamic-slide-fields';
+import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
 import type {
   CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
@@ -86,7 +86,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       meta,
     };
     elements[id] = record;
-    if (meta.ph?.type === 'sldNum') dynamicSlideNumbers.push(id);
+    if (hasDynamicSlideNumber(el)) dynamicSlideNumbers.push(id);
     if (hasDynamicSlideLink(el)) dynamicSlideLinks.push(id);
     if (el.kind === 'group') {
       record.children = addElements(
@@ -153,7 +153,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     elements,
     removedElements: {},
     package: pkg,
-    saveState: { baselines: Object.create(null), createdParts: [] },
+    saveState: {
+      baselines: Object.create(null), createdParts: [],
+      sourceSlideParts: slideOrder.flatMap((id) => slides[id].origin?.part ?? []),
+    },
   };
   if (pres.dispose) disposers.set(doc, pres.dispose);
   registerClipboardAssets(doc);
@@ -175,7 +178,7 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     elements: {},
     removedElements: {},
     package: null,
-    saveState: { baselines: Object.create(null), createdParts: [] },
+    saveState: { baselines: Object.create(null), createdParts: [], sourceSlideParts: [] },
   };
 }
 
@@ -205,6 +208,7 @@ export function replaceDocPackage(doc: EditDoc, pkg: NonNullable<EditDoc['packag
   assignPackage(doc, pkg);
   doc.saveState.baselines = Object.create(null);
   doc.saveState.createdParts = [];
+  doc.saveState.sourceSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
 }
 
 /** 保存模块原子提交包与对应基线，不能拆成两个公开赋值。 */
@@ -228,6 +232,7 @@ export function disposeDoc(doc: EditDoc): void {
   releaseClipboardAssets(doc);
   doc.saveState.baselines = Object.create(null);
   doc.saveState.createdParts = [];
+  doc.saveState.sourceSlideParts = [];
   // assignPackage 只释放保存模块创建的自有包；原始解析包由上面的 Presentation.dispose 释放。
   assignPackage(doc, null);
 }
