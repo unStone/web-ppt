@@ -9,6 +9,7 @@ export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
 function assertSnapshot(snapshot: SlideTreeSnapshot, id: SlideId, label: string): void {
   if (!snapshot || typeof snapshot !== 'object' || !snapshot.slide || snapshot.slide.id !== id
     || (snapshot.after !== null && (typeof snapshot.after !== 'string' || !snapshot.after))
+    || (snapshot.before !== null && (typeof snapshot.before !== 'string' || !snapshot.before))
     || !snapshot.records || typeof snapshot.records !== 'object') {
     throw new Error(`${label} 的页面树快照无效`);
   }
@@ -69,18 +70,49 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   doc.slideOrder.splice(index, 0, slide.id);
 }
 
-export function slidePatchSets(patches: readonly Patch[]): SlideChangeSets {
+export function slidePatchSets(doc: EditDoc, patches: readonly Patch[]): SlideChangeSets {
   const createdSlides = new Set<SlideId>();
   const removedSlides = new Set<SlideId>();
   const movedSlides = new Set<SlideId>();
+  const removals = new Map<SlideId, SlideTreeSnapshot>();
   for (const patch of patches) {
     if (isSlideOrderPatch(patch)) {
-      movedSlides.add(patch.path[1]);
+      if (!createdSlides.has(patch.path[1]) && !removedSlides.has(patch.path[1])) {
+        movedSlides.add(patch.path[1]);
+      }
       continue;
     }
     if (!isSlideTreePatch(patch)) continue;
-    if (patch.op === 'insert') createdSlides.add(patch.path[1]);
-    else removedSlides.add(patch.path[1]);
+    const id = patch.path[1];
+    if (patch.op === 'insert') {
+      if (!removedSlides.delete(id)) createdSlides.add(id);
+      removals.delete(id);
+      movedSlides.delete(id);
+    } else {
+      if (!createdSlides.delete(id)) {
+        removedSlides.add(id);
+        removals.set(id, patch.value);
+      }
+      movedSlides.delete(id);
+    }
   }
-  return { createdSlides, removedSlides, movedSlides };
+  const removedSlideFallbacks = new Map<SlideId, SlideId>();
+  for (const [id, snapshot] of removals) {
+    const seen = new Set<SlideId>([id]);
+    let candidate = snapshot.before;
+    while (candidate && removals.has(candidate) && !seen.has(candidate)) {
+      seen.add(candidate);
+      candidate = removals.get(candidate)!.before;
+    }
+    if (!candidate || !doc.slides[candidate]) {
+      candidate = snapshot.after;
+      while (candidate && removals.has(candidate) && !seen.has(candidate)) {
+        seen.add(candidate);
+        candidate = removals.get(candidate)!.after;
+      }
+    }
+    const fallback = candidate && doc.slides[candidate] ? candidate : doc.slideOrder[0];
+    if (fallback) removedSlideFallbacks.set(id, fallback);
+  }
+  return { createdSlides, removedSlides, movedSlides, removedSlideFallbacks };
 }

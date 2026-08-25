@@ -27,8 +27,10 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
   const template = layoutTemplateRecords(doc, layout, slideId, opc.part);
   doc.identity.nextSpid[opc.part] = template.nextSpid;
   const afterPart = command.at.after ? doc.slides[command.at.after]!.origin?.part : undefined;
+  const afterIndex = command.at.after === null ? -1 : doc.slideOrder.indexOf(command.at.after);
   const value = {
     after: command.at.after,
+    before: doc.slideOrder[afterIndex + 1] ?? null,
     slide: {
       id: slideId,
       src: {

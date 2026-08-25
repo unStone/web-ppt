@@ -49,9 +49,10 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 // 把该元素自己的 dirty.markup 与 dirty.defs 两个 DOM 分区一起替换。
 // change.dirtyElements 与 change.dirtySlides 给出精确失效范围。
 
-editor.subscribe(({ dirtyElements, dirtySlides, movedSlides }) => {
+editor.subscribe(({ dirtyElements, dirtySlides, movedSlides, removedSlides, removedSlideFallbacks }) => {
   updateView(dirtyElements, dirtySlides);
-  if (movedSlides.size) updatePageNavigator(doc.slideOrder);
+  if (movedSlides.size || removedSlides.size) updatePageNavigator(doc.slideOrder);
+  for (const [removedId, fallbackId] of removedSlideFallbacks) replaceActivePage(removedId, fallbackId);
 });
 editor.undo();
 editor.redo();
@@ -185,12 +186,17 @@ OOXML 字段。撤销/重做恢复同一份模型与 OPC 身份；保存只追�
 最终 `doc.slideOrder`，已挂载画布仍停留在自己的 `SlideId`。撤销重做、页码字段、相对跳页、section 归属、
 备注和最小 OOXML 保存共用同一顺序语义。
 
+`RemoveSlide { id }` 删除已有页或会话新增页，并拒绝删除唯一剩余页。事务返回值与订阅事件同时公开
+`removedSlides` 和 `removedSlideFallbacks`：每个被删页映射到最近的存活后继，删除末页时映射到前驱。
+React、Vue、Svelte、Web Component 与原生导航都可直接切换活动路由，不必从瞬时下标推导。撤销重做恢复
+同一页面、元素和 OPC 身份；保存清理页面索引、slide part 与独占 notes，媒体和未知关系目标不做级联删除。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面删除、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 

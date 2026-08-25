@@ -50,9 +50,10 @@ const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
 // Replace this element's `dirty.markup` and `dirty.defs` partitions together.
 // change.dirtyElements 与 change.dirtySlides 给出精确失效范围。
 
-editor.subscribe(({ dirtyElements, dirtySlides, movedSlides }) => {
+editor.subscribe(({ dirtyElements, dirtySlides, movedSlides, removedSlides, removedSlideFallbacks }) => {
   updateView(dirtyElements, dirtySlides);
-  if (movedSlides.size) updatePageNavigator(doc.slideOrder);
+  if (movedSlides.size || removedSlides.size) updatePageNavigator(doc.slideOrder);
+  for (const [removedId, fallbackId] of removedSlideFallbacks) replaceActivePage(removedId, fallbackId);
 });
 editor.undo();
 editor.redo();
@@ -200,13 +201,20 @@ Svelte, Web Component, and vanilla navigators can read the final `doc.slideOrder
 their current `SlideId`. Undo/redo, page-number fields, relative links, section membership, notes, and minimal
 OOXML save all follow the same order.
 
+`RemoveSlide { id }` deletes an existing or session-created page and rejects deleting the only remaining page.
+Transactions and subscriptions expose `removedSlides` plus `removedSlideFallbacks`: each removed id maps to its
+nearest surviving successor, or the predecessor at the tail. This lets any framework update its active route
+without deriving transient indexes. Undo/redo restores the same page/element/OPC identities. Save removes the
+slide indexes and parts plus an exclusively owned notes slide, while shared media and unknown relationship targets
+remain untouched.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
-appended table rows, new shapes/pages, placeholder clears, and element removals, refreshes `doc.package` for the
+appended table rows, new shapes/pages, page removals, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 

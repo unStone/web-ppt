@@ -16,8 +16,9 @@ import { addImagePatches } from './add-image';
 import { addTablePatches } from './add-table';
 import { addSlidePatches } from './add-slide';
 import { moveSlidePatches } from './slide-order';
+import { removeSlidePatches } from './remove-slide';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, SetFlipCommand,
   InsertRowCommand, SetBodyPropsCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -57,6 +58,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     { target: 'none', selectInserted: true }),
   AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches, { target: 'none' }),
   MoveSlide: register<MoveSlideCommand>(['id', 'at'], moveSlidePatches, { target: 'none' }),
+  RemoveSlide: register<RemoveSlideCommand>(['id'], removeSlidePatches, { target: 'none' }),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),

@@ -10,6 +10,7 @@ import { DRAWINGML_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qnam
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import type { XmlElement } from '../xml/types';
 import { patchRelationshipPart } from './clipboard-parts';
+import { removedSlidePartNames } from './remove-slide-parts';
 
 const SLIDE_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml';
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
@@ -92,6 +93,7 @@ function patchSections(
   root: XmlElement,
   slides: readonly SlideRecord[],
   finalSlideIds: readonly number[],
+  removedSlideIds: ReadonlySet<number>,
 ): void {
   const sectionList = findXmlDescendant(root, {
     localName: 'sectionLst', namespaceUri: POWERPOINT_2010_NS,
@@ -104,6 +106,12 @@ function patchSections(
       localName: 'sldIdLst', namespaceUri: POWERPOINT_2010_NS,
     });
     if (!list) continue;
+    for (const node of xmlElementChildren(list, {
+      localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
+    })) {
+      const id = Number(elementAttribute(node, 'id'));
+      if (removedSlideIds.has(id)) removeXmlChild(list, node);
+    }
     const existing = xmlElementChildren(list, {
       localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
     });
@@ -153,12 +161,18 @@ export function patchPresentationSlides(
   if (!list) throw new Error('presentation.xml 缺少 p:sldIdLst');
   const targets = relationshipTargets(relationships);
   const existingByPart = new Map<string, XmlElement>();
+  const removedParts = removedSlidePartNames(doc);
+  const removedSlideIds = new Set<number>();
   for (const node of xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS })) {
     const rid = findXmlAttribute(node, {
       localName: 'id', namespaceUri: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
     })?.value;
     const part = rid ? targets.get(rid) : undefined;
-    if (part) existingByPart.set(part, node);
+    if (part && removedParts.has(part)) {
+      const id = Number(elementAttribute(node, 'id'));
+      if (Number.isFinite(id)) removedSlideIds.add(id);
+      removeXmlChild(list, node);
+    } else if (part) existingByPart.set(part, node);
   }
   const activeCreated = createdSlides(doc);
   const createdById = new Map(activeCreated.map((slide) => [slide.id, slide]));
@@ -179,12 +193,26 @@ export function patchPresentationSlides(
     }
   }
   reorderXmlChildren(list, desired);
-  patchSections(tree.root, activeCreated, desired.map((node) => Number(elementAttribute(node, 'id'))));
+  patchSections(
+    tree.root, activeCreated,
+    desired.map((node) => Number(elementAttribute(node, 'id'))), removedSlideIds,
+  );
   return serializeXmlTreeBytes(tree);
 }
 
 export function patchPresentationRelationships(source: Uint8Array, doc: EditDoc): Uint8Array {
-  return patchRelationshipPart(source, createdSlides(doc).map((slide) => ({
+  const tree = parseXmlTree(source);
+  const removedParts = removedSlidePartNames(doc);
+  for (const node of xmlElementChildren(tree.root, { localName: 'Relationship' })) {
+    const type = elementAttribute(node, 'Type');
+    const target = elementAttribute(node, 'Target');
+    const mode = elementAttribute(node, 'TargetMode');
+    if (type !== SLIDE_REL || !target || mode === 'External') continue;
+    if (removedParts.has(resolveRelationshipTarget('ppt/presentation.xml', target))) {
+      removeXmlChild(tree.root, node);
+    }
+  }
+  return patchRelationshipPart(serializeXmlTreeBytes(tree), createdSlides(doc).map((slide) => ({
     sourceId: slide.creation!.presentationRelationshipId,
     targetId: slide.creation!.presentationRelationshipId,
     type: SLIDE_REL,
@@ -192,8 +220,16 @@ export function patchPresentationRelationships(source: Uint8Array, doc: EditDoc)
   })));
 }
 
-export function patchSlideContentTypes(source: Uint8Array, doc: EditDoc): Uint8Array {
+export function patchSlideContentTypes(
+  source: Uint8Array,
+  doc: EditDoc,
+  removedParts: ReadonlySet<string> = new Set(),
+): Uint8Array {
   const tree = parseXmlTree(source);
+  for (const node of xmlElementChildren(tree.root, { localName: 'Override' })) {
+    const part = findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value;
+    if (part && removedParts.has(part.replace(/^\//, ''))) removeXmlChild(tree.root, node);
+  }
   const existing = new Set(xmlElementChildren(tree.root, { localName: 'Override' })
     .flatMap((node) => {
       const part = findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value;

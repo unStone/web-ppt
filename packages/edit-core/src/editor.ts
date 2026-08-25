@@ -237,7 +237,7 @@ export class Editor {
       renderElements: renderPatchElements(entry.inverse, dirty.dirtyElements),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
-      ...slidePatchSets(entry.inverse),
+      ...slidePatchSets(this.doc, entry.inverse),
       ...dirty,
     };
     this.emit(
@@ -262,7 +262,7 @@ export class Editor {
       renderElements: renderPatchElements(entry.forward, dirty.dirtyElements),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
-      ...slidePatchSets(entry.forward),
+      ...slidePatchSets(this.doc, entry.forward),
       ...dirty,
     };
     this.emit(
@@ -389,7 +389,7 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      const slides = slidePatchSets(forward);
+      const slides = slidePatchSets(this.doc, forward);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
@@ -398,7 +398,7 @@ export class Editor {
     }
     return {
       forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter,
-      ...slidePatchSets(forward),
+      ...slidePatchSets(this.doc, forward),
     };
   }
 
@@ -412,6 +412,7 @@ export class Editor {
     bodyProps: Set<ElementId> = new Set(),
     slideChanges: SlideChangeSets = {
       createdSlides: new Set(), removedSlides: new Set(), movedSlides: new Set(),
+      removedSlideFallbacks: new Map(),
     },
   ): void {
     for (const subscriber of this.subscribers) {
@@ -428,6 +429,7 @@ export class Editor {
           createdSlides: new Set(slideChanges.createdSlides),
           removedSlides: new Set(slideChanges.removedSlides),
           movedSlides: new Set(slideChanges.movedSlides),
+          removedSlideFallbacks: new Map(slideChanges.removedSlideFallbacks),
         });
       } catch (error) {
         reportSubscriberError(error);

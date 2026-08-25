@@ -36,7 +36,7 @@ export type {
 export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardRelationship, ClipboardResource, ClipboardXmlRoot, Command, CommandPatches, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementOrderPatch, ElementTextPatch, ElementTransformPatch,
-  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, SlideChangeSets, SlideOrderPatch, SlideTreePatch, SlideTreeSnapshot,
+  ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SlideChangeSets, SlideOrderPatch, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   SetBodyPropsCommand, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,

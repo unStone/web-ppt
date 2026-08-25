@@ -18,6 +18,7 @@ import {
   createdSlideRelationships, createdSlides, emptySlideXml, patchPresentationRelationships,
   patchPresentationSlides, patchSlideContentTypes, patchSlideNumberFields,
 } from './slide-parts';
+import { removedSlidePackageParts } from './remove-slide-parts';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -83,9 +84,11 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const hasCreatedSlideHistory = activeCreatedSlides.length > 0
     || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
   const currentSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
+  const removedSlideParts = removedSlidePackageParts(doc, nextCreatedParts);
+  const hasRemovedSlideHistory = removedSlideParts.slideParts.size > 0;
   const presentationOrderChanged = currentSlideParts.length !== doc.saveState.sourceSlideParts.length
     || currentSlideParts.some((part, index) => part !== doc.saveState.sourceSlideParts[index]);
-  const hasSlideHistory = hasCreatedSlideHistory || presentationOrderChanged
+  const hasSlideHistory = hasCreatedSlideHistory || hasRemovedSlideHistory || presentationOrderChanged
     || !!nextBaselines[presentationPart];
   if (presentationOrderChanged && !nextBaselines[presentationPart]) {
     const source = doc.package.parts[presentationPart];
@@ -107,16 +110,24 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (source) nextBaselines[relsPart] = source.slice();
     else nextCreatedParts.add(relsPart);
   }
-  if ((clipboard.resources.size || hasCreatedSlideHistory) && !nextBaselines[contentTypesPart]) {
+  for (const part of removedSlideParts.packageParts) {
+    if (nextCreatedParts.has(part) || nextBaselines[part]) continue;
+    const source = doc.package.parts[part];
+    if (source) nextBaselines[part] = source.slice();
+  }
+  if ((clipboard.resources.size || hasCreatedSlideHistory || hasRemovedSlideHistory)
+    && !nextBaselines[contentTypesPart]) {
     const source = doc.package.parts[contentTypesPart];
     if (!source) throw new Error('PPTX 缺少 [Content_Types].xml');
     nextBaselines[contentTypesPart] = source.slice();
   }
-  if (hasCreatedSlideHistory) for (const part of [presentationPart, presentationRelsPart]) {
-    if (nextBaselines[part]) continue;
-    const source = doc.package.parts[part];
-    if (!source) throw new Error(`PPTX 缺少 ${part}`);
-    nextBaselines[part] = source.slice();
+  if (hasCreatedSlideHistory || hasRemovedSlideHistory) {
+    for (const part of [presentationPart, presentationRelsPart]) {
+      if (nextBaselines[part]) continue;
+      const source = doc.package.parts[part];
+      if (!source) throw new Error(`PPTX 缺少 ${part}`);
+      nextBaselines[part] = source.slice();
+    }
   }
   for (const slide of activeCreatedSlides) {
     const part = slide.origin!.part;
@@ -129,6 +140,10 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
 
   const changes: Record<string, Uint8Array | null> = Object.create(null);
   for (const part of nextCreatedParts) changes[part] = null;
+  for (const [part, source] of Object.entries(nextBaselines)) {
+    if (!doc.package.parts[part] && !removedSlideParts.packageParts.has(part)
+      && !nextCreatedParts.has(part)) changes[part] = source;
+  }
   const slideParts = new Set(doc.slideOrder.flatMap((id) => {
     const slide = doc.slides[id];
     const part = slide.origin?.part;
@@ -163,7 +178,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const resourceTypes = patchContentTypes(
       nextBaselines[contentTypesPart], [...clipboard.resources.values()],
     );
-    changes[contentTypesPart] = patchSlideContentTypes(resourceTypes, doc);
+    changes[contentTypesPart] = patchSlideContentTypes(
+      resourceTypes, doc, removedSlideParts.contentTypeParts,
+    );
   }
   for (const slide of activeCreatedSlides) {
     const relsPart = relationshipPartFor(slide.origin!.part);
@@ -185,6 +202,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       nextBaselines[presentationRelsPart], doc,
     );
   }
+  for (const part of removedSlideParts.packageParts) changes[part] = null;
 
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);
   commitSavedPackage(doc, result.package, nextBaselines, [...nextCreatedParts].sort());

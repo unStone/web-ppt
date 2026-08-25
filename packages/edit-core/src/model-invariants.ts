@@ -10,6 +10,7 @@ import { textTargetContext } from './commands/text-target';
 import { tableRowsWithoutTextOverrides } from './table-rows';
 import { assertTableRowAppendEditInfo } from './table-row-append-validation';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
+import { detachedSlideBaselineParts } from './save/remove-slide-parts';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -164,8 +165,11 @@ export function validateEditDoc(doc: EditDoc): void {
     || !Array.isArray(doc.saveState.createdParts) || !Array.isArray(doc.saveState.sourceSlideParts)) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');
   }
+  const detachedBaselines = detachedSlideBaselineParts(doc);
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
-    if (!(bytes instanceof Uint8Array) || (doc.package && !doc.package.parts[part])) {
+    // 删除整页后基线是撤销时复原已移除 OPC part 的唯一来源，因此不要求当前包仍含该 part。
+    if (!(bytes instanceof Uint8Array)
+      || (doc.package && !doc.package.parts[part] && !detachedBaselines.has(part))) {
       throw new Error(`保存基线无效：${part}`);
     }
   }
@@ -197,7 +201,8 @@ export function validateEditDoc(doc: EditDoc): void {
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
     if (slide.id !== slideId) throw new Error(`幻灯片 key 与 id 不一致：${slideId}`);
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
-    if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation) {
+    if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation
+      && !doc.saveState.baselines[slide.origin.part]) {
       throw new Error(`幻灯片 ${slideId} 的源 part 不存在：${slide.origin.part}`);
     }
     if (slide.creation) {
@@ -268,7 +273,8 @@ export function validateEditDoc(doc: EditDoc): void {
   for (const [id, record] of Object.entries(doc.removedElements)) {
     if (record.id !== id || doc.elements[id]) throw new Error(`已删除元素状态冲突：${id}`);
     if (record.meta.editable === 'none') throw new Error(`不可编辑元素不能进入删除集：${id}`);
-    if (record.meta.origin && doc.package && !doc.package.parts[record.meta.origin.part]) {
+    if (record.meta.origin && doc.package && !doc.package.parts[record.meta.origin.part]
+      && !doc.saveState.baselines[record.meta.origin.part]) {
       throw new Error(`已删除元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
     }
   }
@@ -288,6 +294,7 @@ export function validateEditDoc(doc: EditDoc): void {
         spids.add(key);
       }
       if (doc.package && !doc.package.parts[record.meta.origin.part]
+        && !doc.saveState.baselines[record.meta.origin.part]
         && !(record.meta.created && createdParts.has(record.meta.origin.part))) {
         throw new Error(`元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
       }

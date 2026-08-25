@@ -165,6 +165,11 @@ export interface MoveSlideCommand {
   readonly at: { readonly after: SlideId | null };
 }
 
+export interface RemoveSlideCommand {
+  readonly type: 'RemoveSlide';
+  readonly id: SlideId;
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -230,7 +235,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
@@ -293,6 +298,8 @@ export type ElementTreePatch = {
 export interface SlideTreeSnapshot {
   readonly slide: SlideRecord;
   readonly after: SlideId | null;
+  /** 删除视图优先切到原后继；插入 patch 不依赖它定位。 */
+  readonly before: SlideId | null;
   readonly records: Readonly<Record<ElementId, ElementRecord>>;
 }
 
@@ -359,6 +366,7 @@ export interface SlideChangeSets {
   readonly createdSlides: Set<SlideId>;
   readonly removedSlides: Set<SlideId>;
   readonly movedSlides: Set<SlideId>;
+  readonly removedSlideFallbacks: Map<SlideId, SlideId>;
 }
 
 export interface TransactionResult extends ProjectionInvalidation, CommandPatches, SlideChangeSets {

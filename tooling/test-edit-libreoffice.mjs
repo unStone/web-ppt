@@ -5,6 +5,7 @@ import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path
 import { fileURLToPath } from 'node:url';
 import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
+import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -498,6 +499,12 @@ if (basename(savedPath) === 'add-slide.pptx' || basename(savedPath) === 'add-sli
   }
   if (error > 3) throw new Error(`LibreOffice 新增页版式静态形状偏差 ${error.toFixed(3)} SVG unit`);
   geometryEvidence += `，新增页 ${pages} 页/顺序/文字/版式最大偏差 ${error.toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'remove-slide.pptx') {
+  geometryEvidence += runRemoveSlideLibreOfficeContract({
+    savedPath, pages, out, root, soffice, exportSvg: exportLibreOfficeSvg,
+  });
 }
 
 console.log(`\n\x1b[32m✓ LibreOffice 已打开 ${basename(savedPath)} 并导出 PDF（${statSync(pdf).size} bytes${geometryEvidence}）\x1b[0m`);

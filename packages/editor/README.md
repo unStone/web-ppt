@@ -177,6 +177,11 @@ Reordering uses the adjacent `MoveSlide { id, at: { after } }` seam. Subscribe t
 final `session.editor.doc.slideOrder`; mounted view/edit canvases keep their stable `slideId` and only derived
 page-number or relative-link partitions are refreshed. Framework adapters never need a shadow page-order model.
 
+Deletion uses `session.editor.exec({ type: 'RemoveSlide', id })`. All mounted view/edit canvases showing that page
+close active input and switch to the public `removedSlideFallbacks` target; canvases on surviving pages keep their
+stable `slideId` and SVG root. A React, Vue, Svelte, Web Component, or vanilla navigator can consume the same map.
+Disable the command when `session.editor.doc.slideOrder.length === 1`.
+
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant
 in screen pixels at every view zoom. Rotated/flipped elements and nested groups use the same transform order as

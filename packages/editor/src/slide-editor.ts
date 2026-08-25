@@ -405,7 +405,8 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[this.currentSlide]) {
       this.keyboard.breakSequence();
       this.textEditor.close(false);
-      const fallback = this.session.editor.doc.slideOrder[0];
+      const fallback = change.removedSlideFallbacks.get(this.currentSlide)
+        ?? this.session.editor.doc.slideOrder[0];
       if (!fallback) return;
       this.currentSlide = fallback;
       this.render();

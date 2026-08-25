@@ -299,7 +299,7 @@ export function invalidateSlideStructure(
   return { dirtyElements: new Set(elements), dirtySlides: new Set([id]) };
 }
 
-/** 插页只改变页码字段；沿字段父链失效，避免框架订阅者收到整段页尾的元素更新。 */
+/** 页序变化只改变动态字段；沿字段父链失效，避免框架订阅者收到整段页尾的元素更新。 */
 export function invalidateSlideSequence(doc: EditDoc, start: number): ProjectionInvalidation {
   const cache = cacheOf(doc);
   const dirtyElements = new Set<ElementId>();
