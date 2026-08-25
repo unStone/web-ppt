@@ -1,6 +1,6 @@
 import { sortElementChildrenByOrder } from '../element-order';
 import {
-  invalidateElement, invalidateElementStructure, invalidateSlideSequence, invalidateSlideStructure,
+  invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideSequence, invalidateSlideStructure,
 } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type { EditDoc, ElementInsertionResource, ProjectionInvalidation, TableRowInsertion } from '../types';
@@ -24,6 +24,9 @@ import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from '.
 import {
   applySlideOrderPatch, isSlideOrderPatch, slideOrderPatchStart, validateSlideOrderPatch,
 } from './slide-order';
+import {
+  applySlidePropertyPatch, isSlidePropertyPatch, validateSlidePropertyPatch,
+} from './slide-property';
 import type { ElementTransformPatch, ElementTreePatch, Patch, XfrmField } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 
@@ -58,6 +61,10 @@ function validatePatch(
     && patch.path[0] === 'slides' && typeof patch.path[1] === 'string'
     && (patch.op === 'remove' || patch.op === 'insert')) {
     validateSlideTreePatch(doc, patch as import('./types').SlideTreePatch, index);
+    return;
+  }
+  if (isSlidePropertyPatch(input)) {
+    validateSlidePropertyPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path[0] === 'elements'
@@ -263,7 +270,9 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
       for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
       for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
     }
-    const dirty = isSlideTreePatch(patch)
+    const dirty = isSlidePropertyPatch(patch)
+      ? invalidateSlide(doc, patch.path[1])
+      : isSlideTreePatch(patch)
       ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
       : isElementTreePatch(patch)
       ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
@@ -275,6 +284,7 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
   for (const patch of patches) {
     if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
+    else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);

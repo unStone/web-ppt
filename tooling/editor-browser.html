@@ -59,6 +59,7 @@
       runEditorAddTableBrowserContract, runEditorAddTablePerformanceContract,
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
+    import { runEditorSlidePropertiesBrowserContract } from '/tooling/lib/editor-slide-properties-browser-contract.mjs';
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
     import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
     import { runViewerHyperlinkBrowserContract } from '/tooling/lib/viewer-hyperlink-browser-contract.mjs';
@@ -470,6 +471,7 @@
       const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
+      const slidePropertiesResult = await runEditorSlidePropertiesBrowserContract({ openEditor, load });
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
@@ -556,6 +558,8 @@
       report.dataset.fontFaces = String(fontFaces);
       report.dataset.hyperlinkCommitP95 = hyperlinkResult.commitP95.toFixed(3);
       report.dataset.hyperlinkRouteP95 = hyperlinkResult.routeP95.toFixed(3);
+      report.dataset.slidePropertiesBatchP95 = slidePropertiesResult.batchP95.toFixed(3);
+      report.dataset.slidePropertiesRenderP95 = slidePropertiesResult.renderP95.toFixed(3);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
@@ -596,6 +600,8 @@
         + `60 元素页新增 20×10 表格 p95 ${addTablePerformance.p95.toFixed(3)}ms`;
       report.textContent += `\n超链接 60 元素提交/点击路由 p95 `
         + `${hyperlinkResult.commitP95.toFixed(3)} / ${hyperlinkResult.routeP95.toFixed(3)}ms`;
+      report.textContent += `\n200 页属性批量/单页背景上屏 p95 `
+        + `${slidePropertiesResult.batchP95.toFixed(3)} / ${slidePropertiesResult.renderP95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;

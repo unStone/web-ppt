@@ -17,7 +17,10 @@ const LINE_CONTROLLED = new Set([
   ...FILL_NAMES, 'prstDash', 'custDash', 'round', 'bevel', 'miter', 'headEnd', 'tailEnd',
 ]);
 
-function appendFill(properties: XmlElement, fill: Exclude<Fill, { type: 'image' }>): void {
+export function appendVectorFill(
+  properties: XmlElement,
+  fill: Exclude<Fill, { type: 'image' }>,
+): void {
   const node = namespacedElement(properties, DRAWINGML_NS,
     fill.type === 'none' ? 'noFill'
       : fill.type === 'solid' ? 'solidFill'
@@ -54,6 +57,14 @@ function appendFill(properties: XmlElement, fill: Exclude<Fill, { type: 'image' 
   const background = namespacedElement(node, DRAWINGML_NS, 'bgClr');
   insertXmlChildUnchecked(node, background);
   appendDrawingColor(background, fill.bg);
+}
+
+export function removeDrawingFillChildren(properties: XmlElement): void {
+  for (const child of xmlElementChildren(properties)) {
+    if (child.namespaceUri === DRAWINGML_NS && FILL_NAMES.has(child.localName)) {
+      removeXmlChild(properties, child);
+    }
+  }
 }
 
 function lineEnd(line: XmlElement, name: 'headEnd' | 'tailEnd', value: LineEnd): void {
@@ -116,12 +127,8 @@ export function patchElementShapeFormat(document: XmlDocument, record: ElementRe
   if (!hasShapeFormatOverrides(record)) return;
   const properties = shapeProperties(document, record);
   if (own(record.ovr, 'fill')) {
-    for (const child of xmlElementChildren(properties)) {
-      if (child.namespaceUri === DRAWINGML_NS && FILL_NAMES.has(child.localName)) {
-        removeXmlChild(properties, child);
-      }
-    }
-    appendFill(properties, record.ovr.fill!);
+    removeDrawingFillChildren(properties);
+    appendVectorFill(properties, record.ovr.fill!);
   }
   if (own(record.ovr, 'stroke')) patchLine(properties, record.ovr.stroke ?? null);
 }

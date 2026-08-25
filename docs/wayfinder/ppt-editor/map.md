@@ -74,11 +74,11 @@ tracker: local-markdown
 - [编辑形状与图片的二维效果](tickets/048-shape-effects.md) — `SetEffects` 以直接空列表/恢复来源的双语义接通形状、图片和组的四类效果、增量多视图与保留型保存；四项 Chrome 独立预算及 LibreOffice 像素/重存 oracle 均通过。
 - [替换并裁剪图片内容](tickets/049-replace-crop-image.md) — `ReplaceImage`、`SetCrop` 与双矩形手势接通文件替换、来源裁剪、历史资源回收、共享媒体闭包和最小保存；Chrome 60 图片提交/帧 p95 0.5/0.1ms，LibreOffice 非对称像素 oracle 通过。
 - [编辑元素与文字超链接](tickets/050-edit-hyperlinks.md) — 稳定页身份与安全外链贯通命令、查询、复制、最小保存及 edit/view/Viewer 键盘路由；Chrome 预算和 27 份 LibreOffice 工件通过。
+- [编辑页面矢量背景与隐藏状态](tickets/051-edit-slide-background-hidden.md) — 稳定页身份与来源恢复语义贯通背景/隐藏命令、查询、多视图、历史和保留型保存；Chrome 200 页预算及 28 份 LibreOffice 工件通过。
 
 ## Not yet specified
 
-- M4 的图片填充上传/裁剪、页面换版式/背景/隐藏与备注能力还需按用户闭环继续拆分；链接已毕业为
-  [编辑元素与文字超链接](tickets/050-edit-hyperlinks.md)。
+- M4 的图片填充上传/裁剪、页面换版式与备注能力还需按用户闭环继续拆分。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。

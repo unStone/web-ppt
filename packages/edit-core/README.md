@@ -134,6 +134,23 @@ const stroke = queryElementStroke(editor.doc, selectedIds);
 Image-fill upload/crop, effects, text color, and table-cell borders are separate capabilities rather than
 overloaded variants of these two commands.
 
+Slide property controls use stable page ids too. `SetBackground { id, fill }` accepts the same vector fills;
+`SetHidden { id, v }` edits the slide-directory flag. In both commands `null` restores the parsed source.
+`querySlideBackground` and `querySlideHidden` accept multiple `SlideId`s and return effective/source,
+mixed/sourceMixed, and direct state. A background change requests one full-slide render; hidden metadata does
+not rebuild visually unchanged SVG.
+
+```ts
+import { querySlideBackground, querySlideHidden } from '@web-ppt/edit-core';
+
+const background = querySlideBackground(editor.doc, selectedSlideIds);
+editor.exec({ type: 'SetBackground', id: slideId, fill: { type: 'solid', color: '#0F172A' } });
+editor.exec({ type: 'SetHidden', id: slideId, v: true });
+const hidden = querySlideHidden(editor.doc, selectedSlideIds);
+```
+
+Image backgrounds remain a separate resource workflow; they are not encoded into a vector-fill command.
+
 Hyperlinks use stable domain targets instead of page indexes or OOXML actions. `SetLink` edits shape/image links;
 `SetRunProps` uses the same `link` field for a text range. `{ kind: 'none' }` explicitly removes a link, while
 `null` restores the parsed source. `queryElementLink` and `queryRunLink` return effective/source/direct/mixed and

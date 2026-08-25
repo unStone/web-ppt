@@ -20,6 +20,7 @@ interface SlideDomUpdateOptions {
 export function patchSlideDom(options: SlideDomUpdateOptions): boolean {
   const { staticLayer, editor, slideId, change, idPrefix, textMode } = options;
   if (!change.dirtySlides.has(slideId)) return true;
+  if (change.renderSlides.has(slideId)) return false;
   const renderElements = new Set(change.renderElements);
   // 本视图的 HTML 编辑面已覆盖文字；静态 SVG 延迟到退出时一次同步，避免每键双重排版。
   if (options.deferElement && editor.doc.elements[options.deferElement]) {

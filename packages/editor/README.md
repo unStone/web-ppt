@@ -195,6 +195,10 @@ session.editor.exec({
 });
 ```
 
+Page-sidebars use the re-exported `querySlideBackground` / `querySlideHidden` functions and submit
+`SetBackground` / `SetHidden` through the same headless editor. Multiple mounted edit/view surfaces showing the
+target page receive the new background synchronously; surfaces on other pages retain their SVG identity.
+
 Shape palettes use the same framework-neutral seam: call `session.editor.exec({ type: 'AddShape', ... })`.
 Every mounted view inserts the new SVG partition synchronously, the edit view shows its selection frame, and a
 double-click opens the existing text editor. View mode exposes no creation gesture; product code decides when to

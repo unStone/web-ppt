@@ -33,6 +33,7 @@ import { runMoveSlideEditorContract } from './lib/move-slide-editor-contract.mjs
 import { runRemoveSlideEditorContract } from './lib/remove-slide-editor-contract.mjs';
 import { runDuplicateSlideEditorContract } from './lib/duplicate-slide-editor-contract.mjs';
 import { runShapeFormatEditorContract } from './lib/shape-format-editor-contract.mjs';
+import { runSlidePropertiesEditorContract } from './lib/slide-properties-editor-contract.mjs';
 import { runShapeEffectsEditorContract } from './lib/shape-effects-editor-contract.mjs';
 import { runImageCropEditorContract } from './lib/image-crop-editor-contract.mjs';
 
@@ -235,6 +236,7 @@ await runMoveSlideEditorContract({ check, lib, root });
 await runRemoveSlideEditorContract({ check, lib, root, window: domEnvironment.window });
 await runDuplicateSlideEditorContract({ check, lib, root, window: domEnvironment.window });
 await runShapeFormatEditorContract({ check, lib, root });
+await runSlidePropertiesEditorContract({ check, lib, root });
 await runShapeEffectsEditorContract({ check, lib, root });
 await runImageCropEditorContract({ check, lib, root });
 await runEditorSpaceContract({ check, lib, root });

@@ -4,7 +4,7 @@ import { validateEditDoc } from '../model-invariants';
 import { patchOpcPackage } from '../opc/patch';
 import { effectiveElement } from '../projection';
 import type { OpcPatchResult, OpcPartChanges } from '../opc/types';
-import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
+import type { EditDoc, ElementRecord, RemovedElementRecord, SlideRecord } from '../types';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import { hasXfrmOverrides } from './xfrm';
 import { hasTextOverrides } from './text';
@@ -31,6 +31,7 @@ import {
   cloneDuplicateNotesParts, duplicateNotesParts, duplicateRelationshipSource,
   duplicateSlideRemovals, duplicateSlideSource, patchDuplicateSlideRelationships,
 } from './duplicate-slide-parts';
+import { hasSlidePropertyOverrides, patchSlideProperties } from './slide-properties';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -78,6 +79,17 @@ function removalsByPart(doc: EditDoc): Map<string, RemovedElementRecord[]> {
   return grouped;
 }
 
+function slidePropertiesByPart(doc: EditDoc): Map<string, SlideRecord> {
+  const grouped = new Map<string, SlideRecord>();
+  for (const record of Object.values(doc.slides)) {
+    if (!hasSlidePropertyOverrides(record)) continue;
+    const part = record.origin?.part;
+    if (!part) throw new Error(`幻灯片 ${record.id} 缺少 OOXML 回写锚点`);
+    grouped.set(part, record);
+  }
+  return grouped;
+}
+
 /** 始终从首次触碰的基线重建 part，避免连续保存把旧覆盖烘进源树而破坏撤销。 */
 export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   validateEditDoc(doc);
@@ -87,6 +99,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }
 
   const grouped = recordsByPart(doc);
+  const slideProperties = slidePropertiesByPart(doc);
   const explicitHyperlinkParts = new Set([...grouped].flatMap(([part, records]) =>
     records.some(hasHyperlinkOverrides) ? [part] : []));
   const removals = removalsByPart(doc);
@@ -133,7 +146,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }
   const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
   for (const part of new Set([
-    ...grouped.keys(), ...removals.keys(), ...slideNumbers.keys(), ...hyperlinkParts,
+    ...grouped.keys(), ...slideProperties.keys(), ...removals.keys(), ...slideNumbers.keys(),
+    ...hyperlinkParts,
   ])) {
     if (nextBaselines[part]) continue;
     if (activeCreatedSlides.some((slide) => slide.origin?.part === part)) continue;
@@ -218,6 +232,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     materializeElementTreeState(tree, doc, part, records, [
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
     ], { links });
+    const slideRecord = slideProperties.get(part);
+    if (slideRecord) patchSlideProperties(tree, slideRecord);
     const bytes = serializeXmlTreeBytes(tree);
     changes[part] = slideNumbers.has(part)
       ? patchSlideNumberFields(bytes, slideNumbers.get(part)!)

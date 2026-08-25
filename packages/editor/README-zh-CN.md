@@ -172,6 +172,10 @@ session.editor.exec({
 });
 ```
 
+页面侧栏使用 editor 入口转出的 `querySlideBackground` / `querySlideHidden`，并通过同一个 headless
+editor 提交 `SetBackground` / `SetHidden`。显示目标页的多个 edit/view 挂载面会同步更新背景，停留在其它页
+的画布继续保留原 SVG 身份。
+
 形状库也复用同一条无框架 seam：调用 `session.editor.exec({ type: 'AddShape', ... })`。所有挂载视图会
 同步插入新 SVG 分区，edit 视图显示选择框，双击继续打开既有文字编辑器。view 模式本身不提供创建手势；
 产品层决定何时展示命令，不需要导入 DOM 内部模块。

@@ -9,6 +9,6 @@ for (const artifact of EDIT_SAVE_OFFICE_ARTIFACTS) {
   execFileSync(process.execPath, [
     join(root, 'tooling/test-edit-libreoffice.mjs'),
     join(root, 'out/edit-save', artifact.file),
-    String(artifact.slides),
+    String(artifact.libreOfficePages ?? artifact.slides),
   ], { cwd: root, stdio: 'inherit' });
 }

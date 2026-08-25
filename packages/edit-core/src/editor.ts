@@ -3,7 +3,9 @@ import { commandPatches, commandSelectsInsertedElement, commandTargetIds } from 
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
-import { slidePatchSets } from './commands/slide-tree';
+import { isSlideTreePatch, slidePatchSets } from './commands/slide-tree';
+import { isSlideOrderPatch } from './commands/slide-order';
+import { isSlideBackgroundPatch } from './commands/slide-property';
 import { fitTextShapePatches } from './commands/fit-text-shape';
 import { isImageResourcePatch } from './commands/element-image-content';
 import { writableLayerSiblingIds } from './element-order';
@@ -30,7 +32,11 @@ function patchElements(patches: readonly Patch[]): Set<ElementId> {
 }
 
 function affectsSlideSequence(patches: readonly Patch[]): boolean {
-  return patches.some((patch) => patch.path[0] === 'slides' || patch.path[0] === 'slideOrder');
+  return patches.some((patch) => isSlideTreePatch(patch) || isSlideOrderPatch(patch));
+}
+
+function renderPatchSlides(patches: readonly Patch[]): Set<SlideId> {
+  return new Set(patches.filter(isSlideBackgroundPatch).map((patch) => patch.path[1]));
 }
 
 function renderPatchElements(
@@ -89,6 +95,15 @@ function shapeTextCommandTarget(command: Command): ElementId | null {
 
 /** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
 function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): void {
+  const removedSlideIds = new Set(commands.flatMap((command) =>
+    command.type === 'RemoveSlide' ? [command.id] : []));
+  const slidePropertyConflict = commands.flatMap((command) =>
+    command.type === 'SetBackground' || command.type === 'SetHidden' ? [command.id] : [])
+    .find((id) => removedSlideIds.has(id));
+  // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
+  if (slidePropertyConflict) {
+    throw new Error(`同一事务不能修改再删除同一页面：${slidePropertyConflict}`);
+  }
   const layers = commands.filter((command) => command.type === 'SetZ');
   const layerRecords = layers.map((command) => assertSetZCommand(doc, command));
   if (layerRecords.length > 1) {
@@ -246,6 +261,7 @@ export class Editor {
       selection: this.selection,
       touchedElements: patchElements(entry.inverse),
       renderElements: renderPatchElements(entry.inverse, dirty.dirtyElements),
+      renderSlides: renderPatchSlides(entry.inverse),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
       ...slidePatchSets(this.doc, entry.inverse),
@@ -255,6 +271,7 @@ export class Editor {
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
       change,
+      change.renderSlides,
     );
     return change;
   }
@@ -272,6 +289,7 @@ export class Editor {
       selection: this.selection,
       touchedElements: patchElements(entry.forward),
       renderElements: renderPatchElements(entry.forward, dirty.dirtyElements),
+      renderSlides: renderPatchSlides(entry.forward),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
       ...slidePatchSets(this.doc, entry.forward),
@@ -281,6 +299,7 @@ export class Editor {
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
       change,
+      change.renderSlides,
     );
     return change;
   }
@@ -301,6 +320,7 @@ export class Editor {
     const dirtySlides = new Set<SlideId>();
     const touchedElements = new Set<ElementId>();
     const renderElements = new Set<ElementId>();
+    const renderSlides = new Set<SlideId>();
     const reorderedElements = new Set<ElementId>();
     const bodyPropsElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
@@ -315,6 +335,7 @@ export class Editor {
       if (affectsSlideSequence(patches.forward)) {
         for (const id of dirty.dirtyElements) renderElements.add(id);
       }
+      for (const id of renderPatchSlides(patches.forward)) renderSlides.add(id);
       for (const patch of patches.forward) {
         if (patch.path[0] !== 'elements') continue;
         touchedElements.add(patch.path[1]);
@@ -410,10 +431,11 @@ export class Editor {
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
         slides,
+        renderSlides,
       );
     }
     return {
-      forward, inverse, dirtyElements, dirtySlides, selection: selectionAfter,
+      forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
       ...slidePatchSets(this.doc, forward),
     };
   }
@@ -430,6 +452,7 @@ export class Editor {
       createdSlides: new Set(), removedSlides: new Set(), movedSlides: new Set(),
       removedSlideFallbacks: new Map(),
     },
+    renderSlides: Set<SlideId> = new Set(),
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -440,6 +463,7 @@ export class Editor {
           dirtySlides: new Set(slides),
           touchedElements: new Set(touched),
           renderElements: new Set(render),
+          renderSlides: new Set(renderSlides),
           bodyPropsElements: new Set(bodyProps),
           reorderedElements: new Set(reordered),
           createdSlides: new Set(slideChanges.createdSlides),

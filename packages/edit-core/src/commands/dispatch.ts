@@ -24,9 +24,10 @@ import { setEffectsPatches } from './set-effects';
 import { setLinkPatches } from './set-link';
 import { setCropPatches } from './set-crop';
 import { replaceImagePatches } from './replace-image';
+import { setBackgroundPatches, setHiddenPatches } from './set-slide-properties';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetLinkCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  InsertRowCommand, SetBackgroundCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLinkCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -69,6 +70,8 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   MoveSlide: register<MoveSlideCommand>(['id', 'at'], moveSlidePatches, { target: 'none' }),
   RemoveSlide: register<RemoveSlideCommand>(['id'], removeSlidePatches, { target: 'none' }),
   DuplicateSlide: register<DuplicateSlideCommand>(['id'], duplicateSlidePatches, { target: 'none' }),
+  SetBackground: register<SetBackgroundCommand>(['id', 'fill'], setBackgroundPatches, { target: 'none' }),
+  SetHidden: register<SetHiddenCommand>(['id', 'v'], setHiddenPatches, { target: 'none' }),
   SetFill: register<SetFillCommand>(['id', 'fill'], setFillPatches),
   SetStroke: register<SetStrokeCommand>(['id', 'stroke'], setStrokePatches),
   SetEffects: register<SetEffectsCommand>(['id', 'effects'], setEffectsPatches),

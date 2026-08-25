@@ -1,10 +1,21 @@
-import type { Effects, Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
+import type { Effects, Fill, Stroke } from '@web-ppt/core';
 import type {
-  EditableKind, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
+  ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
-import type { AffineMatrix } from '../space';
+import type { ElementClipboardPayload } from './clipboard-types';
+import type {
+  SetBackgroundCommand, SetHiddenCommand, SlidePropertyPatch,
+} from './slide-property-types';
+
+export type {
+  ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
+  ClipboardTextLink, ClipboardXmlRoot, ElementClipboardPayload, ElementClipboardRecordMeta,
+} from './clipboard-types';
+export type {
+  SetBackgroundCommand, SetHiddenCommand, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
+} from './slide-property-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -57,90 +68,6 @@ export interface AlignElementsCommand {
   readonly type: 'AlignElements';
   readonly ids: readonly ElementId[];
   readonly edge: AlignEdge;
-}
-
-export interface ElementClipboardRecordMeta {
-  /** 同一次复制操作的来源证明；粘贴时用来拒绝拼接多个来源的伪造树。 */
-  readonly copyBatchId: string;
-  readonly editable: EditableKind;
-  readonly anchored: boolean;
-  readonly sourceSpid?: number;
-  readonly geom?: GeomSpec;
-  /** 复制时根元素的 frame → slide 视觉矩阵；后代不需要重复携带。 */
-  readonly frameToSlide?: AffineMatrix;
-  readonly link?: ClipboardPortableLink;
-  readonly textLinks?: readonly ClipboardTextLink[];
-}
-
-export type ClipboardPortableLink = {
-  readonly kind: 'external';
-  readonly href: string;
-} | {
-  readonly kind: 'slide';
-  readonly sourceSlideId: SlideId;
-  readonly packageTarget?: { readonly rootHash: string; readonly closureHash: string };
-} | {
-  readonly kind: 'none';
-} | {
-  readonly kind: 'unsupported';
-} | {
-  readonly kind: 'relative';
-  readonly action: 'next' | 'previous' | 'first' | 'last';
-};
-
-export interface ClipboardTextLink {
-  readonly paragraph: number;
-  readonly run: number;
-  readonly cell?: TableCellAddress;
-  readonly value: ClipboardPortableLink;
-}
-
-export interface ClipboardXmlRoot {
-  readonly markup: string;
-  readonly namespaces: Readonly<Record<string, string>>;
-  readonly hostSpids: readonly string[];
-  readonly relationships?: readonly ClipboardRelationship[];
-}
-
-export interface ClipboardRelationship {
-  /** 宿主片段中原始的 r:id / r:embed / r:link 值。 */
-  readonly sourceId: string;
-  readonly type: string;
-  readonly target?: string;
-  readonly targetMode?: 'External';
-  readonly resourceHash?: string;
-  /** 复杂 OOXML 对象只在目标包拥有同一闭包时复用，不把未知格式静默扁平化。 */
-  readonly packageTarget?: {
-    /** 根内容与关系图都不包含 part 路径，目标包据此重新定位等价闭包。 */
-    readonly rootHash: string;
-    readonly closureHash: string;
-  };
-}
-
-export interface ClipboardElementRecord {
-  readonly id: string;
-  readonly parent: string | null;
-  readonly src: SlideElement;
-  readonly meta: ElementClipboardRecordMeta;
-  readonly children: readonly string[];
-}
-
-export interface ClipboardResource {
-  readonly hash: string;
-  readonly mime: string;
-  readonly extension: string;
-  readonly bytes: string;
-}
-
-export interface ElementClipboardPayload {
-  readonly format: 'web-ppt-elements';
-  readonly version: 1;
-  readonly source: { readonly width: number; readonly height: number; readonly copyBatchId: string };
-  readonly bounds: { readonly left: number; readonly top: number };
-  readonly roots: readonly string[];
-  readonly records: Readonly<Record<string, ClipboardElementRecord>>;
-  readonly ooxml: { readonly roots: Readonly<Record<string, ClipboardXmlRoot>> };
-  readonly resources: readonly ClipboardResource[];
 }
 
 export interface PasteElementsCommand {
@@ -309,7 +236,7 @@ export interface InsertRowCommand {
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
-  | SetEffectsCommand | SetLinkCommand;
+  | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetHiddenCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -475,7 +402,7 @@ export type TableRowPatch = {
 };
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
-  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
+  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -521,6 +448,7 @@ export interface SlideChangeSets {
 
 export interface TransactionResult extends ProjectionInvalidation, CommandPatches, SlideChangeSets {
   readonly selection: Selection;
+  readonly renderSlides: Set<SlideId>;
 }
 
 export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
@@ -530,6 +458,8 @@ export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
   readonly touchedElements: Set<ElementId>;
   /** 需要重新生成 markup/defs 的元素；纯层级 patch 不进入这里。 */
   readonly renderElements: Set<ElementId>;
+  /** 页面级视觉属性需要重建整个 SVG；隐藏等纯目录元数据不进入这里。 */
+  readonly renderSlides: Set<SlideId>;
   /** bodyPr 有效值变化；活动文字面必须同步刷新被延迟的静态分区。 */
   readonly bodyPropsElements: Set<ElementId>;
   /** 只需移动既有 DOM 分区的元素；可与 renderElements 重叠。 */

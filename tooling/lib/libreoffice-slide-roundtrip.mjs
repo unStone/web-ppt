@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { unzipSync } from 'fflate';
 
-/** LibreOffice 重存后，从 presentation 关系顺序独立解析每页 notes 归属。 */
+/** LibreOffice 重存后，按 presentation 关系顺序返回页面与可选 notes 归属。 */
 export function roundtripSlideNotes({ savedPath, out, root, soffice, name }) {
   const roundtripDir = join(out, `${name}-roundtrip`);
   mkdirSync(roundtripDir, { recursive: true });
@@ -56,5 +56,5 @@ export function roundtripSlideNotes({ savedPath, out, root, soffice, name }) {
     return [...decode(notePart).matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)]
       .map((match) => match[1]).join('').replace(/\s+/g, '');
   });
-  return { slideParts, noteParts, notes };
+  return { parts, slideParts, noteParts, notes };
 }

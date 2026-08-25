@@ -123,6 +123,22 @@ export interface ElementFillState {
   readonly direct: boolean;
 }
 
+export interface SlideBackgroundState {
+  readonly value: Fill | null;
+  readonly source: Fill | null;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+}
+
+export interface SlideHiddenState {
+  readonly value: boolean;
+  readonly source: boolean;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+}
+
 export interface ElementStrokeState {
   readonly value: Stroke | null;
   readonly mixed: boolean;

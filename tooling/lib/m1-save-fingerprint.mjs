@@ -203,6 +203,23 @@ if (mode === 'projected') {
         },
       });
     }
+  } else if (scenario.type === 'slideProperties') {
+    const [inherited, solid, hidden, pattern] = doc.slideOrder;
+    editor.exec({ type: 'SetBackground', id: inherited, fill: scenario.backgrounds[0] });
+    editor.exec({ type: 'SetBackground', id: solid, fill: scenario.backgrounds[1] });
+    editor.exec(
+      { type: 'SetBackground', id: hidden, fill: { type: 'none' } },
+      { type: 'SetHidden', id: hidden, v: false },
+    );
+    editor.exec({ type: 'SetHidden', id: pattern, v: true });
+    editor.exec({ type: 'DuplicateSlide', id: hidden });
+    const added = [...editor.exec({
+      type: 'AddSlide', layoutId: doc.layoutOrder[0], at: { after: doc.slideOrder.at(-1) },
+    }).createdSlides][0];
+    editor.exec(
+      { type: 'SetBackground', id: added, fill: scenario.backgrounds[2] },
+      { type: 'SetHidden', id: added, v: true },
+    );
   } else if (scenario.type === 'shapeEffects') {
     const named = (name) => Object.values(doc.elements)
       .find((record) => record.src.name === name);

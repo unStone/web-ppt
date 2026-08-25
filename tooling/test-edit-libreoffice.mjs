@@ -9,6 +9,7 @@ import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffic
 import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libreoffice-contract.mjs';
 import { runShapeEffectsLibreOfficeContract } from './lib/shape-effects-libreoffice-contract.mjs';
 import { runImageContentLibreOfficeContract } from './lib/image-content-libreoffice-contract.mjs';
+import { runSlidePropertiesLibreOfficeContract } from './lib/slide-properties-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -252,6 +253,11 @@ if (requestedPages !== undefined && pages !== requestedPages) {
 }
 
 let geometryEvidence = '';
+if (basename(savedPath) === 'slide-properties.pptx') {
+  geometryEvidence = runSlidePropertiesLibreOfficeContract({
+    savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg,
+  });
+}
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
   const markup = exportLibreOfficeSvg(' spAutoFit 几何');
   const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);

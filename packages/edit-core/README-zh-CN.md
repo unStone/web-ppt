@@ -127,6 +127,22 @@ const stroke = queryElementStroke(editor.doc, selectedIds);
 
 图片填充上传/裁剪、效果、文字颜色和单元格边框是独立能力，不会被塞进这两条命令。
 
+页面属性也只使用稳定页身份。`SetBackground { id, fill }` 接受同一套矢量填充，
+`SetHidden { id, v }` 修改页面目录中的隐藏标记；两者传 `null` 都表示恢复解析来源。
+`querySlideBackground` 与 `querySlideHidden` 接受多个 `SlideId`，返回有效值/来源、mixed/sourceMixed
+和直接覆盖状态。背景变化只请求目标页整页重绘，隐藏元数据不会重建视觉未变化的 SVG。
+
+```ts
+import { querySlideBackground, querySlideHidden } from '@web-ppt/edit-core';
+
+const background = querySlideBackground(editor.doc, selectedSlideIds);
+editor.exec({ type: 'SetBackground', id: slideId, fill: { type: 'solid', color: '#0F172A' } });
+editor.exec({ type: 'SetHidden', id: slideId, v: true });
+const hidden = querySlideHidden(editor.doc, selectedSlideIds);
+```
+
+图片背景仍是独立的资源工作流，不会被编码进矢量填充命令。
+
 超链接使用稳定领域目标，不向 UI 泄漏页码或 OOXML action。`SetLink` 编辑形状/图片链接；文字区间通过
 `SetRunProps` 的同名 `link` 字段编辑。`{ kind: 'none' }` 表示显式移除，`null` 表示恢复解析来源。
 `queryElementLink` 与 `queryRunLink` 返回有效值、来源、直接覆盖、混合及可跟随状态，React、Vue、Svelte、

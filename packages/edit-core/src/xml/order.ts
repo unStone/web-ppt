@@ -77,6 +77,12 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
   [expandedName(PRESENTATIONML_NS, 'cSld')]: {
     groups: [p('bg'), p('spTree'), p('custDataLst'), p('controls'), p('extLst')],
   },
+  [expandedName(PRESENTATIONML_NS, 'bg')]: {
+    groups: [p('bgPr', 'bgRef')],
+  },
+  [expandedName(PRESENTATIONML_NS, 'bgPr')]: {
+    groups: [FILL, EFFECT, a('extLst')],
+  },
   [expandedName(PRESENTATIONML_NS, 'sld')]: {
     groups: [p('cSld'), p('clrMapOvr'), p('transition'), p('timing'), p('extLst')],
   },

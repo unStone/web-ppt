@@ -216,6 +216,13 @@ export function validateEditDoc(doc: EditDoc): void {
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
     if (slide.id !== slideId) throw new Error(`幻灯片 key 与 id 不一致：${slideId}`);
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
+    if (own(slide.ovr, 'background')) {
+      if (slide.ovr.background === null) throw new Error(`幻灯片 ${slideId} 的直接背景不能是 null`);
+      assertVectorFill(slide.ovr.background, `幻灯片 ${slideId} 的背景覆盖`);
+    }
+    if (own(slide.ovr, 'hidden') && typeof slide.ovr.hidden !== 'boolean') {
+      throw new Error(`幻灯片 ${slideId} 的隐藏覆盖必须是布尔值`);
+    }
     if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation
       && !doc.saveState.baselines[slide.origin.part]) {
       throw new Error(`幻灯片 ${slideId} 的源 part 不存在：${slide.origin.part}`);
