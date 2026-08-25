@@ -1,6 +1,6 @@
 ---
 title: 为既有页面切换版式并保持内容
-status: in_progress
+status: done
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -31,5 +31,6 @@ blocked_by:
 - `SetLayout { id, layoutId }` 以稀疏页级 patch 切换真实版式；页、元素和 OPC 身份不变。占位符先按 `idx`、再按标题/内容等价类型重绑，几何、外观、文字和项目符号只替换继承值，页面直设格式、背景、转场与内容保留。
 - 目标版式静态节点没有伪造 `EditDoc` 身份；新占位符只在 edit interaction layer 提示。`SlideEditor.queryLayout/setLayout` 为原生、React、Vue 等宿主提供同一公开 seam，view 模式拒绝写入。
 - 保存只改目标 slide 的 slideLayout 关系 Target，复用已有 rId；缺少关系时选最小可用 rId。slide XML、notes、媒体、动画、未知关系与其他 part 逐字保留，连续保存、撤销/重做、新页与复制页重开等价。
-- 固件 `sample-editor-change-layout.pptx` 连续生成两次 SHA-256 均为 `f4f870a5508d4a976ecec4449484cb6329ad508085ba479cc3f7174887d25f1a`。Chrome 200 页单页完整上屏 p95 `0.400ms`；LibreOffice 目标版式静态标记偏差 `0.417 SVG unit`，重存关系正确，全量 31 份 Office 产物均成功打开并导出。
-- 精确执行 `npm run check && npm test && npm run build`：core 2130、edit-core 715、保存 284、PowerPoint 报告 9、editor 288、60 份固件 / 182 页 / 364 对独立 SVG 指纹、metafile 130 全绿，五个发布包构建成功。
+- 固件 `sample-editor-change-layout.pptx` 连续生成两次 SHA-256 均为 `dfcff8780b4c91ad5107ca380bd07e1862b2bcc00e27416a517073b41c55a7eb`。Chrome 200 页单页完整上屏 p95 `0.500ms`；LibreOffice 目标版式静态标记偏差 `0.417 SVG unit`，重存关系正确，全量 31 份 Office 产物均成功打开并导出。
+- 结构历史的资源哈希按不可变条目缓存，字节计量不再深拷贝整页快照；动态页码按稀疏索引失效，避免完整继承投影进入 200 页重排热路径。
+- 精确执行 `npm run check && npm test && npm run build`：core 2130、edit-core 724、保存 292、PowerPoint 报告 9、editor 288、60 份固件 / 182 页 / 364 对独立 SVG 指纹、metafile 130 全绿，162 个快照一致，五个发布包构建成功。
