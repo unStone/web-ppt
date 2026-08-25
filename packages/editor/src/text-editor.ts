@@ -1,10 +1,10 @@
 import {
   applyRunProps, applyTextEditOps, slideOfElement, tableCellOverrideKey,
-  queryParaProps as queryHeadlessParaProps, queryRunProps, textBodyEditText, textBodyFromOverride,
+  queryParaProps as queryHeadlessParaProps, queryRunLink as queryHeadlessRunLink, queryRunProps, textBodyEditText, textBodyFromOverride,
   textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
-  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides,
+  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, Selection, TableCellAddress, TextEditOp, TextPosition,
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -69,6 +69,13 @@ export class TextEditorController {
       const pending = this.pendingRunProps[field as keyof RunPropertyOverrides];
       return [field, pending === undefined ? value : { value: pending, mixed: false }];
     })) as unknown as RunPropertiesState;
+  }
+
+  queryRunLink(): RunLinkState | null {
+    const context = this.textContext();
+    return context ? queryHeadlessRunLink(
+      this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
+    ) : null;
   }
 
   queryParaProps(): ParagraphPropertiesState | null {

@@ -50,6 +50,7 @@ export function elementMetaOf(
     ...(info?.origin ? { origin: info.origin } : {}),
     ...(info?.moveLocked ? { moveLocked: true } : {}),
     ...(info?.textTemplate ? { textTemplate: info.textTemplate } : {}),
+    ...(info?.readonlyLink ? { sourceLinkReadonly: true } : {}),
     editable,
   };
 }

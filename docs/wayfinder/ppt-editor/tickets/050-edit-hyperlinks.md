@@ -1,10 +1,10 @@
 ---
 title: 编辑元素与文字超链接
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
-assignee:
+assignee: /root
 blocked_by:
   - ./006-preserving-xml-tree.md
   - ./008-command-patch-history.md
@@ -47,4 +47,19 @@ HTML/原生 SVG；真实 Chrome 验证 edit/view 点击语义、多 view 增量 
 
 ## Resolution
 
-待实现。
+- 公开 `LinkTarget` 只含规范化安全外链或稳定 `SlideId`；元素走 `SetLink`，文字走
+  `SetRunProps.link`，`null` 恢复来源、`none` 显式移除。`queryElementLink` / `queryRunLink` 统一返回
+  effective/source/mixed/direct/readonly/followable，动态 action 与未知来源不会被面板摊平。
+- core、edit-core 与渲染层共用单一外链安全边界。edit 单击只选择，`Ctrl/Cmd+Enter` / `followLink`
+  显式跟随；editor view 与独立 `Viewer` 都支持鼠标和 `Tab`/`Enter`，内部跳页保持 view 本地稳定身份，
+  外链回调与默认新窗口均隔离 opener，危险来源没有浏览器导航能力。
+- 保存按 slide part 去重外链/内链关系，最小补丁元素 `cNvPr` 与文字 `rPr`；关系 GC 只回收本次退休且已无
+  引用的关系。删除目标页会清理来源点击/悬停节点与悬空关系，未触碰关系、未知扩展和 hover 保持原样；
+  页面重排及同文档/跨文档元素和文字复制粘贴均按稳定页面身份映射。
+- 确定性固件连续生成 SHA-256 均为
+  `edec6544ed73bad68e2779e308fe6f570ba483e07b21f5a393d25d1d795ab9e7`，覆盖共享/孤立关系、危险来源、
+  形状/图片/run、相对动作与三页跳转。最终门禁为 core 2125、edit-core 661、保存 253、editor 283 项，
+  57 份固件 / 172 页 / 344 对 HTML+SVG 独立指纹完全一致；真实 Chrome 超链接 60 元素提交/路由 p95
+  为 2.7/0.1ms，完整 27 份 LibreOffice 工件无修复打开，其中 `hyperlinks.pptx` 验证外链、第三页内跳与文字。
+- `hyperlinks.pptx` 已加入 27 份 PowerPoint 单一清单；当前环境没有 Windows PowerPoint，不能伪造真机成功
+  报告。外部门禁仍由 [M1 真机票据](010-prove-m1-save.md) 保持 open，等待 runner 留存 27/27 证据。

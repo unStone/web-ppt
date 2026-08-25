@@ -26,6 +26,9 @@ v.search('keyword');   // → array of matching slide indices
 await v.exportPng(2);  // → Blob
 ```
 
+Internal slide links support both click and `Tab`/`Enter`; external links can be intercepted with `v.onLinkClick`.
+`destroy()` removes both navigation listeners.
+
 ## Bring your own UI
 
 ```ts

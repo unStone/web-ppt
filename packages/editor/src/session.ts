@@ -4,7 +4,7 @@ import { createDoc, disposeDoc, Editor } from '@web-ppt/edit-core';
 import type { CreateDocOptions, EditorOptions } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
 import { createSlideEditor } from './slide-editor';
-import type { SlideEditor, SlideEditorOptions } from './slide-editor';
+import type { SlideEditor, SlideEditorOptions } from './slide-editor-types';
 
 export interface OpenEditorOptions extends CreateDocOptions, EditorOptions {
   password?: ParseOptions['password'];

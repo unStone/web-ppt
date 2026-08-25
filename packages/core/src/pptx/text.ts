@@ -309,13 +309,16 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         const rPr = kid(node, 'rPr');
         const rp = mergeRun(merged.rp, parseRunProps(rPr, env.ctx, env.fonts));
         const hlink = kid(rPr, 'hlinkClick');
+        let readonlyLink = false;
         if (hlink && env.resolveLink) {
           const url = env.resolveLink(attr(hlink, 'r:id') ?? '', attr(hlink, 'action'));
           if (url) rp.link = url;
+          else readonlyLink = true;
         }
         let text = kid(node, 't')?.textContent ?? '';
         if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
         const run = finalizeRun(text, rp, env, merged.rp);
+        if (env.edit && readonlyLink && run.editInfo) run.editInfo = { ...run.editInfo, readonlyLink: true };
         runs.push(node.localName === 'fld'
           ? { ...run, field: attr(node, 'type') ?? 'unknown' }
           : run);

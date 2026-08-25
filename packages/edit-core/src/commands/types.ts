@@ -1,6 +1,6 @@
 import type { Effects, Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
 import type {
-  EditableKind, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, ParagraphPropertyOverrides, ProjectionInvalidation,
+  EditableKind, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
@@ -68,6 +68,31 @@ export interface ElementClipboardRecordMeta {
   readonly geom?: GeomSpec;
   /** 复制时根元素的 frame → slide 视觉矩阵；后代不需要重复携带。 */
   readonly frameToSlide?: AffineMatrix;
+  readonly link?: ClipboardPortableLink;
+  readonly textLinks?: readonly ClipboardTextLink[];
+}
+
+export type ClipboardPortableLink = {
+  readonly kind: 'external';
+  readonly href: string;
+} | {
+  readonly kind: 'slide';
+  readonly sourceSlideId: SlideId;
+  readonly packageTarget?: { readonly rootHash: string; readonly closureHash: string };
+} | {
+  readonly kind: 'none';
+} | {
+  readonly kind: 'unsupported';
+} | {
+  readonly kind: 'relative';
+  readonly action: 'next' | 'previous' | 'first' | 'last';
+};
+
+export interface ClipboardTextLink {
+  readonly paragraph: number;
+  readonly run: number;
+  readonly cell?: TableCellAddress;
+  readonly value: ClipboardPortableLink;
 }
 
 export interface ClipboardXmlRoot {
@@ -210,6 +235,13 @@ export interface SetEffectsCommand {
   readonly effects: Effects | null;
 }
 
+export interface SetLinkCommand {
+  readonly type: 'SetLink';
+  readonly id: ElementId;
+  /** null 恢复来源；{kind:'none'} 明确移除当前元素链接。 */
+  readonly target: LinkTarget | { readonly kind: 'none' } | null;
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -277,7 +309,7 @@ export interface InsertRowCommand {
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
-  | SetEffectsCommand;
+  | SetEffectsCommand | SetLinkCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -322,6 +354,17 @@ export type ElementEffectsPatch = {
 } | {
   readonly op: 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
+  readonly origin: string;
+};
+
+export type ElementLinkPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
+  readonly value: LinkOverride;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
   readonly origin: string;
 };
 
@@ -431,7 +474,7 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
   | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
 
 export interface CommandPatches {

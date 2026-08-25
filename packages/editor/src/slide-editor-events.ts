@@ -13,7 +13,7 @@ interface SlideEditorEventHandlers {
 }
 
 /** 事件表集中绑定与释放，构造失败和 destroy 共用同一份对称清理。 */
-export function bindSlideEditorEvents(
+export function bindSlideEditorEditEvents(
   element: HTMLElement,
   handlers: SlideEditorEventHandlers,
 ): () => void {
@@ -23,5 +23,20 @@ export function bindSlideEditorEvents(
   return () => {
     for (const [type, handler] of entries) element.removeEventListener(type, handler);
     element.removeEventListener('lostpointercapture', handlers.pointercancel);
+  };
+}
+
+export function bindSlideEditorLinkEvent(
+  element: HTMLElement,
+  handlers: {
+    click: (event: MouseEvent) => void;
+    keydown: (event: KeyboardEvent) => void;
+  },
+): () => void {
+  element.addEventListener('click', handlers.click);
+  element.addEventListener('keydown', handlers.keydown);
+  return () => {
+    element.removeEventListener('click', handlers.click);
+    element.removeEventListener('keydown', handlers.keydown);
   };
 }

@@ -1,6 +1,6 @@
 import type { Presentation } from '@web-ppt/core';
 import type { EditorSession } from './session';
-import type { SlideEditor } from './slide-editor';
+import type { SlideEditor } from './slide-editor-types';
 
 interface SessionState {
   presentation: Presentation;

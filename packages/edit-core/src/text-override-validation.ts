@@ -7,6 +7,7 @@ import {
 } from './paragraph-property-schema';
 import { TEXT_ATOM } from './text-position';
 import { assertTextBodyPropertyOverrides } from './body-property-schema';
+import { assertRunPropertyOverrides } from './run-property-schema';
 
 function validateParagraphOverrides(value: ParagraphPropertyOverrides): void {
   assertParagraphPropertyOverrides(value, '段落格式覆盖');
@@ -63,6 +64,9 @@ export function validateFlatTextOverride(
       if (mark.atomText !== undefined
         && (mark.to - mark.from !== 1 || paragraph.text.slice(mark.from, mark.to) !== TEXT_ATOM)) {
         throw new Error('公式标记必须覆盖单个原子');
+      }
+      if (mark.runOverrides) {
+        assertRunPropertyOverrides(mark.runOverrides, '文字字符格式覆盖');
       }
       offset = mark.to;
     }

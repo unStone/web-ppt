@@ -6,6 +6,7 @@ import type {
 import { renderTextBodyToHtml } from './text-html';
 import { resolveTextScale } from './text-layout';
 import { renderTextSvg } from './text-svg';
+import { withHyperlink } from './hyperlink';
 import { warpSupported } from './text-warp-presets';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
@@ -42,6 +43,7 @@ interface Ctx {
   media: 'badge' | 'player';
   hidden: ReadonlySet<number> | null;
   includeEditMarkers: boolean;
+  resolveLink: (link: string | undefined) => string | undefined;
 }
 
 export interface RenderElementOptions {
@@ -105,6 +107,30 @@ function createCtx(opts: RenderElementOptions): Ctx {
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
     hidden: opts.hiddenElements?.length ? new Set(opts.hiddenElements) : null,
     includeEditMarkers: opts.includeEditMarkers === true,
+    resolveLink: (link) => link,
+  };
+}
+
+function presentationLinkResolver(
+  pres: Presentation,
+  slide: Slide,
+): (link: string | undefined) => string | undefined {
+  const current = pres.slides.indexOf(slide) + 1;
+  return (link) => {
+    if (!link) return link;
+    if (link.startsWith('slide-part:')) {
+      try {
+        const part = decodeURIComponent(link.slice('slide-part:'.length));
+        const index = pres.slides.findIndex((candidate) => candidate.editInfo?.origin.part === part);
+        return index < 0 ? link : `slide:${index + 1}`;
+      } catch { return link; }
+    }
+    if (!link.startsWith('slide:')) return link;
+    if (link === 'slide:next') return `slide:${current + 1}`;
+    if (link === 'slide:previous') return `slide:${current - 1}`;
+    if (link === 'slide:first') return 'slide:1';
+    if (link === 'slide:last') return `slide:${pres.slides.length}`;
+    return link;
   };
 }
 
@@ -122,6 +148,7 @@ export function renderElementToSvg(
 
 export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderOptions = {}): string {
   const ctx = createCtx(opts);
+  ctx.resolveLink = presentationLinkResolver(pres, slide);
   // 背景解析失败只该丢背景，不该丢整页
   let bgFill = '#fff';
   try {
@@ -391,15 +418,6 @@ function flipTransform(el: ElementBase): string {
   return `translate(${r(el.w / 2)} ${r(el.h / 2)}) scale(${el.flipH ? -1 : 1} ${el.flipV ? -1 : 1}) translate(${r(-el.w / 2)} ${r(-el.h / 2)})`;
 }
 
-/** 超链接包装：外部链接用 <a href>，内部跳转标记 data-slide 由 Viewer 处理 */
-function withLink(inner: string, link: string | undefined): string {
-  if (!link) return inner;
-  if (link.startsWith('slide:')) {
-    return `<a data-slide="${esc(link.slice(6))}" style="cursor:pointer">${inner}</a>`;
-  }
-  return `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
-}
-
 // ---------------- 元素分发 ----------------
 
 /**
@@ -444,7 +462,7 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
     const hide = ctx.hidden?.has(el.id) ? 'visibility:hidden;' : '';
     out = `<g data-el="${el.id}" style="${hide}transform-box:fill-box;transform-origin:center">${out}</g>`;
   }
-  return withLink(out, el.link);
+  return withHyperlink(out, ctx.resolveLink(el.link));
 }
 
 /** 沿挤出方向复制若干层路径，形成等轴测风格的立体侧面 */
@@ -737,6 +755,16 @@ function renderText(
   vAlignOverride?: 'top' | 'middle' | 'bottom',
   vertOverride?: TextBody['vert'],
 ): string {
+  if (t.paragraphs.some((paragraph) => paragraph.runs.some((run) =>
+    run.link?.startsWith('slide-part:') || /^slide:(next|previous|first|last)$/.test(run.link ?? '')))) {
+    t = { ...t, paragraphs: t.paragraphs.map((paragraph) => ({
+      ...paragraph,
+      runs: paragraph.runs.map((run) => {
+        const link = ctx.resolveLink(run.link);
+        return link === run.link ? run : { ...run, link };
+      }),
+    })) };
+  }
   // 艺术字变形无法用 HTML 排版表达，强制走 SVG 文本路径，保证屏幕与导出一致。
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
     // HTML 公共入口内部也做这一步；这里仅为独立 SVG 路径保留同一语义。

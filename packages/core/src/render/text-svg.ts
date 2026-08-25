@@ -3,6 +3,7 @@ import { isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
 import { layoutText } from './text-layout';
 import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
 import { warpSupported } from './text-warp-presets';
+import { withHyperlink } from './hyperlink';
 
 /**
  * 纯 SVG <text> 输出。断行和坐标统一由 text-layout 提供；这里仅负责 SVG 序列化、
@@ -99,7 +100,7 @@ export function renderTextSvg(
         const size = fontSize(seg.run, scale);
         out.push(
           `<rect x="${r(cursor)}" y="${r(line.baseline - size * 0.82)}" width="${r(seg.width)}" ` +
-          `height="${r(size * 1.12)}" fill="${seg.run.highlight}"/>`,
+          `height="${r(size * 1.12)}" fill="${esc(seg.run.highlight)}"/>`,
         );
       }
       cursor += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
@@ -112,7 +113,9 @@ export function renderTextSvg(
       for (const seg of segs) {
         const math = seg.run.math?.length ? mathOf(seg.run, scale) : null;
         if (math) {
-          out.push(`<g transform="translate(${r(x)} ${r(line.baseline)})">${math.svg}</g>`);
+          out.push(withHyperlink(
+            `<g transform="translate(${r(x)} ${r(line.baseline)})">${math.svg}</g>`, seg.run.link,
+          ));
         } else {
           out.push(
             `<text x="${r(x)}" y="${r(line.baseline)}" text-anchor="start"` +
@@ -158,7 +161,7 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
   const dy = Math.sin(rad) / 2;
   const id = addDef(
     `<linearGradient id="__ID__" x1="${r(0.5 - dx)}" y1="${r(0.5 - dy)}" x2="${r(0.5 + dx)}" y2="${r(0.5 + dy)}">` +
-    stops.map((sp) => `<stop offset="${r(sp.pos)}%" stop-color="${sp.color}"/>`).join('') +
+    stops.map((sp) => `<stop offset="${r(sp.pos)}%" stop-color="${esc(sp.color)}"/>`).join('') +
     '</linearGradient>',
   );
   return `url(#${id})`;
@@ -204,7 +207,7 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: nu
   const attrs: string[] = [
     `font-size="${r(size)}"`,
     `font-family="${esc(fontFamily(run))}"`,
-    `fill="${grad ?? run.color}"`,
+    `fill="${esc(grad ?? run.color)}"`,
   ];
   if (run.b) attrs.push('font-weight="700"');
   if (run.i) attrs.push('font-style="italic"');
@@ -214,11 +217,13 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: nu
   if (run.strike) deco.push('line-through');
   if (deco.length) attrs.push(`text-decoration="${deco.join(' ')}"`);
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
-  if (run.outline) attrs.push(`stroke="${run.outline.color}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
+  if (run.outline) attrs.push(`stroke="${esc(run.outline.color)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
   if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
   const span = `<tspan ${attrs.join(' ')}>${esc(seg.text)}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
-  return run.baseline ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;
+  const restored = run.baseline
+    ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;
+  return withHyperlink(restored, run.link);
 }
 
 // ---------------- 艺术字变形（prstTxWarp） ----------------

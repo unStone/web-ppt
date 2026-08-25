@@ -47,6 +47,9 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
       a('uFillTx', 'uFill'), a('latin'), a('ea'), a('cs'), a('sym'),
       a('hlinkClick'), a('hlinkMouseOver'), a('rtl'), a('extLst')],
   },
+  [expandedName(PRESENTATIONML_NS, 'cNvPr')]: {
+    groups: [a('hlinkClick'), a('hlinkMouseOver'), a('extLst')],
+  },
   [expandedName(DRAWINGML_NS, 'pPr')]: {
     groups: [a('lnSpc'), a('spcBef'), a('spcAft'), a('buClrTx', 'buClr'),
       a('buSzTx', 'buSzPct', 'buSzPts'), a('buFontTx', 'buFont'),

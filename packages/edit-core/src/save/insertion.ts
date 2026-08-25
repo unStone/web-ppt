@@ -8,6 +8,7 @@ import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
 import { locateElementHost, locateElementHosts } from './xfrm';
 import { materializeElementOverrides } from './materialize';
 import { patchRemovedElement } from './remove-element';
+import type { HyperlinkSaveContext } from './hyperlink';
 
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
@@ -59,11 +60,15 @@ export function materializeElementTreeState(
   part: string,
   records: readonly ElementRecord[],
   removals: readonly RemovedElementRecord[],
-  options: { skipInsertions?: ReadonlySet<string>; scope?: ReadonlySet<string> } = {},
+  options: {
+    skipInsertions?: ReadonlySet<string>;
+    scope?: ReadonlySet<string>;
+    links?: HyperlinkSaveContext;
+  } = {},
 ): void {
   for (const removal of removals) patchRemovedElement(document, removal);
   const inserted = patchInsertedElements(document, doc, records, options.skipInsertions);
-  materializeElementOverrides(document, doc, part, records, options.scope, inserted);
+  materializeElementOverrides(document, doc, part, records, options.scope, inserted, options.links);
 }
 
 /** 从来源基线构造当前有效元素树，供复制原始宿主及其所有后代。 */

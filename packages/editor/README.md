@@ -109,6 +109,29 @@ selection by 10 slide pixels without changing the system clipboard. View mode, a
 text/table selections, and form/contenteditable descendants retain browser ownership. Small pastes insert only
 new markup/defs partitions; large batches may use the existing bounded full-slide fallback.
 
+Links keep PowerPoint's edit/view distinction. Edit-mode clicks only select; `Ctrl/Cmd+Enter` or
+`view.followLink()` follows the current single element/text link. In view mode, internal links are focusable with
+`Tab`, activate with `Enter`, and route through the view's stable `SlideId` state; safe external links open with
+`noopener,noreferrer`. A framework can intercept both through one callback and return `true` when its router handled
+the target:
+
+```ts
+const view = session.mount(container, {
+  mode: 'edit',
+  onLinkFollow(target, context) {
+    if (target.kind === 'slide') {
+      appRouter.openSlide(target.slideId);
+      return true;
+    }
+  },
+});
+view.followLink({ kind: 'external', href: 'https://example.com/docs' });
+```
+
+The callback receives only `LinkTarget` (`external` or stable `slide`), never a raw page index or OOXML action.
+View mode installs no edit pointer/keyboard/clipboard listeners; mode switches and `destroy()` release their
+listeners symmetrically, so multiple React/Vue/Svelte/Web Component/vanilla views keep local navigation state.
+
 Double-clicking an editable shape opens the HTML text layer with native selection and IME composition. Selected
 text responds to `Ctrl/Cmd+B`, `I`, and `U` as one undo unit; the equivalent `beforeinput` format events are also
 handled. At a collapsed caret these shortcuts update view-local pending typing style, and the next insertion plus

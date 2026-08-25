@@ -5,6 +5,7 @@ export const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentation
 export const POWERPOINT_2010_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 export const MARKUP_COMPATIBILITY_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 export const OFFICE_MATH_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/math';
+export const OFFICE_RELATIONSHIPS_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
 const ASCII_NCNAME = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const UNICODE_NCNAME = /^[\p{L}\p{Nl}_][\p{L}\p{Nl}\p{N}\p{M}\p{Pc}_.\-\u00B7\u203F-\u2040]*$/u;

@@ -1,7 +1,8 @@
 import { assertDataObject, own } from './data-validation';
 import type { RunPropertyOverrides } from './types';
+import { assertLinkOverride } from './hyperlink';
 
-export const RUN_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+export const RUN_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike', 'link'] as const;
 
 export function assertRunPropertyOverrides(
   value: unknown,
@@ -26,5 +27,8 @@ export function assertRunPropertyOverrides(
     if (own(props, field) && props[field] !== null && typeof props[field] !== 'boolean') {
       throw new Error(`${label}.${field} 必须是布尔值或 null`);
     }
+  }
+  if (own(props, 'link') && props.link !== null) {
+    assertLinkOverride(props.link, `${label}.link`);
   }
 }

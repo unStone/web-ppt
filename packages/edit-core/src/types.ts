@@ -60,13 +60,47 @@ export type SlideOverrides = Partial<SlideSource>;
 
 type BaseOverrideKey =
   | 'x' | 'y' | 'w' | 'h' | 'rot' | 'flipH' | 'flipV'
-  | 'effects' | 'link' | 'name' | 'scene3d';
+  | 'effects' | 'name' | 'scene3d';
+
+export type LinkTarget = {
+  readonly kind: 'external';
+  readonly href: string;
+} | {
+  readonly kind: 'slide';
+  readonly slideId: SlideId;
+};
+
+/** 相对放映动作没有稳定目标页；可展示和跟随，但不能冒充可编辑 LinkTarget。 */
+export interface RelativeLinkSource {
+  readonly kind: 'relative';
+  readonly action: 'next' | 'previous' | 'first' | 'last';
+}
+
+export interface UnsupportedLinkSource {
+  readonly kind: 'unsupported';
+}
+
+export type LinkSourceValue = LinkTarget | RelativeLinkSource | UnsupportedLinkSource;
+export type LinkOverride = LinkTarget | { readonly kind: 'none' };
+
+export interface ElementLinkState {
+  readonly value: LinkSourceValue | null;
+  readonly source: LinkSourceValue | null;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+  /** true 表示来源只能原样保留；设置新覆盖仍是显式、安全的替换。 */
+  readonly sourceReadonly: boolean;
+  readonly followable: boolean;
+}
 
 /**
  * 只允许覆盖可写字段。`path` / `clipPath` 是由 geom 与当前尺寸算出的派生值，
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
+  /** 缺少字段表示来源；none 表示明确移除，不能用 undefined 混淆二者。 */
+  link?: LinkOverride;
   /** 显式无填充用 Fill.none；缺少该字段才表示恢复来源/主题。 */
   fill?: Exclude<Fill, { type: 'image' }>;
   stroke?: ShapeElement['stroke'] | ImageElement['stroke'];
@@ -138,6 +172,8 @@ export interface TextMark {
   readonly inheritedProps?: RunProperties;
   /** 继承字体可能分别含 latin/ea/cs，不能为面板的单字体值而丢掉回退栈。 */
   readonly inheritedFonts?: readonly string[];
+  /** 只说明来源链接不可安全编辑，不携带原始 action 或危险 URL。 */
+  readonly sourceLinkReadonly?: true;
 }
 
 export interface RunProperties {
@@ -156,6 +192,8 @@ export interface RunPropertyOverrides {
   readonly i?: boolean | null;
   readonly u?: boolean | null;
   readonly strike?: boolean | null;
+  /** null 恢复来源；none 明确去掉选区链接。 */
+  readonly link?: LinkOverride | null;
 }
 
 /** 外部富文本进入模型前的最小白名单；不允许携带 OOXML 来源或 DOM 身份。 */
@@ -187,6 +225,8 @@ export interface RunPropertiesState {
   readonly u: RunPropertyState<boolean>;
   readonly strike: RunPropertyState<boolean>;
 }
+
+export type RunLinkState = ElementLinkState;
 
 export interface ParagraphPropertyOverrides {
   readonly align?: Paragraph['align'] | null;
@@ -284,6 +324,8 @@ export interface ElementMeta {
   imageReplacement?: ElementImageReplacement;
   hiddenByUser?: boolean;
   editable: EditableKind;
+  /** 来源存在无法安全映射的链接；覆盖层缺失时查询为只读来源。 */
+  sourceLinkReadonly?: true;
 }
 
 export interface ElementRecord {

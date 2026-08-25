@@ -13,6 +13,11 @@ import { hasShapeFormatOverrides } from './shape-format';
 import { hasEffectsOverride } from './effects';
 import { hasImageContentOverrides } from './image-content';
 import { hasTableRowOverrides } from './table';
+import {
+  createHyperlinkSaveContext, hasDanglingSlideRelationships, hasHyperlinkOverrides,
+  patchHyperlinkRelationshipPart,
+} from './hyperlink';
+import type { HyperlinkSaveContext } from './hyperlink';
 import { materializeElementTreeState } from './insertion';
 import {
   clipboardPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
@@ -49,6 +54,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
       && !hasEffectsOverride(record)
       && !hasImageContentOverrides(record)
       && !hasTableRowOverrides(record)
+      && !hasHyperlinkOverrides(record)
       && !record.meta.insertion) continue;
     const origin = record.meta.origin;
     if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
@@ -81,6 +87,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }
 
   const grouped = recordsByPart(doc);
+  const explicitHyperlinkParts = new Set([...grouped].flatMap(([part, records]) =>
+    records.some(hasHyperlinkOverrides) ? [part] : []));
   const removals = removalsByPart(doc);
   const clipboard = clipboardPackageParts(doc);
   const activeCreatedSlides = createdSlides(doc);
@@ -98,6 +106,22 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const currentSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
   const removedSlideParts = removedSlidePackageParts(doc, nextCreatedParts);
   const hasRemovedSlideHistory = removedSlideParts.slideParts.size > 0;
+  const danglingHyperlinkParts = new Set<string>();
+  if (hasRemovedSlideHistory) {
+    for (const id of doc.slideOrder) {
+      const slide = doc.slides[id];
+      const part = slide.origin?.part;
+      if (!part) continue;
+      const relsPart = relationshipPartFor(part);
+      const relationSource = nextBaselines[relsPart]
+        ?? (slide.creation ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined)
+        ?? doc.package.parts[relsPart];
+      if (hasDanglingSlideRelationships(doc, part, relationSource)) {
+        danglingHyperlinkParts.add(part);
+      }
+    }
+  }
+  const hyperlinkParts = new Set([...explicitHyperlinkParts, ...danglingHyperlinkParts]);
   const presentationOrderChanged = currentSlideParts.length !== doc.saveState.sourceSlideParts.length
     || currentSlideParts.some((part, index) => part !== doc.saveState.sourceSlideParts[index]);
   const hasSlideHistory = hasCreatedSlideHistory || hasRemovedSlideHistory || presentationOrderChanged
@@ -108,7 +132,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     nextBaselines[presentationPart] = source.slice();
   }
   const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
-  for (const part of new Set([...grouped.keys(), ...removals.keys(), ...slideNumbers.keys()])) {
+  for (const part of new Set([
+    ...grouped.keys(), ...removals.keys(), ...slideNumbers.keys(), ...hyperlinkParts,
+  ])) {
     if (nextBaselines[part]) continue;
     if (activeCreatedSlides.some((slide) => slide.origin?.part === part)) continue;
     const source = doc.package.parts[part];
@@ -116,6 +142,13 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     nextBaselines[part] = source.slice();
   }
   for (const sourcePart of clipboard.relationships.keys()) {
+    const relsPart = relationshipPartFor(sourcePart);
+    if (nextBaselines[relsPart] || nextCreatedParts.has(relsPart)) continue;
+    const source = doc.package.parts[relsPart];
+    if (source) nextBaselines[relsPart] = source.slice();
+    else nextCreatedParts.add(relsPart);
+  }
+  for (const sourcePart of hyperlinkParts) {
     const relsPart = relationshipPartFor(sourcePart);
     if (nextBaselines[relsPart] || nextCreatedParts.has(relsPart)) continue;
     const source = doc.package.parts[relsPart];
@@ -165,6 +198,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const part = slide.origin?.part;
     return part && (nextBaselines[part] || slide.creation || slideNumbers.has(part)) ? [part] : [];
   }));
+  const hyperlinkContexts = new Map<string, HyperlinkSaveContext>();
   for (const part of slideParts) {
     const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === part);
     const source = nextBaselines[part]
@@ -172,9 +206,18 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (!source) throw new Error(`找不到页面保存基线：${part}`);
     const tree = parseXmlTree(source);
     const records = grouped.get(part) ?? [];
+    const relsPart = relationshipPartFor(part);
+    const relationSource = nextBaselines[relsPart] ?? (slide
+      ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined);
+    const links = hyperlinkParts.has(part)
+      ? createHyperlinkSaveContext(
+        doc, part, relationSource, clipboard.relationships.get(part) ?? [],
+      ) : undefined;
+    if (links) hyperlinkContexts.set(part, links);
+    links?.removeDanglingHyperlinks(tree);
     materializeElementTreeState(tree, doc, part, records, [
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
-    ]);
+    ], { links });
     const bytes = serializeXmlTreeBytes(tree);
     changes[part] = slideNumbers.has(part)
       ? patchSlideNumberFields(bytes, slideNumbers.get(part)!)
@@ -182,15 +225,20 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }
 
   const activeRelationshipParts = new Set<string>();
-  for (const [sourcePart, relationships] of clipboard.relationships) {
+  for (const sourcePart of new Set([
+    ...clipboard.relationships.keys(), ...hyperlinkContexts.keys(),
+  ])) {
+    const relationships = clipboard.relationships.get(sourcePart) ?? [];
     const relsPart = relationshipPartFor(sourcePart);
     activeRelationshipParts.add(relsPart);
     const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === sourcePart);
-    changes[relsPart] = patchRelationshipPart(
-      nextBaselines[relsPart] ?? (slide
-        ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined),
-      relationships,
-    );
+    const relationSource = nextBaselines[relsPart] ?? (slide
+      ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined);
+    const links = hyperlinkContexts.get(sourcePart);
+    const slideBytes = changes[sourcePart];
+    changes[relsPart] = links && slideBytes instanceof Uint8Array
+      ? patchHyperlinkRelationshipPart(relationSource, relationships, links, slideBytes)
+      : patchRelationshipPart(relationSource, relationships);
   }
   for (const [part, source] of Object.entries(nextBaselines)) {
     if (part.endsWith('.rels') && !activeRelationshipParts.has(part)) {

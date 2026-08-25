@@ -6,6 +6,22 @@
 
 import type { GeomSpec } from './geometry';
 
+export const MAX_SAFE_EXTERNAL_HREF_LENGTH = 2048;
+
+/**
+ * 解析、编辑和渲染共用同一条导航安全边界，避免某层放行而另一层拒绝。
+ * 返回 URL 让调用方自行决定保留原字面值还是使用规范化 href。
+ */
+export function parseSafeExternalUrl(href: string): URL | null {
+  if (href.length > MAX_SAFE_EXTERNAL_HREF_LENGTH || /[\u0000-\u001f\u007f]/.test(href)) return null;
+  let url: URL;
+  try { url = new URL(href); } catch { return null; }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== 'mailto:') return null;
+  if (url.username || url.password) return null;
+  if ((url.protocol === 'http:' || url.protocol === 'https:') && !url.hostname) return null;
+  return url.href.length <= MAX_SAFE_EXTERNAL_HREF_LENGTH ? url : null;
+}
+
 export interface Presentation {
   width: number;
   height: number;
@@ -305,6 +321,8 @@ export interface ElementEditInfo {
   textTemplate?: TextBody;
   /** 仅编辑模式保留追加行的表样式投影；普通预览不承担结构编辑状态。 */
   tableRowAppend?: TableRowAppendEditInfo;
+  /** 来源存在链接但其 action/关系不能安全映射到公开目标；保存必须原样保留。 */
+  readonlyLink?: true;
 }
 
 export type SlideElement =
@@ -590,4 +608,6 @@ export interface TextRunEditInfo {
     readonly size: number;
     readonly fonts: string[];
   };
+  /** 来源 hlinkClick 无法安全解析；编辑层只展示只读占位，不暴露原始 action/URL。 */
+  readonlyLink?: true;
 }

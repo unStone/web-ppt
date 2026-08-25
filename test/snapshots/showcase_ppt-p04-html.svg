@@ -157,7 +157,7 @@
 </a>
 </div>
 <div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<a data-slide="1" style="cursor:pointer;text-decoration:underline">
+<a data-slide="1" tabindex="0" role="link" style="cursor:pointer;text-decoration:underline">
 <span style="font-size:18.67px;color:rgb(5,99,193);text-decoration:underline;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">跳转到第 1 页</span>
 </a>
 </div>

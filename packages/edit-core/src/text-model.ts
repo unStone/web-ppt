@@ -2,7 +2,7 @@ import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
-  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
+  LinkOverride, RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
 
@@ -50,6 +50,7 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
             }
             : undefined,
           inheritedFonts: run.editInfo?.inheritedRunProps.fonts,
+          ...(run.editInfo?.readonlyLink ? { sourceLinkReadonly: true } : {}),
           ...(run.math?.length ? { atomText: run.text } : {}),
           source: { paragraph: paragraphIndex, run: runIndex },
           preserveSource: true,
@@ -81,28 +82,38 @@ function textRun(mark: TextMark, text: string, source?: TextBody | null): TextRu
 export function textBodyFromOverride(
   override: Extract<TextOverride, { kind: 'flat' }>,
   source?: TextBody | null,
+  resolveLink?: (link: Exclude<LinkOverride, { kind: 'none' }>) => string | undefined,
 ): TextBody {
   return {
     ...override.body,
     // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
     paragraphs: override.paragraphs.map((paragraph): Paragraph => ({
       ...paragraph.props,
-      runs: paragraph.marks.map((mark) =>
-        textRun(mark, paragraph.text.slice(mark.from, mark.to), source)),
+      runs: paragraph.marks.map((mark) => {
+        const run = textRun(mark, paragraph.text.slice(mark.from, mark.to), source);
+        const overrideLink = mark.runOverrides?.link;
+        if (overrideLink === undefined || overrideLink === null) return run;
+        if (overrideLink.kind === 'none') {
+          const { link: _link, ...withoutLink } = run;
+          return withoutLink;
+        }
+        return { ...run, link: resolveLink?.(overrideLink) };
+      }),
     })),
   };
 }
 
-const RUN_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+const STYLE_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'link'] as const;
 
 function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
-  return RUN_PROPERTY_FIELDS.every((field) => Object.prototype.hasOwnProperty.call(left ?? {}, field)
+  return RUN_OVERRIDE_FIELDS.every((field) => Object.prototype.hasOwnProperty.call(left ?? {}, field)
     === Object.prototype.hasOwnProperty.call(right ?? {}, field)
     && Object.is(left?.[field], right?.[field]));
 }
 
 function sameInherited(left?: RunProperties, right?: RunProperties): boolean {
-  return RUN_PROPERTY_FIELDS.every((field) => Object.is(left?.[field], right?.[field]));
+  return STYLE_PROPERTY_FIELDS.every((field) => Object.is(left?.[field], right?.[field]));
 }
 
 function sameStyle(left: TextMark, right: TextMark): boolean {
@@ -112,6 +123,7 @@ function sameStyle(left: TextMark, right: TextMark): boolean {
     && sameRunOverrides(left.runOverrides, right.runOverrides)
     && sameInherited(left.inheritedProps, right.inheritedProps)
     && JSON.stringify(left.inheritedFonts) === JSON.stringify(right.inheritedFonts)
+    && left.sourceLinkReadonly === right.sourceLinkReadonly
     // 不跨来源合并字段/超链接身份；同一来源被区间操作切开的片段仍会归一。
     && JSON.stringify(left.source) === JSON.stringify(right.source);
 }
@@ -342,6 +354,14 @@ function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
   const i = props.i === null ? inherited.i : props.i;
   const u = props.u === null ? inherited.u : props.u;
   const strike = props.strike === null ? inherited.strike : props.strike;
+  const nextOverrides: Record<string, unknown> = { ...mark.runOverrides };
+  for (const field of STYLE_PROPERTY_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(props, field)) nextOverrides[field] = props[field];
+  }
+  if (Object.prototype.hasOwnProperty.call(props, 'link')) {
+    if (props.link === null) delete nextOverrides.link;
+    else nextOverrides.link = props.link;
+  }
   return {
     ...mark,
     props: {
@@ -355,7 +375,9 @@ function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
       ...(u !== undefined ? { u } : {}),
       ...(strike !== undefined ? { strike } : {}),
     },
-    runOverrides: { ...mark.runOverrides, ...props },
+    ...(Object.keys(nextOverrides).length
+      ? { runOverrides: nextOverrides as RunPropertyOverrides }
+      : { runOverrides: undefined }),
   };
 }
 
@@ -520,6 +542,23 @@ export function queryTextRunProps(
   range: TextRange,
   initial?: Extract<TextOverride, { kind: 'flat' }>,
 ): RunPropertiesState {
+  const selected = textMarksInRange(body, range, initial);
+  return {
+    font: fontState(selected),
+    size: state(selected.map((mark) => mark.props.size)),
+    b: state(selected.map((mark) => mark.props.b)),
+    i: state(selected.map((mark) => mark.props.i)),
+    u: state(selected.map((mark) => mark.props.u)),
+    strike: state(selected.map((mark) => mark.props.strike)),
+  };
+}
+
+/** 链接查询与字符面板复用完全相同的区间/公式边界语义。 */
+export function textMarksInRange(
+  body: TextBody,
+  range: TextRange,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): TextMark[] {
   const override = initial ?? flattenTextBody(body);
   if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= override.paragraphs.length) {
     throw new Error('字符格式查询段落范围无效');
@@ -537,12 +576,5 @@ export function queryTextRunProps(
     selected.push(...paragraph.marks.filter((mark) => mark.to > start && mark.from < end));
   }
   if (!selected.length) selected.push(styleAt(first, from));
-  return {
-    font: fontState(selected),
-    size: state(selected.map((mark) => mark.props.size)),
-    b: state(selected.map((mark) => mark.props.b)),
-    i: state(selected.map((mark) => mark.props.i)),
-    u: state(selected.map((mark) => mark.props.u)),
-    strike: state(selected.map((mark) => mark.props.strike)),
-  };
+  return selected;
 }

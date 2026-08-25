@@ -20,6 +20,7 @@ import { runDuplicateSlideSaveContract } from './lib/duplicate-slide-save-contra
 import { runShapeFormatSaveContract } from './lib/shape-format-save-contract.mjs';
 import { runShapeEffectsSaveContract } from './lib/shape-effects-save-contract.mjs';
 import { runImageContentSaveContract } from './lib/image-content-save-contract.mjs';
+import { runHyperlinkSaveContract } from './lib/hyperlink-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -274,6 +275,8 @@ await runImageContentSaveContract({
     return JSON.parse(stdout);
   },
 });
+
+await runHyperlinkSaveContract({ edit, core, load, check, saveArtifact });
 
 const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();
 check('真实 Office 门禁覆盖本轮全部保存产物',

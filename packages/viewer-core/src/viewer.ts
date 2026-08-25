@@ -64,6 +64,7 @@ export class Viewer {
       }
     });
     this.container.addEventListener('click', this.handleClick);
+    this.container.addEventListener('keydown', this.handleKeyDown);
     this.paint();
   }
 
@@ -233,8 +234,20 @@ export class Viewer {
     }
   };
 
+  private handleKeyDown = (e: KeyboardEvent): void => {
+    if (e.key !== 'Enter') return;
+    const el = e.target as Element | null;
+    const jump = el?.closest('[data-slide]');
+    if (!jump) return;
+    const target = this.state.resolveLink(`slide:${jump.getAttribute('data-slide') ?? ''}`);
+    if (target === null) return;
+    e.preventDefault();
+    this.goTo(target);
+  };
+
   destroy(): void {
     this.container.removeEventListener('click', this.handleClick);
+    this.container.removeEventListener('keydown', this.handleKeyDown);
     this.unsubscribe();
     this.playing?.cancel();
     this.cancelAuto?.();

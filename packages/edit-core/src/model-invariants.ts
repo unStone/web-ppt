@@ -16,6 +16,7 @@ import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
 import { assertImageCrop, isEditablePicture } from './image-content';
 import { assertImageReplacement, assertImageResource } from './commands/element-image-content';
+import { assertLinkOverride } from './hyperlink';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -130,6 +131,7 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `表格 ${record.id}`);
     assertTableRows(record);
     assertTextOverrides(doc, record);
+    if (own(record.ovr, 'link')) assertLinkOverride(record.ovr.link, `元素 ${record.id} 的链接覆盖`);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
   }
@@ -327,6 +329,13 @@ export function validateEditDoc(doc: EditDoc): void {
     if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `表格 ${record.id}`);
     assertTableRows(record);
     assertTextOverrides(doc, record);
+    if (own(record.ovr, 'link')) {
+      if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
+        || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不能包含链接覆盖`);
+      }
+      assertLinkOverride(record.ovr.link, `元素 ${id} 的链接覆盖`);
+    }
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
     if (own(record.ovr, 'fill')) {

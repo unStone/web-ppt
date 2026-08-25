@@ -89,6 +89,12 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
       [`${table.src.rows.length}:0`]: { text: { kind: 'empty' } },
     };
   });
+  rejects('拒绝绕过命令伪造的危险链接覆盖', (doc) => {
+    doc.elements[shape.id].ovr.link = { kind: 'external', href: 'javascript:alert(1)' };
+  });
+  rejects('拒绝不支持链接的元素携带链接覆盖', (doc) => {
+    doc.elements[table.id].ovr.link = { kind: 'none' };
+  });
   rejects('拒绝同一 part 内重复的可写 spid', (doc) => {
     doc.elements[frame.id].meta.origin = { ...doc.elements[shape.id].meta.origin };
   });

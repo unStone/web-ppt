@@ -73,6 +73,7 @@ tracker: local-markdown
 - [编辑形状的矢量填充与描边](tickets/047-shape-fill-stroke.md) — 规范化直接格式命令与查询 seam 接通矢量填充、形状/图片描边、多视图、历史和保留型保存；Chrome 预算与 LibreOffice 线宽/虚线/端点 oracle 均通过。
 - [编辑形状与图片的二维效果](tickets/048-shape-effects.md) — `SetEffects` 以直接空列表/恢复来源的双语义接通形状、图片和组的四类效果、增量多视图与保留型保存；四项 Chrome 独立预算及 LibreOffice 像素/重存 oracle 均通过。
 - [替换并裁剪图片内容](tickets/049-replace-crop-image.md) — `ReplaceImage`、`SetCrop` 与双矩形手势接通文件替换、来源裁剪、历史资源回收、共享媒体闭包和最小保存；Chrome 60 图片提交/帧 p95 0.5/0.1ms，LibreOffice 非对称像素 oracle 通过。
+- [编辑元素与文字超链接](tickets/050-edit-hyperlinks.md) — 稳定页身份与安全外链贯通命令、查询、复制、最小保存及 edit/view/Viewer 键盘路由；Chrome 预算和 27 份 LibreOffice 工件通过。
 
 ## Not yet specified
 

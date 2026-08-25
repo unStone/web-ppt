@@ -21,11 +21,12 @@ import { duplicateSlidePatches } from './duplicate-slide';
 import { setFillPatches } from './set-fill';
 import { setStrokePatches } from './set-stroke';
 import { setEffectsPatches } from './set-effects';
+import { setLinkPatches } from './set-link';
 import { setCropPatches } from './set-crop';
 import { replaceImagePatches } from './replace-image';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  InsertRowCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetLinkCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -71,6 +72,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetFill: register<SetFillCommand>(['id', 'fill'], setFillPatches),
   SetStroke: register<SetStrokeCommand>(['id', 'stroke'], setStrokePatches),
   SetEffects: register<SetEffectsCommand>(['id', 'effects'], setEffectsPatches),
+  SetLink: register<SetLinkCommand>(['id', 'target'], setLinkPatches),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),

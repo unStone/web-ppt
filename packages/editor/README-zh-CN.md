@@ -59,6 +59,27 @@ session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 view 模式、活动 pointer 手势、文本/表格选区及表单/contenteditable 后代保留浏览器所有权。小批量只
 插入新增 markup/defs 分区，大批量才使用既有的有界整页回退。
 
+链接遵循 PowerPoint 的 edit/view 区分：edit 单击只选择，`Ctrl/Cmd+Enter` 或 `view.followLink()` 才跟随
+当前单一元素/文字链接；view 模式的内链可用 `Tab` 聚焦、`Enter` 跟随，并以稳定 `SlideId` 路由，外链默认以
+`noopener,noreferrer` 安全打开。
+任意 UI 框架都可用同一个回调接管，返回 `true` 表示宿主已完成路由：
+
+```ts
+const view = session.mount(container, {
+  mode: 'edit',
+  onLinkFollow(target, context) {
+    if (target.kind === 'slide') {
+      appRouter.openSlide(target.slideId);
+      return true;
+    }
+  },
+});
+view.followLink({ kind: 'external', href: 'https://example.com/docs' });
+```
+
+回调只收到外链或稳定页身份，不暴露页下标和 OOXML action。view 模式不安装编辑 pointer/键盘/剪贴板
+监听器；模式切换与 `destroy()` 对称释放，多份 React/Vue/Svelte/Web Component/原生 view 的导航状态互不串联。
+
 双击可编辑形状会打开 HTML 文字层，直接使用浏览器原生选区与 IME。选中文字后，`Ctrl/Cmd+B`、`I`、
 `U` 及对应 `beforeinput` 格式事件会作为一个撤销单元提交；折叠光标下则只更新本视图的待输入格式，
 下一次插入与格式合成一个历史单元，不制造零宽模型 run。实时 DOM Range 会发布到

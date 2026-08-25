@@ -5,6 +5,7 @@ import type {
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { hydrateElementInsertionAssets } from './clipboard-assets';
 import { own } from './data-validation';
+import { renderLinkTarget } from './hyperlink';
 import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRowRef } from './table-cell';
@@ -163,8 +164,12 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
-  const { tableCells, tableRows, ...overrides } = record.ovr;
+  const { tableCells, tableRows, link: linkOverride, ...overrides } = record.ovr;
   let out = { ...record.src, ...overrides } as unknown as SlideElement;
+  if (own(record.ovr, 'link')) {
+    const link = linkOverride?.kind === 'none' ? undefined : renderLinkTarget(doc, linkOverride!);
+    out = { ...out, link } as SlideElement;
+  }
   if (record.meta.imageReplacement && out.kind === 'image') {
     out = { ...out, src: record.meta.imageReplacement.src };
   }
@@ -184,7 +189,10 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
     const source = record.src.kind === 'shape' ? record.src.text : null;
-    out = { ...out, text: textBodyFromOverride(record.ovr.text, source) } as ShapeElement;
+    out = {
+      ...out,
+      text: textBodyFromOverride(record.ovr.text, source, (target) => renderLinkTarget(doc, target)),
+    } as ShapeElement;
   } else if (out.kind === 'table' && (tableCells || tableRows)) {
     if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
     const baseRows = tableRows ? tableRowsWithoutTextOverrides(record) : out.rows;
@@ -200,7 +208,8 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
         changed = true;
         return {
           ...cell,
-          text: override.kind === 'empty' ? null : textBodyFromOverride(override, cell.text),
+          text: override.kind === 'empty' ? null
+            : textBodyFromOverride(override, cell.text, (target) => renderLinkTarget(doc, target)),
         };
       });
       return changed ? { ...row, cells } : row;
@@ -337,6 +346,16 @@ export function invalidateSlideSequence(doc: EditDoc, start: number): Projection
   }
   for (const slideId of doc.slideOrder) {
     for (const id of doc.slides[slideId]?.dynamicSlideLinks ?? []) invalidate(slideId, id);
+  }
+  // 稳定 SlideId 覆盖不会进入来源字段索引；页序与目标存在性变化时仍只扫描稀疏覆盖。
+  for (const record of Object.values(doc.elements)) {
+    const textLink = (text: import('./types').TextOverride | undefined): boolean => text?.kind === 'flat'
+      && text.paragraphs.some((paragraph) => paragraph.marks.some((mark) =>
+        mark.runOverrides?.link?.kind === 'slide'));
+    if (record.ovr.link?.kind === 'slide' || textLink(record.ovr.text)
+      || Object.values(record.ovr.tableCells ?? {}).some((cell) => textLink(cell.text))) {
+      invalidate(slideOfElement(doc, record.id), record.id);
+    }
   }
   return { dirtyElements, dirtySlides };
 }

@@ -62,7 +62,7 @@ function fontSize(value: string, inherited?: number | null): number | null {
 }
 
 function elementProps(element: HTMLElement, inherited: RunPropertyOverrides): RunPropertyOverrides {
-  const next: Record<string, string | number | boolean | null | undefined> = { ...inherited };
+  const next: { -readonly [K in keyof RunPropertyOverrides]: RunPropertyOverrides[K] } = { ...inherited };
   const tag = element.localName;
   if (tag === 'b' || tag === 'strong') next.b = true;
   if (tag === 'i' || tag === 'em') next.i = true;

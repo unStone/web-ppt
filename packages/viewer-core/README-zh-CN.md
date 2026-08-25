@@ -28,6 +28,8 @@ v.search('关键词');     // → 命中的页索引数组
 await v.exportPng(2);  // → Blob
 ```
 
+内部跳页链接同时支持点击与 `Tab`/`Enter`；外链可通过 `v.onLinkClick` 接管，`destroy()` 会释放两类导航监听器。
+
 ## 接自己的 UI
 
 ```ts

@@ -134,6 +134,30 @@ const stroke = queryElementStroke(editor.doc, selectedIds);
 Image-fill upload/crop, effects, text color, and table-cell borders are separate capabilities rather than
 overloaded variants of these two commands.
 
+Hyperlinks use stable domain targets instead of page indexes or OOXML actions. `SetLink` edits shape/image links;
+`SetRunProps` uses the same `link` field for a text range. `{ kind: 'none' }` explicitly removes a link, while
+`null` restores the parsed source. `queryElementLink` and `queryRunLink` return effective/source/direct/mixed and
+followable state, so React, Vue, Svelte, Web Component, and vanilla toolbars never inspect `src` or `ovr`.
+
+```ts
+import { queryElementLink, queryRunLink } from '@web-ppt/edit-core';
+
+editor.exec({
+  type: 'SetLink', id: elementId,
+  target: { kind: 'slide', slideId: doc.slideOrder[2] },
+});
+const elementLink = queryElementLink(doc, [elementId]);
+editor.exec({
+  type: 'SetRunProps', id: elementId, range,
+  props: { link: { kind: 'external', href: 'https://example.com/docs' } },
+});
+const runLink = queryRunLink(doc, elementId, range);
+```
+
+External targets accept normalized `http`, `https`, and `mailto` URLs only. Internal targets retain `SlideId`
+through page reorder, undo/redo, save/reopen, and same/cross-document element copy. Relative or unsupported source
+actions remain queryable and preserved as read-only source values.
+
 `SetRunProps` applies sparse character-format overrides to a half-open text range. It supports font family,
 font size in slide pixels, bold, italic, underline, and strike-through across run and paragraph boundaries.
 Use `null` to remove a direct override and reveal the inherited OOXML value; formulas remain indivisible,

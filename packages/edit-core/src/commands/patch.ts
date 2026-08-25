@@ -8,6 +8,7 @@ import { applyElementTransformPatch } from './element-transform';
 import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
 import { applyElementStrokePatch, isElementStrokePatch, validateElementStrokePatch } from './element-stroke';
 import { applyElementEffectsPatch, isElementEffectsPatch, validateElementEffectsPatch } from './element-effects';
+import { applyElementLinkPatch, isElementLinkPatch, validateElementLinkPatch } from './element-link';
 import {
   applyElementCropPatch, applyElementImageReplacementPatch, applyImageResourcePatch,
   assertImageReplacement, isElementCropPatch, isElementImageReplacementPatch, isImageResourcePatch,
@@ -115,6 +116,13 @@ function validatePatch(
     && patch.path[2] === 'ovr' && patch.path[3] === 'effects'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementEffectsPatch(doc, patch as import('./types').ElementEffectsPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'link'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementLinkPatch(doc, patch as import('./types').ElementLinkPatch, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -271,6 +279,7 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
     else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
+    else if (isElementLinkPatch(patch)) applyElementLinkPatch(doc, patch);
     else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
     else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);

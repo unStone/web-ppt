@@ -600,6 +600,24 @@ group('HTML 文本渲染');
       check('文本与样式不能注入 HTML 节点', !safe.includes('<script>') && !safe.includes('<img src=x'));
       check('危险协议不生成可点击链接',
         ![...safeParsed.doc.getElementsByTagName('a')].some((a) => /^javascript:/i.test(a.getAttribute('href') ?? '')));
+      const safeNative = lib.renderElementToSvg(
+        { ...textEl, text: hostile }, { textMode: 'svg', idPrefix: 'safe-native-link-' },
+      ).markup;
+      const safeNativeParsed = parseXml(`<svg xmlns="http://www.w3.org/2000/svg">${safeNative}</svg>`);
+      check('原生 SVG 文字同样拒绝危险协议',
+        safeNative.includes('data-unsafe-href=') && !safeNative.includes('<a href="javascript:')
+        && !safeNativeParsed.error
+        && ![...safeNativeParsed.doc.getElementsByTagName('*')]
+          .some((element) => element.hasAttribute('onmouseover')),
+      safeNative.slice(0, 500));
+      const linkedNativeBody = structuredClone(textEl.text);
+      linkedNativeBody.paragraphs[0].runs[0].link = 'https://example.com/native-run';
+      const linkedNative = lib.renderElementToSvg(
+        { ...textEl, text: linkedNativeBody }, { textMode: 'svg', idPrefix: 'native-run-link-' },
+      ).markup;
+      check('原生 SVG 保留 run 级外链与新窗口隔离',
+        linkedNative.includes('<a href="https://example.com/native-run" target="_blank" rel="noopener noreferrer">')
+        && linkedNative.includes('<tspan'));
       check('图片项目符号不能注入事件属性',
         ![...safeParsed.doc.getElementsByTagName('*')].some((el) => el.hasAttribute('onerror')));
 
@@ -1604,6 +1622,18 @@ group('查看器');
         eq('内部跳页不触发 onLinkClick', calls.length, 0);
         eq('内部跳页已切页', v.index, 0);
       }
+
+      const keyboardViewer = new viewerLib.Viewer(box, pres, { index: linkPage });
+      const keyboardJump = box.querySelector('[data-slide]');
+      if (check('内部跳页节点可被键盘聚焦', keyboardJump?.getAttribute('tabindex') === '0')) {
+        const event = new globalThis.window.KeyboardEvent('keydown', {
+          key: 'Enter', bubbles: true, cancelable: true,
+        });
+        keyboardJump.dispatchEvent(event);
+        check('Viewer Enter 阻止无 href 的默认行为', event.defaultPrevented);
+        eq('Viewer Enter 跳转内部页面', keyboardViewer.index, 0);
+      }
+      keyboardViewer.destroy();
 
       // 外链应触发回调；返回 true 时阻止默认行为
       const v2 = new viewerLib.Viewer(box, pres, { index: linkPage });

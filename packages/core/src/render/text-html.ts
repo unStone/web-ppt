@@ -10,6 +10,7 @@ import { isOpening, squeezeEm } from './cjk-punct';
 import { layoutText, paraNeedsSqueeze, resolveTextScale } from './text-layout';
 import type { TextLayoutLine } from './text-layout-types';
 import { mathOf } from './text-measure';
+import { withHyperlink } from './hyperlink';
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
 
@@ -130,20 +131,6 @@ function squeezedHtml(text: string): string {
   return out;
 }
 
-const SAFE_LINK_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
-
-function linkAttrs(link: string): string {
-  if (link.startsWith('slide:')) {
-    return `data-slide="${esc(link.slice(6))}" style="cursor:pointer;text-decoration:underline"`;
-  }
-  const scheme = /^([A-Za-z][A-Za-z0-9+.-]*):/.exec(link.trim())?.[1]?.toLowerCase();
-  if (scheme && !SAFE_LINK_SCHEMES.has(scheme)) {
-    // 保留数据供属性面板展示，但不给 href，避免 javascript:/file: 被点击执行或泄漏。
-    return `data-unsafe-href="${esc(link)}" aria-disabled="true"`;
-  }
-  return `href="${esc(link)}" target="_blank" rel="noopener noreferrer"`;
-}
-
 function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string): string {
   // 公式在编辑模型里是一个原子；data-r 放在 SVG 根上不会引入额外 inline 盒，
   // 因而带标记与不带标记的排版完全相同。
@@ -161,7 +148,7 @@ function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string
     : '&#160;';
   const emptyMarker = marker && empty ? ' data-empty="true"' : '';
   const span = `<span${marker}${emptyMarker} style="${esc(runStyle(run, scale))}">${content}</span>`;
-  return run.link ? `<a ${linkAttrs(run.link)}>${span}</a>` : span;
+  return withHyperlink(span, run.link);
 }
 
 function fittedText(

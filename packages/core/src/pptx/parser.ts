@@ -1,4 +1,5 @@
 import { unzipSync } from 'fflate';
+import { parseSafeExternalUrl } from '../types';
 import type {
   CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, MediaInfo,
   OpcPackage, Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
@@ -211,6 +212,7 @@ function editInfoOf(
   geom?: NonNullable<ElementBase['editInfo']>['geom'],
   editable?: NonNullable<ElementBase['editInfo']>['editable'],
   moveLocked = false,
+  readonlyLink = false,
 ): Partial<Pick<ElementBase, 'editInfo'>> {
   if (!env.edit) return {};
   const spid = numAttr(cNvPr, 'id');
@@ -226,7 +228,9 @@ function editInfoOf(
   if (geom) editInfo.geom = geom;
   if (editable) editInfo.editable = editable;
   if (moveLocked) editInfo.moveLocked = true;
-  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable || editInfo.moveLocked
+  if (readonlyLink) editInfo.readonlyLink = true;
+  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable
+    || editInfo.moveLocked || editInfo.readonlyLink
     ? { editInfo } : {};
 }
 
@@ -488,10 +492,14 @@ function brokenShapePlaceholder(node: Element, err: unknown, env: Env): Unsuppor
   };
 }
 
-function hyperlinkOf(cNvPr: Element | null, env: Env): string | undefined {
+function hyperlinkOf(cNvPr: Element | null, env: Env): {
+  readonly link?: string;
+  readonly unsupported: boolean;
+} {
   const h = kid(cNvPr, 'hlinkClick');
-  if (!h) return undefined;
-  return resolveLink(env, attr(h, 'r:id') ?? '', attr(h, 'action')) ?? undefined;
+  if (!h) return { unsupported: false };
+  const link = resolveLink(env, attr(h, 'r:id') ?? '', attr(h, 'action')) ?? undefined;
+  return { ...(link ? { link } : {}), unsupported: !link };
 }
 
 function resolveLink(env: Env, rid: string, action: string | null): string | null {
@@ -501,7 +509,7 @@ function resolveLink(env: Env, rid: string, action: string | null): string | nul
   if (action?.includes('lastslide')) return 'slide:last';
   const rel = env.rels[rid];
   if (!rel) return null;
-  if (/^https?:|^mailto:/i.test(rel.target)) return rel.target;
+  if (parseSafeExternalUrl(rel.target)) return rel.target;
   const idx = env.slideIdMap[rel.target];
   if (idx !== undefined) return env.edit
     ? `slide-part:${encodeURIComponent(rel.target)}`
@@ -601,14 +609,17 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   }
 
   if (!path && !text && !textTemplate) return null;
-  const editing = editInfoOf(env, cNvPr, ph, editableGeom, undefined, movementLocked(nv));
+  const hyperlink = hyperlinkOf(cNvPr, env);
+  const editing = editInfoOf(
+    env, cNvPr, ph, editableGeom, undefined, movementLocked(nv), hyperlink.unsupported,
+  );
   if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
   return {
     kind: 'shape', ...base(xf), path, fill, stroke, text,
     openGeom: openGeom || undefined,
     effects,
     scene3d: parse3D(spPr, env.ctx),
-    link: hyperlinkOf(cNvPr, env),
+    link: hyperlink.link,
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
     ...editing,
@@ -671,14 +682,15 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
   const src = blipUrl(blipFill, env);
   const label = attr(cNvPr, 'name') ?? '图片';
   const media = parseMedia(kid(nv, 'nvPr'), env);
+  const hyperlink = hyperlinkOf(cNvPr, env);
   // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
   if (!src && !media) {
     return {
       kind: 'unsupported', ...base(xf), label: `${label}（格式不支持）`,
-      link: hyperlinkOf(cNvPr, env),
+      link: hyperlink.link,
       name: attr(cNvPr, 'name') ?? undefined,
       id: numAttr(cNvPr, 'id') ?? undefined,
-      ...editInfoOf(env, cNvPr, ph, undefined, 'frame', movementLocked(nv)),
+      ...editInfoOf(env, cNvPr, ph, undefined, 'frame', movementLocked(nv), hyperlink.unsupported),
     };
   }
 
@@ -719,11 +731,14 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
     filter: blipFilter(blipFill),
     stroke: parseLnElement(kid(spPr, 'ln'), env, null),
     effects: parseEffects(kid(spPr, 'effectLst'), env.ctx),
-    link: hyperlinkOf(cNvPr, env),
+    link: hyperlink.link,
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
     media,
-    ...editInfoOf(env, cNvPr, ph, editableGeom, media ? 'frame' : undefined, movementLocked(nv)),
+    ...editInfoOf(
+      env, cNvPr, ph, editableGeom, media ? 'frame' : undefined,
+      movementLocked(nv), hyperlink.unsupported,
+    ),
   };
 }
 

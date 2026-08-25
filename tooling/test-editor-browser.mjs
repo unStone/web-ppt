@@ -250,6 +250,8 @@ async function browserResult(webSocketDebuggerUrl) {
           moveSlidePages: report.dataset.moveSlidePages,
           addTableError: report.dataset.addTableError,
           addTableP95: report.dataset.addTableP95,
+          hyperlinkCommitP95: report.dataset.hyperlinkCommitP95,
+          hyperlinkRouteP95: report.dataset.hyperlinkRouteP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -571,6 +573,7 @@ try {
     + ` · 新增页${result.addSlidePages}页偏差/p95 ${result.addSlideError}px/${result.addSlideP95}ms`
     + ` · 重排页${result.moveSlidePages}页 p95 ${result.moveSlideP95}ms`
     + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`
+    + ` · 超链接提交/路由 p95 ${result.hyperlinkCommitP95}/${result.hyperlinkRouteP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

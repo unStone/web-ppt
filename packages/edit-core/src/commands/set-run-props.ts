@@ -2,7 +2,9 @@ import { applyRunProps, flattenTextBody, queryTextRunProps, textBodyFromOverride
 import { textPositionToIndex } from '../text-position';
 import { assertTextRange } from '../data-validation';
 import { assertRunPropertyOverrides } from '../run-property-schema';
-import type { EditDoc, TextOverride } from '../types';
+import { normalizeLinkTarget } from '../hyperlink';
+import { own } from '../data-validation';
+import type { EditDoc, RunPropertyOverrides, TextOverride } from '../types';
 import type { CommandPatches, SetRunPropsCommand } from './types';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
 
@@ -19,6 +21,9 @@ export function setRunPropsPatches(
   validate(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
   const { body: source, before, patchTarget } = textTargetContext(doc, target);
+  const props: RunPropertyOverrides = own(command.props, 'link') && command.props.link !== null
+    ? { ...command.props, link: normalizeLinkTarget(doc, command.props.link!, 'SetRunProps.props.link') }
+    : command.props;
   const body = before?.kind === 'flat'
     ? textBodyFromOverride(before)
     : source;
@@ -27,7 +32,7 @@ export function setRunPropsPatches(
     return { forward: [], inverse: [] };
   }
   const value: TextOverride = applyRunProps(
-    body, command.range, command.props, before?.kind === 'flat' ? before : undefined,
+    body, command.range, props, before?.kind === 'flat' ? before : undefined,
   );
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) {

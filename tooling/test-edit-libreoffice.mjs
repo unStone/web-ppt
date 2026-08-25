@@ -557,4 +557,25 @@ if (basename(savedPath) === 'duplicate-slide.pptx') {
   });
 }
 
+if (basename(savedPath) === 'hyperlinks.pptx') {
+  const bytes = new Uint8Array(readFileSync(savedPath));
+  const parts = unzipSync(bytes);
+  const decode = (part) => new TextDecoder().decode(parts[part]);
+  const slide = decode('ppt/slides/slide1.xml');
+  const relationships = decode('ppt/slides/_rels/slide1.xml.rels');
+  const external = relationships.match(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Type="[^"]*\/hyperlink"[^>]*Target="https:\/\/example\.com\/shared"[^>]*TargetMode="External"/);
+  const internal = relationships.match(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Type="[^"]*\/slide"[^>]*Target="slide3\.xml"/);
+  if (!external || !internal || !slide.includes(`r:id="${external[1]}"`)
+    || !new RegExp(`r:id="${internal[1]}"[^>]*action="ppaction://hlinksldjump"`).test(slide)) {
+    throw new Error('LibreOffice 超链接产物缺少外部关系或第三页内部跳转');
+  }
+  const markup = exportLibreOfficeSvg('超链接文字');
+  if (!markup.includes('xlink:href="https://example.com/shared"')
+    || !markup.includes('xlink:href="#Slide 3"')
+    || !['共享外链', '内部第三页', '普通文字'].every((text) => markup.includes(text))) {
+    throw new Error('LibreOffice 没有保留外链/内部跳转或完整显示链接文字');
+  }
+  geometryEvidence += '，外链关系/内部第三页跳转/显示文字完整';
+}
+
 console.log(`\n\x1b[32m✓ LibreOffice 已打开 ${basename(savedPath)} 并导出 PDF（${statSync(pdf).size} bytes${geometryEvidence}）\x1b[0m`);

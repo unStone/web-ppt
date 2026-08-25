@@ -127,6 +127,29 @@ const stroke = queryElementStroke(editor.doc, selectedIds);
 
 图片填充上传/裁剪、效果、文字颜色和单元格边框是独立能力，不会被塞进这两条命令。
 
+超链接使用稳定领域目标，不向 UI 泄漏页码或 OOXML action。`SetLink` 编辑形状/图片链接；文字区间通过
+`SetRunProps` 的同名 `link` 字段编辑。`{ kind: 'none' }` 表示显式移除，`null` 表示恢复解析来源。
+`queryElementLink` 与 `queryRunLink` 返回有效值、来源、直接覆盖、混合及可跟随状态，React、Vue、Svelte、
+Web Component 和原生工具栏都无需读取 `src` / `ovr`。
+
+```ts
+import { queryElementLink, queryRunLink } from '@web-ppt/edit-core';
+
+editor.exec({
+  type: 'SetLink', id: elementId,
+  target: { kind: 'slide', slideId: doc.slideOrder[2] },
+});
+const elementLink = queryElementLink(doc, [elementId]);
+editor.exec({
+  type: 'SetRunProps', id: elementId, range,
+  props: { link: { kind: 'external', href: 'https://example.com/docs' } },
+});
+const runLink = queryRunLink(doc, elementId, range);
+```
+
+外链只接受规范化的 `http`、`https`、`mailto`；内链在页面重排、撤销重做、保存重开及同/跨文档复制中
+始终持有 `SlideId`。相对动作和不支持的来源仍可查询并只读保留。
+
 `SetRunProps` 给半开文字区间写入稀疏字符格式覆盖，支持跨 run、跨段落设置字体、幻灯片像素字号、
 粗体、斜体、下划线和删除线。属性传 `null` 会删除直接格式并恢复 OOXML 继承值；公式保持不可拆且保留格式的原子，
 动态字段保存后仍是原字段。headless 的折叠选区刻意不写模型——待输入格式属于挂载的输入适配层，

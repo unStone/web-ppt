@@ -15,6 +15,7 @@ import type {
 } from './commands/types';
 import type { EditDoc, ElementId, ElementMeta, ElementRecord } from './types';
 import type { XmlDocument, XmlElement } from './xml/types';
+import { copiedLinkMeta } from './clipboard-links';
 
 let clipboardBatchSerial = 0;
 
@@ -42,10 +43,13 @@ function hostSpids(host: XmlElement): string[] {
 }
 
 function copiedMeta(
+  doc: EditDoc,
+  id: ElementId,
   meta: ElementMeta,
   copyBatchId: string,
   sourcePart: string,
   frameToSlide?: ReturnType<typeof elementFrameToSlideMatrix>,
+  source?: SlideElement,
 ): ElementClipboardRecordMeta {
   const anchored = meta.origin?.part === sourcePart;
   return {
@@ -55,6 +59,7 @@ function copiedMeta(
     ...(anchored ? { sourceSpid: meta.origin!.spid } : {}),
     ...(meta.geom ? { geom: structuredClone(meta.geom) } : {}),
     ...(frameToSlide ? { frameToSlide } : {}),
+    ...(source ? copiedLinkMeta(doc, id, source) : {}),
   };
 }
 
@@ -159,13 +164,15 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     if (!record) throw new Error(`复制树引用不存在的元素：${id}`);
     const clipboardId = `e${next++}`;
     const children = (record.children ?? []).map((child) => visit(child, clipboardId));
+    const source = copiedSource(doc, id, assetHashes);
     records[clipboardId] = {
       id: clipboardId,
       parent: clipboardParent,
-      src: copiedSource(doc, id, assetHashes),
+      src: source,
       meta: copiedMeta(
-        record.meta, copyBatchId, sourcePart,
+        doc, id, record.meta, copyBatchId, sourcePart,
         clipboardParent === null ? elementFrameToSlideMatrix(doc, id) : undefined,
+        source,
       ),
       children,
     };

@@ -135,10 +135,14 @@
 <g transform="translate(680 420)">
 <path d="M 0 0 L 560 0 L 560 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="7.2" y="21.07" text-anchor="start" xml:space="preserve">
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
 <tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)" text-decoration="underline">外部超链接（example.com）</tspan>
+</a>
 </text>
 <text x="7.2" y="45.47" text-anchor="start" xml:space="preserve">
+<a data-slide="1" tabindex="0" role="link" style="cursor:pointer;text-decoration:underline">
 <tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)" text-decoration="underline">跳转到第 1 页</tspan>
+</a>
 </text>
 </g>
 </g>

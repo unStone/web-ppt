@@ -14,6 +14,9 @@ import type {
 import { prepareInsertionClosures } from './paste-resources';
 import { partSpidAllocator } from './spid';
 import { assertTableRowAppendEditInfo } from '../table-row-append-validation';
+import {
+  applyCopiedLinks, assertClipboardPortableLink, assertClipboardTextLinks,
+} from '../clipboard-links';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
@@ -43,6 +46,10 @@ function assertPayload(value: unknown): asserts value is ElementClipboardPayload
       throw new Error(`剪贴板元素记录无效：${id}`);
     }
     if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `剪贴板元素 ${id}`);
+    if (record.meta.link) assertClipboardPortableLink(record.meta.link, `剪贴板元素 ${id}.meta.link`);
+    if (record.meta.textLinks) assertClipboardTextLinks(
+      record.meta.textLinks, `剪贴板元素 ${id}.meta.textLinks`,
+    );
     reached.add(id);
     for (const child of record.children) visit(child, id);
   };
@@ -195,7 +202,9 @@ export function pasteElementsPatches(
         }
         spids[String(copied.meta.sourceSpid)] = spid;
       }
-      const src = hydrateElementAssets(copied.src);
+      let src = hydrateElementAssets(copied.src);
+      const links = applyCopiedLinks(doc, src, copied.meta);
+      src = links.element;
       if (spid !== undefined) src.id = spid;
       const children = copied.children.map((child, childIndex) => visit(child, id, false, childIndex));
       const z = root
@@ -203,12 +212,13 @@ export function pasteElementsPatches(
         : initialFractionalIndex(index);
       records[id] = {
         id, parent, z, src,
-        ovr: root ? placements.get(rootId)! : {},
+        ovr: { ...(root ? placements.get(rootId)! : {}), ...links.overrides },
         meta: {
           editable: copied.meta.editable,
           ...(copied.meta.geom ? { geom: structuredClone(copied.meta.geom) } : {}),
           ...(spid === undefined ? {} : { origin: { part: destination.part, spid } }),
           created: true,
+          ...(links.sourceLinkReadonly ? { sourceLinkReadonly: true } : {}),
           ...(root ? {
             insertion: {
               markup: payload.ooxml.roots[rootId].markup,

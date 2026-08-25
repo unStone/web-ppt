@@ -22,7 +22,8 @@
   <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
     import { openEditor } from '/out/editor/editor.mjs';
-    import { layoutText } from '/out/editor/core.mjs';
+    import { layoutText, parse } from '/out/editor/core.mjs';
+    import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
     import { runEditorSnapBrowserContract } from '/tooling/lib/editor-snap-browser-contract.mjs';
@@ -59,6 +60,8 @@
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
+    import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
+    import { runViewerHyperlinkBrowserContract } from '/tooling/lib/viewer-hyperlink-browser-contract.mjs';
     import {
       publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
@@ -468,6 +471,8 @@
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
+      const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
+      await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
       const imageCropResult = await runEditorImageCropBrowserContract({ openEditor, load });
       publishEditorImageCropBrowserResult(report, imageCropResult);
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
@@ -549,6 +554,8 @@
       report.dataset.addTableError = addTableResult.geometryError.toFixed(3);
       report.dataset.addTableP95 = addTablePerformance.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
+      report.dataset.hyperlinkCommitP95 = hyperlinkResult.commitP95.toFixed(3);
+      report.dataset.hyperlinkRouteP95 = hyperlinkResult.routeP95.toFixed(3);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
@@ -587,6 +594,8 @@
         + `旋转格贴合偏差 ${tableCellTextResult.geometryError.toFixed(3)}px`;
       report.textContent += `\n新增表格占位符偏差 ${addTableResult.geometryError.toFixed(3)}px，`
         + `60 元素页新增 20×10 表格 p95 ${addTablePerformance.p95.toFixed(3)}ms`;
+      report.textContent += `\n超链接 60 元素提交/点击路由 p95 `
+        + `${hyperlinkResult.commitP95.toFixed(3)} / ${hyperlinkResult.routeP95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;

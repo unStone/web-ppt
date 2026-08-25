@@ -4,17 +4,20 @@ export {
   elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix,
   elementParentToSlidePoint, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, transformSpacePoint,
-  queryElementCrop, queryElementEffects, queryElementFill, queryElementStroke, SHAPE_PATTERN_PRESETS,
+  queryElementCrop, queryElementEffects, queryElementFill, queryElementLink, queryElementStroke,
+  queryRunLink, SHAPE_PATTERN_PRESETS,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
-export type { EditorMode, SlideEditor, SlideEditorOptions } from './slide-editor';
+export type {
+  EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
+} from './slide-editor-types';
 export type { ImageInsertOptions } from './image-insertion';
 export type { ImageReplaceOptions } from './image-insertion';
 export type { TableInsertOptions } from './table-insertion';
 export type {
-  AddImageCommand, AddShapeCommand, AddTableCommand, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementStrokeState, ImageCrop, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides,
-  RunPropertiesState, RunPropertyOverrides, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
-  ReplaceImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
+  AddImageCommand, AddShapeCommand, AddTableCommand, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides,
+  RunLinkState, RunPropertiesState, RunPropertyOverrides, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
+  ReplaceImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
 } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

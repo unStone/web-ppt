@@ -188,10 +188,14 @@
 <g transform="translate(680 420)">
 <path d="M 0 0 L 560 0 L 560 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="9.6" y="22.27" text-anchor="start" xml:space="preserve">
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
 <tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">外部超链接（example.com）</tspan>
+</a>
 </text>
 <text x="9.6" y="44.67" text-anchor="start" xml:space="preserve">
+<a data-slide="1" tabindex="0" role="link" style="cursor:pointer;text-decoration:underline">
 <tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">跳转到第 1 页</tspan>
+</a>
 </text>
 </g>
 </g>

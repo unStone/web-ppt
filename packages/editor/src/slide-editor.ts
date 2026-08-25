@@ -1,5 +1,5 @@
 import type {
-  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunPropertiesState,
+  EditorChange, ElementId, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
@@ -17,7 +17,7 @@ import {
 } from './selection-hit';
 import { TextEditorController } from './text-editor';
 import { claimTextEditing, releaseTextEditing, sessionState } from './session-state';
-import { bindSlideEditorEvents } from './slide-editor-events';
+import { bindSlideEditorEditEvents, bindSlideEditorLinkEvent } from './slide-editor-events';
 import { SlideDomRenderer } from './slide-dom-renderer';
 import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
 import { ImageInsertionController } from './image-insertion';
@@ -27,60 +27,9 @@ import { SlidePointerController } from './slide-pointer-controller';
 import { insertTable } from './table-insertion';
 import type { TableInsertOptions } from './table-insertion';
 import { ImageCropGestureController } from './image-crop-gesture';
-
-export type EditorMode = 'view' | 'edit';
-
-export interface SlideEditorOptions {
-  slideId?: SlideId;
-  mode?: EditorMode;
-  zoom?: number;
-  /** 默认 auto；受 WebKit foreignObject 缩放缺陷影响时自动切到原生 SVG 文本。 */
-  textMode?: 'auto' | 'html' | 'svg';
-  /** 默认开启；false 使本视图的移动手势保留原始指针位移。 */
-  snapping?: boolean;
-  /** 文档没有通用形状页边距；需要时由宿主在幻灯片 px 中显式给出。 */
-  snapMargins?: SnapMargins;
-}
-
-let viewSerial = 0;
-
-function layer(document: Document, name: string): HTMLDivElement {
-  const element = document.createElement('div');
-  element.dataset.pptLayer = name;
-  element.style.position = 'absolute';
-  element.style.inset = '0';
-  return element;
-}
-
-export interface SlideEditor {
-  readonly element: HTMLDivElement;
-  readonly mode: EditorMode;
-  readonly slideId: SlideId;
-  readonly zoom: number;
-  readonly snapping: boolean;
-  readonly destroyed: boolean;
-  setMode(mode: EditorMode): void;
-  setSlide(slideId: SlideId): void;
-  setZoom(zoom: number): void;
-  setSnapping(enabled: boolean): void;
-  /** 注册外置工具栏，使其 pointer 交互不结束当前文字编辑。 */
-  registerTextUi(element: HTMLElement): () => void;
-  queryRunProps(): RunPropertiesState | null;
-  setRunProps(props: RunPropertyOverrides): boolean;
-  queryParaProps(): ParagraphPropertiesState | null;
-  setParaProps(props: ParagraphPropertyOverrides): boolean;
-  queryBodyProps(): TextBodyProperties | null;
-  setBodyProps(props: TextBodyPropertyOverrides): boolean;
-  insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
-  chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
-  replaceImage(file: Blob, options?: ImageReplaceOptions): Promise<ElementId>;
-  chooseReplacementImage(options?: ImageReplaceOptions): Promise<ElementId | null>;
-  insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
-  /** 双击图片之外的框架无关入口；省略 id 时使用当前单选图片。 */
-  startImageCrop(id?: ElementId): boolean;
-  endImageCrop(): void;
-  destroy(): void;
-}
+import { SlideLinkController } from './slide-link-controller';
+import type { EditorMode, SlideEditor, SlideEditorOptions } from './slide-editor-types';
+import { createEditorLayer, nextViewIdPrefix } from './slide-editor-dom';
 
 class DomSlideEditor implements SlideEditor {
   readonly element: HTMLDivElement;
@@ -107,11 +56,18 @@ class DomSlideEditor implements SlideEditor {
   private readonly textEditor: TextEditorController;
   private readonly imageInsertion: ImageInsertionController;
   private readonly pointer: SlidePointerController;
+  private readonly links: SlideLinkController;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
-  private readonly unbindEvents: () => void;
+  private readonly unbindLinkEvent: () => void;
+  private unbindEditEvents: (() => void) | null = null;
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.currentMode !== 'edit') return;
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)
+      && this.links.followSelection('edit', event)) {
+      event.preventDefault();
+      return;
+    }
     if (this.textEditor.owns(event.target)) return;
     if (this.imageCropGesture.activeId && event.key === 'Enter') {
       this.imageCropGesture.commitGesture();
@@ -176,7 +132,7 @@ class DomSlideEditor implements SlideEditor {
     this.textMode = requestedTextMode === 'auto'
       ? foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg'
       : requestedTextMode;
-    this.idPrefix = `${session.editor.doc.identity.prefix}view-${++viewSerial}-`;
+    this.idPrefix = nextViewIdPrefix(session.editor.doc.identity.prefix);
 
     const document = container.ownerDocument;
     this.element = document.createElement('div');
@@ -192,7 +148,7 @@ class DomSlideEditor implements SlideEditor {
     this.stage.style.width = `${state.presentation.width}px`;
     this.stage.style.height = `${state.presentation.height}px`;
 
-    this.staticLayer = layer(document, 'static');
+    this.staticLayer = createEditorLayer(document, 'static');
     this.interactionLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.interactionLayer.dataset.pptLayer = 'interaction';
     this.interactionLayer.setAttribute('viewBox', `0 0 ${state.presentation.width} ${state.presentation.height}`);
@@ -200,7 +156,7 @@ class DomSlideEditor implements SlideEditor {
     this.interactionLayer.style.inset = '0';
     this.interactionLayer.style.width = '100%';
     this.interactionLayer.style.height = '100%';
-    this.textLayer = layer(document, 'text');
+    this.textLayer = createEditorLayer(document, 'text');
     this.interactionLayer.style.pointerEvents = 'none';
     this.textLayer.style.pointerEvents = 'none';
 
@@ -295,25 +251,30 @@ class DomSlideEditor implements SlideEditor {
       editable: () => this.currentMode === 'edit', slideId: () => this.currentSlide,
       hitCandidates: (path) => this.hitCandidates(path),
     });
+    this.links = new SlideLinkController({
+      editor: session.editor, root: this.element,
+      mode: () => this.currentMode, slideId: () => this.currentSlide,
+      setSlide: (target) => this.setSlide(target),
+      queryRunLink: () => this.textEditor.queryRunLink(),
+      onFollow: options.onLinkFollow,
+    });
 
     this.stage.append(this.staticLayer, this.interactionLayer, this.textLayer);
     this.element.append(this.stage);
     this.render();
-    this.setMode(this.currentMode);
     this.setZoom(this.currentZoom);
     this.unsubscribe = session.editor.subscribe((change) => this.update(change));
-    this.unbindEvents = bindSlideEditorEvents(this.element, {
-      pointerdown: this.pointer.down, pointermove: this.pointer.move,
-      pointerup: this.pointer.up, pointercancel: this.pointer.cancel,
-      dblclick: this.pointer.doubleClick, keydown: this.onKeyDown, keyup: this.onKeyUp,
-      blur: this.onBlur, copy: this.onCopy, cut: this.onCut, paste: this.onPaste,
+    this.unbindLinkEvent = bindSlideEditorLinkEvent(this.element, {
+      click: this.links.click, keydown: this.links.keydown,
     });
+    this.setMode(this.currentMode);
     try {
       container.append(this.element);
       state.views.add(this);
     } catch (error) {
       this.unsubscribe();
-      this.unbindEvents();
+      this.unbindLinkEvent();
+      this.unbindEditEvents?.();
       this.element.remove();
       throw error;
     }
@@ -325,9 +286,13 @@ class DomSlideEditor implements SlideEditor {
   get snapping(): boolean { return this.currentSnapping; }
   get destroyed(): boolean { return this.isDestroyed; }
 
+  followLink(target?: LinkTarget): boolean {
+    return !this.isDestroyed && this.links.follow(target);
+  }
   releaseTextEditing(): void { this.textEditor.releaseTextEditing(); }
   registerTextUi(element: HTMLElement): () => void { return this.textEditor.registerExternalUi(element); }
   queryRunProps(): RunPropertiesState | null { return this.textEditor.queryRunProps(); }
+  queryRunLink(): RunLinkState | null { return this.textEditor.queryRunLink(); }
   setRunProps(props: RunPropertyOverrides): boolean { return this.textEditor.setRunProps(props); }
   queryParaProps(): ParagraphPropertiesState | null { return this.textEditor.queryParaProps(); }
   setParaProps(props: ParagraphPropertyOverrides): boolean { return this.textEditor.setParaProps(props); }
@@ -385,6 +350,7 @@ class DomSlideEditor implements SlideEditor {
       }
     }
     this.currentMode = mode;
+    this.syncEditEvents();
     this.element.dataset.mode = mode;
     // Pointer Events 在按下前就按 touch-action 决定是否交给页面滚动；编辑态必须由画布拥有手势。
     this.element.style.touchAction = mode === 'edit' ? 'none' : '';
@@ -434,7 +400,9 @@ class DomSlideEditor implements SlideEditor {
     this.imageInsertion.destroy();
     this.imageCropGesture.destroy();
     this.unsubscribe();
-    this.unbindEvents();
+    this.unbindEditEvents?.();
+    this.unbindEditEvents = null;
+    this.unbindLinkEvent();
     sessionState(this.session).views.delete(this);
     this.element.remove();
   }
@@ -443,6 +411,21 @@ class DomSlideEditor implements SlideEditor {
     this.domRenderer.render(this.session.editor.selection);
     this.imageCropGesture.sync(this.session.editor.selection);
     this.textEditor.refreshStatic();
+  }
+
+  private syncEditEvents(): void {
+    if (this.currentMode === 'view') {
+      this.unbindEditEvents?.();
+      this.unbindEditEvents = null;
+      return;
+    }
+    if (this.unbindEditEvents) return;
+    this.unbindEditEvents = bindSlideEditorEditEvents(this.element, {
+      pointerdown: this.pointer.down, pointermove: this.pointer.move,
+      pointerup: this.pointer.up, pointercancel: this.pointer.cancel,
+      dblclick: this.pointer.doubleClick, keydown: this.onKeyDown, keyup: this.onKeyUp,
+      blur: this.onBlur, copy: this.onCopy, cut: this.onCut, paste: this.onPaste,
+    });
   }
 
   private hitCandidates(path: EventTarget[]): ElementId[] {

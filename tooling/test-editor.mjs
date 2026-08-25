@@ -56,6 +56,13 @@ execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error', `--outfile=${coreBundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const viewerBundle = join(out, 'viewer-core.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--outfile=${viewerBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
 
