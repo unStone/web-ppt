@@ -1,8 +1,9 @@
 import type {
   EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
+  SlideNotesState,
 } from '@web-ppt/edit-core';
-import { querySlideLayout } from '@web-ppt/edit-core';
+import { querySlideLayout, querySlideNotes } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
@@ -342,6 +343,16 @@ class DomSlideEditor implements SlideEditor {
   setLayout(layoutId: string): boolean {
     if (this.isDestroyed || this.currentMode !== 'edit') return false;
     this.session.editor.exec({ type: 'SetLayout', id: this.currentSlide, layoutId });
+    return true;
+  }
+
+  queryNotes(): SlideNotesState {
+    return querySlideNotes(this.session.editor.doc, [this.currentSlide]);
+  }
+
+  setNotes(text: string): boolean {
+    if (this.isDestroyed || this.currentMode !== 'edit') return false;
+    this.session.editor.exec({ type: 'SetNotes', id: this.currentSlide, text });
     return true;
   }
 

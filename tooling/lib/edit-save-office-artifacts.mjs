@@ -26,6 +26,7 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'change-layout.pptx', slides: 1 }),
   Object.freeze({ file: 'shape-format.pptx', slides: 1 }),
   Object.freeze({ file: 'slide-properties.pptx', slides: 8, libreOfficePages: 6 }),
+  Object.freeze({ file: 'slide-notes.pptx', slides: 4 }),
   Object.freeze({ file: 'slide-image-background.pptx', slides: 5 }),
   Object.freeze({ file: 'slide-image-background-tile-oracle.pptx', slides: 1 }),
   Object.freeze({ file: 'shape-effects.pptx', slides: 2 }),

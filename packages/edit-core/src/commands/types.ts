@@ -7,7 +7,7 @@ import type {
 import type { ElementClipboardPayload } from './clipboard-types';
 import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
-  SetLayoutCommand, SlideLayoutPatch, SlidePropertyPatch,
+  SetLayoutCommand, SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type {
@@ -17,7 +17,7 @@ export type {
 export type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetLayoutCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
-  SlideLayoutPatch, SlidePropertyPatch,
+  SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
@@ -241,7 +241,7 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
-  | SetHiddenCommand | SetLayoutCommand;
+  | SetHiddenCommand | SetLayoutCommand | SetNotesCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -407,7 +407,8 @@ export type TableRowPatch = {
 };
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
-  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch | TableRowPatch;
+  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
+  | SlideNotesPatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -448,6 +449,7 @@ export interface SlideChangeSets {
   readonly createdSlides: Set<SlideId>;
   readonly removedSlides: Set<SlideId>;
   readonly movedSlides: Set<SlideId>;
+  readonly notesSlides: Set<SlideId>;
   readonly removedSlideFallbacks: Map<SlideId, SlideId>;
 }
 

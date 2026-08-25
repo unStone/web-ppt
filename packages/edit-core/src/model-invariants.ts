@@ -221,6 +221,7 @@ export function validateEditDoc(doc: EditDoc): void {
   const creationSlideIds = new Set<number>();
   const creationRelationshipIds = new Set<string>();
   const creationNotesParts = new Set<string>();
+  const sessionNotesParts = new Set<string>();
 
   const referenced = new Map<ElementId, SlideId | ElementId>();
   for (const slideId of doc.slideOrder) {
@@ -258,6 +259,34 @@ export function validateEditDoc(doc: EditDoc): void {
     }
     if (own(slide.ovr, 'hidden') && typeof slide.ovr.hidden !== 'boolean') {
       throw new Error(`幻灯片 ${slideId} 的隐藏覆盖必须是布尔值`);
+    }
+    if (own(slide.ovr, 'notes') && typeof slide.ovr.notes !== 'string') {
+      throw new Error(`幻灯片 ${slideId} 的备注覆盖必须是字符串`);
+    }
+    if (own(slide.ovr, 'notes') && !slide.notes) {
+      throw new Error(`幻灯片 ${slideId} 的备注覆盖缺少 OPC 身份`);
+    }
+    if (slide.notes) {
+      const binding = slide.notes;
+      const validPart = (part: string): boolean => /^ppt\/notesSlides\/[^/]+\.xml$/.test(part);
+      const packageUnavailable = doc.meta.readonly && !doc.package;
+      const sourceExists = packageUnavailable || binding.sourcePart === undefined
+        || !!doc.package?.parts[binding.sourcePart] || !!doc.saveState.baselines[binding.sourcePart];
+      const targetExists = packageUnavailable || !!doc.package?.parts[binding.targetPart]
+        || !!doc.saveState.baselines[binding.targetPart];
+      if (!validPart(binding.targetPart)
+        || typeof binding.relationshipId !== 'string' || !binding.relationshipId
+        || binding.sourcePart !== undefined && !validPart(binding.sourcePart)
+        || !sourceExists
+        || !targetExists && binding.sourcePart === undefined && !own(slide.ovr, 'notes')) {
+        throw new Error(`幻灯片 ${slideId} 的备注 OPC 身份无效`);
+      }
+      if (!targetExists) {
+        if (sessionNotesParts.has(binding.targetPart)) {
+          throw new Error(`会话新建备注 part 被多个页面共享：${binding.targetPart}`);
+        }
+        sessionNotesParts.add(binding.targetPart);
+      }
     }
     if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation
       && !doc.saveState.baselines[slide.origin.part]) {

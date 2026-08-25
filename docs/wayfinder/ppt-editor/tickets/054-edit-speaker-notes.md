@@ -1,6 +1,6 @@
 ---
 title: 编辑并保存演讲者备注
-status: open
+status: done
 labels:
   - wayfinder:task
 parent: ../map.md

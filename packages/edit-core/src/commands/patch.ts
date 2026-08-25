@@ -1,7 +1,7 @@
 import { sortElementChildrenByOrder } from '../element-order';
 import { validateEditDoc } from '../model-invariants';
 import {
-  invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideSequence,
+  invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideData, invalidateSlideSequence,
   invalidateSlideStructure, slideOfElement,
 } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
@@ -38,6 +38,7 @@ import {
 import {
   applySlideLayoutPatch, isSlideLayoutPatch, validateSlideLayoutPatch,
 } from './slide-layout';
+import { applySlideNotesPatch, isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
 import type {
   ElementTransformPatch, ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
@@ -82,6 +83,10 @@ function validatePatch(
   }
   if (isSlideLayoutPatch(input)) {
     validateSlideLayoutPatch(doc, input, index);
+    return;
+  }
+  if (isSlideNotesPatch(input)) {
+    validateSlideNotesPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path[0] === 'elements'
@@ -281,6 +286,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
     else if (isSlideLayoutPatch(patch)) applySlideLayoutPatch(doc, patch);
+    else if (isSlideNotesPatch(patch)) applySlideNotesPatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
@@ -416,7 +422,9 @@ function applyPatchBatch(
       for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
       for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
     }
-    const dirty = isSlideLayoutPatch(patch)
+    const dirty = isSlideNotesPatch(patch)
+      ? invalidateSlideData(doc, patch.path[1])
+      : isSlideLayoutPatch(patch)
       ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
       : isSlidePropertyPatch(patch)
       ? invalidateSlide(doc, patch.path[1])

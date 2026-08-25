@@ -284,7 +284,15 @@ export function patchSlideContentTypes(
       }));
       existing.add(part);
     }
-    const notesPart = slide.creation?.duplicateNotesPart;
+    const notesPart = slide.notes?.targetPart;
+    if (!notesPart || existing.has(`/${notesPart}`)) continue;
+    insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
+      attributes: [['PartName', `/${notesPart}`], ['ContentType', NOTES_CONTENT_TYPE]],
+    }));
+    existing.add(`/${notesPart}`);
+  }
+  for (const slide of Object.values(doc.slides)) {
+    const notesPart = slide.notes?.targetPart;
     if (!notesPart || existing.has(`/${notesPart}`)) continue;
     insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
       attributes: [['PartName', `/${notesPart}`], ['ContentType', NOTES_CONTENT_TYPE]],

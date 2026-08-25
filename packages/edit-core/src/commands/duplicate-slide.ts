@@ -1,5 +1,5 @@
 import type { SlideElement } from '@web-ppt/core';
-import { relationshipPartFor, resolveRelationshipTarget } from '../clipboard-source';
+import { relationshipPartFor } from '../clipboard-source';
 import { allocateElementId, allocateSlideId } from '../document';
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
@@ -11,14 +11,17 @@ import type { CommandPatches, DuplicateSlideCommand, SlideTreePatch } from './ty
 
 function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   layoutId: string;
-  notesPart?: string;
+  notesSourcePart?: string;
+  notesRelationshipId?: string;
 } {
   const source = doc.slides[sourceId];
   if (source.creation) {
     return {
       layoutId: source.creation.layoutRelationshipId,
-      ...(source.creation.duplicateNotesSourcePart
-        ? { notesPart: source.creation.duplicateNotesSourcePart } : {}),
+      ...(source.notes ? {
+        ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
+        notesRelationshipId: source.notes.relationshipId,
+      } : {}),
     };
   }
   const part = source.origin?.part;
@@ -27,19 +30,20 @@ function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
     && (doc.saveState.baselines[relsPart] ?? doc.package?.parts[relsPart]);
   if (!bytes) throw new Error(`页面 ${sourceId} 缺少关系 part`);
   let layoutId: string | undefined;
-  let notesPart: string | undefined;
   for (const relation of xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })) {
     const type = findXmlAttribute(relation, { localName: 'Type', namespaceUri: null })?.value;
-    const target = findXmlAttribute(relation, { localName: 'Target', namespaceUri: null })?.value;
-    const mode = findXmlAttribute(relation, { localName: 'TargetMode', namespaceUri: null })?.value;
     if (type?.endsWith('/slideLayout')) {
       layoutId = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
-    } else if (type?.endsWith('/notesSlide') && target && mode !== 'External') {
-      notesPart = resolveRelationshipTarget(part!, target);
     }
   }
   if (!layoutId) throw new Error(`页面 ${sourceId} 缺少版式关系`);
-  return { layoutId, ...(notesPart ? { notesPart } : {}) };
+  return {
+    layoutId,
+    ...(source.notes ? {
+      ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
+      notesRelationshipId: source.notes.relationshipId,
+    } : {}),
+  };
 }
 
 function duplicateRemovedSpids(doc: EditDoc, sourceId: SlideId): number[] {
@@ -105,7 +109,7 @@ export function duplicateSlidePatches(
   const id = allocateSlideId(doc);
   const opc = allocateSlideOpcIdentity(doc);
   const relationshipInfo = sourceRelationshipInfo(doc, source.id);
-  const notesPart = relationshipInfo.notesPart ? allocateNotesPart(doc) : undefined;
+  const notesPart = source.notes ? allocateNotesPart(doc) : undefined;
   const removedSpids = duplicateRemovedSpids(doc, source.id);
   const cloned = duplicateRecords(doc, source.id, id, opc.part);
   const spids = Object.values(cloned.records).flatMap((record) => record.meta.origin?.spid ?? []);
@@ -120,6 +124,14 @@ export function duplicateSlidePatches(
       dynamicSlideNumbers: source.dynamicSlideNumbers.map((elementId) => cloned.remap.get(elementId)!),
       dynamicSlideLinks: source.dynamicSlideLinks.map((elementId) => cloned.remap.get(elementId)!),
       origin: { part: opc.part },
+      ...(notesPart && relationshipInfo.notesRelationshipId ? {
+        notes: {
+          ...(relationshipInfo.notesSourcePart
+            ? { sourcePart: relationshipInfo.notesSourcePart } : {}),
+          targetPart: notesPart,
+          relationshipId: relationshipInfo.notesRelationshipId,
+        },
+      } : {}),
       // 副本仍从同一页 XML 基线起步；保留来源版式才能让未保存的 SetLayout 继续做稀疏继承。
       sourceLayoutId: source.sourceLayoutId ?? source.layoutId,
       creation: {
@@ -128,8 +140,8 @@ export function duplicateSlidePatches(
         ...(source.creation?.duplicateSourcePart
           ? { duplicateSourcePart: source.creation.duplicateSourcePart }
           : source.creation ? {} : { duplicateSourcePart: source.origin.part }),
-        ...(relationshipInfo.notesPart ? {
-          duplicateNotesSourcePart: relationshipInfo.notesPart,
+        ...(relationshipInfo.notesSourcePart ? {
+          duplicateNotesSourcePart: relationshipInfo.notesSourcePart,
           duplicateNotesPart: notesPart,
         } : {}),
         ...(removedSpids.length ? { duplicateRemovedSpids: removedSpids } : {}),

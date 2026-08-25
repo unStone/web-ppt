@@ -124,6 +124,8 @@ export interface Slide {
 
 export interface SlideEditInfo {
   origin: { part: string };
+  /** 当前页 notesSlide 的 OPC 身份；正文编辑仍留在 edit-core。 */
+  notes?: { part: string; relationshipId: string };
   /** 当前页引用的版式 OPC part；仅 PPTX 编辑解析存在。 */
   layoutId?: string;
   /** 背景来自 slide XML 而非版式/母版；换版式时不能覆盖。 */

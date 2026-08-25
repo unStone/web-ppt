@@ -30,12 +30,14 @@ import {
 } from './slide-parts';
 import { removedSlidePackageParts } from './remove-slide-parts';
 import {
-  cloneDuplicateNotesParts, duplicateNotesParts, duplicateRelationshipSource,
-  duplicateSlideRemovals, duplicateSlideSource, patchDuplicateSlideRelationships,
+  duplicateRelationshipSource, duplicateSlideRemovals, duplicateSlideSource,
 } from './duplicate-slide-parts';
 import { hasSlidePropertyOverrides, patchSlideProperties } from './slide-properties';
 import { materializeLayoutFallback } from './layout-fallback';
 import { createLayoutFallbackGeometryResolver } from './layout-fallback-source';
+import {
+  materializeNotesParts, patchSlideNotesRelationship, prepareNotesSave,
+} from './notes';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -118,8 +120,6 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const slidesByPart = new Map(Object.values(doc.slides).flatMap((slide) =>
     slide.origin ? [[slide.origin.part, slide] as const] : []));
   const fallbackGeometrySource = createLayoutFallbackGeometryResolver(doc);
-  const duplicateNotes = duplicateNotesParts(activeCreatedSlides);
-  const duplicateNotesBySlide = new Map(duplicateNotes.map((notes) => [notes.slidePart, notes]));
   const nextBaselines: Record<string, Uint8Array> = Object.assign(
     Object.create(null), doc.saveState.baselines,
   );
@@ -127,6 +127,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const contentTypesPart = '[Content_Types].xml';
   const presentationPart = 'ppt/presentation.xml';
   const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
+  const notesPlan = prepareNotesSave(doc, nextBaselines, nextCreatedParts);
   const hasCreatedSlideHistory = activeCreatedSlides.length > 0
     || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
   const currentSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
@@ -195,7 +196,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const source = doc.package.parts[part];
     if (source) nextBaselines[part] = source.slice();
   }
-  if ((media.resources.size || hasCreatedSlideHistory || hasRemovedSlideHistory)
+  if ((media.resources.size || hasCreatedSlideHistory || hasRemovedSlideHistory
+    || notesPlan.trackedParts.size)
     && !nextBaselines[contentTypesPart]) {
     const source = doc.package.parts[contentTypesPart];
     if (!source) throw new Error('PPTX 缺少 [Content_Types].xml');
@@ -213,10 +215,6 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const part = slide.origin!.part;
     nextCreatedParts.add(part);
     nextCreatedParts.add(relationshipPartFor(part));
-  }
-  for (const notes of duplicateNotes) {
-    nextCreatedParts.add(notes.targetPart);
-    nextCreatedParts.add(relationshipPartFor(notes.targetPart));
   }
   for (const resource of media.resources.values()) {
     if (resource.created) nextCreatedParts.add(resource.targetPart);
@@ -272,6 +270,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const activeRelationshipParts = new Set<string>();
   for (const sourcePart of new Set([
     ...media.relationships.keys(), ...hyperlinkContexts.keys(), ...layoutSlides.keys(),
+    ...notesPlan.relationshipSlides.keys(),
   ])) {
     const relationships = media.relationships.get(sourcePart) ?? [];
     const relsPart = relationshipPartFor(sourcePart);
@@ -286,6 +285,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       : patchRelationshipPart(relationSource, relationships);
     const layoutSlide = layoutSlides.get(sourcePart);
     if (layoutSlide) relationshipBytes = patchSlideLayoutRelationship(layoutSlide, relationshipBytes);
+    const notesSlide = notesPlan.relationshipSlides.get(sourcePart);
+    if (notesSlide) relationshipBytes = patchSlideNotesRelationship(notesSlide, relationshipBytes);
     changes[relsPart] = relationshipBytes;
   }
   for (const [part, source] of Object.entries(nextBaselines)) {
@@ -294,6 +295,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     }
   }
   for (const [part, resource] of media.resources) changes[part] = resourceBytes(resource);
+  materializeNotesParts(doc, nextBaselines, notesPlan, changes);
   if (nextBaselines[contentTypesPart]) {
     const resourceTypes = patchContentTypes(
       nextBaselines[contentTypesPart], [...media.resources.values()],
@@ -307,14 +309,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     const relationships = changes[relsPart];
     const source = relationships instanceof Uint8Array
       ? relationships : duplicateRelationshipSource(doc, slide, nextBaselines);
-    changes[relsPart] = slide.creation?.duplicateSourcePart
-      ? patchDuplicateSlideRelationships(source!, duplicateNotesBySlide.get(slide.origin!.part))
-      : createdSlideRelationships(slide, source);
-  }
-  for (const notes of duplicateNotes) {
-    const cloned = cloneDuplicateNotesParts(doc, nextBaselines, notes);
-    changes[notes.targetPart] = cloned.notes;
-    changes[relationshipPartFor(notes.targetPart)] = cloned.relationships;
+    const materialized = slide.creation?.duplicateSourcePart
+      ? source! : createdSlideRelationships(slide, source);
+    changes[relsPart] = patchSlideNotesRelationship(slide, materialized);
   }
   if (nextBaselines[presentationPart]) {
     const relationships = nextBaselines[presentationRelsPart]

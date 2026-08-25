@@ -258,6 +258,7 @@ async function browserResult(webSocketDebuggerUrl) {
           slidePropertiesRenderP95: report.dataset.slidePropertiesRenderP95,
           slideImageBackgroundP95: report.dataset.slideImageBackgroundP95,
           slideImageBackgroundModelP95: report.dataset.slideImageBackgroundModelP95,
+          slideNotesP95: report.dataset.slideNotesP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -589,6 +590,7 @@ try {
     + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`
     + ` · 页面图片背景200页模型/完整上屏 p95 `
     + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
+    + ` · 备注2000 p95 ${result.slideNotesP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

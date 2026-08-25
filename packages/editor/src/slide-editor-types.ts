@@ -1,6 +1,7 @@
 import type {
   ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
+  SlideNotesState,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
@@ -63,6 +64,10 @@ export interface SlideEditor {
   queryLayout(): SlideLayoutState;
   /** 只接受当前文档的 layoutId；查看模式不改模型。 */
   setLayout(layoutId: string): boolean;
+  /** 普通 textarea 可直接读取当前页纯文本备注。 */
+  queryNotes(): SlideNotesState;
+  /** 查看模式不改模型并返回 false；空字符串表示显式清空。 */
+  setNotes(text: string): boolean;
   insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
   /** 双击图片之外的框架无关入口；省略 id 时使用当前单选图片。 */
   startImageCrop(id?: ElementId): boolean;

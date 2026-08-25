@@ -156,6 +156,14 @@ export interface SlideLayoutState {
   readonly direct: boolean;
 }
 
+export interface SlideNotesState {
+  readonly value: string;
+  readonly source: string;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+}
+
 export interface ElementStrokeState {
   readonly value: Stroke | null;
   readonly mixed: boolean;
@@ -405,6 +413,7 @@ export interface SlideRecord {
   /** 相对页序动作或稳定 part 跳转；插页后由投影层重新解析目标序号。 */
   dynamicSlideLinks: ElementId[];
   origin: { part: string } | null;
+  notes?: SlideNotesBinding;
   layoutId?: string;
   /** 首次打开或创建时的版式来源；layoutId 改变不应覆写这份查询/撤销基线。 */
   sourceLayoutId?: string;
@@ -420,6 +429,12 @@ export interface SlideRecord {
   defaultShape?: ShapeCreationDefaults;
   /** 解析期已在当前页主题/默认表样式上求值，新增表格无需理解 OOXML 样式层。 */
   defaultTable?: TableCreationDefaults;
+}
+
+export interface SlideNotesBinding {
+  readonly sourcePart?: string;
+  readonly targetPart: string;
+  readonly relationshipId: string;
 }
 
 export interface SlideCreation {

@@ -102,7 +102,8 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
   const slidePropertyConflict = commands.flatMap((command) =>
     command.type === 'SetBackground' || command.type === 'SetBackgroundImage'
       || command.type === 'SetBackgroundCrop'
-      || command.type === 'SetHidden' || command.type === 'SetLayout' ? [command.id] : [])
+      || command.type === 'SetHidden' || command.type === 'SetLayout'
+      || command.type === 'SetNotes' ? [command.id] : [])
     .find((id) => removedSlideIds.has(id));
   // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
   if (slidePropertyConflict) {
@@ -408,6 +409,7 @@ export class Editor {
 
     const selectionAfter = this.selection;
     this.refreshActiveImageResources(forward);
+    const slideChanges = slidePatchSets(this.doc, forward);
     const beforeState = this.currentState;
     if (forward.length) this.currentState = this.nextState++;
     const recordsHistory = forward.length && options.recordHistory !== false && origin === this.origin;
@@ -423,7 +425,7 @@ export class Editor {
         label,
         time: options.time ?? Date.now(),
         ...(options.mergeKey ? { mergeKey: options.mergeKey } : {}),
-        affectedSlides: [...dirtySlides],
+        affectedSlides: [...new Set([...dirtySlides, ...slideChanges.notesSlides])],
       };
       this.historyStore.push(entry, beforeState, this.currentState, historyLinks);
     } else if (forward.length) {
@@ -433,17 +435,16 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      const slides = slidePatchSets(this.doc, forward);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
         renderElements, reorderedElements, bodyPropsElements,
-        slides,
+        slideChanges,
         renderSlides,
       );
     }
     return {
       forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
-      ...slidePatchSets(this.doc, forward),
+      ...slideChanges,
     };
   }
 
@@ -457,6 +458,7 @@ export class Editor {
     bodyProps: Set<ElementId> = new Set(),
     slideChanges: SlideChangeSets = {
       createdSlides: new Set(), removedSlides: new Set(), movedSlides: new Set(),
+      notesSlides: new Set(),
       removedSlideFallbacks: new Map(),
     },
     renderSlides: Set<SlideId> = new Set(),
@@ -476,6 +478,7 @@ export class Editor {
           createdSlides: new Set(slideChanges.createdSlides),
           removedSlides: new Set(slideChanges.removedSlides),
           movedSlides: new Set(slideChanges.movedSlides),
+          notesSlides: new Set(slideChanges.notesSlides),
           removedSlideFallbacks: new Map(slideChanges.removedSlideFallbacks),
         });
       } catch (error) {

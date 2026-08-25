@@ -274,12 +274,17 @@ React、Vue、Svelte、Web Component 与原生导航都可直接切换活动路�
 presentation 身份和 notes 回指都相互独立，版式、媒体、图表、评论与未知目标则继续共享原包资源；任一页后续
 编辑或删除都不会改变另一页。
 
+`querySlideNotes(doc, ids)` 返回纯文本备注的 `value/source/mixed/sourceMixed/direct`，工具栏无需读取
+`src/ovr`。`SetNotes { id, text }` 把换行保存为 DrawingML 段落，空字符串表示显式清空；事务只发布
+`notesSlides`，不会使画布投影变脏。无 notes 的旧页和会话新页在首次编辑时才创建 OPC 闭包；共享 notes
+会先分配独立 part，正文之外的占位符、格式、notesMaster、外链和未知扩展继续逐字保留。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面复制/删除、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面复制/删除、演讲者备注、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 

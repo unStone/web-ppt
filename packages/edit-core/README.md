@@ -297,13 +297,20 @@ after it. The returned `createdSlides` identity is the only value framework adap
 back-references are independent, while layout, media, charts, comments, and unknown targets keep sharing their
 original package resources. Later edits or deletion of either page cannot mutate the other.
 
+`querySlideNotes(doc, ids)` returns `value/source/mixed/sourceMixed/direct` for plain-text speaker notes, so
+toolbars never inspect `src/ovr`. `SetNotes { id, text }` maps newlines to DrawingML paragraphs and treats an
+empty string as an explicit clear. Transactions publish only `notesSlides` and do not dirty the canvas projection.
+Old or session-created pages without notes materialize their OPC closure only on first edit; shared notes first fork
+to an independent part while other placeholders, formatting, notesMaster, external links, and unknown extensions
+remain byte-preserved.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
-appended table rows, new shapes/pages, page duplication/removals, placeholder clears, and element removals, refreshes `doc.package` for the
+appended table rows, new shapes/pages, page duplication/removals, speaker notes, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 

@@ -346,6 +346,13 @@ export function invalidateSlide(doc: EditDoc, id: SlideId): ProjectionInvalidati
   return { dirtyElements: new Set(), dirtySlides: new Set([id]) };
 }
 
+/** 备注属于页面数据但不参与 SVG；只清投影缓存，不把画布视图列为脏页。 */
+export function invalidateSlideData(doc: EditDoc, id: SlideId): ProjectionInvalidation {
+  if (!doc.slides[id]) throw new Error(`找不到幻灯片：${id}`);
+  cacheOf(doc).slides.delete(id);
+  return { dirtyElements: new Set(), dirtySlides: new Set() };
+}
+
 /** 页面树 patch 发生在页面存在性变化之前，不能要求目标页已经在模型中。 */
 export function invalidateSlideStructure(
   doc: EditDoc,

@@ -1379,6 +1379,15 @@ function extractText(root: Element | null): string {
   return out.join('').replace(/\n+/g, '\n').trim();
 }
 
+function extractNotesText(root: Element | null): string {
+  const tree = walk(root, 'cSld', 'spTree');
+  for (const shape of kids(tree, 'sp')) {
+    const placeholder = walk(kid(shape, 'nvSpPr'), 'nvPr', 'ph');
+    if (attr(placeholder, 'type') === 'body') return extractText(kid(shape, 'txBody'));
+  }
+  return '';
+}
+
 // ---------------- 批注 ----------------
 
 export interface AuthorInfo {
@@ -1723,8 +1732,10 @@ export function parseSlide(
   const slideW = emu(numAttr(sz, 'cx') ?? 12192000);
   const slideH = emu(numAttr(sz, 'cy') ?? 6858000);
 
-  const notesPath = relByType(slideRels, '/notesSlide');
-  const notes = notesPath ? extractText(walk(pkg.xml(notesPath), 'cSld', 'spTree')) : '';
+  const notesRelationship = Object.entries(slideRels)
+    .find(([, relationship]) => relationship.type.endsWith('/notesSlide'));
+  const notesPath = notesRelationship?.[1].target ?? null;
+  const notes = notesPath ? extractNotesText(pkg.xml(notesPath)) : '';
   const comments = parseSlideComments(pkg, slideRels, authors);
   const directTransition = parseTransition(slideRoot);
 
@@ -1740,6 +1751,8 @@ export function parseSlide(
     ...(edit ? {
       editInfo: {
         origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
+        ...(notesPath && notesRelationship
+          ? { notes: { part: notesPath, relationshipId: notesRelationship[0] } } : {}),
         ...(walk(slideRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
         ...(directTransition ? { directTransition: true as const } : {}),
         ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),

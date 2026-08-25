@@ -44,6 +44,10 @@ view.setSlide(slideId);
 view.setZoom(1.5);
 view.setSnapping(false);   // can be changed without remounting
 
+notesTextarea.value = view.queryNotes().value;
+notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
+// View mode can still queryNotes(), but setNotes() returns false without mutating the shared model.
+
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs

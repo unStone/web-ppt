@@ -74,8 +74,13 @@ export function slidePatchSets(doc: EditDoc, patches: readonly Patch[]): SlideCh
   const createdSlides = new Set<SlideId>();
   const removedSlides = new Set<SlideId>();
   const movedSlides = new Set<SlideId>();
+  const notesSlides = new Set<SlideId>();
   const removals = new Map<SlideId, SlideTreeSnapshot>();
   for (const patch of patches) {
+    if (patch.path[0] === 'slides' && (patch.path.length === 3 && patch.path[2] === 'notes'
+      || patch.path.length === 4 && patch.path[2] === 'ovr' && patch.path[3] === 'notes')) {
+      notesSlides.add(patch.path[1]);
+    }
     if (isSlideOrderPatch(patch)) {
       if (!createdSlides.has(patch.path[1]) && !removedSlides.has(patch.path[1])) {
         movedSlides.add(patch.path[1]);
@@ -114,5 +119,5 @@ export function slidePatchSets(doc: EditDoc, patches: readonly Patch[]): SlideCh
     const fallback = candidate && doc.slides[candidate] ? candidate : doc.slideOrder[0];
     if (fallback) removedSlideFallbacks.set(id, fallback);
   }
-  return { createdSlides, removedSlides, movedSlides, removedSlideFallbacks };
+  return { createdSlides, removedSlides, movedSlides, notesSlides, removedSlideFallbacks };
 }

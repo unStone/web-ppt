@@ -116,6 +116,13 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       dynamicSlideNumbers,
       dynamicSlideLinks,
       origin: slide.editInfo?.origin ?? null,
+      ...(slide.editInfo?.notes ? {
+        notes: {
+          sourcePart: slide.editInfo.notes.part,
+          targetPart: slide.editInfo.notes.part,
+          relationshipId: slide.editInfo.notes.relationshipId,
+        },
+      } : {}),
       ...(slide.editInfo?.layoutId ? { layoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.layoutId ? { sourceLayoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.directBackground ? { sourceDirectBackground: true as const } : {}),

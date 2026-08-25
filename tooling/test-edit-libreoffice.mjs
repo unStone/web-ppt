@@ -11,6 +11,7 @@ import { runChangeLayoutLibreOfficeContract } from './lib/change-layout-libreoff
 import { runShapeEffectsLibreOfficeContract } from './lib/shape-effects-libreoffice-contract.mjs';
 import { runImageContentLibreOfficeContract } from './lib/image-content-libreoffice-contract.mjs';
 import { runSlidePropertiesLibreOfficeContract } from './lib/slide-properties-libreoffice-contract.mjs';
+import { runSlideNotesLibreOfficeContract } from './lib/slide-notes-libreoffice-contract.mjs';
 import {
   runSlideImageBackgroundLibreOfficeContract, runSlideImageTileOracleLibreOfficeContract,
 } from './lib/slide-image-background-libreoffice-contract.mjs';
@@ -592,6 +593,10 @@ if (basename(savedPath) === 'duplicate-slide.pptx') {
   geometryEvidence += runDuplicateSlideLibreOfficeContract({
     savedPath, pages, out, root, soffice, exportSvg: exportLibreOfficeSvg,
   });
+}
+
+if (basename(savedPath) === 'slide-notes.pptx') {
+  geometryEvidence += runSlideNotesLibreOfficeContract({ savedPath, out, root, soffice });
 }
 
 if (basename(savedPath) === 'change-layout.pptx') {

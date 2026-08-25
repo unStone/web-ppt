@@ -1,5 +1,5 @@
 import type { Fill, ImageTilePlacement } from '@web-ppt/core';
-import type { ImageCrop, SlideId, SlideImageBackground } from '../types';
+import type { ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding } from '../types';
 
 export interface SetBackgroundCommand {
   readonly type: 'SetBackground';
@@ -38,6 +38,32 @@ export interface SetLayoutCommand {
   readonly id: SlideId;
   readonly layoutId: string;
 }
+
+export interface SetNotesCommand {
+  readonly type: 'SetNotes';
+  readonly id: SlideId;
+  readonly text: string;
+}
+
+export type SlideNotesPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
+  readonly value: string;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
+  readonly origin: string;
+} | {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'notes'];
+  readonly value: SlideNotesBinding;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'notes'];
+  readonly origin: string;
+};
 
 export type SlideLayoutPatch = {
   readonly op: 'set';

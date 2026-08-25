@@ -20,6 +20,7 @@ import { runRemoveSlideSaveContract } from './lib/remove-slide-save-contract.mjs
 import { runDuplicateSlideSaveContract } from './lib/duplicate-slide-save-contract.mjs';
 import { runShapeFormatSaveContract } from './lib/shape-format-save-contract.mjs';
 import { runSlidePropertiesSaveContract } from './lib/slide-properties-save-contract.mjs';
+import { runSlideNotesSaveContract } from './lib/slide-notes-save-contract.mjs';
 import { runSlideImageBackgroundSaveContract } from './lib/slide-image-background-save-contract.mjs';
 import { runShapeEffectsSaveContract } from './lib/shape-effects-save-contract.mjs';
 import { runImageContentSaveContract } from './lib/image-content-save-contract.mjs';
@@ -278,6 +279,8 @@ await runSlidePropertiesSaveContract({
     return JSON.parse(stdout);
   },
 });
+
+await runSlideNotesSaveContract({ core, edit, load, check, saveArtifact });
 
 await runSlideImageBackgroundSaveContract({
   core, edit, load, check, saveArtifact,

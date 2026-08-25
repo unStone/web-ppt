@@ -43,6 +43,10 @@ view.setSlide(slideId);
 view.setZoom(1.5);
 view.setSnapping(false);   // 无需重新挂载即可切换
 
+notesTextarea.value = view.queryNotes().value;
+notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
+// view 模式仍可 queryNotes()，但 setNotes() 返回 false 且不修改共享模型。
+
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
