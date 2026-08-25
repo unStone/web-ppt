@@ -36,6 +36,13 @@ try {
     throw '无法读取当前 Git revision，证据不能绑定到源码提交'
   }
   $sourceRevision = $sourceRevision.Trim()
+  $worktreeState = (& git status --porcelain=v1 --untracked-files=all 2>$null) -join "`n"
+  if ($LASTEXITCODE -ne 0) {
+    throw '无法读取当前 Git 工作树状态'
+  }
+  if (-not [string]::IsNullOrWhiteSpace($worktreeState)) {
+    throw '当前 Git 工作树不干净，不能生成只绑定到 HEAD 的 PowerPoint 证据'
+  }
 
   $powerPoint = New-Object -ComObject PowerPoint.Application
   $powerPointVersion = [string]$powerPoint.Version

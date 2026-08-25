@@ -76,7 +76,7 @@ const validate = () => {
 
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], {
     encoding: 'utf8',
-    cwd: new URL('..', import.meta.url),
+    cwd: process.cwd(),
   }).trim();
   if (report.sourceRevision !== revision) {
     throw new Error(`PowerPoint 报告属于 ${String(report.sourceRevision)}，当前源码为 ${revision}`);
@@ -124,6 +124,14 @@ const validate = () => {
   }
   if (reportsByFile.size !== expectedFiles.size) {
     throw new Error('PowerPoint 报告包含清单之外的产物');
+  }
+
+  const worktreeState = execFileSync(
+    'git', ['status', '--porcelain=v1', '--untracked-files=all'],
+    { cwd: process.cwd(), encoding: 'utf8' },
+  );
+  if (worktreeState.trim() !== '') {
+    throw new Error('当前 Git 工作树不干净，PowerPoint 证据不能只绑定到 HEAD');
   }
 
   console.log(`PowerPoint 证据有效：${expectedFiles.size}/${expectedFiles.size} 份，版本 ${report.powerPoint.version} build ${report.powerPoint.build}`);

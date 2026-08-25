@@ -27,6 +27,9 @@ npm ci
 npm run test:edit:powerpoint
 ```
 
+运行前 `git status --short` 必须为空。生成端和独立校验端都会拒绝已修改、已暂存或未跟踪的非忽略文件；
+否则未提交源码可能借用 HEAD 的 commit ID，产生无法复现的假证据。
+
 命令先重新生成保存产物，再用 `Presentations.Open2007(..., OpenAndRepair = msoFalse)` 逐份只读
 打开。`DisplayAlerts = ppAlertsAll` 让警告以自动化错误返回，避免默认选择把修复提示吞掉。
 
