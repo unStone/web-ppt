@@ -358,6 +358,18 @@ export function invalidateSlideStructure(
   return { dirtyElements: new Set(elements), dirtySlides: new Set([id]) };
 }
 
+function indexedSlideNumberStillEffective(doc: EditDoc, id: ElementId): boolean {
+  const record = doc.elements[id];
+  if (!record) return false;
+  const contentChanged = record.src.kind === 'shape'
+    ? own(record.ovr, 'text')
+    : record.src.kind === 'table'
+      ? own(record.ovr, 'tableCells') || own(record.ovr, 'tableRows')
+      : false;
+  // 动态字段索引来自来源内容；只有内容覆盖可能把字段真正删掉，普通换页序不应重算整套版式继承。
+  return !contentChanged || hasDynamicSlideNumber(effectiveElement(doc, id));
+}
+
 /** 页序变化只改变动态字段；沿字段父链失效，避免框架订阅者收到整段页尾的元素更新。 */
 export function invalidateSlideSequence(doc: EditDoc, start: number): ProjectionInvalidation {
   const cache = cacheOf(doc);
@@ -379,7 +391,7 @@ export function invalidateSlideSequence(doc: EditDoc, start: number): Projection
   for (const slideId of doc.slideOrder.slice(Math.max(0, start))) {
     const slide = doc.slides[slideId];
     for (const id of slide?.dynamicSlideNumbers ?? []) {
-      if (hasDynamicSlideNumber(effectiveElement(doc, id))) invalidate(slideId, id);
+      if (indexedSlideNumberStillEffective(doc, id)) invalidate(slideId, id);
     }
   }
   for (const slideId of doc.slideOrder) {

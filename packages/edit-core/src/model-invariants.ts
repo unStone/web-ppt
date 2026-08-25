@@ -1,4 +1,5 @@
 import { effectiveElement, slideOfElement } from './projection';
+import { changedLayout } from './layout-projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex, initialFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
@@ -27,13 +28,16 @@ import { assertActiveRelationshipTargets, assertElementInsertionSource } from '.
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
-  const effective = effectiveElement(doc, record.id);
+  const source = changedLayout(doc, slideOfElement(doc, record.id))
+    ? effectiveElement(doc, record.id)
+    : record.src;
   for (const field of XFRM_FIELDS) {
-    assertXfrmValue(field, effective[field], `元素 ${record.id} 的 ${field}`);
+    const value = own(record.ovr, field) ? record.ovr[field] : source[field];
+    assertXfrmValue(field, value, `元素 ${record.id} 的 ${field}`);
   }
-  if (effective.kind === 'group'
-    && (!Number.isFinite(effective.scaleX) || !Number.isFinite(effective.scaleY)
-      || effective.scaleX === 0 || effective.scaleY === 0)) {
+  if (source.kind === 'group'
+    && (!Number.isFinite(source.scaleX) || !Number.isFinite(source.scaleY)
+      || source.scaleX === 0 || source.scaleY === 0)) {
     throw new Error(`组 ${record.id} 的子坐标范围不能为零`);
   }
 }
@@ -210,6 +214,7 @@ export function validateEditDoc(doc: EditDoc): void {
     || doc.layoutOrder.some((id) => doc.layouts[id]?.id !== id)) {
     throw new Error('版式目录与 layoutOrder 不一致');
   }
+  const layoutIds = new Set(doc.layoutOrder);
 
   const createdParts = new Set(Object.values(doc.slides)
     .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));
@@ -223,10 +228,10 @@ export function validateEditDoc(doc: EditDoc): void {
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
     if (slide.id !== slideId) throw new Error(`幻灯片 key 与 id 不一致：${slideId}`);
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
-    if (slide.layoutId !== undefined && !doc.layoutOrder.includes(slide.layoutId)) {
+    if (slide.layoutId !== undefined && !layoutIds.has(slide.layoutId)) {
       throw new Error(`幻灯片 ${slideId} 的当前版式不存在：${slide.layoutId}`);
     }
-    if (slide.sourceLayoutId !== undefined && !doc.layoutOrder.includes(slide.sourceLayoutId)) {
+    if (slide.sourceLayoutId !== undefined && !layoutIds.has(slide.sourceLayoutId)) {
       throw new Error(`幻灯片 ${slideId} 的来源版式不存在：${slide.sourceLayoutId}`);
     }
     if (own(slide.ovr, 'background')) {
@@ -264,8 +269,8 @@ export function validateEditDoc(doc: EditDoc): void {
       const removedSpids = creation.duplicateRemovedSpids ?? [];
       if (!slide.origin || !slide.layoutId
         || !/^ppt\/slides\/slide\d+\.xml$/.test(slide.origin.part)
-        || !doc.layoutOrder.includes(slide.creation.layoutPart)
-        || !doc.layoutOrder.includes(slide.layoutId)
+        || !layoutIds.has(slide.creation.layoutPart)
+        || !layoutIds.has(slide.layoutId)
         || typeof slide.creation.layoutRelationshipId !== 'string'
         || !slide.creation.layoutRelationshipId
         || !Number.isSafeInteger(slide.creation.presentationSlideId)

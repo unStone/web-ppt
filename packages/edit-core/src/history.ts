@@ -250,8 +250,16 @@ export class HistoryStore implements History {
   private sizeOf(entry: HistoryEntry): number {
     const stored = entry as Partial<StoredHistoryEntry>;
     const seen = new WeakSet<object>();
+    // 计量只读遍历即可；结构历史可能携带整页 XML，先深拷贝会把一次提交放大成双份峰值内存。
     return encoder.encode(JSON.stringify({
-      ...cloneHistoryEntry(entry),
+      forward: entry.forward,
+      inverse: entry.inverse,
+      selectionBefore: entry.selectionBefore,
+      selectionAfter: entry.selectionAfter,
+      label: entry.label,
+      time: entry.time,
+      ...(entry.mergeKey ? { mergeKey: entry.mergeKey } : {}),
+      affectedSlides: entry.affectedSlides,
       links: stored.links ?? [],
     }, (_key, value) => {
       if (!value || typeof value !== 'object') return value;

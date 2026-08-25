@@ -3,6 +3,8 @@ import { isSlideBackgroundImagePatch } from './commands/slide-property';
 import type { HistoryEntry, Patch } from './commands/types';
 import type { EditDoc } from './types';
 
+const entryHashes = new WeakMap<HistoryEntry, readonly string[]>();
+
 function collectHashes(value: unknown, output: Set<string>, seen: WeakSet<object>): void {
   if (!value || typeof value !== 'object' || seen.has(value)) return;
   seen.add(value);
@@ -21,9 +23,18 @@ function collectHashes(value: unknown, output: Set<string>, seen: WeakSet<object
 /** 结构历史也可能包住整棵元素快照，因此不能只识别直接 imageReplacement Patch。 */
 export function historyImageResourceHashes(entries: readonly HistoryEntry[]): Set<string> {
   const output = new Set<string>();
-  const seen = new WeakSet<object>();
-  for (const entry of entries) for (const patch of [...entry.forward, ...entry.inverse]) {
-    if ('value' in patch) collectHashes(patch.value, output, seen);
+  for (const entry of entries) {
+    let hashes = entryHashes.get(entry);
+    if (!hashes) {
+      const collected = new Set<string>();
+      const seen = new WeakSet<object>();
+      for (const patch of [...entry.forward, ...entry.inverse]) {
+        if ('value' in patch) collectHashes(patch.value, collected, seen);
+      }
+      hashes = [...collected];
+      entryHashes.set(entry, hashes);
+    }
+    for (const hash of hashes) output.add(hash);
   }
   return output;
 }

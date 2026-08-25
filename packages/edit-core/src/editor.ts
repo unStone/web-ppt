@@ -1,6 +1,6 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
 import { commandPatches, commandSelectsInsertedElement, commandTargetIds } from './commands/dispatch';
-import { willRemoveElementStructure } from './commands/element-tree';
+import { isElementTreePatch, willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
 import { isSlideTreePatch, slidePatchSets } from './commands/slide-tree';
@@ -374,7 +374,8 @@ export class Editor {
           applyCommandPatches(fitted);
         }
       }
-      const structural = forward.some((patch) => patch.path.length === 2);
+      const structural = forward.some((patch) =>
+        isSlideTreePatch(patch) || isElementTreePatch(patch));
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
       else if (commands.length === 1 && commands[0].type === 'PasteElements') {
         const ids = forward.filter((patch) => patch.path.length === 2 && patch.op === 'insert')
