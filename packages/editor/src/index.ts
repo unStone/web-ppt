@@ -1,4 +1,7 @@
 export { openEditor } from './session';
+export {
+  applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT,
+} from './framework-adapter';
 export { ELEMENT_CLIPBOARD_MIME } from './element-clipboard';
 export {
   elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix,
@@ -10,6 +13,10 @@ export {
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
 export type {
+  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptAdapterSnapshot,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptSource, WebPptViewOptions, WebPptViewState,
+} from './framework-adapter';
+export type {
   EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
 } from './slide-editor-types';
 export type { ImageInsertOptions } from './image-insertion';
@@ -20,5 +27,6 @@ export type {
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
   ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
 } from '@web-ppt/edit-core';
+export type { EditorChange, SlideId } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

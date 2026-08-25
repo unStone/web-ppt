@@ -10,9 +10,9 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @web-ppt/viewer",
-    "build": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/fonts",
+    "build": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/react && npm run build -w @web-ppt/vue && npm run build -w @web-ppt/fonts",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "node tooling/test-core.mjs && node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-powerpoint-report.mjs && npm run test:editor && node tooling/test-edit-equivalence.mjs && node tooling/test-metafile.mjs",
+    "test": "node tooling/test-core.mjs && node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-powerpoint-report.mjs && npm run test:editor && npm run test:adapters && node tooling/test-edit-equivalence.mjs && node tooling/test-metafile.mjs",
     "test:core": "node tooling/test-core.mjs",
     "test:edit": "node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-powerpoint-report.mjs && node tooling/test-edit-equivalence.mjs",
     "test:edit:save": "node tooling/test-edit-save.mjs",
@@ -23,6 +23,7 @@
     "test:edit:powerpoint": "npm run test:edit:save && powershell -NoProfile -ExecutionPolicy Bypass -File tooling/test-edit-powerpoint.ps1 -Manifest out/edit-save/office-artifacts.json -Report out/edit-save/powerpoint-report.json && node tooling/validate-edit-powerpoint-report.mjs --manifest out/edit-save/office-artifacts.json --report out/edit-save/powerpoint-report.json",
     "test:edit:equivalence": "node tooling/test-edit-equivalence.mjs",
     "test:editor": "node tooling/test-editor.mjs && node tooling/test-editor-browser.mjs",
+    "test:adapters": "node tooling/test-framework-adapters.mjs",
     "test:metafile": "node tooling/test-metafile.mjs",
     "fixtures": "node tooling/make-fixture.mjs && node tooling/make-edit-basic-fixture.mjs && node tooling/make-edit-xfrm-fixture.mjs && node tooling/make-editor-fixture.mjs && node tooling/make-editor-add-shape-fixture.mjs && node tooling/make-editor-add-image-fixture.mjs && node tooling/make-editor-add-table-fixture.mjs && node tooling/make-editor-add-slide-fixture.mjs && node tooling/make-editor-change-layout-fixture.mjs && node tooling/make-editor-move-slide-fixture.mjs && node tooling/make-editor-remove-slide-fixture.mjs && node tooling/make-editor-notes-fixture.mjs && node tooling/make-editor-duplicate-slide-fixture.mjs && node tooling/make-editor-shape-format-fixture.mjs && node tooling/make-editor-slide-properties-fixture.mjs && node tooling/make-editor-slide-image-background-fixture.mjs && node tooling/make-editor-effects-fixture.mjs && node tooling/make-editor-image-content-fixture.mjs && node tooling/make-editor-text-fixture.mjs && node tooling/make-editor-rich-clipboard-fixture.mjs && node tooling/make-editor-engine-text-fixture.mjs && node tooling/make-editor-sp-autofit-fixture.mjs && node tooling/make-editor-body-props-fixture.mjs && node tooling/make-editor-table-text-fixture.mjs && node tooling/make-editor-hit-fixture.mjs && node tooling/make-editor-space-fixture.mjs && node tooling/make-editor-snap-fixture.mjs && node tooling/make-editor-marquee-fixture.mjs && node tooling/make-editor-keyboard-fixture.mjs && node tooling/make-editor-tab-fixture.mjs && node tooling/make-editor-multiselect-fixture.mjs && node tooling/make-editor-history-fixture.mjs && node tooling/make-editor-delete-fixture.mjs && node tooling/make-editor-layer-fixture.mjs && node tooling/make-editor-hyperlink-fixture.mjs && node tooling/make-editor-align-fixture.mjs && node tooling/make-zip-passthrough-fixture.mjs && node tooling/make-ppt-fixture.mjs && node tooling/make-showcase.mjs && node tooling/make-chart-fixture.mjs && node tooling/make-effects-fixture.mjs && node tooling/make-media-fixture.mjs && node tooling/make-metafile-fixture.mjs && node tooling/make-hidden-fixture.mjs && node tooling/make-autofit-fixture.mjs && node tooling/make-placeholder-fixture.mjs && node tooling/make-ole-fixture.mjs && node tooling/make-encrypted-fixture.mjs && node tooling/make-math-fixture.mjs && node tooling/make-smartart-fixture.mjs && node tooling/make-ppt-encrypted-fixture.mjs && node tooling/make-hardcases-fixture.mjs && node tooling/make-embedfont-fixture.mjs",
     "ppt-samples": "node tooling/make-ppt-samples.mjs",
@@ -38,9 +39,14 @@
     "corpus:probe": "node tooling/probe-corpus.mjs"
   },
   "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
     "jsdom": "^29.1.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "typescript": "^5.5.4",
     "vite": "^5.4.8",
+    "vue": "3.5.41",
     "ws": "^8.21.3"
   }
 }

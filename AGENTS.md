@@ -1,6 +1,6 @@
 # AGENTS.md
 
-纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。零服务端、零框架，唯一运行时依赖是 fflate。
+纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。零服务端；基础包零框架，唯一运行时依赖是 fflate。
 
 ## 仓库
 
@@ -9,13 +9,15 @@
 | `packages/core/` | `@web-ppt/core` —— 解析 / 渲染 / 导出，无框架无 DOM 依赖 |
 | `packages/edit-core/` | `@web-ppt/edit-core` —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖 |
 | `packages/editor/` | `@web-ppt/editor` —— 编辑会话 + 三层 DOM 视图，无框架运行时依赖 |
+| `packages/react/` | `@web-ppt/react` —— React 组件 + hook 薄适配，React 为 optional peer |
+| `packages/vue/` | `@web-ppt/vue` —— Vue 组件 + composable 薄适配，Vue 为 optional peer |
 | `packages/viewer-core/` | `@web-ppt/viewer-core` —— headless 状态机 + 播放层 |
 | `packages/fonts/` | `@web-ppt/fonts` —— 字体替换表 + 按需加载器（可选，不含字体字节） |
 | `packages/viewer/` | 开箱即用查看器（private） |
 | `packages/site/` | 官网（private），含浏览器内实时 Demo |
 | `fixtures/` | 测试样本，**全部由 `tooling/make-*.mjs` 确定性生成** |
 | `tooling/` | 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准 |
-| `test/snapshots/` | 162 个渲染快照基线 |
+| `test/snapshots/` | 176 个渲染快照基线 |
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
@@ -24,9 +26,9 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：1987 + 245 + 11 + 121 + 130 项断言、162 个快照、252 对编辑等价指纹 |
+| `npm test` | 全部测试：2131 + 741 + 307 + 9 + 306 + 8 + 130 项断言、176 个快照、372 对编辑等价指纹 |
 | `npm run fixtures` | 重新生成全部测试文件 |
-| `npm run build` | 构建五个发布包 |
+| `npm run build` | 构建七个发布包 |
 | `npm run dev` | 启动 viewer |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
 
@@ -76,16 +78,18 @@ EMF/WMF (GDI 流)  ─┘
 
 ## 发布
 
-版本号改完打 tag 即可，`release.yml` 走 npm Trusted Publishing（OIDC），**Secrets 里不存任何凭据**：
+全部包完成首次发布与 Trusted Publishing 配置后，版本号改完打 tag 即可；`release.yml` 走 npm
+Trusted Publishing（OIDC），**Secrets 里不存任何凭据**：
 
 ```bash
-# 五个包的 package.json 版本必须一致，否则流水线直接失败
+# 七个包的 package.json 版本必须一致，否则流水线直接失败
 git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
 ```
 
 流水线：校验 tag 与包版本一致 → 类型检查 → 重生成固件 → 全部测试 → 构建 →
-按 `core` → `edit-core` → `viewer-core` → `editor` → `fonts` 顺序发布（`editor` 同时以
-`core`、`edit-core`、`viewer-core` 为 peer 依赖，其余发布包的依赖见各自 package.json）。
+按 `core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` 顺序发布（`editor` 同时以
+`core`、`edit-core`、`viewer-core` 为 peer 依赖，框架适配包以 `editor` 和对应框架为 peer，
+其余发布包的依赖见各自 package.json）。
 
 ⚠️ **新包的第一次发布走不了 OIDC**：npm 要求包已存在才能配置 Trusted Publishing，
 而包要先发布才会存在。新增包时得先在本地 `npm publish` 发一版，再去 npm 的包设置里

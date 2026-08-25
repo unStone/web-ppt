@@ -36,6 +36,7 @@ import { runShapeFormatEditorContract } from './lib/shape-format-editor-contract
 import { runSlidePropertiesEditorContract } from './lib/slide-properties-editor-contract.mjs';
 import { runShapeEffectsEditorContract } from './lib/shape-effects-editor-contract.mjs';
 import { runImageCropEditorContract } from './lib/image-crop-editor-contract.mjs';
+import { runFrameworkAdapterContract } from './lib/framework-adapter-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -66,6 +67,20 @@ execFileSync('npx', [
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
+const frameworkBundle = join(out, 'framework-adapters.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'tooling/lib/framework-adapters-browser-contract.tsx'),
+  '--bundle', '--format=esm', '--platform=browser', '--jsx=automatic', '--log-level=error',
+  `--alias:@web-ppt/react=${join(root, 'packages/react/src/index.ts')}`,
+  `--alias:@web-ppt/vue=${join(root, 'packages/vue/src/index.ts')}`,
+  `--alias:@web-ppt/editor=${join(root, 'packages/editor/src/index.ts')}`,
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  `--outfile=${frameworkBundle}`,
+], { cwd: root, stdio: 'inherit' });
+const load = (name) => new Uint8Array(readFileSync(join(root, 'fixtures', name)));
 
 let passed = 0;
 const failures = [];
@@ -85,6 +100,8 @@ const elementIds = (doc, slideId) => {
   walk(doc.slides[slideId].children);
   return ids;
 };
+
+await runFrameworkAdapterContract({ lib, load, check });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {

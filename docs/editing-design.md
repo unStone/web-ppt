@@ -91,6 +91,9 @@ flowchart TB
     subgraph app["apps/editor（产品外壳，private）"]
         UI["面板 / 工具栏 / 缩略图 / 快捷键"]
     end
+    subgraph adapters["可选框架薄适配"]
+        FA["React component/hook<br/>Vue component/composable"]
+    end
     subgraph editor["@web-ppt/editor（DOM 交互层）"]
         SEL["选择 · 命中"]
         XF["变换 · 吸附 · 参考线"]
@@ -109,6 +112,7 @@ flowchart TB
         G["geometry"]
         T["text-svg"]
     end
+    UI --> FA --> VIEW
     UI --> SEL & XF & TXT
     SEL & XF & TXT --> CMD
     CMD --> DOC --> HIS
@@ -124,7 +128,9 @@ flowchart TB
 |---|---|---|---|---|
 | `packages/edit-core` | `@web-ppt/edit-core` | `core` + fflate | ✅ | **不碰 `document`**（与 core 同规格，可在 Worker 里跑保存） |
 | `packages/editor` | `@web-ppt/editor` | `core` + `edit-core` + `viewer-core` | ✅ | 只做 DOM 绑定与手势，不做业务决策 |
-| `apps/editor` | private | 上面全部 | ❌ | 应用框架（Cordis 之类）只出现在这层 |
+| `packages/react` | `@web-ppt/react` | `editor` + React optional peer | ✅ | 只映射容器、生命周期、受控属性与事件 |
+| `packages/vue` | `@web-ppt/vue` | `editor` + Vue optional peer | ✅ | 只映射容器、生命周期、受控属性与事件 |
+| `apps/editor` | private | 上面全部 | ❌ | 产品工具栏、设计系统和业务状态只出现在这层 |
 
 **对 core 的 API 与分层改动一律是加法**，四条不可破坏的约束原样成立。唯一例外是保存回环暴露出已有 Schema 字段对 OOXML choice 的错误求值：可以修正解析器，但必须同时证明普通预览更接近 Office、既有快照无回归、保存重开等价，且不能把编辑状态带进普通模型。
 
@@ -1021,6 +1027,10 @@ export class SlideEditor {                                           // 三层�
   enterText(id: ElId, at?: TextPos): void;
   destroy(): void;
 }
+
+export function createWebPptAdapter(callbacks?: AdapterCallbacks): WebPptAdapter;
+// source 由 adapter 拥有；共享 EditorSession 必须显式声明 external，避免双重 dispose。
+// React/Vue/Svelte/Web Component 只把 props 与容器映射到这一份 contract。
 ```
 
 ## 附录 D：参考的开源方案

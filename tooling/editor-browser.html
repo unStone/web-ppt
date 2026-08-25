@@ -68,6 +68,7 @@
     import {
       publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
+    import { runFrameworkAdaptersBrowserContract } from '/out/editor/framework-adapters.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -80,6 +81,9 @@
       return response.arrayBuffer();
     };
     try {
+      const frameworkAdapters = await runFrameworkAdaptersBrowserContract(load);
+      report.dataset.frameworkAdapters = 'pass';
+      report.textContent += `\nReact ready ${frameworkAdapters.reactReady} · Vue ready ${frameworkAdapters.vueReady}`;
       await runEditorEngineAutoProbeBrowserContract();
       const session = await openEditor(await load('sample-edit-basic.pptx'), { idPrefix: 'browser-contract-' });
       const view = session.mount(mount, { mode: 'edit', zoom: 0.75 });

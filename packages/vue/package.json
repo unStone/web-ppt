@@ -1,0 +1,35 @@
+{
+  "name": "@web-ppt/vue",
+  "version": "0.4.5",
+  "description": "Thin Vue component and composable for the framework-agnostic Web-PPT viewer/editor.",
+  "keywords": ["pptx", "powerpoint", "vue", "editor", "viewer", "browser", "typescript"],
+  "license": "MIT",
+  "author": "unStone",
+  "homepage": "https://github.com/unStone/web-ppt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unStone/web-ppt.git",
+    "directory": "packages/vue"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/vue.js",
+  "module": "./dist/vue.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/vue.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
+  },
+  "peerDependencies": {
+    "@web-ppt/editor": "^0.4.5",
+    "vue": ">=3.3.0 <4"
+  },
+  "peerDependenciesMeta": { "vue": { "optional": true } },
+  "publishConfig": { "access": "public" }
+}

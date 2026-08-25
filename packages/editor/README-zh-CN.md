@@ -52,6 +52,41 @@ view.destroy();             // 只销毁这一份视图
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 ```
 
+## 框架适配契约
+
+`createWebPptAdapter()` 是 `@web-ppt/react` 与 `@web-ppt/vue` 共用的生命周期边界；Svelte、Web
+Component 和其它宿主也可直接绑定。SSR 导入不会访问 DOM，只有 `attach()` 收到容器后才挂载视图。
+
+```ts
+import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor';
+
+const adapter = createWebPptAdapter({ onError: console.error });
+adapter.attach(container);
+await applyWebPptAdapterBinding(adapter, {
+  source: file, mode: 'edit', slideId, zoom: 1,
+  onViewChange: (state) => routeTo(state.slideId),
+});
+const bytes = await adapter.save();
+adapter.dispose();
+```
+
+通过 `source` 打开的 session 归 adapter 所有，换文件和释放时会原子清理。多视图共享已有 session 时
+必须传 `{ session, sessionOwnership: 'external' }`；每个 adapter 只销毁自己的 view，最终由调用者执行
+`session.dispose()`。过期的并发打开结果会在到达后立即释放。`snapshot` 与 `subscribe()` 公开
+idle/opening/ready/error、进度、session、view、模式、稳定页身份和缩放，不维护第二份演示文稿模型。
+
+所有宿主都只映射下面四步，不复制渲染和编辑状态：
+
+| 宿主 | 创建 / 更新 / 销毁映射 |
+|---|---|
+| React | effect 创建 → props 调 `applyWebPptAdapterBinding` → cleanup 调 `dispose` |
+| Vue | `onMounted` 创建 → 响应式 effect 应用 binding → `onBeforeUnmount` 释放 |
+| Svelte | `onMount` 创建并返回 `dispose`；`$effect` 应用受控 binding |
+| Web Component | `connectedCallback` 创建/挂载；属性应用 binding；`disconnectedCallback` 释放 |
+
+可重复连接的自定义元素必须在每次 `connectedCallback` 新建 adapter，不能复用已经 dispose 的控制器；
+容器仍只需 `adapter.attach(this)`。Shadow DOM 可选，产品 CSS 与工具栏都留在 contract 外。
+
 `SlideEditor` 由三层组成：既有 SVG 静态预览、SVG 交互覆盖层、HTML 文本覆盖层。headless `Editor`
 提交事务后只替换脏元素自己的 markup 与 defs 分区；未修改兄弟的 DOM 节点身份保持不变。只有脏分区
 超过 8 个且覆盖本页 30% 以上时才退回整页重渲，避免小页面的比例失真。顶层和嵌套组节点都会得到
@@ -270,7 +305,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 32.71KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 40.61KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

@@ -7,7 +7,7 @@
 **简体中文** · [English](README.en.md)
 
 纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。
-零服务端依赖、零框架依赖（原生 TypeScript，可被 React / Vue 直接封装），唯一运行时依赖是 fflate。
+零服务端依赖；基础包零框架依赖，React / Vue 只存在于可选适配包，核心唯一运行时依赖是 fflate。
 
 **[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** —— 拖一个自己的文件进去，解析与渲染全在本机，文件不出浏览器。
 
@@ -32,7 +32,9 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 89.77KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 59.47KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 30.53KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 40.61KB |
+| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 0.92KB |
+| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.16KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.43KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.75KB |
 
@@ -79,6 +81,18 @@ session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 slideView.setMode('view'); // 静态预览不重建，只隐藏交互层
 session.dispose();         // 释放全部视图、原包与 blob URL
 ```
+
+React / Vue 不必自己翻译生命周期，可直接安装官方薄适配包；`mode`、`slideId`、`zoom` 都是受控属性，
+`source` 由组件拥有并释放，注入共享会话时必须显式写 `sessionOwnership="external"`：
+
+```tsx
+import { WebPptEditor } from '@web-ppt/react';
+
+<WebPptEditor source={file} mode="edit" zoom={1} onError={console.error} />
+```
+
+Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
+view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
 
 编辑模式的 interaction SVG 会为普通、旋转/翻转及嵌套组元素绘制精确 OBB、8 个缩放柄和旋转柄；
 手柄始终保持屏幕像素尺寸。`@web-ppt/editor` 同时公开元素本地坐标、幻灯片坐标与屏幕坐标的纯函数，
@@ -327,9 +341,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2120 项断言 + 176 个渲染快照 |
-| `npm run test:edit` | 编辑模型 / 保留型 XML / OPC / 文字与元素编辑 499 项断言 + M1 90 项独立验收 + 45 份固件、286 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 250 项会话 / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:core` | 核心解析 / 渲染，2131 项断言 + 176 个渲染快照 |
+| `npm run test:edit` | 编辑模型 741 项 + 保存 307 项 + PowerPoint 证据 9 项 + 61 份固件、372 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 306 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -337,7 +351,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
-| `npm run build` | 构建五个发布包（core / edit-core / editor / viewer-core / fonts） |
+| `npm run test:adapters` | React / Vue 的 8 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
+| `npm run build` | 构建七个发布包（core / edit-core / viewer-core / editor / react / vue / fonts） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
 | `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |
@@ -360,6 +375,8 @@ web-ppt/                     npm workspaces monorepo
 │   ├── core/                @web-ppt/core —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
 │   ├── edit-core/           @web-ppt/edit-core —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖
 │   ├── editor/              @web-ppt/editor —— 编辑会话 + 三层增量 DOM 视图
+│   ├── react/               @web-ppt/react —— React 组件 + hook 薄适配
+│   ├── vue/                 @web-ppt/vue —— Vue 组件 + composable 薄适配
 │   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
 │   ├── fonts/               @web-ppt/fonts —— 字体替换与按需加载
 │   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS

@@ -53,6 +53,44 @@ view.destroy();             // destroys only this mounted view
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs
 ```
 
+## Framework adapter contract
+
+`createWebPptAdapter()` is the lifecycle boundary used by `@web-ppt/react` and `@web-ppt/vue`; Svelte, Web
+Components, and other hosts can bind it directly. It is safe to import during SSR because no DOM is touched until
+`attach()` mounts a container.
+
+```ts
+import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor';
+
+const adapter = createWebPptAdapter({ onError: console.error });
+adapter.attach(container);
+await applyWebPptAdapterBinding(adapter, {
+  source: file, mode: 'edit', slideId, zoom: 1,
+  onViewChange: (state) => routeTo(state.slideId),
+});
+const bytes = await adapter.save();
+adapter.dispose();
+```
+
+The adapter owns sessions opened from `source` and atomically releases them on replacement or disposal. To share
+an existing session across several adapters, pass `{ session, sessionOwnership: 'external' }`; each adapter then
+destroys only its view and the caller remains responsible for `session.dispose()`. Concurrent stale opens dispose
+their late result. `snapshot` and `subscribe()` expose idle/opening/ready/error state, progress, session, view,
+mode, stable slide id, and zoom without introducing a second presentation model.
+
+Every host maps the same four operations; no rendering or editor state is reimplemented:
+
+| Host | Create / update / destroy mapping |
+|---|---|
+| React | effect creates adapter → props call `applyWebPptAdapterBinding` → cleanup calls `dispose` |
+| Vue | `onMounted` creates → reactive effect applies binding → `onBeforeUnmount` disposes |
+| Svelte | `onMount` creates and returns `dispose`; `$effect` applies the controlled binding |
+| Web Component | `connectedCallback` creates/attaches; attributes apply binding; `disconnectedCallback` disposes |
+
+For a reconnectable custom element, create a fresh adapter on every `connectedCallback` rather than retaining a
+disposed controller. Container mounting remains `adapter.attach(this)`, so Shadow DOM is optional and product CSS
+or toolbars stay outside the contract.
+
 `SlideEditor` owns three stacked layers: the existing SVG preview, an SVG interaction overlay, and an HTML
 text overlay. A headless `Editor` transaction replaces only the dirty element's markup and defs partition;
 unchanged sibling DOM nodes keep their identity. The view falls back to one full render only when more than eight
@@ -308,7 +346,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 32.71 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 40.61 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

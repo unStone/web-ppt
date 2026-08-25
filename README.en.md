@@ -8,7 +8,8 @@
 
 A PowerPoint rendering engine that runs entirely in the browser: `.pptx` / `.ppt` → one JSON schema → SVG.
 
-No server, no framework, no Office install, no upload. Files never leave the tab. The only runtime dependency is [fflate](https://github.com/101arrowz/fflate).
+No server, no Office install, no upload. Base packages are framework-free; React and Vue live only in optional
+adapter packages. Files never leave the tab, and the core runtime's only dependency is [fflate](https://github.com/101arrowz/fflate).
 
 **[▶ Live demo](https://unstone.github.io/web-ppt/)** — drop in one of your own decks; parsing and rendering happen on your machine.
 
@@ -33,7 +34,9 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 89.77 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 59.47 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 30.53 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 40.61 KB |
+| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 0.92 KB |
+| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.16 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.43 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.75 KB |
 
@@ -80,6 +83,19 @@ session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 slideView.setMode('view'); // keeps the static preview DOM and hides interaction layers
 session.dispose();         // releases every view, source package, and blob URL
 ```
+
+Official thin adapters map that lifecycle to controlled framework props. A `source` is owned and released by the
+component; an injected shared session must use explicit external ownership:
+
+```tsx
+import { WebPptEditor } from '@web-ppt/react';
+
+<WebPptEditor source={file} mode="edit" zoom={1} onError={console.error} />
+```
+
+Vue exports the same component name from `@web-ppt/vue`. Both packages are SSR-import safe and cover file
+replacement, view/edit switching, undo, save, multiple views, and unmount cleanup. Svelte and Web Components can
+bind the same framework-neutral adapter contract exported by `@web-ppt/editor`.
 
 In edit mode, the interaction SVG draws an exact OBB, eight resize handles, and a rotation handle for plain,
 rotated/flipped, and nested-group elements. Handle size stays constant in screen pixels. Pure functions for
@@ -312,15 +328,16 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,120 assertions + 176 render snapshots |
-| `npm run test:edit` | 499 edit-core assertions + 90 M1 save assertions + 286 process-isolated SVG fingerprint pairs across 45 fixtures |
-| `npm run test:editor` | 250 session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:core` | Core parsing / rendering — 2,131 assertions + 176 render snapshots |
+| `npm run test:edit` | 741 edit-model + 307 save + 9 PowerPoint-evidence assertions, plus 372 process-isolated SVG fingerprint pairs across 61 fixtures |
+| `npm run test:editor` | 306 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
-| `npm run build` | Build all five publishable packages (core / edit-core / editor / viewer-core / fonts) |
+| `npm run test:adapters` | 8 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
+| `npm run build` | Build all seven publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |
 | `npm run ppt-samples` | Convert the pptx fixtures to `.ppt` via LibreOffice (re-run after changing a pptx fixture) |
@@ -338,6 +355,8 @@ web-ppt/                     npm workspaces monorepo
 │   ├── core/                @web-ppt/core — parse / render / export, no framework, no DOM
 │   ├── edit-core/           @web-ppt/edit-core — editing document model + render projection, no framework, no DOM
 │   ├── editor/              @web-ppt/editor — editing session + incremental three-layer DOM
+│   ├── react/               @web-ppt/react — thin React component + hook
+│   ├── vue/                 @web-ppt/vue — thin Vue component + composable
 │   ├── viewer-core/         @web-ppt/viewer-core — headless state machine + playback
 │   ├── fonts/               @web-ppt/fonts — font substitution and on-demand loading
 │   ├── viewer/              @web-ppt/viewer — batteries-included viewer, plain TS

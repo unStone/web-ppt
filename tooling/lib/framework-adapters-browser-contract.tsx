@@ -1,0 +1,183 @@
+import React, { StrictMode, createRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import { createApp, h, reactive } from 'vue';
+import { openEditor } from '@web-ppt/editor';
+import {
+  WebPptEditor as ReactWebPptEditor,
+} from '@web-ppt/react';
+import type { WebPptEditorHandle as ReactHandle } from '@web-ppt/react';
+import {
+  WebPptEditor as VueWebPptEditor,
+} from '@web-ppt/vue';
+import type { WebPptEditorHandle as VueHandle } from '@web-ppt/vue';
+
+const waitFor = async (predicate: () => boolean, label: string): Promise<void> => {
+  for (let attempt = 0; attempt < 300; attempt++) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`${label} 超时`);
+};
+
+const mountPoint = (): HTMLDivElement => {
+  const element = document.createElement('div');
+  element.className = 'contract-offscreen';
+  document.body.append(element);
+  return element;
+};
+
+/** 真实框架运行时覆盖 StrictMode、受控更新、文件替换、共享 session 与 Vue 重挂载。 */
+export async function runFrameworkAdaptersBrowserContract(
+  load: (name: string) => Promise<ArrayBuffer>,
+): Promise<{ reactReady: number; vueReady: number }> {
+  const activeDownloads = new Set<string>();
+  const download = async (bytes: Uint8Array, name: string): Promise<void> => {
+    const url = URL.createObjectURL(new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    }));
+    activeDownloads.add(url);
+    const link = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.append(link);
+    link.click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    link.remove();
+    URL.revokeObjectURL(url);
+    activeDownloads.delete(url);
+  };
+  const notes = await load('sample-editor-notes.pptx');
+  const replacement = await load('sample-editor-add-slide.pptx');
+  const reactMount = mountPoint();
+  const reactRoot = createRoot(reactMount);
+  const reactRef = createRef<ReactHandle>();
+  const reactSessions: Array<NonNullable<ReactHandle['session']>> = [];
+  let progress = 0;
+  let changes = 0;
+  let viewChanges = 0;
+  let errors = 0;
+  const reactProps = (source: ArrayBuffer, mode: 'view' | 'edit', zoom: number) => ({
+    ref: reactRef, source, mode, zoom, textMode: 'svg' as const,
+    openOptions: { idPrefix: 'react-adapter-' },
+    onReady: (session: NonNullable<ReactHandle['session']>) => { reactSessions.push(session); },
+    onProgress: () => { progress++; },
+    onChange: () => { changes++; },
+    onViewChange: () => { viewChanges++; },
+    onError: () => { errors++; },
+  });
+  reactRoot.render(
+    <StrictMode><ReactWebPptEditor {...reactProps(notes, 'view', 1.25)} /></StrictMode>,
+  );
+  await waitFor(() => reactRef.current?.session?.editor.doc.slideOrder.length === 4,
+    'React StrictMode 打开');
+  const firstSession = reactRef.current!.session!;
+  if (reactMount.querySelectorAll('[data-web-ppt-editor]').length !== 1
+    || reactRef.current!.view?.mode !== 'view' || reactRef.current!.view?.zoom !== 1.25
+    || reactRef.current!.view?.setNotes('只读越权') !== false || firstSession.editor.isDirty()) {
+    throw new Error('React StrictMode 初始视图、缩放或只读边界失败');
+  }
+  const secondSlide = firstSession.editor.doc.slideOrder[1];
+  reactRoot.render(
+    <StrictMode>
+      <ReactWebPptEditor {...reactProps(notes, 'edit', 0.8)} slideId={secondSlide} />
+    </StrictMode>,
+  );
+  await waitFor(() => reactRef.current?.view?.mode === 'edit'
+    && reactRef.current.view.zoom === 0.8 && reactRef.current.view.slideId === secondSlide,
+  'React 受控视图更新');
+  reactRef.current!.view!.setNotes('React 编辑备注');
+  if (changes < 1 || viewChanges < 1 || !firstSession.editor.isDirty()
+    || reactRef.current!.undo() === null || firstSession.editor.isDirty()) {
+    throw new Error('React change、受控页或撤销入口失败');
+  }
+  reactRef.current!.view!.setNotes('React 保存备注');
+  const saved = await reactRef.current!.save();
+  await download(saved, 'react-edited.pptx');
+  if (!(saved instanceof Uint8Array) || saved.length === 0 || firstSession.editor.isDirty()) {
+    throw new Error('React 保存入口失败');
+  }
+  reactRoot.render(
+    <StrictMode><ReactWebPptEditor {...reactProps(replacement, 'edit', 1)} /></StrictMode>,
+  );
+  await waitFor(() => reactRef.current?.session !== firstSession
+    && reactRef.current?.session?.editor.doc.slideOrder.length === 1, 'React 文件替换');
+  if (!firstSession.disposed || reactMount.querySelectorAll('[data-web-ppt-editor]').length !== 1) {
+    throw new Error('React 文件替换未释放旧 session 或产生重复视图');
+  }
+  const lastReactSession = reactRef.current!.session!;
+
+  const external = await openEditor(notes, { idPrefix: 'framework-shared-' });
+  const sharedReactMount = mountPoint();
+  const sharedReactRoot = createRoot(sharedReactMount);
+  const sharedReactRef = createRef<ReactHandle>();
+  sharedReactRoot.render(
+    <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
+      mode="edit" textMode="svg" />,
+  );
+
+  const vueMount = mountPoint();
+  const vueState = reactive({ mode: 'view' as 'view' | 'edit', zoom: 1 });
+  let vueHandle: VueHandle | null = null;
+  let vueReady = 0;
+  const vueApp = createApp({
+    setup: () => () => h(VueWebPptEditor, {
+      ref: (value: unknown) => { vueHandle = value as VueHandle | null; },
+      session: external, sessionOwnership: 'external', mode: vueState.mode,
+      zoom: vueState.zoom, textMode: 'svg',
+      onReady: () => { vueReady++; },
+    }),
+  });
+  vueApp.mount(vueMount);
+  await waitFor(() => !!sharedReactRef.current?.view && !!vueHandle?.view,
+    'React/Vue 外部 session 双视图');
+  sharedReactRef.current!.view!.setNotes('跨框架同步');
+  if (vueHandle.view.queryNotes().value !== '跨框架同步'
+    || vueHandle.view.setNotes('Vue 查看越权') !== false) {
+    throw new Error('React/Vue 外部 session 同步或只读边界失败');
+  }
+  vueState.mode = 'edit';
+  vueState.zoom = 0.7;
+  await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7,
+    'Vue 受控模式更新');
+  const notesBeforeVueEdit = vueHandle!.view!.queryNotes().value;
+  vueHandle!.view!.setNotes('Vue 编辑备注');
+  if (vueHandle!.undo() === null || vueHandle!.view!.queryNotes().value !== notesBeforeVueEdit) {
+    throw new Error('Vue 编辑或撤销入口失败');
+  }
+  vueHandle!.view!.setNotes('Vue 保存备注');
+  const vueSaved = await vueHandle!.save();
+  await download(vueSaved, 'vue-edited.pptx');
+  if (!(vueSaved instanceof Uint8Array) || vueSaved.length === 0 || external.editor.isDirty()) {
+    throw new Error('Vue 保存下载入口失败');
+  }
+  vueApp.unmount();
+  if (external.disposed || vueMount.childElementCount !== 0) {
+    throw new Error('Vue 卸载错误释放外部 session 或遗留 DOM');
+  }
+
+  let remountedHandle: VueHandle | null = null;
+  const remountedVue = createApp({
+    setup: () => () => h(VueWebPptEditor, {
+      ref: (value: unknown) => { remountedHandle = value as VueHandle | null; },
+      session: external, sessionOwnership: 'external', mode: 'view', textMode: 'svg',
+    }),
+  });
+  remountedVue.mount(vueMount);
+  await waitFor(() => !!remountedHandle?.view, 'Vue 重挂载');
+  remountedVue.unmount();
+  sharedReactRoot.unmount();
+  if (external.disposed || vueMount.childElementCount !== 0 || sharedReactMount.childElementCount !== 0) {
+    throw new Error('跨框架重挂载/卸载所有权失败');
+  }
+  external.dispose();
+
+  reactRoot.unmount();
+  await waitFor(() => lastReactSession.disposed, 'React 卸载释放 session');
+  if (reactMount.childElementCount !== 0 || errors !== 0 || progress < 2
+    || activeDownloads.size !== 0
+    || reactSessions.some((session) => !session.disposed)) {
+    throw new Error('React StrictMode 卸载泄漏或事件失败');
+  }
+  reactMount.remove();
+  sharedReactMount.remove();
+  vueMount.remove();
+  return { reactReady: reactSessions.length, vueReady };
+}

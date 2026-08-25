@@ -11,6 +11,8 @@
       "@web-ppt/core/geometry": ["./packages/core/src/geometry/index.ts"],
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/editor": ["./packages/editor/src/index.ts"],
+      "@web-ppt/react": ["./packages/react/src/index.ts"],
+      "@web-ppt/vue": ["./packages/vue/src/index.ts"],
       "@web-ppt/viewer-core": ["./packages/viewer-core/src/index.ts"],
       "@web-ppt/fonts": ["./packages/fonts/src/index.ts"]
     }
