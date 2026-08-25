@@ -109,6 +109,31 @@ export async function runTableRowInsertSaveContract({
     eq(`表样式追加行保存产物 ${mode} 指纹等于独立进程有效投影`,
       styleSavedFingerprint[mode], styleProjectedFingerprint[mode]);
   }
+
+  styleEditor.exec({
+    type: 'PasteElements', payload: edit.copyElements(styleDoc, [styleRecord.id]),
+    at: { parentId: styleDoc.slideOrder[2], x: 30, y: 330 },
+  });
+  const pastedStyleId = styleEditor.selection.ids[0];
+  styleEditor.exec({ type: 'InsertRow', id: pastedStyleId });
+  const pastedProjected = styleEditor.effectiveElement(pastedStyleId);
+  const pastedSpid = styleDoc.elements[pastedStyleId].meta.origin.spid;
+  const pastedSaved = await styleEditor.saveDetailed();
+  const pastedReopened = await core.parse(pastedSaved.bytes, { lazy: false, assets: 'defer' });
+  const pastedTable = pastedReopened.slides[2].elements.find((element) =>
+    element.kind === 'table' && element.x === pastedProjected.x && element.rows.length === 5);
+  const pastedXml = new TextDecoder().decode(pastedSaved.package.parts['ppt/slides/slide3.xml']);
+  const pastedAt = pastedXml.indexOf(`<p:cNvPr id="${pastedSpid}"`);
+  const pastedHost = pastedXml.slice(pastedXml.lastIndexOf('<p:graphicFrame>', pastedAt),
+    pastedXml.indexOf('</p:graphicFrame>', pastedAt) + '</p:graphicFrame>'.length);
+  check('既有复杂表格粘贴后追加仍保留完整来源格式与未知兼容节点',
+    pastedTable?.kind === 'table' && pastedTable.rows.length === pastedProjected.rows.length
+      && pastedTable.rows[4].cells[0].colSpan === 2 && pastedTable.rows[4].cells[1].merged
+      && JSON.stringify(pastedTable.rows[4].cells[0].fill)
+        === JSON.stringify(pastedProjected.rows[4].cells[0].fill)
+      && [...pastedHost.matchAll(/a14:paraId="00112233"/g)].length === 3
+      && [...pastedHost.matchAll(/<mc:AlternateContent\b/g)].length === 3);
+  pastedReopened.dispose?.();
   styleReopened.dispose?.();
   edit.disposeDoc(styleDoc);
 }

@@ -51,6 +51,9 @@
       runEditorAddImageBrowserContract, runEditorAddImagePerformanceContract,
     } from '/tooling/lib/editor-add-image-browser-contract.mjs';
     import { runEditorAddSlideBrowserContract } from '/tooling/lib/editor-add-slide-browser-contract.mjs';
+    import {
+      runEditorAddTableBrowserContract, runEditorAddTablePerformanceContract,
+    } from '/tooling/lib/editor-add-table-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -450,6 +453,8 @@
       const addImageResult = await runEditorAddImageBrowserContract({ openEditor, load });
       const addImagePerformance = await runEditorAddImagePerformanceContract({ openEditor, load });
       const addSlideResult = await runEditorAddSlideBrowserContract({ openEditor, load });
+      const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
+      const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
         idPrefix: 'browser-trusted-snap-',
       });
@@ -524,6 +529,8 @@
       report.dataset.addSlideError = addSlideResult.geometryError.toFixed(3);
       report.dataset.addSlideP95 = addSlideResult.p95.toFixed(3);
       report.dataset.addSlidePages = String(addSlideResult.pageCount);
+      report.dataset.addTableError = addTableResult.geometryError.toFixed(3);
+      report.dataset.addTableP95 = addTablePerformance.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
@@ -561,6 +568,8 @@
       report.textContent += `\n20×10 表格单元格输入 p95 ${tableCellTextResult.p95.toFixed(3)}ms，`
         + `末格追加 p95 ${tableCellTextResult.insertRowP95.toFixed(3)}ms，`
         + `旋转格贴合偏差 ${tableCellTextResult.geometryError.toFixed(3)}px`;
+      report.textContent += `\n新增表格占位符偏差 ${addTableResult.geometryError.toFixed(3)}px，`
+        + `60 元素页新增 20×10 表格 p95 ${addTablePerformance.p95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;

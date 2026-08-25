@@ -32,6 +32,7 @@ view.setSlide([...added.createdSlides][0]);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();
+const tableId = view.insertTable(3, 4); // 行、列；当前空内容占位符会被原位替换
 
 view.setMode('view');       // 静态预览 DOM 不重建，只隐藏交互层
 view.setMode('edit');
@@ -138,6 +139,10 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 也可显式调整。读取期间视图暴露 `aria-busy="true"`，失败会拒绝 Promise 并派发 `webpptimageerror`。
 双击空图片占位符走同一入口，占位符与新图片在一个撤销单元内原子替换；画布上的系统图片粘贴也复用
 同一 `AddImage` 命令，文本/表格选区仍保留原生粘贴所有权。
+
+表格选择器同步调用 `view.insertTable(rows, cols, options?)`。显式 `rect` 会原样使用；没有矩形时，视图会
+优先替换当前选中的空内容占位符，否则按行列数生成居中的可用尺寸。结果是真实 DrawingML 表格，单元格
+直接进入既有文字编辑面，末格 `Tab` 复用既有追加行路径；方法返回新元素稳定 id，view 模式明确拒绝创建。
 
 页面导航同样使用上方的 `AddSlide` seam。headless 返回值直接给出新页身份，每个 edit/view 挂载面继续调用
 既有 `setSlide` 切换，因此工具栏不用修改 DOM，也不用扫描生成 ID。edit 视图只在 interaction 层绘制空版式

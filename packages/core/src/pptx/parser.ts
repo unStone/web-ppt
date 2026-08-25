@@ -2,6 +2,7 @@ import { unzipSync } from 'fflate';
 import type {
   CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, MediaInfo,
   OpcPackage, Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
+  TableCreationDefaults,
   TableElement, TableRow, TextBody, UnsupportedElement,
 } from '../types';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
@@ -18,6 +19,7 @@ import {
 } from './diagram';
 import { PackageAssetStore } from './asset-store';
 import type { AssetMode, DeferredAsset } from './asset-store';
+import { builtInTableStyleMarkup } from './builtin-table-styles';
 import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
 import {
   Env, findPh, PH_EQUIV, relByType, Rels, slideInheritance, SlideInheritance,
@@ -1148,11 +1150,25 @@ interface TableStyleParts {
   lastCol: Element | null;
 }
 
+const builtInTableStyles = new Map<string, Element>();
+
+function builtInTableStyle(styleId: string | null): Element | null {
+  if (!styleId) return null;
+  const cached = builtInTableStyles.get(styleId);
+  if (cached) return cached;
+  const markup = builtInTableStyleMarkup(styleId);
+  if (!markup) return null;
+  const style = kid(parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${markup}</root>`), 'tblStyle')!;
+  builtInTableStyles.set(styleId, style);
+  return style;
+}
+
 function findTableStyle(tableStyles: Element | null, styleId: string | null): TableStyleParts | null {
   if (!tableStyles) return null;
   const list = kids(tableStyles, 'tblStyle');
   const def = attr(tableStyles, 'def');
-  const style = list.find((s) => attr(s, 'styleId') === styleId) ?? list.find((s) => attr(s, 'styleId') === def);
+  const style = list.find((s) => attr(s, 'styleId') === styleId) ?? builtInTableStyle(styleId)
+    ?? list.find((s) => attr(s, 'styleId') === def) ?? builtInTableStyle(def);
   if (!style) return null;
   return {
     wholeTbl: kid(style, 'wholeTbl'),
@@ -1308,6 +1324,102 @@ function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableE
   }
 
   return { kind: 'table', ...base(xf), colWidths, rows, name, ...(editInfo ? { editInfo } : {}) };
+}
+
+const creationTables = new WeakMap<Element, Map<string, Element>>();
+let fallbackCreationTable: Element | null = null;
+const CREATION_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN"/></a:p></a:txBody>';
+const NEUTRAL_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN" b="0"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:endParaRPr></a:p></a:txBody>';
+const NEUTRAL_BORDER_FILL = '<a:solidFill><a:schemeClr val="tx1"><a:alpha val="25000"/></a:schemeClr></a:solidFill>';
+
+function escapeXmlText(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** 同时兼容原生 DOM 与 Worker 的 xml-lite，只序列化表样式里已解析出的线节点。 */
+function elementMarkup(element: Element, tagName = element.tagName): string {
+  const attributes = Array.from(element.attributes)
+    .map((item) => ` ${item.name}="${escapeXmlText(item.value)}"`).join('');
+  const nodes = Array.from((element as unknown as { childNodes: readonly unknown[] }).childNodes);
+  if (!nodes.length) return `<${tagName}${attributes}/>`;
+  const content = nodes.map((node) => {
+    if (typeof node === 'string') return escapeXmlText(node);
+    const child = node as { nodeType?: number; nodeValue?: string | null; tagName?: string };
+    return child.nodeType === 1 || child.tagName
+      ? elementMarkup(node as Element)
+      : escapeXmlText(child.nodeValue ?? '');
+  }).join('');
+  return `<${tagName}${attributes}>${content}</${tagName}>`;
+}
+
+function tableCellPropertiesMarkup(parts: TableStyleParts | null, rowPart: Element | null): string {
+  const layers = [parts?.wholeTbl ?? null, rowPart];
+  const borders = BORDER_SIDES.map(([, styleTag, cellTag]) => {
+    let line: Element | null = null;
+    for (const layer of layers) {
+      const candidate = kid(kid(kid(layer, 'tcStyle'), 'tcBdr'), styleTag);
+      if (candidate) line = kid(candidate, 'ln');
+    }
+    return line
+      ? elementMarkup(line, `a:${cellTag}`)
+      : `<a:${cellTag} w="9525">${NEUTRAL_BORDER_FILL}</a:${cellTag}>`;
+  }).join('');
+  const neutralFill = parts ? '' : '<a:solidFill><a:schemeClr val="lt1"/></a:solidFill>';
+  return `<a:tcPr>${borders}${neutralFill}</a:tcPr>`;
+}
+
+function defaultTableSource(
+  cellPropertiesMarkup: readonly [string, string, string],
+  textBodyMarkup: string,
+  tableStyles: Element | null,
+): Element {
+  const key = `${textBodyMarkup}\u0000${cellPropertiesMarkup.join('\u0000')}`;
+  const cache = tableStyles ? creationTables.get(tableStyles) : null;
+  const cached = tableStyles ? cache?.get(key) : fallbackCreationTable;
+  if (cached) return cached;
+  const cell = (properties: string) => `<a:tc>${textBodyMarkup}${properties}</a:tc>`;
+  const root = parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+<a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid><a:gridCol w="9525"/></a:tblGrid>
+<a:tr h="9525">${cell(cellPropertiesMarkup[0])}</a:tr>
+<a:tr h="9525">${cell(cellPropertiesMarkup[1])}</a:tr>
+<a:tr h="9525">${cell(cellPropertiesMarkup[2])}</a:tr>
+  </a:tbl></root>`);
+  const table = kid(root, 'tbl')!;
+  if (tableStyles) {
+    const next = cache ?? new Map<string, Element>();
+    next.set(key, table);
+    if (!cache) creationTables.set(tableStyles, next);
+  } else fallbackCreationTable = table;
+  return table;
+}
+
+/** 写回 tableStyleId 与即时单元格视觉由同一默认表样式求值，避免首次保存后整表变色。 */
+function defaultTableEditInfo(env: Env): TableCreationDefaults {
+  const candidateStyleId = attr(env.tableStyles, 'def')?.trim();
+  const parts = candidateStyleId ? findTableStyle(env.tableStyles, candidateStyleId) : null;
+  const styleId = candidateStyleId || undefined;
+  const cellPropertiesMarkup = [
+    tableCellPropertiesMarkup(parts, parts?.firstRow ?? null),
+    tableCellPropertiesMarkup(parts, parts?.band1H ?? null),
+    tableCellPropertiesMarkup(parts, parts?.band2H ?? null),
+  ] as const;
+  const textBodyMarkup = parts ? CREATION_TABLE_TEXT : NEUTRAL_TABLE_TEXT;
+  const table = parseTable(defaultTableSource(
+    cellPropertiesMarkup, textBodyMarkup, parts ? env.tableStyles : null,
+  ), {
+    x: 0, y: 0, w: 1, h: 3, chX: 0, chY: 0, chW: 1, chH: 3,
+    rot: 0, flipH: false, flipV: false,
+  }, env);
+  const [first, band1, band2] = table.rows.map((row) => row.cells[0]);
+  if (!first?.editInfo?.textTemplate || !band1?.editInfo?.textTemplate
+    || !band2?.editInfo?.textTemplate) {
+    throw new Error('无法构造新增表格单元格模板');
+  }
+  return {
+    ...(styleId ? { styleId } : {}), textBodyMarkup, cellPropertiesMarkup,
+    firstRow: first, bandRows: [band1, band2],
+  };
 }
 
 // ---------------- 幻灯片 ----------------
@@ -1624,6 +1736,7 @@ function parseLayoutCatalog(
       elements: [...staticElements, ...placeholders],
       transition: parseTransition(inheritance.layoutRoot) ?? undefined,
       defaultShape: defaultShapeEditInfo(inheritance.envFor(layoutPath, true))!,
+      defaultTable: defaultTableEditInfo(inheritance.envFor(layoutPath, true)),
     }];
   });
 }
@@ -1680,6 +1793,7 @@ function parseSlide(
       editInfo: {
         origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
         defaultShape: defaultShapeEditInfo(envFor(slidePath, true)),
+        defaultTable: defaultTableEditInfo(envFor(slidePath, true)),
       },
     } : {}),
   };

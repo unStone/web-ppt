@@ -113,6 +113,30 @@ if (mode === 'projected') {
         bytes: imageBytes, mime: image.mime, rect: image.rect,
       });
     }
+  } else if (scenario.type === 'addTable') {
+    const placeholder = Object.values(doc.elements).find((record) =>
+      record.src.name === scenario.placeholderName);
+    editor.exec({
+      type: 'AddTable', slideId: doc.slideOrder[slideIndex], rows: scenario.rows,
+      cols: scenario.cols, rect: scenario.rect, placeholderId: placeholder.id,
+    });
+    const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+    for (const change of scenario.edits) editor.exec({
+      type: 'EditText', id, cell: change.cell,
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 }, text: change.text,
+      }],
+    });
+    editor.exec({ type: 'InsertRow', id });
+    editor.exec({
+      type: 'EditText', id, cell: { r: scenario.rows, c: scenario.cols - 1 },
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 }, text: scenario.appendedText,
+      }],
+    });
+    if (scenario.transform) editor.exec({ type: 'SetXfrm', id, ...scenario.transform });
   } else if (scenario.type === 'addSlide') {
     const layout = (name) => doc.layoutOrder.find((id) => doc.layouts[id].name === name);
     const first = doc.slideOrder[0];

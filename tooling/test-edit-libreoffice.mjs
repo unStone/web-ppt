@@ -371,6 +371,67 @@ if (basename(savedPath) === 'add-image.pptx') {
   geometryEvidence += `，新增图片 frame 最大偏差 ${error.toFixed(3)} SVG unit，WebP 像素 ${pixel.join('/')}`;
 }
 
+if (basename(savedPath) === 'add-table.pptx') {
+  const markup = exportLibreOfficeSvg('新增表格主题与几何');
+  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const tableMatch = markup.match(/<g class="com\.sun\.star\.drawing\.TableShape">\s*<g>([\s\S]*?)<\/g>\s*<\/g>/);
+  if (!viewBox || !tableMatch) throw new Error('LibreOffice 新增表格 SVG 缺少 viewBox 或 TableShape');
+  const fragment = tableMatch[1];
+  const bounds = fragment.match(/<rect class="BoundingBox"[^>]* x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/);
+  const bytes = new Uint8Array(readFileSync(savedPath));
+  const parts = unzipSync(bytes);
+  const slideXml = new TextDecoder().decode(parts['ppt/slides/slide1.xml']);
+  const name = slideXml.match(/<p:cNvPr id="\d+" name="(表格 \d+)"/)?.[1];
+  if (!bounds || !name) throw new Error('新增表格保存产物缺少 frame 或确定性名称');
+  const actual = {
+    left: Number(bounds[1]), top: Number(bounds[2]),
+    right: Number(bounds[1]) + Number(bounds[3]), bottom: Number(bounds[2]) + Number(bounds[4]),
+  };
+  const expected = expectedBounds(
+    savedFrameGeometry(bytes, name), Number(viewBox[1]), Number(viewBox[2]),
+  );
+  const error = geometryError(actual, expected);
+  const filled = fragment.match(/<path\b[^>]*\bfill="rgb\([^)]*\)"[^>]*>/g) ?? [];
+  const countFill = (color) => filled.filter((tag) => tag.includes(`fill="rgb(${color})"`)).length;
+  const header = fragment.match(/<tspan[^>]*font-weight="700"[^>]*fill="rgb\(255,255,255\)"[^>]*>主题表头<\/tspan>/);
+  const body = fragment.match(/<tspan[^>]*fill="rgb\(26,26,26\)"[^>]*>正文单元格<\/tspan>/);
+  const borders = fragment.match(/<path fill="none" stroke="rgb\(112,173,71\)"/g)?.length ?? 0;
+  if (error > 70 || filled.length !== 9
+    || countFill('217,79,112') !== 3 || countFill('183,183,183') !== 3
+    || countFill('255,255,255') !== 3 || !header || !body
+    || !fragment.includes('>Tab </tspan>') || !fragment.includes('>新行</tspan>')
+    || borders !== 8) {
+    throw new Error(`LibreOffice 新增表格证据无效：frame=${error.toFixed(3)} cells=${filled.length} fills=${countFill('217,79,112')}/${countFill('183,183,183')}/${countFill('255,255,255')} borders=${borders}`);
+  }
+  geometryEvidence += `，新增 3×3 主题表格 frame 最大偏差 ${error.toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'add-table-builtin.pptx') {
+  const markup = exportLibreOfficeSvg('新增内置主题表格');
+  const tableMatch = markup.match(/<g class="com\.sun\.star\.drawing\.TableShape">\s*<g>([\s\S]*?)<\/g>\s*<\/g>/);
+  if (!tableMatch) throw new Error('LibreOffice 内置主题表格 SVG 缺少 TableShape');
+  const fragment = tableMatch[1];
+  const filled = fragment.match(/<path\b[^>]*\bfill="rgb\([^)]*\)"[^>]*>/g) ?? [];
+  const colors = new Set(filled.map((tag) => tag.match(/fill="(rgb\([^)]*\))"/)?.[1]).filter(Boolean));
+  const borders = fragment.match(/<path fill="none" stroke="rgb\([^)]*\)"/g)?.length ?? 0;
+  if (filled.length !== 9 || colors.size !== 3 || borders !== 8 || fragment.includes('<image')) {
+    throw new Error(`LibreOffice 内置主题表格证据无效：cells=${filled.length} colors=${colors.size} borders=${borders}`);
+  }
+  geometryEvidence += '，新增 built-in-only 3×3 表格三种主题行色与 8 条完整网格线';
+}
+
+if (basename(savedPath) === 'add-table-fallback.pptx') {
+  const markup = exportLibreOfficeSvg('新增表格中性网格');
+  const tableMatch = markup.match(/<g class="com\.sun\.star\.drawing\.TableShape">\s*<g>([\s\S]*?)<\/g>\s*<\/g>/);
+  if (!tableMatch) throw new Error('LibreOffice 中性表格 SVG 缺少 TableShape');
+  const fragment = tableMatch[1];
+  const borders = fragment.match(/<path fill="none" stroke="rgb\([^)]*\)"/g)?.length ?? 0;
+  if (borders !== 7 || fragment.includes('<image')) {
+    throw new Error(`LibreOffice 中性表格内部网格无效：borders=${borders}`);
+  }
+  geometryEvidence += `，新增 2×3 中性表格 ${borders} 条完整内外网格线`;
+}
+
 if (basename(savedPath) === 'table-row-insert.pptx') {
   const markup = exportLibreOfficeSvg('表格追加行几何');
   const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);

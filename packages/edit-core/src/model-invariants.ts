@@ -8,6 +8,7 @@ import { tableCellKeyResolver } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
 import { textTargetContext } from './commands/text-target';
 import { tableRowsWithoutTextOverrides } from './table-rows';
+import { assertTableRowAppendEditInfo } from './table-row-append-validation';
 import { hasDynamicSlideLink } from './dynamic-slide-fields';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
@@ -120,6 +121,7 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     const record = doc.elements[id];
     if (!record) throw new Error(`元素不存在：${id}`);
     assertParentChain(doc, id);
+    if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `表格 ${record.id}`);
     assertTableRows(record);
     assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
@@ -269,6 +271,7 @@ export function validateEditDoc(doc: EditDoc): void {
 
   const spids = new Set<string>();
   for (const [id, record] of Object.entries(doc.elements)) {
+    if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `表格 ${record.id}`);
     assertTableRows(record);
     assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);

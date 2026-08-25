@@ -1,4 +1,4 @@
-import type { EditDoc } from '../types';
+import type { EditDoc, ElementId } from '../types';
 import { alignElementsPatches } from './align-elements';
 import { editTextPatches } from './edit-text';
 import { fitTextShapePatches } from './fit-text-shape';
@@ -13,24 +13,30 @@ import { setBodyPropsPatches } from './set-body-props';
 import { insertRowPatches } from './insert-row';
 import { addShapePatches } from './add-shape';
 import { addImagePatches } from './add-image';
+import { addTablePatches } from './add-table';
 import { addSlidePatches } from './add-slide';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, EditTextCommand, FitTextShapeCommand, PasteElementsCommand, RemoveElementCommand, SetFlipCommand,
   InsertRowCommand, SetBodyPropsCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
 interface CommandRegistration {
   readonly keys: ReadonlySet<PropertyKey>;
+  readonly target: 'id' | 'ids' | 'none';
+  readonly selectInserted?: boolean;
   readonly patches: (doc: EditDoc, command: Command, origin: string) => CommandPatches;
 }
 
 function register<C extends Command>(
   fields: readonly PropertyKey[],
   handler: (doc: EditDoc, command: C, origin: string) => CommandPatches,
+  options: Pick<CommandRegistration, 'target' | 'selectInserted'> = { target: 'id' },
 ): CommandRegistration {
   return {
     keys: new Set(['type', ...fields]),
+    target: options.target,
+    ...(options.selectInserted ? { selectInserted: true } : {}),
     patches: (doc, command, origin) => handler(doc, command as C, origin),
   };
 }
@@ -40,11 +46,15 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetFlip: register<SetFlipCommand>(['id', ...SET_FLIP_COMMAND_FIELDS], setFlipPatches),
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
-  AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches),
-  PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches),
-  AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches),
-  AddImage: register<AddImageCommand>(['slideId', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches),
-  AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches),
+  AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
+  PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
+  AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches,
+    { target: 'none', selectInserted: true }),
+  AddImage: register<AddImageCommand>(['slideId', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches,
+    { target: 'none', selectInserted: true }),
+  AddTable: register<AddTableCommand>(['slideId', 'rows', 'cols', 'rect', 'placeholderId'], addTablePatches,
+    { target: 'none', selectInserted: true }),
+  AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches, { target: 'none' }),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
@@ -56,17 +66,36 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
 function assertPureCommand(input: Command): void {
   if (!input || typeof input !== 'object') throw new Error('命令必须是纯数据对象');
   const type = (input as Partial<Command>).type as Command['type'];
-  const allowed = COMMANDS[type]?.keys ?? new Set<PropertyKey>(['type', 'id']);
+  const registration = COMMANDS[type];
+  const allowed = registration?.keys ?? new Set<PropertyKey>(['type', 'id']);
   for (const key of Reflect.ownKeys(input)) {
     const descriptor = Object.getOwnPropertyDescriptor(input, key);
     if (!allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
       throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
     }
   }
-  if (input.type !== 'AlignElements' && input.type !== 'PasteElements'
-    && input.type !== 'AddShape' && input.type !== 'AddImage' && input.type !== 'AddSlide') {
-    if (typeof input.id !== 'string' || !input.id) throw new Error('命令 id 必须是非空字符串');
+  if ((registration?.target ?? 'id') === 'id') {
+    const id = (input as Partial<Command> & { id?: unknown }).id;
+    if (typeof id !== 'string' || !id) throw new Error('命令 id 必须是非空字符串');
   }
+}
+
+/** 批处理冲突检测与命令注册共享目标语义；非法动态输入留给纯数据校验给出具体错误。 */
+export function commandTargetIds(command: Command): readonly ElementId[] {
+  const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
+  if (registration?.target === 'ids') {
+    const ids = (command as Partial<AlignElementsCommand>).ids;
+    return Array.isArray(ids) ? ids.filter((id): id is ElementId => typeof id === 'string' && !!id) : [];
+  }
+  if ((registration?.target ?? 'id') === 'id') {
+    const id = (command as Partial<Command> & { id?: unknown }).id;
+    return typeof id === 'string' && id ? [id] : [];
+  }
+  return [];
+}
+
+export function commandSelectsInsertedElement(command: Command): boolean {
+  return COMMANDS[(command as Partial<Command>).type as Command['type']]?.selectInserted === true;
 }
 
 export function commandPatches(doc: EditDoc, command: Command, origin: string): CommandPatches {

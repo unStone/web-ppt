@@ -44,6 +44,8 @@ export interface SlideLayoutTemplate {
   elements: SlideElement[];
   transition?: Transition;
   defaultShape: ShapeCreationDefaults;
+  /** 当前主题与默认表样式求值后的新表格默认值；旧生产者可不提供。 */
+  defaultTable?: TableCreationDefaults;
 }
 
 /** 编辑写回使用的只读 OPC 包句柄。字节视为只读，修改它们属于未定义行为。 */
@@ -104,6 +106,8 @@ export interface SlideEditInfo {
   layoutId?: string;
   /** 当前页主题与颜色映射求值后的新形状默认值；只在编辑解析中保留。 */
   defaultShape?: ShapeCreationDefaults;
+  /** 当前页主题与默认表样式求值后的新表格默认值；只在编辑解析中保留。 */
+  defaultTable?: TableCreationDefaults;
 }
 
 export interface ShapeCreationDefaults {
@@ -113,6 +117,19 @@ export interface ShapeCreationDefaults {
   /** 写回宿主与上面已求值语义的共同来源，避免即时投影和 OOXML 默认值漂移。 */
   styleMarkup: string;
   textBodyMarkup: string;
+}
+
+export interface TableCreationDefaults {
+  /** `tableStyles.xml` 的默认 styleId；缺失时省略 tableStyleId 并使用中性回退。 */
+  styleId?: string;
+  /** 写回的空单元格文字体，与下面已求值的文字模板共用来源。 */
+  textBodyMarkup: string;
+  /** 首行、条纹 1、条纹 2 的 tcPr；显式边框让 Office 与即时投影使用同一网格。 */
+  cellPropertiesMarkup: readonly [string, string, string];
+  /** `firstRow=1` 的首行单元格样式与空文字模板。 */
+  firstRow: TableCell;
+  /** `bandRow=1` 且首行开启时，从第二行开始交替的两种单元格样式。 */
+  bandRows: readonly [TableCell, TableCell];
 }
 
 /** 幻灯片批注 */

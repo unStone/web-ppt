@@ -23,6 +23,8 @@ import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body
 import { ImageInsertionController } from './image-insertion';
 import type { ImageInsertOptions } from './image-insertion';
 import { SlidePointerController } from './slide-pointer-controller';
+import { insertTable } from './table-insertion';
+import type { TableInsertOptions } from './table-insertion';
 
 export type EditorMode = 'view' | 'edit';
 
@@ -69,6 +71,7 @@ export interface SlideEditor {
   setBodyProps(props: TextBodyPropertyOverrides): boolean;
   insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
   chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
+  insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
   destroy(): void;
 }
 
@@ -318,6 +321,12 @@ class DomSlideEditor implements SlideEditor {
 
   chooseImage(options: ImageInsertOptions = {}): Promise<ElementId | null> {
     return this.imageInsertion.choose(options);
+  }
+
+  insertTable(rows: number, cols: number, options: TableInsertOptions = {}): ElementId {
+    if (this.isDestroyed) throw new Error('不能通过已销毁视图插入表格');
+    if (this.currentMode !== 'edit') throw new Error('查看模式不能插入表格');
+    return insertTable(this.session.editor, this.currentSlide, rows, cols, options);
   }
 
   setMode(mode: EditorMode): void {

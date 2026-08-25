@@ -33,6 +33,10 @@ editor.exec({
   type: 'AddImage', slideId, bytes: imageBytes, mime: 'image/png',
   rect: { x: 420, y: 180, w: 320, h: 220 },
 });
+editor.exec({
+  type: 'AddTable', slideId, rows: 3, cols: 4,
+  rect: { x: 180, y: 140, w: 920, h: 360 },
+});
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
@@ -172,6 +176,12 @@ gets its own collision-free relationship and `p:pic` identity. Supplying an empt
 the placeholder atomically. One tree-patch group owns element, relationship, media, Content Types, selection,
 undo/redo, and minimal save semantics; the model stores one hash token instead of duplicating Base64 in `src`.
 SVG input is deliberately excluded until its external references and scripts have a separate sanitizer contract.
+
+`AddTable { slideId, rows, cols, rect, placeholderId? }` inserts a 1–75 by 1–75 native DrawingML table. Integer
+EMU distribution keeps column and row sums exact. The source deck's default table style and current theme are
+resolved once for the immediate model and referenced by the saved `a:tbl`, so first-row/banding colors do not jump
+after reopening. Empty cells are editable immediately and already carry the append-row templates used by final-cell
+`Tab`. An empty content placeholder can be replaced atomically; save changes only the owning slide part.
 
 `doc.layoutOrder` and `doc.layouts` expose the source deck's real layout catalog only in edit mode.
 `AddSlide { layoutId, at: { after } }` creates one page from that layout without cloning another slide. The

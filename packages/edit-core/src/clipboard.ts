@@ -1,7 +1,8 @@
-import type { SlideElement } from '@web-ppt/core';
+import type { SlideElement, TableRowAppendEditInfo } from '@web-ppt/core';
 import { elementOrder } from './element-order';
 import { tokenizeElementAssets } from './clipboard-assets';
 import { effectiveElement } from './projection';
+import { orderedTableRowInsertions } from './table-rows';
 import { outermostSelectedElementIds } from './selection';
 import { elementFrameToSlideMatrix, elementFrameToSlidePoint } from './space';
 import { clipboardClosure } from './clipboard-source';
@@ -83,7 +84,22 @@ function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>): SlideEl
   const portable = tokenizeElementAssets(
     doc, source, assets, insertionOwner(doc, id)?.meta.insertion?.resources,
   );
+  let tableRowAppend: TableRowAppendEditInfo | undefined;
+  if (portable.kind === 'table' && portable.editInfo?.tableRowAppend) {
+    const sourceAppend = portable.editInfo.tableRowAppend;
+    const appended = orderedTableRowInsertions(doc.elements[id]).length;
+    const parity = appended % 2;
+    // src 已包含有效追加行；模板起点也必须前移同样次数，否则再次追加会重复上一条纹。
+    tableRowAppend = {
+      ...(portable.rows.length === 1 && sourceAppend.previousLast
+        ? { previousLast: sourceAppend.previousLast } : {}),
+      regular: [sourceAppend.regular[parity], sourceAppend.regular[1 - parity]],
+      last: [sourceAppend.last[parity], sourceAppend.last[1 - parity]],
+    };
+  }
+  // 来源锚点等解析期身份不能跨文档传播；表格追加模板则是后续结构编辑的必要语义。
   delete portable.editInfo;
+  if (tableRowAppend) portable.editInfo = { tableRowAppend };
   delete portable.id;
   return portable;
 }

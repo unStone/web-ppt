@@ -1,5 +1,5 @@
 import { applyPatches } from './commands/patch';
-import { commandPatches } from './commands/dispatch';
+import { commandPatches, commandSelectsInsertedElement, commandTargetIds } from './commands/dispatch';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
 import { isElementOrderPatch } from './commands/element-order';
@@ -112,15 +112,9 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
       }
     }
   }
-  const targetIds = (command: Command): readonly ElementId[] => {
-    if (command.type === 'AlignElements') return Array.isArray(command.ids) ? command.ids : [];
-    if (command.type === 'PasteElements' || command.type === 'AddShape'
-      || command.type === 'AddImage' || command.type === 'AddSlide') return [];
-    return [command.id];
-  };
   for (const command of commands) {
     if (command.type === 'RemoveElement') continue;
-    const conflict = targetIds(command).find((id) => roots.some((root) => id === root.id
+    const conflict = commandTargetIds(command).find((id) => roots.some((root) => id === root.id
       || isElementDescendantOf(doc, id, root.id)));
     if (conflict) {
       throw new Error(`同一事务不能先修改再删除同一子树：${conflict}`);
@@ -337,8 +331,7 @@ export class Editor {
           kind: 'elements', ids, enteredGroup: this.doc.slides[commands[0].at.parentId]
             ? null : commands[0].at.parentId,
         });
-      } else if (commands.length === 1
-        && (commands[0].type === 'AddShape' || commands[0].type === 'AddImage')) {
+      } else if (commands.length === 1 && commandSelectsInsertedElement(commands[0])) {
         const id = forward.find((patch) => patch.path.length === 2 && patch.op === 'insert')?.path[1];
         if (id) this.currentSelection = normalizeSelection(this.doc, {
           kind: 'elements', ids: [id], enteredGroup: null,

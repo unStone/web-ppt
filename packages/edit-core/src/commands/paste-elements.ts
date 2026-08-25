@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { prepareInsertionClosures } from './paste-resources';
 import { partSpidAllocator } from './spid';
+import { assertTableRowAppendEditInfo } from '../table-row-append-validation';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
@@ -41,6 +42,7 @@ function assertPayload(value: unknown): asserts value is ElementClipboardPayload
       || !Array.isArray(record.children)) {
       throw new Error(`剪贴板元素记录无效：${id}`);
     }
+    if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `剪贴板元素 ${id}`);
     reached.add(id);
     for (const child of record.children) visit(child, id);
   };

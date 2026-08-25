@@ -33,6 +33,7 @@ view.setSlide([...added.createdSlides][0]);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();
+const tableId = view.insertTable(3, 4); // rows, columns; replaces a selected empty content placeholder
 
 view.setMode('view');       // same static preview DOM; interaction layers are hidden
 view.setMode('edit');
@@ -160,6 +161,11 @@ recognized from their bytes rather than the filename or browser MIME. Files stay
 keeps the insertion inside the standard 8MB undo budget and can be changed explicitly. While bytes are read the
 view exposes `aria-busy="true"`; failures reject the promise and dispatch `webpptimageerror`. Double-clicking an
 empty picture placeholder uses the same path and replaces that placeholder plus the image in one undo unit.
+
+Table pickers call synchronous `view.insertTable(rows, cols, options?)`. An explicit `rect` is used as-is; without
+one, the view replaces the selected empty content placeholder or computes a centered size from the grid. The result
+is a native DrawingML table whose cells open in the existing text editor and whose final-cell `Tab` uses the existing
+append-row path. The method returns the new stable element id, while view mode rejects creation.
 
 Page navigators use the equivalent `AddSlide` seam shown above. The headless result identifies the new page;
 each mounted edit or view surface switches with its existing `setSlide` method, so a toolbar never mutates DOM

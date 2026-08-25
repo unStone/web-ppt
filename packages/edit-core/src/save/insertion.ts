@@ -62,8 +62,8 @@ export function materializeElementTreeState(
   options: { skipInsertions?: ReadonlySet<string>; scope?: ReadonlySet<string> } = {},
 ): void {
   for (const removal of removals) patchRemovedElement(document, removal);
-  patchInsertedElements(document, doc, records, options.skipInsertions);
-  materializeElementOverrides(document, doc, part, records, options.scope);
+  const inserted = patchInsertedElements(document, doc, records, options.skipInsertions);
+  materializeElementOverrides(document, doc, part, records, options.scope, inserted);
 }
 
 /** 从来源基线构造当前有效元素树，供复制原始宿主及其所有后代。 */
@@ -153,7 +153,8 @@ export function patchInsertedElements(
   doc: EditDoc,
   records: readonly ElementRecord[],
   skip: ReadonlySet<string> = new Set(),
-): void {
+): Set<string> {
+  const materialized = new Set<string>();
   const candidates = new Set(records
     .filter((record) => record.meta.insertion && !skip.has(record.id))
     .map((record) => record.id));
@@ -172,5 +173,12 @@ export function patchInsertedElements(
     }
     if (covered) continue;
     insertXmlChild(targetParent(document, doc, record), detachedHost(doc, record));
+    const mark = (id: string): void => {
+      if (materialized.has(id)) return;
+      materialized.add(id);
+      for (const child of doc.elements[id]?.children ?? []) mark(child);
+    };
+    mark(record.id);
   }
+  return materialized;
 }

@@ -1,5 +1,6 @@
 import type {
   ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide,
+  TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
 
@@ -280,6 +281,8 @@ export interface SlideRecord {
   creation?: SlideCreation;
   /** 解析期已在当前页主题/颜色映射上求值，新增形状无需理解 OOXML 主题。 */
   defaultShape?: ShapeCreationDefaults;
+  /** 解析期已在当前页主题/默认表样式上求值，新增表格无需理解 OOXML 样式层。 */
+  defaultTable?: TableCreationDefaults;
 }
 
 export interface SlideCreation {

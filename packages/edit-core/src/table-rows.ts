@@ -99,11 +99,21 @@ export function tableRowsWithoutTextOverrides(record: ElementRecord): TableRow[]
 
 export function tableRowHeightDelta(record: ElementRecord): number {
   if (record.src.kind !== 'table') return 0;
+  const base = typeof record.ovr.h === 'number' ? record.ovr.h : record.src.h;
+  const scale = record.src.h > 0 ? base / record.src.h : 1;
   return orderedTableRowInsertions(record).length
-    * (record.src.rows[record.src.rows.length - 1]?.height ?? 0);
+    * (record.src.rows[record.src.rows.length - 1]?.height ?? 0) * scale;
 }
 
 export function effectiveTableFrameHeight(record: ElementRecord): number {
   const base = typeof record.ovr.h === 'number' ? record.ovr.h : record.src.h;
   return base + tableRowHeightDelta(record);
+}
+
+/** SetXfrm 面向当前可见整表；稀疏覆盖保存的是追加前 frame，故需反解同一缩放比例。 */
+export function tableBaseFrameHeight(record: ElementRecord, effectiveHeight: number): number {
+  if (record.src.kind !== 'table') return effectiveHeight;
+  const appended = orderedTableRowInsertions(record).length
+    * (record.src.rows[record.src.rows.length - 1]?.height ?? 0);
+  return record.src.h > 0 ? effectiveHeight * record.src.h / (record.src.h + appended) : effectiveHeight;
 }

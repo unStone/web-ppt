@@ -112,6 +112,8 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       ...(slide.editInfo?.layoutId ? { layoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.defaultShape
         ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
+      ...(slide.editInfo?.defaultTable
+        ? { defaultTable: structuredClone(slide.editInfo.defaultTable) } : {}),
     };
     slides[id] = record;
     slideOrder.push(id);

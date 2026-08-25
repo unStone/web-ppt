@@ -1,9 +1,10 @@
 import { resolveGeomPath } from '@web-ppt/core/geometry';
 import type {
-  GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TextBody,
+  GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TableRow, TextBody,
 } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { hydrateElementInsertionAssets } from './clipboard-assets';
+import { own } from './data-validation';
 import { isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRowRef } from './table-cell';
@@ -17,6 +18,38 @@ interface ProjectionCache {
 }
 
 const caches = new WeakMap<EditDoc, ProjectionCache>();
+
+/** 最后一格吃掉浮点余量，保证即时网格与选择 frame 在 JS 数值上也严格闭合。 */
+function scaledDimensions(values: readonly number[], total: number): number[] {
+  const sourceTotal = values.reduce((sum, value) => sum + value, 0);
+  if (!values.length || sourceTotal <= 0) return [...values];
+  let remaining = total;
+  return values.map((value, index) => {
+    if (index === values.length - 1) return remaining;
+    const scaled = value / sourceTotal * total;
+    remaining -= scaled;
+    return scaled;
+  });
+}
+
+function scaledTableRow(row: TableRow, scale: number): TableRow {
+  return scale === 1 ? row : { ...row, height: row.height * scale };
+}
+
+function scaledTableEditInfo(
+  editInfo: TableElement['editInfo'], scale: number,
+): TableElement['editInfo'] {
+  const append = editInfo?.tableRowAppend;
+  if (!append || scale === 1) return editInfo;
+  return {
+    ...editInfo,
+    tableRowAppend: {
+      ...(append.previousLast ? { previousLast: scaledTableRow(append.previousLast, scale) } : {}),
+      regular: [scaledTableRow(append.regular[0], scale), scaledTableRow(append.regular[1], scale)],
+      last: [scaledTableRow(append.last[0], scale), scaledTableRow(append.last[1], scale)],
+    },
+  };
+}
 
 function cacheOf(doc: EditDoc): ProjectionCache {
   let cache = caches.get(doc);
@@ -145,6 +178,20 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       return changed ? { ...row, cells } : row;
     });
     out = { ...out, rows, h: out.h + tableRowHeightDelta(record) } as TableElement;
+  }
+  if (out.kind === 'table' && (own(record.ovr, 'w') || own(record.ovr, 'h'))) {
+    const sourceHeight = out.rows.reduce((sum, row) => sum + row.height, 0);
+    const heightScale = sourceHeight > 0 ? out.h / sourceHeight : 1;
+    out = {
+      ...out,
+      ...(own(record.ovr, 'w')
+        ? { colWidths: scaledDimensions(out.colWidths, out.w) } : {}),
+      ...(own(record.ovr, 'h')
+        ? { rows: (() => {
+          const heights = scaledDimensions(out.rows.map((row) => row.height), out.h);
+          return out.rows.map((row, index) => ({ ...row, height: heights[index] }));
+        })(), editInfo: scaledTableEditInfo(out.editInfo, heightScale) } : {}),
+    } as TableElement;
   }
   if (out.kind === 'group') {
     const source = record.src as GroupElement;

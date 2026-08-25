@@ -32,6 +32,10 @@ editor.exec({
   type: 'AddImage', slideId, bytes: imageBytes, mime: 'image/png',
   rect: { x: 420, y: 180, w: 320, h: 220 },
 });
+editor.exec({
+  type: 'AddTable', slideId, rows: 3, cols: 4,
+  rect: { x: 180, y: 140, w: 920, h: 360 },
+});
 const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
@@ -160,6 +164,11 @@ headless 包不依赖任何框架运行时。
 媒体 part，但每张图片仍分配无冲突的独立关系和 `p:pic` 身份。传入空图片 `placeholderId` 时会原子替换
 占位符；元素、关系、媒体、Content Types、选区、撤销重做与最小保存由同一个树 patch 组拥有。模型用一枚
 哈希 token 代替在 `src` 中再次复制 Base64。SVG 在外部引用与脚本清洗形成独立安全契约前不会伪装成支持。
+
+`AddTable { slideId, rows, cols, rect, placeholderId? }` 会插入 1–75 行、1–75 列的原生 DrawingML 表格。
+列宽与行高用整数 EMU 均分，总和精确等于 frame。即时模型先按源文档默认表样式与当前主题求值，保存的
+`a:tbl` 引用同一 styleId，因此首行/条纹不会在重开后跳色。所有空格创建后立刻可输入，并已携带末格
+`Tab` 所需的追加行模板；空内容占位符可原子替换，保存只改拥有该表格的 slide part。
 
 `doc.layoutOrder` 与 `doc.layouts` 只在编辑模式公开源文件的真实版式目录。
 `AddSlide { layoutId, at: { after } }` 按选定版式创建一页，不复制其它幻灯片；返回的
