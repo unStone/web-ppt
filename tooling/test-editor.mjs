@@ -31,6 +31,7 @@ import { runAddShapeEditorContract } from './lib/add-shape-editor-contract.mjs';
 import { runAddSlideEditorContract } from './lib/add-slide-editor-contract.mjs';
 import { runMoveSlideEditorContract } from './lib/move-slide-editor-contract.mjs';
 import { runRemoveSlideEditorContract } from './lib/remove-slide-editor-contract.mjs';
+import { runDuplicateSlideEditorContract } from './lib/duplicate-slide-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -222,6 +223,7 @@ await runAddShapeEditorContract({ check, lib, root, window: domEnvironment.windo
 await runAddSlideEditorContract({ check, lib, root, window: domEnvironment.window });
 await runMoveSlideEditorContract({ check, lib, root });
 await runRemoveSlideEditorContract({ check, lib, root, window: domEnvironment.window });
+await runDuplicateSlideEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEditorSpaceContract({ check, lib, root });
 await runElementAlignEditorContract({ check, lib, root });
 await runMoveGestureContract({ check, lib, root });

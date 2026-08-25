@@ -30,6 +30,8 @@ const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
 session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
+const duplicated = session.editor.exec({ type: 'DuplicateSlide', id: view.slideId });
+view.setSlide([...duplicated.createdSlides][0]);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();
@@ -157,6 +159,10 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 关闭输入并切到公开 `removedSlideFallbacks` 指定的后继或前驱；其它画布保持自己的稳定 `slideId` 与 SVG 根。
 React、Vue、Svelte、Web Component 和原生导航消费同一映射即可；当
 `session.editor.doc.slideOrder.length === 1` 时应直接禁用删除入口。
+
+页面复制提交 `DuplicateSlide { id }`，新稳定页身份从 `createdSlides` 返回。现有画布继续停留在原页并保留
+活动输入，React、Vue、Svelte、Web Component 等适配层可用该身份显式切页或挂载新画布。副本默认紧邻来源；
+用户选择其它位置时再组合 `MoveSlide`。
 
 单选时 interaction SVG 绘制精确 OBB，多选时绘制各 OBB 的世界系 AABB 并集，并附带 8 个缩放柄和
 1 个旋转柄；无论视图 zoom 如何变化，描边和手柄都保持屏幕像素尺寸。旋转/翻转元素与嵌套组严格复用

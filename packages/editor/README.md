@@ -31,6 +31,8 @@ const layoutId = session.editor.doc.layoutOrder[0];
 const added = session.editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 view.setSlide([...added.createdSlides][0]);
 session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
+const duplicated = session.editor.exec({ type: 'DuplicateSlide', id: view.slideId });
+view.setSlide([...duplicated.createdSlides][0]);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();
@@ -181,6 +183,11 @@ Deletion uses `session.editor.exec({ type: 'RemoveSlide', id })`. All mounted vi
 close active input and switch to the public `removedSlideFallbacks` target; canvases on surviving pages keep their
 stable `slideId` and SVG root. A React, Vue, Svelte, Web Component, or vanilla navigator can consume the same map.
 Disable the command when `session.editor.doc.slideOrder.length === 1`.
+
+Duplication uses `DuplicateSlide { id }` and reports the new stable page through `createdSlides`. Existing canvases
+stay on their current pages and preserve active input; a React/Vue/Svelte/Web Component adapter can switch or mount
+another canvas explicitly with that returned id. The copy is inserted after its source; compose `MoveSlide` when the
+user chooses another destination.
 
 The interaction SVG draws one exact oriented bounding box for a single selection and the world-space AABB union
 for a multi-selection. It adds eight resize handles and one rotation handle; their stroke and size stay constant

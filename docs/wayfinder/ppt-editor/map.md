@@ -69,10 +69,11 @@ tracker: local-markdown
 - [插入可立即编辑的主题表格](tickets/043-add-table.md) — 主题求值与自包含直接格式接通原生 AddTable、逐格输入、Tab 追加、跨文档复制和最小保存；Chrome 20×10 p95 6.8ms，LibreOffice 网格 oracle 通过。
 - [用稳定页身份重排页面](tickets/044-move-slide.md) — 稳定 SlideId 锚点与专用 SlideOrderPatch 接通页序、动态字段、多视图、历史和最小保存；Chrome 200 页 p95 2.2ms，LibreOffice 无修复打开。
 - [删除页面并完整清理其 OPC 身份](tickets/045-remove-slide.md) — 可逆页面树快照与精确 OPC 删除闭包接通 fallback、多视图、历史和共享资源保留；Chrome 200→1 页 p95 2.4ms，LibreOffice 页序与 notes 一致。
+- [复制页面并重建独立 OPC 身份](tickets/046-duplicate-slide.md) — 稳定页面树副本与 baseline 驱动的独立 slide/notes 闭包接通多视图、历史、section 和最小保存；Chrome 性能预算与 LibreOffice oracle 均通过。
 
 ## Not yet specified
 
-- M4 的填充、描边、效果、图片裁剪、链接、页面复制/换版式/背景/隐藏与备注能力还需按用户闭环继续拆分。
+- M4 的填充、描边、效果、图片裁剪、链接、页面换版式/背景/隐藏与备注能力还需按用户闭环继续拆分。
 - M5 的自动保存、崩溃恢复、选择窗格、格式刷和全量性能预算要根据真实 patch 体积与事件模型拆分。
 - React、Vue、Web Component 或其它框架适配的最终包形态，要在 `@web-ppt/editor` 的生命周期和订阅 API 稳定后，用最小示例与包体积实测决定；框架运行时不得进入 `core`、`edit-core` 或基础 DOM 包。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。

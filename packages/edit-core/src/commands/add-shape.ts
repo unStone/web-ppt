@@ -60,7 +60,8 @@ function sourceShape(
 function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增形状');
   const slide = doc.slides[command.slideId];
-  if (!slide?.origin || !doc.package?.parts[slide.origin.part]) {
+  if (!slide?.origin || !doc.package
+    || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
     throw new Error(`新增形状目标页不可写回：${command.slideId}`);
   }
   if (!slide.defaultShape) throw new Error(`新增形状目标页缺少主题默认值：${command.slideId}`);

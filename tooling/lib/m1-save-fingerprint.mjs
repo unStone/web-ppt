@@ -166,6 +166,10 @@ if (mode === 'projected') {
     const id = doc.slideOrder.find((slideId) => doc.slides[slideId].origin?.part === scenario.part);
     if (!id) throw new Error(`M1 指纹固件缺少待删除页面：${scenario.part}`);
     editor.exec({ type: 'RemoveSlide', id });
+  } else if (scenario.type === 'duplicateSlide') {
+    const id = doc.slideOrder.find((slideId) => doc.slides[slideId].origin?.part === scenario.part);
+    if (!id) throw new Error(`M1 指纹固件缺少待复制页面：${scenario.part}`);
+    editor.exec({ type: 'DuplicateSlide', id });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

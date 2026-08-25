@@ -53,6 +53,7 @@
     import { runEditorAddSlideBrowserContract } from '/tooling/lib/editor-add-slide-browser-contract.mjs';
     import { runEditorMoveSlideBrowserContract } from '/tooling/lib/editor-move-slide-browser-contract.mjs';
     import { runEditorRemoveSlideBrowserContract } from '/tooling/lib/editor-remove-slide-browser-contract.mjs';
+    import { runEditorDuplicateSlideBrowserContract } from '/tooling/lib/editor-duplicate-slide-browser-contract.mjs';
     import {
       runEditorAddTableBrowserContract, runEditorAddTablePerformanceContract,
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
@@ -457,6 +458,7 @@
       const addSlideResult = await runEditorAddSlideBrowserContract({ openEditor, load });
       const moveSlideResult = await runEditorMoveSlideBrowserContract({ openEditor, load });
       await runEditorRemoveSlideBrowserContract({ openEditor, load });
+      await runEditorDuplicateSlideBrowserContract({ openEditor, load });
       const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {

@@ -170,6 +170,11 @@ export interface RemoveSlideCommand {
   readonly id: SlideId;
 }
 
+export interface DuplicateSlideCommand {
+  readonly type: 'DuplicateSlide';
+  readonly id: SlideId;
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -235,7 +240,7 @@ export interface InsertRowCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {

@@ -40,6 +40,8 @@ const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
 editor.exec({ type: 'MoveSlide', id: newSlideId, at: { after: null } });
+const duplicated = editor.exec({ type: 'DuplicateSlide', id: newSlideId });
+const duplicateSlideId = [...duplicated.createdSlides][0];
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -191,12 +193,17 @@ OOXML 字段。撤销/重做恢复同一份模型与 OPC 身份；保存只追�
 React、Vue、Svelte、Web Component 与原生导航都可直接切换活动路由，不必从瞬时下标推导。撤销重做恢复
 同一页面、元素和 OPC 身份；保存清理页面索引、slide part 与独占 notes，媒体和未知关系目标不做级联删除。
 
+`DuplicateSlide { id }` 快照页面提交瞬间的有效元素树，并把独立副本紧邻插在来源后。框架适配层只需读取
+返回的 `createdSlides` 身份；其它落点继续提交独立 `MoveSlide`。页面/元素 id、slide/notes part、
+presentation 身份和 notes 回指都相互独立，版式、媒体、图表、评论与未知目标则继续共享原包资源；任一页后续
+编辑或删除都不会改变另一页。
+
 HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号、空 run 和 autofit 标记，
 可直接作为 contenteditable 覆盖层的内容。core 仍不访问 DOM；焦点与 IME 生命周期由编辑器适配层负责。
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面删除、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面复制/删除、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 

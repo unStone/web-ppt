@@ -7,6 +7,11 @@ import { parseXmlTree } from '../xml/tree';
 const decoder = new TextDecoder();
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
+/** 删除保存再撤销时 part 只存在 detached baseline；身份读取必须与保存重建使用同一真相源。 */
+function sourcePart(doc: EditDoc, part: string): Uint8Array | undefined {
+  return doc.saveState.baselines[part] ?? doc.package?.parts[part];
+}
+
 function maximum(source: string, pattern: RegExp): number {
   let value = 0;
   for (const match of source.matchAll(pattern)) {
@@ -20,7 +25,7 @@ function initializeOpcIdentity(doc: EditDoc): void {
   const pkg = doc.package;
   if (!pkg) throw new Error('新增页需要可写 OOXML 包');
   if (doc.identity.nextSlidePart === undefined) {
-    const parts = [...Object.keys(pkg.parts), ...Object.values(doc.slides)
+    const parts = [...Object.keys(pkg.parts), ...Object.keys(doc.saveState.baselines), ...Object.values(doc.slides)
       .flatMap((slide) => slide.origin ? [slide.origin.part] : [])];
     const highest = Math.max(0, ...parts.flatMap((part) => {
       const match = /^ppt\/slides\/slide(\d+)\.xml$/.exec(part);
@@ -29,12 +34,16 @@ function initializeOpcIdentity(doc: EditDoc): void {
     doc.identity.nextSlidePart = highest + 1;
   }
   if (doc.identity.nextPresentationSlideId === undefined) {
-    const xml = decoder.decode(pkg.parts['ppt/presentation.xml']);
+    const bytes = sourcePart(doc, 'ppt/presentation.xml');
+    if (!bytes) throw new Error('PPTX 缺少 ppt/presentation.xml');
+    const xml = decoder.decode(bytes);
     doc.identity.nextPresentationSlideId = Math.max(255,
       maximum(xml, /<(?:[A-Za-z_][\w.-]*:)?sldId\b[^>]*\bid\s*=\s*["'](\d+)["']/g)) + 1;
   }
   if (doc.identity.nextPresentationRelationship === undefined) {
-    const xml = decoder.decode(pkg.parts['ppt/_rels/presentation.xml.rels']);
+    const bytes = sourcePart(doc, 'ppt/_rels/presentation.xml.rels');
+    if (!bytes) throw new Error('PPTX 缺少 ppt/_rels/presentation.xml.rels');
+    const xml = decoder.decode(bytes);
     doc.identity.nextPresentationRelationship = maximum(xml, /\bId\s*=\s*["']rId(\d+)["']/g) + 1;
   }
 }
@@ -61,13 +70,30 @@ export function allocateSlideOpcIdentity(doc: EditDoc): {
   };
 }
 
+export function allocateNotesPart(doc: EditDoc): string {
+  initializeOpcIdentity(doc);
+  if (doc.identity.nextNotesPart === undefined) {
+    const parts = [
+      ...Object.keys(doc.package!.parts), ...Object.keys(doc.saveState.baselines),
+      ...Object.values(doc.slides).flatMap((slide) =>
+      slide.creation?.duplicateNotesPart ? [slide.creation.duplicateNotesPart] : [])];
+    const highest = Math.max(0, ...parts.flatMap((part) => {
+      const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
+      return match ? [Number(match[1])] : [];
+    }));
+    doc.identity.nextNotesPart = highest + 1;
+  }
+  const partNumber = doc.identity.nextNotesPart++;
+  if (!Number.isSafeInteger(partNumber) || partNumber <= 0) throw new Error('演示文稿的备注身份已耗尽');
+  return `ppt/notesSlides/notesSlide${partNumber}.xml`;
+}
+
 export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined {
   const created = Object.values(doc.slides).find((slide) => slide.origin?.part === part)?.creation;
   if (created) return created.presentationSlideId;
-  const pkg = doc.package;
-  if (!pkg) return undefined;
-  const relsBytes = pkg.parts['ppt/_rels/presentation.xml.rels'];
-  const presentationBytes = pkg.parts['ppt/presentation.xml'];
+  if (!doc.package) return undefined;
+  const relsBytes = sourcePart(doc, 'ppt/_rels/presentation.xml.rels');
+  const presentationBytes = sourcePart(doc, 'ppt/presentation.xml');
   if (!relsBytes || !presentationBytes) return undefined;
   let rid: string | undefined;
   for (const relationship of xmlElementChildren(

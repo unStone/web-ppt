@@ -194,6 +194,7 @@ export function validateEditDoc(doc: EditDoc): void {
     .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));
   const creationSlideIds = new Set<number>();
   const creationRelationshipIds = new Set<string>();
+  const creationNotesParts = new Set<string>();
 
   const referenced = new Map<ElementId, SlideId | ElementId>();
   for (const slideId of doc.slideOrder) {
@@ -206,12 +207,36 @@ export function validateEditDoc(doc: EditDoc): void {
       throw new Error(`幻灯片 ${slideId} 的源 part 不存在：${slide.origin.part}`);
     }
     if (slide.creation) {
+      const creation = slide.creation;
+      const notesFields = [creation.duplicateNotesSourcePart, creation.duplicateNotesPart];
+      const removedSpids = creation.duplicateRemovedSpids ?? [];
       if (!slide.origin || slide.creation.layoutPart !== slide.layoutId
+        || !/^ppt\/slides\/slide\d+\.xml$/.test(slide.origin.part)
         || !doc.layouts[slide.creation.layoutPart]
-        || !/^rId\d+$/.test(slide.creation.layoutRelationshipId)
+        || typeof slide.creation.layoutRelationshipId !== 'string'
+        || !slide.creation.layoutRelationshipId
         || !Number.isSafeInteger(slide.creation.presentationSlideId)
         || slide.creation.presentationSlideId < 256
-        || !/^rId\d+$/.test(slide.creation.presentationRelationshipId)) {
+        || !/^rId\d+$/.test(slide.creation.presentationRelationshipId)
+        || (creation.duplicateSourcePart !== undefined
+          && (typeof creation.duplicateSourcePart !== 'string'
+            || !creation.duplicateSourcePart
+            || creation.duplicateSourcePart === slide.origin.part
+            || (!doc.package?.parts[creation.duplicateSourcePart]
+              && !doc.saveState.baselines[creation.duplicateSourcePart])))
+        || (notesFields.filter((value) => value !== undefined).length !== 0
+          && (typeof creation.duplicateNotesSourcePart !== 'string'
+            || !creation.duplicateNotesSourcePart
+            || typeof creation.duplicateNotesPart !== 'string'
+            || !/^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(creation.duplicateNotesPart)
+            || !creation.duplicateSourcePart
+            || creation.duplicateNotesSourcePart === creation.duplicateNotesPart
+            || (!doc.package?.parts[creation.duplicateNotesSourcePart!]
+              && !doc.saveState.baselines[creation.duplicateNotesSourcePart!])))
+        || !Array.isArray(removedSpids)
+        || new Set(removedSpids).size !== removedSpids.length
+        || removedSpids.some((spid) => !Number.isSafeInteger(spid) || spid <= 0)
+        || (removedSpids.length > 0 && !creation.duplicateSourcePart)) {
         throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份无效`);
       }
       if (creationSlideIds.has(slide.creation.presentationSlideId)
@@ -220,6 +245,12 @@ export function validateEditDoc(doc: EditDoc): void {
       }
       creationSlideIds.add(slide.creation.presentationSlideId);
       creationRelationshipIds.add(slide.creation.presentationRelationshipId);
+      if (creation.duplicateNotesPart) {
+        if (creationNotesParts.has(creation.duplicateNotesPart)) {
+          throw new Error(`新增幻灯片 ${slideId} 的 notes OPC 身份重复`);
+        }
+        creationNotesParts.add(creation.duplicateNotesPart);
+      }
     }
     assertChildren(doc, slideId, slide.children, referenced);
   }
@@ -295,7 +326,7 @@ export function validateEditDoc(doc: EditDoc): void {
       }
       if (doc.package && !doc.package.parts[record.meta.origin.part]
         && !doc.saveState.baselines[record.meta.origin.part]
-        && !(record.meta.created && createdParts.has(record.meta.origin.part))) {
+        && !createdParts.has(record.meta.origin.part)) {
         throw new Error(`元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
       }
     }

@@ -288,6 +288,13 @@ export interface SlideRecord {
 export interface SlideCreation {
   readonly layoutPart: string;
   readonly layoutRelationshipId: string;
+  /** 页面副本从该不可变来源 part 起步；副本链在命令期展平，避免保存依赖页序。 */
+  readonly duplicateSourcePart?: string;
+  /** 副本链展平到最初 notes 基线，目标 notes 因而不依赖中间副本是否已物化。 */
+  readonly duplicateNotesSourcePart?: string;
+  readonly duplicateNotesPart?: string;
+  /** 来源基线中已在复制时删除的宿主；新增宿主仍由 insertion 的存活树决定。 */
+  readonly duplicateRemovedSpids?: readonly number[];
   readonly presentationSlideId: number;
   readonly presentationRelationshipId: string;
   /** 锚点页在 presentation.xml 中的数值 id；section 写回以它定位。 */
@@ -309,8 +316,9 @@ export interface EditIdentity {
   nextElement: number;
   /** part 内 cNvPr@id 分配状态；首次新增时才从保留 XML 求最大值。 */
   nextSpid: Record<string, number>;
-  /** 三项均惰性初始化，未使用新增页能力时不扫描任何保存期身份。 */
+  /** 四项均惰性初始化，未使用新增/复制页能力时不扫描任何保存期身份。 */
   nextSlidePart?: number;
+  nextNotesPart?: number;
   nextPresentationSlideId?: number;
   nextPresentationRelationship?: number;
 }

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffice-contract.mjs';
+import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -503,6 +504,12 @@ if (basename(savedPath) === 'add-slide.pptx' || basename(savedPath) === 'add-sli
 
 if (basename(savedPath) === 'remove-slide.pptx') {
   geometryEvidence += runRemoveSlideLibreOfficeContract({
+    savedPath, pages, out, root, soffice, exportSvg: exportLibreOfficeSvg,
+  });
+}
+
+if (basename(savedPath) === 'duplicate-slide.pptx') {
+  geometryEvidence += runDuplicateSlideLibreOfficeContract({
     savedPath, pages, out, root, soffice, exportSvg: exportLibreOfficeSvg,
   });
 }

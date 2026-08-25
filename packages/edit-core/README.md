@@ -41,6 +41,8 @@ const layoutId = doc.layoutOrder[0];
 const added = editor.exec({ type: 'AddSlide', layoutId, at: { after: slideId } });
 const newSlideId = [...added.createdSlides][0];
 editor.exec({ type: 'MoveSlide', id: newSlideId, at: { after: null } });
+const duplicated = editor.exec({ type: 'DuplicateSlide', id: newSlideId });
+const duplicateSlideId = [...duplicated.createdSlides][0];
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
@@ -208,13 +210,19 @@ without deriving transient indexes. Undo/redo restores the same page/element/OPC
 slide indexes and parts plus an exclusively owned notes slide, while shared media and unknown relationship targets
 remain untouched.
 
+`DuplicateSlide { id }` snapshots the page's current effective tree and inserts an independent copy immediately
+after it. The returned `createdSlides` identity is the only value framework adapters need; use a separate
+`MoveSlide` command for another destination. Page/element ids, slide/notes parts, presentation ids, and notes
+back-references are independent, while layout, media, charts, comments, and unknown targets keep sharing their
+original package resources. Later edits or deletion of either page cannot mutate the other.
+
 The HTML result shares the preview renderer and carries `data-p` / `data-r`, bullet, empty-run, and autofit
 markers for a contenteditable overlay. The core function stays DOM-free; the editor adapter owns focus and IME.
 `layoutText` shares native SVG line breaking and returns paragraph/run identities plus UTF-16 caret stops.
 Its `transform` maps logical coordinates for vertical text; pass `{ includeCarets: false }` for geometry-only work.
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
-appended table rows, new shapes/pages, page removals, placeholder clears, and element removals, refreshes `doc.package` for the
+appended table rows, new shapes/pages, page duplication/removals, placeholder clears, and element removals, refreshes `doc.package` for the
 next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 

@@ -13,6 +13,7 @@ import { patchRelationshipPart } from './clipboard-parts';
 import { removedSlidePartNames } from './remove-slide-parts';
 
 const SLIDE_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml';
+const NOTES_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml';
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
 const LAYOUT_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout';
 
@@ -106,19 +107,20 @@ function patchSections(
       localName: 'sldIdLst', namespaceUri: POWERPOINT_2010_NS,
     });
     if (!list) continue;
-    for (const node of xmlElementChildren(list, {
-      localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
-    })) {
-      const id = Number(elementAttribute(node, 'id'));
-      if (removedSlideIds.has(id)) removeXmlChild(list, node);
-    }
-    const existing = xmlElementChildren(list, {
+    const sourceNodes = xmlElementChildren(list, {
       localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
     });
-    const members = new Set(existing.flatMap((node) => {
+    // 先记录来源归属；锚点页本次同时删除时，副本仍应继承复制瞬间的 section。
+    const members = new Set(sourceNodes.flatMap((node) => {
       const id = elementAttribute(node, 'id');
       return id ? [Number(id)] : [];
     }));
+    for (const node of sourceNodes) {
+      const id = Number(elementAttribute(node, 'id'));
+      if (removedSlideIds.has(id)) removeXmlChild(list, node);
+    }
+    const existing = sourceNodes.filter((node) =>
+      !removedSlideIds.has(Number(elementAttribute(node, 'id'))));
     let advanced = true;
     while (advanced) {
       advanced = false;
@@ -237,11 +239,18 @@ export function patchSlideContentTypes(
     }));
   for (const slide of createdSlides(doc)) {
     const part = `/${slide.origin!.part}`;
-    if (existing.has(part)) continue;
+    if (!existing.has(part)) {
+      insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
+        attributes: [['PartName', part], ['ContentType', SLIDE_CONTENT_TYPE]],
+      }));
+      existing.add(part);
+    }
+    const notesPart = slide.creation?.duplicateNotesPart;
+    if (!notesPart || existing.has(`/${notesPart}`)) continue;
     insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
-      attributes: [['PartName', part], ['ContentType', SLIDE_CONTENT_TYPE]],
+      attributes: [['PartName', `/${notesPart}`], ['ContentType', NOTES_CONTENT_TYPE]],
     }));
-    existing.add(part);
+    existing.add(`/${notesPart}`);
   }
   return serializeXmlTreeBytes(tree);
 }

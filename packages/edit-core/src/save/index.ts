@@ -19,6 +19,10 @@ import {
   patchPresentationSlides, patchSlideContentTypes, patchSlideNumberFields,
 } from './slide-parts';
 import { removedSlidePackageParts } from './remove-slide-parts';
+import {
+  cloneDuplicateNotesParts, duplicateNotesParts, duplicateRelationshipSource,
+  duplicateSlideRemovals, duplicateSlideSource, patchDuplicateSlideRelationships,
+} from './duplicate-slide-parts';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -74,6 +78,8 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const removals = removalsByPart(doc);
   const clipboard = clipboardPackageParts(doc);
   const activeCreatedSlides = createdSlides(doc);
+  const duplicateNotes = duplicateNotesParts(activeCreatedSlides);
+  const duplicateNotesBySlide = new Map(duplicateNotes.map((notes) => [notes.slidePart, notes]));
   const nextBaselines: Record<string, Uint8Array> = Object.assign(
     Object.create(null), doc.saveState.baselines,
   );
@@ -134,6 +140,10 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     nextCreatedParts.add(part);
     nextCreatedParts.add(relationshipPartFor(part));
   }
+  for (const notes of duplicateNotes) {
+    nextCreatedParts.add(notes.targetPart);
+    nextCreatedParts.add(relationshipPartFor(notes.targetPart));
+  }
   for (const resource of clipboard.resources.values()) {
     if (resource.created) nextCreatedParts.add(resource.targetPart);
   }
@@ -151,11 +161,14 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   }));
   for (const part of slideParts) {
     const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === part);
-    const source = nextBaselines[part] ?? (slide ? emptySlideXml() : undefined);
+    const source = nextBaselines[part]
+      ?? (slide ? duplicateSlideSource(doc, slide, nextBaselines) ?? emptySlideXml() : undefined);
     if (!source) throw new Error(`找不到页面保存基线：${part}`);
     const tree = parseXmlTree(source);
     const records = grouped.get(part) ?? [];
-    materializeElementTreeState(tree, doc, part, records, removals.get(part) ?? []);
+    materializeElementTreeState(tree, doc, part, records, [
+      ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
+    ]);
     const bytes = serializeXmlTreeBytes(tree);
     changes[part] = slideNumbers.has(part)
       ? patchSlideNumberFields(bytes, slideNumbers.get(part)!)
@@ -166,7 +179,12 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   for (const [sourcePart, relationships] of clipboard.relationships) {
     const relsPart = relationshipPartFor(sourcePart);
     activeRelationshipParts.add(relsPart);
-    changes[relsPart] = patchRelationshipPart(nextBaselines[relsPart], relationships);
+    const slide = activeCreatedSlides.find((candidate) => candidate.origin?.part === sourcePart);
+    changes[relsPart] = patchRelationshipPart(
+      nextBaselines[relsPart] ?? (slide
+        ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined),
+      relationships,
+    );
   }
   for (const [part, source] of Object.entries(nextBaselines)) {
     if (part.endsWith('.rels') && !activeRelationshipParts.has(part)) {
@@ -185,9 +203,16 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   for (const slide of activeCreatedSlides) {
     const relsPart = relationshipPartFor(slide.origin!.part);
     const relationships = changes[relsPart];
-    changes[relsPart] = createdSlideRelationships(
-      slide, relationships instanceof Uint8Array ? relationships : undefined,
-    );
+    const source = relationships instanceof Uint8Array
+      ? relationships : duplicateRelationshipSource(doc, slide, nextBaselines);
+    changes[relsPart] = slide.creation?.duplicateSourcePart
+      ? patchDuplicateSlideRelationships(source!, duplicateNotesBySlide.get(slide.origin!.part))
+      : createdSlideRelationships(slide, source);
+  }
+  for (const notes of duplicateNotes) {
+    const cloned = cloneDuplicateNotesParts(doc, nextBaselines, notes);
+    changes[notes.targetPart] = cloned.notes;
+    changes[relationshipPartFor(notes.targetPart)] = cloned.relationships;
   }
   if (nextBaselines[presentationPart]) {
     const relationships = nextBaselines[presentationRelsPart]
