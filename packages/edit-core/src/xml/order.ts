@@ -36,7 +36,7 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
   [expandedName(POWERPOINT_2010_NS, 'xfrm')]: { groups: [a('off'), a('ext')] },
   [expandedName(DRAWINGML_NS, 'ln')]: {
     groups: [FILL, a('prstDash', 'custDash'), a('round', 'bevel', 'miter'),
-      a('headEnd'), a('tailEnd')],
+      a('headEnd'), a('tailEnd'), a('extLst')],
   },
   [expandedName(DRAWINGML_NS, 'rPr')]: {
     groups: [a('ln'), FILL, EFFECT, a('highlight'), a('uLnTx', 'uLn'),

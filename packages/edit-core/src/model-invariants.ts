@@ -11,6 +11,8 @@ import { tableRowsWithoutTextOverrides } from './table-rows';
 import { assertTableRowAppendEditInfo } from './table-row-append-validation';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import { detachedSlideBaselineParts } from './save/remove-slide-parts';
+import { assertVectorFill } from './shape-fill';
+import { assertStroke } from './shape-stroke';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -317,6 +319,19 @@ export function validateEditDoc(doc: EditDoc): void {
     assertTextOverrides(doc, record);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
+    if (own(record.ovr, 'fill')) {
+      if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不能包含填充覆盖`);
+      }
+      assertVectorFill(record.ovr.fill, `元素 ${id} 的填充覆盖`);
+    }
+    if (own(record.ovr, 'stroke')) {
+      if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
+        || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不能包含描边覆盖`);
+      }
+      if (record.ovr.stroke !== null) assertStroke(record.ovr.stroke, `元素 ${id} 的描边覆盖`);
+    }
     if (record.meta.origin) {
       // 母版元素会按页投影成多个只读记录，但仍共享同一个 OOXML 锚点；只有可写节点必须独占锚点。
       if (record.meta.editable !== 'none') {

@@ -96,6 +96,37 @@ markup/defs 的元素；框架适配层无需猜 patch 类型。
 同一套世界坐标到父坐标换算；一个命令只生成一个撤销单元，已经对齐时不制造空历史。React、Vue、
 Web Component 或原生工具栏可把六个按钮直接映射到这条 JSON 命令，无需依赖 DOM 包内部结构。
 
+`SetFill { id, fill }` 修改形状的矢量填充：显式无填充、纯色、线性/径向渐变和渲染器支持的
+DrawingML 图案。`SetStroke { id, stroke }` 修改形状描边与图片边框，包括颜色、幻灯片像素线宽、
+预设虚线、端帽、连接、复合线和线端。颜色会在命令入口规范成 core 解析器使用的 `rgb()` / `rgba()`，
+角度、stop、透明度和线宽也会收敛到 OOXML 可往返精度；查询会显式补全实线、端帽、连接与无线端，
+避免 UI 把 XML 缺省误解成未定义。传 `null` 会删除直接覆盖并恢复来源/主题值；`{ type: 'none' }`
+是显式无填充或无描边，仍然属于直接格式。
+
+```ts
+import {
+  queryElementFill, queryElementStroke, SHAPE_PATTERN_PRESETS,
+} from '@web-ppt/edit-core';
+
+const fill = queryElementFill(editor.doc, selectedIds);
+// { value, mixed, direct } 可直接驱动 React/Vue/Svelte/Web Component 控件。
+editor.exec({
+  type: 'SetFill', id: elementId,
+  fill: {
+    type: 'gradient', angle: 45,
+    stops: [{ pos: 0, color: '#38BDF8' }, { pos: 1, color: '#6366F1' }],
+  },
+});
+editor.exec({
+  type: 'SetStroke', id: elementId,
+  stroke: { color: '#0F172A', width: 2, dash: [8, 6], cap: 'round', join: 'round' },
+});
+editor.exec({ type: 'SetFill', id: elementId, fill: null }); // 恢复继承填充
+const stroke = queryElementStroke(editor.doc, selectedIds);
+```
+
+图片填充上传/裁剪、效果、文字颜色和单元格边框是独立能力，不会被塞进这两条命令。
+
 `SetRunProps` 给半开文字区间写入稀疏字符格式覆盖，支持跨 run、跨段落设置字体、幻灯片像素字号、
 粗体、斜体、下划线和删除线。属性传 `null` 会删除直接格式并恢复 OOXML 继承值；公式保持不可拆且保留格式的原子，
 动态字段保存后仍是原字段。headless 的折叠选区刻意不写模型——待输入格式属于挂载的输入适配层，

@@ -1,5 +1,5 @@
 import type {
-  ElementBase, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide,
+  ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
@@ -57,7 +57,8 @@ type BaseOverrideKey =
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
-  fill?: ShapeElement['fill'];
+  /** 显式无填充用 Fill.none；缺少该字段才表示恢复来源/主题。 */
+  fill?: Exclude<Fill, { type: 'image' }>;
   stroke?: ShapeElement['stroke'] | ImageElement['stroke'];
   openGeom?: ShapeElement['openGeom'];
   src?: ImageElement['src'];
@@ -70,6 +71,20 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   /** 表格行使用稳定身份稀疏追加；不复制整张 rows，未来可沿同一身份扩展中间插入。 */
   tableRows?: Record<TableRowId, TableRowInsertion>;
 };
+
+export interface ElementFillState {
+  readonly value: Fill | null;
+  readonly mixed: boolean;
+  /** 任一目标存在直接覆盖时为 true；UI 可据此启用“恢复默认”。 */
+  readonly direct: boolean;
+}
+
+export interface ElementStrokeState {
+  readonly value: Stroke | null;
+  readonly mixed: boolean;
+  /** 任一目标存在直接覆盖时为 true；显式无描边同样属于直接覆盖。 */
+  readonly direct: boolean;
+}
 
 export interface TableCellOverrides {
   text?: TextOverride;

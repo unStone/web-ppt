@@ -56,7 +56,7 @@ const END_SIZE: Record<string, number> = { sm: 2, med: 3, lg: 5 };
 export function parseLineEnd(el: Element | null): LineEnd | undefined {
   if (!el) return undefined;
   const type = END_TYPES[attr(el, 'type') ?? 'none'];
-  if (!type || type === 'none') return undefined;
+  if (!type) return undefined;
   return {
     type,
     w: END_SIZE[attr(el, 'w') ?? 'med'] ?? 3,

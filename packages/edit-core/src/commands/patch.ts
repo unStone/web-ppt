@@ -5,6 +5,8 @@ import {
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type { EditDoc, ProjectionInvalidation, TableRowInsertion } from '../types';
 import { applyElementTransformPatch } from './element-transform';
+import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
+import { applyElementStrokePatch, isElementStrokePatch, validateElementStrokePatch } from './element-stroke';
 import {
   applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
 } from './element-order';
@@ -73,6 +75,20 @@ function validatePatch(
     && patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'order'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementOrderPatch(doc, patch as import('./types').ElementOrderPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'fill'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementFillPatch(doc, patch as import('./types').ElementFillPatch, index);
+    return;
+  }
+  if (Array.isArray(patch.path) && patch.path.length === 4
+    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'stroke'
+    && (patch.op === 'set' || patch.op === 'del')) {
+    validateElementStrokePatch(doc, patch as import('./types').ElementStrokePatch, index);
     return;
   }
   if (!Array.isArray(patch.path) || patch.path.length !== 4
@@ -195,6 +211,8 @@ export function applyPatches(doc: EditDoc, patches: readonly Patch[]): Projectio
     if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
+    else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
+    else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));

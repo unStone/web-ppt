@@ -100,6 +100,40 @@ flipped/non-uniformly scaled groups, and frame-only objects share the same world
 is one undo unit; already aligned targets create no empty history. A React, Vue, Web Component, or vanilla toolbar
 can map its six buttons directly to this JSON command without importing DOM internals.
 
+`SetFill { id, fill }` edits vector fills on shapes: explicit no-fill, solid color, linear/radial gradients,
+and renderer-supported DrawingML patterns. `SetStroke { id, stroke }` edits shape outlines and image borders,
+including color, pixel width, preset dash, cap, join, compound line, and line ends. Colors are normalized to the
+same `rgb()` / `rgba()` representation returned by core parsing; angles, stops, alpha, and line widths are also
+quantized to round-trippable OOXML precision. Queries materialize solid/default cap/join/no-end values so UI code
+does not mistake XML defaults for unknown state. Passing `null` removes the direct override and reveals the
+source/theme value; `{ type: 'none' }`
+is an explicit no-fill or no-stroke choice and remains direct formatting.
+
+```ts
+import {
+  queryElementFill, queryElementStroke, SHAPE_PATTERN_PRESETS,
+} from '@web-ppt/edit-core';
+
+const fill = queryElementFill(editor.doc, selectedIds);
+// { value, mixed, direct } is ready for React/Vue/Svelte/Web Component controls.
+editor.exec({
+  type: 'SetFill', id: elementId,
+  fill: {
+    type: 'gradient', angle: 45,
+    stops: [{ pos: 0, color: '#38BDF8' }, { pos: 1, color: '#6366F1' }],
+  },
+});
+editor.exec({
+  type: 'SetStroke', id: elementId,
+  stroke: { color: '#0F172A', width: 2, dash: [8, 6], cap: 'round', join: 'round' },
+});
+editor.exec({ type: 'SetFill', id: elementId, fill: null }); // restore inherited fill
+const stroke = queryElementStroke(editor.doc, selectedIds);
+```
+
+Image-fill upload/crop, effects, text color, and table-cell borders are separate capabilities rather than
+overloaded variants of these two commands.
+
 `SetRunProps` applies sparse character-format overrides to a half-open text range. It supports font family,
 font size in slide pixels, bold, italic, underline, and strike-through across run and paragraph boundaries.
 Use `null` to remove a direct override and reveal the inherited OOXML value; formulas remain indivisible,

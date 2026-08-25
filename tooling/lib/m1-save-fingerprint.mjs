@@ -170,6 +170,39 @@ if (mode === 'projected') {
     const id = doc.slideOrder.find((slideId) => doc.slides[slideId].origin?.part === scenario.part);
     if (!id) throw new Error(`M1 指纹固件缺少待复制页面：${scenario.part}`);
     editor.exec({ type: 'DuplicateSlide', id });
+  } else if (scenario.type === 'shapeFormat') {
+    const named = (name) => Object.values(doc.elements)
+      .find((record) => record.src.name === name);
+    for (const change of scenario.fills) {
+      const record = named(change.targetName);
+      if (!record) throw new Error(`M1 指纹固件缺少填充目标：${change.targetName}`);
+      editor.exec({ type: 'SetFill', id: record.id, fill: change.fill });
+    }
+    for (const change of scenario.strokes) {
+      const record = named(change.targetName);
+      if (!record) throw new Error(`M1 指纹固件缺少描边目标：${change.targetName}`);
+      editor.exec({ type: 'SetStroke', id: record.id, stroke: change.stroke });
+    }
+    editor.exec({
+      type: 'AddShape', slideId: doc.slideOrder[slideIndex],
+      preset: scenario.added.preset, rect: scenario.added.rect,
+    });
+    const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
+    if (!id) throw new Error('M1 指纹未得到格式化新增形状');
+    editor.exec(
+      { type: 'SetFill', id, fill: scenario.added.fill },
+      { type: 'SetStroke', id, stroke: scenario.added.stroke },
+    );
+    if (scenario.copied) {
+      const copied = named(scenario.copied.targetName);
+      if (!copied) throw new Error(`M1 指纹固件缺少复制格式目标：${scenario.copied.targetName}`);
+      editor.exec({
+        type: 'PasteElements', payload: edit.copyElements(doc, [copied.id]),
+        at: {
+          parentId: doc.slideOrder[slideIndex], x: scenario.copied.x, y: scenario.copied.y,
+        },
+      });
+    }
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

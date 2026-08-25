@@ -317,6 +317,37 @@ if (basename(savedPath) === 'body-props-editing.pptx') {
   geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
 }
 
+if (basename(savedPath) === 'shape-format.pptx') {
+  const markup = exportLibreOfficeSvg('形状格式');
+  const gradients = markup.match(/<linearGradient\b/g)?.length ?? 0;
+  const patterns = markup.match(/<pattern\b/g)?.length ?? 0;
+  const redLineEnds = markup.match(/<path fill="rgb\(239,68,68\)" stroke="none"/g)?.length ?? 0;
+  const evidence = {
+    gradients: gradients >= 2
+      && markup.includes('stop-color:rgb(14,165,233)')
+      && markup.includes('stop-color:rgb(217,70,239)'),
+    radial: patterns >= 2 && markup.includes('fill="rgb(249,115,22)"'),
+    pattern: markup.includes('fill="rgb(220,252,231)"')
+      && markup.includes('stroke="rgb(5,46,22)"'),
+    imageFillStroke: markup.includes('<image ')
+      && markup.includes('stroke="rgb(124,58,237)"'),
+    richStroke: markup.includes('stroke="rgb(239,68,68)"')
+      && markup.includes('stroke-width="53"')
+      && markup.includes('stroke-dasharray="424,159,53,159"'),
+    lineWidth: markup.includes(
+      '<path fill="none" stroke="rgb(17,24,39)" stroke-width="159" stroke-linejoin="miter"',
+    ),
+    lineEnds: redLineEnds >= 4,
+    addedShape: markup.includes('fill="rgb(253,224,71)"'),
+  };
+  if (!Object.values(evidence).every(Boolean)) {
+    throw new Error(`LibreOffice 形状格式证据无效：${JSON.stringify({
+      gradients, patterns, redLineEnds, ...evidence,
+    })}`);
+  }
+  geometryEvidence += `，形状格式 ${gradients} 个渐变/${patterns} 个图案、图片填充描边、线宽/虚线/端点与新增形状`;
+}
+
 if (basename(savedPath) === 'add-shape.pptx') {
   const markup = exportLibreOfficeSvg('新增形状几何');
   const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);

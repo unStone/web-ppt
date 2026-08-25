@@ -153,6 +153,25 @@ Product toolbars stay outside the base DOM package. Their six alignment actions 
 refreshes the interaction frame. This keeps the same integration surface for React, Vue, Web Components, and
 vanilla applications without putting a framework runtime into the editor package.
 
+Fill and outline controls use the same external-toolbar seam. The editor entry re-exports
+`queryElementFill`, `queryElementStroke`, and `SHAPE_PATTERN_PRESETS`, so an adapter can derive mixed/effective
+state and submit JSON commands without reading SVG or importing editor internals. Every mounted edit and view
+surface updates the target markup/defs partition; unchanged siblings and the page SVG keep their DOM identity.
+
+```ts
+import { openEditor, queryElementFill } from '@web-ppt/editor';
+
+const state = queryElementFill(session.editor.doc, selectedIds);
+session.editor.exec({
+  type: 'SetFill', id: selectedIds[0],
+  fill: { type: 'solid', color: state.mixed ? '#2563EB' : '#0EA5E9' },
+});
+session.editor.exec({
+  type: 'SetStroke', id: selectedIds[0],
+  stroke: { color: '#0F172A', width: 2, dash: null },
+});
+```
+
 Shape palettes use the same framework-neutral seam: call `session.editor.exec({ type: 'AddShape', ... })`.
 Every mounted view inserts the new SVG partition synchronously, the edit view shows its selection frame, and a
 double-click opens the existing text editor. View mode exposes no creation gesture; product code decides when to

@@ -1,4 +1,4 @@
-import type { GeomSpec, SlideElement } from '@web-ppt/core';
+import type { Fill, GeomSpec, SlideElement, Stroke } from '@web-ppt/core';
 import type {
   EditableKind, ElementId, ElementRecord, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
@@ -175,6 +175,20 @@ export interface DuplicateSlideCommand {
   readonly id: SlideId;
 }
 
+export interface SetFillCommand {
+  readonly type: 'SetFill';
+  readonly id: ElementId;
+  /** null 删除直接覆盖；显式无填充使用 { type: 'none' }。 */
+  readonly fill: Exclude<Fill, { type: 'image' }> | null;
+}
+
+export interface SetStrokeCommand {
+  readonly type: 'SetStroke';
+  readonly id: ElementId;
+  /** null 恢复来源；{type:'none'} 形成显式无描边。 */
+  readonly stroke: Stroke | { readonly type: 'none' } | null;
+}
+
 export type TextEditOp = {
   readonly type: 'replace';
   readonly from: TextPosition;
@@ -241,7 +255,7 @@ export interface InsertRowCommand {
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
-  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand;
+  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -255,6 +269,28 @@ type DeleteXfrmPatch = { [F in XfrmField]: {
   readonly origin: string;
 } }[XfrmField];
 export type ElementTransformPatch = SetXfrmPatch | DeleteXfrmPatch;
+
+export type ElementFillPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
+  readonly value: Exclude<Fill, { type: 'image' }>;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
+  readonly origin: string;
+};
+
+export type ElementStrokePatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
+  readonly value: Stroke | null;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
+  readonly origin: string;
+};
 
 export type ElementTextPatch = {
   readonly op: 'set';
@@ -329,7 +365,7 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementTextPatch | ElementOrderPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementTextPatch | ElementOrderPatch
   | ElementTreePatch | SlideTreePatch | SlideOrderPatch | TableRowPatch;
 
 export interface CommandPatches {

@@ -132,6 +132,25 @@ Shadow DOM 文本与活动 pointer 手势继续使用浏览器原生键盘行为
 替换真正移动的元素并刷新选择框。React、Vue、Web Component 与原生应用因此共用同一个集成面，
 框架运行时不会进入 editor 包。
 
+填充和描边控件复用同一个外置工具栏 seam。editor 发布入口直接转出 `queryElementFill`、
+`queryElementStroke` 与 `SHAPE_PATTERN_PRESETS`，适配层可读取有效值/混合态并提交 JSON 命令，
+无需扫描 SVG 或导入编辑器内部模块。所有已挂载的 edit/view 视图只更新目标 markup/defs 分区，
+未修改兄弟和整页 SVG 的 DOM 身份保持不变。
+
+```ts
+import { openEditor, queryElementFill } from '@web-ppt/editor';
+
+const state = queryElementFill(session.editor.doc, selectedIds);
+session.editor.exec({
+  type: 'SetFill', id: selectedIds[0],
+  fill: { type: 'solid', color: state.mixed ? '#2563EB' : '#0EA5E9' },
+});
+session.editor.exec({
+  type: 'SetStroke', id: selectedIds[0],
+  stroke: { color: '#0F172A', width: 2, dash: null },
+});
+```
+
 形状库也复用同一条无框架 seam：调用 `session.editor.exec({ type: 'AddShape', ... })`。所有挂载视图会
 同步插入新 SVG 分区，edit 视图显示选择框，双击继续打开既有文字编辑器。view 模式本身不提供创建手势；
 产品层决定何时展示命令，不需要导入 DOM 内部模块。

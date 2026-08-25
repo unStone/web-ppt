@@ -9,6 +9,7 @@ import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import { hasXfrmOverrides } from './xfrm';
 import { hasTextOverrides } from './text';
 import { hasOrderOverride } from './order';
+import { hasShapeFormatOverrides } from './shape-format';
 import { hasTableRowOverrides } from './table';
 import { materializeElementTreeState } from './insertion';
 import {
@@ -42,6 +43,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   const grouped = new Map<string, ElementRecord[]>();
   for (const record of Object.values(doc.elements)) {
     if (!hasXfrmOverrides(record) && !hasTextOverrides(record) && !hasOrderOverride(record)
+      && !hasShapeFormatOverrides(record)
       && !hasTableRowOverrides(record)
       && !record.meta.insertion) continue;
     const origin = record.meta.origin;
