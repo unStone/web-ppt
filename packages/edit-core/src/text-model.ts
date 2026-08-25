@@ -2,9 +2,11 @@ import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
-  LinkOverride, RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
+  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
+
+export { textBodyFromOverride } from './text-override-projection';
 
 const DEFAULT_RUN: Omit<TextRun, 'text'> = {
   b: false, i: false, u: false, strike: false, size: 18, color: '#000000', fonts: [],
@@ -63,43 +65,6 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
         directParagraphProps: paragraph.editInfo?.directParagraphProps,
       };
     }),
-  };
-}
-
-function textRun(mark: TextMark, text: string, source?: TextBody | null): TextRun {
-  const props = { ...mark.props };
-  if (props.field && source) {
-    const sourceRun = mark.source
-      ? source.paragraphs[mark.source.paragraph]?.runs[mark.source.run] : undefined;
-    const preservesField = mark.preserveSource && sourceRun?.field?.toLowerCase() === props.field.toLowerCase()
-      && sourceRun.text === text;
-    // 字段缓存一旦被局部改写，保存会降级为普通 run；投影必须采用同一字段身份语义。
-    if (!preservesField) delete props.field;
-  }
-  return { text: mark.atomText ?? text, ...props };
-}
-
-export function textBodyFromOverride(
-  override: Extract<TextOverride, { kind: 'flat' }>,
-  source?: TextBody | null,
-  resolveLink?: (link: Exclude<LinkOverride, { kind: 'none' }>) => string | undefined,
-): TextBody {
-  return {
-    ...override.body,
-    // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
-    paragraphs: override.paragraphs.map((paragraph): Paragraph => ({
-      ...paragraph.props,
-      runs: paragraph.marks.map((mark) => {
-        const run = textRun(mark, paragraph.text.slice(mark.from, mark.to), source);
-        const overrideLink = mark.runOverrides?.link;
-        if (overrideLink === undefined || overrideLink === null) return run;
-        if (overrideLink.kind === 'none') {
-          const { link: _link, ...withoutLink } = run;
-          return withoutLink;
-        }
-        return { ...run, link: resolveLink?.(overrideLink) };
-      }),
-    })),
   };
 }
 

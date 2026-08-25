@@ -7,6 +7,7 @@ import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffice-contract.mjs';
 import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libreoffice-contract.mjs';
+import { runChangeLayoutLibreOfficeContract } from './lib/change-layout-libreoffice-contract.mjs';
 import { runShapeEffectsLibreOfficeContract } from './lib/shape-effects-libreoffice-contract.mjs';
 import { runImageContentLibreOfficeContract } from './lib/image-content-libreoffice-contract.mjs';
 import { runSlidePropertiesLibreOfficeContract } from './lib/slide-properties-libreoffice-contract.mjs';
@@ -218,11 +219,11 @@ function firstRgbPixelFromPngDataUrl(fragment) {
   return [...raw.subarray(1, 4)];
 }
 
-function exportLibreOfficeSvg(label) {
-  const svg = join(out, `${basename(savedPath, extname(savedPath))}.svg`);
+function exportLibreOfficeSvg(label, sourcePath = savedPath) {
+  const svg = join(out, `${basename(sourcePath, extname(sourcePath))}.svg`);
   if (existsSync(svg)) unlinkSync(svg);
   const exported = spawnSync(soffice, [
-    '--headless', '--norestore', '--convert-to', 'svg', '--outdir', out, savedPath,
+    '--headless', '--norestore', '--convert-to', 'svg', '--outdir', out, sourcePath,
   ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
   if (exported.error) throw exported.error;
   if (exported.status !== 0 || !existsSync(svg)) {
@@ -250,8 +251,12 @@ function pdfPageCount(path) {
 
 const pdf = join(out, `${basename(savedPath, extname(savedPath))}.pdf`);
 if (existsSync(pdf)) unlinkSync(pdf);
+// 换版式固件故意只有一张隐藏页；默认 PDF 过滤会导出零页并误报 IO 失败。
+const pdfFormat = basename(savedPath) === 'change-layout.pptx'
+  ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
+  : 'pdf';
 const opened = spawnSync(soffice, [
-  '--headless', '--norestore', '--convert-to', 'pdf', '--outdir', out, savedPath,
+  '--headless', '--norestore', '--convert-to', pdfFormat, '--outdir', out, savedPath,
 ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
 if (opened.error) throw opened.error;
 if (opened.status !== 0) {
@@ -586,6 +591,12 @@ if (basename(savedPath) === 'remove-slide.pptx') {
 if (basename(savedPath) === 'duplicate-slide.pptx') {
   geometryEvidence += runDuplicateSlideLibreOfficeContract({
     savedPath, pages, out, root, soffice, exportSvg: exportLibreOfficeSvg,
+  });
+}
+
+if (basename(savedPath) === 'change-layout.pptx') {
+  geometryEvidence += runChangeLayoutLibreOfficeContract({
+    savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg,
   });
 }
 

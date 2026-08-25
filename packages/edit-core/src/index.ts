@@ -8,7 +8,7 @@ export { queryRunLink } from './run-links';
 export { queryParaProps } from './paragraph-properties';
 export { queryBodyProps } from './body-properties';
 export { queryElementFill, SHAPE_PATTERN_PRESETS } from './shape-fill';
-export { querySlideBackground, querySlideHidden } from './slide-properties';
+export { querySlideBackground, querySlideHidden, querySlideLayout } from './slide-properties';
 export { queryElementStroke } from './shape-stroke';
 export { queryElementEffects } from './shape-effects';
 export { queryElementCrop } from './image-content';
@@ -28,6 +28,7 @@ export {
   effectiveElement, invalidateAll, invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideStructure,
   slideOfElement, toSlide,
 } from './projection';
+export { projectedSlideElementIds, unboundLayoutPlaceholders } from './layout-projection';
 export {
   assertFractionalIndex, compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
 } from './fractional-index';
@@ -39,7 +40,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideBackgroundState, SlideHiddenState, SlideImageBackground,
+  CreateDocOptions, EditableKind, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideCreation, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -50,7 +51,7 @@ export type {
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementLinkPatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
   PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetFlipCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
-  ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLinkCommand, SetStrokeCommand, TableRowPatch,
+  ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, SlideLayoutPatch, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export {

@@ -76,6 +76,7 @@ tracker: local-markdown
 - [编辑元素与文字超链接](tickets/050-edit-hyperlinks.md) — 稳定页身份与安全外链贯通命令、查询、复制、最小保存及 edit/view/Viewer 键盘路由；Chrome 预算和 27 份 LibreOffice 工件通过。
 - [编辑页面矢量背景与隐藏状态](tickets/051-edit-slide-background-hidden.md) — 稳定页身份与来源恢复语义贯通背景/隐藏命令、查询、多视图、历史和保留型保存；Chrome 200 页预算及 28 份 LibreOffice 工件通过。
 - [上传并裁剪页面图片背景](tickets/052-slide-image-background.md) — 内容寻址媒体闭包与页面级来源物化贯通图片背景上传/裁剪、多视图、历史和保留型 `blipFill` 写回；Chrome 200 页预算及 30 份 LibreOffice 工件通过。
+- [为既有页面切换版式并保持内容](tickets/053-change-slide-layout.md) — 稀疏 `SetLayout` 与继承感知占位符重绑贯通多视图、历史和最小 slideLayout 关系写回；Chrome 200 页完整上屏及 31 份 LibreOffice 工件通过。
 
 ## Not yet specified
 

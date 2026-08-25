@@ -1,9 +1,10 @@
 ---
 title: 为既有页面切换版式并保持内容
-status: open
+status: in_progress
 labels:
   - wayfinder:task
 parent: ../map.md
+assignee: /root
 blocked_by:
   - ./006-preserving-xml-tree.md
   - ./008-command-patch-history.md
@@ -24,3 +25,11 @@ blocked_by:
 保存只改目标 slide 的 slideLayout 关系目标；关系 id 尽量保持，关系不存在或会话中新页才按确定规则创建。页面 XML、notes、媒体、动画、未知扩展和未触碰 part 保持；连续保存幂等，保存重开后的有效元素、占位符继承、背景和动态字段与保存前一致。
 
 确定性固件至少覆盖：同 `idx` 不同几何、按类型回退、目标缺少旧占位符、目标新增占位符、用户移动过的占位符、标题/正文文字、图片占位符、普通元素、主题背景、隐藏页、notes、动态页码与未知关系。Node 验证命令、查询、历史、最小 XML 与独立渲染指纹；真实 Chrome 验证双视图和 200 页单页换版式完整上屏 p95 小于 16ms；LibreOffice 打开、重存关系和渲染 oracle 通过，产物加入统一 PowerPoint 清单。
+
+## Resolution
+
+- `SetLayout { id, layoutId }` 以稀疏页级 patch 切换真实版式；页、元素和 OPC 身份不变。占位符先按 `idx`、再按标题/内容等价类型重绑，几何、外观、文字和项目符号只替换继承值，页面直设格式、背景、转场与内容保留。
+- 目标版式静态节点没有伪造 `EditDoc` 身份；新占位符只在 edit interaction layer 提示。`SlideEditor.queryLayout/setLayout` 为原生、React、Vue 等宿主提供同一公开 seam，view 模式拒绝写入。
+- 保存只改目标 slide 的 slideLayout 关系 Target，复用已有 rId；缺少关系时选最小可用 rId。slide XML、notes、媒体、动画、未知关系与其他 part 逐字保留，连续保存、撤销/重做、新页与复制页重开等价。
+- 固件 `sample-editor-change-layout.pptx` 连续生成两次 SHA-256 均为 `f4f870a5508d4a976ecec4449484cb6329ad508085ba479cc3f7174887d25f1a`。Chrome 200 页单页完整上屏 p95 `0.400ms`；LibreOffice 目标版式静态标记偏差 `0.417 SVG unit`，重存关系正确，全量 31 份 Office 产物均成功打开并导出。
+- 精确执行 `npm run check && npm test && npm run build`：core 2130、edit-core 715、保存 284、PowerPoint 报告 9、editor 288、60 份固件 / 182 页 / 364 对独立 SVG 指纹、metafile 130 全绿，五个发布包构建成功。

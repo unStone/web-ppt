@@ -1,6 +1,8 @@
 import {
-  effectiveElement, elementFrameToSlidePoint,
+  effectiveElement, elementFrameToParentMatrix, elementFrameToSlidePoint,
+  transformSpacePoint, unboundLayoutPlaceholders,
 } from '@web-ppt/edit-core';
+import type { SlideElement } from '@web-ppt/core';
 import type { EditDoc, ElementId, SlideId, SpacePoint } from '@web-ppt/edit-core';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -24,9 +26,20 @@ function corners(doc: EditDoc, id: ElementId): [SpacePoint, SpacePoint, SpacePoi
 }
 
 interface PlaceholderEntry {
-  readonly id: ElementId;
+  readonly id?: ElementId;
+  readonly layoutIdx?: string;
   readonly type: string;
   readonly points: readonly [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
+}
+
+function layoutCorners(element: SlideElement): PlaceholderEntry['points'] {
+  const matrix = elementFrameToParentMatrix(element);
+  return [
+    transformSpacePoint(matrix, { x: 0, y: 0 }),
+    transformSpacePoint(matrix, { x: element.w, y: 0 }),
+    transformSpacePoint(matrix, { x: element.w, y: element.h }),
+    transformSpacePoint(matrix, { x: 0, y: element.h }),
+  ];
 }
 
 function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
@@ -44,6 +57,16 @@ function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
     for (const child of record.children ?? []) visit(child);
   };
   for (const id of doc.slides[slideId]?.children ?? []) visit(id);
+  for (const element of unboundLayoutPlaceholders(doc, slideId)) {
+    const placeholder = element.editInfo?.placeholder;
+    if (!placeholder || !TEXT_PLACEHOLDERS.has(placeholder.type)
+      || element.w <= 0 || element.h <= 0) continue;
+    entries.push({
+      type: placeholder.type,
+      ...(placeholder.idx === undefined ? {} : { layoutIdx: placeholder.idx }),
+      points: layoutCorners(element),
+    });
+  }
   return entries;
 }
 
@@ -61,8 +84,8 @@ export function renderPlaceholderOverlay(
     return;
   }
   const entries = placeholders(doc, slideId);
-  const signature = `${zoom}\0${entries.map(({ id, points }) =>
-    `${id}:${points.map(({ x, y }) => `${x},${y}`).join(';')}`).join('\0')}`;
+  const signature = `${zoom}\0${entries.map(({ id, layoutIdx, type, points }) =>
+    `${id ?? `layout:${type}:${layoutIdx ?? ''}`}:${points.map(({ x, y }) => `${x},${y}`).join(';')}`).join('\0')}`;
   if (previous?.dataset.editPlaceholderSignature === signature) return;
   previous?.remove();
   const document = layer.ownerDocument;
@@ -71,19 +94,23 @@ export function renderPlaceholderOverlay(
   group.dataset.editPlaceholderSignature = signature;
   group.setAttribute('aria-hidden', 'true');
   group.style.pointerEvents = 'none';
-  for (const { id, type, points } of entries) {
-    const record = doc.elements[id];
+  for (const { id, layoutIdx, type, points } of entries) {
     const hit = svg(document, 'polygon');
-    hit.dataset.editPlaceholderId = id;
+    if (id) {
+      hit.dataset.editPlaceholderId = id;
+      hit.dataset.editId = id;
+    } else {
+      hit.dataset.editLayoutPlaceholder = '';
+      if (layoutIdx !== undefined) hit.dataset.editLayoutPlaceholderIdx = layoutIdx;
+    }
     hit.dataset.editPlaceholderType = type;
-    hit.dataset.editId = id;
     hit.setAttribute('points', points.map((point) => `${point.x},${point.y}`).join(' '));
     hit.setAttribute('fill', 'rgba(37,99,235,0.025)');
     hit.setAttribute('stroke', '#94a3b8');
     hit.setAttribute('stroke-width', String(1.25 / zoom));
     hit.setAttribute('stroke-dasharray', `${5 / zoom} ${4 / zoom}`);
-    hit.style.pointerEvents = 'all';
-    hit.style.cursor = type === 'pic' ? 'pointer' : 'text';
+    hit.style.pointerEvents = id ? 'all' : 'none';
+    if (id) hit.style.cursor = type === 'pic' ? 'pointer' : 'text';
     group.append(hit);
 
     const label = svg(document, 'text');
@@ -98,7 +125,7 @@ export function renderPlaceholderOverlay(
     label.setAttribute('fill', '#64748b');
     label.setAttribute('font-family', 'system-ui, sans-serif');
     label.setAttribute('font-size', String(15 / zoom));
-    label.textContent = LABELS[record.meta.ph!.type] ?? '添加内容';
+    label.textContent = LABELS[type] ?? '添加内容';
     group.append(label);
   }
   layer.prepend(group);

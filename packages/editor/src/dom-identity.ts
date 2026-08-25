@@ -1,3 +1,4 @@
+import { projectedSlideElementIds } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId, SlideId } from '@web-ppt/edit-core';
 
 export function elementIds(doc: EditDoc, roots: readonly ElementId[]): ElementId[] {
@@ -24,18 +25,24 @@ function findByIdentity(root: ParentNode, attribute: 'editId' | 'editRoot', id: 
     .find((node) => node.dataset[attribute] === id) ?? null;
 }
 
-export function bindElementIdentities(root: ParentNode, doc: EditDoc, roots: readonly ElementId[]): void {
-  const ids = elementIds(doc, roots);
+function bindProjectedIdentities(
+  root: ParentNode,
+  doc: EditDoc,
+  ids: readonly (ElementId | null)[],
+): void {
   const nodes = includingRoot(root, '[data-el]');
   if (nodes.length !== ids.length) throw new Error('渲染节点与编辑投影的元素数量不一致');
   nodes.forEach((node, index) => {
     const id = ids[index];
+    // 目标版式的静态元素只参与投影，不伪造可编辑的 EditDoc 身份。
+    if (id === null) return;
     if (String(doc.elements[id].src.id) !== node.dataset.el) {
       throw new Error(`渲染节点与编辑投影的顺序不一致：${id}`);
     }
     node.dataset.editId = id;
   });
   for (const id of ids) {
+    if (id === null) continue;
     const identity = findByIdentity(root, 'editId', id);
     if (!identity) throw new Error(`渲染结果缺少编辑元素：${id}`);
     const partition = identity.parentElement?.localName === 'a' ? identity.parentElement : identity;
@@ -43,8 +50,12 @@ export function bindElementIdentities(root: ParentNode, doc: EditDoc, roots: rea
   }
 }
 
+export function bindElementIdentities(root: ParentNode, doc: EditDoc, roots: readonly ElementId[]): void {
+  bindProjectedIdentities(root, doc, elementIds(doc, roots));
+}
+
 export function bindSlideIdentities(root: ParentNode, doc: EditDoc, slideId: SlideId): void {
-  bindElementIdentities(root, doc, doc.slides[slideId].children);
+  bindProjectedIdentities(root, doc, projectedSlideElementIds(doc, slideId));
 }
 
 export function findElementPartition(root: ParentNode, id: ElementId): SVGElement | null {

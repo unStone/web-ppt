@@ -1,7 +1,8 @@
 import type {
   EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
-  RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
+  RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
+import { querySlideLayout } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
@@ -331,6 +332,16 @@ class DomSlideEditor implements SlideEditor {
   setBackgroundCrop(crop: ImageCrop | null): boolean {
     if (this.isDestroyed || this.currentMode !== 'edit') return false;
     this.session.editor.exec({ type: 'SetBackgroundCrop', id: this.currentSlide, crop });
+    return true;
+  }
+
+  queryLayout(): SlideLayoutState {
+    return querySlideLayout(this.session.editor.doc, [this.currentSlide]);
+  }
+
+  setLayout(layoutId: string): boolean {
+    if (this.isDestroyed || this.currentMode !== 'edit') return false;
+    this.session.editor.exec({ type: 'SetLayout', id: this.currentSlide, layoutId });
     return true;
   }
 

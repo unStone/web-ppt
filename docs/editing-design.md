@@ -126,7 +126,7 @@ flowchart TB
 | `packages/editor` | `@web-ppt/editor` | `core` + `edit-core` + `viewer-core` | ✅ | 只做 DOM 绑定与手势，不做业务决策 |
 | `apps/editor` | private | 上面全部 | ❌ | 应用框架（Cordis 之类）只出现在这层 |
 
-**对 core 的改动一律是加法**，四条不可破坏的约束原样成立：
+**对 core 的 API 与分层改动一律是加法**，四条不可破坏的约束原样成立。唯一例外是保存回环暴露出已有 Schema 字段对 OOXML choice 的错误求值：可以修正解析器，但必须同时证明普通预览更接近 Office、既有快照无回归、保存重开等价，且不能把编辑状态带进普通模型。
 
 | 约束 | 本方案是否仍成立 | 说明 |
 |---|---|---|

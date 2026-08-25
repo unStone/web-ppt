@@ -1,6 +1,6 @@
 import type {
   ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
-  RunPropertiesState, RunPropertyOverrides, SlideId, TextBodyProperties, TextBodyPropertyOverrides,
+  RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
@@ -60,6 +60,9 @@ export interface SlideEditor {
   setBackgroundImage(file: Blob, options?: ImageBackgroundOptions): Promise<SlideId>;
   chooseBackgroundImage(options?: ImageBackgroundOptions): Promise<SlideId | null>;
   setBackgroundCrop(crop: ImageCrop | null): boolean;
+  queryLayout(): SlideLayoutState;
+  /** 只接受当前文档的 layoutId；查看模式不改模型。 */
+  setLayout(layoutId: string): boolean;
   insertTable(rows: number, cols: number, options?: TableInsertOptions): ElementId;
   /** 双击图片之外的框架无关入口；省略 id 时使用当前单选图片。 */
   startImageCrop(id?: ElementId): boolean;

@@ -6,6 +6,7 @@ import { isElementOrderPatch } from './commands/element-order';
 import { isSlideTreePatch, slidePatchSets } from './commands/slide-tree';
 import { isSlideOrderPatch } from './commands/slide-order';
 import { isSlideBackgroundPatch } from './commands/slide-property';
+import { isSlideLayoutPatch } from './commands/slide-layout';
 import { fitTextShapePatches } from './commands/fit-text-shape';
 import { isImageResourcePatch } from './commands/element-image-content';
 import { writableLayerSiblingIds } from './element-order';
@@ -36,7 +37,8 @@ function affectsSlideSequence(patches: readonly Patch[]): boolean {
 }
 
 function renderPatchSlides(patches: readonly Patch[]): Set<SlideId> {
-  return new Set(patches.filter(isSlideBackgroundPatch).map((patch) => patch.path[1]));
+  return new Set(patches.filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
+    .map((patch) => patch.path[1]));
 }
 
 function renderPatchElements(
@@ -100,7 +102,7 @@ function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): v
   const slidePropertyConflict = commands.flatMap((command) =>
     command.type === 'SetBackground' || command.type === 'SetBackgroundImage'
       || command.type === 'SetBackgroundCrop'
-      || command.type === 'SetHidden' ? [command.id] : [])
+      || command.type === 'SetHidden' || command.type === 'SetLayout' ? [command.id] : [])
     .find((id) => removedSlideIds.has(id));
   // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
   if (slidePropertyConflict) {

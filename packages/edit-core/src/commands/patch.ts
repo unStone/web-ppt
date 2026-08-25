@@ -6,8 +6,8 @@ import {
 } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type {
-  EditDoc, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
-  SlideImageBackground, TableRowInsertion,
+  EditDoc, ElementId, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
+  SlideId, SlideImageBackground, TableRowInsertion,
 } from '../types';
 import { applyElementTransformPatch } from './element-transform';
 import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
@@ -35,6 +35,9 @@ import {
   isSlidePropertyPatch, validateSlidePropertyPatch, assertSlideImageBackground,
   assertSlideImageBackgroundDimensions,
 } from './slide-property';
+import {
+  applySlideLayoutPatch, isSlideLayoutPatch, validateSlideLayoutPatch,
+} from './slide-layout';
 import type {
   ElementTransformPatch, ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
@@ -75,6 +78,10 @@ function validatePatch(
   }
   if (isSlidePropertyPatch(input)) {
     validateSlidePropertyPatch(doc, input, index, stagedImageResources);
+    return;
+  }
+  if (isSlideLayoutPatch(input)) {
+    validateSlideLayoutPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path[0] === 'elements'
@@ -273,6 +280,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
+    else if (isSlideLayoutPatch(patch)) applySlideLayoutPatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
@@ -287,6 +295,16 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
   for (const parent of orderParents) sortElementChildrenByOrder(doc, parent);
+}
+
+function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
+  const ids: ElementId[] = [];
+  const visit = (id: ElementId): void => {
+    ids.push(id);
+    for (const child of doc.elements[id]?.children ?? []) visit(child);
+  };
+  for (const id of doc.slides[slideId].children) visit(id);
+  return ids;
 }
 
 function applyPatchBatch(
@@ -398,7 +416,9 @@ function applyPatchBatch(
       for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
       for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
     }
-    const dirty = isSlidePropertyPatch(patch)
+    const dirty = isSlideLayoutPatch(patch)
+      ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
+      : isSlidePropertyPatch(patch)
       ? invalidateSlide(doc, patch.path[1])
       : isSlideTreePatch(patch)
       ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))

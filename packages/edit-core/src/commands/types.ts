@@ -6,7 +6,8 @@ import type {
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
 import type {
-  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlidePropertyPatch,
+  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
+  SetLayoutCommand, SlideLayoutPatch, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type {
@@ -14,7 +15,9 @@ export type {
   ClipboardTextLink, ClipboardXmlRoot, ElementClipboardPayload, ElementClipboardRecordMeta,
 } from './clipboard-types';
 export type {
-  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
+  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
+  SetLayoutCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SlideLayoutPatch, SlidePropertyPatch,
 } from './slide-property-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
@@ -238,7 +241,7 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
-  | SetHiddenCommand;
+  | SetHiddenCommand | SetLayoutCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -404,7 +407,7 @@ export type TableRowPatch = {
 };
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
-  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | TableRowPatch;
+  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

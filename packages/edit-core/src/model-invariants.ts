@@ -223,6 +223,12 @@ export function validateEditDoc(doc: EditDoc): void {
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
     if (slide.id !== slideId) throw new Error(`幻灯片 key 与 id 不一致：${slideId}`);
     if (doc.elements[slideId]) throw new Error(`幻灯片与元素 id 冲突：${slideId}`);
+    if (slide.layoutId !== undefined && !doc.layoutOrder.includes(slide.layoutId)) {
+      throw new Error(`幻灯片 ${slideId} 的当前版式不存在：${slide.layoutId}`);
+    }
+    if (slide.sourceLayoutId !== undefined && !doc.layoutOrder.includes(slide.sourceLayoutId)) {
+      throw new Error(`幻灯片 ${slideId} 的来源版式不存在：${slide.sourceLayoutId}`);
+    }
     if (own(slide.ovr, 'background')) {
       if (slide.ovr.background === null) throw new Error(`幻灯片 ${slideId} 的直接背景不能是 null`);
       if (slide.ovr.background?.type === 'image') {
@@ -256,9 +262,10 @@ export function validateEditDoc(doc: EditDoc): void {
       const creation = slide.creation;
       const notesFields = [creation.duplicateNotesSourcePart, creation.duplicateNotesPart];
       const removedSpids = creation.duplicateRemovedSpids ?? [];
-      if (!slide.origin || slide.creation.layoutPart !== slide.layoutId
+      if (!slide.origin || !slide.layoutId
         || !/^ppt\/slides\/slide\d+\.xml$/.test(slide.origin.part)
-        || !doc.layouts[slide.creation.layoutPart]
+        || !doc.layoutOrder.includes(slide.creation.layoutPart)
+        || !doc.layoutOrder.includes(slide.layoutId)
         || typeof slide.creation.layoutRelationshipId !== 'string'
         || !slide.creation.layoutRelationshipId
         || !Number.isSafeInteger(slide.creation.presentationSlideId)

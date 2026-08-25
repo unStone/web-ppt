@@ -5,6 +5,8 @@ import type {
 import {
   assertTableCellAddress, tableCellOverrideKey, tableCellRowRef,
 } from '../table-cell';
+import { rebasedTextBase } from '../layout-projection';
+import { slideOfElement } from '../projection';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
 import type { ElementTextPatch } from './types';
 
@@ -66,6 +68,15 @@ export function textTargetContext(
 ): TextTargetContext {
   const record = doc.elements[target.id];
   if (!record) throw new Error(`找不到可编辑文字的元素：${target.id}`);
+  if (target.cell === undefined) {
+    const body = rebasedTextBase(doc, slideOfElement(doc, target.id), target.id);
+    if (record.meta.editable !== 'full' || record.src.kind !== 'shape' || !body) {
+      throw new Error(`找不到可编辑文字的形状：${target.id}`);
+    }
+    return {
+      record, body, before: record.ovr.text, patchTarget: { id: target.id },
+    };
+  }
   return textTargetContextForRecord(record, target);
 }
 

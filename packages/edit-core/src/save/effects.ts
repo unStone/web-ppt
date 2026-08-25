@@ -73,8 +73,11 @@ export function hasEffectsOverride(record: ElementRecord): boolean {
   return own(record.ovr, 'effects');
 }
 
-export function patchElementEffects(document: XmlDocument, record: ElementRecord): void {
-  if (!hasEffectsOverride(record)) return;
+export function materializeElementEffects(
+  document: XmlDocument,
+  record: ElementRecord,
+  effects: Effects,
+): void {
   const properties = shapeProperties(document, record);
   let list = findXmlChild(properties, { localName: 'effectLst', namespaceUri: DRAWINGML_NS });
   const dag = findXmlChild(properties, { localName: 'effectDag', namespaceUri: DRAWINGML_NS });
@@ -85,5 +88,10 @@ export function patchElementEffects(document: XmlDocument, record: ElementRecord
   }
   // SetEffects 是完整替换；保留 effectLst 自身未知属性和宿主邻接节点，但不混入旧效果图。
   for (const child of xmlElementChildren(list)) removeXmlChild(list, child);
-  appendEffects(list, record.ovr.effects ?? {});
+  appendEffects(list, effects);
+}
+
+export function patchElementEffects(document: XmlDocument, record: ElementRecord): void {
+  if (!hasEffectsOverride(record)) return;
+  materializeElementEffects(document, record, record.ovr.effects ?? {});
 }

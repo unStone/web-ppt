@@ -75,7 +75,7 @@ function lineEnd(line: XmlElement, name: 'headEnd' | 'tailEnd', value: LineEnd):
   insertXmlInOrder(line, node);
 }
 
-function patchLine(properties: XmlElement, stroke: Stroke | null): void {
+function patchLine(properties: XmlElement, stroke: Stroke | null, materializeDefaults = true): void {
   let line = findXmlChild(properties, { localName: 'ln', namespaceUri: DRAWINGML_NS });
   if (!line) {
     line = namespacedElement(properties, DRAWINGML_NS, 'ln');
@@ -93,23 +93,32 @@ function patchLine(properties: XmlElement, stroke: Stroke | null): void {
     return;
   }
   setXmlAttribute(line, 'w', String(Math.round(stroke.width * 9525)));
-  const cap = stroke.cap ?? 'butt';
-  setXmlAttribute(line, 'cap', cap === 'butt' ? 'flat' : cap === 'round' ? 'rnd' : 'sq');
-  setXmlAttribute(line, 'cmpd', stroke.compound ?? 'sng');
+  const cap = stroke.cap;
+  if (cap !== undefined || materializeDefaults) {
+    const value = cap ?? 'butt';
+    setXmlAttribute(line, 'cap', value === 'butt' ? 'flat' : value === 'round' ? 'rnd' : 'sq');
+  }
+  if (stroke.compound !== undefined || materializeDefaults) {
+    setXmlAttribute(line, 'cmpd', stroke.compound ?? 'sng');
+  }
   const solid = namespacedElement(line, DRAWINGML_NS, 'solidFill');
   insertXmlInOrder(line, solid);
   appendDrawingColor(solid, stroke.color);
   const dashName = strokeDashName(stroke);
-  const dash = namespacedElement(line, DRAWINGML_NS, 'prstDash');
-  setXmlAttribute(dash, 'val', dashName ?? 'solid');
-  insertXmlInOrder(line, dash);
-  const joinName = stroke.join ?? 'miter';
-  const join = namespacedElement(line, DRAWINGML_NS, joinName === 'round' ? 'round'
-    : joinName === 'bevel' ? 'bevel' : 'miter');
-  insertXmlInOrder(line, join);
+  if (dashName || materializeDefaults) {
+    const dash = namespacedElement(line, DRAWINGML_NS, 'prstDash');
+    setXmlAttribute(dash, 'val', dashName ?? 'solid');
+    insertXmlInOrder(line, dash);
+  }
+  if (stroke.join !== undefined || materializeDefaults) {
+    const joinName = stroke.join ?? 'miter';
+    const join = namespacedElement(line, DRAWINGML_NS, joinName === 'round' ? 'round'
+      : joinName === 'bevel' ? 'bevel' : 'miter');
+    insertXmlInOrder(line, join);
+  }
   const noEnd: LineEnd = { type: 'none', w: 3, h: 3 };
-  lineEnd(line, 'headEnd', stroke.head ?? noEnd);
-  lineEnd(line, 'tailEnd', stroke.tail ?? noEnd);
+  if (stroke.head !== undefined || materializeDefaults) lineEnd(line, 'headEnd', stroke.head ?? noEnd);
+  if (stroke.tail !== undefined || materializeDefaults) lineEnd(line, 'tailEnd', stroke.tail ?? noEnd);
 }
 
 function shapeProperties(document: XmlDocument, record: ElementRecord): XmlElement {
@@ -117,6 +126,25 @@ function shapeProperties(document: XmlDocument, record: ElementRecord): XmlEleme
   const properties = findXmlChild(host, { localName: 'spPr', namespaceUri: PRESENTATIONML_NS });
   if (!properties) throw new Error(`元素 ${record.id} 缺少 p:spPr`);
   return properties;
+}
+
+/** 目标版式不再提供占位符时，把旧版式的有效矢量填充固定到页面宿主。 */
+export function materializeElementFill(
+  document: XmlDocument,
+  record: ElementRecord,
+  fill: Exclude<Fill, { type: 'image' }> | null,
+): void {
+  const properties = shapeProperties(document, record);
+  removeDrawingFillChildren(properties);
+  appendVectorFill(properties, fill ?? { type: 'none' });
+}
+
+export function materializeElementStroke(
+  document: XmlDocument,
+  record: ElementRecord,
+  stroke: Stroke | null,
+): void {
+  patchLine(shapeProperties(document, record), stroke, false);
 }
 
 export function hasShapeFormatOverrides(record: ElementRecord): boolean {

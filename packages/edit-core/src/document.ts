@@ -1,5 +1,7 @@
 import type { Presentation, SlideElement } from '@web-ppt/core';
 import { registerSessionAssets, releaseSessionAssets } from './session-assets';
+import { releaseLayoutProjectionCache } from './layout-projection';
+import { releaseProjectionCache } from './projection';
 import { initialFractionalIndex } from './fractional-index';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
@@ -47,11 +49,15 @@ export function elementMetaOf(
   return {
     ...(info?.geom ? { geom: info.geom } : {}),
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
+    ...(info?.placeholderDirect ? { placeholderDirect: info.placeholderDirect } : {}),
+    ...(info?.placeholderInheritedEffects
+      ? { placeholderInheritedEffects: info.placeholderInheritedEffects } : {}),
     ...(info?.origin ? { origin: info.origin } : {}),
     ...(info?.moveLocked ? { moveLocked: true } : {}),
     ...(info?.textTemplate ? { textTemplate: info.textTemplate } : {}),
     ...(info?.readonlyLink ? { sourceLinkReadonly: true } : {}),
     editable,
+    ...(belongsToInheritedPart ? { inherited: true as const } : {}),
   };
 }
 
@@ -111,6 +117,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       dynamicSlideLinks,
       origin: slide.editInfo?.origin ?? null,
       ...(slide.editInfo?.layoutId ? { layoutId: slide.editInfo.layoutId } : {}),
+      ...(slide.editInfo?.layoutId ? { sourceLayoutId: slide.editInfo.layoutId } : {}),
+      ...(slide.editInfo?.directBackground ? { sourceDirectBackground: true as const } : {}),
+      ...(slide.editInfo?.directTransition ? { sourceDirectTransition: true as const } : {}),
+      ...(slide.editInfo?.hideMasterShapes ? { sourceHideMasterShapes: true as const } : {}),
       ...(slide.editInfo?.defaultShape
         ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
       ...(slide.editInfo?.defaultTable
@@ -201,6 +211,10 @@ export function allocateElementId(doc: EditDoc): ElementId {
 
 function assignPackage(doc: EditDoc, pkg: EditDoc['package']): void {
   const previous = doc.package;
+  if (previous !== pkg) {
+    releaseLayoutProjectionCache(doc);
+    releaseProjectionCache(doc);
+  }
   (doc as { package: EditDoc['package'] }).package = pkg;
   if (previous !== pkg) (previous as OwnedOpcPackage | null)?.dispose?.();
 }

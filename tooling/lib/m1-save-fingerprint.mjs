@@ -162,6 +162,11 @@ if (mode === 'projected') {
       type: 'MoveSlide', id: slideByPart(move.part),
       at: { after: move.afterPart === null ? null : slideByPart(move.afterPart) },
     });
+  } else if (scenario.type === 'changeLayout') {
+    const layoutId = doc.layoutOrder.find((id) =>
+      doc.layouts[id].name === scenario.targetLayoutName);
+    if (!layoutId) throw new Error(`M1 指纹固件缺少版式：${scenario.targetLayoutName}`);
+    editor.exec({ type: 'SetLayout', id: doc.slideOrder[slideIndex], layoutId });
   } else if (scenario.type === 'removeSlide') {
     const id = doc.slideOrder.find((slideId) => doc.slides[slideId].origin?.part === scenario.part);
     if (!id) throw new Error(`M1 指纹固件缺少待删除页面：${scenario.part}`);

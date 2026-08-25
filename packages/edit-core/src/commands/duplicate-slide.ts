@@ -9,9 +9,6 @@ import {
 } from './add-slide-identity';
 import type { CommandPatches, DuplicateSlideCommand, SlideTreePatch } from './types';
 
-const LAYOUT_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout';
-const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
-
 function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   layoutId: string;
   notesPart?: string;
@@ -35,9 +32,9 @@ function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
     const type = findXmlAttribute(relation, { localName: 'Type', namespaceUri: null })?.value;
     const target = findXmlAttribute(relation, { localName: 'Target', namespaceUri: null })?.value;
     const mode = findXmlAttribute(relation, { localName: 'TargetMode', namespaceUri: null })?.value;
-    if (type === LAYOUT_REL) {
+    if (type?.endsWith('/slideLayout')) {
       layoutId = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
-    } else if (type === NOTES_REL && target && mode !== 'External') {
+    } else if (type?.endsWith('/notesSlide') && target && mode !== 'External') {
       notesPart = resolveRelationshipTarget(part!, target);
     }
   }
@@ -123,6 +120,8 @@ export function duplicateSlidePatches(
       dynamicSlideNumbers: source.dynamicSlideNumbers.map((elementId) => cloned.remap.get(elementId)!),
       dynamicSlideLinks: source.dynamicSlideLinks.map((elementId) => cloned.remap.get(elementId)!),
       origin: { part: opc.part },
+      // 副本仍从同一页 XML 基线起步；保留来源版式才能让未保存的 SetLayout 继续做稀疏继承。
+      sourceLayoutId: source.sourceLayoutId ?? source.layoutId,
       creation: {
         layoutPart: source.layoutId,
         layoutRelationshipId: relationshipInfo.layoutId,

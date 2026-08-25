@@ -3,6 +3,7 @@ import type { ColorCtx } from './color';
 import { extractLstStyle } from './text';
 import type { LevelStyles, ThemeFonts } from './text';
 import type { ImageMetadata } from '../image-metadata';
+import { findPlaceholderByIdentity } from '../placeholder-match';
 
 export type Rels = Record<string, { type: string; target: string }>;
 
@@ -44,6 +45,8 @@ export interface Env {
   hiddenPh: Set<string>;
   slideIdMap: Record<string, number>;
   edit: boolean;
+  /** 仅版式目录解析开启；为九级占位符建立一次共享输入模板，不放大每页模型。 */
+  layoutCatalog?: boolean;
 }
 
 export interface SlideInheritance {
@@ -112,24 +115,8 @@ function collectPh(tree: Element | null): PhInfo[] {
   return out;
 }
 
-export const PH_EQUIV: Readonly<Record<string, readonly string[]>> = {
-  title: ['title', 'ctrTitle'], ctrTitle: ['ctrTitle', 'title'],
-  body: ['body', 'subTitle', 'obj'], subTitle: ['subTitle', 'body'], obj: ['obj', 'body'],
-};
-
 export function findPh(list: PhInfo[], type: string | null, idx: string | null): Element | null {
-  if (idx !== null) {
-    const matched = list.find((placeholder) => placeholder.idx === idx);
-    if (matched) return matched.sp;
-  }
-  if (type) {
-    for (const candidate of PH_EQUIV[type] ?? [type]) {
-      const matched = list.find((placeholder) => placeholder.type === candidate);
-      if (matched) return matched.sp;
-    }
-  }
-  if (!type && idx === null) return list.find((placeholder) => placeholder.type === 'body')?.sp ?? null;
-  return null;
+  return findPlaceholderByIdentity(list, (placeholder) => placeholder, { type, idx })?.sp ?? null;
 }
 
 export function slideInheritance(
@@ -137,11 +124,11 @@ export function slideInheritance(
   slideRoot: Element | null,
   layoutPath: string | null,
   presentationRoot: Element,
-  docDefaults: LevelStyles,
   tableStyles: Element | null,
   slideIdMap: Record<string, number>,
   slideNum: number,
   edit: boolean,
+  sharedDocDefaults?: LevelStyles,
 ): SlideInheritance {
   const layoutRoot = layoutPath ? pkg.xml(layoutPath) : null;
   const layoutRels = layoutPath ? pkg.rels(layoutPath) : {};
@@ -159,6 +146,7 @@ export function slideInheritance(
     ?? walk(layoutRoot, 'clrMapOvr', 'overrideClrMapping');
   if (override) for (const attribute of Array.from(override.attributes)) clrMap[attribute.localName] = attribute.value;
   const ctx: ColorCtx = { theme: theme.colors, clrMap };
+  const docDefaults = sharedDocDefaults ?? { lvls: [] };
   if (!docDefaults.def && !docDefaults.lvls.length) {
     const defaults = extractLstStyle(kid(presentationRoot, 'defaultTextStyle'), ctx, theme.fonts);
     docDefaults.def = defaults.def;

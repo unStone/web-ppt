@@ -1,3 +1,4 @@
+import type { SlideElement } from '@web-ppt/core';
 import type { ElementRecord } from '../types';
 import { isFrameSaveXfrmField, XFRM_FIELDS } from '../commands/xfrm';
 import { insertXmlInOrder } from '../xml/order';
@@ -117,17 +118,19 @@ function childOrInsert(parent: XmlElement, localName: string): XmlElement {
   return child;
 }
 
-function materializeTransform(xfrm: XmlElement, record: ElementRecord): void {
-  const effective = { ...record.src, ...record.ovr };
+function materializeTransform(xfrm: XmlElement, effective: SlideElement, label: string): void {
   const off = childOrInsert(xfrm, 'off');
   const ext = childOrInsert(xfrm, 'ext');
-  setXmlAttribute(off, 'x', emu(effective.x, `${record.id}.x`));
-  setXmlAttribute(off, 'y', emu(effective.y, `${record.id}.y`));
-  setXmlAttribute(ext, 'cx', emu(effective.w, `${record.id}.w`));
-  setXmlAttribute(ext, 'cy', emu(effective.h, `${record.id}.h`));
-  if (effective.rot !== 0) setXmlAttribute(xfrm, 'rot', angle(effective.rot, `${record.id}.rot`));
-  if (effective.flipH) setXmlAttribute(xfrm, 'flipH', '1');
-  if (effective.flipV) setXmlAttribute(xfrm, 'flipV', '1');
+  setXmlAttribute(off, 'x', emu(effective.x, `${label}.x`));
+  setXmlAttribute(off, 'y', emu(effective.y, `${label}.y`));
+  setXmlAttribute(ext, 'cx', emu(effective.w, `${label}.w`));
+  setXmlAttribute(ext, 'cy', emu(effective.h, `${label}.h`));
+  if (effective.rot !== 0) setXmlAttribute(xfrm, 'rot', angle(effective.rot, `${label}.rot`));
+  else removeXmlAttribute(xfrm, 'rot');
+  for (const field of ['flipH', 'flipV'] as const) {
+    if (effective[field]) setXmlAttribute(xfrm, field, '1');
+    else removeXmlAttribute(xfrm, field);
+  }
 }
 
 function transformNode(document: XmlDocument, record: ElementRecord): { xfrm: XmlElement; created: boolean } {
@@ -158,7 +161,9 @@ export function patchElementXfrm(document: XmlDocument, record: ElementRecord): 
     throw new Error(`框架对象 ${record.id} 只允许写回位置、尺寸与粘贴补偿翻转`);
   }
   const { xfrm, created } = transformNode(document, record);
-  if (created) materializeTransform(xfrm, record);
+  if (created) materializeTransform(
+    xfrm, { ...record.src, ...record.ovr } as SlideElement, record.id,
+  );
 
   const effective = { ...record.src, ...record.ovr };
   const hasOff = own(record.ovr, 'x') || own(record.ovr, 'y');
@@ -192,4 +197,15 @@ export function patchElementXfrm(document: XmlDocument, record: ElementRecord): 
     if (effective[field]) setXmlAttribute(xfrm, field, '1');
     else removeXmlAttribute(xfrm, field);
   }
+}
+
+/** 版式目标缺失时写入完整有效 frame，使 Office 重开不再依赖已经断开的旧版式宿主。 */
+export function materializeElementXfrm(
+  document: XmlDocument,
+  record: ElementRecord,
+  effective: SlideElement,
+): void {
+  if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可写回`);
+  const { xfrm } = transformNode(document, record);
+  materializeTransform(xfrm, effective, record.id);
 }

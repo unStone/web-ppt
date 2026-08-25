@@ -9,21 +9,24 @@ const EMPTY_ASSETS = Object.freeze(Object.create(null)) as NonNullable<OpcPackag
 export function createOwnedPackage(
   bytes: Uint8Array,
   parts: Readonly<Record<string, Uint8Array>>,
+  assets: OpcPackage['assets'] = EMPTY_ASSETS,
 ): OpcPackage {
   let currentBytes = bytes;
   let currentParts = parts;
+  let currentAssets = assets;
   let disposed = false;
   const handle = {
     format: 'pptx' as const,
     get bytes(): Uint8Array { return currentBytes; },
     get parts(): Readonly<Record<string, Uint8Array>> { return currentParts; },
-    get assets(): OpcPackage['assets'] { return EMPTY_ASSETS; },
+    get assets(): OpcPackage['assets'] { return currentAssets; },
     get disposed(): boolean { return disposed; },
   } as OwnedOpcPackage;
   Object.defineProperty(handle, 'dispose', {
     value: () => {
       currentBytes = EMPTY_BYTES;
       currentParts = EMPTY_PARTS;
+      currentAssets = EMPTY_ASSETS;
       disposed = true;
     },
   });

@@ -308,8 +308,11 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
   }
   check('固定种子 part 增删改始终可重解压且重复保存幂等', patchProperty);
   const disposable = opc.patchOpcPackage(source, { [target]: replacement }).package;
+  const retainedAssets = Object.keys(disposable.assets ?? {}).length;
   opc.disposeOpcPackage(disposable);
   check('独立保存结果可显式释放大包字节', disposable.disposed
-    && disposable.bytes.length === 0 && Object.keys(disposable.parts).length === 0);
+    && retainedAssets > 0
+    && disposable.bytes.length === 0 && Object.keys(disposable.parts).length === 0
+    && Object.keys(disposable.assets ?? {}).length === 0);
   pres.dispose?.();
 }

@@ -1,6 +1,8 @@
 import { own } from './data-validation';
 import { toSlide } from './projection';
-import type { EditDoc, SlideBackgroundState, SlideHiddenState, SlideId } from './types';
+import type {
+  EditDoc, SlideBackgroundState, SlideHiddenState, SlideId, SlideLayoutState,
+} from './types';
 
 function records(doc: EditDoc, ids: readonly SlideId[]) {
   if (!ids.length) throw new Error('页面属性查询至少需要一个页面');
@@ -39,5 +41,18 @@ export function querySlideHidden(doc: EditDoc, ids: readonly SlideId[]): SlideHi
     mixed: values.some((value) => value !== values[0]),
     sourceMixed: sources.some((value) => value !== sources[0]),
     direct: selected.some((record) => own(record.ovr, 'hidden')),
+  };
+}
+
+export function querySlideLayout(doc: EditDoc, ids: readonly SlideId[]): SlideLayoutState {
+  const selected = records(doc, ids);
+  const values = selected.map((record) => record.layoutId ?? null);
+  const sources = selected.map((record) => record.sourceLayoutId ?? null);
+  return {
+    value: values[0],
+    source: sources[0],
+    mixed: values.some((value) => value !== values[0]),
+    sourceMixed: sources.some((value) => value !== sources[0]),
+    direct: selected.some((record) => (record.layoutId ?? null) !== (record.sourceLayoutId ?? null)),
   };
 }

@@ -3,6 +3,7 @@ import { hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { validateEditDoc } from '../model-invariants';
 import { patchOpcPackage } from '../opc/patch';
 import { effectiveElement } from '../projection';
+import { layoutFallbackElementIds, layoutFallbackGeometry } from '../layout-projection';
 import type { OpcPatchResult, OpcPartChanges } from '../opc/types';
 import type { EditDoc, ElementRecord, RemovedElementRecord, SlideRecord } from '../types';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
@@ -24,7 +25,8 @@ import {
 } from './clipboard-parts';
 import {
   createdSlideRelationships, createdSlides, emptySlideXml, patchPresentationRelationships,
-  patchPresentationSlides, patchSlideContentTypes, patchSlideNumberFields,
+  patchPresentationSlides, patchSlideContentTypes, patchSlideLayoutRelationship,
+  patchSlideNumberFields,
 } from './slide-parts';
 import { removedSlidePackageParts } from './remove-slide-parts';
 import {
@@ -32,6 +34,8 @@ import {
   duplicateSlideRemovals, duplicateSlideSource, patchDuplicateSlideRelationships,
 } from './duplicate-slide-parts';
 import { hasSlidePropertyOverrides, patchSlideProperties } from './slide-properties';
+import { materializeLayoutFallback } from './layout-fallback';
+import { createLayoutFallbackGeometryResolver } from './layout-fallback-source';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -105,6 +109,15 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const removals = removalsByPart(doc);
   const media = mediaPackageParts(doc);
   const activeCreatedSlides = createdSlides(doc);
+  const layoutSlides = new Map(Object.values(doc.slides).flatMap((slide) =>
+    slide.layoutId !== slide.sourceLayoutId && slide.origin ? [[slide.origin.part, slide] as const] : []));
+  const layoutFallbacks = new Map(Object.values(doc.slides).flatMap((slide) => {
+    const ids = layoutFallbackElementIds(doc, slide.id);
+    return slide.origin && ids.length ? [[slide.origin.part, ids] as const] : [];
+  }));
+  const slidesByPart = new Map(Object.values(doc.slides).flatMap((slide) =>
+    slide.origin ? [[slide.origin.part, slide] as const] : []));
+  const fallbackGeometrySource = createLayoutFallbackGeometryResolver(doc);
   const duplicateNotes = duplicateNotesParts(activeCreatedSlides);
   const duplicateNotesBySlide = new Map(duplicateNotes.map((notes) => [notes.slidePart, notes]));
   const nextBaselines: Record<string, Uint8Array> = Object.assign(
@@ -147,7 +160,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
   for (const part of new Set([
     ...grouped.keys(), ...slideProperties.keys(), ...removals.keys(), ...slideNumbers.keys(),
-    ...hyperlinkParts,
+    ...hyperlinkParts, ...layoutFallbacks.keys(),
   ])) {
     if (nextBaselines[part]) continue;
     if (activeCreatedSlides.some((slide) => slide.origin?.part === part)) continue;
@@ -163,6 +176,14 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     else nextCreatedParts.add(relsPart);
   }
   for (const sourcePart of hyperlinkParts) {
+    const relsPart = relationshipPartFor(sourcePart);
+    if (nextBaselines[relsPart] || nextCreatedParts.has(relsPart)) continue;
+    const source = doc.package.parts[relsPart];
+    if (source) nextBaselines[relsPart] = source.slice();
+    else nextCreatedParts.add(relsPart);
+  }
+  for (const [sourcePart, slide] of layoutSlides) {
+    if (slide.creation) continue;
     const relsPart = relationshipPartFor(sourcePart);
     if (nextBaselines[relsPart] || nextCreatedParts.has(relsPart)) continue;
     const source = doc.package.parts[relsPart];
@@ -232,6 +253,14 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     materializeElementTreeState(tree, doc, part, records, [
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
     ], { links });
+    for (const id of layoutFallbacks.get(part) ?? []) {
+      const record = doc.elements[id];
+      const owningSlide = slidesByPart.get(part);
+      materializeLayoutFallback(
+        tree, record, effectiveElement(doc, id), layoutFallbackGeometry(record),
+        owningSlide ? fallbackGeometrySource(owningSlide, record) : undefined,
+      );
+    }
     const slideRecord = slideProperties.get(part);
     if (slideRecord) patchSlideProperties(tree, doc, slideRecord);
     const bytes = serializeXmlTreeBytes(tree);
@@ -242,7 +271,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
 
   const activeRelationshipParts = new Set<string>();
   for (const sourcePart of new Set([
-    ...media.relationships.keys(), ...hyperlinkContexts.keys(),
+    ...media.relationships.keys(), ...hyperlinkContexts.keys(), ...layoutSlides.keys(),
   ])) {
     const relationships = media.relationships.get(sourcePart) ?? [];
     const relsPart = relationshipPartFor(sourcePart);
@@ -252,9 +281,12 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       ? duplicateRelationshipSource(doc, slide, nextBaselines) : undefined);
     const links = hyperlinkContexts.get(sourcePart);
     const slideBytes = changes[sourcePart];
-    changes[relsPart] = links && slideBytes instanceof Uint8Array
+    let relationshipBytes = links && slideBytes instanceof Uint8Array
       ? patchHyperlinkRelationshipPart(relationSource, relationships, links, slideBytes)
       : patchRelationshipPart(relationSource, relationships);
+    const layoutSlide = layoutSlides.get(sourcePart);
+    if (layoutSlide) relationshipBytes = patchSlideLayoutRelationship(layoutSlide, relationshipBytes);
+    changes[relsPart] = relationshipBytes;
   }
   for (const [part, source] of Object.entries(nextBaselines)) {
     if (part.endsWith('.rels') && !activeRelationshipParts.has(part)) {

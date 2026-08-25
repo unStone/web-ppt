@@ -40,7 +40,7 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
       },
       ovr: {}, children: template.children, dynamicSlideNumbers: template.dynamicSlideNumbers,
       dynamicSlideLinks: template.dynamicSlideLinks,
-      origin: { part: opc.part }, layoutId: layout.id,
+      origin: { part: opc.part }, layoutId: layout.id, sourceLayoutId: layout.id,
       defaultShape: structuredClone(layout.defaultShape),
       ...(layout.defaultTable ? { defaultTable: structuredClone(layout.defaultTable) } : {}),
       creation: {

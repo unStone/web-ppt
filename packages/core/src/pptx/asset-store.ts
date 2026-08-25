@@ -18,19 +18,22 @@ export class PackageAssetStore {
   private objectUrls: string[] = [];
   private packageAssets: Record<string, OpcPackageAsset> = Object.create(null);
 
-  constructor(private readonly publishAssets: boolean) {}
+  constructor(
+    private readonly publishAssets: boolean,
+    private readonly tokenPrefix = 'asset:',
+  ) {}
 
   get published(): Readonly<Record<string, OpcPackageAsset>> {
     return this.packageAssets;
   }
 
   /** 把一段字节挂成可引用的地址：defer 下发令牌，否则建 blob URL。 */
-  store(key: string, data: Uint8Array, mime: string): string {
+  store(key: string, data: Uint8Array, mime: string, sourcePart?: string): string {
     let result: string;
     if (this.mode === 'defer') {
       let token = this.deferredIndex.get(key);
       if (token === undefined) {
-        token = `asset:${this.deferred.length}`;
+        token = `${this.tokenPrefix}${this.deferred.length}`;
         this.deferred.push({ mime, data });
         this.deferredIndex.set(key, token);
       }
@@ -44,7 +47,7 @@ export class PackageAssetStore {
       }
       result = url!;
     }
-    if (this.publishAssets) this.packageAssets[result] = { mime, bytes: data };
+    if (this.publishAssets) this.packageAssets[result] = { mime, bytes: data, sourcePart };
     return result;
   }
 
@@ -54,8 +57,8 @@ export class PackageAssetStore {
   }
 
   /** 转码后的 URL 仍指回 OPC 原始字节，编辑命令才能无损复用 EMF/WMF 等来源。 */
-  publish(url: string, data: Uint8Array, mime: string): void {
-    if (this.publishAssets) this.packageAssets[url] = { mime, bytes: data };
+  publish(url: string, data: Uint8Array, mime: string, sourcePart?: string): void {
+    if (this.publishAssets) this.packageAssets[url] = { mime, bytes: data, sourcePart };
   }
 
   /** 只撤销本模块创建的 blob URL；data URI 与 Worker 令牌无需释放。 */
@@ -68,6 +71,8 @@ export class PackageAssetStore {
       }
     }
     this.objectUrls = [];
+    this.deferred.length = 0;
+    this.deferredIndex.clear();
     this.urlCache.clear();
     this.packageAssets = Object.create(null);
   }

@@ -10,6 +10,9 @@ import { decryptOoxml } from './crypto/ooxml';
 import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
+import {
+  releasePptxLayoutReparseSession, reparsePptxSlideWithLayout,
+} from './pptx/layout-reparse';
 import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
@@ -18,7 +21,11 @@ import { isKnownPreset, resolveGeomPath } from './geometry';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
+export * from './edit-metadata';
+export * from './placeholder-match';
+export * from './text-body-edit';
 export { fitTextShapeHeight, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
+export { releasePptxLayoutReparseSession, reparsePptxSlideWithLayout };
 export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';
 export type { RenderTextBodyHtmlOptions } from './render/text-html';
 export type {

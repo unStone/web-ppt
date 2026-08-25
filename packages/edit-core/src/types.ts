@@ -1,5 +1,6 @@
 import type {
-  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
+  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
@@ -142,6 +143,14 @@ export interface SlideBackgroundState {
 export interface SlideHiddenState {
   readonly value: boolean;
   readonly source: boolean;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+}
+
+export interface SlideLayoutState {
+  readonly value: string | null;
+  readonly source: string | null;
   readonly mixed: boolean;
   readonly sourceMixed: boolean;
   readonly direct: boolean;
@@ -334,6 +343,9 @@ export type TextOverride = {
 export interface ElementMeta {
   geom?: GeomSpec;
   ph?: { type: string; idx?: string };
+  placeholderDirect?: PlaceholderDirectFlags;
+  /** 旧版式解绑时需要固定的继承效果；普通未编辑投影仍沿用 core 既有语义。 */
+  placeholderInheritedEffects?: Effects;
   origin?: { part: string; spid: number };
   locked?: boolean;
   /** 来源文件只禁止移动；与宿主设置的通用 locked 分开，避免误伤其他编辑。 */
@@ -342,12 +354,18 @@ export interface ElementMeta {
   textTemplate?: TextBody;
   /** 会话中新建的元素没有保存基线宿主；撤销时不能把它误记成来源删除。 */
   created?: boolean;
+  /** 新建普通形状的 p:style 使用主题引用；换母版时其有效默认值必须重新求值。 */
+  themeDefaultShape?: true;
+  /** 页眉页脚字段的内容属于页面，几何与空白格式仍来自当前版式。 */
+  fieldPlaceholder?: true;
   /** 仅新建树根携带；保存从初始基线重建时据此重新插入宿主。 */
   insertion?: ElementInsertionSource;
   /** 只承载当前有效替换资源；历史中的旧闭包不会污染活跃 OPC 图。 */
   imageReplacement?: ElementImageReplacement;
   hiddenByUser?: boolean;
   editable: EditableKind;
+  /** true 表示节点只来自母版/版式投影，不属于 slide XML 的可持久内容树。 */
+  inherited?: true;
   /** 来源存在无法安全映射的链接；覆盖层缺失时查询为只读来源。 */
   sourceLinkReadonly?: true;
 }
@@ -388,6 +406,14 @@ export interface SlideRecord {
   dynamicSlideLinks: ElementId[];
   origin: { part: string } | null;
   layoutId?: string;
+  /** 首次打开或创建时的版式来源；layoutId 改变不应覆写这份查询/撤销基线。 */
+  sourceLayoutId?: string;
+  /** 解析期已确认背景来自 slide XML，而非旧版式的有效值。 */
+  sourceDirectBackground?: true;
+  /** 解析期已确认转场来自 slide XML。 */
+  sourceDirectTransition?: true;
+  /** 来源页面自身屏蔽母版图形；只换关系不能改变这一页级语义。 */
+  sourceHideMasterShapes?: true;
   /** 仅会话中新页存在；保存层据此物化 OPC part 与 presentation 引用。 */
   creation?: SlideCreation;
   /** 解析期已在当前页主题/颜色映射上求值，新增形状无需理解 OOXML 主题。 */

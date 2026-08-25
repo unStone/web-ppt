@@ -1,46 +1,34 @@
-import { unzipSync } from 'fflate';
-import { parseSafeExternalUrl } from '../types';
+import {
+  parseSafeExternalUrl,
+} from '../types';
+import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadata';
+import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
   CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
-  OpcPackage, Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
+  Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
   TableCreationDefaults,
   TableElement, TableRow, TextBody, UnsupportedElement,
 } from '../types';
-import { METAFILE_EXT, metafileDataUrl } from '../metafile';
-import { readImageMetadata } from '../image-metadata';
-import type { ImageMetadata } from '../image-metadata';
-import { embeddedFontToSfnt } from '../font/eot';
+import type { PlaceholderDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
 import { childColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseTiming, parseTransition } from './animation';
 import { custGeomPath, parseAdjustments, presetGeom } from './geometry';
-import { extractLstStyle, LevelStyles, parseTextBody, TextEnv } from './text';
+import { extractLstStyle, parseTextBody, TextEnv } from './text';
+import type { LevelStyles } from './text';
+import { completeTextTemplateLevels } from './text-template';
 import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
-import { PackageAssetStore } from './asset-store';
 import type { AssetMode, DeferredAsset } from './asset-store';
 import { builtInTableStyleMarkup } from './builtin-table-styles';
 import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
-import {
-  Env, findPh, PH_EQUIV, relByType, Rels, slideInheritance, SlideInheritance,
-} from './slide-inheritance';
+import { Env, findPh, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
+import { Pkg } from './package-reader';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
-
-const decoder = new TextDecoder();
-const EMPTY_BYTES = new Uint8Array(0);
-
-const MIME: Record<string, string> = {
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
-  bmp: 'image/bmp', webp: 'image/webp', svg: 'image/svg+xml', tif: 'image/tiff', tiff: 'image/tiff',
-};
-
-const METAFILE_MIME: Record<string, string> = {
-  emf: 'image/x-emf', wmf: 'image/x-wmf', pict: 'image/x-pict', pct: 'image/x-pict', pic: 'image/x-pict',
-};
 
 /** 音视频容器 → MIME；未知扩展名按媒体类型给个兜底值 */
 const MEDIA_MIME: Record<string, string> = {
@@ -49,138 +37,6 @@ const MEDIA_MIME: Record<string, string> = {
   mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', wma: 'audio/x-ms-wma',
   ogg: 'audio/ogg', oga: 'audio/ogg', aac: 'audio/aac', mid: 'audio/midi', midi: 'audio/midi',
 };
-
-class Pkg {
-  files: Record<string, Uint8Array>;
-  private readonly assetStore: PackageAssetStore;
-  private xmlCache = new Map<string, Element | null>();
-  private relsCache = new Map<string, Rels>();
-  private imageMetadataCache = new Map<string, ImageMetadata | null>();
-  private sourceBytes: Uint8Array | null = null;
-  private opcHandle: OpcPackage | undefined;
-  private isDisposed = false;
-
-  constructor(bytes: Uint8Array, keepPackage = false) {
-    this.files = unzipSync(bytes);
-    this.assetStore = new PackageAssetStore(keepPackage);
-    if (keepPackage) {
-      // 50MB 演示若再复制一份原包，会把编辑模式的内存预算直接吃掉；
-      // 按公开契约持有只读视图，File/Blob 路径本身已是解析器创建的独占缓冲。
-      this.sourceBytes = bytes;
-      const owner = this;
-      this.opcHandle = Object.freeze({
-        format: 'pptx' as const,
-        get bytes(): Uint8Array { return owner.sourceBytes ?? EMPTY_BYTES; },
-        get parts(): Readonly<Record<string, Uint8Array>> { return owner.files; },
-        get assets(): Readonly<Record<string, { mime: string; bytes: Uint8Array }>> {
-          return owner.assetStore.published;
-        },
-        get disposed(): boolean { return owner.isDisposed; },
-      });
-    }
-  }
-
-  set assetMode(value: AssetMode) { this.assetStore.mode = value; }
-  get deferred(): DeferredAsset[] { return this.assetStore.deferred; }
-  get opcPackage(): OpcPackage | undefined { return this.opcHandle; }
-
-  xml(path: string): Element | null {
-    if (!this.xmlCache.has(path)) {
-      const data = this.files[path];
-      let root: Element | null = null;
-      if (data) {
-        try {
-          root = parseXml(decoder.decode(data));
-        } catch {
-          root = null;
-        }
-      }
-      this.xmlCache.set(path, root);
-    }
-    return this.xmlCache.get(path) ?? null;
-  }
-
-  rels(partPath: string): Rels {
-    if (!this.relsCache.has(partPath)) {
-      const dir = partPath.slice(0, partPath.lastIndexOf('/') + 1);
-      const out: Rels = {};
-      const root = this.xml(`${dir}_rels/${partPath.slice(dir.length)}.rels`);
-      for (const rel of kids(root, 'Relationship')) {
-        const id = attr(rel, 'Id');
-        const target = attr(rel, 'Target');
-        if (!id || !target) continue;
-        const external = attr(rel, 'TargetMode') === 'External';
-        out[id] = { type: attr(rel, 'Type') ?? '', target: external ? target : resolvePath(dir, target) };
-      }
-      this.relsCache.set(partPath, out);
-    }
-    return this.relsCache.get(partPath)!;
-  }
-
-  blobUrl(path: string, mime: string): string | null {
-    const data = this.files[path];
-    return data ? this.assetStore.store(`${mime}|${path}`, data, mime) : null;
-  }
-
-  /**
-   * 嵌入字体的可用地址。
-   *
-   * fntdata 是 EOT 容器而不是裸 TTF，得先还原成 sfnt（见 font/eot.ts）。
-   * 还原不出来就返回 null —— 与其声明一个浏览器注定拒绝的 @font-face，
-   * 不如干脆不声明，让文本老实回退到替换字体。
-   */
-  fontUrl(path: string): string | null {
-    const raw = this.files[path];
-    if (!raw) return null;
-    const font = embeddedFontToSfnt(raw);
-    return font ? this.assetStore.store(`font|${path}`, font.data, font.mime) : null;
-  }
-
-  /** 释放全部 blob URL，并清空缓存以便 zip 数据被回收 */
-  dispose(): void {
-    this.assetStore.dispose();
-    this.xmlCache.clear();
-    this.relsCache.clear();
-    this.imageMetadataCache.clear();
-    this.files = {};
-    this.sourceBytes = null;
-    this.isDisposed = true;
-  }
-
-  mediaUrl(path: string): string | null {
-    const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
-    if (METAFILE_EXT.has(ext)) {
-      const key = `mf|${path}`;
-      const result = this.assetStore.cached(key, () => {
-        const data = this.files[path];
-        return data ? metafileDataUrl(data) : null;
-      });
-      const data = this.files[path];
-      if (result && data) this.assetStore.publish(result, data, METAFILE_MIME[ext] ?? 'application/octet-stream');
-      return result;
-    }
-    const mime = MIME[ext];
-    return mime ? this.blobUrl(path, mime) : null;
-  }
-
-  imageMetadata(path: string): ImageMetadata | null {
-    if (!this.imageMetadataCache.has(path)) {
-      const bytes = this.files[path];
-      this.imageMetadataCache.set(path, bytes ? readImageMetadata(bytes) : null);
-    }
-    return this.imageMetadataCache.get(path) ?? null;
-  }
-}
-
-function resolvePath(baseDir: string, target: string): string {
-  if (target.startsWith('/')) return target.slice(1);
-  const out: string[] = [];
-  for (const seg of (baseDir + target).split('/')) {
-    if (seg === '..') out.pop();
-    else if (seg !== '.' && seg !== '') out.push(seg);
-  }
-  return out.join('/');
-}
 
 // ---------------- 变换 ----------------
 
@@ -232,6 +88,7 @@ function editInfoOf(
   editable?: NonNullable<ElementBase['editInfo']>['editable'],
   moveLocked = false,
   readonlyLink = false,
+  placeholderDirect: PlaceholderDirectFlags = placeholderDirectFlags(0),
 ): Partial<Pick<ElementBase, 'editInfo'>> {
   if (!env.edit) return {};
   const spid = numAttr(cNvPr, 'id');
@@ -245,10 +102,11 @@ function editInfoOf(
     };
   }
   if (geom) editInfo.geom = geom;
+  if (ph && placeholderDirect) editInfo.placeholderDirect = placeholderDirect;
   if (editable) editInfo.editable = editable;
   if (moveLocked) editInfo.moveLocked = true;
   if (readonlyLink) editInfo.readonlyLink = true;
-  return editInfo.origin || editInfo.placeholder || editInfo.geom || editInfo.editable
+  return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom || editInfo.editable
     || editInfo.moveLocked || editInfo.readonlyLink
     ? { editInfo } : {};
 }
@@ -260,6 +118,17 @@ function withPhClr(env: Env, phClr: string | null): Env {
 // ---------------- 填充 / 描边 ----------------
 
 const FILL_TAGS = ['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill'];
+
+function placeholderDirectBits(spPr: Element | null, style: Element | null): PlaceholderDirectFlags {
+  let bits = 0;
+  if (kid(spPr, 'xfrm')) bits |= PLACEHOLDER_DIRECT_BITS.transform;
+  if (kid(spPr, 'prstGeom') || kid(spPr, 'custGeom')) bits |= PLACEHOLDER_DIRECT_BITS.geometry;
+  if (FILL_TAGS.some((tag) => !!kid(spPr, tag))) bits |= PLACEHOLDER_DIRECT_BITS.fill;
+  if (kid(spPr, 'ln')) bits |= PLACEHOLDER_DIRECT_BITS.stroke;
+  if (kid(spPr, 'effectLst') || kid(spPr, 'effectDag')) bits |= PLACEHOLDER_DIRECT_BITS.effects;
+  if (style) bits |= PLACEHOLDER_DIRECT_BITS.style;
+  return placeholderDirectFlags(bits);
+}
 const TILE_ALIGNMENTS = new Set<ImageTileAlignment>(['tl', 't', 'tr', 'l', 'ctr', 'r', 'bl', 'b', 'br']);
 
 function parseFillProps(container: Element | null, env: Env): Fill | null {
@@ -452,7 +321,7 @@ function defaultShapeEditInfo(env: Env): NonNullable<Slide['editInfo']>['default
   }, true);
   if (!textTemplate) throw new Error('无法构造新增形状文字模板');
   return {
-    fill: style.fill, stroke: style.stroke, textTemplate,
+    fill: style.fill, stroke: style.stroke, effects: style.effects, textTemplate,
     styleMarkup: CREATION_SHAPE_STYLE, textBodyMarkup: CREATION_SHAPE_TEXT,
   };
 }
@@ -614,6 +483,12 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   }
 
   const effects = parseEffects(kid(spPr, 'effectLst'), env.ctx) ?? styleRef.effects;
+  // Presentation 的既有字段不改语义；编辑模式另存解绑旧版式时才需要的继承来源。
+  const placeholderInheritedEffects = env.edit && !effects && ph && !kid(sp, 'style')
+    ? parseEffects(
+      walk(layoutSp, 'spPr', 'effectLst') ?? walk(masterSp, 'spPr', 'effectLst'), env.ctx,
+    ) ?? undefined
+    : undefined;
 
   // 无几何但有填充/描边时按矩形处理（常见于省略 prstGeom 的文本框）
   if (!path && (fill || stroke)) path = presetGeom('rect', xf.w, xf.h, {}).d;
@@ -621,11 +496,12 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   const txBody = kid(sp, 'txBody');
   let text: TextBody | null = null;
   let textTemplate: TextBody | undefined;
+  let textLevelTemplate: TextBody | undefined;
   if (txBody) {
     const chain: LevelStyles[] = [env.docDefaults];
     if (ph) {
       const cat = phType === 'title' || phType === 'ctrTitle' ? 'title'
-        : !phType || PH_EQUIV.body.includes(phType) ? 'body' : 'other';
+        : !phType || PLACEHOLDER_TYPE_EQUIVALENTS.body.includes(phType) ? 'body' : 'other';
       chain.push(env.masterStyles[cat]);
       chain.push(extractLstStyle(walk(masterSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
       chain.push(extractLstStyle(walk(layoutSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
@@ -649,14 +525,23 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
     if (!text && env.edit) {
       textTemplate = parseTextBody(txBody, textEnv, true) ?? undefined;
     }
+    const levelSeed = text ?? textTemplate;
+    if (env.layoutCatalog && levelSeed) {
+      textLevelTemplate = completeTextTemplateLevels(levelSeed, textEnv);
+    }
   }
 
   if (!path && !text && !textTemplate) return null;
   const hyperlink = hyperlinkOf(cNvPr, env);
   const editing = editInfoOf(
     env, cNvPr, ph, editableGeom, undefined, movementLocked(nv), hyperlink.unsupported,
+    placeholderDirectBits(spPr, kid(sp, 'style')),
   );
   if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
+  if (editing.editInfo && textLevelTemplate) editing.editInfo.textLevelTemplate = textLevelTemplate;
+  if (editing.editInfo && placeholderInheritedEffects) {
+    editing.editInfo.placeholderInheritedEffects = placeholderInheritedEffects;
+  }
   return {
     kind: 'shape', ...base(xf), path, fill, stroke, text,
     openGeom: openGeom || undefined,
@@ -781,6 +666,7 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
     ...editInfoOf(
       env, cNvPr, ph, editableGeom, media ? 'frame' : undefined,
       movementLocked(nv), hyperlink.unsupported,
+      placeholderDirectBits(spPr, null),
     ),
   };
 }
@@ -1495,7 +1381,7 @@ function extractText(root: Element | null): string {
 
 // ---------------- 批注 ----------------
 
-interface AuthorInfo {
+export interface AuthorInfo {
   name: string;
   initials?: string;
 }
@@ -1503,7 +1389,7 @@ interface AuthorInfo {
 /**
  * 作者表：经典 commentAuthors.xml（authorId 为数字）与新版 authors.xml（id 为 GUID）都收进同一张表。
  */
-function parseCommentAuthors(pkg: Pkg, presRels: Rels): Map<string, AuthorInfo> {
+export function parseCommentAuthors(pkg: Pkg, presRels: Rels): Map<string, AuthorInfo> {
   const out = new Map<string, AuthorInfo>();
   for (const rel of Object.values(presRels)) {
     if (!/\/(commentAuthors|authors)$/.test(rel.type)) continue;
@@ -1641,8 +1527,8 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const tableStylesPath = relByType(presRels, '/tableStyles');
   const tableStyles = tableStylesPath ? pkg.xml(tableStylesPath) : null;
-
   const docDefaults: LevelStyles = { lvls: [] };
+
   const slideIds = kids(kid(presRoot, 'sldIdLst'), 'sldId');
 
   // 幻灯片路径 → 页码，用于内部超链接
@@ -1679,7 +1565,8 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   const buildSlide = (i: number): Slide => {
     try {
       return parseSlide(
-        pkg, slidePaths[i], i + 1, presRoot, docDefaults, tableStyles, slideIdMap, authors, opts.edit === true,
+        pkg, slidePaths[i], i + 1, presRoot, tableStyles, slideIdMap, authors, opts.edit === true,
+        undefined, docDefaults,
       );
     } catch (err) {
       return failed(i, err);
@@ -1711,7 +1598,7 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const sections = parseSections(presRoot, idToIndex);
   const layouts = opts.edit
-    ? parseLayoutCatalog(pkg, presRoot, presRels, docDefaults, tableStyles, slideIdMap)
+    ? parseLayoutCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap)
     : undefined;
 
   const opcPackage = pkg.opcPackage;
@@ -1758,7 +1645,6 @@ function parseLayoutCatalog(
   pkg: Pkg,
   presRoot: Element,
   presRels: Rels,
-  docDefaults: LevelStyles,
   tableStyles: Element | null,
   slideIdMap: Record<string, number>,
 ): NonNullable<Presentation['editInfo']>['layouts'] {
@@ -1767,7 +1653,7 @@ function parseLayoutCatalog(
   );
   return layoutPaths.flatMap((layoutPath) => {
     const inheritance = slideInheritance(
-      pkg, null, layoutPath, presRoot, docDefaults, tableStyles, slideIdMap, 1, true,
+      pkg, null, layoutPath, presRoot, tableStyles, slideIdMap, 1, true,
     );
     if (!inheritance.layoutRoot || !inheritance.masterPath) return [];
     const staticElements: SlideElement[] = [];
@@ -1781,7 +1667,9 @@ function parseLayoutCatalog(
       inheritance.layoutTree, inheritance.envFor(layoutPath, false), true,
     ));
     const placeholders = parseShapeTree(
-      inheritance.layoutTree, inheritance.envFor(layoutPath, true), false,
+      inheritance.layoutTree,
+      { ...inheritance.envFor(layoutPath, true), layoutCatalog: true },
+      false,
     ).flatMap((element) => {
       const template = layoutPlaceholderTemplate(element);
       return template ? [template] : [];
@@ -1799,22 +1687,23 @@ function parseLayoutCatalog(
   });
 }
 
-function parseSlide(
+export function parseSlide(
   pkg: Pkg,
   slidePath: string,
   slideNum: number,
   presRoot: Element,
-  docDefaults: LevelStyles,
   tableStyles: Element | null,
   slideIdMap: Record<string, number>,
   authors: Map<string, AuthorInfo>,
   edit: boolean,
+  layoutOverride?: string,
+  docDefaults?: LevelStyles,
 ): Slide {
   const slideRoot = pkg.xml(slidePath);
   const slideRels = pkg.rels(slidePath);
-  const layoutPath = relByType(slideRels, '/slideLayout');
+  const layoutPath = layoutOverride ?? relByType(slideRels, '/slideLayout');
   const inheritance = slideInheritance(
-    pkg, slideRoot, layoutPath, presRoot, docDefaults, tableStyles, slideIdMap, slideNum, edit,
+    pkg, slideRoot, layoutPath, presRoot, tableStyles, slideIdMap, slideNum, edit, docDefaults,
   );
   const { layoutRoot, masterPath, masterTree, layoutTree, envFor } = inheritance;
   const slideTree = walk(slideRoot, 'cSld', 'spTree');
@@ -1837,6 +1726,7 @@ function parseSlide(
   const notesPath = relByType(slideRels, '/notesSlide');
   const notes = notesPath ? extractText(walk(pkg.xml(notesPath), 'cSld', 'spTree')) : '';
   const comments = parseSlideComments(pkg, slideRels, authors);
+  const directTransition = parseTransition(slideRoot);
 
   return {
     background,
@@ -1845,11 +1735,14 @@ function parseSlide(
     comments: comments.length ? comments : undefined,
     hidden: attr(slideRoot, 'show') === '0' || undefined,
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
-    transition: parseTransition(slideRoot) ?? parseTransition(layoutRoot),
+    transition: directTransition ?? parseTransition(layoutRoot),
     animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
     ...(edit ? {
       editInfo: {
         origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
+        ...(walk(slideRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
+        ...(directTransition ? { directTransition: true as const } : {}),
+        ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),
         defaultShape: defaultShapeEditInfo(envFor(slidePath, true)),
         defaultTable: defaultTableEditInfo(envFor(slidePath, true)),
       },

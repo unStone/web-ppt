@@ -1,6 +1,7 @@
 import { isKnownPreset, resolveGeomPath } from '@web-ppt/core/geometry';
 import type { ShapeCreationDefaults, ShapeElement } from '@web-ppt/core';
 import { allocateElementId } from '../document';
+import { currentShapeDefaults } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
@@ -53,6 +54,7 @@ function sourceShape(
     path: geom.d, ...(geom.open ? { openGeom: true } : {}),
     fill: geom.open ? { type: 'none' } : structuredClone(defaults.fill),
     stroke: structuredClone(defaults.stroke),
+    effects: structuredClone(defaults.effects),
     text: null,
   };
 }
@@ -64,12 +66,13 @@ function assertCommand(doc: EditDoc, command: AddShapeCommand) {
     || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
     throw new Error(`新增形状目标页不可写回：${command.slideId}`);
   }
-  if (!slide.defaultShape) throw new Error(`新增形状目标页缺少主题默认值：${command.slideId}`);
+  const defaults = currentShapeDefaults(doc, slide.id);
+  if (!defaults) throw new Error(`新增形状目标页缺少主题默认值：${command.slideId}`);
   if (typeof command.preset !== 'string' || !isKnownPreset(command.preset)) {
     throw new Error(`未知预设形状：${String(command.preset)}`);
   }
   assertInsertionRect(command.rect, 'AddShape.rect');
-  return slide;
+  return { slide, defaults };
 }
 
 /** 新形状和 OOXML 宿主由同一组默认值构造，再走既有结构 patch 与保存主干。 */
@@ -78,7 +81,7 @@ export function addShapePatches(
   command: AddShapeCommand,
   origin: string,
 ): CommandPatches {
-  const slide = assertCommand(doc, command);
+  const { slide, defaults } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = allocateElementSpid(doc, slide.origin!.part);
   const name = `形状 ${spid}`;
@@ -86,12 +89,13 @@ export function addShapePatches(
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
     id, parent: slide.id, z: fractionalIndexBetween(previous, null, id),
-    src: sourceShape(spid, name, command.preset, command.rect, slide.defaultShape!), ovr: {},
+    src: sourceShape(spid, name, command.preset, command.rect, defaults), ovr: {},
     meta: {
-      editable: 'full', created: true, textTemplate: structuredClone(slide.defaultShape!.textTemplate),
+      editable: 'full', created: true, themeDefaultShape: true,
+      textTemplate: structuredClone(defaults.textTemplate),
       geom: { preset: command.preset, adj: {} },
       origin: { part: slide.origin!.part, spid },
-      insertion: insertionSource(spid, name, command.preset, command.rect, slide.defaultShape!),
+      insertion: insertionSource(spid, name, command.preset, command.rect, defaults),
     },
   };
   const value = { root: id, parent: slide.id, records: { [id]: record } };

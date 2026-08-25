@@ -1,7 +1,7 @@
 import type {
   TextBodyLayoutProperties, TextVert,
 } from '../types';
-import { TEXT_BODY_PROPERTY_BITS } from '../types';
+import { TEXT_BODY_PROPERTY_BITS } from '../text-body-edit';
 import { attr, emu, kid, numAttr } from '../xml';
 
 const VERT: Record<string, TextVert> = {

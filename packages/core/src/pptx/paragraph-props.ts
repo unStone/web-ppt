@@ -11,6 +11,8 @@ export function mergeParagraphProps(base: ParaProps, over: ParaProps): ParaProps
   // lnSpc 的 spcPct / spcPts 是同一 choice；直接层选择一种时必须遮住继承层的另一种。
   if (over.lnPct !== undefined) delete merged.lnPx;
   if (over.lnPx !== undefined) delete merged.lnPct;
+  if (over.buSizePct !== undefined) delete merged.buSizePts;
+  if (over.buSizePts !== undefined) delete merged.buSizePct;
   return merged;
 }
 

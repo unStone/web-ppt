@@ -43,7 +43,10 @@ function nextPackage(
   }
   for (const [name, part] of replacements) if (part !== null) parts[name] = part;
   Object.freeze(parts);
-  return createOwnedPackage(bytes, parts);
+  // replacements 已排除逐字相同的 part；没变的媒体可直接沿用 URL，不再同步扫描大字节。
+  const assets = Object.freeze(Object.fromEntries(Object.entries(source.assets ?? {}).filter(([, asset]) =>
+    !!asset.sourcePart && !!parts[asset.sourcePart] && !replacements.has(asset.sourcePart))));
+  return createOwnedPackage(bytes, parts, assets);
 }
 
 /** 释放脱离 EditDoc 单独持有的保存结果；原始解析包仍由 Presentation.dispose() 释放。 */

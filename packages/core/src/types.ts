@@ -5,6 +5,10 @@
  */
 
 import type { GeomSpec } from './geometry';
+import type {
+  ParagraphLayoutDirectFlags, PlaceholderDirectFlags, TextRunDirectFlags, TextRunEditInfo,
+} from './edit-metadata';
+import type { TextBodyEditInfo } from './text-body-edit';
 
 export const MAX_SAFE_EXTERNAL_HREF_LENGTH = 2048;
 
@@ -79,6 +83,8 @@ export interface OpcPackage {
 export interface OpcPackageAsset {
   readonly mime: string;
   readonly bytes: Uint8Array;
+  /** 资源来自哪个 OPC part；同包重解析时据此复用原会话 URL，避免重复 blob 与令牌冲突。 */
+  readonly sourcePart?: string;
 }
 
 /** 演示文稿的「节」 */
@@ -120,6 +126,12 @@ export interface SlideEditInfo {
   origin: { part: string };
   /** 当前页引用的版式 OPC part；仅 PPTX 编辑解析存在。 */
   layoutId?: string;
+  /** 背景来自 slide XML 而非版式/母版；换版式时不能覆盖。 */
+  directBackground?: true;
+  /** 转场来自 slide XML；换版式时继续优先。 */
+  directTransition?: true;
+  /** 页面自身 showMasterSp="0"；换版式后仍须屏蔽目标母版图形。 */
+  hideMasterShapes?: true;
   /** 当前页主题与颜色映射求值后的新形状默认值；只在编辑解析中保留。 */
   defaultShape?: ShapeCreationDefaults;
   /** 当前页主题与默认表样式求值后的新表格默认值；只在编辑解析中保留。 */
@@ -129,6 +141,7 @@ export interface SlideEditInfo {
 export interface ShapeCreationDefaults {
   fill: Fill | null;
   stroke: Stroke | null;
+  effects?: Effects;
   textTemplate: TextBody;
   /** 写回宿主与上面已求值语义的共同来源，避免即时投影和 OOXML 默认值漂移。 */
   styleMarkup: string;
@@ -324,8 +337,14 @@ export interface ElementEditInfo {
   origin?: { part: string; spid: number };
   /** 占位符身份；type 是 ECMA-376 默认值展开后的语义值 */
   placeholder?: { type: string; idx?: string };
+  /** slide 占位符自身声明的属性位；换版式只替换未直设的继承值。 */
+  placeholderDirect?: PlaceholderDirectFlags;
+  /** 仅编辑模式保留来源版式/母版的效果；不改变只读 Presentation 的既有求值语义。 */
+  placeholderInheritedEffects?: Effects;
   /** 预设形状的可重算语义；继承自版式/母版时也保留，只在编辑解析中存在 */
   geom?: GeomSpec;
+  /** 版式目录的九级继承基值；与只含一个空段的首次输入模板分开。 */
+  textLevelTemplate?: TextBody;
   /** 内部内容不可安全写回时只允许框架级变换；省略表示由元素类型推断为 full */
   editable?: 'full' | 'frame' | 'none';
   /** OOXML `noMove` 约束；只禁止改变位置，不扩大成通用编辑锁。 */
@@ -472,27 +491,6 @@ export interface TextBodyLayoutProperties {
   columnGap?: number;
 }
 
-export type TextBodyEditableProperty =
-  | 'anchor' | 'insets' | 'wrap' | 'vert' | 'anchorCtr' | 'columns' | 'columnGap' | 'autoFit';
-
-export const TEXT_BODY_PROPERTY_BITS: Readonly<Record<TextBodyEditableProperty, number>> = {
-  anchor: 1 << 0,
-  insets: 1 << 1,
-  wrap: 1 << 2,
-  vert: 1 << 3,
-  anchorCtr: 1 << 4,
-  columns: 1 << 5,
-  columnGap: 1 << 6,
-  autoFit: 1 << 7,
-};
-
-export interface TextBodyEditInfo {
-  /** 去掉当前形状 bodyPr 后，由版式、母版和 OOXML 默认值求出的结果。 */
-  inherited?: TextBodyLayoutProperties;
-  /** 当前形状 bodyPr 真正直设的字段位；紧凑表示避免空文字框批量历史膨胀。 */
-  direct: number;
-}
-
 export interface TextBody extends TextBodyLayoutProperties {
   paragraphs: Paragraph[];
   /** 艺术字变形（bodyPr/prstTxWarp）；adj 为 avLst 里的 gd 名 → 数值 */
@@ -545,6 +543,10 @@ export interface Paragraph {
       'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent',
       true
     >>;
+    /** pPr/defRPr 声明的字符字段位，对本段所有 run 生效。 */
+    directRun: TextRunDirectFlags;
+    /** 项目符号、方向等非工具栏段落字段的直设位。 */
+    directLayout: ParagraphLayoutDirectFlags;
   };
 }
 
@@ -610,17 +612,4 @@ export interface TextRun {
   math?: MathNode[];
   /** 仅编辑解析保留；删除直接字符格式时用它恢复继承链的有效值。 */
   editInfo?: TextRunEditInfo;
-}
-
-export interface TextRunEditInfo {
-  readonly inheritedRunProps: {
-    readonly b: boolean;
-    readonly i: boolean;
-    readonly u: boolean;
-    readonly strike: boolean;
-    readonly size: number;
-    readonly fonts: string[];
-  };
-  /** 来源 hlinkClick 无法安全解析；编辑层只展示只读占位，不暴露原始 action/URL。 */
-  readonlyLink?: true;
 }

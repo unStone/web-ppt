@@ -1,10 +1,13 @@
-import type { Paragraph, TextBody, TextRun, TextWarp } from '../types';
+import { textRunDirectFlags, TEXT_RUN_DIRECT_BITS } from '../edit-metadata';
+import type {
+  Paragraph, TextBody, TextRun, TextWarp,
+} from '../types';
+import type { TextFontSlots, TextRunDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
 import { mathPlainText, parseOmml } from './omml';
-import {
-  directParagraphProps, effectiveParagraphProps, mergeParagraphProps, resolveParagraphLevel,
-} from './paragraph-props';
+import { mergeParagraphProps, resolveParagraphLevel } from './paragraph-props';
+import { materializeParagraph } from './text-materialization';
 import { directTextBodyProperties, parseTextBodyLayout } from './text-body';
 
 /**
@@ -23,10 +26,10 @@ export interface RunProps {
   b?: boolean;
   i?: boolean;
   u?: boolean;
-  uColor?: string;
+  uColor?: string | null;
   strike?: boolean;
   color?: string;
-  gradient?: string;
+  gradient?: string | null;
   latin?: string;
   ea?: string;
   /** 复杂脚本字体（阿拉伯语 / 希伯来语 / 泰语 / 天城文等），缺失会导致回退到拉丁字体 */
@@ -34,8 +37,8 @@ export interface RunProps {
   baseline?: number;
   spc?: number;
   caps?: 'none' | 'all' | 'small';
-  outline?: { color: string; width: number };
-  highlight?: string;
+  outline?: { color: string; width: number } | null;
+  highlight?: string | null;
   link?: string;
 }
 
@@ -44,9 +47,10 @@ export interface ParaProps {
   marL?: number;
   indent?: number;
   bullet?: Bullet;
-  buColor?: string;
-  buFont?: string;
-  buSizePct?: number;
+  buColor?: string | null;
+  buFont?: string | null;
+  buSizePct?: number | null;
+  buSizePts?: number;
   lnPct?: number;
   lnPx?: number;
   spcBef?: number;
@@ -97,8 +101,16 @@ export function extractLstStyle(el: Element | null, ctx: ColorCtx, fonts: ThemeF
 }
 
 export function parseParaProps(pPr: Element | null, ctx: ColorCtx, fonts: ThemeFonts): ParaProps {
+  return parseParaPropsDetailed(pPr, ctx, fonts).props;
+}
+
+export function parseParaPropsDetailed(
+  pPr: Element | null,
+  ctx: ColorCtx,
+  fonts: ThemeFonts,
+): { props: ParaProps; directRun: TextRunDirectFlags } {
   const out: ParaProps = { rp: {} };
-  if (!pPr) return out;
+  if (!pPr) return { props: out, directRun: textRunDirectFlags(0) };
   const algn = attr(pPr, 'algn');
   if (algn) out.algn = algn;
   const marL = numAttr(pPr, 'marL');
@@ -133,38 +145,60 @@ export function parseParaProps(pPr: Element | null, ctx: ColorCtx, fonts: ThemeF
     const rid = attr(buBlip, 'r:embed');
     if (rid) out.bullet = { kind: 'image', rid };
   }
-  const buClr = childColor(kid(pPr, 'buClr'), ctx);
-  if (buClr) out.buColor = buClr;
-  const buFont = attr(kid(pPr, 'buFont'), 'typeface');
-  if (buFont) out.buFont = buFont;
+  const buClr = kid(pPr, 'buClr');
+  if (buClr) out.buColor = childColor(buClr, ctx) ?? null;
+  else if (kid(pPr, 'buClrTx')) out.buColor = null;
+  const buFont = kid(pPr, 'buFont');
+  if (buFont) out.buFont = attr(buFont, 'typeface');
+  else if (kid(pPr, 'buFontTx')) out.buFont = null;
   const buSz = numAttr(kid(pPr, 'buSzPct'), 'val');
   if (buSz !== null) out.buSizePct = buSz / 100000;
+  else {
+    const buSzPts = numAttr(kid(pPr, 'buSzPts'), 'val');
+    if (buSzPts !== null) out.buSizePts = pt100(buSzPts);
+    else if (kid(pPr, 'buSzTx')) out.buSizePct = null;
+  }
 
   const defRPr = kid(pPr, 'defRPr');
-  if (defRPr) out.rp = parseRunProps(defRPr, ctx, fonts);
-  return out;
+  const parsedRun = parseRunPropsDetailed(defRPr, ctx, fonts);
+  out.rp = parsedRun.props;
+  return { props: out, directRun: parsedRun.direct };
 }
 
 export function parseRunProps(rPr: Element | null, ctx: ColorCtx, fonts: ThemeFonts): RunProps {
-  const out: RunProps = {};
-  if (!rPr) return out;
-  const sz = numAttr(rPr, 'sz');
-  if (sz !== null) out.sz = sz;
-  if (attr(rPr, 'b') !== null) out.b = boolAttr(rPr, 'b');
-  if (attr(rPr, 'i') !== null) out.i = boolAttr(rPr, 'i');
-  const u = attr(rPr, 'u');
-  if (u !== null) out.u = u !== 'none';
-  const strike = attr(rPr, 'strike');
-  if (strike !== null) out.strike = strike !== 'noStrike';
-  const baseline = numAttr(rPr, 'baseline');
-  if (baseline !== null && baseline !== 0) out.baseline = baseline / 1000;
-  const spc = numAttr(rPr, 'spc');
-  if (spc !== null && spc !== 0) out.spc = pt100(spc);
-  const cap = attr(rPr, 'cap');
-  if (cap) out.caps = cap === 'all' ? 'all' : cap === 'small' ? 'small' : 'none';
+  return parseRunPropsDetailed(rPr, ctx, fonts).props;
+}
 
-  const color = childColor(kid(rPr, 'solidFill'), ctx);
+export function parseRunPropsDetailed(
+  rPr: Element | null,
+  ctx: ColorCtx,
+  fonts: ThemeFonts,
+): { props: RunProps; direct: TextRunDirectFlags } {
+  const out: RunProps = {};
+  let bits = 0;
+  if (!rPr) return { props: out, direct: textRunDirectFlags(bits) };
+  const sz = numAttr(rPr, 'sz');
+  if (sz !== null) { out.sz = sz; bits |= TEXT_RUN_DIRECT_BITS.size; }
+  if (attr(rPr, 'b') !== null) { out.b = boolAttr(rPr, 'b'); bits |= TEXT_RUN_DIRECT_BITS.b; }
+  if (attr(rPr, 'i') !== null) { out.i = boolAttr(rPr, 'i'); bits |= TEXT_RUN_DIRECT_BITS.i; }
+  const u = attr(rPr, 'u');
+  if (u !== null) { out.u = u !== 'none'; bits |= TEXT_RUN_DIRECT_BITS.u; }
+  const strike = attr(rPr, 'strike');
+  if (strike !== null) { out.strike = strike !== 'noStrike'; bits |= TEXT_RUN_DIRECT_BITS.strike; }
+  const baseline = numAttr(rPr, 'baseline');
+  if (baseline !== null) { out.baseline = baseline / 1000; bits |= TEXT_RUN_DIRECT_BITS.baseline; }
+  const spc = numAttr(rPr, 'spc');
+  if (spc !== null) { out.spc = pt100(spc); bits |= TEXT_RUN_DIRECT_BITS.spacing; }
+  const cap = attr(rPr, 'cap');
+  if (cap) {
+    out.caps = cap === 'all' ? 'all' : cap === 'small' ? 'small' : 'none';
+    bits |= TEXT_RUN_DIRECT_BITS.caps;
+  }
+
+  const solidFill = kid(rPr, 'solidFill');
+  const color = childColor(solidFill, ctx);
   if (color) out.color = color;
+  if (solidFill) out.gradient = null;
   const grad = kid(rPr, 'gradFill');
   if (grad) {
     const stops = kids(kid(grad, 'gsLst'), 'gs')
@@ -177,24 +211,49 @@ export function parseRunProps(rPr: Element | null, ctx: ColorCtx, fonts: ThemeFo
       if (!out.color) out.color = stops[0].color;
     }
   }
+  if (kid(rPr, 'noFill')) {
+    out.color = 'transparent';
+    out.gradient = null;
+  }
+  if (solidFill || grad || ['noFill', 'blipFill', 'pattFill', 'grpFill']
+    .some((name) => !!kid(rPr, name))) {
+    bits |= TEXT_RUN_DIRECT_BITS.color | TEXT_RUN_DIRECT_BITS.gradient;
+  }
+  if (!solidFill && !grad && ['blipFill', 'pattFill', 'grpFill']
+    .some((name) => !!kid(rPr, name))) {
+    out.color = 'transparent';
+    out.gradient = null;
+  }
   const uFill = childColor(kid(rPr, 'uFill'), ctx) ?? childColor(kid(kid(rPr, 'uFill'), 'solidFill'), ctx);
   if (uFill) out.uColor = uFill;
-  const hl = childColor(kid(rPr, 'highlight'), ctx);
-  if (hl) out.highlight = hl;
+  if (kid(rPr, 'uFillTx') || kid(rPr, 'uFill') && !uFill) out.uColor = null;
+  if (kid(rPr, 'uFillTx') || kid(rPr, 'uFill')) bits |= TEXT_RUN_DIRECT_BITS.underlineColor;
+  const highlight = kid(rPr, 'highlight');
+  if (highlight) out.highlight = childColor(highlight, ctx) ?? null;
+  if (highlight) bits |= TEXT_RUN_DIRECT_BITS.highlight;
 
   const ln = kid(rPr, 'ln');
-  if (ln && !kid(ln, 'noFill')) {
+  if (kid(ln, 'noFill')) out.outline = null;
+  else if (ln) {
     const lc = childColor(kid(ln, 'solidFill'), ctx);
     if (lc) out.outline = { color: lc, width: emu(numAttr(ln, 'w') ?? 9525) };
+    else out.outline = null;
   }
+  if (ln) bits |= TEXT_RUN_DIRECT_BITS.outline;
 
-  const latin = resolveFont(attr(kid(rPr, 'latin'), 'typeface'), fonts);
+  const latinNode = kid(rPr, 'latin');
+  const latin = resolveFont(attr(latinNode, 'typeface'), fonts);
   if (latin) out.latin = latin;
-  const ea = resolveFont(attr(kid(rPr, 'ea'), 'typeface'), fonts);
+  if (attr(latinNode, 'typeface') !== null) bits |= TEXT_RUN_DIRECT_BITS.fontLatin;
+  const eaNode = kid(rPr, 'ea');
+  const ea = resolveFont(attr(eaNode, 'typeface'), fonts);
   if (ea) out.ea = ea;
-  const cs = resolveFont(attr(kid(rPr, 'cs'), 'typeface'), fonts);
+  if (attr(eaNode, 'typeface') !== null) bits |= TEXT_RUN_DIRECT_BITS.fontEastAsian;
+  const csNode = kid(rPr, 'cs');
+  const cs = resolveFont(attr(csNode, 'typeface'), fonts);
   if (cs) out.cs = cs;
-  return out;
+  if (attr(csNode, 'typeface') !== null) bits |= TEXT_RUN_DIRECT_BITS.fontComplexScript;
+  return { props: out, direct: textRunDirectFlags(bits) };
 }
 
 function resolveFont(tf: string | null, fonts: ThemeFonts): string | null {
@@ -209,59 +268,6 @@ function resolveFont(tf: string | null, fonts: ThemeFonts): string | null {
 }
 
 const mergeRun = (base: RunProps, over: RunProps): RunProps => ({ ...base, ...over });
-
-/** Wingdings / Symbol 常见项目符号字符映射到通用 Unicode */
-const SYMBOL_BULLETS: Record<string, string> = {
-  '': '▪', '': '•', '': '➢', '': '✓',
-  '': '●', '': '◆', '': '□', '': '❖',
-  '§': '▪', n: '▪', l: '●', u: '◆', p: '❑', v: '❖',
-  w: '♦', 'Ø': '➢', 'ü': '✓', F: '☞', q: '❑',
-};
-
-function bulletText(bu: Bullet | undefined, counters: number[], lvl: number): string | null {
-  if (!bu || bu.kind === 'none' || bu.kind === 'image') return null;
-  if (bu.kind === 'char') {
-    const mapped = SYMBOL_BULLETS[bu.char];
-    if (mapped) return mapped;
-    if (bu.font && /wingdings|webdings|symbol/i.test(bu.font)) return '•';
-    return bu.char;
-  }
-  counters.length = lvl + 1;
-  counters[lvl] = (counters[lvl] ?? bu.startAt - 1) + 1;
-  return formatAutoNum(bu.scheme, counters[lvl]);
-}
-
-function formatAutoNum(scheme: string, num: number): string {
-  let body: string;
-  if (scheme.startsWith('alphaLc')) body = alpha(num).toLowerCase();
-  else if (scheme.startsWith('alphaUc')) body = alpha(num);
-  else if (scheme.startsWith('romanLc')) body = roman(num).toLowerCase();
-  else if (scheme.startsWith('romanUc')) body = roman(num);
-  else if (scheme.startsWith('circleNum')) body = circled(num);
-  else body = String(num);
-  if (scheme.endsWith('ParenBoth')) return `(${body})`;
-  if (scheme.endsWith('ParenR')) return `${body})`;
-  if (scheme.endsWith('Period')) return `${body}.`;
-  return body;
-}
-
-function alpha(num: number): string {
-  let s = '';
-  while (num > 0) {
-    s = String.fromCharCode(65 + ((num - 1) % 26)) + s;
-    num = Math.floor((num - 1) / 26);
-  }
-  return s;
-}
-
-function roman(num: number): string {
-  const table: [number, string][] = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
-  let s = '';
-  for (const [v, sym] of table) while (num >= v) { s += sym; num -= v; }
-  return s;
-}
-
-const circled = (num: number): string => (num >= 1 && num <= 20 ? String.fromCharCode(0x2460 + num - 1) : String(num));
 
 /** bodyPr/prstTxWarp → TextWarp；avLst 的 fmla 形如 "val 5400000" */
 function parseWarp(bodyPrs: (Element | null)[]): TextWarp | undefined {
@@ -299,7 +305,8 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     const pPr = kid(p, 'pPr');
     const lvl = numAttr(pPr, 'lvl') ?? 0;
     const inherited = resolveParagraphLevel(env.chain, lvl);
-    const direct = parseParaProps(pPr, env.ctx, env.fonts);
+    const parsedParagraph = parseParaPropsDetailed(pPr, env.ctx, env.fonts);
+    const direct = parsedParagraph.props;
     const merged = mergeParagraphProps(inherited, direct);
 
     const runs: TextRun[] = [];
@@ -307,7 +314,8 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     for (let node = parent.firstElementChild; node; node = node.nextElementSibling) {
       if (node.localName === 'r' || node.localName === 'fld') {
         const rPr = kid(node, 'rPr');
-        const rp = mergeRun(merged.rp, parseRunProps(rPr, env.ctx, env.fonts));
+        const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
+        const rp = mergeRun(merged.rp, parsedRun.props);
         const hlink = kid(rPr, 'hlinkClick');
         let readonlyLink = false;
         if (hlink && env.resolveLink) {
@@ -317,7 +325,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         }
         let text = kid(node, 't')?.textContent ?? '';
         if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
-        const run = finalizeRun(text, rp, env, merged.rp);
+        const run = finalizeRun(text, rp, env, merged.rp, parsedRun.direct);
         if (env.edit && readonlyLink && run.editInfo) run.editInfo = { ...run.editInfo, readonlyLink: true };
         runs.push(node.localName === 'fld'
           ? { ...run, field: attr(node, 'type') ?? 'unknown' }
@@ -325,8 +333,10 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         if (text.trim()) hasContent = true;
       } else if (node.localName === 'br') {
         // a:br 自带 rPr；忽略它会让带格式硬换行保存重开后退回段落默认字符格式。
-        const rp = mergeRun(merged.rp, parseRunProps(kid(node, 'rPr'), env.ctx, env.fonts));
-        runs.push(finalizeRun('\n', rp, env, merged.rp));
+        const rPr = kid(node, 'rPr');
+        const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
+        const rp = mergeRun(merged.rp, parsedRun.props);
+        runs.push(finalizeRun('\n', rp, env, merged.rp, parsedRun.direct));
       } else if (node.localName === 'AlternateContent') {
         // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
         const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
@@ -350,36 +360,23 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     collectRuns(p, 4);
     if (runs.length === 0) {
       const endRPr = kid(p, 'endParaRPr');
+      const parsedRun = parseRunPropsDetailed(endRPr, env.ctx, env.fonts);
       runs.push(finalizeRun(
-        '', mergeRun(merged.rp, parseRunProps(endRPr, env.ctx, env.fonts)), env, merged.rp,
+        '', mergeRun(merged.rp, parsedRun.props), env, merged.rp, parsedRun.direct,
       ));
     }
 
-    const maxSize = Math.max(...runs.map((r) => r.size), 1);
-    const effective = effectiveParagraphProps(merged, maxSize, layout.lnSpcReduction ?? 0);
-
-    const buImage = merged.bullet?.kind === 'image' && env.resolveImage ? env.resolveImage(merged.bullet.rid) : null;
-
-    paragraphs.push({
-      align: effective.align,
+    paragraphs.push(materializeParagraph({
       lvl,
-      marL: effective.marginLeft,
-      indent: effective.indent,
-      bullet: bulletText(merged.bullet, counters, lvl),
-      lineHeight: effective.lineHeight,
-      spaceBefore: effective.spaceBefore,
-      spaceAfter: effective.spaceAfter,
+      resolved: merged,
+      inherited,
+      direct,
+      directRun: parsedParagraph.directRun,
       runs,
-      bulletColor: merged.buColor ?? null,
-      bulletFont: merged.buFont ?? null,
-      bulletSize: merged.buSizePct ?? null,
-      bulletImage: buImage,
-      rtl: merged.rtl,
-      ...(env.edit ? { editInfo: {
-        inheritedParagraphProps: effectiveParagraphProps(inherited, maxSize, layout.lnSpcReduction ?? 0),
-        directParagraphProps: directParagraphProps(direct),
-      } } : {}),
-    });
+      counters,
+      lnSpcReduction: layout.lnSpcReduction ?? 0,
+      env,
+    }));
   }
 
   // 编辑解析必须保留空段落及 endParaRPr 的格式入口；普通查看仍把它收敛成 null，避免空形状生成 DOM。
@@ -416,13 +413,19 @@ function fieldText(type: string | null, env: TextEnv): string {
   return '';
 }
 
-function effectiveFonts(rp: RunProps, env: TextEnv): string[] {
+function effectiveFontSlots(rp: RunProps, env: TextEnv): TextFontSlots {
   // run 里没写 a:latin 不等于「没有字体」——ECMA-376 的继承链走到最后落在
   // 主题的 minorFont 上。不补这一层，渲染会掉到 CSS 的通用回退（Helvetica）
   // 上，字宽与 PowerPoint 对不齐；collectFonts 也会以为这份文件没用字体。
-  const latin = rp.latin ?? env.fonts.minor.latin;
-  const ea = rp.ea ?? env.fonts.minor.ea;
-  const cs = rp.cs ?? env.fonts.minor.cs ?? null;
+  return {
+    latin: rp.latin ?? env.fonts.minor.latin,
+    eastAsian: rp.ea ?? env.fonts.minor.ea,
+    complexScript: rp.cs ?? env.fonts.minor.cs ?? null,
+  };
+}
+
+function fontStack(slots: TextFontSlots): string[] {
+  const { latin, eastAsian: ea, complexScript: cs } = slots;
 
   // 字体栈按 latin → ea → cs 排，浏览器会逐个回退直到找到含该字形的字体
   const fonts: string[] = [];
@@ -432,6 +435,10 @@ function effectiveFonts(rp: RunProps, env: TextEnv): string[] {
   return fonts;
 }
 
+function effectiveFonts(rp: RunProps, env: TextEnv): string[] {
+  return fontStack(effectiveFontSlots(rp, env));
+}
+
 function inheritedRunProps(rp: RunProps, env: TextEnv): NonNullable<TextRun['editInfo']>['inheritedRunProps'] {
   return {
     b: rp.b ?? false,
@@ -439,12 +446,27 @@ function inheritedRunProps(rp: RunProps, env: TextEnv): NonNullable<TextRun['edi
     u: rp.u ?? false,
     strike: rp.strike ?? false,
     size: pt100(rp.sz ?? 1800),
+    color: rp.color ?? env.defaultColor ?? 'rgb(0,0,0)',
     fonts: effectiveFonts(rp, env),
+    baseline: rp.baseline || undefined,
+    spacing: rp.spc || undefined,
+    caps: rp.caps && rp.caps !== 'none' ? rp.caps : undefined,
+    outline: rp.outline ?? null,
+    gradient: rp.gradient ?? null,
+    highlight: rp.highlight ?? null,
+    underlineColor: rp.uColor ?? null,
   };
 }
 
-function finalizeRun(text: string, rp: RunProps, env: TextEnv, inherited?: RunProps): TextRun {
-  const fonts = effectiveFonts(rp, env);
+export function finalizeRun(
+  text: string,
+  rp: RunProps,
+  env: TextEnv,
+  inherited?: RunProps,
+  direct: TextRunDirectFlags = textRunDirectFlags(0),
+): TextRun {
+  const fontSlots = effectiveFontSlots(rp, env);
+  const fonts = fontStack(fontSlots);
   const size = pt100(rp.sz ?? 1800);
   return {
     text,
@@ -455,14 +477,18 @@ function finalizeRun(text: string, rp: RunProps, env: TextEnv, inherited?: RunPr
     size,
     color: rp.color ?? env.defaultColor ?? 'rgb(0,0,0)',
     fonts,
-    baseline: rp.baseline,
-    spacing: rp.spc,
+    baseline: rp.baseline || undefined,
+    spacing: rp.spc || undefined,
     caps: rp.caps && rp.caps !== 'none' ? rp.caps : undefined,
     outline: rp.outline ?? null,
     gradient: rp.gradient ?? null,
     link: rp.link,
     highlight: rp.highlight ?? null,
     underlineColor: rp.uColor ?? null,
-    ...(env.edit && inherited ? { editInfo: { inheritedRunProps: inheritedRunProps(inherited, env) } } : {}),
+    ...(env.edit && inherited ? { editInfo: {
+      inheritedRunProps: inheritedRunProps(inherited, env),
+      direct,
+      fontSlots,
+    } } : {}),
   };
 }

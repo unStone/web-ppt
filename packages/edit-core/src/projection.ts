@@ -12,6 +12,10 @@ import { tableCellOverrideKeyFromRowRef } from './table-cell';
 import {
   orderedTableRowInsertions, tableRowHeightDelta, tableRowsWithoutTextOverrides,
 } from './table-rows';
+import {
+  changedLayout, projectedLayoutElements, projectionContentIds, rebasedElementBase,
+  rebasedTextBase, resolvedLayoutSlide,
+} from './layout-projection';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -19,6 +23,11 @@ interface ProjectionCache {
 }
 
 const caches = new WeakMap<EditDoc, ProjectionCache>();
+
+/** 文档换包或释放后，投影不能继续持有旧资源 URL 与整页 Schema。 */
+export function releaseProjectionCache(doc: EditDoc): void {
+  caches.delete(doc);
+}
 
 /** 最后一格吃掉浮点余量，保证即时网格与选择 frame 在 JS 数值上也严格闭合。 */
 function scaledDimensions(values: readonly number[], total: number): number[] {
@@ -164,8 +173,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
+  const layoutBase = rebasedElementBase(doc, slideOfElement(doc, id), record);
   const { tableCells, tableRows, link: linkOverride, ...overrides } = record.ovr;
-  let out = { ...record.src, ...overrides } as unknown as SlideElement;
+  let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
   if (own(record.ovr, 'link')) {
     const link = linkOverride?.kind === 'none' ? undefined : renderLinkTarget(doc, linkOverride!);
     out = { ...out, link } as SlideElement;
@@ -188,10 +198,12 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (out.kind === 'shape' && record.ovr.text?.kind === 'empty') {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
-    const source = record.src.kind === 'shape' ? record.src.text : null;
+    const baseText = layoutBase.base.kind === 'shape'
+      ? layoutBase.base.text ?? rebasedTextBase(doc, slideOfElement(doc, id), id)
+      : null;
     out = {
       ...out,
-      text: textBodyFromOverride(record.ovr.text, source, (target) => renderLinkTarget(doc, target)),
+      text: textBodyFromOverride(record.ovr.text, baseText, (target) => renderLinkTarget(doc, target)),
     } as ShapeElement;
   } else if (out.kind === 'table' && (tableCells || tableRows)) {
     if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
@@ -239,14 +251,14 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       ...out, scaleX, scaleY,
       children: (record.children ?? []).map((childId) => effectiveElement(doc, childId)),
     } as GroupElement;
-  } else if (out.kind === 'shape' && record.meta.geom) {
-    const geom = resolveGeomPath(record.meta.geom, out.w, out.h);
+  } else if (out.kind === 'shape' && layoutBase.geom) {
+    const geom = resolveGeomPath(layoutBase.geom, out.w, out.h);
     out = { ...out, path: geom.d, openGeom: geom.open || undefined } as ShapeElement;
-  } else if (out.kind === 'image' && record.meta.geom) {
-    const geom = resolveGeomPath(record.meta.geom, out.w, out.h);
+  } else if (out.kind === 'image' && layoutBase.geom) {
+    const geom = resolveGeomPath(layoutBase.geom, out.w, out.h);
     out = {
       ...out,
-      clipPath: record.meta.geom.preset === 'rect' ? null : geom.d,
+      clipPath: layoutBase.geom.preset === 'rect' ? null : geom.d,
     } as ImageElement;
   }
   out = dynamicSlideNumber(doc, id, out);
@@ -261,10 +273,23 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
   if (cached) return cached;
   const record = doc.slides[id];
   if (!record) throw new Error(`找不到幻灯片：${id}`);
+  const layout = changedLayout(doc, id);
+  const resolved = layout ? resolvedLayoutSlide(doc, id) : null;
+  const contentIds = projectionContentIds(doc, id);
+  const layoutSource = layout ? {
+    background: structuredClone(resolved?.background ?? layout.background),
+    layoutName: layout.name,
+    transition: structuredClone(resolved?.transition ?? layout.transition),
+  } : {};
   let slide: Slide = {
     ...record.src,
+    ...layoutSource,
     ...record.ovr,
-    elements: record.children.map((elementId) => effectiveElement(doc, elementId)),
+    elements: [
+      ...(layout ? projectedLayoutElements(doc, id)
+        .filter((element) => !element.editInfo?.placeholder) : []),
+      ...contentIds.map((elementId) => effectiveElement(doc, elementId)),
+    ],
   };
   if (record.backgroundImage) {
     const resource = doc.imageResources[record.backgroundImage.resourceHash];
@@ -389,7 +414,7 @@ export function invalidateElementStructure(
 }
 
 export function invalidateAll(doc: EditDoc): ProjectionInvalidation {
-  caches.delete(doc);
+  releaseProjectionCache(doc);
   return {
     dirtyElements: new Set(Object.keys(doc.elements)),
     dirtySlides: new Set(doc.slideOrder),

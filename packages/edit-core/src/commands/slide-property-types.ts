@@ -33,6 +33,23 @@ export interface SetHiddenCommand {
   readonly v: boolean | null;
 }
 
+export interface SetLayoutCommand {
+  readonly type: 'SetLayout';
+  readonly id: SlideId;
+  readonly layoutId: string;
+}
+
+export type SlideLayoutPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'layoutId'];
+  readonly value: string;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'layoutId'];
+  readonly origin: string;
+};
+
 export type SlideBackgroundPatch = {
   readonly op: 'set';
   readonly path: readonly ['slides', SlideId, 'ovr', 'background'];

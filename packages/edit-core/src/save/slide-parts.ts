@@ -3,7 +3,7 @@ import type { EditDoc, SlideRecord } from '../types';
 import {
   createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild, reorderXmlChildren,
 } from '../xml/nodes';
-import { setXmlAttribute } from '../xml/mutate';
+import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import { namespacedElement } from './xml-element';
 import { findXmlAttribute, findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
 import { DRAWINGML_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qname';
@@ -33,11 +33,50 @@ export function emptySlideXml(): Uint8Array {
 
 export function createdSlideRelationships(slide: SlideRecord, source?: Uint8Array): Uint8Array {
   if (!slide.creation || !slide.origin) throw new Error(`页面 ${slide.id} 不是可物化的新页`);
-  const id = slide.creation.layoutRelationshipId;
-  return patchRelationshipPart(source, [{
-    sourceId: id, targetId: id, type: LAYOUT_REL,
-    target: relativeTarget(slide.origin.part, slide.creation.layoutPart),
-  }]);
+  return patchSlideLayoutRelationship(slide, source);
+}
+
+function availableRelationshipId(source?: Uint8Array): string {
+  const used = new Set(source
+    ? xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' })
+      .flatMap((node) => elementAttribute(node, 'Id') ?? [])
+    : []);
+  for (let serial = 1; ; serial++) if (!used.has(`rId${serial}`)) return `rId${serial}`;
+}
+
+/** 复用既有 rId，只改内部 Target；未知关系、属性与顺序均留在原树。 */
+export function patchSlideLayoutRelationship(slide: SlideRecord, source?: Uint8Array): Uint8Array {
+  if (!slide.origin || !slide.layoutId) throw new Error(`页面 ${slide.id} 缺少版式写回身份`);
+  if (!source) {
+    const id = slide.creation?.layoutRelationshipId ?? availableRelationshipId();
+    return patchRelationshipPart(undefined, [{
+      sourceId: id,
+      targetId: id,
+      type: LAYOUT_REL,
+      target: relativeTarget(slide.origin.part, slide.layoutId),
+    }]);
+  }
+  const tree = parseXmlTree(source);
+  const relationships = xmlElementChildren(tree.root, { localName: 'Relationship' });
+  const relation = relationships.find((node) => elementAttribute(node, 'Type')?.endsWith('/slideLayout')
+    && elementAttribute(node, 'TargetMode') !== 'External'
+    && (slide.creation === undefined
+      || elementAttribute(node, 'Id') === slide.creation.layoutRelationshipId));
+  if (!relation) {
+    const id = slide.creation?.layoutRelationshipId ?? availableRelationshipId(source);
+    return patchRelationshipPart(source, [{
+      sourceId: id,
+      targetId: id,
+      type: LAYOUT_REL,
+      target: relativeTarget(slide.origin.part, slide.layoutId),
+    }]);
+  }
+  const target = relativeTarget(slide.origin.part, slide.layoutId);
+  if (elementAttribute(relation, 'Target') === target
+    && elementAttribute(relation, 'TargetMode') === undefined) return source;
+  setXmlAttribute(relation, 'Target', target);
+  removeXmlAttribute(relation, 'TargetMode');
+  return serializeXmlTreeBytes(tree);
 }
 
 /** PowerPoint 会重算字段，LibreOffice 不一定；只刷新 a:fld 的缓存文字，不降级成普通 run。 */

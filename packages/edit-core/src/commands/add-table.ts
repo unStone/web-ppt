@@ -1,5 +1,6 @@
 import type { TableCell, TableCreationDefaults, TableElement, TableRow } from '@web-ppt/core';
 import { allocateElementId } from '../document';
+import { currentTableDefaults } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import { directTableCellMarkup } from '../table-direct-markup';
@@ -105,7 +106,8 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
     || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
     throw new Error(`新增表格目标页不可写回：${command.slideId}`);
   }
-  if (!slide.defaultTable) throw new Error(`新增表格目标页缺少主题默认值：${command.slideId}`);
+  const defaults = currentTableDefaults(doc, slide.id);
+  if (!defaults) throw new Error(`新增表格目标页缺少主题默认值：${command.slideId}`);
   assertTableDimension(command.rows, 'AddTable.rows');
   assertTableDimension(command.cols, 'AddTable.cols');
   assertInsertionRect(command.rect, 'AddTable.rect');
@@ -128,7 +130,7 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
   };
   const columns = distributeEmu(frameEmu.w, command.cols, 'AddTable.rect.w');
   const rows = distributeEmu(frameEmu.h, command.rows, 'AddTable.rect.h');
-  return { slide, placeholder, columns, rows, normalized };
+  return { slide, defaults, placeholder, columns, rows, normalized };
 }
 
 /** 表格视觉默认值、即时模型和 OOXML 宿主共用一个来源，再交给既有结构历史与保存主干。 */
@@ -137,12 +139,12 @@ export function addTablePatches(
   command: AddTableCommand,
   origin: string,
 ): CommandPatches {
-  const { slide, placeholder, columns, rows, normalized } = assertCommand(doc, command);
+  const { slide, defaults, placeholder, columns, rows, normalized } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = allocateElementSpid(doc, slide.origin!.part);
   const name = `表格 ${spid}`;
-  const source = sourceTable(spid, name, normalized, slide.defaultTable!, columns, rows);
-  const markup = tableMarkup(spid, name, normalized, slide.defaultTable!, source, columns, rows);
+  const source = sourceTable(spid, name, normalized, defaults, columns, rows);
+  const markup = tableMarkup(spid, name, normalized, defaults, source, columns, rows);
   const insertion: ElementInsertionSource = {
     markup, namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
     spids: { [String(spid)]: spid },
