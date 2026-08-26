@@ -10,6 +10,9 @@ npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor @web
 ```tsx
 import { useRef, useState } from 'react';
 import { WebPptEditor, type WebPptEditorHandle } from '@web-ppt/react';
+import { createIndexedDbRecoveryStore } from '@web-ppt/editor';
+
+const recoveryStore = createIndexedDbRecoveryStore({ namespace: 'react-deck' });
 
 export function Deck({ file }: { file: File }) {
   const editor = useRef<WebPptEditorHandle>(null);
@@ -26,6 +29,8 @@ export function Deck({ file }: { file: File }) {
       mode={mode}
       slideId={slideId}
       zoom={1}
+      openOptions={{ recovery: { store: recoveryStore } }}
+      onRecovery={(candidate) => openRecoveryModal(candidate)}
       onViewChange={(state) => setSlideId(state.slideId ?? undefined)}
       onError={console.error}
       style={{ width: '100%', height: 600 }}
@@ -48,6 +53,10 @@ function download(bytes: Uint8Array) {
 mode, slide, and zoom. Changing `source` atomically opens the replacement and releases the old owned session.
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe, including
 React StrictMode's development setup/cleanup/setup cycle.
+
+While a journal is awaiting a decision, `snapshot.status` is `recovering` and `snapshot.recovery` contains its
+lightweight metadata. `onRecovery` may return `restore`, `discard`, or `cancel`; source hashing, IndexedDB writes,
+compaction, replay, and cleanup remain in `@web-ppt/editor` rather than the React component.
 
 To share one session between several React, Vue, Web Component, Svelte, or vanilla views, ownership is explicit:
 

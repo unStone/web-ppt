@@ -259,6 +259,11 @@ async function browserResult(webSocketDebuggerUrl) {
           slideImageBackgroundP95: report.dataset.slideImageBackgroundP95,
           slideImageBackgroundModelP95: report.dataset.slideImageBackgroundModelP95,
           slideNotesP95: report.dataset.slideNotesP95,
+          recoveryPersistMs: report.dataset.recoveryPersistMs,
+          recoveryRestoreMs: report.dataset.recoveryRestoreMs,
+          recoveryChunks: report.dataset.recoveryChunks,
+          recoverySyncOverhead: report.dataset.recoverySyncOverhead,
+          recoveryFingerprintMs: report.dataset.recoveryFingerprintMs,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -591,6 +596,9 @@ try {
     + ` · 页面图片背景200页模型/完整上屏 p95 `
     + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
     + ` · 备注2000 p95 ${result.slideNotesP95}ms`
+    + ` · IndexedDB恢复1000帧 写入/恢复 ${result.recoveryPersistMs}/${result.recoveryRestoreMs}ms`
+    + `/分块 ${result.recoveryChunks}/同步增量 ${result.recoverySyncOverhead}ms`
+    + `/50MB指纹 ${result.recoveryFingerprintMs}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

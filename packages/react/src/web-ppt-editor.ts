@@ -6,7 +6,7 @@ import type {
 import { useWebPptAdapter } from './use-web-ppt-adapter';
 
 type ContainerProps = Omit<HTMLAttributes<HTMLDivElement>,
-  'children' | 'onChange' | 'onError' | 'onProgress'>;
+  'children' | 'onChange' | 'onError' | 'onProgress' | 'onRecovery'>;
 
 export type WebPptEditorProps = WebPptAdapterBinding & ContainerProps;
 
@@ -23,13 +23,13 @@ const EditorComponent = forwardRef<WebPptEditorHandle, WebPptEditorProps>((props
   const {
     source, session, sessionOwnership, openOptions,
     mode, slideId, zoom, textMode, snapping, snapMargins, onLinkFollow,
-    onReady, onError, onProgress, onChange, onViewChange,
+    onReady, onError, onProgress, onChange, onViewChange, onRecovery,
     ...containerProps
   } = props;
   const binding = {
     source, session, sessionOwnership, openOptions,
     mode, slideId, zoom, textMode, snapping, snapMargins, onLinkFollow,
-    onReady, onError, onProgress, onChange, onViewChange,
+    onReady, onError, onProgress, onChange, onViewChange, onRecovery,
   } as WebPptAdapterBinding;
   const { adapter, containerRef } = useWebPptAdapter(binding);
   useImperativeHandle(ref, () => ({

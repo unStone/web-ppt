@@ -36,6 +36,7 @@ export const WebPptEditor = defineComponent({
       default: undefined,
     },
     onLinkFollow: { type: Function as PropType<BindingProp<'onLinkFollow'>>, default: undefined },
+    onRecovery: { type: Function as PropType<BindingProp<'onRecovery'>>, default: undefined },
   },
   emits: {
     ready: (_session: EditorSession) => true,
@@ -59,6 +60,7 @@ export const WebPptEditor = defineComponent({
       onProgress: (progress: WebPptAdapterProgress) => emit('progress', progress),
       onChange: (change: EditorChange) => emit('change', change),
       onViewChange: (state: WebPptViewState) => emit('viewChange', state),
+      onRecovery: props.onRecovery,
       } satisfies WebPptViewOptions & WebPptAdapterCallbacks;
       if (props.session != null && props.source == null && props.sessionOwnership === 'external') {
         return { ...common, session: props.session, sessionOwnership: 'external' };

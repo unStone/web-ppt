@@ -37,6 +37,8 @@ import { runSlidePropertiesEditorContract } from './lib/slide-properties-editor-
 import { runShapeEffectsEditorContract } from './lib/shape-effects-editor-contract.mjs';
 import { runImageCropEditorContract } from './lib/image-crop-editor-contract.mjs';
 import { runFrameworkAdapterContract } from './lib/framework-adapter-contract.mjs';
+import { runRecoveryPersistenceContract } from './lib/recovery-persistence-contract.mjs';
+import { runRecoveryAdapterContract } from './lib/recovery-adapter-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -102,6 +104,8 @@ const elementIds = (doc, slideId) => {
 };
 
 await runFrameworkAdapterContract({ lib, load, check });
+await runRecoveryPersistenceContract({ lib, load, check });
+await runRecoveryAdapterContract({ lib, load, check });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {

@@ -6,6 +6,12 @@
 
 ### 新增
 
+- `@web-ppt/editor` 新增显式启用的纯浏览器自动保存：完整源字节 SHA-256 把同内容输入绑定到同一日志，
+  IndexedDB 以串行批次原子追加恢复帧，并按分块数、总估算字节、记录数和保留期压缩清理。`openEditor`
+  在解析和挂载前完成 restore/discard/cancel 决策，clean 尾帧不提示；adapter 与 React/Vue 共用
+  `recovering + onRecovery` seam；原子代际占位拒绝旧页面在 discard 后复活日志。真实 Chrome 中 50MB
+  指纹为 42.2ms，1,000 帧写入/关闭重开恢复为 131.5/14.9ms，压缩后 10 个分块，同步提交增量 0.000ms。
+
 - `@web-ppt/edit-core` 新增版本化 `RecoveryFrame`、`Editor.subscribeRecovery()` 与
   `restoreRecoveryFrames()`：事务、撤销/重做、非历史写入、选区、保存点、图片资源和身份水位都能按
   严格序号写成纯 JSON。会话图片 URL 在 patch 中先变成保留 token，资源闭包缺失会原子拒绝；回放先在

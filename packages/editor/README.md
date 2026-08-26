@@ -53,18 +53,57 @@ view.destroy();             // destroys only this mounted view
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs
 ```
 
-`openEditor()` also accepts `idPrefix` plus `recoveryFrames` from `@web-ppt/edit-core`. The prefix must be the
-one stored with those frames; replay finishes atomically before the session or any DOM view becomes observable.
-The package intentionally does not choose an IndexedDB schema, source fingerprint, retention policy, or recovery
-prompt for its host application. Framework adapters treat `openOptions` as immutable input: replace the
-`recoveryFrames` array reference when loading a different journal, so the same source is reopened without hashing
-the entire log on every framework render.
+## Autosave and crash recovery
+
+Storage is opt-in. Once `recovery` is provided, the source is read once, identified by a full-byte SHA-256, and
+parsed from those same bytes. Transactions are appended in asynchronous batches, so canvas commits never wait for
+IndexedDB.
+
+```ts
+import { createIndexedDbRecoveryStore, openEditor } from '@web-ppt/editor';
+
+const recoveryStore = createIndexedDbRecoveryStore({ namespace: 'my-editor' });
+const session = await openEditor(file, {
+  recovery: {
+    store: recoveryStore,
+    decide: async (candidate) => showRecoveryDialog({
+      changedAt: new Date(candidate.updatedAt),
+      actions: ['restore', 'discard', 'cancel'],
+    }),
+    onError: (error) => showAutosaveWarning(error),
+  },
+});
+
+await session.recovery?.flush(); // await queued frames before a critical navigation
+session.dispose();
+await recoveryStore.close();     // share one store across sessions; close it at app shutdown
+```
+
+Equal bytes across `File`, `Blob`, `ArrayBuffer`, and `Uint8Array` resolve to one journal; equal names or sizes do
+not. `restore` reuses the stored `idPrefix` before any DOM is visible, while `discard` atomically replaces the old
+journal with an empty, new-generation reservation. Late writes from an older tab are rejected instead of reviving
+discarded edits. `cancel` neither parses nor mounts nor changes the journal. A clean tail is reset without prompting.
+Edits made after a save retain the complete chain from the original source.
+
+Defaults compact more than 64 chunks back to 32 and retain at most 20 journals, 16MB, or 30 days. `stats()`,
+`cleanup()`, and factory options expose those controls. Compaction regroups patch frames unchanged and coalesces only
+consecutive metadata-only frames, preserving the final selection/savepoint state. Append/quota failures never roll back committed edits; they surface through
+`session.recovery.error`, `flush()` rejection, and `onError` without an unhandled rejection.
+
+A custom `RecoveryStore` implements `load`, atomic `reset`, atomic `append`, and `remove`. It must persist and compare
+the supplied `epoch`; this is the generation guard that prevents a stale session from appending after discard. Its
+`reset` must also reject before commit when `request.signal` is aborted, so a superseded open cannot overwrite the
+latest reservation.
+
+You may still supply `idPrefix + recoveryFrames` from `@web-ppt/edit-core` for custom persistence, but not together
+with `recovery`. Framework adapters use O(1) reference identity for both stores and manual logs rather than scanning
+them on every render.
 
 ## Framework adapter contract
 
 `createWebPptAdapter()` is the lifecycle boundary used by `@web-ppt/react` and `@web-ppt/vue`; Svelte, Web
-Components, and other hosts can bind it directly. It is safe to import during SSR because no DOM is touched until
-`attach()` mounts a container.
+Components, and other hosts can bind it directly. It is safe to import during SSR and in a Worker because no DOM or
+IndexedDB global is touched until a session or store is explicitly created; `attach()` is the first DOM boundary.
 
 ```ts
 import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor';
@@ -82,8 +121,10 @@ adapter.dispose();
 The adapter owns sessions opened from `source` and atomically releases them on replacement or disposal. To share
 an existing session across several adapters, pass `{ session, sessionOwnership: 'external' }`; each adapter then
 destroys only its view and the caller remains responsible for `session.dispose()`. Concurrent stale opens dispose
-their late result. `snapshot` and `subscribe()` expose idle/opening/ready/error state, progress, session, view,
-mode, stable slide id, and zoom without introducing a second presentation model.
+their late result. `snapshot` and `subscribe()` expose idle/opening/recovering/ready/error state, progress, the
+recovery candidate, session, view, mode, stable slide id, and zoom without introducing a second presentation model.
+When persistence is enabled, `onRecovery(candidate)` returns `restore`, `discard`, or `cancel`; React and Vue pass
+through this same callback.
 
 Every host maps the same four operations; no rendering or editor state is reimplemented:
 

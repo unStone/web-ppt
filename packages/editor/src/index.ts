@@ -1,4 +1,7 @@
 export { openEditor } from './session';
+export { fingerprintSource } from './source-fingerprint';
+export { RecoveryOpenCancelledError } from './recovery-store';
+export { createIndexedDbRecoveryStore } from './indexeddb-recovery-store';
 export {
   applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT,
 } from './framework-adapter';
@@ -12,6 +15,14 @@ export {
   SHAPE_PATTERN_PRESETS,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
+export type { WebPptSourceIdentity } from './source-fingerprint';
+export type {
+  EditorRecovery, RecoveryCandidate, RecoveryDecision, RecoveryDecisionHandler, RecoveryOptions,
+  RecoveryStore, RecoveryStoreAppend, RecoveryStoreJournal, RecoveryStoreReset,
+} from './recovery-store';
+export type {
+  IndexedDbRecoveryStore, IndexedDbRecoveryStoreOptions, RecoveryCleanupResult, RecoveryStoreStats,
+} from './indexeddb-recovery-store';
 export type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptAdapterSnapshot,
   WebPptAdapterSubscriber, WebPptDocument, WebPptSource, WebPptViewOptions, WebPptViewState,

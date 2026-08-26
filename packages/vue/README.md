@@ -11,11 +11,14 @@ npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor @web
 <script setup lang="ts">
 import { ref } from 'vue';
 import { WebPptEditor, type WebPptEditorHandle } from '@web-ppt/vue';
+import { createIndexedDbRecoveryStore, type RecoveryCandidate } from '@web-ppt/editor';
 
 const props = defineProps<{ file: File }>();
 const editor = ref<WebPptEditorHandle>();
 const mode = ref<'view' | 'edit'>('edit');
 const slideId = ref<string>();
+const recoveryStore = createIndexedDbRecoveryStore({ namespace: 'vue-deck' });
+const decideRecovery = (candidate: RecoveryCandidate) => openRecoveryModal(candidate);
 const save = async () => download(await editor.value!.save());
 
 function download(bytes: Uint8Array) {
@@ -38,6 +41,8 @@ function download(bytes: Uint8Array) {
     :mode="mode"
     :slide-id="slideId"
     :zoom="1"
+    :open-options="{ recovery: { store: recoveryStore } }"
+    :on-recovery="decideRecovery"
     style="width: 100%; height: 600px"
     @view-change="slideId = $event.slideId ?? undefined"
     @error="console.error"
@@ -50,6 +55,10 @@ function download(bytes: Uint8Array) {
 mode, slide, and zoom. Changing `source` atomically opens the replacement and releases the old owned session.
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe and handles
 conditional remounts without retaining an old view.
+
+While a journal is awaiting a decision, `snapshot.status` is `recovering` and `snapshot.recovery` contains its
+lightweight metadata. The `onRecovery` function prop returns `restore`, `discard`, or `cancel`; source hashing,
+IndexedDB writes, compaction, replay, and cleanup remain in `@web-ppt/editor` rather than the Vue component.
 
 To share one session between several Vue, React, Web Component, Svelte, or vanilla views, ownership is explicit:
 

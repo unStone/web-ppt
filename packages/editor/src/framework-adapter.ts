@@ -1,11 +1,16 @@
 import type { EditorChange, LinkTarget, SlideId } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
+import { RecoveryOpenCancelledError } from './recovery-store';
+import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
+import { bindAdapterRecovery } from './adapter-recovery';
 import type {
   EditorMode, LinkFollowContext, LinkFollowHandler, SlideEditor, SlideEditorOptions,
 } from './slide-editor-types';
+import type { WebPptSource } from './source-fingerprint';
+import { openOptionsKey, sameMargins, validateViewOptions } from './adapter-options';
 
-export type WebPptSource = File | Blob | ArrayBuffer | Uint8Array;
+export type { WebPptSource } from './source-fingerprint';
 
 export type WebPptDocument = {
   readonly source: WebPptSource;
@@ -30,7 +35,7 @@ export interface WebPptViewOptions {
 }
 
 export interface WebPptAdapterProgress {
-  readonly phase: 'opening' | 'ready';
+  readonly phase: 'opening' | 'recovering' | 'ready';
   readonly ratio: 0 | 1;
 }
 
@@ -47,6 +52,7 @@ export interface WebPptAdapterCallbacks {
   readonly onProgress?: (progress: WebPptAdapterProgress) => void;
   readonly onChange?: (change: EditorChange) => void;
   readonly onViewChange?: (state: WebPptViewState) => void;
+  readonly onRecovery?: (candidate: RecoveryCandidate) => RecoveryDecision | Promise<RecoveryDecision>;
 }
 
 export type WebPptAdapterBinding = WebPptViewOptions & WebPptAdapterCallbacks & ({
@@ -67,11 +73,12 @@ export type WebPptAdapterBinding = WebPptViewOptions & WebPptAdapterCallbacks & 
 });
 
 export interface WebPptAdapterSnapshot extends WebPptViewState {
-  readonly status: 'idle' | 'opening' | 'ready' | 'error' | 'disposed';
+  readonly status: 'idle' | 'opening' | 'recovering' | 'ready' | 'error' | 'disposed';
   readonly progress: number;
   readonly error: unknown | null;
   readonly session: EditorSession | null;
   readonly view: SlideEditor | null;
+  readonly recovery: RecoveryCandidate | null;
 }
 
 export type WebPptAdapterSubscriber = (snapshot: WebPptAdapterSnapshot) => void;
@@ -103,62 +110,11 @@ const DEFAULT_VIEW = Object.freeze({
   mode: 'edit' as const, zoom: 1, textMode: 'auto' as const, snapping: true,
 });
 
-const recoveryLogKeys = new WeakMap<object, number>();
-let nextRecoveryLogKey = 1;
-
-function recoveryLogKey(frames: OpenEditorOptions['recoveryFrames']): number {
-  if (!frames) return 0;
-  let key = recoveryLogKeys.get(frames);
-  if (key === undefined) {
-    key = nextRecoveryLogKey++;
-    recoveryLogKeys.set(frames, key);
-  }
-  return key;
-}
-
 export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
   status: 'idle', progress: 0, error: null, session: null, view: null,
+  recovery: null,
   mode: DEFAULT_VIEW.mode, slideId: null, zoom: DEFAULT_VIEW.zoom, snapping: DEFAULT_VIEW.snapping,
 });
-
-function validateViewOptions(options: WebPptViewOptions): void {
-  if (options.mode !== undefined && options.mode !== 'view' && options.mode !== 'edit') {
-    throw new Error(`未知编辑器模式：${String(options.mode)}`);
-  }
-  if (options.zoom !== undefined && (!Number.isFinite(options.zoom) || options.zoom <= 0)) {
-    throw new Error('缩放必须是有限正数');
-  }
-  if (options.textMode !== undefined
-    && options.textMode !== 'auto' && options.textMode !== 'html' && options.textMode !== 'svg') {
-    throw new Error(`未知文字模式：${String(options.textMode)}`);
-  }
-  if (options.snapping !== undefined && typeof options.snapping !== 'boolean') {
-    throw new Error('吸附开关必须是布尔值');
-  }
-  const margins = options.snapMargins;
-  if (margins && ![margins.left, margins.right, margins.top, margins.bottom]
-    .every((value) => Number.isFinite(value) && value >= 0)) {
-    throw new Error('吸附页边距必须是有限非负值');
-  }
-}
-
-function openOptionsKey(options: OpenEditorOptions | undefined): string {
-  return JSON.stringify({
-    password: options?.password, idPrefix: options?.idPrefix, origin: options?.origin,
-    historyLimit: options?.historyLimit, historyByteLimit: options?.historyByteLimit,
-    // 恢复日志可能很大；框架 props 采用不可变引用语义，O(1) 身份键避免每次 render 重扫全部 patch。
-    recoveryLog: recoveryLogKey(options?.recoveryFrames),
-  });
-}
-
-function sameMargins(
-  left: SlideEditorOptions['snapMargins'],
-  right: SlideEditorOptions['snapMargins'],
-): boolean {
-  return left === right || !!left && !!right
-    && left.left === right.left && left.right === right.right
-    && left.top === right.top && left.bottom === right.bottom;
-}
 
 class BrowserWebPptAdapter implements WebPptAdapter {
   private callbacks: WebPptAdapterCallbacks;
@@ -174,6 +130,8 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private currentSource: WebPptSource | null = null;
   private currentOpenKey = '';
   private opening: Promise<EditorSession | null> | null = null;
+  private openingAbort: AbortController | null = null;
+  private activeRecoveryGeneration: number | null = null;
   private isDisposed = false;
 
   constructor(callbacks: WebPptAdapterCallbacks) { this.callbacks = callbacks; }
@@ -265,6 +223,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   async setDocument(document: WebPptDocument | null): Promise<EditorSession | null> {
     this.assertActive();
     if (document === null) {
+      this.cancelOpening();
       this.generation++;
       this.currentSource = null;
       this.currentOpenKey = '';
@@ -272,6 +231,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.releaseCurrent();
       this.updateSnapshot({
         status: 'idle', progress: 0, error: null, session: null, view: null, slideId: null,
+        recovery: null,
       });
       return null;
     }
@@ -287,16 +247,21 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       if (this.ownsSession && this.session && !this.session.disposed) return this.session;
     }
     const generation = ++this.generation;
+    this.cancelOpening();
+    const abort = new AbortController();
+    this.openingAbort = abort;
     this.currentSource = document.source;
     this.currentOpenKey = key;
-    this.updateSnapshot({ status: 'opening', progress: 0, error: null });
+    this.updateSnapshot({ status: 'opening', progress: 0, error: null, recovery: null });
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'opening', ratio: 0 }));
-    const opening = this.openOwned(document.source, document.openOptions, generation);
+    const opening = this.openOwned(document.source, document.openOptions, generation, abort.signal);
     this.opening = opening;
     try {
       return await opening;
     } finally {
-      if (this.opening === opening) this.opening = null;
+      if (this.opening === opening) {
+        this.opening = null;
+      }
     }
   }
 
@@ -311,6 +276,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   dispose(): void {
     if (this.isDisposed) return;
     this.isDisposed = true;
+    this.cancelOpening();
     this.generation++;
     this.opening = null;
     this.releaseCurrent();
@@ -319,7 +285,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentOpenKey = '';
     this.currentSnapshot = {
       ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
-      session: null, view: null, slideId: null,
+      session: null, view: null, slideId: null, recovery: null,
     };
     this.notifySubscribers();
     this.subscribers.clear();
@@ -329,11 +295,29 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     source: WebPptSource,
     options: OpenEditorOptions | undefined,
     generation: number,
+    signal: AbortSignal,
   ): Promise<EditorSession | null> {
     let session: EditorSession;
+    const boundOptions = bindAdapterRecovery(options, signal, {
+      active: () => generation === this.generation && !this.isDisposed,
+      errorActive: () => this.activeRecoveryGeneration === generation && !this.isDisposed,
+      decision: () => this.callbacks.onRecovery,
+      recovering: (candidate) => {
+        this.updateSnapshot({ status: 'recovering', progress: 0, recovery: candidate });
+        this.notify((callbacks) => callbacks.onProgress?.({ phase: 'recovering', ratio: 0 }));
+      },
+      opening: () => this.updateSnapshot({ status: 'opening', recovery: null }),
+      errorHandler: () => this.callbacks.onError,
+      error: (error) => this.emitError(error),
+    });
     try {
-      session = await openEditor(source, options);
+      session = await openEditor(source, boundOptions);
     } catch (error) {
+      if (boundOptions?.recovery?.signal?.aborted
+        || error instanceof RecoveryOpenCancelledError) {
+        this.publishCancelledOpen(generation);
+        return null;
+      }
       if (generation === this.generation && !this.isDisposed) this.fail(error);
       throw error;
     }
@@ -342,7 +326,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       return null;
     }
     try {
-      this.commitSession(session, true);
+      this.commitSession(session, true, generation);
       return session;
     } catch (error) {
       session.dispose();
@@ -356,6 +340,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       return this.rejectDocument(new Error('注入 EditorSession 必须声明 ownership: external'));
     }
     if (document.session.disposed) return this.rejectDocument(new Error('不能注入已释放的 EditorSession'));
+    this.cancelOpening();
     ++this.generation;
     this.currentSource = null;
     this.currentOpenKey = '';
@@ -373,7 +358,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       return document.session;
     }
     try {
-      this.commitSession(document.session, false);
+      this.commitSession(document.session, false, null);
       return document.session;
     } catch (error) {
       this.fail(error);
@@ -381,7 +366,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     }
   }
 
-  private commitSession(session: EditorSession, owned: boolean): void {
+  private commitSession(
+    session: EditorSession,
+    owned: boolean,
+    recoveryGeneration: number | null,
+  ): void {
     const nextView = this.container ? this.mount(session, this.container) : null;
     const previousSession = this.session;
     const previousOwned = this.ownsSession;
@@ -390,6 +379,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.unsubscribeEditor = null;
     this.session = session;
     this.ownsSession = owned;
+    this.activeRecoveryGeneration = recoveryGeneration;
     this.view = nextView;
     previousView?.destroy();
     if (previousOwned && previousSession && previousSession !== session) previousSession.dispose();
@@ -402,6 +392,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     });
     this.updateSnapshot({
       status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
+      recovery: null,
     });
     this.publishReadyState(true);
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'ready', ratio: 1 }));
@@ -442,6 +433,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     if (this.ownsSession) this.session?.dispose();
     this.session = null;
     this.ownsSession = false;
+    this.activeRecoveryGeneration = null;
   }
 
   private publishReadyState(notifyView: boolean): void {
@@ -459,6 +451,21 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     if (notifyView && changed) this.notify((callbacks) => callbacks.onViewChange?.(viewState));
   }
 
+  private cancelOpening(): void {
+    this.openingAbort?.abort(new Error('新的文档请求已取代旧请求'));
+    this.openingAbort = null;
+  }
+
+  private publishCancelledOpen(generation: number): void {
+    if (generation !== this.generation || this.isDisposed) return;
+    this.currentSource = null;
+    this.currentOpenKey = '';
+    this.updateSnapshot({
+      status: this.session ? 'ready' : 'idle', progress: this.session ? 1 : 0,
+      error: null, recovery: null,
+    });
+  }
+
   private updateSnapshot(patch: Partial<WebPptAdapterSnapshot>): void {
     const keys = Object.keys(patch) as Array<keyof WebPptAdapterSnapshot>;
     if (keys.every((key) => Object.is(this.currentSnapshot[key], patch[key]))) return;
@@ -469,7 +476,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private fail(error: unknown): void {
     this.currentSource = null;
     this.currentOpenKey = '';
-    this.updateSnapshot({ status: 'error', error, progress: 0 });
+    this.updateSnapshot({ status: 'error', error, progress: 0, recovery: null });
     this.emitError(error);
   }
 

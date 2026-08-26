@@ -6,6 +6,7 @@ import {
   WebPptEditor as ReactWebPptEditor,
 } from '@web-ppt/react';
 import type { WebPptEditorHandle as ReactHandle } from '@web-ppt/react';
+import type { RecoveryStore, RecoveryStoreJournal } from '@web-ppt/editor';
 import {
   WebPptEditor as VueWebPptEditor,
 } from '@web-ppt/vue';
@@ -103,6 +104,91 @@ export async function runFrameworkAdaptersBrowserContract(
     throw new Error('React 文件替换未释放旧 session 或产生重复视图');
   }
   const lastReactSession = reactRef.current!.session!;
+
+  const recoveryRecords = new Map<string, RecoveryStoreJournal>();
+  const recoveryStore: RecoveryStore = {
+    async load(identity) {
+      return structuredClone(recoveryRecords.get(identity.fingerprint) ?? null);
+    },
+    async reset(request) {
+      if (request.signal?.aborted) throw request.signal.reason;
+      const time = Date.now();
+      recoveryRecords.set(request.source.fingerprint, {
+        version: 1, source: structuredClone(request.source), idPrefix: request.idPrefix,
+        epoch: request.epoch, createdAt: time, updatedAt: time, estimatedBytes: 0, frames: [],
+      });
+    },
+    async append(request) {
+      const current = recoveryRecords.get(request.source.fingerprint);
+      if (!current || current.idPrefix !== request.idPrefix || current.epoch !== request.epoch) {
+        throw new Error('恢复日志代际冲突');
+      }
+      const frames = [...current.frames, ...structuredClone(request.frames)];
+      recoveryRecords.set(request.source.fingerprint, {
+        version: 1, source: structuredClone(request.source), idPrefix: request.idPrefix,
+        epoch: request.epoch, createdAt: current.createdAt,
+        updatedAt: Math.max(current.updatedAt, frames[frames.length - 1].time),
+        estimatedBytes: JSON.stringify(frames).length, frames,
+      });
+    },
+    async remove(identity) {
+      recoveryRecords.delete(identity.fingerprint);
+    },
+  };
+  const recoverySeed = await openEditor(notes, {
+    recovery: { store: recoveryStore, decide: () => 'restore' },
+  });
+  const recoverySlide = recoverySeed.editor.doc.slideOrder[0];
+  recoverySeed.editor.exec({ type: 'SetNotes', id: recoverySlide, text: '跨框架恢复备注' });
+  await recoverySeed.recovery!.flush();
+  recoverySeed.dispose();
+
+  const recoveryOpenOptions = {
+    recovery: { store: recoveryStore, decide: () => 'discard' as const },
+  };
+  const reactRecoveryMount = mountPoint();
+  const reactRecoveryRoot = createRoot(reactRecoveryMount);
+  const reactRecoveryRef = createRef<ReactHandle>();
+  let reactRecoveryPrompts = 0;
+  reactRecoveryRoot.render(<ReactWebPptEditor ref={reactRecoveryRef} source={notes}
+    openOptions={recoveryOpenOptions} onRecovery={() => {
+      reactRecoveryPrompts++;
+      return 'restore';
+    }} />);
+  await waitFor(() => reactRecoveryRef.current?.session?.editor.isDirty() === true,
+    'React 恢复候选');
+  if (reactRecoveryPrompts !== 1
+    || reactRecoveryRef.current!.view!.queryNotes().value !== '跨框架恢复备注') {
+    throw new Error('React 没有透传恢复决策或恢复模型');
+  }
+  const reactRecoverySession = reactRecoveryRef.current!.session!;
+  reactRecoveryRoot.unmount();
+  await waitFor(() => reactRecoverySession.disposed, 'React 恢复会话卸载');
+  reactRecoveryMount.remove();
+
+  const vueRecoveryMount = mountPoint();
+  let vueRecoveryHandle: VueHandle | null = null;
+  let vueRecoveryPrompts = 0;
+  const vueRecoveryApp = createApp({
+    setup: () => () => h(VueWebPptEditor, {
+      ref: (value: unknown) => { vueRecoveryHandle = value as VueHandle | null; },
+      source: notes, openOptions: recoveryOpenOptions,
+      onRecovery: () => { vueRecoveryPrompts++; return 'restore'; },
+    }),
+  });
+  vueRecoveryApp.mount(vueRecoveryMount);
+  await waitFor(() => vueRecoveryHandle?.session?.editor.isDirty() === true,
+    'Vue 恢复候选');
+  if (vueRecoveryPrompts !== 1
+    || vueRecoveryHandle!.view!.queryNotes().value !== '跨框架恢复备注') {
+    throw new Error('Vue 没有透传恢复决策或恢复模型');
+  }
+  const vueRecoverySession = vueRecoveryHandle!.session!;
+  vueRecoveryApp.unmount();
+  if (!vueRecoverySession.disposed || vueRecoveryMount.childElementCount !== 0) {
+    throw new Error('Vue 恢复会话卸载未释放资源');
+  }
+  vueRecoveryMount.remove();
 
   const external = await openEditor(notes, { idPrefix: 'framework-shared-' });
   const sharedReactMount = mountPoint();

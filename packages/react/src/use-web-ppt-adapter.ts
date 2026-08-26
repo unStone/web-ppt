@@ -49,6 +49,7 @@ export function useWebPptAdapter(binding: WebPptAdapterBinding): UseWebPptAdapte
     binding.mode, binding.slideId, binding.zoom, binding.textMode, binding.snapping,
     binding.snapMargins, binding.onLinkFollow,
     binding.onReady, binding.onError, binding.onProgress, binding.onChange, binding.onViewChange,
+    binding.onRecovery,
   ]);
 
   return { adapter, snapshot, containerRef };

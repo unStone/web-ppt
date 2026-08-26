@@ -52,15 +52,54 @@ view.destroy();             // 只销毁这一份视图
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 ```
 
-`openEditor()` 同样接受 `@web-ppt/edit-core` 的 `idPrefix` 与 `recoveryFrames`。前缀必须使用日志旁保存的
-原值；回放会在会话和任何 DOM 视图对外可见前原子完成。本包有意不替产品决定 IndexedDB schema、
-源文件指纹、保留策略或恢复提示。框架 adapter 把 `openOptions` 当作不可变输入；切换日志时应替换
-`recoveryFrames` 数组引用，这样同源文件会重开，又不必在每次框架 render 时哈希整份日志。
+## 自动保存与崩溃恢复
+
+能力默认不产生存储副作用；显式传入 `recovery` 后，源文件只读取一次并按完整字节计算 SHA-256，解析继续
+复用同一份字节。日志按事务异步批量追加，画布提交不等待 IndexedDB。
+
+```ts
+import { createIndexedDbRecoveryStore, openEditor } from '@web-ppt/editor';
+
+const recoveryStore = createIndexedDbRecoveryStore({ namespace: 'my-editor' });
+const session = await openEditor(file, {
+  recovery: {
+    store: recoveryStore,
+    decide: async (candidate) => showRecoveryDialog({
+      changedAt: new Date(candidate.updatedAt),
+      actions: ['restore', 'discard', 'cancel'],
+    }),
+    onError: (error) => showAutosaveWarning(error),
+  },
+});
+
+await session.recovery?.flush(); // 关键跳转前等待已排队帧；普通编辑不需要逐次等待
+session.dispose();
+await recoveryStore.close();     // store 可跨多个 session 共用，只在应用退出时关闭
+```
+
+同内容的 `File` / `Blob` / `ArrayBuffer` / `Uint8Array` 命中同一日志；同名、同大小但字节不同不会串档。
+`restore` 使用日志自己的 `idPrefix` 并在任何 DOM 可见前回放；`discard` 原子换成空的新代际占位，旧页面的
+迟到写入会被拒绝，不能复活已放弃内容。`cancel` 不解析、不挂载也不改日志。尾帧 clean 时自动换代且不打扰
+用户；保存后继续编辑仍保留从原始源可完整回放的链。
+
+默认每份日志超过 64 个分块时压回 32 个，最多保留 20 份 / 16MB / 30 天；可用
+`stats()`、`cleanup()` 和工厂选项调整。压缩原样保留 Patch 帧，只合并连续且没有模型变化的元数据帧，
+最终选区与保存点语义不变。
+追加或 quota 失败不会回滚已提交编辑；错误进入 `session.recovery.error`、`flush()` rejection 与 `onError`，
+不会产生未处理 Promise rejection。
+
+自定义 `RecoveryStore` 需要实现 `load`、原子 `reset`、原子 `append` 与 `remove`，并持久化、比较传入的
+`epoch`；这个代际守卫负责阻止放弃恢复后的旧会话继续追加。`reset` 还必须在 `request.signal` 已取消时
+拒绝提交，避免过期打开覆盖最新占位。
+
+仍可直接传 `@web-ppt/edit-core` 的 `idPrefix + recoveryFrames` 接管自己的存储，但不能与 `recovery` 同时用。
+框架 adapter 对恢复 store 和手工日志都采用 O(1) 引用身份，不会在每次 render 时扫描日志。
 
 ## 框架适配契约
 
 `createWebPptAdapter()` 是 `@web-ppt/react` 与 `@web-ppt/vue` 共用的生命周期边界；Svelte、Web
-Component 和其它宿主也可直接绑定。SSR 导入不会访问 DOM，只有 `attach()` 收到容器后才挂载视图。
+Component 和其它宿主也可直接绑定。SSR 与 Worker 导入不会读取 DOM 或 IndexedDB 全局；显式创建会话或
+store 后才使用对应能力，只有 `attach()` 收到容器后才挂载视图。
 
 ```ts
 import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor';
@@ -78,7 +117,9 @@ adapter.dispose();
 通过 `source` 打开的 session 归 adapter 所有，换文件和释放时会原子清理。多视图共享已有 session 时
 必须传 `{ session, sessionOwnership: 'external' }`；每个 adapter 只销毁自己的 view，最终由调用者执行
 `session.dispose()`。过期的并发打开结果会在到达后立即释放。`snapshot` 与 `subscribe()` 公开
-idle/opening/ready/error、进度、session、view、模式、稳定页身份和缩放，不维护第二份演示文稿模型。
+idle/opening/recovering/ready/error、进度、恢复候选、session、view、模式、稳定页身份和缩放，不维护第二份
+演示文稿模型。启用持久化时可由 `onRecovery(candidate)` 返回 `restore`、`discard` 或 `cancel`；React/Vue
+组件透传同一个回调。
 
 所有宿主都只映射下面四步，不复制渲染和编辑状态：
 

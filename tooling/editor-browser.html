@@ -69,6 +69,7 @@
       publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
     import { runFrameworkAdaptersBrowserContract } from '/out/editor/framework-adapters.mjs';
+    import { runEditorRecoveryBrowserContract } from '/tooling/lib/editor-recovery-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -81,6 +82,15 @@
       return response.arrayBuffer();
     };
     try {
+      const recovery = await runEditorRecoveryBrowserContract({
+        lib: await import('/out/editor/editor.mjs'), load,
+      });
+      report.dataset.recoveryPersistMs = recovery.persistMs.toFixed(1);
+      report.dataset.recoveryRestoreMs = recovery.restoreMs.toFixed(1);
+      report.dataset.recoveryChunks = String(recovery.chunks);
+      report.dataset.recoverySyncOverhead = recovery.syncOverhead.toFixed(3);
+      report.dataset.recoveryFingerprintMs = recovery.fingerprintMs.toFixed(1);
+      report.textContent += `\n恢复日志 1000 帧 ${report.dataset.recoveryPersistMs}/${report.dataset.recoveryRestoreMs}ms`;
       const frameworkAdapters = await runFrameworkAdaptersBrowserContract(load);
       report.dataset.frameworkAdapters = 'pass';
       report.textContent += `\nReact ready ${frameworkAdapters.reactReady} · Vue ready ${frameworkAdapters.vueReady}`;
