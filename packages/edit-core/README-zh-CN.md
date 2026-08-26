@@ -86,6 +86,33 @@ if (element.kind === 'shape' && element.text) {
 协同客户端必须传入跨客户端唯一且稳定的 `origin`；追加行身份会包含它，两个 structuredClone 出来的
 文档并发追加时才不会占用同一条 patch 路径。
 
+文档文字查找是无 DOM 的稳定身份查询：按页序、组内绘制序和表格行列序遍历，返回 UTF-16 范围；可以跨
+相邻 run 命中，但绝不跨段落、动态字段或公式原子拼接。空查询和非纯 JSON 选项会明确拒绝。
+
+```ts
+import { findText } from '@web-ppt/edit-core';
+
+const matches = findText(editor.doc, {
+  query: '季度', scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+});
+const current = matches[0];
+editor.exec({
+  type: 'ReplaceText', from: '季度', to: '年度', matchCase: false, wholeWord: true,
+  scope: {
+    kind: 'match',
+    match: { slideId: current.slideId, id: current.id, range: current.range },
+  },
+});
+editor.exec({
+  type: 'ReplaceText', from: '草稿', to: '定稿',
+  scope: { kind: 'slides', slideIds: selectedSlideIds },
+});
+```
+
+全部替换只匹配执行开始时的一份快照，把所有目标 shape/cell 放进一个事务，并只生成一个撤销单元。
+精确范围失效、只读文档、锁定目标或任一目标非法时，整条命令在模型写入前拒绝。恢复回放与最小 OOXML
+保存因此继续消费普通 patch，不需要另一条专用链路。
+
 崩溃恢复使用独立的纯 JSON 日志订阅。它记录真正生效的 patch，覆盖撤销、重做、非历史写入、选区、
 保存点、图片资源与全部身份水位；没有订阅者时，普通提交不会为恢复数据做深拷贝。持久化层应按序号
 追加帧，并把首帧的 `identity.prefix` 与源文件 key 一起保存；重开同一源文件时用同一前缀建模：

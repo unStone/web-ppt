@@ -553,14 +553,14 @@ function renderText(
     };
     return renderTextSvg(
       vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
-      w, h, addDef, marginsOverride, vAlignOverride,
+      w, h, addDef, marginsOverride, vAlignOverride, ctx.includeEditMarkers,
     );
   }
   const html = renderTextBodyToHtml(t, w, h, {
     insets: marginsOverride,
     anchor: vAlignOverride,
     vert: vertOverride,
-    includeEditMarkers: false,
+    includeEditMarkers: ctx.includeEditMarkers,
   });
   return `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">${html}</foreignObject>`;
 }

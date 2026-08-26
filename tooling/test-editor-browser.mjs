@@ -266,6 +266,11 @@ async function browserResult(webSocketDebuggerUrl) {
           recoveryFingerprintMs: report.dataset.recoveryFingerprintMs,
           selectionPaneP95: report.dataset.selectionPaneP95,
           formatPainterP95: report.dataset.formatPainterP95,
+          findReplaceBuildMs: report.dataset.findReplaceBuildMs,
+          findReplaceQueryP95: report.dataset.findReplaceQueryP95,
+          findReplaceIncrementalMs: report.dataset.findReplaceIncrementalMs,
+          findReplaceNavigationP95: report.dataset.findReplaceNavigationP95,
+          findReplaceReplaceP95: report.dataset.findReplaceReplaceP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -603,6 +608,10 @@ try {
     + `/50MB指纹 ${result.recoveryFingerprintMs}ms`
     + ` · 选择窗格60锁定往返 p95 ${result.selectionPaneP95}ms`
     + ` · 格式刷60完整反馈 p95 ${result.formatPainterP95}ms`
+    + ` · 查找替换200页索引/查询/增量 ${result.findReplaceBuildMs}/`
+    + `${result.findReplaceQueryP95}/${result.findReplaceIncrementalMs}ms`
+    + ` · 查找替换60导航/替换 p95 ${result.findReplaceNavigationP95}/`
+    + `${result.findReplaceReplaceP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

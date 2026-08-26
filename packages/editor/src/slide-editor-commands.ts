@@ -18,6 +18,8 @@ import { insertTable } from './table-insertion';
 import { querySelectionBodyProps, setSelectionBodyProps } from './selection-body-properties';
 import type { FormatPainterStartOptions } from './format-painter-types';
 import type { FormatPainterViewBinding } from './format-painter-view';
+import type { TextSearchOpenOptions } from './text-search-types';
+import type { TextSearchViewBinding } from './text-search-view';
 
 interface SlideEditorCommandsOptions {
   readonly session: EditorSession;
@@ -27,6 +29,7 @@ interface SlideEditorCommandsOptions {
   readonly imageCropGesture: ImageCropGestureController;
   readonly links: SlideLinkController;
   readonly formatPainter: FormatPainterViewBinding;
+  readonly textSearch: TextSearchViewBinding;
   mode(): EditorMode;
   slideId(): SlideId;
   destroyed(): boolean;
@@ -50,6 +53,12 @@ export class SlideEditorCommands {
   }
 
   cancelFormatPainter(): void { this.options.formatPainter.cancel(); }
+  openTextSearch(options: TextSearchOpenOptions): void { this.options.textSearch.open(options); }
+  closeTextSearch(): void { this.options.textSearch.close(); }
+  nextTextSearch() { return this.options.textSearch.next(); }
+  previousTextSearch() { return this.options.textSearch.previous(); }
+  replaceCurrentText(): boolean { return this.options.textSearch.replaceCurrent(); }
+  replaceAllText(): number { return this.options.textSearch.replaceAll(); }
   followLink(target?: LinkTarget): boolean {
     return !this.options.destroyed() && this.options.links.follow(target);
   }

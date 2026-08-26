@@ -54,6 +54,24 @@ mode, slide, and zoom. Changing `source` atomically opens the replacement and re
 The same snapshot includes `formatPainter`; call `adapter.startFormatPainter({ continuous: true })` or
 `adapter.cancelFormatPainter()` from a toolbar. React only observes the editor session controller and does not
 create another painter state machine.
+`snapshot.textSearch` follows the same rule: render its query, match count, current match, invalidation flag, and
+`canReplace` directly, then call adapter actions from the toolbar:
+
+```tsx
+const { adapter, snapshot } = useWebPptAdapter(binding);
+return <form onSubmit={(event) => { event.preventDefault(); adapter?.nextTextSearch(); }}>
+  <input
+    aria-label="Find"
+    value={snapshot.textSearch.query}
+    onChange={(event) => adapter?.setTextSearchQuery(event.target.value)}
+    onFocus={() => adapter?.openTextSearch({ mode: 'find' })}
+  />
+  <span>{snapshot.textSearch.currentIndex + 1}/{snapshot.textSearch.matches.length}</span>
+  <button type="button" disabled={!snapshot.textSearch.canReplace}
+    onClick={() => adapter?.replaceCurrentText()}>Replace</button>
+</form>;
+```
+
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe, including
 React StrictMode's development setup/cleanup/setup cycle.
 
@@ -94,6 +112,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.subscribe(...)` | returned `snapshot` |
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
 | `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
+| `adapter.openTextSearch/.../replaceAllText()` | returned `adapter` + `snapshot.textSearch` |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with React 19.2.8; the optional peer range supports React 18.2–19. The

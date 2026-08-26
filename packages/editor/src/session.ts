@@ -17,6 +17,8 @@ import { createSelectionPane } from './selection-pane';
 import type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 import { SessionFormatPainter } from './format-painter';
 import type { FormatPainter } from './format-painter-types';
+import { SessionTextSearch } from './text-search';
+import type { TextSearch } from './text-search-types';
 
 let recoverySessionSerial = 0;
 
@@ -60,6 +62,7 @@ export interface EditorSession {
   readonly editor: Editor;
   readonly recovery: EditorRecovery | null;
   readonly formatPainter: FormatPainter;
+  readonly textSearch: TextSearch;
   readonly disposed: boolean;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
   mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
@@ -70,6 +73,7 @@ class BrowserEditorSession implements EditorSession {
   readonly editor: Editor;
   readonly recovery: RecoverySessionController | null;
   readonly formatPainter: SessionFormatPainter;
+  readonly textSearch: SessionTextSearch;
   private isDisposed = false;
 
   constructor(
@@ -80,6 +84,7 @@ class BrowserEditorSession implements EditorSession {
     this.editor = editor;
     this.recovery = recovery;
     this.formatPainter = new SessionFormatPainter(editor);
+    this.textSearch = new SessionTextSearch(editor);
     registerSession(this, presentation);
   }
 
@@ -102,6 +107,7 @@ class BrowserEditorSession implements EditorSession {
     if (this.isDisposed) return;
     this.isDisposed = true;
     this.recovery?.dispose();
+    this.textSearch.dispose();
     this.formatPainter.dispose();
     const state = sessionState(this);
     for (const view of [...state.views]) view.destroy();

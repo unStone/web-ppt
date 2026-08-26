@@ -31,6 +31,7 @@ import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
 import { setNamePatches } from './element-name';
 import { applyFormatPatches } from './apply-format';
+import { replaceTextPatches } from './replace-text';
 import {
   assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
 } from './element-interaction';
@@ -39,6 +40,7 @@ import type {
   InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import type { ApplyFormatCommand } from './format-painter-types';
+import type { ReplaceTextCommand } from '../text-search-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
 interface CommandRegistration {
@@ -72,6 +74,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   ApplyFormat: register<ApplyFormatCommand>([
     'from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange',
   ], applyFormatPatches, { target: 'to' }),
+  ReplaceText: register<ReplaceTextCommand>([
+    'scope', 'from', 'to', 'matchCase', 'wholeWord',
+  ], replaceTextPatches, { target: 'none' }),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
   AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches,

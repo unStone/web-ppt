@@ -7,6 +7,7 @@ import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } 
 import type { SnapMargins } from './snap';
 import type { TableInsertOptions } from './table-insertion';
 import type { FormatPainterStartOptions } from './format-painter-types';
+import type { TextSearchOpenOptions } from './text-search-types';
 
 export type EditorMode = 'view' | 'edit';
 export type LinkFollowSource = 'view' | 'edit' | 'api';
@@ -49,6 +50,12 @@ export interface SlideEditor {
   /** 从当前单元素或文字选区启用会话级格式刷。 */
   startFormatPainter(options?: FormatPainterStartOptions): boolean;
   cancelFormatPainter(): void;
+  openTextSearch(options?: TextSearchOpenOptions): void;
+  closeTextSearch(): void;
+  nextTextSearch(): import('@web-ppt/edit-core').TextSearchMatch | null;
+  previousTextSearch(): import('@web-ppt/edit-core').TextSearchMatch | null;
+  replaceCurrentText(): boolean;
+  replaceAllText(): number;
   /** 省略目标时跟随当前单一元素或文字选区；内部页始终使用稳定 SlideId。 */
   followLink(target?: LinkTarget): boolean;
   /** 注册外置工具栏，使其 pointer 交互不结束当前文字编辑。 */

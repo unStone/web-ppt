@@ -4,8 +4,10 @@ export { fingerprintSource } from './source-fingerprint';
 export { RecoveryOpenCancelledError } from './recovery-store';
 export { createIndexedDbRecoveryStore } from './indexeddb-recovery-store';
 export {
-  applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT,
+  createWebPptAdapter,
 } from './framework-adapter';
+export { applyWebPptAdapterBinding } from './framework-adapter-binding';
+export { WEB_PPT_IDLE_SNAPSHOT } from './framework-adapter-state';
 export { ELEMENT_CLIPBOARD_MIME } from './element-clipboard';
 export {
   elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix,
@@ -20,6 +22,10 @@ export type {
   FormatPainter, FormatPainterSnapshot, FormatPainterSource, FormatPainterStartOptions,
   FormatPainterSubscriber, FormatPainterTarget,
 } from './format-painter-types';
+export type {
+  TextSearch, TextSearchMode, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
+  TextSearchSubscriber,
+} from './text-search-types';
 export type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 export type { WebPptSourceIdentity } from './source-fingerprint';
 export type {
@@ -31,8 +37,10 @@ export type {
 } from './indexeddb-recovery-store';
 export type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptSource, WebPptViewOptions, WebPptViewState,
-} from './framework-adapter';
+  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptTextSearchState,
+  WebPptViewOptions, WebPptViewState,
+} from './framework-adapter-types';
+export type { WebPptSource } from './source-fingerprint';
 export type {
   EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
 } from './slide-editor-types';
@@ -45,7 +53,10 @@ export type {
   ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
   FormatMaskField,
 } from '@web-ppt/edit-core';
-export type { EditorChange, SlideId } from '@web-ppt/edit-core';
+export type {
+  EditorChange, FindTextRequest, ReplaceTextCommand, ReplaceTextScope, SlideId, TextSearchMatch,
+  TextSearchScope, TextSearchTarget,
+} from '@web-ppt/edit-core';
 export type { SelectionPaneItem } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

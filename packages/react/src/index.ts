@@ -8,5 +8,6 @@ export type {
 } from './web-ppt-selection-pane';
 export type {
   FormatPainterStartOptions, WebPptAdapterBinding, WebPptAdapterProgress,
-  WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptViewState,
+  WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptTextSearchState, WebPptViewState,
+  TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
 } from '@web-ppt/editor';

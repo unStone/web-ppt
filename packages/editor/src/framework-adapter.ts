@@ -1,4 +1,4 @@
-import type { EditorChange, LinkTarget } from '@web-ppt/edit-core';
+import type { EditorChange, LinkTarget, TextSearchMatch } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
 import { RecoveryOpenCancelledError } from './recovery-store';
@@ -12,36 +12,17 @@ import type { SelectionPane } from './selection-pane-types';
 import { AdapterSelectionPaneBinding } from './adapter-selection-pane';
 import type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptViewOptions, WebPptViewState,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptTextSearchState,
+  WebPptViewOptions, WebPptViewState,
 } from './framework-adapter-types';
 import type { FormatPainterStartOptions } from './format-painter-types';
 import { AdapterFormatPainterBinding } from './adapter-format-painter';
-
-export type { WebPptSource } from './source-fingerprint';
-export type {
-  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress,
-  WebPptAdapterSnapshot, WebPptAdapterSubscriber, WebPptDocument, WebPptViewOptions,
-  WebPptFormatPainterState, WebPptViewState,
-} from './framework-adapter-types';
-
-/** React/Vue/Svelte/Web Component 只需把受控 props 映射到这一处。 */
-export function applyWebPptAdapterBinding(
-  adapter: WebPptAdapter,
-  binding: WebPptAdapterBinding,
-): Promise<EditorSession | null> {
-  return adapter.applyBinding(binding);
-}
-
-const DEFAULT_VIEW = Object.freeze({
-  mode: 'edit' as const, zoom: 1, textMode: 'auto' as const, snapping: true,
-});
-
-export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
-  status: 'idle', progress: 0, error: null, session: null, view: null, selectionPane: null,
-  recovery: null,
-  formatPainter: Object.freeze({ active: false, mode: 'inactive', source: null, readonly: true }),
-  mode: DEFAULT_VIEW.mode, slideId: null, zoom: DEFAULT_VIEW.zoom, snapping: DEFAULT_VIEW.snapping,
-});
+import { AdapterTextSearchBinding } from './adapter-text-search';
+import type { TextSearchOpenOptions, TextSearchOptions } from './text-search-types';
+import {
+  DEFAULT_WEB_PPT_VIEW as DEFAULT_VIEW, WEB_PPT_IDLE_SNAPSHOT,
+} from './framework-adapter-state';
+import { followAdapterLink } from './adapter-link';
 
 class BrowserWebPptAdapter implements WebPptAdapter {
   private callbacks: WebPptAdapterCallbacks;
@@ -53,6 +34,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private ownsSession = false;
   private unsubscribeEditor: (() => void) | null = null;
   private readonly formatPainterBinding = new AdapterFormatPainterBinding();
+  private readonly textSearchBinding: AdapterTextSearchBinding;
   private desired: WebPptViewOptions = DEFAULT_VIEW;
   private currentSnapshot: WebPptAdapterSnapshot = WEB_PPT_IDLE_SNAPSHOT;
   private generation = 0;
@@ -63,7 +45,12 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private activeRecoveryGeneration: number | null = null;
   private isDisposed = false;
 
-  constructor(callbacks: WebPptAdapterCallbacks) { this.callbacks = callbacks; }
+  constructor(callbacks: WebPptAdapterCallbacks) {
+    this.callbacks = callbacks;
+    this.textSearchBinding = new AdapterTextSearchBinding((match) => {
+      if (match.slideId !== this.snapshot.slideId) this.setView({ slideId: match.slideId });
+    });
+  }
 
   get snapshot(): WebPptAdapterSnapshot { return this.currentSnapshot; }
   get disposed(): boolean { return this.isDisposed; }
@@ -173,6 +160,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
         status: 'idle', progress: 0, error: null, session: null, view: null,
         selectionPane: null, slideId: null,
         recovery: null, formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
+        textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
       });
       return null;
     }
@@ -196,6 +184,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.updateSnapshot({
       status: 'opening', progress: 0, error: null, recovery: null,
       formatPainter: { ...this.formatPainterState(false), readonly: true },
+      textSearch: { ...this.textSearchState(false), canReplace: false },
     });
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'opening', ratio: 0 }));
     const opening = this.openOwned(document.source, document.openOptions, generation, abort.signal);
@@ -235,6 +224,16 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.formatPainterBinding.cancel();
   }
 
+  openTextSearch(options: TextSearchOpenOptions = {}): void { this.assertReady(); this.textSearchBinding.open(options); }
+  closeTextSearch(): void { this.assertReady(); this.textSearchBinding.close(); }
+  setTextSearchQuery(query: string): void { this.assertReady(); this.textSearchBinding.setQuery(query); }
+  setTextSearchReplacement(value: string): void { this.assertReady(); this.textSearchBinding.setReplacement(value); }
+  setTextSearchOptions(options: Partial<TextSearchOptions>): void { this.assertReady(); this.textSearchBinding.setOptions(options); }
+  nextTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.next(); }
+  previousTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.previousMatch(); }
+  replaceCurrentText(): boolean { this.assertReady(); return this.textSearchState().canReplace && this.textSearchBinding.replaceCurrent(); }
+  replaceAllText(): number { this.assertReady(); return this.textSearchState().canReplace ? this.textSearchBinding.replaceAll() : 0; }
+
   dispose(): void {
     if (this.isDisposed) return;
     this.isDisposed = true;
@@ -250,6 +249,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
       session: null, view: null, selectionPane: null, slideId: null, recovery: null,
       formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
+      textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
     };
     this.notifySubscribers();
     this.subscribers.clear();
@@ -351,6 +351,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.unsubscribeEditor?.();
     this.unsubscribeEditor = null;
     this.formatPainterBinding.release();
+    this.textSearchBinding.release();
     this.session = session;
     this.ownsSession = owned;
     this.activeRecoveryGeneration = recoveryGeneration;
@@ -368,10 +369,14 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.formatPainterBinding.bind(session, () => {
       if (this.session === session && !this.isDisposed) this.publishReadyState(false);
     });
+    this.textSearchBinding.bind(session, () => {
+      if (this.session === session && !this.isDisposed) this.publishReadyState(false);
+    });
     this.updateSnapshot({
       status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
       selectionPane: this.paneBinding.pane,
       recovery: null, formatPainter: this.formatPainterState(false),
+      textSearch: this.textSearchState(false),
     });
     this.publishReadyState(true);
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'ready', ratio: 1 }));
@@ -394,21 +399,17 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   }
 
   private followLink(target: LinkTarget, context: LinkFollowContext): boolean | void {
-    try {
-      if (this.desired.onLinkFollow?.(target, context) === true) return true;
-    } catch (error) {
-      this.emitError(error);
-      return undefined;
-    }
-    if (target.kind !== 'slide') return undefined;
-    this.setView({ slideId: target.slideId });
-    return true;
+    return followAdapterLink(
+      target, context, this.desired.onLinkFollow,
+      (slideId) => this.setView({ slideId }), (error) => this.emitError(error),
+    );
   }
 
   private releaseCurrent(): void {
     this.unsubscribeEditor?.();
     this.unsubscribeEditor = null;
     this.formatPainterBinding.release();
+    this.textSearchBinding.release();
     this.view?.destroy();
     this.view = null;
     this.paneBinding.release();
@@ -421,7 +422,9 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private publishReadyState(notifyView: boolean): void {
     const viewState: WebPptViewState = {
       mode: this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
-      slideId: this.view?.slideId ?? this.session?.editor.doc.slideOrder[0] ?? null,
+      slideId: this.view?.slideId
+        ?? (this.desired.slideId && this.session?.editor.doc.slides[this.desired.slideId]
+          ? this.desired.slideId : this.session?.editor.doc.slideOrder[0] ?? null),
       zoom: this.view?.zoom ?? this.desired.zoom ?? DEFAULT_VIEW.zoom,
       snapping: this.view?.snapping ?? this.desired.snapping ?? DEFAULT_VIEW.snapping,
     };
@@ -432,12 +435,19 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.updateSnapshot({
       ...viewState, session: this.session, view: this.view, selectionPane: this.paneBinding.pane,
       formatPainter: this.formatPainterState(),
+      textSearch: this.textSearchState(),
     });
     if (notifyView && changed) this.notify((callbacks) => callbacks.onViewChange?.(viewState));
   }
 
   private formatPainterState(ready = this.currentSnapshot.status === 'ready'): WebPptFormatPainterState {
     return this.formatPainterBinding.state(
+      ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
+    );
+  }
+
+  private textSearchState(ready = this.currentSnapshot.status === 'ready'): WebPptTextSearchState {
+    return this.textSearchBinding.state(
       ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
     );
   }
@@ -454,6 +464,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.updateSnapshot({
       status: this.session ? 'ready' : 'idle', progress: this.session ? 1 : 0,
       error: null, recovery: null, formatPainter: this.formatPainterState(!!this.session),
+      textSearch: this.textSearchState(!!this.session),
     });
   }
 
@@ -470,6 +481,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.updateSnapshot({
       status: 'error', error, progress: 0, recovery: null,
       formatPainter: { ...this.formatPainterState(false), readonly: true },
+      textSearch: { ...this.textSearchState(false), canReplace: false },
     });
     this.emitError(error);
   }

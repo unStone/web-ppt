@@ -88,6 +88,34 @@ the two projection methods; none of their runtimes enter this package.
 Collaborative clients must pass a stable, client-unique `origin`; appended-row identities include it so two
 structured-cloned documents can merge concurrent appends without sharing a path.
 
+Document text search is a DOM-free query over stable page and element identities. It walks pages, group children,
+and table cells in drawing order, returns UTF-16 ranges, can match across adjacent runs, and never joins paragraphs,
+dynamic fields, or formula atoms. Empty queries and non-JSON-shaped options fail closed.
+
+```ts
+import { findText } from '@web-ppt/edit-core';
+
+const matches = findText(editor.doc, {
+  query: 'quarterly', scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+});
+const current = matches[0];
+editor.exec({
+  type: 'ReplaceText', from: 'quarterly', to: 'annual', matchCase: false, wholeWord: true,
+  scope: {
+    kind: 'match',
+    match: { slideId: current.slideId, id: current.id, range: current.range },
+  },
+});
+editor.exec({
+  type: 'ReplaceText', from: 'draft', to: 'final',
+  scope: { kind: 'slides', slideIds: selectedSlideIds },
+});
+```
+
+An all-match replacement evaluates one source snapshot, writes every affected shape or cell in one transaction,
+and creates one undo unit. A stale exact match, readonly document, locked target, or any invalid target rejects the
+whole command before model mutation. Recovery replay and minimal OOXML save therefore use the same ordinary patches.
+
 For crash recovery, subscribe to the separate JSON journal. It reports the patches that actually took effect—
 including undo, redo, non-history writes, selection changes, savepoints, image resources, and allocator
 watermarks. With no subscriber, commits do not clone recovery data. Persist frames in sequence order and keep the

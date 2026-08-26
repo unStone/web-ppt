@@ -102,6 +102,12 @@ import { WebPptEditor } from '@web-ppt/react';
 不兼容目标通过统一错误 seam 报告且不丢来源。React/Vue 直接用共享 adapter 的
 `startFormatPainter/cancelFormatPainter` 和 `snapshot.formatPainter`，不复制状态机；Chrome 60 元素完整反馈 p95 为 0.4ms。
 
+`Ctrl/Cmd+F` 与 `Ctrl/Cmd+H` 打开会话级查找/替换，`Enter` / `Shift+Enter` 循环导航，`Escape`
+关闭。view 模式可跨页查找与高亮，edit 模式才允许替换当前或全部；命中字段、公式、锁定对象时保持
+原子边界。React/Vue 使用 `adapter.openTextSearch()` 等动作和 `snapshot.textSearch` 渲染自己的搜索栏，
+不会复制索引或状态机。Chrome 契约实测 200 页首次索引 / 冷查询 p95 为 2.0 / 0.5ms，60 元素页导航 /
+替换完整反馈 p95 为 0.1 / 0.9ms。
+
 Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
 view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
 

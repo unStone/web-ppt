@@ -2,6 +2,7 @@ import { commandTargetIds } from './commands/dispatch';
 import { assertFormatMask } from './commands/format-painter-types';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand } from './commands/set-z';
+import { replaceTextTargetIds } from './commands/replace-text';
 import type { Command } from './commands/types';
 import { writableLayerSiblingIds } from './element-order';
 import { isElementDescendantOf } from './selection';
@@ -77,7 +78,9 @@ export function validateCommandRelations(doc: EditDoc, commands: readonly Comman
     // ApplyFormat 读取来源的有效投影；它与写目标同样不能依赖同事务已删除的子树。
     const dependencies = command.type === 'ApplyFormat'
       ? [...commandTargetIds(command), command.from]
-      : commandTargetIds(command);
+      : command.type === 'ReplaceText'
+        ? replaceTextTargetIds(doc, command)
+        : commandTargetIds(command);
     const conflict = dependencies.find((id) => roots.some((root) => id === root.id
       || isElementDescendantOf(doc, id, root.id)));
     if (conflict) throw new Error(`同一事务不能先修改再删除同一子树：${conflict}`);

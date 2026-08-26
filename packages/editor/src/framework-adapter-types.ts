@@ -1,4 +1,4 @@
-import type { EditorChange, SlideId } from '@web-ppt/edit-core';
+import type { EditorChange, SlideId, TextSearchMatch } from '@web-ppt/edit-core';
 import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
 import type { SelectionPane } from './selection-pane-types';
@@ -9,6 +9,9 @@ import type { WebPptSource } from './source-fingerprint';
 import type {
   FormatPainterSnapshot, FormatPainterStartOptions,
 } from './format-painter-types';
+import type {
+  TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
+} from './text-search-types';
 
 export type WebPptDocument = {
   readonly source: WebPptSource;
@@ -49,6 +52,11 @@ export interface WebPptFormatPainterState extends FormatPainterSnapshot {
   readonly readonly: boolean;
 }
 
+export interface WebPptTextSearchState extends TextSearchSnapshot {
+  /** 只有文档就绪、来源可写且当前为编辑模式时为 true；查找与导航不受此值限制。 */
+  readonly canReplace: boolean;
+}
+
 export interface WebPptAdapterCallbacks {
   readonly onReady?: (session: EditorSession) => void;
   readonly onError?: (error: unknown) => void;
@@ -84,6 +92,7 @@ export interface WebPptAdapterSnapshot extends WebPptViewState {
   readonly selectionPane: SelectionPane | null;
   readonly recovery: RecoveryCandidate | null;
   readonly formatPainter: WebPptFormatPainterState;
+  readonly textSearch: WebPptTextSearchState;
 }
 
 export type WebPptAdapterSubscriber = (snapshot: WebPptAdapterSnapshot) => void;
@@ -103,5 +112,14 @@ export interface WebPptAdapter {
   redo(): EditorChange | null;
   startFormatPainter(options?: FormatPainterStartOptions): boolean;
   cancelFormatPainter(): void;
+  openTextSearch(options?: TextSearchOpenOptions): void;
+  closeTextSearch(): void;
+  setTextSearchQuery(query: string): void;
+  setTextSearchReplacement(replacement: string): void;
+  setTextSearchOptions(options: Partial<TextSearchOptions>): void;
+  nextTextSearch(): TextSearchMatch | null;
+  previousTextSearch(): TextSearchMatch | null;
+  replaceCurrentText(): boolean;
+  replaceAllText(): number;
   dispose(): void;
 }

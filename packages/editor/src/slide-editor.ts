@@ -32,6 +32,8 @@ import type { FormatPainterStartOptions } from './format-painter-types';
 import { FormatPainterViewBinding } from './format-painter-view';
 import { SlideEditorCommands } from './slide-editor-commands';
 import { SlideEditorKeyboardEvents } from './slide-editor-keyboard-events';
+import { TextSearchViewBinding } from './text-search-view';
+import type { TextSearchOpenOptions } from './text-search-types';
 
 class DomSlideEditor implements SlideEditor {
   readonly element: HTMLDivElement;
@@ -60,6 +62,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly pointer: SlidePointerController;
   private readonly links: SlideLinkController;
   private readonly formatPainter: FormatPainterViewBinding;
+  private readonly textSearch: TextSearchViewBinding;
   private readonly commands: SlideEditorCommands;
   private readonly keyboardEvents: SlideEditorKeyboardEvents;
   private isDestroyed = false;
@@ -197,6 +200,11 @@ class DomSlideEditor implements SlideEditor {
     this.formatPainter = new FormatPainterViewBinding(
       this.element, session.formatPainter, options.onError,
     );
+    this.textSearch = new TextSearchViewBinding(
+      this.element, this.staticLayer, session.textSearch,
+      () => this.currentMode, () => session.editor.doc.meta.readonly, () => this.currentSlide,
+      (match) => this.setSlide(match.slideId), options.onError,
+    );
     this.pointer = new SlidePointerController({
       editor: session.editor, root: this.element,
       staticLayer: this.staticLayer, interactionLayer: this.interactionLayer,
@@ -222,6 +230,7 @@ class DomSlideEditor implements SlideEditor {
       session, element: this.element, textEditor: this.textEditor,
       imageInsertion: this.imageInsertion, imageCropGesture: this.imageCropGesture,
       links: this.links, formatPainter: this.formatPainter,
+      textSearch: this.textSearch,
       mode: () => this.currentMode, slideId: () => this.currentSlide,
       destroyed: () => this.isDestroyed, cancelGestures: () => this.cancelGestures(),
     });
@@ -240,7 +249,8 @@ class DomSlideEditor implements SlideEditor {
     this.setZoom(this.currentZoom);
     this.unsubscribe = session.editor.subscribe((change) => this.update(change));
     this.unbindLinkEvent = bindSlideEditorLinkEvent(this.element, {
-      click: this.links.click, keydown: this.links.keydown,
+      click: this.links.click,
+      keydown: (event) => { if (!this.textSearch.keydown(event)) this.links.keydown(event); },
     });
     this.setMode(this.currentMode);
     try {
@@ -248,6 +258,7 @@ class DomSlideEditor implements SlideEditor {
       state.views.add(this);
     } catch (error) {
       this.unsubscribe();
+      this.textSearch.destroy();
       this.formatPainter.destroy();
       this.unbindLinkEvent();
       this.unbindEditEvents?.();
@@ -268,9 +279,14 @@ class DomSlideEditor implements SlideEditor {
 
   cancelFormatPainter(): void { this.commands.cancelFormatPainter(); }
 
-  followLink(target?: LinkTarget): boolean {
-    return this.commands.followLink(target);
-  }
+  openTextSearch(options: TextSearchOpenOptions = {}): void { this.commands.openTextSearch(options); }
+  closeTextSearch(): void { this.commands.closeTextSearch(); }
+  nextTextSearch() { return this.commands.nextTextSearch(); }
+  previousTextSearch() { return this.commands.previousTextSearch(); }
+  replaceCurrentText(): boolean { return this.commands.replaceCurrentText(); }
+  replaceAllText(): number { return this.commands.replaceAllText(); }
+
+  followLink(target?: LinkTarget): boolean { return this.commands.followLink(target); }
   releaseTextEditing(): void { this.commands.releaseTextEditing(); }
   registerTextUi(element: HTMLElement): () => void { return this.commands.registerTextUi(element); }
   queryRunProps(): RunPropertiesState | null { return this.commands.queryRunProps(); }
@@ -284,15 +300,12 @@ class DomSlideEditor implements SlideEditor {
   insertImage(file: Blob, options: ImageInsertOptions = {}): Promise<ElementId> {
     return this.commands.insertImage(file, options);
   }
-
   chooseImage(options: ImageInsertOptions = {}): Promise<ElementId | null> {
     return this.commands.chooseImage(options);
   }
-
   replaceImage(file: Blob, options: ImageReplaceOptions = {}): Promise<ElementId> {
     return this.commands.replaceImage(file, options);
   }
-
   chooseReplacementImage(options: ImageReplaceOptions = {}): Promise<ElementId | null> {
     return this.commands.chooseReplacementImage(options);
   }
@@ -303,17 +316,11 @@ class DomSlideEditor implements SlideEditor {
   chooseBackgroundImage(options: ImageBackgroundOptions = {}): Promise<SlideId | null> {
     return this.commands.chooseBackgroundImage(options);
   }
-  setBackgroundCrop(crop: ImageCrop | null): boolean {
-    return this.commands.setBackgroundCrop(crop);
-  }
+  setBackgroundCrop(crop: ImageCrop | null): boolean { return this.commands.setBackgroundCrop(crop); }
 
-  queryLayout(): SlideLayoutState {
-    return this.commands.queryLayout();
-  }
+  queryLayout(): SlideLayoutState { return this.commands.queryLayout(); }
 
-  setLayout(layoutId: string): boolean {
-    return this.commands.setLayout(layoutId);
-  }
+  setLayout(layoutId: string): boolean { return this.commands.setLayout(layoutId); }
 
   queryNotes(): SlideNotesState {
     return this.commands.queryNotes();
@@ -354,6 +361,7 @@ class DomSlideEditor implements SlideEditor {
     this.interactionLayer.style.display = mode === 'view' ? 'none' : '';
     this.textLayer.style.display = mode === 'view' ? 'none' : '';
     this.domRenderer.renderSelection(this.session.editor.selection);
+    this.textSearch.sync();
   }
 
   setSlide(slideId: SlideId): void {
@@ -377,6 +385,7 @@ class DomSlideEditor implements SlideEditor {
     this.stage.style.transform = `scale(${zoom})`;
     this.domRenderer.renderSelection(this.session.editor.selection);
     this.imageCropGesture.sync(this.session.editor.selection);
+    this.textSearch.sync();
   }
 
   setSnapping(enabled: boolean): void {
@@ -395,6 +404,7 @@ class DomSlideEditor implements SlideEditor {
     this.imageInsertion.destroy();
     this.imageCropGesture.destroy();
     this.unsubscribe();
+    this.textSearch.destroy();
     this.formatPainter.destroy();
     this.unbindEditEvents?.();
     this.unbindEditEvents = null;
@@ -407,6 +417,7 @@ class DomSlideEditor implements SlideEditor {
     this.domRenderer.render(this.session.editor.selection);
     this.imageCropGesture.sync(this.session.editor.selection);
     this.textEditor.refreshStatic();
+    this.textSearch.sync();
   }
 
   private syncEditEvents(): void {
@@ -448,6 +459,7 @@ class DomSlideEditor implements SlideEditor {
     this.domRenderer.update(change, this.textEditor.activeElementId);
     this.textEditor.update(change);
     this.imageCropGesture.sync(change.selection);
+    this.textSearch.sync();
   }
 
   private cancelGestures(): void {

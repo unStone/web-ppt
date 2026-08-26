@@ -150,6 +150,32 @@ and `data-format-painter-source`, so products can supply their own cursor and to
 `adapter.startFormatPainter()` / `cancelFormatPainter()` map to the same controller, while
 `snapshot.formatPainter` exposes `active`, `mode`, `source`, and `readonly` to React, Vue, Svelte, and Web Components.
 
+### Session find and replace
+
+Every mounted view and adapter also consumes one lazy `session.textSearch` controller. View mode can search,
+navigate, and highlight; edit mode additionally enables replacement. The first non-empty query builds per-page
+results, later document transactions evict only dirty or removed pages, and page moves only reorder cached results.
+
+```ts
+session.textSearch.open({
+  mode: 'replace', query: 'draft', replacement: 'final',
+  scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+});
+session.textSearch.next();
+session.textSearch.replaceCurrent();
+
+adapter.openTextSearch({ mode: 'find', query: 'owner' });
+adapter.setTextSearchReplacement('team');
+adapter.replaceAllText(); // false/0 in view mode; snapshot.textSearch.canReplace explains why
+```
+
+Focused views use `Ctrl/Cmd+F`, `Ctrl/Cmd+H`, `Enter`, `Shift+Enter`, and `Escape`. Only the view receiving a
+cross-page navigation event switches slides; other views keep their local page. Roots expose
+`data-text-search-*`, matched elements expose `data-ppt-search-matches` / `data-ppt-search-current`, and the
+current text range exposes `data-ppt-search-current-range`. Exact range boxes live in an overlay rather than a
+fourth render layer. Products own the search bar and ARIA controls. The Chromium contract measures 200-page
+initial index / cold query p95 at 1.8 / 0.5ms and 60-element navigation / replacement feedback p95 at 0.1 / 0.9ms.
+
 `mountSelectionPane()` is the single accessible DOM implementation for the object catalog. It presents the current
 slide in topmost-first tree order, keeps duplicate OOXML names distinct through stable element ids, and supports
 group navigation, rename, lock, and session-only hide. Arrow keys, Home/End, Left/Right, Enter, Space, and F2 work

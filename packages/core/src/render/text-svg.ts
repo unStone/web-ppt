@@ -30,6 +30,10 @@ interface Seg {
   text: string;
   run: TextRun;
   width: number;
+  paragraphIndex?: number;
+  runIndex?: number;
+  from?: number;
+  to?: number;
 }
 
 interface Line {
@@ -47,14 +51,19 @@ export function renderTextSvg(
   addDef: (markup: string) => string,
   marginsOverride?: [number, number, number, number],
   vAlignOverride?: 'top' | 'middle' | 'bottom',
+  includeEditMarkers = false,
 ): string {
   // 竖排：按横排排完再整体旋转 90°（交换宽高）
   if (t.vert === 'vert' || t.vert === 'wordArtVert') {
-    const inner = renderTextSvg({ ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride);
+    const inner = renderTextSvg(
+      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers,
+    );
     return `<g transform="translate(${r(w)} 0) rotate(90)">${inner}</g>`;
   }
   if (t.vert === 'vert270') {
-    const inner = renderTextSvg({ ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride);
+    const inner = renderTextSvg(
+      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers,
+    );
     return `<g transform="translate(0 ${r(h)}) rotate(-90)">${inner}</g>`;
   }
 
@@ -82,7 +91,11 @@ export function renderTextSvg(
         ? para.runs[segment.runIndex]
         : { ...first, text: `${para.bullet} `, size: first.size * (para.bulletSize ?? 1),
           color: para.bulletColor ?? first.color, u: false, strike: false };
-      return { text: segment.text, run, width: segment.naturalWidth };
+      return {
+        text: segment.text, run, width: segment.naturalWidth,
+        paragraphIndex: line.paragraphIndex, runIndex: segment.runIndex,
+        from: segment.from, to: segment.to,
+      };
     });
     const renderLine: Line = {
       segs,
@@ -120,15 +133,19 @@ export function renderTextSvg(
           out.push(
             `<text x="${r(x)}" y="${r(line.baseline)}" text-anchor="start"` +
             (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-            ` xml:space="preserve">${spanSvg(seg, scale, addDef)}</text>`,
+            ` xml:space="preserve">${spanSvg(
+              seg, scale, addDef, undefined, includeEditMarkers,
+            )}</text>`,
           );
         }
         x += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
       }
     } else {
       const tspans = line.squeezed
-        ? squeezedSpans(renderLine, scale, addDef)
-        : segs.map((segment) => spanSvg(segment, scale, addDef)).join('');
+        ? squeezedSpans(renderLine, scale, addDef, includeEditMarkers)
+        : segs.map((segment) => spanSvg(
+          segment, scale, addDef, undefined, includeEditMarkers,
+        )).join('');
       out.push(
         `<text x="${r(line.anchorX)}" y="${r(line.baseline)}" ` +
         `text-anchor="${line.rtl ? flipAnchor(textAnchor) : textAnchor}"` +
@@ -177,7 +194,12 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
  * 位移可能落在段与段的交界上（比如标点和它后面的字属于不同 run），
  * 那就带到下一段的第一个字符上去。
  */
-function squeezedSpans(line: Line, scale: number, addDef: (m: string) => string): string {
+function squeezedSpans(
+  line: Line,
+  scale: number,
+  addDef: (m: string) => string,
+  includeEditMarkers = false,
+): string {
   let carry = 0; // 位移落在段与段交界上时，带给下一段的第一个字符
   return line.segs.map((seg) => {
     const em = fontSize(seg.run, scale);
@@ -195,12 +217,18 @@ function squeezedSpans(line: Line, scale: number, addDef: (m: string) => string)
       else if (i + 1 < chars.length) dx[i + 1] -= amount;    // 收尾标点：后面的字左移
       else carry -= amount;                                  // 落在段末：带给下一段
     }
-    return spanSvg(seg, scale, addDef, any ? dx : undefined);
+    return spanSvg(seg, scale, addDef, any ? dx : undefined, includeEditMarkers);
   }).join('');
 }
 
 /** `dx` 非空时按逐字符位移输出（标点挤压用，见 squeezedSpans） */
-function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: number[]): string {
+function spanSvg(
+  seg: Seg,
+  scale: number,
+  addDef: (m: string) => string,
+  dx?: number[],
+  includeEditMarkers = false,
+): string {
   const run = seg.run;
   const size = fontSize(run, scale);
   const grad = run.gradient ? gradientFill(run.gradient, addDef) : null;
@@ -219,7 +247,10 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: nu
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
   if (run.outline) attrs.push(`stroke="${esc(run.outline.color)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
   if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
-  const span = `<tspan ${attrs.join(' ')}>${esc(seg.text)}</tspan>`;
+  const marker = includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0
+    ? ` data-r="${seg.paragraphIndex}.${seg.runIndex}" data-from="${seg.from}" data-to="${seg.to}"`
+    : '';
+  const span = `<tspan${marker} ${attrs.join(' ')}>${esc(seg.text)}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
   const restored = run.baseline
     ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;

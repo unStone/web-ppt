@@ -1,6 +1,6 @@
 import type { OpenEditorOptions } from './session';
 import type { SlideEditorOptions } from './slide-editor-types';
-import type { WebPptViewOptions } from './framework-adapter';
+import type { WebPptViewOptions } from './framework-adapter-types';
 
 const recoveryLogKeys = new WeakMap<object, number>();
 const recoveryStoreKeys = new WeakMap<object, number>();

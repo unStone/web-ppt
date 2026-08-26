@@ -83,10 +83,11 @@ tracker: local-markdown
 - [持久化恢复日志并提供恢复决策](tickets/057-persist-recovery-journal.md) — 完整源指纹、异步 IndexedDB 分块、原子代际换代与统一 adapter 恢复状态贯通崩溃恢复；1,000 帧写入/重开均低于预算，两路最终审查归零。
 - [实现可访问的选择窗格与对象锁定](tickets/058-accessible-selection-pane.md) — 稳定投影目录、稀疏名称写回与纯会话锁定/隐藏贯通唯一 DOM 控制器及 React/Vue 薄挂载；Chrome 60 元素往返 p95 0.4ms，LibreOffice 实件打开通过。
 - [实现可连续使用的格式刷](tickets/059-continuous-format-painter.md) — 严格 `ApplyFormat` 与会话级单次/连续状态机贯通对象、文字、表格、跨页和多视图，React/Vue 共享同一 adapter；Chrome 60 元素完整反馈 p95 0.300ms，最小保存与 LibreOffice 实件打开通过。
+- [实现文档级查找替换闭环](tickets/060-document-find-replace.md) — 严格 `findText` / `ReplaceText` 与会话级增量索引贯通可见文字、精确范围高亮、跨页导航、原子历史、保存恢复及 React/Vue adapter；Chrome 200 页和 60 元素预算、LibreOffice 实件及两路最终审查全部通过。
 
 ## Not yet specified
 
-- M5 的查找替换、切换效果编辑和剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
+- M5 的切换效果编辑和剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。
 
 ## Out of scope

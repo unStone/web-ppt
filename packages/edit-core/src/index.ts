@@ -9,6 +9,7 @@ export { queryRunLink } from './run-links';
 export { queryParaProps } from './paragraph-properties';
 export { queryBodyProps } from './body-properties';
 export { assertFormatMask, FORMAT_MASK_FIELDS } from './commands/format-painter-types';
+export { assertFindTextRequest, findText } from './text-search';
 export { queryElementFill, SHAPE_PATTERN_PRESETS } from './shape-fill';
 export { querySlideBackground, querySlideHidden, querySlideLayout } from './slide-properties';
 export { querySlideNotes } from './slide-notes';
@@ -63,6 +64,10 @@ export type {
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type { SelectionPaneItem } from './selection-pane';
+export type {
+  FindTextRequest, ReplaceTextCommand, ReplaceTextScope, TextSearchMatch, TextSearchScope,
+  TextSearchTarget,
+} from './text-search-types';
 export {
   applyParagraphProps, applyRunProps, applyTextEditOps, flattenTextBody, queryTextParagraphProps,
   queryTextRunProps, textBodyFromOverride, textFragmentFromRange, textMarksInRange,

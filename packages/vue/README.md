@@ -56,6 +56,28 @@ mode, slide, and zoom. Changing `source` atomically opens the replacement and re
 The same snapshot includes `formatPainter`; toolbars call
 `adapter.startFormatPainter({ continuous: true })` / `adapter.cancelFormatPainter()`. Vue observes the editor
 session controller rather than creating another painter state machine.
+`snapshot.value.textSearch` is the same shared find/replace state. A product toolbar binds it without maintaining
+another index:
+
+```vue
+<script setup lang="ts">
+const { adapter, snapshot } = useWebPptAdapter(binding);
+const setQuery = (event: Event) => adapter.value?.setTextSearchQuery(
+  (event.target as HTMLInputElement).value,
+);
+</script>
+<template>
+  <form @submit.prevent="adapter?.nextTextSearch()">
+    <input aria-label="Find" :value="snapshot.textSearch.query"
+      @focus="adapter?.openTextSearch({ mode: 'find' })"
+      @input="setQuery" />
+    <span>{{ snapshot.textSearch.currentIndex + 1 }}/{{ snapshot.textSearch.matches.length }}</span>
+    <button type="button" :disabled="!snapshot.textSearch.canReplace"
+      @click="adapter?.replaceCurrentText()">Replace</button>
+  </form>
+</template>
+```
+
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe and handles
 conditional remounts without retaining an old view.
 
@@ -98,6 +120,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.subscribe(...)` | returned `snapshot` |
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
 | `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
+| `adapter.openTextSearch/.../replaceAllText()` | returned `adapter` + `snapshot.textSearch` |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with Vue 3.5.41; the optional peer range supports Vue 3.3–3.5. The

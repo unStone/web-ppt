@@ -28,7 +28,7 @@ import type { RecoveryFrameSource, RecoverySubscriber } from './recovery-types';
 import {
   cloneSelection, normalizeSelection, selectionAfterInteractionState, selectionAfterStructure,
 } from './selection';
-import { shapeTextCommandTarget, validateCommandRelations } from './transaction-validation';
+import { validateCommandRelations } from './transaction-validation';
 import type { EditDoc, ElementId, SlideId } from './types';
 
 function reportSubscriberError(error: unknown): void {
@@ -268,10 +268,11 @@ export class Editor {
       } else for (const command of commands) {
         const patches = commandPatches(this.doc, command, origin);
         applyCommandPatches(patches);
-        const textShapeId = shapeTextCommandTarget(command);
-        if (textShapeId
-          && patches.forward.some((patch) => patch.path.length === 4 && patch.path[3] === 'text')) {
-          autoFitTargets.add(textShapeId);
+        // 批量文字命令没有单一 command.id；以实际文字 patch 为真相才能完整覆盖所有 shape。
+        for (const patch of patches.forward) {
+          if (patch.path[0] === 'elements' && patch.path.length === 4 && patch.path[3] === 'text') {
+            autoFitTargets.add(patch.path[1]);
+          }
         }
       }
       for (const id of autoFitTargets) {

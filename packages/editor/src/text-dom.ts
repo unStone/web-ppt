@@ -66,7 +66,10 @@ export function rangePositions(
   };
 }
 
-export function caretPointAt(container: HTMLElement, offset: number): { node: Node; offset: number } {
+export function caretPointAt(
+  container: HTMLElement | SVGElement,
+  offset: number,
+): { node: Node; offset: number } {
   let remaining = offset;
   for (let index = 0; index < container.childNodes.length; index++) {
     const child = container.childNodes[index];
@@ -80,8 +83,8 @@ export function caretPointAt(container: HTMLElement, offset: number): { node: No
     const read = readSemanticNode(child);
     if (!read.valid) continue;
     if (remaining <= read.text.length) {
-      if (child instanceof HTMLElement && !['br', 'svg'].includes(child.localName)) {
-        return caretPointAt(child, remaining);
+      if (child instanceof Element && !['br', 'svg'].includes(child.localName)) {
+        return caretPointAt(child as HTMLElement | SVGElement, remaining);
       }
       return { node: container, offset: index + (remaining ? 1 : 0) };
     }
@@ -91,18 +94,29 @@ export function caretPointAt(container: HTMLElement, offset: number): { node: No
 }
 
 /** engine 行盒会把同一 run 拆成多个标记；边界优先落到下一视觉行，run 末尾才落前一段。 */
-export function domPointAt(root: HTMLElement, position: TextPosition): { node: Node; offset: number } | null {
-  const markers = [...root.querySelectorAll<HTMLElement>(`[data-r="${position.p}.${position.r}"]`)];
+export function domPointAt(
+  root: Element,
+  position: TextPosition,
+  markerKind: 'edit' | 'search' = 'edit',
+): { node: Node; offset: number } | null {
+  const attribute = markerKind === 'edit' ? 'data-r' : 'data-ppt-search-r';
+  const markers = [...root.querySelectorAll<HTMLElement | SVGElement>(
+    `[${attribute}="${position.p}.${position.r}"]`,
+  )];
   if (!markers.length) return null;
-  const ranged = markers.filter((marker) => marker.hasAttribute('data-from')
-    && marker.hasAttribute('data-to'));
+  const fromField = markerKind === 'edit' ? 'from' : 'pptSearchFrom';
+  const toField = markerKind === 'edit' ? 'to' : 'pptSearchTo';
+  const ranged = markers.filter((marker) => marker.dataset[fromField] !== undefined
+    && marker.dataset[toField] !== undefined);
   const marker = ranged.find((candidate) => {
-    const from = Number(candidate.dataset.from);
-    const to = Number(candidate.dataset.to);
+    const from = Number(candidate.dataset[fromField]);
+    const to = Number(candidate.dataset[toField]);
     return position.off >= from && position.off < to;
-  }) ?? [...ranged].reverse().find((candidate) => position.off === Number(candidate.dataset.to))
+  }) ?? [...ranged].reverse().find(
+    (candidate) => position.off === Number(candidate.dataset[toField]),
+  )
     ?? markers[0];
-  const from = Number(marker.dataset.from ?? 0);
+  const from = Number(marker.dataset[fromField] ?? 0);
   const localOffset = Math.max(0, position.off - from);
   if (marker.localName === 'svg') {
     const parent = marker.parentNode;

@@ -144,6 +144,32 @@ session.formatPainter.cancel();
 `adapter.startFormatPainter()` / `cancelFormatPainter()` 直接映射同一控制器，
 `snapshot.formatPainter` 向 React、Vue、Svelte 与 Web Component 公开 `active`、`mode`、`source`、`readonly`。
 
+### 会话级查找替换
+
+所有已挂载 view 与 adapter 还会共用一份懒建立的 `session.textSearch`。view 模式可查找、导航和高亮，
+edit 模式额外开放替换。第一次非空查询才按页建立结果；后续文档事务只淘汰脏页/删除页缓存，页面重排只
+重组已有结果，不重扫文字。
+
+```ts
+session.textSearch.open({
+  mode: 'replace', query: '草稿', replacement: '定稿',
+  scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+});
+session.textSearch.next();
+session.textSearch.replaceCurrent();
+
+adapter.openTextSearch({ mode: 'find', query: '负责人' });
+adapter.setTextSearchReplacement('团队');
+adapter.replaceAllText(); // view 模式返回 0；snapshot.textSearch.canReplace 会解释原因
+```
+
+聚焦 view 支持 `Ctrl/Cmd+F`、`Ctrl/Cmd+H`、`Enter`、`Shift+Enter` 与 `Escape`。跨页导航只切换收到
+事件的 view，其它视图保持本地页面。根节点公开 `data-text-search-*`，命中元素公开
+`data-ppt-search-matches` / `data-ppt-search-current`，当前文字范围公开
+`data-ppt-search-current-range`；精确范围框属于 overlay，不会增加第四个渲染层。产品自己渲染搜索栏和
+ARIA 控件。Chromium 契约实测 200 页首次索引 / 冷查询 p95 为 1.8 / 0.5ms，
+60 元素导航 / 替换完整反馈 p95 为 0.1 / 0.9ms。
+
 `mountSelectionPane()` 是对象目录唯一的可访问 DOM 实现：按当前页从顶层到底层展示稳定元素树，重名对象
 仍由稳定 id 区分，并支持组合导航、重命名、锁定与仅会话隐藏。方向键、Home/End、Left/Right、Enter、
 Space 和 F2 均可独立完成操作。锁定与隐藏沿组合继承；显示子元素只删除自身 `visibility`，绝不写

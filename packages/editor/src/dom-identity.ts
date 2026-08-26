@@ -48,6 +48,19 @@ function bindProjectedIdentities(
     const partition = identity.parentElement?.localName === 'a' ? identity.parentElement : identity;
     (partition as SVGElement).dataset.editRoot = id;
   }
+  // 静态层标记不能与 contenteditable 的 data-r 重名，否则宿主的编辑器选择器会命中预览副本。
+  for (const marker of root.querySelectorAll<HTMLElement | SVGElement>('[data-r]')) {
+    marker.dataset.pptSearchR = marker.dataset.r!;
+    delete marker.dataset.r;
+    if (marker.dataset.from !== undefined) {
+      marker.dataset.pptSearchFrom = marker.dataset.from;
+      delete marker.dataset.from;
+    }
+    if (marker.dataset.to !== undefined) {
+      marker.dataset.pptSearchTo = marker.dataset.to;
+      delete marker.dataset.to;
+    }
+  }
 }
 
 export function bindElementIdentities(root: ParentNode, doc: EditDoc, roots: readonly ElementId[]): void {
