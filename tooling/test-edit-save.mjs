@@ -25,6 +25,7 @@ import { runSlideImageBackgroundSaveContract } from './lib/slide-image-backgroun
 import { runShapeEffectsSaveContract } from './lib/shape-effects-save-contract.mjs';
 import { runImageContentSaveContract } from './lib/image-content-save-contract.mjs';
 import { runHyperlinkSaveContract } from './lib/hyperlink-save-contract.mjs';
+import { runSelectionPaneSaveContract } from './lib/selection-pane-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -319,6 +320,7 @@ await runImageContentSaveContract({
 });
 
 await runHyperlinkSaveContract({ edit, core, load, check, saveArtifact });
+await runSelectionPaneSaveContract({ edit, core, load, check, saveArtifact });
 
 const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();
 check('真实 Office 门禁覆盖本轮全部保存产物',

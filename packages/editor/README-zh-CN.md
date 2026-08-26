@@ -17,6 +17,9 @@ const view = session.mount(container, {
   mode: 'edit', zoom: 1, textMode: 'auto', snapping: true,
   snapMargins: { left: 24, right: 24, top: 24, bottom: 24 }, // 可选，单位为幻灯片 px
 });
+const selectionPane = session.mountSelectionPane(paneContainer, {
+  mode: 'edit', slideId: view.slideId,
+});
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -42,6 +45,7 @@ view.setMode('edit');
 view.setSlide(slideId);
 view.setZoom(1.5);
 view.setSnapping(false);   // 无需重新挂载即可切换
+selectionPane.setSlide(slideId);
 
 notesTextarea.value = view.queryNotes().value;
 notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
@@ -49,6 +53,7 @@ notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value)
 
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
+selectionPane.destroy();
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 ```
 
@@ -106,6 +111,7 @@ import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor'
 
 const adapter = createWebPptAdapter({ onError: console.error });
 adapter.attach(container);
+adapter.attachSelectionPane(paneContainer);
 await applyWebPptAdapterBinding(adapter, {
   source: file, mode: 'edit', slideId, zoom: 1,
   onViewChange: (state) => routeTo(state.slideId),
@@ -120,6 +126,11 @@ adapter.dispose();
 idle/opening/recovering/ready/error、进度、恢复候选、session、view、模式、稳定页身份和缩放，不维护第二份
 演示文稿模型。启用持久化时可由 `onRecovery(candidate)` 返回 `restore`、`discard` 或 `cancel`；React/Vue
 组件透传同一个回调。
+
+`mountSelectionPane()` 是对象目录唯一的可访问 DOM 实现：按当前页从顶层到底层展示稳定元素树，重名对象
+仍由稳定 id 区分，并支持组合导航、重命名、锁定与仅会话隐藏。方向键、Home/End、Left/Right、Enter、
+Space 和 F2 均可独立完成操作。锁定与隐藏沿组合继承；显示子元素只删除自身 `visibility`，绝不写
+`visible` 顶掉隐藏祖先。几何和文字编辑保持既有行 DOM 身份；Chromium 中 60 对象锁定往返 p95 为 0.4ms。
 
 所有宿主都只映射下面四步，不复制渲染和编辑状态：
 

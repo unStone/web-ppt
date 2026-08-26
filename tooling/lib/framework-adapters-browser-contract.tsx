@@ -3,14 +3,18 @@ import { createRoot } from 'react-dom/client';
 import { createApp, h, reactive } from 'vue';
 import { openEditor } from '@web-ppt/editor';
 import {
-  WebPptEditor as ReactWebPptEditor,
+  WebPptEditor as ReactWebPptEditor, WebPptSelectionPane as ReactSelectionPane,
 } from '@web-ppt/react';
-import type { WebPptEditorHandle as ReactHandle } from '@web-ppt/react';
+import type {
+  WebPptEditorHandle as ReactHandle, WebPptSelectionPaneHandle as ReactPaneHandle,
+} from '@web-ppt/react';
 import type { RecoveryStore, RecoveryStoreJournal } from '@web-ppt/editor';
 import {
-  WebPptEditor as VueWebPptEditor,
+  WebPptEditor as VueWebPptEditor, WebPptSelectionPane as VueSelectionPane,
 } from '@web-ppt/vue';
-import type { WebPptEditorHandle as VueHandle } from '@web-ppt/vue';
+import type {
+  WebPptEditorHandle as VueHandle, WebPptSelectionPaneHandle as VuePaneHandle,
+} from '@web-ppt/vue';
 
 const waitFor = async (predicate: () => boolean, label: string): Promise<void> => {
   for (let attempt = 0; attempt < 300; attempt++) {
@@ -214,6 +218,28 @@ export async function runFrameworkAdaptersBrowserContract(
   vueApp.mount(vueMount);
   await waitFor(() => !!sharedReactRef.current?.view && !!vueHandle?.view,
     'React/Vue 外部 session 双视图');
+  const sharedReactPaneRef = createRef<ReactPaneHandle>();
+  sharedReactRoot.render(<>
+    <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
+      mode="edit" textMode="svg" />
+    <ReactSelectionPane ref={sharedReactPaneRef} adapter={sharedReactRef.current!.adapter} />
+  </>);
+  const vuePaneMount = mountPoint();
+  let vuePaneHandle: VuePaneHandle | null = null;
+  const vuePaneApp = createApp({
+    setup: () => () => h(VueSelectionPane, {
+      ref: (value: unknown) => { vuePaneHandle = value as VuePaneHandle | null; },
+      adapter: vueHandle!.adapter,
+    }),
+  });
+  vuePaneApp.mount(vuePaneMount);
+  await waitFor(() => !!sharedReactPaneRef.current?.pane && !!vuePaneHandle?.pane,
+    'React/Vue 选择窗格薄包装');
+  if (sharedReactPaneRef.current!.pane!.mode !== 'edit' || vuePaneHandle!.pane!.mode !== 'view'
+    || sharedReactMount.querySelectorAll('[role="treeitem"]').length === 0
+    || vuePaneMount.querySelectorAll('[role="treeitem"]').length === 0) {
+    throw new Error('React/Vue 选择窗格没有复用 adapter 的模式或目录');
+  }
   sharedReactRef.current!.view!.setNotes('跨框架同步');
   if (vueHandle.view.queryNotes().value !== '跨框架同步'
     || vueHandle.view.setNotes('Vue 查看越权') !== false) {
@@ -223,6 +249,7 @@ export async function runFrameworkAdaptersBrowserContract(
   vueState.zoom = 0.7;
   await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7,
     'Vue 受控模式更新');
+  if (vuePaneHandle!.pane!.mode !== 'edit') throw new Error('Vue 选择窗格没有跟随受控模式');
   const notesBeforeVueEdit = vueHandle!.view!.queryNotes().value;
   vueHandle!.view!.setNotes('Vue 编辑备注');
   if (vueHandle!.undo() === null || vueHandle!.view!.queryNotes().value !== notesBeforeVueEdit) {
@@ -234,10 +261,12 @@ export async function runFrameworkAdaptersBrowserContract(
   if (!(vueSaved instanceof Uint8Array) || vueSaved.length === 0 || external.editor.isDirty()) {
     throw new Error('Vue 保存下载入口失败');
   }
+  vuePaneApp.unmount();
   vueApp.unmount();
-  if (external.disposed || vueMount.childElementCount !== 0) {
+  if (external.disposed || vueMount.childElementCount !== 0 || vuePaneMount.childElementCount !== 0) {
     throw new Error('Vue 卸载错误释放外部 session 或遗留 DOM');
   }
+  vuePaneMount.remove();
 
   let remountedHandle: VueHandle | null = null;
   const remountedVue = createApp({

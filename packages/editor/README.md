@@ -18,6 +18,9 @@ const view = session.mount(container, {
   mode: 'edit', zoom: 1, textMode: 'auto', snapping: true,
   snapMargins: { left: 24, right: 24, top: 24, bottom: 24 }, // optional slide px
 });
+const selectionPane = session.mountSelectionPane(paneContainer, {
+  mode: 'edit', slideId: view.slideId,
+});
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -43,6 +46,7 @@ view.setMode('edit');
 view.setSlide(slideId);
 view.setZoom(1.5);
 view.setSnapping(false);   // can be changed without remounting
+selectionPane.setSlide(slideId);
 
 notesTextarea.value = view.queryNotes().value;
 notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
@@ -50,6 +54,7 @@ notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value)
 
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
+selectionPane.destroy();
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs
 ```
 
@@ -110,6 +115,7 @@ import { applyWebPptAdapterBinding, createWebPptAdapter } from '@web-ppt/editor'
 
 const adapter = createWebPptAdapter({ onError: console.error });
 adapter.attach(container);
+adapter.attachSelectionPane(paneContainer);
 await applyWebPptAdapterBinding(adapter, {
   source: file, mode: 'edit', slideId, zoom: 1,
   onViewChange: (state) => routeTo(state.slideId),
@@ -125,6 +131,13 @@ their late result. `snapshot` and `subscribe()` expose idle/opening/recovering/r
 recovery candidate, session, view, mode, stable slide id, and zoom without introducing a second presentation model.
 When persistence is enabled, `onRecovery(candidate)` returns `restore`, `discard`, or `cancel`; React and Vue pass
 through this same callback.
+
+`mountSelectionPane()` is the single accessible DOM implementation for the object catalog. It presents the current
+slide in topmost-first tree order, keeps duplicate OOXML names distinct through stable element ids, and supports
+group navigation, rename, lock, and session-only hide. Arrow keys, Home/End, Left/Right, Enter, Space, and F2 work
+without a pointer. Lock and hide inherit through groups; showing a child removes its own `visibility` declaration
+instead of writing `visible`, so a hidden ancestor cannot be bypassed. Geometry and text edits retain existing row
+DOM identities; a 60-object lock/unlock round trip measures 0.4ms p95 in the Chromium contract.
 
 Every host maps the same four operations; no rendering or editor state is reimplemented:
 

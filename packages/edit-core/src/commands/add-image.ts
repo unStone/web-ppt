@@ -13,6 +13,7 @@ import type {
 import { createImageResource } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
+import { assertElementUnlocked } from './element-interaction';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -80,6 +81,7 @@ export function addImagePatches(
   const placeholderTextIsEmpty = placeholder?.src.kind === 'shape'
     && (placeholder.ovr.text?.kind === 'empty'
       || (placeholder.ovr.text === undefined && placeholder.src.text === null));
+  if (placeholder) assertElementUnlocked(doc, placeholder.id);
   if (command.placeholderId !== undefined && (typeof command.placeholderId !== 'string'
     || !placeholder || placeholder.parent !== slide.id || placeholder.meta.ph?.type !== 'pic'
     || placeholder.meta.editable !== 'full' || placeholder.meta.locked || !placeholderTextIsEmpty)) {

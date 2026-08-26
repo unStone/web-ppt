@@ -65,6 +65,25 @@ export interface SetZCommand {
   readonly to: ElementLayerTarget;
 }
 
+export interface SetNameCommand {
+  readonly type: 'SetName';
+  readonly id: ElementId;
+  /** null 删除本次会话的名称覆盖并恢复来源 cNvPr@name。 */
+  readonly name: string | null;
+}
+
+export interface SetLockedCommand {
+  readonly type: 'SetLocked';
+  readonly id: ElementId;
+  readonly locked: boolean;
+}
+
+export interface SetElementHiddenCommand {
+  readonly type: 'SetElementHidden';
+  readonly id: ElementId;
+  readonly hidden: boolean;
+}
+
 export type AlignEdge = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 
 export interface AlignElementsCommand {
@@ -236,7 +255,8 @@ export interface InsertRowCommand {
   readonly id: ElementId;
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
+  | SetLockedCommand | SetElementHiddenCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
@@ -364,6 +384,29 @@ export type ElementOrderPatch = {
   readonly origin: string;
 };
 
+export type ElementNamePatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
+  readonly value: string;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
+  readonly origin: string;
+};
+
+export type ElementInteractionField = 'locked' | 'hiddenByUser';
+export type ElementInteractionPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
+  readonly value: true;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
+  readonly origin: string;
+};
+
 export interface ElementTreeSnapshot {
   readonly root: ElementId;
   readonly parent: SlideId | ElementId;
@@ -406,7 +449,7 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementInteractionPatch
   | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch;
 
@@ -471,6 +514,8 @@ export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
   readonly bodyPropsElements: Set<ElementId>;
   /** 只需移动既有 DOM 分区的元素；可与 renderElements 重叠。 */
   readonly reorderedElements: Set<ElementId>;
+  /** 名称与会话交互状态改变；选择窗格只消费这一集合，避免文字输入重建目录 DOM。 */
+  readonly paneElements: Set<ElementId>;
 }
 
 export type EditorSubscriber = (change: EditorChange) => void;

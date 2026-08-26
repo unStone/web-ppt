@@ -40,6 +40,7 @@ import { runModelInvariantContract } from './lib/model-invariant-contract.mjs';
 import { runXmlTreeContract } from './lib/xml-tree-contract.mjs';
 import { runOpcZipContract } from './lib/opc-zip-contract.mjs';
 import { runSetXfrmSaveContract } from './lib/set-xfrm-save-contract.mjs';
+import { runSelectionPaneContract } from './lib/selection-pane-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -119,6 +120,7 @@ await runShapeAutofitEditContract({ edit, core, load, check });
 await runBodyPropsEditContract({ edit, core, load, check });
 await runHyperlinkContract({ edit, core, load, check });
 await runRecoveryJournalContract({ edit, core, load, check });
+await runSelectionPaneContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

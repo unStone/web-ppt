@@ -2,6 +2,7 @@ import { elementOrder, elementParentChildren, writableLayerSiblingIds } from '..
 import { fractionalIndexBetween } from '../fractional-index';
 import type { EditDoc, ElementId, FractionalIndex } from '../types';
 import type { CommandPatches, ElementOrderPatch, SetZCommand } from './types';
+import { assertElementUnlocked } from './element-interaction';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const TARGETS = new Set<SetZCommand['to']>(['front', 'back', 'forward', 'backward']);
@@ -12,7 +13,7 @@ export function assertSetZCommand(doc: EditDoc, command: SetZCommand) {
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
   if (record.meta.editable === 'none') throw new Error(`元素不可编辑：${command.id}`);
-  if (record.meta.locked) throw new Error(`元素已锁定：${command.id}`);
+  assertElementUnlocked(doc, command.id);
   if (!record.meta.origin?.part) throw new Error(`元素缺少可写 OOXML 来源 part：${command.id}`);
   return record;
 }

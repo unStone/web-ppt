@@ -10,7 +10,7 @@ import { namespacedElement } from './xml-element';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
-interface HostSpec {
+export interface HostSpec {
   readonly namespaceUri: string;
   readonly nonVisual: string;
   readonly properties: string | null;

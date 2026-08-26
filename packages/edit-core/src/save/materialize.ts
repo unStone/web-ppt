@@ -9,6 +9,7 @@ import { patchElementEffects } from './effects';
 import { patchElementImageContent } from './image-content';
 import { patchElementHyperlink } from './hyperlink';
 import type { HyperlinkSaveContext } from './hyperlink';
+import { patchElementName } from './name';
 
 /** 插入片段与整页保存必须经过同一条覆盖物化管线，避免二次复制丢失编辑。 */
 export function materializeElementOverrides(
@@ -24,6 +25,7 @@ export function materializeElementOverrides(
   // 表格追加行不是 set 操作，片段中已经物化后绝不能在外层再次生成。
   patchElementOrders(document, doc, part, scope);
   for (const record of records) {
+    patchElementName(document, record);
     patchElementXfrm(document, record);
     patchElementShapeFormat(document, record);
     patchElementEffects(document, record);

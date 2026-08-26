@@ -74,11 +74,13 @@ import { openEditor } from '@web-ppt/editor';
 
 const session = await openEditor(file);
 const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
+const selectionPane = session.mountSelectionPane(paneContainer, { mode: 'edit' });
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
 session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 slideView.setMode('view'); // 静态预览不重建，只隐藏交互层
+selectionPane.setMode('view');
 session.dispose();         // 释放全部视图、原包与 blob URL
 ```
 
@@ -90,6 +92,10 @@ import { WebPptEditor } from '@web-ppt/react';
 
 <WebPptEditor source={file} mode="edit" zoom={1} onError={console.error} />
 ```
+
+需要选择窗格时，React/Vue 的 `WebPptSelectionPane` 直接复用 `useWebPptAdapter()` 返回的 adapter；
+无框架宿主使用 `session.mountSelectionPane()`。对象树支持键盘导航、重命名、锁定、隐藏和组合继承，
+文字/几何编辑不会重建目录 DOM。
 
 Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
 view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。

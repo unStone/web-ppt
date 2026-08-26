@@ -17,6 +17,7 @@ import { assertTableRowAppendEditInfo } from '../table-row-append-validation';
 import {
   applyCopiedLinks, assertClipboardPortableLink, assertClipboardTextLinks,
 } from '../clipboard-links';
+import { assertElementUnlocked } from './element-interaction';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
@@ -93,9 +94,10 @@ function resolvePasteDestination(doc: EditDoc, parentId: string): { parent: Slid
     return { parent: parentId, part: slide.origin.part };
   }
   const group = doc.elements[parentId];
-  if (!group || group.src.kind !== 'group' || group.meta.editable !== 'full' || group.meta.locked) {
+  if (!group || group.src.kind !== 'group' || group.meta.editable !== 'full') {
     throw new Error('粘贴目标必须是可写幻灯片或组合');
   }
+  assertElementUnlocked(doc, parentId);
   if (!group.meta.origin) throw new Error('粘贴目标组合缺少写回锚点');
   return { parent: parentId, part: group.meta.origin.part };
 }

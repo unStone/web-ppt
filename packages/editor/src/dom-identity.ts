@@ -62,6 +62,30 @@ export function findElementPartition(root: ParentNode, id: ElementId): SVGElemen
   return findByIdentity(root, 'editRoot', id);
 }
 
+/**
+ * visibility 会被后代的 visible 覆盖；显示元素时必须删除声明，让祖先隐藏继续继承。
+ */
+export function syncElementVisibility(root: ParentNode, doc: EditDoc, id: ElementId): boolean {
+  const partition = findElementPartition(root, id);
+  const record = doc.elements[id];
+  if (!partition || !record) return false;
+  if (record.meta.hiddenByUser) partition.style.visibility = 'hidden';
+  else partition.style.removeProperty('visibility');
+  return true;
+}
+
+export function syncElementTreeVisibility(root: ParentNode, doc: EditDoc, id: ElementId): void {
+  const visit = (current: ElementId): void => {
+    syncElementVisibility(root, doc, current);
+    for (const child of doc.elements[current]?.children ?? []) visit(child);
+  };
+  visit(id);
+}
+
+export function syncSlideVisibility(root: ParentNode, doc: EditDoc, slideId: SlideId): void {
+  for (const id of doc.slides[slideId]?.children ?? []) syncElementTreeVisibility(root, doc, id);
+}
+
 export function touchedElementPartitions(
   doc: EditDoc,
   slideId: SlideId,

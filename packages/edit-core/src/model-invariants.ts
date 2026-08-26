@@ -25,6 +25,7 @@ import {
 import { assertLinkOverride } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 import { isNotesPart } from './notes-part';
+import { assertElementName } from './element-name';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -143,6 +144,7 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     assertTableRows(record);
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) assertLinkOverride(record.ovr.link, `元素 ${record.id} 的链接覆盖`);
+    if (own(record.ovr, 'name')) assertElementName(record.ovr.name, `元素 ${record.id} 的名称覆盖`);
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
   }

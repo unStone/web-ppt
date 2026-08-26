@@ -64,8 +64,10 @@ check('基础包没有 React/Vue 运行时依赖', basePackages.every((pkg) => {
   return !runtime.react && !runtime['react-dom'] && !runtime.vue;
 }));
 
-check('React 入口公开组件与 hook', !!react.WebPptEditor && typeof react.useWebPptAdapter === 'function');
-check('Vue 入口公开组件与 composable', !!vue.WebPptEditor && typeof vue.useWebPptAdapter === 'function');
+check('React 入口公开组件、选择窗格与 hook', !!react.WebPptEditor && !!react.WebPptSelectionPane
+  && typeof react.useWebPptAdapter === 'function');
+check('Vue 入口公开组件、选择窗格与 composable', !!vue.WebPptEditor && !!vue.WebPptSelectionPane
+  && typeof vue.useWebPptAdapter === 'function');
 const reactMarkup = renderReact(React.createElement(react.WebPptEditor, { mode: 'view' }));
 const vueMarkup = await renderVue(createSSRApp({
   render: () => h(vue.WebPptEditor, { mode: 'view' }),

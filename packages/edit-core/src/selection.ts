@@ -4,6 +4,8 @@ import type { EditDoc, ElementId } from './types';
 import type { Selection, TextPosition } from './commands/types';
 import { textRunEditLength } from './text-position';
 import { assertTableCellAddress } from './table-cell';
+import { elementHasLockedAncestor } from './commands/element-interaction';
+import { elementOrAncestorMatches } from './element-ancestry';
 
 const clonePosition = (position: TextPosition): TextPosition => ({ ...position });
 
@@ -131,6 +133,27 @@ export function selectionAfterStructure(doc: EditDoc, selection: Selection): Sel
   const ids = selection.ids.filter((id) => !!doc.elements[id]);
   if (!ids.length) return { kind: 'none' };
   const enteredGroup = selection.enteredGroup && doc.elements[selection.enteredGroup]?.src.kind === 'group'
+    && ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))
+    ? selection.enteredGroup : null;
+  return normalizeSelection(doc, { kind: 'elements', ids, enteredGroup });
+}
+
+function elementHiddenBySelfOrAncestor(doc: EditDoc, id: ElementId): boolean {
+  return elementOrAncestorMatches(doc, id, (record) => record.meta.hiddenByUser === true);
+}
+
+const interactive = (doc: EditDoc, id: ElementId): boolean =>
+  !elementHasLockedAncestor(doc, id) && !elementHiddenBySelfOrAncestor(doc, id);
+
+/** 会话锁定/隐藏不删除模型，只过滤因此失效的活动选区。 */
+export function selectionAfterInteractionState(doc: EditDoc, selection: Selection): Selection {
+  if (selection.kind === 'none') return selection;
+  if (selection.kind === 'text' || selection.kind === 'table') {
+    return interactive(doc, selection.id) ? cloneSelection(selection) : { kind: 'none' };
+  }
+  const ids = selection.ids.filter((id) => interactive(doc, id));
+  if (!ids.length) return { kind: 'none' };
+  const enteredGroup = selection.enteredGroup && interactive(doc, selection.enteredGroup)
     && ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))
     ? selection.enteredGroup : null;
   return normalizeSelection(doc, { kind: 'elements', ids, enteredGroup });

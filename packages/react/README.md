@@ -54,6 +54,19 @@ mode, slide, and zoom. Changing `source` atomically opens the replacement and re
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe, including
 React StrictMode's development setup/cleanup/setup cycle.
 
+The optional selection pane reuses that adapter; it does not maintain another document or selection:
+
+```tsx
+const { adapter, containerRef } = useWebPptAdapter(binding);
+return <div className="deck">
+  <div ref={containerRef} />
+  <WebPptSelectionPane adapter={adapter} aria-label="Objects" />
+</div>;
+```
+
+`WebPptSelectionPane` follows controlled slide and view/edit mode changes, exposes its DOM controller through a
+ref, and detaches without disposing an external session.
+
 While a journal is awaiting a decision, `snapshot.status` is `recovering` and `snapshot.recovery` contains its
 lightweight metadata. `onRecovery` may return `restore`, `discard`, or `cancel`; source hashing, IndexedDB writes,
 compaction, replay, and cleanup remain in `@web-ppt/editor` rather than the React component.
@@ -72,6 +85,7 @@ Those components destroy their views but never dispose the injected session; the
 |---|---|
 | `createWebPptAdapter()` | `useWebPptAdapter()` |
 | `adapter.attach(element)` | returned `containerRef` |
+| `adapter.attachSelectionPane(element)` | `<WebPptSelectionPane adapter={adapter} />` |
 | `adapter.setDocument(...)` | `source` or external `session` prop |
 | `adapter.setView(...)` | controlled `mode`, `slideId`, `zoom`, `snapping` props |
 | `adapter.subscribe(...)` | returned `snapshot` |

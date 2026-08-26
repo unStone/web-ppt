@@ -1,4 +1,5 @@
 export { openEditor } from './session';
+export { createSelectionPane } from './selection-pane';
 export { fingerprintSource } from './source-fingerprint';
 export { RecoveryOpenCancelledError } from './recovery-store';
 export { createIndexedDbRecoveryStore } from './indexeddb-recovery-store';
@@ -15,6 +16,7 @@ export {
   SHAPE_PATTERN_PRESETS,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
+export type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 export type { WebPptSourceIdentity } from './source-fingerprint';
 export type {
   EditorRecovery, RecoveryCandidate, RecoveryDecision, RecoveryDecisionHandler, RecoveryOptions,
@@ -39,5 +41,6 @@ export type {
   ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
 } from '@web-ppt/edit-core';
 export type { EditorChange, SlideId } from '@web-ppt/edit-core';
+export type { SelectionPaneItem } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
 export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

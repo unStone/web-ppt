@@ -264,6 +264,7 @@ async function browserResult(webSocketDebuggerUrl) {
           recoveryChunks: report.dataset.recoveryChunks,
           recoverySyncOverhead: report.dataset.recoverySyncOverhead,
           recoveryFingerprintMs: report.dataset.recoveryFingerprintMs,
+          selectionPaneP95: report.dataset.selectionPaneP95,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
@@ -599,6 +600,7 @@ try {
     + ` · IndexedDB恢复1000帧 写入/恢复 ${result.recoveryPersistMs}/${result.recoveryRestoreMs}ms`
     + `/分块 ${result.recoveryChunks}/同步增量 ${result.recoverySyncOverhead}ms`
     + `/50MB指纹 ${result.recoveryFingerprintMs}ms`
+    + ` · 选择窗格60锁定往返 p95 ${result.selectionPaneP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`

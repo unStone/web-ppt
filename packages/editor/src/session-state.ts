@@ -1,10 +1,12 @@
 import type { Presentation } from '@web-ppt/core';
 import type { EditorSession } from './session';
 import type { SlideEditor } from './slide-editor-types';
+import type { SelectionPane } from './selection-pane-types';
 
 interface SessionState {
   presentation: Presentation;
   views: Set<SlideEditor>;
+  panes: Set<SelectionPane>;
   textOwner: TextEditingOwner | null;
 }
 
@@ -13,7 +15,7 @@ interface TextEditingOwner { releaseTextEditing(): void }
 const states = new WeakMap<EditorSession, SessionState>();
 
 export function registerSession(session: EditorSession, presentation: Presentation): void {
-  states.set(session, { presentation, views: new Set(), textOwner: null });
+  states.set(session, { presentation, views: new Set(), panes: new Set(), textOwner: null });
 }
 
 export function sessionState(session: EditorSession): SessionState {

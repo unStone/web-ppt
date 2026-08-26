@@ -81,10 +81,11 @@ tracker: local-markdown
 - [发布 React 与 Vue 查看编辑适配包](tickets/055-publish-react-vue-adapters.md) — 单一框架无关 adapter 统一受控 view/edit、文件与外部会话所有权、错误及销毁；React/Vue SSR 和真实浏览器全生命周期通过，两包仅 0.92/1.16KB gzip。
 - [建立可持久化操作日志与确定性恢复原语](tickets/056-recovery-journal-primitives.md) — 版本化纯 JSON 帧、资源闭包、实际 OPC 身份下界与原子 staged replay 贯通 headless 恢复；1,000 帧回放 269.9ms，两路最终审查归零。
 - [持久化恢复日志并提供恢复决策](tickets/057-persist-recovery-journal.md) — 完整源指纹、异步 IndexedDB 分块、原子代际换代与统一 adapter 恢复状态贯通崩溃恢复；1,000 帧写入/重开均低于预算，两路最终审查归零。
+- [实现可访问的选择窗格与对象锁定](tickets/058-accessible-selection-pane.md) — 稳定投影目录、稀疏名称写回与纯会话锁定/隐藏贯通唯一 DOM 控制器及 React/Vue 薄挂载；Chrome 60 元素往返 p95 0.4ms，LibreOffice 实件打开通过。
 
 ## Not yet specified
 
-- M5 的选择窗格、格式刷和剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
+- M5 的格式刷、查找替换、切换效果编辑和剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。
 
 ## Out of scope

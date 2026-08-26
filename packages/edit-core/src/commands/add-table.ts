@@ -11,6 +11,7 @@ import { removeElementPatches } from './element-tree';
 import type { AddTableCommand, CommandPatches, ElementTreePatch } from './types';
 import { assertInsertionRect, EMU_PER_PX, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
+import { assertElementUnlocked } from './element-interaction';
 
 const TABLE_URI = 'http://schemas.openxmlformats.org/drawingml/2006/table';
 
@@ -113,6 +114,7 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
   assertInsertionRect(command.rect, 'AddTable.rect');
   const placeholder = command.placeholderId === undefined
     ? undefined : doc.elements[command.placeholderId];
+  if (placeholder) assertElementUnlocked(doc, placeholder.id);
   if (command.placeholderId !== undefined
     && !isEmptyContentPlaceholder(doc, slide.id, command.placeholderId)) {
     throw new Error(`AddTable.placeholderId 必须是目标页中的空内容占位符：${String(command.placeholderId)}`);

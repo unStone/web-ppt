@@ -11,16 +11,20 @@ npm i @web-ppt/core @web-ppt/edit-core
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, Editor } from '@web-ppt/edit-core';
+import { createDoc, Editor, querySelectionPane } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
 const editor = new Editor(doc);
 const slideId = doc.slideOrder[0];
 const elementId = doc.slides[slideId].children[0];
+const objects = querySelectionPane(doc, slideId); // 最上层对象在前的稳定元素树
 
 const change = editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
 editor.exec({ type: 'SetFlip', id: elementId, h: true });
+editor.exec({ type: 'SetName', id: elementId, name: '标题' });
+editor.exec({ type: 'SetLocked', id: elementId, locked: true });        // 仅会话状态
+editor.exec({ type: 'SetElementHidden', id: elementId, hidden: true }); // 仅会话状态
 editor.exec({ type: 'AlignElements', ids: [elementId], edge: 'center' });
 editor.exec({
   type: 'AddShape', slideId, preset: 'roundRect',

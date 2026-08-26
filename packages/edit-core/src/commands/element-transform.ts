@@ -1,6 +1,7 @@
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementTransformPatch, Patch, XfrmField, XfrmValueByField } from './types';
 import { assertXfrmValue, isFrameXfrmField } from './xfrm';
+import { assertElementUnlocked } from './element-interaction';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -17,7 +18,7 @@ export function elementTransformPatches(
   const record = doc.elements[id];
   if (!record) throw new Error(`找不到元素：${id}`);
   if (record.meta.editable === 'none') throw new Error(`元素不可编辑：${id}`);
-  if (record.meta.locked) throw new Error(`元素已锁定：${id}`);
+  assertElementUnlocked(doc, id);
   if (record.meta.editable === 'frame'
     && fields.some((field) => values[field] !== undefined && !isFrameXfrmField(field))) {
     throw new Error(`框架对象只允许修改位置与尺寸：${id}`);

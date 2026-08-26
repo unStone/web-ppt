@@ -13,6 +13,8 @@ import type {
   EditorRecovery, RecoveryCandidate, RecoveryOptions, RecoveryStoreJournal,
 } from './recovery-store';
 import { fingerprintSourceBytes, sourceBytes } from './source-fingerprint';
+import { createSelectionPane } from './selection-pane';
+import type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 
 let recoverySessionSerial = 0;
 
@@ -57,6 +59,7 @@ export interface EditorSession {
   readonly recovery: EditorRecovery | null;
   readonly disposed: boolean;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
+  mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
   dispose(): void;
 }
 
@@ -82,12 +85,21 @@ class BrowserEditorSession implements EditorSession {
     return createSlideEditor(container, this, options);
   }
 
+  mountSelectionPane(
+    container: HTMLElement,
+    options: SelectionPaneOptions = {},
+  ): SelectionPane {
+    if (this.isDisposed) throw new Error('不能挂载已经释放的编辑会话');
+    return createSelectionPane(container, this, options);
+  }
+
   dispose(): void {
     if (this.isDisposed) return;
     this.isDisposed = true;
     this.recovery?.dispose();
     const state = sessionState(this);
     for (const view of [...state.views]) view.destroy();
+    for (const pane of [...state.panes]) pane.destroy();
     disposeDoc(this.editor.doc);
     releaseSession(this);
   }

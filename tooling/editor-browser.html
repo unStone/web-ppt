@@ -21,7 +21,7 @@
   <div id="perf-mount" class="contract-offscreen"></div>
   <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
-    import { openEditor } from '/out/editor/editor.mjs';
+    import { createWebPptAdapter, openEditor } from '/out/editor/editor.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
@@ -70,6 +70,9 @@
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
     import { runFrameworkAdaptersBrowserContract } from '/out/editor/framework-adapters.mjs';
     import { runEditorRecoveryBrowserContract } from '/tooling/lib/editor-recovery-browser-contract.mjs';
+    import {
+      runEditorSelectionPaneBrowserContract,
+    } from '/tooling/lib/editor-selection-pane-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -94,6 +97,9 @@
       const frameworkAdapters = await runFrameworkAdaptersBrowserContract(load);
       report.dataset.frameworkAdapters = 'pass';
       report.textContent += `\nReact ready ${frameworkAdapters.reactReady} · Vue ready ${frameworkAdapters.vueReady}`;
+      const selectionPaneResult = await runEditorSelectionPaneBrowserContract({
+        openEditor, createWebPptAdapter, load,
+      });
       await runEditorEngineAutoProbeBrowserContract();
       const session = await openEditor(await load('sample-edit-basic.pptx'), { idPrefix: 'browser-contract-' });
       const view = session.mount(mount, { mode: 'edit', zoom: 0.75 });
@@ -583,6 +589,7 @@
       report.dataset.slideImageBackgroundP95 = slidePropertiesResult.imageRenderP95.toFixed(3);
       report.dataset.slideImageBackgroundModelP95 = slidePropertiesResult.imageModelP95.toFixed(3);
       report.dataset.slideNotesP95 = slideNotesResult.p95.toFixed(3);
+      report.dataset.selectionPaneP95 = selectionPaneResult.p95.toFixed(3);
       report.textContent = `PASS\n实心/描边/重叠/嵌套组原生命中，Alt z 序循环\n`
         + `查看模式与多视图销毁通过\n点选反馈 p95 ${hitP95.toFixed(3)}ms\n`
         + `三档缩放 OBB / 手柄最大偏差 ${spaceError.toFixed(3)} / ${handleError.toFixed(3)}px\n`
@@ -629,6 +636,7 @@
         + `${slidePropertiesResult.imageModelP95.toFixed(3)} / `
         + `${slidePropertiesResult.imageRenderP95.toFixed(3)}ms`;
       report.textContent += `\n2,000 字符备注提交 p95 ${slideNotesResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n60 元素选择窗格锁定往返 p95 ${selectionPaneResult.p95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `
         + `${autofitResult.browserP95.toFixed(3)} / ${autofitResult.engineP95.toFixed(3)}ms，`
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;

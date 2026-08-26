@@ -1,15 +1,16 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
-import { commandPatches, commandSelectsInsertedElement, commandTargetIds } from './commands/dispatch';
-import { isElementTreePatch, willRemoveElementStructure } from './commands/element-tree';
-import { assertSetZCommand, setZBatchPatches } from './commands/set-z';
+import { commandPatches, commandSelectsInsertedElement } from './commands/dispatch';
+import { isElementTreePatch } from './commands/element-tree';
 import { isElementOrderPatch } from './commands/element-order';
+import { setZBatchPatches } from './commands/set-z';
 import { isSlideTreePatch, slidePatchSets } from './commands/slide-tree';
-import { isSlideOrderPatch } from './commands/slide-order';
-import { isSlideBackgroundPatch } from './commands/slide-property';
-import { isSlideLayoutPatch } from './commands/slide-layout';
 import { fitTextShapePatches } from './commands/fit-text-shape';
 import { isImageResourcePatch } from './commands/element-image-content';
-import { writableLayerSiblingIds } from './element-order';
+import { isElementInteractionPatch } from './commands/element-interaction';
+import {
+  affectsSlideSequence, bodyPropsPatchElements, hasDocumentPatch, panePatchElements, patchElements,
+  renderPatchElements, renderPatchSlides, reorderedPatchElements,
+} from './change-classification';
 import type {
   Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
   TransactionOptions, TransactionResult,
@@ -25,38 +26,10 @@ import { effectiveElement, toSlide } from './projection';
 import { RecoveryJournal, restoreRecoveryFrames } from './recovery';
 import type { RecoveryFrameSource, RecoverySubscriber } from './recovery-types';
 import {
-  cloneSelection, isElementDescendantOf, normalizeSelection, selectionAfterStructure,
+  cloneSelection, normalizeSelection, selectionAfterInteractionState, selectionAfterStructure,
 } from './selection';
-import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
-
-function patchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter((patch) => patch.path[0] === 'elements')
-    .map((patch) => patch.path[1]));
-}
-
-function affectsSlideSequence(patches: readonly Patch[]): boolean {
-  return patches.some((patch) => isSlideTreePatch(patch) || isSlideOrderPatch(patch));
-}
-
-function renderPatchSlides(patches: readonly Patch[]): Set<SlideId> {
-  return new Set(patches.filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
-    .map((patch) => patch.path[1]));
-}
-
-function renderPatchElements(
-  patches: readonly Patch[], dirtyElements: ReadonlySet<ElementId> = new Set(),
-): Set<ElementId> {
-  const result = new Set(patches
-    .filter((patch) => patch.path[0] === 'elements' && !isElementOrderPatch(patch))
-    .map((patch) => patch.path[1]));
-  // 页树与页序会改变字段投影，却没有元素属性 patch；必须把派生脏元素交给 DOM 增量层。
-  if (affectsSlideSequence(patches)) for (const id of dirtyElements) result.add(id);
-  return result;
-}
-
-function reorderedPatchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter(isElementOrderPatch).map((patch) => patch.path[1]));
-}
+import { shapeTextCommandTarget, validateCommandRelations } from './transaction-validation';
+import type { EditDoc, ElementId, SlideId } from './types';
 
 function reportSubscriberError(error: unknown): void {
   try {
@@ -64,98 +37,6 @@ function reportSubscriberError(error: unknown): void {
     if (reporter) reporter(error);
     else console.error('Editor 订阅者执行失败', error);
   } catch { /* 监听器与错误上报都不能把已提交事务伪装成失败。 */ }
-}
-
-function bodyPropsPatchElements(
-  forward: readonly Patch[],
-  inverse: readonly Patch[],
-): Set<ElementId> {
-  const result = new Set<ElementId>();
-  const inverseByPath = new Map(inverse.map((patch) => [JSON.stringify(patch.path), patch]));
-  const textValue = (patch: Patch | undefined): TextOverride | null => {
-    if (!patch || patch.op !== 'set' || !patch.value || typeof patch.value !== 'object') return null;
-    const value = patch.value as unknown as TextOverride;
-    return value.kind === 'flat' || value.kind === 'empty' ? value : null;
-  };
-  for (const patch of forward) {
-    if (patch.path.length !== 4 || patch.path[0] !== 'elements' || patch.path[3] !== 'text') continue;
-    const before = inverseByPath.get(JSON.stringify(patch.path));
-    const forwardValue = textValue(patch);
-    const inverseValue = textValue(before);
-    if (JSON.stringify(forwardValue?.bodyOverrides) !== JSON.stringify(inverseValue?.bodyOverrides)) {
-      result.add(patch.path[1]);
-    }
-  }
-  return result;
-}
-
-function shapeTextCommandTarget(command: Command): ElementId | null {
-  if (command.type !== 'EditText' && command.type !== 'SetRunProps'
-    && command.type !== 'SetParaProps' && command.type !== 'SetBodyProps') {
-    return null;
-  }
-  return !('cell' in command) || command.cell === undefined ? command.id : null;
-}
-
-/** 删除子树与同树属性编辑无法形成无需依赖顺序的双向 patch，必须在任何模型修改前拒绝。 */
-function validateCommandRelations(doc: EditDoc, commands: readonly Command[]): void {
-  const removedSlideIds = new Set(commands.flatMap((command) =>
-    command.type === 'RemoveSlide' ? [command.id] : []));
-  const slidePropertyConflict = commands.flatMap((command) =>
-    command.type === 'SetBackground' || command.type === 'SetBackgroundImage'
-      || command.type === 'SetBackgroundCrop'
-      || command.type === 'SetHidden' || command.type === 'SetLayout'
-      || command.type === 'SetNotes' ? [command.id] : [])
-    .find((id) => removedSlideIds.has(id));
-  // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
-  if (slidePropertyConflict) {
-    throw new Error(`同一事务不能修改再删除同一页面：${slidePropertyConflict}`);
-  }
-  const layers = commands.filter((command) => command.type === 'SetZ');
-  const layerRecords = layers.map((command) => assertSetZCommand(doc, command));
-  if (layerRecords.length > 1) {
-    const parent = layerRecords[0].parent;
-    const part = layerRecords[0].meta.origin?.part ?? null;
-    if (layerRecords.some((record) => record.parent !== parent
-      || (record.meta.origin?.part ?? null) !== part)) {
-      throw new Error('同一层级事务只能调整同一父级、同一来源 part 的元素');
-    }
-  }
-  const removals = commands.filter((command) => command.type === 'RemoveElement');
-  if (new Set(removals.map((command) => command.id)).size !== removals.length) {
-    throw new Error('同一事务不能重复删除同一元素');
-  }
-  const roots = removals.filter((command) => willRemoveElementStructure(doc.elements[command.id]));
-  const explicitFits = new Set(commands.flatMap((command) =>
-    command.type === 'FitTextShape' ? [command.id] : []));
-  const duplicatedFitId = commands.map(shapeTextCommandTarget)
-    .find((id): id is ElementId => !!id && explicitFits.has(id));
-  if (duplicatedFitId) {
-    throw new Error(`文字命令会自动派生 FitTextShape，同一事务不能重复指定：${duplicatedFitId}`);
-  }
-  if (roots.length && layerRecords.length) {
-    const layerCandidates = writableLayerSiblingIds(doc, layerRecords[0]);
-    if (roots.some((root) => layerCandidates.some((id) => id === root.id
-      || isElementDescendantOf(doc, id, root.id)))) {
-      throw new Error('同一事务不能删除可能承担层级覆盖的兄弟子树');
-    }
-  }
-  for (let left = 0; left < roots.length; left++) {
-    for (let right = left + 1; right < roots.length; right++) {
-      if (isElementDescendantOf(doc, roots[left].id, roots[right].id)
-        || isElementDescendantOf(doc, roots[right].id, roots[left].id)) {
-        throw new Error('同一事务的删除根不能互为祖先与后代');
-      }
-    }
-  }
-  for (const command of commands) {
-    if (command.type === 'RemoveElement') continue;
-    const conflict = commandTargetIds(command).find((id) => roots.some((root) => id === root.id
-      || isElementDescendantOf(doc, id, root.id)));
-    if (conflict) {
-      throw new Error(`同一事务不能先修改再删除同一子树：${conflict}`);
-    }
-  }
 }
 
 class TransactionCollector implements Transaction {
@@ -289,6 +170,7 @@ export class Editor {
       renderSlides: renderPatchSlides(entry.inverse),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.inverse),
+      paneElements: panePatchElements(entry.inverse),
       ...slidePatchSets(this.doc, entry.inverse),
       ...dirty,
     };
@@ -298,6 +180,7 @@ export class Editor {
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
       change,
       change.renderSlides,
+      change.paneElements,
     );
     return change;
   }
@@ -319,6 +202,7 @@ export class Editor {
       renderSlides: renderPatchSlides(entry.forward),
       bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
       reorderedElements: reorderedPatchElements(entry.forward),
+      paneElements: panePatchElements(entry.forward),
       ...slidePatchSets(this.doc, entry.forward),
       ...dirty,
     };
@@ -328,6 +212,7 @@ export class Editor {
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
       change,
       change.renderSlides,
+      change.paneElements,
     );
     return change;
   }
@@ -370,7 +255,7 @@ export class Editor {
         if (patch.path[0] !== 'elements') continue;
         touchedElements.add(patch.path[1]);
         if (isElementOrderPatch(patch)) reorderedElements.add(patch.path[1]);
-        else renderElements.add(patch.path[1]);
+        else if (!isElementInteractionPatch(patch)) renderElements.add(patch.path[1]);
       }
       forward.push(...patches.forward);
       inverse.unshift(...patches.inverse);
@@ -414,6 +299,9 @@ export class Editor {
           kind: 'elements', ids: [id], enteredGroup: null,
         });
       } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
+      if (forward.some(isElementInteractionPatch)) {
+        this.currentSelection = selectionAfterInteractionState(this.doc, this.currentSelection);
+      }
       if (structural) validateEditDoc(this.doc);
       else validateEditElements(this.doc, forward
         .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
@@ -434,7 +322,7 @@ export class Editor {
     this.refreshActiveImageResources(forward);
     const slideChanges = slidePatchSets(this.doc, forward);
     const beforeState = this.currentState;
-    if (forward.length) this.currentState = this.nextState++;
+    if (hasDocumentPatch(forward)) this.currentState = this.nextState++;
     const recordsHistory = forward.length && options.recordHistory !== false && origin === this.origin;
     if (recordsHistory) {
       // 资源表是按哈希寻址的会话缓存；撤销只切换元素引用，避免新旧 Base64 同时挤占历史预算。
@@ -455,6 +343,7 @@ export class Editor {
       this.historyStore.rebaseUnrecorded(forward, this.currentState, () => this.nextState++);
     }
     const selectionChanged = JSON.stringify(selectionBefore) !== JSON.stringify(selectionAfter);
+    const paneElements = panePatchElements(forward);
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
@@ -464,6 +353,7 @@ export class Editor {
         renderElements, reorderedElements, bodyPropsElements,
         slideChanges,
         renderSlides,
+        paneElements,
       );
     }
     return {
@@ -504,6 +394,7 @@ export class Editor {
       removedSlideFallbacks: new Map(),
     },
     renderSlides: Set<SlideId> = new Set(),
+    paneElements: Set<ElementId> = new Set(),
   ): void {
     for (const subscriber of this.subscribers) {
       try {
@@ -517,6 +408,7 @@ export class Editor {
           renderSlides: new Set(renderSlides),
           bodyPropsElements: new Set(bodyProps),
           reorderedElements: new Set(reordered),
+          paneElements: new Set(paneElements),
           createdSlides: new Set(slideChanges.createdSlides),
           removedSlides: new Set(slideChanges.removedSlides),
           movedSlides: new Set(slideChanges.movedSlides),

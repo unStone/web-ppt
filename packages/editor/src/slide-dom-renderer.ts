@@ -1,7 +1,10 @@
 import { renderSlideToSvg } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
 import type { Editor, EditorChange, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
-import { bindSlideIdentities, findElementPartition } from './dom-identity';
+import {
+  bindSlideIdentities, findElementPartition, syncElementTreeVisibility,
+  syncElementVisibility, syncSlideVisibility,
+} from './dom-identity';
 import { insertElementPartition, patchElement } from './dom-patch';
 import { patchSlideDom } from './slide-dom-update';
 import { renderSelectionOverlay } from './selection-overlay';
@@ -31,6 +34,7 @@ export class SlideDomRenderer {
       },
     );
     bindSlideIdentities(staticLayer, editor.doc, slideId);
+    syncSlideVisibility(staticLayer, editor.doc, slideId);
     this.renderSelection(selection);
   }
 
@@ -40,7 +44,15 @@ export class SlideDomRenderer {
     if (!patchSlideDom({
       staticLayer, editor, slideId, change, idPrefix, textMode, deferElement,
     })) this.render(change.selection);
-    else this.renderSelection(change.selection);
+    else {
+      for (const id of change.renderElements) {
+        if (editor.doc.elements[id]) syncElementTreeVisibility(staticLayer, editor.doc, id);
+      }
+      for (const id of change.paneElements) {
+        if (editor.doc.elements[id]) syncElementVisibility(staticLayer, editor.doc, id);
+      }
+      this.renderSelection(change.selection);
+    }
   }
 
   syncElement(id: ElementId): void {
@@ -48,6 +60,7 @@ export class SlideDomRenderer {
     const updated = findElementPartition(staticLayer, id)
       ? patchElement(staticLayer, editor, id, idPrefix, textMode)
       : insertElementPartition(staticLayer, editor, id, idPrefix, textMode);
+    if (updated) syncElementTreeVisibility(staticLayer, editor.doc, id);
     if (!updated) this.render(editor.selection);
   }
 

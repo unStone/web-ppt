@@ -29,9 +29,13 @@ import {
 } from './set-slide-properties';
 import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
+import { setNamePatches } from './element-name';
+import {
+  assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
+} from './element-interaction';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
@@ -60,6 +64,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetFlip: register<SetFlipCommand>(['id', ...SET_FLIP_COMMAND_FIELDS], setFlipPatches),
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
+  SetName: register<SetNameCommand>(['id', 'name'], setNamePatches),
+  SetLocked: register<SetLockedCommand>(['id', 'locked'], setLockedPatches),
+  SetElementHidden: register<SetElementHiddenCommand>(['id', 'hidden'], setElementHiddenPatches),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
   AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches,
@@ -135,5 +142,9 @@ export function commandPatches(doc: EditDoc, command: Command, origin: string): 
   assertPureCommand(command);
   const registration = COMMANDS[command.type];
   if (!registration) throw new Error(`不支持的命令：${String((command as Partial<Command>).type)}`);
+  // 锁定是树语义；在分发表统一拦截，避免新增内容命令时遗漏祖先锁定。
+  if (command.type !== 'SetLocked' && command.type !== 'SetElementHidden') {
+    for (const id of commandTargetIds(command)) assertElementUnlocked(doc, id);
+  }
   return registration.patches(doc, command, origin);
 }

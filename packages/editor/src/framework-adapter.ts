@@ -1,102 +1,26 @@
-import type { EditorChange, LinkTarget, SlideId } from '@web-ppt/edit-core';
+import type { EditorChange, LinkTarget } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
 import { RecoveryOpenCancelledError } from './recovery-store';
-import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import { bindAdapterRecovery } from './adapter-recovery';
 import type {
-  EditorMode, LinkFollowContext, LinkFollowHandler, SlideEditor, SlideEditorOptions,
+  LinkFollowContext, SlideEditor,
 } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
 import { openOptionsKey, sameMargins, validateViewOptions } from './adapter-options';
+import type { SelectionPane } from './selection-pane-types';
+import { AdapterSelectionPaneBinding } from './adapter-selection-pane';
+import type {
+  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterSnapshot,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptViewOptions, WebPptViewState,
+} from './framework-adapter-types';
 
 export type { WebPptSource } from './source-fingerprint';
-
-export type WebPptDocument = {
-  readonly source: WebPptSource;
-  readonly openOptions?: OpenEditorOptions;
-  readonly session?: never;
-  readonly ownership?: never;
-} | {
-  readonly session: EditorSession;
-  readonly ownership: 'external';
-  readonly source?: never;
-  readonly openOptions?: never;
-};
-
-export interface WebPptViewOptions {
-  readonly mode?: EditorMode;
-  readonly slideId?: SlideId;
-  readonly zoom?: number;
-  readonly textMode?: SlideEditorOptions['textMode'];
-  readonly snapping?: boolean;
-  readonly snapMargins?: SlideEditorOptions['snapMargins'];
-  readonly onLinkFollow?: LinkFollowHandler;
-}
-
-export interface WebPptAdapterProgress {
-  readonly phase: 'opening' | 'recovering' | 'ready';
-  readonly ratio: 0 | 1;
-}
-
-export interface WebPptViewState {
-  readonly mode: EditorMode;
-  readonly slideId: SlideId | null;
-  readonly zoom: number;
-  readonly snapping: boolean;
-}
-
-export interface WebPptAdapterCallbacks {
-  readonly onReady?: (session: EditorSession) => void;
-  readonly onError?: (error: unknown) => void;
-  readonly onProgress?: (progress: WebPptAdapterProgress) => void;
-  readonly onChange?: (change: EditorChange) => void;
-  readonly onViewChange?: (state: WebPptViewState) => void;
-  readonly onRecovery?: (candidate: RecoveryCandidate) => RecoveryDecision | Promise<RecoveryDecision>;
-}
-
-export type WebPptAdapterBinding = WebPptViewOptions & WebPptAdapterCallbacks & ({
-  readonly source: WebPptSource;
-  readonly openOptions?: OpenEditorOptions;
-  readonly session?: never;
-  readonly sessionOwnership?: never;
-} | {
-  readonly session: EditorSession;
-  readonly sessionOwnership: 'external';
-  readonly source?: never;
-  readonly openOptions?: never;
-} | {
-  readonly source?: null;
-  readonly session?: null;
-  readonly sessionOwnership?: never;
-  readonly openOptions?: OpenEditorOptions;
-});
-
-export interface WebPptAdapterSnapshot extends WebPptViewState {
-  readonly status: 'idle' | 'opening' | 'recovering' | 'ready' | 'error' | 'disposed';
-  readonly progress: number;
-  readonly error: unknown | null;
-  readonly session: EditorSession | null;
-  readonly view: SlideEditor | null;
-  readonly recovery: RecoveryCandidate | null;
-}
-
-export type WebPptAdapterSubscriber = (snapshot: WebPptAdapterSnapshot) => void;
-
-export interface WebPptAdapter {
-  readonly snapshot: WebPptAdapterSnapshot;
-  readonly disposed: boolean;
-  subscribe(subscriber: WebPptAdapterSubscriber): () => void;
-  setCallbacks(callbacks: WebPptAdapterCallbacks): void;
-  applyBinding(binding: WebPptAdapterBinding): Promise<EditorSession | null>;
-  attach(container: HTMLElement | null): void;
-  setView(options: WebPptViewOptions): void;
-  setDocument(document: WebPptDocument | null): Promise<EditorSession | null>;
-  save(): Promise<Uint8Array>;
-  undo(): EditorChange | null;
-  redo(): EditorChange | null;
-  dispose(): void;
-}
+export type {
+  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress,
+  WebPptAdapterSnapshot, WebPptAdapterSubscriber, WebPptDocument, WebPptViewOptions,
+  WebPptViewState,
+} from './framework-adapter-types';
 
 /** React/Vue/Svelte/Web Component 只需把受控 props 映射到这一处。 */
 export function applyWebPptAdapterBinding(
@@ -111,7 +35,7 @@ const DEFAULT_VIEW = Object.freeze({
 });
 
 export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
-  status: 'idle', progress: 0, error: null, session: null, view: null,
+  status: 'idle', progress: 0, error: null, session: null, view: null, selectionPane: null,
   recovery: null,
   mode: DEFAULT_VIEW.mode, slideId: null, zoom: DEFAULT_VIEW.zoom, snapping: DEFAULT_VIEW.snapping,
 });
@@ -120,6 +44,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private callbacks: WebPptAdapterCallbacks;
   private readonly subscribers = new Set<WebPptAdapterSubscriber>();
   private container: HTMLElement | null = null;
+  private readonly paneBinding = new AdapterSelectionPaneBinding();
   private session: EditorSession | null = null;
   private view: SlideEditor | null = null;
   private ownsSession = false;
@@ -189,6 +114,15 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.publishReadyState(false);
   }
 
+  attachSelectionPane(container: HTMLElement | null): void {
+    this.assertActive();
+    this.paneBinding.attach(
+      container, this.session, this.desired, this.view?.slideId ?? null,
+      (error) => this.emitError(error),
+    );
+    this.publishReadyState(false);
+  }
+
   setView(options: WebPptViewOptions): void {
     this.assertActive();
     validateViewOptions(options);
@@ -217,6 +151,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       if (this.desired.zoom !== undefined) this.view.setZoom(this.desired.zoom);
       if (this.desired.snapping !== undefined) this.view.setSnapping(this.desired.snapping);
     }
+    this.paneBinding.sync(this.session, this.desired);
     this.publishReadyState(true);
   }
 
@@ -230,7 +165,8 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.opening = null;
       this.releaseCurrent();
       this.updateSnapshot({
-        status: 'idle', progress: 0, error: null, session: null, view: null, slideId: null,
+        status: 'idle', progress: 0, error: null, session: null, view: null,
+        selectionPane: null, slideId: null,
         recovery: null,
       });
       return null;
@@ -281,11 +217,12 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.opening = null;
     this.releaseCurrent();
     this.container = null;
+    this.paneBinding.dispose();
     this.currentSource = null;
     this.currentOpenKey = '';
     this.currentSnapshot = {
       ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
-      session: null, view: null, slideId: null, recovery: null,
+      session: null, view: null, selectionPane: null, slideId: null, recovery: null,
     };
     this.notifySubscribers();
     this.subscribers.clear();
@@ -372,6 +309,15 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     recoveryGeneration: number | null,
   ): void {
     const nextView = this.container ? this.mount(session, this.container) : null;
+    let nextPane: SelectionPane | null = null;
+    try {
+      nextPane = this.paneBinding.prepare(
+        session, this.desired, nextView?.slideId ?? null, (error) => this.emitError(error),
+      );
+    } catch (error) {
+      nextView?.destroy();
+      throw error;
+    }
     const previousSession = this.session;
     const previousOwned = this.ownsSession;
     const previousView = this.view;
@@ -382,6 +328,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.activeRecoveryGeneration = recoveryGeneration;
     this.view = nextView;
     previousView?.destroy();
+    this.paneBinding.commit(nextPane);
     if (previousOwned && previousSession && previousSession !== session) previousSession.dispose();
     this.unsubscribeEditor = session.editor.subscribe((change) => {
       this.notify((callbacks) => callbacks.onChange?.(change));
@@ -392,6 +339,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     });
     this.updateSnapshot({
       status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
+      selectionPane: this.paneBinding.pane,
       recovery: null,
     });
     this.publishReadyState(true);
@@ -430,6 +378,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.unsubscribeEditor = null;
     this.view?.destroy();
     this.view = null;
+    this.paneBinding.release();
     if (this.ownsSession) this.session?.dispose();
     this.session = null;
     this.ownsSession = false;
@@ -447,7 +396,9 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       || viewState.slideId !== this.currentSnapshot.slideId
       || viewState.zoom !== this.currentSnapshot.zoom
       || viewState.snapping !== this.currentSnapshot.snapping;
-    this.updateSnapshot({ ...viewState, session: this.session, view: this.view });
+    this.updateSnapshot({
+      ...viewState, session: this.session, view: this.view, selectionPane: this.paneBinding.pane,
+    });
     if (notifyView && changed) this.notify((callbacks) => callbacks.onViewChange?.(viewState));
   }
 

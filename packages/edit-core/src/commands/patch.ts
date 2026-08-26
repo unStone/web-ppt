@@ -43,6 +43,12 @@ import type {
   ElementTransformPatch, ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
+import {
+  applyElementNamePatch, isElementNamePatch, validateElementNamePatch,
+} from './element-name';
+import {
+  applyElementInteractionPatch, isElementInteractionPatch, validateElementInteractionPatch,
+} from './element-interaction';
 
 function validatePatch(
   doc: EditDoc,
@@ -115,6 +121,14 @@ function validatePatch(
     && patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'order'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementOrderPatch(doc, patch as import('./types').ElementOrderPatch, index);
+    return;
+  }
+  if (isElementNamePatch(input)) {
+    validateElementNamePatch(doc, input, index);
+    return;
+  }
+  if (isElementInteractionPatch(input)) {
+    validateElementInteractionPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -298,6 +312,8 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
+    else if (isElementNamePatch(patch)) applyElementNamePatch(doc, patch);
+    else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
   for (const parent of orderParents) sortElementChildrenByOrder(doc, parent);
@@ -407,7 +423,7 @@ function applyPatchBatch(
   const dirtySlides = new Set<string>();
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
   for (const patch of patches) {
-    if (isImageResourcePatch(patch)) continue;
+    if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)) continue;
     if (isSlideOrderPatch(patch)) {
       const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
       for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
