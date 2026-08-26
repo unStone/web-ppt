@@ -2,7 +2,7 @@ import { TEXT_BODY_PROPERTY_BITS } from '@web-ppt/core';
 import type { TextBodyEditInfo, TextBodyLayoutProperties } from '@web-ppt/core';
 import { textTargetContext } from './commands/text-target';
 import type {
-  EditDoc, TextBodyOverride, TextBodyProperties, TextBodyPropertyOverrides, TextOverride,
+  EditDoc, TableCellAddress, TextBodyOverride, TextBodyProperties, TextBodyPropertyOverrides, TextOverride,
 } from './types';
 
 const same = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
@@ -21,8 +21,14 @@ function properties(body: TextBodyLayoutProperties): TextBodyProperties {
   };
 }
 
-export function queryBodyProps(doc: EditDoc, id: string): TextBodyProperties {
-  const { body: source, before } = textTargetContext(doc, { id });
+export function queryBodyProps(
+  doc: EditDoc,
+  id: string,
+  cell?: TableCellAddress,
+): TextBodyProperties {
+  const { body: source, before } = textTargetContext(
+    doc, { id, ...(cell !== undefined ? { cell } : {}) },
+  );
   return properties(before?.body ?? source);
 }
 

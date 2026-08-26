@@ -21,6 +21,24 @@ export function assertDataObject(
   }
 }
 
+/** JSON 数组必须稠密且只能拥有索引与 length；否则序列化会吞掉空洞、访问器或附加状态。 */
+export function assertDataArray(value: unknown, label: string): asserts value is readonly unknown[] {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) {
+    throw new Error(`${label} 必须是纯数据数组`);
+  }
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== value.length + 1 || keys[keys.length - 1] !== 'length') {
+    throw new Error(`${label} 必须是没有附加字段的稠密数组`);
+  }
+  for (let index = 0; index < value.length; index++) {
+    const key = String(index);
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (keys[index] !== key || !descriptor?.enumerable || !('value' in descriptor)) {
+      throw new Error(`${label}[${index}] 必须是可序列化的数据项`);
+    }
+  }
+}
+
 export function assertTextPosition(value: unknown, label: string): asserts value is TextPosition {
   assertDataObject(value, ['p', 'r', 'off'], label);
   for (const field of ['p', 'r', 'off'] as const) {

@@ -51,6 +51,9 @@ function download(bytes: Uint8Array) {
 `useWebPptAdapter(binding)` exposes the same controlled contract without the component. It returns
 `{ containerRef, adapter, snapshot }`; `snapshot` carries `status`, progress, errors, the active session/view,
 mode, slide, and zoom. Changing `source` atomically opens the replacement and releases the old owned session.
+The same snapshot includes `formatPainter`; call `adapter.startFormatPainter({ continuous: true })` or
+`adapter.cancelFormatPainter()` from a toolbar. React only observes the editor session controller and does not
+create another painter state machine.
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe, including
 React StrictMode's development setup/cleanup/setup cycle.
 
@@ -90,6 +93,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.setView(...)` | controlled `mode`, `slideId`, `zoom`, `snapping` props |
 | `adapter.subscribe(...)` | returned `snapshot` |
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
+| `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with React 19.2.8; the optional peer range supports React 18.2–19. The

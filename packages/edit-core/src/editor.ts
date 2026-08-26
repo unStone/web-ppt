@@ -1,5 +1,5 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
-import { commandPatches, commandSelectsInsertedElement } from './commands/dispatch';
+import { assertPureCommand, commandPatches, commandSelectsInsertedElement } from './commands/dispatch';
 import { isElementTreePatch } from './commands/element-tree';
 import { isElementOrderPatch } from './commands/element-order';
 import { setZBatchPatches } from './commands/set-z';
@@ -135,6 +135,7 @@ export class Editor {
 
   exec(...commands: Command[]): TransactionResult {
     if (!commands.length) throw new Error('exec 至少需要一个命令');
+    for (const command of commands) assertPureCommand(command);
     return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑', {});
   }
 
@@ -226,6 +227,7 @@ export class Editor {
     label: string,
     options: TransactionOptions,
   ): TransactionResult {
+    for (const command of commands) assertPureCommand(command);
     validateCommandRelations(this.doc, commands);
     const operationTime = options.time ?? Date.now();
     if (!Number.isFinite(operationTime)) throw new Error('事务时间必须是有限数字');

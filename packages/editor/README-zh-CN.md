@@ -127,6 +127,23 @@ idle/opening/recovering/ready/error、进度、恢复候选、session、view、�
 演示文稿模型。启用持久化时可由 `onRecovery(candidate)` 返回 `restore`、`discard` 或 `cancel`；React/Vue
 组件透传同一个回调。
 
+### 会话级格式刷
+
+所有已挂载视图与框架 adapter 共用一个会话控制器。先单选 shape/image/group 或文字范围，
+再启用单次或连续模式：
+
+```ts
+view.startFormatPainter();                     // 第一个成功目标后退出
+view.startFormatPainter({ continuous: true }); // 保持稳定来源，可跨页/跨视图
+session.formatPainter.cancel();
+```
+
+`Escape`、任一视图切到 `view`、来源被删除或 session 释放都会立即退出。目标点击先以一条
+原子 `ApplyFormat` 命令应用，再选中目标；不兼容目标派发 `webpptformaterror` 且保留来源。
+根节点用 `data-format-painter="single|continuous"` 与 `data-format-painter-source` 交给产品自定义光标/按钮。
+`adapter.startFormatPainter()` / `cancelFormatPainter()` 直接映射同一控制器，
+`snapshot.formatPainter` 向 React、Vue、Svelte 与 Web Component 公开 `active`、`mode`、`source`、`readonly`。
+
 `mountSelectionPane()` 是对象目录唯一的可访问 DOM 实现：按当前页从顶层到底层展示稳定元素树，重名对象
 仍由稳定 id 区分，并支持组合导航、重命名、锁定与仅会话隐藏。方向键、Home/End、Left/Right、Enter、
 Space 和 F2 均可独立完成操作。锁定与隐藏沿组合继承；显示子元素只删除自身 `visibility`，绝不写

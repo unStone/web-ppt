@@ -20,6 +20,7 @@ export interface TextTargetContext {
   readonly body: TextBody;
   readonly before: TextOverride | undefined;
   readonly patchTarget: TextPatchTarget;
+  readonly empty: boolean;
 }
 
 export interface TextPatchTarget {
@@ -43,6 +44,8 @@ export function textTargetContextForRecord(
       body: record.src.text ?? record.meta.textTemplate!,
       before: record.ovr.text,
       patchTarget: { id: target.id },
+      empty: record.ovr.text?.kind === 'empty'
+        || (!record.ovr.text && record.src.text === null),
     };
   }
   assertTableCellAddress(target.cell, '文字命令 cell');
@@ -59,6 +62,8 @@ export function textTargetContextForRecord(
     body,
     before: record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text,
     patchTarget: { id: target.id, cell: { row, c: target.cell.c } },
+    empty: record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text?.kind === 'empty'
+      || (!record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text && cell.text === null),
   };
 }
 
@@ -75,6 +80,8 @@ export function textTargetContext(
     }
     return {
       record, body, before: record.ovr.text, patchTarget: { id: target.id },
+      empty: record.ovr.text?.kind === 'empty'
+        || (!record.ovr.text && record.src.text === null),
     };
   }
   return textTargetContextForRecord(record, target);

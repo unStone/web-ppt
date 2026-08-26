@@ -11,15 +11,14 @@ export function setBodyPropsPatches(
   origin: string,
 ): CommandPatches {
   assertTextBodyPropertyOverrides(command.props, 'SetBodyProps.props');
-  const target = { id: command.id };
-  const { record, body: source, before, patchTarget } = textTargetContext(doc, target);
+  const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
+  const { body: source, before, patchTarget, empty } = textTargetContext(doc, target);
   const sourceBaseline = flattenTextBody(source);
   const baseline = before?.kind === 'flat' ? before : before?.body
     ? { ...sourceBaseline, body: before.body, ...(before.bodyOverrides ? { bodyOverrides: before.bodyOverrides } : {}) }
     : sourceBaseline;
   const applied = applyBodyProps(baseline, command.props, source.editInfo);
-  const staysEmpty = before?.kind === 'empty'
-    || (!before && record.src.kind === 'shape' && record.src.text === null);
+  const staysEmpty = empty;
   const value = staysEmpty
     ? {
       kind: 'empty' as const,

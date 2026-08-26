@@ -1,4 +1,4 @@
-import type { Editor, ElementId, SlideId } from '@web-ppt/edit-core';
+import type { Editor, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
 import { ImageInsertionController } from './image-insertion';
 import { shouldYieldPointerEvent } from './keyboard-owner';
 import type { MarqueeGestureController } from './marquee-gesture';
@@ -13,6 +13,7 @@ import {
 } from './selection-hit';
 import type { TextEditorController } from './text-editor';
 import type { ImageCropGestureController } from './image-crop-gesture';
+import type { FormatPainterTarget } from './format-painter-types';
 
 interface SlidePointerControllerOptions {
   readonly editor: Editor;
@@ -29,6 +30,11 @@ interface SlidePointerControllerOptions {
   editable(): boolean;
   slideId(): SlideId;
   hitCandidates(path: EventTarget[]): ElementId[];
+  formatPainter: {
+    active(): boolean;
+    apply(target: FormatPainterTarget): boolean;
+    error(error: unknown): void;
+  };
 }
 
 /** 统一路由画布 pointer 命中；视图生命周期类只负责装配控制器。 */
@@ -42,6 +48,10 @@ export class SlidePointerController {
     if (!o.editable() || event.button !== 0 || event.isPrimary === false) return;
     if (shouldYieldPointerEvent(event) || o.textEditor.owns(event.target)) return;
     if (o.textEditor.isActive) o.textEditor.close(false);
+    if (o.formatPainter.active()) {
+      this.applyFormat(event);
+      return;
+    }
     const cropHandle = o.crop.handleAt(event.target);
     if (cropHandle) {
       o.move.cancel(); o.resize.cancel(); o.rotation.cancel(); o.marquee.cancel();
@@ -92,16 +102,7 @@ export class SlidePointerController {
       o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
     );
     const togglesSelection = selectionModifierActive(event);
-    const id = event.altKey
-      ? alternateSelectableElementId(
-        o.editor.doc,
-        o.root.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
-        o.staticLayer,
-        enteredGroup,
-        selection,
-        togglesSelection,
-      )
-      : outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
+    const id = this.pointedElement(event, candidates, enteredGroup, selection, togglesSelection);
     const keepsSelection = id && !event.altKey && !togglesSelection && selection.kind === 'elements'
       && selection.ids.includes(id);
     if (!id) {
@@ -128,6 +129,51 @@ export class SlidePointerController {
     event.preventDefault();
     o.root.focus({ preventScroll: true });
   };
+
+  private applyFormat(event: PointerEvent): void {
+    const o = this.options;
+    o.move.cancel(); o.resize.cancel(); o.rotation.cancel(); o.marquee.cancel();
+    const selection = o.editor.selection;
+    const enteredGroup = enteredGroupOnSlide(
+      o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
+    );
+    const candidates = o.hitCandidates(event.composedPath());
+    const id = this.pointedElement(
+      event, candidates, enteredGroup, selection, selectionModifierActive(event),
+    );
+    if (id) {
+      const cell = tableCellAddressFromPath(event.composedPath(), o.staticLayer);
+      try {
+        if (o.formatPainter.apply({ id, ...(cell ? { cell } : {}) })) {
+          o.editor.select({ kind: 'elements', ids: [id], enteredGroup });
+        }
+      } catch (error) {
+        o.formatPainter.error(error);
+      }
+    }
+    event.preventDefault();
+    o.root.focus({ preventScroll: true });
+  }
+
+  private pointedElement(
+    event: PointerEvent,
+    candidates: ElementId[],
+    enteredGroup: ElementId | null,
+    selection: Selection,
+    togglesSelection: boolean,
+  ): ElementId | undefined {
+    const o = this.options;
+    return event.altKey
+      ? alternateSelectableElementId(
+        o.editor.doc,
+        o.root.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
+        o.staticLayer,
+        enteredGroup,
+        selection,
+        togglesSelection,
+      )
+      : outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
+  }
 
   readonly move = (event: PointerEvent): void => {
     this.options.marquee.move(event);

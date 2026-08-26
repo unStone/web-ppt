@@ -1,4 +1,5 @@
 import { commandTargetIds } from './commands/dispatch';
+import { assertFormatMask } from './commands/format-painter-types';
 import { willRemoveElementStructure } from './commands/element-tree';
 import { assertSetZCommand } from './commands/set-z';
 import type { Command } from './commands/types';
@@ -7,6 +8,12 @@ import { isElementDescendantOf } from './selection';
 import type { EditDoc, ElementId } from './types';
 
 export function shapeTextCommandTarget(command: Command): ElementId | null {
+  if (command.type === 'ApplyFormat') {
+    assertFormatMask(command.mask, 'ApplyFormat.mask');
+    return command.toCell === undefined
+      && command.mask.some((field) => field === 'run' || field === 'paragraph' || field === 'body')
+      ? command.to : null;
+  }
   if (command.type !== 'EditText' && command.type !== 'SetRunProps'
     && command.type !== 'SetParaProps' && command.type !== 'SetBodyProps') {
     return null;
@@ -67,7 +74,11 @@ export function validateCommandRelations(doc: EditDoc, commands: readonly Comman
   }
   for (const command of commands) {
     if (command.type === 'RemoveElement') continue;
-    const conflict = commandTargetIds(command).find((id) => roots.some((root) => id === root.id
+    // ApplyFormat 读取来源的有效投影；它与写目标同样不能依赖同事务已删除的子树。
+    const dependencies = command.type === 'ApplyFormat'
+      ? [...commandTargetIds(command), command.from]
+      : commandTargetIds(command);
+    const conflict = dependencies.find((id) => roots.some((root) => id === root.id
       || isElementDescendantOf(doc, id, root.id)));
     if (conflict) throw new Error(`同一事务不能先修改再删除同一子树：${conflict}`);
   }

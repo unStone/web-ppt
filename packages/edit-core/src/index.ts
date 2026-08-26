@@ -8,6 +8,7 @@ export { queryRunProps } from './run-properties';
 export { queryRunLink } from './run-links';
 export { queryParaProps } from './paragraph-properties';
 export { queryBodyProps } from './body-properties';
+export { assertFormatMask, FORMAT_MASK_FIELDS } from './commands/format-painter-types';
 export { queryElementFill, SHAPE_PATTERN_PRESETS } from './shape-fill';
 export { querySlideBackground, querySlideHidden, querySlideLayout } from './slide-properties';
 export { querySlideNotes } from './slide-notes';
@@ -57,7 +58,7 @@ export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, EditorChange,
   EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
-  PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
+  ApplyFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';

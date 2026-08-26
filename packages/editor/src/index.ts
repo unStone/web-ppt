@@ -16,6 +16,10 @@ export {
   SHAPE_PATTERN_PRESETS,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
+export type {
+  FormatPainter, FormatPainterSnapshot, FormatPainterSource, FormatPainterStartOptions,
+  FormatPainterSubscriber, FormatPainterTarget,
+} from './format-painter-types';
 export type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 export type { WebPptSourceIdentity } from './source-fingerprint';
 export type {
@@ -27,7 +31,7 @@ export type {
 } from './indexeddb-recovery-store';
 export type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptSource, WebPptViewOptions, WebPptViewState,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptSource, WebPptViewOptions, WebPptViewState,
 } from './framework-adapter';
 export type {
   EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
@@ -39,6 +43,7 @@ export type {
   AddImageCommand, AddShapeCommand, AddTableCommand, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, SlideBackgroundState, SlideHiddenState, SlideLayoutState,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
   ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
+  FormatMaskField,
 } from '@web-ppt/edit-core';
 export type { EditorChange, SlideId } from '@web-ppt/edit-core';
 export type { SelectionPaneItem } from '@web-ppt/edit-core';

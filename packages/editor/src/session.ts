@@ -15,6 +15,8 @@ import type {
 import { fingerprintSourceBytes, sourceBytes } from './source-fingerprint';
 import { createSelectionPane } from './selection-pane';
 import type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
+import { SessionFormatPainter } from './format-painter';
+import type { FormatPainter } from './format-painter-types';
 
 let recoverySessionSerial = 0;
 
@@ -57,6 +59,7 @@ export interface OpenEditorOptions extends CreateDocOptions, EditorOptions {
 export interface EditorSession {
   readonly editor: Editor;
   readonly recovery: EditorRecovery | null;
+  readonly formatPainter: FormatPainter;
   readonly disposed: boolean;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
   mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
@@ -66,6 +69,7 @@ export interface EditorSession {
 class BrowserEditorSession implements EditorSession {
   readonly editor: Editor;
   readonly recovery: RecoverySessionController | null;
+  readonly formatPainter: SessionFormatPainter;
   private isDisposed = false;
 
   constructor(
@@ -75,6 +79,7 @@ class BrowserEditorSession implements EditorSession {
   ) {
     this.editor = editor;
     this.recovery = recovery;
+    this.formatPainter = new SessionFormatPainter(editor);
     registerSession(this, presentation);
   }
 
@@ -97,6 +102,7 @@ class BrowserEditorSession implements EditorSession {
     if (this.isDisposed) return;
     this.isDisposed = true;
     this.recovery?.dispose();
+    this.formatPainter.dispose();
     const state = sessionState(this);
     for (const view of [...state.views]) view.destroy();
     for (const pane of [...state.panes]) pane.destroy();

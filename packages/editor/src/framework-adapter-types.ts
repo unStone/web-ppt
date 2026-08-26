@@ -6,6 +6,9 @@ import type {
   EditorMode, LinkFollowHandler, SlideEditor, SlideEditorOptions,
 } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
+import type {
+  FormatPainterSnapshot, FormatPainterStartOptions,
+} from './format-painter-types';
 
 export type WebPptDocument = {
   readonly source: WebPptSource;
@@ -39,6 +42,11 @@ export interface WebPptViewState {
   readonly slideId: SlideId | null;
   readonly zoom: number;
   readonly snapping: boolean;
+}
+
+export interface WebPptFormatPainterState extends FormatPainterSnapshot {
+  /** 文档未就绪、只读或当前为查看模式时为 true。 */
+  readonly readonly: boolean;
 }
 
 export interface WebPptAdapterCallbacks {
@@ -75,6 +83,7 @@ export interface WebPptAdapterSnapshot extends WebPptViewState {
   readonly view: SlideEditor | null;
   readonly selectionPane: SelectionPane | null;
   readonly recovery: RecoveryCandidate | null;
+  readonly formatPainter: WebPptFormatPainterState;
 }
 
 export type WebPptAdapterSubscriber = (snapshot: WebPptAdapterSnapshot) => void;
@@ -92,5 +101,7 @@ export interface WebPptAdapter {
   save(): Promise<Uint8Array>;
   undo(): EditorChange | null;
   redo(): EditorChange | null;
+  startFormatPainter(options?: FormatPainterStartOptions): boolean;
+  cancelFormatPainter(): void;
   dispose(): void;
 }

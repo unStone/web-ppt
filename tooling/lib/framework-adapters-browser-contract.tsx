@@ -245,6 +245,27 @@ export async function runFrameworkAdaptersBrowserContract(
     || vueHandle.view.setNotes('Vue 查看越权') !== false) {
     throw new Error('React/Vue 外部 session 同步或只读边界失败');
   }
+  const painterSource = Object.values(external.editor.doc.elements)
+    .find((record) => record.src.kind === 'shape' && record.meta.editable === 'full')!;
+  external.editor.select({ kind: 'elements', ids: [painterSource.id], enteredGroup: null });
+  if (!sharedReactRef.current!.adapter.startFormatPainter({ continuous: true })) {
+    throw new Error('React adapter 没有启用共享会话格式刷');
+  }
+  await waitFor(() => vueHandle?.adapter.snapshot.formatPainter.active === true,
+    'React/Vue 格式刷快照同步');
+  if (sharedReactRef.current!.adapter.snapshot.formatPainter.source
+      !== external.formatPainter.snapshot.source
+    || vueHandle!.adapter.snapshot.formatPainter.source
+      !== external.formatPainter.snapshot.source
+    || vueHandle!.adapter.snapshot.formatPainter.readonly !== true
+    || sharedReactRef.current!.view!.element.dataset.formatPainter !== 'continuous'
+    || vueHandle!.view!.element.dataset.formatPainter !== 'continuous') {
+    throw new Error('React/Vue 没有直接观察同一个会话格式刷状态机');
+  }
+  vueHandle!.adapter.cancelFormatPainter();
+  if (sharedReactRef.current!.adapter.snapshot.formatPainter.active) {
+    throw new Error('Vue adapter 取消没有同步到 React 视图');
+  }
   vueState.mode = 'edit';
   vueState.zoom = 0.7;
   await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7,

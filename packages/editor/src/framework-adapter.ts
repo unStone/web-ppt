@@ -12,14 +12,16 @@ import type { SelectionPane } from './selection-pane-types';
 import { AdapterSelectionPaneBinding } from './adapter-selection-pane';
 import type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptViewOptions, WebPptViewState,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptViewOptions, WebPptViewState,
 } from './framework-adapter-types';
+import type { FormatPainterStartOptions } from './format-painter-types';
+import { AdapterFormatPainterBinding } from './adapter-format-painter';
 
 export type { WebPptSource } from './source-fingerprint';
 export type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress,
   WebPptAdapterSnapshot, WebPptAdapterSubscriber, WebPptDocument, WebPptViewOptions,
-  WebPptViewState,
+  WebPptFormatPainterState, WebPptViewState,
 } from './framework-adapter-types';
 
 /** React/Vue/Svelte/Web Component 只需把受控 props 映射到这一处。 */
@@ -37,6 +39,7 @@ const DEFAULT_VIEW = Object.freeze({
 export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
   status: 'idle', progress: 0, error: null, session: null, view: null, selectionPane: null,
   recovery: null,
+  formatPainter: Object.freeze({ active: false, mode: 'inactive', source: null, readonly: true }),
   mode: DEFAULT_VIEW.mode, slideId: null, zoom: DEFAULT_VIEW.zoom, snapping: DEFAULT_VIEW.snapping,
 });
 
@@ -49,6 +52,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private view: SlideEditor | null = null;
   private ownsSession = false;
   private unsubscribeEditor: (() => void) | null = null;
+  private readonly formatPainterBinding = new AdapterFormatPainterBinding();
   private desired: WebPptViewOptions = DEFAULT_VIEW;
   private currentSnapshot: WebPptAdapterSnapshot = WEB_PPT_IDLE_SNAPSHOT;
   private generation = 0;
@@ -135,6 +139,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       throw new Error('吸附页边距必须位于页面内');
     }
     this.desired = desired;
+    if (options.mode === 'view' && previous.mode !== 'view') this.formatPainterBinding.cancel();
     const rebuild = previous.textMode !== this.desired.textMode
       || !sameMargins(previous.snapMargins, this.desired.snapMargins);
     if (rebuild && this.session && this.container) {
@@ -167,7 +172,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.updateSnapshot({
         status: 'idle', progress: 0, error: null, session: null, view: null,
         selectionPane: null, slideId: null,
-        recovery: null,
+        recovery: null, formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
       });
       return null;
     }
@@ -188,7 +193,10 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.openingAbort = abort;
     this.currentSource = document.source;
     this.currentOpenKey = key;
-    this.updateSnapshot({ status: 'opening', progress: 0, error: null, recovery: null });
+    this.updateSnapshot({
+      status: 'opening', progress: 0, error: null, recovery: null,
+      formatPainter: { ...this.formatPainterState(false), readonly: true },
+    });
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'opening', ratio: 0 }));
     const opening = this.openOwned(document.source, document.openOptions, generation, abort.signal);
     this.opening = opening;
@@ -209,6 +217,24 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   undo(): EditorChange | null { this.assertReady(); return this.session!.editor.undo(); }
   redo(): EditorChange | null { this.assertReady(); return this.session!.editor.redo(); }
 
+  startFormatPainter(options: FormatPainterStartOptions = {}): boolean {
+    this.assertReady();
+    if (this.formatPainterState().readonly) return false;
+    try {
+      return this.view
+        ? this.view.startFormatPainter(options)
+        : this.formatPainterBinding.start(options);
+    } catch (error) {
+      this.emitError(error);
+      throw error;
+    }
+  }
+
+  cancelFormatPainter(): void {
+    this.assertReady();
+    this.formatPainterBinding.cancel();
+  }
+
   dispose(): void {
     if (this.isDisposed) return;
     this.isDisposed = true;
@@ -223,6 +249,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSnapshot = {
       ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
       session: null, view: null, selectionPane: null, slideId: null, recovery: null,
+      formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
     };
     this.notifySubscribers();
     this.subscribers.clear();
@@ -323,6 +350,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     const previousView = this.view;
     this.unsubscribeEditor?.();
     this.unsubscribeEditor = null;
+    this.formatPainterBinding.release();
     this.session = session;
     this.ownsSession = owned;
     this.activeRecoveryGeneration = recoveryGeneration;
@@ -337,10 +365,13 @@ class BrowserWebPptAdapter implements WebPptAdapter {
         this.publishReadyState(true);
       });
     });
+    this.formatPainterBinding.bind(session, () => {
+      if (this.session === session && !this.isDisposed) this.publishReadyState(false);
+    });
     this.updateSnapshot({
       status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
       selectionPane: this.paneBinding.pane,
-      recovery: null,
+      recovery: null, formatPainter: this.formatPainterState(false),
     });
     this.publishReadyState(true);
     this.notify((callbacks) => callbacks.onProgress?.({ phase: 'ready', ratio: 1 }));
@@ -358,6 +389,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       snapMargins: this.desired.snapMargins,
       slideId,
       onLinkFollow: (target, context) => this.followLink(target, context),
+      onError: (error) => this.emitError(error),
     });
   }
 
@@ -376,6 +408,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private releaseCurrent(): void {
     this.unsubscribeEditor?.();
     this.unsubscribeEditor = null;
+    this.formatPainterBinding.release();
     this.view?.destroy();
     this.view = null;
     this.paneBinding.release();
@@ -398,8 +431,15 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       || viewState.snapping !== this.currentSnapshot.snapping;
     this.updateSnapshot({
       ...viewState, session: this.session, view: this.view, selectionPane: this.paneBinding.pane,
+      formatPainter: this.formatPainterState(),
     });
     if (notifyView && changed) this.notify((callbacks) => callbacks.onViewChange?.(viewState));
+  }
+
+  private formatPainterState(ready = this.currentSnapshot.status === 'ready'): WebPptFormatPainterState {
+    return this.formatPainterBinding.state(
+      ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
+    );
   }
 
   private cancelOpening(): void {
@@ -413,7 +453,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentOpenKey = '';
     this.updateSnapshot({
       status: this.session ? 'ready' : 'idle', progress: this.session ? 1 : 0,
-      error: null, recovery: null,
+      error: null, recovery: null, formatPainter: this.formatPainterState(!!this.session),
     });
   }
 
@@ -427,7 +467,10 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private fail(error: unknown): void {
     this.currentSource = null;
     this.currentOpenKey = '';
-    this.updateSnapshot({ status: 'error', error, progress: 0, recovery: null });
+    this.updateSnapshot({
+      status: 'error', error, progress: 0, recovery: null,
+      formatPainter: { ...this.formatPainterState(false), readonly: true },
+    });
     this.emitError(error);
   }
 

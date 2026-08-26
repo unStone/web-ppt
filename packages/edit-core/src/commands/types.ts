@@ -9,6 +9,7 @@ import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetLayoutCommand, SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
+import type { ApplyFormatCommand } from './format-painter-types';
 
 export type {
   ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
@@ -19,6 +20,7 @@ export type {
   SetLayoutCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
   SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
+export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -246,6 +248,7 @@ export interface FitTextShapeCommand {
 export interface SetBodyPropsCommand {
   readonly type: 'SetBodyProps';
   readonly id: ElementId;
+  readonly cell?: TableCellAddress;
   readonly props: TextBodyPropertyOverrides;
 }
 
@@ -257,6 +260,7 @@ export interface InsertRowCommand {
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
   | SetLockedCommand | SetElementHiddenCommand
+  | ApplyFormatCommand
   | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand

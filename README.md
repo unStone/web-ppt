@@ -97,6 +97,11 @@ import { WebPptEditor } from '@web-ppt/react';
 无框架宿主使用 `session.mountSelectionPane()`。对象树支持键盘导航、重命名、锁定、隐藏和组合继承，
 文字/几何编辑不会重建目录 DOM。
 
+单选形状/图片/组或文字范围后，`slideView.startFormatPainter()` 启用单次格式刷，
+`{ continuous: true }` 可跨页、跨视图连续使用。`Escape`、切换 view、删除来源或释放会话会立即退出；
+不兼容目标通过统一错误 seam 报告且不丢来源。React/Vue 直接用共享 adapter 的
+`startFormatPainter/cancelFormatPainter` 和 `snapshot.formatPainter`，不复制状态机；Chrome 60 元素完整反馈 p95 为 0.4ms。
+
 Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
 view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
 

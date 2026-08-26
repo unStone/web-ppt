@@ -53,6 +53,9 @@ function download(bytes: Uint8Array) {
 `useWebPptAdapter(binding)` accepts a ref, computed value, getter, or plain controlled binding and returns
 `{ container, adapter, snapshot }`. `snapshot` carries `status`, progress, errors, the active session/view,
 mode, slide, and zoom. Changing `source` atomically opens the replacement and releases the old owned session.
+The same snapshot includes `formatPainter`; toolbars call
+`adapter.startFormatPainter({ continuous: true })` / `adapter.cancelFormatPainter()`. Vue observes the editor
+session controller rather than creating another painter state machine.
 Unmount releases listeners, focus, Blob URLs, views, and owned package bytes. The entry is SSR-safe and handles
 conditional remounts without retaining an old view.
 
@@ -94,6 +97,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.setView(...)` | controlled `mode`, `slideId`, `zoom`, `snapping` props |
 | `adapter.subscribe(...)` | returned `snapshot` |
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
+| `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with Vue 3.5.41; the optional peer range supports Vue 3.3–3.5. The

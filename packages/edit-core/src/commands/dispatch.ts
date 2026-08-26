@@ -30,6 +30,7 @@ import {
 import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
 import { setNamePatches } from './element-name';
+import { applyFormatPatches } from './apply-format';
 import {
   assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
 } from './element-interaction';
@@ -37,11 +38,12 @@ import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
   InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
+import type { ApplyFormatCommand } from './format-painter-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 
 interface CommandRegistration {
   readonly keys: ReadonlySet<PropertyKey>;
-  readonly target: 'id' | 'ids' | 'none';
+  readonly target: 'id' | 'ids' | 'to' | 'none';
   readonly selectInserted?: boolean;
   readonly patches: (doc: EditDoc, command: Command, origin: string) => CommandPatches;
 }
@@ -67,6 +69,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetName: register<SetNameCommand>(['id', 'name'], setNamePatches),
   SetLocked: register<SetLockedCommand>(['id', 'locked'], setLockedPatches),
   SetElementHidden: register<SetElementHiddenCommand>(['id', 'hidden'], setElementHiddenPatches),
+  ApplyFormat: register<ApplyFormatCommand>([
+    'from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange',
+  ], applyFormatPatches, { target: 'to' }),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
   AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches,
@@ -99,13 +104,20 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
   FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
-  SetBodyProps: register<SetBodyPropsCommand>(['id', 'props'], setBodyPropsPatches),
+  SetBodyProps: register<SetBodyPropsCommand>(['id', 'cell', 'props'], setBodyPropsPatches),
   InsertRow: register<InsertRowCommand>(['id'], insertRowPatches),
 };
 
-function assertPureCommand(input: Command): void {
-  if (!input || typeof input !== 'object') throw new Error('命令必须是纯数据对象');
-  const type = (input as Partial<Command>).type as Command['type'];
+export function assertPureCommand(input: Command): void {
+  if (!input || typeof input !== 'object'
+    || (Object.getPrototypeOf(input) !== Object.prototype && Object.getPrototypeOf(input) !== null)) {
+    throw new Error('命令必须是纯数据对象');
+  }
+  const typeDescriptor = Object.getOwnPropertyDescriptor(input, 'type');
+  if (!typeDescriptor?.enumerable || !('value' in typeDescriptor)) {
+    throw new Error('命令 type 必须是可序列化的数据字段');
+  }
+  const type = typeDescriptor.value as Command['type'];
   const registration = COMMANDS[type];
   const allowed = registration?.keys ?? new Set<PropertyKey>(['type', 'id']);
   for (const key of Reflect.ownKeys(input)) {
@@ -126,6 +138,10 @@ export function commandTargetIds(command: Command): readonly ElementId[] {
   if (registration?.target === 'ids') {
     const ids = (command as Partial<AlignElementsCommand>).ids;
     return Array.isArray(ids) ? ids.filter((id): id is ElementId => typeof id === 'string' && !!id) : [];
+  }
+  if (registration?.target === 'to') {
+    const id = (command as Partial<ApplyFormatCommand>).to;
+    return typeof id === 'string' && id ? [id] : [];
   }
   if ((registration?.target ?? 'id') === 'id') {
     const id = (command as Partial<Command> & { id?: unknown }).id;

@@ -6,6 +6,7 @@ import type {
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
 import type { TableInsertOptions } from './table-insertion';
+import type { FormatPainterStartOptions } from './format-painter-types';
 
 export type EditorMode = 'view' | 'edit';
 export type LinkFollowSource = 'view' | 'edit' | 'api';
@@ -30,6 +31,8 @@ export interface SlideEditorOptions {
   snapMargins?: SnapMargins;
   /** React/Vue 等宿主可接管路由；返回 true 阻止内置页跳转或安全新窗口。 */
   onLinkFollow?: LinkFollowHandler;
+  /** 与自定义事件 webpptformaterror 同源，adapter 用它接入全局 onError。 */
+  onError?: (error: unknown) => void;
 }
 
 export interface SlideEditor {
@@ -43,6 +46,9 @@ export interface SlideEditor {
   setSlide(slideId: SlideId): void;
   setZoom(zoom: number): void;
   setSnapping(enabled: boolean): void;
+  /** 从当前单元素或文字选区启用会话级格式刷。 */
+  startFormatPainter(options?: FormatPainterStartOptions): boolean;
+  cancelFormatPainter(): void;
   /** 省略目标时跟随当前单一元素或文字选区；内部页始终使用稳定 SlideId。 */
   followLink(target?: LinkTarget): boolean;
   /** 注册外置工具栏，使其 pointer 交互不结束当前文字编辑。 */

@@ -132,6 +132,24 @@ recovery candidate, session, view, mode, stable slide id, and zoom without intro
 When persistence is enabled, `onRecovery(candidate)` returns `restore`, `discard`, or `cancel`; React and Vue pass
 through this same callback.
 
+### Session format painter
+
+The format painter is one session controller shared by every mounted view and framework adapter. Select exactly one
+shape/image/group or a text range, then start a one-shot or continuous painter:
+
+```ts
+view.startFormatPainter();                    // exits after the first successful target
+view.startFormatPainter({ continuous: true }); // keeps the stable source across slides/views
+session.formatPainter.cancel();
+```
+
+`Escape`, switching any view to `view` mode, deleting the source, or disposing the session cancels it. A target
+click applies one atomic `ApplyFormat` command before selecting that target; incompatible targets dispatch
+`webpptformaterror` and retain the active source. Active roots expose `data-format-painter="single|continuous"`
+and `data-format-painter-source`, so products can supply their own cursor and toolbar styling without owning state.
+`adapter.startFormatPainter()` / `cancelFormatPainter()` map to the same controller, while
+`snapshot.formatPainter` exposes `active`, `mode`, `source`, and `readonly` to React, Vue, Svelte, and Web Components.
+
 `mountSelectionPane()` is the single accessible DOM implementation for the object catalog. It presents the current
 slide in topmost-first tree order, keeps duplicate OOXML names distinct through stable element ids, and supports
 group navigation, rename, lock, and session-only hide. Arrow keys, Home/End, Left/Right, Enter, Space, and F2 work

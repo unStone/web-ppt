@@ -5,5 +5,6 @@ export type { UseWebPptAdapterResult } from './use-web-ppt-adapter';
 export type { WebPptEditorHandle } from './web-ppt-editor';
 export type { WebPptSelectionPaneHandle } from './web-ppt-selection-pane';
 export type {
-  WebPptAdapterBinding, WebPptAdapterProgress, WebPptAdapterSnapshot, WebPptViewState,
+  FormatPainterStartOptions, WebPptAdapterBinding, WebPptAdapterProgress,
+  WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptViewState,
 } from '@web-ppt/editor';
