@@ -4,7 +4,19 @@
 
 ## 未发布
 
+## 0.5.0-beta.1 - 2026-08-27
+
 ### 新增
+
+- `@web-ppt/edit-core`、`@web-ppt/editor` 与框架适配层新增元素动画编辑闭环：稳定
+  `SlideId` / `ElementId` 时间线支持来源恢复、显式清空、撤销恢复、删除/复制页联动，以及
+  view/edit 共用的无副作用即时预览。首个安全目录覆盖入场/退场的 appear、fade、fly、wipe、zoom、
+  dissolve，强调 spin/grow 和 2–256 顶点运动路径；复杂 MCE、build、扩展或条件时间树会标记
+  `sourceReadonly`，只有调用方明确整条替换才写回；公开 `MAX_ANIMATION_STEPS=128`，保证允许写入的
+  最重时间线仍能在有界解析预算内完整回读。
+- 元素动画保存按 OOXML 官方 preset/filter 重建规范 `p:tnLst`，保留 timing 根属性、`bldLst`、
+  `extLst` 与无关 MCE，并精确回读 trigger、delay、duration、方向和路径。真实 Chrome 实测 60 元素
+  启动、200 页批量提交、单页反馈 p95 为 0.8/3.5/0.4ms；确定性 5 页固件及 LibreOffice 打开验证通过。
 
 - `@web-ppt/editor` 新增显式启用的纯浏览器自动保存：完整源字节 SHA-256 把同内容输入绑定到同一日志，
   IndexedDB 以串行批次原子追加恢复帧，并按分块数、总估算字节、记录数和保留期压缩清理。`openEditor`

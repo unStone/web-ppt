@@ -113,6 +113,12 @@ import { WebPptEditor } from '@web-ppt/react';
 React/Vue 复用同一 adapter，支持 40 种效果、显式关闭、来源恢复、精确时长、自动换片与 morph 粒度。
 Chrome 实测 40 种效果与 60 元素复杂页启动 p95 0.1ms，200 页批量提交 / 单页反馈 p95 2.4 / 0.3ms。
 
+元素动画工具栏使用 `queryAnimations` / `setAnimations` / `previewAnimations`：时间线以稳定元素身份表达，
+`null` 恢复来源，`[]` 显式清空；view/edit 都能预览当前值或尚未提交的合法值，预览不改模型、选区或历史。
+首版安全目录覆盖 appear/fade/fly/wipe/zoom/dissolve、spin/grow 与 2–256 顶点运动路径；复杂来源会返回
+`sourceReadonly`，产品应提示用户明确整条替换；公开 `MAX_ANIMATION_STEPS=128` 供工具栏提前约束。
+Chrome 实测 60 元素启动 / 200 页批量提交 / 单页反馈 p95 为 0.8 / 3.5 / 0.4ms。
+
 Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
 view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
 

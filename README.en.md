@@ -97,6 +97,15 @@ Vue exports the same component name from `@web-ppt/vue`. Both packages are SSR-i
 replacement, view/edit switching, undo, save, multiple views, and unmount cleanup. Svelte and Web Components can
 bind the same framework-neutral adapter contract exported by `@web-ppt/editor`.
 
+Custom toolbars use the shared adapter actions `queryTransition` / `setTransition` / `previewTransition` and
+`queryAnimations` / `setAnimations` / `previewAnimations`. Both view and edit modes can preview committed or
+uncommitted valid values without mutating the model, selection, or history; only edit mode can commit. Animation
+timelines use stable element identities, restore their source with `null`, and clear explicitly with `[]`. The beta
+catalog covers appear/fade/fly/wipe/zoom/dissolve entrances and exits, spin/grow emphasis, and 2–256-point motion
+paths. Complex source timing trees report `sourceReadonly` so products can require an explicit whole-timeline
+replacement instead of presenting a lossy partial edit. `MAX_ANIMATION_STEPS=128` lets toolbars enforce the same
+bounded limit whose heaviest accepted timeline is guaranteed to round-trip through the parser.
+
 In edit mode, the interaction SVG draws an exact OBB, eight resize handles, and a rotation handle for plain,
 rotated/flipped, and nested-group elements. Handle size stays constant in screen pixels. Pure functions for
 element-local, slide, and screen coordinates are exported so framework adapters never duplicate group math.

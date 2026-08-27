@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/viewer-core",
-  "version": "0.4.5",
+  "version": "0.5.0-beta.1",
   "description": "Headless presentation state machine for Web-PPT: navigation, zoom, search and click-batched animation playback, drivable from any UI framework.",
   "keywords": [
     "pptx",
@@ -50,7 +50,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.4.5"
+    "@web-ppt/core": "^0.5.0-beta.1"
   },
   "publishConfig": {
     "access": "public"
