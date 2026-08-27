@@ -6,7 +6,7 @@
 它把解析源值与用户覆盖分开保存，为页和元素分配会话内稳定身份，再投影回现有高保真 `Slide` Schema。
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core
+npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```
 
 ```ts

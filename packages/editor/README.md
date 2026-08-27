@@ -7,7 +7,7 @@ source file once, owns its parsed resources and headless editing model, and moun
 slide views without uploading the file.
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
 ```
 
 ```ts

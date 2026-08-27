@@ -71,6 +71,14 @@ const stepped = await presentationToPrintableHtml(pres, { animationSteps: true }
 
 For a visual editor, `@web-ppt/editor` owns parsed resources, the headless Editor, and every mounted view:
 
+Editing is currently on the beta line. Install the whole stack from the same `next` version to avoid mixing it
+with stable viewer packages:
+
+```bash
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
+# React / Vue apps can additionally install @web-ppt/react@next react or @web-ppt/vue@next vue
+```
+
 ```ts
 import { openEditor } from '@web-ppt/editor';
 

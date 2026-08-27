@@ -69,6 +69,13 @@ const stepped = await presentationToPrintableHtml(pres, { animationSteps: true }
 
 需要可视编辑时，`@web-ppt/editor` 会统一管理解析资源、headless Editor 与全部挂载视图：
 
+编辑能力当前在 beta 线，整套依赖必须使用相同的 `next` 版本，避免与稳定查看包混装：
+
+```bash
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
+# React / Vue 项目再安装 @web-ppt/react@next react 或 @web-ppt/vue@next vue
+```
+
 ```ts
 import { openEditor } from '@web-ppt/editor';
 

@@ -6,7 +6,7 @@
 解析资源与 headless 编辑模型；文件不上传，同一会话可挂载一份或多份高保真幻灯片视图。
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
 ```
 
 ```ts

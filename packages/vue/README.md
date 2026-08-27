@@ -4,7 +4,7 @@ Thin Vue bindings for the framework-agnostic `@web-ppt/editor`. The component ow
 lifecycle; parsing, preview, editing, history, and saving remain in the shared editor session.
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor @web-ppt/vue vue
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next @web-ppt/vue@next vue
 ```
 
 ```vue

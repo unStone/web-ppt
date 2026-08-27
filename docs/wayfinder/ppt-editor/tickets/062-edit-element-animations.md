@@ -1,6 +1,6 @@
 ---
 title: 编辑并预览元素动画时间线
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -19,7 +19,8 @@ blocked_by: []
 根或组内元素，公开 `effect`、`kind`、`trigger`、`delayMs`、`durationMs`、可选方向与运动路径；点击分组由顺序和
 `click` / `withPrev` / `afterPrev` 自动推导，不向调用方泄漏易失的 OOXML cTn id 或 spid。
 `durationMs` 必须是 60–10000ms、`delayMs` 为 0–300000ms 的整数；入口/退出/强调/路径必须与效果、方向和路径数据相容，未知字段、原型、
-非有限数、空路径、跨页或失效目标在落模前原子拒绝。`querySlideAnimations(doc, SlideId[])` 返回
+非有限数、空路径、跨页或失效目标在落模前原子拒绝；公开最大 128 步，保证 writer 的最重合法时间线仍在
+core 的有界解析预算内完整回读。`querySlideAnimations(doc, SlideId[])` 返回
 effective/source/mixed/sourceMixed/direct；产品工具栏不得读取 `src/ovr`，批量修改继续使用既有事务并只产生一个
 撤销项。
 
@@ -46,4 +47,20 @@ seam。60 元素时间线提交、200 页批量提交和连续预览必须实测
 
 ## Resolution
 
-<!-- 完成后记录公开契约、保存/兼容策略、性能与完整验收证据。 -->
+- `@web-ppt/edit-core` 与 `@web-ppt/editor` 现以稳定元素身份公开动画查询、设置和草稿预览；`null` 恢复来源、
+  `[]` 显式清空，复杂来源返回 `sourceReadonly`，`MAX_ANIMATION_STEPS=128` 让 UI 与回读预算使用同一边界。
+  安全目录覆盖 appear/fade/fly/wipe/zoom/dissolve 入退场、spin/grow 强调及 2–256 点运动路径，未知字段、
+  失效目标和不相容参数在修改模型前原子拒绝。
+- view/edit 共用受控播放层和惰性动画控制器；预览当前值或未提交时间线都不修改模型、选区和历史，连续预览
+  会取消上一轮。React/Vue 只映射共享 adapter，未复制状态机，适配包自身分别为 934B / 1128B gzip。
+- 保存从首次触碰基线重建规范 `p:tnLst`，保留 timing 根未知属性、`bldLst`、`extLst`、无关 MCE 和未触碰
+  的复杂来源；删除元素同步清理引用，条件链清理保持线性复杂度。128 步最重合法时间线保存重开后完整回读。
+- 确定性固件 SHA-256 为
+  `d0579d4bf06033e7c0507cd0f05e63bcc53b32e917dc5d7109ee93b6463791f0`。Chrome 的 60 元素启动、200 页
+  批量提交、单页反馈 p95 分别为 0.8 / 3.5 / 0.4ms；LibreOffice 将保存产物正常打开为 5 页、50047 字节
+  PDF。Windows PowerPoint 真机证据继续归任务 010。
+- 最终门禁通过：core 2145、edit-core 874、保存 370、PowerPoint 证据契约 9、editor 360、adapter 9、
+  66 份固件 / 239 页 / 478 对 SVG、图元文件 130，七个包均构建成功；规格与工程规范两路终审均无遗留项。
+- 七包 `0.5.0-beta.1` 已发布并通过全新目录按包名安装与 ESM 导入。既有 `core` / `viewer-core` / `fonts`
+  的 `latest` 仍为 `0.4.5`，beta 在 `next`；四个首次发布的新包由 npm 同时建立 `latest` 与 `next`，均指向
+  `0.5.0-beta.1`。因此 beta 编辑栈必须显式统一安装 `@next` 或锁定完全相同的版本。

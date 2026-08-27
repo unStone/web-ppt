@@ -7,7 +7,7 @@ It keeps parsed source values separate from user overrides, assigns stable sessi
 an editable document back to the existing high-fidelity `Slide` schema. It has no DOM dependency.
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core
+npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```
 
 ```ts

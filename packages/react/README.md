@@ -4,7 +4,7 @@ Thin React bindings for the framework-agnostic `@web-ppt/editor`. The component 
 lifecycle; parsing, preview, editing, history, and saving remain in the shared editor session.
 
 ```bash
-npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor @web-ppt/react react
+npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next @web-ppt/react@next react
 ```
 
 ```tsx
