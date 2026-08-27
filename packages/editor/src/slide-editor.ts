@@ -1,7 +1,7 @@
 import type {
   EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideNotesState,
+  SlideNotesState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
@@ -34,6 +34,7 @@ import { SlideEditorCommands } from './slide-editor-commands';
 import { SlideEditorKeyboardEvents } from './slide-editor-keyboard-events';
 import { TextSearchViewBinding } from './text-search-view';
 import type { TextSearchOpenOptions } from './text-search-types';
+import { TransitionPreviewController } from './transition-preview';
 
 class DomSlideEditor implements SlideEditor {
   readonly element: HTMLDivElement;
@@ -65,6 +66,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly textSearch: TextSearchViewBinding;
   private readonly commands: SlideEditorCommands;
   private readonly keyboardEvents: SlideEditorKeyboardEvents;
+  private transitionPreview: TransitionPreviewController | null = null;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
   private readonly unbindLinkEvent: () => void;
@@ -231,6 +233,7 @@ class DomSlideEditor implements SlideEditor {
       imageInsertion: this.imageInsertion, imageCropGesture: this.imageCropGesture,
       links: this.links, formatPainter: this.formatPainter,
       textSearch: this.textSearch,
+      transitionPreview: () => this.transitionPreviewController(),
       mode: () => this.currentMode, slideId: () => this.currentSlide,
       destroyed: () => this.isDestroyed, cancelGestures: () => this.cancelGestures(),
     });
@@ -318,6 +321,14 @@ class DomSlideEditor implements SlideEditor {
   }
   setBackgroundCrop(crop: ImageCrop | null): boolean { return this.commands.setBackgroundCrop(crop); }
 
+  queryTransition(): SlideTransitionState { return this.commands.queryTransition(); }
+  previewTransition(value?: SlideTransitionInput): Promise<boolean> {
+    return this.commands.previewTransition(value);
+  }
+  setTransition(value: SlideTransitionInput | null): boolean {
+    return this.commands.setTransition(value);
+  }
+
   queryLayout(): SlideLayoutState { return this.commands.queryLayout(); }
 
   setLayout(layoutId: string): boolean { return this.commands.setLayout(layoutId); }
@@ -367,6 +378,7 @@ class DomSlideEditor implements SlideEditor {
   setSlide(slideId: SlideId): void {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
+    this.transitionPreview?.cancel();
     this.cancelGestures();
     this.imageCropGesture.exit();
     this.keyboard.breakSequence();
@@ -398,6 +410,7 @@ class DomSlideEditor implements SlideEditor {
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
+    this.transitionPreview?.cancel();
     this.cancelGestures();
     this.keyboard.breakSequence();
     this.textEditor.destroy();
@@ -446,6 +459,7 @@ class DomSlideEditor implements SlideEditor {
 
   private update(change: EditorChange): void {
     this.cancelGestures();
+    if (change.dirtySlides.has(this.currentSlide)) this.transitionPreview?.cancel();
     if (!this.session.editor.doc.slides[this.currentSlide]) {
       this.keyboard.breakSequence();
       this.textEditor.close(false);
@@ -468,6 +482,18 @@ class DomSlideEditor implements SlideEditor {
     this.resizeGesture.cancel();
     this.rotationGesture.cancel();
     this.imageCropGesture.cancelGesture();
+  }
+
+  private transitionPreviewController(): TransitionPreviewController {
+    if (!this.transitionPreview) {
+      this.transitionPreview = new TransitionPreviewController({
+        layer: this.staticLayer,
+        chrome: [this.interactionLayer, this.textLayer],
+        current: () => this.session.editor.toSlide(this.currentSlide).transition,
+        destroyed: () => this.isDestroyed,
+      });
+    }
+    return this.transitionPreview;
   }
 
   private cancelActiveGesture(): boolean {

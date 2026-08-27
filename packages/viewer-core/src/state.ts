@@ -30,6 +30,7 @@ export type StateChange =
   | { type: 'zoom'; zoom: number };
 
 type Listener = (change: StateChange) => void;
+const MAX_TIMER_DELAY_MS = 0x7fffffff;
 
 export class PresentationState {
   private idx = 0;
@@ -200,10 +201,18 @@ export class PresentationState {
     this.cancelAutoAdvance();
     const ms = this.autoAdvanceDelay;
     if (ms === null) return () => undefined;
-    this.autoTimer = setTimeout(() => {
-      this.autoTimer = null;
-      this.next();
-    }, ms);
+    let remaining = ms;
+    const scheduleChunk = (): void => {
+      // 浏览器和 Node 的计时器都是 32 位有符号延迟；更大的合法 OOXML unsignedInt 会溢出成近即时。
+      const delay = Math.min(remaining, MAX_TIMER_DELAY_MS);
+      this.autoTimer = setTimeout(() => {
+        this.autoTimer = null;
+        remaining -= delay;
+        if (remaining > 0) scheduleChunk();
+        else this.next();
+      }, delay);
+    };
+    scheduleChunk();
     return () => this.cancelAutoAdvance();
   }
 

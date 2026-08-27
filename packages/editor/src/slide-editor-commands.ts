@@ -1,8 +1,9 @@
-import { querySlideLayout, querySlideNotes } from '@web-ppt/edit-core';
+import { querySlideLayout, querySlideNotes, querySlideTransition } from '@web-ppt/edit-core';
 import type {
   ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState,
   SlideNotesState, TextBodyProperties, TextBodyPropertyOverrides,
+  SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
 import type { TextEditorController } from './text-editor';
@@ -20,6 +21,7 @@ import type { FormatPainterStartOptions } from './format-painter-types';
 import type { FormatPainterViewBinding } from './format-painter-view';
 import type { TextSearchOpenOptions } from './text-search-types';
 import type { TextSearchViewBinding } from './text-search-view';
+import type { TransitionPreviewController } from './transition-preview';
 
 interface SlideEditorCommandsOptions {
   readonly session: EditorSession;
@@ -30,6 +32,7 @@ interface SlideEditorCommandsOptions {
   readonly links: SlideLinkController;
   readonly formatPainter: FormatPainterViewBinding;
   readonly textSearch: TextSearchViewBinding;
+  transitionPreview(): TransitionPreviewController;
   mode(): EditorMode;
   slideId(): SlideId;
   destroyed(): boolean;
@@ -109,6 +112,19 @@ export class SlideEditorCommands {
     if (o.destroyed() || o.mode() !== 'edit') return false;
     o.session.editor.exec({ type: 'SetBackgroundCrop', id: o.slideId(), crop });
     return true;
+  }
+
+  queryTransition(): SlideTransitionState {
+    return querySlideTransition(this.options.session.editor.doc, [this.options.slideId()]);
+  }
+  setTransition(value: SlideTransitionInput | null): boolean {
+    const o = this.options;
+    if (o.destroyed() || o.mode() !== 'edit') return false;
+    o.session.editor.exec({ type: 'SetTransition', id: o.slideId(), t: value });
+    return true;
+  }
+  previewTransition(value?: SlideTransitionInput): Promise<boolean> {
+    return this.options.transitionPreview().preview(value);
   }
 
   queryLayout(): SlideLayoutState {

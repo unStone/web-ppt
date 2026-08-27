@@ -1654,6 +1654,17 @@ group('xml-lite');
     try { liteMod.parseXmlLite('not xml at all'); return false; }
     catch (e) { return e instanceof Error && !!e.message; }
   })());
+
+  const deepXml = (depth) => '<q:r xmlns:q="urn:deep">' + '<q:n>'.repeat(depth)
+    + '</q:n>'.repeat(depth) + '</q:r>';
+  const started = performance.now();
+  const deep = liteMod.parseXmlLite(deepXml(8000));
+  const elapsed = performance.now() - started;
+  check('深层 XML 命名空间解析保持线性且不递归查询父链',
+    deep.namespaceURI === 'urn:deep'
+      && deep.firstElementChild?.lookupNamespaceURI('q') === 'urn:deep'
+      && elapsed < 250,
+  `${elapsed.toFixed(1)}ms`);
 }
 
 // ---------------- 12. 查看器交互 ----------------
@@ -2061,6 +2072,9 @@ group('播放引擎');
   // 自动换片
   const withAdv = { transition: { type: 'fade', durationMs: 500, advanceAfterMs: 3000 } };
   eq('读出自动换片延迟', viewerLib.autoAdvanceMs(withAdv), 3000);
+  eq('0ms 自动换片是合法配置', viewerLib.autoAdvanceMs({
+    transition: { type: 'fade', durationMs: 500, advanceAfterMs: 0 },
+  }), 0);
   eq('无自动换片返回 null', viewerLib.autoAdvanceMs({ transition: { type: 'fade', durationMs: 500 } }), null);
   eq('无切换返回 null', viewerLib.autoAdvanceMs({}), null);
 }
@@ -2367,6 +2381,71 @@ group('CJK 标点挤压');
 
 group('headless 状态机');
 {
+  {
+    const nativeSetTimeout = globalThis.setTimeout;
+    const nativeClearTimeout = globalThis.clearTimeout;
+    const pending = new Map();
+    const delays = [];
+    let serial = 0;
+    globalThis.setTimeout = ((callback, delay) => {
+      const id = ++serial;
+      delays.push(delay);
+      pending.set(id, callback);
+      return id;
+    });
+    globalThis.clearTimeout = ((id) => { pending.delete(id); });
+    const fire = () => {
+      const entry = pending.entries().next().value;
+      if (!entry) return false;
+      pending.delete(entry[0]);
+      entry[1]();
+      return true;
+    };
+    const timedState = (advanceAfterMs) => new viewerLib.PresentationState({
+      width: 960, height: 540,
+      slides: [
+        { elements: [], transition: { type: 'fade', durationMs: 500, advanceAfterMs } },
+        { elements: [] },
+      ],
+    }, { autoAdvance: true });
+    try {
+      const zero = timedState(0);
+      zero.scheduleAutoAdvance();
+      check('0ms 自动换片按 0ms 排队后翻页', delays.at(-1) === 0 && fire() && zero.index === 1);
+      zero.destroy();
+
+      const max = timedState(0x7fffffff);
+      max.scheduleAutoAdvance();
+      check('2^31-1ms 使用单个最大安全计时器',
+        delays.at(-1) === 0x7fffffff && fire() && max.index === 1);
+      max.destroy();
+
+      const overflow = timedState(0x80000000);
+      overflow.scheduleAutoAdvance();
+      const overflowStart = delays.length;
+      const firstOverflow = delays.at(-1) === 0x7fffffff && fire() && overflow.index === 0;
+      check('2^31ms 分成最大安全延迟与剩余 1ms',
+        firstOverflow && delays.length === overflowStart + 1 && delays.at(-1) === 1
+          && fire() && overflow.index === 1);
+      overflow.destroy();
+
+      const uintMax = timedState(0xffffffff);
+      uintMax.scheduleAutoAdvance();
+      const chunks = [];
+      while (pending.size) {
+        chunks.push(delays.at(-1));
+        fire();
+      }
+      check('unsignedInt 最大延迟分三段且不会提前翻页',
+        chunks.join(',') === '2147483647,2147483647,1' && uintMax.index === 1,
+      chunks.join(','));
+      uintMax.destroy();
+    } finally {
+      globalThis.setTimeout = nativeSetTimeout;
+      globalThis.clearTimeout = nativeClearTimeout;
+    }
+  }
+
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     const St = viewerLib.PresentationState;

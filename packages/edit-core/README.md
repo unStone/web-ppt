@@ -211,6 +211,26 @@ editor.exec({ type: 'SetHidden', id: slideId, v: true });
 const hidden = querySlideHidden(editor.doc, selectedSlideIds);
 ```
 
+Slide transitions use the same stable page ids. `SetTransition { id, t }` accepts one of the 40 playable
+effects, an explicit `{ type: 'none' }`, or `null` to restore the parsed source. Inputs are normalized before
+commit: the default duration is 750ms, directions are effect-specific, and morph can use object, word, or
+character matching. Metadata changes do not rebuild the slide SVG.
+Omitting `advanceAfterMs` preserves the page's current timing, so changing a visual effect does not silently alter
+the existing slideshow policy.
+
+```ts
+import {
+  querySlideTransition, SLIDE_TRANSITION_TYPES, transitionDirections,
+} from '@web-ppt/edit-core';
+
+const transition = querySlideTransition(editor.doc, selectedSlideIds);
+editor.exec({
+  type: 'SetTransition', id: slideId,
+  t: { type: 'push', dir: 'r', durationMs: 600, advanceAfterMs: 4000 },
+});
+editor.exec({ type: 'SetTransition', id: slideId, t: null }); // restore source
+```
+
 Image backgrounds use content-addressed media resources. Uploading identical bytes across pages stores one media
 part; source and inherited image backgrounds can be cropped without editing the shared layout or master.
 

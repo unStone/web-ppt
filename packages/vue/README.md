@@ -56,6 +56,9 @@ mode, slide, and zoom. Changing `source` atomically opens the replacement and re
 The same snapshot includes `formatPainter`; toolbars call
 `adapter.startFormatPainter({ continuous: true })` / `adapter.cancelFormatPainter()`. Vue observes the editor
 session controller rather than creating another painter state machine.
+Page-transition controls use the same adapter: `queryTransition()`, `setTransition(value)`, and
+`previewTransition(value?)` need no Vue-owned playback state. Preview works in view and edit modes; mutation is
+edit-only. `SlideTransitionInput` and `SlideTransitionState` are re-exported for typed controls.
 `snapshot.value.textSearch` is the same shared find/replace state. A product toolbar binds it without maintaining
 another index:
 

@@ -61,6 +61,7 @@
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
     import { runEditorSlidePropertiesBrowserContract } from '/tooling/lib/editor-slide-properties-browser-contract.mjs';
+    import { runEditorTransitionBrowserContract } from '/tooling/lib/editor-transition-browser-contract.mjs';
     import { runEditorSlideNotesBrowserContract } from '/tooling/lib/editor-slide-notes-browser-contract.mjs';
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
     import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
@@ -507,6 +508,9 @@
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
       const slidePropertiesResult = await runEditorSlidePropertiesBrowserContract({ openEditor, load });
+      const transitionResult = await runEditorTransitionBrowserContract({
+        openEditor, createWebPptAdapter, load,
+      });
       const slideNotesResult = await runEditorSlideNotesBrowserContract({ openEditor, load });
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
@@ -600,6 +604,9 @@
       report.dataset.slidePropertiesRenderP95 = slidePropertiesResult.renderP95.toFixed(3);
       report.dataset.slideImageBackgroundP95 = slidePropertiesResult.imageRenderP95.toFixed(3);
       report.dataset.slideImageBackgroundModelP95 = slidePropertiesResult.imageModelP95.toFixed(3);
+      report.dataset.transitionPreviewP95 = transitionResult.previewP95.toFixed(3);
+      report.dataset.transitionBatchP95 = transitionResult.batchP95.toFixed(3);
+      report.dataset.transitionFeedbackP95 = transitionResult.feedbackP95.toFixed(3);
       report.dataset.slideNotesP95 = slideNotesResult.p95.toFixed(3);
       report.dataset.selectionPaneP95 = selectionPaneResult.p95.toFixed(3);
       report.dataset.formatPainterP95 = formatPainterResult.p95.toFixed(3);
@@ -653,6 +660,9 @@
       report.textContent += `\n200 页图片背景裁剪模型/完整上屏 p95 `
         + `${slidePropertiesResult.imageModelP95.toFixed(3)} / `
         + `${slidePropertiesResult.imageRenderP95.toFixed(3)}ms`;
+      report.textContent += `\n40 种切换启动、200 页批量/单页反馈 p95 `
+        + `${transitionResult.previewP95.toFixed(3)} / ${transitionResult.batchP95.toFixed(3)} / `
+        + `${transitionResult.feedbackP95.toFixed(3)}ms`;
       report.textContent += `\n2,000 字符备注提交 p95 ${slideNotesResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素选择窗格锁定往返 p95 ${selectionPaneResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素格式刷完整反馈 p95 ${formatPainterResult.p95.toFixed(3)}ms`;

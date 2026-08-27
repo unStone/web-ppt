@@ -9,20 +9,54 @@
 export interface LiteAttr {
   name: string;
   localName: string;
+  prefix: string | null;
+  namespaceURI: string | null;
   value: string;
 }
+
+const ROOT_NAMESPACE_BINDINGS: ReadonlyMap<string, string> = new Map([
+  ['xml', 'http://www.w3.org/XML/1998/namespace'],
+]);
 
 export class LiteElement {
   readonly localName: string;
   readonly tagName: string;
+  readonly prefix: string | null;
+  namespaceURI: string | null = null;
   readonly attributes: LiteAttr[] = [];
   readonly childNodes: (LiteElement | string)[] = [];
   nextElementSibling: LiteElement | null = null;
+  private namespaceBindings: ReadonlyMap<string, string> = ROOT_NAMESPACE_BINDINGS;
 
   constructor(tagName: string) {
     this.tagName = tagName;
     const i = tagName.indexOf(':');
+    this.prefix = i < 0 ? null : tagName.slice(0, i);
     this.localName = i < 0 ? tagName : tagName.slice(i + 1);
+  }
+
+  resolveNamespaces(parent: LiteElement | undefined): void {
+    let local: Map<string, string> | undefined;
+    for (const attribute of this.attributes) {
+      if (attribute.name === 'xmlns') {
+        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS))
+          .set('', attribute.value);
+      }
+      else if (attribute.prefix === 'xmlns') {
+        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS))
+          .set(attribute.localName, attribute.value);
+      }
+    }
+    // 绝大多数 OOXML 节点没有 xmlns：直接共享父环境，既保持 O(1) 查询也不逐节点复制 Map。
+    this.namespaceBindings = local ?? parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS;
+    this.namespaceURI = this.lookupNamespaceURI(this.prefix);
+    for (const attribute of this.attributes) {
+      if (attribute.name === 'xmlns' || attribute.prefix === 'xmlns') {
+        attribute.namespaceURI = 'http://www.w3.org/2000/xmlns/';
+      } else if (attribute.prefix) {
+        attribute.namespaceURI = this.lookupNamespaceURI(attribute.prefix);
+      }
+    }
   }
 
   get firstElementChild(): LiteElement | null {
@@ -37,6 +71,11 @@ export class LiteElement {
   getAttribute(name: string): string | null {
     for (const a of this.attributes) if (a.name === name) return a.value;
     return null;
+  }
+
+  lookupNamespaceURI(prefix: string | null): string | null {
+    const key = prefix ?? '';
+    return this.namespaceBindings.get(key) || null;
   }
 
   get textContent(): string {
@@ -158,9 +197,12 @@ export function parseXmlLite(text: string): LiteElement {
       el.attributes.push({
         name,
         localName: ci < 0 ? name : name.slice(ci + 1),
+        prefix: ci < 0 ? null : name.slice(0, ci),
+        namespaceURI: null,
         value: decode(m[3] ?? m[4] ?? ''),
       });
     }
+    el.resolveNamespaces(stack[stack.length - 1]);
 
     if (stack.length) link(stack[stack.length - 1], el);
     else if (!root) root = el;

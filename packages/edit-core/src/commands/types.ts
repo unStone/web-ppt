@@ -7,6 +7,7 @@ import type {
 import type { ElementClipboardPayload } from './clipboard-types';
 import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
+  SetTransitionCommand,
   SetLayoutCommand, SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 import type { ApplyFormatCommand } from './format-painter-types';
@@ -18,7 +19,8 @@ export type {
 } from './clipboard-types';
 export type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
-  SetLayoutCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SetTransitionCommand, SetLayoutCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SlideTransitionPatch,
   SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
@@ -267,7 +269,7 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
-  | SetHiddenCommand | SetLayoutCommand | SetNotesCommand;
+  | SetHiddenCommand | SetTransitionCommand | SetLayoutCommand | SetNotesCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';

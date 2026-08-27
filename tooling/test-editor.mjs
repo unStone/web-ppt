@@ -39,6 +39,7 @@ import { runImageCropEditorContract } from './lib/image-crop-editor-contract.mjs
 import { runFrameworkAdapterContract } from './lib/framework-adapter-contract.mjs';
 import { runRecoveryPersistenceContract } from './lib/recovery-persistence-contract.mjs';
 import { runRecoveryAdapterContract } from './lib/recovery-adapter-contract.mjs';
+import { runTransitionEditorContract } from './lib/transition-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -69,6 +70,7 @@ execFileSync('npx', [
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
+const viewer = await import(`file://${viewerBundle}?run=${Date.now()}`);
 const frameworkBundle = join(out, 'framework-adapters.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'tooling/lib/framework-adapters-browser-contract.tsx'),
@@ -106,6 +108,7 @@ const elementIds = (doc, slideId) => {
 await runFrameworkAdapterContract({ lib, load, check });
 await runRecoveryPersistenceContract({ lib, load, check });
 await runRecoveryAdapterContract({ lib, load, check });
+await runTransitionEditorContract({ lib, viewer, load, check, window: domEnvironment.window });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {

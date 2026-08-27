@@ -1,6 +1,6 @@
 import type {
   Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
-  Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke,
+  Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
@@ -159,6 +159,14 @@ export interface SlideLayoutState {
 export interface SlideNotesState {
   readonly value: string;
   readonly source: string;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+}
+
+export interface SlideTransitionState {
+  readonly value: Transition | null;
+  readonly source: Transition | null;
   readonly mixed: boolean;
   readonly sourceMixed: boolean;
   readonly direct: boolean;

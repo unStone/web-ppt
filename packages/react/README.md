@@ -54,6 +54,10 @@ mode, slide, and zoom. Changing `source` atomically opens the replacement and re
 The same snapshot includes `formatPainter`; call `adapter.startFormatPainter({ continuous: true })` or
 `adapter.cancelFormatPainter()` from a toolbar. React only observes the editor session controller and does not
 create another painter state machine.
+Page-transition controls follow the same seam: `adapter.queryTransition()`, `adapter.setTransition(value)`, and
+`adapter.previewTransition(value?)` work in a product toolbar without React-owned playback state. Preview is
+available in view and edit modes; mutation remains edit-only. `SlideTransitionInput` and `SlideTransitionState`
+are re-exported for typed controls.
 `snapshot.textSearch` follows the same rule: render its query, match count, current match, invalidation flag, and
 `canReplace` directly, then call adapter actions from the toolbar:
 

@@ -1,5 +1,6 @@
 import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
-import { attr, kid, kids, numAttr } from '../xml';
+import { transitionDefaultDirection } from '../transition';
+import { attr, kid, numAttr } from '../xml';
 
 /**
  * 幻灯片切换（p:transition）与元素动画（p:timing）解析。
@@ -10,6 +11,13 @@ import { attr, kid, kids, numAttr } from '../xml';
  */
 
 const SPEED_MS: Record<string, number> = { slow: 1000, med: 750, fast: 500 };
+const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+const POWERPOINT_2010_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
+const POWERPOINT_2015_NS = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
+const MARKUP_COMPATIBILITY_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
+const SUPPORTED_TRANSITION_NAMESPACES = new Set([
+  POWERPOINT_2010_NS, POWERPOINT_2015_NS,
+]);
 
 const TRANSITION_TAGS: Record<string, TransitionType> = {
   fade: 'fade', cut: 'cut', push: 'push', pull: 'pull', cover: 'cover',
@@ -19,8 +27,8 @@ const TRANSITION_TAGS: Record<string, TransitionType> = {
   newsflash: 'newsflash', randomBar: 'randomBar', strips: 'strips',
   random: 'dissolve', fadeThroughBlack: 'fade',
   // p14（PowerPoint 2010+）与 p159（morph）扩展。
-  // 解析层按 localName 匹配、与命名空间无关，findTransition 又会钻进
-  // mc:AlternateContent 的 Choice 分支，所以这里只需补名字即可命中。
+  // findTransition 会钻进 mc:AlternateContent 的 Choice；expanded name 仍需校验，
+  // 否则 mc:Ignorable 外部节点与 p:fade 同名时会被误当成标准效果。
   vortex: 'vortex', switch: 'switch', flip: 'flip', ripple: 'ripple',
   honeycomb: 'honeycomb', glitter: 'glitter', warp: 'warp', flythrough: 'flythrough',
   flash: 'flash', shred: 'shred', reveal: 'reveal', wheelReverse: 'wheelReverse',
@@ -28,39 +36,104 @@ const TRANSITION_TAGS: Record<string, TransitionType> = {
   doors: 'doors', window: 'window', prism: 'prism', morph: 'morph',
 };
 
+const EXTENDED_TRANSITION_TAGS = new Set([
+  'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
+  'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
+  'doors', 'window', 'prism',
+]);
+
+function transitionType(element: Element): TransitionType | undefined {
+  const mapped = TRANSITION_TAGS[element.localName];
+  if (!mapped) return undefined;
+  const namespace = element.namespaceURI;
+  if (element.localName === 'morph') return namespace === POWERPOINT_2015_NS ? mapped : undefined;
+  if (EXTENDED_TRANSITION_TAGS.has(element.localName)) {
+    return namespace === POWERPOINT_2010_NS ? mapped : undefined;
+  }
+  return namespace === PRESENTATIONML_NS ? mapped : undefined;
+}
+
+function numberAttribute(
+  element: Element,
+  localName: string,
+  namespaceURI: string | null,
+): number | null {
+  const attribute = Array.from(element.attributes).find((candidate) =>
+    candidate.localName === localName && candidate.namespaceURI === namespaceURI);
+  if (!attribute || attribute.value === '') return null;
+  const value = Number(attribute.value);
+  return Number.isFinite(value) ? value : null;
+}
+
+function childByName(
+  parent: Element | null,
+  namespaceURI: string,
+  localName: string,
+): Element | null {
+  if (!parent) return null;
+  for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
+    if (child.namespaceURI === namespaceURI && child.localName === localName) return child;
+  }
+  return null;
+}
+
+function childrenByName(
+  parent: Element | null,
+  namespaceURI: string,
+  localName: string,
+): Element[] {
+  const found: Element[] = [];
+  if (!parent) return found;
+  for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
+    if (child.namespaceURI === namespaceURI && child.localName === localName) found.push(child);
+  }
+  return found;
+}
+
+function supportedChoice(choice: Element): boolean {
+  const requires = choice.getAttribute('Requires')?.trim().split(/\s+/).filter(Boolean) ?? [];
+  return requires.length > 0 && requires.every((prefix) => {
+    const namespace = choice.lookupNamespaceURI(prefix);
+    return namespace !== null && SUPPORTED_TRANSITION_NAMESPACES.has(namespace);
+  });
+}
+
 export function parseTransition(root: Element | null): Transition | undefined {
   // p:transition 可能在 p:sld 直属，也可能在 mc:AlternateContent 里的 p14 变体
   const el = findTransition(root);
   if (!el) return undefined;
 
-  let type: TransitionType = 'fade';
+  let type: TransitionType = 'none';
   let dir: string | undefined;
   let morphBy: Transition['morphBy'];
   for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
-    const mapped = TRANSITION_TAGS[c.localName];
+    const mapped = transitionType(c);
     if (!mapped) continue;
     type = mapped;
-    dir = attr(c, 'dir') ?? attr(c, 'orient') ?? undefined;
+    dir = c.getAttribute('dir') ?? c.getAttribute('orient') ?? undefined;
     if (c.localName === 'morph') {
-      const opt = attr(c, 'option');
+      const opt = c.getAttribute('option');
       morphBy = opt === 'byWord' || opt === 'byChar' ? opt : 'byObject';
     }
     if (c.localName === 'split') {
-      const orient = attr(c, 'orient') ?? 'horz';
-      const d = attr(c, 'dir') ?? 'out';
+      const orient = c.getAttribute('orient') ?? 'horz';
+      const d = c.getAttribute('dir') ?? 'out';
       dir = `${orient}-${d}`;
     }
     break;
   }
 
-  const exactMs = numAttr(el, 'p14:dur') ?? numAttr(el, 'dur');
-  const durationMs = exactMs ?? SPEED_MS[attr(el, 'spd') ?? 'med'] ?? 750;
-  const advTm = numAttr(el, 'advTm');
+  const exactMs = numberAttribute(el, 'dur', POWERPOINT_2010_NS)
+    ?? numberAttribute(el, 'dur', null);
+  const durationMs = type === 'none'
+    ? 0 : exactMs ?? SPEED_MS[el.getAttribute('spd') ?? 'fast'] ?? 500;
+  const advTm = numberAttribute(el, 'advTm', null);
+  dir ??= transitionDefaultDirection(type);
 
   return {
     type,
     dir,
-    durationMs: Math.max(80, Math.min(5000, durationMs)),
+    durationMs: type === 'none' ? 0 : Math.max(80, Math.min(5000, durationMs)),
     advanceAfterMs: advTm !== null && advTm !== undefined ? advTm : undefined,
     morphBy,
   };
@@ -68,13 +141,15 @@ export function parseTransition(root: Element | null): Transition | undefined {
 
 function findTransition(root: Element | null): Element | null {
   if (!root) return null;
-  const direct = kid(root, 'transition');
+  const direct = childByName(root, PRESENTATIONML_NS, 'transition');
   if (direct) return direct;
-  for (const alt of kids(root, 'AlternateContent')) {
-    for (const branch of [kid(alt, 'Choice'), kid(alt, 'Fallback')]) {
-      const t = kid(branch, 'transition');
-      if (t) return t;
-    }
+  for (const alternate of childrenByName(root, MARKUP_COMPATIBILITY_NS, 'AlternateContent')) {
+    // MCE 先原子选择一个分支，再解释其内容；不能因所选 Choice 无 transition 改投 Fallback。
+    const selected = childrenByName(alternate, MARKUP_COMPATIBILITY_NS, 'Choice')
+      .find(supportedChoice)
+      ?? childByName(alternate, MARKUP_COMPATIBILITY_NS, 'Fallback');
+    const transition = childByName(selected, PRESENTATIONML_NS, 'transition');
+    if (transition) return transition;
   }
   return null;
 }

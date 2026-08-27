@@ -108,6 +108,11 @@ import { WebPptEditor } from '@web-ppt/react';
 不会复制索引或状态机。Chrome 契约实测 200 页首次索引 / 冷查询 p95 为 2.0 / 0.5ms，60 元素页导航 /
 替换完整反馈 p95 为 0.1 / 0.9ms。
 
+页面切换工具栏直接使用 `queryTransition` / `setTransition` / `previewTransition`：view/edit 均可即时
+预览当前值或尚未提交的值，只有 edit 能写入；连续预览会取消旧动画，默认挂载不自动播放。
+React/Vue 复用同一 adapter，支持 40 种效果、显式关闭、来源恢复、精确时长、自动换片与 morph 粒度。
+Chrome 实测 40 种效果与 60 元素复杂页启动 p95 0.1ms，200 页批量提交 / 单页反馈 p95 2.4 / 0.3ms。
+
 Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
 view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
 

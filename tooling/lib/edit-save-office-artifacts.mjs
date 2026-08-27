@@ -35,6 +35,8 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'selection-pane.pptx', slides: 2 }),
   Object.freeze({ file: 'format-painter.pptx', slides: 2 }),
   Object.freeze({ file: 'find-replace.pptx', slides: 3 }),
+  Object.freeze({ file: 'slide-transitions.pptx', slides: 41 }),
+  Object.freeze({ file: 'slide-transition-inherited-none.pptx', slides: 1 }),
 ]);
 
 export const EDIT_SAVE_OFFICE_MANIFEST = 'office-artifacts.json';

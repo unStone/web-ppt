@@ -1,4 +1,5 @@
-import type { Fill, ImageTilePlacement } from '@web-ppt/core';
+import type { Fill, ImageTilePlacement, Transition } from '@web-ppt/core';
+import type { SlideTransitionInput } from '../slide-transition';
 import type { ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding } from '../types';
 
 export interface SetBackgroundCommand {
@@ -31,6 +32,13 @@ export interface SetHiddenCommand {
   readonly id: SlideId;
   /** null 恢复来源；false 可覆盖来源隐藏页。 */
   readonly v: boolean | null;
+}
+
+export interface SetTransitionCommand {
+  readonly type: 'SetTransition';
+  readonly id: SlideId;
+  /** null 恢复来源；type=none 明确关闭切换。 */
+  readonly t: SlideTransitionInput | null;
 }
 
 export interface SetLayoutCommand {
@@ -109,4 +117,16 @@ export type SlideHiddenPatch = {
   readonly origin: string;
 };
 
-export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch;
+export type SlideTransitionPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
+  readonly value: Transition;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
+  readonly origin: string;
+};
+
+export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch
+  | SlideTransitionPatch;

@@ -13,6 +13,7 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import { appendVectorFill, removeDrawingFillChildren } from './shape-format';
 import { patchBackgroundImageFill } from './background-image';
 import { namespacedElement } from './xml-element';
+import { patchSlideTransition } from './transition';
 
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
@@ -30,7 +31,8 @@ function remapRelationshipIds(root: XmlElement, record: SlideRecord): void {
 }
 
 export function hasSlidePropertyOverrides(record: SlideRecord): boolean {
-  return own(record.ovr, 'background') || own(record.ovr, 'hidden');
+  return own(record.ovr, 'background') || own(record.ovr, 'hidden')
+    || own(record.ovr, 'transition');
 }
 
 function commonSlide(document: XmlDocument, record: SlideRecord): XmlElement {
@@ -134,6 +136,12 @@ export function patchSlideProperties(document: XmlDocument, doc: EditDoc, record
   if (own(record.ovr, 'hidden')) {
     if (record.ovr.hidden) setXmlAttribute(document.root, 'show', '0');
     else removeXmlAttribute(document.root, 'show');
+  }
+  if (own(record.ovr, 'transition')) {
+    const layoutTransition = record.layoutId ? doc.layouts[record.layoutId]?.transition : undefined;
+    patchSlideTransition(
+      document, record.ovr.transition!, layoutTransition !== undefined,
+    );
   }
   patchBackground(document, doc, record);
 }

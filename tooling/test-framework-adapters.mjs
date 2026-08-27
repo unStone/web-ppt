@@ -55,6 +55,7 @@ const readPackage = (name) => JSON.parse(readFileSync(join(root, 'packages', nam
 const reactPackage = readPackage('react');
 const vuePackage = readPackage('vue');
 const basePackages = ['core', 'edit-core', 'viewer-core', 'editor'].map(readPackage);
+const viewerPackage = readPackage('viewer-core');
 check('框架只作为对应适配包的 optional peer',
   reactPackage.peerDependencies?.react && reactPackage.peerDependenciesMeta?.react?.optional === true
     && vuePackage.peerDependencies?.vue && vuePackage.peerDependenciesMeta?.vue?.optional === true
@@ -63,6 +64,8 @@ check('基础包没有 React/Vue 运行时依赖', basePackages.every((pkg) => {
   const runtime = { ...pkg.dependencies, ...pkg.peerDependencies, ...pkg.optionalDependencies };
   return !runtime.react && !runtime['react-dom'] && !runtime.vue;
 }));
+check('viewer-core peer 下界包含其运行时使用的 core 新导出',
+  viewerPackage.peerDependencies?.['@web-ppt/core'] === '^0.4.5');
 
 check('React 入口公开组件、选择窗格与 hook', !!react.WebPptEditor && !!react.WebPptSelectionPane
   && typeof react.useWebPptAdapter === 'function');

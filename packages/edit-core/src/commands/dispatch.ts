@@ -26,6 +26,7 @@ import { setCropPatches } from './set-crop';
 import { replaceImagePatches } from './replace-image';
 import {
   setBackgroundCropPatches, setBackgroundImagePatches, setBackgroundPatches, setHiddenPatches,
+  setTransitionPatches,
 } from './set-slide-properties';
 import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
@@ -37,7 +38,7 @@ import {
 } from './element-interaction';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
@@ -99,6 +100,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     ['id', 'crop'], setBackgroundCropPatches, { target: 'none' },
   ),
   SetHidden: register<SetHiddenCommand>(['id', 'v'], setHiddenPatches, { target: 'none' }),
+  SetTransition: register<SetTransitionCommand>(['id', 't'], setTransitionPatches, { target: 'none' }),
   SetLayout: register<SetLayoutCommand>(['id', 'layoutId'], setLayoutPatches, { target: 'none' }),
   SetNotes: register<SetNotesCommand>(['id', 'text'], setNotesPatches, { target: 'none' }),
   SetFill: register<SetFillCommand>(['id', 'fill'], setFillPatches),

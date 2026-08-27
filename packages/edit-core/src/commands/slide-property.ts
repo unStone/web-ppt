@@ -3,6 +3,7 @@ import { base64ToBytes } from '../clipboard-binary';
 import { assertDataObject } from '../data-validation';
 import { assertImageCrop } from '../image-content';
 import { assertVectorFill } from '../shape-fill';
+import { assertStoredSlideTransition } from '../slide-transition';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource, SlideImageBackground, SlideRecord,
 } from '../types';
@@ -17,6 +18,7 @@ import { assertUploadImageResource } from './element-image-content';
 import { normalizeSlideImageTile } from './slide-image';
 import type {
   Patch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
+  SlideTransitionPatch,
 } from './types';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
@@ -266,9 +268,14 @@ export function isSlideBackgroundImagePatch(patch: Patch): patch is SlideBackgro
     && patch.path[2] === 'backgroundImage';
 }
 
+export function isSlideTransitionPatch(patch: Patch): patch is SlideTransitionPatch {
+  return patch.path.length === 4 && patch.path[0] === 'slides'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'transition';
+}
+
 export function isSlidePropertyPatch(patch: Patch): patch is SlidePropertyPatch {
   return isSlideBackgroundPatch(patch) || isSlideBackgroundImagePatch(patch)
-    || isSlideHiddenPatch(patch);
+    || isSlideHiddenPatch(patch) || isSlideTransitionPatch(patch);
 }
 
 export function validateSlidePropertyPatch(
@@ -289,6 +296,8 @@ export function validateSlidePropertyPatch(
     const record = doc.slides[patch.path[1]];
     if (!record.origin?.part) throw new Error(`Patch ${index} 的页面图片背景缺少来源 part`);
     assertSlideImageBackground(patch.value, record, resources, `Patch ${index} 的 backgroundImage`, doc);
+  } else if (isSlideTransitionPatch(patch)) {
+    assertStoredSlideTransition(patch.value, `Patch ${index} 的 transition`);
   } else if (typeof patch.value !== 'boolean') {
     throw new Error(`Patch ${index} 的 hidden 必须是布尔值`);
   }
@@ -303,6 +312,9 @@ export function applySlidePropertyPatch(doc: EditDoc, patch: SlidePropertyPatch)
   } else if (isSlideBackgroundImagePatch(patch)) {
     if (patch.op === 'set') record.backgroundImage = structuredClone(patch.value);
     else delete record.backgroundImage;
+  } else if (isSlideTransitionPatch(patch)) {
+    if (patch.op === 'set') record.ovr.transition = structuredClone(patch.value);
+    else delete record.ovr.transition;
   } else if (patch.op === 'set') record.ovr.hidden = patch.value;
   else delete record.ovr.hidden;
 }

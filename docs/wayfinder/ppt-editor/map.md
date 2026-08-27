@@ -84,10 +84,11 @@ tracker: local-markdown
 - [实现可访问的选择窗格与对象锁定](tickets/058-accessible-selection-pane.md) — 稳定投影目录、稀疏名称写回与纯会话锁定/隐藏贯通唯一 DOM 控制器及 React/Vue 薄挂载；Chrome 60 元素往返 p95 0.4ms，LibreOffice 实件打开通过。
 - [实现可连续使用的格式刷](tickets/059-continuous-format-painter.md) — 严格 `ApplyFormat` 与会话级单次/连续状态机贯通对象、文字、表格、跨页和多视图，React/Vue 共享同一 adapter；Chrome 60 元素完整反馈 p95 0.300ms，最小保存与 LibreOffice 实件打开通过。
 - [实现文档级查找替换闭环](tickets/060-document-find-replace.md) — 严格 `findText` / `ReplaceText` 与会话级增量索引贯通可见文字、精确范围高亮、跨页导航、原子历史、保存恢复及 React/Vue adapter；Chrome 200 页和 60 元素预算、LibreOffice 实件及两路最终审查全部通过。
+- [编辑并即时预览页面切换效果](tickets/061-edit-slide-transitions.md) — 统一 `Slide.transition` 与无框架 adapter 贯通 40 种效果、严格命令、view/edit 预览、保留型 OOXML 及 React/Vue；Chrome 复杂页与 200 页预算、LibreOffice 实件通过。
 
 ## Not yet specified
 
-- M5 的切换效果编辑和剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
+- M5 的剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
 - M6 的动画编辑、顶点编辑、表样式与协同适配分别形成独立扩展，只有主编辑闭环稳定后才展开。
 
 ## Out of scope

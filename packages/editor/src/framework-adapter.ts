@@ -1,4 +1,7 @@
-import type { EditorChange, LinkTarget, TextSearchMatch } from '@web-ppt/edit-core';
+import { querySlideTransition } from '@web-ppt/edit-core';
+import type {
+  EditorChange, LinkTarget, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+} from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
 import { RecoveryOpenCancelledError } from './recovery-store';
@@ -233,6 +236,27 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   previousTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.previousMatch(); }
   replaceCurrentText(): boolean { this.assertReady(); return this.textSearchState().canReplace && this.textSearchBinding.replaceCurrent(); }
   replaceAllText(): number { this.assertReady(); return this.textSearchState().canReplace ? this.textSearchBinding.replaceAll() : 0; }
+
+  queryTransition(): SlideTransitionState | null {
+    this.assertReady();
+    const slideId = this.currentSnapshot.slideId;
+    return slideId ? querySlideTransition(this.session!.editor.doc, [slideId]) : null;
+  }
+
+  setTransition(value: SlideTransitionInput | null): boolean {
+    this.assertReady();
+    const slideId = this.currentSnapshot.slideId;
+    if (!slideId || this.currentSnapshot.mode !== 'edit' || this.session!.editor.doc.meta.readonly) {
+      return false;
+    }
+    this.session!.editor.exec({ type: 'SetTransition', id: slideId, t: value });
+    return true;
+  }
+
+  previewTransition(value?: SlideTransitionInput): Promise<boolean> {
+    this.assertReady();
+    return this.view?.previewTransition(value) ?? Promise.resolve(false);
+  }
 
   dispose(): void {
     if (this.isDisposed) return;

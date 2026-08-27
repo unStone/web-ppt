@@ -218,6 +218,20 @@ export async function runFrameworkAdaptersBrowserContract(
   vueApp.mount(vueMount);
   await waitFor(() => !!sharedReactRef.current?.view && !!vueHandle?.view,
     'React/Vue 外部 session 双视图');
+  const reactAdapter = sharedReactRef.current!.adapter!;
+  const vueAdapter = vueHandle!.adapter!;
+  if (!reactAdapter.setTransition({ type: 'fade', durationMs: 90 })
+    || vueAdapter.queryTransition()?.value?.type !== 'fade'
+    || vueAdapter.setTransition({ type: 'cut' }) !== false) {
+    throw new Error('React/Vue 没有透传共享切换查询、编辑或查看权限边界');
+  }
+  const vueTransitionPreview = vueAdapter.previewTransition({
+    type: 'push', dir: 'r', durationMs: 80,
+  });
+  const vueTransitionLayer = vueMount.querySelector('[data-ppt-layer="static"]');
+  if (vueTransitionLayer?.getAnimations().length !== 1 || !await vueTransitionPreview) {
+    throw new Error('Vue 查看模式没有透传真实切换预览');
+  }
   const sharedReactPaneRef = createRef<ReactPaneHandle>();
   sharedReactRoot.render(<>
     <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"

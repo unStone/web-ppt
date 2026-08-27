@@ -15,7 +15,7 @@ export {
   slideToElementParentPoint, slideToScreenPoint, transformSpacePoint,
   queryElementCrop, queryElementEffects, queryElementFill, queryElementLink, queryElementStroke,
   queryRunLink, querySlideBackground, querySlideHidden, querySlideLayout, querySlideNotes,
-  SHAPE_PATTERN_PRESETS,
+  querySlideTransition, SHAPE_PATTERN_PRESETS, SLIDE_TRANSITION_TYPES, transitionDirections,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
 export type {
@@ -49,8 +49,8 @@ export type { ImageBackgroundOptions, ImageReplaceOptions } from './image-insert
 export type { TableInsertOptions } from './table-insertion';
 export type {
   AddImageCommand, AddShapeCommand, AddTableCommand, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, SlideBackgroundState, SlideHiddenState, SlideLayoutState,
-  RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
-  ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
+  RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, SlideTransitionInput, SlideTransitionState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
+  ReplaceImageCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
   FormatMaskField,
 } from '@web-ppt/edit-core';
 export type {

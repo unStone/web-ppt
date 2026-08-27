@@ -21,6 +21,7 @@ import { isKnownPreset, resolveGeomPath } from './geometry';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
+export { transitionDefaultDirection, transitionPreferredDirection } from './transition';
 export * from './edit-metadata';
 export * from './placeholder-match';
 export * from './text-body-edit';

@@ -235,7 +235,7 @@ export async function runChangeLayoutContract({ edit, core, load, check }) {
   alternateFiles['ppt/slides/slide7.xml'] = encoder.encode(
     decoder.decode(alternateFiles['ppt/slides/slide7.xml']).replace(
       '<p:transition spd="slow"><p:fade/></p:transition>',
-      '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Choice Requires="p14"><p:transition spd="slow"><p:fade/></p:transition></mc:Choice></mc:AlternateContent>',
+      '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" Requires="p14"><p:transition spd="slow"><p:fade/></p:transition></mc:Choice></mc:AlternateContent>',
     ),
   );
   const alternatePresentation = await core.parse(zipSync(alternateFiles, { level: 0 }), {

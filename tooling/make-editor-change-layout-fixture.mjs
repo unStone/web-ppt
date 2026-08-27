@@ -9,6 +9,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
+const P14 = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 const files = unzipSync(new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-add-slide.pptx'))));
 const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
 const xfrm = (x, y, w, h) => `<a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm>`;
@@ -28,7 +30,7 @@ const sourceOnlyLayoutPlaceholder = placeholder({
 });
 replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml.replace(
   '</p:spTree></p:cSld>', `${sourceOnlyLayoutPlaceholder}</p:spTree></p:cSld>`,
-));
+).replace('</p:sldLayout>', '<p:transition advTm="3000"/></p:sldLayout>'));
 
 const targetShapes = [
   `<p:sp><p:nvSpPr><p:cNvPr id="110" name="目标版式角标"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(20, 20, 180, 42)}<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`,
@@ -48,7 +50,12 @@ const targetShapes = [
 ].join('');
 files['ppt/slideLayouts/slideLayout2.xml'] = encoder.encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj" showMasterSp="1">
 <p:cSld name="重点内容"><p:bg><p:bgPr>${solid('accent1')}<a:effectLst/></p:bgPr></p:bg><p:spTree>${nvGrp}${targetShapes}</p:spTree></p:cSld>
-<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">
+<p:extLst/></mc:Choice><mc:Fallback><p:transition><p:cut/></p:transition></mc:Fallback></mc:AlternateContent>
+<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p200="urn:web-ppt:future" Requires="p200">
+<p:transition><p200:futureEffect/></p:transition></mc:Choice><mc:Fallback>
+<p:transition spd="fast"><p:push dir="r"/></p:transition></mc:Fallback></mc:AlternateContent></p:sldLayout>`);
 replace('ppt/slideLayouts/_rels/slideLayout2.xml.rels', (xml) => xml.replace(
   '../slideMasters/slideMaster1.xml', '../slideMasters/slideMaster2.xml',
 ));

@@ -253,7 +253,7 @@ function pdfPageCount(path) {
 const pdf = join(out, `${basename(savedPath, extname(savedPath))}.pdf`);
 if (existsSync(pdf)) unlinkSync(pdf);
 // 换版式固件故意只有一张隐藏页；默认 PDF 过滤会导出零页并误报 IO 失败。
-const pdfFormat = basename(savedPath) === 'change-layout.pptx'
+const pdfFormat = ['change-layout.pptx', 'slide-transition-inherited-none.pptx'].includes(basename(savedPath))
   ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
   : 'pdf';
 const opened = spawnSync(soffice, [

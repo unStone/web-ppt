@@ -1,4 +1,6 @@
-import type { EditorChange, SlideId, TextSearchMatch } from '@web-ppt/edit-core';
+import type {
+  EditorChange, SlideId, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+} from '@web-ppt/edit-core';
 import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
 import type { SelectionPane } from './selection-pane-types';
@@ -121,5 +123,8 @@ export interface WebPptAdapter {
   previousTextSearch(): TextSearchMatch | null;
   replaceCurrentText(): boolean;
   replaceAllText(): number;
+  queryTransition(): SlideTransitionState | null;
+  setTransition(value: SlideTransitionInput | null): boolean;
+  previewTransition(value?: SlideTransitionInput): Promise<boolean>;
   dispose(): void;
 }

@@ -1,4 +1,4 @@
-import type { AnimStep, Slide, Transition } from '@web-ppt/core';
+import { transitionPreferredDirection, type AnimStep, type Slide, type Transition } from '@web-ppt/core';
 
 /**
  * 动画与切换的播放层。全部走 Web Animations API，
@@ -163,15 +163,24 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
 // ---------------- 切换 ----------------
 
 export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
-  const d = t.dir ?? '';
+  const d = t.dir ?? transitionPreferredDirection(t.type) ?? '';
   const shift = (x: string, y: string): string => `translate(${x}, ${y})`;
-  const dirVec = (): [string, string] =>
-    d.includes('l') ? ['-100%', '0'] : d.includes('r') ? ['100%', '0']
-    : d.includes('u') ? ['0', '-100%'] : ['0', '100%'];
+  const dirVec = (): [string, string] => {
+    const vectors: Readonly<Record<string, [string, string]>> = {
+      l: ['-100%', '0'], r: ['100%', '0'], u: ['0', '-100%'], d: ['0', '100%'],
+      lu: ['-100%', '-100%'], ld: ['-100%', '100%'],
+      ru: ['100%', '-100%'], rd: ['100%', '100%'],
+    };
+    return vectors[d] ?? vectors.d;
+  };
 
   switch (t.type) {
     case 'cut':
-      return incoming ? [{ opacity: 1 }, { opacity: 1 }] : [{ opacity: 0 }, { opacity: 0 }];
+      // cut 没有补间，但仍要让旧页在切点前可见；否则预览只会创建一条视觉空动画。
+      return incoming ? [{ opacity: 1 }, { opacity: 1 }] : [
+        { opacity: 1, offset: 0 }, { opacity: 1, offset: 0.49 },
+        { opacity: 0, offset: 0.5 }, { opacity: 0, offset: 1 },
+      ];
     case 'push':
     case 'pull': {
       const [x, y] = dirVec();
@@ -217,13 +226,22 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     // 取每种最有辨识度的那一维（旋转轴 / 缩放中心 / 裁剪形状）做近似，
     // 保证"不同的效果看起来确实不同"，不追求逐帧还原。
     case 'ripple':
+      {
+        const origins: Readonly<Record<string, string>> = {
+          lu: '0% 0%', ld: '0% 100%', ru: '100% 0%', rd: '100% 100%', center: '50% 50%',
+        };
+        const origin = origins[d] ?? origins.center;
+        return incoming
+          ? [{ clipPath: `circle(0% at ${origin})` }, { clipPath: `circle(145% at ${origin})` }]
+          : [{ opacity: 1 }, { opacity: 1 }];
+      }
+    case 'vortex': {
+      const [x, y] = dirVec();
+      const angle = d === 'r' || d === 'd' ? 180 : -180;
       return incoming
-        ? [{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)' }]
-        : [{ opacity: 1 }, { opacity: 1 }];
-    case 'vortex':
-      return incoming
-        ? [{ opacity: 0, transform: 'scale(0.2) rotate(-180deg)' }, { opacity: 1, transform: 'none' }]
+        ? [{ opacity: 0, transformOrigin: `${x === '0' ? '50%' : x.startsWith('-') ? '0%' : '100%'} ${y === '0' ? '50%' : y.startsWith('-') ? '0%' : '100%'}`, transform: `scale(0.2) rotate(${angle}deg)` }, { opacity: 1, transform: 'none' }]
         : [{ opacity: 1 }, { opacity: 0 }];
+    }
     case 'honeycomb':
       return incoming
         ? [{ opacity: 0, transform: 'scale(0.85) rotate(-6deg)' }, { opacity: 1, transform: 'none' }]
@@ -232,10 +250,12 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       return incoming
         ? [{ opacity: 0, clipPath: wipeClip(d || 'l', true) }, { opacity: 1, clipPath: wipeClip(d || 'l', false) }]
         : [{ opacity: 1 }, { opacity: 0 }];
-    case 'shred':
+    case 'shred': {
+      const outward = d === 'out';
       return incoming
-        ? [{ opacity: 0, transform: 'scale(1.06)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scaleY(0.9)' }];
+        ? [{ opacity: 0, transform: outward ? 'scale(1.35) rotate(5deg)' : 'scale(0.72) rotate(-5deg)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: outward ? 'scaleY(0.72)' : 'scaleY(1.2)' }];
+    }
     case 'flash':
       // 闪白：拉高亮度再落回，比单纯淡入更贴近原效果
       return incoming
@@ -251,31 +271,47 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       return incoming
         ? [{ opacity: 0, transform: 'scale(1.3) rotate(20deg)' }, { opacity: 1, transform: 'none' }]
         : [{ opacity: 1 }, { opacity: 0 }];
-    case 'doors':
+    case 'doors': {
       // 门从中间向两侧打开：新页由中缝向外展开
+      const hidden = d === 'horz' ? 'inset(50% 0 50% 0)' : 'inset(0 50% 0 50%)';
       return incoming
-        ? [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0 0 0)' }]
+        ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }]
         : [{ opacity: 1 }, { opacity: 1 }];
-    case 'window':
+    }
+    case 'window': {
+      const hidden = d === 'horz' ? 'inset(0 50% 0 50%)' : 'inset(50% 0 50% 0)';
       return incoming
-        ? [{ clipPath: 'inset(50% 0 50% 0)' }, { clipPath: 'inset(0 0 0 0)' }]
+        ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }]
         : [{ opacity: 1 }, { opacity: 1 }];
+    }
     case 'switch':
-    case 'flip':
-    case 'prism': {
-      const sign = t.type === 'flip' ? -1 : 1;
+    case 'flip': {
+      const sign = (t.type === 'flip' ? -1 : 1) * (d === 'r' ? -1 : 1);
       return incoming
         ? [{ opacity: 0, transform: `perspective(1400px) rotateY(${sign * -80}deg)` },
           { opacity: 1, transform: 'perspective(1400px) rotateY(0)' }]
         : [{ opacity: 1, transform: 'perspective(1400px) rotateY(0)' },
           { opacity: 0, transform: `perspective(1400px) rotateY(${sign * 80}deg)` }];
     }
-    case 'ferris':
+    case 'prism': {
+      const vertical = d === 'u' || d === 'd';
+      const sign = d === 'r' || d === 'd' ? -1 : 1;
+      const rotate = (degrees: number): string => vertical
+        ? `rotateX(${degrees}deg)` : `rotateY(${degrees}deg)`;
       return incoming
-        ? [{ opacity: 0, transform: 'perspective(1400px) rotateX(70deg)' },
+        ? [{ opacity: 0, transform: `perspective(1400px) ${rotate(sign * -70)}` },
+          { opacity: 1, transform: `perspective(1400px) ${rotate(0)}` }]
+        : [{ opacity: 1, transform: `perspective(1400px) ${rotate(0)}` },
+          { opacity: 0, transform: `perspective(1400px) ${rotate(sign * 70)}` }];
+    }
+    case 'ferris': {
+      const sign = d === 'r' ? -1 : 1;
+      return incoming
+        ? [{ opacity: 0, transform: `perspective(1400px) rotateX(${sign * 70}deg)` },
           { opacity: 1, transform: 'perspective(1400px) rotateX(0)' }]
         : [{ opacity: 1, transform: 'perspective(1400px) rotateX(0)' },
-          { opacity: 0, transform: 'perspective(1400px) rotateX(-70deg)' }];
+          { opacity: 0, transform: `perspective(1400px) rotateX(${sign * -70}deg)` }];
+    }
     case 'gallery':
     case 'conveyor': {
       const back = t.type === 'conveyor' ? 25 : 12;
@@ -295,20 +331,43 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
         ? [{ transform: shift(x, y) }, { transform: 'translate(0,0)' }]
         : [{ transform: 'translate(0,0)' }, { transform: shift(inv(x), inv(y)) }];
     }
-    case 'flythrough':
+    case 'flythrough': {
+      const fromScale = d === 'out' ? 2.2 : 0.15;
+      const toScale = d === 'out' ? 0.15 : 2.2;
       return incoming
-        ? [{ opacity: 0, transform: 'perspective(1000px) scale(0.15)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'perspective(1000px) scale(2.2)' }];
-    case 'warp':
+        ? [{ opacity: 0, transform: `perspective(1000px) scale(${fromScale})` }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `perspective(1000px) scale(${toScale})` }];
+    }
+    case 'warp': {
+      const outward = d === 'out';
       return incoming
-        ? [{ opacity: 0, transform: 'skewX(-18deg) scale(1.15)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'skewX(18deg) scale(0.9)' }];
+        ? [{ opacity: 0, transform: outward ? 'skewX(-18deg) scale(1.35)' : 'skewX(18deg) scale(0.65)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: outward ? 'skewX(18deg) scale(0.65)' : 'skewX(-18deg) scale(1.35)' }];
+    }
 
     case 'blinds':
     case 'checker':
-    case 'comb':
-    case 'randomBar':
-    case 'strips':
+    case 'randomBar': {
+      const hidden = wipeClip(d, true);
+      return incoming
+        ? [{ opacity: 0.2, clipPath: hidden }, { opacity: 1, clipPath: wipeClip(d, false) }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    }
+    case 'comb': {
+      const transform = d === 'vert' ? 'translateY(-100%)' : 'translateX(-100%)';
+      return incoming
+        ? [{ opacity: 0, transform }, { opacity: 1, transform: 'translate(0,0)' }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    }
+    case 'strips': {
+      const corners: Readonly<Record<string, string>> = {
+        lu: '0% 0%', ld: '0% 100%', ru: '100% 0%', rd: '100% 100%',
+      };
+      const origin = corners[d] ?? corners.rd;
+      return incoming
+        ? [{ opacity: 0, clipPath: `circle(0% at ${origin})` }, { opacity: 1, clipPath: `circle(145% at ${origin})` }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    }
     case 'newsflash':
     case 'dissolve':
     case 'fade':
@@ -358,17 +417,40 @@ export function morphPairs(
   return pairs;
 }
 
-function playMorph(
+export interface TransitionPlayHandle {
+  readonly animations: readonly Animation[];
+  readonly finished: Promise<void>;
+  cancel(): void;
+}
+
+function transitionHandle(
+  animations: Animation[], outgoing: HTMLElement | null, durationMs: number,
+): TransitionPlayHandle {
+  let released = false;
+  const release = (): void => {
+    if (released) return;
+    released = true;
+    for (const animation of animations) {
+      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+    }
+    outgoing?.remove();
+  };
+  const finished = settle(animations.map((animation) => animation.finished), durationMs)
+    .then(release);
+  return { animations, finished, cancel: release };
+}
+
+function playMorphControlled(
   outgoing: HTMLElement | null, incoming: HTMLElement, t: Transition,
-): Promise<void> {
-  if (!outgoing) return Promise.resolve();
+): TransitionPlayHandle {
+  if (!outgoing) return transitionHandle([], null, t.durationMs);
   const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
   const pairs = morphPairs(outgoing, incoming);
   const matched = new Set(pairs.map((p) => p.node.getAttribute('data-el')));
-  const jobs: Promise<unknown>[] = [];
+  const animations: Animation[] = [];
 
   const run = (node: HTMLElement, frames: Keyframe[]): void => {
-    try { jobs.push(node.animate(frames, opts).finished); } catch { /* 不支持则跳过 */ }
+    try { animations.push(node.animate(frames, opts)); } catch { /* 不支持则跳过 */ }
   };
 
   for (const { node, from, to } of pairs) {
@@ -391,39 +473,52 @@ function playMorph(
     if (!matched.has(el.getAttribute('data-el'))) run(el as HTMLElement, [{ opacity: 0 }, { opacity: 1 }]);
   });
 
-  return settle(jobs, t.durationMs).then(() => { outgoing.remove(); });
+  return transitionHandle(animations, outgoing, t.durationMs);
 }
 
 /**
  * 播放切换：把旧内容截图式地留在下层，新内容在上层按效果进场。
  * outgoing 为旧内容节点（可为 null），incoming 为新内容节点。
  */
+export function playTransitionControlled(
+  outgoing: HTMLElement | null,
+  incoming: HTMLElement,
+  t: Transition | undefined,
+): TransitionPlayHandle {
+  if (!t || t.type === 'none') {
+    outgoing?.remove();
+    return transitionHandle([], null, 0);
+  }
+  // morph 不能整层动画：它要逐元素配对补间
+  if (t.type === 'morph' && outgoing) return playMorphControlled(outgoing, incoming, t);
+
+  const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
+  const animations: Animation[] = [];
+  try {
+    animations.push(incoming.animate(transitionFrames(t, true), opts));
+    if (outgoing) animations.push(outgoing.animate(transitionFrames(t, false), opts));
+  } catch {
+    // 第二层 animate 失败时，第一层可能已经创建；必须同步回收，不能留下 fill:both 残影。
+    for (const animation of animations) {
+      void animation.finished.catch(() => undefined);
+      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+    }
+    outgoing?.remove();
+    return transitionHandle([], null, 0);
+  }
+  return transitionHandle(animations, outgoing, t.durationMs);
+}
+
 export function playTransition(
   outgoing: HTMLElement | null,
   incoming: HTMLElement,
   t: Transition | undefined,
 ): Promise<void> {
-  if (!t || t.type === 'none') {
-    outgoing?.remove();
-    return Promise.resolve();
-  }
-  // morph 不能整层动画：它要逐元素配对补间
-  if (t.type === 'morph' && outgoing) return playMorph(outgoing, incoming, t);
-
-  const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
-  const jobs: Promise<unknown>[] = [];
-  try {
-    jobs.push(incoming.animate(transitionFrames(t, true), opts).finished);
-    if (outgoing) jobs.push(outgoing.animate(transitionFrames(t, false), opts).finished);
-  } catch {
-    outgoing?.remove();
-    return Promise.resolve();
-  }
-  return settle(jobs, t.durationMs).then(() => { outgoing?.remove(); });
+  return playTransitionControlled(outgoing, incoming, t).finished;
 }
 
 /** 幻灯片是否配置了自动换片 */
 export function autoAdvanceMs(slide: Slide): number | null {
   const ms = slide.transition?.advanceAfterMs;
-  return ms !== undefined && ms > 0 ? ms : null;
+  return ms !== undefined && ms >= 0 ? ms : null;
 }

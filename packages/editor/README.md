@@ -52,6 +52,12 @@ notesTextarea.value = view.queryNotes().value;
 notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
 // View mode can still queryNotes(), but setNotes() returns false without mutating the shared model.
 
+const transition = view.queryTransition();
+await view.previewTransition(); // preview the effective value in view or edit mode
+await view.previewTransition({ type: 'push', dir: 'r', durationMs: 500 }); // preview before commit
+view.setTransition({ type: 'morph', durationMs: 900, morphBy: 'byWord' });
+view.setTransition(null); // restore the parsed source; { type: 'none' } explicitly disables it
+
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
 selectionPane.destroy();

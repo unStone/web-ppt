@@ -26,6 +26,7 @@ import { assertLinkOverride } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 import { isNotesPart } from './notes-part';
 import { assertElementName } from './element-name';
+import { assertStoredSlideTransition } from './slide-transition';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -262,6 +263,9 @@ export function validateEditDoc(doc: EditDoc): void {
     }
     if (own(slide.ovr, 'hidden') && typeof slide.ovr.hidden !== 'boolean') {
       throw new Error(`幻灯片 ${slideId} 的隐藏覆盖必须是布尔值`);
+    }
+    if (own(slide.ovr, 'transition')) {
+      assertStoredSlideTransition(slide.ovr.transition, `幻灯片 ${slideId} 的切换覆盖`);
     }
     if (own(slide.ovr, 'notes') && typeof slide.ovr.notes !== 'string') {
       throw new Error(`幻灯片 ${slideId} 的备注覆盖必须是字符串`);

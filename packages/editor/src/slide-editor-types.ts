@@ -2,6 +2,7 @@ import type {
   ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideNotesState,
+  SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
@@ -74,6 +75,11 @@ export interface SlideEditor {
   setBackgroundImage(file: Blob, options?: ImageBackgroundOptions): Promise<SlideId>;
   chooseBackgroundImage(options?: ImageBackgroundOptions): Promise<SlideId | null>;
   setBackgroundCrop(crop: ImageCrop | null): boolean;
+  queryTransition(): SlideTransitionState;
+  /** 查看模式同样可预览；省略值时播放当前页有效切换，不写模型。 */
+  previewTransition(value?: SlideTransitionInput): Promise<boolean>;
+  /** null 恢复来源；查看模式不改模型并返回 false。 */
+  setTransition(value: SlideTransitionInput | null): boolean;
   queryLayout(): SlideLayoutState;
   /** 只接受当前文档的 layoutId；查看模式不改模型。 */
   setLayout(layoutId: string): boolean;

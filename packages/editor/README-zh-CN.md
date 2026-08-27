@@ -51,6 +51,12 @@ notesTextarea.value = view.queryNotes().value;
 notesTextarea.addEventListener('input', () => view.setNotes(notesTextarea.value));
 // view 模式仍可 queryNotes()，但 setNotes() 返回 false 且不修改共享模型。
 
+const transition = view.queryTransition();
+await view.previewTransition(); // view/edit 都可预览当前有效值
+await view.previewTransition({ type: 'push', dir: 'r', durationMs: 500 }); // 提交前试听
+view.setTransition({ type: 'morph', durationMs: 900, morphBy: 'byWord' });
+view.setTransition(null); // 恢复解析来源；{ type: 'none' } 表示显式关闭
+
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
 selectionPane.destroy();

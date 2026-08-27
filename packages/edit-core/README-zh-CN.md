@@ -200,6 +200,24 @@ editor.exec({ type: 'SetHidden', id: slideId, v: true });
 const hidden = querySlideHidden(editor.doc, selectedSlideIds);
 ```
 
+页面切换同样使用稳定页身份。`SetTransition { id, t }` 接受 40 种可播放效果、显式
+`{ type: 'none' }`，或用 `null` 恢复解析来源。输入在提交前统一规范化：默认时长 750ms，方向按效果
+限定，morph 可按对象、词或字符匹配。切换只是元数据，修改时不会重建页面 SVG。
+省略 `advanceAfterMs` 会保留页面当前计时，避免只改视觉效果时破坏既有放映策略。
+
+```ts
+import {
+  querySlideTransition, SLIDE_TRANSITION_TYPES, transitionDirections,
+} from '@web-ppt/edit-core';
+
+const transition = querySlideTransition(editor.doc, selectedSlideIds);
+editor.exec({
+  type: 'SetTransition', id: slideId,
+  t: { type: 'push', dir: 'r', durationMs: 600, advanceAfterMs: 4000 },
+});
+editor.exec({ type: 'SetTransition', id: slideId, t: null }); // 恢复来源
+```
+
 图片背景按内容寻址：多页上传相同字节只保存一份媒体；来源页或版式继承的图片背景也可直接裁剪，
 不会修改共享版式或母版。
 

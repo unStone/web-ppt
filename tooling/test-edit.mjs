@@ -43,6 +43,7 @@ import { runSetXfrmSaveContract } from './lib/set-xfrm-save-contract.mjs';
 import { runSelectionPaneContract } from './lib/selection-pane-contract.mjs';
 import { runFormatPainterContract } from './lib/format-painter-contract.mjs';
 import { runFindReplaceContract } from './lib/find-replace-contract.mjs';
+import { runTransitionContract } from './lib/transition-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -125,6 +126,7 @@ await runRecoveryJournalContract({ edit, core, load, check });
 await runSelectionPaneContract({ edit, core, load, check });
 await runFormatPainterContract({ edit, core, load, check });
 await runFindReplaceContract({ edit, core, load, check });
+await runTransitionContract({ edit, core, load, check });
 
 console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 {

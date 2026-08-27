@@ -12,10 +12,12 @@ import {
   prepareExistingSourceClosure, prepareMediaResourceClosure, prepareTrustedSourceClosure,
 } from './paste-resources';
 import { normalizeSlideImageTilePlacement } from './slide-image';
+import { normalizeSlideTransition, querySlideTransition } from '../slide-transition';
 import { UPLOAD_BACKGROUND_SOURCE_ID } from './slide-property';
 import type {
   CommandPatches, ImageResourcePatch, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
-  SetHiddenCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SetHiddenCommand, SetTransitionCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SlideTransitionPatch,
 } from './types';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
@@ -252,6 +254,40 @@ export function setHiddenPatches(
   const forward: SlideHiddenPatch = { op: 'set', path, value: command.v, origin };
   const inverse: SlideHiddenPatch = hadOverride
     ? { op: 'set', path, value: record.ovr.hidden!, origin }
+    : { op: 'del', path, origin };
+  return { forward: [forward], inverse: [inverse] };
+}
+
+export function setTransitionPatches(
+  doc: EditDoc,
+  command: SetTransitionCommand,
+  origin: string,
+): CommandPatches {
+  if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面切换');
+  const record = doc.slides[command.id];
+  if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
+  const path = ['slides', command.id, 'ovr', 'transition'] as const;
+  const hadOverride = own(record.ovr, 'transition');
+  if (command.t === null) {
+    if (!hadOverride) return { forward: [], inverse: [] };
+    return {
+      forward: [{ op: 'del', path, origin }],
+      inverse: [{ op: 'set', path, value: structuredClone(record.ovr.transition!), origin }],
+    };
+  }
+  const currentAdvance = querySlideTransition(doc, [command.id]).value?.advanceAfterMs;
+  // 视觉效果与放映策略是两个维度；本阶段尚未开放 advClick，省略延迟时保留现有计时，
+  // 避免把 advClick="0" 的页面写成既不能点击、也不会自动前进的死页。
+  const normalizedInput = command.t.advanceAfterMs === undefined && currentAdvance !== undefined
+    ? { ...command.t, advanceAfterMs: currentAdvance }
+    : command.t;
+  const value = normalizeSlideTransition(normalizedInput, 'SetTransition.t');
+  if (hadOverride && JSON.stringify(record.ovr.transition) === JSON.stringify(value)) {
+    return { forward: [], inverse: [] };
+  }
+  const forward: SlideTransitionPatch = { op: 'set', path, value, origin };
+  const inverse: SlideTransitionPatch = hadOverride
+    ? { op: 'set', path, value: structuredClone(record.ovr.transition!), origin }
     : { op: 'del', path, origin };
   return { forward: [forward], inverse: [inverse] };
 }
