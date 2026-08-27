@@ -5,6 +5,7 @@ import { insertXmlInOrder } from '../xml/order';
 import { setXmlAttribute } from '../xml/mutate';
 import { MARKUP_COMPATIBILITY_NS, PRESENTATIONML_NS, XMLNS_NS } from '../xml/qname';
 import { xmlElementChildren } from '../xml/query';
+import { nodeState } from '../xml/state';
 import type { XmlDocument, XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 
@@ -214,6 +215,150 @@ function timingSlots(root: XmlElement): TimingSlot[] {
   }
   if (direct.length) return [{ parent: root, timing: direct[0] }];
   return alternates[0] ?? [];
+}
+
+const TARGET_BEHAVIORS = new Set([
+  'set', 'anim', 'animClr', 'animEffect', 'animMotion', 'animRot', 'animScale',
+  'audio', 'video', 'cmd',
+]);
+
+function parentElement(element: XmlElement): XmlElement | null {
+  const parent = nodeState(element).parent;
+  return parent?.type === 'element' ? parent : null;
+}
+
+function attributeValue(element: XmlElement, localName: string): string | undefined {
+  return element.attributes.find((attribute) =>
+    attribute.namespaceUri === null && attribute.localName === localName)?.value;
+}
+
+function walkElements(root: XmlElement): XmlElement[] {
+  const result: XmlElement[] = [];
+  const stack = [root];
+  while (stack.length) {
+    const element = stack.pop()!;
+    result.push(element);
+    if (result.length > 100_000) throw new Error('动画时间树节点超过保存安全上限');
+    const children = xmlElementChildren(element);
+    for (let index = children.length - 1; index >= 0; index--) stack.push(children[index]);
+  }
+  return result;
+}
+
+function referencesTarget(root: XmlElement, spids: ReadonlySet<number>): boolean {
+  return walkElements(root).some((element) => {
+    const value = attributeValue(element, 'spid');
+    return value !== undefined && spids.has(Number(value));
+  });
+}
+
+function targetOwner(target: XmlElement): XmlElement | null {
+  let current: XmlElement | null = target;
+  let behavior: XmlElement | null = null;
+  while (current) {
+    if (TARGET_BEHAVIORS.has(current.localName)) behavior = current;
+    if (current.namespaceUri === PRESENTATIONML_NS && current.localName === 'par') {
+      const time = xmlElementChildren(current).find((child) =>
+        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn');
+      if (time && attributeValue(time, 'presetClass')) return current;
+    }
+    current = parentElement(current);
+  }
+  return behavior;
+}
+
+function presetTime(owner: XmlElement): XmlElement | undefined {
+  if (owner.namespaceUri !== PRESENTATIONML_NS || owner.localName !== 'par') return undefined;
+  return xmlElementChildren(owner).find((child) =>
+    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn'
+      && !!attributeValue(child, 'presetClass'));
+}
+
+function preserveClickBoundaries(timing: XmlElement, removals: ReadonlySet<XmlElement>): void {
+  const owners = walkElements(timing).filter((element) => !!presetTime(element));
+  owners.forEach((owner, index) => {
+    const time = presetTime(owner)!;
+    if (!removals.has(owner) || attributeValue(time, 'nodeType') !== 'clickEffect') return;
+    const next = owners.slice(index + 1).find((candidate) => !removals.has(candidate));
+    const nextTime = next && presetTime(next);
+    if (nextTime) setXmlAttribute(nextTime, 'nodeType', 'clickEffect');
+  });
+}
+
+function pruneEmptyTimeContainers(timing: XmlElement): void {
+  for (let pass = 0; pass < 64; pass++) {
+    let changed = false;
+    const nodes = walkElements(timing).reverse();
+    for (const node of nodes) {
+      if (node.namespaceUri !== PRESENTATIONML_NS
+        || (node.localName !== 'par' && node.localName !== 'seq')) continue;
+      const time = xmlElementChildren(node).find((child) =>
+        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn');
+      const list = time && xmlElementChildren(time).find((child) =>
+        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
+      const parent = parentElement(node);
+      if (list && xmlElementChildren(list).length === 0 && parent) {
+        removeXmlChild(parent, node);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  for (const node of walkElements(timing).reverse()) {
+    if (node.namespaceUri !== PRESENTATIONML_NS
+      || (node.localName !== 'tnLst' && node.localName !== 'bldLst')
+      || xmlElementChildren(node).length !== 0) continue;
+    const parent = parentElement(node);
+    if (parent) removeXmlChild(parent, node);
+  }
+}
+
+function allTimingSlots(root: XmlElement): TimingSlot[] {
+  const slots: TimingSlot[] = directTimings(root).map((timing) => ({ parent: root, timing }));
+  for (const alternate of xmlElementChildren(root)) {
+    if (alternate.namespaceUri !== MARKUP_COMPATIBILITY_NS
+      || alternate.localName !== 'AlternateContent') continue;
+    for (const branch of xmlElementChildren(alternate)) {
+      if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS
+        || (branch.localName !== 'Choice' && branch.localName !== 'Fallback')) continue;
+      for (const timing of directTimings(branch)) slots.push({ parent: branch, timing });
+    }
+  }
+  return slots;
+}
+
+/** 删除对象必须保留式清理所有已知/未知行为和 build 对该 spid 的引用。 */
+export function removeSlideAnimationTargets(
+  document: XmlDocument, sourceSpids: readonly number[],
+): void {
+  if (!sourceSpids.length) return;
+  const spids = new Set(sourceSpids);
+  for (const slot of allTimingSlots(document.root)) {
+    const timing = slot.timing!;
+    const removals = new Set<XmlElement>();
+    for (const element of walkElements(timing)) {
+      if (element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt'
+        && spids.has(Number(attributeValue(element, 'spid')))) {
+        const owner = targetOwner(element);
+        if (owner) removals.add(owner);
+      }
+    }
+    preserveClickBoundaries(timing, removals);
+    for (const node of removals) {
+      const parent = parentElement(node);
+      if (parent) removeXmlChild(parent, node);
+    }
+    for (const buildList of xmlElementChildren(timing).filter((element) =>
+      element.namespaceUri === PRESENTATIONML_NS && element.localName === 'bldLst')) {
+      for (const build of [...xmlElementChildren(buildList)]) {
+        if (referencesTarget(build, spids)) removeXmlChild(buildList, build);
+      }
+    }
+    pruneEmptyTimeContainers(timing);
+    if (!materialAttribute(timing) && xmlElementChildren(timing).length === 0) {
+      removeXmlChild(slot.parent, timing);
+    }
+  }
 }
 
 function patchTiming(

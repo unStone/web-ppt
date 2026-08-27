@@ -2,6 +2,12 @@ import { diffPackageBytes } from '../diff-package.mjs';
 
 const decoder = new TextDecoder();
 
+const animationCarrier = (xml) => {
+  const start = xml.indexOf('<mc:AlternateContent><mc:Choice Requires="p14"><p:timing');
+  const end = start < 0 ? -1 : xml.indexOf('</mc:AlternateContent>', start);
+  return start >= 0 && end >= 0 ? xml.slice(start, end + '</mc:AlternateContent>'.length) : '';
+};
+
 /** 从首次基线重建规范 timing，并只通过保存产物与重解析公开 Schema 取证。 */
 export async function runAnimationSaveContract({ edit, core, load, check, saveArtifact }) {
   console.log('\n\x1b[36m▸ 元素动画保留型保存\x1b[0m');
@@ -34,6 +40,34 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
       motionPath },
     { target: plainB, kind: 'exit', effect: 'fade', trigger: 'click', delayMs: 0, durationMs: 500 },
   ];
+
+  const preservePresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const preserveDoc = edit.createDoc(preservePresentation, { idPrefix: 'animation-preserve-' });
+  const preserveEditor = new edit.Editor(preserveDoc);
+  const preserveSlide = preserveDoc.slideOrder[0];
+  const preserveTarget = preserveDoc.slides[preserveSlide].children[1];
+  const preservePart = preserveDoc.slides[preserveSlide].origin.part;
+  const originalPreserveXml = decoder.decode(preservePresentation.package.parts[preservePart]);
+  preserveEditor.exec({ type: 'SetName', id: preserveTarget, name: '同页非动画编辑' });
+  const preserved = await preserveEditor.saveDetailed();
+  const preservedXml = decoder.decode(preserved.package.parts[preservePart]);
+  check('复杂来源页只改非动画属性时 timing/MCE 子树逐字直通',
+    animationCarrier(originalPreserveXml)
+      && animationCarrier(preservedXml) === animationCarrier(originalPreserveXml));
+  preserveEditor.exec({ type: 'SetAnimations', slideId: preserveSlide, steps: [{
+    target: preserveTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
+    delayMs: 10, durationMs: 700,
+  }] });
+  await preserveEditor.saveDetailed();
+  preserveEditor.exec({ type: 'SetAnimations', slideId: preserveSlide, steps: null });
+  preserveEditor.exec({ type: 'SetName', id: preserveTarget, name: null });
+  const restoredComplex = await preserveEditor.saveDetailed();
+  check('复杂来源显式替换后 null 从首次基线恢复原 part 字节',
+    diffPackageBytes(input, restoredComplex.bytes).equal);
+  edit.disposeDoc(preserveDoc);
+
   editor.exec({ type: 'SetAnimations', slideId: plainSlide, steps });
   const saved = await editor.saveDetailed();
   const artifact = saveArtifact('element-animations.pptx', saved.bytes);
@@ -72,6 +106,7 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
   });
   const reopenedDoc = edit.createDoc(reopenedPresentation, { idPrefix: 'animation-reopen-' });
+  const reopenedEditor = new edit.Editor(reopenedDoc);
   const reopened = edit.querySlideAnimations(reopenedDoc, [reopenedDoc.slideOrder[1]]);
   const [reopenedA, reopenedB] = reopenedDoc.slides[reopenedDoc.slideOrder[1]].children;
   const reopenedMotion = reopened.value.find((step) => step.kind === 'motion');
@@ -91,6 +126,17 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
       && reopenedPath.length === motionPath.length
       && reopenedPath.every(([x, y], index) =>
         Math.abs(x - motionPath[index][0]) < 0.001 && Math.abs(y - motionPath[index][1]) < 0.001));
+
+  const removedSourceTarget = reopenedEditor.exec({ type: 'RemoveElement', id: reopenedA });
+  reopenedEditor.exec({ type: 'SetAnimations', slideId: reopenedDoc.slideOrder[1], steps: null });
+  const afterNull = edit.querySlideAnimations(reopenedDoc, [reopenedDoc.slideOrder[1]]);
+  const removedSourceSpid = removedSourceTarget.forward.find((patch) => patch.op === 'remove')
+    ?.value.records[reopenedA].meta.origin.spid;
+  const removedSourceSaved = await reopenedEditor.saveDetailed();
+  const removedSourceXml = decoder.decode(removedSourceSaved.package.parts['ppt/slides/slide2.xml']);
+  check('受支持来源 Remove→null 不会恢复已删除目标或悬空 spTgt',
+    !afterNull.direct && afterNull.value.every((step) => step.target !== reopenedA)
+      && !removedSourceXml.includes(`<p:spTgt spid="${removedSourceSpid}"`));
   edit.disposeDoc(reopenedDoc);
 
   const sourceBefore = presentation.package.parts['ppt/slides/slide1.xml'];
@@ -121,8 +167,103 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   const clearedSourceXml = decoder.decode(clearedSource.package.parts['ppt/slides/slide1.xml']);
   check('空时间线删除 tnLst 但保留 build 与 timing 的其他载荷',
     clearedSourceXml.includes('<p:timing') && !clearedSourceXml.includes('<p:tnLst')
-      && [...clearedSourceXml.matchAll(/<p:timing\b/g)].length === 2
+      && [...clearedSourceXml.matchAll(/<p:timing\b/g)].length === 1
       && clearedSourceXml.includes('<p:bldLst') && clearedSourceXml.includes('{ANIMATION-KEEP}'));
+
+  const deletePresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const deleteDoc = edit.createDoc(deletePresentation, { idPrefix: 'animation-delete-' });
+  const deleteEditor = new edit.Editor(deleteDoc);
+  const [deleteSourceSlide, , , deleteUnsupportedSlide] = deleteDoc.slideOrder;
+  const [deleteSourceA, deleteSourceB] = deleteDoc.slides[deleteSourceSlide].children;
+  const deleteSourceSpid = deleteDoc.elements[deleteSourceA].meta.origin.spid;
+  const deleteUnsupported = deleteDoc.slides[deleteUnsupportedSlide].children[0];
+  const deleteUnsupportedSpid = deleteDoc.elements[deleteUnsupported].meta.origin.spid;
+  deleteEditor.exec({ type: 'RemoveElement', id: deleteSourceA });
+  deleteEditor.exec({ type: 'SetAnimations', slideId: deleteSourceSlide, steps: null });
+  deleteEditor.exec({ type: 'RemoveElement', id: deleteUnsupported });
+  const deleted = await deleteEditor.saveDetailed();
+  const deletedSourceXml = decoder.decode(deleted.package.parts['ppt/slides/slide1.xml']);
+  const deletedUnsupportedXml = decoder.decode(deleted.package.parts['ppt/slides/slide4.xml']);
+  const deletedSourceState = edit.querySlideAnimations(deleteDoc, [deleteSourceSlide]);
+  check('sourceReadonly 删除保留无关 unsupported 行为并清理 tnLst/build 目标',
+    !deletedSourceState.direct && deletedSourceState.value.length === 1
+      && deletedSourceState.value[0].target === deleteSourceB
+      && deletedSourceXml.includes('<p:animClr')
+      && !deletedSourceXml.includes(`<p:spTgt spid="${deleteSourceSpid}"`)
+      && !deletedSourceXml.includes(`<p:bldP spid="${deleteSourceSpid}"`));
+  check('unsupported-only 删除唯一目标后不留下悬空行为',
+    !deletedUnsupportedXml.includes(`<p:spTgt spid="${deleteUnsupportedSpid}"`)
+      && !deletedUnsupportedXml.includes('<p:animClr')
+      && !deletedUnsupportedXml.includes('<p:tnLst'));
+  const deletedReopenPresentation = await core.parse(deleted.bytes, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const deletedReopenDoc = edit.createDoc(deletedReopenPresentation, { idPrefix: 'animation-delete-reopen-' });
+  const deletedReopen = edit.querySlideAnimations(deletedReopenDoc, [deletedReopenDoc.slideOrder[0]]);
+  check('删除保存重开后复杂来源只剩仍存在目标',
+    deletedReopen.value.length === 1
+      && deletedReopen.value[0].target === deletedReopenDoc.slides[deletedReopenDoc.slideOrder[0]].children[0]);
+  edit.disposeDoc(deletedReopenDoc);
+  edit.disposeDoc(deleteDoc);
+
+  const operationsPresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const operationsDoc = edit.createDoc(operationsPresentation, { idPrefix: 'animation-operations-' });
+  const operationsEditor = new edit.Editor(operationsDoc);
+  const operationsSource = operationsDoc.slideOrder[0];
+  const copiedSource = [...operationsEditor.exec({
+    type: 'DuplicateSlide', id: operationsSource,
+  }).createdSlides][0];
+  const operationsPlain = operationsDoc.slideOrder[2];
+  const operationsPlainTarget = operationsDoc.slides[operationsPlain].children[0];
+  operationsEditor.exec({ type: 'SetAnimations', slideId: operationsPlain, steps: [{
+    target: operationsPlainTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
+    delayMs: 0, durationMs: 500,
+  }] });
+  const copiedOverride = [...operationsEditor.exec({
+    type: 'DuplicateSlide', id: operationsPlain,
+  }).createdSlides][0];
+  const addedSlide = [...operationsEditor.exec({
+    type: 'AddSlide', layoutId: operationsDoc.layoutOrder[0], at: { after: operationsDoc.slideOrder.at(-1) },
+  }).createdSlides][0];
+  operationsEditor.exec({
+    type: 'AddShape', slideId: addedSlide, preset: 'rect', rect: { x: 100, y: 100, w: 240, h: 120 },
+  });
+  const addedShape = operationsEditor.selection.kind === 'elements'
+    ? operationsEditor.selection.ids[0] : null;
+  operationsEditor.exec({ type: 'SetAnimations', slideId: addedSlide, steps: [{
+    target: addedShape, kind: 'entrance', effect: 'wipe', dir: 'l', trigger: 'click',
+    delayMs: 0, durationMs: 600,
+  }] });
+  const operationsSaved = await operationsEditor.saveDetailed();
+  const operationsReopenPresentation = await core.parse(operationsSaved.bytes, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const operationsReopenDoc = edit.createDoc(
+    operationsReopenPresentation, { idPrefix: 'animation-operations-reopen-' },
+  );
+  const copiedSourceIndex = operationsDoc.slideOrder.indexOf(copiedSource);
+  const copiedOverrideIndex = operationsDoc.slideOrder.indexOf(copiedOverride);
+  const addedSlideIndex = operationsDoc.slideOrder.indexOf(addedSlide);
+  const copiedSourceReopenId = operationsReopenDoc.slideOrder[copiedSourceIndex];
+  const copiedOverrideReopenId = operationsReopenDoc.slideOrder[copiedOverrideIndex];
+  const addedReopenId = operationsReopenDoc.slideOrder[addedSlideIndex];
+  const copiedSourceState = edit.querySlideAnimations(operationsReopenDoc, [copiedSourceReopenId]);
+  const copiedOverrideState = edit.querySlideAnimations(operationsReopenDoc, [copiedOverrideReopenId]);
+  const addedState = edit.querySlideAnimations(operationsReopenDoc, [addedReopenId]);
+  check('复制复杂来源/直接覆盖与新增页动画保存重开均重映射到各自元素',
+    copiedSourceState.sourceReadonly && copiedSourceState.value.length === 3
+      && copiedSourceState.value.every((step) =>
+        operationsReopenDoc.slides[copiedSourceReopenId].children.includes(step.target))
+      && !copiedOverrideState.sourceReadonly && copiedOverrideState.value.length === 1
+      && operationsReopenDoc.slides[copiedOverrideReopenId].children.includes(copiedOverrideState.value[0].target)
+      && !addedState.sourceReadonly && addedState.value.length === 1
+      && operationsReopenDoc.slides[addedReopenId].children.includes(addedState.value[0].target));
+  edit.disposeDoc(operationsReopenDoc);
+  edit.disposeDoc(operationsDoc);
 
   const cleanPresentation = await core.parse(input, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',

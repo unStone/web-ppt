@@ -297,6 +297,12 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
     const animations = projectAnimationSteps(doc, animationOverride!);
     if (animations) slide.animations = animations;
     else delete slide.animations;
+  } else if (record.sourceAnimations?.some((step) => !doc.elements[step.target])) {
+    const animations = projectAnimationSteps(
+      doc, record.sourceAnimations.filter((step) => !!doc.elements[step.target]),
+    );
+    if (animations) slide.animations = animations;
+    else delete slide.animations;
   }
   if (record.backgroundImage) {
     const resource = doc.imageResources[record.backgroundImage.resourceHash];

@@ -2068,6 +2068,19 @@ group('播放引擎');
       viewerLib.playGroup(fakeContainer, [anim.animations.find((a) => a.kind === 'entrance')]);
       eq('入场动画仍是两帧', calls[0]?.frames.length, 2);
       check('入场动画不走线性缓动', calls[0]?.opts.easing !== 'linear', calls[0]?.opts.easing);
+
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        target: 1, kind: 'entrance', effect: 'appear', trigger: 'click',
+        delayMs: 0, durationMs: 500, clickGroup: 0,
+      }]);
+      eq('appear 入场在起点阶跃而不伪装成 fade', calls[0]?.opts.easing, 'steps(1, start)');
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        target: 1, kind: 'exit', effect: 'appear', trigger: 'click',
+        delayMs: 0, durationMs: 500, clickGroup: 0,
+      }]);
+      eq('appear 退场在终点阶跃并对齐保存语义', calls[0]?.opts.easing, 'steps(1, end)');
     }
     check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
   }

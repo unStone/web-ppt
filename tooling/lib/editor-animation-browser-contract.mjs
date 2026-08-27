@@ -45,6 +45,28 @@ export async function runEditorAnimationBrowserContract({
     throw new Error('Chrome 动画初始查询、惰性挂载或查看权限边界失败');
   }
 
+  const appearIn = view.previewAnimations([{
+    target: source.value[0].target, kind: 'entrance', effect: 'appear', trigger: 'click',
+    delayMs: 0, durationMs: 60,
+  }]);
+  const appearInAnimation = ownedAnimations(viewLayer)[0];
+  if (appearInAnimation?.effect?.getTiming().easing !== 'steps(1, start)') {
+    throw new Error('Chrome appear 入场错误退化成连续淡入');
+  }
+  finish([appearInAnimation]);
+  await appearIn;
+  const appearOut = view.previewAnimations([{
+    target: source.value[0].target, kind: 'exit', effect: 'appear', trigger: 'click',
+    delayMs: 0, durationMs: 60,
+  }]);
+  const appearOutAnimation = ownedAnimations(viewLayer)[0];
+  const appearOutEasing = appearOutAnimation?.effect?.getTiming().easing;
+  if (appearOutEasing !== 'steps(1, end)' && appearOutEasing !== 'steps(1)') {
+    throw new Error('Chrome appear 退场错误提前隐藏或连续淡出');
+  }
+  finish([appearOutAnimation]);
+  await appearOut;
+
   const historyBefore = session.editor.history.undoCount;
   const selectionBefore = JSON.stringify(session.editor.selection);
   const beforeSourceStyles = styleSnapshot(viewLayer);

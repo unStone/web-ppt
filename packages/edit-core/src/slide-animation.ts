@@ -207,7 +207,9 @@ const clone = (steps: readonly EditAnimationStep[]): readonly EditAnimationStep[
 
 export function querySlideAnimations(doc: EditDoc, ids: readonly SlideId[]): SlideAnimationState {
   const selected = records(doc, ids);
-  const sources = selected.map((record) => record.sourceAnimations ?? []);
+  // 删除来源目标后，null 恢复的是仍可寻址的来源，而不是把已删 spid 重新挂回有效时间线。
+  const sources = selected.map((record) =>
+    (record.sourceAnimations ?? []).filter((step) => !!doc.elements[step.target]));
   const values = selected.map((record, index) =>
     own(record.ovr, 'animations') ? record.ovr.animations! : sources[index]);
   const valueSignature = JSON.stringify(values[0]);

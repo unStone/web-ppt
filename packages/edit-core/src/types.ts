@@ -1,9 +1,10 @@
 import type {
-  AnimEffect, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
 } from '@web-ppt/core';
+import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 
 export type ElementId = string;
 export type SlideId = string;
@@ -183,11 +184,25 @@ interface EditAnimationBase {
 }
 
 export type EditAnimationStep = EditAnimationBase & ({
-  readonly kind: 'entrance' | 'exit' | 'emphasis';
-  readonly effect: AnimEffect;
-  readonly dir?: string;
+  readonly kind: 'entrance' | 'exit';
+  readonly effect: Exclude<EntranceExitAnimationEffect, 'fly' | 'wipe' | 'zoom'>;
+  readonly dir?: never;
+} | {
+  readonly kind: 'entrance' | 'exit';
+  readonly effect: 'fly' | 'wipe';
+  readonly dir?: 'l' | 'r' | 'u' | 'd';
+} | {
+  readonly kind: 'entrance' | 'exit';
+  readonly effect: 'zoom';
+  readonly dir?: 'in' | 'out';
+} | {
+  readonly kind: 'emphasis';
+  readonly effect: EmphasisAnimationEffect;
+  readonly dir?: never;
 } | {
   readonly kind: 'motion';
+  readonly effect?: never;
+  readonly dir?: never;
   readonly motionPath: readonly (readonly [number, number])[];
 });
 
@@ -436,6 +451,8 @@ export interface RemovedElementRecord {
   id: ElementId;
   parent: SlideId | ElementId;
   meta: ElementMeta;
+  /** 删除树在来源 slide part 中占用的全部 spid；保存期用它清理 timing/build 悬空引用。 */
+  sourceSpids?: readonly number[];
 }
 
 export interface SlideRecord {

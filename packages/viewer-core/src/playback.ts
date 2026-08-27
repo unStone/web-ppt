@@ -150,11 +150,15 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
       : [from, to];
 
     try {
+      const easing = step.motionPath?.length ? 'linear'
+        : step.effect === 'appear' && step.kind === 'entrance' ? 'steps(1, start)'
+          : step.effect === 'appear' && step.kind === 'exit' ? 'steps(1, end)'
+            : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       const anim = node.animate(frames, {
         duration: step.durationMs,
         delay: start,
         // 路径动画在 PowerPoint 里是匀速，不能套入场用的缓动
-        easing: step.motionPath?.length ? 'linear' : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        easing,
         fill: 'both',
       });
       if (step.kind === 'exit') {

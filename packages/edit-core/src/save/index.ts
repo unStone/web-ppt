@@ -33,6 +33,7 @@ import {
   duplicateRelationshipSource, duplicateSlideRemovals, duplicateSlideSource,
 } from './duplicate-slide-parts';
 import { hasSlidePropertyOverrides, patchSlideProperties } from './slide-properties';
+import { removeSlideAnimationTargets } from './animation';
 import { materializeLayoutFallback } from './layout-fallback';
 import { createLayoutFallbackGeometryResolver } from './layout-fallback-source';
 import {
@@ -250,9 +251,12 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       ) : undefined;
     if (links) hyperlinkContexts.set(part, links);
     links?.removeDanglingHyperlinks(tree);
-    materializeElementTreeState(tree, doc, part, records, [
+    const removedRecords = [
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
-    ], { links });
+    ];
+    materializeElementTreeState(tree, doc, part, records, removedRecords, { links });
+    removeSlideAnimationTargets(tree, removedRecords.flatMap((record) =>
+      record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : [])));
     for (const id of layoutFallbacks.get(part) ?? []) {
       const record = doc.elements[id];
       const owningSlide = slidesByPart.get(part);

@@ -55,12 +55,15 @@ export function removeElementPatches(
   const path = ['elements', command.id] as const;
   const removedIds = new Set(Object.keys(value.records));
   const slideId = slideOfElement(doc, command.id);
+  const slide = doc.slides[slideId];
   const animations = querySlideAnimations(doc, [slideId]).value;
   const remainingAnimations = animations
     .filter((step) => !removedIds.has(step.target))
     .map((step, index) => index === 0 && step.trigger !== 'click'
       ? { ...step, trigger: 'click' as const } : step);
-  const animationPatches = remainingAnimations.length === animations.length
+  const sourceNeedsPreservingCleanup = slide.sourceAnimationsReadonly === true
+    && !Object.prototype.hasOwnProperty.call(slide.ovr, 'animations');
+  const animationPatches = remainingAnimations.length === animations.length || sourceNeedsPreservingCleanup
     ? { forward: [], inverse: [] }
     : setAnimationsPatches(doc, {
       type: 'SetAnimations', slideId, steps: remainingAnimations,
@@ -137,10 +140,17 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     const root = snapshot.records[snapshot.root];
     if (root.meta.created) delete doc.removedElements[snapshot.root];
     else {
+      const sourcePart = root.meta.origin?.part;
+      const sourceSpids = [...new Set(Object.values(snapshot.records).flatMap((record) => {
+        const origin = record.meta.origin;
+        if (!origin || origin.part !== sourcePart) return [];
+        return [origin.spid];
+      }))].sort((a, b) => a - b);
       doc.removedElements[snapshot.root] = {
         id: root.id,
         parent: root.parent,
         meta: structuredClone(root.meta),
+        ...(sourceSpids.length ? { sourceSpids } : {}),
       };
     }
     return;

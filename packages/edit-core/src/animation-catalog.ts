@@ -20,7 +20,9 @@ export const ANIMATION_EFFECTS = Object.freeze([
   'appear', 'fade', 'fly', 'wipe', 'zoom', 'dissolve', 'spin', 'grow',
 ] as const satisfies readonly AnimEffect[]);
 
-type EditableAnimationEffect = typeof ANIMATION_EFFECTS[number];
+export type EditableAnimationEffect = typeof ANIMATION_EFFECTS[number];
+export type EntranceExitAnimationEffect = Exclude<EditableAnimationEffect, 'spin' | 'grow'>;
+export type EmphasisAnimationEffect = Extract<EditableAnimationEffect, 'spin' | 'grow'>;
 
 const EFFECTS: Readonly<Record<EditableAnimationEffect, AnimationEffectSpec>> = Object.freeze({
   appear: { kinds: ENTRANCE_EXIT, directions: NONE, preset: 1 },

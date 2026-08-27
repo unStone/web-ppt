@@ -10,7 +10,7 @@ export async function runAnimationEditContract({ edit, core, load, check }) {
   });
   const doc = edit.createDoc(presentation, { idPrefix: 'animation-' });
   const editor = new edit.Editor(doc);
-  const [sourceSlide, plainSlide, perfSlide, unsupportedOnlySlide] = doc.slideOrder;
+  const [sourceSlide, plainSlide, perfSlide, unsupportedOnlySlide, noncanonicalSlide] = doc.slideOrder;
   const [sourceA, sourceB] = doc.slides[sourceSlide].children;
   const [plainA, plainB] = doc.slides[plainSlide].children;
 
@@ -33,6 +33,13 @@ export async function runAnimationEditContract({ edit, core, load, check }) {
   check('仅含未支持行为的来源时间树返回空可编辑子集并明确只读',
     unsupportedOnly.value.length === 0 && unsupportedOnly.source.length === 0
       && unsupportedOnly.sourceReadonly && !unsupportedOnly.direct);
+  const noncanonical = edit.querySlideAnimations(doc, [noncanonicalSlide]);
+  check('可识别但不可由 writer 等价重建的条件和值必须标记来源只读',
+    noncanonical.value.length === 1 && noncanonical.value[0].effect === 'spin'
+      && noncanonical.sourceReadonly && !noncanonical.direct, JSON.stringify(noncanonical));
+  const mixed = edit.querySlideAnimations(doc, [sourceSlide, plainSlide]);
+  check('多页查询公开 effective/source 的 mixed 与 sourceMixed',
+    mixed.mixed && mixed.sourceMixed && !mixed.direct && mixed.sourceReadonly);
 
   editor.exec({ type: 'SetAnimations', slideId: plainSlide, steps: [{
     target: plainA, kind: 'entrance', effect: 'fly', trigger: 'click', delayMs: 0, durationMs: 500,

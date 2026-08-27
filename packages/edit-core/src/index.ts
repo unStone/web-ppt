@@ -72,6 +72,9 @@ export type {
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type { SlideTransitionInput } from './slide-transition';
+export type {
+  EditableAnimationEffect, EmphasisAnimationEffect, EntranceExitAnimationEffect,
+} from './animation-catalog';
 export type { SelectionPaneItem } from './selection-pane';
 export type {
   FindTextRequest, ReplaceTextCommand, ReplaceTextScope, TextSearchMatch, TextSearchScope,

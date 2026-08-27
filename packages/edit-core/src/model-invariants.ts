@@ -405,6 +405,11 @@ export function validateEditDoc(doc: EditDoc): void {
       && !doc.saveState.baselines[record.meta.origin.part]) {
       throw new Error(`已删除元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
     }
+    if (record.sourceSpids && (!Array.isArray(record.sourceSpids)
+      || record.sourceSpids.some((spid) => !Number.isInteger(spid) || spid <= 0)
+      || new Set(record.sourceSpids).size !== record.sourceSpids.length)) {
+      throw new Error(`已删除元素 ${id} 的动画来源 spid 无效`);
+    }
   }
 
   const spids = new Set<string>();

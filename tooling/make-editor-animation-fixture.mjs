@@ -52,7 +52,9 @@ ${motion({ id: 30, target: firstA.id })}
 </p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>
 <p:bldLst fixture:keepBuild="yes"><p:bldP spid="${firstA.id}" grpId="0" build="p"/></p:bldLst>
 <p:extLst><p:ext uri="{ANIMATION-KEEP}"><fixture:payload value="keep"/></p:ext></p:extLst></p:timing>`;
-const timingCarrier = `<mc:AlternateContent><mc:Choice Requires="p14">${sourceTiming}</mc:Choice><mc:Fallback>${sourceTiming}</mc:Fallback></mc:AlternateContent>`;
+// Choice 故意只有 parser 尚未支持的 p14 行为；预览必须按真实能力选择标准 Fallback。
+const choiceTiming = `<p:timing><p:tnLst><p14:anim presetID="999"><p:cBhvr><p:cTn id="91" dur="700"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr></p14:anim></p:tnLst></p:timing>`;
+const timingCarrier = `<mc:AlternateContent><mc:Choice Requires="p14">${choiceTiming}</mc:Choice><mc:Fallback>${sourceTiming}</mc:Fallback></mc:AlternateContent>`;
 const unrelatedMce = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice Requires="fixture"><fixture:keep/></mc:Choice><mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>`;
 const slide1 = slideXml(`${firstA.xml}${firstB.xml}`, '',
   `xmlns:fixture="urn:web-ppt:animation-fixture" xmlns:mc="${MC}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" mc:Ignorable="fixture p14" fixture:root="keep"`)
@@ -75,10 +77,19 @@ const fourthA = shape({ x: 360, y: 260, color: 'C55A11', name: 'readonly-only', 
 const unsupportedOnlyTiming = `<p:timing><p:tnLst><p:animClr clrSpc="rgb"><p:cBhvr><p:cTn id="1" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${fourthA.id}"/></p:tgtEl></p:cBhvr><p:to><a:srgbClr val="00FF00"/></p:to></p:animClr></p:tnLst></p:timing>`;
 const slide4 = slideXml(fourthA.xml).replace('</p:sld>', `${unsupportedOnlyTiming}</p:sld>`);
 
+const fifthA = shape({ x: 360, y: 260, color: '4472C4', name: 'noncanonical-spin', text: '非规范可识别时间树' });
+const noncanonicalSpin = spin({ id: 100, target: fifthA.id })
+  .replace('presetClass="emph" fill="hold"', 'presetClass="emph" dur="900" fill="hold"')
+  .replace('nodeType="withEffect"', 'nodeType="clickEffect"')
+  .replace('<p:cond delay="120"/>', '<p:cond delay="120"/><p:cond delay="240"/>')
+  .replace('by="21600000"', 'by="10800000"');
+const noncanonicalTiming = `<p:timing><p:tnLst><p:par><p:cTn id="92" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="93" dur="indefinite" nodeType="mainSeq"><p:childTnLst><p:par><p:cTn id="94" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>${noncanonicalSpin}</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+const slide5 = slideXml(fifthA.xml).replace('</p:sld>', `${noncanonicalTiming}</p:sld>`);
+
 const bytes = deck({
   name: 'Editor Animations', width: 1280, height: 720,
-  slides: [slide1, slide2, slide3, slide4],
+  slides: [slide1, slide2, slide3, slide4, slide5],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 writeFileSync(join(root, 'fixtures/sample-editor-animations.pptx'), bytes);
-console.log(`fixtures/sample-editor-animations.pptx 已生成（4 页，${(bytes.length / 1024).toFixed(1)} KB）`);
+console.log(`fixtures/sample-editor-animations.pptx 已生成（5 页，${(bytes.length / 1024).toFixed(1)} KB）`);
