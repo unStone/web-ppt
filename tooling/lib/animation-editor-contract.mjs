@@ -85,11 +85,16 @@ export async function runAnimationEditorContract({ lib, load, check, window }) {
     check('来源时间线在静态高保真层按同一点击组播放', firstCalls.length === 3
       && firstCalls.every((call) => call.owner.closest('[data-ppt-layer="static"]'))
       && firstCalls[0].options.duration === source.value[0].durationMs
-      && view.animationPreview !== null);
+      && view.animationPreview !== null,
+    JSON.stringify(firstCalls.map((call) => ({
+      target: call.owner.closest('[data-el]')?.getAttribute('data-el'),
+      duration: call.options.duration,
+    }))));
     const second = view.previewAnimations();
     const secondCalls = animations.calls.slice(4);
     check('连续预览只取消自己创建的 WAAPI', firstCalls.every((call) => call.animation.cancelled)
-      && !hostAnimation.cancelled && secondCalls.length === 3);
+      && !hostAnimation.cancelled && secondCalls.length === 3,
+    JSON.stringify({ first: firstCalls.length, second: secondCalls.length }));
     secondCalls.forEach((call) => call.animation.finish());
     check('预览结束恢复样式、编辑 chrome、模型与历史', await first && await second
       && editMount.querySelector('[data-ppt-layer="interaction"]').style.visibility === ''

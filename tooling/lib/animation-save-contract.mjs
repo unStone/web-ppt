@@ -1,4 +1,5 @@
 import { diffPackageBytes } from '../diff-package.mjs';
+import { unzipSync, zipSync } from 'fflate';
 
 const decoder = new TextDecoder();
 
@@ -176,27 +177,43 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   const deleteDoc = edit.createDoc(deletePresentation, { idPrefix: 'animation-delete-' });
   const deleteEditor = new edit.Editor(deleteDoc);
   const [deleteSourceSlide, , , deleteUnsupportedSlide] = deleteDoc.slideOrder;
-  const [deleteSourceA, deleteSourceB] = deleteDoc.slides[deleteSourceSlide].children;
+  const [deleteSourceA, deleteSourceB, deleteSourceGroup] = deleteDoc.slides[deleteSourceSlide].children;
   const deleteSourceSpid = deleteDoc.elements[deleteSourceA].meta.origin.spid;
+  const deleteSourceGroupChild = deleteDoc.elements[deleteSourceGroup].children[0];
+  const deleteSourceGroupChildSpid = deleteDoc.elements[deleteSourceGroupChild].meta.origin.spid;
   const deleteUnsupported = deleteDoc.slides[deleteUnsupportedSlide].children[0];
   const deleteUnsupportedSpid = deleteDoc.elements[deleteUnsupported].meta.origin.spid;
   deleteEditor.exec({ type: 'RemoveElement', id: deleteSourceA });
   deleteEditor.exec({ type: 'SetAnimations', slideId: deleteSourceSlide, steps: null });
+  deleteEditor.exec({ type: 'RemoveElement', id: deleteSourceGroup });
+  const deletedCopy = [...deleteEditor.exec({
+    type: 'DuplicateSlide', id: deleteSourceSlide,
+  }).createdSlides][0];
   deleteEditor.exec({ type: 'RemoveElement', id: deleteUnsupported });
   const deleted = await deleteEditor.saveDetailed();
   const deletedSourceXml = decoder.decode(deleted.package.parts['ppt/slides/slide1.xml']);
+  const deletedCopyPart = deleteDoc.slides[deletedCopy].origin.part;
+  const deletedCopyXml = decoder.decode(deleted.package.parts[deletedCopyPart]);
   const deletedUnsupportedXml = decoder.decode(deleted.package.parts['ppt/slides/slide4.xml']);
   const deletedSourceState = edit.querySlideAnimations(deleteDoc, [deleteSourceSlide]);
   check('sourceReadonly 删除保留无关 unsupported 行为并清理 tnLst/build 目标',
     !deletedSourceState.direct && deletedSourceState.value.length === 1
       && deletedSourceState.value[0].target === deleteSourceB
-      && deletedSourceXml.includes('<p:animClr')
+      && deletedSourceXml.includes('fixture:keepTarget="yes"')
+      && !deletedSourceXml.includes('fixture:dropTarget="yes"')
+      && !deletedSourceXml.includes('fixture:triggerOwner="yes"')
+      && deletedSourceXml.includes('fixture:keepBuild="yes"')
       && !deletedSourceXml.includes(`<p:spTgt spid="${deleteSourceSpid}"`)
       && !deletedSourceXml.includes(`<p:bldP spid="${deleteSourceSpid}"`));
   check('unsupported-only 删除唯一目标后不留下悬空行为',
     !deletedUnsupportedXml.includes(`<p:spTgt spid="${deleteUnsupportedSpid}"`)
       && !deletedUnsupportedXml.includes('<p:animClr')
       && !deletedUnsupportedXml.includes('<p:tnLst'));
+  check('删除含动画子元素的来源组后复制页不会遗留子元素 timing 引用',
+    !deletedCopyXml.includes(`<p:spTgt spid="${deleteSourceGroupChildSpid}"`)
+      && deletedCopyXml.includes('fixture:keepTarget="yes"')
+      && !deletedCopyXml.includes('fixture:dropTarget="yes"')
+      && !deletedCopyXml.includes('fixture:triggerOwner="yes"'));
   const deletedReopenPresentation = await core.parse(deleted.bytes, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
   });
@@ -207,6 +224,33 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
       && deletedReopen.value[0].target === deletedReopenDoc.slides[deletedReopenDoc.slideOrder[0]].children[0]);
   edit.disposeDoc(deletedReopenDoc);
   edit.disposeDoc(deleteDoc);
+
+  const stressParts = unzipSync(input);
+  const stressPart = 'ppt/slides/slide2.xml';
+  const stressSource = decoder.decode(stressParts[stressPart]);
+  const stressTarget = Number(stressSource.match(/<p:sp><p:nvSpPr><p:cNvPr id="(\d+)"/)?.[1]);
+  const stressEffects = Array.from({ length: 4000 }, (_, index) => {
+    const id = 1000 + index * 3;
+    return `<p:par><p:cTn id="${id}" presetID="10" presetClass="entr" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 1}" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`;
+  }).join('');
+  const stressTiming = `<p:timing><p:tnLst>${stressEffects}</p:tnLst></p:timing>`;
+  stressParts[stressPart] = new TextEncoder().encode(
+    stressSource.replace('</p:sld>', `${stressTiming}</p:sld>`),
+  );
+  const stressPresentation = await core.parse(zipSync(stressParts), {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const stressDoc = edit.createDoc(stressPresentation, { idPrefix: 'animation-delete-stress-' });
+  const stressEditor = new edit.Editor(stressDoc);
+  stressEditor.exec({ type: 'RemoveElement', id: stressDoc.slides[stressDoc.slideOrder[1]].children[0] });
+  const stressStart = performance.now();
+  const stressSaved = await stressEditor.saveDetailed();
+  const stressElapsed = performance.now() - stressStart;
+  const stressXml = decoder.decode(stressSaved.package.parts[stressPart]);
+  check('大量点击动画目标删除保持线性预算且不留引用',
+    stressElapsed < 500 && !stressXml.includes(`<p:spTgt spid="${stressTarget}"`),
+    `${stressElapsed.toFixed(1)}ms`);
+  edit.disposeDoc(stressDoc);
 
   const operationsPresentation = await core.parse(input, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',

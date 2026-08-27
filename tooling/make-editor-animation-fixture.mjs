@@ -43,12 +43,25 @@ function spin({ id, target }) {
 
 const firstA = shape({ x: 160, y: 190, color: '2E75B6', name: 'source-a', text: '来源动画 A' });
 const firstB = shape({ x: 700, y: 390, color: '70AD47', name: 'source-b', text: '来源动画 B' });
+const sourceGroupId = nextShapeId();
+const sourceGroupChild = shape({
+  x: 0, y: 0, color: '5B9BD5', name: 'source-group-child', text: '组内未支持动画',
+});
+const sourceGroup = `<p:grpSp><p:nvGrpSpPr><p:cNvPr id="${sourceGroupId}" name="source-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm><a:off x="${px(970)}" y="${px(90)}"/><a:ext cx="${px(230)}" cy="${px(90)}"/><a:chOff x="0" y="0"/><a:chExt cx="${px(420)}" cy="${px(150)}"/></a:xfrm></p:grpSpPr>
+${sourceGroupChild.xml}</p:grpSp>`;
 const sourceTiming = `<p:timing xmlns:fixture="urn:web-ppt:animation-fixture" fixture:keep="timing"><p:tnLst>
 <p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>
 ${behavior({ id: 10, presetID: 2, presetClass: 'entr', nodeType: 'clickEffect', target: firstA.id, duration: 600, delay: 0, filter: 'slide(fromLeft)' })}
 ${spin({ id: 20, target: firstB.id })}
 ${motion({ id: 30, target: firstA.id })}
-<p:animClr clrSpc="rgb"><p:cBhvr><p:cTn id="40" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr><p:to><a:srgbClr val="FF0000"/></p:to></p:animClr>
+<p14:anim fixture:multiTarget="yes">
+<p:cBhvr fixture:dropTarget="yes"><p:cTn id="41" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${sourceGroupChild.id}"/></p:tgtEl></p:cBhvr>
+<p:cBhvr fixture:keepTarget="yes"><p:cTn id="42" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr>
+</p14:anim>
+<p:par fixture:triggerOwner="yes"><p:cTn id="50" dur="indefinite"><p:stCondLst><p:cond delay="0" evt="onClick"><p:tgtEl><p:spTgt spid="${sourceGroupChild.id}"/></p:tgtEl></p:cond></p:stCondLst><p:childTnLst>
+<p:cmd type="call" cmd="fixture:keep"><p:cBhvr><p:cTn id="51" dur="1"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr></p:cmd>
+</p:childTnLst></p:cTn></p:par>
 </p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>
 <p:bldLst fixture:keepBuild="yes"><p:bldP spid="${firstA.id}" grpId="0" build="p"/></p:bldLst>
 <p:extLst><p:ext uri="{ANIMATION-KEEP}"><fixture:payload value="keep"/></p:ext></p:extLst></p:timing>`;
@@ -56,7 +69,7 @@ ${motion({ id: 30, target: firstA.id })}
 const choiceTiming = `<p:timing><p:tnLst><p14:anim presetID="999"><p:cBhvr><p:cTn id="91" dur="700"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr></p14:anim></p:tnLst></p:timing>`;
 const timingCarrier = `<mc:AlternateContent><mc:Choice Requires="p14">${choiceTiming}</mc:Choice><mc:Fallback>${sourceTiming}</mc:Fallback></mc:AlternateContent>`;
 const unrelatedMce = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice Requires="fixture"><fixture:keep/></mc:Choice><mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>`;
-const slide1 = slideXml(`${firstA.xml}${firstB.xml}`, '',
+const slide1 = slideXml(`${firstA.xml}${firstB.xml}${sourceGroup}`, '',
   `xmlns:fixture="urn:web-ppt:animation-fixture" xmlns:mc="${MC}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" mc:Ignorable="fixture p14" fixture:root="keep"`)
   .replace('</p:sld>', `${timingCarrier}${unrelatedMce}</p:sld>`);
 

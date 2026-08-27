@@ -187,18 +187,22 @@ export type EditAnimationStep = EditAnimationBase & ({
   readonly kind: 'entrance' | 'exit';
   readonly effect: Exclude<EntranceExitAnimationEffect, 'fly' | 'wipe' | 'zoom'>;
   readonly dir?: never;
+  readonly motionPath?: never;
 } | {
   readonly kind: 'entrance' | 'exit';
   readonly effect: 'fly' | 'wipe';
   readonly dir?: 'l' | 'r' | 'u' | 'd';
+  readonly motionPath?: never;
 } | {
   readonly kind: 'entrance' | 'exit';
   readonly effect: 'zoom';
   readonly dir?: 'in' | 'out';
+  readonly motionPath?: never;
 } | {
   readonly kind: 'emphasis';
   readonly effect: EmphasisAnimationEffect;
   readonly dir?: never;
+  readonly motionPath?: never;
 } | {
   readonly kind: 'motion';
   readonly effect?: never;
@@ -504,6 +508,8 @@ export interface SlideCreation {
   readonly duplicateNotesPart?: string;
   /** 来源基线中已在复制时删除的宿主；新增宿主仍由 insertion 的存活树决定。 */
   readonly duplicateRemovedSpids?: readonly number[];
+  /** 结构删除只需根 spid；动画引用还可能指向已随组删除的后代。 */
+  readonly duplicateRemovedAnimationSpids?: readonly number[];
   readonly presentationSlideId: number;
   readonly presentationRelationshipId: string;
   /** 锚点页在 presentation.xml 中的数值 id；section 写回以它定位。 */

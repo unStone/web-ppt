@@ -3,7 +3,7 @@ const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const XMLNS = 'http://www.w3.org/2000/xmlns/';
 const XML = 'http://www.w3.org/XML/1998/namespace';
 
-const MAX_NODES = 4096;
+export const MAX_TIMING_NODES = 4096;
 
 function children(parent: Element | null, namespace: string, localName?: string): Element[] {
   const found: Element[] = [];
@@ -43,13 +43,14 @@ interface ValidationContext {
 
 function take(context: ValidationContext): boolean {
   context.nodes++;
-  return context.nodes <= MAX_NODES;
+  return context.nodes <= MAX_TIMING_NODES;
 }
 
 function pChildren(element: Element, context: ValidationContext): Element[] | null {
   if (!take(context)) return null;
   const result: Element[] = [];
   for (let child = element.firstElementChild; child; child = child.nextElementSibling) {
+    if (!take(context)) return null;
     if (child.namespaceURI !== P) return null;
     result.push(child);
   }

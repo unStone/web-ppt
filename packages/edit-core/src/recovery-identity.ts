@@ -97,7 +97,8 @@ function slideIdentityKey(slide: SlideRecord): string {
     creation ? [
       creation.layoutPart, creation.layoutRelationshipId, creation.duplicateSourcePart ?? null,
       creation.duplicateNotesSourcePart ?? null, creation.duplicateNotesPart ?? null,
-      creation.duplicateRemovedSpids ?? null, creation.presentationSlideId,
+      creation.duplicateRemovedSpids ?? null, creation.duplicateRemovedAnimationSpids ?? null,
+      creation.presentationSlideId,
       creation.presentationRelationshipId, creation.sectionAfterSlideId ?? null,
     ] : null,
   ]);

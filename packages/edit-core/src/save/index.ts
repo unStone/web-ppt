@@ -255,8 +255,11 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       ...(slide ? duplicateSlideRemovals(slide) : []), ...(removals.get(part) ?? []),
     ];
     materializeElementTreeState(tree, doc, part, records, removedRecords, { links });
-    removeSlideAnimationTargets(tree, removedRecords.flatMap((record) =>
-      record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : [])));
+    const duplicateAnimationSpids = slide?.creation?.duplicateRemovedAnimationSpids
+      ?? slide?.creation?.duplicateRemovedSpids ?? [];
+    const liveAnimationSpids = (removals.get(part) ?? []).flatMap((record) =>
+      record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : []));
+    removeSlideAnimationTargets(tree, [...duplicateAnimationSpids, ...liveAnimationSpids]);
     for (const id of layoutFallbacks.get(part) ?? []) {
       const record = doc.elements[id];
       const owningSlide = slidesByPart.get(part);

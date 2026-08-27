@@ -46,14 +46,26 @@ function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   };
 }
 
-function duplicateRemovedSpids(doc: EditDoc, sourceId: SlideId): number[] {
+function duplicateRemovedSpids(doc: EditDoc, sourceId: SlideId): {
+  roots: number[];
+  animations: number[];
+} {
   const source = doc.slides[sourceId];
-  const inherited = source.creation?.duplicateRemovedSpids ?? [];
-  const current = Object.values(doc.removedElements).flatMap((record) => {
+  const inheritedRoots = source.creation?.duplicateRemovedSpids ?? [];
+  const inheritedAnimations = source.creation?.duplicateRemovedAnimationSpids ?? inheritedRoots;
+  const current = Object.values(doc.removedElements).filter((record) => {
     const origin = record.meta.origin;
-    return origin && origin.part === source.origin?.part && !record.meta.created ? [origin.spid] : [];
+    return !!origin && origin.part === source.origin?.part && !record.meta.created;
   });
-  return [...new Set([...inherited, ...current])].sort((left, right) => left - right);
+  const roots = current.flatMap((record) => record.meta.origin?.spid ?? []);
+  const animations = current.flatMap((record) =>
+    record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : []));
+  const unique = (values: readonly number[]) =>
+    [...new Set(values)].sort((left, right) => left - right);
+  return {
+    roots: unique([...inheritedRoots, ...roots]),
+    animations: unique([...inheritedAnimations, ...animations]),
+  };
 }
 
 function retargetSource(source: SlideElement, part: string): void {
@@ -157,7 +169,10 @@ export function duplicateSlidePatches(
           duplicateNotesSourcePart: relationshipInfo.notesSourcePart,
           duplicateNotesPart: notesPart,
         } : {}),
-        ...(removedSpids.length ? { duplicateRemovedSpids: removedSpids } : {}),
+        ...(removedSpids.roots.length ? { duplicateRemovedSpids: removedSpids.roots } : {}),
+        ...(removedSpids.animations.length ? {
+          duplicateRemovedAnimationSpids: removedSpids.animations,
+        } : {}),
         presentationSlideId: opc.presentationSlideId,
         presentationRelationshipId: opc.presentationRelationshipId,
         sectionAfterSlideId: presentationSlideIdForPart(doc, source.origin.part),

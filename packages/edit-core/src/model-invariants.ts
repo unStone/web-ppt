@@ -306,6 +306,7 @@ export function validateEditDoc(doc: EditDoc): void {
       const creation = slide.creation;
       const notesFields = [creation.duplicateNotesSourcePart, creation.duplicateNotesPart];
       const removedSpids = creation.duplicateRemovedSpids ?? [];
+      const removedAnimationSpids = creation.duplicateRemovedAnimationSpids ?? removedSpids;
       if (!slide.origin || !slide.layoutId
         || !/^ppt\/slides\/slide\d+\.xml$/.test(slide.origin.part)
         || !layoutIds.has(slide.creation.layoutPart)
@@ -333,7 +334,11 @@ export function validateEditDoc(doc: EditDoc): void {
         || !Array.isArray(removedSpids)
         || new Set(removedSpids).size !== removedSpids.length
         || removedSpids.some((spid) => !Number.isSafeInteger(spid) || spid <= 0)
-        || (removedSpids.length > 0 && !creation.duplicateSourcePart)) {
+        || !Array.isArray(removedAnimationSpids)
+        || new Set(removedAnimationSpids).size !== removedAnimationSpids.length
+        || removedAnimationSpids.some((spid) => !Number.isSafeInteger(spid) || spid <= 0)
+        || removedSpids.some((spid) => !removedAnimationSpids.includes(spid))
+        || (removedAnimationSpids.length > 0 && !creation.duplicateSourcePart)) {
         throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份无效`);
       }
       if (creationSlideIds.has(slide.creation.presentationSlideId)

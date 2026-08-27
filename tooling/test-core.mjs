@@ -91,6 +91,13 @@ const colorMod = await (async () => {
   return import(`file://${c}?t=${Date.now()}`);
 })();
 
+const animationMod = await (async () => {
+  const output = join(outDir, 'animation-bundle.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/animation.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error', `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
+  return import(`file://${output}?t=${Date.now()}`);
+})();
+
 const load = (name) => {
   const p = join(root, 'fixtures', name);
   return existsSync(p) ? new Uint8Array(readFileSync(p)) : null;
@@ -865,6 +872,17 @@ group('图片与资源');
 
 group('动画 / 切换');
 {
+  const wideEffects = Array.from({ length: 4200 }, (_, index) =>
+    `<p:par><p:cTn id="${index + 1}" presetID="10" presetClass="entr" nodeType="clickEffect" dur="500"><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${index + 5001}" dur="500"/><p:tgtEl><p:spTgt spid="1"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`).join('');
+  const wideXml = parseXml(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst>${wideEffects}</p:tnLst></p:timing></p:sld>`);
+  const wideStart = performance.now();
+  const wideTiming = animationMod.parseSlideTiming(wideXml.doc.documentElement, 1280, 720);
+  const wideElapsed = performance.now() - wideStart;
+  check('超宽 timing 超过预算后停止解析且标记只读', wideTiming.readonly
+    && !wideTiming.animations, `${wideTiming.animations?.length ?? 0} steps`);
+  check('超宽 timing 预算避免主线程长时间遍历', wideElapsed < 100,
+    `${wideElapsed.toFixed(1)}ms`);
+
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     const withTrans = pres.slides.filter((s) => s.transition);

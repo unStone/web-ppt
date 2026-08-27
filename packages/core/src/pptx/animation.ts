@@ -1,7 +1,9 @@
 import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
-import { selectSlideTiming, timingHasUnsupportedContent } from './animation-timing';
+import {
+  MAX_TIMING_NODES, selectSlideTiming, timingHasUnsupportedContent,
+} from './animation-timing';
 
 /**
  * 幻灯片切换（p:transition）与元素动画（p:timing）解析。
@@ -384,24 +386,47 @@ interface ParsedTiming {
   readonly readonly: boolean;
 }
 
+/**
+ * 解析预算按真实 DOM 节点计数；即使来源已经判为只读，也不能再无界扫描宽树。
+ * preset 子树仍参与计数，但不会把嵌套 cTn 重复解释成第二个效果。
+ */
+function presetTimeNodes(timing: Element): Element[] | null {
+  const found: Element[] = [];
+  const stack: { element: Element; depth: number; insidePreset: boolean }[] = [
+    { element: timing, depth: 0, insidePreset: false },
+  ];
+  let visited = 0;
+  while (stack.length) {
+    const current = stack.pop()!;
+    if (++visited > MAX_TIMING_NODES) return null;
+    const preset = !current.insidePreset && current.depth <= 25
+      && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
+    if (preset) found.push(current.element);
+    const children: Element[] = [];
+    for (let child = current.element.firstElementChild; child; child = child.nextElementSibling) {
+      children.push(child);
+    }
+    for (let index = children.length - 1; index >= 0; index--) {
+      stack.push({
+        element: children[index], depth: current.depth + 1,
+        insidePreset: current.insidePreset || preset,
+      });
+    }
+  }
+  return found;
+}
+
 function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): ParsedTiming {
   if (!timing) return { readonly: false };
   const steps: AnimStep[] = [];
   let readonly = timingHasUnsupportedContent(timing);
-
-  const visit = (el: Element, depth: number): void => {
-    for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
-      if (c.localName === 'cTn' && attr(c, 'presetClass')) {
-        const step = buildStep(c, slideW, slideH);
-        if (step) steps.push(step);
-        else readonly = true;
-        // 效果节点内部不会再嵌套别的效果，跳过其子树
-        continue;
-      }
-      if (depth > 0) visit(c, depth - 1);
-    }
-  };
-  visit(timing, 24);
+  const timeNodes = presetTimeNodes(timing);
+  if (!timeNodes) return { readonly: true };
+  for (const time of timeNodes) {
+    const step = buildStep(time, slideW, slideH);
+    if (step) steps.push(step);
+    else readonly = true;
+  }
 
   if (!steps.length) return { readonly };
 

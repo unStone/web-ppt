@@ -18,6 +18,7 @@
     }
   },
   "include": [
-    "packages/*/src"
+    "packages/*/src",
+    "tooling/type-contracts/animation.ts"
   ]
 }

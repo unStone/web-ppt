@@ -253,18 +253,16 @@ function referencesTarget(root: XmlElement, spids: ReadonlySet<number>): boolean
 }
 
 function targetOwner(target: XmlElement): XmlElement | null {
-  let current: XmlElement | null = target;
-  let behavior: XmlElement | null = null;
+  let current: XmlElement | null = parentElement(target);
+  let fallback: XmlElement | null = current?.localName === 'tgtEl' ? current : target;
   while (current) {
-    if (TARGET_BEHAVIORS.has(current.localName)) behavior = current;
-    if (current.namespaceUri === PRESENTATIONML_NS && current.localName === 'par') {
-      const time = xmlElementChildren(current).find((child) =>
-        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn');
-      if (time && attributeValue(time, 'presetClass')) return current;
-    }
+    // cBhvr / cond 是最小语义所有者；直接删整个 preset 会误伤同组的其他目标。
+    if (current.namespaceUri === PRESENTATIONML_NS
+      && (current.localName === 'cBhvr' || current.localName === 'cond')) return current;
+    if (TARGET_BEHAVIORS.has(current.localName)) return current;
     current = parentElement(current);
   }
-  return behavior;
+  return fallback;
 }
 
 function presetTime(owner: XmlElement): XmlElement | undefined {
@@ -276,13 +274,18 @@ function presetTime(owner: XmlElement): XmlElement | undefined {
 
 function preserveClickBoundaries(timing: XmlElement, removals: ReadonlySet<XmlElement>): void {
   const owners = walkElements(timing).filter((element) => !!presetTime(element));
-  owners.forEach((owner, index) => {
+  let nextSurvivor: XmlElement | null = null;
+  for (let index = owners.length - 1; index >= 0; index--) {
+    const owner = owners[index];
     const time = presetTime(owner)!;
-    if (!removals.has(owner) || attributeValue(time, 'nodeType') !== 'clickEffect') return;
-    const next = owners.slice(index + 1).find((candidate) => !removals.has(candidate));
-    const nextTime = next && presetTime(next);
-    if (nextTime) setXmlAttribute(nextTime, 'nodeType', 'clickEffect');
-  });
+    if (!removals.has(owner)) {
+      nextSurvivor = owner;
+      continue;
+    }
+    if (attributeValue(time, 'nodeType') === 'clickEffect' && nextSurvivor) {
+      setXmlAttribute(presetTime(nextSurvivor)!, 'nodeType', 'clickEffect');
+    }
+  }
 }
 
 function pruneEmptyTimeContainers(timing: XmlElement): void {
@@ -307,7 +310,74 @@ function pruneEmptyTimeContainers(timing: XmlElement): void {
   for (const node of walkElements(timing).reverse()) {
     if (node.namespaceUri !== PRESENTATIONML_NS
       || (node.localName !== 'tnLst' && node.localName !== 'bldLst')
-      || xmlElementChildren(node).length !== 0) continue;
+      || xmlElementChildren(node).length !== 0 || materialAttribute(node)) continue;
+    const parent = parentElement(node);
+    if (parent) removeXmlChild(parent, node);
+  }
+}
+
+function spTargets(root: XmlElement): XmlElement[] {
+  return walkElements(root).filter((element) =>
+    element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt');
+}
+
+function removeTargetNode(target: XmlElement): void {
+  const parent = parentElement(target);
+  if (!parent) return;
+  removeXmlChild(parent, target);
+  if (parent.localName === 'tgtEl' && xmlElementChildren(parent).length === 0
+    && !materialAttribute(parent)) {
+    const grandparent = parentElement(parent);
+    if (grandparent) removeXmlChild(grandparent, parent);
+  }
+}
+
+const STRUCTURAL_BEHAVIOR_PARENTS = new Set([
+  'timing', 'tnLst', 'childTnLst', 'subTnLst', 'par', 'seq', 'cTn',
+]);
+
+function behaviorContainer(
+  behavior: XmlElement, removals: ReadonlySet<XmlElement>,
+): XmlElement | null {
+  const parent = parentElement(behavior);
+  if (!parent || STRUCTURAL_BEHAVIOR_PARENTS.has(parent.localName)) return null;
+  const behaviors = xmlElementChildren(parent).filter((child) =>
+    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cBhvr');
+  return behaviors.length && behaviors.every((child) => removals.has(child)) ? parent : null;
+}
+
+function conditionTimeContainer(
+  condition: XmlElement, removals: ReadonlySet<XmlElement>,
+): XmlElement | null {
+  const list = parentElement(condition);
+  if (!list || (list.localName !== 'stCondLst' && list.localName !== 'endCondLst')) return null;
+  const conditions = xmlElementChildren(list).filter((child) =>
+    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cond');
+  if (!conditions.length || !conditions.every((child) => removals.has(child))) return null;
+  const time = parentElement(list);
+  const container = time && parentElement(time);
+  return container && container.namespaceUri === PRESENTATIONML_NS
+    && (container.localName === 'par' || container.localName === 'seq') ? container : null;
+}
+
+function insideRemoval(element: XmlElement, removals: ReadonlySet<XmlElement>): boolean {
+  for (let current = parentElement(element); current; current = parentElement(current)) {
+    if (removals.has(current)) return true;
+  }
+  return false;
+}
+
+function emptyPresetOwners(timing: XmlElement): XmlElement[] {
+  return walkElements(timing).filter((owner) => {
+    const time = presetTime(owner);
+    const list = time && xmlElementChildren(time).find((child) =>
+      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
+    return !!list && xmlElementChildren(list).length === 0;
+  });
+}
+
+function removePlanned(nodes: ReadonlySet<XmlElement>): void {
+  for (const node of nodes) {
     const parent = parentElement(node);
     if (parent) removeXmlChild(parent, node);
   }
@@ -336,25 +406,56 @@ export function removeSlideAnimationTargets(
   for (const slot of allTimingSlots(document.root)) {
     const timing = slot.timing!;
     const removals = new Set<XmlElement>();
+    const surgicalTargets = new Set<XmlElement>();
+    const targetsByOwner = new Map<XmlElement, XmlElement[]>();
     for (const element of walkElements(timing)) {
       if (element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt'
         && spids.has(Number(attributeValue(element, 'spid')))) {
         const owner = targetOwner(element);
-        if (owner) removals.add(owner);
+        if (owner) targetsByOwner.set(owner, [...(targetsByOwner.get(owner) ?? []), element]);
       }
     }
-    preserveClickBoundaries(timing, removals);
-    for (const node of removals) {
-      const parent = parentElement(node);
-      if (parent) removeXmlChild(parent, node);
+    for (const [owner, targets] of targetsByOwner) {
+      const retained = spTargets(owner).some((target) =>
+        !spids.has(Number(attributeValue(target, 'spid'))));
+      if (retained) targets.forEach((target) => surgicalTargets.add(target));
+      else removals.add(owner);
     }
-    for (const buildList of xmlElementChildren(timing).filter((element) =>
+    surgicalTargets.forEach(removeTargetNode);
+
+    const behaviorContainers = new Set<XmlElement>();
+    const timeContainers = new Set<XmlElement>();
+    for (const node of removals) {
+      if (node.namespaceUri !== PRESENTATIONML_NS) continue;
+      if (node.localName === 'cBhvr') {
+        const container = behaviorContainer(node, removals);
+        if (container) behaviorContainers.add(container);
+      } else if (node.localName === 'cond') {
+        const container = conditionTimeContainer(node, removals);
+        if (container) timeContainers.add(container);
+      }
+    }
+    behaviorContainers.forEach((node) => removals.add(node));
+    const immediate = new Set([...removals].filter((node) => !timeContainers.has(node)));
+    removePlanned(immediate);
+
+    const presetRemovals = new Set<XmlElement>(emptyPresetOwners(timing));
+    for (const owner of walkElements(timing).filter((element) => !!presetTime(element))) {
+      if (timeContainers.has(owner) || insideRemoval(owner, timeContainers)) presetRemovals.add(owner);
+    }
+    preserveClickBoundaries(timing, presetRemovals);
+    removePlanned(timeContainers);
+
+    for (const buildList of walkElements(timing).filter((element) =>
       element.namespaceUri === PRESENTATIONML_NS && element.localName === 'bldLst')) {
       for (const build of [...xmlElementChildren(buildList)]) {
         if (referencesTarget(build, spids)) removeXmlChild(buildList, build);
       }
     }
     pruneEmptyTimeContainers(timing);
+    if (spTargets(timing).some((target) => spids.has(Number(attributeValue(target, 'spid'))))) {
+      throw new Error('删除动画目标后仍存在悬空 spTgt');
+    }
     if (!materialAttribute(timing) && xmlElementChildren(timing).length === 0) {
       removeXmlChild(slot.parent, timing);
     }
