@@ -9,6 +9,8 @@ import {
 } from './animation-catalog';
 
 export { ANIMATION_EFFECTS, animationDirections, animationEffectsForKind };
+/** 128 个最重的规范效果仍能在 core 的 4096 DOM 节点预算内完整回读。 */
+export const MAX_ANIMATION_STEPS = 128;
 
 const EFFECT_SET = new Set<string>(ANIMATION_EFFECTS);
 const STEP_FIELDS = [
@@ -122,7 +124,9 @@ export function normalizeSlideAnimations(
 ): readonly EditAnimationStep[] {
   if (!doc.slides[slideId]) throw new Error(`找不到幻灯片：${String(slideId)}`);
   assertDataArray(value, label);
-  if (value.length > 1000) throw new Error(`${label} 最多包含 1000 步`);
+  if (value.length > MAX_ANIMATION_STEPS) {
+    throw new Error(`${label} 最多包含 ${MAX_ANIMATION_STEPS} 步`);
+  }
   const normalized = value.map((candidate, index) =>
     normalizeStep(doc, slideId, candidate, `${label}[${index}]`));
   if (normalized[0] && normalized[0].trigger !== 'click') {
@@ -152,7 +156,7 @@ export function sourceAnimationSteps(
   };
   for (const id of record.children) visit(id);
   const mapped: EditAnimationStep[] = [];
-  let readonly = false;
+  let readonly = steps.length > MAX_ANIMATION_STEPS;
   for (const step of steps) {
     const target = ids.get(step.target);
     if (!target) { readonly = true; continue; }

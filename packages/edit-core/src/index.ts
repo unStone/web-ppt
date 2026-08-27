@@ -16,7 +16,7 @@ export {
   normalizeSlideTransition, querySlideTransition, SLIDE_TRANSITION_TYPES, transitionDirections,
 } from './slide-transition';
 export {
-  ANIMATION_EFFECTS, animationDirections, animationEffectsForKind,
+  ANIMATION_EFFECTS, MAX_ANIMATION_STEPS, animationDirections, animationEffectsForKind,
   normalizeSlideAnimations, projectAnimationSteps,
   querySlideAnimations,
 } from './slide-animation';

@@ -15,7 +15,8 @@ export async function runAnimationEditContract({ edit, core, load, check }) {
   const [plainA, plainB] = doc.slides[plainSlide].children;
 
   check('公开效果目录按类别只暴露可安全保存组合',
-    edit.ANIMATION_EFFECTS.join('|') === 'appear|fade|fly|wipe|zoom|dissolve|spin|grow'
+    edit.MAX_ANIMATION_STEPS === 128
+      && edit.ANIMATION_EFFECTS.join('|') === 'appear|fade|fly|wipe|zoom|dissolve|spin|grow'
       && edit.animationEffectsForKind('entrance').join('|') === 'appear|fade|fly|wipe|zoom|dissolve'
       && edit.animationEffectsForKind('emphasis').join('|') === 'spin|grow'
       && edit.animationDirections('fly').join('|') === 'l|r|u|d');
@@ -147,6 +148,8 @@ export async function runAnimationEditContract({ edit, core, load, check }) {
         steps: [{ ...steps[0], extra: true }] }))
       && rejected(() => editor.exec({ type: 'SetAnimations', slideId: plainSlide,
         steps: [{ ...steps[2], motionPath: [[1, 0], [2, 0]] }] }))
+      && rejected(() => editor.exec({ type: 'SetAnimations', slideId: plainSlide,
+        steps: Array.from({ length: 129 }, () => ({ ...steps[0] })) }))
       && rejected(() => edit.querySlideAnimations(doc, []))
       && JSON.stringify(doc.slides[plainSlide].ovr) === stable
       && editor.history.undoCount === history);

@@ -140,6 +140,34 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
       && !removedSourceXml.includes(`<p:spTgt spid="${removedSourceSpid}"`));
   edit.disposeDoc(reopenedDoc);
 
+  const boundaryPresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const boundaryDoc = edit.createDoc(boundaryPresentation, { idPrefix: 'animation-boundary-' });
+  const boundaryEditor = new edit.Editor(boundaryDoc);
+  const boundarySlide = boundaryDoc.slideOrder[1];
+  const boundaryTarget = boundaryDoc.slides[boundarySlide].children[0];
+  const boundarySteps = Array.from({ length: 128 }, () => ({
+    target: boundaryTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
+    delayMs: 0, durationMs: 500,
+  }));
+  boundaryEditor.exec({ type: 'SetAnimations', slideId: boundarySlide, steps: boundarySteps });
+  const boundarySaved = await boundaryEditor.saveDetailed();
+  const boundaryReopenPresentation = await core.parse(boundarySaved.bytes, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const boundaryReopenDoc = edit.createDoc(
+    boundaryReopenPresentation, { idPrefix: 'animation-boundary-reopen-' },
+  );
+  const boundaryState = edit.querySlideAnimations(
+    boundaryReopenDoc, [boundaryReopenDoc.slideOrder[1]],
+  );
+  check('公开最大时间线由 writer 保存后仍能完整回读',
+    !boundaryState.sourceReadonly && boundaryState.value.length === 128
+      && boundaryState.value.every((step) => step.effect === 'fade' && step.trigger === 'click'));
+  edit.disposeDoc(boundaryReopenDoc);
+  edit.disposeDoc(boundaryDoc);
+
   const sourceBefore = presentation.package.parts['ppt/slides/slide1.xml'];
   check('未触碰复杂来源时间树保持原 part 字节',
     saved.package.parts['ppt/slides/slide1.xml'] === sourceBefore);
