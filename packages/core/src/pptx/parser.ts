@@ -14,7 +14,7 @@ import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml'
 import { getChartParser } from '../chart/hook';
 import { childColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
-import { parseTiming, parseTransition } from './animation';
+import { parseSlideTiming, parseTransition } from './animation';
 import { custGeomPath, parseAdjustments, presetGeom } from './geometry';
 import { extractLstStyle, parseTextBody, TextEnv } from './text';
 import type { LevelStyles } from './text';
@@ -1750,6 +1750,7 @@ export function parseSlide(
   const notes = notesPath ? extractNotesText(pkg.xml(notesPath)) : '';
   const comments = parseSlideComments(pkg, slideRels, authors);
   const directTransition = parseTransition(slideRoot);
+  const timing = parseSlideTiming(slideRoot, slideW, slideH);
 
   return {
     background,
@@ -1759,7 +1760,7 @@ export function parseSlide(
     hidden: attr(slideRoot, 'show') === '0' || undefined,
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: directTransition ?? parseTransition(layoutRoot),
-    animations: parseTiming(kid(slideRoot, 'timing'), slideW, slideH),
+    animations: timing.animations,
     ...(edit ? {
       editInfo: {
         origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
@@ -1767,6 +1768,7 @@ export function parseSlide(
           ? { notes: { part: notesPath, relationshipId: notesRelationship[0] } } : {}),
         ...(walk(slideRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
         ...(directTransition ? { directTransition: true as const } : {}),
+        ...(timing.readonly ? { animationSourceReadonly: true as const } : {}),
         ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),
         defaultShape: defaultShapeEditInfo(envFor(slidePath, true)),
         defaultTable: defaultTableEditInfo(envFor(slidePath, true)),

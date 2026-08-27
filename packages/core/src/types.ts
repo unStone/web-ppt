@@ -140,6 +140,8 @@ export interface SlideEditInfo {
   directBackground?: true;
   /** 转场来自 slide XML；换版式时继续优先。 */
   directTransition?: true;
+  /** 原始时间树超出可编辑子集；未触碰时仍须逐字节直通。 */
+  animationSourceReadonly?: true;
   /** 页面自身 showMasterSp="0"；换版式后仍须屏蔽目标母版图形。 */
   hideMasterShapes?: true;
   /** 当前页主题与颜色映射求值后的新形状默认值；只在编辑解析中保留。 */

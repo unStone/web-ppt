@@ -59,6 +59,9 @@ session controller rather than creating another painter state machine.
 Page-transition controls use the same adapter: `queryTransition()`, `setTransition(value)`, and
 `previewTransition(value?)` need no Vue-owned playback state. Preview works in view and edit modes; mutation is
 edit-only. `SlideTransitionInput` and `SlideTransitionState` are re-exported for typed controls.
+Element-animation controls follow the same seam: `queryAnimations()`, `setAnimations(steps | null)`, and
+`previewAnimations(draft?)`. Targets are stable `ElementId`s; preview automatically runs all click groups without
+mutating the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
 `snapshot.value.textSearch` is the same shared find/replace state. A product toolbar binds it without maintaining
 another index:
 
@@ -124,6 +127,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
 | `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
 | `adapter.openTextSearch/.../replaceAllText()` | returned `adapter` + `snapshot.textSearch` |
+| `adapter.query/set/previewAnimations()` | returned `adapter`; no Vue playback state |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with Vue 3.5.41; the optional peer range supports Vue 3.3–3.5. The

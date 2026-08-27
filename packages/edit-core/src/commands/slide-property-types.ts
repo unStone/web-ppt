@@ -1,6 +1,8 @@
 import type { Fill, ImageTilePlacement, Transition } from '@web-ppt/core';
 import type { SlideTransitionInput } from '../slide-transition';
-import type { ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding } from '../types';
+import type {
+  EditAnimationStep, ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding,
+} from '../types';
 
 export interface SetBackgroundCommand {
   readonly type: 'SetBackground';
@@ -39,6 +41,13 @@ export interface SetTransitionCommand {
   readonly id: SlideId;
   /** null 恢复来源；type=none 明确关闭切换。 */
   readonly t: SlideTransitionInput | null;
+}
+
+export interface SetAnimationsCommand {
+  readonly type: 'SetAnimations';
+  readonly slideId: SlideId;
+  /** null 恢复来源；空列表明确移除页面动画。 */
+  readonly steps: readonly EditAnimationStep[] | null;
 }
 
 export interface SetLayoutCommand {
@@ -128,5 +137,16 @@ export type SlideTransitionPatch = {
   readonly origin: string;
 };
 
+export type SlideAnimationsPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
+  readonly value: readonly EditAnimationStep[];
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
+  readonly origin: string;
+};
+
 export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch
-  | SlideTransitionPatch;
+  | SlideTransitionPatch | SlideAnimationsPatch;

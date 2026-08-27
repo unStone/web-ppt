@@ -57,6 +57,16 @@ await view.previewTransition({ type: 'push', dir: 'r', durationMs: 500 }); // �
 view.setTransition({ type: 'morph', durationMs: 900, morphBy: 'byWord' });
 view.setTransition(null); // 恢复解析来源；{ type: 'none' } 表示显式关闭
 
+const animations = view.queryAnimations(); // 目标始终是稳定 ElementId，不泄漏 OOXML spid
+// sourceReadonly=true 时，产品应提示“替换整条时间线”，不能把复杂来源伪装成完整可编辑。
+await view.previewAnimations();             // view/edit 都会一键播放完整有效时间线
+await view.previewAnimations([{             // 先校验并试听草稿，不改变历史
+  target: targetId, kind: 'entrance', effect: 'fly', dir: 'r', trigger: 'click',
+  delayMs: 0, durationMs: 500,
+}]);
+view.setAnimations(animations.value); // 仅 edit 模式可写；[] 明确删除时间线
+view.setAnimations(null);             // 恢复未触碰的解析来源
+
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
 selectionPane.destroy();

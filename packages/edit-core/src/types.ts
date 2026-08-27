@@ -1,5 +1,5 @@
 import type {
-  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  AnimEffect, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
@@ -65,7 +65,10 @@ export interface SlideImageBackground extends ElementImageReplacement {
 }
 
 export type SlideSource = Omit<Slide, 'elements' | 'editInfo'>;
-export type SlideOverrides = Partial<SlideSource>;
+export type SlideOverrides = Omit<Partial<SlideSource>, 'animations'> & {
+  /** 稳定元素身份只存在编辑模型；投影时才恢复易失的数值 spid。 */
+  animations?: readonly EditAnimationStep[];
+};
 
 type BaseOverrideKey =
   | 'x' | 'y' | 'w' | 'h' | 'rot' | 'flipH' | 'flipV'
@@ -170,6 +173,32 @@ export interface SlideTransitionState {
   readonly mixed: boolean;
   readonly sourceMixed: boolean;
   readonly direct: boolean;
+}
+
+interface EditAnimationBase {
+  readonly target: ElementId;
+  readonly trigger: 'click' | 'withPrev' | 'afterPrev';
+  readonly delayMs: number;
+  readonly durationMs: number;
+}
+
+export type EditAnimationStep = EditAnimationBase & ({
+  readonly kind: 'entrance' | 'exit' | 'emphasis';
+  readonly effect: AnimEffect;
+  readonly dir?: string;
+} | {
+  readonly kind: 'motion';
+  readonly motionPath: readonly (readonly [number, number])[];
+});
+
+export interface SlideAnimationState {
+  readonly value: readonly EditAnimationStep[];
+  readonly source: readonly EditAnimationStep[];
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
+  readonly direct: boolean;
+  /** true 表示来源含不可稳定寻址或尚未开放的时间树节点；未触碰时仍会原样保留。 */
+  readonly sourceReadonly: boolean;
 }
 
 export interface ElementStrokeState {
@@ -413,6 +442,9 @@ export interface SlideRecord {
   id: SlideId;
   src: SlideSource;
   ovr: SlideOverrides;
+  /** 来源查询使用稳定元素身份；原始数值动画仍留在 src 供未触碰投影与字节直通。 */
+  sourceAnimations?: readonly EditAnimationStep[];
+  sourceAnimationsReadonly?: true;
   /** 大字节留在 imageResources；页面历史只持有这个关系闭包与哈希。 */
   backgroundImage?: SlideImageBackground;
   children: ElementId[];

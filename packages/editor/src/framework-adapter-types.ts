@@ -1,5 +1,6 @@
 import type {
-  EditorChange, SlideId, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+  EditAnimationStep, EditorChange, SlideAnimationState, SlideId, SlideTransitionInput,
+  SlideTransitionState, TextSearchMatch,
 } from '@web-ppt/edit-core';
 import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
@@ -126,5 +127,8 @@ export interface WebPptAdapter {
   queryTransition(): SlideTransitionState | null;
   setTransition(value: SlideTransitionInput | null): boolean;
   previewTransition(value?: SlideTransitionInput): Promise<boolean>;
+  queryAnimations(): SlideAnimationState | null;
+  setAnimations(value: readonly EditAnimationStep[] | null): boolean;
+  previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean>;
   dispose(): void;
 }

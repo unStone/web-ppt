@@ -1,8 +1,8 @@
 import type {
-  ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
+  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideNotesState,
-  SlideTransitionInput, SlideTransitionState,
+  SlideAnimationState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
@@ -80,6 +80,11 @@ export interface SlideEditor {
   previewTransition(value?: SlideTransitionInput): Promise<boolean>;
   /** null 恢复来源；查看模式不改模型并返回 false。 */
   setTransition(value: SlideTransitionInput | null): boolean;
+  queryAnimations(): SlideAnimationState;
+  /** 查看和编辑模式均可试听；传值时先校验草稿但不写模型。 */
+  previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean>;
+  /** null 恢复来源，空数组删除时间线；查看模式不改模型。 */
+  setAnimations(value: readonly EditAnimationStep[] | null): boolean;
   queryLayout(): SlideLayoutState;
   /** 只接受当前文档的 layoutId；查看模式不改模型。 */
   setLayout(layoutId: string): boolean;

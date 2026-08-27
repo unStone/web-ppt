@@ -1,6 +1,7 @@
 import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
+import { selectSlideTiming, timingHasUnsupportedContent } from './animation-timing';
 
 /**
  * 幻灯片切换（p:transition）与元素动画（p:timing）解析。
@@ -166,7 +167,7 @@ const PRESET_EFFECT: Record<number, AnimEffect> = {
   33: 'float', 34: 'swivel', 35: 'fly', 36: 'stretch', 37: 'stretch', 38: 'fly',
   39: 'float', 40: 'spin', 41: 'swivel', 42: 'float', 43: 'fly', 44: 'spin',
   45: 'stretch', 46: 'stretch', 47: 'float', 48: 'zoom', 49: 'fly', 50: 'stretch',
-  51: 'swivel', 52: 'stretch', 53: 'grow',
+  51: 'swivel', 52: 'stretch', 53: 'grow', 59: 'grow', 61: 'spin',
 };
 
 /** presetSubtype → 方向（值表示「来自」的方位） */
@@ -213,11 +214,11 @@ function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } 
  * 只有 M / L / C / Z 四个几何命令，外加一个 E 表示「路径结束」；
  * 坐标是幻灯片宽高的比例（0-1），且相对形状**起始中心**而非画布原点。
  *
- * 返回按弧长等距重采样的位移点（px）。等距是必要的：直接用控制点当关键帧，
- * WAAPI 会把每段都按相同时长走完，长段慢、短段快，与 PowerPoint 的匀速不符。
+ * 返回位移折线（px）。顶点是几何，匀速由播放层的关键帧 offset 表达；
+ * 预先重采样会切掉尖角，也会让“保存后重开”改变用户输入的路径。
  */
 export function parseMotionPath(
-  path: string, slideW: number, slideH: number, samples = 24,
+  path: string, slideW: number, slideH: number, maxPoints = 256,
 ): [number, number][] | undefined {
   const tokens = path.match(/[MLCZEmlcze]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
   if (!tokens) return undefined;
@@ -272,7 +273,9 @@ export function parseMotionPath(
   const [ox, oy] = pts[0];
   const abs = pts.map(([x, y]): [number, number] => [(x - ox) * slideW, (y - oy) * slideH]);
 
-  // 按弧长等距重采样
+  if (abs.length <= maxPoints) return abs;
+
+  // 极端来源路径只为守住内存上界而降采样；常规折线及编辑器写回始终保留顶点。
   const seg: number[] = [0];
   for (let k = 1; k < abs.length; k++) {
     seg.push(seg[k - 1] + Math.hypot(abs[k][0] - abs[k - 1][0], abs[k][1] - abs[k - 1][1]));
@@ -282,8 +285,8 @@ export function parseMotionPath(
 
   const out: [number, number][] = [];
   let j = 1;
-  for (let k = 0; k < samples; k++) {
-    const want = (total * k) / (samples - 1);
+  for (let k = 0; k < maxPoints; k++) {
+    const want = (total * k) / (maxPoints - 1);
     while (j < seg.length - 1 && seg[j] < want) j++;
     const span = seg[j] - seg[j - 1];
     const t = span > 0 ? (want - seg[j - 1]) / span : 0;
@@ -373,14 +376,25 @@ function startDelay(cTn: Element): number {
 }
 
 export function parseTiming(timing: Element | null, slideW = 0, slideH = 0): AnimStep[] | undefined {
-  if (!timing) return undefined;
+  return parseTimingDetailed(timing, slideW, slideH).animations;
+}
+
+interface ParsedTiming {
+  readonly animations?: AnimStep[];
+  readonly readonly: boolean;
+}
+
+function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): ParsedTiming {
+  if (!timing) return { readonly: false };
   const steps: AnimStep[] = [];
+  let readonly = timingHasUnsupportedContent(timing);
 
   const visit = (el: Element, depth: number): void => {
     for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
       if (c.localName === 'cTn' && attr(c, 'presetClass')) {
         const step = buildStep(c, slideW, slideH);
         if (step) steps.push(step);
+        else readonly = true;
         // 效果节点内部不会再嵌套别的效果，跳过其子树
         continue;
       }
@@ -389,7 +403,7 @@ export function parseTiming(timing: Element | null, slideW = 0, slideH = 0): Ani
   };
   visit(timing, 24);
 
-  if (!steps.length) return undefined;
+  if (!steps.length) return { readonly };
 
   // 按点击批次编号：第一个效果与其后所有 withPrev/afterPrev 归为同一批
   let group = -1;
@@ -397,7 +411,13 @@ export function parseTiming(timing: Element | null, slideW = 0, slideH = 0): Ani
     if (s.trigger === 'click' || group < 0) group++;
     s.clickGroup = group;
   }
-  return steps;
+  return { animations: steps, readonly };
+}
+
+export function parseSlideTiming(root: Element | null, slideW = 0, slideH = 0): ParsedTiming {
+  const selected = selectSlideTiming(root);
+  const parsed = parseTimingDetailed(selected.timing, slideW, slideH);
+  return { ...parsed, readonly: selected.readonly || parsed.readonly };
 }
 
 function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | null {
@@ -419,7 +439,7 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const trigger: AnimStep['trigger'] =
     nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
 
-  const dur = findDuration(cTn) ?? 500;
+  const dur = numAttr(cTn, 'dur') ?? findDuration(cTn) ?? 500;
 
   // 运动路径优先于 presetID 推出来的效果：路径本身就完整描述了位移
   const rawPath = kind === 'motion' ? findMotion(cTn) : null;

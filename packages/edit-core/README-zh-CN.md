@@ -218,6 +218,32 @@ editor.exec({
 editor.exec({ type: 'SetTransition', id: slideId, t: null }); // 恢复来源
 ```
 
+元素时间线始终以稳定 `ElementId` 指向目标，只在投影和保存边界映射回 OOXML spid。
+`SetAnimations { slideId, steps }` 支持入口、退出、强调与运动路径；`[]` 明确删除时间线，`null` 恢复未触碰
+来源。首步必须是 `click`；运动路径保留 2–256 个原始折线顶点，播放层用弧长 offset 保持匀速。
+若来源时间树含 MCE、build、扩展或编辑子集之外的行为，查询会返回 `sourceReadonly`，且首次显式替换前仍逐字节保留来源。
+
+| 类别 | 可安全写回效果 | 方向 |
+|---|---|---|
+| 入口 / 退出 | `appear`、`fade`、`fly`、`wipe`、`zoom`、`dissolve` | `fly`/`wipe`: `l/r/u/d`；`zoom`: `in/out` |
+| 强调 | `spin`、`grow` | 无 |
+| 路径 | `motionPath` | 无 |
+
+```ts
+import {
+  ANIMATION_EFFECTS, animationDirections, animationEffectsForKind, querySlideAnimations,
+} from '@web-ppt/edit-core';
+
+const animation = querySlideAnimations(editor.doc, selectedSlideIds);
+const entranceEffects = animationEffectsForKind('entrance');
+editor.exec({
+  type: 'SetAnimations', slideId,
+  steps: [{ target: elementId, kind: 'entrance', effect: 'fly', dir: 'r',
+    trigger: 'click', delayMs: 0, durationMs: 500 }],
+});
+editor.exec({ type: 'SetAnimations', slideId, steps: null });
+```
+
 图片背景按内容寻址：多页上传相同字节只保存一份媒体；来源页或版式继承的图片背景也可直接裁剪，
 不会修改共享版式或母版。
 

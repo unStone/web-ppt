@@ -1,7 +1,7 @@
 import type {
-  EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
+  EditAnimationStep, EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideNotesState, SlideTransitionInput, SlideTransitionState,
+  SlideAnimationState, SlideNotesState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
@@ -35,6 +35,7 @@ import { SlideEditorKeyboardEvents } from './slide-editor-keyboard-events';
 import { TextSearchViewBinding } from './text-search-view';
 import type { TextSearchOpenOptions } from './text-search-types';
 import { TransitionPreviewController } from './transition-preview';
+import { AnimationPreviewController } from './animation-preview';
 
 class DomSlideEditor implements SlideEditor {
   readonly element: HTMLDivElement;
@@ -67,6 +68,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly commands: SlideEditorCommands;
   private readonly keyboardEvents: SlideEditorKeyboardEvents;
   private transitionPreview: TransitionPreviewController | null = null;
+  private animationPreview: AnimationPreviewController | null = null;
   private isDestroyed = false;
   private readonly unsubscribe: () => void;
   private readonly unbindLinkEvent: () => void;
@@ -234,6 +236,7 @@ class DomSlideEditor implements SlideEditor {
       links: this.links, formatPainter: this.formatPainter,
       textSearch: this.textSearch,
       transitionPreview: () => this.transitionPreviewController(),
+      animationPreview: () => this.animationPreviewController(),
       mode: () => this.currentMode, slideId: () => this.currentSlide,
       destroyed: () => this.isDestroyed, cancelGestures: () => this.cancelGestures(),
     });
@@ -323,10 +326,19 @@ class DomSlideEditor implements SlideEditor {
 
   queryTransition(): SlideTransitionState { return this.commands.queryTransition(); }
   previewTransition(value?: SlideTransitionInput): Promise<boolean> {
+    this.animationPreview?.cancel();
     return this.commands.previewTransition(value);
   }
   setTransition(value: SlideTransitionInput | null): boolean {
     return this.commands.setTransition(value);
+  }
+  queryAnimations(): SlideAnimationState { return this.commands.queryAnimations(); }
+  previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean> {
+    this.transitionPreview?.cancel();
+    return this.commands.previewAnimations(value);
+  }
+  setAnimations(value: readonly EditAnimationStep[] | null): boolean {
+    return this.commands.setAnimations(value);
   }
 
   queryLayout(): SlideLayoutState { return this.commands.queryLayout(); }
@@ -355,6 +367,8 @@ class DomSlideEditor implements SlideEditor {
     if (mode !== 'view' && mode !== 'edit') throw new Error(`未知编辑器模式：${String(mode)}`);
     if (mode === 'view' && mode !== this.currentMode) this.formatPainter.cancel();
     if (mode !== this.currentMode) {
+      this.transitionPreview?.cancel();
+      this.animationPreview?.cancel();
       this.cancelGestures();
       this.keyboard.breakSequence();
       if (mode === 'view') {
@@ -379,6 +393,7 @@ class DomSlideEditor implements SlideEditor {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
     if (slideId === this.currentSlide) return;
     this.transitionPreview?.cancel();
+    this.animationPreview?.cancel();
     this.cancelGestures();
     this.imageCropGesture.exit();
     this.keyboard.breakSequence();
@@ -390,6 +405,8 @@ class DomSlideEditor implements SlideEditor {
   setZoom(zoom: number): void {
     if (!Number.isFinite(zoom) || zoom <= 0) throw new Error('缩放必须是有限正数');
     if (zoom !== this.currentZoom) {
+      this.transitionPreview?.cancel();
+      this.animationPreview?.cancel();
       this.cancelGestures();
       this.keyboard.breakSequence();
     }
@@ -411,6 +428,7 @@ class DomSlideEditor implements SlideEditor {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     this.transitionPreview?.cancel();
+    this.animationPreview?.cancel();
     this.cancelGestures();
     this.keyboard.breakSequence();
     this.textEditor.destroy();
@@ -459,7 +477,10 @@ class DomSlideEditor implements SlideEditor {
 
   private update(change: EditorChange): void {
     this.cancelGestures();
-    if (change.dirtySlides.has(this.currentSlide)) this.transitionPreview?.cancel();
+    if (change.dirtySlides.has(this.currentSlide)) {
+      this.transitionPreview?.cancel();
+      this.animationPreview?.cancel();
+    }
     if (!this.session.editor.doc.slides[this.currentSlide]) {
       this.keyboard.breakSequence();
       this.textEditor.close(false);
@@ -494,6 +515,18 @@ class DomSlideEditor implements SlideEditor {
       });
     }
     return this.transitionPreview;
+  }
+
+  private animationPreviewController(): AnimationPreviewController {
+    if (!this.animationPreview) {
+      this.animationPreview = new AnimationPreviewController({
+        layer: this.staticLayer,
+        chrome: [this.interactionLayer, this.textLayer],
+        current: () => this.session.editor.toSlide(this.currentSlide).animations,
+        destroyed: () => this.isDestroyed,
+      });
+    }
+    return this.animationPreview;
   }
 
   private cancelActiveGesture(): boolean {

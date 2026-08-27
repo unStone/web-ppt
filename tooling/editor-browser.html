@@ -62,6 +62,7 @@
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
     import { runEditorSlidePropertiesBrowserContract } from '/tooling/lib/editor-slide-properties-browser-contract.mjs';
     import { runEditorTransitionBrowserContract } from '/tooling/lib/editor-transition-browser-contract.mjs';
+    import { runEditorAnimationBrowserContract } from '/tooling/lib/editor-animation-browser-contract.mjs';
     import { runEditorSlideNotesBrowserContract } from '/tooling/lib/editor-slide-notes-browser-contract.mjs';
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
     import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
@@ -511,6 +512,9 @@
       const transitionResult = await runEditorTransitionBrowserContract({
         openEditor, createWebPptAdapter, load,
       });
+      const animationResult = await runEditorAnimationBrowserContract({
+        openEditor, createWebPptAdapter, load,
+      });
       const slideNotesResult = await runEditorSlideNotesBrowserContract({ openEditor, load });
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
@@ -607,6 +611,9 @@
       report.dataset.transitionPreviewP95 = transitionResult.previewP95.toFixed(3);
       report.dataset.transitionBatchP95 = transitionResult.batchP95.toFixed(3);
       report.dataset.transitionFeedbackP95 = transitionResult.feedbackP95.toFixed(3);
+      report.dataset.animationPreviewP95 = animationResult.previewP95.toFixed(3);
+      report.dataset.animationBatchP95 = animationResult.batchP95.toFixed(3);
+      report.dataset.animationFeedbackP95 = animationResult.feedbackP95.toFixed(3);
       report.dataset.slideNotesP95 = slideNotesResult.p95.toFixed(3);
       report.dataset.selectionPaneP95 = selectionPaneResult.p95.toFixed(3);
       report.dataset.formatPainterP95 = formatPainterResult.p95.toFixed(3);

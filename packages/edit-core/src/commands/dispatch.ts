@@ -30,6 +30,7 @@ import {
 } from './set-slide-properties';
 import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
+import { setAnimationsPatches } from './set-animations';
 import { setNamePatches } from './element-name';
 import { applyFormatPatches } from './apply-format';
 import { replaceTextPatches } from './replace-text';
@@ -38,7 +39,7 @@ import {
 } from './element-interaction';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
 } from './types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
@@ -101,6 +102,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   ),
   SetHidden: register<SetHiddenCommand>(['id', 'v'], setHiddenPatches, { target: 'none' }),
   SetTransition: register<SetTransitionCommand>(['id', 't'], setTransitionPatches, { target: 'none' }),
+  SetAnimations: register<SetAnimationsCommand>(['slideId', 'steps'], setAnimationsPatches, { target: 'none' }),
   SetLayout: register<SetLayoutCommand>(['id', 'layoutId'], setLayoutPatches, { target: 'none' }),
   SetNotes: register<SetNotesCommand>(['id', 'text'], setNotesPatches, { target: 'none' }),
   SetFill: register<SetFillCommand>(['id', 'fill'], setFillPatches),

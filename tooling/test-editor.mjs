@@ -40,6 +40,7 @@ import { runFrameworkAdapterContract } from './lib/framework-adapter-contract.mj
 import { runRecoveryPersistenceContract } from './lib/recovery-persistence-contract.mjs';
 import { runRecoveryAdapterContract } from './lib/recovery-adapter-contract.mjs';
 import { runTransitionEditorContract } from './lib/transition-editor-contract.mjs';
+import { runAnimationEditorContract } from './lib/animation-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -109,6 +110,7 @@ await runFrameworkAdapterContract({ lib, load, check });
 await runRecoveryPersistenceContract({ lib, load, check });
 await runRecoveryAdapterContract({ lib, load, check });
 await runTransitionEditorContract({ lib, viewer, load, check, window: domEnvironment.window });
+await runAnimationEditorContract({ lib, load, check, window: domEnvironment.window });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {

@@ -58,6 +58,9 @@ Page-transition controls follow the same seam: `adapter.queryTransition()`, `ada
 `adapter.previewTransition(value?)` work in a product toolbar without React-owned playback state. Preview is
 available in view and edit modes; mutation remains edit-only. `SlideTransitionInput` and `SlideTransitionState`
 are re-exported for typed controls.
+Element-animation controls use the same adapter: `queryAnimations()`, `setAnimations(steps | null)`, and
+`previewAnimations(draft?)`. Targets are stable `ElementId`s; preview automatically runs every click group and
+does not mutate the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
 `snapshot.textSearch` follows the same rule: render its query, match count, current match, invalidation flag, and
 `canReplace` directly, then call adapter actions from the toolbar:
 
@@ -117,6 +120,7 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.save/undo/redo()` | component ref or returned `adapter` |
 | `adapter.startFormatPainter/cancelFormatPainter()` | returned `adapter` + `snapshot.formatPainter` |
 | `adapter.openTextSearch/.../replaceAllText()` | returned `adapter` + `snapshot.textSearch` |
+| `adapter.query/set/previewAnimations()` | returned `adapter`; no React playback state |
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with React 19.2.8; the optional peer range supports React 18.2–19. The

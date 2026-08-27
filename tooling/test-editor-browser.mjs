@@ -261,6 +261,9 @@ async function browserResult(webSocketDebuggerUrl) {
           transitionPreviewP95: report.dataset.transitionPreviewP95,
           transitionBatchP95: report.dataset.transitionBatchP95,
           transitionFeedbackP95: report.dataset.transitionFeedbackP95,
+          animationPreviewP95: report.dataset.animationPreviewP95,
+          animationBatchP95: report.dataset.animationBatchP95,
+          animationFeedbackP95: report.dataset.animationFeedbackP95,
           slideNotesP95: report.dataset.slideNotesP95,
           recoveryPersistMs: report.dataset.recoveryPersistMs,
           recoveryRestoreMs: report.dataset.recoveryRestoreMs,
@@ -607,6 +610,8 @@ try {
     + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
     + ` · 40种切换启动/200页批量/单页反馈 p95 ${result.transitionPreviewP95}/`
     + `${result.transitionBatchP95}/${result.transitionFeedbackP95}ms`
+    + ` · 60元素动画启动/200页批量/单页反馈 p95 ${result.animationPreviewP95}/`
+    + `${result.animationBatchP95}/${result.animationFeedbackP95}ms`
     + ` · 备注2000 p95 ${result.slideNotesP95}ms`
     + ` · IndexedDB恢复1000帧 写入/恢复 ${result.recoveryPersistMs}/${result.recoveryRestoreMs}ms`
     + `/分块 ${result.recoveryChunks}/同步增量 ${result.recoverySyncOverhead}ms`

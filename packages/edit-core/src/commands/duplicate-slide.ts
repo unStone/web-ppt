@@ -121,6 +121,19 @@ export function duplicateSlidePatches(
     before: doc.slideOrder[sourceIndex + 1] ?? null,
     slide: {
       ...structuredClone(source), id, children: cloned.children,
+      ...(source.sourceAnimations ? {
+        sourceAnimations: source.sourceAnimations.map((step) => ({
+          ...structuredClone(step), target: cloned.remap.get(step.target)!,
+        })),
+      } : {}),
+      ovr: {
+        ...structuredClone(source.ovr),
+        ...(source.ovr.animations ? {
+          animations: source.ovr.animations.map((step) => ({
+            ...structuredClone(step), target: cloned.remap.get(step.target)!,
+          })),
+        } : {}),
+      },
       dynamicSlideNumbers: source.dynamicSlideNumbers.map((elementId) => cloned.remap.get(elementId)!),
       dynamicSlideLinks: source.dynamicSlideLinks.map((elementId) => cloned.remap.get(elementId)!),
       origin: { part: opc.part },

@@ -6,14 +6,16 @@ import {
   WebPptEditor as ReactWebPptEditor, WebPptSelectionPane as ReactSelectionPane,
 } from '@web-ppt/react';
 import type {
-  WebPptEditorHandle as ReactHandle, WebPptSelectionPaneHandle as ReactPaneHandle,
+  EditAnimationStep as ReactAnimationStep, WebPptEditorHandle as ReactHandle,
+  WebPptSelectionPaneHandle as ReactPaneHandle,
 } from '@web-ppt/react';
 import type { RecoveryStore, RecoveryStoreJournal } from '@web-ppt/editor';
 import {
   WebPptEditor as VueWebPptEditor, WebPptSelectionPane as VueSelectionPane,
 } from '@web-ppt/vue';
 import type {
-  WebPptEditorHandle as VueHandle, WebPptSelectionPaneHandle as VuePaneHandle,
+  EditAnimationStep as VueAnimationStep, WebPptEditorHandle as VueHandle,
+  WebPptSelectionPaneHandle as VuePaneHandle,
 } from '@web-ppt/vue';
 
 const waitFor = async (predicate: () => boolean, label: string): Promise<void> => {
@@ -231,6 +233,22 @@ export async function runFrameworkAdaptersBrowserContract(
   const vueTransitionLayer = vueMount.querySelector('[data-ppt-layer="static"]');
   if (vueTransitionLayer?.getAnimations().length !== 1 || !await vueTransitionPreview) {
     throw new Error('Vue 查看模式没有透传真实切换预览');
+  }
+  const sharedSlide = reactAdapter.snapshot.slideId!;
+  const animationTarget = external.editor.doc.slides[sharedSlide].children[0];
+  const reactAnimation: ReactAnimationStep[] = [{
+    target: animationTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
+    delayMs: 0, durationMs: 80,
+  }];
+  const vueAnimation: VueAnimationStep[] = reactAnimation;
+  if (!reactAdapter.setAnimations(reactAnimation)
+    || vueAdapter.queryAnimations()?.value[0]?.target !== animationTarget) {
+    throw new Error('React/Vue 没有透传共享元素动画类型、查询或编辑');
+  }
+  const vueAnimationPreview = vueAdapter.previewAnimations(vueAnimation);
+  if (vueTransitionLayer?.getAnimations({ subtree: true }).length !== 1
+    || !await vueAnimationPreview) {
+    throw new Error('Vue 查看模式没有透传真实元素动画预览');
   }
   const sharedReactPaneRef = createRef<ReactPaneHandle>();
   sharedReactRoot.render(<>

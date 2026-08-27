@@ -8,6 +8,7 @@ import type { OwnedOpcPackage } from './opc-owner-protocol';
 import type {
   CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
 } from './types';
+import { sourceAnimationSteps } from './slide-animation';
 
 let sessionSerial = 0;
 const disposers = new WeakMap<EditDoc, () => void>();
@@ -177,6 +178,14 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       sourceSlideParts: slideOrder.flatMap((id) => slides[id].origin?.part ?? []),
     },
   };
+  pres.slides.forEach((slide, index) => {
+    const id = slideOrder[index];
+    const sourceAnimations = sourceAnimationSteps(doc, id, slide.animations);
+    if (sourceAnimations.steps.length) doc.slides[id].sourceAnimations = sourceAnimations.steps;
+    if (sourceAnimations.readonly || slide.editInfo?.animationSourceReadonly) {
+      doc.slides[id].sourceAnimationsReadonly = true;
+    }
+  });
   if (pres.dispose) disposers.set(doc, pres.dispose);
   registerSessionAssets(doc, pres.editInfo?.assets);
   return doc;

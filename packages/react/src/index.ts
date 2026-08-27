@@ -9,6 +9,6 @@ export type {
 export type {
   FormatPainterStartOptions, WebPptAdapterBinding, WebPptAdapterProgress,
   WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptTextSearchState, WebPptViewState,
-  SlideTransitionInput, SlideTransitionState,
+  EditAnimationStep, SlideAnimationState, SlideTransitionInput, SlideTransitionState,
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
 } from '@web-ppt/editor';

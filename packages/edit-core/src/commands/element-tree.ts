@@ -6,6 +6,8 @@ import type {
 } from './types';
 import { clearElementTextPatches } from './element-text';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
+import { querySlideAnimations } from '../slide-animation';
+import { setAnimationsPatches } from './set-animations';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -51,9 +53,22 @@ export function removeElementPatches(
   }
   const value = snapshotTree(doc, command.id);
   const path = ['elements', command.id] as const;
+  const removedIds = new Set(Object.keys(value.records));
+  const slideId = slideOfElement(doc, command.id);
+  const animations = querySlideAnimations(doc, [slideId]).value;
+  const remainingAnimations = animations
+    .filter((step) => !removedIds.has(step.target))
+    .map((step, index) => index === 0 && step.trigger !== 'click'
+      ? { ...step, trigger: 'click' as const } : step);
+  const animationPatches = remainingAnimations.length === animations.length
+    ? { forward: [], inverse: [] }
+    : setAnimationsPatches(doc, {
+      type: 'SetAnimations', slideId, steps: remainingAnimations,
+    }, origin);
   return {
-    forward: [{ op: 'remove', path, value, origin }],
-    inverse: [{ op: 'insert', path, value, origin }],
+    forward: [...animationPatches.forward, { op: 'remove', path, value, origin }],
+    // 动画 Patch 的目标在元素树恢复前无效，因此逆序必须先插回元素。
+    inverse: [{ op: 'insert', path, value, origin }, ...animationPatches.inverse],
   };
 }
 

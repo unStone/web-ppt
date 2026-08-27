@@ -30,7 +30,8 @@ export function validateCommandRelations(doc: EditDoc, commands: readonly Comman
     command.type === 'SetBackground' || command.type === 'SetBackgroundImage'
       || command.type === 'SetBackgroundCrop'
       || command.type === 'SetHidden' || command.type === 'SetTransition' || command.type === 'SetLayout'
-      || command.type === 'SetNotes' ? [command.id] : [])
+      || command.type === 'SetNotes' ? [command.id]
+      : command.type === 'SetAnimations' ? [command.slideId] : [])
     .find((id) => removedSlideIds.has(id));
   // 删除页的逆 patch 先恢复整页；同事务再夹带页属性会让预校验依赖执行顺序，直接拒绝才是原子语义。
   if (slidePropertyConflict) {

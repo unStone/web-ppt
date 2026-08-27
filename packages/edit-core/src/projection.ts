@@ -16,6 +16,7 @@ import {
   changedLayout, projectedLayoutElements, projectionContentIds, rebasedElementBase,
   rebasedTextBase, resolvedLayoutSlide,
 } from './layout-projection';
+import { projectAnimationSteps } from './slide-animation';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -281,16 +282,22 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
     layoutName: layout.name,
     transition: structuredClone(resolved?.transition ?? layout.transition),
   } : {};
+  const { animations: animationOverride, ...slideOverrides } = record.ovr;
   let slide: Slide = {
     ...record.src,
     ...layoutSource,
-    ...record.ovr,
+    ...slideOverrides,
     elements: [
       ...(layout ? projectedLayoutElements(doc, id)
         .filter((element) => !element.editInfo?.placeholder) : []),
       ...contentIds.map((elementId) => effectiveElement(doc, elementId)),
     ],
   };
+  if (own(record.ovr, 'animations')) {
+    const animations = projectAnimationSteps(doc, animationOverride!);
+    if (animations) slide.animations = animations;
+    else delete slide.animations;
+  }
   if (record.backgroundImage) {
     const resource = doc.imageResources[record.backgroundImage.resourceHash];
     if (!resource || slide.background?.type !== 'image') {

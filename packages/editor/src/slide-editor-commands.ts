@@ -1,9 +1,12 @@
-import { querySlideLayout, querySlideNotes, querySlideTransition } from '@web-ppt/edit-core';
+import {
+  normalizeSlideAnimations, projectAnimationSteps, querySlideAnimations, querySlideLayout,
+  querySlideNotes, querySlideTransition,
+} from '@web-ppt/edit-core';
 import type {
-  ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides,
+  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState,
   SlideNotesState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideTransitionInput, SlideTransitionState,
+  SlideAnimationState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
 import type { TextEditorController } from './text-editor';
@@ -22,6 +25,7 @@ import type { FormatPainterViewBinding } from './format-painter-view';
 import type { TextSearchOpenOptions } from './text-search-types';
 import type { TextSearchViewBinding } from './text-search-view';
 import type { TransitionPreviewController } from './transition-preview';
+import type { AnimationPreviewController } from './animation-preview';
 
 interface SlideEditorCommandsOptions {
   readonly session: EditorSession;
@@ -33,6 +37,7 @@ interface SlideEditorCommandsOptions {
   readonly formatPainter: FormatPainterViewBinding;
   readonly textSearch: TextSearchViewBinding;
   transitionPreview(): TransitionPreviewController;
+  animationPreview(): AnimationPreviewController;
   mode(): EditorMode;
   slideId(): SlideId;
   destroyed(): boolean;
@@ -125,6 +130,26 @@ export class SlideEditorCommands {
   }
   previewTransition(value?: SlideTransitionInput): Promise<boolean> {
     return this.options.transitionPreview().preview(value);
+  }
+
+  queryAnimations(): SlideAnimationState {
+    return querySlideAnimations(this.options.session.editor.doc, [this.options.slideId()]);
+  }
+  setAnimations(value: readonly EditAnimationStep[] | null): boolean {
+    const o = this.options;
+    if (o.destroyed() || o.mode() !== 'edit') return false;
+    o.session.editor.exec({ type: 'SetAnimations', slideId: o.slideId(), steps: value });
+    return true;
+  }
+  previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean> {
+    const o = this.options;
+    const steps = value === undefined
+      ? o.session.editor.toSlide(o.slideId()).animations
+      : projectAnimationSteps(
+        o.session.editor.doc,
+        normalizeSlideAnimations(o.session.editor.doc, o.slideId(), value, 'previewAnimations.steps'),
+      );
+    return o.animationPreview().preview(steps);
   }
 
   queryLayout(): SlideLayoutState {

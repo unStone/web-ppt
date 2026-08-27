@@ -231,6 +231,34 @@ editor.exec({
 editor.exec({ type: 'SetTransition', id: slideId, t: null }); // restore source
 ```
 
+Element timelines keep `ElementId` targets stable while projection and save map them back to OOXML spids.
+`SetAnimations { slideId, steps }` accepts entrance, exit, emphasis, and motion-path steps; `[]` explicitly
+removes the timeline and `null` restores the untouched source. The first step must use `click`; motion paths retain
+their 2–256 polyline vertices while playback uses arc-length offsets for constant speed. Query state reports
+`sourceReadonly` for MCE, build, extension, or unsupported source timing nodes and preserves them byte-for-byte
+until an explicit replacement.
+
+| Kind | Safely writable effects | Directions |
+|---|---|---|
+| Entrance / exit | `appear`, `fade`, `fly`, `wipe`, `zoom`, `dissolve` | `fly`/`wipe`: `l/r/u/d`; `zoom`: `in/out` |
+| Emphasis | `spin`, `grow` | none |
+| Motion | `motionPath` | none |
+
+```ts
+import {
+  ANIMATION_EFFECTS, animationDirections, animationEffectsForKind, querySlideAnimations,
+} from '@web-ppt/edit-core';
+
+const animation = querySlideAnimations(editor.doc, selectedSlideIds);
+const entranceEffects = animationEffectsForKind('entrance');
+editor.exec({
+  type: 'SetAnimations', slideId,
+  steps: [{ target: elementId, kind: 'entrance', effect: 'fly', dir: 'r',
+    trigger: 'click', delayMs: 0, durationMs: 500 }],
+});
+editor.exec({ type: 'SetAnimations', slideId, steps: null });
+```
+
 Image backgrounds use content-addressed media resources. Uploading identical bytes across pages stores one media
 part; source and inherited image backgrounds can be cropped without editing the shared layout or master.
 

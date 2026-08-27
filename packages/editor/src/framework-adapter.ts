@@ -1,6 +1,7 @@
-import { querySlideTransition } from '@web-ppt/edit-core';
+import { querySlideAnimations, querySlideTransition } from '@web-ppt/edit-core';
 import type {
-  EditorChange, LinkTarget, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+  EditAnimationStep, EditorChange, LinkTarget, SlideAnimationState, SlideTransitionInput,
+  SlideTransitionState, TextSearchMatch,
 } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
@@ -256,6 +257,27 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   previewTransition(value?: SlideTransitionInput): Promise<boolean> {
     this.assertReady();
     return this.view?.previewTransition(value) ?? Promise.resolve(false);
+  }
+
+  queryAnimations(): SlideAnimationState | null {
+    this.assertReady();
+    const slideId = this.currentSnapshot.slideId;
+    return slideId ? querySlideAnimations(this.session!.editor.doc, [slideId]) : null;
+  }
+
+  setAnimations(value: readonly EditAnimationStep[] | null): boolean {
+    this.assertReady();
+    const slideId = this.currentSnapshot.slideId;
+    if (!slideId || this.currentSnapshot.mode !== 'edit' || this.session!.editor.doc.meta.readonly) {
+      return false;
+    }
+    this.session!.editor.exec({ type: 'SetAnimations', slideId, steps: value });
+    return true;
+  }
+
+  previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean> {
+    this.assertReady();
+    return this.view?.previewAnimations(value) ?? Promise.resolve(false);
   }
 
   dispose(): void {

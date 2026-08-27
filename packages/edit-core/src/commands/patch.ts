@@ -32,7 +32,7 @@ import {
 } from './slide-order';
 import {
   applySlidePropertyPatch, isSlideBackgroundImagePatch, isSlideBackgroundPatch,
-  isSlidePropertyPatch, validateSlidePropertyPatch, assertSlideImageBackground,
+  isSlideAnimationsPatch, isSlidePropertyPatch, validateSlidePropertyPatch, assertSlideImageBackground,
   assertSlideImageBackgroundDimensions,
 } from './slide-property';
 import {
@@ -56,6 +56,7 @@ function validatePatch(
   index: number,
   stagedTableRows: ReadonlyMap<string, Record<string, TableRowInsertion>>,
   stagedImageResources: Readonly<Record<string, ElementInsertionResource>>,
+  animationDoc: EditDoc,
 ): void {
   const patch = input as Partial<Patch> & { path?: unknown; value?: unknown };
   if (!['set', 'del', 'remove', 'insert', 'move'].includes(String(patch.op))) {
@@ -84,7 +85,7 @@ function validatePatch(
     return;
   }
   if (isSlidePropertyPatch(input)) {
-    validateSlidePropertyPatch(doc, input, index, stagedImageResources);
+    validateSlidePropertyPatch(animationDoc, input, index, stagedImageResources);
     return;
   }
   if (isSlideLayoutPatch(input)) {
@@ -335,6 +336,10 @@ function applyPatchBatch(
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
   validatePatchRelations(doc, patches);
+  const structural = patches.some((patch) => isSlideTreePatch(patch) || isElementTreePatch(patch));
+  const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
+  const animationDoc = needsAnimationStage ? structuralPatchStage(doc, patches) : doc;
+  if (needsAnimationStage) applyPatchValues(animationDoc, patches);
   const imageResourcePatches: { patch: ImageResourcePatch; index: number }[] = [];
   patches.forEach((patch, index) => {
     if (isImageResourcePatch(patch)) imageResourcePatches.push({ patch, index });
@@ -350,7 +355,7 @@ function applyPatchBatch(
   if (imageResourcePatches.length) assertImageResourceTargets(doc, stagedImageResources);
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   patches.forEach((patch, index) => {
-    validatePatch(doc, patch, index, stagedTableRows, stagedImageResources);
+    validatePatch(doc, patch, index, stagedTableRows, stagedImageResources, animationDoc);
     if (!isTableRowPatch(patch)) return;
     const current = stagedTableRows.get(patch.path[1])
       ?? { ...doc.elements[patch.path[1]]?.ovr.tableRows };
@@ -452,10 +457,9 @@ function applyPatchBatch(
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
   }
-  if (stageStructuralModel
-    && patches.some((patch) => isSlideTreePatch(patch) || isElementTreePatch(patch))) {
-    const stage = structuralPatchStage(doc, patches);
-    applyPatchValues(stage, patches);
+  if (stageStructuralModel && structural) {
+    const stage = needsAnimationStage ? animationDoc : structuralPatchStage(doc, patches);
+    if (!needsAnimationStage) applyPatchValues(stage, patches);
     validateEditDoc(stage);
   }
   applyPatchValues(doc, patches);

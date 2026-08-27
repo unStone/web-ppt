@@ -58,6 +58,16 @@ await view.previewTransition({ type: 'push', dir: 'r', durationMs: 500 }); // pr
 view.setTransition({ type: 'morph', durationMs: 900, morphBy: 'byWord' });
 view.setTransition(null); // restore the parsed source; { type: 'none' } explicitly disables it
 
+const animations = view.queryAnimations(); // targets are stable ElementIds, never OOXML spids
+// When sourceReadonly is true, offer an explicit whole-timeline replacement instead of partial editing.
+await view.previewAnimations();             // plays the complete effective timeline in view/edit mode
+await view.previewAnimations([{             // validate and audition a draft without changing history
+  target: targetId, kind: 'entrance', effect: 'fly', dir: 'r', trigger: 'click',
+  delayMs: 0, durationMs: 500,
+}]);
+view.setAnimations(animations.value); // edit mode only; [] removes the timeline
+view.setAnimations(null);             // restore the untouched parsed source
+
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
 selectionPane.destroy();

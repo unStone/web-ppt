@@ -109,6 +109,8 @@ export function framesFor(step: AnimStep): Keyframes {
 }
 
 export interface PlayHandle {
+  /** 由本句柄创建的动画；宿主需要精确回收时无需扫描整棵 DOM。 */
+  readonly animations: readonly Animation[];
   cancel(): void;
   finished: Promise<void>;
 }
@@ -116,24 +118,35 @@ export interface PlayHandle {
 /** 播放一批动画；返回可取消的句柄 */
 export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
   const anims: Animation[] = [];
-  let cursor = 0;
+  let previousStart = 0;
+  let previousEnd = 0;
 
   for (const step of group) {
+    const start = step.trigger === 'afterPrev'
+      ? previousEnd + step.delayMs
+      : step.trigger === 'withPrev' ? previousStart + step.delayMs : step.delayMs;
+    previousStart = start;
+    previousEnd = start + step.durationMs;
     const node = container.querySelector(`[data-el="${step.target}"]`) as HTMLElement | null;
     if (!node) continue;
-
-    const start = step.trigger === 'afterPrev' ? cursor + step.delayMs : step.delayMs;
-    if (step.trigger === 'afterPrev') cursor = start + step.durationMs;
-    else cursor = Math.max(cursor, start + step.durationMs);
 
     const { from, to } = framesFor(step);
     node.style.visibility = 'visible';
     if (step.kind === 'entrance') node.style.opacity = '';
 
-    // 运动路径给的是等距采样点，直接铺成多关键帧；
-    // 用 offset-path 会更"正统"，但它在 <img> 加载的 SVG 与 foreignObject 里支持不一致
+    // 顶点必须原样保留；累计弧长映射到 offset 才能同时得到匀速与尖角不变。
+    // 不用 offset-path，因为它在 <img> SVG 与 foreignObject 里支持不一致。
+    const distances = step.motionPath?.reduce<number[]>((values, [x, y], index, points) => {
+      if (index === 0) values.push(0);
+      else values.push(values[index - 1] + Math.hypot(x - points[index - 1][0], y - points[index - 1][1]));
+      return values;
+    }, []);
+    const distance = distances?.[distances.length - 1] ?? 0;
     const frames: Keyframe[] = step.motionPath?.length
-      ? step.motionPath.map(([dx, dy]) => ({ transform: `translate(${dx}px, ${dy}px)` }))
+      ? step.motionPath.map(([dx, dy], index) => ({
+        transform: `translate(${dx}px, ${dy}px)`,
+        offset: distance > 0 ? distances![index] / distance : index / (step.motionPath!.length - 1),
+      }))
       : [from, to];
 
     try {
@@ -155,6 +168,7 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
   }
 
   return {
+    animations: anims,
     cancel: () => anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } }),
     finished: Promise.all(anims.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
   };

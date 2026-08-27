@@ -928,15 +928,11 @@ group('动画 / 切换');
       // 运动路径
       eq('运动路径动画条数', motion.length, 2);
       for (const m of motion) {
-        check(`运动路径 ${m.target} 有采样点`, (m.motionPath?.length ?? 0) >= 8, `${m.motionPath?.length}`);
+        check(`运动路径 ${m.target} 有有效折线`, (m.motionPath?.length ?? 0) >= 2
+          && m.motionPath.length <= 256, `${m.motionPath?.length}`);
         check(`运动路径 ${m.target} 起点归零`,
           m.motionPath[0][0] === 0 && m.motionPath[0][1] === 0, JSON.stringify(m.motionPath?.[0]));
         check(`运动路径 ${m.target} 无脏值`, !BAD.test(JSON.stringify(m.motionPath)));
-        // 弧长等距重采样：相邻步长应基本一致，否则 WAAPI 会把长段走得比短段慢
-        const d = m.motionPath.slice(1).map(([x, y], i) =>
-          Math.hypot(x - m.motionPath[i][0], y - m.motionPath[i][1]));
-        check(`运动路径 ${m.target} 采样等距`, Math.max(...d) / Math.min(...d) < 1.2,
-          `max/min=${(Math.max(...d) / Math.min(...d)).toFixed(3)}`);
       }
       // 闭合路径（Z）必须回到原点
       const closed = motion.find((m) => m.target === 707);
@@ -2058,8 +2054,15 @@ group('播放引擎');
       eq('运动路径铺成多关键帧', calls[0]?.frames.length, mstep.motionPath.length);
       eq('运动路径走线性缓动', calls[0]?.opts.easing, 'linear');
       check('关键帧是 translate',
-        /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(calls[0].frames[3].transform),
-        calls[0].frames[3].transform);
+        /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(calls[0].frames[1].transform),
+        calls[0].frames[1].transform);
+
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        ...mstep, motionPath: [[0, 0], [10, 0], [40, 0]],
+      }]);
+      eq('非等距路径按累计弧长分配关键帧时间',
+        calls[0]?.frames.map((frame) => frame.offset).join('|'), '0|0.25|1');
 
       calls.length = 0;
       viewerLib.playGroup(fakeContainer, [anim.animations.find((a) => a.kind === 'entrance')]);

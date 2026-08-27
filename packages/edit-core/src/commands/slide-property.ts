@@ -4,6 +4,7 @@ import { assertDataObject } from '../data-validation';
 import { assertImageCrop } from '../image-content';
 import { assertVectorFill } from '../shape-fill';
 import { assertStoredSlideTransition } from '../slide-transition';
+import { assertStoredSlideAnimations } from '../slide-animation';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource, SlideImageBackground, SlideRecord,
 } from '../types';
@@ -17,8 +18,8 @@ import { sourceImageBackground } from '../slide-background-source';
 import { assertUploadImageResource } from './element-image-content';
 import { normalizeSlideImageTile } from './slide-image';
 import type {
-  Patch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch, SlidePropertyPatch,
-  SlideTransitionPatch,
+  Patch, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SlidePropertyPatch, SlideTransitionPatch,
 } from './types';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
@@ -273,9 +274,14 @@ export function isSlideTransitionPatch(patch: Patch): patch is SlideTransitionPa
     && patch.path[2] === 'ovr' && patch.path[3] === 'transition';
 }
 
+export function isSlideAnimationsPatch(patch: Patch): patch is SlideAnimationsPatch {
+  return patch.path.length === 4 && patch.path[0] === 'slides'
+    && patch.path[2] === 'ovr' && patch.path[3] === 'animations';
+}
+
 export function isSlidePropertyPatch(patch: Patch): patch is SlidePropertyPatch {
   return isSlideBackgroundPatch(patch) || isSlideBackgroundImagePatch(patch)
-    || isSlideHiddenPatch(patch) || isSlideTransitionPatch(patch);
+    || isSlideHiddenPatch(patch) || isSlideTransitionPatch(patch) || isSlideAnimationsPatch(patch);
 }
 
 export function validateSlidePropertyPatch(
@@ -298,6 +304,8 @@ export function validateSlidePropertyPatch(
     assertSlideImageBackground(patch.value, record, resources, `Patch ${index} 的 backgroundImage`, doc);
   } else if (isSlideTransitionPatch(patch)) {
     assertStoredSlideTransition(patch.value, `Patch ${index} 的 transition`);
+  } else if (isSlideAnimationsPatch(patch)) {
+    assertStoredSlideAnimations(doc, patch.path[1], patch.value, `Patch ${index} 的 animations`);
   } else if (typeof patch.value !== 'boolean') {
     throw new Error(`Patch ${index} 的 hidden 必须是布尔值`);
   }
@@ -315,6 +323,9 @@ export function applySlidePropertyPatch(doc: EditDoc, patch: SlidePropertyPatch)
   } else if (isSlideTransitionPatch(patch)) {
     if (patch.op === 'set') record.ovr.transition = structuredClone(patch.value);
     else delete record.ovr.transition;
+  } else if (isSlideAnimationsPatch(patch)) {
+    if (patch.op === 'set') record.ovr.animations = structuredClone(patch.value);
+    else delete record.ovr.animations;
   } else if (patch.op === 'set') record.ovr.hidden = patch.value;
   else delete record.ovr.hidden;
 }
