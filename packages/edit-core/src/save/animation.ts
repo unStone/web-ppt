@@ -336,28 +336,40 @@ const STRUCTURAL_BEHAVIOR_PARENTS = new Set([
   'timing', 'tnLst', 'childTnLst', 'subTnLst', 'par', 'seq', 'cTn',
 ]);
 
-function behaviorContainer(
-  behavior: XmlElement, removals: ReadonlySet<XmlElement>,
-): XmlElement | null {
-  const parent = parentElement(behavior);
-  if (!parent || STRUCTURAL_BEHAVIOR_PARENTS.has(parent.localName)) return null;
-  const behaviors = xmlElementChildren(parent).filter((child) =>
-    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cBhvr');
-  return behaviors.length && behaviors.every((child) => removals.has(child)) ? parent : null;
+function behaviorContainers(removals: ReadonlySet<XmlElement>): Set<XmlElement> {
+  const parents = new Set<XmlElement>();
+  for (const behavior of removals) {
+    if (behavior.namespaceUri !== PRESENTATIONML_NS || behavior.localName !== 'cBhvr') continue;
+    const parent = parentElement(behavior);
+    if (parent && !STRUCTURAL_BEHAVIOR_PARENTS.has(parent.localName)) parents.add(parent);
+  }
+  const containers = new Set<XmlElement>();
+  for (const parent of parents) {
+    const behaviors = xmlElementChildren(parent).filter((child) =>
+      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cBhvr');
+    if (behaviors.length && behaviors.every((child) => removals.has(child))) containers.add(parent);
+  }
+  return containers;
 }
 
-function conditionTimeContainer(
-  condition: XmlElement, removals: ReadonlySet<XmlElement>,
-): XmlElement | null {
-  const list = parentElement(condition);
-  if (!list || (list.localName !== 'stCondLst' && list.localName !== 'endCondLst')) return null;
-  const conditions = xmlElementChildren(list).filter((child) =>
-    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cond');
-  if (!conditions.length || !conditions.every((child) => removals.has(child))) return null;
-  const time = parentElement(list);
-  const container = time && parentElement(time);
-  return container && container.namespaceUri === PRESENTATIONML_NS
-    && (container.localName === 'par' || container.localName === 'seq') ? container : null;
+function conditionTimeContainers(removals: ReadonlySet<XmlElement>): Set<XmlElement> {
+  const lists = new Set<XmlElement>();
+  for (const condition of removals) {
+    if (condition.namespaceUri !== PRESENTATIONML_NS || condition.localName !== 'cond') continue;
+    const list = parentElement(condition);
+    if (list && (list.localName === 'stCondLst' || list.localName === 'endCondLst')) lists.add(list);
+  }
+  const containers = new Set<XmlElement>();
+  for (const list of lists) {
+    const conditions = xmlElementChildren(list).filter((child) =>
+      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cond');
+    if (!conditions.length || !conditions.every((child) => removals.has(child))) continue;
+    const time = parentElement(list);
+    const container = time && parentElement(time);
+    if (container && container.namespaceUri === PRESENTATIONML_NS
+      && (container.localName === 'par' || container.localName === 'seq')) containers.add(container);
+  }
+  return containers;
 }
 
 function insideRemoval(element: XmlElement, removals: ReadonlySet<XmlElement>): boolean {
@@ -423,19 +435,9 @@ export function removeSlideAnimationTargets(
     }
     surgicalTargets.forEach(removeTargetNode);
 
-    const behaviorContainers = new Set<XmlElement>();
-    const timeContainers = new Set<XmlElement>();
-    for (const node of removals) {
-      if (node.namespaceUri !== PRESENTATIONML_NS) continue;
-      if (node.localName === 'cBhvr') {
-        const container = behaviorContainer(node, removals);
-        if (container) behaviorContainers.add(container);
-      } else if (node.localName === 'cond') {
-        const container = conditionTimeContainer(node, removals);
-        if (container) timeContainers.add(container);
-      }
-    }
-    behaviorContainers.forEach((node) => removals.add(node));
+    const behaviorOwners = behaviorContainers(removals);
+    const timeContainers = conditionTimeContainers(removals);
+    behaviorOwners.forEach((node) => removals.add(node));
     const immediate = new Set([...removals].filter((node) => !timeContainers.has(node)));
     removePlanned(immediate);
 

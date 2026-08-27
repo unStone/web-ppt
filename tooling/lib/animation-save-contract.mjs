@@ -208,7 +208,7 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   check('unsupported-only 删除唯一目标后不留下悬空行为',
     !deletedUnsupportedXml.includes(`<p:spTgt spid="${deleteUnsupportedSpid}"`)
       && !deletedUnsupportedXml.includes('<p:animClr')
-      && !deletedUnsupportedXml.includes('<p:tnLst'));
+      && deletedUnsupportedXml.includes('fixture:keepList="yes"'));
   check('删除含动画子元素的来源组后复制页不会遗留子元素 timing 引用',
     !deletedCopyXml.includes(`<p:spTgt spid="${deleteSourceGroupChildSpid}"`)
       && deletedCopyXml.includes('fixture:keepTarget="yes"')
@@ -233,7 +233,13 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
     const id = 1000 + index * 3;
     return `<p:par><p:cTn id="${id}" presetID="10" presetClass="entr" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 1}" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`;
   }).join('');
-  const stressTiming = `<p:timing><p:tnLst>${stressEffects}</p:tnLst></p:timing>`;
+  const sharedBehaviors = Array.from({ length: 4000 }, (_, index) => {
+    const id = 20_000 + index;
+    return `<p:cBhvr><p:cTn id="${id}" dur="500"/><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cBhvr>`;
+  }).join('');
+  const sharedConditions = Array.from({ length: 4000 }, () =>
+    `<p:cond delay="0"><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cond>`).join('');
+  const stressTiming = `<p:timing><p:tnLst>${stressEffects}<p14:anim xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sharedBehaviors}</p14:anim><p:par><p:cTn id="30000"><p:stCondLst>${sharedConditions}</p:stCondLst></p:cTn></p:par></p:tnLst></p:timing>`;
   stressParts[stressPart] = new TextEncoder().encode(
     stressSource.replace('</p:sld>', `${stressTiming}</p:sld>`),
   );
@@ -247,7 +253,7 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   const stressSaved = await stressEditor.saveDetailed();
   const stressElapsed = performance.now() - stressStart;
   const stressXml = decoder.decode(stressSaved.package.parts[stressPart]);
-  check('大量点击动画目标删除保持线性预算且不留引用',
+  check('大量点击及同父行为/条件目标删除保持线性预算且不留引用',
     stressElapsed < 500 && !stressXml.includes(`<p:spTgt spid="${stressTarget}"`),
     `${stressElapsed.toFixed(1)}ms`);
   edit.disposeDoc(stressDoc);

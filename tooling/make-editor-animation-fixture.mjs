@@ -87,7 +87,7 @@ const many = Array.from({ length: 60 }, (_, index) => {
 const slide3 = `${slideXml(many)}`;
 
 const fourthA = shape({ x: 360, y: 260, color: 'C55A11', name: 'readonly-only', text: '仅含未支持来源行为' });
-const unsupportedOnlyTiming = `<p:timing><p:tnLst><p:animClr clrSpc="rgb"><p:cBhvr><p:cTn id="1" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${fourthA.id}"/></p:tgtEl></p:cBhvr><p:to><a:srgbClr val="00FF00"/></p:to></p:animClr></p:tnLst></p:timing>`;
+const unsupportedOnlyTiming = `<p:timing><p:tnLst xmlns:fixture="urn:web-ppt:animation-fixture" fixture:keepList="yes"><p:animClr clrSpc="rgb"><p:cBhvr><p:cTn id="1" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${fourthA.id}"/></p:tgtEl></p:cBhvr><p:to><a:srgbClr val="00FF00"/></p:to></p:animClr></p:tnLst></p:timing>`;
 const slide4 = slideXml(fourthA.xml).replace('</p:sld>', `${unsupportedOnlyTiming}</p:sld>`);
 
 const fifthA = shape({ x: 360, y: 260, color: '4472C4', name: 'noncanonical-spin', text: '非规范可识别时间树' });

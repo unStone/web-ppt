@@ -39,18 +39,21 @@ export function selectSlideTiming(root: Element | null): SlideTimingSelection {
 interface ValidationContext {
   nodes: number;
   readonly ids: Set<number>;
+  readonly seen: Set<Element>;
 }
 
-function take(context: ValidationContext): boolean {
+function take(context: ValidationContext, element: Element): boolean {
+  if (context.seen.has(element)) return true;
+  context.seen.add(element);
   context.nodes++;
   return context.nodes <= MAX_TIMING_NODES;
 }
 
 function pChildren(element: Element, context: ValidationContext): Element[] | null {
-  if (!take(context)) return null;
+  if (!take(context, element)) return null;
   const result: Element[] = [];
   for (let child = element.firstElementChild; child; child = child.nextElementSibling) {
-    if (!take(context)) return null;
+    if (!take(context, child)) return null;
     if (child.namespaceURI !== P) return null;
     result.push(child);
   }
@@ -275,7 +278,7 @@ function clickGroup(element: Element, context: ValidationContext): boolean {
 }
 
 function canonicalTiming(timing: Element): boolean {
-  const context: ValidationContext = { nodes: 0, ids: new Set() };
+  const context: ValidationContext = { nodes: 0, ids: new Set(), seen: new Set() };
   if (timing.namespaceURI !== P || timing.localName !== 'timing' || !attributes(timing, [])) return false;
   const list = exactChildren(timing, ['tnLst'], context)?.[0];
   if (!list || !attributes(list, [])) return false;

@@ -883,6 +883,23 @@ group('动画 / 切换');
   check('超宽 timing 预算避免主线程长时间遍历', wideElapsed < 100,
     `${wideElapsed.toFixed(1)}ms`);
 
+  let canonicalId = 0;
+  const nextCanonicalId = () => ++canonicalId;
+  const canonicalEffects = Array.from({ length: 90 }, () => {
+    const wrapper = nextCanonicalId();
+    const preset = nextCanonicalId();
+    const visibility = nextCanonicalId();
+    const effect = nextCanonicalId();
+    return `<p:par><p:cTn id="${wrapper}" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst><p:par><p:cTn id="${preset}" presetID="10" presetClass="entr" dur="500" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:set><p:cBhvr><p:cTn id="${visibility}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="1"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${effect}" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="1"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`;
+  }).join('');
+  const rootId = nextCanonicalId();
+  const mainId = nextCanonicalId();
+  const canonicalXml = parseXml(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst><p:par><p:cTn id="${rootId}" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="${mainId}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${canonicalEffects}</p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing></p:sld>`);
+  const canonicalTiming = animationMod.parseSlideTiming(canonicalXml.doc.documentElement, 1280, 720);
+  check('预算按唯一 DOM 节点计数，不误伤 90 步规范时间线',
+    !canonicalTiming.readonly && canonicalTiming.animations?.length === 90,
+    `${canonicalTiming.animations?.length ?? 0} steps / readonly=${canonicalTiming.readonly}`);
+
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     const withTrans = pres.slides.filter((s) => s.transition);

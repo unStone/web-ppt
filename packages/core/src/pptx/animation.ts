@@ -392,25 +392,46 @@ interface ParsedTiming {
  */
 function presetTimeNodes(timing: Element): Element[] | null {
   const found: Element[] = [];
-  const stack: { element: Element; depth: number; insidePreset: boolean }[] = [
-    { element: timing, depth: 0, insidePreset: false },
-  ];
+  interface Cursor {
+    next: Element | null;
+    readonly depth: number;
+    readonly insidePreset: boolean;
+  }
+  const parents: Cursor[] = [];
+  let current: { element: Element; depth: number; insidePreset: boolean } | null = {
+    element: timing, depth: 0, insidePreset: false,
+  };
   let visited = 0;
-  while (stack.length) {
-    const current = stack.pop()!;
+  while (current) {
     if (++visited > MAX_TIMING_NODES) return null;
-    const preset = !current.insidePreset && current.depth <= 25
+    const preset: boolean = !current.insidePreset && current.depth <= 25
       && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
     if (preset) found.push(current.element);
-    const children: Element[] = [];
-    for (let child = current.element.firstElementChild; child; child = child.nextElementSibling) {
-      children.push(child);
-    }
-    for (let index = children.length - 1; index >= 0; index--) {
-      stack.push({
-        element: children[index], depth: current.depth + 1,
-        insidePreset: current.insidePreset || preset,
+    const insidePreset: boolean = current.insidePreset || preset;
+    const child: Element | null = current.element.firstElementChild;
+    if (child) {
+      parents.push({
+        next: child.nextElementSibling,
+        depth: current.depth + 1,
+        insidePreset,
       });
+      current = { element: child, depth: current.depth + 1, insidePreset };
+      continue;
+    }
+    current = null;
+    while (parents.length && !current) {
+      const cursor = parents[parents.length - 1];
+      const sibling = cursor.next;
+      if (!sibling) {
+        parents.pop();
+        continue;
+      }
+      cursor.next = sibling.nextElementSibling;
+      current = {
+        element: sibling,
+        depth: cursor.depth,
+        insidePreset: cursor.insidePreset,
+      };
     }
   }
   return found;
