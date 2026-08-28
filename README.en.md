@@ -346,15 +346,15 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,131 assertions + 176 render snapshots |
-| `npm run test:edit` | 741 edit-model + 307 save + 9 PowerPoint-evidence assertions, plus 372 process-isolated SVG fingerprint pairs across 61 fixtures |
-| `npm run test:editor` | 306 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:core` | Core parsing / rendering — 2,145 assertions + 176 render snapshots |
+| `npm run test:edit` | 874 edit-model + 370 save + 9 PowerPoint-evidence assertions, plus 478 process-isolated SVG fingerprint pairs across 66 fixtures |
+| `npm run test:editor` | 360 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
-| `npm run test:adapters` | 8 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
+| `npm run test:adapters` | 9 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
 | `npm run build` | Build all seven publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |

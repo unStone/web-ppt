@@ -377,9 +377,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2131 项断言 + 176 个渲染快照 |
-| `npm run test:edit` | 编辑模型 741 项 + 保存 307 项 + PowerPoint 证据 9 项 + 61 份固件、372 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 306 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:core` | 核心解析 / 渲染，2145 项断言 + 176 个渲染快照 |
+| `npm run test:edit` | 编辑模型 874 项 + 保存 370 项 + PowerPoint 证据 9 项 + 66 份固件、478 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 360 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -387,7 +387,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
-| `npm run test:adapters` | React / Vue 的 8 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
+| `npm run test:adapters` | React / Vue 的 9 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
 | `npm run build` | 构建七个发布包（core / edit-core / viewer-core / editor / react / vue / fonts） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |

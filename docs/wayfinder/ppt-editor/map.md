@@ -90,8 +90,16 @@ tracker: local-markdown
 
 ## Not yet specified
 
-- M5 的剩余性能预算继续独立拆分；不把产品 UI 或业务状态塞入无框架 adapter。
-- M6 的顶点编辑、表样式与协同适配分别形成独立扩展；元素动画扩展已完成并发布 beta。
+- 2026-08-28 重规划：剩余工作已全部拆为票据 064–075——[生成式保存](tickets/064-generated-pptx-save.md)
+  →（[.ppt 转存](tickets/065-ppt-edit-save-as-pptx.md)、[空白新建](tickets/066-blank-document-entry.md)）、
+  [组合解组](tickets/067-group-ungroup-commands.md)、[列表升降级](tickets/068-text-list-level.md)、
+  [快捷键对账](tickets/069-appendix-b-shortcut-audit.md)、[顶点](tickets/070-vertex-editing-extension.md) /
+  [表样式](tickets/071-table-style-library.md) / [协同](tickets/072-collab-adapter-package.md) 三个 M6 扩展、
+  [编辑页工具栏](tickets/073-site-editor-toolbar-completion.md)、[性能契约抗负载](tickets/074-perf-contract-load-isolation.md)、
+  [0.5.0 转正](tickets/075-0.5.0-stable-release.md)。建议顺序：064 与 010（等外部 Windows runner）先行，
+  067 / 073 次之，070–072 独立推进，075 收尾。§10.3 性能预算已在各票据内逐项达标，不再单列。
+- [072](tickets/072-collab-adapter-package.md) 的 CRDT / LWW 选型在票据内决策；0.6 线目标待 0.5.0 转正后另立。
+- 不把产品 UI 或业务状态塞入无框架 adapter（073 只做 seam 接线）。
 
 ## Out of scope
 

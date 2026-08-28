@@ -1,6 +1,8 @@
 # 编辑能力技术方案
 
-> 状态：设计稿，未开工。目标版本 v0.5 → v0.9。
+> 状态：M0–M5 已实现，M6 完成动画编辑，整线随 `0.5.0-beta.1` 发布（`@next`）。
+> 实施记录见 [wayfinder 地图](wayfinder/ppt-editor/map.md)；尚未关闭的验收：PowerPoint 真机（[票据 010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)，缺 Windows runner）。
+> 生成式保存、组合/解组、顶点编辑、表样式、协同仍未实现，见地图前沿票据。本稿保留为架构与验收依据。
 > 前置阅读：[AGENTS.md](../AGENTS.md)（约束与陷阱）、[README.md](../README.md#架构)（分层）。
 
 把只读渲染引擎变成编辑器，真正的难点不是"加个拖拽框"，而是三件事：
