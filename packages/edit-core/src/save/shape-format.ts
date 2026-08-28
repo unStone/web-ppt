@@ -11,6 +11,7 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 import { locateElementHost } from './xfrm';
 import { appendDrawingColor } from './drawing-color';
+import { patchBackgroundImageFill } from './background-image';
 
 const FILL_NAMES = new Set(['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill']);
 const LINE_CONTROLLED = new Set([
@@ -137,6 +138,15 @@ export function materializeElementFill(
   const properties = shapeProperties(document, record);
   removeDrawingFillChildren(properties);
   appendVectorFill(properties, fill ?? { type: 'none' });
+}
+
+export function materializeElementImageFill(
+  document: XmlDocument,
+  record: ElementRecord,
+  fill: Extract<Fill, { type: 'image' }>,
+  relationshipId: string,
+): void {
+  patchBackgroundImageFill(shapeProperties(document, record), fill, relationshipId, false);
 }
 
 export function materializeElementStroke(

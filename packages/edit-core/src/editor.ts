@@ -101,8 +101,9 @@ export class Editor {
   }
 
   async saveDetailed(): Promise<OpcPatchResult> {
-    const { saveEditDoc } = await import('./save/index');
-    const result = saveEditDoc(this.doc);
+    const result = this.doc.meta.source === 'pptx' && this.doc.package && !this.doc.package.disposed
+      ? (await import('./save/index')).saveEditDoc(this.doc)
+      : (await import('./generate/index')).generateEditDoc(this.doc);
     this.markSaved();
     return result;
   }

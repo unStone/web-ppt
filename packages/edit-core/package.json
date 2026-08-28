@@ -42,6 +42,10 @@
       "types": "./dist/save/index.d.ts",
       "import": "./dist/save.js"
     },
+    "./generate": {
+      "types": "./dist/generate/index.d.ts",
+      "import": "./dist/generate.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

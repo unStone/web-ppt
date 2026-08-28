@@ -32,6 +32,27 @@ function validatePartName(name: string): void {
   }
 }
 
+/** 生成保存从已解压 part 构造全新包；输入和结果都拍快照，调用方不能随后改写。 */
+export function createOpcPackage(parts: Readonly<Record<string, Uint8Array>>): OpcPatchResult {
+  const snapshots: Record<string, Uint8Array> = Object.create(null);
+  const changes = new Map<string, Uint8Array>();
+  for (const [name, bytes] of Object.entries(parts)) {
+    validatePartName(name);
+    const snapshot = bytes.slice();
+    snapshots[name] = snapshot;
+    changes.set(name, snapshot);
+  }
+  const rewritten = repackZipParts(Object.create(null), changes);
+  const frozen = Object.freeze(snapshots);
+  return {
+    ...rewritten,
+    bytes: rewritten.bytes,
+    package: createOwnedPackage(rewritten.bytes, frozen),
+    mode: 'repacked',
+    fallbackReason: null,
+  };
+}
+
 function nextPackage(
   source: OpcPackage,
   bytes: Uint8Array,

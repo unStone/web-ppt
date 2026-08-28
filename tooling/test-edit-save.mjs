@@ -30,6 +30,7 @@ import { runFormatPainterSaveContract } from './lib/format-painter-save-contract
 import { runFindReplaceSaveContract } from './lib/find-replace-save-contract.mjs';
 import { runTransitionSaveContract } from './lib/transition-save-contract.mjs';
 import { runAnimationSaveContract } from './lib/animation-save-contract.mjs';
+import { runGeneratedSaveContract } from './lib/generated-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -50,11 +51,15 @@ const aliases = [
 ];
 const corePath = join(out, 'core.mjs');
 const editPath = join(out, 'edit.mjs');
+const generatePath = join(out, 'generate.mjs');
 const core = await bundleBrowser({
   root, entry: join(root, 'packages/core/src/index.ts'), output: corePath,
 });
 const edit = await bundleBrowser({
   root, entry: join(root, 'packages/edit-core/src/index.ts'), output: editPath, aliases,
+});
+const generate = await bundleBrowser({
+  root, entry: join(root, 'tooling/lib/generated-save-public-entry.ts'), output: generatePath, aliases,
 });
 const fixturesDir = join(root, 'fixtures');
 const load = (name) => new Uint8Array(readFileSync(join(fixturesDir, name)));
@@ -76,6 +81,17 @@ const check = (label, condition, detail = '') => {
 };
 const eq = (label, actual, expected) => check(label, Object.is(actual, expected),
   `期望 ${String(expected)}，实际 ${String(actual)}`);
+
+await runGeneratedSaveContract({
+  core, edit: generate, generate, load, check, eq, saveArtifact,
+  renderFingerprint: (file, mode) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/generated-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
 
 await runM1SaveContract({
   core,

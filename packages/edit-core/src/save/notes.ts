@@ -110,6 +110,11 @@ function emptyNotesXml(): Uint8Array {
 </p:notes>`);
 }
 
+/** 生成式保存与新增备注共用同一份最小宿主，避免两条备注序列化规则漂移。 */
+export function createGeneratedNotesPart(value: string): Uint8Array {
+  return patchNotesText(emptyNotesXml(), value);
+}
+
 const attribute = (element: XmlElement, localName: string): string | undefined =>
   element.attributes.find((candidate) =>
     candidate.localName === localName && candidate.namespaceUri === null)?.value;

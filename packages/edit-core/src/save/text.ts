@@ -19,6 +19,7 @@ import { namespacedElement } from './xml-element';
 import { patchTextBodyProperties } from './text-body';
 import { patchHyperlinkNode } from './hyperlink';
 import type { HyperlinkSaveContext } from './hyperlink';
+import { materializeParagraphLayout, materializeRunProperties } from './text-source-less';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
@@ -230,15 +231,17 @@ function paragraphProperties(
   paragraph: XmlElement,
   flat: FlatTextParagraph,
   lnSpcReduction: number,
+  materializeLayout = false,
 ): XmlElement | null {
   let properties = findXmlChild(paragraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS });
-  if (!flat.paragraphOverrides) return properties;
+  if (!flat.paragraphOverrides && !materializeLayout) return properties;
   if (!properties) {
     properties = namespacedElement(paragraph, DRAWINGML_NS, 'pPr');
     insertXmlInOrder(paragraph, properties);
   }
   if (properties) {
     applyParagraphOverrides(properties, flat, lnSpcReduction);
+    if (materializeLayout) materializeParagraphLayout(properties, flat);
     if (!hasPropertyContent(properties)) {
       removeXmlChild(paragraph, properties);
       return null;
@@ -264,26 +267,7 @@ function appendCopiedRunProperties(
     }
     for (const child of sourceProperties.children) insertXmlChildUnchecked(properties, cloneXmlNode(child));
   } else {
-    setXmlAttribute(properties, 'sz', String(Math.round(mark.props.size * 75)));
-    if (mark.props.b) setXmlAttribute(properties, 'b', '1');
-    if (mark.props.i) setXmlAttribute(properties, 'i', '1');
-    if (mark.props.u) setXmlAttribute(properties, 'u', 'sng');
-    if (mark.props.strike) setXmlAttribute(properties, 'strike', 'sngStrike');
-    if (mark.props.baseline) setXmlAttribute(properties, 'baseline', String(Math.round(mark.props.baseline * 1000)));
-    if (mark.props.spacing) setXmlAttribute(properties, 'spc', String(Math.round(mark.props.spacing * 75)));
-    const color = /^#([0-9a-f]{6})$/i.exec(mark.props.color)?.[1];
-    if (color) {
-      const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');
-      const srgb = namespacedElement(fill, DRAWINGML_NS, 'srgbClr');
-      setXmlAttribute(srgb, 'val', color.toUpperCase());
-      insertXmlChildUnchecked(fill, srgb);
-      insertXmlChildUnchecked(properties, fill);
-    }
-    if (mark.props.fonts[0]) {
-      const latin = namespacedElement(properties, DRAWINGML_NS, 'latin');
-      setXmlAttribute(latin, 'typeface', mark.props.fonts[0]);
-      insertXmlChildUnchecked(properties, latin);
-    }
+    materializeRunProperties(properties, mark);
   }
   applyRunOverrides(properties, mark, links);
   if (hasPropertyContent(properties)) insertXmlChildUnchecked(run, properties);
@@ -364,7 +348,7 @@ function appendFlatParagraph(
     ? findXmlChild(sourceParagraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS })
     : null;
   if (pPr) insertXmlChildUnchecked(paragraph, cloneXmlNode(pPr));
-  paragraphProperties(paragraph, flat, lnSpcReduction);
+  paragraphProperties(paragraph, flat, lnSpcReduction, !sourceParagraph);
   const remainingNodes = new Map(preservedNodes);
   const appendPreservedNodes = (through = Number.POSITIVE_INFINITY): void => {
     for (const [gap, nodes] of [...remainingNodes].sort(([left], [right]) => left - right)) {

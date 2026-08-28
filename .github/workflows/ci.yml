@@ -41,9 +41,12 @@ jobs:
       - name: 安装 LibreOffice
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress
 
-      - name: 补丁保存外部打开测试
+      - name: 保存产物外部打开测试
         # 复用上一阶段通过最小差异合约的同一份字节，避免各自生成不同样本。
         run: |
+          npm run test:edit:libreoffice -- out/edit-save/generated-empty.pptx 1
+          npm run test:edit:libreoffice -- out/edit-save/generated-content.pptx 1
+          npm run test:edit:libreoffice -- out/edit-save/generated-ppt-source.pptx 2
           npm run test:edit:libreoffice -- out/edit-save/single-move.pptx
           npm run test:edit:libreoffice -- out/edit-save/engine-text-editing.pptx
           npm run test:edit:libreoffice -- out/edit-save/table-cell-text-editing.pptx
