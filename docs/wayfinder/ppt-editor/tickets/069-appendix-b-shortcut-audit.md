@@ -1,6 +1,7 @@
 ---
 title: 盘点并补齐附录 B 快捷键
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -29,3 +30,13 @@ blocked_by: []
 不新开监听通道；每条新键位有真实浏览器可信事件断言。
 
 验收：附录 B 每一行都能指到实现或明确的职责标注；新增键位的 Chrome 可信输入契约通过；全部门禁绿。
+
+## Resolution
+
+附录 B 已逐行落到实现或产品职责：editor 补齐画布/文字双层 `Ctrl/Cmd+A`、逐 run 字号档位、段落对齐、
+可写 PPTX 新建页与事件视图翻页；保存和 F5 继续由产品层负责，查找替换与表格 Tab 优先级也已补入索引。
+
+页面级键位复用唯一文档控制器，内部切页通过公开回调同步 adapter、selection pane 与官网分页器；新页清空旧选择，
+撤销重做按结构变化回显。混合字号以稳定线性区间逆序预测，IME composition / 229 边界完全避让，避免 run 分裂漂移
+或未提交组词丢失。合成 DOM、真实 Chrome 可信输入、官网产品闭环及 `npm run check && npm test && npm run build`
+全部通过；Spec / Standards 最终复审均无 P0/P1/P2。

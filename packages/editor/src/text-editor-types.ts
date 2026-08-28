@@ -11,6 +11,8 @@ export interface TextEditorControllerOptions {
   claim: () => void;
   release: () => void;
   syncStatic: (id: ElementId) => void;
+  selectAllElements: () => void;
+  documentKeyDown: (event: KeyboardEvent) => boolean;
 }
 
 export interface CompositionSnapshot {

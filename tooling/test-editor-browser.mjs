@@ -20,6 +20,7 @@ import { runTrustedTextContract } from './lib/editor-text-trusted-contract.mjs';
 import { runTrustedEngineTextContract } from './lib/editor-engine-text-trusted-contract.mjs';
 import { runTrustedRichTextClipboardContract } from './lib/editor-rich-text-clipboard-trusted-contract.mjs';
 import { runTrustedTableCellTextContract } from './lib/editor-table-cell-text-trusted-contract.mjs';
+import { runTrustedShortcutAuditContract } from './lib/editor-shortcut-audit-trusted-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -497,6 +498,8 @@ async function browserResult(webSocketDebuggerUrl) {
         const trustedTextP95 = await runTrustedTextContract({ evaluate, request });
         await runTrustedEngineTextContract({ evaluate, request });
         await runTrustedTableCellTextContract({ evaluate, request });
+        // IME 中投递页面键会让 Chromium 延迟 Process key；放在其他文字契约后隔离输入队列。
+        await runTrustedShortcutAuditContract({ evaluate, dispatchKey, request });
         await evaluate(`(() => {
           const report = document.querySelector('#report');
           report.dataset.trustedDrag = 'pass';
@@ -513,6 +516,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedModifierSelection = 'pass';
           report.dataset.trustedClipboard = 'pass';
           report.dataset.trustedRichTextClipboard = 'pass';
+          report.dataset.trustedShortcutAudit = 'pass';
           report.dataset.trustedText = 'pass';
           report.dataset.trustedEngineText = 'pass';
           report.dataset.trustedTableCellText = 'pass';
@@ -527,6 +531,7 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedGroup: 'pass',
           trustedClipboard: 'pass',
           trustedRichTextClipboard: 'pass',
+          trustedShortcutAudit: 'pass',
           trustedText: 'pass',
           trustedEngineText: 'pass',
           trustedTableCellText: 'pass',
@@ -637,6 +642,7 @@ try {
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · trusted clipboard ${result.trustedClipboard}`
     + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`
+    + ` · trusted appendix B ${result.trustedShortcutAudit}`
     + ` · trusted text/IME ${result.trustedText}`
     + ` · trusted engine text/IME ${result.trustedEngineText}`
     + ` · trusted table cell text/IME ${result.trustedTableCellText}`

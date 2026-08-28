@@ -993,15 +993,22 @@ OOXML 的复杂类型是 **sequence**，顺序错了 PowerPoint 会报"需要修
 
 ## 附录 B：快捷键（对齐 PowerPoint，冲突处让位浏览器）
 
-| 分类 | 键 |
-|---|---|
-| 通用 | `Ctrl/Cmd+Z` 撤销、`Ctrl+Shift+Z` / `Ctrl+Y` 重做、`Ctrl+C/X/V` 复制剪切粘贴、`Ctrl+Shift+V` 纯文本粘贴、`Ctrl+D` 原位再制、`Delete/Backspace` 删除、`Ctrl+A` 全选、`Ctrl+S` 保存 |
-| 选择 | `Tab` 下一个元素、`Shift+Tab` 上一个、`Esc` 退出/退组、双击进组或进文本 |
-| 变换 | 方向键 1px、`Shift+方向键` 10px、拖动时 `Shift` 等比 / `Alt` 从中心 / `Ctrl` 关吸附、旋转时 `Shift` 吸 15° |
-| 层级 | `Ctrl+Shift+]` 置顶、`Ctrl+]` 上移、`Ctrl+[` 下移、`Ctrl+Shift+[` 置底 |
-| 组合 | `Ctrl+G` 组合、`Ctrl+Shift+G` 解组 |
-| 文本 | `Ctrl+B/I/U`、`Ctrl+Shift+>` / `<` 增减字号、`Ctrl+E/L/R/J` 对齐、`Shift+Enter` 软换行、`Tab` / `Shift+Tab` 升降级（编辑态） |
-| 页 | `Ctrl+M` 新建页、`PageUp/Down` 翻页、`F5` 演示 |
+| 分类 | 键 | 责任与实现 |
+|---|---|---|
+| 历史 | `Ctrl/Cmd+Z` 撤销、`Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y` 重做 | editor：[`keyboard-history.ts`](../packages/editor/src/keyboard-history.ts) |
+| 剪贴板 | `Ctrl/Cmd+C/X/V` 复制剪切粘贴、`Ctrl/Cmd+Shift+V` 纯文本粘贴、`Ctrl/Cmd+D` 原位再制 | editor：[`element-clipboard.ts`](../packages/editor/src/element-clipboard.ts)、[`text-clipboard-controller.ts`](../packages/editor/src/text-clipboard-controller.ts) |
+| 删除 | `Delete/Backspace` 删除 | editor：[`keyboard-delete.ts`](../packages/editor/src/keyboard-delete.ts)；文字删除由 [`text-input-plan.ts`](../packages/editor/src/text-input-plan.ts) 接管 |
+| 全选 | `Ctrl/Cmd+A` | editor：[`keyboard-document.ts`](../packages/editor/src/keyboard-document.ts)、[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts)；文字内首次全选编辑面，再按一次全选本页直属元素 |
+| 保存 | `Ctrl/Cmd+S` | **产品层职责**：下载名、格式转换和文件句柄不属于编辑内核；官网落位于 [`editor-page.ts`](../packages/site/src/editor-page.ts) |
+| 选择 | `Tab` 下一个元素、`Shift+Tab` 上一个、`Esc` 退出/退组、双击进组或进文本 | editor：[`editor-keyboard.ts`](../packages/editor/src/editor-keyboard.ts)、[`slide-editor-keyboard-events.ts`](../packages/editor/src/slide-editor-keyboard-events.ts)、[`slide-pointer-controller.ts`](../packages/editor/src/slide-pointer-controller.ts) |
+| 变换 | 方向键 1px、`Shift+方向键` 10px、拖动时 `Shift` 等比 / `Alt` 从中心 / `Ctrl/Cmd` 关吸附、旋转时 `Shift` 吸 15° | editor：[`keyboard-nudge.ts`](../packages/editor/src/keyboard-nudge.ts) 与 move / resize / rotation gesture 控制器 |
+| 层级 | `Ctrl/Cmd+Shift+]` 置顶、`Ctrl/Cmd+]` 上移、`Ctrl/Cmd+[` 下移、`Ctrl/Cmd+Shift+[` 置底 | editor：[`keyboard-layer.ts`](../packages/editor/src/keyboard-layer.ts) |
+| 组合 | `Ctrl/Cmd+G` 组合、`Ctrl/Cmd+Shift+G` 解组 | editor：[`keyboard-group.ts`](../packages/editor/src/keyboard-group.ts) |
+| 查找 | `Ctrl/Cmd+F` 查找、`Ctrl/Cmd+H` 替换 | editor：[`text-search-view.ts`](../packages/editor/src/text-search-view.ts) |
+| 字符 | `Ctrl/Cmd+B/I/U`、`Ctrl/Cmd+Shift+>` / `<` 按字号档位增减 | editor：[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts) → `SetRunProps` |
+| 段落 | `Ctrl/Cmd+E/L/R/J` 对齐、`Shift+Enter` 软换行、`Tab` / `Shift+Tab` 升降级（编辑态） | editor：[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts)、[`text-input-plan.ts`](../packages/editor/src/text-input-plan.ts)、[`text-list-level.ts`](../packages/editor/src/text-list-level.ts)；表格单元格优先前后跳格，末格 `Tab` 追加行 |
+| 页 | `Ctrl/Cmd+M` 新建页、`PageUp/Down` 翻页 | editor：[`keyboard-document.ts`](../packages/editor/src/keyboard-document.ts)；新页仅适用于有版式的可写 PPTX，沿用当前版式并清空选择，事件视图独立回显 |
+| 演示 | `F5` 从头演示 | **产品层职责**：全屏授权、放映窗口和演讲者视图属于宿主；可组合 `viewer-core`，官网查看器示例见 [`main.ts`](../packages/site/src/main.ts) |
 
 ## 附录 C：API 草案
 

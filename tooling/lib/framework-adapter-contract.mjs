@@ -1,3 +1,5 @@
+import { keyboardEvent } from './keyboard-event.mjs';
+
 /** 框架无关控制器守住文件替换、所有权、并发打开与多视图的唯一实现。 */
 export async function runFrameworkAdapterContract({ lib, load, check }) {
   console.log('\n\x1b[36m▸ 框架无关 adapter 生命周期\x1b[0m');
@@ -126,6 +128,19 @@ export async function runFrameworkAdapterContract({ lib, load, check }) {
     staleResult === null && latestResult === adapter.snapshot.session
       && latestResult.editor.doc.slideOrder.length === 4
       && mount.querySelectorAll('[data-web-ppt-editor]').length === 1);
+  const adapterFirstSlide = latestResult.editor.doc.slideOrder[0];
+  const adapterSecondSlide = latestResult.editor.doc.slideOrder[1];
+  const adapterPaneMount = document.createElement('div');
+  adapter.attachSelectionPane(adapterPaneMount);
+  adapter.snapshot.view.element.focus();
+  const adapterPageDown = adapter.snapshot.view.element.dispatchEvent(
+    keyboardEvent('keydown', 'PageDown'),
+  );
+  check('视图内部翻页同步 adapter snapshot、selection pane 与 onViewChange',
+    !adapterPageDown && adapterFirstSlide !== adapterSecondSlide
+      && adapter.snapshot.slideId === adapterSecondSlide
+      && adapter.snapshot.selectionPane?.slideId === adapterSecondSlide
+      && events.views.at(-1)?.slideId === adapterSecondSlide);
 
   const external = await lib.openEditor(load('sample-editor-notes.pptx'), {
     idPrefix: 'adapter-external-',

@@ -43,6 +43,7 @@ import { runRecoveryAdapterContract } from './lib/recovery-adapter-contract.mjs'
 import { runTransitionEditorContract } from './lib/transition-editor-contract.mjs';
 import { runAnimationEditorContract } from './lib/animation-editor-contract.mjs';
 import { runListLevelEditorContract } from './lib/list-level-editor-contract.mjs';
+import { runShortcutAuditContract } from './lib/shortcut-audit-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -276,6 +277,7 @@ await runTextEditorContract({ check, lib, root, window: domEnvironment.window })
 await runRunFormatEditorContract({ check, lib, root, window: domEnvironment.window });
 await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironment.window });
 await runListLevelEditorContract({ check, lib, root, window: domEnvironment.window });
+await runShortcutAuditContract({ check, lib, root, window: domEnvironment.window });
 await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });

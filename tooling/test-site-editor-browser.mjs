@@ -188,6 +188,11 @@ async function runContract(webSocketDebuggerUrl) {
       type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
     });
   };
+  const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0) => {
+    const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode, modifiers };
+    await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
+    await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
+  };
   try {
     await request('Runtime.enable');
     await request('Emulation.setDeviceMetricsOverride', {
@@ -271,6 +276,15 @@ async function runContract(webSocketDebuggerUrl) {
     await click('#addSlide');
     await waitFor(`document.querySelector('#slideCount')?.textContent === '2'
       && document.querySelector('#pageIndicator')?.textContent === '2 / 2'`, '空白文稿新增页面');
+    await evaluate("document.querySelector('[data-web-ppt-editor]').focus({ preventScroll: true })");
+    await dispatchKey('PageUp', 'PageUp', 33);
+    await waitFor(`document.querySelector('#pageIndicator')?.textContent === '1 / 2'
+      && document.querySelector('[data-slide-id][aria-current="true"] .slide-number')?.textContent === '1'`,
+    '可信 PageUp 同步产品分页器');
+    await dispatchKey('PageDown', 'PageDown', 34);
+    await waitFor(`document.querySelector('#pageIndicator')?.textContent === '2 / 2'
+      && document.querySelector('[data-slide-id][aria-current="true"] .slide-number')?.textContent === '2'`,
+    '可信 PageDown 同步产品分页器');
     const blankInitialCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
     await click('#addShape');
     await waitFor("document.querySelector('#fileName')?.textContent.startsWith('●')", '空白文稿编辑命令');

@@ -199,6 +199,14 @@ function showSlide(id: string): void {
   slideList.querySelector<HTMLElement>(`[data-slide-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest' });
 }
 
+function handleViewSlideChange(id: string): void {
+  if (!session?.editor.doc.slides[id]) return;
+  pane?.setSlide(id);
+  syncControls();
+  slideList.querySelector<HTMLElement>(`[data-slide-id="${CSS.escape(id)}"]`)
+    ?.scrollIntoView({ block: 'nearest' });
+}
+
 function setMode(next: EditorMode): void {
   if (!session || !view || next === 'edit' && !canWriteDocument()) return;
   if (next === 'edit' && needsPptConversion()) {
@@ -283,7 +291,9 @@ async function openDocument(
     newDocument = !!options.newDocument;
     pptConversionAccepted = false;
     mode = canWriteDocument() && next.editor.doc.meta.source !== 'ppt' ? 'edit' : 'view';
-    view = next.mount(canvasMount, { mode, zoom: 1, snapping: true, onError: reportError });
+    view = next.mount(canvasMount, {
+      mode, zoom: 1, snapping: true, onSlideChange: handleViewSlideChange, onError: reportError,
+    });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     unregisterToolbar = view.registerTextUi(toolbar);
     unregisterInspector = view.registerTextUi(inspectorElement);

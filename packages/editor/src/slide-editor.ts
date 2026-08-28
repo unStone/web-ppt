@@ -6,6 +6,8 @@ import type {
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
 import { EditorKeyboardController } from './editor-keyboard';
+import { DocumentKeyboardController } from './keyboard-document';
+import type { KeyboardControllerOptions } from './keyboard-context';
 import { ElementClipboardController } from './element-clipboard';
 import { MarqueeGestureController } from './marquee-gesture';
 import { MoveGestureController } from './move-gesture';
@@ -18,6 +20,7 @@ import {
 } from './selection-hit';
 import { TextEditorController } from './text-editor';
 import { claimTextEditing, releaseTextEditing, sessionState } from './session-state';
+import { selectAllSlideElements } from './selection-all';
 import { bindSlideEditorEditEvents, bindSlideEditorLinkEvent } from './slide-editor-events';
 import { SlideDomRenderer } from './slide-dom-renderer';
 import { ImageInsertionController } from './image-insertion';
@@ -51,6 +54,8 @@ class DomSlideEditor implements SlideEditor {
   private currentSnapping: boolean;
   private readonly snapMargins: SnapMargins | undefined;
   private readonly textMode: 'html' | 'svg';
+  private readonly onSlideChange: SlideEditorOptions['onSlideChange'];
+  private readonly onError: SlideEditorOptions['onError'];
   private readonly keyboard: EditorKeyboardController;
   private readonly clipboard: ElementClipboardController;
   private readonly marqueeGesture: MarqueeGestureController;
@@ -86,6 +91,8 @@ class DomSlideEditor implements SlideEditor {
       throw new Error('吸附开关必须是布尔值');
     }
     this.currentSnapping = options.snapping ?? true;
+    this.onSlideChange = options.onSlideChange;
+    this.onError = options.onError;
     this.snapMargins = normalizeSnapMargins(options.snapMargins, session.editor.doc.meta);
     const requestedTextMode = options.textMode ?? 'auto';
     this.textMode = requestedTextMode === 'auto'
@@ -127,6 +134,14 @@ class DomSlideEditor implements SlideEditor {
       editable: () => this.currentMode === 'edit',
     });
 
+    const keyboardOptions: KeyboardControllerOptions = {
+      editor: session.editor, namespace: this.idPrefix,
+      slideId: () => this.currentSlide, revealSlide: (nextSlide) => this.setSlide(nextSlide),
+      gestureActive: () => this.hasActiveGesture(),
+      onError: options.onError,
+    };
+    const documentKeyboard = new DocumentKeyboardController(keyboardOptions);
+
     this.textEditor = new TextEditorController({
       editor: session.editor,
       boundary: this.element,
@@ -137,6 +152,8 @@ class DomSlideEditor implements SlideEditor {
       claim: () => claimTextEditing(this.session, this),
       release: () => releaseTextEditing(this.session, this),
       syncStatic: (id) => this.domRenderer.syncElement(id),
+      selectAllElements: () => { selectAllSlideElements(session.editor, this.currentSlide); },
+      documentKeyDown: (event) => documentKeyboard.keyDown(event, true),
     });
 
     this.imageInsertion = new ImageInsertionController({
@@ -145,12 +162,7 @@ class DomSlideEditor implements SlideEditor {
       editable: () => this.currentMode === 'edit',
     });
 
-    this.keyboard = new EditorKeyboardController({
-      editor: session.editor, namespace: this.idPrefix,
-      slideId: () => this.currentSlide, revealSlide: (slideId) => this.setSlide(slideId),
-      gestureActive: () => this.hasActiveGesture(),
-      onError: options.onError,
-    });
+    this.keyboard = new EditorKeyboardController(keyboardOptions, documentKeyboard);
     this.clipboard = new ElementClipboardController({
       editor: session.editor,
       slideId: () => this.currentSlide,
@@ -401,6 +413,9 @@ class DomSlideEditor implements SlideEditor {
     this.textEditor.close(false);
     this.currentSlide = slideId;
     this.render();
+    try { this.onSlideChange?.(slideId); } catch (error) {
+      try { this.onError?.(error); } catch { /* 宿主观察者不能破坏切页后的视图。 */ }
+    }
   }
 
   setZoom(zoom: number): void {

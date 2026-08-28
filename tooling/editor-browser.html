@@ -688,6 +688,7 @@
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;
       globalThis.editorContract = {
+        openEditor, load,
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,
         trustedLayerSession,

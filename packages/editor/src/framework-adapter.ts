@@ -1,6 +1,6 @@
 import { querySlideAnimations, querySlideTransition } from '@web-ppt/edit-core';
 import type {
-  EditAnimationStep, EditorChange, LinkTarget, SlideAnimationState, SlideTransitionInput,
+  EditAnimationStep, EditorChange, LinkTarget, SlideAnimationState, SlideId, SlideTransitionInput,
   SlideTransitionState, TextSearchMatch,
 } from '@web-ppt/edit-core';
 import { openEditor } from './session';
@@ -442,8 +442,16 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       snapMargins: this.desired.snapMargins,
       slideId,
       onLinkFollow: (target, context) => this.followLink(target, context),
+      onSlideChange: (nextSlide) => this.handleSlideChange(nextSlide),
       onError: (error) => this.emitError(error),
     });
+  }
+
+  private handleSlideChange(slideId: SlideId): void {
+    if (!this.session?.editor.doc.slides[slideId]) return;
+    this.desired = { ...this.desired, slideId };
+    this.paneBinding.sync(this.session, { ...this.desired, slideId });
+    this.publishReadyState(true);
   }
 
   private followLink(target: LinkTarget, context: LinkFollowContext): boolean | void {

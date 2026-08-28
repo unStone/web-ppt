@@ -20,9 +20,11 @@ export class HistoryKeyboardController {
     const selection = change.selection;
     const elementId = selection.kind === 'elements' ? selection.ids[0]
       : selection.kind === 'none' ? null : selection.id;
-    const slideId = elementId
+    const structuralSlide = change.createdSlides.values().next().value;
+    const slideId = structuralSlide ?? (elementId
       ? slideOfElement(this.options.editor.doc, elementId)
-      : change.dirtySlides.values().next().value;
+      : change.removedSlideFallbacks.values().next().value
+        ?? change.dirtySlides.values().next().value);
     if (slideId) this.options.revealSlide(slideId);
     return true;
   }

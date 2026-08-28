@@ -93,6 +93,7 @@ tracker: local-markdown
 - [实现元素组合与解组](tickets/067-group-ungroup-commands.md) — 原子层级 Patch 与仿射分解贯通稳定身份、最小写回、多视图快捷键及来源语义；Chrome 60 元素组合/解组 p95 6.9/7.1ms，LibreOffice 几何 oracle 与两路终审通过。
 - [补全官网编辑页工具栏能力面](tickets/073-site-editor-toolbar-completion.md) — 公开 seam 已接入上下文工具栏、响应式抽屉与确定性本机恢复，真实 Chrome 的操作、撤销重做、保存重开、双尺寸布局和零 console warning 契约全部通过。
 - [实现文本列表升降级](tickets/068-text-list-level.md) — 九级继承重基、自动续号、Tab 交互、稀疏保存和双渲染路径已贯通，LibreOffice 几何 oracle、批量负载预算与两路终审全部通过。
+- [盘点并补齐附录 B 快捷键](tickets/069-appendix-b-shortcut-audit.md) — 统一文档键盘通道贯通全选、逐 run 字号、对齐、新建与翻页，产品职责、IME 边界、受控切页和真实 Chrome 可信输入均已闭环。
 
 ## Not yet specified
 

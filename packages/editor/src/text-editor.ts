@@ -18,11 +18,14 @@ import { TextAutofitThrottle } from './text-autofit';
 import type { TextAutofitTarget } from './text-autofit';
 import { resolveTextEditorContext } from './text-editor-context';
 import { changeTextListLevel } from './text-list-level';
+import { TextKeyboardController } from './text-keyboard';
+import { stepSelectedFontSize } from './text-font-step';
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
   private readonly clipboard: TextClipboardController;
   private readonly autofit: TextAutofitThrottle;
+  private readonly keyboard: TextKeyboardController;
   private activeId: ElementId | null = null;
   private activeCell: TableCellAddress | null = null;
   private root: HTMLDivElement | null = null;
@@ -46,6 +49,27 @@ export class TextEditorController {
       context: () => this.textContext(),
       pendingProps: () => this.pendingRunProps,
       commit: (ops, nextIndex, label) => this.commit(ops, nextIndex, label),
+    });
+    this.keyboard = new TextKeyboardController({
+      editor: options.editor, composing: () => this.composing, activeCell: () => this.activeCell,
+      context: () => this.textContext(), close: (select) => this.close(select),
+      navigateTableCell: (reverse) => this.navigateTableCell(reverse),
+      changeListLevel: (delta) => {
+        const context = this.composing ? null : this.textContext();
+        if (changeTextListLevel(options.editor, context, delta) && context) {
+          this.root?.focus({ preventScroll: true });
+          this.setSelection(context.positions.from, context.positions.to);
+        }
+      },
+      formatSelection: (field) => this.formatSelection(field),
+      stepFontSize: (direction) => stepSelectedFontSize(
+        options.editor, this.composing ? null : this.textContext(), direction,
+        (props) => this.setRunProps(props), (from, to) => this.setSelection(from, to),
+      ),
+      setParaProps: (props) => this.setParaProps(props),
+      restoreSelection: (from, to) => this.setSelection(from, to),
+      selectAllElements: options.selectAllElements,
+      documentKeyDown: options.documentKeyDown,
     });
   }
 
@@ -282,6 +306,7 @@ export class TextEditorController {
 
   private bind(root: HTMLDivElement): void {
     this.clipboard.bind(root);
+    this.keyboard.bind(root);
     root.addEventListener('beforeinput', (event) => this.beforeInput(event as InputEvent));
     root.addEventListener('compositionstart', () => {
       this.composing = true;
@@ -298,35 +323,6 @@ export class TextEditorController {
     root.addEventListener('compositionend', () => this.endComposition());
     root.addEventListener('pointerup', () => this.syncSelection());
     root.addEventListener('keyup', () => this.syncSelection());
-    root.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        this.close();
-        return;
-      }
-      if (event.key === 'Tab' && this.activeCell) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.navigateTableCell(event.shiftKey);
-        return;
-      }
-      if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        event.preventDefault();
-        event.stopPropagation();
-        const context = this.composing ? null : this.textContext();
-        if (changeTextListLevel(this.options.editor, context, event.shiftKey ? -1 : 1) && context) {
-          this.root?.focus({ preventScroll: true });
-          this.setSelection(context.positions.from, context.positions.to);
-        }
-        return;
-      }
-      if (event.altKey || (!event.ctrlKey && !event.metaKey)) return;
-      const field = ({ b: 'b', i: 'i', u: 'u' } as const)[event.key.toLowerCase() as 'b' | 'i' | 'u'];
-      if (!field || !this.formatSelection(field)) return;
-      event.preventDefault();
-      event.stopPropagation();
-    });
   }
 
   private navigateTableCell(reverse: boolean): void {

@@ -33,6 +33,8 @@ export interface SlideEditorOptions {
   snapMargins?: SnapMargins;
   /** React/Vue 等宿主可接管路由；返回 true 阻止内置页跳转或安全新窗口。 */
   onLinkFollow?: LinkFollowHandler;
+  /** 页面级快捷键或内部链接切页后通知宿主同步侧栏、分页器和受控状态。 */
+  onSlideChange?: (slideId: SlideId) => void;
   /** 与自定义事件 webpptformaterror 同源，adapter 用它接入全局 onError。 */
   onError?: (error: unknown) => void;
 }
