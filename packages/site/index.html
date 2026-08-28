@@ -99,9 +99,9 @@
 
   <ul class="stats">
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
-    <li><b>84<i>KB</i></b><span>gzip 核心包</span></li>
+    <li><b>90<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>2003</b><span>断言 + 162 快照</span></li>
+    <li><b>3897</b><span>断言 + 176 快照</span></li>
   </ul>
 </section>
 
@@ -148,7 +148,9 @@
       <div class="spacer"></div>
       <span class="meta" id="meta">载入中…</span>
       <button class="chip act" id="present" title="全屏播放，按文件里的动画逐步展开">全屏演示</button>
-      <a class="chip act" id="download" download>下载</a>
+      <!-- download 属性等有了 href 再加：HTML 规范要求 href 不在时这些属性一律省略，
+           光秃秃的 <a download> 会被当成不可抓取的链接 -->
+      <a class="chip act" id="download">下载</a>
     </div>
     <!-- 误点幻灯片里的超链接时在这儿提示，而不是直接把人带走 -->
     <div class="link-toast" id="linkToast" hidden></div>
@@ -367,7 +369,7 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
     <table class="matrix pkgs">
       <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
       <tbody>
-        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>84KB gzip</td></tr>
+        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>89.8KB gzip</td></tr>
         <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>7.4KB gzip</td></tr>
         <tr><td><code>@web-ppt/fonts</code></td><td>字体替换与按需加载（可选）</td><td><code>@web-ppt/core</code></td><td>2.8KB gzip</td></tr>
       </tbody>
@@ -387,6 +389,6 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
   </nav>
 </footer>
 
-<script type="module" src="./src/main.ts"></script>
+<script type="module" src="./src/boot.ts"></script>
 </body>
 </html>

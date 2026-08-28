@@ -24,7 +24,8 @@ import { fetchSamples, type Sample } from './samples-index';
 setFontDecoder(eotToTtf);
 
 const grid = document.querySelector<HTMLElement>('#sampleGrid')!;
-const status = document.querySelector<HTMLElement>('#sampleStatus')!;
+// 卡片是构建时预渲染进 HTML 的（见 vite.config.ts），那种情况下占位符压根不存在
+const status = document.querySelector<HTMLElement>('#sampleStatus');
 
 const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
 
@@ -33,6 +34,8 @@ const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
 function card(s: Sample): HTMLElement {
   const el = document.createElement('article');
   el.className = 'sample-card';
+  el.dataset.file = s.file;
+  el.dataset.url = s.url;
 
   const h = document.createElement('h3');
   h.textContent = s.title; // 外部文本，只走 textContent
@@ -75,7 +78,8 @@ function card(s: Sample): HTMLElement {
     const a = document.createElement('a');
     a.href = s.source;
     a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    // 出处指向不受控的第三方，收录样本不等于给对方背书
+    a.rel = 'noopener noreferrer nofollow';
     a.textContent = '出处';
     credit.append(a);
   }
@@ -99,7 +103,8 @@ overlay.innerHTML =
   '<div class="spacer"></div>' +
   '<span class="meta preview-meta"></span>' +
   '<button class="chip act preview-share">复制链接</button>' +
-  '<a class="chip act preview-dl" download>下载</a>' +
+  // download 属性等预览真的拿到文件、有了 href 再补上，理由同 index.html
+  '<a class="chip act preview-dl">下载</a>' +
   '<button class="chip act preview-full">全屏演示</button>' +
   '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>' +
   '</div>' +
@@ -277,19 +282,55 @@ addEventListener('keydown', (e) => {
 
 /* ── 装载清单 ─────────────────────────────────── */
 
+/**
+ * 认领构建时预渲染的卡片：接上「预览」，并把它们算作已经摆过的条目。
+ *
+ * 卡片本身是构建期用同一份清单、同一套字段生成的，这里不重建 DOM——重建一遍
+ * 会让已经在屏幕上的东西闪一下，纯属倒退。预览要的 url / file 在 data-* 里，
+ * 标题直接读 h3，所以清单拿不到时这些卡也照样能用。
+ */
+function adoptPrerendered(): Map<string, Sample> {
+  const shown = new Map<string, Sample>();
+  for (const el of grid.querySelectorAll<HTMLElement>('.sample-card[data-file]')) {
+    const { file, url } = el.dataset;
+    if (!file || !url) continue;
+    const s: Sample = {
+      url,
+      file,
+      title: el.querySelector('h3')?.textContent ?? file,
+      highlight: '',
+      author: '',
+      license: '',
+      source: '',
+      demo: false,
+    };
+    shown.set(file, s);
+    el.querySelector('[data-preview]')?.addEventListener('click', () => void openSample(s));
+  }
+  return shown;
+}
+
 async function build(): Promise<void> {
+  const shown = adoptPrerendered();
+
   const all = await fetchSamples();
-  if (!all.length) {
-    status.textContent = '样本清单暂时取不到，稍后再试；首页的内置样本不依赖它。';
+  if (!all.length && !shown.size) {
+    if (status) status.textContent = '样本清单暂时取不到，稍后再试；首页的内置样本不依赖它。';
     return;
   }
-  status.remove();
-  for (const s of all) grid.append(card(s));
+  status?.remove();
+
+  // 预渲染之后样本库新增的条目，运行时补在后面；已经在页面上的不动
+  for (const s of all) {
+    if (shown.has(s.file)) continue;
+    shown.set(s.file, s);
+    grid.append(card(s));
+  }
 
   // 带 ?sample= 进来的（别人分享的地址）直接把预览打开。
   // 参数只用来在**已校验过来源的**清单里查条目，不会去 fetch 查询串本身。
   const want = new URLSearchParams(location.search).get('sample');
-  const hit = want ? all.find((s) => s.file === want) : undefined;
+  const hit = want ? shown.get(want) : undefined;
   if (hit) void openSample(hit);
 }
 

@@ -6,14 +6,21 @@
   --bg-sunk: #f0f0f2;
   --fg: #16161a;
   --fg-mute: #5c5c66;
-  --fg-faint: #8a8a94;
+  --fg-faint: #6b6b76;
   --line: #e3e3e7;
   --line-soft: #eeeef1;
   --accent: #e8622c;
   --accent-soft: #fdf0ea;
-  --good: #1c8c5a;
+  /* 文字与实心按钮专用的深一档橙。
+     --accent 压白字只有 3.37:1，当文字压在 --accent-soft 上只有 3.02:1，都够不到
+     WCAG AA 的 4.5:1。装饰件（描边、进度条、圆点）继续用 --accent，观感一点不变；
+     凡是「字」和「白字的底」一律走 --accent-ink。深色模式下两者本就同色。 */
+  --accent-ink: #bb4917;
+  --on-accent: #ffffff;
+  --good: #17794e;
   --bad: #c0392b;
   --code-bg: #f7f7f8;
+  --code-n: #7c3aed;
   --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
   --radius: 12px;
   --maxw: 1080px;
@@ -30,23 +37,29 @@
     --bg-sunk: #1c1c21;
     --fg: #ececf0;
     --fg-mute: #a0a0ab;
-    --fg-faint: #74747f;
+    --fg-faint: #87878f;
     --line: #26262d;
     --line-soft: #1e1e24;
     --accent: #ff7a45;
     --accent-soft: #2a1710;
+    /* 深色底下亮橙本身就够亮，当文字够；反过来白字压在它上面只有 2.59:1，
+       所以实心按钮改用深色字 */
+    --accent-ink: #ff7a45;
+    --on-accent: #16161a;
     --good: #46c08a;
     --bad: #e5705f;
     --code-bg: #16161a;
+    --code-n: #a78bfa;
     --shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.4);
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e0e11; --bg-soft: #16161a; --bg-sunk: #1c1c21;
-  --fg: #ececf0; --fg-mute: #a0a0ab; --fg-faint: #74747f;
+  --fg: #ececf0; --fg-mute: #a0a0ab; --fg-faint: #87878f;
   --line: #26262d; --line-soft: #1e1e24;
   --accent: #ff7a45; --accent-soft: #2a1710;
-  --good: #46c08a; --bad: #e5705f; --code-bg: #16161a;
+  --accent-ink: #ff7a45; --on-accent: #16161a;
+  --good: #46c08a; --bad: #e5705f; --code-bg: #16161a; --code-n: #a78bfa;
   --shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.4);
 }
 
@@ -72,7 +85,7 @@ code { font-family: var(--mono); font-size: .88em; }
 .brand { font-weight: 650; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
 .mark {
   display: grid; place-items: center; width: 22px; height: 22px;
-  border-radius: 6px; background: var(--accent); color: #fff;
+  border-radius: 6px; background: var(--accent-ink); color: var(--on-accent);
   font: 700 13px/1 var(--sans);
 }
 .nav nav { margin-left: auto; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
@@ -104,7 +117,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   font-size: 14.5px; font-weight: 500; transition: transform .12s, border-color .15s, background .15s;
 }
 .btn:hover { transform: translateY(-1px); border-color: var(--fg-faint); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--on-accent); }
 .btn.primary:hover { filter: brightness(1.06); }
 
 .install {
@@ -162,7 +175,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   font: 500 12.5px/1.5 var(--mono); transition: all .15s;
 }
 .chip:hover { color: var(--fg); border-color: var(--fg-faint); }
-.chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 .chip.file { font-family: var(--sans); font-size: 13px; }
 /* 来自样本库的条目：一个小点，跟同源内置样本区分开 */
 .chip.remote { font-family: var(--sans); font-size: 13px; }
@@ -176,7 +189,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   font-family: var(--sans); font-size: 13px;
   border-style: dashed; color: var(--fg-faint);
 }
-.chip.more:hover { color: var(--accent); border-color: var(--accent); }
+.chip.more:hover { color: var(--accent-ink); border-color: var(--accent); }
 .chip.more::after { content: " ›"; }
 .icon {
   width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px;
@@ -214,7 +227,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   position: absolute; inset: 10px; display: none; place-items: center;
   border: 2px dashed var(--accent); border-radius: 9px;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
-  color: var(--accent); font-weight: 550; pointer-events: none;
+  color: var(--accent-ink); font-weight: 550; pointer-events: none;
 }
 .demo.dragging .drop-hint { display: grid; }
 .stage .spin {
@@ -233,12 +246,12 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
 /* 动作型 chip：跟「选样本」的 chip 区分开——它们做的是事，不是切换 */
 .chip.act { font-family: var(--sans); font-size: 13px; text-decoration: none; }
-.chip.act:hover { color: var(--accent); border-color: var(--accent); }
+.chip.act:hover { color: var(--accent-ink); border-color: var(--accent); }
 .chip.act.done { color: var(--good); border-color: var(--good); }
 
 /* 开关型 chip：按下态用实心，跟「做一件事」的 .act 区分开 */
 .chip.toggle[aria-pressed="true"] {
-  background: var(--accent-soft); border-color: var(--accent); color: var(--accent);
+  background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink);
 }
 .chip.toggle[aria-pressed="true"]::before { content: "✓ "; }
 .chip.toggle[aria-pressed="false"] { color: var(--fg-faint); }
@@ -248,7 +261,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   padding: 8px 12px; border-top: 1px solid var(--line-soft); background: var(--bg-soft);
   font-size: 12.5px; color: var(--fg-mute); overflow-wrap: anywhere;
 }
-.link-toast a { color: var(--accent); }
+.link-toast a { color: var(--accent-ink); }
 
 /* ── 全屏演示 ─────────────────────────────────── */
 .stage-wrap:fullscreen { background: #000; }
@@ -344,10 +357,10 @@ table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
   border-radius: 0 0 var(--radius) var(--radius);
 }
 .card code { font-size: 12px; line-height: 1.72; white-space: pre; }
-.k { color: var(--accent); }
+.k { color: var(--accent-ink); }
 .s { color: var(--good); }
 .c { color: var(--fg-faint); }
-.n { color: #8b5cf6; }
+.n { color: var(--code-n); }
 
 /* ── 架构图 ───────────────────────────────────── */
 .arch { border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-soft); padding: 18px; overflow-x: auto; }

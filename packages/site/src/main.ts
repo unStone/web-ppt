@@ -372,6 +372,10 @@ pick.addEventListener('change', () => {
   if (f) void openFile(f);
 });
 
+// 引擎是滚到 demo 才加载的（见 boot.ts）。慢网上有人可能在它到位之前就把文件
+// 选好了，那次 change 没人接——接上监听时框里已经有文件，就直接渲染。
+if (pick.files?.length) void openFile(pick.files[0]);
+
 // 整块 demo 都是拖放目标
 let dragDepth = 0;
 demo.addEventListener('dragenter', (e) => { e.preventDefault(); if (++dragDepth === 1) demo.classList.add('dragging'); });
@@ -583,4 +587,22 @@ async function renderHardCases(): Promise<void> {
   }
 }
 
-void renderHardCases();
+/**
+ * 六张卡在整页最底下，进来的人未必滚得到。固件不大，但解析加渲染六页 SVG 是
+ * 实打实的主线程活儿，没人看的时候干这些纯属白烧电。滚到了再说。
+ */
+const hardGrid = document.querySelector<HTMLElement>('#hardGrid');
+if (hardGrid && 'IntersectionObserver' in window) {
+  const hardIo = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        hardIo.disconnect();
+        void renderHardCases();
+      }
+    },
+    { rootMargin: '200px' },
+  );
+  hardIo.observe(hardGrid);
+} else {
+  void renderHardCases();
+}
