@@ -65,6 +65,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
       && !hasImageContentOverrides(record)
       && !hasTableRowOverrides(record)
       && !hasHyperlinkOverrides(record)
+      && record.meta.sourceParent === undefined
       && !record.meta.insertion) continue;
     const origin = record.meta.origin;
     if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);

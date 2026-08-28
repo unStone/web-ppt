@@ -27,6 +27,8 @@ export interface ElementInsertionSource {
   readonly spids: Readonly<Record<string, number>>;
   readonly relationships?: readonly ElementInsertionRelationship[];
   readonly resources?: readonly ElementInsertionResource[];
+  /** false 表示宿主只是空容器，后代要按当前模型层级分别插入或从来源树移动。 */
+  readonly containsDescendants?: false;
 }
 
 export interface ElementInsertionRelationship {
@@ -432,6 +434,8 @@ export interface ElementMeta {
   inherited?: true;
   /** 来源存在无法安全映射的链接；覆盖层缺失时查询为只读来源。 */
   sourceLinkReadonly?: true;
+  /** 来源 XML 中的直属父级；结构编辑后保存层据此移动原宿主而不是克隆内容。 */
+  sourceParent?: SlideId | ElementId;
 }
 
 export interface ElementRecord {

@@ -22,6 +22,23 @@ function cloneRecord(record: ElementRecord): ElementRecord {
   return structuredClone(record);
 }
 
+function removedRecord(snapshot: ElementTreeSnapshot, root: ElementRecord) {
+  const sourcePart = root.meta.origin?.part;
+  const sourceSpids: number[] = [];
+  const visit = (id: ElementId): void => {
+    const record = snapshot.records[id];
+    if (!record) return;
+    const origin = record.meta.origin;
+    if (origin && origin.part === sourcePart) sourceSpids.push(origin.spid);
+    for (const child of record.children ?? []) visit(child);
+  };
+  visit(root.id);
+  return {
+    id: root.id, parent: root.parent, meta: structuredClone(root.meta),
+    ...(sourceSpids.length ? { sourceSpids: [...new Set(sourceSpids)].sort((a, b) => a - b) } : {}),
+  };
+}
+
 function snapshotTree(doc: EditDoc, root: ElementId): ElementTreeSnapshot {
   const record = doc.elements[root];
   if (!record) throw new Error(`找不到元素：${root}`);
@@ -138,20 +155,17 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
       slide.dynamicSlideLinks = slide.dynamicSlideLinks.filter((id) => !removed.has(id));
     }
     const root = snapshot.records[snapshot.root];
-    if (root.meta.created) delete doc.removedElements[snapshot.root];
+    if (root.meta.created) {
+      delete doc.removedElements[snapshot.root];
+      // 新组只提供容器；删除它时，曾从来源树移入的根仍需留下真实来源 tombstone。
+      for (const record of Object.values(snapshot.records)) {
+        if (!record.meta.created && record.meta.sourceParent !== undefined) {
+          doc.removedElements[record.id] = removedRecord(snapshot, record);
+        }
+      }
+    }
     else {
-      const sourcePart = root.meta.origin?.part;
-      const sourceSpids = [...new Set(Object.values(snapshot.records).flatMap((record) => {
-        const origin = record.meta.origin;
-        if (!origin || origin.part !== sourcePart) return [];
-        return [origin.spid];
-      }))].sort((a, b) => a - b);
-      doc.removedElements[snapshot.root] = {
-        id: root.id,
-        parent: root.parent,
-        meta: structuredClone(root.meta),
-        ...(sourceSpids.length ? { sourceSpids } : {}),
-      };
+      doc.removedElements[snapshot.root] = removedRecord(snapshot, root);
     }
     return;
   }
@@ -173,6 +187,9 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     slide.dynamicSlideLinks.push(...dynamicLinkIds.filter((id) => !known.has(id)));
   }
   delete doc.removedElements[snapshot.root];
+  for (const record of Object.values(snapshot.records)) {
+    if (record.meta.sourceParent !== undefined) delete doc.removedElements[record.id];
+  }
   // 多根删除时，快照下标取自不断收缩的数组，不能作为跨进程回放的位置依据；z 才是稳定顺序。
   const rootZ = elementOrder(snapshot.records[snapshot.root]);
   const last = siblings[siblings.length - 1];

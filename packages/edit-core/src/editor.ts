@@ -1,6 +1,7 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
 import { assertPureCommand, commandPatches, commandSelectsInsertedElement } from './commands/dispatch';
 import { isElementTreePatch } from './commands/element-tree';
+import { isElementHierarchyPatch } from './commands/element-hierarchy';
 import { isElementOrderPatch } from './commands/element-order';
 import { setZBatchPatches } from './commands/set-z';
 import { isSlideTreePatch, slidePatchSets } from './commands/slide-tree';
@@ -244,6 +245,7 @@ export class Editor {
     const origin = options.origin ?? this.origin;
     const autoFitTargets = new Set<ElementId>();
     const historyLinks: HistoryPatchLink[] = [];
+    let commandSelection: Selection | null = null;
     const selectionBefore = this.selection;
     const identityBefore = structuredClone(this.doc.identity);
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
@@ -255,6 +257,14 @@ export class Editor {
       }
       for (const id of renderPatchSlides(patches.forward)) renderSlides.add(id);
       for (const patch of patches.forward) {
+        if (isElementHierarchyPatch(patch)) {
+          for (const id of patch.value.affected) {
+            touchedElements.add(id);
+            renderElements.add(id);
+            reorderedElements.add(id);
+          }
+          continue;
+        }
         if (patch.path[0] !== 'elements') continue;
         touchedElements.add(patch.path[1]);
         if (isElementOrderPatch(patch)) reorderedElements.add(patch.path[1]);
@@ -269,6 +279,7 @@ export class Editor {
       } else for (const command of commands) {
         const patches = commandPatches(this.doc, command, origin);
         applyCommandPatches(patches);
+        if (patches.selection) commandSelection = patches.selection;
         // 批量文字命令没有单一 command.id；以实际文字 patch 为真相才能完整覆盖所有 shape。
         for (const patch of patches.forward) {
           if (patch.path[0] === 'elements' && patch.path.length === 4 && patch.path[3] === 'text') {
@@ -288,8 +299,9 @@ export class Editor {
         }
       }
       const structural = forward.some((patch) =>
-        isSlideTreePatch(patch) || isElementTreePatch(patch));
+        isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
+      else if (commandSelection) this.currentSelection = normalizeSelection(this.doc, commandSelection);
       else if (commands.length === 1 && commands[0].type === 'PasteElements') {
         const ids = forward.filter((patch) => patch.path.length === 2 && patch.op === 'insert')
           .map((patch) => patch.path[1]);

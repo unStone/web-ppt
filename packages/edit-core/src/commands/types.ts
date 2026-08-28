@@ -5,6 +5,7 @@ import type {
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
+import type { ElementHierarchyPatch, GroupCommand, UngroupCommand } from './group-types';
 import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetAnimationsCommand, SetTransitionCommand,
@@ -24,6 +25,9 @@ export type {
   SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
+export type {
+  ElementHierarchyPatch, ElementHierarchyState, GroupCommand, UngroupCommand,
+} from './group-types';
 export type { ReplaceTextCommand, ReplaceTextScope } from '../text-search-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
@@ -265,7 +269,7 @@ export interface InsertRowCommand {
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
   | SetLockedCommand | SetElementHiddenCommand
   | ApplyFormatCommand | ReplaceTextCommand
-  | AlignElementsCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
@@ -458,12 +462,13 @@ export type TableRowPatch = {
 };
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementInteractionPatch
-  | ElementTreePatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
+  | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
   readonly inverse: Patch[];
+  readonly selection?: Selection;
 }
 
 export interface TextPosition {

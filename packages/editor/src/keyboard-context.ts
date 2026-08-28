@@ -6,4 +6,5 @@ export interface KeyboardControllerOptions {
   slideId(): SlideId;
   revealSlide(slideId: SlideId): void;
   gestureActive(): boolean;
+  onError?(error: unknown): void;
 }

@@ -2,6 +2,7 @@ import type { TableCell, TextBody } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
 import { effectiveElement, toSlide } from '../projection';
+import { supportsElementLink } from '../hyperlink';
 import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
 import { directTableCellMarkup } from '../table-direct-markup';
@@ -113,7 +114,7 @@ function fullOverrides(doc: EditDoc, slideId: SlideId, record: ElementRecord): E
     rot: source.rot, flipH: source.flipH, flipV: source.flipV,
     ...(source.name ? { name: source.name } : {}),
     ...(source.effects ? { effects: source.effects } : {}),
-    ...(source.link && (source.kind === 'shape' || source.kind === 'image')
+    ...(source.link && supportsElementLink(source.kind)
       ? { link: generatedLink(doc, slideId, source.link, `元素 ${record.id} 链接`) } : {}),
   };
   if (source.kind === 'shape') {

@@ -32,6 +32,7 @@
     import { runEditorHistoryBrowserContract } from '/tooling/lib/editor-history-browser-contract.mjs';
     import { runEditorDeleteBrowserContract } from '/tooling/lib/editor-delete-browser-contract.mjs';
     import { runEditorLayerBrowserContract } from '/tooling/lib/editor-layer-browser-contract.mjs';
+    import { runEditorGroupBrowserContract } from '/tooling/lib/editor-group-browser-contract.mjs';
     import { runEditorAlignBrowserContract } from '/tooling/lib/editor-align-browser-contract.mjs';
     import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
     import { runEditorMultiselectBrowserContract } from '/tooling/lib/editor-multiselect-browser-contract.mjs';
@@ -485,6 +486,7 @@
       const historyResult = await runEditorHistoryBrowserContract({ openEditor, load });
       const deleteResult = await runEditorDeleteBrowserContract({ openEditor, load });
       const layerResult = await runEditorLayerBrowserContract({ openEditor, load });
+      const groupResult = await runEditorGroupBrowserContract({ openEditor, load });
       const alignResult = await runEditorAlignBrowserContract({ openEditor, load });
       const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const multiselectResult = await runEditorMultiselectBrowserContract({ openEditor, load });
@@ -530,6 +532,9 @@
       const trustedLayerSession = await openEditor(await load('sample-editor-layer.pptx'), {
         idPrefix: 'browser-trusted-layer-',
       });
+      const trustedGroupSession = await openEditor(await load('sample-editor-space.pptx'), {
+        idPrefix: 'browser-trusted-group-',
+      });
 
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
@@ -563,6 +568,8 @@
       report.dataset.layerP95 = layerResult.layerP95.toFixed(3);
       report.dataset.layerUndoP95 = layerResult.undoP95.toFixed(3);
       report.dataset.layerRedoP95 = layerResult.redoP95.toFixed(3);
+      report.dataset.groupP95 = groupResult.groupP95.toFixed(3);
+      report.dataset.ungroupP95 = groupResult.ungroupP95.toFixed(3);
       report.dataset.alignError = alignResult.geometryError.toFixed(3);
       report.dataset.alignP95 = alignResult.p95.toFixed(3);
       report.dataset.tabP95 = tabP95.toFixed(3);
@@ -684,6 +691,7 @@
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,
         trustedMarqueeSession,
         trustedLayerSession,
+        trustedGroupSession,
         textResult, richTextResult, engineTextResult, tableCellTextResult, autofitResult,
       };
     } catch (error) {

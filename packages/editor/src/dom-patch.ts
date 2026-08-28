@@ -1,6 +1,6 @@
 import { renderElementToSvg } from '@web-ppt/core';
 import type { Editor, ElementId } from '@web-ppt/edit-core';
-import { bindElementIdentities, findElementPartition } from './dom-identity';
+import { bindElementIdentities, bindSingleElementIdentity, findElementPartition } from './dom-identity';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -52,13 +52,19 @@ function renderElementParts(
   idPrefix: string,
   textMode: 'html' | 'svg',
 ): { next: SVGElement; nextDefs: SVGElement[] } | null {
-  const rendered = renderElementToSvg(editor.effectiveElement(id), {
+  const element = editor.effectiveElement(id);
+  const record = editor.doc.elements[id];
+  const structuralShell = element.kind === 'group'
+    && record?.meta.insertion?.containsDescendants === false;
+  const projected = structuralShell ? { ...element, children: [] } : element;
+  const rendered = renderElementToSvg(projected, {
     textMode, idPrefix: `${idPrefix}${id}-`, includeEditMarkers: true,
   });
   const markup = svgChildren(staticLayer.ownerDocument, rendered.markup);
   if (markup.length !== 1) return null;
   const next = markup[0];
-  bindElementIdentities(next, editor.doc, [id]);
+  if (structuralShell) bindSingleElementIdentity(next, editor.doc, id);
+  else bindElementIdentities(next, editor.doc, [id]);
   const nextDefs = svgChildren(staticLayer.ownerDocument, rendered.defs);
   for (const node of nextDefs) node.dataset.editDefs = id;
   return { next, nextDefs };
@@ -105,6 +111,8 @@ export function insertElementPartition(
   id: ElementId,
   idPrefix: string,
   textMode: 'html' | 'svg',
+  fallbackParent?: Node | null,
+  knownChildren?: readonly SVGElement[],
 ): boolean {
   const record = editor.doc.elements[id];
   const siblings = editor.doc.slides[record?.parent]?.children
@@ -124,11 +132,22 @@ export function insertElementPartition(
     }
   }
   const defs = staticLayer.querySelector<SVGDefsElement>('svg defs');
-  if (!anchor || !defs) return false;
+  if ((!anchor && !fallbackParent) || !defs) return false;
   const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode);
   if (!rendered) return false;
-  defs.append(...rendered.nextDefs);
-  if (before) anchor.before(rendered.next);
+  const reusableChildren = record.meta.insertion?.containsDescendants === false
+    && !!record.children?.length
+    && (knownChildren?.length === record.children.length
+      || record.children.every((child) => !!findElementPartition(staticLayer, child)));
+  if (reusableChildren) {
+    const childContainer = rendered.next.querySelector<SVGGElement>('[data-edit-group-children]');
+    if (!childContainer) return false;
+    childContainer.append(...(knownChildren
+      ?? record.children!.map((child) => findElementPartition(staticLayer, child)!)));
+    // 新组合的 OOXML 容器没有自身视觉定义；孩子继续持有原 defs，避免 60 元素结构操作重绘。
+  } else defs.append(...rendered.nextDefs);
+  if (!anchor) fallbackParent!.appendChild(rendered.next);
+  else if (before) anchor.before(rendered.next);
   else anchor.after(rendered.next);
   return true;
 }

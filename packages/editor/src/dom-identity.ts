@@ -68,6 +68,11 @@ export function bindElementIdentities(root: ParentNode, doc: EditDoc, roots: rea
   bindProjectedIdentities(root, doc, elementIds(doc, roots));
 }
 
+/** 结构壳尚未挂孩子时只绑定容器本身，孩子沿用原分区身份。 */
+export function bindSingleElementIdentity(root: ParentNode, doc: EditDoc, id: ElementId): void {
+  bindProjectedIdentities(root, doc, [id]);
+}
+
 export function bindSlideIdentities(root: ParentNode, doc: EditDoc, slideId: SlideId): void {
   bindProjectedIdentities(root, doc, projectedSlideElementIds(doc, slideId));
 }

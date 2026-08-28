@@ -1,6 +1,7 @@
 ---
 title: 实现元素组合与解组
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -24,3 +25,10 @@ blocked_by: []
 
 验收：属性测试覆盖嵌套 / 旋转 / 翻转组合的世界变换不变量（误差 ≤0.01px）；固定种子组合→解组→撤销全等；
 LibreOffice 打开组合与解组产物无修复且几何 oracle 通过；真实 Chrome 60 元素组合/解组完整反馈 p95 ≤ 8ms；全部门禁绿。
+
+## Resolution
+
+- `Group` / `Ungroup` 以单个纯 JSON 层级 Patch 原子改写父链、分数序、删除集和选区；稳定 ElementId / spid、外部回放水位、锁定与跨父边界均由模型层统一约束。
+- 新 `grpSp` 使用恒等子坐标系并物理迁移来源 XML 宿主；解组以仿射分解回填孩子 frame，旋转叠加非等比缩放或斜切会显式拒绝，名称、组级超链接、未知 XML 与动画 spid 均保持来源语义。
+- `Ctrl/Cmd+G`、`Ctrl/Cmd+Shift+G` 已接入 keyboard-owner；新组复用孩子 DOM，来源组只重绘直属孩子，多视图、撤销重做和未触碰兄弟均保持增量身份。
+- 固定种子属性测试、纯 JSON 恢复、生成式 / `.ppt` / 空白文稿、保存重开与 CI LibreOffice oracle 均已覆盖；真实 Chrome 60 元素组合/解组 p95 为 6.9/7.1ms，两路最终审查无剩余 P1/P2。

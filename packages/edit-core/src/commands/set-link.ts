@@ -1,5 +1,5 @@
 import { own } from '../data-validation';
-import { normalizeLinkTarget, queryElementLink } from '../hyperlink';
+import { normalizeLinkTarget, queryElementLink, supportsElementLink } from '../hyperlink';
 import type { EditDoc, LinkOverride } from '../types';
 import type { CommandPatches, ElementLinkPatch, SetLinkCommand } from './types';
 
@@ -11,7 +11,7 @@ export function setLinkPatches(
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改链接');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
-  if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
+  if (!supportsElementLink(record.src.kind)
     || record.meta.editable !== 'full') {
     throw new Error(`元素不支持链接：${command.id}`);
   }

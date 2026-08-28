@@ -35,7 +35,15 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
   if (!source) return;
   const label = `元素 ${record.id} 的插入闭包`;
   if (!record.meta.created || !record.meta.origin) throw new Error(`${label} 缺少新建宿主身份`);
-  assertDataObject(source, ['markup', 'namespaces', 'spids', 'relationships', 'resources'], label);
+  assertDataObject(source, [
+    'markup', 'namespaces', 'spids', 'relationships', 'resources', 'containsDescendants',
+  ], label);
+  if (source.containsDescendants !== undefined && source.containsDescendants !== false) {
+    throw new Error(`${label}.containsDescendants 只能显式为 false`);
+  }
+  if (source.containsDescendants === false && record.src.kind !== 'group') {
+    throw new Error(`${label} 只有组合能使用空容器语义`);
+  }
   if (typeof source.markup !== 'string' || !source.markup
     || !source.namespaces || typeof source.namespaces !== 'object' || Array.isArray(source.namespaces)
     || !source.spids || typeof source.spids !== 'object' || Array.isArray(source.spids)

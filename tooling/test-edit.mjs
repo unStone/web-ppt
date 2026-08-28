@@ -45,6 +45,7 @@ import { runFormatPainterContract } from './lib/format-painter-contract.mjs';
 import { runFindReplaceContract } from './lib/find-replace-contract.mjs';
 import { runTransitionContract } from './lib/transition-contract.mjs';
 import { runAnimationEditContract } from './lib/animation-edit-contract.mjs';
+import { runGroupUngroupContract } from './lib/group-ungroup-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -99,6 +100,7 @@ const sourceCount = (pres) => {
 await runElementDeleteContract({ edit, core, load, check });
 await runElementLayerContract({ edit, core, load, check });
 await runElementAlignContract({ edit, core, load, check });
+await runGroupUngroupContract({ edit, core, load, check });
 await runElementClipboardContract({ edit, core, load, check });
 await runTextEditContract({ edit, core, load, check });
 await runRunFormatContract({ edit, core, load, check });

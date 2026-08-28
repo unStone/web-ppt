@@ -15,6 +15,7 @@ import { runSlideNotesLibreOfficeContract } from './lib/slide-notes-libreoffice-
 import {
   runSlideImageBackgroundLibreOfficeContract, runSlideImageTileOracleLibreOfficeContract,
 } from './lib/slide-image-background-libreoffice-contract.mjs';
+import { runGroupUngroupLibreOfficeContract } from './lib/group-ungroup-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -275,6 +276,7 @@ if (requestedPages !== undefined && pages !== requestedPages) {
 }
 
 let geometryEvidence = '';
+geometryEvidence += runGroupUngroupLibreOfficeContract({ savedPath, exportSvg: exportLibreOfficeSvg });
 if (basename(savedPath) === 'slide-properties.pptx') {
   geometryEvidence = runSlidePropertiesLibreOfficeContract({
     savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg,

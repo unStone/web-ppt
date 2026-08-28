@@ -10,6 +10,7 @@ import { runHistoryShortcutContract } from './lib/history-shortcut-contract.mjs'
 import { runDeleteKeyboardContract } from './lib/delete-keyboard-contract.mjs';
 import { runKeyboardNudgeContract } from './lib/keyboard-nudge-contract.mjs';
 import { runLayerKeyboardContract } from './lib/layer-keyboard-contract.mjs';
+import { runGroupKeyboardContract } from './lib/group-keyboard-contract.mjs';
 import { runMarqueeGestureContract } from './lib/marquee-gesture-contract.mjs';
 import { runModifierSelectionContract } from './lib/modifier-selection-contract.mjs';
 import { runMoveGestureContract } from './lib/move-gesture-contract.mjs';
@@ -267,6 +268,7 @@ await runMarqueeGestureContract({ check, lib, root });
 await runHistoryShortcutContract({ check, lib, root });
 await runDeleteKeyboardContract({ check, lib, root });
 await runLayerKeyboardContract({ check, lib, root });
+await runGroupKeyboardContract({ check, lib, root });
 await runKeyboardNudgeContract({ check, lib, root });
 await runTabSelectionContract({ check, lib, root });
 await runTextEditorContract({ check, lib, root, window: domEnvironment.window });

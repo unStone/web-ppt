@@ -22,7 +22,7 @@ import {
 import {
   assertSlideImageBackground, assertSlideImageBackgroundDimensions, assertSlideImageFill,
 } from './commands/slide-property';
-import { assertLinkOverride } from './hyperlink';
+import { assertLinkOverride, supportsElementLink } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 import { isNotesPart } from './notes-part';
 import { assertElementName } from './element-name';
@@ -362,6 +362,13 @@ export function validateEditDoc(doc: EditDoc): void {
     assertElementOrder(record);
     if (record.src.kind === 'group' && !record.children) throw new Error(`组 ${id} 缺少 children`);
     if (record.src.kind !== 'group' && record.children) throw new Error(`非组元素 ${id} 不能拥有 children`);
+    if (record.meta.sourceParent !== undefined) {
+      const sourceParent = record.meta.sourceParent;
+      if (record.meta.created || sourceParent === record.parent
+        || (!doc.slides[sourceParent] && !doc.elements[sourceParent] && !doc.removedElements[sourceParent])) {
+        throw new Error(`元素 ${id} 的来源父级无效`);
+      }
+    }
     if (record.children) assertChildren(doc, id, record.children, referenced);
   }
   for (const id of Object.keys(doc.elements)) {
@@ -423,7 +430,7 @@ export function validateEditDoc(doc: EditDoc): void {
     assertTableRows(record);
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) {
-      if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
+      if (!supportsElementLink(record.src.kind)
         || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不能包含链接覆盖`);
       }

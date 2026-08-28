@@ -1,6 +1,7 @@
 import { isElementInteractionPatch } from './commands/element-interaction';
 import { isElementNamePatch } from './commands/element-name';
 import { isElementOrderPatch } from './commands/element-order';
+import { isElementHierarchyPatch } from './commands/element-hierarchy';
 import { isSlideLayoutPatch } from './commands/slide-layout';
 import { isSlideOrderPatch } from './commands/slide-order';
 import { isSlideBackgroundPatch } from './commands/slide-property';
@@ -9,8 +10,8 @@ import type { Patch } from './commands/types';
 import type { ElementId, SlideId, TextOverride } from './types';
 
 export function patchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter((patch) => patch.path[0] === 'elements')
-    .map((patch) => patch.path[1]));
+  return new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
+    ? patch.value.affected : patch.path[0] === 'elements' ? [patch.path[1]] : []));
 }
 
 export function affectsSlideSequence(patches: readonly Patch[]): boolean {
@@ -25,17 +26,18 @@ export function renderPatchSlides(patches: readonly Patch[]): Set<SlideId> {
 export function renderPatchElements(
   patches: readonly Patch[], dirtyElements: ReadonlySet<ElementId> = new Set(),
 ): Set<ElementId> {
-  const result = new Set(patches
-    .filter((patch) => patch.path[0] === 'elements'
-      && !isElementOrderPatch(patch) && !isElementInteractionPatch(patch))
-    .map((patch) => patch.path[1]));
+  const result = new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
+    ? patch.value.affected
+    : patch.path[0] === 'elements' && !isElementOrderPatch(patch) && !isElementInteractionPatch(patch)
+      ? [patch.path[1]] : []));
   // 页树与页序会改变字段投影，却没有元素属性 patch；必须把派生脏元素交给 DOM 增量层。
   if (affectsSlideSequence(patches)) for (const id of dirtyElements) result.add(id);
   return result;
 }
 
 export function reorderedPatchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.filter(isElementOrderPatch).map((patch) => patch.path[1]));
+  return new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
+    ? patch.value.affected : isElementOrderPatch(patch) ? [patch.path[1]] : []));
 }
 
 export function panePatchElements(patches: readonly Patch[]): Set<ElementId> {

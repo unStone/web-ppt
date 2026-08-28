@@ -62,12 +62,15 @@ export function materializeElementTreeState(
   removals: readonly RemovedElementRecord[],
   options: {
     skipInsertions?: ReadonlySet<string>;
+    skipReparents?: boolean;
     scope?: ReadonlySet<string>;
     links?: HyperlinkSaveContext;
   } = {},
 ): void {
-  for (const removal of removals) patchRemovedElement(document, removal);
   const inserted = patchInsertedElements(document, doc, records, options.skipInsertions);
+  if (!options.skipReparents) patchReparentedElements(document, doc, records);
+  // 解组要先把仍存活的孩子移出来源组，再删除旧组宿主。
+  for (const removal of removals) patchRemovedElement(document, removal);
   materializeElementOverrides(document, doc, part, records, options.scope, inserted, options.links);
 }
 
@@ -121,14 +124,14 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   };
   visit(host);
   if (pending.size) throw new Error(`新建元素 ${record.id} 的 spid 无法完整重映射`);
-  const records = collectRecords(doc, [record.id]);
+  const records = source.containsDescendants === false ? [record] : collectRecords(doc, [record.id]);
   const scope = new Set(records.map((current) => current.id));
   const part = record.meta.origin!.part;
   pruneInactiveInsertionHosts(wrapper, source, records, part);
   const removals = Object.values(doc.removedElements).filter((removed) =>
     removed.meta.origin?.part === part && scope.has(removed.parent));
   materializeElementTreeState(wrapper, doc, part, records, removals, {
-    skipInsertions: new Set([record.id]), scope,
+    skipInsertions: new Set([record.id]), skipReparents: true, scope,
   });
   return wrapper;
 }
@@ -163,12 +166,23 @@ export function patchInsertedElements(
   const candidates = new Set(records
     .filter((record) => record.meta.insertion && !skip.has(record.id))
     .map((record) => record.id));
-  for (const record of records) {
+  const depth = (record: ElementRecord): number => {
+    let value = 0;
+    let parent = record.parent;
+    while (!doc.slides[parent]) {
+      value++;
+      const ancestor = doc.elements[parent];
+      if (!ancestor) break;
+      parent = ancestor.parent;
+    }
+    return value;
+  };
+  for (const record of [...records].sort((left, right) => depth(left) - depth(right))) {
     if (!candidates.has(record.id)) continue;
     let ancestor = record.parent;
     let covered = false;
     while (!doc.slides[ancestor]) {
-      if (candidates.has(ancestor)) {
+      if (candidates.has(ancestor) && doc.elements[ancestor]?.meta.insertion?.containsDescendants !== false) {
         covered = true;
         break;
       }
@@ -186,4 +200,22 @@ export function patchInsertedElements(
     mark(record.id);
   }
   return materialized;
+}
+
+/** 层级编辑移动原宿主本身，未知扩展、关系引用与 spid 因此都不需要重建。 */
+export function patchReparentedElements(
+  document: XmlDocument,
+  doc: EditDoc,
+  records: readonly ElementRecord[],
+): void {
+  const moved = records.filter((record) => record.meta.sourceParent !== undefined);
+  if (!moved.length) return;
+  const located = locateElementHosts(document, moved);
+  for (const record of moved) {
+    const location = located.get(record.id)!;
+    const target = targetParent(document, doc, record);
+    if (location.parent === target) continue;
+    if (!removeXmlChild(location.parent, location.host)) throw new Error(`无法移动元素宿主：${record.id}`);
+    insertXmlChild(target, location.host);
+  }
 }

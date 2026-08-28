@@ -2,6 +2,7 @@ import { KeyboardNudgeController } from './keyboard-nudge';
 import { HistoryKeyboardController } from './keyboard-history';
 import { DeleteKeyboardController } from './keyboard-delete';
 import { LayerKeyboardController } from './keyboard-layer';
+import { GroupKeyboardController } from './keyboard-group';
 import type { KeyboardControllerOptions } from './keyboard-context';
 import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { directSelectableChildIds, enteredGroupOnSlide } from './selection-hit';
@@ -12,6 +13,7 @@ export class EditorKeyboardController {
   private readonly history: HistoryKeyboardController;
   private readonly deletion: DeleteKeyboardController;
   private readonly layer: LayerKeyboardController;
+  private readonly group: GroupKeyboardController;
   private readonly nudge: KeyboardNudgeController;
 
   constructor(options: KeyboardControllerOptions) {
@@ -19,6 +21,7 @@ export class EditorKeyboardController {
     this.history = new HistoryKeyboardController(options);
     this.deletion = new DeleteKeyboardController(options);
     this.layer = new LayerKeyboardController(options);
+    this.group = new GroupKeyboardController(options);
     this.nudge = new KeyboardNudgeController(options);
   }
 
@@ -28,6 +31,10 @@ export class EditorKeyboardController {
       return true;
     }
     if (this.deletion.keyDown(event)) {
+      this.nudge.breakSequence();
+      return true;
+    }
+    if (this.group.keyDown(event)) {
       this.nudge.breakSequence();
       return true;
     }

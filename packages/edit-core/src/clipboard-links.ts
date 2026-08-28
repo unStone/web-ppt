@@ -1,7 +1,7 @@
 import type { SlideElement, TextBody, TextRun } from '@web-ppt/core';
 import { packageTargetIdentity, resolvePackageTarget } from './clipboard-source';
 import { assertDataObject } from './data-validation';
-import { assertLinkOverride } from './hyperlink';
+import { assertLinkOverride, queryElementLink, supportsElementLink } from './hyperlink';
 import { flattenTextBody } from './text-model';
 import { textRunEditLength } from './text-position';
 import type {
@@ -10,7 +10,6 @@ import type {
 import type {
   EditDoc, ElementOverrides, LinkOverride, LinkSourceValue, TableCellOverrides,
 } from './types';
-import { queryElementLink } from './hyperlink';
 import { queryRunLink } from './run-links';
 
 function portableTarget(doc: EditDoc, value: LinkSourceValue | null): ClipboardPortableLink | null {
@@ -53,7 +52,7 @@ export function copiedLinkMeta(
   element: SlideElement,
 ): Pick<ElementClipboardRecordMeta, 'link' | 'textLinks'> {
   const editableText = doc.elements[id]?.meta.editable === 'full';
-  const elementState = element.kind === 'shape' || element.kind === 'image'
+  const elementState = supportsElementLink(element.kind)
     ? queryElementLink(doc, [id]) : null;
   const link = elementState?.value ? portableTarget(doc, elementState.value)
     : elementState?.direct ? { kind: 'none' as const } : null;

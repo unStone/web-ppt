@@ -149,6 +149,7 @@ class DomSlideEditor implements SlideEditor {
       editor: session.editor, namespace: this.idPrefix,
       slideId: () => this.currentSlide, revealSlide: (slideId) => this.setSlide(slideId),
       gestureActive: () => this.hasActiveGesture(),
+      onError: options.onError,
     });
     this.clipboard = new ElementClipboardController({
       editor: session.editor,

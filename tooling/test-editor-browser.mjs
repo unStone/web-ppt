@@ -10,6 +10,7 @@ import { runTrustedKeyboardContract } from './lib/editor-keyboard-trusted-contra
 import { runTrustedHistoryContract } from './lib/editor-history-browser-contract.mjs';
 import { runTrustedDeleteContract } from './lib/editor-delete-browser-contract.mjs';
 import { runTrustedLayerContract } from './lib/editor-layer-browser-contract.mjs';
+import { runTrustedGroupContract } from './lib/editor-group-browser-contract.mjs';
 import { runTrustedModifierSelectionContract } from './lib/editor-multiselect-browser-contract.mjs';
 import { runTrustedTabContract } from './lib/editor-tab-browser-contract.mjs';
 import { runTrustedMarqueeContract } from './lib/editor-marquee-trusted-contract.mjs';
@@ -213,6 +214,8 @@ async function browserResult(webSocketDebuggerUrl) {
           layerP95: report.dataset.layerP95,
           layerUndoP95: report.dataset.layerUndoP95,
           layerRedoP95: report.dataset.layerRedoP95,
+          groupP95: report.dataset.groupP95,
+          ungroupP95: report.dataset.ungroupP95,
           alignError: report.dataset.alignError,
           alignP95: report.dataset.alignP95,
           tabP95: report.dataset.tabP95,
@@ -486,6 +489,7 @@ async function browserResult(webSocketDebuggerUrl) {
         await runTrustedHistoryContract({ evaluate, dispatchKey });
         await runTrustedDeleteContract({ evaluate, dispatchKey });
         await runTrustedLayerContract({ evaluate, dispatchKey });
+        await runTrustedGroupContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
         await runTrustedClipboardContract({ evaluate, dispatchKey });
@@ -504,6 +508,7 @@ async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedHistory = 'pass';
           report.dataset.trustedDelete = 'pass';
           report.dataset.trustedLayer = 'pass';
+          report.dataset.trustedGroup = 'pass';
           report.dataset.trustedTab = 'pass';
           report.dataset.trustedModifierSelection = 'pass';
           report.dataset.trustedClipboard = 'pass';
@@ -519,6 +524,7 @@ async function browserResult(webSocketDebuggerUrl) {
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
           trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
           trustedLayer: 'pass',
+          trustedGroup: 'pass',
           trustedClipboard: 'pass',
           trustedRichTextClipboard: 'pass',
           trustedText: 'pass',
@@ -582,6 +588,7 @@ try {
     + ` · 撤销/重做60 p95 ${result.historyUndoP95}/${result.historyRedoP95}ms`
     + ` · 删除/撤销/重做60 p95 ${result.deleteP95}/${result.deleteUndoP95}/${result.deleteRedoP95}ms`
     + ` · 层级/撤销/重做60 p95 ${result.layerP95}/${result.layerUndoP95}/${result.layerRedoP95}ms`
+    + ` · 组合/解组60 p95 ${result.groupP95}/${result.ungroupP95}ms`
     + ` · Tab60 p95 ${result.tabP95}ms`
     + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
     + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
@@ -626,7 +633,7 @@ try {
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
-    + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}`
+    + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}/${result.trustedGroup}`
     + ` · trusted multiselect ${result.trustedModifierSelection}`
     + ` · trusted clipboard ${result.trustedClipboard}`
     + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`

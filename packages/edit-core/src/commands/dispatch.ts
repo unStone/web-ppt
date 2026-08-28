@@ -1,5 +1,7 @@
 import type { EditDoc, ElementId } from '../types';
 import { alignElementsPatches } from './align-elements';
+import { groupPatches } from './group';
+import { ungroupPatches } from './ungroup';
 import { editTextPatches } from './edit-text';
 import { fitTextShapePatches } from './fit-text-shape';
 import { pasteElementsPatches } from './paste-elements';
@@ -38,8 +40,8 @@ import {
   assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
 } from './element-interaction';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
+  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand, UngroupCommand,
 } from './types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
@@ -80,6 +82,8 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     'scope', 'from', 'to', 'matchCase', 'wholeWord',
   ], replaceTextPatches, { target: 'none' }),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
+  Group: register<GroupCommand>(['ids'], groupPatches, { target: 'ids' }),
+  Ungroup: register<UngroupCommand>(['id'], ungroupPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
   AddShape: register<AddShapeCommand>(['slideId', 'preset', 'rect'], addShapePatches,
     { target: 'none', selectInserted: true }),
@@ -145,7 +149,7 @@ export function assertPureCommand(input: Command): void {
 export function commandTargetIds(command: Command): readonly ElementId[] {
   const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
   if (registration?.target === 'ids') {
-    const ids = (command as Partial<AlignElementsCommand>).ids;
+    const ids = (command as Partial<AlignElementsCommand | GroupCommand>).ids;
     return Array.isArray(ids) ? ids.filter((id): id is ElementId => typeof id === 'string' && !!id) : [];
   }
   if (registration?.target === 'to') {

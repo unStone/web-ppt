@@ -51,6 +51,8 @@ jobs:
           npm run test:edit:libreoffice -- out/edit-save/generated-ppt-edited.pptx 2
           npm run test:edit:libreoffice -- out/edit-save/generated-ppt-unsupported.pptx 2
           npm run test:edit:libreoffice -- out/edit-save/generated-ppt-ole-preview.pptx 1
+          npm run test:edit:libreoffice -- out/edit-save/group-elements.pptx 1
+          npm run test:edit:libreoffice -- out/edit-save/ungroup-elements.pptx 1
           npm run test:edit:libreoffice -- out/site-editor-browser/sample.pptx 2
           npm run test:edit:libreoffice -- out/edit-save/single-move.pptx
           npm run test:edit:libreoffice -- out/edit-save/engine-text-editing.pptx

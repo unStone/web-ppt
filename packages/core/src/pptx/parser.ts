@@ -1,6 +1,3 @@
-import {
-  parseSafeExternalUrl,
-} from '../types';
 import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadata';
 import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
@@ -25,6 +22,7 @@ import {
 import type { AssetMode, DeferredAsset } from './asset-store';
 import { builtInTableStyleMarkup } from './builtin-table-styles';
 import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
+import { hyperlinkOf, resolveLink } from './hyperlink';
 import { Env, findPh, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
 import { Pkg } from './package-reader';
 
@@ -402,31 +400,6 @@ function brokenShapePlaceholder(node: Element, err: unknown, env: Env): Unsuppor
     label: `${name}（解析失败：${reason.slice(0, 40)}）`,
     ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame', movementLocked(nv)),
   };
-}
-
-function hyperlinkOf(cNvPr: Element | null, env: Env): {
-  readonly link?: string;
-  readonly unsupported: boolean;
-} {
-  const h = kid(cNvPr, 'hlinkClick');
-  if (!h) return { unsupported: false };
-  const link = resolveLink(env, attr(h, 'r:id') ?? '', attr(h, 'action')) ?? undefined;
-  return { ...(link ? { link } : {}), unsupported: !link };
-}
-
-function resolveLink(env: Env, rid: string, action: string | null): string | null {
-  if (action?.includes('nextslide')) return env.edit ? 'slide:next' : `slide:${env.slideNum + 1}`;
-  if (action?.includes('previousslide')) return env.edit ? 'slide:previous' : `slide:${env.slideNum - 1}`;
-  if (action?.includes('firstslide')) return env.edit ? 'slide:first' : 'slide:1';
-  if (action?.includes('lastslide')) return 'slide:last';
-  const rel = env.rels[rid];
-  if (!rel) return null;
-  if (parseSafeExternalUrl(rel.target)) return rel.target;
-  const idx = env.slideIdMap[rel.target];
-  if (idx !== undefined) return env.edit
-    ? `slide-part:${encodeURIComponent(rel.target)}`
-    : `slide:${idx}`;
-  return null;
 }
 
 function parseSp(sp: Element, env: Env): ShapeElement | null {
@@ -863,6 +836,7 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
   const children = parseShapeTree(grp, env, skipPh);
   if (!children.length) return null;
   const cNvPr = kid(nv, 'cNvPr');
+  const hyperlink = hyperlinkOf(cNvPr, env);
   return {
     kind: 'group',
     ...base(xf),
@@ -872,9 +846,12 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
     scaleY: xf.chH ? xf.h / xf.chH : 1,
     children,
     effects: parseEffects(kid(grpSpPr, 'effectLst'), env.ctx),
+    link: hyperlink.link,
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(env, cNvPr, null, undefined, undefined, movementLocked(nv)),
+    ...editInfoOf(
+      env, cNvPr, null, undefined, undefined, movementLocked(nv), hyperlink.unsupported,
+    ),
   };
 }
 

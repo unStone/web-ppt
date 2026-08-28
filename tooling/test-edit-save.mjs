@@ -31,6 +31,7 @@ import { runFindReplaceSaveContract } from './lib/find-replace-save-contract.mjs
 import { runTransitionSaveContract } from './lib/transition-save-contract.mjs';
 import { runAnimationSaveContract } from './lib/animation-save-contract.mjs';
 import { runGeneratedSaveContract } from './lib/generated-save-contract.mjs';
+import { runGroupUngroupSaveContract } from './lib/group-ungroup-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -92,6 +93,8 @@ await runGeneratedSaveContract({
     return JSON.parse(stdout);
   },
 });
+
+await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 
 await runM1SaveContract({
   core,

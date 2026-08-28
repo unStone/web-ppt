@@ -1,4 +1,4 @@
-import { assertLinkOverride } from '../hyperlink';
+import { assertLinkOverride, supportsElementLink } from '../hyperlink';
 import type { EditDoc } from '../types';
 import type { ElementLinkPatch, Patch } from './types';
 
@@ -10,7 +10,7 @@ export function isElementLinkPatch(patch: Patch): patch is ElementLinkPatch {
 export function validateElementLinkPatch(doc: EditDoc, patch: ElementLinkPatch, index: number): void {
   const record = doc.elements[patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
-  if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
+  if (!supportsElementLink(record.src.kind)
     || record.meta.editable !== 'full') {
     throw new Error(`Patch ${index} 指向不支持链接的元素`);
   }

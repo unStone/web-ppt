@@ -1,10 +1,14 @@
 import { MAX_SAFE_EXTERNAL_HREF_LENGTH, parseSafeExternalUrl } from '@web-ppt/core';
+import type { SlideElement } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
 import type {
   EditDoc, ElementId, ElementLinkState, LinkOverride, LinkSourceValue, LinkTarget, SlideId,
 } from './types';
 
 export const MAX_EXTERNAL_LINK_LENGTH = MAX_SAFE_EXTERNAL_HREF_LENGTH;
+
+export const supportsElementLink = (kind: SlideElement['kind']): boolean =>
+  kind === 'shape' || kind === 'image' || kind === 'group';
 
 export function normalizeExternalLinkTarget(href: string): LinkTarget | null {
   const url = parseSafeExternalUrl(href);
@@ -104,7 +108,7 @@ export function queryElementLink(doc: EditDoc, ids: readonly ElementId[]): Eleme
   const records = ids.map((id) => {
     const record = doc.elements[id];
     if (!record) throw new Error(`找不到元素：${id}`);
-    if (record.src.kind !== 'shape' && record.src.kind !== 'image') {
+    if (!supportsElementLink(record.src.kind)) {
       throw new Error(`元素不支持链接：${id}`);
     }
     return record;

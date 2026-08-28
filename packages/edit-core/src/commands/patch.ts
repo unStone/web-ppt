@@ -24,6 +24,9 @@ import {
   applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
 } from './element-order';
 import { applyElementTreePatch, isElementTreePatch, validateElementTreePatch } from './element-tree';
+import {
+  applyElementHierarchyPatch, isElementHierarchyPatch, validateElementHierarchyPatch,
+} from './element-hierarchy';
 import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
 import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
 import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
@@ -64,6 +67,10 @@ function validatePatch(
   }
   if (typeof patch.origin !== 'string' || !patch.origin) throw new Error(`Patch ${index} 缺少 origin`);
   if (isImageResourcePatch(input)) {
+    return;
+  }
+  if (isElementHierarchyPatch(input)) {
+    validateElementHierarchyPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 2
@@ -210,7 +217,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
         tableOrders.set(order, index);
       }
     }
-    if (!isElementTreePatch(patch) && !isSlideTreePatch(patch)) return;
+    if (!isElementTreePatch(patch) && !isSlideTreePatch(patch) && !isElementHierarchyPatch(patch)) return;
     for (const id of Object.keys(patch.value.records)) {
       const previous = owner.get(id);
       if (previous !== undefined) {
@@ -244,7 +251,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
     }
   }
   patches.forEach((patch, index) => {
-    if (isElementTreePatch(patch) || isSlideTreePatch(patch)) return;
+    if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) return;
     const tree = owner.get(patch.path[1]);
     if (tree !== undefined) {
       throw new Error(`Patch ${index} 与 Patch ${tree} 同时修改将被移除的元素：${patch.path[1]}`);
@@ -286,6 +293,11 @@ function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc 
       const slideId = doc.slides[patch.value.parent]
         ? patch.value.parent : slideOfElement(doc, patch.value.parent);
       cloneSlide(slideId);
+    } else if (isElementHierarchyPatch(patch)) {
+      for (const parent of Object.keys(patch.value.children)) cloneParent(parent);
+      const slideId = doc.slides[patch.value.parent]
+        ? patch.value.parent : slideOfElement(doc, patch.value.parent);
+      cloneSlide(slideId);
     } else if (isElementOrderPatch(patch)) {
       const parent = doc.elements[patch.path[1]]?.parent;
       if (parent) cloneParent(parent);
@@ -303,6 +315,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isSlideLayoutPatch(patch)) applySlideLayoutPatch(doc, patch);
     else if (isSlideNotesPatch(patch)) applySlideNotesPatch(doc, patch);
     else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
+    else if (isElementHierarchyPatch(patch)) applyElementHierarchyPatch(doc, patch);
     else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
     else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
     else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
@@ -336,7 +349,8 @@ function applyPatchBatch(
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
   validatePatchRelations(doc, patches);
-  const structural = patches.some((patch) => isSlideTreePatch(patch) || isElementTreePatch(patch));
+  const structural = patches.some((patch) =>
+    isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
   const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
   const animationDoc = needsAnimationStage ? structuralPatchStage(doc, patches) : doc;
   if (needsAnimationStage) applyPatchValues(animationDoc, patches);
@@ -453,6 +467,8 @@ function applyPatchBatch(
       ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
       : isElementTreePatch(patch)
       ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
+      : isElementHierarchyPatch(patch)
+      ? invalidateElementStructure(doc, patch.value.affected, patch.value.parent)
       : invalidateElement(doc, patch.path[1]);
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);

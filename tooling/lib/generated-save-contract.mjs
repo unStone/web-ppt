@@ -75,6 +75,13 @@ export async function runGeneratedSaveContract({
       && blankDoc.elements[shapeId]?.src.kind === 'shape'
       && blankDoc.elements[tableId]?.src.kind === 'table'
       && blankDoc.elements[imageId]?.src.kind === 'image');
+    blankEditor.exec({ type: 'Group', ids: [shapeId, tableId] });
+    const blankGroupId = blankEditor.selection.ids[0];
+    const blankGrouped = blankDoc.elements[blankGroupId];
+    blankEditor.exec({ type: 'Ungroup', id: blankGroupId });
+    check('空白文稿的生成模型支持组合→解组并恢复孩子直属身份',
+      blankGrouped?.src.kind === 'group' && !blankDoc.elements[blankGroupId]
+        && [shapeId, tableId].every((id) => blankDoc.elements[id]?.parent === firstSlide));
     const dynamicNumber = blankDoc.slides[secondSlide].dynamicSlideNumbers
       .map((id) => blankEditor.effectiveElement(id))
       .find((element) => element.kind === 'shape');
@@ -227,6 +234,19 @@ export async function runGeneratedSaveContract({
   check('.ppt 生成插入复用结构历史且不丢图片资源', removedImage
     && editedLegacyDoc.elements[imageId]?.src.kind === 'image'
     && Object.keys(editedLegacyDoc.imageResources).length === 1);
+  editedLegacy.exec({ type: 'Group', ids: [shapeId, tableId, imageId] });
+  const legacyGroupId = editedLegacy.selection.ids[0];
+  const legacyGroupedBytes = generate.generateEditDoc(editedLegacyDoc).bytes;
+  const legacyGroupedReopened = await core.parse(legacyGroupedBytes, { lazy: false, assets: 'defer' });
+  const generatedGroup = legacyGroupedReopened.slides[0].elements.find((element) =>
+    element.kind === 'group' && element.children.length === 3);
+  check('.ppt 统一模型中的新组合可生成并由公开解析器重开', generatedGroup?.kind === 'group'
+    && generatedGroup.children.map((element) => element.kind).sort().join(',') === 'image,shape,table');
+  legacyGroupedReopened.dispose?.();
+  editedLegacy.exec({ type: 'Ungroup', id: legacyGroupId });
+  check('.ppt 统一模型解组后恢复三种插入的直属身份',
+    !editedLegacyDoc.elements[legacyGroupId]
+      && [shapeId, tableId, imageId].every((id) => editedLegacyDoc.elements[id]?.parent === editedSlideId));
   const editedLegacySaved = await editedLegacy.saveDetailed();
   saveArtifact('generated-ppt-edited.pptx', editedLegacySaved.bytes);
   const editedLegacyReopened = await core.parse(editedLegacySaved.bytes, { lazy: false, assets: 'defer' });

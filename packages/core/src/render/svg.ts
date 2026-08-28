@@ -420,7 +420,8 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
 function renderGroup(el: GroupElement, ctx: Ctx): string {
   const childXf = `scale(${r(el.scaleX || 1)} ${r(el.scaleY || 1)}) translate(${r(-el.childX)} ${r(-el.childY)})`;
   const children = el.children.map((c) => renderEl(c, ctx)).join('');
-  return wrapEl(el, `<g transform="${flipTransform(el)} ${childXf}">${children}</g>`, ctx);
+  const marker = ctx.includeEditMarkers ? ' data-edit-group-children="1"' : '';
+  return wrapEl(el, `<g${marker} transform="${flipTransform(el)} ${childXf}">${children}</g>`, ctx);
 }
 
 // ---------------- 表格 ----------------
