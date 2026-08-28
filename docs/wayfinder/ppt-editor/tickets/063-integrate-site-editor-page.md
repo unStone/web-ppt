@@ -27,7 +27,7 @@ blocked_by: []
   首屏之外。1050px 以下隐藏对象窗格，680px 以下压缩页栏与工具栏，390×844 和 1280×720 均实际截图检查。
 - 真实 Chromium 已走通：默认 7 页载入、插入形状、脏状态、撤销/重做、view 模式禁用写入、跳到动画页播放、
   保存下载 `showcase-edited.pptx`；`.ppt` 只读边界与零 console warning 通过。`/web-ppt/editor.html` 生产子路径
-  实际加载成功；静态页面为 4.58KB gzip，编辑入口 chunk 为 150.71KB gzip，只在独立编辑页下载。
+  实际加载成功；静态页面为 4.57KB gzip，编辑入口 chunk 为 150.71KB gzip，只在独立编辑页下载。
 - 全仓 `npm run check && npm test && npm run build` 通过：2145 项 core、874 项 edit-core、370 项保存、9 项
   PowerPoint 证据契约、360 项 editor、9 项框架适配、478 对编辑等价指纹及 130 项图元文件断言均为绿色，
   七个发布包全部构建成功。

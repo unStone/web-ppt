@@ -53,7 +53,7 @@ let mode: EditorMode = 'edit';
 let zoom = 1;
 let fitWanted = true;
 let activeName = 'showcase.pptx';
-let opening = 0;
+let openGeneration = 0;
 
 function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -94,8 +94,8 @@ function syncControls(): void {
   const ready = !!editor && !app.dataset.loading;
   const writable = ready && canEditDocument();
   const index = currentIndex();
-  buttons.undo.disabled = !writable || !editor!.history.undoCount;
-  buttons.redo.disabled = !writable || !editor!.history.redoCount;
+  buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
+  buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
@@ -200,19 +200,19 @@ function disposeCurrent(): void {
 }
 
 async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name: string): Promise<void> {
-  const generation = ++opening;
+  const generation = ++openGeneration;
   setLoading(`正在打开 ${name}`);
   notice(`正在解析 ${name}…`);
   try {
     const next = await openEditor(source);
-    if (generation !== opening) {
+    if (generation !== openGeneration) {
       next.dispose();
       return;
     }
     disposeCurrent();
     session = next;
     activeName = name;
-    mode = !next.editor.doc.meta.readonly && next.editor.doc.meta.source === 'pptx' ? 'edit' : 'view';
+    mode = canEditDocument() ? 'edit' : 'view';
     view = next.mount(canvasMount, { mode, zoom: 1, snapping: true, onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     unregisterToolbar = view.registerTextUi(toolbar);
@@ -232,7 +232,7 @@ async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name
     notice(message, canEditDocument() ? 'success' : 'normal');
     view.element.focus();
   } catch (error) {
-    if (generation !== opening) return;
+    if (generation !== openGeneration) return;
     const failure = new Error(`打开失败：${explain(error)}`);
     if (session) {
       hideLoading();
@@ -260,6 +260,10 @@ function showOpenFailure(error: unknown): void {
 
 function confirmReplacement(): boolean {
   return !session?.editor.isDirty() || window.confirm('当前修改还没有保存，仍然打开另一份文件吗？');
+}
+
+function tryOpenLocalFile(file: File | undefined): void {
+  if (file && confirmReplacement()) void openDocument(file, file.name);
 }
 
 async function saveCopy(): Promise<void> {
@@ -342,8 +346,7 @@ buttons.fit.addEventListener('click', () => { fitWanted = true; fitView(); });
 buttons.save.addEventListener('click', () => void saveCopy());
 
 fileInput.addEventListener('change', () => {
-  const file = fileInput.files?.[0];
-  if (file && confirmReplacement()) void openDocument(file, file.name);
+  tryOpenLocalFile(fileInput.files?.[0]);
   fileInput.value = '';
 });
 
@@ -364,8 +367,7 @@ window.addEventListener('drop', (event) => {
   event.preventDefault();
   dragDepth = 0;
   dropLayer.hidden = true;
-  const file = event.dataTransfer?.files[0];
-  if (file && confirmReplacement()) void openDocument(file, file.name);
+  tryOpenLocalFile(event.dataTransfer?.files[0]);
 });
 
 window.addEventListener('keydown', (event) => {
@@ -387,5 +389,5 @@ void fetch(new URL('./demo/showcase.pptx', document.baseURI))
     return response.arrayBuffer();
   })
   // 用户可能在示例下载完成前已经选择了本地文件；迟到的示例不能覆盖用户意图。
-  .then((bytes) => opening ? undefined : openDocument(bytes, 'showcase.pptx'))
-  .catch(showOpenFailure);
+  .then((bytes) => openGeneration ? undefined : openDocument(bytes, 'showcase.pptx'))
+  .catch((error) => { if (!openGeneration) showOpenFailure(error); });
