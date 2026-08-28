@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const MIME = 'application/x-web-ppt-elements+json';
 
 const clipboardEvent = (type, data) => {
@@ -168,9 +170,10 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
       }
       samples.sort((left, right) => left - right);
       pasteP95 = samples[Math.floor(samples.length * 0.95)];
-      if (pasteP95 > 16 || Object.keys(performanceSession.editor.doc.elements).length !== sourceElementCount) {
-        throw new Error(`60 元素剪贴板粘贴 p95 ${pasteP95.toFixed(3)}ms`);
+      if (Object.keys(performanceSession.editor.doc.elements).length !== sourceElementCount) {
+        throw new Error('60 元素剪贴板粘贴撤销后模型数量不一致');
       }
+      recordPerformanceBudget('60 元素剪贴板粘贴 p95', pasteP95, 16);
     } finally {
       performanceSession.dispose();
       performanceMount.remove();

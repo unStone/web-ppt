@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const clipboardEvent = (type, data) => {
   const event = new ClipboardEvent(type, { bubbles: true, composed: true, cancelable: true });
   Object.defineProperty(event, 'clipboardData', { value: data });
@@ -56,8 +58,7 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  if (p95 > 30 || session.editor.history.undoCount !== 0) {
-    throw new Error(`2,000 字符富文本粘贴完整上屏 p95 ${p95.toFixed(3)}ms`);
-  }
+  if (session.editor.history.undoCount !== 0) throw new Error('2,000 字符富文本粘贴撤销后历史不一致');
+  recordPerformanceBudget('2,000 字符富文本粘贴完整上屏 p95', p95, 30);
   return { session, view, mount, id: record.id, p95 };
 }

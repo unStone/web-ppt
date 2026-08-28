@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const percentile95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -51,7 +53,7 @@ export async function runEditorSlideNotesBrowserContract({ openEditor, load }) {
       mount.querySelector('[data-ppt-layer="static"] svg') !== staticSlides[index])) {
     throw new Error('Chrome 备注 textarea、多视图同步或零画布重绘边界失败');
   }
-  if (p95 > 16) throw new Error(`Chrome 2,000 字符备注提交 p95 ${p95.toFixed(3)}ms`);
+  recordPerformanceBudget('Chrome 2,000 字符备注提交 p95', p95, 16);
   unsubscribe();
   session.dispose();
   textarea.remove();

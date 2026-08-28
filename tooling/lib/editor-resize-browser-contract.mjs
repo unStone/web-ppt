@@ -1,4 +1,6 @@
 /** 浏览器矩阵是缩放幽灵的独立 oracle；这里不调用编辑器坐标函数来推导期望值。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -173,15 +175,16 @@ async function performanceContract(openEditor, load) {
       }),
     });
     const committed = session.editor.effectiveElement(id);
-    if (p95 > 8 || committed.w <= source.w || committed.h <= source.h
+    if (committed.w <= source.w || committed.h <= source.h
       || session.editor.history.undoCount !== 1
       || mount.querySelector('[data-edit-resize-ghost]')
       || mount.querySelector(`[data-edit-id="${id}"]`) === target
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
       || staticSvg.querySelector('defs') !== defs) {
-      throw new Error(`60 元素缩放帧 p95 ${p95.toFixed(3)}ms 或增量身份失败`);
+      throw new Error('60 元素缩放提交或增量 DOM 身份失败');
     }
+    recordPerformanceBudget('60 元素缩放帧 p95', p95, 8);
     session.editor.undo();
 
     const singularSlide = session.editor.doc.slideOrder[1];
@@ -202,10 +205,11 @@ async function performanceContract(openEditor, load) {
       return current.w === singularSources[index].w && current.h === singularSources[index].h
         && current.rot === singularSources[index].rot;
     });
-    if (singularP95 > 8 || singularIds.length !== 60 || !singularStable
+    if (singularIds.length !== 60 || !singularStable
       || session.editor.history.undoCount !== 0 || mount.querySelector('[data-edit-resize-ghost]')) {
-      throw new Error(`60 个 45° 元素近奇异缩放帧 p95 ${singularP95.toFixed(3)}ms 或取消恢复失败`);
+      throw new Error('60 个 45° 元素近奇异缩放取消恢复失败');
     }
+    recordPerformanceBudget('60 个 45° 元素近奇异缩放帧 p95', singularP95, 8);
     return { p95, singularP95 };
   } finally {
     session.dispose();

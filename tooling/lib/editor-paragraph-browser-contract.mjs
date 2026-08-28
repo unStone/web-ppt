@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 function selectAcross(root) {
   const first = root.querySelector('[data-r="0.0"]')?.firstChild;
   const second = root.querySelector('[data-r="1.0"]')?.firstChild;
@@ -57,8 +59,7 @@ export async function runEditorParagraphBrowserContract({ openEditor, load }) {
     && paragraphs[0].align === 'left' && paragraphs[1].align === 'left'
     && paragraphs[2].align === 'right'
     && !!editable && selection?.rangeCount === 1 && !selection.getRangeAt(0).collapsed
-    && secondaryMount.querySelector(`[data-edit-id="${record.id}"]`)?.outerHTML !== secondaryBefore
-    && p95 <= 30;
+    && secondaryMount.querySelector(`[data-edit-id="${record.id}"]`)?.outerHTML !== secondaryBefore;
   view.setMode('view');
   const isolated = view.queryParaProps() === null && !view.setParaProps({ align: 'center' });
   unregister();
@@ -68,6 +69,7 @@ export async function runEditorParagraphBrowserContract({ openEditor, load }) {
   mount.remove();
   secondaryMount.remove();
   toolbar.remove();
-  if (!ok || !isolated) throw new Error(`真实浏览器段落格式失败：p95=${p95.toFixed(3)}ms`);
+  if (!ok || !isolated) throw new Error('真实浏览器段落格式的模型、选区或多视图隔离失败');
+  recordPerformanceBudget('真实浏览器段落格式 p95', p95, 30);
   return p95;
 }

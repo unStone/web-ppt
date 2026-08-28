@@ -1,4 +1,6 @@
 /** DevTools IME 输入域产生 isTrusted beforeinput/composition 事件。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 export async function runTrustedTextContract({ evaluate, request }) {
   const modifier = await evaluate("navigator.platform.includes('Mac') ? 4 : 2");
   await evaluate(`(() => {
@@ -130,10 +132,10 @@ export async function runTrustedTextContract({ evaluate, request }) {
   })()`);
   const passed = stable && result.stable && result.inserted
     && result.trustedBeforeInput && result.trustedComposition && result.formatted
-    && result.selectedFormatted && result.trustedShortcut
-    && result.p95 <= 30;
+    && result.selectedFormatted && result.trustedShortcut;
   if (!passed) {
     throw new Error(`真实文字/IME 输入失败：${JSON.stringify({ stable, ...result })}`);
   }
+  recordPerformanceBudget('可信文字输入 p95', result.p95, 30);
   return result.p95;
 }

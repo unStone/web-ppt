@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const percentile95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -211,10 +213,10 @@ export async function runEditorAnimationBrowserContract({
   }
   const batchP95 = percentile95(batchSamples);
   const feedbackP95 = percentile95(feedbackSamples);
-  if (previewP95 > 16 || batchP95 > 16 || feedbackP95 > 16
-    || perfLayer.querySelector('svg') !== feedbackSvg) {
-    throw new Error(`Chrome 动画启动/200页批量/单页反馈 p95 ${previewP95.toFixed(3)}/${batchP95.toFixed(3)}/${feedbackP95.toFixed(3)}ms`);
-  }
+  if (perfLayer.querySelector('svg') !== feedbackSvg) throw new Error('Chrome 动画反馈重建了静态 SVG');
+  recordPerformanceBudget('Chrome 动画启动 p95', previewP95, 16);
+  recordPerformanceBudget('Chrome 200 页动画批量 p95', batchP95, 16);
+  recordPerformanceBudget('Chrome 单页动画反馈 p95', feedbackP95, 16);
 
   session.dispose();
   viewMount.remove();

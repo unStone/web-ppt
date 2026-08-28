@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => [...samples].sort((left, right) => left - right)
   [Math.floor(samples.length * 0.95)];
 
@@ -59,9 +61,8 @@ export async function runEditorMoveSlideBrowserContract({ openEditor, load }) {
       samples.push(performance.now() - started);
     }
     const feedbackP95 = p95(samples);
-    if (performanceSession.editor.doc.slideOrder.length !== 200 || feedbackP95 > 16) {
-      throw new Error(`200 页重排 p95 ${feedbackP95.toFixed(3)}ms 或页数不一致`);
-    }
+    if (performanceSession.editor.doc.slideOrder.length !== 200) throw new Error('200 页重排后页数不一致');
+    recordPerformanceBudget('200 页重排 p95', feedbackP95, 16);
     return { p95: feedbackP95, pageCount: performanceSession.editor.doc.slideOrder.length };
   } finally {
     performanceSession.dispose();

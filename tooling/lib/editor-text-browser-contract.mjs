@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const textOf = (element) => element.text?.paragraphs
   .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 
@@ -49,9 +51,10 @@ export async function runEditorTextBrowserContract({ openEditor, load }) {
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
   const editedText = textOf(session.editor.effectiveElement(record.id));
-  if (p95 > 30 || prevented !== 80 || !editedText.endsWith('0123456789')) {
-    throw new Error(`文字按键到上屏 p95 ${p95.toFixed(3)}ms，提交=${prevented}/80`);
+  if (prevented !== 80 || !editedText.endsWith('0123456789')) {
+    throw new Error(`文字按键提交失败：${prevented}/80`);
   }
+  recordPerformanceBudget('文字按键到上屏 p95', p95, 30);
   if (mount.querySelector(`[data-edit-id="${record.id}"]`) !== partition) {
     throw new Error('文字输入热路径重绘了被遮挡的静态 SVG 分区');
   }

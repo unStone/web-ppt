@@ -1,6 +1,7 @@
 ---
 title: 让浏览器性能契约抗环境负载
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -21,3 +22,9 @@ p95 14.0/12.9/5.3ms 而判失败；同机安静环境立刻复测为 4.7/3.4/1.8
 
 验收：复现脚本（人为并行 CPU 负载）下功能断言仍绿、性能断言给出「环境受扰重测」路径；安静环境行为与现状
 逐字节一致；对 `tooling/test-editor-browser.mjs` 全部性能契约生效；全部门禁绿。
+
+## Resolution
+
+浏览器与 Node 侧性能预算改为延迟汇总：功能断言始终先完整执行，测前与测中以 rAF 和固定计算采样环境，只有功能全绿、预算超标且环境受扰时才以全新 Chrome 自动重测一次；安静失败和第二次失败仍直接报错，原预算数值与安静成功输出均未改变。
+
+新增策略单测与真实 CPU/Chromium 并行负载复现器，显式等待负载就绪、重测前释放并确认全部负载退出。实际负载第 4 轮触发受扰路径后安静复测通过；`npm run check && npm test && npm run build` 全绿，规格与规范终审均无 P0/P1/P2。

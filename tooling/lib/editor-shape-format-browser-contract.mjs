@@ -1,4 +1,5 @@
 import { queryElementFill, queryElementStroke } from '/out/editor/editor.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const byName = (doc, name) => Object.values(doc.elements)
   .find((record) => record.src.name === name);
@@ -109,11 +110,13 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
   };
   const fillP95 = p95(fillSamples);
   const strokeP95 = p95(strokeSamples);
-  if (roots.length !== 60 || Math.max(fillP95, strokeP95) > 16
+  if (roots.length !== 60
     || perfStatic.querySelector(`[data-edit-id="${perfSibling}"]`) !== stableSibling
     || perfStatic.querySelector('svg') !== stableSvg) {
-    throw new Error(`Chrome 60 元素填充/描边 p95 ${fillP95.toFixed(3)}/${strokeP95.toFixed(3)}ms`);
+    throw new Error('Chrome 60 元素填充/描边后的 DOM 身份不稳定');
   }
+  recordPerformanceBudget('Chrome 60 元素填充 p95', fillP95, 16);
+  recordPerformanceBudget('Chrome 60 元素描边 p95', strokeP95, 16);
   perfSession.dispose();
   mount.remove();
   viewMount.remove();

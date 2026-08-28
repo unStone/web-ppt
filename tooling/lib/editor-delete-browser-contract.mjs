@@ -1,5 +1,6 @@
 /** 批量结构删除的完整 DOM 反馈与可信按键默认行为都必须纳入预算。 */
 import { keyboardEvent } from './keyboard-event.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -38,20 +39,22 @@ export async function runEditorDeleteBrowserContract({ openEditor, load }) {
     }
     const result = { deleteP95: p95(deletion), undoP95: p95(undo), redoP95: p95(redo) };
     const selection = session.editor.selection;
-    if (ids.length !== 60 || Object.values(result).some((value) => value > 8) || !consumed
+    if (ids.length !== 60 || !consumed
       || !ids.every((id) => !!session.editor.doc.elements[id])
       || mount.querySelectorAll('[data-edit-id]').length !== 60
       || selection.kind !== 'elements' || selection.ids.join(',') !== ids.join(',')
       || session.editor.history.undoCount !== 0 || session.editor.history.redoCount !== 1
       || session.editor.isDirty()) {
-      throw new Error(`60 元素删除/撤销/重做 p95 ${result.deleteP95.toFixed(3)}/`
-        + `${result.undoP95.toFixed(3)}/${result.redoP95.toFixed(3)}ms 或最终状态不一致：`
+      throw new Error('60 元素删除/撤销/重做最终状态不一致：'
         + JSON.stringify({ consumed, existing: ids.filter((id) => !!session.editor.doc.elements[id]).length,
           nodes: mount.querySelectorAll('[data-edit-id]').length, selection: selection.kind,
           selected: selection.kind === 'elements' ? selection.ids.length : 0,
           undo: session.editor.history.undoCount, redo: session.editor.history.redoCount,
           dirty: session.editor.isDirty() }));
     }
+    recordPerformanceBudget('60 元素删除 p95', result.deleteP95, 8);
+    recordPerformanceBudget('60 元素删除撤销 p95', result.undoP95, 8);
+    recordPerformanceBudget('60 元素删除重做 p95', result.redoP95, 8);
     return result;
   } finally {
     session.dispose();

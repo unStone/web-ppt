@@ -1,6 +1,7 @@
 import {
   SLIDE_TRANSITION_TYPES, transitionDirections,
 } from '/out/editor/editor.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const percentile95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -131,10 +132,11 @@ export async function runEditorTransitionBrowserContract({
   if (previewResults.some((played) => !played)
     || remaining.length !== 1 || remaining[0] !== hostAnimation
     || previewNode(viewMount)
-    || previewP95 > 16 || session.editor.history.undoCount !== historyBefore
+    || session.editor.history.undoCount !== historyBefore
     || JSON.stringify(session.editor.selection) !== selectionBefore || session.editor.isDirty()) {
-    throw new Error(`Chrome 40 种切换预览或零副作用边界失败，启动 p95 ${previewP95.toFixed(3)}ms`);
+    throw new Error('Chrome 40 种切换预览或零副作用边界失败');
   }
+  recordPerformanceBudget('Chrome 40 种切换启动 p95', previewP95, 16);
   hostAnimation.cancel();
   await hostFinished;
   if (await view.previewTransition({ type: 'none' }) !== false) {
@@ -229,10 +231,11 @@ export async function runEditorTransitionBrowserContract({
   }
   const complexPreviewP95 = percentile95(complexSamples);
   if ((await Promise.all(complexPreviews)).some((played) => !played)
-    || complexPreviewP95 > 16 || previewNode(complexMount)
+    || previewNode(complexMount)
     || complexSession.editor.isDirty()) {
-    throw new Error(`Chrome 60 元素复杂页切换预览失败，启动 p95 ${complexPreviewP95.toFixed(3)}ms`);
+    throw new Error('Chrome 60 元素复杂页切换预览失败');
   }
+  recordPerformanceBudget('Chrome 60 元素复杂页切换启动 p95', complexPreviewP95, 16);
   complexSession.dispose();
   complexMount.remove();
 
@@ -260,9 +263,9 @@ export async function runEditorTransitionBrowserContract({
   const batchP95 = percentile95(batchSamples);
   const feedbackP95 = percentile95(feedbackSamples);
   const measuredPreviewP95 = Math.max(previewP95, complexPreviewP95);
-  if (ids.length !== 200 || batchP95 > 16 || feedbackP95 > 16) {
-    throw new Error(`Chrome 200 页切换批量/单页反馈 p95 ${batchP95.toFixed(3)}/${feedbackP95.toFixed(3)}ms`);
-  }
+  if (ids.length !== 200) throw new Error(`切换性能固件页数错误：${ids.length}`);
+  recordPerformanceBudget('Chrome 200 页切换批量 p95', batchP95, 16);
+  recordPerformanceBudget('Chrome 单页切换反馈 p95', feedbackP95, 16);
 
   session.dispose();
   viewMount.remove();

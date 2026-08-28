@@ -1,4 +1,6 @@
 /** 修饰键状态、SVG 布局反馈与帧预算必须由真实 Chrome 验收。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const pointer = (type, point, pointerId, init = {}) => new PointerEvent(type, {
   bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId,
   isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1,
@@ -46,11 +48,12 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
       clickSamples.push(performance.now() - started);
     }
     const clickP95 = p95(clickSamples);
-    if (ids.length !== 60 || clickP95 > 8 || !consumed
+    if (ids.length !== 60 || !consumed
       || session.editor.selection.kind !== 'none' || session.editor.history.undoCount !== history
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
-      throw new Error(`60 元素修饰点选 p95 ${clickP95.toFixed(3)}ms 或选区/历史/静态层不一致`);
+      throw new Error('60 元素修饰点选的选区、历史或静态层不一致');
     }
+    recordPerformanceBudget('60 元素修饰点选 p95', clickP95, 8);
 
     const initial = ids.filter((_, index) => index % 2 === 0);
     session.editor.select({ kind: 'elements', ids: initial, enteredGroup: null });
@@ -96,12 +99,13 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
     }
     const marqueeP95 = p95(marqueeSamples);
     const selection = session.editor.selection;
-    if (marqueeP95 > 8 || !firstPreview || selection.kind !== 'elements'
+    if (!firstPreview || selection.kind !== 'elements'
       || selection.ids.join(',') !== initial.join(',') || session.editor.history.undoCount !== history
       || mount.querySelector('[data-edit-marquee-layer]')
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
-      throw new Error(`60 元素增减框选 p95 ${marqueeP95.toFixed(3)}ms 或预览/提交不一致`);
+      throw new Error('60 元素增减框选的预览或提交状态不一致');
     }
+    recordPerformanceBudget('60 元素增减框选 p95', marqueeP95, 8);
     return { clickP95, marqueeP95 };
   } finally {
     session.dispose();

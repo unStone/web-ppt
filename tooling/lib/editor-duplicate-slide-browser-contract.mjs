@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const percentile95 = (samples) => [...samples].sort((left, right) => left - right)
   [Math.floor(samples.length * 0.95)];
 
@@ -96,10 +98,9 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
     }
     const duplicateP95 = percentile95(duplicateSamples);
     const undoP95 = percentile95(undoSamples);
-    if (editor.doc.slides[sourceId].children.length < 60
-      || duplicateP95 > 16 || undoP95 > 16) {
-      throw new Error(`200 页/60 元素复制/撤销 p95 ${duplicateP95.toFixed(3)}/${undoP95.toFixed(3)}ms`);
-    }
+    if (editor.doc.slides[sourceId].children.length < 60) throw new Error('复制性能固件不足 60 元素');
+    recordPerformanceBudget('200 页/60 元素复制 p95', duplicateP95, 16);
+    recordPerformanceBudget('200 页/60 元素复制撤销 p95', undoP95, 16);
     return { duplicateP95, undoP95, pageCount: 200 };
   } finally {
     performanceSession.dispose();

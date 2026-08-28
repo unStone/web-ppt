@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => [...samples].sort((left, right) => left - right)
   [Math.floor(samples.length * 0.95)];
 
@@ -236,10 +238,11 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   const navigationP95 = p95(navigationSamples);
   const replaceP95 = p95(replaceSamples);
   if (perfIds.length !== 60 || perfSession.textSearch.snapshot.matches.length !== 60
-    || navigationP95 > 16 || replaceP95 > 16
     || perfMount.querySelectorAll('[data-ppt-search-matches]').length !== 60) {
-    throw new Error(`60 元素查找导航/替换反馈 p95 ${navigationP95.toFixed(3)}/${replaceP95.toFixed(3)}ms`);
+    throw new Error('60 元素查找导航/替换后的匹配模型或 DOM 不一致');
   }
+  recordPerformanceBudget('60 元素查找导航反馈 p95', navigationP95, 16);
+  recordPerformanceBudget('60 元素查找替换反馈 p95', replaceP95, 16);
   perfSession.dispose();
   perfMount.remove();
 
@@ -274,10 +277,10 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
     querySamples.push(performance.now() - started);
   }
   const queryP95 = p95(querySamples);
-  if (pagesSession.editor.doc.slideOrder.length !== 200 || buildMs > 30
-    || queryP95 > 30 || incrementalMs > 16) {
-    throw new Error(`200 页索引/查询/增量替换 ${buildMs.toFixed(3)}/${queryP95.toFixed(3)}/${incrementalMs.toFixed(3)}ms`);
-  }
+  if (pagesSession.editor.doc.slideOrder.length !== 200) throw new Error('查找替换性能固件页数不一致');
+  recordPerformanceBudget('200 页查找索引', buildMs, 30);
+  recordPerformanceBudget('200 页查找查询 p95', queryP95, 30);
+  recordPerformanceBudget('200 页增量替换', incrementalMs, 16);
   pagesSession.dispose();
   console.info(`查找替换 200 页索引/查询/增量 ${buildMs.toFixed(3)}/${queryP95.toFixed(3)}/${incrementalMs.toFixed(3)}ms`);
   console.info(`查找替换 60 元素导航/替换 p95 ${navigationP95.toFixed(3)}/${replaceP95.toFixed(3)}ms`);

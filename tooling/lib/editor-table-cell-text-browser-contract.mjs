@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const cellText = (table, r, c) => table.rows[r].cells[c].text?.paragraphs
   .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 
@@ -78,9 +80,10 @@ export async function runEditorTableCellTextBrowserContract({ openEditor, load }
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  if (p95 > 30 || cellText(session.editor.effectiveElement(performanceTable.id), 5, 10) !== original) {
-    throw new Error(`20×10 表格输入完整上屏 p95 ${p95.toFixed(3)}ms`);
+  if (cellText(session.editor.effectiveElement(performanceTable.id), 5, 10) !== original) {
+    throw new Error('20×10 表格输入撤销后文字不一致');
   }
+  recordPerformanceBudget('20×10 表格输入完整上屏 p95', p95, 30);
   mount.querySelector('[data-ppt-text-editor]').dispatchEvent(new KeyboardEvent('keydown', {
     key: 'Escape', bubbles: true, composed: true, cancelable: true,
   }));
@@ -103,9 +106,10 @@ export async function runEditorTableCellTextBrowserContract({ openEditor, load }
   }
   insertSamples.sort((left, right) => left - right);
   const insertRowP95 = insertSamples[Math.floor(insertSamples.length * 0.95)];
-  if (insertRowP95 > 30 || session.editor.effectiveElement(performanceTable.id).rows.length !== 10) {
-    throw new Error(`20×10 表格末格追加完整上屏 p95 ${insertRowP95.toFixed(3)}ms`);
+  if (session.editor.effectiveElement(performanceTable.id).rows.length !== 10) {
+    throw new Error('20×10 表格末格追加撤销后行数不一致');
   }
+  recordPerformanceBudget('20×10 表格末格追加完整上屏 p95', insertRowP95, 30);
   mount.querySelector('[data-ppt-text-editor]').dispatchEvent(new KeyboardEvent('keydown', {
     key: 'Escape', bubbles: true, composed: true, cancelable: true,
   }));

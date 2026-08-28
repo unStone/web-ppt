@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const textOf = (text) => text.paragraphs
   .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
 
@@ -128,14 +130,14 @@ export async function runEditorAutofitBrowserContract({ openEditor, load, layout
 
   for (const [mode, result] of Object.entries({ browser, engine, cell })) {
     if (!result.firstWindowStable || !result.settledDuringBurst || !result.synchronous
-      || result.p95 > 30 || !nearScale(result.initialScale, result.initialExpected)
+      || !nearScale(result.initialScale, result.initialExpected)
       || !nearScale(result.settledScale, result.expectedScale)
       || result.reopenedScale !== result.settledScale) {
-      throw new Error(`${mode} autofit 失败：p95=${result.p95.toFixed(3)}ms `
-        + `initial=${result.initialScale}/${result.initialExpected} `
+      throw new Error(`${mode} autofit 功能失败：initial=${result.initialScale}/${result.initialExpected} `
         + `settled=${result.settledScale}/${result.expectedScale}/${result.reopenedScale} `
         + `window=${result.firstWindowStable}/${result.settledDuringBurst}`);
     }
+    recordPerformanceBudget(`${mode} autofit p95`, result.p95, 30);
   }
   return { browserP95: browser.p95, engineP95: engine.p95, cellP95: cell.p95 };
 }

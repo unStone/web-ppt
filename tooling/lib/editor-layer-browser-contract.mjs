@@ -1,5 +1,6 @@
 /** 真实浏览器同时验证 60 元素层级反馈预算与可信括号键语义。 */
 import { keyboardEvent } from './keyboard-event.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -47,18 +48,20 @@ export async function runEditorLayerBrowserContract({ openEditor, load }) {
     const domOrder = orderedNodes.every((node, index) => index === 0
       || !!(orderedNodes[index - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
     const selection = session.editor.selection;
-    if (ids.length !== 60 || selected.length !== 59 || Object.values(result).some((value) => value > 8)
+    if (ids.length !== 60 || selected.length !== 59
       || !consumed || !stable || !domOrder
       || session.editor.doc.slides[view.slideId].children.join(',') !== roots.join(',')
       || selection.kind !== 'elements' || selection.ids.join(',') !== selected.join(',')
       || session.editor.history.undoCount !== 0 || session.editor.history.redoCount !== 1
       || session.editor.isDirty()) {
-      throw new Error(`60 元素层级/撤销/重做 p95 ${result.layerP95.toFixed(3)}/`
-        + `${result.undoP95.toFixed(3)}/${result.redoP95.toFixed(3)}ms 或最终状态不一致：`
+      throw new Error('60 元素层级/撤销/重做最终状态不一致：'
         + JSON.stringify({ ids: ids.length, selected: selected.length, consumed, stable, domOrder,
           selection: selection.kind, undo: session.editor.history.undoCount,
           redo: session.editor.history.redoCount, dirty: session.editor.isDirty() }));
     }
+    recordPerformanceBudget('60 元素层级 p95', result.layerP95, 8);
+    recordPerformanceBudget('60 元素层级撤销 p95', result.undoP95, 8);
+    recordPerformanceBudget('60 元素层级重做 p95', result.redoP95, 8);
     return result;
   } finally {
     session.dispose();

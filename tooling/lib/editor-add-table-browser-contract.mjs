@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -131,11 +133,12 @@ export async function runEditorAddTablePerformanceContract({ openEditor, load })
       session.editor.undo();
     }
     const feedbackP95 = p95(samples);
-    if (feedbackP95 > 16 || session.editor.doc.slides[slideId].children.length !== 60
+    if (session.editor.doc.slides[slideId].children.length !== 60
       || mount.querySelector('[data-ppt-layer="static"] svg') !== svg
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling) {
-      throw new Error(`60 元素页 20×10 表格插入 p95 ${feedbackP95.toFixed(3)}ms 或 DOM 身份不稳定`);
+      throw new Error('60 元素页 20×10 表格插入后的 DOM 身份不稳定');
     }
+    recordPerformanceBudget('60 元素页 20×10 表格插入 p95', feedbackP95, 16);
     return { p95: feedbackP95 };
   } finally {
     session.dispose();

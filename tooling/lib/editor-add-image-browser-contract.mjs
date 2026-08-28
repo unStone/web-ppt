@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const WEBP_1PX = 'UklGRhwAAABXRUJQVlA4TA8AAAAvAAAAAAcQ/Y/+ByKi/wEA';
 const bytesOf = () => Uint8Array.from(atob(PNG_1PX), (char) => char.charCodeAt(0));
@@ -213,11 +215,12 @@ export async function runEditorAddImagePerformanceContract({ openEditor, load })
       session.editor.undo();
     }
     const feedbackP95 = p95(samples);
-    if (feedbackP95 > 16 || session.editor.doc.slides[slideId].children.length !== 60
+    if (session.editor.doc.slides[slideId].children.length !== 60
       || mount.querySelector('[data-ppt-layer="static"] svg') !== svg
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling) {
-      throw new Error(`60 元素图片插入 p95 ${feedbackP95.toFixed(3)}ms 或 DOM 身份不稳定`);
+      throw new Error('60 元素图片插入后的 DOM 身份不稳定');
     }
+    recordPerformanceBudget('60 元素图片插入 p95', feedbackP95, 16);
     return { p95: feedbackP95 };
   } finally {
     session.dispose();

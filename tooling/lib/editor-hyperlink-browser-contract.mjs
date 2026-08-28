@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -125,9 +127,8 @@ export async function runEditorHyperlinkBrowserContract({ openEditor, load }) {
       routeSamples.push(performance.now() - started);
     }
     routeP95 = p95(routeSamples);
-    if (routeP95 > 8 || followed.at(-1)?.source !== 'view') {
-      throw new Error(`查看模式点击路由 p95 ${routeP95.toFixed(3)}ms`);
-    }
+    if (followed.at(-1)?.source !== 'view') throw new Error('查看模式点击没有进入链接路由');
+    recordPerformanceBudget('查看模式点击路由 p95', routeP95, 8);
 
     const internal = partition(viewMount, internalId);
     const internalAnchor = internal.closest('[data-slide]') ?? internal.querySelector('[data-slide]');
@@ -240,7 +241,7 @@ export async function runEditorHyperlinkBrowserContract({ openEditor, load }) {
       perfSession.editor.undo();
     }
     commitP95 = p95(samples);
-    if (commitP95 > 16) throw new Error(`60 元素链接提交 p95 ${commitP95.toFixed(3)}ms`);
+    recordPerformanceBudget('60 元素链接提交 p95', commitP95, 16);
   } finally {
     perfSession.dispose();
     perfMount.remove();

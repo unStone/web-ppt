@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const mountPoint = () => {
   const element = document.createElement('div');
   element.className = 'contract-offscreen';
@@ -202,9 +204,10 @@ export async function runEditorSelectionPaneBrowserContract({
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  if (ids.length !== 60 || p95 > 16 || rowFor(performanceMount, ids[0]) !== stableRow) {
-    throw new Error(`60 元素选择窗格锁定往返 p95 ${p95.toFixed(3)}ms`);
+  if (ids.length !== 60 || rowFor(performanceMount, ids[0]) !== stableRow) {
+    throw new Error('60 元素选择窗格锁定往返后的行 DOM 身份不稳定');
   }
+  recordPerformanceBudget('60 元素选择窗格锁定往返 p95', p95, 16);
   performanceSession.editor.exec({
     type: 'SetXfrm', id: ids[0], x: performanceSession.editor.doc.elements[ids[0]].src.x + 1,
   });

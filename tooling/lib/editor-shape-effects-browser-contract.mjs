@@ -1,4 +1,5 @@
 import { queryElementEffects } from '/out/editor/editor.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const byName = (doc, name) => Object.values(doc.elements)
   .find((record) => record.src.name === name);
@@ -105,12 +106,12 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
     samples.sort((left, right) => left - right);
     return [name, samples[Math.floor(samples.length * 0.95)]];
   });
-  if (roots.length !== 60 || p95s.some(([, p95]) => p95 > 16)
+  if (roots.length !== 60
     || perfStatic.querySelector(`[data-edit-id="${perfSibling}"]`) !== stableSibling
     || perfStatic.querySelector('svg') !== stableSvg) {
-    throw new Error(`Chrome 60 元素二维效果 ${p95s.map(([name, p95]) =>
-      `${name}=${p95.toFixed(3)}ms`).join('/')}`);
+    throw new Error('Chrome 60 元素二维效果后的 DOM 身份不稳定');
   }
+  for (const [name, value] of p95s) recordPerformanceBudget(`Chrome 60 元素${name} p95`, value, 16);
   perfSession.dispose();
   mount.remove();
   viewMount.remove();

@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const percentile95 = (samples) => [...samples]
   .sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
@@ -91,10 +93,11 @@ export async function runEditorBodyPropsBrowserContract({ openEditor, load }) {
   const browser = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'html' });
   const engine = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'svg' });
   for (const [mode, result] of Object.entries({ browser, engine })) {
-    if (!result.synchronous || result.p95 > 30 || result.frameError > 0.5) {
-      throw new Error(`${mode} 文字框属性失败：p95=${result.p95.toFixed(3)}ms `
-        + `同步=${result.synchronous}/${result.failures.join(',')} frame=${result.frameError.toFixed(3)}px`);
+    if (!result.synchronous || result.frameError > 0.5) {
+      throw new Error(`${mode} 文字框属性功能失败：同步=${result.synchronous}/`
+        + `${result.failures.join(',')} frame=${result.frameError.toFixed(3)}px`);
     }
+    recordPerformanceBudget(`${mode} 文字框属性 p95`, result.p95, 30);
   }
   return {
     browserP95: browser.p95,

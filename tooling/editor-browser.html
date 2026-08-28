@@ -82,6 +82,13 @@
     import {
       runEditorFindReplaceBrowserContract,
     } from '/tooling/lib/editor-find-replace-browser-contract.mjs';
+    import {
+      classifyAnimationFrameEnvironment,
+      clearPerformanceFailures,
+      readPerformanceFailures,
+      recordPerformanceBudget,
+      sampleAnimationFrameEnvironment,
+    } from '/tooling/lib/browser-performance-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -94,6 +101,8 @@
       return response.arrayBuffer();
     };
     try {
+      clearPerformanceFailures();
+      const environmentBefore = await sampleAnimationFrameEnvironment();
       const recovery = await runEditorRecoveryBrowserContract({
         lib: await import('/out/editor/editor.mjs'), load,
       });
@@ -231,7 +240,7 @@
       }
       hitSamples.sort((left, right) => left - right);
       const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
-      if (hitP95 > 8) throw new Error(`点选反馈 p95 ${hitP95.toFixed(3)}ms`);
+      recordPerformanceBudget('点选反馈 p95', hitP95, 8);
 
       hitView.destroy();
       const spaceSession = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-space-' });
@@ -390,7 +399,8 @@
       }
       samples.sort((left, right) => left - right);
       const p95 = samples[Math.floor(samples.length * 0.95)];
-      if (perfRoots.length !== 60 || p95 > 16) throw new Error(`60 元素提交 p95 ${p95.toFixed(3)}ms`);
+      if (perfRoots.length !== 60) throw new Error(`性能固件元素数错误：${perfRoots.length}`);
+      recordPerformanceBudget('60 元素提交 p95', p95, 16);
 
       const selectionSamples = [];
       const perfStaticSvg = perfMount.querySelector('[data-ppt-layer="static"] svg');
@@ -403,10 +413,11 @@
       }
       selectionSamples.sort((left, right) => left - right);
       const selectionP95 = selectionSamples[Math.floor(selectionSamples.length * 0.95)];
-      if (selectionP95 > 8 || perfMount.querySelectorAll('[data-edit-handle]').length !== 9
+      if (perfMount.querySelectorAll('[data-edit-handle]').length !== 9
         || perfMount.querySelector('[data-ppt-layer="static"] svg') !== perfStaticSvg) {
-        throw new Error(`60 元素完整选择框反馈 p95 ${selectionP95.toFixed(3)}ms`);
+        throw new Error('60 元素完整选择框的手柄或静态层身份不一致');
       }
+      recordPerformanceBudget('60 元素完整选择框反馈 p95', selectionP95, 8);
 
       const dragTarget = perfMount.querySelector(`[data-edit-id="${perfTarget}"]`);
       const dragSibling = perfMount.querySelector(`[data-edit-id="${perfRoots[1]}"]`);
@@ -462,7 +473,7 @@
       dragSamples.sort((left, right) => left - right);
       const dragP95 = dragSamples[Math.floor(dragSamples.length * 0.95)];
       const dragMoved = perfSession.editor.effectiveElement(perfTarget);
-      if (!dragDuring || dragP95 > 8
+      if (!dragDuring
         || Math.abs(dragMoved.x - (dragSource.x + dragEnd.x - 10)) > 1e-6
         || Math.abs(dragMoved.y - (dragSource.y + dragEnd.y - 10)) > 1e-6
         || perfSession.editor.history.undoCount !== dragHistoryBefore + 1
@@ -471,8 +482,9 @@
         || perfMount.querySelector(`[data-edit-id="${perfRoots[1]}"]`) !== dragSibling
         || perfMount.querySelector('[data-ppt-layer="static"] svg') !== dragStaticSvg
         || dragStaticSvg.querySelector('defs') !== dragDefs) {
-        throw new Error(`60 元素拖动帧 p95 ${dragP95.toFixed(3)}ms`);
+        throw new Error('60 元素拖动的模型、历史或增量 DOM 身份不一致');
       }
+      recordPerformanceBudget('60 元素拖动帧 p95', dragP95, 8);
       perfSession.editor.undo();
       if (Math.abs(perfSession.editor.effectiveElement(perfTarget).x - dragSource.x) > 1e-6) {
         throw new Error('Chrome 拖动撤销未恢复源位置');
@@ -507,6 +519,7 @@
       const changeLayoutResult = await runEditorChangeLayoutBrowserContract({ openEditor, load });
       await runEditorRemoveSlideBrowserContract({ openEditor, load });
       await runEditorDuplicateSlideBrowserContract({ openEditor, load });
+      const environmentDuring = await sampleAnimationFrameEnvironment();
       const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
@@ -536,6 +549,11 @@
         idPrefix: 'browser-trusted-group-',
       });
 
+      const environment = classifyAnimationFrameEnvironment({
+        before: environmentBefore, during: environmentDuring,
+      });
+      report.dataset.performanceFailures = JSON.stringify(readPerformanceFailures());
+      report.dataset.performanceEnvironment = JSON.stringify(environment);
       report.dataset.status = 'pass';
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
@@ -698,6 +716,7 @@
     } catch (error) {
       report.style.color = '#b91c1c';
       report.dataset.status = 'fail';
+      report.dataset.failureKind = 'functional';
       report.textContent = `FAIL\n${error instanceof Error ? error.stack : String(error)}`;
       throw error;
     }

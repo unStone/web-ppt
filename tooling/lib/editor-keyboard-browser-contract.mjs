@@ -1,4 +1,6 @@
 /** Chrome 的 getScreenCTM 是嵌套组键盘微移在屏幕空间里的独立坐标 oracle。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const key = (type, value, init = {}) => new KeyboardEvent(type, {
   key: value, bubbles: true, cancelable: true, ...init,
 });
@@ -121,12 +123,13 @@ async function performanceContract(openEditor, load) {
       const current = session.editor.effectiveElement(id);
       return current.x === sources[index].x && current.y === sources[index].y;
     });
-    if (ids.length !== 60 || pressP95 > 16 || !restored
+    if (ids.length !== 60 || !restored
       || session.editor.history.undoCount !== samples.length
       || session.editor.selection.kind !== 'elements'
       || session.editor.selection.ids.length !== 60) {
-      throw new Error(`60 元素独立键盘提交 p95 ${pressP95.toFixed(3)}ms 或模型/历史不一致`);
+      throw new Error('60 元素独立键盘提交的模型或历史不一致');
     }
+    recordPerformanceBudget('60 元素独立键盘提交 p95', pressP95, 16);
 
     session.editor.history.clear();
     const repeatSamples = [];
@@ -151,10 +154,10 @@ async function performanceContract(openEditor, load) {
       const current = session.editor.effectiveElement(id);
       return current.x === sources[index].x && current.y === sources[index].y;
     });
-    if (repeatP95 > 16 || !repeated || !compact || !repeatRestored) {
-      throw new Error(`60 元素连续 auto-repeat p95 ${repeatP95.toFixed(3)}ms `
-        + `或压缩/撤销失败：compact=${compact} restored=${repeatRestored}`);
+    if (!repeated || !compact || !repeatRestored) {
+      throw new Error(`60 元素连续 auto-repeat 压缩/撤销失败：compact=${compact} restored=${repeatRestored}`);
     }
+    recordPerformanceBudget('60 元素连续 auto-repeat p95', repeatP95, 16);
     return Math.max(pressP95, repeatP95);
   } finally {
     session.dispose();

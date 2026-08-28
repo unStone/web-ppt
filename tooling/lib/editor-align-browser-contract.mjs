@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -66,11 +68,12 @@ export async function runEditorAlignBrowserContract({ openEditor, load }) {
       staticLayer?.querySelector('svg')?.getBoundingClientRect();
     }
     const alignP95 = p95(samples);
-    if (ids.length !== 60 || alignP95 > 8
+    if (ids.length !== 60
       || mount.querySelector('[data-ppt-layer="static"]') !== staticLayer
       || perfSession.editor.isDirty() || perfSession.editor.history.undoCount !== 0) {
-      throw new Error(`60 元素完整 DOM 对齐反馈 p95 ${alignP95.toFixed(3)}ms 或 DOM/历史状态不稳定`);
+      throw new Error('60 元素完整 DOM 对齐后的 DOM 或历史状态不稳定');
     }
+    recordPerformanceBudget('60 元素完整 DOM 对齐反馈 p95', alignP95, 8);
     return { geometryError, p95: alignP95 };
   } finally {
     perfSession.dispose();

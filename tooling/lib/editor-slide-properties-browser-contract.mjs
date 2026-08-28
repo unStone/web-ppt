@@ -1,4 +1,5 @@
 import { querySlideBackground, querySlideHidden } from '/out/editor/editor.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const percentile95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -165,9 +166,7 @@ export async function runEditorSlidePropertiesBrowserContract({ openEditor, load
     imageRenderSamples.push(performance.now() - started);
   }
   const imageRenderP95 = percentile95(imageRenderSamples);
-  if (imageRenderP95 > 16) {
-    throw new Error(`Chrome 200 页图片背景裁剪完整上屏 p95 ${imageRenderP95.toFixed(3)}ms`);
-  }
+  recordPerformanceBudget('Chrome 200 页图片背景裁剪完整上屏 p95', imageRenderP95, 16);
   const batchSamples = [];
   for (let index = 0; index < 40; index++) {
     const started = performance.now();
@@ -187,9 +186,9 @@ export async function runEditorSlidePropertiesBrowserContract({ openEditor, load
   }
   const batchP95 = percentile95(batchSamples);
   const renderP95 = percentile95(renderSamples);
-  if (ids.length !== 200 || batchP95 > 16 || renderP95 > 16) {
-    throw new Error(`Chrome 200 页批量/单页上屏 p95 ${batchP95.toFixed(3)}/${renderP95.toFixed(3)}ms`);
-  }
+  if (ids.length !== 200) throw new Error(`页面属性性能固件页数错误：${ids.length}`);
+  recordPerformanceBudget('Chrome 200 页属性批量 p95', batchP95, 16);
+  recordPerformanceBudget('Chrome 单页属性完整上屏 p95', renderP95, 16);
   const modelSession = await openEditor(await load('sample-editor-slide-properties.pptx'), {
     idPrefix: 'browser-slide-background-model-',
   });
@@ -211,9 +210,7 @@ export async function runEditorSlidePropertiesBrowserContract({ openEditor, load
   }
   const imageModelP95 = percentile95(imageModelSamples);
   modelSession.dispose();
-  if (imageModelP95 > 16) {
-    throw new Error(`Chrome 200 页图片背景模型提交 p95 ${imageModelP95.toFixed(3)}ms`);
-  }
+  recordPerformanceBudget('Chrome 200 页图片背景模型提交 p95', imageModelP95, 16);
   session.dispose();
   firstMount.remove();
   mirrorMount.remove();

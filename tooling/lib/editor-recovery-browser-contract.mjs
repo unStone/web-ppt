@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 function deleteDatabase(name) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(name);
@@ -81,9 +83,8 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
     const fingerprintStart = performance.now();
     const identity = await lib.fingerprintSource(largeSource);
     fingerprintMs = performance.now() - fingerprintStart;
-    if (identity.byteLength !== largeSource.length || fingerprintMs > 500) {
-      throw new Error(`50MB 源指纹预算超限：${fingerprintMs.toFixed(1)}ms`);
-    }
+    if (identity.byteLength !== largeSource.length) throw new Error('50MB 源指纹字节数不一致');
+    recordPerformanceBudget('50MB 源指纹', fingerprintMs, 500);
   }
   let prompted = 0;
   const first = await lib.openEditor(source, {
@@ -309,8 +310,8 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   }
   await reopenedStore.close();
   await deleteDatabase(databaseName);
-  if (persistMs > 500 || restoreMs > 500 || syncOverhead > 0.5) {
-    throw new Error(`IndexedDB 预算超限：写入 ${persistMs.toFixed(1)}ms / 恢复 ${restoreMs.toFixed(1)}ms`);
-  }
+  recordPerformanceBudget('IndexedDB 1000 帧写入', persistMs, 500);
+  recordPerformanceBudget('IndexedDB 1000 帧恢复', restoreMs, 500);
+  recordPerformanceBudget('IndexedDB 同步增量开销', syncOverhead, 0.5);
   return { persistMs, restoreMs, chunks: firstStats.chunkCount, syncOverhead, fingerprintMs };
 }

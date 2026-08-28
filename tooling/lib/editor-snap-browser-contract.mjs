@@ -1,4 +1,6 @@
 /** Chrome 的 getScreenCTM 是吸附幽灵与参考线的独立 oracle。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const near = (actual, expected, epsilon = 1e-6) => Math.abs(actual - expected) <= epsilon;
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
@@ -260,14 +262,15 @@ async function performanceContract(openEditor, load) {
     }
     samples.sort((left, right) => left - right);
     const p95 = samples[Math.floor(samples.length * 0.95)];
-    if (ids.length !== 60 || p95 > 8
+    if (ids.length !== 60
       || !near(session.editor.effectiveElement(id).x, source.x)
       || session.editor.history.undoCount !== history
       || mount.querySelector('[data-edit-drag-ghost]')
       || mount.querySelector('[data-edit-snap-guides]')
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
-      throw new Error(`60 元素吸附拖动帧 p95 ${p95.toFixed(3)}ms 或取消恢复失败`);
+      throw new Error('60 元素吸附拖动取消恢复失败');
     }
+    recordPerformanceBudget('60 元素吸附拖动帧 p95', p95, 8);
     return p95;
   } finally {
     session.dispose();

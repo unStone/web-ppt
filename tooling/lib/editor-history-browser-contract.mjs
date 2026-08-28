@@ -1,5 +1,6 @@
 /** 撤销重做的默认行为、可信修饰键与 60 元素反馈预算必须由真实浏览器取证。 */
 import { keyboardEvent } from './keyboard-event.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 export async function runEditorHistoryBrowserContract({ openEditor, load }) {
   const mount = document.createElement('div');
@@ -37,13 +38,14 @@ export async function runEditorHistoryBrowserContract({ openEditor, load }) {
       return current.x === sources[index].x + 1 && current.y === sources[index].y;
     });
     const selection = session.editor.selection;
-    if (ids.length !== 60 || undoP95 > 8 || redoP95 > 8 || !consumed || !moved
+    if (ids.length !== 60 || !consumed || !moved
       || selection.kind !== 'elements' || selection.ids.join(',') !== ids.join(',')
       || session.editor.history.undoCount !== 1 || session.editor.history.redoCount !== 0
       || !session.editor.isDirty() || mount.querySelectorAll('[data-edit-id]').length !== 60) {
-      throw new Error(`60 元素撤销/重做 p95 ${undoP95.toFixed(3)}/${redoP95.toFixed(3)}ms `
-        + '或模型、历史、选区不一致');
+      throw new Error('60 元素撤销/重做的模型、历史或选区不一致');
     }
+    recordPerformanceBudget('60 元素撤销 p95', undoP95, 8);
+    recordPerformanceBudget('60 元素重做 p95', redoP95, 8);
     return { undoP95, redoP95 };
   } finally {
     session.dispose();

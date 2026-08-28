@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const textOf = (element) => element.text.paragraphs
   .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
 
@@ -125,9 +127,10 @@ export async function runEditorEngineTextBrowserContract({ openEditor, load }) {
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  if (p95 > 30 || session.editor.history.undoCount !== 0
+  if (session.editor.history.undoCount !== 0
     || textOf(session.editor.effectiveElement(record.id)).length !== originalLength) {
-    throw new Error(`engine 2,000 字符完整上屏 p95 ${p95.toFixed(3)}ms`);
+    throw new Error('engine 2,000 字符输入撤销后的模型或历史不一致');
   }
+  recordPerformanceBudget('engine 2,000 字符完整上屏 p95', p95, 30);
   return { session, view, mount, id: record.id, p95, positionError, initialLines };
 }

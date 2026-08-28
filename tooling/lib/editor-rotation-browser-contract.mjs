@@ -1,4 +1,6 @@
 /** Chrome 的 getScreenCTM 是旋转幽灵的独立 oracle，避免用编辑器坐标函数证明自己。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -211,10 +213,11 @@ async function performanceContract(openEditor, load) {
       return current.x === sources[index].x && current.y === sources[index].y
         && current.rot === sources[index].rot;
     });
-    if (ids.length !== 60 || p95 > 8 || !stable || session.editor.history.undoCount !== 0
+    if (ids.length !== 60 || !stable || session.editor.history.undoCount !== 0
       || mount.querySelector('[data-edit-rotation-ghost]')) {
-      throw new Error(`60 元素旋转帧 p95 ${p95.toFixed(3)}ms 或取消恢复失败`);
+      throw new Error('60 元素旋转取消恢复失败');
     }
+    recordPerformanceBudget('60 元素旋转帧 p95', p95, 8);
     return p95;
   } finally {
     session.dispose();

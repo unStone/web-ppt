@@ -1,4 +1,6 @@
 /** Tab 的焦点默认行为与帧预算必须由真实 Chrome 验收。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const tab = (shiftKey = false) => new KeyboardEvent('keydown', {
   key: 'Tab', bubbles: true, composed: true, cancelable: true, shiftKey,
 });
@@ -26,13 +28,14 @@ export async function runEditorTabBrowserContract({ openEditor, load }) {
     samples.sort((left, right) => left - right);
     const p95 = samples[Math.floor(samples.length * 0.95)];
     const selection = session.editor.selection;
-    if (ids.length !== 60 || p95 > 8 || !consumed
+    if (ids.length !== 60 || !consumed
       || document.activeElement !== view.element
       || selection.kind !== 'elements' || selection.ids.join(',') !== ids[59]
       || selection.enteredGroup !== null || session.editor.history.undoCount !== 0
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
-      throw new Error(`60 元素 Tab 遍历 p95 ${p95.toFixed(3)}ms 或焦点/选区/静态层不一致`);
+      throw new Error('60 元素 Tab 遍历的焦点、选区或静态层不一致');
     }
+    recordPerformanceBudget('60 元素 Tab 遍历 p95', p95, 8);
     return p95;
   } finally {
     session.dispose();

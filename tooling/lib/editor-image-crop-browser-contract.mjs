@@ -1,4 +1,5 @@
 import { elementFrameToSlidePoint, queryElementCrop } from '/out/editor/editor.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const bytesOf = () => Uint8Array.from(atob(PNG_1PX), (char) => char.charCodeAt(0));
@@ -174,13 +175,15 @@ async function performanceContract(openEditor, load) {
     const historyBeforeFrame = session.editor.history.undoCount;
     const cropBeforeFrame = JSON.stringify(queryElementCrop(session.editor.doc, [id]).value);
     const frameP95 = measureFrames(mount, view);
-    if (ids.length !== 60 || commitP95 > 16 || frameP95 > 8
+    if (ids.length !== 60
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
       || mount.querySelector('[data-ppt-layer="static"] svg') !== svg
       || session.editor.history.undoCount !== historyBeforeFrame
       || JSON.stringify(queryElementCrop(session.editor.doc, [id]).value) !== cropBeforeFrame) {
-      throw new Error(`Chrome 60 图片裁剪提交/帧 p95 ${commitP95.toFixed(3)}/${frameP95.toFixed(3)}ms`);
+      throw new Error('Chrome 60 图片裁剪后的模型、历史或 DOM 身份不稳定');
     }
+    recordPerformanceBudget('Chrome 60 图片裁剪提交 p95', commitP95, 16);
+    recordPerformanceBudget('Chrome 60 图片裁剪帧 p95', frameP95, 8);
     return { commitP95, frameP95 };
   } finally {
     session.dispose();

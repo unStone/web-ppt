@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 function caretAtEnd(root) {
   const marker = [...root.querySelectorAll('[data-r]')].at(-1);
   const walker = document.createTreeWalker(marker, NodeFilter.SHOW_TEXT);
@@ -103,10 +105,11 @@ export async function runEditorShapeAutofitBrowserContract({ openEditor, load })
   const browser = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'html' });
   const engine = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'svg' });
   for (const [mode, result] of Object.entries({ browser, engine })) {
-    if (!result.synchronous || result.p95 > 30 || result.error > 0.5) {
-      throw new Error(`${mode} spAutoFit 失败：p95=${result.p95.toFixed(3)}ms `
-        + `同步=${result.synchronous}/${JSON.stringify(result.state)} frame=${result.error.toFixed(3)}px`);
+    if (!result.synchronous || result.error > 0.5) {
+      throw new Error(`${mode} spAutoFit 功能失败：同步=${result.synchronous}/`
+        + `${JSON.stringify(result.state)} frame=${result.error.toFixed(3)}px`);
     }
+    recordPerformanceBudget(`${mode} spAutoFit p95`, result.p95, 30);
   }
   return { browserP95: browser.p95, engineP95: engine.p95, frameError: Math.max(browser.error, engine.error) };
 }

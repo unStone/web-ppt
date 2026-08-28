@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -57,11 +59,12 @@ export async function runEditorAddSlideBrowserContract({ openEditor, load }) {
     const hit = editMount.querySelector(`[data-edit-placeholder-id="${title.id}"]`);
     hit.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
     const editable = editMount.querySelector(`[data-ppt-text-editor="${title.id}"]`);
-    if (geometryError > 0.5 || feedbackP95 > 16 || session.editor.doc.slideOrder.length !== 21
+    if (geometryError > 0.5 || session.editor.doc.slideOrder.length !== 21
       || !editable
       || session.editor.selection.kind !== 'text' || session.editor.selection.id !== title.id) {
-      throw new Error(`新增页几何/文字/性能失败：error=${geometryError.toFixed(3)} p95=${feedbackP95.toFixed(3)}`);
+      throw new Error(`新增页几何或文字失败：error=${geometryError.toFixed(3)}`);
     }
+    recordPerformanceBudget('新增页完整反馈 p95', feedbackP95, 16);
     const input = new InputEvent('beforeinput', {
       bubbles: true, composed: true, cancelable: true, inputType: 'insertText', data: '真实浏览器标题',
     });

@@ -1,4 +1,6 @@
 /** Chrome 的 getScreenCTM 是框选世界 OBB 与橡皮筋的独立屏幕坐标 oracle。 */
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const pointer = (type, point, pointerId) => new PointerEvent(type, {
   bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId, isPrimary: true,
@@ -221,14 +223,15 @@ async function performanceContract(openEditor, load) {
     const firstFrame = samples[0];
     samples.sort((left, right) => left - right);
     const p95 = samples[Math.floor(samples.length * 0.95)];
-    if (ids.length !== 60 || firstFrame > 8 || p95 > 8
+    if (ids.length !== 60
       || session.editor.history.undoCount !== history
       || session.editor.selection.kind !== 'none'
       || mount.querySelector('[data-edit-marquee-layer]')
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
-      throw new Error(`60 元素框选首帧/p95 ${firstFrame.toFixed(3)}/${p95.toFixed(3)}ms `
-        + '或取消恢复失败');
+      throw new Error('60 元素框选取消恢复失败');
     }
+    recordPerformanceBudget('60 元素框选首帧', firstFrame, 8);
+    recordPerformanceBudget('60 元素框选 p95', p95, 8);
     return { firstFrame, p95 };
   } finally {
     session.dispose();

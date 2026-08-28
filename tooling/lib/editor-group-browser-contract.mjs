@@ -1,5 +1,6 @@
 /** 真实浏览器验证 60 元素组合/解组完整反馈预算与可信快捷键。 */
 import { keyboardEvent } from './keyboard-event.mjs';
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
@@ -59,10 +60,9 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
       && session.editor.doc.slides[view.slideId].children.join(',') === roots.join(',')
       && session.editor.history.undoCount === 0 && session.editor.history.redoCount === 0
       && !session.editor.isDirty();
-    if (!correct || result.groupP95 > 8 || result.ungroupP95 > 8) {
-      throw new Error(`60 元素组合/解组 p95 ${result.groupP95.toFixed(3)}/`
-        + `${result.ungroupP95.toFixed(3)}ms 或最终状态不一致`);
-    }
+    if (!correct) throw new Error('60 元素组合/解组最终状态不一致');
+    recordPerformanceBudget('60 元素组合 p95', result.groupP95, 8);
+    recordPerformanceBudget('60 元素解组 p95', result.ungroupP95, 8);
     return result;
   } finally {
     session.dispose();

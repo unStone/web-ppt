@@ -1,3 +1,5 @@
+import { recordPerformanceBudget } from './browser-performance-contract.mjs';
+
 const p95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
@@ -104,12 +106,13 @@ export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
       staticLayer.querySelector('svg')?.getBoundingClientRect();
     }
     const addP95 = p95(samples);
-    if (performanceSession.editor.doc.slides[slideId].children.length !== 60 || addP95 > 16
+    if (performanceSession.editor.doc.slides[slideId].children.length !== 60
       || staticLayer.querySelector('svg') !== svg
       || staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
       || performanceSession.editor.isDirty() || performanceSession.editor.history.undoCount !== 0) {
-      throw new Error(`60 元素页新增形状完整反馈 p95 ${addP95.toFixed(3)}ms 或 DOM/历史不稳定`);
+      throw new Error('60 元素页新增形状后的 DOM 或历史不稳定');
     }
+    recordPerformanceBudget('60 元素页新增形状完整反馈 p95', addP95, 16);
     return { geometryError, p95: addP95 };
   } finally {
     performanceSession.dispose();
