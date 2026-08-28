@@ -13,7 +13,7 @@ const DEFAULT_RUN: Omit<TextRun, 'text'> = {
 };
 
 const DEFAULT_PROPERTIES: RunProperties = {
-  font: null, size: DEFAULT_RUN.size, b: DEFAULT_RUN.b, i: DEFAULT_RUN.i,
+  font: null, size: DEFAULT_RUN.size, color: DEFAULT_RUN.color, b: DEFAULT_RUN.b, i: DEFAULT_RUN.i,
   u: DEFAULT_RUN.u, strike: DEFAULT_RUN.strike,
 };
 
@@ -45,6 +45,7 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
             ? {
               font: run.editInfo.inheritedRunProps.fonts[0] ?? null,
               size: run.editInfo.inheritedRunProps.size,
+              color: run.editInfo.inheritedRunProps.color,
               b: run.editInfo.inheritedRunProps.b,
               i: run.editInfo.inheritedRunProps.i,
               u: run.editInfo.inheritedRunProps.u,
@@ -68,7 +69,7 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
   };
 }
 
-const STYLE_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+const STYLE_PROPERTY_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'link'] as const;
 
 function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
@@ -301,7 +302,7 @@ export function textFragmentFromRange(body: TextBody, range: TextRange): TextFra
         marks.push({
           from: markFrom, to: text.length,
           props: {
-            ...(font ? { font } : {}), size: mark.props.size,
+            ...(font ? { font } : {}), size: mark.props.size, color: mark.props.color,
             b: mark.props.b, i: mark.props.i, u: mark.props.u, strike: mark.props.strike,
           },
         });
@@ -315,6 +316,7 @@ function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
   const inherited = mark.inheritedProps ?? DEFAULT_PROPERTIES;
   const font = props.font === null ? inherited.font : props.font;
   const size = props.size === null ? inherited.size : props.size;
+  const color = props.color === null ? inherited.color : props.color;
   const b = props.b === null ? inherited.b : props.b;
   const i = props.i === null ? inherited.i : props.i;
   const u = props.u === null ? inherited.u : props.u;
@@ -335,6 +337,7 @@ function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
         ? { fonts: props.font === null ? [...(mark.inheritedFonts ?? (font ? [font] : []))] : font ? [font] : [] }
         : {}),
       ...(size !== undefined ? { size } : {}),
+      ...(color !== undefined ? { color } : {}),
       ...(b !== undefined ? { b } : {}),
       ...(i !== undefined ? { i } : {}),
       ...(u !== undefined ? { u } : {}),
@@ -511,6 +514,7 @@ export function queryTextRunProps(
   return {
     font: fontState(selected),
     size: state(selected.map((mark) => mark.props.size)),
+    color: state(selected.map((mark) => mark.props.color)),
     b: state(selected.map((mark) => mark.props.b)),
     i: state(selected.map((mark) => mark.props.i)),
     u: state(selected.map((mark) => mark.props.u)),

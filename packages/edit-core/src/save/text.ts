@@ -20,6 +20,7 @@ import { patchTextBodyProperties } from './text-body';
 import { patchHyperlinkNode } from './hyperlink';
 import type { HyperlinkSaveContext } from './hyperlink';
 import { materializeParagraphLayout, materializeRunProperties } from './text-source-less';
+import { appendDrawingColor } from './drawing-color';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
@@ -116,6 +117,14 @@ function setFont(properties: XmlElement, font: string | null): void {
   }
 }
 
+function setColor(properties: XmlElement, color: string | null): void {
+  removeRunPropertyChildren(properties, ['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill']);
+  if (color === null) return;
+  const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');
+  appendDrawingColor(fill, color);
+  insertXmlInOrder(properties, fill);
+}
+
 function applyRunOverrides(
   properties: XmlElement,
   mark: TextMark,
@@ -124,6 +133,7 @@ function applyRunOverrides(
   const overrides = mark.runOverrides;
   if (!overrides) return;
   if (Object.prototype.hasOwnProperty.call(overrides, 'font')) setFont(properties, overrides.font ?? null);
+  if (Object.prototype.hasOwnProperty.call(overrides, 'color')) setColor(properties, overrides.color ?? null);
   const attributes = {
     size: ['sz', (value: number) => String(Math.round(value * 75))],
     b: ['b', (value: boolean) => value ? '1' : '0'],

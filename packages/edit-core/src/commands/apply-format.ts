@@ -24,7 +24,7 @@ import {
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
 
 const TEXT_FIELDS = new Set<FormatMaskField>(['run', 'paragraph', 'body']);
-const RUN_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike'] as const;
+const RUN_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const PARAGRAPH_FIELDS = [
   'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
 ] as const;

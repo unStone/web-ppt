@@ -7,6 +7,11 @@ import {
   type SlideEditor,
 } from '@web-ppt/editor';
 import { eotToTtf } from 'mtx-decompressor';
+import { createEditorInspector, type EditorInspector } from './editor-inspector';
+import { createSlideInspector, type SlideInspector } from './editor-slide-inspector';
+import { createProductTools } from './editor-product-tools';
+import { createSiteRecovery } from './editor-recovery';
+import { enableSlideReorder } from './editor-slide-reorder';
 
 setFontDecoder(eotToTtf);
 
@@ -26,6 +31,7 @@ const documentKind = $<HTMLElement>('#documentKind');
 const pageIndicator = $<HTMLElement>('#pageIndicator');
 const zoomLabel = $<HTMLElement>('#zoomLabel');
 const dropLayer = $<HTMLElement>('#dropLayer');
+const inspectorElement = $<HTMLElement>('#editorInspector');
 
 const buttons = {
   newFile: $<HTMLButtonElement>('#newFile'),
@@ -38,6 +44,7 @@ const buttons = {
   addTable: $<HTMLButtonElement>('#addTable'),
   addSlide: $<HTMLButtonElement>('#addSlide'),
   play: $<HTMLButtonElement>('#playAnimations'),
+  inspector: $<HTMLButtonElement>('#inspectorToggle'),
   zoomOut: $<HTMLButtonElement>('#zoomOut'),
   fit: $<HTMLButtonElement>('#fitZoom'),
   zoomIn: $<HTMLButtonElement>('#zoomIn'),
@@ -51,11 +58,15 @@ let view: SlideEditor | null = null;
 let pane: SelectionPane | null = null;
 let unsubscribeEditor: (() => void) | null = null;
 let unregisterToolbar: (() => void) | null = null;
+let unregisterInspector: (() => void) | null = null;
+let inspector: EditorInspector | null = null;
+let slideInspector: SlideInspector | null = null;
 let mode: EditorMode = 'edit';
 let zoom = 1;
 let fitWanted = true;
 let activeName = 'showcase.pptx';
 let openGeneration = 0;
+let openController: AbortController | null = null;
 let pptConversionAccepted = false;
 let newDocument = false;
 
@@ -122,6 +133,7 @@ function syncControls(): void {
   buttons.addTable.disabled = !writable || mode !== 'edit';
   buttons.addSlide.disabled = !writable || mode !== 'edit' || !editor!.doc.layoutOrder.length;
   buttons.play.disabled = !ready;
+  buttons.inspector.disabled = !ready;
   buttons.edit.disabled = !capable;
   buttons.view.disabled = !ready;
   buttons.zoomOut.disabled = !ready;
@@ -143,6 +155,10 @@ function syncControls(): void {
   fileName.textContent = `${dirty ? '● ' : ''}${activeName}`;
   document.title = `${dirty ? '● ' : ''}${activeName} · Web-PPT 编辑器`;
   syncSlideSelection();
+  inspector?.sync();
+  slideInspector?.sync();
+  productTools.sync();
+  recovery.sync(session);
 }
 
 function syncSlideSelection(): void {
@@ -169,6 +185,7 @@ function renderSlideList(): void {
     mini.textContent = `P${index + 1}`;
     button.append(number, mini);
     button.addEventListener('click', () => showSlide(id));
+    enableSlideReorder(button, id, () => ({ session, showSlide, onError: reportError }));
     slideList.append(button);
   });
   syncControls();
@@ -224,8 +241,10 @@ function fitView(): void {
 function disposeCurrent(): void {
   unsubscribeEditor?.();
   unregisterToolbar?.();
+  unregisterInspector?.();
   unsubscribeEditor = null;
   unregisterToolbar = null;
+  unregisterInspector = null;
   session?.dispose();
   session = null;
   view = null;
@@ -235,16 +254,25 @@ function disposeCurrent(): void {
   slideList.replaceChildren();
 }
 
+function cancelPendingOpen(): void {
+  recovery.cancelPending();
+  openController?.abort(new DOMException('打开已被新请求取代', 'AbortError'));
+  openController = null;
+}
+
 async function openDocument(
   source: File | Blob | ArrayBuffer | Uint8Array,
   name: string,
   options: { newDocument?: boolean } = {},
 ): Promise<void> {
+  cancelPendingOpen();
   const generation = ++openGeneration;
+  const controller = new AbortController();
+  openController = controller;
   setLoading(`正在打开 ${name}`);
   notice(`正在解析 ${name}…`);
   try {
-    const next = await openEditor(source);
+    const next = await openEditor(source, recovery.openOptions(controller.signal));
     if (generation !== openGeneration) {
       next.dispose();
       return;
@@ -258,9 +286,12 @@ async function openDocument(
     view = next.mount(canvasMount, { mode, zoom: 1, snapping: true, onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     unregisterToolbar = view.registerTextUi(toolbar);
+    unregisterInspector = view.registerTextUi(inspectorElement);
+    productTools.bindSession();
     unsubscribeEditor = next.editor.subscribe((change) => {
       if (change.createdSlides.size || change.removedSlides.size || change.movedSlides.size) renderSlideList();
       else syncControls();
+      void recovery.flush(next);
     });
     renderSlideList();
     fitWanted = true;
@@ -283,6 +314,8 @@ async function openDocument(
     } else {
       showOpenFailure(failure);
     }
+  } finally {
+    if (openController === controller) openController = null;
   }
 }
 
@@ -310,6 +343,7 @@ function tryOpenLocalFile(file: File | undefined): void {
 
 async function createNewDocument(): Promise<void> {
   if (!confirmReplacement()) return;
+  cancelPendingOpen();
   const generation = ++openGeneration;
   setLoading('正在新建演示文稿');
   notice('正在准备空白演示文稿…');
@@ -419,6 +453,9 @@ buttons.play.addEventListener('click', () => void run(async () => {
   const played = await view.previewAnimations();
   notice(played ? '正在播放当前页元素动画' : '当前页没有可播放的元素动画');
 }));
+buttons.inspector.addEventListener('click', () => {
+  if (app.dataset.inspectorOpen === 'true') closeInspector(); else openInspector();
+});
 buttons.zoomOut.addEventListener('click', () => { fitWanted = false; applyZoom(zoom - .1); });
 buttons.zoomIn.addEventListener('click', () => { fitWanted = false; applyZoom(zoom + .1); });
 buttons.fit.addEventListener('click', () => { fitWanted = true; fitView(); });
@@ -461,6 +498,27 @@ window.addEventListener('beforeunload', (event) => {
   event.returnValue = '';
 });
 new ResizeObserver(() => { if (fitWanted) fitView(); }).observe(canvasViewport);
+
+function openInspector(): void {
+  app.dataset.inspectorOpen = 'true';
+  buttons.inspector.setAttribute('aria-expanded', 'true');
+}
+
+function closeInspector(): void {
+  app.dataset.inspectorOpen = 'false';
+  buttons.inspector.setAttribute('aria-expanded', 'false');
+}
+
+const recovery = createSiteRecovery(notice);
+const productTools = createProductTools(() => ({
+  session, view, writable: canMutateDocument() && mode === 'edit', openInspector,
+}), notice);
+inspector = createEditorInspector(inspectorElement, () => ({
+  session, view, writable: canMutateDocument() && mode === 'edit',
+}), notice);
+slideInspector = createSlideInspector(inspectorElement, () => ({
+  session, view, writable: canMutateDocument() && mode === 'edit', showSlide,
+}), notice);
 
 void fetch(new URL('./demo/showcase.pptx', document.baseURI))
   .then((response) => {

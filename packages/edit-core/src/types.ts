@@ -278,6 +278,7 @@ export interface TextMark {
 export interface RunProperties {
   readonly font: string | null;
   readonly size: number;
+  readonly color: string;
   readonly b: boolean;
   readonly i: boolean;
   readonly u: boolean;
@@ -287,6 +288,7 @@ export interface RunProperties {
 export interface RunPropertyOverrides {
   readonly font?: string | null;
   readonly size?: number | null;
+  readonly color?: string | null;
   readonly b?: boolean | null;
   readonly i?: boolean | null;
   readonly u?: boolean | null;
@@ -319,6 +321,7 @@ export interface RunPropertyState<T> {
 export interface RunPropertiesState {
   readonly font: RunPropertyState<string>;
   readonly size: RunPropertyState<number>;
+  readonly color: RunPropertyState<string>;
   readonly b: RunPropertyState<boolean>;
   readonly i: RunPropertyState<boolean>;
   readonly u: RunPropertyState<boolean>;

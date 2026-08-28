@@ -27,7 +27,7 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun): TextRun {
       ? [...(sourceRun?.editInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts ?? mark.props.fonts)]
       : overrides.font ? [overrides.font] : [];
   }
-  for (const field of ['size', 'b', 'i', 'u', 'strike'] as const) {
+  for (const field of ['size', 'color', 'b', 'i', 'u', 'strike'] as const) {
     const value = overrides?.[field];
     if (value !== undefined) {
       const inherited = sourceRun?.editInfo?.inheritedRunProps[field]

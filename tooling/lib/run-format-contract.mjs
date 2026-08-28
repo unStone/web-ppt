@@ -27,12 +27,11 @@ export async function runRunFormatContract({ edit, core, load, check }) {
     { type: 'SetRunProps', id: record.id, range: { from: caret, to: { ...caret, off: 1 } }, props: { size: 0 } },
     { type: 'SetRunProps', id: record.id, range: { from: caret, to: { ...caret, off: 1 } }, props: { font: ' Aptos ' } },
     { type: 'SetRunProps', id: record.id, range: { from: { ...caret, off: 1 }, to: caret }, props: { b: true } },
-    { type: 'SetRunProps', id: record.id, range: { from: caret, to: { ...caret, off: 1 } }, props: { color: '#fff' } },
   ]) {
     try { editor.exec(command); } catch { invalidRejected++; }
   }
   check('字符格式非法数据在落 patch 前原子拒绝',
-    invalidRejected === 5 && editor.history.undoCount === 0 && record.ovr.text === undefined);
+    invalidRejected === 4 && editor.history.undoCount === 0 && record.ovr.text === undefined);
   const result = editor.exec(JSON.parse(JSON.stringify({
     type: 'SetRunProps', id: record.id,
     range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 1 } },
@@ -53,20 +52,25 @@ export async function runRunFormatContract({ edit, core, load, check }) {
   const beforeQuery = edit.queryRunProps(editor.doc, record.id, whole);
   editor.exec({
     type: 'SetRunProps', id: record.id, range: whole,
-    props: { font: 'Aptos', size: 32, b: false, i: true, u: true, strike: true },
+    props: { font: 'Aptos', size: 32, color: '#123456', b: false, i: true, u: true, strike: true },
   });
   const afterQuery = edit.queryRunProps(editor.doc, record.id, whole);
   const formatted = editor.effectiveElement(record.id).text.paragraphs[0].runs;
-  check('跨 run 设置六个 P0 字符属性并公开报告混合态与统一态',
+  check('跨 run 设置七个字符属性并公开报告混合态与统一态',
     beforeQuery.b.mixed === true && beforeQuery.i.mixed === true
       && beforeQuery.font.mixed === true && beforeQuery.size.mixed === false
       && Object.values(afterQuery).every((state) => state.mixed === false)
       && afterQuery.font.value === 'Aptos' && afterQuery.size.value === 32
+      && afterQuery.color.value === 'rgb(18,52,86)'
       && afterQuery.b.value === false && afterQuery.i.value === true
       && afterQuery.u.value === true && afterQuery.strike.value === true
       && formatted.length === 3
       && formatted.every((run) => run.fonts[0] === 'Aptos' && run.size === 32
-        && !run.b && run.i && run.u && run.strike));
+        && run.color === 'rgb(18,52,86)'
+        && !run.b && run.i && run.u && run.strike),
+    `query=${JSON.stringify(afterQuery)} runs=${JSON.stringify(formatted.map((run) => ({
+      color: run.color, font: run.fonts[0], size: run.size, b: run.b, i: run.i, u: run.u, strike: run.strike,
+    })))}`);
 
   const fallbackBody = JSON.parse(JSON.stringify(record.src.text));
   fallbackBody.paragraphs[0].runs[0].fonts = ['Shared Latin', 'EA One'];
@@ -173,7 +177,7 @@ export async function runRunFormatContract({ edit, core, load, check }) {
   resetEditor.exec({
     type: 'SetRunProps', id: resetRecord.id,
     range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 1 } },
-    props: { font: 'Noto Sans', size: 31.2, b: true, i: true, u: true, strike: true },
+    props: { font: 'Noto Sans', size: 31.2, color: '#123456', b: true, i: true, u: true, strike: true },
   });
   resetEditor.exec({
     type: 'SetRunProps', id: resetRich.id,
@@ -196,8 +200,9 @@ export async function runRunFormatContract({ edit, core, load, check }) {
   const formattedRun = formattedRecord.text.paragraphs[0].runs[0];
   const formattedXml = new TextDecoder()
     .decode(formattedReopened.package.parts['ppt/slides/slide1.xml']);
-  check('六个 P0 属性保存重开并把字体写入 latin、ea、cs',
+  check('七个字符属性保存重开并把字体写入 latin、ea、cs',
     formattedRun.fonts[0] === 'Noto Sans' && Math.abs(formattedRun.size - 31.2) < 1e-9
+      && formattedRun.color === 'rgb(18,52,86)'
       && formattedRun.b && formattedRun.i && formattedRun.u && formattedRun.strike
       && (formattedXml.match(/typeface="Noto Sans"/g) ?? []).length === 3,
     `font=${formattedRun.fonts.join(',')} size=${formattedRun.size}`

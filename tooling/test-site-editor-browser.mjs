@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/site-editor-browser');
@@ -44,6 +45,13 @@ const routes = new Map([
   ['/editor-page.css', ['text/css; charset=utf-8', readFileSync(join(root, 'packages/site/src/editor-page.css'))]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
+  ['/fixtures/sample-editor-shape-format.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx'))]],
+  ['/fixtures/sample-editor-text.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-text.pptx'))]],
+  ['/fixtures/sample-editor-image-content.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-image-content.pptx'))]],
+  ['/fixtures/sample-editor-format-painter.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-format-painter.pptx'))]],
+  ['/fixtures/sample-editor-transitions.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-transitions.pptx'))]],
+  ['/fixtures/sample-editor-animations.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-animations.pptx'))]],
+  ['/assets/replacement.png', ['image/png', readFileSync(join(root, 'packages/site/public/og.png'))]],
 ]);
 const server = createServer((request, response) => {
   const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
@@ -57,6 +65,15 @@ const delay = (milliseconds) => new Promise((resolveDelay) => setTimeout(resolve
 let child;
 let profile;
 let diagnostics = '';
+
+function assertPngDimensions(data, width, height, label) {
+  const png = Buffer.from(data, 'base64');
+  const actual = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+  if (actual.width !== width || actual.height !== height) {
+    throw new Error(`${label}截图尺寸错误：${JSON.stringify(actual)}`);
+  }
+  return png;
+}
 
 function browserRunning() {
   return child && child.exitCode === null && child.signalCode === null;
@@ -150,6 +167,8 @@ async function runContract(webSocketDebuggerUrl) {
       status: document.querySelector('#statusText')?.textContent,
       loading: document.querySelector('#editorApp')?.dataset.loading,
       file: document.querySelector('#fileName')?.textContent,
+      animations: document.querySelectorAll('#animationTimeline li').length,
+      animationHtml: document.querySelector('#animationTimeline')?.innerHTML,
     }))()`);
     throw new Error(`等待${label}超时：${JSON.stringify(state)}`);
   };
@@ -157,6 +176,7 @@ async function runContract(webSocketDebuggerUrl) {
     const point = await evaluate(`(() => {
       const node = document.querySelector(${JSON.stringify(selector)});
       if (!node) return null;
+      node.scrollIntoView({ block: 'center', inline: 'center' });
       const rect = node.getBoundingClientRect();
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     })()`);
@@ -170,6 +190,9 @@ async function runContract(webSocketDebuggerUrl) {
   };
   try {
     await request('Runtime.enable');
+    await request('Emulation.setDeviceMetricsOverride', {
+      width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+    });
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
@@ -183,6 +206,53 @@ async function runContract(webSocketDebuggerUrl) {
         return original.call(this);
       };
     })()`);
+    await runSiteEditorToolbarContract({ evaluate, waitFor, click });
+    await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
+    const desktopLayout = await evaluate(`(() => {
+      const panel = document.querySelector('.object-panel').getBoundingClientRect();
+      const canvas = document.querySelector('#canvasViewport').getBoundingClientRect();
+      return { width: innerWidth, height: innerHeight, scrollWidth: document.documentElement.scrollWidth,
+        panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom, width: panel.width, height: panel.height },
+        canvas: { width: canvas.width, height: canvas.height } };
+    })()`);
+    if (desktopLayout.width !== 1280 || desktopLayout.height !== 720
+      || desktopLayout.scrollWidth > desktopLayout.width
+      || desktopLayout.panel.left < 0 || desktopLayout.panel.right > desktopLayout.width + 1
+      || desktopLayout.panel.bottom > desktopLayout.height + 1
+      || desktopLayout.panel.width < 200 || desktopLayout.panel.height < 300
+      || desktopLayout.canvas.width < 300 || desktopLayout.canvas.height < 300) {
+      throw new Error(`1280×720 工具栏布局越界：${JSON.stringify(desktopLayout)}`);
+    }
+    const desktopShot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+    writeFileSync(join(out, 'toolbar-1280x720.png'), assertPngDimensions(desktopShot.result.data, 1280, 720, '桌面'));
+    await request('Emulation.setDeviceMetricsOverride', {
+      width: 390, height: 844, deviceScaleFactor: 1, mobile: true,
+    });
+    if (!await evaluate("document.querySelector('#editorApp').dataset.inspectorOpen === 'true'")) {
+      await click('#inspectorToggle');
+    }
+    await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
+    await waitFor("document.querySelector('#editorApp').dataset.inspectorOpen === 'true'", '移动端格式抽屉');
+    const mobileLayout = await evaluate(`(() => {
+      const panel = document.querySelector('.object-panel').getBoundingClientRect();
+      const canvas = document.querySelector('#canvasViewport').getBoundingClientRect();
+      return { width: innerWidth, height: innerHeight, scrollWidth: document.documentElement.scrollWidth,
+        panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom, width: panel.width, height: panel.height },
+        canvas: { width: canvas.width, height: canvas.height } };
+    })()`);
+    if (mobileLayout.width !== 390 || mobileLayout.height !== 844
+      || mobileLayout.scrollWidth > mobileLayout.width
+      || mobileLayout.panel.left < 71 || mobileLayout.panel.right > mobileLayout.width + 1
+      || mobileLayout.panel.bottom > mobileLayout.height + 1
+      || mobileLayout.panel.width < 250 || mobileLayout.panel.height < 300
+      || mobileLayout.canvas.width < 200 || mobileLayout.canvas.height < 200) {
+      throw new Error(`390×844 工具栏布局越界：${JSON.stringify(mobileLayout)}`);
+    }
+    const mobileShot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+    writeFileSync(join(out, 'toolbar-390x844.png'), assertPngDimensions(mobileShot.result.data, 390, 844, '移动端'));
+    await request('Emulation.setDeviceMetricsOverride', {
+      width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+    });
     await click('#newFile');
     await waitFor(`document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
       && document.querySelector('#slideCount')?.textContent === '1'
@@ -310,7 +380,7 @@ try {
   const url = `http://127.0.0.1:${address.port}/editor.html`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(`\n\x1b[32m✓ 官网 .ppt 转换闭环通过（下载 ${result.bytes} bytes）\x1b[0m`);
+  console.log(`\n\x1b[32m✓ 官网编辑工具栏与 .ppt 转换闭环通过（下载 ${result.bytes} bytes）\x1b[0m`);
 } finally {
   if (browserRunning()) {
     child.kill('SIGTERM');

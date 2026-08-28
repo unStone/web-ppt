@@ -1,8 +1,9 @@
 import { assertDataObject, own } from './data-validation';
 import type { RunPropertyOverrides } from './types';
 import { assertLinkOverride } from './hyperlink';
+import { assertDrawingColor } from './shape-fill';
 
-export const RUN_PROPERTY_FIELDS = ['font', 'size', 'b', 'i', 'u', 'strike', 'link'] as const;
+export const RUN_PROPERTY_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike', 'link'] as const;
 
 export function assertRunPropertyOverrides(
   value: unknown,
@@ -22,6 +23,9 @@ export function assertRunPropertyOverrides(
   if (own(props, 'size') && props.size !== null
     && (typeof props.size !== 'number' || !Number.isFinite(props.size) || props.size <= 0)) {
     throw new Error(`${label}.size 必须是有限正数或 null`);
+  }
+  if (own(props, 'color') && props.color !== null) {
+    assertDrawingColor(props.color, `${label}.color`);
   }
   for (const field of ['b', 'i', 'u', 'strike'] as const) {
     if (own(props, field) && props[field] !== null && typeof props[field] !== 'boolean') {

@@ -44,6 +44,14 @@
     <span class="tool-divider"></span>
     <div class="tool-group">
       <button id="playAnimations" type="button" disabled>▶ <span>播放动画</span></button>
+      <button id="inspectorToggle" type="button" aria-controls="objectPanel" aria-expanded="false">⚙ <span>格式</span></button>
+    </div>
+    <span class="tool-divider"></span>
+    <div class="tool-group product-tools">
+      <button id="findText" type="button" disabled>⌕ <span>查找</span></button>
+      <button id="replaceText" type="button" disabled>⇄ <span>替换</span></button>
+      <button id="formatPainter" type="button" aria-pressed="false" disabled>▣ <span>格式刷</span></button>
+      <button id="formatPainterContinuous" type="button" aria-pressed="false" disabled>▣▣ <span>连续格式刷</span></button>
     </div>
     <div class="toolbar-spacer"></div>
     <div class="tool-group zoom-tools" aria-label="缩放">
@@ -79,9 +87,92 @@
       </div>
     </section>
 
-    <aside class="object-panel" aria-label="对象列表">
+    <aside class="object-panel" id="objectPanel" aria-label="对象与格式面板">
       <div class="panel-heading"><span>对象</span><small>双击可重命名</small></div>
       <div class="object-list" id="objectList"></div>
+      <div class="inspector" id="editorInspector" aria-label="上下文格式">
+        <section class="inspector-section search-inspector" id="searchInspector" hidden>
+          <div class="inspector-title"><h2>查找与替换</h2><button id="closeSearch" type="button" aria-label="关闭查找">×</button></div>
+          <label class="inspector-stack"><span>查找</span><input id="searchQuery" type="search" /></label>
+          <label class="inspector-stack" id="replacementField" hidden><span>替换为</span><input id="searchReplacement" type="text" /></label>
+          <div class="inspector-actions">
+            <button id="searchPrevious" type="button">上一个</button><button id="searchNext" type="button">下一个</button>
+            <button id="replaceCurrent" type="button">替换</button><button id="replaceAll" type="button">全部替换</button>
+          </div>
+          <output id="searchCount">0 个结果</output>
+        </section>
+        <section class="inspector-section" id="textInspector" hidden>
+          <h2>文字</h2>
+          <div class="inspector-actions text-style-actions">
+            <button id="textBold" type="button" aria-pressed="false"><b>B</b></button>
+            <button id="textItalic" type="button" aria-pressed="false"><i>I</i></button>
+            <button id="textUnderline" type="button" aria-pressed="false"><u>U</u></button>
+          </div>
+          <label class="inspector-field"><span>字号</span><input id="textFontSize" type="number" min="1" max="400" step="1" /></label>
+          <label class="inspector-field"><span>颜色</span><input id="textColor" type="color" value="#000000" /></label>
+          <label class="inspector-stack"><span>对齐</span><select id="textAlign"><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option><option value="justify">两端对齐</option></select></label>
+        </section>
+        <section class="inspector-section" id="shapeInspector" hidden>
+          <h2>形状</h2>
+          <label class="inspector-stack"><span>填充</span><select id="shapeFillType"><option value="solid">纯色</option><option value="none">无填充</option><option value="preserve">复杂填充（保留）</option></select></label>
+          <label class="inspector-field"><span>填充色</span><input id="shapeFillColor" type="color" value="#000000" /></label>
+          <label class="inspector-stack"><span>描边</span><select id="shapeStrokeType"><option value="solid">实线</option><option value="none">无描边</option></select></label>
+          <label class="inspector-field"><span>描边色</span><input id="shapeStrokeColor" type="color" value="#000000" /></label>
+          <label class="inspector-field"><span>粗细</span><input id="shapeStrokeWidth" type="number" min="0" max="50" step="0.5" /></label>
+          <label class="inspector-check"><input id="shapeShadow" type="checkbox" /><span>阴影</span></label>
+          <label class="inspector-check"><input id="shapeGlow" type="checkbox" /><span>发光</span></label>
+          <label class="inspector-field"><span>柔化边缘</span><input id="shapeSoftEdge" type="number" min="0" max="50" step="0.5" /></label>
+        </section>
+        <section class="inspector-section" id="imageInspector" hidden>
+          <h2>图片</h2>
+          <label class="button inspector-file" for="replaceImageInput">替换图片</label>
+          <input id="replaceImageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" />
+          <div class="inspector-actions"><button id="startImageCrop" type="button">进入裁剪</button><button id="finishImageCrop" type="button">完成裁剪</button></div>
+          <div class="inspector-actions"><button id="cropImageTen" type="button">四周裁 10%</button><button id="resetImageCrop" type="button">重置裁剪</button></div>
+        </section>
+        <section class="inspector-section" id="linkInspector" hidden>
+          <h2>超链接</h2>
+          <label class="inspector-stack"><span>类型</span><select id="linkType"><option value="none">无</option><option value="external">网页 / 邮件</option><option value="slide">本文档页面</option></select></label>
+          <label class="inspector-stack" id="linkHrefField"><span>地址</span><input id="linkHref" type="url" placeholder="https://example.com" /></label>
+          <label class="inspector-stack" id="linkSlideField" hidden><span>页面</span><select id="linkSlide"></select></label>
+          <div class="inspector-actions"><button id="applyLink" type="button">应用</button><button id="followLink" type="button">打开链接</button></div>
+        </section>
+        <section class="inspector-section" id="slideInspector">
+          <h2>页面</h2>
+          <label class="inspector-field"><span>背景色</span><input id="slideBackgroundColor" type="color" value="#ffffff" /></label>
+          <label class="inspector-check"><input id="slideHidden" type="checkbox" /><span>放映时隐藏</span></label>
+          <label class="inspector-stack"><span>版式</span><select id="slideLayout"></select></label>
+          <div class="inspector-actions"><button id="duplicateSlide" type="button">复制页面</button><button id="deleteSlide" type="button">删除页面</button></div>
+        </section>
+        <section class="inspector-section" id="notesInspector">
+          <h2>演讲者备注</h2>
+          <textarea id="slideNotes" rows="4" placeholder="添加仅演讲者可见的备注"></textarea>
+          <button id="applyNotes" type="button">保存备注</button>
+        </section>
+        <section class="inspector-section" id="transitionInspector">
+          <h2>页面切换</h2>
+          <label class="inspector-stack"><span>效果</span><select id="transitionType"></select></label>
+          <label class="inspector-stack"><span>方向</span><select id="transitionDirection"></select></label>
+          <label class="inspector-field"><span>时长 ms</span><input id="transitionDuration" type="number" min="80" max="5000" step="10" value="750" /></label>
+          <div class="inspector-actions"><button id="applyTransition" type="button">应用</button><button id="previewTransition" type="button">预览</button></div>
+        </section>
+        <section class="inspector-section" id="animationInspector">
+          <h2>元素动画时间线</h2>
+          <label class="inspector-stack"><span>目标</span><select id="animationTarget"></select></label>
+          <label class="inspector-stack"><span>类别</span><select id="animationKind"><option value="entrance">进入</option><option value="exit">退出</option><option value="emphasis">强调</option></select></label>
+          <label class="inspector-stack"><span>效果</span><select id="animationEffect"></select></label>
+          <button id="addAnimation" type="button">添加动画</button>
+          <small id="animationReadonly" hidden>源时间线含暂不支持的节点；为避免丢失，当前仅可预览。</small>
+          <ol class="animation-timeline" id="animationTimeline"></ol>
+          <button id="previewTimeline" type="button">预览时间线</button>
+        </section>
+        <section class="inspector-section recovery-inspector">
+          <h2>本机恢复</h2>
+          <label class="inspector-check"><input id="recoveryToggle" type="checkbox" /><span>自动保存恢复记录</span></label>
+          <small id="recoveryState">只写入本机浏览器；保存副本后恢复记录会标记为已保存。</small>
+        </section>
+        <p class="inspector-empty" id="inspectorEmpty">选择元素或文字以编辑格式</p>
+      </div>
       <div class="object-help">
         <kbd>双击</kbd> 编辑文字<br />
         <kbd>拖动</kbd> 移动元素<br />
@@ -98,6 +189,9 @@
 
   <div class="drop-layer" id="dropLayer" hidden>
     <div><strong>松开以打开演示文稿</strong><span>.pptx 可直接编辑，.ppt 确认后另存为 .pptx</span></div>
+  </div>
+  <div class="recovery-prompt" id="recoveryPrompt" role="dialog" aria-modal="true" aria-labelledby="recoveryTitle" hidden>
+    <div><strong id="recoveryTitle">发现未保存的本机恢复记录</strong><p id="recoverySummary"></p><span><button id="discardRecovery" type="button">放弃记录</button><button class="button primary" id="restoreRecovery" type="button">恢复编辑</button></span></div>
   </div>
 </div>
 <script type="module" src="./src/editor-page.ts"></script>

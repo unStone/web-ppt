@@ -1,6 +1,7 @@
 ---
 title: 补全官网编辑页工具栏能力面
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -34,3 +35,10 @@ blocked_by: []
 
 验收：每项能力在真实浏览器走通「操作 → 撤销 → 保存 → 重新打开验证」；390×844 与 1280×720 截图检查；
 零 console warning；生产构建体积增量在票据内如实记录；全部门禁绿。
+
+## Resolution
+
+- 官网编辑页以选区上下文面板接通文字、形状、图片、链接、页面、备注、查找替换、单次 / 连续格式刷、切换、动画与本机恢复；1050px 以下改为侧边抽屉，680px 以下改为底部抽屉，产品状态仍留在 site。
+- 对账发现公开 `SetRunProps` 实际缺少文字颜色，已补齐继承感知模型、严格命令校验、投影、格式刷与稀疏 OOXML 写回；所有产品控件只调用 `@web-ppt/editor` / `@web-ppt/edit-core` 公开 seam。
+- 真实 Chrome 覆盖每组能力的操作、撤销重做、下载、保存重开和本机恢复；恢复决策具备 AbortSignal 与打开代际取消，落盘状态只由当前会话最新 flush 发布，1280×720 / 390×844 的 PNG 像素尺寸与面板边界均有断言，零 console warning，两路终审无剩余 P1/P2。
+- 生产构建相对开工基线：`editor.html` 13.77→25.63 kB（gzip 4.73→7.46，增量 11.86 / 2.73 kB），编辑 JS 509.38→539.19 kB（gzip 156.89→166.09，增量 29.81 / 9.20 kB），合计增量 41.67 / 11.93 kB；既有大 chunk 警告在基线已存在，`npm run check && npm test && npm run build` 全绿。

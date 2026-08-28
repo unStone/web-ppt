@@ -232,7 +232,7 @@ export async function runFormatPainterContract({ edit, core, load, check }) {
   const sourceRange = whole(textEditor.effectiveElement(textSource.id).text);
   textEditor.exec({
     type: 'SetRunProps', id: textSource.id, range: sourceRange,
-    props: { font: 'Noto Sans', size: 31.2, b: true, i: true, u: true, strike: true },
+    props: { font: 'Noto Sans', size: 31.2, color: '#123456', b: true, i: true, u: true, strike: true },
   });
   textEditor.exec({
     type: 'SetParaProps', id: textSource.id, range: sourceRange,

@@ -91,6 +91,7 @@ tracker: local-markdown
 - [打通 .ppt 编辑另存 .pptx 的产品闭环](tickets/065-ppt-edit-save-as-pptx.md) — 首次编辑确认、统一 adapter 格式 seam 与诚实 frame 降级贯通真实浏览器下载及 LibreOffice 无修复打开。
 - [建立空白新建文稿闭环](tickets/066-blank-document-entry.md) — 按需确定性模板、三种真实版式与官网新建/加页入口贯通插入、历史、动态页码、保存重开及 LibreOffice 无修复打开。
 - [实现元素组合与解组](tickets/067-group-ungroup-commands.md) — 原子层级 Patch 与仿射分解贯通稳定身份、最小写回、多视图快捷键及来源语义；Chrome 60 元素组合/解组 p95 6.9/7.1ms，LibreOffice 几何 oracle 与两路终审通过。
+- [补全官网编辑页工具栏能力面](tickets/073-site-editor-toolbar-completion.md) — 公开 seam 已接入上下文工具栏、响应式抽屉与确定性本机恢复，真实 Chrome 的操作、撤销重做、保存重开、双尺寸布局和零 console warning 契约全部通过。
 
 ## Not yet specified
 
