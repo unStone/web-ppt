@@ -89,6 +89,7 @@ tracker: local-markdown
 - [官网独立接入可保存编辑器页面](tickets/063-integrate-site-editor-page.md) — 独立 `editor.html` 以已发布无框架 seam 接通本地打开、编辑、预览与保存；响应式、复杂页滚动、`.ppt` 安全降级及 GitHub Pages 子路径均经真实浏览器验证。
 - [实现生成式 PPTX 保存](tickets/064-generated-pptx-save.md) — 无原包 EditDoc 可确定性生成完整 PPTX，补丁保存路径与按需体积边界保持独立。
 - [打通 .ppt 编辑另存 .pptx 的产品闭环](tickets/065-ppt-edit-save-as-pptx.md) — 首次编辑确认、统一 adapter 格式 seam 与诚实 frame 降级贯通真实浏览器下载及 LibreOffice 无修复打开。
+- [建立空白新建文稿闭环](tickets/066-blank-document-entry.md) — 按需确定性模板、三种真实版式与官网新建/加页入口贯通插入、历史、动态页码、保存重开及 LibreOffice 无修复打开。
 
 ## Not yet specified
 

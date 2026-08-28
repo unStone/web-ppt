@@ -16,6 +16,7 @@ const bundle = join(out, 'editor-page.js');
 const aliases = [
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+  ['@web-ppt/edit-core/generate', join(root, 'packages/edit-core/src/generate/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
   ['@web-ppt/editor', join(root, 'packages/editor/src/index.ts')],
@@ -172,6 +173,53 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    await evaluate(`(() => {
+      const original = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.download) {
+          globalThis.__capturedDownload = { name: this.download, href: this.href };
+          return;
+        }
+        return original.call(this);
+      };
+    })()`);
+    await click('#newFile');
+    await waitFor(`document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
+      && document.querySelector('#slideCount')?.textContent === '1'
+      && !document.querySelector('#editorApp')?.dataset.loading`, '空白文稿就绪');
+    const blank = await evaluate(`(() => ({
+      kind: document.querySelector('#documentKind')?.textContent,
+      shapeDisabled: document.querySelector('#addShape')?.disabled,
+      tableDisabled: document.querySelector('#addTable')?.disabled,
+      saveDisabled: document.querySelector('#saveFile')?.disabled,
+      page: document.querySelector('#pageIndicator')?.textContent,
+    }))()`);
+    if (blank.kind !== 'PPTX · 可编辑' || blank.shapeDisabled || blank.tableDisabled
+      || blank.saveDisabled || blank.page !== '1 / 1') {
+      throw new Error(`空白文稿没有进入可编辑状态：${JSON.stringify(blank)}`);
+    }
+    await click('#addSlide');
+    await waitFor(`document.querySelector('#slideCount')?.textContent === '2'
+      && document.querySelector('#pageIndicator')?.textContent === '2 / 2'`, '空白文稿新增页面');
+    const blankInitialCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
+    await click('#addShape');
+    await waitFor("document.querySelector('#fileName')?.textContent.startsWith('●')", '空白文稿编辑命令');
+    await click('#undo');
+    await click('#redo');
+    const blankEditedCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
+    if (blankEditedCount !== blankInitialCount + 1) throw new Error('空白文稿撤销重做没有恢复插入形状');
+    await click('#saveFile');
+    await waitFor('!!globalThis.__capturedDownload', '空白 PPTX 下载');
+    const blankDownload = await evaluate(`(async () => {
+      const captured = globalThis.__capturedDownload;
+      const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
+      return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)) };
+    })()`, true);
+    if (blankDownload.name !== '未命名演示文稿.pptx'
+      || blankDownload.bytes[0] !== 0x50 || blankDownload.bytes[1] !== 0x4b) {
+      throw new Error(`空白文稿下载无效：${JSON.stringify(blankDownload)}`);
+    }
+    await evaluate('globalThis.__capturedDownload = null');
     await evaluate(`(async () => {
       const bytes = await fetch('/fixtures/sample.ppt').then((response) => response.arrayBuffer());
       const transfer = new DataTransfer();
@@ -234,16 +282,6 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor("document.querySelector('#fileName')?.textContent.startsWith('●')", '编辑命令提交');
     const editedCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
     if (editedCount !== initialCount + 1) throw new Error('确认转换后插入命令没有生效');
-    await evaluate(`(() => {
-      const original = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function () {
-        if (this.download) {
-          globalThis.__capturedDownload = { name: this.download, href: this.href };
-          return;
-        }
-        return original.call(this);
-      };
-    })()`);
     await click('#saveFile');
     await waitFor('!!globalThis.__capturedDownload', 'PPTX 下载');
     const downloaded = await evaluate(`(async () => {

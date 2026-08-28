@@ -80,6 +80,13 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
   padding: 0 12px; border-bottom: 1px solid var(--soft-line); color: var(--muted); font-size: 12px; font-weight: 700;
 }
 .panel-heading small { font-weight: 400; font-size: 10px; }
+.panel-actions { display: inline-flex; align-items: center; gap: 5px; }
+.panel-actions button {
+  display: grid; place-items: center; width: 23px; height: 23px; padding: 0; border: 1px solid var(--line);
+  border-radius: 6px; background: white; color: var(--ink); cursor: pointer; font-size: 16px; line-height: 1;
+}
+.panel-actions button:hover:not(:disabled) { border-color: #b9b9b2; background: var(--accent-soft); }
+.panel-actions button:disabled { cursor: not-allowed; opacity: .35; }
 .slide-list, .object-list { min-height: 0; overflow: auto; padding: 9px; }
 .slide-list { display: flex; flex-direction: column; gap: 7px; }
 .slide-item {
@@ -153,6 +160,7 @@ kbd { padding: 2px 5px; border: 1px solid #d5d5cf; border-bottom-width: 2px; bor
   .workspace { grid-template-columns: 72px minmax(0, 1fr); }
   .slide-panel .panel-heading { justify-content: center; padding: 0; }
   .slide-panel .panel-heading span:first-child { display: none; }
+  .slide-panel .panel-actions { display: inline-flex; }
   .slide-list { padding: 5px; }
   .slide-item { display: flex; flex-direction: column; gap: 3px; padding: 4px; }
   .slide-mini { width: 100%; }

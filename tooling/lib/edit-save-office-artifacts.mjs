@@ -1,5 +1,6 @@
 /** 真实 Office 门禁只消费本轮保存测试生成的确定性产物，避免通配符夹带陈旧文件。 */
 export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
+  Object.freeze({ file: 'blank-new-document.pptx', slides: 2 }),
   // Impress 打开零页 OOXML 后会在导出时补一张空白页；模型页数仍保持为零。
   Object.freeze({ file: 'generated-empty.pptx', slides: 0, libreOfficePages: 1 }),
   Object.freeze({ file: 'generated-content.pptx', slides: 1 }),

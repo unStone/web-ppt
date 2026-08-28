@@ -20,6 +20,7 @@
     <span class="beta-badge">编辑器 beta</span>
     <span class="file-name" id="fileName">内置示例</span>
     <span class="privacy-note"><i></i>文件仅在本机处理</span>
+    <button class="button" id="newFile" type="button">新建</button>
     <label class="button primary file-button" for="fileInput">打开本地文件</label>
     <input id="fileInput" type="file" accept=".pptx,.ppt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" />
   </header>
@@ -55,7 +56,10 @@
 
   <main class="workspace">
     <aside class="slide-panel" aria-label="幻灯片列表">
-      <div class="panel-heading"><span>幻灯片</span><span id="slideCount">0</span></div>
+      <div class="panel-heading">
+        <span>幻灯片</span>
+        <span class="panel-actions"><span id="slideCount">0</span><button id="addSlide" type="button" title="新增幻灯片" aria-label="新增幻灯片" disabled>＋</button></span>
+      </div>
       <div class="slide-list" id="slideList"></div>
     </aside>
 

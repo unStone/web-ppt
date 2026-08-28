@@ -10,6 +10,108 @@ export async function runGeneratedSaveContract({
   console.log('\n\x1b[36m▸ 生成式 PPTX 保存\x1b[0m');
   if (!check('公开按需生成入口', typeof generate.generateEditDoc === 'function')) return;
 
+  if (check('公开按需空白 PPTX 入口', typeof generate.createBlankPptx === 'function')) {
+    const blank = generate.createBlankPptx();
+    const blankPresentation = await core.parse(blank, {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const blankDoc = edit.createDoc(blankPresentation, { idPrefix: 'blank-new-' });
+    const blankEditor = new edit.Editor(blankDoc);
+    check('空白 PPTX 默认 16:9、带一页与三种真实版式',
+      blankPresentation.width === 1280 && blankPresentation.height === 720
+        && blankDoc.slideOrder.length === 1
+        && JSON.stringify(blankDoc.layoutOrder.map((id) => blankDoc.layouts[id].name))
+          === JSON.stringify(['标题页', '标题和内容', '空白'])
+        && blankDoc.slides[blankDoc.slideOrder[0]].layoutId
+          === blankDoc.layoutOrder.find((id) => blankDoc.layouts[id].name === '空白'));
+
+    const custom = generate.createBlankPptx({ width: 960, height: 540 });
+    const customPresentation = await core.parse(custom, { lazy: false });
+    check('空白 PPTX 尺寸可覆盖',
+      customPresentation.width === 960 && customPresentation.height === 540);
+    customPresentation.dispose?.();
+
+    const firstSlide = blankDoc.slideOrder[0];
+    const contentLayout = blankDoc.layoutOrder.find((id) => blankDoc.layouts[id].name === '标题和内容');
+    const added = blankEditor.exec({
+      type: 'AddSlide', layoutId: contentLayout, at: { after: firstSlide },
+    });
+    const secondSlide = [...added.createdSlides][0];
+    const title = blankDoc.slides[secondSlide].children.map((id) => blankDoc.elements[id])
+      .find((record) => record.meta.ph?.type === 'title');
+    blankEditor.exec({
+      type: 'EditText', id: title.id,
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+        text: '从空白开始',
+      }],
+    });
+    blankEditor.exec({
+      type: 'AddShape', slideId: firstSlide, preset: 'roundRect',
+      rect: { x: 96, y: 88, w: 320, h: 160 },
+    });
+    const shapeId = blankEditor.selection.ids[0];
+    blankEditor.exec({
+      type: 'EditText', id: shapeId,
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+        text: '可编辑文字',
+      }],
+    });
+    blankEditor.exec({
+      type: 'AddTable', slideId: firstSlide, rows: 2, cols: 2,
+      rect: { x: 480, y: 88, w: 480, h: 220 },
+    });
+    const tableId = blankEditor.selection.ids[0];
+    blankEditor.exec({
+      type: 'AddImage', slideId: firstSlide, bytes: bytesOf(PNG_1PX), mime: 'image/png',
+      rect: { x: 96, y: 360, w: 160, h: 160 },
+    });
+    const imageId = blankEditor.selection.ids[0];
+    blankEditor.undo();
+    const imageUndone = !blankDoc.elements[imageId];
+    blankEditor.redo();
+    check('空白文稿插入形状文字、图片、表格并可撤销重做', imageUndone
+      && blankDoc.elements[shapeId]?.src.kind === 'shape'
+      && blankDoc.elements[tableId]?.src.kind === 'table'
+      && blankDoc.elements[imageId]?.src.kind === 'image');
+    const dynamicNumber = blankDoc.slides[secondSlide].dynamicSlideNumbers
+      .map((id) => blankEditor.effectiveElement(id))
+      .find((element) => element.kind === 'shape');
+    check('空白文稿新增页的动态页码使用最终页序', dynamicNumber?.kind === 'shape'
+      && dynamicNumber.text?.paragraphs.some((paragraph) => paragraph.runs.some((run) =>
+        run.field === 'slidenum' && run.text === '2')));
+
+    const projectionFingerprint = (slides) => JSON.stringify(slides, (key, value) => {
+      if (key === 'id' || key === 'editInfo' || key === 'name') return undefined;
+      // 统一 Schema 中“显式无值”和“未写可选值”对投影等价；指纹只观察有效语义。
+      if (value === null) return undefined;
+      if (typeof value === 'string' && /^(?:blob:|asset:|data:)/.test(value)) return '<asset>';
+      return value;
+    });
+    const projected = projectionFingerprint(blankDoc.slideOrder.map((id) => blankEditor.toSlide(id)));
+    const blankSaved = await blankEditor.saveDetailed();
+    check('空白文稿保存保留插入图片的原始字节',
+      Object.entries(blankSaved.package.parts).some(([part, value]) =>
+        part.startsWith('ppt/media/') && equalBytes(value, bytesOf(PNG_1PX))));
+    saveArtifact('blank-new-document.pptx', blankSaved.bytes);
+    const blankReopened = await core.parse(blankSaved.bytes, {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const blankReopenedDoc = edit.createDoc(blankReopened, { idPrefix: 'blank-reopened-' });
+    const blankReopenedEditor = new edit.Editor(blankReopenedDoc);
+    const reopenedProjection = projectionFingerprint(
+      blankReopenedDoc.slideOrder.map((id) => blankReopenedEditor.toSlide(id)),
+    );
+    const mismatch = [...projected].findIndex((char, index) => char !== reopenedProjection[index]);
+    check('空白文稿保存重开后的投影指纹一致', reopenedProjection === projected,
+      `${projected.length} != ${reopenedProjection.length} @${mismatch}: `
+        + `${projected.slice(Math.max(0, mismatch - 120), mismatch + 180)} != `
+        + reopenedProjection.slice(Math.max(0, mismatch - 120), mismatch + 180));
+    edit.disposeDoc(blankReopenedDoc);
+    edit.disposeDoc(blankDoc);
+  }
+
   const doc = edit.createEmptyDoc({ width: 1280, height: 720, idPrefix: 'generated-empty-' });
   const first = generate.generateEditDoc(doc);
   const second = generate.generateEditDoc(doc);

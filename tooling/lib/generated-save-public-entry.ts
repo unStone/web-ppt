@@ -2,4 +2,4 @@
 export {
   createDoc, createEmptyDoc, disposeDoc, Editor, querySlideNotes, toSlide,
 } from '../../packages/edit-core/src/index';
-export { generateEditDoc } from '../../packages/edit-core/src/generate/index';
+export * from '../../packages/edit-core/src/generate/index';

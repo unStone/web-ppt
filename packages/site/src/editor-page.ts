@@ -28,6 +28,7 @@ const zoomLabel = $<HTMLElement>('#zoomLabel');
 const dropLayer = $<HTMLElement>('#dropLayer');
 
 const buttons = {
+  newFile: $<HTMLButtonElement>('#newFile'),
   edit: $<HTMLButtonElement>('#editMode'),
   view: $<HTMLButtonElement>('#viewMode'),
   undo: $<HTMLButtonElement>('#undo'),
@@ -35,6 +36,7 @@ const buttons = {
   addShape: $<HTMLButtonElement>('#addShape'),
   addImage: $<HTMLButtonElement>('#addImage'),
   addTable: $<HTMLButtonElement>('#addTable'),
+  addSlide: $<HTMLButtonElement>('#addSlide'),
   play: $<HTMLButtonElement>('#playAnimations'),
   zoomOut: $<HTMLButtonElement>('#zoomOut'),
   fit: $<HTMLButtonElement>('#fitZoom'),
@@ -55,6 +57,7 @@ let fitWanted = true;
 let activeName = 'showcase.pptx';
 let openGeneration = 0;
 let pptConversionAccepted = false;
+let newDocument = false;
 
 function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -100,6 +103,7 @@ function canMutateDocument(): boolean {
 
 function outputName(): string {
   const stem = activeName.replace(/\.(pptx?|potx?|ppsx?)$/i, '');
+  if (newDocument) return `${stem}.pptx`;
   return session?.editor.doc.meta.source === 'ppt' ? `${stem}.pptx` : `${stem}-edited.pptx`;
 }
 
@@ -109,12 +113,14 @@ function syncControls(): void {
   const capable = ready && canWriteDocument();
   const writable = capable && !needsPptConversion();
   const index = currentIndex();
+  buttons.newFile.disabled = !!app.dataset.loading;
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
   buttons.addTable.disabled = !writable || mode !== 'edit';
+  buttons.addSlide.disabled = !writable || mode !== 'edit' || !editor!.doc.layoutOrder.length;
   buttons.play.disabled = !ready;
   buttons.edit.disabled = !capable;
   buttons.view.disabled = !ready;
@@ -229,7 +235,11 @@ function disposeCurrent(): void {
   slideList.replaceChildren();
 }
 
-async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name: string): Promise<void> {
+async function openDocument(
+  source: File | Blob | ArrayBuffer | Uint8Array,
+  name: string,
+  options: { newDocument?: boolean } = {},
+): Promise<void> {
   const generation = ++openGeneration;
   setLoading(`正在打开 ${name}`);
   notice(`正在解析 ${name}…`);
@@ -242,6 +252,7 @@ async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name
     disposeCurrent();
     session = next;
     activeName = name;
+    newDocument = !!options.newDocument;
     pptConversionAccepted = false;
     mode = canWriteDocument() && next.editor.doc.meta.source !== 'ppt' ? 'edit' : 'view';
     view = next.mount(canvasMount, { mode, zoom: 1, snapping: true, onError: reportError });
@@ -297,6 +308,29 @@ function tryOpenLocalFile(file: File | undefined): void {
   if (file && confirmReplacement()) void openDocument(file, file.name);
 }
 
+async function createNewDocument(): Promise<void> {
+  if (!confirmReplacement()) return;
+  const generation = ++openGeneration;
+  setLoading('正在新建演示文稿');
+  notice('正在准备空白演示文稿…');
+  try {
+    // 默认主题与版式只属于新建/生成路径；打开已有文件不会下载这段代码。
+    const { createBlankPptx } = await import('@web-ppt/edit-core/generate');
+    if (generation !== openGeneration) return;
+    await openDocument(createBlankPptx(), '未命名演示文稿.pptx', { newDocument: true });
+  } catch (error) {
+    if (generation !== openGeneration) return;
+    const failure = new Error(`新建失败：${explain(error)}`);
+    if (session) {
+      hideLoading();
+      reportError(failure);
+      view?.element.focus();
+    } else {
+      showOpenFailure(failure);
+    }
+  }
+}
+
 async function saveCopy(): Promise<void> {
   if (!session || !canMutateDocument()) return;
   buttons.save.disabled = true;
@@ -325,6 +359,7 @@ async function run(action: () => void | Promise<void>): Promise<void> {
   try { await action(); } catch (error) { reportError(error); }
 }
 
+buttons.newFile.addEventListener('click', () => void createNewDocument());
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
 buttons.undo.addEventListener('click', () => {
@@ -345,6 +380,19 @@ buttons.next.addEventListener('click', () => {
   const id = index >= 0 ? session?.editor.doc.slideOrder[index + 1] : undefined;
   if (id) showSlide(id);
 });
+buttons.addSlide.addEventListener('click', () => void run(() => {
+  if (!session || !view) return;
+  const current = session.editor.doc.slides[view.slideId];
+  const layoutId = current.layoutId && session.editor.doc.layouts[current.layoutId]
+    ? current.layoutId : session.editor.doc.layoutOrder[0];
+  if (!layoutId) throw new Error('当前文稿没有可用版式');
+  const result = session.editor.exec({
+    type: 'AddSlide', layoutId, at: { after: view.slideId },
+  });
+  const added = [...result.createdSlides][0];
+  if (added) showSlide(added);
+  notice('已新增幻灯片', 'success');
+}));
 buttons.addShape.addEventListener('click', () => void run(() => {
   if (!session || !view) return;
   const { width, height } = session.editor.doc.meta;
