@@ -11,7 +11,8 @@ A PowerPoint rendering engine that runs entirely in the browser: `.pptx` / `.ppt
 No server, no Office install, no upload. Base packages are framework-free; React and Vue live only in optional
 adapter packages. Files never leave the tab, and the core runtime's only dependency is [fflate](https://github.com/101arrowz/fflate).
 
-**[▶ Live demo](https://unstone.github.io/web-ppt/)** — drop in one of your own decks; parsing and rendering happen on your machine.
+**[▶ Live demo](https://unstone.github.io/web-ppt/)** · **[✎ Online editor](https://unstone.github.io/web-ppt/editor.html)**
+— drop in one of your own decks; parsing, rendering, and editing happen on your machine.
 
 ![Web-PPT rendering showcase.pptx: 144 preset shapes, slide transitions, and entrance animations played one click batch at a time](https://raw.githubusercontent.com/unStone/web-ppt/master/docs/demo.gif)
 
@@ -377,7 +378,7 @@ web-ppt/                     npm workspaces monorepo
 │   ├── viewer-core/         @web-ppt/viewer-core — headless state machine + playback
 │   ├── fonts/               @web-ppt/fonts — font substitution and on-demand loading
 │   ├── viewer/              @web-ppt/viewer — batteries-included viewer, plain TS
-│   └── site/                @web-ppt/site — the website, with the in-browser live demo
+│   └── site/                @web-ppt/site — the website, with the viewer demo and standalone editor
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
 └── test/snapshots/          176 render snapshot baselines

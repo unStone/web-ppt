@@ -86,6 +86,7 @@ tracker: local-markdown
 - [实现文档级查找替换闭环](tickets/060-document-find-replace.md) — 严格 `findText` / `ReplaceText` 与会话级增量索引贯通可见文字、精确范围高亮、跨页导航、原子历史、保存恢复及 React/Vue adapter；Chrome 200 页和 60 元素预算、LibreOffice 实件及两路最终审查全部通过。
 - [编辑并即时预览页面切换效果](tickets/061-edit-slide-transitions.md) — 统一 `Slide.transition` 与无框架 adapter 贯通 40 种效果、严格命令、view/edit 预览、保留型 OOXML 及 React/Vue；Chrome 复杂页与 200 页预算、LibreOffice 实件通过。
 - [编辑并预览元素动画时间线](tickets/062-edit-element-animations.md) — 稳定元素身份与统一播放层贯通安全动画目录、view/edit 草稿预览、保留型 OOXML 和 React/Vue；128 步回读边界、Chrome 预算、LibreOffice、双审及 npm beta 发布通过。
+- [官网独立接入可保存编辑器页面](tickets/063-integrate-site-editor-page.md) — 独立 `editor.html` 以已发布无框架 seam 接通本地打开、编辑、预览与保存；响应式、复杂页滚动、`.ppt` 安全降级及 GitHub Pages 子路径均经真实浏览器验证。
 
 ## Not yet specified
 

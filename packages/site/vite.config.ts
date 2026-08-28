@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 /** 多页站点：每加一个页面就在这儿登记，构建入口和 id 校验都从这里取 */
-const PAGES = ['index.html', 'samples.html'];
+const PAGES = ['index.html', 'samples.html', 'editor.html'];
 
 // GitHub Pages 部署在 /web-ppt/ 子路径下；本地 dev 用根路径
 const base = process.env.SITE_BASE ?? '/';

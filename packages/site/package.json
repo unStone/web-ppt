@@ -2,7 +2,7 @@
   "name": "@web-ppt/site",
   "version": "0.1.0",
   "private": true,
-  "description": "Web-PPT 官网：定位 / 能力矩阵 / 浏览器内实时 Demo",
+  "description": "Web-PPT 官网：能力说明、浏览器内查看 Demo 与独立编辑器",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@web-ppt/core": "*",
+    "@web-ppt/edit-core": "*",
+    "@web-ppt/editor": "*",
     "@web-ppt/viewer-core": "*",
     "mtx-decompressor": "^1.6.0",
     "@web-ppt/fonts": "*"

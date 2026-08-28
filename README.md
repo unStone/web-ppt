@@ -9,7 +9,8 @@
 纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。
 零服务端依赖；基础包零框架依赖，React / Vue 只存在于可选适配包，核心唯一运行时依赖是 fflate。
 
-**[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** —— 拖一个自己的文件进去，解析与渲染全在本机，文件不出浏览器。
+**[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** · **[✎ 在线编辑器](https://unstone.github.io/web-ppt/editor.html)**
+—— 拖一个自己的文件进去，解析、渲染与编辑全在本机，文件不出浏览器。
 
 ![Web-PPT 渲染 showcase.pptx：144 个预设形状、切换效果、按点击分批播放的入场动画](docs/demo.gif)
 
@@ -415,7 +416,7 @@ web-ppt/                     npm workspaces monorepo
 │   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
 │   ├── fonts/               @web-ppt/fonts —— 字体替换与按需加载
 │   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
-│   └── site/                @web-ppt/site —— 官网，含浏览器内实时 Demo
+│   └── site/                @web-ppt/site —— 官网，含浏览器内查看 Demo 与独立编辑器
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
 └── test/snapshots/          176 个渲染快照基线

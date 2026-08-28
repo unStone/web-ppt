@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>在线 PPT 编辑器 · Web-PPT</title>
+<meta name="description" content="完全运行在浏览器里的 PPT 编辑器：打开、编辑、预览并保存 .pptx，文件不会上传。" />
+<link rel="canonical" href="https://unstone.github.io/web-ppt/editor.html" />
+<meta name="theme-color" content="#f7f7f5" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23d95622'/><path d='M10 8h7.5a5.5 5.5 0 010 11H14v5h-4V8zm4 3.4v4.2h3.2a2.1 2.1 0 000-4.2H14z' fill='%23fff'/></svg>" />
+<link rel="stylesheet" href="./src/editor-page.css" />
+</head>
+<body>
+<div class="editor-app" id="editorApp">
+  <header class="app-header">
+    <a class="app-brand" href="./" aria-label="返回 Web-PPT 官网">
+      <span class="app-mark">P</span>
+      <span>Web-PPT</span>
+    </a>
+    <span class="beta-badge">编辑器 beta</span>
+    <span class="file-name" id="fileName">内置示例</span>
+    <span class="privacy-note"><i></i>文件仅在本机处理</span>
+    <label class="button primary file-button" for="fileInput">打开本地文件</label>
+    <input id="fileInput" type="file" accept=".pptx,.ppt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" />
+  </header>
+
+  <div class="toolbar" id="editorToolbar" aria-label="编辑工具栏">
+    <div class="tool-group mode-switch" aria-label="工作模式">
+      <button id="editMode" type="button" aria-pressed="true">编辑</button>
+      <button id="viewMode" type="button" aria-pressed="false">预览</button>
+    </div>
+    <span class="tool-divider"></span>
+    <div class="tool-group">
+      <button id="undo" type="button" title="撤销（Ctrl/Cmd+Z）" disabled>↶ <span>撤销</span></button>
+      <button id="redo" type="button" title="重做（Ctrl/Cmd+Shift+Z）" disabled>↷ <span>重做</span></button>
+    </div>
+    <span class="tool-divider"></span>
+    <div class="tool-group edit-tools">
+      <button id="addShape" type="button" disabled><b class="shape-icon"></b><span>形状</span></button>
+      <button id="addImage" type="button" disabled>▧ <span>图片</span></button>
+      <button id="addTable" type="button" disabled>▦ <span>表格</span></button>
+    </div>
+    <span class="tool-divider"></span>
+    <div class="tool-group">
+      <button id="playAnimations" type="button" disabled>▶ <span>播放动画</span></button>
+    </div>
+    <div class="toolbar-spacer"></div>
+    <div class="tool-group zoom-tools" aria-label="缩放">
+      <button id="zoomOut" type="button" title="缩小" disabled>−</button>
+      <button id="fitZoom" type="button" disabled><span id="zoomLabel">适应</span></button>
+      <button id="zoomIn" type="button" title="放大" disabled>＋</button>
+    </div>
+    <button class="button save-button" id="saveFile" type="button" disabled>保存副本</button>
+  </div>
+
+  <main class="workspace">
+    <aside class="slide-panel" aria-label="幻灯片列表">
+      <div class="panel-heading"><span>幻灯片</span><span id="slideCount">0</span></div>
+      <div class="slide-list" id="slideList"></div>
+    </aside>
+
+    <section class="canvas-column">
+      <div class="canvas-viewport" id="canvasViewport">
+        <div class="canvas-mount" id="canvasMount" aria-label="幻灯片编辑画布"></div>
+        <div class="canvas-state" id="canvasState" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <strong>正在打开内置示例</strong>
+          <small>解析和渲染完全在浏览器中进行</small>
+        </div>
+      </div>
+      <div class="page-controls">
+        <button id="prevSlide" type="button" aria-label="上一页" disabled>‹</button>
+        <span id="pageIndicator">— / —</span>
+        <button id="nextSlide" type="button" aria-label="下一页" disabled>›</button>
+      </div>
+    </section>
+
+    <aside class="object-panel" aria-label="对象列表">
+      <div class="panel-heading"><span>对象</span><small>双击可重命名</small></div>
+      <div class="object-list" id="objectList"></div>
+      <div class="object-help">
+        <kbd>双击</kbd> 编辑文字<br />
+        <kbd>拖动</kbd> 移动元素<br />
+        <kbd>Delete</kbd> 删除选中元素
+      </div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span id="statusText" role="status" aria-live="polite">准备打开示例…</span>
+    <span class="status-spacer"></span>
+    <span id="documentKind">PPTX · 可编辑</span>
+  </footer>
+
+  <div class="drop-layer" id="dropLayer" hidden>
+    <div><strong>松开以打开演示文稿</strong><span>.pptx 可编辑，.ppt 当前提供只读预览</span></div>
+  </div>
+</div>
+<script type="module" src="./src/editor-page.ts"></script>
+</body>
+</html>
