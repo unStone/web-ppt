@@ -4,6 +4,7 @@ import { extractLstStyle } from './text';
 import type { LevelStyles, ThemeFonts } from './text';
 import type { ImageMetadata } from '../image-metadata';
 import { findPlaceholderByIdentity } from '../placeholder-match';
+import type { TextBody } from '../types';
 
 export type Rels = Record<string, { type: string; target: string }>;
 
@@ -47,6 +48,8 @@ export interface Env {
   edit: boolean;
   /** 仅版式目录解析开启；为九级占位符建立一次共享输入模板，不放大每页模型。 */
   layoutCatalog?: boolean;
+  /** 同一页大量文本框通常共享九级样式；按值驻留可避免编辑快照重复深拷贝。 */
+  textLevelTemplateCache?: Map<string, TextBody>;
 }
 
 export interface SlideInheritance {
@@ -163,6 +166,7 @@ export function slideInheritance(
   const layoutPh = collectPh(layoutTree);
   const masterPh = collectPh(masterTree);
   const hiddenPh = new Set<string>();
+  const textLevelTemplateCache = edit ? new Map<string, TextBody>() : undefined;
   const headerFooter = kid(layoutRoot, 'hf') ?? kid(masterRoot, 'hf');
   if (headerFooter) {
     for (const type of ['sldNum', 'ftr', 'dt', 'hdr']) {
@@ -172,7 +176,7 @@ export function slideInheritance(
   const envFor = (partPath: string | null, phAware: boolean): Env => ({
     pkg, ctx, theme, rels: partPath ? pkg.rels(partPath) : {}, partPath: partPath ?? '',
     docDefaults, masterStyles, layoutPh: phAware ? layoutPh : [], masterPh: phAware ? masterPh : [],
-    slideNum, tableStyles, hiddenPh, slideIdMap, edit,
+    slideNum, tableStyles, hiddenPh, slideIdMap, edit, textLevelTemplateCache,
   });
   return { layoutPath, layoutRoot, masterPath, masterRoot, masterTree, layoutTree, envFor };
 }

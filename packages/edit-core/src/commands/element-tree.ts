@@ -8,6 +8,7 @@ import { clearElementTextPatches } from './element-text';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { querySlideAnimations } from '../slide-animation';
 import { setAnimationsPatches } from './set-animations';
+import { cloneElementRecord } from './record-clone';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -16,10 +17,6 @@ export function willRemoveElementStructure(record: ElementRecord | undefined): b
 
 export function isElementTreePatch(patch: Patch): patch is ElementTreePatch {
   return patch.path.length === 2 && patch.path[0] === 'elements';
-}
-
-function cloneRecord(record: ElementRecord): ElementRecord {
-  return structuredClone(record);
 }
 
 function removedRecord(snapshot: ElementTreeSnapshot, root: ElementRecord) {
@@ -48,7 +45,7 @@ function snapshotTree(doc: EditDoc, root: ElementId): ElementTreeSnapshot {
   const visit = (id: ElementId): void => {
     const current = doc.elements[id];
     if (!current) throw new Error(`删除树引用不存在的元素：${id}`);
-    records[id] = cloneRecord(current);
+    records[id] = cloneElementRecord(current);
     for (const child of current.children ?? []) visit(child);
   };
   visit(root);
@@ -169,8 +166,9 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     }
     return;
   }
+  // Patch 批次已在统一 seam 隔离；这里直接接管记录才能保留跨根的共享目录。
   for (const [id, record] of Object.entries(snapshot.records)) {
-    doc.elements[id] = cloneRecord(record);
+    doc.elements[id] = record;
     const anchor = record.meta.origin;
     const next = anchor && doc.identity.nextSpid[anchor.part];
     // 远端结构 patch 不经过本地分配器；已初始化的 part 计数仍必须越过它的 spid。

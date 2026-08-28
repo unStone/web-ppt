@@ -3,6 +3,7 @@ import {
 } from '../edit-metadata';
 import type { ParagraphLayoutDirectFlags, TextRunDirectFlags } from '../edit-metadata';
 import type { Paragraph, TextRun } from '../types';
+import { formatDrawingAutoNumber } from '../text-auto-number';
 import { directParagraphProps, effectiveParagraphProps } from './paragraph-props';
 import type { Bullet, ParaProps, TextEnv } from './text';
 
@@ -12,40 +13,6 @@ const SYMBOL_BULLETS: Record<string, string> = {
   '§': '▪', n: '▪', l: '●', u: '◆', p: '❑', v: '❖',
   w: '♦', 'Ø': '➢', 'ü': '✓', F: '☞', q: '❑',
 };
-
-function alpha(num: number): string {
-  let value = '';
-  while (num > 0) {
-    value = String.fromCharCode(65 + ((num - 1) % 26)) + value;
-    num = Math.floor((num - 1) / 26);
-  }
-  return value;
-}
-
-function roman(num: number): string {
-  const table: [number, string][] = [
-    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
-    [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-  ];
-  let value = '';
-  for (const [amount, symbol] of table) while (num >= amount) { value += symbol; num -= amount; }
-  return value;
-}
-
-function formatAutoNum(scheme: string, num: number): string {
-  let body: string;
-  if (scheme.startsWith('alphaLc')) body = alpha(num).toLowerCase();
-  else if (scheme.startsWith('alphaUc')) body = alpha(num);
-  else if (scheme.startsWith('romanLc')) body = roman(num).toLowerCase();
-  else if (scheme.startsWith('romanUc')) body = roman(num);
-  else if (scheme.startsWith('circleNum')) {
-    body = num >= 1 && num <= 20 ? String.fromCharCode(0x2460 + num - 1) : String(num);
-  } else body = String(num);
-  if (scheme.endsWith('ParenBoth')) return `(${body})`;
-  if (scheme.endsWith('ParenR')) return `${body})`;
-  if (scheme.endsWith('Period')) return `${body}.`;
-  return body;
-}
 
 function bulletText(bullet: Bullet | undefined, counters: number[], lvl: number): string | null {
   if (!bullet || bullet.kind === 'none' || bullet.kind === 'image') return null;
@@ -57,7 +24,7 @@ function bulletText(bullet: Bullet | undefined, counters: number[], lvl: number)
   }
   counters.length = lvl + 1;
   counters[lvl] = (counters[lvl] ?? bullet.startAt - 1) + 1;
-  return formatAutoNum(bullet.scheme, counters[lvl]);
+  return formatDrawingAutoNumber(bullet.scheme, counters[lvl]);
 }
 
 function directParagraphLayoutBits(props: ParaProps): ParagraphLayoutDirectFlags {
@@ -111,10 +78,16 @@ export function materializeParagraph(input: ParagraphMaterialization): Paragraph
     bulletImage,
     rtl: resolved.rtl,
     ...(env.edit ? { editInfo: {
-      inheritedParagraphProps: effectiveParagraphProps(inherited, maxSize, lnSpcReduction),
+      inheritedParagraphProps: {
+        level: 0,
+        ...effectiveParagraphProps(inherited, maxSize, lnSpcReduction),
+      },
       directParagraphProps: directParagraphProps(direct),
       directRun,
       directLayout: directParagraphLayoutBits(direct),
+      ...(resolved.bullet?.kind === 'auto'
+        ? { autoNumbering: { scheme: resolved.bullet.scheme, startAt: resolved.bullet.startAt } }
+        : {}),
     } } : {}),
   };
 }

@@ -20,6 +20,7 @@ export function fieldTextWithoutDirect(source: TextBody): TextBody {
     const inheritedParagraph = paragraph.editInfo?.inheritedParagraphProps;
     if (inheritedParagraph) {
       Object.assign(paragraph, {
+        lvl: inheritedParagraph.level,
         align: inheritedParagraph.align, lineHeight: inheritedParagraph.lineHeight,
         spaceBefore: inheritedParagraph.spaceBefore, spaceAfter: inheritedParagraph.spaceAfter,
         marL: inheritedParagraph.marginLeft, indent: inheritedParagraph.indent,

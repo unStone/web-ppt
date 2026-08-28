@@ -9,6 +9,7 @@ import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '..
 import type { CommandPatches, ElementHierarchyPatch, UngroupCommand, XfrmField } from './types';
 import { elementHasLockedAncestor } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
+import { cloneElementRecord } from './record-clone';
 
 const FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'];
 const EPSILON = 1e-8;
@@ -108,7 +109,7 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     const order = fractionalIndexBetween(previous, afterOrder, childId);
     previous = order;
     moved[childId] = {
-      ...structuredClone(before), parent, z: order, order,
+      ...cloneElementRecord(before), parent, z: order, order,
       ovr: sparseTransform(before, placement), meta: movedMeta(before, parent),
     };
   }
@@ -128,8 +129,8 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     value: {
       parent, affected: [group.id, ...children],
       records: {
-        [group.id]: structuredClone(group),
-        ...Object.fromEntries(children.map((id) => [id, structuredClone(doc.elements[id])])),
+        [group.id]: cloneElementRecord(group),
+        ...Object.fromEntries(children.map((id) => [id, cloneElementRecord(doc.elements[id])])),
       },
       children: { [parent]: [...siblings], [group.id]: children },
       removed: { [group.id]: null },

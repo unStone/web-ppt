@@ -3,8 +3,6 @@ import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fie
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { ElementHierarchyPatch, ElementHierarchyState, Patch } from './types';
 
-const cloneRecord = <T>(value: T): T => structuredClone(value);
-
 export function isElementHierarchyPatch(patch: Patch): patch is ElementHierarchyPatch {
   return patch.path.length === 3 && patch.path[0] === 'elements' && patch.path[2] === 'hierarchy';
 }
@@ -55,10 +53,11 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
   const slide = doc.slides[elementHierarchySlide(doc, patch.value)];
   const before = new Map(Object.keys(patch.value.records).flatMap((id) =>
     doc.elements[id] ? [[id, doc.elements[id]] as const] : []));
+  // 统一 Patch seam 已整批隔离；这里直接接管，避免再次复制驻留目录。
   for (const [id, record] of Object.entries(patch.value.records)) {
     if (record === null) delete doc.elements[id];
     else {
-      doc.elements[id] = cloneRecord(record as ElementRecord);
+      doc.elements[id] = record as ElementRecord;
       const anchor = record.meta.origin;
       const next = anchor && doc.identity.nextSpid[anchor.part];
       // 远端层级 Patch 也可能携带新组；分配水位必须越过它，避免下一次本地组合撞 spid。
@@ -77,7 +76,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
   }
   for (const [id, record] of Object.entries(patch.value.removed)) {
     if (record === null) delete doc.removedElements[id];
-    else doc.removedElements[id] = cloneRecord(record as RemovedElementRecord);
+    else doc.removedElements[id] = structuredClone(record as RemovedElementRecord);
   }
   const refreshIndex = (
     key: 'dynamicSlideNumbers' | 'dynamicSlideLinks',

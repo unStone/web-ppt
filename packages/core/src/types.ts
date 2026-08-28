@@ -545,6 +545,7 @@ export interface Paragraph {
   /** 只在 edit 解析保留；删除直接 pPr 时恢复继承链，而不是把有效值摊平。 */
   editInfo?: {
     inheritedParagraphProps: {
+      level: number;
       align: Paragraph['align'];
       lineHeight: number | null;
       spaceBefore: number;
@@ -554,13 +555,15 @@ export interface Paragraph {
     };
     /** 来源 pPr 直接声明过的字段；清除不存在的直设格式必须保持严格 no-op。 */
     directParagraphProps: Partial<Record<
-      'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent',
+      'level' | 'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent',
       true
     >>;
     /** pPr/defRPr 声明的字符字段位，对本段所有 run 生效。 */
     directRun: TextRunDirectFlags;
     /** 项目符号、方向等非工具栏段落字段的直设位。 */
     directLayout: ParagraphLayoutDirectFlags;
+    /** 自动编号语义只在编辑模式保留，投影改级后据此重算同级续号。 */
+    autoNumbering?: { readonly scheme: string; readonly startAt: number };
   };
 }
 

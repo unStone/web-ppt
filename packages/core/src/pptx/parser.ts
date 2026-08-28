@@ -499,8 +499,11 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
       textTemplate = parseTextBody(txBody, textEnv, true) ?? undefined;
     }
     const levelSeed = text ?? textTemplate;
-    if (env.layoutCatalog && levelSeed) {
-      textLevelTemplate = completeTextTemplateLevels(levelSeed, textEnv);
+    if (env.edit && levelSeed) {
+      const completed = completeTextTemplateLevels(levelSeed, textEnv, env.layoutCatalog === true);
+      const key = JSON.stringify(completed);
+      textLevelTemplate = env.textLevelTemplateCache?.get(key) ?? completed;
+      env.textLevelTemplateCache?.set(key, textLevelTemplate);
     }
   }
 

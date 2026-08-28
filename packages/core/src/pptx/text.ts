@@ -43,6 +43,7 @@ export interface RunProps {
 }
 
 export interface ParaProps {
+  lvl?: number;
   algn?: string;
   marL?: number;
   indent?: number;
@@ -111,6 +112,8 @@ export function parseParaPropsDetailed(
 ): { props: ParaProps; directRun: TextRunDirectFlags } {
   const out: ParaProps = { rp: {} };
   if (!pPr) return { props: out, directRun: textRunDirectFlags(0) };
+  const lvl = numAttr(pPr, 'lvl');
+  if (lvl !== null) out.lvl = lvl;
   const algn = attr(pPr, 'algn');
   if (algn) out.algn = algn;
   const marL = numAttr(pPr, 'marL');

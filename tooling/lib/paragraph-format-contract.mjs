@@ -65,7 +65,7 @@ export async function runParagraphFormatContract({ edit, core, load, check }) {
   const invalidProps = [
     {}, { align: 'start' }, { lineHeight: 0.49 }, { spaceBefore: -1 },
     { spaceAfter: Infinity }, { marginLeft: -1 }, { indent: NaN },
-    { align: 'left', level: 1 },
+    { level: -1 }, { level: 9 }, { level: 1.5 }, { align: 'left', unknown: 1 },
   ];
   const rejected = invalidProps.every((props) => {
     try {
@@ -103,7 +103,7 @@ export async function runParagraphFormatContract({ edit, core, load, check }) {
     })), formattedState }));
   const remoteDoc = structuredClone(doc);
   const remoteValue = structuredClone(paragraphs.ovr.text);
-  remoteValue.paragraphs[0].paragraphOverrides.level = 1;
+  remoteValue.paragraphs[0].paragraphOverrides.unknown = 1;
   const remoteBaseline = JSON.stringify(remoteDoc);
   let remoteRejected = false;
   try {

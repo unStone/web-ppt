@@ -1,7 +1,7 @@
 import { DEFAULT_TEXT_LINE_HEIGHT } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import type { ElementRecord, TextOverride } from '../types';
-import type { FlatTextParagraph, TextMark } from '../types';
+import type { FlatTextParagraph, RunProperties, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
 import { tableCellKeyResolver } from '../table-cell';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
@@ -17,10 +17,9 @@ import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
 import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
 import { patchTextBodyProperties } from './text-body';
-import { patchHyperlinkNode } from './hyperlink';
 import type { HyperlinkSaveContext } from './hyperlink';
 import { materializeParagraphLayout, materializeRunProperties } from './text-source-less';
-import { appendDrawingColor } from './drawing-color';
+import { applyRunOverrides, clearedLevelRunFallback } from './run-overrides';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
@@ -92,78 +91,18 @@ function sourceUnit(
     ?? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS });
 }
 
-function removeRunPropertyChildren(properties: XmlElement, names: readonly string[]): void {
-  for (const child of xmlElementChildren(properties)) {
-    // clone 尚未挂回宿主时可能还没有继承命名空间；rPr 内这些 localName 本身已唯一。
-    if (names.includes(child.localName)) {
-      removeXmlChild(properties, child);
-    }
-  }
-}
-
-function setFont(properties: XmlElement, font: string | null): void {
-  const names = ['latin', 'ea', 'cs'] as const;
-  if (font === null) {
-    removeRunPropertyChildren(properties, names);
-    return;
-  }
-  for (const name of names) {
-    let child = xmlElementChildren(properties).find((candidate) => candidate.localName === name);
-    if (!child) {
-      child = namespacedElement(properties, DRAWINGML_NS, name);
-      insertXmlInOrder(properties, child);
-    }
-    setXmlAttribute(child, 'typeface', font);
-  }
-}
-
-function setColor(properties: XmlElement, color: string | null): void {
-  removeRunPropertyChildren(properties, ['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill']);
-  if (color === null) return;
-  const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');
-  appendDrawingColor(fill, color);
-  insertXmlInOrder(properties, fill);
-}
-
-function applyRunOverrides(
-  properties: XmlElement,
-  mark: TextMark,
-  links?: HyperlinkSaveContext,
-): void {
-  const overrides = mark.runOverrides;
-  if (!overrides) return;
-  if (Object.prototype.hasOwnProperty.call(overrides, 'font')) setFont(properties, overrides.font ?? null);
-  if (Object.prototype.hasOwnProperty.call(overrides, 'color')) setColor(properties, overrides.color ?? null);
-  const attributes = {
-    size: ['sz', (value: number) => String(Math.round(value * 75))],
-    b: ['b', (value: boolean) => value ? '1' : '0'],
-    i: ['i', (value: boolean) => value ? '1' : '0'],
-    u: ['u', (value: boolean) => value ? 'sng' : 'none'],
-    strike: ['strike', (value: boolean) => value ? 'sngStrike' : 'noStrike'],
-  } as const;
-  for (const field of Object.keys(attributes) as (keyof typeof attributes)[]) {
-    if (!Object.prototype.hasOwnProperty.call(overrides, field)) continue;
-    const [name, serialize] = attributes[field];
-    const value = overrides[field];
-    if (value === null) removeXmlAttribute(properties, name);
-    else setXmlAttribute(properties, name, (serialize as (input: never) => string)(value as never));
-  }
-  if (links && own(overrides, 'link') && overrides.link !== null) {
-    patchHyperlinkNode(properties, overrides.link!, links);
-  }
-}
-
 function patchSourceRunProperties(
   source: XmlElement,
   mark: TextMark,
   links?: HyperlinkSaveContext,
+  clearedFallback?: Partial<RunProperties>,
 ): void {
   let properties = xmlElementChildren(source).find((child) => child.localName === 'rPr');
   if (!properties) {
     properties = namespacedElement(source, DRAWINGML_NS, 'rPr');
     insertXmlChildUnchecked(source, properties, xmlElementChildren(source)[0] ?? null);
   }
-  applyRunOverrides(properties, mark, links);
+  applyRunOverrides(properties, mark, links, clearedFallback);
   if (!hasPropertyContent(properties)) removeXmlChild(source, properties);
 }
 
@@ -207,6 +146,12 @@ function applyParagraphOverrides(
 ): void {
   const overrides = paragraph.paragraphOverrides;
   if (!overrides) return;
+  if (own(overrides, 'level')) {
+    const value = overrides.level;
+    if (value === undefined) throw new Error('段落级别覆盖无效');
+    if (value === null) removeXmlAttribute(properties, 'lvl');
+    else setXmlAttribute(properties, 'lvl', String(value));
+  }
   if (own(overrides, 'align')) {
     const value = overrides.align;
     if (value === undefined) throw new Error('段落对齐覆盖无效');
@@ -265,6 +210,7 @@ function appendCopiedRunProperties(
   source: XmlElement | null,
   mark: TextMark,
   links?: HyperlinkSaveContext,
+  clearedFallback?: Partial<RunProperties>,
 ): void {
   const sourceProperties = source?.localName === 'endParaRPr' ? source
     : source && ['r', 'fld', 'br'].includes(source.localName)
@@ -279,7 +225,7 @@ function appendCopiedRunProperties(
   } else {
     materializeRunProperties(properties, mark);
   }
-  applyRunOverrides(properties, mark, links);
+  applyRunOverrides(properties, mark, links, clearedFallback);
   if (hasPropertyContent(properties)) insertXmlChildUnchecked(run, properties);
 }
 
@@ -289,9 +235,10 @@ function appendTextRun(
   mark: TextMark,
   text: string,
   links?: HyperlinkSaveContext,
+  clearedFallback?: Partial<RunProperties>,
 ): void {
   const run = namespacedElement(paragraph, DRAWINGML_NS, 'r');
-  appendCopiedRunProperties(run, source, mark, links);
+  appendCopiedRunProperties(run, source, mark, links, clearedFallback);
   const value = namespacedElement(run, DRAWINGML_NS, 't');
   if (/^\s|\s$/.test(text)) setXmlAttribute(value, 'xml:space', 'preserve');
   insertXmlChildUnchecked(value, createXmlText(text));
@@ -305,6 +252,7 @@ function appendMark(
   text: string,
   source: XmlElement | null,
   links?: HyperlinkSaveContext,
+  clearedFallback?: Partial<RunProperties>,
 ): void {
   if (mark.preserveSource && mark.atomText !== undefined && source
     && ['oMath', 'oMathPara', 'AlternateContent'].includes(source.localName)) {
@@ -323,7 +271,7 @@ function appendMark(
         insertXmlChildUnchecked(field, properties, xmlElementChildren(field)[0] ?? null);
       }
       if (properties) {
-        applyRunOverrides(properties, mark, links);
+        applyRunOverrides(properties, mark, links, clearedFallback);
         if (!hasPropertyContent(properties)) removeXmlChild(field, properties);
       }
       insertXmlChildUnchecked(paragraph, field);
@@ -332,10 +280,10 @@ function appendMark(
   }
   const lines = text.split('\n');
   lines.forEach((line, index) => {
-    if (line) appendTextRun(paragraph, source, mark, line, links);
+    if (line) appendTextRun(paragraph, source, mark, line, links, clearedFallback);
     if (index < lines.length - 1) {
       const br = namespacedElement(paragraph, DRAWINGML_NS, 'br');
-      appendCopiedRunProperties(br, source, mark, links);
+      appendCopiedRunProperties(br, source, mark, links, clearedFallback);
       insertXmlChildUnchecked(paragraph, br);
     }
   });
@@ -344,6 +292,7 @@ function appendMark(
 function appendFlatParagraph(
   body: XmlElement,
   sourceParagraphs: readonly XmlElement[],
+  source: TextBody,
   flat: FlatTextParagraph,
   lnSpcReduction: number,
   preservedNodes: PreservedNodesByRunGap,
@@ -372,6 +321,7 @@ function appendFlatParagraph(
     appendMark(
       paragraph, mark, flat.text.slice(mark.from, mark.to),
       sourceUnit(sourceParagraphs, flat, mark), links,
+      clearedLevelRunFallback(source, flat, mark),
     );
   }
   appendPreservedNodes();
@@ -379,14 +329,21 @@ function appendFlatParagraph(
     ? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS })
     : null;
   const nextEnd = end ? cloneXmlNode(end) : namespacedElement(paragraph, DRAWINGML_NS, 'endParaRPr');
-  if (!flat.text.length && flat.marks[0]) applyRunOverrides(nextEnd, flat.marks[0], links);
+  if (!flat.text.length && flat.marks[0]) {
+    applyRunOverrides(
+      nextEnd, flat.marks[0], links,
+      clearedLevelRunFallback(source, flat, flat.marks[0]),
+    );
+  }
   insertXmlChildUnchecked(paragraph, nextEnd);
 }
 
 function nonParagraphFormatProps(props: FlatTextParagraph['props']): object {
   const {
-    align: _align, marL: _marL, indent: _indent, lineHeight: _lineHeight,
-    spaceBefore: _spaceBefore, spaceAfter: _spaceAfter, ...rest
+    lvl: _lvl, align: _align, marL: _marL, indent: _indent, lineHeight: _lineHeight,
+    spaceBefore: _spaceBefore, spaceAfter: _spaceAfter,
+    bullet: _bullet, bulletColor: _bulletColor, bulletFont: _bulletFont,
+    bulletSize: _bulletSize, bulletImage: _bulletImage, rtl: _rtl, ...rest
   } = props;
   return rest;
 }
@@ -427,26 +384,32 @@ function patchFormatOnly(
         end = namespacedElement(sourceParagraph, DRAWINGML_NS, 'endParaRPr');
         insertXmlInOrder(sourceParagraph, end);
       }
-      applyRunOverrides(end, mark, links);
+      applyRunOverrides(end, mark, links, clearedLevelRunFallback(source, paragraph, mark));
       return;
     }
     for (const runIndex of changed) {
-      const source = units[runIndex];
-      if (!source) throw new Error(`字符格式来源 run 不存在：${paragraphIndex}.${runIndex}`);
+      const sourceUnitNode = units[runIndex];
+      if (!sourceUnitNode) throw new Error(`字符格式来源 run 不存在：${paragraphIndex}.${runIndex}`);
       const fragments = paragraph.marks.filter((mark) => mark.source?.run === runIndex);
-      if (fragments.length === 1 && ['r', 'fld', 'br'].includes(source.localName)) {
-        patchSourceRunProperties(source, fragments[0], links);
+      if (fragments.length === 1 && ['r', 'fld', 'br'].includes(sourceUnitNode.localName)) {
+        patchSourceRunProperties(
+          sourceUnitNode, fragments[0], links,
+          clearedLevelRunFallback(source, paragraph, fragments[0]),
+        );
         continue;
       }
       const staging = createXmlElement('a:p', {
         selfClosing: false, attributes: [['xmlns:a', DRAWINGML_NS]],
       });
       for (const mark of fragments) {
-        appendMark(staging, mark, paragraph.text.slice(mark.from, mark.to), source, links);
+        appendMark(
+          staging, mark, paragraph.text.slice(mark.from, mark.to), sourceUnitNode, links,
+          clearedLevelRunFallback(source, paragraph, mark),
+        );
       }
       const replacements = [...xmlElementChildren(staging)];
       for (const replacement of replacements) removeXmlChild(staging, replacement);
-      replaceXmlChildren(sourceParagraph, source, replacements);
+      replaceXmlChildren(sourceParagraph, sourceUnitNode, replacements);
     }
   });
   return true;
@@ -471,7 +434,7 @@ function patchTextBody(
     const preservedNodes = assignPreservedNodes(sourceParagraphs, override.paragraphs);
     for (const [index, paragraph] of override.paragraphs.entries()) {
       appendFlatParagraph(
-        body, sourceParagraphs, paragraph, override.body.lnSpcReduction ?? 0,
+        body, sourceParagraphs, source, paragraph, override.body.lnSpcReduction ?? 0,
         preservedNodes[index], links,
       );
     }

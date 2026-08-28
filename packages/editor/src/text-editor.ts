@@ -17,6 +17,7 @@ import { planTextInput } from './text-input-plan';
 import { TextAutofitThrottle } from './text-autofit';
 import type { TextAutofitTarget } from './text-autofit';
 import { resolveTextEditorContext } from './text-editor-context';
+import { changeTextListLevel } from './text-list-level';
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
@@ -308,6 +309,16 @@ export class TextEditorController {
         event.preventDefault();
         event.stopPropagation();
         this.navigateTableCell(event.shiftKey);
+        return;
+      }
+      if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        const context = this.composing ? null : this.textContext();
+        if (changeTextListLevel(this.options.editor, context, event.shiftKey ? -1 : 1) && context) {
+          this.root?.focus({ preventScroll: true });
+          this.setSelection(context.positions.from, context.positions.to);
+        }
         return;
       }
       if (event.altKey || (!event.ctrlKey && !event.metaKey)) return;

@@ -26,7 +26,7 @@ import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target
 const TEXT_FIELDS = new Set<FormatMaskField>(['run', 'paragraph', 'body']);
 const RUN_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const PARAGRAPH_FIELDS = [
-  'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
+  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
 ] as const;
 
 function validate(command: ApplyFormatCommand): void {
@@ -146,6 +146,7 @@ function textFormatPatches(
   ) as Extract<TextOverride, { kind: 'flat' }>;
   if (copiesParagraph) value = applyParagraphProps(
     targetBody, toRange, uniformParagraphProps(doc, command, fromRange), value,
+    target.levelTemplate, target.body,
   ) as Extract<TextOverride, { kind: 'flat' }>;
   if (copiesBody) {
     const props = queryBodyProps(doc, command.from, command.fromCell) as TextBodyPropertyOverrides;

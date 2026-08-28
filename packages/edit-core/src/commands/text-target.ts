@@ -5,7 +5,7 @@ import type {
 import {
   assertTableCellAddress, tableCellOverrideKey, tableCellRowRef,
 } from '../table-cell';
-import { rebasedTextBase } from '../layout-projection';
+import { rebasedTextBase, rebasedTextLevelTemplate } from '../layout-projection';
 import { slideOfElement } from '../projection';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
 import type { ElementTextPatch } from './types';
@@ -18,6 +18,7 @@ export interface TextTarget {
 export interface TextTargetContext {
   readonly record: ElementRecord;
   readonly body: TextBody;
+  readonly levelTemplate?: TextBody;
   readonly before: TextOverride | undefined;
   readonly patchTarget: TextPatchTarget;
   readonly empty: boolean;
@@ -42,6 +43,7 @@ export function textTargetContextForRecord(
     return {
       record,
       body: record.src.text ?? record.meta.textTemplate!,
+      levelTemplate: record.src.editInfo?.textLevelTemplate ?? record.meta.textTemplate,
       before: record.ovr.text,
       patchTarget: { id: target.id },
       empty: record.ovr.text?.kind === 'empty'
@@ -79,7 +81,9 @@ export function textTargetContext(
       throw new Error(`找不到可编辑文字的形状：${target.id}`);
     }
     return {
-      record, body, before: record.ovr.text, patchTarget: { id: target.id },
+      record, body, levelTemplate: rebasedTextLevelTemplate(
+        doc, slideOfElement(doc, target.id), target.id,
+      ), before: record.ovr.text, patchTarget: { id: target.id },
       empty: record.ovr.text?.kind === 'empty'
         || (!record.ovr.text && record.src.text === null),
     };

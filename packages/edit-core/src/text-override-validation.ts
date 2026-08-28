@@ -25,6 +25,10 @@ function validateInherited(value: ParagraphProperties): void {
     if (fieldValue !== null && (typeof fieldValue !== 'number' || !Number.isFinite(fieldValue))) {
       throw new Error(`继承段落格式 ${field} 无效`);
     }
+    if (field === 'level' && fieldValue !== null
+      && (!Number.isInteger(fieldValue) || fieldValue < 0 || fieldValue > 8)) {
+      throw new Error('继承段落格式 level 无效');
+    }
   }
 }
 

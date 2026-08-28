@@ -376,3 +376,23 @@ export function rebasedTextBase(doc: EditDoc, slideId: SlideId, id: ElementId): 
     ? structuredClone(template)
     : rebaseLayoutText(record.meta.textTemplate ?? template, template);
 }
+
+/** 列表改级必须读取九级样式目录，不能从当前段落反推相邻级别的继承值。 */
+export function rebasedTextLevelTemplate(
+  doc: EditDoc,
+  slideId: SlideId,
+  id: ElementId,
+): TextBody | undefined {
+  const record = doc.elements[id];
+  if (!record) throw new Error(`找不到元素：${id}`);
+  const target = targetPlaceholder(doc, slideId, record);
+  const resolved = resolvedLayoutSource(doc, slideId, record);
+  // 重解析结果已把页面自身 lstStyle 叠到新母版/版式链，优先级高于裸目标占位符。
+  const candidates = [resolved, target, record.src];
+  for (const candidate of candidates) {
+    if (candidate?.kind === 'shape' && candidate.editInfo?.textLevelTemplate) {
+      return candidate.editInfo.textLevelTemplate;
+    }
+  }
+  return record.meta.textTemplate;
+}

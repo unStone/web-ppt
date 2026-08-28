@@ -30,7 +30,7 @@ export function effectiveParagraphProps(
   props: ParaProps,
   maxSize: number,
   lnSpcReduction: number,
-): NonNullable<Paragraph['editInfo']>['inheritedParagraphProps'] {
+): Omit<NonNullable<Paragraph['editInfo']>['inheritedParagraphProps'], 'level'> {
   // spcPct 以字体单倍行高（≈1.2em）为基准，spcPts 才是绝对点值。
   let lineHeight: number | null = props.lnPct !== undefined ? props.lnPct * DEFAULT_TEXT_LINE_HEIGHT : null;
   if (lineHeight === null && props.lnPx) lineHeight = props.lnPx / maxSize;
@@ -49,6 +49,7 @@ export function directParagraphProps(
   props: ParaProps,
 ): NonNullable<Paragraph['editInfo']>['directParagraphProps'] {
   return {
+    ...(props.lvl !== undefined ? { level: true as const } : {}),
     ...(props.algn !== undefined ? { align: true as const } : {}),
     ...(props.lnPct !== undefined || props.lnPx !== undefined ? { lineHeight: true as const } : {}),
     ...(props.spcBef !== undefined ? { spaceBefore: true as const } : {}),

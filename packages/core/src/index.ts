@@ -25,6 +25,7 @@ export { transitionDefaultDirection, transitionPreferredDirection } from './tran
 export * from './edit-metadata';
 export * from './placeholder-match';
 export * from './text-body-edit';
+export { formatDrawingAutoNumber } from './text-auto-number';
 export { fitTextShapeHeight, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
 export { releasePptxLayoutReparseSession, reparsePptxSlideWithLayout };
 export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';

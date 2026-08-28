@@ -17,6 +17,7 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'element-clipboard.pptx', slides: 2 }),
   Object.freeze({ file: 'basic-text-editing.pptx', slides: 1 }),
   Object.freeze({ file: 'engine-text-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'list-level-editing.pptx', slides: 1 }),
   Object.freeze({ file: 'table-cell-text-editing.pptx', slides: 3 }),
   Object.freeze({ file: 'shape-autofit-text-editing.pptx', slides: 2 }),
   Object.freeze({ file: 'body-props-editing.pptx', slides: 1 }),

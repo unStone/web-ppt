@@ -2,7 +2,7 @@ import { assertDataObject, own } from './data-validation';
 import type { ParagraphPropertyOverrides } from './types';
 
 export const PARAGRAPH_PROPERTY_FIELDS = [
-  'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
+  'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent', 'level',
 ] as const;
 export const PARAGRAPH_ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
 
@@ -24,7 +24,12 @@ export function assertParagraphPropertyOverrides(
     if (typeof fieldValue !== 'number' || !Number.isFinite(fieldValue)) {
       throw new Error(`${label}.${field} 必须是有限数或 null`);
     }
+    if (field === 'level' && (!Number.isInteger(fieldValue) || fieldValue < 0 || fieldValue > 8)) {
+      throw new Error(`${label}.level 必须是 0–8 的整数或 null`);
+    }
     if (field === 'lineHeight' && fieldValue < 0.5) throw new Error(`${label}.lineHeight 不能小于 0.5`);
-    if (field !== 'indent' && fieldValue < 0) throw new Error(`${label}.${field} 不能为负数`);
+    if (field !== 'indent' && field !== 'level' && fieldValue < 0) {
+      throw new Error(`${label}.${field} 不能为负数`);
+    }
   }
 }

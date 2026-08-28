@@ -473,12 +473,14 @@ function applyPatchBatch(
     for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
   }
+  // 结构 Patch 整批隔离一次：既不与调用方共享对象，也保留跨 Patch 的驻留目录身份。
+  const appliedPatches = structural ? structuredClone(patches) : patches;
   if (stageStructuralModel && structural) {
-    const stage = needsAnimationStage ? animationDoc : structuralPatchStage(doc, patches);
-    if (!needsAnimationStage) applyPatchValues(stage, patches);
+    const stage = needsAnimationStage ? animationDoc : structuralPatchStage(doc, appliedPatches);
+    if (!needsAnimationStage) applyPatchValues(stage, appliedPatches);
     validateEditDoc(stage);
   }
-  applyPatchValues(doc, patches);
+  applyPatchValues(doc, appliedPatches);
   return { dirtyElements, dirtySlides };
 }
 

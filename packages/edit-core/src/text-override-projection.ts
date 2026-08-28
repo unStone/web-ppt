@@ -11,8 +11,8 @@ function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
   return props;
 }
 
-function textRun(mark: TextMark, text: string, sourceRun?: TextRun): TextRun {
-  const props = { ...(sourceRun ? runProps(sourceRun) : mark.props) };
+function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps = false): TextRun {
+  const props = { ...(sourceRun && !useMarkProps ? runProps(sourceRun) : mark.props) };
   if (sourceRun) {
     // math / field 是内容身份而非视觉格式；新输入只借来源样式，不能复活旧语义。
     for (const field of ['math', 'field'] as const) {
@@ -23,15 +23,19 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun): TextRun {
   }
   const overrides = mark.runOverrides;
   if (overrides?.font !== undefined) {
+    const inheritedFonts = useMarkProps
+      ? mark.inheritedFonts ?? sourceRun?.editInfo?.inheritedRunProps.fonts
+      : sourceRun?.editInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts;
     props.fonts = overrides.font === null
-      ? [...(sourceRun?.editInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts ?? mark.props.fonts)]
+      ? [...(inheritedFonts ?? mark.props.fonts)]
       : overrides.font ? [overrides.font] : [];
   }
   for (const field of ['size', 'color', 'b', 'i', 'u', 'strike'] as const) {
     const value = overrides?.[field];
     if (value !== undefined) {
-      const inherited = sourceRun?.editInfo?.inheritedRunProps[field]
-        ?? mark.inheritedProps?.[field] ?? mark.props[field];
+      const inherited = useMarkProps
+        ? mark.inheritedProps?.[field] ?? sourceRun?.editInfo?.inheritedRunProps[field]
+        : sourceRun?.editInfo?.inheritedRunProps[field] ?? mark.inheritedProps?.[field];
       (props as unknown as Record<string, unknown>)[field] = value === null ? inherited : value;
     }
   }
@@ -95,16 +99,23 @@ function bodyFromOverride(
 function paragraphFromOverride(
   paragraph: FlatTextParagraph,
   source: Paragraph | undefined,
+  useFlatLayout = false,
 ): Omit<Paragraph, 'runs' | 'editInfo'> {
-  const props = source ? paragraphProps(source) : { ...paragraph.props };
   const overrides = paragraph.paragraphOverrides;
+  // level 会连带九级样式中的符号、缩进与字符默认值；投影必须采用已重基的扁平结果。
+  const levelChanged = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'level');
+  const props = source && !levelChanged && !useFlatLayout
+    ? paragraphProps(source) : { ...paragraph.props };
   const fields = [
+    ['level', 'lvl'],
     ['align', 'align'], ['lineHeight', 'lineHeight'], ['spaceBefore', 'spaceBefore'],
     ['spaceAfter', 'spaceAfter'], ['marginLeft', 'marL'], ['indent', 'indent'],
   ] as const;
   for (const [overrideField, paragraphField] of fields) {
     if (overrides?.[overrideField] === undefined) continue;
-    const inherited = source?.editInfo?.inheritedParagraphProps;
+    const inherited = levelChanged
+      ? paragraph.inheritedParagraphProps ?? source?.editInfo?.inheritedParagraphProps
+      : source?.editInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
     const value = overrides[overrideField] === null
       ? inherited?.[overrideField] ?? paragraph.props[paragraphField]
       : paragraph.props[paragraphField];
@@ -119,18 +130,25 @@ export function textBodyFromOverride(
   source?: TextBody | null,
   resolveLink?: (link: Exclude<LinkOverride, { kind: 'none' }>) => string | undefined,
 ): TextBody {
+  const hasLevelChanges = override.paragraphs.some((paragraph) =>
+    Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'level'));
   return {
     ...bodyFromOverride(override, source),
     // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
     paragraphs: override.paragraphs.map((paragraph, paragraphIndex): Paragraph => {
       const sourceParagraph = source?.paragraphs[paragraph.sourceParagraph ?? paragraphIndex];
+      const levelChanged = Object.prototype.hasOwnProperty.call(
+        paragraph.paragraphOverrides ?? {}, 'level',
+      );
       return {
-        ...paragraphFromOverride(paragraph, sourceParagraph),
+        ...paragraphFromOverride(paragraph, sourceParagraph, hasLevelChanges),
         runs: paragraph.marks.map((mark, markIndex) => {
           const sourceRun = source?.paragraphs[
             mark.source?.paragraph ?? paragraph.sourceParagraph ?? paragraphIndex
           ]?.runs[mark.source?.run ?? markIndex];
-          const run = textRun(mark, paragraph.text.slice(mark.from, mark.to), sourceRun);
+          const run = textRun(
+            mark, paragraph.text.slice(mark.from, mark.to), sourceRun, levelChanged,
+          );
           const overrideLink = mark.runOverrides?.link;
           if (overrideLink === undefined || overrideLink === null) return run;
           if (overrideLink.kind === 'none') {

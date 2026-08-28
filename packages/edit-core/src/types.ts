@@ -331,6 +331,7 @@ export interface RunPropertiesState {
 export type RunLinkState = ElementLinkState;
 
 export interface ParagraphPropertyOverrides {
+  readonly level?: number | null;
   readonly align?: Paragraph['align'] | null;
   readonly lineHeight?: number | null;
   readonly spaceBefore?: number | null;
@@ -340,6 +341,7 @@ export interface ParagraphPropertyOverrides {
 }
 
 export interface ParagraphProperties {
+  readonly level: number;
   readonly align: Paragraph['align'];
   readonly lineHeight: number | null;
   readonly spaceBefore: number;
@@ -349,6 +351,7 @@ export interface ParagraphProperties {
 }
 
 export interface ParagraphPropertiesState {
+  readonly level: RunPropertyState<number>;
   readonly align: RunPropertyState<Paragraph['align']>;
   readonly lineHeight: RunPropertyState<number>;
   readonly spaceBefore: RunPropertyState<number>;

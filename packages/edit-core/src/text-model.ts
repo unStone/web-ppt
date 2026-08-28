@@ -1,10 +1,11 @@
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
-  FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
+  FlatTextParagraph, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
   RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
 import { TEXT_ATOM, textRunEditLength } from './text-position';
+import { applyParagraphPropertyOverrides } from './paragraph-level';
 
 export { textBodyFromOverride } from './text-override-projection';
 
@@ -417,59 +418,12 @@ export function applyParagraphProps(
   range: TextRange,
   props: ParagraphPropertyOverrides,
   initial?: Extract<TextOverride, { kind: 'flat' }>,
+  levelTemplate?: TextBody,
+  sourceBody: TextBody = body,
 ): TextOverride {
   const override = initial ?? flattenTextBody(body);
   queryTextRunProps(body, range, override);
-  const own = (field: keyof ParagraphPropertyOverrides): boolean =>
-    Object.prototype.hasOwnProperty.call(props, field);
-  const current = (paragraph: FlatTextParagraph): ParagraphProperties => ({
-    align: paragraph.props.align, lineHeight: paragraph.props.lineHeight,
-    spaceBefore: paragraph.props.spaceBefore, spaceAfter: paragraph.props.spaceAfter,
-    marginLeft: paragraph.props.marL, indent: paragraph.props.indent,
-  });
-  const formatted = (paragraph: FlatTextParagraph): ParagraphProperties => {
-    const before = current(paragraph);
-    const inherited = paragraph.inheritedParagraphProps ?? before;
-    return {
-      align: own('align') ? props.align ?? inherited.align : before.align,
-      lineHeight: own('lineHeight') ? props.lineHeight ?? inherited.lineHeight : before.lineHeight,
-      spaceBefore: own('spaceBefore') ? props.spaceBefore ?? inherited.spaceBefore : before.spaceBefore,
-      spaceAfter: own('spaceAfter') ? props.spaceAfter ?? inherited.spaceAfter : before.spaceAfter,
-      marginLeft: own('marginLeft') ? props.marginLeft ?? inherited.marginLeft : before.marginLeft,
-      indent: own('indent') ? props.indent ?? inherited.indent : before.indent,
-    };
-  };
-  const overrides = (paragraph: FlatTextParagraph): ParagraphPropertyOverrides => {
-    const next: Record<string, ParagraphPropertyOverrides[keyof ParagraphPropertyOverrides]> = {
-      ...paragraph.paragraphOverrides,
-    };
-    const before = current(paragraph);
-    for (const field of Object.keys(props) as (keyof ParagraphPropertyOverrides)[]) {
-      if (Object.is(props[field], before[field])) continue;
-      if (props[field] === null && !paragraph.directParagraphProps?.[field]) delete next[field];
-      else next[field] = props[field];
-    }
-    return next;
-  };
-  return {
-    ...override,
-    paragraphs: override.paragraphs.map((paragraph, index) => {
-      if (index < range.from.p || index > range.to.p) return paragraph;
-      const next = formatted(paragraph);
-      const nextOverrides = overrides(paragraph);
-      const { paragraphOverrides: _previous, ...base } = paragraph;
-      return {
-        ...base,
-        props: {
-          ...paragraph.props,
-          align: next.align, lineHeight: next.lineHeight,
-          spaceBefore: next.spaceBefore, spaceAfter: next.spaceAfter,
-          marL: next.marginLeft, indent: next.indent,
-        },
-        ...(Object.keys(nextOverrides).length ? { paragraphOverrides: nextOverrides } : {}),
-      };
-    }),
-  };
+  return applyParagraphPropertyOverrides(sourceBody, override, range, props, levelTemplate);
 }
 
 export function queryTextParagraphProps(
@@ -481,6 +435,7 @@ export function queryTextParagraphProps(
   queryTextRunProps(body, range, override);
   const paragraphs = override.paragraphs.slice(range.from.p, range.to.p + 1);
   return {
+    level: state(paragraphs.map((paragraph) => paragraph.props.lvl)),
     align: state(paragraphs.map((paragraph) => paragraph.props.align)),
     lineHeight: state(paragraphs.map((paragraph) => paragraph.props.lineHeight)),
     spaceBefore: state(paragraphs.map((paragraph) => paragraph.props.spaceBefore)),

@@ -11,6 +11,7 @@ import { assertFrameRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { elementHasLockedAncestor } from './element-interaction';
 import type { CommandPatches, ElementHierarchyPatch, GroupCommand } from './types';
+import { cloneElementRecord } from './record-clone';
 
 interface GroupFrame { x: number; y: number; w: number; h: number }
 
@@ -107,7 +108,7 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
   };
   const moved = Object.fromEntries(ordered.map((childId, index) => {
     const before = doc.elements[childId];
-    const { order: _order, ...withoutOrder } = structuredClone(before);
+    const { order: _order, ...withoutOrder } = cloneElementRecord(before);
     const z = initialFractionalIndex(index);
     return [childId, {
       ...withoutOrder, parent: id, z, order: z,
@@ -137,7 +138,9 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
       parent, affected: [id, ...ordered],
       records: {
         [id]: null,
-        ...Object.fromEntries(ordered.map((childId) => [childId, structuredClone(doc.elements[childId])])),
+        ...Object.fromEntries(ordered.map((childId) => [
+          childId, cloneElementRecord(doc.elements[childId]),
+        ])),
       },
       children: { [parent]: [...siblings] },
       removed: { [id]: null },

@@ -15,13 +15,20 @@ function emptyParagraph(paragraph: Paragraph): Paragraph {
 }
 
 /**
- * 版式常只放一级提示文字，但 lstStyle 仍定义完整九级默认值。
- * 目录只构造一次九级模板，页面切换时即可按 lvl 重基，无需保留 OOXML。
+ * 正文常只出现少数级别，但 lstStyle 仍定义完整九级默认值。
+ * 编辑解析预先构造九级模板，改级即可按 lvl 重基，无需让 edit-core 认识 OOXML。
  */
-export function completeTextTemplateLevels(source: TextBody, env: TextEnv): TextBody {
+export function completeTextTemplateLevels(
+  source: TextBody,
+  env: TextEnv,
+  preserveExisting = false,
+): TextBody {
   const existing = new Map<number, Paragraph>();
-  for (const paragraph of source.paragraphs) {
-    if (!existing.has(paragraph.lvl)) existing.set(paragraph.lvl, emptyParagraph(paragraph));
+  if (preserveExisting) {
+    // 版式目录还承担换版式投影，目标占位符的提示段直设不能被纯 lvl 样式抹掉。
+    for (const paragraph of source.paragraphs) {
+      if (!existing.has(paragraph.lvl)) existing.set(paragraph.lvl, emptyParagraph(paragraph));
+    }
   }
   const counters: number[] = [];
   const paragraphs = Array.from({ length: 9 }, (_, lvl): Paragraph => {

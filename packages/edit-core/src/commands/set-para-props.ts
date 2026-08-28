@@ -17,12 +17,13 @@ export function setParaPropsPatches(
 ): CommandPatches {
   validate(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
-  const { body: source, before, patchTarget } = textTargetContext(doc, target);
+  const { body: source, before, patchTarget, levelTemplate } = textTargetContext(doc, target);
   const body = before?.kind === 'flat'
     ? textBodyFromOverride(before)
     : source;
   const value: TextOverride = applyParagraphProps(
     body, command.range, command.props, before?.kind === 'flat' ? before : undefined,
+    levelTemplate, source,
   );
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) return { forward: [], inverse: [] };

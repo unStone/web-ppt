@@ -63,7 +63,7 @@ replace('ppt/slideLayouts/_rels/slideLayout2.xml.rels', (xml) => xml.replace(
 const directBody = `<p:sp><p:nvSpPr><p:cNvPr id="805" name="现有正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="2"/></p:nvPr></p:nvSpPr>
 <p:spPr>${xfrm(160, 238, 900, 260)}<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr>
 <p:style><a:lnRef idx="0"><a:schemeClr val="accent2"/></a:lnRef><a:fillRef idx="0"><a:schemeClr val="accent2"/></a:fillRef><a:effectRef idx="1"><a:schemeClr val="accent2"/></a:effectRef><a:fontRef idx="minor"><a:schemeClr val="tx1"/></a:fontRef></p:style>
-<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/>${run('用于验证换版式保持直设位置与格式', 2400, 'bg1', ' baseline="0" spc="0"', '<a:ln><a:noFill/></a:ln><a:uFillTx/><a:latin typeface="Source Latin"/>')}<a:p><a:pPr lvl="1"><a:buClrTx/><a:buFontTx/><a:buSzPts val="2000"/></a:pPr><a:r><a:t>二级正文沿用目标级别样式</a:t></a:r></a:p></p:txBody></p:sp>`;
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle><a:lvl3pPr marL="${px(180)}" indent="${px(-20)}"><a:buChar char="☞"/><a:defRPr sz="2100"/></a:lvl3pPr></a:lstStyle>${run('用于验证换版式保持直设位置与格式', 2400, 'bg1', ' baseline="0" spc="0"', '<a:ln><a:noFill/></a:ln><a:uFillTx/><a:latin typeface="Source Latin"/>')}<a:p><a:pPr lvl="1"><a:buClrTx/><a:buFontTx/><a:buSzPts val="2000"/></a:pPr><a:r><a:t>二级正文沿用目标级别样式</a:t></a:r></a:p></p:txBody></p:sp>`;
 const picture = `<p:pic><p:nvPicPr><p:cNvPr id="808" name="现有图片占位符"/><p:cNvPicPr/><p:nvPr><p:ph type="pic" idx="4"/></p:nvPr></p:nvPicPr>
 <p:blipFill><a:blip r:embed="rId3"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr/></p:pic>`;
 const sourceOnly = `<p:sp><p:nvSpPr><p:cNvPr id="809" name="来源独有内容"/><p:cNvSpPr/><p:nvPr><p:ph type="cust" idx="6"/></p:nvPr></p:nvSpPr>

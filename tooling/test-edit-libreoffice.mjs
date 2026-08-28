@@ -16,6 +16,7 @@ import {
   runSlideImageBackgroundLibreOfficeContract, runSlideImageTileOracleLibreOfficeContract,
 } from './lib/slide-image-background-libreoffice-contract.mjs';
 import { runGroupUngroupLibreOfficeContract } from './lib/group-ungroup-libreoffice-contract.mjs';
+import { runListLevelLibreOfficeContract } from './lib/list-level-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -357,6 +358,10 @@ if (basename(savedPath) === 'body-props-editing.pptx') {
     throw new Error(`LibreOffice autofit 模式证据无效：shape=${growError.toFixed(3)} noneOverflow=${(noneMaxY - noneShape.bounds.bottom).toFixed(3)}`);
   }
   geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
+}
+
+if (basename(savedPath) === 'list-level-editing.pptx') {
+  geometryEvidence += runListLevelLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
 }
 
 if (basename(savedPath) === 'shape-format.pptx') {
