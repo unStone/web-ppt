@@ -9,6 +9,8 @@ import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import type { AddShapeCommand, CommandPatches, ElementTreePatch } from './types';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
+import { incrementalInsertionPart } from './insertion-host';
+import { GENERATED_SHAPE_DEFAULTS } from './generated-creation-defaults';
 
 function shapeMarkup(
   spid: number,
@@ -41,7 +43,7 @@ function insertionSource(
 }
 
 function sourceShape(
-  spid: number,
+  spid: number | undefined,
   name: string,
   preset: string,
   rect: AddShapeCommand['rect'],
@@ -49,7 +51,7 @@ function sourceShape(
 ): ShapeElement {
   const geom = resolveGeomPath({ preset, adj: {} }, rect.w, rect.h);
   return {
-    kind: 'shape', id: spid, name,
+    kind: 'shape', ...(spid === undefined ? {} : { id: spid }), name,
     x: rect.x, y: rect.y, w: rect.w, h: rect.h, rot: 0, flipH: false, flipV: false,
     path: geom.d, ...(geom.open ? { openGeom: true } : {}),
     fill: geom.open ? { type: 'none' } : structuredClone(defaults.fill),
@@ -62,17 +64,15 @@ function sourceShape(
 function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增形状');
   const slide = doc.slides[command.slideId];
-  if (!slide?.origin || !doc.package
-    || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
-    throw new Error(`新增形状目标页不可写回：${command.slideId}`);
-  }
-  const defaults = currentShapeDefaults(doc, slide.id);
+  if (!slide) throw new Error(`找不到新增形状目标页：${command.slideId}`);
+  const part = incrementalInsertionPart(doc, slide);
+  const defaults = currentShapeDefaults(doc, slide.id) ?? (part ? undefined : GENERATED_SHAPE_DEFAULTS);
   if (!defaults) throw new Error(`新增形状目标页缺少主题默认值：${command.slideId}`);
   if (typeof command.preset !== 'string' || !isKnownPreset(command.preset)) {
     throw new Error(`未知预设形状：${String(command.preset)}`);
   }
   assertInsertionRect(command.rect, 'AddShape.rect');
-  return { slide, defaults };
+  return { slide, defaults, part };
 }
 
 /** 新形状和 OOXML 宿主由同一组默认值构造，再走既有结构 patch 与保存主干。 */
@@ -81,10 +81,10 @@ export function addShapePatches(
   command: AddShapeCommand,
   origin: string,
 ): CommandPatches {
-  const { slide, defaults } = assertCommand(doc, command);
+  const { slide, defaults, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
-  const spid = allocateElementSpid(doc, slide.origin!.part);
-  const name = `形状 ${spid}`;
+  const spid = part ? allocateElementSpid(doc, part) : undefined;
+  const name = spid === undefined ? '形状' : `形状 ${spid}`;
   const siblings = slide.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
@@ -94,8 +94,10 @@ export function addShapePatches(
       editable: 'full', created: true, themeDefaultShape: true,
       textTemplate: structuredClone(defaults.textTemplate),
       geom: { preset: command.preset, adj: {} },
-      origin: { part: slide.origin!.part, spid },
-      insertion: insertionSource(spid, name, command.preset, command.rect, defaults),
+      ...(part && spid !== undefined ? {
+        origin: { part, spid },
+        insertion: insertionSource(spid, name, command.preset, command.rect, defaults),
+      } : {}),
     },
   };
   const value = { root: id, parent: slide.id, records: { [id]: record } };

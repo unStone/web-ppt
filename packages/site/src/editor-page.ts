@@ -54,6 +54,7 @@ let zoom = 1;
 let fitWanted = true;
 let activeName = 'showcase.pptx';
 let openGeneration = 0;
+let pptConversionAccepted = false;
 
 function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -84,15 +85,29 @@ function currentIndex(): number {
   return session.editor.doc.slideOrder.indexOf(view.slideId);
 }
 
-function canEditDocument(): boolean {
+function canWriteDocument(): boolean {
   const doc = session?.editor.doc;
-  return !!doc && !doc.meta.readonly && doc.meta.source === 'pptx';
+  return !!doc && !doc.meta.readonly;
+}
+
+function needsPptConversion(): boolean {
+  return session?.editor.doc.meta.source === 'ppt' && !pptConversionAccepted;
+}
+
+function canMutateDocument(): boolean {
+  return canWriteDocument() && !needsPptConversion();
+}
+
+function outputName(): string {
+  const stem = activeName.replace(/\.(pptx?|potx?|ppsx?)$/i, '');
+  return session?.editor.doc.meta.source === 'ppt' ? `${stem}.pptx` : `${stem}-edited.pptx`;
 }
 
 function syncControls(): void {
   const editor = session?.editor;
   const ready = !!editor && !app.dataset.loading;
-  const writable = ready && canEditDocument();
+  const capable = ready && canWriteDocument();
+  const writable = capable && !needsPptConversion();
   const index = currentIndex();
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
@@ -101,7 +116,7 @@ function syncControls(): void {
   buttons.addImage.disabled = !writable || mode !== 'edit';
   buttons.addTable.disabled = !writable || mode !== 'edit';
   buttons.play.disabled = !ready;
-  buttons.edit.disabled = !writable;
+  buttons.edit.disabled = !capable;
   buttons.view.disabled = !ready;
   buttons.zoomOut.disabled = !ready;
   buttons.fit.disabled = !ready;
@@ -113,9 +128,11 @@ function syncControls(): void {
   const total = editor?.doc.slideOrder.length ?? 0;
   pageIndicator.textContent = index < 0 ? '— / —' : `${index + 1} / ${total}`;
   slideCount.textContent = String(total);
-  documentKind.textContent = !editor ? 'PPTX · 可编辑' : canEditDocument()
-    ? 'PPTX · 可编辑'
-    : `${editor.doc.meta.source.toUpperCase()} · 只读预览`;
+  documentKind.textContent = !editor ? 'PPTX · 可编辑'
+    : editor.doc.meta.readonly ? `${editor.doc.meta.source.toUpperCase()} · 只读预览`
+      : editor.doc.meta.source === 'ppt'
+        ? pptConversionAccepted ? 'PPT → PPTX · 可编辑' : 'PPT · 转换后可编辑'
+        : 'PPTX · 可编辑';
   const dirty = editor?.isDirty() ?? false;
   fileName.textContent = `${dirty ? '● ' : ''}${activeName}`;
   document.title = `${dirty ? '● ' : ''}${activeName} · Web-PPT 编辑器`;
@@ -160,7 +177,20 @@ function showSlide(id: string): void {
 }
 
 function setMode(next: EditorMode): void {
-  if (!session || !view || next === 'edit' && !canEditDocument()) return;
+  if (!session || !view || next === 'edit' && !canWriteDocument()) return;
+  if (next === 'edit' && needsPptConversion()) {
+    const targetName = outputName();
+    const accepted = window.confirm(
+      `${activeName} 是旧版 .ppt。进入编辑后将另存为 ${targetName}，不会覆盖原文件。`
+      + '未建模的旧格式内容将显示为带原因的框架占位，仅支持移动、缩放等框架级编辑。继续吗？',
+    );
+    if (!accepted) {
+      syncControls();
+      notice('已取消格式转换，继续以预览模式打开');
+      return;
+    }
+    pptConversionAccepted = true;
+  }
   mode = next;
   view.setMode(next);
   pane?.setMode(next);
@@ -212,7 +242,8 @@ async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name
     disposeCurrent();
     session = next;
     activeName = name;
-    mode = canEditDocument() ? 'edit' : 'view';
+    pptConversionAccepted = false;
+    mode = canWriteDocument() && next.editor.doc.meta.source !== 'ppt' ? 'edit' : 'view';
     view = next.mount(canvasMount, { mode, zoom: 1, snapping: true, onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     unregisterToolbar = view.registerTextUi(toolbar);
@@ -225,11 +256,11 @@ async function openDocument(source: File | Blob | ArrayBuffer | Uint8Array, name
     requestAnimationFrame(fitView);
     hideLoading();
     const message = next.editor.doc.meta.source === 'ppt'
-      ? `${name} 已打开；当前版本尚未实现生成式 PPTX 保存，因此只提供安全预览`
+      ? `${name} 已打开；进入编辑时会先确认另存为 ${outputName()}`
       : next.editor.doc.meta.readonly
         ? `${name} 已打开；当前文件缺少安全写回上下文，只能预览`
         : `${name} 已就绪，可直接选择、拖动或双击编辑文字`;
-    notice(message, canEditDocument() ? 'success' : 'normal');
+    notice(message, canWriteDocument() ? 'success' : 'normal');
     view.element.focus();
   } catch (error) {
     if (generation !== openGeneration) return;
@@ -267,7 +298,7 @@ function tryOpenLocalFile(file: File | undefined): void {
 }
 
 async function saveCopy(): Promise<void> {
-  if (!session || !canEditDocument()) return;
+  if (!session || !canMutateDocument()) return;
   buttons.save.disabled = true;
   notice('正在生成 PPTX 副本…');
   try {
@@ -278,7 +309,7 @@ async function saveCopy(): Promise<void> {
     }));
     const link = Object.assign(document.createElement('a'), {
       href: url,
-      download: activeName.replace(/\.(pptx?|potx?|ppsx?)$/i, '') + '-edited.pptx',
+      download: outputName(),
     });
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -371,7 +402,7 @@ window.addEventListener('drop', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && canEditDocument()) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && canMutateDocument()) {
     event.preventDefault();
     void saveCopy();
   }

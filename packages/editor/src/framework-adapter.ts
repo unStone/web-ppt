@@ -162,7 +162,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.releaseCurrent();
       this.updateSnapshot({
         status: 'idle', progress: 0, error: null, session: null, view: null,
-        selectionPane: null, slideId: null,
+        selectionPane: null, slideId: null, documentKind: null,
         recovery: null, formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
         textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
       });
@@ -294,6 +294,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSnapshot = {
       ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
       session: null, view: null, selectionPane: null, slideId: null, recovery: null,
+      documentKind: null,
       formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
       textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
     };
@@ -421,6 +422,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.updateSnapshot({
       status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
       selectionPane: this.paneBinding.pane,
+      documentKind: session.editor.doc.meta.source,
       recovery: null, formatPainter: this.formatPainterState(false),
       textSearch: this.textSearchState(false),
     });
@@ -480,6 +482,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       || viewState.snapping !== this.currentSnapshot.snapping;
     this.updateSnapshot({
       ...viewState, session: this.session, view: this.view, selectionPane: this.paneBinding.pane,
+      documentKind: this.session?.editor.doc.meta.source ?? null,
       formatPainter: this.formatPainterState(),
       textSearch: this.textSearchState(),
     });

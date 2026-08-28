@@ -39,7 +39,7 @@ export type {
 } from './indexeddb-recovery-store';
 export type {
   WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptTextSearchState,
+  WebPptAdapterSubscriber, WebPptDocument, WebPptDocumentKind, WebPptFormatPainterState, WebPptTextSearchState,
   WebPptViewOptions, WebPptViewState,
 } from './framework-adapter-types';
 export type { WebPptSource } from './source-fingerprint';

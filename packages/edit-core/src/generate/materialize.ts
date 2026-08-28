@@ -261,6 +261,39 @@ function groupInsertion(record: ElementRecord, spid: number): ElementInsertionSo
   };
 }
 
+/** 未建模旧格式不能悄悄变成普通矩形；生成包保留预览和带原因的明示框架占位。 */
+function unsupportedInsertion(
+  doc: EditDoc,
+  record: ElementRecord,
+  spid: number,
+  part: string,
+): ElementInsertionSource {
+  const source = record.src;
+  if (source.kind !== 'unsupported') throw new Error(`元素 ${record.id} 不是框架占位`);
+  const name = esc(source.name ?? `未支持对象 ${spid}`);
+  const label = esc(source.label).replace(/>/g, '&gt;');
+  const preview = source.preview
+    ? imageClosure(doc, { src: source.preview, name: source.name, id: source.id }, `rIdUnsupportedPreview${spid}`, part)
+    : null;
+  if (preview && !preview.resource) throw new Error(`框架占位 ${record.id} 的外链预览不能生成独立包`);
+  const fill = preview
+    ? `<a:blipFill><a:blip r:embed="${preview.relationship.targetId}"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`
+    : '<a:solidFill><a:srgbClr val="F2F2F2"/></a:solidFill>';
+  return {
+    markup: `<p:sp><p:nvSpPr><p:cNvPr id="${spid}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:spPr><a:xfrm/><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+${fill}<a:ln w="12700"><a:solidFill><a:srgbClr val="AAAAAA"/></a:solidFill><a:prstDash val="dash"/></a:ln></p:spPr>
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="zh-CN" sz="1200"><a:solidFill><a:srgbClr val="777777"/></a:solidFill></a:rPr><a:t>${label}</a:t></a:r><a:endParaRPr lang="zh-CN"/></a:p></p:txBody></p:sp>`,
+    namespaces: {
+      'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS,
+      ...(preview ? { 'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships' } : {}),
+    },
+    spids: { [String(spid)]: spid },
+    ...(preview ? { relationships: [preview.relationship] } : {}),
+    ...(preview?.resource ? { resources: [preview.resource] } : {}),
+  };
+}
+
 function elementInsertion(
   doc: EditDoc,
   record: ElementRecord,
@@ -275,7 +308,9 @@ function elementInsertion(
   if (record.src.kind === 'image') return imageInsertion(doc, record, spid, part);
   if (record.src.kind === 'table') return tableInsertion(record, spid);
   if (record.src.kind === 'group') return groupInsertion(record, spid);
-  throw new Error(`生成保存暂不支持元素类型：${record.src.kind}`);
+  if (record.src.kind === 'unsupported') return unsupportedInsertion(doc, record, spid, part);
+  const unknown: never = record.src;
+  throw new Error(`生成保存遇到未知元素类型：${String(unknown)}`);
 }
 
 function allocatedSpids(doc: EditDoc, slideId: SlideId): Map<string, number> {

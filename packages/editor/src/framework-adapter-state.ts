@@ -7,6 +7,7 @@ export const DEFAULT_WEB_PPT_VIEW = Object.freeze({
 /** 空态也是完整受控状态，宿主首帧无需判空后再补默认值。 */
 export const WEB_PPT_IDLE_SNAPSHOT: WebPptAdapterSnapshot = Object.freeze({
   status: 'idle', progress: 0, error: null, session: null, view: null, selectionPane: null,
+  documentKind: null,
   recovery: null,
   formatPainter: Object.freeze({ active: false, mode: 'inactive', source: null, readonly: true }),
   textSearch: Object.freeze({

@@ -15,6 +15,7 @@ import {
 } from './escher';
 import { ansi, findAll, findRec, Rec, records, RT, utf16 } from './records';
 import { parseAnimations, parseSlideShowInfo } from './timing';
+import { customPath } from './custom-path';
 
 /**
  * .ppt（PowerPoint 97-2003）纯浏览器解析。
@@ -675,10 +676,17 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
 
   // 图片
   const pib = props.simple.get(P.pib);
+  const preview = pib === undefined ? null : blipUrl(pib);
+  // 预览图不能代表可重建的嵌入对象；保留静态预览，但编辑能力必须降为框架级。
+  if (sp.flags & SP_FLAG.OLE) {
+    return {
+      kind: 'unsupported', ...base, label: '不支持编辑的旧版 OLE 对象',
+      ...(preview ? { preview } : {}),
+    };
+  }
   if (pib !== undefined && (shapeType === MSO_PICTURE_FRAME || pib > 0)) {
-    const src = blipUrl(pib);
-    if (src) {
-      const img: ImageElement = { kind: 'image', ...base, src, crop: null, stroke: shapeStroke(props, ctx.scheme) };
+    if (preview) {
+      const img: ImageElement = { kind: 'image', ...base, src: preview, crop: null, stroke: shapeStroke(props, ctx.scheme) };
       return img;
     }
   }
@@ -690,15 +698,22 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   let path: string | null = null;
   let openGeom = false;
   if (shapeType === 0 && props.complex.has(P.pVertices)) {
-    path = customPath(ctx, props, box.w, box.h);
+    path = customPath(dv, props, box.w, box.h);
+  }
+  // LibreOffice 的 OOXML→PPT 转换会用 0xFFF 表示已有的边界框投影；保留历史矩形兼容语义。
+  const preset = MSO_SHAPE[shapeType] ?? (shapeType === 0x0fff ? 'rect' : null);
+  if (!path && !preset) {
+    return {
+      kind: 'unsupported', ...base,
+      label: `不支持的旧版形状（MSOSPT ${shapeType}）`,
+    };
   }
   if (!path) {
-    const prst = MSO_SHAPE[shapeType] ?? 'rect';
     const adj = msoAdjusts(props, shapeType);
-    const g = presetGeom(prst, box.w, box.h, adj);
+    const g = presetGeom(preset!, box.w, box.h, adj);
     path = g.d;
     openGeom = g.open;
-    if (ctx.edit) base.editInfo = { geom: { preset: prst, adj } };
+    if (ctx.edit) base.editInfo = { geom: { preset: preset!, adj } };
   }
 
   // 文本
@@ -752,60 +767,6 @@ function msoAdjusts(props: EscherProps, shapeType: number): Record<string, numbe
   }
   if (out.adj1 !== undefined) out.adj = out.adj1;
   return out;
-}
-
-/** pVertices + pSegmentInfo → SVG path（复用 pptx 的 custGeom 逻辑不适用，这里直接生成） */
-function customPath(ctx: Ctx, props: EscherProps, w: number, h: number): string | null {
-  const { dv } = ctx;
-  const v = props.complex.get(P.pVertices);
-  const s = props.complex.get(P.pSegmentInfo);
-  if (!v) return null;
-  // 复杂属性数组头：u16 count, u16 countMax, u16 entrySize
-  const readArray = (c: { start: number; len: number }, parse: (off: number) => number[]): number[][] => {
-    const count = dv.getUint16(c.start, true);
-    const entrySize = dv.getInt16(c.start + 4, true);
-    const size = entrySize === -4 ? 8 : entrySize;
-    const out: number[][] = [];
-    for (let i = 0; i < count; i++) {
-      const off = c.start + 6 + i * size;
-      if (off + size > c.start + c.len) break;
-      out.push(parse(off));
-    }
-    return out;
-  };
-  const entrySize = dv.getInt16(v.start + 4, true);
-  const pts = readArray(v, (off) =>
-    entrySize === 4 ? [dv.getInt16(off, true), dv.getInt16(off + 2, true)] : [dv.getInt32(off, true), dv.getInt32(off + 4, true)],
-  );
-  if (!pts.length) return null;
-
-  const gl = props.simple.get(P.geoLeft) ?? 0;
-  const gt = props.simple.get(P.geoTop) ?? 0;
-  const gr = props.simple.get(P.geoRight) ?? 21600;
-  const gb = props.simple.get(P.geoBottom) ?? 21600;
-  const sx = w / Math.max(1, gr - gl);
-  const sy = h / Math.max(1, gb - gt);
-  const px = (p: number[]): string => `${((p[0] - gl) * sx).toFixed(2)} ${((p[1] - gt) * sy).toFixed(2)}`;
-
-  if (!s) return `M ${pts.map(px).join(' L ')} Z`;
-
-  const segs = readArray(s, (off) => [dv.getUint16(off, true)]);
-  const out: string[] = [];
-  let pi = 0;
-  for (const [seg] of segs) {
-    const msoType = seg >> 13;
-    if (seg === 0x4000) out.push(`M ${px(pts[pi++] ?? [0, 0])}`);
-    else if (seg === 0x6001) out.push('Z');
-    else if (seg === 0x8000) break;
-    else if (msoType === 0b010 || seg === 0xb300) {
-      const a = pts[pi++], b = pts[pi++], c = pts[pi++];
-      if (a && b && c) out.push(`C ${px(a)} ${px(b)} ${px(c)}`);
-    } else if (seg < 0x4000) {
-      const n = seg & 0xfff;
-      for (let i = 0; i < Math.max(1, n) && pts[pi]; i++) out.push(`L ${px(pts[pi++])}`);
-    }
-  }
-  return out.length ? out.join(' ') : `M ${pts.map(px).join(' L ')} Z`;
 }
 
 /** 组自身：定位框、子坐标系，以及旋转 / 翻转所需的 Sp 与属性表 */

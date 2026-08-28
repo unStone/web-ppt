@@ -36,7 +36,8 @@ function bindProjectedIdentities(
     const id = ids[index];
     // 目标版式的静态元素只参与投影，不伪造可编辑的 EditDoc 身份。
     if (id === null) return;
-    if (String(doc.elements[id].src.id) !== node.dataset.el) {
+    const sourceId = doc.elements[id].src.id;
+    if ((sourceId === undefined ? '' : String(sourceId)) !== node.dataset.el) {
       throw new Error(`渲染节点与编辑投影的顺序不一致：${id}`);
     }
     node.dataset.editId = id;

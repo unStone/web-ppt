@@ -16,11 +16,15 @@
 <g data-el="12290" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(48 120)">
 <image href="data:<d934e4317b2b>" width="560" height="544" preserveAspectRatio="none"/>
+<rect width="560" height="544" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>
+<text x="280" y="272" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="16">不支持编辑的旧版 OLE 对象</text>
 </g>
 </g>
 <g data-el="12291" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(640 120)">
 <image href="data:<a304b203a9b6>" width="560" height="544" preserveAspectRatio="none"/>
+<rect width="560" height="544" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>
+<text x="280" y="272" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="16">不支持编辑的旧版 OLE 对象</text>
 </g>
 </g>
 </svg>

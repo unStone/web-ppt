@@ -472,6 +472,8 @@ export interface TableCell {
 export interface UnsupportedElement extends ElementBase {
   kind: 'unsupported';
   label: string;
+  /** 无法编辑原语义时仍保留其静态预览；编辑模型始终只开放 frame 能力。 */
+  preview?: string;
 }
 
 export type TextVert = 'horz' | 'vert' | 'vert270' | 'wordArtVert';

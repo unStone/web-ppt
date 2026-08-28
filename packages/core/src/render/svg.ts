@@ -290,9 +290,10 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
     out = renderFailure(el, e);
   }
   // 动画需要按形状 id 定位到具体节点
-  if (el.id !== undefined) {
-    const hide = ctx.hidden?.has(el.id) ? 'visibility:hidden;' : '';
-    out = `<g data-el="${el.id}" style="${hide}transform-box:fill-box;transform-origin:center">${out}</g>`;
+  if (el.id !== undefined || ctx.includeEditMarkers) {
+    const hide = el.id !== undefined && ctx.hidden?.has(el.id) ? 'visibility:hidden;' : '';
+    // .ppt 合法元素可能没有 spid；编辑标记仍要占一个顺序槽，默认渲染则保持原样。
+    out = `<g data-el="${el.id ?? ''}" style="${hide}transform-box:fill-box;transform-origin:center">${out}</g>`;
   }
   return withHyperlink(out, ctx.resolveLink(el.link));
 }
@@ -507,8 +508,12 @@ function renderComments(comments: SlideComment[] | undefined, W: number, H: numb
 
 function renderUnsupported(el: UnsupportedElement): string {
   const fs = Math.max(10, Math.min(16, el.h / 6));
+  const preview = el.preview
+    ? `<image href="${esc(el.preview)}" width="${r(el.w)}" height="${r(el.h)}" preserveAspectRatio="none"/>`
+    : '';
   return (
     `<g transform="${baseTransform(el)}">` +
+    preview +
     `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>` +
     `<text x="${r(el.w / 2)}" y="${r(el.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="${r(fs)}">${esc(el.label)}</text>` +
     '</g>'

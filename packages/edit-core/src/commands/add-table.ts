@@ -12,6 +12,8 @@ import type { AddTableCommand, CommandPatches, ElementTreePatch } from './types'
 import { assertInsertionRect, EMU_PER_PX, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { assertElementUnlocked } from './element-interaction';
+import { incrementalInsertionPart } from './insertion-host';
+import { GENERATED_TABLE_DEFAULTS } from './generated-creation-defaults';
 
 const TABLE_URI = 'http://schemas.openxmlformats.org/drawingml/2006/table';
 
@@ -39,7 +41,7 @@ function rowAt(defaults: TableCreationDefaults, index: number, columns: number, 
 }
 
 function sourceTable(
-  spid: number,
+  spid: number | undefined,
   name: string,
   command: AddTableCommand,
   defaults: TableCreationDefaults,
@@ -56,7 +58,7 @@ function sourceTable(
     rowAt(localDefaults, command.rows + 1, command.cols, appendHeight),
   ] as const;
   return {
-    kind: 'table', id: spid, name,
+    kind: 'table', ...(spid === undefined ? {} : { id: spid }), name,
     x: command.rect.x, y: command.rect.y, w: command.rect.w, h: command.rect.h,
     rot: 0, flipH: false, flipV: false,
     colWidths: columnEmu.map((width) => width / EMU_PER_PX), rows,
@@ -103,11 +105,9 @@ ${rowEmu.map(row).join('\n')}
 function assertCommand(doc: EditDoc, command: AddTableCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增表格');
   const slide = doc.slides[command.slideId];
-  if (!slide?.origin || !doc.package
-    || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
-    throw new Error(`新增表格目标页不可写回：${command.slideId}`);
-  }
-  const defaults = currentTableDefaults(doc, slide.id);
+  if (!slide) throw new Error(`找不到新增表格目标页：${command.slideId}`);
+  const part = incrementalInsertionPart(doc, slide);
+  const defaults = currentTableDefaults(doc, slide.id) ?? (part ? undefined : GENERATED_TABLE_DEFAULTS);
   if (!defaults) throw new Error(`新增表格目标页缺少主题默认值：${command.slideId}`);
   assertTableDimension(command.rows, 'AddTable.rows');
   assertTableDimension(command.cols, 'AddTable.cols');
@@ -132,7 +132,7 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
   };
   const columns = distributeEmu(frameEmu.w, command.cols, 'AddTable.rect.w');
   const rows = distributeEmu(frameEmu.h, command.rows, 'AddTable.rect.h');
-  return { slide, defaults, placeholder, columns, rows, normalized };
+  return { slide, defaults, placeholder, columns, rows, normalized, part };
 }
 
 /** 表格视觉默认值、即时模型和 OOXML 宿主共用一个来源，再交给既有结构历史与保存主干。 */
@@ -141,16 +141,16 @@ export function addTablePatches(
   command: AddTableCommand,
   origin: string,
 ): CommandPatches {
-  const { slide, defaults, placeholder, columns, rows, normalized } = assertCommand(doc, command);
+  const { slide, defaults, placeholder, columns, rows, normalized, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
-  const spid = allocateElementSpid(doc, slide.origin!.part);
-  const name = `表格 ${spid}`;
+  const spid = part ? allocateElementSpid(doc, part) : undefined;
+  const name = spid === undefined ? '表格' : `表格 ${spid}`;
   const source = sourceTable(spid, name, normalized, defaults, columns, rows);
-  const markup = tableMarkup(spid, name, normalized, defaults, source, columns, rows);
-  const insertion: ElementInsertionSource = {
-    markup, namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
+  const insertion: ElementInsertionSource | undefined = part && spid !== undefined ? {
+    markup: tableMarkup(spid, name, normalized, defaults, source, columns, rows),
+    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
     spids: { [String(spid)]: spid },
-  };
+  } : undefined;
   const siblings = slide.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
@@ -160,7 +160,7 @@ export function addTablePatches(
     src: source, ovr: {},
     meta: {
       editable: 'full', created: true,
-      origin: { part: slide.origin!.part, spid }, insertion,
+      ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };
   const value = { root: id, parent: slide.id, records: { [id]: record } };

@@ -1347,6 +1347,18 @@ group('表格');
 
 group('.ppt 二进制');
 {
+  const unsupportedBytes = load('sample-ppt-unsupported.ppt');
+  if (check('ppt 未建模形状固件存在', !!unsupportedBytes)) {
+    const unsupportedPpt = await lib.parse(unsupportedBytes, { edit: true, lazy: false });
+    const unknownShape = unsupportedPpt.slides[0]?.elements[0];
+    const ole = unsupportedPpt.slides[1]?.elements[0];
+    check('ppt 未知 MSOSPT 与 OLE 均降级为如实标记的框架对象',
+      unsupportedPpt.slides.length === 2 && unknownShape?.kind === 'unsupported'
+        && unknownShape.label.includes('MSOSPT 300')
+        && lib.renderElementToSvg(unknownShape).markup.includes('MSOSPT 300')
+        && ole?.kind === 'unsupported' && ole.label.includes('OLE'));
+    unsupportedPpt.dispose?.();
+  }
   const pres = parsed.get('showcase.ppt');
   if (pres) {
     const runs = [];
@@ -1368,13 +1380,22 @@ group('.ppt 二进制');
   // .ppt 里的图表以内嵌 EMF 呈现，需经图元文件解码器转成 SVG data URI
   const chartPpt = parsed.get('sample-chart.ppt');
   if (chartPpt) {
-    const imgs = [];
-    for (const s of chartPpt.slides) walkElements(s.elements, (e) => { if (e.kind === 'image') imgs.push(e); });
-    check('ppt 图表解出图片', imgs.length >= 9, `实际 ${imgs.length}`);
-    const svgImgs = imgs.filter((i) => i.src.startsWith('data:image/svg+xml'));
+    const previews = [];
+    const oleFrames = [];
+    for (const s of chartPpt.slides) walkElements(s.elements, (e) => {
+      if (e.kind === 'image') previews.push(e.src);
+      if (e.kind === 'unsupported' && e.preview) {
+        previews.push(e.preview);
+        if (e.label.includes('OLE')) oleFrames.push(e);
+      }
+    });
+    check('ppt 图表保留静态预览且 OLE 语义降为框架对象',
+      previews.length >= 9 && oleFrames.length >= 9,
+      `预览 ${previews.length} · OLE frame ${oleFrames.length}`);
+    const svgImgs = previews.filter((src) => src.startsWith('data:image/svg+xml'));
     check('EMF 已解码为 SVG', svgImgs.length >= 9, `实际 ${svgImgs.length}`);
     // 回归：BLIP 里的图元数据是 DEFLATE 压缩的，不解压会得到乱码
-    const decoded = decodeURIComponent(svgImgs[0].src.split(',')[1] ?? '');
+    const decoded = decodeURIComponent(svgImgs[0].split(',')[1] ?? '');
     check('解码结果是合法 SVG', decoded.startsWith('<svg'), decoded.slice(0, 40));
     check('解码结果含绘图内容', (decoded.match(/<(path|rect|text|image)/g) || []).length > 20);
   }

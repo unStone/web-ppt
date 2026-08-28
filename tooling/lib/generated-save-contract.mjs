@@ -1,5 +1,8 @@
 import { equalBytes } from './bytes.mjs';
 
+const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+const bytesOf = (base64) => Uint8Array.from(Buffer.from(base64, 'base64'));
+
 /** 生成保存只从公开入口和最终 PPTX 观察，不读取生成器内部状态。 */
 export async function runGeneratedSaveContract({
   core, edit, generate, load, check, saveArtifact, renderFingerprint,
@@ -88,6 +91,110 @@ export async function runGeneratedSaveContract({
     JSON.stringify(legacyAfter) === JSON.stringify(legacyBefore),
     `${JSON.stringify(legacyBefore)} != ${JSON.stringify(legacyAfter)}`);
   edit.disposeDoc(legacyDoc);
+
+  const editedLegacySource = await core.parse(load('sample.ppt'), {
+    edit: true, lazy: false, assets: 'defer',
+  });
+  const editedLegacyDoc = edit.createDoc(editedLegacySource, { idPrefix: 'generated-ppt-edited-' });
+  const editedLegacy = new edit.Editor(editedLegacyDoc);
+  const editedSlideId = editedLegacyDoc.slideOrder[0];
+  const sourceKindCounts = edit.toSlide(editedLegacyDoc, editedSlideId).elements
+    .reduce((counts, element) => ({ ...counts, [element.kind]: (counts[element.kind] ?? 0) + 1 }), {});
+  editedLegacy.exec({
+    type: 'AddShape', slideId: editedSlideId, preset: 'roundRect',
+    rect: { x: 80, y: 60, w: 240, h: 120 },
+  });
+  const shapeId = editedLegacy.selection.ids[0];
+  editedLegacy.exec({
+    type: 'AddTable', slideId: editedSlideId, rows: 2, cols: 3,
+    rect: { x: 350, y: 60, w: 420, h: 160 },
+  });
+  const tableId = editedLegacy.selection.ids[0];
+  editedLegacy.exec({
+    type: 'AddImage', slideId: editedSlideId, bytes: bytesOf(PNG_1PX), mime: 'image/png',
+    rect: { x: 800, y: 60, w: 120, h: 120 },
+  });
+  const imageId = editedLegacy.selection.ids[0];
+  check('.ppt 生成编辑的形状、表格与图片只写统一模型',
+    [shapeId, tableId, imageId].every((id) => editedLegacyDoc.elements[id]?.meta.created
+      && !editedLegacyDoc.elements[id].meta.origin && !editedLegacyDoc.elements[id].meta.insertion)
+      && Object.keys(editedLegacyDoc.imageResources).length === 1);
+  editedLegacy.undo();
+  const removedImage = !editedLegacyDoc.elements[imageId];
+  editedLegacy.redo();
+  check('.ppt 生成插入复用结构历史且不丢图片资源', removedImage
+    && editedLegacyDoc.elements[imageId]?.src.kind === 'image'
+    && Object.keys(editedLegacyDoc.imageResources).length === 1);
+  const editedLegacySaved = await editedLegacy.saveDetailed();
+  saveArtifact('generated-ppt-edited.pptx', editedLegacySaved.bytes);
+  const editedLegacyReopened = await core.parse(editedLegacySaved.bytes, { lazy: false, assets: 'defer' });
+  const savedKindCounts = editedLegacyReopened.slides[0].elements
+    .reduce((counts, element) => ({ ...counts, [element.kind]: (counts[element.kind] ?? 0) + 1 }), {});
+  check('.ppt 确认后三种插入能生成并重开',
+    savedKindCounts.shape === (sourceKindCounts.shape ?? 0) + 1
+      && savedKindCounts.table === (sourceKindCounts.table ?? 0) + 1
+      && savedKindCounts.image === (sourceKindCounts.image ?? 0) + 1
+      && editedLegacyReopened.slides.length === editedLegacySource.slides.length);
+  editedLegacyReopened.dispose?.();
+  edit.disposeDoc(editedLegacyDoc);
+
+  const unsupportedSource = await core.parse(load('sample-ppt-unsupported.ppt'), {
+    edit: true, lazy: false, assets: 'defer',
+  });
+  const unsupportedDoc = edit.createDoc(unsupportedSource, { idPrefix: 'generated-ppt-unsupported-' });
+  const unsupportedEditor = new edit.Editor(unsupportedDoc);
+  const unsupportedRecords = Object.values(unsupportedDoc.elements);
+  const unsupportedRecord = unsupportedRecords.find((record) =>
+    record.src.kind === 'unsupported' && record.src.label.includes('MSOSPT 300'));
+  const oleRecord = unsupportedRecords.find((record) =>
+    record.src.kind === 'unsupported' && record.src.label.includes('OLE'));
+  check('.ppt 未知形状与 OLE 以 frame 而非普通图形进入编辑模型',
+    unsupportedRecord?.meta.editable === 'frame' && oleRecord?.meta.editable === 'frame');
+  unsupportedEditor.exec({
+    type: 'SetXfrm', id: unsupportedRecord.id,
+    x: unsupportedRecord.src.x + 24, y: unsupportedRecord.src.y + 12,
+  });
+  const unsupportedSaved = await unsupportedEditor.saveDetailed();
+  saveArtifact('generated-ppt-unsupported.pptx', unsupportedSaved.bytes);
+  const unsupportedReopened = await core.parse(unsupportedSaved.bytes, { lazy: false, assets: 'defer' });
+  const generatedElements = unsupportedReopened.slides.flatMap((slide) => slide.elements);
+  const generatedPlaceholder = generatedElements.find((element) =>
+    element.kind === 'shape' && element.text?.paragraphs.some((paragraph) =>
+      paragraph.runs.some((run) => run.text.includes('MSOSPT 300'))));
+  const generatedOlePlaceholder = generatedElements.find((element) =>
+    element.kind === 'shape' && element.text?.paragraphs.some((paragraph) =>
+      paragraph.runs.some((run) => run.text.includes('OLE'))));
+  check('.ppt 未知形状与 OLE 另存后以显式原因占位生成并重开',
+    generatedPlaceholder?.kind === 'shape'
+      && generatedPlaceholder.x === unsupportedRecord.src.x + 24
+      && generatedPlaceholder.y === unsupportedRecord.src.y + 12
+      && generatedOlePlaceholder?.kind === 'shape');
+  unsupportedReopened.dispose?.();
+  edit.disposeDoc(unsupportedDoc);
+
+  const oleSource = await core.parse(load('sample-chart.ppt'), {
+    edit: true, lazy: false, assets: 'defer',
+  });
+  const oleSlide = oleSource.slides.find((slide) =>
+    slide.elements.some((element) => element.kind === 'unsupported' && !!element.preview));
+  const olePreview = oleSlide?.elements.find((element) =>
+    element.kind === 'unsupported' && !!element.preview);
+  const oleOnlySource = {
+    ...oleSource,
+    slides: oleSlide && olePreview ? [{ ...oleSlide, elements: [olePreview] }] : [],
+  };
+  const oleDoc = edit.createDoc(oleOnlySource, { idPrefix: 'generated-ppt-ole-preview-' });
+  const oleSaved = await new edit.Editor(oleDoc).saveDetailed();
+  saveArtifact('generated-ppt-ole-preview.pptx', oleSaved.bytes);
+  const oleReopened = await core.parse(oleSaved.bytes, { lazy: false, assets: 'defer' });
+  const olePlaceholder = oleReopened.slides[0]?.elements.find((element) =>
+    element.kind === 'shape' && element.fill?.type === 'image'
+      && element.text?.paragraphs.some((paragraph) =>
+        paragraph.runs.some((run) => run.text.includes('OLE'))));
+  check('.ppt OLE 另存后同时保留静态预览与显式原因',
+    oleDoc.slideOrder.length === 1 && olePlaceholder?.kind === 'shape');
+  oleReopened.dispose?.();
+  edit.disposeDoc(oleDoc);
 
   const hiddenSource = await core.parse(load('sample-hidden.ppt'), {
     edit: true, lazy: false, assets: 'defer',

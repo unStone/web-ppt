@@ -50,6 +50,9 @@ export interface WebPptViewState {
   readonly snapping: boolean;
 }
 
+/** 公开输入格式供产品层决定是否需要另存提示；adapter 本身不拥有确认状态。 */
+export type WebPptDocumentKind = 'pptx' | 'ppt';
+
 export interface WebPptFormatPainterState extends FormatPainterSnapshot {
   /** 文档未就绪、只读或当前为查看模式时为 true。 */
   readonly readonly: boolean;
@@ -91,6 +94,7 @@ export interface WebPptAdapterSnapshot extends WebPptViewState {
   readonly progress: number;
   readonly error: unknown | null;
   readonly session: EditorSession | null;
+  readonly documentKind: WebPptDocumentKind | null;
   readonly view: SlideEditor | null;
   readonly selectionPane: SelectionPane | null;
   readonly recovery: RecoveryCandidate | null;

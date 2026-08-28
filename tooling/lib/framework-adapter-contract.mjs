@@ -13,7 +13,13 @@ export async function runFrameworkAdapterContract({ lib, load, check }) {
     onError: (error) => events.errors.push(error),
   });
   let snapshots = 0;
-  const unsubscribeSnapshot = adapter.subscribe(() => { snapshots++; });
+  const readyKinds = [];
+  const unsubscribeSnapshot = adapter.subscribe((snapshot) => {
+    snapshots++;
+    if (snapshot.status === 'ready') {
+      readyKinds.push([snapshot.documentKind, snapshot.session?.editor.doc.meta.source ?? null]);
+    }
+  });
   const mount = document.createElement('div');
   adapter.attach(mount);
   adapter.setView({ mode: 'view', zoom: 1.25, textMode: 'svg', snapping: false });
@@ -22,9 +28,11 @@ export async function runFrameworkAdapterContract({ lib, load, check }) {
   });
   check('来源文件由 adapter 打开、挂载并显式拥有资源',
     adapter.snapshot.status === 'ready' && adapter.snapshot.session === first
+      && adapter.snapshot.documentKind === 'pptx'
       && adapter.snapshot.view?.mode === 'view' && adapter.snapshot.view.zoom === 1.25
       && adapter.snapshot.view.snapping === false
       && mount.querySelectorAll('[data-web-ppt-editor]').length === 1
+      && readyKinds.every(([kind, source]) => kind === source)
       && events.progress[0]?.phase === 'opening' && events.progress.at(-1)?.phase === 'ready'
       && events.ready.at(-1) === first && events.errors.length === 0);
   check('查看模式与控制器受控模式共用只读编辑视图',
@@ -32,6 +40,28 @@ export async function runFrameworkAdapterContract({ lib, load, check }) {
   const snapshotsBeforeNoop = snapshots;
   adapter.setView({ mode: 'view', zoom: 1.25, textMode: 'svg', snapping: false });
   check('相同受控属性不制造订阅更新', snapshots === snapshotsBeforeNoop);
+
+  const legacyAdapter = lib.createWebPptAdapter();
+  const legacyMount = document.createElement('div');
+  const legacyReadyKinds = [];
+  legacyAdapter.subscribe((snapshot) => {
+    if (snapshot.status === 'ready') {
+      legacyReadyKinds.push([snapshot.documentKind, snapshot.session?.editor.doc.meta.source ?? null]);
+    }
+  });
+  legacyAdapter.attach(legacyMount);
+  const legacy = await legacyAdapter.setDocument({
+    source: load('sample.ppt'), openOptions: { idPrefix: 'adapter-ppt-conversion-' },
+  });
+  const legacySaved = await legacyAdapter.save();
+  check('adapter 公开输入格式且 .ppt 与 .pptx 共用生成保存 seam',
+    legacyAdapter.snapshot.documentKind === 'ppt'
+      && legacy.editor.doc.meta.readonly === false
+      && legacyReadyKinds.length > 0
+      && legacyReadyKinds.every(([kind, source]) => kind === source)
+      && legacyMount.querySelectorAll('[data-edit-id]').length > 0
+      && legacySaved[0] === 0x50 && legacySaved[1] === 0x4b);
+  legacyAdapter.dispose();
 
   const recoverySource = load('sample-edit-xfrm.pptx');
   const recoverySeed = await lib.openEditor(recoverySource, { idPrefix: 'adapter-recovery-' });

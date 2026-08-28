@@ -3,17 +3,21 @@ import { insertionResourceToken } from '../session-assets';
 import { allocateElementId } from '../document';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
-import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
+import type {
+  EditDoc, ElementInsertionResource, ElementInsertionSource, ElementRecord,
+} from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { prepareInsertionClosures } from './paste-resources';
 import { removeElementPatches } from './element-tree';
 import type {
   AddImageCommand, ClipboardResource, CommandPatches, ElementClipboardPayload, ElementTreePatch,
+  ImageResourcePatch,
 } from './types';
 import { createImageResource } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { assertElementUnlocked } from './element-interaction';
+import { incrementalInsertionPart } from './insertion-host';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -52,13 +56,13 @@ function closurePayload(resource: ClipboardResource, markup: string, spid: numbe
 }
 
 function sourceImage(
-  spid: number,
+  spid: number | undefined,
   name: string,
   rect: AddImageCommand['rect'],
   resource: ClipboardResource,
 ): ImageElement {
   return {
-    kind: 'image', id: spid, name,
+    kind: 'image', ...(spid === undefined ? {} : { id: spid }), name,
     x: rect.x, y: rect.y, w: rect.w, h: rect.h, rot: 0, flipH: false, flipV: false,
     src: insertionResourceToken(resource.hash), crop: null, stroke: null,
   };
@@ -72,10 +76,8 @@ export function addImagePatches(
 ): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增图片');
   const slide = doc.slides[command.slideId];
-  if (!slide?.origin || !doc.package
-    || (!doc.package.parts[slide.origin.part] && !slide.creation)) {
-    throw new Error(`新增图片目标页不可写回：${command.slideId}`);
-  }
+  if (!slide) throw new Error(`找不到新增图片目标页：${command.slideId}`);
+  const part = incrementalInsertionPart(doc, slide);
   const placeholder = command.placeholderId === undefined
     ? undefined : doc.elements[command.placeholderId];
   const placeholderTextIsEmpty = placeholder?.src.kind === 'shape'
@@ -90,38 +92,56 @@ export function addImagePatches(
   assertInsertionRect(command.rect, 'AddImage.rect');
   const resource = imageResource(command);
   const id = allocateElementId(doc);
-  const spid = allocateElementSpid(doc, slide.origin.part);
-  const name = `图片 ${spid}`;
-  const markup = pictureMarkup(spid, name, command.rect);
-  const payload = closurePayload(resource, markup, spid);
-  // 字节刚在 imageResource 中完成拷贝、容器校验和哈希；避免为 2MB 图片再做一次 Base64 解码与 SHA-256。
-  const closure = prepareInsertionClosures(doc, payload, payload.roots, slide.origin.part, {
-    preverifiedResourceHashes: new Set([resource.hash]),
-  }).get('image')!;
+  const spid = part ? allocateElementSpid(doc, part) : undefined;
+  const name = spid === undefined ? '图片' : `图片 ${spid}`;
+  let insertion: ElementInsertionSource | undefined;
+  if (part && spid !== undefined) {
+    const markup = pictureMarkup(spid, name, command.rect);
+    const payload = closurePayload(resource, markup, spid);
+    // 字节刚在 imageResource 中完成拷贝、容器校验和哈希；避免为 2MB 图片再做一次 Base64 解码与 SHA-256。
+    const closure = prepareInsertionClosures(doc, payload, payload.roots, part, {
+      preverifiedResourceHashes: new Set([resource.hash]),
+    }).get('image')!;
+    insertion = {
+      markup,
+      namespaces: payload.ooxml.roots.image.namespaces,
+      spids: { [String(spid)]: spid },
+      relationships: closure.relationships,
+      resources: closure.resources,
+    };
+  }
   const siblings = slide.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
-  const insertion: ElementInsertionSource = {
-    markup,
-    namespaces: payload.ooxml.roots.image.namespaces,
-    spids: { [String(spid)]: spid },
-    relationships: closure.relationships,
-    resources: closure.resources,
-  };
   const record: ElementRecord = {
     id, parent: slide.id, z: fractionalIndexBetween(previous, null, id),
     src: sourceImage(spid, name, command.rect, resource), ovr: {},
     meta: {
       editable: 'full', created: true,
-      origin: { part: slide.origin.part, spid }, insertion,
+      ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };
   const value = { root: id, parent: slide.id, records: { [id]: record } };
   const forward: ElementTreePatch = { op: 'insert', path: ['elements', id], value, origin };
   const inverse: ElementTreePatch = { op: 'remove', path: ['elements', id], value, origin };
-  if (!placeholder) return { forward: [forward], inverse: [inverse] };
+  const retained = doc.imageResources[resource.hash];
+  const generatedResource: ElementInsertionResource = retained ?? {
+    ...resource, targetPart: `ppt/media/web-ppt-${resource.hash}.${resource.extension}`, created: true,
+  };
+  const resourceForward: ImageResourcePatch[] = !part && !retained ? [{
+    op: 'set', path: ['imageResources', resource.hash], value: generatedResource, origin,
+  }] : [];
+  const resourceInverse: ImageResourcePatch[] = !part && !retained ? [{
+    op: 'del', path: ['imageResources', resource.hash], origin,
+  }] : [];
+  if (!placeholder) {
+    return {
+      forward: [...resourceForward, forward],
+      inverse: [inverse, ...resourceInverse],
+    };
+  }
   const removal = removeElementPatches(doc, { type: 'RemoveElement', id: placeholder.id }, origin);
   return {
-    forward: [...removal.forward, forward],
-    inverse: [inverse, ...removal.inverse],
+    forward: [...resourceForward, ...removal.forward, forward],
+    inverse: [inverse, ...removal.inverse, ...resourceInverse],
   };
 }
