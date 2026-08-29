@@ -118,6 +118,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           spaceError: report.dataset.spaceError, handleError: report.dataset.handleError,
           nestedDragError: report.dataset.nestedDragError,
           dragP95: report.dataset.dragP95, resizeError: report.dataset.resizeError,
+          vertexP95: report.dataset.vertexP95, vertexError: report.dataset.vertexError,
           resizeHitError: report.dataset.resizeHitError, resizeP95: report.dataset.resizeP95,
           resizeSingularP95: report.dataset.resizeSingularP95,
           rotationNestedError: report.dataset.rotationNestedError,

@@ -1,5 +1,5 @@
 import type {
-  Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TextBody, TextRun,
@@ -114,6 +114,8 @@ export interface ElementLinkState {
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
+  /** 自定义几何是 path 的语义来源；path 本身仍保持派生字段，不能写入覆盖层。 */
+  geometry?: CustomGeometry;
   /** 缺少字段表示来源；none 表示明确移除，不能用 undefined 混淆二者。 */
   link?: LinkOverride;
   /** 显式无填充用 Fill.none；缺少该字段才表示恢复来源/主题。 */
@@ -414,6 +416,7 @@ export type TextOverride = {
 
 export interface ElementMeta {
   geom?: GeomSpec;
+  customGeometry?: CustomGeometry;
   ph?: { type: string; idx?: string };
   placeholderDirect?: PlaceholderDirectFlags;
   /** 旧版式解绑时需要固定的继承效果；普通未编辑投影仍沿用 core 既有语义。 */

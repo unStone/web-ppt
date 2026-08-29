@@ -5,6 +5,10 @@
 import { attr, kid, kids, numAttr } from '../xml';
 import { ep, n, rad } from '../geometry';
 import type { Adj, Geom, Pt } from '../geometry';
+import type {
+  CustomGeometry, CustomGeometryCommand, CustomGeometryGuide, CustomGeometryPoint,
+  CustomGeometryPointRole, CustomGeometryScalar,
+} from '../geometry/custom';
 
 export { isKnownPreset, presetGeom, resolveGeomPath } from '../geometry';
 export type { Adj, Geom, GeomSpec, Pt } from '../geometry';
@@ -81,6 +85,95 @@ function evalGuides(gdLst: Element | null, g: Record<string, number>): Record<st
   return g;
 }
 
+function geometryGuides(list: Element | null): CustomGeometryGuide[] {
+  return kids(list, 'gd').flatMap((guide) => {
+    const name = attr(guide, 'name');
+    const formula = attr(guide, 'fmla');
+    return name && formula ? [{ name, formula }] : [];
+  });
+}
+
+/** edit 模式专用：表达式原样保留，交互使用同一 guide 求值后的数值。 */
+export function customGeometryModel(custGeom: Element, w: number, h: number): CustomGeometry {
+  const adjustments = geometryGuides(kid(custGeom, 'avLst'));
+  const guides = geometryGuides(kid(custGeom, 'gdLst'));
+  const paths = kids(kid(custGeom, 'pathLst'), 'path').map((path, pathIndex) => {
+    const width = numAttr(path, 'w') || w * 9525;
+    const height = numAttr(path, 'h') || h * 9525;
+    const values = builtinGuides(width, height);
+    evalGuides(kid(custGeom, 'avLst'), values);
+    evalGuides(kid(custGeom, 'gdLst'), values);
+    const scalar = (expression: string | null): CustomGeometryScalar => {
+      const source = expression ?? '0';
+      const parsed = source in values ? values[source] : Number(source);
+      return { expression: source, value: Number.isFinite(parsed) ? parsed : 0 };
+    };
+    const point = (
+      element: Element | undefined, id: string, role: CustomGeometryPointRole,
+    ): CustomGeometryPoint => ({
+      id, role,
+      x: scalar(attr(element ?? null, 'x')),
+      y: scalar(attr(element ?? null, 'y')),
+    });
+    const commands: CustomGeometryCommand[] = [];
+    let closed = false;
+    const elements: Element[] = [];
+    for (let element = path.firstElementChild; element; element = element.nextElementSibling) {
+      if (['moveTo', 'lnTo', 'cubicBezTo', 'quadBezTo', 'arcTo', 'close'].includes(element.localName)) {
+        elements.push(element);
+      }
+    }
+    elements.forEach((element, elementIndex) => {
+      const commandIndex = commands.length;
+      const id = `p${pathIndex}-c${commandIndex}`;
+      const commandPoints = kids(element, 'pt');
+      if (element.localName === 'moveTo' || element.localName === 'lnTo') {
+        const anchor = point(commandPoints[0], `${id}-a`, 'anchor');
+        commands.push({
+          id, type: element.localName === 'moveTo' ? 'move' : 'line',
+          points: [anchor],
+        });
+      } else if (element.localName === 'cubicBezTo') {
+        const points = [
+          point(commandPoints[0], `${id}-c0`, 'control'),
+          point(commandPoints[1], `${id}-c1`, 'control'),
+          point(commandPoints[2], `${id}-a`, 'anchor'),
+        ] as const;
+        commands.push({
+          id, type: 'cubic', points,
+        });
+      } else if (element.localName === 'quadBezTo') {
+        const points = [
+          point(commandPoints[0], `${id}-c0`, 'control'),
+          point(commandPoints[1], `${id}-a`, 'anchor'),
+        ] as const;
+        commands.push({
+          id, type: 'quadratic', points,
+        });
+      } else if (element.localName === 'arcTo') {
+        commands.push({
+          id, type: 'arc', points: [],
+          widthRadius: scalar(attr(element, 'wR')),
+          heightRadius: scalar(attr(element, 'hR')),
+          startAngle: scalar(attr(element, 'stAng')),
+          sweepAngle: scalar(attr(element, 'swAng')),
+        });
+      } else if (element.localName === 'close') {
+        if (elementIndex === elements.length - 1) closed = true;
+        else commands.push({ id, type: 'close', points: [] });
+      }
+    });
+    return {
+      id: `p${pathIndex}`, width, height,
+      fill: attr(path, 'fill') ?? 'norm',
+      stroke: !['0', 'false'].includes(attr(path, 'stroke') ?? '1'),
+      extrusionOk: !['0', 'false'].includes(attr(path, 'extrusionOk') ?? '1'),
+      closed, commands,
+    };
+  });
+  return { adjustments, guides, paths };
+}
+
 /** custGeom → SVG path，支持 gdLst 公式与 guide 引用 */
 export function custGeomPath(custGeom: Element, w: number, h: number): Geom | null {
   const paths = kids(kid(custGeom, 'pathLst'), 'path');
@@ -115,12 +208,13 @@ export function custGeomPath(custGeom: Element, w: number, h: number): Geom | nu
     const st = attr(p, 'stroke');
     if (st !== '0' && st !== 'false') anyStroke = true;
 
-    let cx = 0, cy = 0;
+    let cx = 0, cy = 0, startX = 0, startY = 0;
     for (let cmd = p.firstElementChild; cmd; cmd = cmd.nextElementSibling) {
       const pts = kids(cmd, 'pt');
       switch (cmd.localName) {
         case 'moveTo':
           [cx, cy] = ptOf(pts[0]);
+          [startX, startY] = [cx, cy];
           out.push(`M ${n(cx)} ${n(cy)}`);
           break;
         case 'lnTo':
@@ -159,6 +253,7 @@ export function custGeomPath(custGeom: Element, w: number, h: number): Geom | nu
         }
         case 'close':
           out.push('Z');
+          [cx, cy] = [startX, startY];
           break;
       }
     }

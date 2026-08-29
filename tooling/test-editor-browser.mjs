@@ -192,6 +192,7 @@ try {
     + ` ${result.spaceError}/${result.handleError}px`
     + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
     + ` · 拖动帧 p95 ${result.dragP95}ms`
+    + ` · 顶点偏差/p95 ${result.vertexError}px/${result.vertexP95}ms`
     + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`

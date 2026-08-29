@@ -47,6 +47,7 @@ import { runTransitionContract } from './lib/transition-contract.mjs';
 import { runAnimationEditContract } from './lib/animation-edit-contract.mjs';
 import { runGroupUngroupContract } from './lib/group-ungroup-contract.mjs';
 import { runListLevelContract } from './lib/list-level-contract.mjs';
+import { runVertexGeometryContract } from './lib/vertex-geometry-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -107,6 +108,7 @@ await runTextEditContract({ edit, core, load, check });
 await runRunFormatContract({ edit, core, load, check });
 await runParagraphFormatContract({ edit, core, load, check });
 await runListLevelContract({ edit, core, load, check });
+await runVertexGeometryContract({ edit, core, load, check });
 await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runTableRowInsertContract({ edit, core, load, check });

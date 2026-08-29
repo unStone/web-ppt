@@ -17,7 +17,7 @@ import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
-import { isKnownPreset, resolveGeomPath } from './geometry';
+import { isKnownPreset, resolveGeomPath } from './geometry/index';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 
 export * from './types';
@@ -34,7 +34,10 @@ export type {
   TextLayout, TextLayoutCaret, TextLayoutLine, TextLayoutOptions, TextLayoutSegment, TextMeasure,
 } from './render/text-layout';
 export { isKnownPreset, resolveGeomPath };
-export type { Adj, Geom, GeomSpec } from './geometry';
+export type {
+  Adj, CustomGeometry, CustomGeometryCloseCommand, CustomGeometryCommand, CustomGeometryGuide, CustomGeometryPath,
+  CustomGeometryPoint, CustomGeometryScalar, Geom, GeomSpec,
+} from './geometry/index';
 export { groupSteps, hiddenBefore, staticHidden };
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';

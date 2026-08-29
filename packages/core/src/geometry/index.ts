@@ -8,6 +8,14 @@
  * Geom.open = true 表示开放路径（只描边不填充，如括号 / 弧线 / 连接线）
  */
 
+export type {
+  CubicArcSegment, CustomGeometry, CustomGeometryArcCommand, CustomGeometryCloseCommand, CustomGeometryCommand, CustomGeometryCubicCommand,
+  CustomGeometryGuide, CustomGeometryLineCommand, CustomGeometryMoveCommand, CustomGeometryPath,
+  CustomGeometryPoint, CustomGeometryPointRole, CustomGeometryQuadraticCommand,
+  CustomGeometryScalar,
+} from './custom';
+export { arcToCubicSegments, materializeCustomGeometryArcs, resolveCustomGeometry } from './custom';
+
 export interface Geom {
   d: string;
   open: boolean;

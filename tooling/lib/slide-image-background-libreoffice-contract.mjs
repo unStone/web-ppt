@@ -11,7 +11,7 @@ function paeth(left, above, upperLeft) {
   return dl <= da && dl <= du ? left : da <= du ? above : upperLeft;
 }
 
-function decodePng(bytes) {
+export function decodePng(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const width = view.getUint32(16);
   const height = view.getUint32(20);

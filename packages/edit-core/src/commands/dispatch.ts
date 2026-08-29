@@ -25,6 +25,8 @@ import { setStrokePatches } from './set-stroke';
 import { setEffectsPatches } from './set-effects';
 import { setLinkPatches } from './set-link';
 import { setCropPatches } from './set-crop';
+import { setGeometryPatches } from './set-geometry';
+import { convertToCustomGeometryPatches } from './convert-to-custom-geometry';
 import { replaceImagePatches } from './replace-image';
 import {
   setBackgroundCropPatches, setBackgroundImagePatches, setBackgroundPatches, setHiddenPatches,
@@ -43,6 +45,7 @@ import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
   InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand, UngroupCommand,
 } from './types';
+import type { ConvertToCustomGeometryCommand, SetGeometryCommand } from './geometry-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -91,6 +94,8 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     { target: 'none', selectInserted: true }),
   ReplaceImage: register<ReplaceImageCommand>(['id', 'bytes', 'mime'], replaceImagePatches),
   SetCrop: register<SetCropCommand>(['id', 'crop'], setCropPatches),
+  SetGeometry: register<SetGeometryCommand>(['id', 'geometry'], setGeometryPatches),
+  ConvertToCustomGeometry: register<ConvertToCustomGeometryCommand>(['id'], convertToCustomGeometryPatches),
   AddTable: register<AddTableCommand>(['slideId', 'rows', 'cols', 'rect', 'placeholderId'], addTablePatches,
     { target: 'none', selectInserted: true }),
   AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches, { target: 'none' }),

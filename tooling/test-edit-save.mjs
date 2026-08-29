@@ -33,6 +33,7 @@ import { runAnimationSaveContract } from './lib/animation-save-contract.mjs';
 import { runGeneratedSaveContract } from './lib/generated-save-contract.mjs';
 import { runGroupUngroupSaveContract } from './lib/group-ungroup-save-contract.mjs';
 import { runListLevelSaveContract } from './lib/list-level-save-contract.mjs';
+import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -97,6 +98,7 @@ await runGeneratedSaveContract({
 
 await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 await runListLevelSaveContract({ edit, core, load, check, saveArtifact });
+await runVertexSaveContract({ edit, core, load, check, saveArtifact });
 
 await runM1SaveContract({
   core,

@@ -25,6 +25,12 @@ export { queryElementStroke } from './shape-stroke';
 export { queryElementEffects } from './shape-effects';
 export { queryElementCrop } from './image-content';
 export {
+  assertCustomGeometry, moveCustomGeometryPoint, queryElementCustomGeometry,
+  setCustomGeometryClosed, setCustomGeometrySegmentType,
+} from './custom-geometry';
+export { customGeometryFromSvgPath } from './custom-geometry-path';
+export type { CustomGeometry } from '@web-ppt/core';
+export {
   MAX_EXTERNAL_LINK_LENGTH, normalizeExternalLinkTarget, queryElementLink,
 } from './hyperlink';
 export type { VectorFill } from './shape-fill';
@@ -71,6 +77,9 @@ export type {
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableRowPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
+export type {
+  ConvertToCustomGeometryCommand, ElementGeometryPatch, SetGeometryCommand,
+} from './commands/geometry-types';
 export type { SlideTransitionInput } from './slide-transition';
 export type {
   EditableAnimationEffect, EmphasisAnimationEffect, EntranceExitAnimationEffect,

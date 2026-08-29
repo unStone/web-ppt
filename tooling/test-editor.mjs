@@ -44,6 +44,7 @@ import { runTransitionEditorContract } from './lib/transition-editor-contract.mj
 import { runAnimationEditorContract } from './lib/animation-editor-contract.mjs';
 import { runListLevelEditorContract } from './lib/list-level-editor-contract.mjs';
 import { runShortcutAuditContract } from './lib/shortcut-audit-contract.mjs';
+import { runVertexEditorContract } from './lib/vertex-editor-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -60,6 +61,16 @@ execFileSync('npx', [
   `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
   `--outfile=${bundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const vertexBundle = join(out, 'vertex.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/editor/src/vertex/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  `--outfile=${vertexBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const coreBundle = join(out, 'core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
@@ -73,6 +84,7 @@ execFileSync('npx', [
   `--outfile=${viewerBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
+const vertex = await import(`file://${vertexBundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
 const viewer = await import(`file://${viewerBundle}?run=${Date.now()}`);
 const frameworkBundle = join(out, 'framework-adapters.mjs');
@@ -278,6 +290,7 @@ await runRunFormatEditorContract({ check, lib, root, window: domEnvironment.wind
 await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironment.window });
 await runListLevelEditorContract({ check, lib, root, window: domEnvironment.window });
 await runShortcutAuditContract({ check, lib, root, window: domEnvironment.window });
+await runVertexEditorContract({ check, lib, vertex, root });
 await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });

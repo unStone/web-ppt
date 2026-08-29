@@ -52,6 +52,9 @@ import {
 import {
   applyElementInteractionPatch, isElementInteractionPatch, validateElementInteractionPatch,
 } from './element-interaction';
+import {
+  applyElementGeometryPatch, isElementGeometryPatch, validateElementGeometryPatch,
+} from './element-geometry';
 
 function validatePatch(
   doc: EditDoc,
@@ -151,6 +154,10 @@ function validatePatch(
     && patch.path[2] === 'ovr' && patch.path[3] === 'crop'
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementCropPatch(doc, patch as import('./types').ElementCropPatch, index);
+    return;
+  }
+  if (isElementGeometryPatch(input)) {
+    validateElementGeometryPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -321,6 +328,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
     else if (isElementLinkPatch(patch)) applyElementLinkPatch(doc, patch);
     else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
+    else if (isElementGeometryPatch(patch)) applyElementGeometryPatch(doc, patch);
     else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);

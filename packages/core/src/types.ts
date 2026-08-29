@@ -4,7 +4,8 @@
  * 注意：新增能力一律用可选字段，保证已有生产者（如图表模块）无需同步改动。
  */
 
-import type { GeomSpec } from './geometry';
+import type { GeomSpec } from './geometry/index';
+import type { CustomGeometry } from './geometry/custom';
 import type {
   ParagraphLayoutDirectFlags, PlaceholderDirectFlags, TextRunDirectFlags, TextRunEditInfo,
 } from './edit-metadata';
@@ -355,6 +356,8 @@ export interface ElementEditInfo {
   placeholderInheritedEffects?: Effects;
   /** 预设形状的可重算语义；继承自版式/母版时也保留，只在编辑解析中存在 */
   geom?: GeomSpec;
+  /** custGeom 的可编辑路径；默认渲染仍只消费 ShapeElement.path。 */
+  customGeometry?: CustomGeometry;
   /** 版式目录的九级继承基值；与只含一个空段的首次输入模板分开。 */
   textLevelTemplate?: TextBody;
   /** 内部内容不可安全写回时只允许框架级变换；省略表示由元素类型推断为 full */

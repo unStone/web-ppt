@@ -12,7 +12,7 @@ import { getChartParser } from '../chart/hook';
 import { childColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseSlideTiming, parseTransition } from './animation';
-import { custGeomPath, parseAdjustments, presetGeom } from './geometry';
+import { custGeomPath, customGeometryModel, parseAdjustments, presetGeom } from './geometry';
 import { extractLstStyle, parseTextBody, TextEnv } from './text';
 import type { LevelStyles } from './text';
 import { completeTextTemplateLevels } from './text-template';
@@ -87,6 +87,7 @@ function editInfoOf(
   moveLocked = false,
   readonlyLink = false,
   placeholderDirect: PlaceholderDirectFlags = placeholderDirectFlags(0),
+  customGeometry?: NonNullable<ElementBase['editInfo']>['customGeometry'],
 ): Partial<Pick<ElementBase, 'editInfo'>> {
   if (!env.edit) return {};
   const spid = numAttr(cNvPr, 'id');
@@ -100,11 +101,13 @@ function editInfoOf(
     };
   }
   if (geom) editInfo.geom = geom;
+  if (customGeometry) editInfo.customGeometry = customGeometry;
   if (ph && placeholderDirect) editInfo.placeholderDirect = placeholderDirect;
   if (editable) editInfo.editable = editable;
   if (moveLocked) editInfo.moveLocked = true;
   if (readonlyLink) editInfo.readonlyLink = true;
-  return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom || editInfo.editable
+  return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom
+    || editInfo.customGeometry || editInfo.editable
     || editInfo.moveLocked || editInfo.readonlyLink
     ? { editInfo } : {};
 }
@@ -430,6 +433,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   let path: string | null = null;
   let openGeom = false;
   let editableGeom: NonNullable<ElementBase['editInfo']>['geom'] | undefined;
+  let editableCustomGeometry: NonNullable<ElementBase['editInfo']>['customGeometry'] | undefined;
   if (prstGeom) {
     const preset = attr(prstGeom, 'prst') ?? 'rect';
     const adj = parseAdjustments(kid(prstGeom, 'avLst'));
@@ -443,6 +447,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
       path = g.d;
       openGeom = g.open;
     }
+    if (env.edit) editableCustomGeometry = customGeometryModel(custGeom, xf.w, xf.h);
   }
 
   let fill = parseFillProps(spPr, env);
@@ -511,7 +516,7 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   const hyperlink = hyperlinkOf(cNvPr, env);
   const editing = editInfoOf(
     env, cNvPr, ph, editableGeom, undefined, movementLocked(nv), hyperlink.unsupported,
-    placeholderDirectBits(spPr, kid(sp, 'style')),
+    placeholderDirectBits(spPr, kid(sp, 'style')), editableCustomGeometry,
   );
   if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
   if (editing.editInfo && textLevelTemplate) editing.editInfo.textLevelTemplate = textLevelTemplate;

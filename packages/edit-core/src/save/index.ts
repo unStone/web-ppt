@@ -40,6 +40,7 @@ import {
   materializeNotesParts, patchSlideNotesRelationship, prepareNotesSave,
 } from './notes';
 import { hasNameOverride } from './name';
+import { hasGeometryOverride } from './geometry';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -60,6 +61,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   for (const record of Object.values(doc.elements)) {
     if (!hasXfrmOverrides(record) && !hasTextOverrides(record) && !hasOrderOverride(record)
       && !hasNameOverride(record)
+      && !hasGeometryOverride(record)
       && !hasShapeFormatOverrides(record)
       && !hasEffectsOverride(record)
       && !hasImageContentOverrides(record)

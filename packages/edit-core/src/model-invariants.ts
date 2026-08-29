@@ -28,6 +28,7 @@ import { isNotesPart } from './notes-part';
 import { assertElementName } from './element-name';
 import { assertStoredSlideTransition } from './slide-transition';
 import { assertStoredSlideAnimations } from './slide-animation';
+import { assertCustomGeometryOverride } from './custom-geometry';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -465,6 +466,16 @@ export function validateEditDoc(doc: EditDoc): void {
         throw new Error(`元素 ${id} 不支持图片裁剪覆盖`);
       }
       assertImageCrop(record.ovr.crop, `元素 ${id} 的图片裁剪覆盖`);
+    }
+    if (own(record.ovr, 'geometry')) {
+      if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不支持自定义几何覆盖`);
+      }
+      assertCustomGeometryOverride(
+        record.meta.customGeometry ?? null,
+        record.ovr.geometry,
+        `元素 ${id} 的自定义几何覆盖`,
+      );
     }
     if (record.meta.imageReplacement) {
       if (record.src.kind !== 'image' || !isEditablePicture(record.src)

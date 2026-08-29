@@ -17,6 +17,7 @@ import {
 } from './lib/slide-image-background-libreoffice-contract.mjs';
 import { runGroupUngroupLibreOfficeContract } from './lib/group-ungroup-libreoffice-contract.mjs';
 import { runListLevelLibreOfficeContract } from './lib/list-level-libreoffice-contract.mjs';
+import { runVertexEditingLibreOfficeContract } from './lib/vertex-editing-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -291,6 +292,11 @@ if (basename(savedPath) === 'slide-image-background.pptx') {
 if (basename(savedPath) === 'slide-image-background-tile-oracle.pptx') {
   geometryEvidence = runSlideImageTileOracleLibreOfficeContract({
     exportSvg: exportLibreOfficeSvg,
+  });
+}
+if (basename(savedPath) === 'vertex-editing.pptx') {
+  geometryEvidence = runVertexEditingLibreOfficeContract({
+    savedPath, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
   });
 }
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {

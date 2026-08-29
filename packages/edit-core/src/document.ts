@@ -49,6 +49,7 @@ export function elementMetaOf(
   const editable = inherited === 'full' && !lacksWriteAnchor && !belongsToInheritedPart ? own : 'none';
   return {
     ...(info?.geom ? { geom: info.geom } : {}),
+    ...(info?.customGeometry ? { customGeometry: info.customGeometry } : {}),
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
     ...(info?.placeholderDirect ? { placeholderDirect: info.placeholderDirect } : {}),
     ...(info?.placeholderInheritedEffects

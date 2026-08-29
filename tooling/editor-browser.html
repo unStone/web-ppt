@@ -22,6 +22,7 @@
   <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
     import { createWebPptAdapter, openEditor } from '/out/editor/editor.mjs';
+    import { createVertexEditor } from '/out/editor/vertex.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
@@ -89,6 +90,7 @@
       recordPerformanceBudget,
       sampleAnimationFrameEnvironment,
     } from '/tooling/lib/browser-performance-contract.mjs';
+    import { runEditorVertexBrowserContract } from '/tooling/lib/editor-vertex-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -103,6 +105,9 @@
     try {
       clearPerformanceFailures();
       const environmentBefore = await sampleAnimationFrameEnvironment();
+      const vertexResult = await runEditorVertexBrowserContract({ openEditor, createVertexEditor, load });
+      report.dataset.vertexP95 = vertexResult.p95.toFixed(3);
+      report.dataset.vertexError = vertexResult.geometryError.toFixed(3);
       const recovery = await runEditorRecoveryBrowserContract({
         lib: await import('/out/editor/editor.mjs'), load,
       });
@@ -705,6 +710,8 @@
         + `单元格 ${autofitResult.cellP95.toFixed(3)}ms`;
       report.textContent += `\n60 元素修饰点选/框选 p95 ${multiselectResult.clickP95.toFixed(3)} / `
         + `${multiselectResult.marqueeP95.toFixed(3)}ms`;
+      report.textContent += `\n60 元素顶点拖动偏差/p95 ${vertexResult.geometryError.toFixed(3)}px / `
+        + `${vertexResult.p95.toFixed(3)}ms`;
       globalThis.editorContract = {
         openEditor, load,
         session, hitSession, spaceSession, spaceView, fontSession, perfSession, trustedSnapSession,

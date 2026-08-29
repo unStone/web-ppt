@@ -1,4 +1,4 @@
-import { resolveGeomPath } from '@web-ppt/core/geometry';
+import { resolveCustomGeometry, resolveGeomPath } from '@web-ppt/core/geometry';
 import type {
   GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TableRow, TextBody,
 } from '@web-ppt/core';
@@ -175,7 +175,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
 
   const record = elementRecord(doc, id);
   const layoutBase = rebasedElementBase(doc, slideOfElement(doc, id), record);
-  const { tableCells, tableRows, link: linkOverride, ...overrides } = record.ovr;
+  const {
+    tableCells, tableRows, link: linkOverride, geometry: geometryOverride, ...overrides
+  } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
   if (own(record.ovr, 'link')) {
     const link = linkOverride?.kind === 'none' ? undefined : renderLinkTarget(doc, linkOverride!);
@@ -252,6 +254,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       ...out, scaleX, scaleY,
       children: (record.children ?? []).map((childId) => effectiveElement(doc, childId)),
     } as GroupElement;
+  } else if (out.kind === 'shape' && (geometryOverride || record.meta.customGeometry)) {
+    const geometry = resolveCustomGeometry(geometryOverride ?? record.meta.customGeometry!, out.w, out.h);
+    out = { ...out, path: geometry.d, openGeom: geometry.open || undefined } as ShapeElement;
   } else if (out.kind === 'shape' && layoutBase.geom) {
     const geom = resolveGeomPath(layoutBase.geom, out.w, out.h);
     out = { ...out, path: geom.d, openGeom: geom.open || undefined } as ShapeElement;

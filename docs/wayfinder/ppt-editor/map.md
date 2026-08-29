@@ -95,6 +95,7 @@ tracker: local-markdown
 - [实现文本列表升降级](tickets/068-text-list-level.md) — 九级继承重基、自动续号、Tab 交互、稀疏保存和双渲染路径已贯通，LibreOffice 几何 oracle、批量负载预算与两路终审全部通过。
 - [盘点并补齐附录 B 快捷键](tickets/069-appendix-b-shortcut-audit.md) — 统一文档键盘通道贯通全选、逐 run 字号、对齐、新建与翻页，产品职责、IME 边界、受控切页和真实 Chrome 可信输入均已闭环。
 - [让浏览器性能契约抗环境负载](tickets/074-perf-contract-load-isolation.md) — 功能断言与性能预算延迟汇总彻底分离，测前/测中环境基线仅授予一次全新 Chrome 重测；真实并行 CPU/Chromium 负载、安静输出与双轴终审全部通过。
+- [建立顶点编辑独立扩展](tickets/070-vertex-editing-extension.md) — 稳定自由形状地址、按需圆弧物化与保留型保存贯通独立 vertex 入口；Chrome 60 元素拖动 p95 0.2ms，主入口零增长且 LibreOffice 像素 oracle 通过。
 
 ## Not yet specified
 
