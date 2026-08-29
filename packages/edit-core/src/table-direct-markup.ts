@@ -65,10 +65,18 @@ function lineMarkup(tag: string, stroke: Stroke | null | undefined): string {
   return `<a:${tag} ${attributes}><a:solidFill>${colorMarkup(stroke.color)}</a:solidFill>${dash ? `<a:prstDash val="${dash}"/>` : ''}${join}</a:${tag}>`;
 }
 
-function runProperties(run: TextRun): string {
+export interface DirectTableCellMarkupOptions {
+  /** 生成式保存有表样式时只落真正的单元格直设，缺失字段继续由样式求值。 */
+  readonly sparseAppearance?: boolean;
+  readonly omitTextBold?: boolean;
+  readonly omitTextColor?: boolean;
+}
+
+function runProperties(run: TextRun, options: DirectTableCellMarkupOptions): string {
   const attributes = [
     'lang="zh-CN"', `sz="${Math.max(100, Math.round(run.size * 75))}"`,
-    `b="${run.b ? 1 : 0}"`, `i="${run.i ? 1 : 0}"`,
+    ...(!options.omitTextBold ? [`b="${run.b ? 1 : 0}"`] : []),
+    `i="${run.i ? 1 : 0}"`,
     `u="${run.u ? 'sng' : 'none'}"`, `strike="${run.strike ? 'sngStrike' : 'noStrike'}"`,
   ];
   if (run.baseline) attributes.push(`baseline="${Math.round(run.baseline * 1000)}"`);
@@ -78,19 +86,27 @@ function runProperties(run: TextRun): string {
   const cs = run.fonts[2] ? escapeAttribute(run.fonts[2]) : ea;
   const fonts = latin
     ? `<a:latin typeface="${latin}"/><a:ea typeface="${ea}"/><a:cs typeface="${cs}"/>` : '';
-  return `<a:endParaRPr ${attributes.join(' ')}><a:solidFill>${colorMarkup(run.color)}</a:solidFill>${fonts}</a:endParaRPr>`;
+  const color = options.omitTextColor
+    ? '' : `<a:solidFill>${colorMarkup(run.color)}</a:solidFill>`;
+  return `<a:endParaRPr ${attributes.join(' ')}>${color}${fonts}</a:endParaRPr>`;
 }
 
 /** 新表格把已求值视觉写成直接格式，跨文档粘贴不再依赖来源 tableStyles/theme。 */
-export function directTableCellMarkup(cell: TableCell): string {
+export function directTableCellMarkup(
+  cell: TableCell,
+  options: DirectTableCellMarkupOptions = {},
+): string {
   const body = cell.editInfo?.textTemplate ?? cell.text;
   const run = body?.paragraphs[0]?.runs[0];
   if (!run) throw new Error('新增表格单元格缺少可写文字模板');
-  const text = `<a:txBody><a:bodyPr/><a:lstStyle/><a:p>${runProperties(run)}</a:p></a:txBody>`;
-  const borders = lineMarkup('lnL', cell.borders?.l) + lineMarkup('lnR', cell.borders?.r)
-    + lineMarkup('lnT', cell.borders?.t) + lineMarkup('lnB', cell.borders?.b);
+  const text = `<a:txBody><a:bodyPr/><a:lstStyle/><a:p>${runProperties(run, options)}</a:p></a:txBody>`;
+  const borders = ([['lnL', 'l'], ['lnR', 'r'], ['lnT', 't'], ['lnB', 'b']] as const)
+    .flatMap(([tag, side]) => options.sparseAppearance
+      && !Object.prototype.hasOwnProperty.call(cell.borders ?? {}, side)
+      ? [] : lineMarkup(tag, cell.borders?.[side])).join('');
   const margins = cell.margins ?? [4.8, 9.6, 4.8, 9.6];
   const anchor = cell.vAlign === 'middle' ? 'ctr' : cell.vAlign === 'bottom' ? 'b' : 't';
   const properties = `marT="${Math.round(margins[0] * 9525)}" marR="${Math.round(margins[1] * 9525)}" marB="${Math.round(margins[2] * 9525)}" marL="${Math.round(margins[3] * 9525)}" anchor="${anchor}" vert="${escapeAttribute(cell.vert ?? 'horz')}"`;
-  return `<a:tc>${text}<a:tcPr ${properties}>${borders}${fillMarkup(cell.fill)}</a:tcPr></a:tc>`;
+  const fill = options.sparseAppearance && cell.fill === null ? '' : fillMarkup(cell.fill);
+  return `<a:tc>${text}<a:tcPr ${properties}>${borders}${fill}</a:tcPr></a:tc>`;
 }

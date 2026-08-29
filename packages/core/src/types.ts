@@ -56,6 +56,8 @@ export interface PresentationEditInfo {
   layouts: SlideLayoutTemplate[];
   /** 非 OPC 输入在 edit 模式保留会话 URL 的原字节，供复制、转换与崩溃恢复同步取用。 */
   assets?: PresentationEditAsset[];
+  /** 当前演示文稿的表样式 part；省略表示保存时需要按需创建。 */
+  tableStylesPart?: string;
 }
 
 export interface PresentationEditAsset {
@@ -75,6 +77,8 @@ export interface SlideLayoutTemplate {
   defaultShape: ShapeCreationDefaults;
   /** 当前主题与默认表样式求值后的新表格默认值；旧生产者可不提供。 */
   defaultTable?: TableCreationDefaults;
+  /** 按当前版式主题求值后的表样式目录，仅编辑解析存在。 */
+  tableStyles?: TableStyleDefinition[];
 }
 
 /** 编辑写回使用的只读 OPC 包句柄。字节视为只读，修改它们属于未定义行为。 */
@@ -149,6 +153,37 @@ export interface SlideEditInfo {
   defaultShape?: ShapeCreationDefaults;
   /** 当前页主题与默认表样式求值后的新表格默认值；只在编辑解析中保留。 */
   defaultTable?: TableCreationDefaults;
+  /** 按当前页主题求值后的表样式目录，仅编辑解析存在。 */
+  tableStyles?: TableStyleDefinition[];
+}
+
+export interface TableStyleSettings {
+  readonly styleId: string;
+  readonly firstRow: boolean;
+  readonly lastRow: boolean;
+  readonly bandRow: boolean;
+  readonly firstCol: boolean;
+  readonly lastCol: boolean;
+  readonly bandCol: boolean;
+}
+
+export interface TableStylePart {
+  readonly fill?: Fill;
+  readonly borders?: CellBorders;
+  readonly text?: { readonly b?: boolean; readonly color?: string };
+}
+
+export interface TableStyleDefinition {
+  readonly styleId: string;
+  readonly name: string;
+  readonly source: 'document' | 'builtin';
+  /** 缺失样式按需写回时使用；只在 edit 模式进入公开目录。 */
+  readonly markup: string;
+  readonly parts: Readonly<Partial<Record<
+    'wholeTbl' | 'band1H' | 'band2H' | 'band1V' | 'band2V'
+    | 'firstRow' | 'lastRow' | 'firstCol' | 'lastCol'
+    | 'nwCell' | 'neCell' | 'swCell' | 'seCell', TableStylePart
+  >>>;
 }
 
 export interface ShapeCreationDefaults {
@@ -368,6 +403,8 @@ export interface ElementEditInfo {
   textTemplate?: TextBody;
   /** 仅编辑模式保留追加行的表样式投影；普通预览不承担结构编辑状态。 */
   tableRowAppend?: TableRowAppendEditInfo;
+  /** 来源 `a:tblPr` 的样式选择；稀疏覆盖删除后据此恢复。 */
+  tableStyle?: TableStyleSettings;
   /** 来源存在链接但其 action/关系不能安全映射到公开目标；保存必须原样保留。 */
   readonlyLink?: true;
 }
@@ -469,7 +506,15 @@ export interface TableCell {
   /** 竖排文字方向 */
   vert?: TextVert;
   /** 仅编辑解析保留空单元格的段落与 endParaRPr 格式入口；不参与普通渲染。 */
-  editInfo?: { textTemplate?: TextBody };
+  editInfo?: { textTemplate?: TextBody; styleBase?: TableCellStyleBase };
+}
+
+/** 切换表样式前的单元格直设基线；样式只能填补这些值没有覆盖的字段。 */
+export interface TableCellStyleBase {
+  readonly fill: Fill | null;
+  readonly borders: CellBorders;
+  readonly text: TextBody | null;
+  readonly textTemplate?: TextBody;
 }
 
 export interface UnsupportedElement extends ElementBase {

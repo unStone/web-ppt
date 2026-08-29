@@ -3,7 +3,7 @@ import { directTableCellMarkup } from '../table-direct-markup';
 import { own } from '../data-validation';
 import type { ElementRecord } from '../types';
 import {
-  cloneXmlNode, insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren,
+  cloneXmlNode, createXmlText, insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren,
 } from '../xml/nodes';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import {
@@ -17,6 +17,35 @@ import { namespacedElement } from './xml-element';
 
 export function hasTableRowOverrides(record: ElementRecord): boolean {
   return !!record.ovr.tableRows && Object.keys(record.ovr.tableRows).length > 0;
+}
+
+export function hasTableStyleOverride(record: ElementRecord): boolean {
+  return Object.prototype.hasOwnProperty.call(record.ovr, 'tableStyle');
+}
+
+/** tblPr 只保存六个开关与 styleId；单元格直接格式继续原位直通。 */
+export function patchTableStyle(document: XmlDocument, record: ElementRecord): void {
+  if (!hasTableStyleOverride(record)) return;
+  if (record.src.kind !== 'table' || record.meta.editable !== 'full') {
+    throw new Error(`元素 ${record.id} 不能写回表样式`);
+  }
+  const settings = record.ovr.tableStyle!;
+  const { host } = locateElementHost(document, record);
+  const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
+  const properties = table && findXmlChild(table, { localName: 'tblPr', namespaceUri: DRAWINGML_NS });
+  if (!properties) throw new Error(`表格 ${record.id} 缺少 a:tblPr`);
+  for (const field of ['firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'] as const) {
+    if (settings[field]) setXmlAttribute(properties, field, '1');
+    else removeXmlAttribute(properties, field);
+  }
+  let styleId = findXmlChild(properties, { localName: 'tableStyleId', namespaceUri: DRAWINGML_NS });
+  if (!styleId) {
+    styleId = namespacedElement(properties, DRAWINGML_NS, 'tableStyleId');
+    const extension = findXmlChild(properties, { localName: 'extLst', namespaceUri: DRAWINGML_NS });
+    insertXmlChildUnchecked(properties, styleId, extension);
+  }
+  for (const child of [...styleId.children]) removeXmlChild(styleId, child);
+  insertXmlChildUnchecked(styleId, createXmlText(settings.styleId));
 }
 
 function removeParagraphContent(parent: XmlElement): void {

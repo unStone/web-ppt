@@ -280,6 +280,9 @@ if (mode === 'projected') {
       type: 'PasteElements', payload: edit.copyElements(doc, [target.id]),
       at: { parentId: doc.slideOrder[slideIndex], ...scenario.copy },
     });
+  } else if (scenario.type === 'tableStyle') {
+    if (!target || target.src.kind !== 'table') throw new Error('M1 指纹固件缺少表样式目标');
+    editor.exec({ type: 'SetTableStyle', id: target.id, ...scenario.settings });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

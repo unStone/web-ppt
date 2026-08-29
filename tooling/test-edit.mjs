@@ -48,6 +48,7 @@ import { runAnimationEditContract } from './lib/animation-edit-contract.mjs';
 import { runGroupUngroupContract } from './lib/group-ungroup-contract.mjs';
 import { runListLevelContract } from './lib/list-level-contract.mjs';
 import { runVertexGeometryContract } from './lib/vertex-geometry-contract.mjs';
+import { runTableStyleContract } from './lib/table-style-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -112,6 +113,7 @@ await runVertexGeometryContract({ edit, core, load, check });
 await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runTableRowInsertContract({ edit, core, load, check });
+await runTableStyleContract({ edit, core, load, check });
 await runAddShapeContract({ edit, core, load, check, eq });
 await runAddImageContract({ edit, core, load, check });
 await runAddTableContract({ edit, core, load, check });

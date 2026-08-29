@@ -2,7 +2,7 @@ import type {
   CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
-  SlideElement, SlideLayoutTemplate, TextBody, TextRun,
+  SlideElement, SlideLayoutTemplate, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 
@@ -131,6 +131,8 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   tableCells?: Record<TableCellKey, TableCellOverrides>;
   /** 表格行使用稳定身份稀疏追加；不复制整张 rows，未来可沿同一身份扩展中间插入。 */
   tableRows?: Record<TableRowId, TableRowInsertion>;
+  /** 缺少字段表示来源；SetTableStyle(null) 删除整份覆盖。 */
+  tableStyle?: TableStyleSettings;
 };
 
 export interface ElementFillState {
@@ -271,8 +273,12 @@ export interface TextMark {
   readonly runOverrides?: RunPropertyOverrides;
   /** 删除直接格式后用于恢复继承所得的有效值；只含字符格式 P0 字段。 */
   readonly inheritedProps?: RunProperties;
+  /** 完整继承字符元数据；改级后不能继续沿用旧层级的非面板字段。 */
+  readonly inheritedRunProps?: import('@web-ppt/core').TextRunEditInfo['inheritedRunProps'];
   /** 继承字体可能分别含 latin/ea/cs，不能为面板的单字体值而丢掉回退栈。 */
   readonly inheritedFonts?: readonly string[];
+  /** 去重字体栈不足以还原脚本槽；清除 font 直设与换级重基必须保留槽位身份。 */
+  readonly inheritedFontSlots?: import('@web-ppt/core').TextFontSlots;
   /** 只说明来源链接不可安全编辑，不携带原始 action 或危险 URL。 */
   readonly sourceLinkReadonly?: true;
 }
@@ -503,6 +509,8 @@ export interface SlideRecord {
   defaultShape?: ShapeCreationDefaults;
   /** 解析期已在当前页主题/默认表样式上求值，新增表格无需理解 OOXML 样式层。 */
   defaultTable?: TableCreationDefaults;
+  /** 当前页主题求值后的公开表样式目录。 */
+  tableStyles?: TableStyleDefinition[];
 }
 
 export interface SlideNotesBinding {
@@ -535,6 +543,8 @@ export interface EditDocMeta {
   source: Presentation['source'];
   /** true 表示缺少可靠写回上下文，只能安全查看 */
   readonly: boolean;
+  /** 来源演示文稿的表样式 part；省略表示保存时按需创建标准 part。 */
+  tableStylesPart?: string;
 }
 
 /** 会话内身份分配状态必须随文档持久化，否则恢复后会复用旧 id。 */

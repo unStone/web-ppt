@@ -35,6 +35,7 @@ import {
 import { setLayoutPatches } from './slide-layout';
 import { setNotesPatches } from './slide-notes';
 import { setAnimationsPatches } from './set-animations';
+import { setTableStylePatches } from './set-table-style';
 import { setNamePatches } from './element-name';
 import { applyFormatPatches } from './apply-format';
 import { replaceTextPatches } from './replace-text';
@@ -43,7 +44,7 @@ import {
 } from './element-interaction';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetXfrmCommand, SetZCommand, UngroupCommand,
+  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, UngroupCommand,
 } from './types';
 import type { ConvertToCustomGeometryCommand, SetGeometryCommand } from './geometry-types';
 import type { ApplyFormatCommand } from './format-painter-types';
@@ -124,6 +125,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
   SetBodyProps: register<SetBodyPropsCommand>(['id', 'cell', 'props'], setBodyPropsPatches),
   InsertRow: register<InsertRowCommand>(['id'], insertRowPatches),
+  SetTableStyle: register<SetTableStyleCommand>([
+    'id', 'styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol',
+  ], setTableStylePatches),
 };
 
 export function assertPureCommand(input: Command): void {

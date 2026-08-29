@@ -18,6 +18,24 @@ const BUILTIN_TABLE_STYLES: Readonly<Record<string, string>> = Object.freeze({
 </a:tblStyle>`,
 });
 
+export interface BuiltInTableStyleMarkup {
+  readonly styleId: string;
+  readonly name: string;
+  readonly markup: string;
+}
+
+const BUILTIN_TABLE_STYLE_CATALOG: readonly BuiltInTableStyleMarkup[] = Object.freeze([
+  Object.freeze({
+    styleId: MEDIUM_STYLE_2_ACCENT_1,
+    name: 'Medium Style 2 - Accent 1',
+    markup: BUILTIN_TABLE_STYLES[MEDIUM_STYLE_2_ACCENT_1],
+  }),
+]);
+
+export function builtInTableStyleCatalog(): readonly BuiltInTableStyleMarkup[] {
+  return BUILTIN_TABLE_STYLE_CATALOG;
+}
+
 export function builtInTableStyleMarkup(styleId: string | null): string | null {
   return styleId ? BUILTIN_TABLE_STYLES[styleId.toUpperCase()] ?? null : null;
 }

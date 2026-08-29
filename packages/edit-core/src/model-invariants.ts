@@ -29,6 +29,7 @@ import { assertElementName } from './element-name';
 import { assertStoredSlideTransition } from './slide-transition';
 import { assertStoredSlideAnimations } from './slide-animation';
 import { assertCustomGeometryOverride } from './custom-geometry';
+import { assertTableStyleSettings } from './table-style';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -148,6 +149,9 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) assertLinkOverride(record.ovr.link, `元素 ${record.id} 的链接覆盖`);
     if (own(record.ovr, 'name')) assertElementName(record.ovr.name, `元素 ${record.id} 的名称覆盖`);
+    if (own(record.ovr, 'tableStyle')) {
+      assertTableStyleSettings(doc, record.id, record.ovr.tableStyle, `表格 ${record.id} 的样式覆盖`);
+    }
     assertFiniteTransform(record, doc);
     assertTextBodies(record);
   }

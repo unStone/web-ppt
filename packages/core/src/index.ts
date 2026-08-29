@@ -19,9 +19,11 @@ import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
 import { isKnownPreset, resolveGeomPath } from './geometry/index';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
+import { tableStyleCellAppearance, tableStylePreview } from './table-style';
 
 export * from './types';
 export { transitionDefaultDirection, transitionPreferredDirection } from './transition';
+export { tableStyleCellAppearance, tableStylePreview };
 export * from './edit-metadata';
 export * from './placeholder-match';
 export * from './text-body-edit';

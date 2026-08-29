@@ -14,6 +14,7 @@ import type {
 } from './slide-property-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
+import type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
 
 export type {
   ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
@@ -30,6 +31,7 @@ export type {
   ElementHierarchyPatch, ElementHierarchyState, GroupCommand, UngroupCommand,
 } from './group-types';
 export type { ReplaceTextCommand, ReplaceTextScope } from '../text-search-types';
+export type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -274,7 +276,8 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
-  | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand;
+  | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
+  | SetTableStyleCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -464,7 +467,7 @@ export type TableRowPatch = {
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementInteractionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
-  | SlideNotesPatch | TableRowPatch;
+  | SlideNotesPatch | TableRowPatch | ElementTableStylePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

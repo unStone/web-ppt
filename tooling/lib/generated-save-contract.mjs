@@ -2,6 +2,15 @@ import { equalBytes } from './bytes.mjs';
 
 const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const bytesOf = (base64) => Uint8Array.from(Buffer.from(base64, 'base64'));
+const FALLBACK_TABLE_BORDER = { color: 'rgba(0,0,0,0.25)', width: 1, dash: null };
+const tableAppearance = (table) => table.rows.map((row) => row.cells.map((cell) => ({
+  fill: cell.fill,
+  borders: Object.fromEntries(['l', 'r', 't', 'b'].map((side) =>
+    [side, cell.borders?.[side] === undefined ? FALLBACK_TABLE_BORDER : cell.borders[side]])),
+  text: cell.text?.paragraphs.map((paragraph) => paragraph.runs.map((run) => ({
+    text: run.text, b: run.b, color: run.color,
+  }))),
+})));
 
 /** 生成保存只从公开入口和最终 PPTX 观察，不读取生成器内部状态。 */
 export async function runGeneratedSaveContract({
@@ -182,6 +191,85 @@ export async function runGeneratedSaveContract({
   check('生成前后两条文本路径的独立进程指纹一致', JSON.stringify(after) === JSON.stringify(before),
     `${JSON.stringify(before)} != ${JSON.stringify(after)}`);
   edit.disposeDoc(content);
+
+  const styledSource = await core.parse(load('sample-editor-table-style.pptx'), {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const styledDoc = edit.createDoc(styledSource, { idPrefix: 'generated-table-style-' });
+  const styledEditor = new edit.Editor(styledDoc);
+  const styledId = Object.values(styledDoc.elements)
+    .find((record) => record.src.kind === 'table' && record.src.name === '六开关表样式')?.id;
+  const styledSettings = {
+    styleId: '{71A84F42-BA92-4C1E-9EE0-71590D54A071}',
+    firstRow: true, lastRow: true, bandRow: false,
+    firstCol: false, lastCol: true, bandCol: true,
+  };
+  if (check('生成保存找到表样式目标', !!styledId)) {
+    styledEditor.exec({
+      type: 'SetRunProps', id: styledId, cell: { r: 0, c: 2 },
+      range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 3 } },
+      props: { b: false, color: '#7C3AED' },
+    });
+    styledEditor.exec({ type: 'SetTableStyle', id: styledId, ...styledSettings });
+    const sessionDirect = styledEditor.effectiveElement(styledId)
+      .rows[0].cells[2].text.paragraphs[0].runs[0];
+    check('生成前会话字符直设高于表样式',
+      sessionDirect.b === false && sessionDirect.color === 'rgb(124,58,237)');
+    const styledAppearance = tableAppearance(styledEditor.effectiveElement(styledId));
+    const styledProjection = JSON.stringify(styledAppearance);
+    styledSource.dispose?.();
+    const styledSaved = generate.generateEditDoc(styledDoc);
+    const styledReopened = await core.parse(styledSaved.bytes, {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const styledReopenedDoc = edit.createDoc(styledReopened, { idPrefix: 'generated-table-style-reopened-' });
+    const styledReopenedId = Object.values(styledReopenedDoc.elements)
+      .find((record) => record.src.kind === 'table' && record.src.name === '六开关表样式')?.id;
+    const reopenedState = styledReopenedId
+      ? edit.queryTableStyle(styledReopenedDoc, styledReopenedId).value : null;
+    const generatedStyleXml = new TextDecoder()
+      .decode(styledSaved.package.parts['ppt/tableStyles.xml'] ?? new Uint8Array());
+    const namespaceComplete = generatedStyleXml.includes('xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"')
+      && generatedStyleXml.includes('xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"')
+      && generatedStyleXml.includes('mc:Ignorable="a14"')
+      && generatedStyleXml.includes('<a14:keep val="TABLE-STYLE-NS-KEEP"/>');
+    const styledReopenedEditor = new edit.Editor(styledReopenedDoc);
+    const reopenedAppearance = styledReopenedId
+      ? tableAppearance(styledReopenedEditor.effectiveElement(styledReopenedId)) : [];
+    const reopenedProjection = JSON.stringify(reopenedAppearance);
+    let appearanceMismatch = null;
+    styledAppearance.some((row, r) => row.some((cell, c) => {
+      if (JSON.stringify(cell) === JSON.stringify(reopenedAppearance[r]?.[c])) return false;
+      appearanceMismatch = { r, c, before: cell, after: reopenedAppearance[r]?.[c] };
+      return true;
+    }));
+    check('生成保存物化表样式 OPC 闭包并保留可继续编辑的样式状态',
+      !!styledSaved.package.parts['ppt/tableStyles.xml'] && namespaceComplete && !!reopenedState
+        && Object.entries(styledSettings).every(([field, value]) => reopenedState[field] === value)
+        && reopenedProjection === styledProjection,
+    JSON.stringify({ hasPart: !!styledSaved.package.parts['ppt/tableStyles.xml'], namespaceComplete, reopenedState,
+      projectionEqual: reopenedProjection === styledProjection, appearanceMismatch }));
+    styledReopenedEditor.exec({
+      type: 'SetTableStyle', id: styledReopenedId,
+      styleId: '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}',
+      firstRow: true, lastRow: false, bandRow: true,
+      firstCol: false, lastCol: false, bandCol: false,
+    });
+    const restyled = styledReopenedEditor.effectiveElement(styledReopenedId);
+    const changedCells = restyled.rows.flatMap((row, r) => row.cells.map((cell, c) =>
+      JSON.stringify(cell.fill) !== JSON.stringify(styledAppearance[r][c].fill))).filter(Boolean).length;
+    const preservedDirect = restyled.rows[1].cells[1];
+    const preservedRun = restyled.rows[0].cells[1].text.paragraphs[0].runs[0];
+    const preservedSessionRun = restyled.rows[0].cells[2].text.paragraphs[0].runs[0];
+    check('生成保存重开后仍可二次切换样式且不清洗真实直接格式',
+      changedCells > 0 && preservedDirect.fill?.color === 'rgb(17,24,39)'
+        && preservedDirect.borders.l?.color === 'rgb(220,38,38)'
+        && preservedRun.b === false && preservedRun.color === 'rgb(16,185,129)'
+        && preservedSessionRun.b === false && preservedSessionRun.color === 'rgb(124,58,237)',
+    `changed=${changedCells}`);
+    edit.disposeDoc(styledReopenedDoc);
+  }
+  edit.disposeDoc(styledDoc);
 
   const legacySource = await core.parse(load('sample.ppt'), {
     edit: true, lazy: false, assets: 'defer',

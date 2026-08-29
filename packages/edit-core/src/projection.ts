@@ -17,6 +17,7 @@ import {
   rebasedTextBase, resolvedLayoutSlide,
 } from './layout-projection';
 import { projectAnimationSteps } from './slide-animation';
+import { projectTableStyle } from './table-style';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -176,7 +177,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const record = elementRecord(doc, id);
   const layoutBase = rebasedElementBase(doc, slideOfElement(doc, id), record);
   const {
-    tableCells, tableRows, link: linkOverride, geometry: geometryOverride, ...overrides
+    tableCells, tableRows, tableStyle, link: linkOverride, geometry: geometryOverride, ...overrides
   } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
   if (own(record.ovr, 'link')) {
@@ -230,6 +231,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       return changed ? { ...row, cells } : row;
     });
     out = { ...out, rows, h: out.h + tableRowHeightDelta(record) } as TableElement;
+  }
+  if (out.kind === 'table' && tableStyle) {
+    out = projectTableStyle(doc, slideOfElement(doc, id), out, tableStyle);
   }
   if (out.kind === 'table' && (own(record.ovr, 'w') || own(record.ovr, 'h'))) {
     const sourceHeight = out.rows.reduce((sum, row) => sum + row.height, 0);

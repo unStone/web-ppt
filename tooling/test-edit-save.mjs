@@ -34,6 +34,7 @@ import { runGeneratedSaveContract } from './lib/generated-save-contract.mjs';
 import { runGroupUngroupSaveContract } from './lib/group-ungroup-save-contract.mjs';
 import { runListLevelSaveContract } from './lib/list-level-save-contract.mjs';
 import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
+import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -99,6 +100,17 @@ await runGeneratedSaveContract({
 await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 await runListLevelSaveContract({ edit, core, load, check, saveArtifact });
 await runVertexSaveContract({ edit, core, load, check, saveArtifact });
+await runTableStyleSaveContract({
+  edit, core, load, check, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
 
 await runM1SaveContract({
   core,

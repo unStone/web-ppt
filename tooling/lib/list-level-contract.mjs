@@ -91,10 +91,20 @@ export async function runListLevelContract({ edit, core, load, check }) {
   });
   editor.exec({ type: 'SetParaProps', id: record.id, range: range(7), props: { level: 2 } });
   const clearedThenChanged = paragraphs()[7];
+  const clearedRange = {
+    from: { p: 7, r: 0, off: 0 },
+    to: { p: 7, r: 0, off: clearedThenChanged.runs[0].text.length },
+  };
+  const clearedBody = editor.effectiveElement(record.id).text;
+  const clearedRoundTrip = edit.textBodyFromOverride(
+    edit.applyRunProps(clearedBody, clearedRange, { size: null }), clearedBody,
+  ).paragraphs[7].runs[0];
   check('先清来源直设再改级时预览采用新级继承值',
     clearedThenChanged.lvl === 2 && clearedThenChanged.marL === 144
       && clearedThenChanged.indent === -18 && clearedThenChanged.bullet === '★'
-      && clearedThenChanged.runs[0].size === 24,
+      && clearedThenChanged.runs[0].size === 24
+      && clearedThenChanged.runs[0].editInfo?.inheritedRunProps.size === 24
+      && clearedRoundTrip.size === 24,
     JSON.stringify([
       clearedThenChanged.lvl, clearedThenChanged.marL, clearedThenChanged.indent,
       clearedThenChanged.bullet, clearedThenChanged.runs[0].size,

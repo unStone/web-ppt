@@ -96,6 +96,7 @@ tracker: local-markdown
 - [盘点并补齐附录 B 快捷键](tickets/069-appendix-b-shortcut-audit.md) — 统一文档键盘通道贯通全选、逐 run 字号、对齐、新建与翻页，产品职责、IME 边界、受控切页和真实 Chrome 可信输入均已闭环。
 - [让浏览器性能契约抗环境负载](tickets/074-perf-contract-load-isolation.md) — 功能断言与性能预算延迟汇总彻底分离，测前/测中环境基线仅授予一次全新 Chrome 重测；真实并行 CPU/Chromium 负载、安静输出与双轴终审全部通过。
 - [建立顶点编辑独立扩展](tickets/070-vertex-editing-extension.md) — 稳定自由形状地址、按需圆弧物化与保留型保存贯通独立 vertex 入口；Chrome 60 元素拖动 p95 0.2ms，主入口零增长且 LibreOffice 像素 oracle 通过。
+- [实现表格样式应用与写回](tickets/071-table-style-library.md) — 公开样式目录、六开关命令、直接格式优先级与按需 OPC 物化贯通补丁及生成保存，LibreOffice 表样式 oracle 与两路终审通过。
 
 ## Not yet specified
 

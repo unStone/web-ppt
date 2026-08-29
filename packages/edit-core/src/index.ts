@@ -24,6 +24,8 @@ export { querySlideNotes } from './slide-notes';
 export { queryElementStroke } from './shape-stroke';
 export { queryElementEffects } from './shape-effects';
 export { queryElementCrop } from './image-content';
+export { listTableStyles, queryTableStyle } from './table-style';
+export type { TableStyleCatalogItem, TableStyleState } from './table-style';
 export {
   assertCustomGeometry, moveCustomGeometryPoint, queryElementCustomGeometry,
   setCustomGeometryClosed, setCustomGeometrySegmentType,
@@ -75,6 +77,7 @@ export type {
   ElementHierarchyPatch, ElementHierarchyState, ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SetTransitionCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideTransitionPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
   ApplyFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableRowPatch,
+  ElementTableStylePatch, SetTableStyleCommand,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type {

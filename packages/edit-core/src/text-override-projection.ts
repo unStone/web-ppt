@@ -1,4 +1,9 @@
-import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
+import {
+  paragraphLayoutDirectFlags, TEXT_RUN_DIRECT_BITS, textRunDirectFlags,
+} from '@web-ppt/core';
+import type {
+  Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo,
+} from '@web-ppt/core';
 import type { FlatTextParagraph, LinkOverride, TextMark, TextOverride } from './types';
 
 function runProps(run: TextRun): Omit<TextRun, 'text'> {
@@ -9,6 +14,125 @@ function runProps(run: TextRun): Omit<TextRun, 'text'> {
 function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
   const { runs: _runs, editInfo: _editInfo, ...props } = paragraph;
   return props;
+}
+
+const RUN_DIRECT_FIELDS = [
+  ['size', TEXT_RUN_DIRECT_BITS.size], ['color', TEXT_RUN_DIRECT_BITS.color],
+  ['b', TEXT_RUN_DIRECT_BITS.b], ['i', TEXT_RUN_DIRECT_BITS.i],
+  ['u', TEXT_RUN_DIRECT_BITS.u], ['strike', TEXT_RUN_DIRECT_BITS.strike],
+] as const;
+const FONT_DIRECT_BITS = TEXT_RUN_DIRECT_BITS.fonts | TEXT_RUN_DIRECT_BITS.fontLatin
+  | TEXT_RUN_DIRECT_BITS.fontEastAsian | TEXT_RUN_DIRECT_BITS.fontComplexScript;
+
+function fontSlots(fonts: readonly string[]): TextFontSlots {
+  return {
+    latin: fonts[0] ?? null,
+    eastAsian: fonts[1] ?? null,
+    complexScript: fonts[2] ?? null,
+  };
+}
+
+function uniformFontSlots(font: string | null): TextFontSlots {
+  return { latin: font, eastAsian: font, complexScript: font };
+}
+
+/** 有效投影必须携带用户直设来源，否则后续样式投影会误把它当继承值覆盖。 */
+function projectedRunEditInfo(
+  mark: TextMark,
+  props: Omit<TextRun, 'text'>,
+  sourceRun?: TextRun,
+  useMarkProps = false,
+): TextRunEditInfo | undefined {
+  const overrides = mark.runOverrides;
+  let bits = sourceRun?.editInfo?.direct ?? 0;
+  for (const [field, bit] of RUN_DIRECT_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(overrides ?? {}, field)) continue;
+    bits = overrides?.[field] === null ? bits & ~bit : bits | bit;
+  }
+  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'font')) {
+    bits = overrides?.font === null ? bits & ~FONT_DIRECT_BITS : bits | TEXT_RUN_DIRECT_BITS.fonts;
+  }
+  if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly) return undefined;
+
+  const sourceInfo = sourceRun?.editInfo;
+  const inheritedRunProps = useMarkProps
+    ? mark.inheritedRunProps ?? sourceInfo?.inheritedRunProps
+    : sourceInfo?.inheritedRunProps ?? mark.inheritedRunProps;
+  const preferredInheritedFonts = useMarkProps
+    ? mark.inheritedFonts ?? sourceInfo?.inheritedRunProps.fonts
+    : sourceInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts;
+  const inheritedFonts = [...(preferredInheritedFonts
+    ?? (mark.inheritedProps?.font ? [mark.inheritedProps.font] : props.fonts))];
+  const effectiveFonts = [...props.fonts];
+  const inheritedSlots = (useMarkProps
+    ? mark.inheritedFontSlots ?? sourceInfo?.inheritedFontSlots
+    : sourceInfo?.inheritedFontSlots ?? mark.inheritedFontSlots)
+    ?? fontSlots(inheritedFonts);
+  return {
+    inheritedRunProps: inheritedRunProps
+      ? structuredClone(inheritedRunProps)
+      : {
+        b: mark.inheritedProps?.b ?? props.b,
+        i: mark.inheritedProps?.i ?? props.i,
+        u: mark.inheritedProps?.u ?? props.u,
+        strike: mark.inheritedProps?.strike ?? props.strike,
+        size: mark.inheritedProps?.size ?? props.size,
+        color: mark.inheritedProps?.color ?? props.color,
+        fonts: inheritedFonts,
+      },
+    inheritedFontSlots: structuredClone(inheritedSlots),
+    direct: textRunDirectFlags(bits),
+    fontSlots: Object.prototype.hasOwnProperty.call(overrides ?? {}, 'font')
+      ? overrides?.font === null
+        ? structuredClone(inheritedSlots)
+        : uniformFontSlots(effectiveFonts[0] ?? null)
+      : useMarkProps && !(bits & FONT_DIRECT_BITS)
+        ? structuredClone(inheritedSlots)
+        : sourceInfo?.fontSlots ?? fontSlots(effectiveFonts),
+    ...(sourceInfo?.readonlyLink || mark.sourceLinkReadonly ? { readonlyLink: true } : {}),
+  };
+}
+
+const PARAGRAPH_DIRECT_FIELDS = [
+  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
+] as const;
+
+function projectedParagraphEditInfo(
+  paragraph: FlatTextParagraph,
+  props: Omit<Paragraph, 'runs' | 'editInfo'>,
+  source: Paragraph | undefined,
+  useFlatLayout: boolean,
+): Paragraph['editInfo'] {
+  const sourceInfo = source?.editInfo;
+  const overrides = paragraph.paragraphOverrides;
+  const directParagraphProps = {
+    ...(sourceInfo?.directParagraphProps ?? paragraph.directParagraphProps),
+  };
+  for (const field of PARAGRAPH_DIRECT_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(overrides ?? {}, field)) continue;
+    if (overrides?.[field] === null) delete directParagraphProps[field];
+    else directParagraphProps[field] = true;
+  }
+  if (!sourceInfo && !paragraph.inheritedParagraphProps
+    && !paragraph.directParagraphProps && !overrides) return undefined;
+  const inherited = useFlatLayout
+    ? paragraph.inheritedParagraphProps ?? sourceInfo?.inheritedParagraphProps
+    : sourceInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
+  return {
+    inheritedParagraphProps: structuredClone(inherited ?? {
+      level: props.lvl,
+      align: props.align,
+      lineHeight: props.lineHeight,
+      spaceBefore: props.spaceBefore,
+      spaceAfter: props.spaceAfter,
+      marginLeft: props.marL,
+      indent: props.indent,
+    }),
+    directParagraphProps,
+    directRun: sourceInfo?.directRun ?? textRunDirectFlags(0),
+    directLayout: sourceInfo?.directLayout ?? paragraphLayoutDirectFlags(0),
+    ...(sourceInfo?.autoNumbering ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) } : {}),
+  };
 }
 
 function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps = false): TextRun {
@@ -46,7 +170,8 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     // 字段缓存一旦被局部改写，保存会降级为普通 run；投影必须采用同一字段身份语义。
     if (!preservesField) delete props.field;
   }
-  return { text: mark.atomText ?? text, ...props };
+  const editInfo = projectedRunEditInfo(mark, props, sourceRun, useMarkProps);
+  return { text: mark.atomText ?? text, ...props, ...(editInfo ? { editInfo } : {}) };
 }
 
 function bodyFromOverride(
@@ -140,8 +265,13 @@ export function textBodyFromOverride(
       const levelChanged = Object.prototype.hasOwnProperty.call(
         paragraph.paragraphOverrides ?? {}, 'level',
       );
+      const paragraphProps = paragraphFromOverride(paragraph, sourceParagraph, hasLevelChanges);
+      const editInfo = projectedParagraphEditInfo(
+        paragraph, paragraphProps, sourceParagraph, levelChanged || hasLevelChanges,
+      );
       return {
-        ...paragraphFromOverride(paragraph, sourceParagraph, hasLevelChanges),
+        ...paragraphProps,
+        ...(editInfo ? { editInfo } : {}),
         runs: paragraph.marks.map((mark, markIndex) => {
           const sourceRun = source?.paragraphs[
             mark.source?.paragraph ?? paragraph.sourceParagraph ?? paragraphIndex

@@ -53,7 +53,9 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
               strike: run.editInfo.inheritedRunProps.strike,
             }
             : undefined,
+          inheritedRunProps: run.editInfo?.inheritedRunProps,
           inheritedFonts: run.editInfo?.inheritedRunProps.fonts,
+          inheritedFontSlots: run.editInfo?.inheritedFontSlots,
           ...(run.editInfo?.readonlyLink ? { sourceLinkReadonly: true } : {}),
           ...(run.math?.length ? { atomText: run.text } : {}),
           source: { paragraph: paragraphIndex, run: runIndex },
@@ -89,7 +91,9 @@ function sameStyle(left: TextMark, right: TextMark): boolean {
     && left.preserveSource === right.preserveSource
     && sameRunOverrides(left.runOverrides, right.runOverrides)
     && sameInherited(left.inheritedProps, right.inheritedProps)
+    && JSON.stringify(left.inheritedRunProps) === JSON.stringify(right.inheritedRunProps)
     && JSON.stringify(left.inheritedFonts) === JSON.stringify(right.inheritedFonts)
+    && JSON.stringify(left.inheritedFontSlots) === JSON.stringify(right.inheritedFontSlots)
     && left.sourceLinkReadonly === right.sourceLinkReadonly
     // 不跨来源合并字段/超链接身份；同一来源被区间操作切开的片段仍会归一。
     && JSON.stringify(left.source) === JSON.stringify(right.source);

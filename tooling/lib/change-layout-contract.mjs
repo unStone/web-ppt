@@ -202,6 +202,46 @@ export async function runChangeLayoutContract({ edit, core, load, check }) {
       && JSON.stringify(doc.identity) === stable.identity
       && editor.history.undoCount === stable.history);
 
+  const fontRebasePresentation = await core.parse(input, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const fontRebaseDoc = edit.createDoc(fontRebasePresentation, { idPrefix: 'layout-font-rebase-' });
+  const fontRebaseEditor = new edit.Editor(fontRebaseDoc);
+  const fontRebaseSlide = fontRebaseDoc.slideOrder[0];
+  const fontRebaseShape = Object.values(fontRebaseDoc.elements)
+    .find((candidate) => candidate.src.name === '现有正文');
+  const fontRebaseTarget = fontRebaseDoc.layoutOrder
+    .find((id) => fontRebaseDoc.layouts[id].name === '重点内容');
+  const fontRebaseLength = fontRebaseShape.src.text.paragraphs[0].runs
+    .reduce((length, run) => length + run.text.length, 0);
+  const fontRebaseRange = {
+    from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: fontRebaseLength },
+  };
+  fontRebaseEditor.exec({
+    type: 'SetRunProps', id: fontRebaseShape.id, range: fontRebaseRange,
+    props: { font: 'Session Font' },
+  });
+  fontRebaseEditor.exec({
+    type: 'SetRunProps', id: fontRebaseShape.id, range: fontRebaseRange,
+    props: { font: null },
+  });
+  fontRebaseEditor.exec({ type: 'SetLayout', id: fontRebaseSlide, layoutId: fontRebaseTarget });
+  const fontRebasedRun = fontRebaseEditor.effectiveElement(fontRebaseShape.id)
+    .text.paragraphs[0].runs[0];
+  const expectedFontSlots = {
+    latin: fontRebasedRun.fonts[0] ?? null,
+    eastAsian: fontRebasedRun.fonts[1] ?? null,
+    complexScript: fontRebasedRun.fonts[2] ?? null,
+  };
+  check('字体 set→clear 后换版式会同步逐脚本有效值与继承 provenance',
+    fontRebasedRun.fonts.join('|') === 'Target Latin|Target EA|Target CS'
+      && JSON.stringify(fontRebasedRun.editInfo?.fontSlots) === JSON.stringify(expectedFontSlots)
+      && JSON.stringify(fontRebasedRun.editInfo?.inheritedFontSlots)
+        === JSON.stringify(expectedFontSlots),
+  JSON.stringify({ fonts: fontRebasedRun.fonts, expectedFontSlots,
+    editInfo: fontRebasedRun.editInfo }));
+  edit.disposeDoc(fontRebaseDoc);
+
   const directFiles = unzipSync(input.slice());
   directFiles['ppt/slides/slide7.xml'] = encoder.encode(
     decoder.decode(directFiles['ppt/slides/slide7.xml']).replace(

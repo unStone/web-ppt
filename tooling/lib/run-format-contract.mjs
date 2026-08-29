@@ -126,6 +126,43 @@ export async function runRunFormatContract({ edit, core, load, check }) {
   check('null 删除直接字符格式并让有效投影立即回到继承值',
     resetRun.text === '同' && resetRun.fonts[0] !== 'Courier New'
       && resetRun.size === 24 && resetRun.b === false);
+
+  const syntheticBody = {
+    paragraphs: [{
+      align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null,
+      lineHeight: null, spaceBefore: 0, spaceAfter: 0,
+      runs: [{
+        text: '字', b: false, i: false, u: false, strike: false,
+        size: 24, color: '#000000', fonts: ['Direct Latin', 'Direct EA', 'Direct CS'],
+        editInfo: {
+          inheritedRunProps: {
+            b: false, i: false, u: false, strike: false, size: 24, color: '#000000',
+            fonts: ['Inherited Latin', 'Inherited EA', 'Inherited CS'],
+          },
+          inheritedFontSlots: {
+            latin: 'Inherited Latin', eastAsian: 'Inherited EA', complexScript: 'Inherited CS',
+          },
+          direct: core.textRunDirectFlags(core.TEXT_RUN_DIRECT_BITS.fonts),
+          fontSlots: { latin: 'Direct Latin', eastAsian: 'Direct EA', complexScript: 'Direct CS' },
+        },
+      }],
+    }],
+  };
+  const syntheticRange = {
+    from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 1 },
+  };
+  const clearedFont = edit.textBodyFromOverride(
+    edit.applyRunProps(syntheticBody, syntheticRange, { font: null }), syntheticBody,
+  );
+  const clearedFontRoundTrip = edit.textBodyFromOverride(edit.flattenTextBody(clearedFont), clearedFont);
+  const clearedFontRun = clearedFontRoundTrip.paragraphs[0].runs[0];
+  check('清除单字体直设后逐脚本继承槽与 direct provenance 可继续往返',
+    JSON.stringify(clearedFontRun.editInfo?.fontSlots) === JSON.stringify({
+      latin: 'Inherited Latin', eastAsian: 'Inherited EA', complexScript: 'Inherited CS',
+    })
+      && !(clearedFontRun.editInfo.direct & core.TEXT_RUN_DIRECT_BITS.fonts)
+      && JSON.stringify(clearedFontRun.fonts)
+        === JSON.stringify(['Inherited Latin', 'Inherited EA', 'Inherited CS']));
   resetEditor.undo();
   const restoredRun = resetEditor.effectiveElement(resetRecord.id).text.paragraphs[0].runs[1];
   check('撤销恢复原始直接字符格式且重做再次恢复继承',

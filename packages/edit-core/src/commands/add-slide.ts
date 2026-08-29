@@ -43,6 +43,7 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
       origin: { part: opc.part }, layoutId: layout.id, sourceLayoutId: layout.id,
       defaultShape: structuredClone(layout.defaultShape),
       ...(layout.defaultTable ? { defaultTable: structuredClone(layout.defaultTable) } : {}),
+      ...(layout.tableStyles ? { tableStyles: structuredClone(layout.tableStyles) } : {}),
       creation: {
         layoutPart: layout.origin.part,
         layoutRelationshipId: 'rId1',

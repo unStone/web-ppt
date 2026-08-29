@@ -1,10 +1,9 @@
 import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadata';
 import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
-  CellBorders, EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
-  Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableCell,
-  TableCreationDefaults,
-  TableElement, TableRow, TextBody, UnsupportedElement,
+  EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
+  Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TextBody,
+  UnsupportedElement,
 } from '../types';
 import type { PlaceholderDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
@@ -20,11 +19,11 @@ import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
 import type { AssetMode, DeferredAsset } from './asset-store';
-import { builtInTableStyleMarkup } from './builtin-table-styles';
 import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
 import { hyperlinkOf, resolveLink } from './hyperlink';
 import { Env, findPh, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
 import { Pkg } from './package-reader';
+import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-style';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
@@ -880,7 +879,7 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
 
   const tbl = kid(data, 'tbl');
   if (tbl) {
-    const parsed = parseTable(tbl, xf, env, name);
+    const parsed = parseTable(tbl, base(xf), env, TABLE_FORMAT_READER, name);
     const editInfo = env.edit
       ? { ...parsed.editInfo, ...frameEditInfo.editInfo }
       : undefined;
@@ -1069,287 +1068,7 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
 
 // ---------------- 表格 ----------------
 
-interface TableStyleParts {
-  wholeTbl: Element | null;
-  band1H: Element | null;
-  band2H: Element | null;
-  firstRow: Element | null;
-  lastRow: Element | null;
-  firstCol: Element | null;
-  lastCol: Element | null;
-}
-
-const builtInTableStyles = new Map<string, Element>();
-
-function builtInTableStyle(styleId: string | null): Element | null {
-  if (!styleId) return null;
-  const cached = builtInTableStyles.get(styleId);
-  if (cached) return cached;
-  const markup = builtInTableStyleMarkup(styleId);
-  if (!markup) return null;
-  const style = kid(parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${markup}</root>`), 'tblStyle')!;
-  builtInTableStyles.set(styleId, style);
-  return style;
-}
-
-function findTableStyle(tableStyles: Element | null, styleId: string | null): TableStyleParts | null {
-  if (!tableStyles) return null;
-  const list = kids(tableStyles, 'tblStyle');
-  const def = attr(tableStyles, 'def');
-  const style = list.find((s) => attr(s, 'styleId') === styleId) ?? builtInTableStyle(styleId)
-    ?? list.find((s) => attr(s, 'styleId') === def) ?? builtInTableStyle(def);
-  if (!style) return null;
-  return {
-    wholeTbl: kid(style, 'wholeTbl'),
-    band1H: kid(style, 'band1H'),
-    band2H: kid(style, 'band2H'),
-    firstRow: kid(style, 'firstRow'),
-    lastRow: kid(style, 'lastRow'),
-    firstCol: kid(style, 'firstCol'),
-    lastCol: kid(style, 'lastCol'),
-  };
-}
-
-/**
- * 单元格四边。
- * 第二项是 tableStyles 里 tcBdr 的子元素名（left/right/top/bottom），
- * 第三项是 tcPr 上的单元格级覆盖标签名（DrawingML 用缩写 lnL/lnR/lnT/lnB，不是 lnLeft）。
- */
-const BORDER_SIDES: [keyof CellBorders, string, string][] = [
-  ['l', 'left', 'lnL'],
-  ['r', 'right', 'lnR'],
-  ['t', 'top', 'lnT'],
-  ['b', 'bottom', 'lnB'],
-];
-
-function stylePartToCell(part: Element | null, env: Env): { fill: Fill | null; borders: CellBorders; bold: boolean; color: string | null } {
-  const out = { fill: null as Fill | null, borders: {} as CellBorders, bold: false, color: null as string | null };
-  if (!part) return out;
-  const tcStyle = kid(part, 'tcStyle');
-  out.fill = parseFillProps(kid(tcStyle, 'fill') ?? tcStyle, env);
-  const bdr = kid(tcStyle, 'tcBdr');
-  for (const [key, tag] of BORDER_SIDES) {
-    const side = kid(bdr, tag);
-    if (side) out.borders[key] = parseLnElement(kid(side, 'ln'), env, null);
-  }
-  const tx = kid(part, 'tcTxStyle');
-  if (tx) {
-    out.bold = attr(tx, 'b') === 'on';
-    out.color = childColor(tx, env.ctx);
-  }
-  return out;
-}
-
-function parseTable(tbl: Element, xf: XfrmInfo, env: Env, name?: string): TableElement {
-  const tblPr = kid(tbl, 'tblPr');
-  const styleId = kid(tblPr, 'tableStyleId')?.textContent?.trim() ?? null;
-  const parts = findTableStyle(env.tableStyles, styleId);
-  const firstRowOn = boolAttr(tblPr, 'firstRow');
-  const lastRowOn = boolAttr(tblPr, 'lastRow');
-  const firstColOn = boolAttr(tblPr, 'firstCol');
-  const lastColOn = boolAttr(tblPr, 'lastCol');
-  const bandRow = boolAttr(tblPr, 'bandRow');
-
-  const colWidths = kids(kid(tbl, 'tblGrid'), 'gridCol').map((c) => emu(numAttr(c, 'w')));
-  const trs = kids(tbl, 'tr');
-
-  const parseRow = (tr: Element, ri: number, rowCount: number): TableRow => {
-    const isFirst = firstRowOn && ri === 0;
-    const isLast = lastRowOn && ri === rowCount - 1;
-    const bandIdx = bandRow ? (firstRowOn ? ri - 1 : ri) : -1;
-    return {
-      height: emu(numAttr(tr, 'h')),
-      cells: kids(tr, 'tc').map((tc, ci): TableCell => {
-        const isFirstCol = firstColOn && ci === 0;
-        const isLastCol = lastColOn && ci === kids(tr, 'tc').length - 1;
-
-        // 样式叠加：整表 → 条纹 → 首/末列 → 首/末行
-        const layers: (Element | null)[] = [parts?.wholeTbl ?? null];
-        if (bandIdx >= 0 && !isFirst && !isLast) layers.push(bandIdx % 2 === 0 ? (parts?.band1H ?? null) : (parts?.band2H ?? null));
-        if (isFirstCol) layers.push(parts?.firstCol ?? null);
-        if (isLastCol) layers.push(parts?.lastCol ?? null);
-        if (isFirst) layers.push(parts?.firstRow ?? null);
-        if (isLast) layers.push(parts?.lastRow ?? null);
-
-        let fill: Fill | null = null;
-        const borders: CellBorders = {};
-        let bold = false;
-        let color: string | null = null;
-        for (const layer of layers) {
-          const r = stylePartToCell(layer, env);
-          if (r.fill) fill = r.fill;
-          for (const [key] of BORDER_SIDES) if (r.borders[key] !== undefined) borders[key] = r.borders[key];
-          if (r.bold) bold = true;
-          if (r.color) color = r.color;
-        }
-
-        const tcPr = kid(tc, 'tcPr');
-        const ownFill = parseFillProps(tcPr, env);
-        if (ownFill) fill = ownFill;
-        for (const [key, , lnTag] of BORDER_SIDES) {
-          const side = kid(tcPr, lnTag);
-          if (side) borders[key] = parseLnElement(side, env, null);
-        }
-
-        const txBody = kid(tc, 'txBody');
-        const textEnv: Parameters<typeof parseTextBody>[1] = {
-          ctx: env.ctx,
-          fonts: env.theme.fonts,
-          chain: [env.docDefaults],
-          slideNum: env.slideNum,
-          defaultColor: color,
-          resolveLink: (rid, action) => resolveLink(env, rid, action),
-          edit: env.edit,
-        };
-        const text = parseTextBody(txBody, textEnv);
-        const textTemplate = !text && env.edit
-          ? parseTextBody(txBody, textEnv, true) ?? undefined
-          : undefined;
-        if (bold) {
-          for (const body of [text, textTemplate]) {
-            if (body) for (const p of body.paragraphs) for (const r of p.runs) r.b = true;
-          }
-        }
-
-        const mar = (n2: string, dflt: number): number => {
-          const v = numAttr(tcPr, n2);
-          return v === null ? emu(dflt) : emu(v);
-        };
-
-        return {
-          colSpan: numAttr(tc, 'gridSpan') ?? 1,
-          rowSpan: numAttr(tc, 'rowSpan') ?? 1,
-          merged: boolAttr(tc, 'hMerge') || boolAttr(tc, 'vMerge'),
-          fill,
-          text,
-          borders,
-          margins: [mar('marT', 45720), mar('marR', 91440), mar('marB', 45720), mar('marL', 91440)],
-          vAlign: attr(tcPr, 'anchor') === 'ctr' ? 'middle' : attr(tcPr, 'anchor') === 'b' ? 'bottom' : 'top',
-          vert: attr(tcPr, 'vert') === 'vert' ? 'vert' : attr(tcPr, 'vert') === 'vert270' ? 'vert270' : undefined,
-          ...(textTemplate ? { editInfo: { textTemplate } } : {}),
-        };
-      }),
-    };
-  };
-
-  const rows = trs.map((tr, ri) => parseRow(tr, ri, trs.length));
-  let editInfo: TableElement['editInfo'];
-  const template = trs[trs.length - 1];
-  if (env.edit && template) {
-    const next = trs.length;
-    editInfo = {
-      tableRowAppend: {
-        ...(next === 1 ? { previousLast: parseRow(template, 0, 2) } : {}),
-        regular: [
-          parseRow(template, next, next + 2),
-          parseRow(template, next + 1, next + 3),
-        ],
-        last: [
-          parseRow(template, next, next + 1),
-          parseRow(template, next + 1, next + 2),
-        ],
-      },
-    };
-  }
-
-  return { kind: 'table', ...base(xf), colWidths, rows, name, ...(editInfo ? { editInfo } : {}) };
-}
-
-const creationTables = new WeakMap<Element, Map<string, Element>>();
-let fallbackCreationTable: Element | null = null;
-const CREATION_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN"/></a:p></a:txBody>';
-const NEUTRAL_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN" b="0"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:endParaRPr></a:p></a:txBody>';
-const NEUTRAL_BORDER_FILL = '<a:solidFill><a:schemeClr val="tx1"><a:alpha val="25000"/></a:schemeClr></a:solidFill>';
-
-function escapeXmlText(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-/** 同时兼容原生 DOM 与 Worker 的 xml-lite，只序列化表样式里已解析出的线节点。 */
-function elementMarkup(element: Element, tagName = element.tagName): string {
-  const attributes = Array.from(element.attributes)
-    .map((item) => ` ${item.name}="${escapeXmlText(item.value)}"`).join('');
-  const nodes = Array.from((element as unknown as { childNodes: readonly unknown[] }).childNodes);
-  if (!nodes.length) return `<${tagName}${attributes}/>`;
-  const content = nodes.map((node) => {
-    if (typeof node === 'string') return escapeXmlText(node);
-    const child = node as { nodeType?: number; nodeValue?: string | null; tagName?: string };
-    return child.nodeType === 1 || child.tagName
-      ? elementMarkup(node as Element)
-      : escapeXmlText(child.nodeValue ?? '');
-  }).join('');
-  return `<${tagName}${attributes}>${content}</${tagName}>`;
-}
-
-function tableCellPropertiesMarkup(parts: TableStyleParts | null, rowPart: Element | null): string {
-  const layers = [parts?.wholeTbl ?? null, rowPart];
-  const borders = BORDER_SIDES.map(([, styleTag, cellTag]) => {
-    let line: Element | null = null;
-    for (const layer of layers) {
-      const candidate = kid(kid(kid(layer, 'tcStyle'), 'tcBdr'), styleTag);
-      if (candidate) line = kid(candidate, 'ln');
-    }
-    return line
-      ? elementMarkup(line, `a:${cellTag}`)
-      : `<a:${cellTag} w="9525">${NEUTRAL_BORDER_FILL}</a:${cellTag}>`;
-  }).join('');
-  const neutralFill = parts ? '' : '<a:solidFill><a:schemeClr val="lt1"/></a:solidFill>';
-  return `<a:tcPr>${borders}${neutralFill}</a:tcPr>`;
-}
-
-function defaultTableSource(
-  cellPropertiesMarkup: readonly [string, string, string],
-  textBodyMarkup: string,
-  tableStyles: Element | null,
-): Element {
-  const key = `${textBodyMarkup}\u0000${cellPropertiesMarkup.join('\u0000')}`;
-  const cache = tableStyles ? creationTables.get(tableStyles) : null;
-  const cached = tableStyles ? cache?.get(key) : fallbackCreationTable;
-  if (cached) return cached;
-  const cell = (properties: string) => `<a:tc>${textBodyMarkup}${properties}</a:tc>`;
-  const root = parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-<a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid><a:gridCol w="9525"/></a:tblGrid>
-<a:tr h="9525">${cell(cellPropertiesMarkup[0])}</a:tr>
-<a:tr h="9525">${cell(cellPropertiesMarkup[1])}</a:tr>
-<a:tr h="9525">${cell(cellPropertiesMarkup[2])}</a:tr>
-  </a:tbl></root>`);
-  const table = kid(root, 'tbl')!;
-  if (tableStyles) {
-    const next = cache ?? new Map<string, Element>();
-    next.set(key, table);
-    if (!cache) creationTables.set(tableStyles, next);
-  } else fallbackCreationTable = table;
-  return table;
-}
-
-/** 写回 tableStyleId 与即时单元格视觉由同一默认表样式求值，避免首次保存后整表变色。 */
-function defaultTableEditInfo(env: Env): TableCreationDefaults {
-  const candidateStyleId = attr(env.tableStyles, 'def')?.trim();
-  const parts = candidateStyleId ? findTableStyle(env.tableStyles, candidateStyleId) : null;
-  const styleId = candidateStyleId || undefined;
-  const cellPropertiesMarkup = [
-    tableCellPropertiesMarkup(parts, parts?.firstRow ?? null),
-    tableCellPropertiesMarkup(parts, parts?.band1H ?? null),
-    tableCellPropertiesMarkup(parts, parts?.band2H ?? null),
-  ] as const;
-  const textBodyMarkup = parts ? CREATION_TABLE_TEXT : NEUTRAL_TABLE_TEXT;
-  const table = parseTable(defaultTableSource(
-    cellPropertiesMarkup, textBodyMarkup, parts ? env.tableStyles : null,
-  ), {
-    x: 0, y: 0, w: 1, h: 3, chX: 0, chY: 0, chW: 1, chH: 3,
-    rot: 0, flipH: false, flipV: false,
-  }, env);
-  const [first, band1, band2] = table.rows.map((row) => row.cells[0]);
-  if (!first?.editInfo?.textTemplate || !band1?.editInfo?.textTemplate
-    || !band2?.editInfo?.textTemplate) {
-    throw new Error('无法构造新增表格单元格模板');
-  }
-  return {
-    ...(styleId ? { styleId } : {}), textBodyMarkup, cellPropertiesMarkup,
-    firstRow: first, bandRows: [band1, band2],
-  };
-}
+const TABLE_FORMAT_READER = { fill: parseFillProps, line: parseLnElement } as const;
 
 // ---------------- 幻灯片 ----------------
 
@@ -1614,7 +1333,10 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
     ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
     sections: sections.length ? sections : undefined,
-    ...(layouts ? { editInfo: { layouts } } : {}),
+    ...(layouts ? { editInfo: {
+      layouts,
+      ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
+    } } : {}),
   };
 }
 
@@ -1680,6 +1402,7 @@ function parseLayoutCatalog(
       const template = layoutPlaceholderTemplate(element);
       return template ? [template] : [];
     });
+    const editEnv = inheritance.envFor(layoutPath, true);
     return [{
       id: layoutPath,
       name: attr(walk(inheritance.layoutRoot, 'cSld'), 'name') ?? layoutPath,
@@ -1687,8 +1410,9 @@ function parseLayoutCatalog(
       background: resolvedSlideBackground(null, null, inheritance),
       elements: [...staticElements, ...placeholders],
       transition: parseTransition(inheritance.layoutRoot) ?? undefined,
-      defaultShape: defaultShapeEditInfo(inheritance.envFor(layoutPath, true))!,
-      defaultTable: defaultTableEditInfo(inheritance.envFor(layoutPath, true)),
+      defaultShape: defaultShapeEditInfo(editEnv)!,
+      defaultTable: defaultTableEditInfo(editEnv, TABLE_FORMAT_READER),
+      tableStyles: tableStyleCatalog(tableStyles, editEnv, TABLE_FORMAT_READER),
     }];
   });
 }
@@ -1736,6 +1460,7 @@ export function parseSlide(
   const comments = parseSlideComments(pkg, slideRels, authors);
   const directTransition = parseTransition(slideRoot);
   const timing = parseSlideTiming(slideRoot, slideW, slideH);
+  const editEnv = edit ? envFor(slidePath, true) : null;
 
   return {
     background,
@@ -1755,8 +1480,9 @@ export function parseSlide(
         ...(directTransition ? { directTransition: true as const } : {}),
         ...(timing.readonly ? { animationSourceReadonly: true as const } : {}),
         ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),
-        defaultShape: defaultShapeEditInfo(envFor(slidePath, true)),
-        defaultTable: defaultTableEditInfo(envFor(slidePath, true)),
+        defaultShape: defaultShapeEditInfo(editEnv!),
+        defaultTable: defaultTableEditInfo(editEnv!, TABLE_FORMAT_READER),
+        tableStyles: tableStyleCatalog(tableStyles, editEnv!, TABLE_FORMAT_READER),
       },
     } : {}),
   };

@@ -55,6 +55,9 @@ import {
 import {
   applyElementGeometryPatch, isElementGeometryPatch, validateElementGeometryPatch,
 } from './element-geometry';
+import {
+  applyElementTableStylePatch, isElementTableStylePatch, validateElementTableStylePatch,
+} from './element-table-style';
 
 function validatePatch(
   doc: EditDoc,
@@ -158,6 +161,10 @@ function validatePatch(
   }
   if (isElementGeometryPatch(input)) {
     validateElementGeometryPatch(doc, input, index);
+    return;
+  }
+  if (isElementTableStylePatch(input)) {
+    validateElementTableStylePatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 4
@@ -329,6 +336,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isElementLinkPatch(patch)) applyElementLinkPatch(doc, patch);
     else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
     else if (isElementGeometryPatch(patch)) applyElementGeometryPatch(doc, patch);
+    else if (isElementTableStylePatch(patch)) applyElementTableStylePatch(doc, patch);
     else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);

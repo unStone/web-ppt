@@ -94,6 +94,7 @@ export async function runParagraphFormatContract({ edit, core, load, check }) {
       && paragraph.spaceBefore === 14 && paragraph.spaceAfter === 7
       && paragraph.marL === 30 && paragraph.indent === -12)
       && formatted[3].align === 'right'
+      && formatted[1].editInfo?.directParagraphProps.align === true
       && Object.values(formattedState).every((state) => !state.mixed)
       && formatResult.forward.length === 1 && editor.history.undoCount === 2,
     JSON.stringify({ formatted: formatted.map((paragraph) => ({
@@ -129,6 +130,7 @@ export async function runParagraphFormatContract({ edit, core, load, check }) {
     reset.align === 'right' && reset.lineHeight === 1.5
       && reset.spaceBefore === 8 && reset.spaceAfter === 4
       && reset.marL === 20 && reset.indent === -10
+      && reset.editInfo?.directParagraphProps.align !== true
       && resetResult.forward.length === 1 && editor.history.undoCount === 3);
   editor.undo();
   const undoReset = editor.effectiveElement(paragraphs.id).text.paragraphs[0];

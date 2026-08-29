@@ -60,6 +60,9 @@ function rebasedRun(
     out.editInfo = {
       ...(out.editInfo ?? source.editInfo),
       inheritedRunProps: structuredClone(target.editInfo.inheritedRunProps),
+      inheritedFontSlots: structuredClone(
+        target.editInfo.inheritedFontSlots ?? target.editInfo.fontSlots,
+      ),
     };
   }
   return out;

@@ -18,6 +18,7 @@ import {
 import { runGroupUngroupLibreOfficeContract } from './lib/group-ungroup-libreoffice-contract.mjs';
 import { runListLevelLibreOfficeContract } from './lib/list-level-libreoffice-contract.mjs';
 import { runVertexEditingLibreOfficeContract } from './lib/vertex-editing-libreoffice-contract.mjs';
+import { runTableStyleLibreOfficeContract } from './lib/table-style-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -298,6 +299,9 @@ if (basename(savedPath) === 'vertex-editing.pptx') {
   geometryEvidence = runVertexEditingLibreOfficeContract({
     savedPath, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
   });
+}
+if (basename(savedPath) === 'table-style-oracle.pptx') {
+  geometryEvidence += runTableStyleLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
 }
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
   const markup = exportLibreOfficeSvg(' spAutoFit 几何');

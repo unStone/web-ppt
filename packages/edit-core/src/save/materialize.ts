@@ -3,7 +3,7 @@ import type { XmlDocument } from '../xml/types';
 import { patchElementOrders } from './order';
 import { patchElementText } from './text';
 import { patchElementXfrm } from './xfrm';
-import { patchTableGeometry, patchTableRows } from './table';
+import { patchTableGeometry, patchTableRows, patchTableStyle } from './table';
 import { patchElementShapeFormat } from './shape-format';
 import { patchElementEffects } from './effects';
 import { patchElementImageContent } from './image-content';
@@ -34,6 +34,7 @@ export function materializeElementOverrides(
     patchElementImageContent(document, record);
     if (links) patchElementHyperlink(document, record, links);
     if (!structuralContentAlreadyMaterialized.has(record.id)) patchTableRows(document, record);
+    patchTableStyle(document, record);
     patchTableGeometry(document, record);
     patchElementText(document, record, links);
   }

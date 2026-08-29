@@ -88,7 +88,9 @@ function rebasedMark(
     ...mark,
     props,
     inheritedProps: runProperties(target),
+    inheritedRunProps: target.editInfo?.inheritedRunProps,
     inheritedFonts: [...target.fonts],
+    inheritedFontSlots: target.editInfo?.fontSlots,
   };
 }
 

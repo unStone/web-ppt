@@ -1,11 +1,11 @@
-import type { TableCell, TextBody } from '@web-ppt/core';
+import { TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
+import type { TextBody } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
 import { effectiveElement, toSlide } from '../projection';
 import { supportsElementLink } from '../hyperlink';
 import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
-import { directTableCellMarkup } from '../table-direct-markup';
 import { tableCellKey } from '../table-cell';
 import { flattenTextBody } from '../text-model';
 import type {
@@ -25,9 +25,13 @@ import {
 import type { HyperlinkSaveContext } from '../save/hyperlink';
 import { materializeElementImageFill, materializeElementStroke } from '../save/shape-format';
 import { patchSlideProperties } from '../save/slide-properties';
+import {
+  materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
+} from '../save/table-style-part';
 import { customGeometryMarkup } from './custom-geometry';
 import { generatedLink } from './links';
 import { imageClosure, imageInsertion } from './media';
+import { generatedTableStyleDefinitions, tableInsertion } from './table';
 import { generatedEmptySlideXml, generatedTemplateParts } from './template';
 
 const esc = (value: string): string => value
@@ -36,22 +40,11 @@ const esc = (value: string): string => value
 const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
 const NOTES_MASTER_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster';
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
-const EMPTY_TABLE_TEXT: TextBody = {
-  anchor: 'top', insets: [4.8, 9.6, 4.8, 9.6], wrap: true, fontScale: 1,
-  paragraphs: [{
-    align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null,
-    lineHeight: null, spaceBefore: 0, spaceAfter: 0,
-    runs: [{
-      text: '', b: false, i: false, u: false, strike: false,
-      size: 18, color: '#000000', fonts: [],
-    }],
-  }],
-};
-
 function textOverride(
   doc: EditDoc,
   slideId: SlideId,
   body: TextBody | null | undefined,
+  tableStyleAware = false,
 ): TextOverride | undefined {
   if (!body) return undefined;
   if (body.warp) throw new Error('生成保存暂不支持艺术字变形');
@@ -78,7 +71,7 @@ function textOverride(
       columnGap: body.columnGap ?? 0,
       autoFit,
     },
-    paragraphs: flat.paragraphs.map((paragraph) => ({
+    paragraphs: flat.paragraphs.map((paragraph, paragraphIndex) => ({
       ...paragraph,
       sourceParagraph: undefined,
       paragraphOverrides: {
@@ -89,20 +82,27 @@ function textOverride(
         marginLeft: paragraph.props.marL,
         indent: paragraph.props.indent,
       },
-      marks: paragraph.marks.map((mark) => ({
-        ...mark,
-        source: undefined, preserveSource: undefined,
-        // 生成包不再拥有原主题继承链；把可编辑字符字段固定为当前有效值。
-        runOverrides: {
-          size: mark.props.size,
-          b: mark.props.b,
-          i: mark.props.i,
-          u: mark.props.u,
-          strike: mark.props.strike,
-          ...(mark.props.link
-            ? { link: generatedLink(doc, slideId, mark.props.link, '文字链接') } : {}),
-        },
-      })),
+      marks: paragraph.marks.map((mark, markIndex) => {
+        const sourceParagraph = body.paragraphs[paragraphIndex];
+        const sourceRun = sourceParagraph?.runs[markIndex];
+        const direct = (sourceParagraph?.editInfo?.directRun ?? 0) | (sourceRun?.editInfo?.direct ?? 0);
+        return {
+          ...mark,
+          source: undefined, preserveSource: undefined,
+          // 生成包不再拥有原主题继承链；表样式控制的 b/color 只有真实直设才固定。
+          runOverrides: {
+            size: mark.props.size,
+            ...(!tableStyleAware || direct & TEXT_RUN_DIRECT_BITS.b ? { b: mark.props.b } : {}),
+            ...(tableStyleAware && direct & TEXT_RUN_DIRECT_BITS.color
+              ? { color: mark.props.color } : {}),
+            i: mark.props.i,
+            u: mark.props.u,
+            strike: mark.props.strike,
+            ...(mark.props.link
+              ? { link: generatedLink(doc, slideId, mark.props.link, '文字链接') } : {}),
+          },
+        };
+      }),
     })),
   };
 }
@@ -131,7 +131,10 @@ function fullOverrides(doc: EditDoc, slideId: SlideId, record: ElementRecord): E
   if (source.kind === 'table') {
     const tableCells: NonNullable<ElementOverrides['tableCells']> = {};
     source.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
-      const text = !cell.merged && textOverride(doc, slideId, cell.text);
+      const text = !cell.merged && textOverride(
+        doc, slideId, cell.text,
+        !!source.editInfo?.tableStyle && !!cell.editInfo?.styleBase,
+      );
       if (text) tableCells[tableCellKey({ r, c })] = { text };
     }));
     return { ...common, ...(Object.keys(tableCells).length ? { tableCells } : {}) };
@@ -173,68 +176,6 @@ function shapeInsertion(
     spids: { [String(spid)]: spid },
     ...(fillClosure ? { relationships: [fillClosure.relationship] } : {}),
     ...(fillClosure?.resource ? { resources: [fillClosure.resource] } : {}),
-  };
-}
-
-function coveringCell(
-  rows: readonly { readonly cells: readonly TableCell[] }[],
-  row: number,
-  column: number,
-): { row: number; column: number } | null {
-  for (let r = 0; r <= row; r++) {
-    for (let c = 0; c <= column; c++) {
-      const cell = rows[r]?.cells[c];
-      if (!cell?.merged && r + cell.rowSpan > row && c + cell.colSpan > column) return { row: r, column: c };
-    }
-  }
-  return null;
-}
-
-function tableCellMarkup(
-  rows: readonly { readonly cells: readonly TableCell[] }[],
-  row: number,
-  column: number,
-): string {
-  const cell = rows[row].cells[column];
-  const attrs: string[] = [];
-  if (!cell.merged) {
-    if (cell.colSpan > 1) attrs.push(`gridSpan="${cell.colSpan}"`);
-    if (cell.rowSpan > 1) attrs.push(`rowSpan="${cell.rowSpan}"`);
-  } else {
-    const anchor = coveringCell(rows, row, column);
-    if (!anchor) throw new Error(`表格合并占位格缺少起始格：${row},${column}`);
-    if (column > anchor.column) attrs.push('hMerge="1"');
-    if (row > anchor.row) attrs.push('vMerge="1"');
-  }
-  const fallbackBorder = { color: 'rgba(0,0,0,0.25)', width: 1, dash: null } as const;
-  // renderer 对“未声明边框”显示兜底网格线；生成包必须把这层运行时语义固定下来。
-  const markup = directTableCellMarkup({
-    ...cell,
-    ...(!cell.editInfo?.textTemplate && !cell.text?.paragraphs[0]?.runs[0]
-      ? { editInfo: { textTemplate: EMPTY_TABLE_TEXT } } : {}),
-    borders: {
-      l: cell.borders?.l === undefined ? fallbackBorder : cell.borders.l,
-      r: cell.borders?.r === undefined ? fallbackBorder : cell.borders.r,
-      t: cell.borders?.t === undefined ? fallbackBorder : cell.borders.t,
-      b: cell.borders?.b === undefined ? fallbackBorder : cell.borders.b,
-    },
-  });
-  return attrs.length ? markup.replace('<a:tc>', `<a:tc ${attrs.join(' ')}>` ) : markup;
-}
-
-function tableInsertion(record: ElementRecord, spid: number): ElementInsertionSource {
-  const source = record.src;
-  if (source.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
-  const columns = source.colWidths.map((width) => `<a:gridCol w="${Math.round(width * 9525)}"/>`).join('');
-  const rows = source.rows.map((row, r) => `<a:tr h="${Math.round(row.height * 9525)}">${row.cells
-    .map((_, c) => tableCellMarkup(source.rows, r, c)).join('')}</a:tr>`).join('');
-  const name = esc(source.name ?? `表格 ${spid}`);
-  return {
-    markup: `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${spid}" name="${name}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
-<p:xfrm/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl>
-<a:tblPr/><a:tblGrid>${columns}</a:tblGrid>${rows}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`,
-    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
-    spids: { [String(spid)]: spid },
   };
 }
 
@@ -429,6 +370,15 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
   const parts = generatedTemplateParts(
     doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides,
   );
+  const tableStyles = generatedTableStyleDefinitions(doc);
+  if (tableStyles.length) {
+    const part = 'ppt/tableStyles.xml';
+    parts[part] = materializeTableStyles(undefined, tableStyles);
+    parts['[Content_Types].xml'] = patchTableStyleContentType(parts['[Content_Types].xml'], part);
+    parts['ppt/_rels/presentation.xml.rels'] = patchTableStylePresentationRelationships(
+      parts['ppt/_rels/presentation.xml.rels'], part,
+    );
+  }
   const resources = new Map<string, ElementInsertionResource>();
   doc.slideOrder.forEach((slideId, index) => {
     const slidePart = `ppt/slides/slide${index + 1}.xml`;

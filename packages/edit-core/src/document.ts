@@ -134,6 +134,8 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
         ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
       ...(slide.editInfo?.defaultTable
         ? { defaultTable: structuredClone(slide.editInfo.defaultTable) } : {}),
+      ...(slide.editInfo?.tableStyles
+        ? { tableStyles: structuredClone(slide.editInfo.tableStyles) } : {}),
     };
     slides[id] = record;
     slideOrder.push(id);
@@ -162,7 +164,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     ? !!pkg && !pkg.disposed && slideOrder.every((id) => slides[id].origin !== null)
     : true;
   const doc: EditDoc = {
-    meta: { width: pres.width, height: pres.height, source: pres.source, readonly: !patchable },
+    meta: {
+      width: pres.width, height: pres.height, source: pres.source, readonly: !patchable,
+      ...(pres.editInfo?.tableStylesPart ? { tableStylesPart: pres.editInfo.tableStylesPart } : {}),
+    },
     identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1, nextSpid: {} },
     slides,
     slideOrder,

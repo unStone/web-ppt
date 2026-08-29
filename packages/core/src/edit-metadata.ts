@@ -21,6 +21,8 @@ export interface TextRunEditInfo {
     readonly highlight?: string | null;
     readonly underlineColor?: string | null;
   };
+  /** 继承链按脚本求值后的槽位；清除单字体直设时不能从去重后的 CSS 字体栈反推。 */
+  readonly inheritedFontSlots?: TextFontSlots;
   /** rPr 自己声明的字符字段位；段落 defRPr 的直设位另存于 Paragraph.editInfo。 */
   readonly direct: TextRunDirectFlags;
   /** 有效字体按脚本保留；换版式时只重基未直设的脚本槽。 */

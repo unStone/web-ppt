@@ -490,6 +490,7 @@ export function finalizeRun(
     underlineColor: rp.uColor ?? null,
     ...(env.edit && inherited ? { editInfo: {
       inheritedRunProps: inheritedRunProps(inherited, env),
+      inheritedFontSlots: effectiveFontSlots(inherited, env),
       direct,
       fontSlots,
     } } : {}),

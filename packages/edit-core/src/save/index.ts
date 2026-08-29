@@ -13,7 +13,7 @@ import { hasOrderOverride } from './order';
 import { hasShapeFormatOverrides } from './shape-format';
 import { hasEffectsOverride } from './effects';
 import { hasImageContentOverrides } from './image-content';
-import { hasTableRowOverrides } from './table';
+import { hasTableRowOverrides, hasTableStyleOverride } from './table';
 import {
   createHyperlinkSaveContext, hasDanglingSlideRelationships, hasHyperlinkOverrides,
   patchHyperlinkRelationshipPart,
@@ -41,6 +41,10 @@ import {
 } from './notes';
 import { hasNameOverride } from './name';
 import { hasGeometryOverride } from './geometry';
+import {
+  materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
+  tableStyleSavePlan,
+} from './table-style-part';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -66,6 +70,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
       && !hasEffectsOverride(record)
       && !hasImageContentOverrides(record)
       && !hasTableRowOverrides(record)
+      && !hasTableStyleOverride(record)
       && !hasHyperlinkOverrides(record)
       && record.meta.sourceParent === undefined
       && !record.meta.insertion) continue;
@@ -133,6 +138,20 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const contentTypesPart = '[Content_Types].xml';
   const presentationPart = 'ppt/presentation.xml';
   const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
+  const tableStyles = tableStyleSavePlan(doc);
+  if (tableStyles?.definitions.length && !nextBaselines[tableStyles.part]) {
+    const source = doc.package.parts[tableStyles.part];
+    if (source) nextBaselines[tableStyles.part] = source.slice();
+    else {
+      nextCreatedParts.add(tableStyles.part);
+      for (const part of [contentTypesPart, presentationRelsPart]) {
+        if (nextBaselines[part]) continue;
+        const baseline = doc.package.parts[part];
+        if (!baseline) throw new Error(`PPTX 缺少 ${part}`);
+        nextBaselines[part] = baseline.slice();
+      }
+    }
+  }
   const notesPlan = prepareNotesSave(doc, nextBaselines, nextCreatedParts);
   const hasCreatedSlideHistory = activeCreatedSlides.length > 0
     || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
@@ -338,7 +357,24 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
       nextBaselines[presentationRelsPart], doc,
     );
   }
+  if (tableStyles?.definitions.length && nextCreatedParts.has(tableStyles.part)) {
+    const contentTypes = changes[contentTypesPart] ?? nextBaselines[contentTypesPart];
+    const relationships = changes[presentationRelsPart] ?? nextBaselines[presentationRelsPart];
+    if (!(contentTypes instanceof Uint8Array) || !(relationships instanceof Uint8Array)) {
+      throw new Error('创建 tableStyles.xml 缺少 OPC 闭包基线');
+    }
+    changes[contentTypesPart] = patchTableStyleContentType(contentTypes, tableStyles.part);
+    changes[presentationRelsPart] = patchTableStylePresentationRelationships(
+      relationships, tableStyles.part,
+    );
+  }
   for (const part of removedSlideParts.packageParts) changes[part] = null;
+  if (tableStyles) {
+    const source = nextBaselines[tableStyles.part];
+    if (tableStyles.definitions.length) {
+      changes[tableStyles.part] = materializeTableStyles(source, tableStyles.definitions);
+    } else if (source) changes[tableStyles.part] = source;
+  }
 
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);
   commitSavedPackage(doc, result.package, nextBaselines, [...nextCreatedParts].sort());
