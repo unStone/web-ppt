@@ -4,6 +4,12 @@
 
 ## 未发布
 
+### 新增
+
+- 新增可选的 `@web-ppt/collab`：字段级 LWW、分数序与确定性页序重物化把 `Editor` 补丁流接到
+  可插拔 provider，支持离线幂等回放、remove-wins、远端历史 rebase 和 BroadcastChannel 双标签页。
+  OOXML 元素身份由 provider 分配的副本 slot 精确分区；协同包不进入单机 `editor` 入口。
+
 ## 0.5.0-beta.1 - 2026-08-27
 
 ### 新增

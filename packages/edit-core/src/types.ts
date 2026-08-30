@@ -547,6 +547,27 @@ export interface EditDocMeta {
   tableStylesPart?: string;
 }
 
+export interface EditIdentityRange {
+  /** 划分区间前的全局首值；恢复时据此重算当前 slot 的精确边界。 */
+  base: number;
+  maximum: number;
+  next: number;
+  end: number;
+  step: number;
+}
+
+/** 协同分配状态随恢复日志持久化；ranges 是各类 OOXML 数值身份的互斥游标。 */
+export interface EditIdentityAllocation {
+  replicaId: string;
+  prefix: string;
+  slot: number;
+  count: number;
+  /** 与补丁事务一起进入恢复帧，进程重开后不能复用旧消息序号或 Lamport 时间。 */
+  clock: number;
+  sequence: number;
+  ranges: Record<string, EditIdentityRange>;
+}
+
 /** 会话内身份分配状态必须随文档持久化，否则恢复后会复用旧 id。 */
 export interface EditIdentity {
   prefix: string;
@@ -559,6 +580,7 @@ export interface EditIdentity {
   nextNotesPart?: number;
   nextPresentationSlideId?: number;
   nextPresentationRelationship?: number;
+  allocation?: EditIdentityAllocation;
 }
 
 /** 只保存首次触碰的 XML part；必须随文档 structuredClone 才能在 Worker 中正确撤销后保存。 */

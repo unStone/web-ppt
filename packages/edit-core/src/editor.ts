@@ -9,11 +9,13 @@ import { fitTextShapePatches } from './commands/fit-text-shape';
 import { isImageResourcePatch } from './commands/element-image-content';
 import { isElementInteractionPatch } from './commands/element-interaction';
 import {
-  affectsSlideSequence, bodyPropsPatchElements, hasDocumentPatch, panePatchElements, patchElements,
-  renderPatchElements, renderPatchSlides, reorderedPatchElements,
+  affectsSlideSequence, bodyPropsPatchElements, hasDocumentPatch, panePatchElements,
+  renderPatchSlides,
 } from './change-classification';
 import type {
-  Command, EditorChange, EditorOptions, EditorSubscriber, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
+  Command, EditorChange, EditorOptions, EditorPatchEvent, EditorPatchSubscriber,
+  EditorPatchSubscribeOptions, EditorSubscriber,
+  ExternalPatchOptions, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
   TransactionOptions, TransactionResult,
 } from './commands/types';
 import { HistoryStore } from './history';
@@ -31,14 +33,12 @@ import {
 } from './selection';
 import { validateCommandRelations } from './transaction-validation';
 import type { EditDoc, ElementId, SlideId } from './types';
-
-function reportSubscriberError(error: unknown): void {
-  try {
-    const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
-    if (reporter) reporter(error);
-    else console.error('Editor 订阅者执行失败', error);
-  } catch { /* 监听器与错误上报都不能把已提交事务伪装成失败。 */ }
-}
+import { changeFromPatches } from './patch-change';
+import { assertEditIdentityWatermark, mergeEditIdentityWatermark } from './identity-watermark';
+import {
+  advanceCollaborationVersion, assertCollaborationVersionAvailable,
+} from './identity-allocation';
+import { EditorPatchJournal, reportEditorSubscriberError } from './patch-events';
 
 class TransactionCollector implements Transaction {
   readonly commands: Command[] = [];
@@ -64,6 +64,7 @@ export class Editor {
   private readonly historyStore: HistoryStore;
   private readonly origin: string;
   private readonly subscribers = new Set<EditorSubscriber>();
+  private readonly patchJournal = new EditorPatchJournal();
   private readonly recoveryJournal: RecoveryJournal;
   private currentSelection: Selection = { kind: 'none' };
   private currentState = 0;
@@ -135,6 +136,13 @@ export class Editor {
     return this.recoveryJournal.subscribe(subscriber);
   }
 
+  subscribePatches(
+    subscriber: EditorPatchSubscriber,
+    options: EditorPatchSubscribeOptions = {},
+  ): () => void {
+    return this.patchJournal.subscribe(subscriber, options);
+  }
+
   exec(...commands: Command[]): TransactionResult {
     if (!commands.length) throw new Error('exec 至少需要一个命令');
     for (const command of commands) assertPureCommand(command);
@@ -159,25 +167,18 @@ export class Editor {
   undo(): EditorChange | null {
     const entry = this.historyStore.peekUndo();
     if (!entry) return null;
+    assertCollaborationVersionAvailable(this.doc.identity);
     // 历史创建后可能已有远端 Patch 改变模型；重放必须重新在完整暂存模型上验真。
     const dirty = applyPatches(this.doc, entry.inverse);
     this.refreshActiveImageResources(entry.inverse);
     this.currentSelection = cloneSelection(entry.selectionBefore);
     this.historyStore.moveToRedo();
     this.currentState = this.currentState === entry.afterState ? entry.beforeState : this.nextState++;
-    const change = {
-      source: 'undo' as const,
-      selection: this.selection,
-      touchedElements: patchElements(entry.inverse),
-      renderElements: renderPatchElements(entry.inverse, dirty.dirtyElements),
-      renderSlides: renderPatchSlides(entry.inverse),
-      bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
-      reorderedElements: reorderedPatchElements(entry.inverse),
-      paneElements: panePatchElements(entry.inverse),
-      ...slidePatchSets(this.doc, entry.inverse),
-      ...dirty,
-    };
-    this.emitRecovery('undo', entry.inverse, entry.label);
+    const change = changeFromPatches(this.doc, entry.inverse, entry.forward, 'undo', this.selection, dirty);
+    const time = Date.now();
+    advanceCollaborationVersion(this.doc.identity);
+    this.queuePatches('undo', entry.inverse, this.origin, entry.label, time);
+    this.emitRecovery('undo', entry.inverse, entry.label, time);
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
@@ -185,31 +186,25 @@ export class Editor {
       change.renderSlides,
       change.paneElements,
     );
+    this.flushPatches();
     return change;
   }
 
   redo(): EditorChange | null {
     const entry = this.historyStore.peekRedo();
     if (!entry) return null;
+    assertCollaborationVersionAvailable(this.doc.identity);
     // redo 尤其可能与远端新增的 OPC 身份相撞，不能沿用命令事务内的可信快速路径。
     const dirty = applyPatches(this.doc, entry.forward);
     this.refreshActiveImageResources(entry.forward);
     this.currentSelection = cloneSelection(entry.selectionAfter);
     this.historyStore.moveToUndo();
     this.currentState = this.currentState === entry.beforeState ? entry.afterState : this.nextState++;
-    const change = {
-      source: 'redo' as const,
-      selection: this.selection,
-      touchedElements: patchElements(entry.forward),
-      renderElements: renderPatchElements(entry.forward, dirty.dirtyElements),
-      renderSlides: renderPatchSlides(entry.forward),
-      bodyPropsElements: bodyPropsPatchElements(entry.forward, entry.inverse),
-      reorderedElements: reorderedPatchElements(entry.forward),
-      paneElements: panePatchElements(entry.forward),
-      ...slidePatchSets(this.doc, entry.forward),
-      ...dirty,
-    };
-    this.emitRecovery('redo', entry.forward, entry.label);
+    const change = changeFromPatches(this.doc, entry.forward, entry.inverse, 'redo', this.selection, dirty);
+    const time = Date.now();
+    advanceCollaborationVersion(this.doc.identity);
+    this.queuePatches('redo', entry.forward, this.origin, entry.label, time);
+    this.emitRecovery('redo', entry.forward, entry.label, time);
     this.emit(
       change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
       change.renderElements, change.reorderedElements, change.bodyPropsElements,
@@ -217,6 +212,44 @@ export class Editor {
       change.renderSlides,
       change.paneElements,
     );
+    this.flushPatches();
+    return change;
+  }
+
+  applyExternalPatches(patches: readonly Patch[], options: ExternalPatchOptions = {}): EditorChange | null {
+    if (!Array.isArray(patches)) throw new Error('外部补丁必须是数组');
+    const time = options.time ?? Date.now();
+    const origin = options.origin ?? 'external';
+    const label = options.label?.trim() || '外部编辑';
+    if (!Number.isFinite(time)) throw new Error('外部补丁时间必须是有限数字');
+    if (typeof origin !== 'string' || !origin) throw new Error('外部补丁 origin 必须是非空字符串');
+    if (options.identity) assertEditIdentityWatermark(options.identity);
+    if (!patches.length) {
+      if (options.identity) mergeEditIdentityWatermark(this.doc.identity, options.identity);
+      // 纯延迟/LWW 消息也改变协同 checkpoint；空帧把元数据与 identity 水位一起持久化。
+      if (options.identity) this.emitRecovery('transaction', [], label, time);
+      return null;
+    }
+    const dirty = applyPatches(this.doc, patches);
+    if (options.identity) mergeEditIdentityWatermark(this.doc.identity, options.identity);
+    const structural = patches.some((patch) =>
+      isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
+    if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
+    if (patches.some(isElementInteractionPatch)) {
+      this.currentSelection = selectionAfterInteractionState(this.doc, this.currentSelection);
+    }
+    this.refreshActiveImageResources(patches);
+    if (hasDocumentPatch(patches)) this.currentState = this.nextState++;
+    this.historyStore.rebaseUnrecorded(patches, this.currentState, () => this.nextState++);
+    const change = changeFromPatches(this.doc, patches, [], 'external', this.selection, dirty);
+    this.queuePatches('external', patches, origin, label, time);
+    this.emitRecovery('transaction', patches, label, time);
+    this.emit(
+      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
+      change.renderElements, change.reorderedElements, change.bodyPropsElements,
+      change, change.renderSlides, change.paneElements,
+    );
+    this.flushPatches();
     return change;
   }
 
@@ -321,6 +354,7 @@ export class Editor {
       if (structural) validateEditDoc(this.doc);
       else validateEditElements(this.doc, forward
         .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
+      if (forward.length) advanceCollaborationVersion(this.doc.identity);
     } catch (error) {
       if (inverse.length) applyLocalPatches(this.doc, inverse);
       // AddSlide 会惰性创建 OPC 水位；只 Object.assign 会把失败事务新增的字段残留在文档中。
@@ -363,6 +397,7 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
+      if (forward.length) this.queuePatches('transaction', forward, origin, label, operationTime);
       this.emitRecovery(forward.length ? 'transaction' : 'selection', forward, label, operationTime);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
@@ -371,6 +406,7 @@ export class Editor {
         renderSlides,
         paneElements,
       );
+      this.flushPatches();
     }
     return {
       forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
@@ -395,6 +431,18 @@ export class Editor {
       time,
     });
   }
+
+  private queuePatches(
+    source: EditorPatchEvent['source'], patches: readonly Patch[], origin: string, label: string, time: number,
+  ): void {
+    const event: EditorPatchEvent = {
+      source, patches: structuredClone([...patches]), identity: structuredClone(this.doc.identity),
+      origin, label, time,
+    };
+    this.patchJournal.queue(event);
+  }
+
+  private flushPatches(): void { this.patchJournal.flush(); }
 
   private emit(
     source: EditorChange['source'],
@@ -432,7 +480,7 @@ export class Editor {
           removedSlideFallbacks: new Map(slideChanges.removedSlideFallbacks),
         });
       } catch (error) {
-        reportSubscriberError(error);
+        reportEditorSubscriberError(error);
       }
     }
   }

@@ -1,6 +1,6 @@
 import type { Effects, Fill, Stroke } from '@web-ppt/core';
 import type {
-  ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
+  EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
@@ -519,7 +519,7 @@ export interface TransactionResult extends ProjectionInvalidation, CommandPatche
 }
 
 export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
-  readonly source: 'transaction' | 'undo' | 'redo' | 'selection';
+  readonly source: 'transaction' | 'undo' | 'redo' | 'external' | 'selection';
   readonly selection: Selection;
   /** dirtyElements 含投影缓存祖先；DOM 增量分区必须以真正被 patch 的元素为准。 */
   readonly touchedElements: Set<ElementId>;
@@ -536,6 +536,29 @@ export interface EditorChange extends ProjectionInvalidation, SlideChangeSets {
 }
 
 export type EditorSubscriber = (change: EditorChange) => void;
+
+export interface EditorPatchEvent {
+  readonly source: Exclude<EditorChange['source'], 'selection'>;
+  readonly patches: readonly Patch[];
+  readonly identity: EditIdentity;
+  readonly origin: string;
+  readonly label: string;
+  readonly time: number;
+}
+
+export type EditorPatchSubscriber = (event: EditorPatchEvent) => void;
+
+export interface EditorPatchSubscribeOptions {
+  /** 协同 checkpoint 必须先于 recovery 观察者看到同一事务；该阶段的订阅者不得重入编辑器。 */
+  readonly phase?: 'before-recovery' | 'after-observers';
+}
+
+export interface ExternalPatchOptions {
+  readonly identity?: EditIdentity;
+  readonly origin?: string;
+  readonly label?: string;
+  readonly time?: number;
+}
 
 export interface Transaction {
   exec(...commands: Command[]): void;

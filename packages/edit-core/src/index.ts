@@ -44,8 +44,10 @@ export { isElementDescendantOf, outermostSelectedElementIds } from './selection'
 export { elementOrder, writableLayerSiblingIds } from './element-order';
 export { MAX_ELEMENT_NAME_LENGTH } from './element-name';
 export { querySelectionPane } from './selection-pane';
-export { applyPatches } from './commands/patch';
+export { applyPatches, assertPatchesApplicable, stageExternalPatches } from './commands/patch';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
+export { configureCollaborationIdentity } from './collaboration-identity';
+export { assertIdentityAllocation, MAX_COLLABORATION_VERSION } from './identity-allocation';
 export {
   effectiveElement, invalidateAll, invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideStructure,
   slideOfElement, toSlide,
@@ -62,7 +64,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
+  CreateDocOptions, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideCreation, SlideNotesBinding, SlideRecord, SlideSource, TableCellAddress, TableCellKey, TableCellOverrides, TableCellRowRef, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -73,7 +75,7 @@ export type {
 } from './recovery-types';
 export type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, EditorChange, GroupCommand, UngroupCommand,
-  EditorOptions, EditorSubscriber, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
+  EditorOptions, EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions, EditorSubscriber, ExternalPatchOptions, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   ElementHierarchyPatch, ElementHierarchyState, ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertRowCommand, MoveSlideCommand, Patch, RemoveElementCommand, RemoveSlideCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand, SetTransitionCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideTransitionPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot,
   ApplyFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableRowPatch,

@@ -188,7 +188,7 @@ export function pasteElementsPatches(
       if (spid !== undefined) src.id = spid;
       const children = copied.children.map((child, childIndex) => visit(child, id, false, childIndex));
       const z = root
-        ? (previousOrder = fractionalIndexBetween(previousOrder, null))
+        ? (previousOrder = fractionalIndexBetween(previousOrder, null, id))
         : initialFractionalIndex(index);
       records[id] = {
         id, parent, z, src,

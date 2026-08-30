@@ -1,4 +1,5 @@
 import { fractionalIndexBetween } from '../fractional-index';
+import { logicalIdentityPrefix } from '../identity-allocation';
 import type { EditDoc, ElementRecord } from '../types';
 import { lastTableRowOrder } from '../table-rows';
 import type { CommandPatches, InsertRowCommand, TableRowPatch } from './types';
@@ -6,7 +7,7 @@ import type { CommandPatches, InsertRowCommand, TableRowPatch } from './types';
 function allocateRowId(doc: EditDoc, record: ElementRecord, origin: string): string {
   for (;;) {
     const serial = (doc.identity.nextElement++).toString(36);
-    const id = `${doc.identity.prefix}r${serial}:${origin.length.toString(36)}:${origin}`;
+    const id = `${logicalIdentityPrefix(doc.identity)}r${serial}:${origin.length.toString(36)}:${origin}`;
     if (!record.ovr.tableRows?.[id]) return id;
   }
 }

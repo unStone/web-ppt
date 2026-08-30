@@ -11,6 +11,7 @@ import { parseXmlTree } from '../xml/tree';
 import type { ElementClipboardPayload } from './types';
 import type { ClipboardClosure } from '../clipboard-source';
 import type { OpcPackage } from '@web-ppt/core';
+import { allocateIdentityRange, logicalIdentityPrefix } from '../identity-allocation';
 
 export interface PreparedInsertionClosure {
   relationships: ElementInsertionRelationship[];
@@ -118,6 +119,33 @@ function mediaAllocation(doc: EditDoc): {
 
 function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => string {
   const used = relationshipIds(doc, destinationPart);
+  const allocation = doc.identity.allocation;
+  if (allocation) {
+    const key = `relationship:${destinationPart}`;
+    if (!allocation.ranges[key]) {
+      const highest = Math.max(0, ...[...used].flatMap((id) => {
+        const match = /^rId(\d+)$/.exec(id);
+        const value = Number(match?.[1]);
+        return Number.isSafeInteger(value) && value > 0 && value <= 0xffff_ffff ? [value] : [];
+      }));
+      const first = allocation.slot + 1;
+      const rounds = highest < first ? 0 : Math.floor((highest - first) / allocation.count) + 1;
+      allocation.ranges[key] = {
+        base: first, maximum: 0xffff_ffff, next: first + rounds * allocation.count,
+        end: 0x1_0000_0000,
+        step: allocation.count,
+      };
+    }
+    return () => {
+      let id: string;
+      do {
+        const serial = allocateIdentityRange(doc.identity, key, 1)!;
+        id = `rId${serial}`;
+      } while (used.has(id));
+      used.add(id);
+      return id;
+    };
+  }
   let serial = 1;
   return () => {
     while (used.has(`rId${serial}`)) serial++;
@@ -135,7 +163,7 @@ function directMediaTarget(
   if (retained) return retained.targetPart;
   const pkg = doc.package!;
   const stem = `web-ppt-${source.hash}`;
-  const session = sha256(new TextEncoder().encode(doc.identity.prefix)).slice(0, 10);
+  const session = sha256(new TextEncoder().encode(logicalIdentityPrefix(doc.identity))).slice(0, 10);
   for (let serial = 0; ; serial++) {
     const suffix = serial === 0 ? '' : serial === 1 ? `-${session}` : `-${session}-${serial}`;
     const targetPart = `ppt/media/${stem}${suffix}.${source.extension}`;
@@ -350,7 +378,10 @@ export function prepareInsertionClosures(
       if (!source) throw new Error(`剪贴板关系缺少资源：${relationship.resourceHash}`);
       let targetPart = targetByHash.get(source.hash);
       if (!targetPart) {
-        targetPart = allocateMediaPart(resourcePrefix(source.mime), source.extension);
+        // 协同副本不能从各自离线视图里竞争 image1.png；内容寻址让相同字节复用、不同字节天然分流。
+        targetPart = doc.identity.allocation
+          ? directMediaTarget(doc, source)
+          : allocateMediaPart(resourcePrefix(source.mime), source.extension);
         targetByHash.set(source.hash, targetPart);
       }
       const prepared = {

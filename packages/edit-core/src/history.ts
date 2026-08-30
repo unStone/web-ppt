@@ -47,6 +47,29 @@ export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {
 
 const pathKey = (patch: Patch): string => JSON.stringify(patch.path);
 
+function pathContains(left: Patch['path'], right: Patch['path']): boolean {
+  return left.length <= right.length && left.every((segment, index) => segment === right[index]);
+}
+
+const pathsConflict = (left: Patch['path'], right: Patch['path']): boolean =>
+  pathContains(left, right) || pathContains(right, left);
+
+function affectedPatchPaths(patch: Patch): Patch['path'][] {
+  const affected: Patch['path'][] = [patch.path];
+  const value = 'value' in patch && patch.value && typeof patch.value === 'object'
+    ? patch.value as { records?: Readonly<Record<string, unknown>>; affected?: readonly string[] }
+    : null;
+  if (patch.path[0] === 'slides' && patch.path.length === 2) {
+    affected.push(['slideOrder', patch.path[1]]);
+    for (const id of Object.keys(value?.records ?? {})) affected.push(['elements', id]);
+  } else if (patch.path[0] === 'elements' && patch.path.length === 2) {
+    for (const id of Object.keys(value?.records ?? {})) affected.push(['elements', id]);
+  } else if (patch.path[0] === 'elements' && patch.path[2] === 'hierarchy') {
+    for (const id of value?.affected ?? Object.keys(value?.records ?? {})) affected.push(['elements', id]);
+  }
+  return affected;
+}
+
 /** Patch 是绝对 set/del；同一路径的连续编辑只需最终正向值与最初逆向值。 */
 function compactPatches(patches: readonly Patch[]): Patch[] {
   const output: Patch[] = [];
@@ -139,7 +162,8 @@ export class HistoryStore implements History {
 
   /** 后到的非记录写入胜出；旧历史只保留未冲突路径，避免撤销覆盖远端或系统改动。 */
   rebaseUnrecorded(patches: readonly Patch[], currentState: number, allocateState: () => number): void {
-    const paths = new Set(patches.map(pathKey));
+    const patchPaths = patches.flatMap(affectedPatchPaths);
+    const paths = new Set(patchPaths.map((path) => JSON.stringify(path)));
     if (!paths.size) return;
     const strip = (list: StoredHistoryEntry[]): void => {
       for (let index = list.length - 1; index >= 0; index--) {
@@ -147,7 +171,7 @@ export class HistoryStore implements History {
         const linked = new Set(entry.links
           .filter((link) => paths.has(link.trigger))
           .flatMap((link) => link.related));
-        const conflicts = (patch: Patch): boolean => paths.has(pathKey(patch))
+        const conflicts = (patch: Patch): boolean => patchPaths.some((path) => pathsConflict(path, patch.path))
           || linked.has(pathKey(patch));
         const forward = entry.forward.filter((patch) => !conflicts(patch));
         if (forward.length === entry.forward.length) continue;

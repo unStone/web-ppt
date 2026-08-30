@@ -5,6 +5,8 @@ import { setXmlAttribute } from '../xml/mutate';
 import { parseXmlTree } from '../xml/tree';
 import type { XmlDocument, XmlElement } from '../xml/types';
 import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
+import { elementOrder } from '../element-order';
+import { compareFractionalIndex } from '../fractional-index';
 import { locateElementHost, locateElementHosts } from './xfrm';
 import { materializeElementOverrides } from './materialize';
 import { patchRemovedElement } from './remove-element';
@@ -177,7 +179,14 @@ export function patchInsertedElements(
     }
     return value;
   };
-  for (const record of [...records].sort((left, right) => depth(left) - depth(right))) {
+  for (const record of [...records].sort((left, right) => {
+    const depthOrder = depth(left) - depth(right);
+    if (depthOrder) return depthOrder;
+    // Record 目录的插入顺序取决于补丁到达先后；持久化顺序只能信模型的分数序。
+    if (left.parent === right.parent) return compareFractionalIndex(elementOrder(left), elementOrder(right));
+    if (left.id === right.id) return 0;
+    return left.id < right.id ? -1 : 1;
+  })) {
     if (!candidates.has(record.id)) continue;
     let ancestor = record.parent;
     let covered = false;

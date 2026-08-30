@@ -320,6 +320,7 @@ export function validateEditDoc(doc: EditDoc): void {
         || !slide.creation.layoutRelationshipId
         || !Number.isSafeInteger(slide.creation.presentationSlideId)
         || slide.creation.presentationSlideId < 256
+        || slide.creation.presentationSlideId > 0x7fff_ffff
         || !/^rId\d+$/.test(slide.creation.presentationRelationshipId)
         || (creation.duplicateSourcePart !== undefined
           && (typeof creation.duplicateSourcePart !== 'string'

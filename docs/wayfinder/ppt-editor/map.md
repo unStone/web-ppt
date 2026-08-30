@@ -97,6 +97,7 @@ tracker: local-markdown
 - [让浏览器性能契约抗环境负载](tickets/074-perf-contract-load-isolation.md) — 功能断言与性能预算延迟汇总彻底分离，测前/测中环境基线仅授予一次全新 Chrome 重测；真实并行 CPU/Chromium 负载、安静输出与双轴终审全部通过。
 - [建立顶点编辑独立扩展](tickets/070-vertex-editing-extension.md) — 稳定自由形状地址、按需圆弧物化与保留型保存贯通独立 vertex 入口；Chrome 60 元素拖动 p95 0.2ms，主入口零增长且 LibreOffice 像素 oracle 通过。
 - [实现表格样式应用与写回](tickets/071-table-style-library.md) — 公开样式目录、六开关命令、直接格式优先级与按需 OPC 物化贯通补丁及生成保存，LibreOffice 表样式 oracle 与两路终审通过。
+- [建立协同适配扩展包](tickets/072-collab-adapter-package.md) — 字段级 LWW、严格同副本因果前缀与精确身份分区贯通可插拔 provider、恢复和双标签页，薄包 12160B gzip 且两路终审归零。
 
 ## Not yet specified
 

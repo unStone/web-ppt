@@ -9,6 +9,7 @@ import type {
   CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
 } from './types';
 import { sourceAnimationSteps } from './slide-animation';
+import { logicalIdentityPrefix } from './identity-allocation';
 
 let sessionSerial = 0;
 const disposers = new WeakMap<EditDoc, () => void>();
@@ -219,14 +220,14 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
 
 export function allocateSlideId(doc: EditDoc): SlideId {
   for (;;) {
-    const id = `${doc.identity.prefix}s${(doc.identity.nextSlide++).toString(36)}`;
+    const id = `${logicalIdentityPrefix(doc.identity)}s${(doc.identity.nextSlide++).toString(36)}`;
     if (!doc.slides[id] && !doc.elements[id]) return id;
   }
 }
 
 export function allocateElementId(doc: EditDoc): ElementId {
   for (;;) {
-    const id = `${doc.identity.prefix}e${(doc.identity.nextElement++).toString(36)}`;
+    const id = `${logicalIdentityPrefix(doc.identity)}e${(doc.identity.nextElement++).toString(36)}`;
     if (!doc.elements[id] && !doc.slides[id]) return id;
   }
 }

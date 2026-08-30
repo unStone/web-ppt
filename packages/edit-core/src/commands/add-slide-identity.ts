@@ -3,9 +3,11 @@ import type { EditDoc } from '../types';
 import { PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlAttribute, findXmlChild, xmlElementChildren } from '../xml/query';
 import { parseXmlTree } from '../xml/tree';
+import { allocateIdentityRange, ensureIdentityRange } from '../identity-allocation';
 
 const decoder = new TextDecoder();
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const MAX_PRESENTATION_SLIDE_ID = 0x7fff_ffff;
 
 /** 删除保存再撤销时 part 只存在 detached baseline；身份读取必须与保存重建使用同一真相源。 */
 function sourcePart(doc: EditDoc, part: string): Uint8Array | undefined {
@@ -54,12 +56,25 @@ export function allocateSlideOpcIdentity(doc: EditDoc): {
   presentationRelationshipId: string;
 } {
   initializeOpcIdentity(doc);
-  const partNumber = doc.identity.nextSlidePart!++;
-  const presentationSlideId = doc.identity.nextPresentationSlideId!++;
-  const relationshipNumber = doc.identity.nextPresentationRelationship!++;
+  const partNumber = allocateIdentityRange(
+    doc.identity, 'slidePart', doc.identity.nextSlidePart!,
+  ) ?? doc.identity.nextSlidePart!++;
+  const presentationSlideId = allocateIdentityRange(
+    doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID,
+  ) ?? doc.identity.nextPresentationSlideId!++;
+  const relationshipNumber = allocateIdentityRange(
+    doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!,
+  ) ?? doc.identity.nextPresentationRelationship!++;
+  doc.identity.nextSlidePart = Math.max(doc.identity.nextSlidePart!, partNumber + 1);
+  doc.identity.nextPresentationSlideId = Math.max(
+    doc.identity.nextPresentationSlideId!, presentationSlideId + 1,
+  );
+  doc.identity.nextPresentationRelationship = Math.max(
+    doc.identity.nextPresentationRelationship!, relationshipNumber + 1,
+  );
   if (!Number.isSafeInteger(partNumber) || partNumber <= 0
     || !Number.isSafeInteger(presentationSlideId) || presentationSlideId < 256
-    || presentationSlideId > 0xffffffff
+    || presentationSlideId > MAX_PRESENTATION_SLIDE_ID
     || !Number.isSafeInteger(relationshipNumber) || relationshipNumber <= 0) {
     throw new Error('演示文稿的新增页身份已耗尽');
   }
@@ -83,9 +98,39 @@ export function allocateNotesPart(doc: EditDoc): string {
     }));
     doc.identity.nextNotesPart = highest + 1;
   }
-  const partNumber = doc.identity.nextNotesPart++;
+  const partNumber = allocateIdentityRange(
+    doc.identity, 'notesPart', doc.identity.nextNotesPart,
+  ) ?? doc.identity.nextNotesPart++;
+  doc.identity.nextNotesPart = Math.max(doc.identity.nextNotesPart, partNumber + 1);
   if (!Number.isSafeInteger(partNumber) || partNumber <= 0) throw new Error('演示文稿的备注身份已耗尽');
   return `ppt/notesSlides/notesSlide${partNumber}.xml`;
+}
+
+/** 协同绑定期固化全部全局 OPC 数值区间，后续远端补丁不会改变本副本的分配边界。 */
+export function prepareSlideOpcNamespaces(doc: EditDoc): void {
+  initializeOpcIdentity(doc);
+  ensureIdentityRange(doc.identity, 'slidePart', doc.identity.nextSlidePart!);
+  ensureIdentityRange(
+    doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID,
+  );
+  ensureIdentityRange(
+    doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!,
+  );
+  let firstNotesPart = doc.identity.nextNotesPart;
+  if (firstNotesPart === undefined) {
+    const parts = [
+      ...Object.keys(doc.package!.parts), ...Object.keys(doc.saveState.baselines),
+      ...Object.values(doc.slides).flatMap((slide) =>
+        slide.notes ? [slide.notes.targetPart] : []),
+    ];
+    const highest = Math.max(0, ...parts.flatMap((part) => {
+      const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
+      return match ? [Number(match[1])] : [];
+    }));
+    firstNotesPart = highest + 1;
+  }
+  // 预留区间不等于消费身份；保持 undefined，恢复验真才能区分“已准备”与“已新增备注”。
+  ensureIdentityRange(doc.identity, 'notesPart', firstNotesPart);
 }
 
 export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined {

@@ -1,6 +1,7 @@
 ---
 title: 建立协同适配扩展包
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -23,3 +24,18 @@ M6 后置项、D13 承诺。模型侧的前置条件已成立：扁平记录 + �
 
 验收：双实例固定种子并发脚本收敛到同一 EditDoc；断线重连补丁重放幂等；保存产物与单机语义一致；
 主包体积回归零增长；全部门禁绿。
+
+## Resolution
+
+选择独立的 `@web-ppt/collab` 字段级 LWW 适配包，而不引入 Yjs 镜像文档：现有绝对 Patch、分数序与恢复日志可直接映射，
+`edit-core` 只增加双向 Patch / recovery / 身份分配 seam，单机 `editor` 入口仍零协同依赖。provider 仅负责消息搬运与唯一
+replica slot；BroadcastChannel 给出双标签页实现。富文本当前按完整 `TextOverride` 寄存器收敛，Peritext 式字符级意图保留明确
+列为非目标。
+
+合并层已贯通字段 LWW、remove-wins、确定性页序、层级快照重基、严格同副本 sequence 因果前缀、原子 deferred 隔离与有界
+checkpoint；逻辑 id 及全部新增 OOXML 数值身份按 4096 个 slot 精确分区，远端补丁不进入本地撤销历史。98 项契约覆盖固定种子
+并发、120 种嵌套结构投递排列、随机结构 / 撤销链、断线重放、恢复与双标签页；薄包 12160B gzip（不含 peer），主编辑入口
+保持 256631B / 63305B gzip，Spec / Standards 最终复审均无 P0/P1/P2。
+
+2026-08-30 按用户决策将真实浏览器性能复验后置到功能开发收尾；既有预算与测试脚本保持不变。本票以类型检查、全部非性能
+测试、构建及上述专项契约收口，受扰环境下的性能超标不作为协同功能失败。

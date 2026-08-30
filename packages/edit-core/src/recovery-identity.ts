@@ -4,7 +4,10 @@ import { isSlideNotesPatch } from './commands/slide-notes';
 import { isSlideTreePatch } from './commands/slide-tree';
 import { allocateElementSpid } from './commands/spid';
 import type { Patch } from './commands/types';
-import type { EditDoc, EditIdentity, ElementRecord, SlideNotesBinding, SlideRecord } from './types';
+import type {
+  EditDoc, EditIdentity, EditIdentityAllocation, ElementRecord, SlideNotesBinding, SlideRecord,
+} from './types';
+import { assertIdentityAllocation } from './identity-allocation';
 
 export function assertRecoveryIdentity(
   value: unknown,
@@ -24,10 +27,15 @@ export function assertRecoveryIdentity(
       !part || !Number.isSafeInteger(counter) || counter <= 0)
     || !optionalCounter(identity.nextSlidePart)
     || !optionalCounter(identity.nextNotesPart)
-    // 0x1_0000_0000 表示已分配完最后一个合法的 u32 id；文档仍可打开，但不能再新增页。
-    || !optionalCounter(identity.nextPresentationSlideId, 256, 0x1_0000_0000)
+    // 0x8000_0000 表示已分配完最后一个合法 ST_SlideId；文档仍可打开，但不能再新增页。
+    || !optionalCounter(identity.nextPresentationSlideId, 256, 0x8000_0000)
     || !optionalCounter(identity.nextPresentationRelationship)) {
     throw new Error(`恢复帧 ${sequence} 的身份水位无效`);
+  }
+  if (identity.allocation !== undefined) {
+    assertIdentityAllocation(
+      identity.allocation, `恢复帧 ${sequence} 的身份分配命名空间`, identity.prefix,
+    );
   }
 }
 
@@ -60,6 +68,7 @@ export interface RecoveryIdentityFloor {
   minimumNewNotesPart?: number;
   checkedSlideSource: boolean;
   checkedNotesSource: boolean;
+  allocation?: EditIdentityAllocation;
 }
 
 function anchorKey(record: Pick<ElementRecord, 'meta'>): string | null {
@@ -169,6 +178,7 @@ export function createRecoveryIdentityFloor(doc: EditDoc): RecoveryIdentityFloor
       ? {} : { nextPresentationRelationship: identity.nextPresentationRelationship }),
     checkedSlideSource: false,
     checkedNotesSource: false,
+    ...(identity.allocation ? { allocation: structuredClone(identity.allocation) } : {}),
   };
 }
 
@@ -365,6 +375,7 @@ function identityProbe(doc: EditDoc): EditDoc {
     ...doc,
     identity: {
       ...structuredClone(doc.identity), nextSpid: {},
+      allocation: undefined,
       nextSlidePart: undefined, nextNotesPart: undefined,
       nextPresentationSlideId: undefined, nextPresentationRelationship: undefined,
     },
@@ -446,14 +457,30 @@ export function assertRecoveryIdentityFloor(
   const optional = [
     'nextSlidePart', 'nextNotesPart', 'nextPresentationSlideId', 'nextPresentationRelationship',
   ] as const;
+  const previousAllocation = floor.allocation;
+  const nextAllocation = next.allocation;
+  const allocationInvalid = previousAllocation ? !nextAllocation
+    || previousAllocation.replicaId !== nextAllocation.replicaId
+    || previousAllocation.prefix !== nextAllocation.prefix
+    || previousAllocation.slot !== nextAllocation.slot
+    || previousAllocation.count !== nextAllocation.count
+    || nextAllocation.clock < previousAllocation.clock
+    || nextAllocation.sequence < previousAllocation.sequence
+    || Object.entries(previousAllocation.ranges).some(([key, range]) => {
+      const candidate = nextAllocation.ranges[key];
+      return !candidate || candidate.base !== range.base || candidate.maximum !== range.maximum
+        || candidate.end !== range.end || candidate.step !== range.step
+        || candidate.next < range.next;
+    }) : false;
   const invalid = next.nextSlide < floor.nextSlide || next.nextElement < floor.nextElement
     || [...floor.nextSpid].some(([part, counter]) =>
       next.nextSpid[part] === undefined || next.nextSpid[part] < counter)
     || optional.some((key) => floor[key] !== undefined
-      && (next[key] === undefined || next[key]! < floor[key]!));
+      && (next[key] === undefined || next[key]! < floor[key]!)) || allocationInvalid;
   if (invalid) throw new Error(`恢复帧 ${sequence} 的身份水位没有越过已分配身份`);
   floor.nextSlide = next.nextSlide;
   floor.nextElement = next.nextElement;
   for (const [part, counter] of Object.entries(next.nextSpid)) floor.nextSpid.set(part, counter);
   for (const key of optional) if (next[key] !== undefined) floor[key] = next[key];
+  floor.allocation = nextAllocation ? structuredClone(nextAllocation) : undefined;
 }

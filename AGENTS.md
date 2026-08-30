@@ -8,6 +8,7 @@
 |---|---|
 | `packages/core/` | `@web-ppt/core` —— 解析 / 渲染 / 导出，无框架无 DOM 依赖 |
 | `packages/edit-core/` | `@web-ppt/edit-core` —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖 |
+| `packages/collab/` | `@web-ppt/collab` —— 可选字段级 LWW 协同适配，以 `edit-core` 为 peer |
 | `packages/editor/` | `@web-ppt/editor` —— 编辑会话 + 三层 DOM 视图，无框架运行时依赖 |
 | `packages/react/` | `@web-ppt/react` —— React 组件 + hook 薄适配，React 为 optional peer |
 | `packages/vue/` | `@web-ppt/vue` —— Vue 组件 + composable 薄适配，Vue 为 optional peer |
@@ -28,7 +29,7 @@
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
 | `npm test` | 全部测试：2145 + 874 + 370 + 9 + 360 + 9 + 130 项断言、176 个快照、478 对编辑等价指纹 |
 | `npm run fixtures` | 重新生成全部测试文件 |
-| `npm run build` | 构建七个发布包 |
+| `npm run build` | 构建八个发布包 |
 | `npm run dev` | 启动 viewer |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
 
@@ -82,14 +83,14 @@ EMF/WMF (GDI 流)  ─┘
 Trusted Publishing（OIDC），**Secrets 里不存任何凭据**：
 
 ```bash
-# 七个包的 package.json 版本必须一致，否则流水线直接失败
+# 八个包的 package.json 版本必须一致，否则流水线直接失败
 git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
 ```
 
 流水线：校验 tag 与包版本一致 → 类型检查 → 重生成固件 → 全部测试 → 构建 →
-按 `core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` 顺序发布（`editor` 同时以
+按 `core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` → `collab` 顺序发布（`editor` 同时以
 `core`、`edit-core`、`viewer-core` 为 peer 依赖，框架适配包以 `editor` 和对应框架为 peer，
-其余发布包的依赖见各自 package.json）。
+`collab` 只以 `edit-core` 为 peer，其余发布包的依赖见各自 package.json）。
 
 ⚠️ **新包的第一次发布走不了 OIDC**：npm 要求包已存在才能配置 Trusted Publishing，
 而包要先发布才会存在。新增包时得先在本地 `npm publish` 发一版，再去 npm 的包设置里

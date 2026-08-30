@@ -43,11 +43,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          for p in packages/core packages/edit-core packages/viewer-core packages/editor packages/react packages/vue packages/fonts; do
+          for p in packages/core packages/edit-core packages/viewer-core packages/editor packages/react packages/vue packages/fonts packages/collab; do
             v=$(node -p "require('./$p/package.json').version")
             [ "$v" = "$tag" ] || { echo "::error::$p 版本 $v 与 tag $tag 不一致"; exit 1; }
           done
-          echo "tag $tag 与七个包版本一致"
+          echo "tag $tag 与八个包版本一致"
 
       - name: 类型检查
         run: npm run check
@@ -57,7 +57,7 @@ jobs:
         # 可执行原因，避免最后一个 publish 才用误导性的 scoped 404 失败。
         run: |
           missing=()
-          for p in packages/core packages/edit-core packages/viewer-core packages/editor packages/react packages/vue packages/fonts; do
+          for p in packages/core packages/edit-core packages/viewer-core packages/editor packages/react packages/vue packages/fonts packages/collab; do
             name=$(node -p "require('./$p/package.json').name")
             npm view "$name" name >/dev/null 2>&1 || missing+=("$name")
           done
@@ -81,6 +81,9 @@ jobs:
       - name: React / Vue 适配与体积门禁
         run: npm run test:adapters
 
+      - name: 协同适配与收敛门禁
+        run: npm run test:collab
+
       - name: 编辑性能预算
         run: npm run bench:edit
 
@@ -96,7 +99,7 @@ jobs:
       # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
       # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。
       #
-      # 每步先查 registry 上有没有这个版本，有就跳过。发布是七步串行的，
+      # 每步先查 registry 上有没有这个版本，有就跳过。发布是八步串行的，
       # 中间任一步挂掉都得重跑整个 job，没有这层守卫，前面已发成功的包会以
       # EPUBLISHCONFLICT 把重跑再次弄红，真正的失败原因反而被埋掉。
       # 新包第一版在本地手工发过的情况同理。
@@ -134,4 +137,9 @@ jobs:
       # trusted publisher，之后这一步才会通。
       - name: 发布 @web-ppt/fonts
         working-directory: packages/fonts
+        run: bash ../../tooling/publish-if-new.sh
+
+      # collab 只以 edit-core 为 peer；首版仍须先手工发布并配置 Trusted Publishing。
+      - name: 发布 @web-ppt/collab
+        working-directory: packages/collab
         run: bash ../../tooling/publish-if-new.sh

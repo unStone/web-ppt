@@ -1,13 +1,10 @@
 import { sortElementChildrenByOrder } from '../element-order';
 import { validateEditDoc } from '../model-invariants';
-import {
-  invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideData, invalidateSlideSequence,
-  invalidateSlideStructure, slideOfElement,
-} from '../projection';
+import { releaseProjectionCache, slideOfElement } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
 import type {
-  EditDoc, ElementId, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
-  SlideId, SlideImageBackground, TableRowInsertion,
+  EditDoc, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
+  SlideImageBackground, TableRowInsertion,
 } from '../types';
 import { applyElementTransformPatch } from './element-transform';
 import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
@@ -31,7 +28,7 @@ import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } f
 import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
 import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
 import {
-  applySlideOrderPatch, isSlideOrderPatch, slideOrderPatchStart, validateSlideOrderPatch,
+  applySlideOrderPatch, isSlideOrderPatch, validateSlideOrderPatch,
 } from './slide-order';
 import {
   applySlidePropertyPatch, isSlideBackgroundImagePatch, isSlideBackgroundPatch,
@@ -58,6 +55,7 @@ import {
 import {
   applyElementTableStylePatch, isElementTableStylePatch, validateElementTableStylePatch,
 } from './element-table-style';
+import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalidation';
 
 function validatePatch(
   doc: EditDoc,
@@ -210,7 +208,11 @@ function validatePatch(
   }
 }
 
-function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
+function validatePatchRelations(
+  doc: EditDoc,
+  patches: readonly Patch[],
+  allowSequentialStructure: boolean,
+): void {
   const owner = new Map<string, number>();
   const tableRows = new Map<string, number>();
   const tableOrders = new Map<string, number>();
@@ -234,7 +236,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
     if (!isElementTreePatch(patch) && !isSlideTreePatch(patch) && !isElementHierarchyPatch(patch)) return;
     for (const id of Object.keys(patch.value.records)) {
       const previous = owner.get(id);
-      if (previous !== undefined) {
+      if (previous !== undefined && !allowSequentialStructure) {
         throw new Error(`Patch ${index} 与 Patch ${previous} 的元素树重叠：${id}`);
       }
       owner.set(id, index);
@@ -267,7 +269,7 @@ function validatePatchRelations(doc: EditDoc, patches: readonly Patch[]): void {
   patches.forEach((patch, index) => {
     if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) return;
     const tree = owner.get(patch.path[1]);
-    if (tree !== undefined) {
+    if (tree !== undefined && !allowSequentialStructure) {
       throw new Error(`Patch ${index} 与 Patch ${tree} 同时修改将被移除的元素：${patch.path[1]}`);
     }
   });
@@ -304,14 +306,13 @@ function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc 
     if (patch.path[0] === 'elements' && patch.path.length > 2) cloneElement(patch.path[1]);
     if (isElementTreePatch(patch)) {
       cloneParent(patch.value.parent);
-      const slideId = doc.slides[patch.value.parent]
-        ? patch.value.parent : slideOfElement(doc, patch.value.parent);
-      cloneSlide(slideId);
+      // 父级可能由同一外部批次里的前序结构 Patch 创建；它尚不在基线中，也无需写时复制。
+      if (doc.slides[patch.value.parent]) cloneSlide(patch.value.parent);
+      else if (doc.elements[patch.value.parent]) cloneSlide(slideOfElement(doc, patch.value.parent));
     } else if (isElementHierarchyPatch(patch)) {
       for (const parent of Object.keys(patch.value.children)) cloneParent(parent);
-      const slideId = doc.slides[patch.value.parent]
-        ? patch.value.parent : slideOfElement(doc, patch.value.parent);
-      cloneSlide(slideId);
+      if (doc.slides[patch.value.parent]) cloneSlide(patch.value.parent);
+      else if (doc.elements[patch.value.parent]) cloneSlide(slideOfElement(doc, patch.value.parent));
     } else if (isElementOrderPatch(patch)) {
       const parent = doc.elements[patch.path[1]]?.parent;
       if (parent) cloneParent(parent);
@@ -346,17 +347,9 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
-  for (const parent of orderParents) sortElementChildrenByOrder(doc, parent);
-}
-
-function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
-  const ids: ElementId[] = [];
-  const visit = (id: ElementId): void => {
-    ids.push(id);
-    for (const child of doc.elements[id]?.children ?? []) visit(child);
-  };
-  for (const id of doc.slides[slideId].children) visit(id);
-  return ids;
+  for (const parent of orderParents) {
+    if (doc.slides[parent] || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
+  }
 }
 
 function applyPatchBatch(
@@ -364,12 +357,16 @@ function applyPatchBatch(
   patches: readonly Patch[],
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
-  validatePatchRelations(doc, patches);
+  validatePatchRelations(doc, patches, stageStructuralModel);
   const structural = patches.some((patch) =>
     isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
+  // 结构批次会把记录对象直接交给模型；统一克隆既隔离调用方，也供暂存模型安全预演。
+  const appliedPatches = structural ? structuredClone(patches) : patches;
+  const validationStage = stageStructuralModel && structural
+    ? structuralPatchStage(doc, appliedPatches) : null;
   const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
-  const animationDoc = needsAnimationStage ? structuralPatchStage(doc, patches) : doc;
-  if (needsAnimationStage) applyPatchValues(animationDoc, patches);
+  const animationDoc = needsAnimationStage ? structuralPatchStage(doc, appliedPatches) : doc;
+  if (needsAnimationStage) applyPatchValues(animationDoc, structuredClone(appliedPatches));
   const imageResourcePatches: { patch: ImageResourcePatch; index: number }[] = [];
   patches.forEach((patch, index) => {
     if (isImageResourcePatch(patch)) imageResourcePatches.push({ patch, index });
@@ -384,15 +381,25 @@ function applyPatchBatch(
   });
   if (imageResourcePatches.length) assertImageResourceTargets(doc, stagedImageResources);
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
+  const dirtyElements = new Set<string>();
+  const dirtySlides = new Set<string>();
   patches.forEach((patch, index) => {
-    validatePatch(doc, patch, index, stagedTableRows, stagedImageResources, animationDoc);
-    if (!isTableRowPatch(patch)) return;
-    const current = stagedTableRows.get(patch.path[1])
-      ?? { ...doc.elements[patch.path[1]]?.ovr.tableRows };
-    if (patch.op === 'insert') current[patch.path[4]] = { ...patch.value };
-    else delete current[patch.path[4]];
-    stagedTableRows.set(patch.path[1], current);
+    const patchDoc = validationStage ?? doc;
+    validatePatch(patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc);
+    if (isTableRowPatch(patch)) {
+      const current = stagedTableRows.get(patch.path[1])
+        ?? { ...patchDoc.elements[patch.path[1]]?.ovr.tableRows };
+      if (patch.op === 'insert') current[patch.path[4]] = { ...patch.value };
+      else delete current[patch.path[4]];
+      stagedTableRows.set(patch.path[1], current);
+    }
+    if (validationStage) {
+      collectPatchInvalidation(validationStage, patch, dirtyElements, dirtySlides);
+      // 后续结构 Patch 必须看见前序创建的页/组；逐条克隆避免暂存写回污染批次快照。
+      applyPatchValues(validationStage, [structuredClone(appliedPatches[index])]);
+    }
   });
+  const consistencyDoc = validationStage ?? doc;
   const resourceHashes = new Set(imageResourcePatches.map(({ patch }) => patch.path[1]));
   const replacements = new Map<string, ElementImageReplacement | undefined>();
   const backgrounds = new Map<string, EditDoc['slides'][string]['ovr']['background']>();
@@ -407,9 +414,9 @@ function applyPatchBatch(
     }
   }
   const finalBackgroundImage = (id: string): SlideImageBackground | undefined =>
-    backgroundImages.has(id) ? backgroundImages.get(id) : doc.slides[id]?.backgroundImage;
+    backgroundImages.has(id) ? backgroundImages.get(id) : consistencyDoc.slides[id]?.backgroundImage;
   if (resourceHashes.size) {
-    for (const record of Object.values(doc.elements)) {
+    for (const record of Object.values(consistencyDoc.elements)) {
       const replacement = replacements.has(record.id)
         ? replacements.get(record.id) : record.meta.imageReplacement;
       if (replacement && resourceHashes.has(replacement.resourceHash) && record.meta.origin) {
@@ -419,26 +426,26 @@ function applyPatchBatch(
         );
       }
     }
-    for (const record of Object.values(doc.slides)) {
+    for (const record of Object.values(consistencyDoc.slides)) {
       const backgroundImage = finalBackgroundImage(record.id);
       if (backgroundImage
         && backgroundImage.resourceHashes.some((hash) => resourceHashes.has(hash))
         && record.origin) {
         assertSlideImageBackground(
           backgroundImage, record, stagedImageResources,
-          `幻灯片 ${record.id} 的最终图片背景资源`, doc,
+          `幻灯片 ${record.id} 的最终图片背景资源`, consistencyDoc,
         );
       }
     }
   }
   const touchedBackgroundSlides = new Set([...backgrounds.keys(), ...backgroundImages.keys()]);
-  if (resourceHashes.size) for (const record of Object.values(doc.slides)) {
+  if (resourceHashes.size) for (const record of Object.values(consistencyDoc.slides)) {
     if (finalBackgroundImage(record.id)?.resourceHashes.some((hash) => resourceHashes.has(hash))) {
       touchedBackgroundSlides.add(record.id);
     }
   }
   for (const slideId of touchedBackgroundSlides) {
-    const record = doc.slides[slideId];
+    const record = consistencyDoc.slides[slideId];
     if (!record) throw new Error(`图片背景 Patch 指向不存在的幻灯片：${slideId}`);
     const background = backgrounds.has(slideId) ? backgrounds.get(slideId) : record.ovr.background;
     const backgroundImage = finalBackgroundImage(slideId);
@@ -448,63 +455,47 @@ function applyPatchBatch(
     }
     if (background?.type === 'image' && backgroundImage) {
       assertSlideImageBackgroundDimensions(
-        doc, record, background, backgroundImage, stagedImageResources,
+        consistencyDoc, record, background, backgroundImage, stagedImageResources,
         `幻灯片 ${record.id} 的最终图片背景`,
       );
     }
   }
-  validateElementOrderPatchSet(doc, patches);
-  const dirtyElements = new Set<string>();
-  const dirtySlides = new Set<string>();
+  // 结构批中的中途 order 可能被后续解组/删除吸收；逐条验值、最终模型验唯一性即可。
+  if (!validationStage) validateElementOrderPatchSet(doc, patches);
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
-  for (const patch of patches) {
-    if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)) continue;
-    if (isSlideOrderPatch(patch)) {
-      const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
-      for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
-      for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
-      continue;
-    }
-    if (isSlideTreePatch(patch)) {
-      const start = patch.op === 'insert'
-        ? (patch.value.after === null ? 0 : doc.slideOrder.indexOf(patch.value.after) + 1)
-        : doc.slideOrder.indexOf(patch.path[1]) + 1;
-      const sequence = invalidateSlideSequence(doc, start);
-      for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
-      for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
-    }
-    const dirty = isSlideNotesPatch(patch)
-      ? invalidateSlideData(doc, patch.path[1])
-      : isSlideLayoutPatch(patch)
-      ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
-      : isSlidePropertyPatch(patch)
-      ? invalidateSlide(doc, patch.path[1])
-      : isSlideTreePatch(patch)
-      ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
-      : isElementTreePatch(patch)
-      ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
-      : isElementHierarchyPatch(patch)
-      ? invalidateElementStructure(doc, patch.value.affected, patch.value.parent)
-      : invalidateElement(doc, patch.path[1]);
-    for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
-    for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
+  if (!validationStage) for (const patch of patches) {
+    collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides);
   }
-  // 结构 Patch 整批隔离一次：既不与调用方共享对象，也保留跨 Patch 的驻留目录身份。
-  const appliedPatches = structural ? structuredClone(patches) : patches;
-  if (stageStructuralModel && structural) {
-    const stage = needsAnimationStage ? animationDoc : structuralPatchStage(doc, appliedPatches);
-    if (!needsAnimationStage) applyPatchValues(stage, appliedPatches);
-    validateEditDoc(stage);
+  if (validationStage) {
+    validateEditDoc(validationStage);
+    let released = false;
+    for (const patch of patches) {
+      if (canInvalidateAgainst(doc, patch)) {
+        collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides);
+      } else if (!released) {
+        // 新页/新组上的后续页序与字段可能影响旧页派生值；无法沿基线遍历时清空真实缓存。
+        releaseProjectionCache(doc);
+        released = true;
+      }
+    }
   }
   applyPatchValues(doc, appliedPatches);
   return { dirtyElements, dirtySlides };
 }
-
+/** 协同等调用方可在不触碰真实模型的前提下验真一批外部 Patch。 */
+export function assertPatchesApplicable(doc: EditDoc, patches: readonly Patch[]): void {
+  stageExternalPatches(doc, patches);
+}
+/** 返回写时复制的外部 Patch 预演模型；调用方只能读取，真实文档始终不变。 */
+export function stageExternalPatches(doc: EditDoc, patches: readonly Patch[]): EditDoc {
+  const stage = structuralPatchStage(doc, patches);
+  applyPatches(stage, patches);
+  return stage;
+}
 /** JSON/协同 seam：结构快照必须先在写时复制的完整模型上验真。 */
 export function applyPatches(doc: EditDoc, patches: readonly Patch[]): ProjectionInvalidation {
   return applyPatchBatch(doc, patches, true);
 }
-
 /** 仅供同一事务内刚生成的命令 Patch；事务末尾由 Editor 统一校验完整模型。 */
 export function applyLocalPatches(doc: EditDoc, patches: readonly Patch[]): ProjectionInvalidation {
   return applyPatchBatch(doc, patches, false);
