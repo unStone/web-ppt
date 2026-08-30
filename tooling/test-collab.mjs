@@ -529,8 +529,8 @@ console.log('\n\x1b[36m▸ BroadcastChannel 双标签页 provider\x1b[0m');
 
 const thinGzip = gzipSync(readFileSync(thinFile)).length;
 const editorSource = readFileSync(join(root, 'packages/editor/src/index.ts'), 'utf8');
-// 结构冲突重基与有界重放元数据是正确性成本；12KB 仍保持为独立按需薄包。
-check('协同包排除 peer 后小于 12KB gzip', thinGzip < 12 * 1024, `${thinGzip} bytes`);
+// 表格 tombstone 还需携带依赖清理与末维度全序裁决；14KB 仍保持为独立按需薄包。
+check('协同包排除 peer 后小于 14KB gzip', thinGzip < 14 * 1024, `${thinGzip} bytes`);
 check('单机 editor 入口没有协同依赖', !editorSource.includes('@web-ppt/collab'));
 
 if (failures.length) {

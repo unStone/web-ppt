@@ -9,7 +9,7 @@ import { renderLinkTarget } from './hyperlink';
 import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRefs } from './table-cell';
-import { orderedTableColumns, orderedTableRows } from './table-grid';
+import { orderedTableColumns, orderedTableRows, tableCellMergeRole } from './table-grid';
 import {
   hasComplexTableStructureOverrides, hasTableStructureOverrides, projectTableStructure,
 } from './table-grid-projection';
@@ -186,6 +186,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     link: linkOverride, geometry: geometryOverride, ...overrides
   } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
+  let complexTableStructure = false;
   if (own(record.ovr, 'link')) {
     const link = linkOverride?.kind === 'none' ? undefined : renderLinkTarget(doc, linkOverride!);
     out = { ...out, link } as SlideElement;
@@ -217,7 +218,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     } as ShapeElement;
   } else if (out.kind === 'table' && (tableCells || hasTableStructureOverrides(record))) {
     if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
-    const complexTableStructure = hasComplexTableStructureOverrides(record);
+    complexTableStructure = hasComplexTableStructureOverrides(record);
     if (complexTableStructure) out = projectTableStructure(record, out);
     else if (tableRows) out = { ...out, rows: tableRowsWithoutTextOverrides(record) };
     const baseRows = out.rows;
@@ -226,8 +227,13 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     const rows = baseRows.map((row, r) => {
       let changed = false;
       const cells = row.cells.map((cell, c) => {
-        const rowRef = gridRows[r]?.rowRef;
-        const columnRef = gridColumns[c]?.columnRef;
+        const gridRow = gridRows[r];
+        const gridColumn = gridColumns[c];
+        const rowRef = gridRow?.rowRef;
+        const columnRef = gridColumn?.columnRef;
+        if (gridRow && gridColumn && tableCellMergeRole(record, {
+          row: gridRow.id, column: gridColumn.id,
+        }) === 'placeholder') return cell;
         const override = rowRef === undefined || columnRef === undefined
           ? undefined : tableCells?.[tableCellOverrideKeyFromRefs(rowRef, columnRef)]?.text;
         if (!override) return cell;
@@ -246,8 +252,10 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
         ? { h: out.h + tableRowHeightDelta(record) } : {}),
     } as TableElement;
   }
-  if (out.kind === 'table' && tableStyle) {
-    out = projectTableStyle(doc, slideOfElement(doc, id), out, tableStyle);
+  const effectiveTableStyle = tableStyle ?? (complexTableStructure && record.src.kind === 'table'
+    ? record.src.editInfo?.tableStyle : undefined);
+  if (out.kind === 'table' && effectiveTableStyle) {
+    out = projectTableStyle(doc, slideOfElement(doc, id), out, effectiveTableStyle);
   }
   if (out.kind === 'table' && tableCells) {
     const gridRows = orderedTableRows(record);
@@ -256,9 +264,14 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     const rows = out.rows.map((row, r) => ({
       ...row,
       cells: row.cells.map((cell, c) => {
-        const rowRef = gridRows[r]?.rowRef;
-        const columnRef = gridColumns[c]?.columnRef;
+        const gridRow = gridRows[r];
+        const gridColumn = gridColumns[c];
+        const rowRef = gridRow?.rowRef;
+        const columnRef = gridColumn?.columnRef;
         if (rowRef === undefined || columnRef === undefined) return cell;
+        if (tableCellMergeRole(record, {
+          row: gridRow.id, column: gridColumn.id,
+        }) === 'placeholder') return cell;
         const cellOverride = tableCells[tableCellOverrideKeyFromRefs(rowRef, columnRef)];
         if (!cellOverride) return cell;
         const { text: _text, ...appearance } = cellOverride;

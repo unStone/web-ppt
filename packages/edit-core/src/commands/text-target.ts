@@ -7,6 +7,10 @@ import {
 } from '../table-cell';
 import { rebasedTextBase, rebasedTextLevelTemplate } from '../layout-projection';
 import { slideOfElement } from '../projection';
+import {
+  hasComplexTableStructureOverrides, projectTableStructure,
+} from '../table-grid-projection';
+import { orderedTableColumns, orderedTableRows, tableCellMergeRole } from '../table-grid';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
 import type { ElementTextPatch } from './types';
 
@@ -52,9 +56,18 @@ export function textTargetContextForRecord(
   }
   assertTableCellAddress(target.cell, '文字命令 cell');
   if (record.src.kind !== 'table') throw new Error(`文字命令 cell 必须指向表格：${target.id}`);
-  const cell = tableRowsWithoutTextOverrides(record)[target.cell.r]?.cells[target.cell.c];
+  const rows = hasComplexTableStructureOverrides(record)
+    ? projectTableStructure(record, record.src).rows : tableRowsWithoutTextOverrides(record);
+  const cell = rows[target.cell.r]?.cells[target.cell.c];
   if (!cell) throw new Error(`表格单元格越界：${target.cell.r},${target.cell.c}`);
-  if (cell.merged) throw new Error(`合并占位格不可单独编辑：${target.cell.r},${target.cell.c}`);
+  const stableCell = {
+    row: orderedTableRows(record)[target.cell.r]?.id,
+    column: orderedTableColumns(record)[target.cell.c]?.id,
+  };
+  if (!stableCell.row || !stableCell.column
+    || cell.merged || tableCellMergeRole(record, stableCell) === 'placeholder') {
+    throw new Error(`合并占位格不可单独编辑：${target.cell.r},${target.cell.c}`);
+  }
   const body = cell.text ?? cell.editInfo?.textTemplate;
   if (!body) throw new Error(`表格单元格缺少可编辑文本体：${target.cell.r},${target.cell.c}`);
   const row = tableCellRowRef(record, target.cell);

@@ -2,7 +2,7 @@ import type { TableRow } from '@web-ppt/core';
 import { initialFractionalIndex } from './fractional-index';
 import type {
   EditDoc, ElementId, ElementRecord, TableCellColumnRef, TableCellRowRef, TableColumnId,
-  TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion,
+  TableCellRef, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion,
 } from './types';
 
 export interface TableGridRow {
@@ -23,6 +23,11 @@ export interface TableGridState {
   readonly merges: readonly TableMergeRegion[];
 }
 
+export interface TableGridIdentities {
+  readonly rows: readonly TableRowId[];
+  readonly columns: readonly TableColumnId[];
+}
+
 export interface OrderedTableColumn extends TableColumnInsertion {
   readonly id: TableColumnId;
   readonly columnRef: TableCellColumnRef;
@@ -37,6 +42,23 @@ export interface OrderedTableRow extends TableRowInsertion {
 
 export function sourceTableRowId(index: number): TableRowId { return `#r${index}`; }
 export function sourceTableColumnId(index: number): string { return `#c${index}`; }
+export function isReservedTableRowId(id: string): boolean { return /^#r\d+$/.test(id); }
+export function isReservedTableColumnId(id: string): boolean { return /^#c\d+$/.test(id); }
+
+export function tableGridIdentities(doc: EditDoc, id: ElementId): TableGridIdentities {
+  const record = doc.elements[id];
+  if (!record || record.src.kind !== 'table') throw new Error(`找不到表格：${id}`);
+  return {
+    rows: [
+      ...record.src.rows.map((_, index) => sourceTableRowId(index)),
+      ...Object.keys(record.ovr.tableRows ?? {}),
+    ],
+    columns: [
+      ...record.src.colWidths.map((_, index) => sourceTableColumnId(index)),
+      ...Object.keys(record.ovr.tableColumns ?? {}),
+    ],
+  };
+}
 
 export function orderedTableRows(record: ElementRecord): OrderedTableRow[] {
   if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
@@ -96,6 +118,71 @@ export function effectiveTableMerges(record: ElementRecord): readonly TableMerge
   return record.ovr.tableMerges ?? sourceTableMerges(record);
 }
 
+export function tableCellMergeRole(
+  record: ElementRecord, cell: TableCellRef,
+): 'anchor' | 'placeholder' | null {
+  if (record.src.kind !== 'table') return null;
+  const complete = {
+    ...record,
+    ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+  } satisfies ElementRecord;
+  const rows = orderedTableRows(complete);
+  const columns = orderedTableColumns(complete);
+  const point = {
+    r: rows.findIndex((row) => row.id === cell.row),
+    c: columns.findIndex((column) => column.id === cell.column),
+  };
+  if (point.r < 0 || point.c < 0) return null;
+  for (const merge of effectiveTableMerges(record)) {
+    const endpoints = [
+      rows.findIndex((row) => row.id === merge.from.row),
+      columns.findIndex((column) => column.id === merge.from.column),
+      rows.findIndex((row) => row.id === merge.to.row),
+      columns.findIndex((column) => column.id === merge.to.column),
+    ];
+    if (endpoints.some((index) => index < 0)) continue;
+    const [r1, c1, r2, c2] = [
+      Math.min(endpoints[0], endpoints[2]), Math.min(endpoints[1], endpoints[3]),
+      Math.max(endpoints[0], endpoints[2]), Math.max(endpoints[1], endpoints[3]),
+    ];
+    if (point.r < r1 || point.r > r2 || point.c < c1 || point.c > c2) continue;
+    return point.r === r1 && point.c === c1 ? 'anchor' : 'placeholder';
+  }
+  return null;
+}
+
+function visibleTableMerges(
+  record: ElementRecord, rows: readonly { id: string }[], columns: readonly { id: string }[],
+): TableMergeRegion[] {
+  const unrestricted = {
+    ...record,
+    ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+  } satisfies ElementRecord;
+  const allRows = orderedTableRows(unrestricted);
+  const allColumns = orderedTableColumns(unrestricted);
+  const visibleRows = new Set(rows.map((row) => row.id));
+  const visibleColumns = new Set(columns.map((column) => column.id));
+  return effectiveTableMerges(record).flatMap((merge) => {
+    const r1 = allRows.findIndex((row) => row.id === merge.from.row);
+    const r2 = allRows.findIndex((row) => row.id === merge.to.row);
+    const c1 = allColumns.findIndex((column) => column.id === merge.from.column);
+    const c2 = allColumns.findIndex((column) => column.id === merge.to.column);
+    if ([r1, r2, c1, c2].some((index) => index < 0)) return [];
+    const remainingRows = allRows.slice(Math.min(r1, r2), Math.max(r1, r2) + 1)
+      .filter((row) => visibleRows.has(row.id));
+    const remainingColumns = allColumns.slice(Math.min(c1, c2), Math.max(c1, c2) + 1)
+      .filter((column) => visibleColumns.has(column.id));
+    if (remainingRows.length * remainingColumns.length <= 1) return [];
+    return [{
+      from: { row: remainingRows[0].id, column: remainingColumns[0].id },
+      to: {
+        row: remainingRows[remainingRows.length - 1].id,
+        column: remainingColumns[remainingColumns.length - 1].id,
+      },
+    }];
+  });
+}
+
 export function queryTableGrid(doc: EditDoc, id: ElementId): TableGridState {
   const record = doc.elements[id];
   if (!record || record.src.kind !== 'table') throw new Error(`找不到表格：${id}`);
@@ -114,11 +201,8 @@ export function queryTableGrid(doc: EditDoc, id: ElementId): TableGridState {
       ? source.colWidths[entry.template ?? source.colWidths.length - 1] ?? 0
       : source.colWidths[entry.source]),
   }));
-  const rowIds = new Set(rows.map((row) => row.id));
-  const columnIds = new Set(columns.map((column) => column.id));
-  const merges = effectiveTableMerges(record).filter((merge) =>
-    rowIds.has(merge.from.row) && rowIds.has(merge.to.row)
-      && columnIds.has(merge.from.column) && columnIds.has(merge.to.column));
+  const merges = visibleTableMerges(record, rows, columns)
+    .map((merge) => ({ from: { ...merge.from }, to: { ...merge.to } }));
   return { rows, columns, merges };
 }
 

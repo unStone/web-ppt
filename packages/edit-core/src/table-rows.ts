@@ -1,5 +1,6 @@
 import type { TableCell, TableRow, TextBody } from '@web-ppt/core';
 import type { ElementRecord, TableRowId, TableRowInsertion } from './types';
+import { initialFractionalIndex } from './fractional-index';
 import { orderedTableRows, tableRowTemplate } from './table-grid';
 
 export interface OrderedTableRowInsertion extends TableRowInsertion {
@@ -86,11 +87,14 @@ export function tableRowsWithoutTextOverrides(record: ElementRecord): TableRow[]
   const insertions = orderedTableRowInsertions(record);
   if (!insertions.length) {
     projectedRows.delete(record);
-    return source.rows;
+    const rows = orderedTableRows(record);
+    return rows.length === source.rows.length
+      ? source.rows
+      : rows.map((entry) => source.rows[entry.source!]);
   }
   const styles = source.editInfo?.tableRowAppend;
-  const allAppended = insertions.every((insertion) => insertion.order > orderedTableRows(record)
-    .find((row) => row.source === source.rows.length - 1)!.order);
+  const allAppended = insertions.every((insertion) =>
+    insertion.order > initialFractionalIndex(source.rows.length - 1));
   const sourceRows = [...source.rows];
   if (styles && allAppended) sourceRows[sourceRows.length - 1] = styles.previousLast ?? styles.regular[1];
   const nextCache = new Map<TableRowId, AppendedRowProjection>();

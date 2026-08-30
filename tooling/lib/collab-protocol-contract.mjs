@@ -1,11 +1,285 @@
 const createdElement = (result) => result.forward.find((patch) =>
   patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
+const plainCell = (cell) => cell?.text?.paragraphs
+  .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 
 export async function runCollabProtocolContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
   semanticDoc, stringDiff,
 }) {
   console.log('\n\x1b[36m▸ 原子消息、页序意图与协议边界\x1b[0m');
+  {
+    const pair = await createPair('sample-edit-basic.pptx', 'collab-table-delete-props-');
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec(
+      {
+        type: 'SetCellProps', id: table.id,
+        cell: { row: grid.rows[0].id, column: grid.columns[1].id },
+        props: { fill: { type: 'solid', color: '#AA3377' } },
+      },
+      { type: 'SetColumnWidth', id: table.id, column: grid.columns[1].id, width: 77 },
+    );
+    pair.rightEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
+    hub.flush((items) => items.reverse());
+    check('并发单元格格式、列宽与删列由 tombstone 隐藏并收敛',
+      edit.queryTableGrid(pair.left, table.id).columns.length === 1
+        && edit.queryTableGrid(pair.right, table.id).columns.length === 1
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    pair.rightEditor.undo();
+    hub.flush();
+    const leftRestored = pair.leftEditor.effectiveElement(table.id);
+    const rightRestored = pair.rightEditor.effectiveElement(table.id);
+    check('协同撤销删列恢复休眠维度及其并发尺寸格式',
+      edit.queryTableGrid(pair.left, table.id).columns[1].width === 77
+        && edit.queryTableGrid(pair.right, table.id).columns[1].width === 77
+        && leftRestored.rows[0].cells[1].fill?.type === 'solid'
+        && rightRestored.rows[0].cells[1].fill?.type === 'solid'
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair('sample-edit-basic.pptx', 'collab-table-last-column-');
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec(
+      {
+        type: 'EditText', id: table.id, cell: { r: 0, c: 0 },
+        ops: [{
+          type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+          text: 'KEEP',
+        }],
+      },
+      {
+        type: 'SetCellProps', id: table.id,
+        cell: { row: grid.rows[0].id, column: grid.columns[0].id },
+        props: { fill: { type: 'solid', color: '#225588' } },
+      },
+    );
+    hub.flush();
+    pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[0].id });
+    pair.rightEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
+    hub.flush((items) => items.reverse());
+    const leftColumns = edit.queryTableGrid(pair.left, table.id).columns;
+    const rightColumns = edit.queryTableGrid(pair.right, table.id).columns;
+    check('并发删除不同末列按消息全序撤销最早 tombstone 并保留一列',
+      leftColumns.length === 1 && rightColumns.length === 1
+        && leftColumns[0].id === grid.columns[0].id
+        && rightColumns[0].id === grid.columns[0].id
+        && plainCell(pair.leftEditor.effectiveElement(table.id).rows[0].cells[0]).startsWith('KEEP')
+        && plainCell(pair.rightEditor.effectiveElement(table.id).rows[0].cells[0]).startsWith('KEEP')
+        && pair.leftEditor.effectiveElement(table.id).rows[0].cells[0].fill?.type === 'solid'
+        && pair.rightEditor.effectiveElement(table.id).rows[0].cells[0].fill?.type === 'solid'
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair(
+      'sample-editor-table-structure.pptx', 'collab-table-merge-delete-',
+    );
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
+    pair.rightEditor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[1].id, column: grid.columns[2].id },
+      to: { row: grid.rows[1].id, column: grid.columns[3].id },
+    });
+    hub.flush((items) => items.reverse());
+    const hasNewMerge = (doc) => edit.queryTableGrid(doc, table.id).merges.some((merge) =>
+      merge.from.row === grid.rows[1].id && merge.from.column === grid.columns[2].id
+        && merge.to.row === grid.rows[1].id && merge.to.column === grid.columns[3].id);
+    check('删列 tombstone 与无关并发合并独立收敛且不丢合并区域',
+      hasNewMerge(pair.left) && hasNewMerge(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    pair.rightEditor.undo();
+    hub.flush();
+    check('并发合并撤销只移除自身区域并保留删列投影',
+      edit.queryTableGrid(pair.left, table.id).columns.length === 3
+        && edit.queryTableGrid(pair.right, table.id).columns.length === 3
+        && !hasNewMerge(pair.left) && !hasNewMerge(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair(
+      'sample-editor-table-structure.pptx', 'collab-table-dormant-merge-',
+    );
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
+    hub.flush();
+    pair.rightEditor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[1].id, column: grid.columns[2].id },
+      to: { row: grid.rows[1].id, column: grid.columns[3].id },
+    });
+    hub.flush();
+    pair.leftEditor.undo();
+    hub.flush();
+    const restoredMerges = (doc) => edit.queryTableGrid(doc, table.id).merges;
+    const hasHorizontalSource = (doc) => restoredMerges(doc).some((merge) =>
+      merge.from.row === grid.rows[0].id && merge.from.column === grid.columns[0].id
+        && merge.to.column === grid.columns[1].id);
+    const hasUnrelatedMerge = (doc) => restoredMerges(doc).some((merge) =>
+      merge.from.row === grid.rows[1].id && merge.from.column === grid.columns[2].id
+        && merge.to.column === grid.columns[3].id);
+    check('删列同步后新增无关合并，撤销删列恢复休眠来源合并且保留新合并',
+      hasHorizontalSource(pair.left) && hasHorizontalSource(pair.right)
+        && hasUnrelatedMerge(pair.left) && hasUnrelatedMerge(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    pair.rightEditor.undo();
+    hub.flush();
+    check('休眠期新增合并的撤销只移除自身并保留两处来源合并',
+      restoredMerges(pair.left).length === 2 && restoredMerges(pair.right).length === 2
+        && hasHorizontalSource(pair.left) && hasHorizontalSource(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair(
+      'sample-editor-table-structure.pptx', 'collab-table-covered-cell-',
+    );
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.rightEditor.exec({
+      type: 'SetCellProps', id: table.id,
+      cell: { row: grid.rows[1].id, column: grid.columns[2].id },
+      props: { fill: { type: 'solid', color: '#884422' } },
+    });
+    pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[2].id });
+    pair.leftEditor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[1].id, column: grid.columns[1].id },
+      to: { row: grid.rows[1].id, column: grid.columns[3].id },
+    });
+    const messageRank = (item) => item.message.patches.some((patch) =>
+      patch.path[3] === 'tableRemovedColumns') ? 0
+      : item.message.patches.some((patch) => patch.path[3] === 'tableMerges') ? 1 : 2;
+    hub.flush((items) => items.sort((left, right) => messageRank(left) - messageRank(right)));
+    check('跨隐藏列合并让发送方未知的并发占位格格式休眠并收敛',
+      semanticDoc(pair.left) === semanticDoc(pair.right)
+        && pair.leftEditor.effectiveElement(table.id).rows[1].cells[2].merged
+        && pair.rightEditor.effectiveElement(table.id).rows[1].cells[2].merged
+        && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    pair.leftEditor.undo();
+    hub.flush();
+    pair.leftEditor.undo();
+    hub.flush();
+    check('撤销并发合并与删列恢复休眠的并发格式',
+      edit.queryTableGrid(pair.left, table.id).columns.length === 4
+        && edit.queryTableGrid(pair.right, table.id).columns.length === 4
+        && pair.leftEditor.effectiveElement(table.id).rows[1].cells[2].fill?.type === 'solid'
+        && pair.rightEditor.effectiveElement(table.id).rows[1].cells[2].fill?.type === 'solid'
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair(
+      'sample-editor-table-structure.pptx', 'collab-table-backing-role-',
+    );
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    const grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[0].id });
+    hub.flush();
+    let rejected = false;
+    try {
+      pair.rightEditor.exec({
+        type: 'SetCellProps', id: table.id,
+        cell: { row: grid.rows[0].id, column: grid.columns[1].id },
+        props: { fill: { type: 'solid', color: '#552211' } },
+      });
+    } catch { rejected = true; }
+    check('删合并锚点同步后，两端统一拒绝编辑被提升的 backing 占位格',
+      rejected && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
+  {
+    const pair = await createPair(
+      'sample-editor-table-structure.pptx', 'collab-table-merge-cleanup-atomic-',
+    );
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const table = Object.values(pair.left.elements)
+      .find((record) => record.src.kind === 'table');
+    let grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({ type: 'SplitCell', id: table.id, cell: grid.merges[0].from });
+    grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({ type: 'SplitCell', id: table.id, cell: grid.merges[0].from });
+    hub.flush();
+    pair.leftEditor.exec({
+      type: 'EditText', id: table.id, cell: { r: 2, c: 1 },
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+        text: 'KEEP_LEFT',
+      }],
+    });
+    hub.flush();
+    grid = edit.queryTableGrid(pair.left, table.id);
+    pair.leftEditor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[2].id, column: grid.columns[0].id },
+      to: { row: grid.rows[2].id, column: grid.columns[1].id },
+    });
+    pair.rightEditor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[2].id, column: grid.columns[2].id },
+      to: { row: grid.rows[2].id, column: grid.columns[3].id },
+    });
+    hub.flush();
+    const finalMerges = edit.queryTableGrid(pair.left, table.id).merges;
+    check('并发合并仅裁决拓扑，落败区域普通格文字不丢',
+      finalMerges.length === 1 && finalMerges[0].from.column === grid.columns[2].id
+        && plainCell(pair.leftEditor.effectiveElement(table.id).rows[2].cells[1])
+          .startsWith('KEEP_LEFT')
+        && plainCell(pair.rightEditor.effectiveElement(table.id).rows[2].cells[1])
+          .startsWith('KEEP_LEFT')
+        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
+
   {
     const pair = await createPair('showcase.pptx', 'collab-last-move-');
     const hub = new OfflineHub();

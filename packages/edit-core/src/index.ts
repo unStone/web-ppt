@@ -38,8 +38,9 @@ export {
 export type { VectorFill } from './shape-fill';
 export type { StrokeCommandValue } from './shape-stroke';
 export { validateEditDoc } from './model-invariants';
-export { tableCellKey, tableCellOverrideKey } from './table-cell';
-export { queryTableGrid } from './table-grid';
+export { tableCellKey, tableCellOverrideKey, tableCellStableRefFromKey } from './table-cell';
+export { queryTableGrid, tableCellMergeRole, tableGridIdentities } from './table-grid';
+export type { TableGridIdentities } from './table-grid';
 export { assertTableDimension, isEmptyContentPlaceholder, MAX_TABLE_DIMENSION } from './table-insertion-policy';
 export { isElementDescendantOf, outermostSelectedElementIds } from './selection';
 export { elementOrder, writableLayerSiblingIds } from './element-order';

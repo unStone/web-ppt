@@ -155,7 +155,10 @@ export function tableCellKeyResolver(
   record: ElementRecord,
 ): (key: string) => TableCellAddress | null {
   const rows = orderedTableRows(record);
+  const columns = orderedTableColumns(record);
   const sourceRows = new Map(rows.flatMap((entry, index) =>
+    entry.source === null ? [] : [[entry.source, index] as const]));
+  const sourceColumns = new Map(columns.flatMap((entry, index) =>
     entry.source === null ? [] : [[entry.source, index] as const]));
   const insertedRows = new Map(rows.flatMap((entry, index) =>
     entry.source === null ? [[entry.id, index] as const] : []));
@@ -163,17 +166,36 @@ export function tableCellKeyResolver(
     const source = parseTableCellKey(key);
     if (source) {
       const r = sourceRows.get(source.r);
-      return record.src.kind === 'table' && r !== undefined ? { r, c: source.c } : null;
+      const c = sourceColumns.get(source.c);
+      return record.src.kind === 'table' && r !== undefined && c !== undefined ? { r, c } : null;
     }
     const inserted = parseInsertedTableCellKey(key);
     if (inserted) {
       const r = insertedRows.get(inserted.rowId);
-      const c = orderedTableColumns(record).findIndex((entry) => entry.columnRef === inserted.c);
+      const c = columns.findIndex((entry) => entry.columnRef === inserted.c);
       return r === undefined || r < 0 || c < 0 ? null : { r, c };
     }
     const universal = parseUniversalTableCellKey(key);
     return universal ? tableCellAddressFromRefs(record, universal.row, universal.column) : null;
   };
+}
+
+/** 协同冲突判断必须能解析已被 tombstone 隐藏的格，但不能让普通编辑重新寻址它。 */
+export function tableCellStableRefFromKey(
+  record: ElementRecord, key: string,
+): TableCellRef | null {
+  if (record.src.kind !== 'table') return null;
+  const unrestricted = {
+    ...record,
+    ovr: {
+      ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined,
+    },
+  } satisfies ElementRecord;
+  const address = tableCellKeyResolver(unrestricted)(key);
+  if (!address) return null;
+  const row = orderedTableRows(unrestricted)[address.r];
+  const column = orderedTableColumns(unrestricted)[address.c];
+  return row && column ? { row: row.id, column: column.id } : null;
 }
 
 export function assertTableCellAddress(

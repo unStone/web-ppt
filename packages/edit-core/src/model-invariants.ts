@@ -1,11 +1,10 @@
 import { effectiveElement, slideOfElement } from './projection';
 import { changedLayout } from './layout-projection';
 import { elementOrder } from './element-order';
-import { assertFractionalIndex, initialFractionalIndex } from './fractional-index';
+import { assertFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
 import { validateEmptyTextOverride, validateFlatTextOverride } from './text-override-validation';
 import type { EditDoc, ElementId, ElementRecord, SlideId, TextOverride } from './types';
-import { tableCellKeyResolver } from './table-cell';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
 import { textTargetContext } from './commands/text-target';
 import { tableRowsWithoutTextOverrides } from './table-rows';
@@ -30,8 +29,9 @@ import { assertStoredSlideTransition } from './slide-transition';
 import { assertStoredSlideAnimations } from './slide-animation';
 import { assertCustomGeometryOverride } from './custom-geometry';
 import { assertTableStyleSettings } from './table-style';
-import { assertTableMergeRegions } from './commands/table-grid-patch';
-import { orderedTableColumns, orderedTableRows, sourceTableColumnId, sourceTableRowId } from './table-grid';
+import {
+  assertTableCellOverrides, assertTableGridOverrides, assertTableRows,
+} from './table-invariants';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -67,98 +67,6 @@ function assertTextBodies(record: ElementRecord): void {
   }
 }
 
-function assertTableRows(record: ElementRecord): void {
-  const rows = record.ovr.tableRows;
-  if (rows === undefined) return;
-  if (record.src.kind !== 'table' || !record.src.rows.length) {
-    throw new Error(`非表格元素 ${record.id} 不能包含追加行`);
-  }
-  assertDataObject(rows, Object.keys(rows), `表格 ${record.id} 的追加行`);
-  const entries = Object.entries(rows);
-  if (!entries.length) throw new Error(`表格 ${record.id} 的追加行不能为空`);
-  const orders = new Set<string>();
-  for (const [id, insertion] of entries) {
-    if (!id) throw new Error(`表格 ${record.id} 的追加行身份不能为空`);
-    assertDataObject(insertion, ['order', 'template'], `表格 ${record.id} 的追加行 ${id}`);
-    if (typeof insertion.order !== 'string') throw new Error(`表格 ${record.id} 的追加行顺序无效`);
-    assertFractionalIndex(insertion.order);
-    if (insertion.template !== undefined
-      && (!Number.isSafeInteger(insertion.template) || insertion.template < 0
-        || insertion.template >= record.src.rows.length)) {
-      throw new Error(`表格 ${record.id} 的追加行模板无效`);
-    }
-    if (record.src.rows.some((_, source) => insertion.order === initialFractionalIndex(source))) {
-      throw new Error(`表格 ${record.id} 的追加行顺序与来源行冲突`);
-    }
-    if (orders.has(insertion.order)) throw new Error(`表格 ${record.id} 的追加行顺序重复`);
-    orders.add(insertion.order);
-  }
-}
-
-function assertTableGridOverrides(record: ElementRecord): void {
-  if (record.src.kind !== 'table') {
-    const fields = ['tableColumns', 'tableRemovedRows', 'tableRemovedColumns', 'tableRowHeights',
-      'tableColumnWidths', 'tableMerges'] as const;
-    if (fields.some((field) => own(record.ovr, field))) throw new Error(`非表格元素 ${record.id} 不能包含网格覆盖`);
-    return;
-  }
-  const columns = record.ovr.tableColumns;
-  if (columns) {
-    assertDataObject(columns, Object.keys(columns), `表格 ${record.id} 的新增列`);
-    if (!Object.keys(columns).length) throw new Error(`表格 ${record.id} 的新增列不能为空`);
-    const orders = new Set<string>();
-    for (const [id, insertion] of Object.entries(columns)) {
-      if (!id) throw new Error(`表格 ${record.id} 的新增列身份不能为空`);
-      assertDataObject(insertion, ['order', 'template'], `表格 ${record.id} 的新增列 ${id}`);
-      assertFractionalIndex(insertion.order);
-      if (insertion.template !== undefined
-        && (!Number.isSafeInteger(insertion.template) || insertion.template < 0
-          || insertion.template >= record.src.colWidths.length)) throw new Error(`表格 ${record.id} 的新增列模板无效`);
-      if (record.src.colWidths.some((_, source) => insertion.order === initialFractionalIndex(source))) {
-        throw new Error(`表格 ${record.id} 的新增列顺序与来源列冲突`);
-      }
-      if (orders.has(insertion.order)) throw new Error(`表格 ${record.id} 的新增列顺序重复`);
-      orders.add(insertion.order);
-    }
-  }
-  const rowIds = new Set([
-    ...record.src.rows.map((_, index) => sourceTableRowId(index)),
-    ...Object.keys(record.ovr.tableRows ?? {}),
-  ]);
-  const columnIds = new Set([
-    ...record.src.colWidths.map((_, index) => sourceTableColumnId(index)),
-    ...Object.keys(record.ovr.tableColumns ?? {}),
-  ]);
-  for (const [field, ids, kind] of [
-    ['tableRemovedRows', rowIds, '行'], ['tableRemovedColumns', columnIds, '列'],
-  ] as const) {
-    const values = record.ovr[field];
-    if (!values) continue;
-    assertDataObject(values, Object.keys(values), `表格 ${record.id} 的删除${kind}`);
-    if (!Object.keys(values).length) throw new Error(`表格 ${record.id} 的删除${kind}不能为空`);
-    for (const [id, value] of Object.entries(values)) {
-      if (!ids.has(id) || value !== true) throw new Error(`表格 ${record.id} 的删除${kind}无效：${id}`);
-    }
-  }
-  for (const [field, ids, kind] of [
-    ['tableRowHeights', rowIds, '行高'], ['tableColumnWidths', columnIds, '列宽'],
-  ] as const) {
-    const values = record.ovr[field];
-    if (!values) continue;
-    assertDataObject(values, Object.keys(values), `表格 ${record.id} 的${kind}`);
-    if (!Object.keys(values).length) throw new Error(`表格 ${record.id} 的${kind}覆盖不能为空`);
-    for (const [id, value] of Object.entries(values)) {
-      if (!ids.has(id) || !Number.isFinite(value) || value <= 0) throw new Error(`表格 ${record.id} 的${kind}无效：${id}`);
-    }
-  }
-  if (!orderedTableRows(record).length || !orderedTableColumns(record).length) {
-    throw new Error(`表格 ${record.id} 至少保留一行一列`);
-  }
-  if (record.ovr.tableMerges !== undefined) {
-    assertTableMergeRegions(record, record.ovr.tableMerges, `表格 ${record.id} 的合并区域`);
-  }
-}
-
 function assertTextOverride(value: unknown, label: string): asserts value is TextOverride {
   if (!value || typeof value !== 'object') throw new Error(`${label} 无效`);
   const kind = (value as { kind?: unknown }).kind;
@@ -177,47 +85,7 @@ function assertTextOverrides(doc: EditDoc, record: ElementRecord): void {
     textTargetContext(doc, { id: record.id });
     assertTextOverride(record.ovr.text, `元素 ${record.id} 的文字覆盖`);
   }
-  const cells = record.ovr.tableCells;
-  if (cells === undefined) return;
-  if (record.src.kind !== 'table') throw new Error(`非表格元素 ${record.id} 不能包含单元格覆盖`);
-  assertDataObject(cells, Object.keys(cells), `表格 ${record.id} 的单元格覆盖`);
-  const entries = Object.entries(cells);
-  if (!entries.length) throw new Error(`表格 ${record.id} 的单元格覆盖不能为空`);
-  const resolveCell = tableCellKeyResolver(record);
-  for (const [key, value] of entries) {
-    const cell = resolveCell(key);
-    if (!cell) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
-    textTargetContext(doc, { id: record.id, cell });
-    assertDataObject(value, ['text', 'fill', 'borders', 'margins', 'vAlign', 'vert'],
-      `表格 ${record.id} 的单元格覆盖 ${key}`);
-    if (!Reflect.ownKeys(value).length) {
-      throw new Error(`表格 ${record.id} 的单元格覆盖 ${key} 不能为空`);
-    }
-    if (value.text !== undefined) {
-      textTargetContext(doc, { id: record.id, cell });
-      assertTextOverride(value.text, `表格 ${record.id} 的单元格文字覆盖 ${key}`);
-    }
-    if (own(value, 'fill')) {
-      if (value.fill !== null) assertVectorFill(value.fill, `表格 ${record.id} 的单元格填充 ${key}`);
-    }
-    if (value.borders !== undefined) {
-      assertDataObject(value.borders, ['l', 'r', 't', 'b'], `表格 ${record.id} 的单元格边框 ${key}`);
-      for (const side of ['l', 'r', 't', 'b'] as const) {
-        const stroke = value.borders[side];
-        if (stroke !== undefined && stroke !== null) assertStroke(stroke, `表格 ${record.id} 的单元格边框 ${key}.${side}`);
-      }
-    }
-    if (value.margins !== undefined
-      && (value.margins.length !== 4 || value.margins.some((part) => !Number.isFinite(part) || part < 0))) {
-      throw new Error(`表格 ${record.id} 的单元格边距 ${key} 无效`);
-    }
-    if (value.vAlign !== undefined && !['top', 'middle', 'bottom'].includes(value.vAlign)) {
-      throw new Error(`表格 ${record.id} 的单元格垂直对齐 ${key} 无效`);
-    }
-    if (value.vert !== undefined && !['horz', 'vert', 'vert270', 'wordArtVert'].includes(value.vert)) {
-      throw new Error(`表格 ${record.id} 的单元格文字方向 ${key} 无效`);
-    }
-  }
+  assertTableCellOverrides(doc, record, assertTextOverride);
 }
 
 function assertParentChain(doc: EditDoc, id: ElementId): void {
@@ -531,6 +399,7 @@ export function validateEditDoc(doc: EditDoc): void {
   for (const [id, record] of Object.entries(doc.elements)) {
     if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `表格 ${record.id}`);
     assertTableRows(record);
+    assertTableGridOverrides(record);
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) {
       if (!supportsElementLink(record.src.kind)

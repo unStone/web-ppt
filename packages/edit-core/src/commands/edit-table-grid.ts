@@ -3,11 +3,11 @@ import { logicalIdentityPrefix } from '../identity-allocation';
 import { normalizeVectorFill } from '../shape-fill';
 import { normalizeStroke } from '../shape-stroke';
 import {
-  tableCellAddressFromStableRef, tableCellKeyResolver, tableCellOverrideKeyFromRefs,
+  tableCellAddressFromStableRef, tableCellOverrideKeyFromRefs,
 } from '../table-cell';
 import {
   effectiveTableMerges, orderedTableColumns, orderedTableRows, queryTableGrid,
-  tableColumnById,
+  tableCellMergeRole, tableColumnById,
 } from '../table-grid';
 import type {
   EditDoc, ElementRecord, TableCellRef, TableMergeRegion,
@@ -15,7 +15,7 @@ import type {
 import type {
   CommandPatches, InsertColumnCommand, MergeCellsCommand, RemoveColumnCommand,
   RemoveRowCommand, SetCellPropsCommand, SetColumnWidthCommand, SetRowHeightCommand,
-  ElementTextPatch, Patch, SplitCellCommand, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch,
+  SplitCellCommand, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch,
   TableMergePatch,
 } from './types';
 
@@ -81,58 +81,15 @@ function removedPatch(
   };
 }
 
-function cleanupCellOverrides(
-  record: ElementRecord,
-  predicate: (r: number, c: number) => boolean,
-  origin: string,
-): { forward: Patch[]; inverse: Patch[] } {
-  const resolve = tableCellKeyResolver(record);
-  const rows = orderedTableRows(record);
-  const columns = orderedTableColumns(record);
-  const forward: Patch[] = [];
-  const inverse: Patch[] = [];
-  for (const [key, cell] of Object.entries(record.ovr.tableCells ?? {})) {
-    const address = resolve(key);
-    if (!address || !predicate(address.r, address.c)) continue;
-    const row = rows[address.r]?.rowRef;
-    const column = columns[address.c]?.columnRef;
-    if (row === undefined || column === undefined) continue;
-    if (cell.text !== undefined) {
-      const path = ['elements', record.id, 'ovr', 'tableCells', row, column, 'text'] as const;
-      forward.push({ op: 'del', path, origin } satisfies ElementTextPatch);
-      inverse.unshift({ op: 'set', path, value: cell.text, origin } satisfies ElementTextPatch);
-    }
-    for (const field of ['fill', 'borders', 'margins', 'vAlign', 'vert'] as const) {
-      const value = cell[field];
-      if (value === undefined) continue;
-      const path = ['elements', record.id, 'ovr', 'tableCells', key, field] as const;
-      forward.push({ op: 'del', path, origin } satisfies TableCellPropsPatch);
-      inverse.unshift({ op: 'set', path, value, origin } satisfies TableCellPropsPatch);
-    }
-  }
-  return { forward, inverse };
-}
-
-function combine(
-  first: { forward: readonly Patch[]; inverse: readonly Patch[] },
-  second: { forward: readonly Patch[]; inverse: readonly Patch[] },
-): CommandPatches {
-  return {
-    forward: [...first.forward, ...second.forward],
-    inverse: [...second.inverse, ...first.inverse],
-  };
-}
-
 export function removeRowPatches(
   doc: EditDoc, command: RemoveRowCommand, origin: string,
 ): CommandPatches {
   const record = editableTable(doc, command.id);
   const rows = orderedTableRows(record);
   if (rows.length <= 1) throw new Error('表格至少保留一行');
-  const index = rows.findIndex((row) => row.id === command.row);
-  if (index < 0) throw new Error(`找不到表格行：${command.row}`);
-  return combine(cleanupCellOverrides(record, (r) => r === index, origin),
-    removedPatch(record, 'tableRemovedRows', command.row, origin));
+  if (!rows.some((row) => row.id === command.row)) throw new Error(`找不到表格行：${command.row}`);
+  // tombstone 只改变可见投影；撤销后同一稳定身份的内容、尺寸与合并拓扑必须自然恢复。
+  return removedPatch(record, 'tableRemovedRows', command.row, origin);
 }
 
 export function removeColumnPatches(
@@ -141,10 +98,10 @@ export function removeColumnPatches(
   const record = editableTable(doc, command.id);
   const columns = orderedTableColumns(record);
   if (columns.length <= 1) throw new Error('表格至少保留一列');
-  const index = columns.findIndex((column) => column.id === command.column);
-  if (index < 0) throw new Error(`找不到表格列：${command.column}`);
-  return combine(cleanupCellOverrides(record, (_r, c) => c === index, origin),
-    removedPatch(record, 'tableRemovedColumns', command.column, origin));
+  if (!columns.some((column) => column.id === command.column)) {
+    throw new Error(`找不到表格列：${command.column}`);
+  }
+  return removedPatch(record, 'tableRemovedColumns', command.column, origin);
 }
 
 function sizePatches(
@@ -189,6 +146,13 @@ function rect(record: ElementRecord, from: TableCellRef, to: TableCellRef): read
     Math.max(first.r, last.r), Math.max(first.c, last.c)];
 }
 
+function completeGridRecord(record: ElementRecord): ElementRecord {
+  return {
+    ...record,
+    ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+  };
+}
+
 function normalizedRegion(record: ElementRecord, from: TableCellRef, to: TableCellRef): TableMergeRegion {
   const [r1, c1, r2, c2] = rect(record, from, to);
   const grid = queryTableGrid({ elements: { [record.id]: record } } as EditDoc, record.id);
@@ -222,14 +186,16 @@ export function mergeCellsPatches(
   const region = normalizedRegion(record, command.from, command.to);
   const target = rect(record, region.from, region.to);
   if (target[0] === target[2] && target[1] === target[3]) throw new Error('至少选择两个单元格才能合并');
-  const current = effectiveTableMerges(record);
-  if (current.some((merge) => intersects(target, rect(record, merge.from, merge.to)))) {
+  const visible = queryTableGrid(doc, record.id).merges;
+  if (visible.some((merge) => intersects(target, rect(record, merge.from, merge.to)))) {
     throw new Error('新合并区域不能与现有合并重叠');
   }
-  const cleanup = cleanupCellOverrides(record,
-    (r, c) => r >= target[0] && r <= target[2] && c >= target[1] && c <= target[3]
-      && (r !== target[0] || c !== target[1]), origin);
-  return combine(cleanup, mergePatch(record, [...current, region], origin));
+  const complete = completeGridRecord(record);
+  const completeTarget = rect(complete, region.from, region.to);
+  // 新矩形跨过隐藏身份时会显式取代与之相交的休眠合并；无关休眠区域必须保留。
+  const current = effectiveTableMerges(record).filter((merge) =>
+    !intersects(completeTarget, rect(complete, merge.from, merge.to)));
+  return mergePatch(record, [...current, region], origin);
 }
 
 export function splitCellPatches(
@@ -238,12 +204,21 @@ export function splitCellPatches(
   const record = editableTable(doc, command.id);
   const point = tableCellAddressFromStableRef(record, command.cell);
   if (!point) throw new Error('拆分坐标包含不存在的行列身份');
-  const current = effectiveTableMerges(record);
-  const index = current.findIndex((merge) => {
+  const visible = queryTableGrid(doc, record.id).merges;
+  const visibleMerge = visible.find((merge) => {
     const [r1, c1, r2, c2] = rect(record, merge.from, merge.to);
     return point.r >= r1 && point.r <= r2 && point.c >= c1 && point.c <= c2;
   });
-  if (index < 0) throw new Error('指定单元格不属于合并区域');
+  if (!visibleMerge) throw new Error('指定单元格不属于合并区域');
+  const complete = completeGridRecord(record);
+  const completePoint = tableCellAddressFromStableRef(complete, command.cell)!;
+  const current = effectiveTableMerges(record);
+  const index = current.findIndex((merge) => {
+    const [r1, c1, r2, c2] = rect(complete, merge.from, merge.to);
+    return completePoint.r >= r1 && completePoint.r <= r2
+      && completePoint.c >= c1 && completePoint.c <= c2;
+  });
+  if (index < 0) throw new Error('可见合并缺少完整合并真值');
   return mergePatch(record, current.filter((_, mergeIndex) => mergeIndex !== index), origin);
 }
 
@@ -253,6 +228,9 @@ export function setCellPropsPatches(
   const record = editableTable(doc, command.id);
   const address = tableCellAddressFromStableRef(record, command.cell);
   if (!address) throw new Error('单元格格式坐标包含不存在的行列身份');
+  if (tableCellMergeRole(record, command.cell) === 'placeholder') {
+    throw new Error('合并占位格不可单独设置格式');
+  }
   const rows = orderedTableRows(record);
   const columns = orderedTableColumns(record);
   const key = tableCellOverrideKeyFromRefs(rows[address.r].rowRef, columns[address.c].columnRef);

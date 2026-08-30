@@ -119,6 +119,43 @@ if (mode === 'projected') {
         text: '结构写回',
       }],
     });
+  } else if (scenario.type === 'tableStructureDelete') {
+    const table = target?.src.kind === 'table' ? target
+      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    if (!table) throw new Error('M1 指纹固件缺少结构删除表格');
+    const grid = edit.queryTableGrid(doc, table.id);
+    editor.exec(
+      { type: 'RemoveRow', id: table.id, row: grid.rows[1].id },
+      { type: 'RemoveColumn', id: table.id, column: grid.columns[1].id },
+    );
+  } else if (scenario.type === 'tableDormantPlaceholder') {
+    const table = target?.src.kind === 'table' ? target
+      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    if (!table) throw new Error('M1 指纹固件缺少休眠占位格表格');
+    const initial = edit.queryTableGrid(doc, table.id);
+    editor.exec({
+      type: 'SetColumnWidth', id: table.id, column: initial.columns.at(-1).id, width: 271,
+    });
+    const merge = initial.merges
+      .find((region) => region.from.row === '#r0' && region.from.column === '#c0');
+    editor.exec({ type: 'SplitCell', id: table.id, cell: merge.from });
+    const grid = edit.queryTableGrid(doc, table.id);
+    const dormant = { row: grid.rows[0].id, column: grid.columns[1].id };
+    editor.exec({
+      type: 'EditText', id: table.id, cell: { r: 0, c: 1 },
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+        text: 'CUSTOM_SLEEP',
+      }],
+    });
+    editor.exec({
+      type: 'SetCellProps', id: table.id, cell: dormant,
+      props: { fill: { type: 'solid', color: '#DDAA33' } },
+    });
+    editor.exec({
+      type: 'MergeCells', id: table.id,
+      from: { row: grid.rows[0].id, column: grid.columns[0].id }, to: dormant,
+    });
   } else if (scenario.type === 'addShape') {
     editor.exec({
       type: 'AddShape', slideId: doc.slideOrder[slideIndex], preset: scenario.preset, rect: scenario.rect,
@@ -339,7 +376,7 @@ slide = inlineAssets(slide);
 
 // 生成保存会把同页不支持对象转成自包含占位形状；表格结构契约只比较本次编辑目标，
 // 否则无关对象的既有生成语义会掩盖表格自身的写回等价性。
-if (scenario.type === 'tableStructure') {
+if (['tableStructure', 'tableStructureDelete', 'tableDormantPlaceholder'].includes(scenario.type)) {
   slide = { ...slide, elements: slide.elements.filter((element) => element.name === scenario.targetName) };
 }
 

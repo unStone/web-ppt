@@ -15,7 +15,7 @@
 - 新增可选的 `@web-ppt/collab`：字段级 LWW、分数序与确定性页序重物化把 `Editor` 补丁流接到
   可插拔 provider，支持离线幂等回放、remove-wins、远端历史 rebase 和 BroadcastChannel 双标签页。
   OOXML 元素身份由 provider 分配的副本 slot 精确分区；协同包不进入单机 `editor` 入口。
-  发布入口为 10.04KB gzip；契约测试使用的完整薄包在排除 peer 后为 12,160B gzip，两种口径不混用。
+  发布入口为 10.70KB gzip；契约测试使用的完整薄包在排除 peer 后为 13,023B gzip，两种口径不混用。
 
 ### 改进
 

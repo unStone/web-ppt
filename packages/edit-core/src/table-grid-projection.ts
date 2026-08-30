@@ -21,7 +21,8 @@ export function hasComplexTableStructureOverrides(record: ElementRecord): boolea
 }
 
 function normalizedCell(source: TableCell, empty: boolean): TableCell {
-  const cell = empty || source.merged ? emptyTableCell(source) : structuredClone(source);
+  // 合并占位格仍有自己的来源内容；结构删除/拆分后它会重新成为普通逻辑格。
+  const cell = empty ? emptyTableCell(source) : structuredClone(source);
   return { ...cell, colSpan: 1, rowSpan: 1, merged: false };
 }
 

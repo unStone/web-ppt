@@ -1,5 +1,6 @@
 import { assertDataObject } from '../data-validation';
 import { assertFractionalIndex, initialFractionalIndex } from '../fractional-index';
+import { isReservedTableRowId } from '../table-grid';
 import type { EditDoc } from '../types';
 import type { Patch, TableRowPatch } from './types';
 
@@ -15,6 +16,9 @@ export function validateTableRowPatch(doc: EditDoc, patch: TableRowPatch, index:
   if (record.meta.editable !== 'full') throw new Error(`Patch ${index} 指向不可编辑表格`);
   const rowId = patch.path[4];
   if (!rowId || typeof rowId !== 'string') throw new Error(`Patch ${index} 的行身份无效`);
+  if (patch.op === 'insert' && isReservedTableRowId(rowId)) {
+    throw new Error(`Patch ${index} 的行身份占用了来源命名空间：${rowId}`);
+  }
   assertDataObject(patch.value, ['order', 'template'], `Patch ${index} 的新增行`);
   if (typeof patch.value.order !== 'string') throw new Error(`Patch ${index} 的行顺序无效`);
   assertFractionalIndex(patch.value.order);

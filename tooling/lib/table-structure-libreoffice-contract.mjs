@@ -83,12 +83,42 @@ function decomposedGridOracle(fragment) {
   return '删除穿过来源合并区后得到完整 2×3 网格（4 纵线/3 横线）';
 }
 
+function adjacentMergeOracle(fragment) {
+  const segments = lineSegments(fragment);
+  const verticals = segments.filter((line) => close(line.x1, line.x2, 0.01));
+  const horizontals = segments.filter((line) => close(line.y1, line.y2, 0.01));
+  const unique = (values) => [...values].sort((left, right) => left - right)
+    .filter((value, index, all) => index === 0 || !close(value, all[index - 1]));
+  const xs = unique(verticals.map((line) => line.x1));
+  const ys = unique(horizontals.map((line) => line.y1));
+  if (xs.length !== 5 || ys.length !== 5) {
+    throw new Error(`LibreOffice 相邻合并网格边界无效：x=${xs.length} y=${ys.length}`);
+  }
+  const coversVertical = (x, from, to) => verticals.some((line) => close(line.x1, x)
+    && Math.min(line.y1, line.y2) <= from + 40 && Math.max(line.y1, line.y2) >= to - 40);
+  const coversHorizontal = (y, from, to) => horizontals.some((line) => close(line.y1, y)
+    && Math.min(line.x1, line.x2) <= from + 40 && Math.max(line.x1, line.x2) >= to - 40);
+  const topology = coversVertical(xs[1], ys[0], ys[2])
+    && !coversVertical(xs[1], ys[2], ys[4])
+    && coversVertical(xs[2], ys[0], ys[4])
+    && coversVertical(xs[3], ys[0], ys[2])
+    && !coversVertical(xs[3], ys[2], ys[3])
+    && coversVertical(xs[3], ys[3], ys[4])
+    && !coversHorizontal(ys[1], xs[0], xs[3])
+    && coversHorizontal(ys[1], xs[3], xs[4])
+    && coversHorizontal(ys[2], xs[0], xs[4])
+    && coversHorizontal(ys[3], xs[0], xs[4]);
+  if (!topology) throw new Error('LibreOffice 相邻纵向、横向与 L 形合并拓扑不一致');
+  return `相邻纵向、横向与 L 形合并保持独立（${segments.length} 条可见边）`;
+}
+
 export function runTableStructureLibreOfficeContract({ savedPath, exportSvg }) {
   const name = basename(savedPath);
   if (!['table-structure-patch.pptx', 'table-structure-generated.pptx',
-    'table-structure-delete.pptx'].includes(name)) return '';
+    'table-structure-delete.pptx', 'table-structure-adjacent-merges.pptx'].includes(name)) return '';
   const fragment = tableFragment(exportSvg('表格结构网格'));
-  const evidence = name === 'table-structure-delete.pptx'
-    ? decomposedGridOracle(fragment) : mergedGridOracle(fragment);
+  const evidence = name === 'table-structure-delete.pptx' ? decomposedGridOracle(fragment)
+    : name === 'table-structure-adjacent-merges.pptx' ? adjacentMergeOracle(fragment)
+      : mergedGridOracle(fragment);
   return `，${evidence}`;
 }

@@ -1,7 +1,9 @@
 import { assertDataObject } from '../data-validation';
 import { assertFractionalIndex, initialFractionalIndex } from '../fractional-index';
-import { tableCellKeyResolver } from '../table-cell';
-import { orderedTableColumns, orderedTableRows, queryTableGrid } from '../table-grid';
+import { tableCellStableRefFromKey } from '../table-cell';
+import {
+  isReservedTableColumnId, orderedTableColumns, orderedTableRows, queryTableGrid,
+} from '../table-grid';
 import type { EditDoc, ElementRecord, TableCellOverrides } from '../types';
 import type {
   Patch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch,
@@ -46,7 +48,10 @@ export function isTableCellPropsPatch(patch: Patch): patch is TableCellPropsPatc
 export function validateTableColumnPatch(doc: EditDoc, patch: TableColumnPatch, index: number): void {
   const record = tableRecord(doc, patch.path[1], index);
   const id = patch.path[4];
-  if (!id) throw new Error(`Patch ${index} 的列身份无效`);
+  if (typeof id !== 'string' || !id) throw new Error(`Patch ${index} 的列身份无效`);
+  if (patch.op === 'insert' && isReservedTableColumnId(id)) {
+    throw new Error(`Patch ${index} 的列身份占用了来源命名空间：${id}`);
+  }
   assertDataObject(patch.value, ['order', 'template'], `Patch ${index} 的新增列`);
   assertFractionalIndex(patch.value.order);
   if (patch.value.template !== undefined
@@ -129,14 +134,19 @@ export function assertTableMergeRegions(record: ElementRecord, value: unknown, l
 
 export function validateTableMergePatch(doc: EditDoc, patch: TableMergePatch, index: number): void {
   const record = tableRecord(doc, patch.path[1], index);
-  if (patch.op === 'set') assertTableMergeRegions(record, patch.value, `Patch ${index} 的合并区域`);
+  if (patch.op === 'set') assertTableMergeRegions({
+    ...record,
+    ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+  }, patch.value, `Patch ${index} 的合并区域`);
 }
 
 export function validateTableCellPropsPatch(
   doc: EditDoc, patch: TableCellPropsPatch, index: number,
 ): void {
   const record = tableRecord(doc, patch.path[1], index);
-  if (!tableCellKeyResolver(record)(patch.path[4])) throw new Error(`Patch ${index} 的单元格身份无效`);
+  if (!tableCellStableRefFromKey(record, patch.path[4])) {
+    throw new Error(`Patch ${index} 的单元格身份无效`);
+  }
   if (patch.op === 'del') return;
   const field = patch.path[5];
   if (field === 'margins') {

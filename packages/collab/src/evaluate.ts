@@ -12,6 +12,7 @@ import {
 } from './state';
 import type { CollaborationSession, Lifecycle } from './state';
 import type { CollabMessage } from './types';
+import { rebaseTablePatches } from './table-conflict';
 
 export interface PatchAvailability {
   readonly elements: Set<string>;
@@ -184,5 +185,11 @@ export function evaluateRemoteMessage(
       recorded.push(patch);
     }
   }
-  return { accepted, recorded, missingDependency, availability: available };
+  const table = rebaseTablePatches(doc, session, raw.stamp, accepted);
+  return {
+    accepted: table.accepted,
+    recorded: [...recorded, ...table.recorded],
+    missingDependency,
+    availability: available,
+  };
 }

@@ -356,7 +356,8 @@ export class Editor {
         .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
       if (forward.length) advanceCollaborationVersion(this.doc.identity);
     } catch (error) {
-      if (inverse.length) applyLocalPatches(this.doc, inverse);
+      // 多命令事务的逆补丁依赖前序恢复的行列/元素；失败回滚也必须按顺序暂存验证。
+      if (inverse.length) applyPatches(this.doc, inverse);
       // AddSlide 会惰性创建 OPC 水位；只 Object.assign 会把失败事务新增的字段残留在文档中。
       for (const key of Object.keys(this.doc.identity)) {
         if (!Object.prototype.hasOwnProperty.call(identityBefore, key)) {

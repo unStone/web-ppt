@@ -244,7 +244,7 @@ function validatePatchRelations(
     if (isTableRowPatch(patch)) {
       const path = JSON.stringify(patch.path);
       const previousPath = tableRows.get(path);
-      if (previousPath !== undefined) {
+      if (previousPath !== undefined && !allowSequentialStructure) {
         throw new Error(`Patch ${index} 与 Patch ${previousPath} 重复修改同一表格行`);
       }
       tableRows.set(path, index);
@@ -261,7 +261,7 @@ function validatePatchRelations(
       || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) {
       const path = JSON.stringify(patch.path);
       const previousPath = tableGridPaths.get(path);
-      if (previousPath !== undefined) {
+      if (previousPath !== undefined && !allowSequentialStructure) {
         throw new Error(`Patch ${index} 与 Patch ${previousPath} 重复修改同一表格网格路径`);
       }
       tableGridPaths.set(path, index);

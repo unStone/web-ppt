@@ -2,7 +2,7 @@ import { tableRowsWithoutTextOverrides, effectiveTableFrameHeight } from '../tab
 import { directTableCellMarkup } from '../table-direct-markup';
 import { own } from '../data-validation';
 import type { ElementRecord } from '../types';
-import { tableCellKeyResolver } from '../table-cell';
+import { tableCellKeyResolver, tableCellStableRefFromKey } from '../table-cell';
 import { orderedTableColumns, orderedTableRows } from '../table-grid';
 import {
   hasComplexTableStructureOverrides, hasTableStructureOverrides, projectTableStructure,
@@ -239,8 +239,7 @@ function patchComplexTableStructure(document: XmlDocument, record: ElementRecord
       const cell = cloneXmlNode(cellTemplate);
       return {
         cell,
-        empty: rowEntry.source === null || columnEntry.source === null
-          || projected.rows[r].cells[columnEntries.indexOf(columnEntry)].merged,
+        empty: rowEntry.source === null || columnEntry.source === null,
       };
     });
     replaceRepeatedChildren(row, 'tc', cellEntries.map((entry) => entry.cell));
@@ -253,17 +252,22 @@ function patchComplexTableStructure(document: XmlDocument, record: ElementRecord
   });
   replaceRepeatedChildren(table, 'tr', rows);
   emptyTargets.forEach(clearCell);
+  const mergeOwners = new Map<string, { readonly r: number; readonly c: number }>();
+  projected.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
+    if (cell.merged || cell.rowSpan <= 1 && cell.colSpan <= 1) return;
+    for (let rr = r; rr < r + cell.rowSpan; rr++) for (let cc = c; cc < c + cell.colSpan; cc++) {
+      mergeOwners.set(`${rr}:${cc}`, { r, c });
+    }
+  }));
   projected.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
     const target = xmlElementChildren(rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS })[c];
     if (cell.rowSpan > 1) setXmlAttribute(target, 'rowSpan', String(cell.rowSpan));
     if (cell.colSpan > 1) setXmlAttribute(target, 'gridSpan', String(cell.colSpan));
     if (!cell.merged) return;
-    let top = r;
-    while (top > 0 && projected.rows[top].cells[c].merged) top--;
-    let left = c;
-    while (left > 0 && projected.rows[r].cells[left].merged) left--;
-    if (c > left) setXmlAttribute(target, 'hMerge', '1');
-    if (r > top) setXmlAttribute(target, 'vMerge', '1');
+    const owner = mergeOwners.get(`${r}:${c}`);
+    if (!owner) throw new Error(`表格 ${record.id} 的合并占位格缺少锚点：${r},${c}`);
+    if (c > owner.c) setXmlAttribute(target, 'hMerge', '1');
+    if (r > owner.r) setXmlAttribute(target, 'vMerge', '1');
   }));
   frameSize(host, record, projected.w, projected.h);
 }
@@ -295,6 +299,8 @@ export function patchTableCellAppearances(document: XmlDocument, record: Element
   for (const [key, override] of Object.entries(record.ovr.tableCells ?? {})) {
     if (!['fill', 'borders', 'margins', 'vAlign', 'vert'].some((field) => own(override, field))) continue;
     const address = resolve(key);
+    const stable = tableCellStableRefFromKey(record, key);
+    if (!address && stable) continue;
     const source = address && projected.rows[address.r]?.cells[address.c];
     const target = address && rows[address.r]
       ? xmlElementChildren(rows[address.r], { localName: 'tc', namespaceUri: DRAWINGML_NS })[address.c] : null;

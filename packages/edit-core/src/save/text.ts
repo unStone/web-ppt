@@ -3,7 +3,7 @@ import type { TextBody } from '@web-ppt/core';
 import type { ElementRecord, TextOverride } from '../types';
 import type { FlatTextParagraph, RunProperties, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
-import { tableCellKeyResolver } from '../table-cell';
+import { tableCellKeyResolver, tableCellStableRefFromKey } from '../table-cell';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
 import { hasComplexTableStructureOverrides, projectTableStructure } from '../table-grid-projection';
 import {
@@ -474,6 +474,8 @@ export function patchElementText(
   for (const [key, cellOverride] of Object.entries(record.ovr.tableCells)) {
     if (!cellOverride.text) continue;
     const address = resolveCell(key);
+    const stable = tableCellStableRefFromKey(record, key);
+    if (!address && stable) continue;
     if (!address) throw new Error(`表格 ${record.id} 的单元格覆盖坐标无效：${key}`);
     const { r, c } = address;
     const source = sourceRows[r]?.cells[c];
@@ -482,7 +484,8 @@ export function patchElementText(
       rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS },
     )[c];
     const body = cell && findXmlChild(cell, { localName: 'txBody', namespaceUri: DRAWINGML_NS });
-    if (!sourceText || source?.merged || !body) {
+    // 合并占位格的覆盖只在投影中休眠；仍要写回其 txBody，重开后拆分才能恢复同一逻辑格。
+    if (!sourceText || !body) {
       throw new Error(`表格 ${record.id} 的单元格不可写回：${r},${c}`);
     }
     patchTextBody(body, sourceText, cellOverride.text, links);

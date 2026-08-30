@@ -1,6 +1,7 @@
 import type { EditDoc, TableRowInsertion } from '../types';
 import { validateEmptyTextOverride, validateFlatTextOverride } from '../text-override-validation';
 import { tableCellAddressFromRefs, tableCellOverrideKeyFromRefs } from '../table-cell';
+import { orderedTableColumns, orderedTableRows, tableCellMergeRole } from '../table-grid';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 import { textTargetContextForRecord } from './text-target';
 
@@ -43,15 +44,30 @@ export function validateElementTextPatch(
   stagedTableRows?: Record<string, TableRowInsertion>,
 ): void {
   const sourceRecord = doc.elements[patch.path[1]];
-  const record = sourceRecord && stagedTableRows
+  const stagedRecord = sourceRecord && stagedTableRows
     ? { ...sourceRecord, ovr: { ...sourceRecord.ovr, tableRows: stagedTableRows } }
     : sourceRecord;
+  const record = stagedRecord && patch.path.length === 7
+    ? {
+      ...stagedRecord,
+      ovr: {
+        ...stagedRecord.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined,
+      },
+    }
+    : stagedRecord;
   const cell = patch.path.length === 7 && record
     ? tableCellAddressFromRefs(record, patch.path[4], patch.path[5]) : null;
   if (patch.path.length === 7 && !cell) throw new Error(`Patch ${index} 的表格行身份或列坐标无效`);
   const target = patch.path.length === 4 ? { id: patch.path[1] } : { id: patch.path[1], cell: cell! };
   if (!record) throw new Error(`Patch ${index} 指向不存在的元素`);
-  textTargetContextForRecord(record, target);
+  const stable = patch.path.length === 7 && cell && record.src.kind === 'table'
+    ? {
+      row: orderedTableRows(record)[cell.r]?.id,
+      column: orderedTableColumns(record)[cell.c]?.id,
+    } : null;
+  const dormant = stable?.row && stable.column
+    && tableCellMergeRole(record, { row: stable.row, column: stable.column }) === 'placeholder';
+  if (!dormant) textTargetContextForRecord(record, target);
   if (patch.op === 'set') {
     if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value);
     else if (patch.value.kind === 'empty') validateEmptyTextOverride(patch.value);
