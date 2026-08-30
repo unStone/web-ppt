@@ -32,6 +32,9 @@ tracker: local-markdown
 
 <!-- 已关闭票据只在这里留一句索引；详细答案只写进对应票据。 -->
 
+- [表格结构编辑](tickets/001-table-structure-editing.md)：稳定行列身份、tombstone 可见性与完整合并真值共同保证
+  插删、合并、保存和协同始终指向同一逻辑单元格。
+
 ## Not yet specified
 
 - 图片透明度/灰度/双色调、画布 AT 语义与 File System Access 都是真实缺口，但现有路线没有证据证明它们
