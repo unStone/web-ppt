@@ -73,8 +73,21 @@ jobs:
       - name: 图元文件解码测试
         run: npm run test:metafile
 
+      # 这两条此前只在 release.yml 里跑，PR 阶段发现不了适配包与协同包的回归
+      - name: React / Vue 适配与体积门禁
+        run: npm run test:adapters
+
+      - name: 协同适配与收敛门禁
+        run: npm run test:collab
+
       - name: 构建
         run: npm run build
+
+      # 放在构建之后：体积核对要读 dist 产物。
+      # 守的是单测碰不到的一类问题——LICENSE 与各处声明不符、npm 链接指向不存在的包、
+      # 文档里的体积和快照数照抄旧值。
+      - name: 跨产物一致性
+        run: npm run verify
 
       - name: 上传快照差异
         if: failure()

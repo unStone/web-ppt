@@ -15,6 +15,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/metafile');
@@ -871,4 +872,5 @@ if (failures.length) {
   for (const f of failures) console.log(`  · ${f}`);
   process.exit(1);
 }
+recordCount('metafile', pass);
 console.log(`\x1b[32m✓ 全部 ${pass} 项断言通过\x1b[0m`);

@@ -1,10 +1,10 @@
 import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { defineConfig } from 'vite';
+// 页面清单与 id 校验和 `npm run verify` 共用一份实现：构建期闸门只在构建站点时才拦，
+// 而一致性检查要能不构建就给出同一结论，两处分叉迟早会有一边失效。
+import { SITE_PAGES, duplicateIds } from '../../tooling/lib/unique-ids.mjs';
 import { fetchSamples, type Sample } from './src/samples-index';
-
-/** 多页站点：每加一个页面就在这儿登记，构建入口和 id 校验都从这里取 */
-const PAGES = ['index.html', 'samples.html', 'editor.html'];
 
 // GitHub Pages 部署在 /web-ppt/ 子路径下；本地 dev 用根路径
 const base = process.env.SITE_BASE ?? '/';
@@ -52,7 +52,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: Object.fromEntries(PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])),
+      input: Object.fromEntries(SITE_PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])),
       output: {
         /**
          * 共享 chunk 与样式表显式命名。
@@ -159,13 +159,8 @@ export default defineConfig({
        */
       name: 'assert-unique-ids',
       buildStart() {
-        for (const page of PAGES) {
-          const html = readFileSync(page, 'utf8');
-          const seen = new Map<string, number>();
-          for (const m of html.matchAll(/\bid="([^"]+)"/g)) {
-            seen.set(m[1], (seen.get(m[1]) ?? 0) + 1);
-          }
-          const dup = [...seen].filter(([, n]) => n > 1).map(([id, n]) => `#${id}×${n}`);
+        for (const page of SITE_PAGES) {
+          const dup = duplicateIds(readFileSync(page, 'utf8'));
           if (dup.length) this.error(`${page} 存在重复 id：${dup.join('、')}`);
         }
       },

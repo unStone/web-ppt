@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { recordCount } from './lib/measured.mjs';
 
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const validator = join(projectRoot, 'tooling/validate-edit-powerpoint-report.mjs');
@@ -140,5 +141,6 @@ if (failures.length) {
   console.error(`\n\x1b[31m✗ ${failures.length} 项 PowerPoint 证据契约失败\x1b[0m`);
   process.exitCode = 1;
 } else {
+  recordCount('powerpoint', passed);
   console.log(`\n\x1b[32m✓ PowerPoint 证据契约全部通过（${passed} 项断言）\x1b[0m`);
 }

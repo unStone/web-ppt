@@ -18,7 +18,7 @@
 | `packages/site/` | 官网（private），含浏览器内实时 Demo |
 | `fixtures/` | 测试样本，**全部由 `tooling/make-*.mjs` 确定性生成** |
 | `tooling/` | 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准 |
-| `test/snapshots/` | 176 个渲染快照基线 |
+| `test/snapshots/` | 178 个渲染快照基线 |
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
@@ -27,13 +27,15 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：2145 + 874 + 370 + 9 + 360 + 9 + 130 项断言、176 个快照、478 对编辑等价指纹 |
+| `npm test` | 全部测试：2168 + 942 + 433 + 9 + 389 + 9 + 98 + 130 项断言、178 个快照、490 对编辑等价指纹 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建八个发布包 |
 | `npm run dev` | 启动 viewer |
+| `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`npm run verify -- --net` 另查外链可达） |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
 
-**改完代码必须跑**：`npm run check && npm test && npm run build`。三条都绿才算完成。
+**改完代码必须跑**：`npm run check && npm test && npm run build && npm run verify`。四条都绿才算完成
+（`verify` 要读测试落盘的断言数与 `dist` 产物体积，所以排在最后）。
 
 ## 不可破坏的约束
 
@@ -53,6 +55,7 @@
 | **固件覆盖盲区** | 加能力时**必须同时加固件**。隐藏页曾经零固件覆盖，让一个 `skipHidden` 的真 bug 在 986 项断言下活了很久 |
 | **LibreOffice 转换非确定性** | `.ppt` 样本由 LibreOffice 转出，字节不可重复。`make-ppt-samples.mjs` 因此按**渲染结果**而非字节比对，内容没变就保留原文件 |
 | **固件必须确定性** | `npm run fixtures` 重跑两次字节必须一致，CI 会验。写生成脚本时不要引入时间戳 / 随机数 |
+| **文档数字会悄悄过期** | 断言数、快照数、包体积、版本号散落在 README / README.en / AGENTS / 官网十几处，改一处忘另一处没有任何提示。实测下来快照数（176→178）、七个包的体积、官网 JSON-LD 的 `softwareVersion`（停在 0.3.0）全都漂了，README 还写着「七个发布包」。`npm run verify` 把这些拉到一处比对——**改数字前先跑它拿实测值，不要照抄旧值** |
 | **npm 认的 README 不一定是 README.md** | `@npmcli/package-json` 用 `{README,README.*}` 去 glob 再取第一个像 markdown 的命中——`README.zh-CN.md` 同样匹配，实测还排在 `README.md` 前面。结果是 tarball 里是英文版（`files` 挡住了别的），npm 页面显示的却是中文版，只有 `npm view <pkg> readme` 看得出来（0.4.4 就这么翻了车）。本地化 README 一律用连字符 `README-zh-CN.md`；`sync-package-docs.mjs` 里有守卫，别绕过 |
 | **package-lock 不能用镜像源** | 用 `--registry=npmmirror` 装依赖会把镜像 URL 烘进 lock，新版 npm 直接 `EALLOWREMOTE` 拒绝。装依赖一律用官方源；本机代理导致 TLS 失败时用 `env -u HTTP_PROXY -u HTTPS_PROXY npm i` 绕开 |
 | **画布污染只发生在 `blob:`** | 含 `foreignObject` 的 SVG 经 **blob: URL** 加载会让画布被判污染（`toBlob` 抛 `SecurityError`），换成 **`data:` URI 就不会**——实测 Chrome 148 仍是这样。Chromium 曾提案让 blob: 也不污染（原计划 M131），至今未生效，别依赖。所以 `slideToPng` 走 data: URI + `foreignObject`，排版与屏幕预览逐像素一致 |

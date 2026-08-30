@@ -37,7 +37,7 @@ blocked_by:
 - 契约覆盖文字、表格追加后撤销、图片、元素/页面新增、空白版式、备注分叉、资源重绑、坏前缀/尾帧/
   序号/选区/时间/身份及独立进程双文本 SVG 指纹；恢复产物保存重开后投影一致。LibreOffice 将最终
   `recovered.pptx` 转为 PDF 1.7，2 页可读。Windows PowerPoint 真机成功不在本机伪造，仍由
-  [010 外部验收票](010-powerpoint-com-validation.md) 追踪。
+  [010 外部验收票](010-prove-m1-save.md) 追踪。
 - 最终门禁：core 2135、edit-core 778、保存 307、PowerPoint 证据契约 9、editor 308、框架适配器 8、
   61 份固件 372 对独立 SVG 指纹、图元 130 项全部通过，七个发布包构建成功。210 页 / 50MB、
   1,000 帧实测日志 316.3KB，JSON 序列化 1.6ms、原子回放 269.9ms，低于 500ms 预算；编辑内存

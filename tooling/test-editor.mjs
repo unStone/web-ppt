@@ -45,6 +45,7 @@ import { runAnimationEditorContract } from './lib/animation-editor-contract.mjs'
 import { runListLevelEditorContract } from './lib/list-level-editor-contract.mjs';
 import { runShortcutAuditContract } from './lib/shortcut-audit-contract.mjs';
 import { runVertexEditorContract } from './lib/vertex-editor-contract.mjs';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/editor');
@@ -429,5 +430,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exitCode = 1;
 } else {
+  recordCount('editor', passed);
   console.log(`\x1b[32m✓ 全部 ${passed} 项 editor 断言通过\x1b[0m`);
 }

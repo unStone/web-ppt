@@ -8,6 +8,7 @@ import React from 'react';
 import { renderToString as renderReact } from 'react-dom/server';
 import { createSSRApp, h } from 'vue';
 import { renderToString as renderVue } from '@vue/server-renderer';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/framework-adapters');
@@ -89,5 +90,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exit(1);
 }
+recordCount('adapters', passed);
 console.log(`\n\x1b[32m✓ 框架适配包 ${passed} 项断言通过`
   + `（React ${reactThin.gzip}B / Vue ${vueThin.gzip}B gzip，不含 peer）\x1b[0m`);

@@ -101,6 +101,12 @@ jobs:
       - name: 构建
         run: npm run build
 
+      # 放在构建之后：体积核对要读 dist 产物。
+      # 守的是单测碰不到的一类问题——LICENSE 与各处声明不符、npm 链接指向不存在的包、
+      # 文档里的体积和快照数照抄旧值。
+      - name: 跨产物一致性
+        run: npm run verify
+
       # 顺序不能反：editor 同时依赖 core、edit-core 与 viewer-core，其余包也以 core 为 peer 依赖。
       # 在包目录内发布而非用 -w：OIDC 需要按包换取令牌，workspace 路径下
       # 是否走同一条代码路径没有保证，进包目录是文档示例里的形态。

@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fixturesDir = join(root, 'fixtures');
@@ -70,5 +71,7 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exitCode = 1;
 } else {
+  recordCount('fixtures', fixtures.length);
+  recordCount('equivalence', svgCount);
   console.log(`\x1b[32m✓ ${fixtures.length} 份固件 / ${pages} 页 / ${svgCount} 对原始 SVG 指纹完全一致\x1b[0m`);
 }

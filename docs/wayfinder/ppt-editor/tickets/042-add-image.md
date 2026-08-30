@@ -74,5 +74,5 @@ view、静态 SVG、PNG、打印和保存文件不含辅助 UI。保存只改变
 确定性 PNG 实测 `Editor.exec(AddImage)` 99.66ms，历史计费 3,243,972 bytes，保留堆增量 6,800,248
 bytes，`arrayBuffers` 增量 0，默认历史仍保留撤销。最终 `npm run check && npm test && npm run build`
 全绿；编辑主入口 62.33KB gzip，DOM editor 32.71KB gzip。真实 PowerPoint 产物已加入 16 项 Office
-manifest；Windows 实机执行仍由未关闭的 [010 Office 门禁](010-office-powerpoint-gate.md) 跟踪。
+manifest；Windows 实机执行仍由未关闭的 [010 Office 门禁](010-prove-m1-save.md) 跟踪。
 规格与工程规范复审均为 Findings 0。

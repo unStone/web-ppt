@@ -49,6 +49,7 @@ import { runGroupUngroupContract } from './lib/group-ungroup-contract.mjs';
 import { runListLevelContract } from './lib/list-level-contract.mjs';
 import { runVertexGeometryContract } from './lib/vertex-geometry-contract.mjs';
 import { runTableStyleContract } from './lib/table-style-contract.mjs';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit');
@@ -351,5 +352,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exitCode = 1;
 } else {
+  recordCount('edit', passed);
   console.log(`\x1b[32m✓ 全部 ${passed} 项 edit-core 断言通过\x1b[0m`);
 }

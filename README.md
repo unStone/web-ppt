@@ -31,13 +31,14 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 89.77KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 59.47KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 40.61KB |
-| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 0.92KB |
-| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.16KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 7.43KB |
-| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.75KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 90.08KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 62.98KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 61.82KB |
+| [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 10.04KB |
+| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.02KB |
+| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.29KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 8.10KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
 
 ## 快速开始
 
@@ -233,7 +234,7 @@ disposeDoc(doc);                                     // 同时释放被接管的
 保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
 OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
 和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
-编辑模型主入口连静态共享 chunk 为 59.47KB gzip，首次调用保存再按需增加 8.30KB。
+编辑模型主入口连静态共享 chunk 为 62.98KB gzip，首次调用保存再按需增加 8.30KB。
 
 ### 接自己的 UI
 
@@ -377,9 +378,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2145 项断言 + 176 个渲染快照 |
-| `npm run test:edit` | 编辑模型 874 项 + 保存 370 项 + PowerPoint 证据 9 项 + 66 份固件、478 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 360 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:core` | 核心解析 / 渲染，2168 项断言 + 178 个渲染快照 |
+| `npm run test:edit` | 编辑模型 942 项 + 保存 433 项 + PowerPoint 证据 9 项 + 71 份固件、490 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 389 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -387,8 +388,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
+| `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
 | `npm run test:adapters` | React / Vue 的 9 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
-| `npm run build` | 构建七个发布包（core / edit-core / viewer-core / editor / react / vue / fonts） |
+| `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
 | `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |
@@ -419,7 +421,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site —— 官网，含浏览器内查看 Demo 与独立编辑器
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          176 个渲染快照基线
+└── test/snapshots/          178 个渲染快照基线
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -438,7 +440,7 @@ web-ppt/                     npm workspaces monorepo
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 21 个测试文件 × 全部页 × 两条文本路径 = 176 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 22 个测试文件 × 全部页 × 两条文本路径 = 178 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |

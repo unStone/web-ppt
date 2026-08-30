@@ -10,11 +10,12 @@
  * 失败以非 0 退出码结束。
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv, parseXml } from './lib/dom-env.mjs';
 import { makeTtf } from './lib/font.mjs';
+import { recordCount } from './lib/measured.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
@@ -3476,6 +3477,9 @@ group('渲染快照');
   let written = 0;
   let missing = 0;
   const drifted = [];
+  // 这一轮真正用到的基线。缺失有人查，多余没人查——fixture 改名或删页后旧基线会
+  // 留在目录里，既让「N 个快照」这个对外数字失真，也可能在改回同名时诈尸复活。
+  const used = new Set();
 
   for (const [file, pres] of parsed) {
     // 注意用 for 循环而非 forEach：早期版本在回调里 return，会静默跳过第二种文本模式
@@ -3483,6 +3487,7 @@ group('渲染快照');
       const slide = pres.slides[i];
       for (const mode of ['html', 'svg']) {
         const name = snapshotName(file, i + 1, mode);
+        used.add(name);
         const path = join(snapDir, name);
         const actual = normalizeSvg(lib.renderSlideToSvg(pres, slide, { textMode: mode }));
 
@@ -3509,6 +3514,8 @@ group('渲染快照');
     console.log(`  已更新 ${written} 个基线`);
   } else {
     check('无缺失基线', missing === 0, `${missing} 个缺失，用 UPDATE_SNAPSHOTS=1 生成`);
+    const orphans = readdirSync(snapDir).filter((f) => f.endsWith('.svg') && !used.has(f));
+    check('无孤儿基线', orphans.length === 0, `${orphans.length} 个已无对应渲染：${orphans.join('、')}`);
     if (drifted.length) {
       for (const d of drifted) failures.push(`快照漂移 ${d}`);
     } else {
@@ -3527,4 +3534,5 @@ if (failures.length) {
   if (failures.length > 40) console.log(`  … 另有 ${failures.length - 40} 项`);
   process.exit(1);
 }
+recordCount('core', pass);
 console.log(`\x1b[32m✓ 全部 ${pass} 项断言通过\x1b[0m`);

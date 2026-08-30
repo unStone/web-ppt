@@ -33,13 +33,14 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 89.77 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 59.47 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 40.61 KB |
-| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 0.92 KB |
-| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.16 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 7.43 KB |
-| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.75 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 90.08 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 62.98 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 61.82 KB |
+| [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 10.04 KB |
+| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.02 KB |
+| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.29 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 8.10 KB |
+| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.69 KB |
 
 ## Quick start
 
@@ -203,7 +204,7 @@ for byte and retains declarations, comments, PIs, namespace prefixes, attribute 
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. The main editing graph is 59.47 KB gzip including static shared chunks;
+return an explainable fallback reason. The main editing graph is 62.98 KB gzip including static shared chunks;
 the first save adds 8.30 KB on demand.
 
 ### Bring your own UI
@@ -346,16 +347,17 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,145 assertions + 176 render snapshots |
-| `npm run test:edit` | 874 edit-model + 370 save + 9 PowerPoint-evidence assertions, plus 478 process-isolated SVG fingerprint pairs across 66 fixtures |
-| `npm run test:editor` | 360 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:core` | Core parsing / rendering — 2,168 assertions + 178 render snapshots |
+| `npm run test:edit` | 942 edit-model + 433 save + 9 PowerPoint-evidence assertions, plus 490 process-isolated SVG fingerprint pairs across 71 fixtures |
+| `npm run test:editor` | 389 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
+| `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |
 | `npm run test:adapters` | 9 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
-| `npm run build` | Build all seven publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts) |
+| `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |
 | `npm run ppt-samples` | Convert the pptx fixtures to `.ppt` via LibreOffice (re-run after changing a pptx fixture) |
@@ -381,7 +383,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site — the website, with the viewer demo and standalone editor
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          176 render snapshot baselines
+└── test/snapshots/          178 render snapshot baselines
 ```
 
 `packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
@@ -398,7 +400,7 @@ Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM an
 |---|---|
 | **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
 | **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 21 test files × every slide × both text paths = 176 normalized SVG baselines, compared byte for byte |
+| **Render snapshots** | 22 test files × every slide × both text paths = 178 normalized SVG baselines, compared byte for byte |
 | **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
 | **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
 | **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |

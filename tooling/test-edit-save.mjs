@@ -38,6 +38,7 @@ import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-save');
@@ -379,5 +380,6 @@ if (failures.length) {
     version: 1,
     artifacts: EDIT_SAVE_OFFICE_ARTIFACTS,
   }, null, 2)}\n`);
+  recordCount('save', passed);
   console.log(`\x1b[32m✓ M1 保存验收全部通过（${passed} 项断言）\x1b[0m`);
 }

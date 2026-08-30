@@ -16,7 +16,7 @@ tracker: local-markdown
 
 - 领域词汇见 [CONTEXT.md](../../../CONTEXT.md)，架构与验收以 [编辑能力技术方案](../../editing-design.md) 为准。
 - 必须遵守根目录 `AGENTS.md`：`render/` 只依赖 `types.ts`、格式按魔数识别、两条出片文本路径不合并、`core` 与 `edit-core` 不依赖 DOM。
-- 每个任务完成后必须运行 `npm run check && npm test && npm run build`；新增能力必须有确定性固件，写回保真还要做独立进程渲染对比与 LibreOffice ground truth。
+- 每个任务完成后必须运行 `npm run check && npm test && npm run build && npm run verify`；新增能力必须有确定性固件，写回保真还要做独立进程渲染对比与 LibreOffice ground truth。
 - 性能是接口契约：只读路径零额外负担；拖动帧 ≤ 8ms、单元素提交 ≤ 16ms、200 页/50MB 且只改 3 页的保存 ≤ 500ms、编辑内存增量 ≤ 40%。
 - 本地 Markdown 任务以 `tickets/*.md` 表示子任务；`status: open` 且 `blocked_by: []` 的任务位于前沿，开始工作前先把 `assignee` 改为当前执行者。
 - 本地图按 `wayfinder` 推进：一轮最多关闭一个任务；答案、验证证据与后续发现记录在该任务的 `## Resolution`，地图只追加一句决策索引。
@@ -98,19 +98,14 @@ tracker: local-markdown
 - [建立顶点编辑独立扩展](tickets/070-vertex-editing-extension.md) — 稳定自由形状地址、按需圆弧物化与保留型保存贯通独立 vertex 入口；Chrome 60 元素拖动 p95 0.2ms，主入口零增长且 LibreOffice 像素 oracle 通过。
 - [实现表格样式应用与写回](tickets/071-table-style-library.md) — 公开样式目录、六开关命令、直接格式优先级与按需 OPC 物化贯通补丁及生成保存，LibreOffice 表样式 oracle 与两路终审通过。
 - [建立协同适配扩展包](tickets/072-collab-adapter-package.md) — 字段级 LWW、严格同副本因果前缀与精确身份分区贯通可插拔 provider、恢复和双标签页，薄包 12160B gzip 且两路终审归零。
+- [建立跨产物一致性闸门](tickets/076-cross-artifact-consistency-gate.md) — 测试实测、包元数据与构建入口统一核对许可证、版本、链接、八包清单、HTML id、文档规模和两种协同体积口径，并进入 CI 与发布流程。
 
 ## Not yet specified
 
-- 2026-08-28 重规划：剩余工作已全部拆为票据 064–075——[生成式保存](tickets/064-generated-pptx-save.md)
-  →（[.ppt 转存](tickets/065-ppt-edit-save-as-pptx.md)、[空白新建](tickets/066-blank-document-entry.md)）、
-  [组合解组](tickets/067-group-ungroup-commands.md)、[列表升降级](tickets/068-text-list-level.md)、
-  [快捷键对账](tickets/069-appendix-b-shortcut-audit.md)、[顶点](tickets/070-vertex-editing-extension.md) /
-  [表样式](tickets/071-table-style-library.md) / [协同](tickets/072-collab-adapter-package.md) 三个 M6 扩展、
-  [编辑页工具栏](tickets/073-site-editor-toolbar-completion.md)、[性能契约抗负载](tickets/074-perf-contract-load-isolation.md)、
-  [0.5.0 转正](tickets/075-0.5.0-stable-release.md)。建议顺序：064 与 010（等外部 Windows runner）先行，
-  067 / 073 次之，070–072 独立推进，075 收尾。§10.3 性能预算已在各票据内逐项达标，不再单列。
-- [072](tickets/072-collab-adapter-package.md) 的 CRDT / LWW 选型在票据内决策；0.6 线目标待 0.5.0 转正后另立。
-- 不把产品 UI 或业务状态塞入无框架 adapter（073 只做 seam 接线）。
+- 0.5.0 只剩 [用桌面 PowerPoint 证明 M1 保存](tickets/010-prove-m1-save.md) 的外部 Windows 证据，随后
+  [发布 0.5.0 稳定版](tickets/075-0.5.0-stable-release.md)；二者不阻塞后续功能开发。
+- 0.6–1.0 已完成能力盘点与技术路线，见 [能力盘点与演进路线](../../roadmap.md)；0.6 已另建
+  [补齐 0.6 高频编辑能力](../ppt-editing-completeness/map.md)，不再把旧地图无限延长。
 
 ## Out of scope
 

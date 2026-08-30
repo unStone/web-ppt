@@ -8,6 +8,7 @@ import { runCollabSlideIdentityContract } from './lib/collab-slide-identity-cont
 import { runCollabHardeningContract } from './lib/collab-hardening-contract.mjs';
 import { runCollabAtomicContract } from './lib/collab-atomic-contract.mjs';
 import { runCollabProtocolContract } from './lib/collab-protocol-contract.mjs';
+import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/collab');
@@ -537,4 +538,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exit(1);
 }
+recordCount('collab', passed);
+recordCount('collabThinGzip', thinGzip);
 console.log(`\n\x1b[32m✓ 协同适配包 ${passed} 项断言通过（${thinGzip}B gzip，不含 peer）\x1b[0m`);
