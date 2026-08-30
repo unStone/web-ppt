@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/editor",
-  "version": "0.5.0-beta.1",
+  "version": "0.5.0-beta.2",
   "description": "Framework-agnostic browser editing session and DOM view for Web-PPT.",
   "keywords": [
     "pptx",
@@ -48,9 +48,9 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.5.0-beta.1",
-    "@web-ppt/edit-core": "^0.5.0-beta.1",
-    "@web-ppt/viewer-core": "^0.5.0-beta.1"
+    "@web-ppt/core": "^0.5.0-beta.2",
+    "@web-ppt/edit-core": "^0.5.0-beta.2",
+    "@web-ppt/viewer-core": "^0.5.0-beta.2"
   },
   "publishConfig": {
     "access": "public"

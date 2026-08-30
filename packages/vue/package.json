@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/vue",
-  "version": "0.5.0-beta.1",
+  "version": "0.5.0-beta.2",
   "description": "Thin Vue component and composable for the framework-agnostic Web-PPT viewer/editor.",
   "keywords": ["pptx", "powerpoint", "vue", "editor", "viewer", "browser", "typescript"],
   "license": "MIT",
@@ -27,7 +27,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/editor": "^0.5.0-beta.1",
+    "@web-ppt/editor": "^0.5.0-beta.2",
     "vue": ">=3.3.0 <4"
   },
   "peerDependenciesMeta": { "vue": { "optional": true } },
