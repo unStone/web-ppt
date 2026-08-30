@@ -1,6 +1,6 @@
-import type { TableRow, TextBody } from '@web-ppt/core';
-import { initialFractionalIndex } from './fractional-index';
+import type { TableCell, TableRow, TextBody } from '@web-ppt/core';
 import type { ElementRecord, TableRowId, TableRowInsertion } from './types';
+import { orderedTableRows, tableRowTemplate } from './table-grid';
 
 export interface OrderedTableRowInsertion extends TableRowInsertion {
   readonly id: TableRowId;
@@ -21,8 +21,8 @@ export function orderedTableRowInsertions(record: ElementRecord): OrderedTableRo
 
 export function lastTableRowOrder(record: ElementRecord): string {
   if (record.src.kind !== 'table' || !record.src.rows.length) throw new Error(`表格 ${record.id} 没有可复制的行`);
-  const insertions = orderedTableRowInsertions(record);
-  return insertions[insertions.length - 1]?.order ?? initialFractionalIndex(record.src.rows.length - 1);
+  const rows = orderedTableRows(record);
+  return rows[rows.length - 1].order;
 }
 
 function emptyTextTemplate(body: TextBody): TextBody {
@@ -35,6 +35,19 @@ function emptyTextTemplate(body: TextBody): TextBody {
       ...structuredClone(paragraph),
       runs: [{ ...structuredClone(run), text: '', math: undefined }],
     }],
+  };
+}
+
+export function emptyTableCell(source: TableCell): TableCell {
+  const body = source.text ?? source.editInfo?.textTemplate;
+  if (!body) throw new Error('表格单元格模板缺少文本体');
+  return {
+    ...structuredClone(source),
+    colSpan: 1,
+    rowSpan: 1,
+    merged: false,
+    text: null,
+    editInfo: { ...structuredClone(source.editInfo), textTemplate: emptyTextTemplate(body) },
   };
 }
 
@@ -69,40 +82,41 @@ function projectedAppendRow(record: ElementRecord, id: TableRowId, template: Tab
 
 export function tableRowsWithoutTextOverrides(record: ElementRecord): TableRow[] {
   if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
+  const source = record.src;
   const insertions = orderedTableRowInsertions(record);
   if (!insertions.length) {
     projectedRows.delete(record);
-    return record.src.rows;
+    return source.rows;
   }
-  const sourceTemplate = record.src.rows[record.src.rows.length - 1];
-  if (!sourceTemplate) throw new Error(`表格 ${record.id} 没有可复制的行`);
-  const styles = record.src.editInfo?.tableRowAppend;
-  const sourceRows = [...record.src.rows];
-  if (styles) sourceRows[sourceRows.length - 1] = styles.previousLast ?? styles.regular[1];
+  const styles = source.editInfo?.tableRowAppend;
+  const allAppended = insertions.every((insertion) => insertion.order > orderedTableRows(record)
+    .find((row) => row.source === source.rows.length - 1)!.order);
+  const sourceRows = [...source.rows];
+  if (styles && allAppended) sourceRows[sourceRows.length - 1] = styles.previousLast ?? styles.regular[1];
   const nextCache = new Map<TableRowId, AppendedRowProjection>();
-  const appended = insertions.map((insertion, index) => {
-    const template = index === insertions.length - 1
-      ? styles?.last[index % 2]
-      : styles?.regular[index % 2];
-    const resolved = template ?? sourceTemplate;
-    const row = projectedAppendRow(record, insertion.id, resolved);
-    nextCache.set(insertion.id, { template: resolved, row });
+  const appendedIndex = new Map(insertions.map((insertion, index) => [insertion.id, index]));
+  const rows = orderedTableRows(record).map((entry) => {
+    if (entry.source !== null) return sourceRows[entry.source];
+    const index = appendedIndex.get(entry.id)!;
+    const styleTemplate = allAppended
+      ? (index === insertions.length - 1 ? styles?.last[index % 2] : styles?.regular[index % 2])
+      : undefined;
+    const resolved = styleTemplate ?? tableRowTemplate(record, entry);
+    const row = projectedAppendRow(record, entry.id, resolved);
+    nextCache.set(entry.id, { template: resolved, row });
     return row;
   });
   // 只保留当前稀疏行；撤销后被 redo 截断的 rowId 不得把深克隆格式留到会话结束。
   projectedRows.set(record, nextCache);
-  return [
-    ...sourceRows,
-    ...appended,
-  ];
+  return rows;
 }
 
 export function tableRowHeightDelta(record: ElementRecord): number {
   if (record.src.kind !== 'table') return 0;
   const base = typeof record.ovr.h === 'number' ? record.ovr.h : record.src.h;
   const scale = record.src.h > 0 ? base / record.src.h : 1;
-  return orderedTableRowInsertions(record).length
-    * (record.src.rows[record.src.rows.length - 1]?.height ?? 0) * scale;
+  return orderedTableRowInsertions(record)
+    .reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0) * scale;
 }
 
 export function effectiveTableFrameHeight(record: ElementRecord): number {
@@ -113,7 +127,7 @@ export function effectiveTableFrameHeight(record: ElementRecord): number {
 /** SetXfrm 面向当前可见整表；稀疏覆盖保存的是追加前 frame，故需反解同一缩放比例。 */
 export function tableBaseFrameHeight(record: ElementRecord, effectiveHeight: number): number {
   if (record.src.kind !== 'table') return effectiveHeight;
-  const appended = orderedTableRowInsertions(record).length
-    * (record.src.rows[record.src.rows.length - 1]?.height ?? 0);
+  const appended = orderedTableRowInsertions(record)
+    .reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0);
   return record.src.h > 0 ? effectiveHeight * record.src.h / (record.src.h + appended) : effectiveHeight;
 }

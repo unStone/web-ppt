@@ -58,6 +58,7 @@ export interface RecoveryIdentityFloor {
   readonly slideIdPattern: RegExp;
   readonly elementIdPattern: RegExp;
   readonly rowIdPattern: RegExp;
+  readonly columnIdPattern: RegExp;
   nextSlidePart?: number;
   nextNotesPart?: number;
   nextPresentationSlideId?: number;
@@ -170,6 +171,7 @@ export function createRecoveryIdentityFloor(doc: EditDoc): RecoveryIdentityFloor
     slideIdPattern: new RegExp(`^${escaped}s([0-9a-z]+)$`),
     elementIdPattern: new RegExp(`^${escaped}e([0-9a-z]+)$`),
     rowIdPattern: new RegExp(`^${escaped}r([0-9a-z]+):`),
+    columnIdPattern: new RegExp(`^${escaped}c([0-9a-z]+):`),
     ...(identity.nextSlidePart === undefined ? {} : { nextSlidePart: identity.nextSlidePart }),
     ...(identity.nextNotesPart === undefined ? {} : { nextNotesPart: identity.nextNotesPart }),
     ...(identity.nextPresentationSlideId === undefined
@@ -194,7 +196,8 @@ function advanceLogicalId(floor: RecoveryIdentityFloor, id: string): void {
   if (slide !== undefined) floor.nextSlide = Math.max(floor.nextSlide, slide + 1);
   const element = base36Serial(id, floor.elementIdPattern);
   const row = base36Serial(id, floor.rowIdPattern);
-  const serial = element ?? row;
+  const column = base36Serial(id, floor.columnIdPattern);
+  const serial = element ?? row ?? column;
   if (serial !== undefined) floor.nextElement = Math.max(floor.nextElement, serial + 1);
 }
 
@@ -312,7 +315,8 @@ function advancePatchIdentities(floor: RecoveryIdentityFloor, patches: readonly 
   for (const patch of patches) {
     advanceLogicalId(floor, patch.path[1]);
     if (patch.path[0] === 'elements' && patch.path[2] === 'ovr'
-      && patch.path[3] === 'tableRows' && typeof patch.path[4] === 'string') {
+      && (patch.path[3] === 'tableRows' || patch.path[3] === 'tableColumns')
+      && typeof patch.path[4] === 'string') {
       advanceLogicalId(floor, patch.path[4]);
     }
     if (isElementTreePatch(patch)) {

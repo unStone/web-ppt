@@ -19,6 +19,7 @@ import { runGroupUngroupLibreOfficeContract } from './lib/group-ungroup-libreoff
 import { runListLevelLibreOfficeContract } from './lib/list-level-libreoffice-contract.mjs';
 import { runVertexEditingLibreOfficeContract } from './lib/vertex-editing-libreoffice-contract.mjs';
 import { runTableStyleLibreOfficeContract } from './lib/table-style-libreoffice-contract.mjs';
+import { runTableStructureLibreOfficeContract } from './lib/table-structure-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -280,6 +281,9 @@ if (requestedPages !== undefined && pages !== requestedPages) {
 
 let geometryEvidence = '';
 geometryEvidence += runGroupUngroupLibreOfficeContract({ savedPath, exportSvg: exportLibreOfficeSvg });
+geometryEvidence += runTableStructureLibreOfficeContract({
+  savedPath, exportSvg: exportLibreOfficeSvg,
+});
 if (basename(savedPath) === 'slide-properties.pptx') {
   geometryEvidence = runSlidePropertiesLibreOfficeContract({
     savedPath, out, root, soffice, exportSvg: exportLibreOfficeSvg,

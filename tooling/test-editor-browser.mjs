@@ -218,6 +218,7 @@ try {
     + ` · auto engine ${result.engineAutoProbe}`
     + ` · table20×10 ${result.tableCellTextP95}ms/末格追加 ${result.tableInsertRowP95}ms`
     + `/贴合偏差 ${result.tableCellGeometryError}px`
+    + ` · 表格60格结构反馈 p95 ${result.tableStructureP95}ms`
     + ` · autofit browser/engine/cell ${result.autofitBrowserP95}/${result.autofitEngineP95}/${result.autofitCellP95}ms`
     + ` · spAutoFit browser/engine ${result.shapeAutofitBrowserP95}/${result.shapeAutofitEngineP95}ms`
     + `/frame ${result.shapeAutofitFrameError}px`

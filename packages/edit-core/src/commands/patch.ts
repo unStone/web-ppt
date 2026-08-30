@@ -1,7 +1,7 @@
 import { sortElementChildrenByOrder } from '../element-order';
 import { validateEditDoc } from '../model-invariants';
 import { releaseProjectionCache, slideOfElement } from '../projection';
-import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRowRef } from '../table-cell';
+import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRefs } from '../table-cell';
 import type {
   EditDoc, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
   SlideImageBackground, TableRowInsertion,
@@ -26,6 +26,11 @@ import {
 } from './element-hierarchy';
 import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
 import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
+import {
+  applyTableGridPatch, isTableCellPropsPatch, isTableColumnPatch, isTableGridEntryPatch,
+  isTableMergePatch, validateTableCellPropsPatch, validateTableColumnPatch,
+  validateTableGridEntryPatch, validateTableMergePatch,
+} from './table-grid-patch';
 import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
 import {
   applySlideOrderPatch, isSlideOrderPatch, validateSlideOrderPatch,
@@ -112,7 +117,8 @@ function validatePatch(
     && ((patch.path.length === 4 && patch.path[3] === 'text')
       || (patch.path.length === 7 && patch.path[3] === 'tableCells'
         && (typeof patch.path[4] === 'number' || typeof patch.path[4] === 'string')
-        && typeof patch.path[5] === 'number' && patch.path[6] === 'text'))
+        && (typeof patch.path[5] === 'number' || typeof patch.path[5] === 'string')
+        && patch.path[6] === 'text'))
     && (patch.op === 'set' || patch.op === 'del')) {
     validateElementTextPatch(
       doc,
@@ -127,6 +133,22 @@ function validatePatch(
     && patch.path[2] === 'ovr' && patch.path[3] === 'tableRows'
     && (patch.op === 'insert' || patch.op === 'remove')) {
     validateTableRowPatch(doc, patch as import('./types').TableRowPatch, index);
+    return;
+  }
+  if (isTableColumnPatch(input)) {
+    validateTableColumnPatch(doc, input, index);
+    return;
+  }
+  if (isTableGridEntryPatch(input)) {
+    validateTableGridEntryPatch(doc, input, index);
+    return;
+  }
+  if (isTableMergePatch(input)) {
+    validateTableMergePatch(doc, input, index);
+    return;
+  }
+  if (isTableCellPropsPatch(input)) {
+    validateTableCellPropsPatch(doc, input, index);
     return;
   }
   if (Array.isArray(patch.path) && patch.path.length === 3
@@ -216,6 +238,8 @@ function validatePatchRelations(
   const owner = new Map<string, number>();
   const tableRows = new Map<string, number>();
   const tableOrders = new Map<string, number>();
+  const tableGridPaths = new Map<string, number>();
+  const tableColumnOrders = new Map<string, number>();
   patches.forEach((patch, index) => {
     if (isTableRowPatch(patch)) {
       const path = JSON.stringify(patch.path);
@@ -231,6 +255,23 @@ function validatePatchRelations(
           throw new Error(`Patch ${index} 与 Patch ${previousOrder} 的表格行顺序冲突`);
         }
         tableOrders.set(order, index);
+      }
+    }
+    if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
+      || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) {
+      const path = JSON.stringify(patch.path);
+      const previousPath = tableGridPaths.get(path);
+      if (previousPath !== undefined) {
+        throw new Error(`Patch ${index} 与 Patch ${previousPath} 重复修改同一表格网格路径`);
+      }
+      tableGridPaths.set(path, index);
+      if (isTableColumnPatch(patch) && patch.op === 'insert') {
+        const order = `${patch.path[1]}\0${patch.value.order}`;
+        const previousOrder = tableColumnOrders.get(order);
+        if (previousOrder !== undefined) {
+          throw new Error(`Patch ${index} 与 Patch ${previousOrder} 的表格列顺序冲突`);
+        }
+        tableColumnOrders.set(order, index);
       }
     }
     if (!isElementTreePatch(patch) && !isSlideTreePatch(patch) && !isElementHierarchyPatch(patch)) return;
@@ -257,7 +298,7 @@ function validatePatchRelations(
     if (isElementTextPatch(patch) && patch.path.length === 7
       && typeof patch.path[4] === 'string') {
       const cells = cellsFor(patch.path[1], patch.path[4]);
-      const key = tableCellOverrideKeyFromRowRef(patch.path[4], patch.path[5]);
+      const key = tableCellOverrideKeyFromRefs(patch.path[4], patch.path[5]);
       if (patch.op === 'set') cells.add(key);
       else cells.delete(key);
     }
@@ -342,6 +383,8 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
+    else if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
+      || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) applyTableGridPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
     else if (isElementNamePatch(patch)) applyElementNamePatch(doc, patch);
     else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
@@ -359,7 +402,9 @@ function applyPatchBatch(
 ): ProjectionInvalidation {
   validatePatchRelations(doc, patches, stageStructuralModel);
   const structural = patches.some((patch) =>
-    isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
+    isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
+      || isTableRowPatch(patch) || isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
+      || isTableMergePatch(patch) || isTableCellPropsPatch(patch));
   // 结构批次会把记录对象直接交给模型；统一克隆既隔离调用方，也供暂存模型安全预演。
   const appliedPatches = structural ? structuredClone(patches) : patches;
   const validationStage = stageStructuralModel && structural

@@ -10,6 +10,7 @@ import { runTableCellTextSaveContract } from './lib/table-cell-text-save-contrac
 import { runShapeAutofitSaveContract } from './lib/shape-autofit-save-contract.mjs';
 import { runBodyPropsSaveContract } from './lib/body-props-save-contract.mjs';
 import { runTableRowInsertSaveContract } from './lib/table-row-insert-save-contract.mjs';
+import { runTableStructureSaveContract } from './lib/table-structure-save-contract.mjs';
 import { runAddShapeSaveContract } from './lib/add-shape-save-contract.mjs';
 import { runAddImageSaveContract } from './lib/add-image-save-contract.mjs';
 import { runAddTableSaveContract } from './lib/add-table-save-contract.mjs';
@@ -186,6 +187,18 @@ await runBodyPropsSaveContract({
 await runTableRowInsertSaveContract({
   core, edit, load, check, eq,
   saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
+
+await runTableStructureSaveContract({
+  core, edit, load, check, eq, saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [

@@ -67,23 +67,17 @@ function tableCellMarkup(
       ...(base.textTemplate ? { textTemplate: structuredClone(base.textTemplate) } : {}),
     },
   } : cell;
-  const fallbackBorder = { color: 'rgba(0,0,0,0.25)', width: 1, dash: null } as const;
-  // renderer 的未声明边框有网格兜底；仅无样式表格需要把这层视觉固定成直设。
   const markup = directTableCellMarkup({
     ...markupCell,
     ...(!markupCell.editInfo?.textTemplate && !markupCell.text?.paragraphs[0]?.runs[0]
       ? { editInfo: { textTemplate: EMPTY_TABLE_TEXT } } : {}),
-    ...(!base ? { borders: {
-      l: cell.borders?.l === undefined ? fallbackBorder : cell.borders.l,
-      r: cell.borders?.r === undefined ? fallbackBorder : cell.borders.r,
-      t: cell.borders?.t === undefined ? fallbackBorder : cell.borders.t,
-      b: cell.borders?.b === undefined ? fallbackBorder : cell.borders.b,
-    } } : {}),
-  }, base ? {
+  }, {
     sparseAppearance: true,
-    omitTextBold: !(direct & TEXT_RUN_DIRECT_BITS.b),
-    omitTextColor: !(direct & TEXT_RUN_DIRECT_BITS.color),
-  } : {});
+    ...(base ? {
+      omitTextBold: !(direct & TEXT_RUN_DIRECT_BITS.b),
+      omitTextColor: !(direct & TEXT_RUN_DIRECT_BITS.color),
+    } : {}),
+  });
   return attrs.length ? markup.replace('<a:tc>', `<a:tc ${attrs.join(' ')}>` ) : markup;
 }
 

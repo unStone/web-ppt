@@ -1,9 +1,9 @@
 import type { TextBody } from '@web-ppt/core';
 import type {
-  EditDoc, ElementRecord, TableCellAddress, TableCellRowRef, TextOverride,
+  EditDoc, ElementRecord, TableCellAddress, TableCellColumnRef, TableCellRowRef, TextOverride,
 } from '../types';
 import {
-  assertTableCellAddress, tableCellOverrideKey, tableCellRowRef,
+  assertTableCellAddress, tableCellColumnRef, tableCellOverrideKey, tableCellRowRef,
 } from '../table-cell';
 import { rebasedTextBase, rebasedTextLevelTemplate } from '../layout-projection';
 import { slideOfElement } from '../projection';
@@ -26,7 +26,7 @@ export interface TextTargetContext {
 
 export interface TextPatchTarget {
   readonly id: string;
-  readonly cell?: { readonly row: TableCellRowRef; readonly c: number };
+  readonly cell?: { readonly row: TableCellRowRef; readonly column: TableCellColumnRef };
 }
 
 export function textTargetContextForRecord(
@@ -58,12 +58,13 @@ export function textTargetContextForRecord(
   const body = cell.text ?? cell.editInfo?.textTemplate;
   if (!body) throw new Error(`表格单元格缺少可编辑文本体：${target.cell.r},${target.cell.c}`);
   const row = tableCellRowRef(record, target.cell);
-  if (row === null) throw new Error(`表格单元格越界：${target.cell.r},${target.cell.c}`);
+  const column = tableCellColumnRef(record, target.cell);
+  if (row === null || column === null) throw new Error(`表格单元格越界：${target.cell.r},${target.cell.c}`);
   return {
     record,
     body,
     before: record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text,
-    patchTarget: { id: target.id, cell: { row, c: target.cell.c } },
+    patchTarget: { id: target.id, cell: { row, column } },
     empty: record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text?.kind === 'empty'
       || (!record.ovr.tableCells?.[tableCellOverrideKey(record, target.cell)]?.text && cell.text === null),
   };
@@ -100,7 +101,7 @@ export function setTextPatch(
     ? { op: 'set', path: ['elements', target.id, 'ovr', 'text'], value, origin }
     : {
       op: 'set',
-      path: ['elements', target.id, 'ovr', 'tableCells', target.cell.row, target.cell.c, 'text'],
+      path: ['elements', target.id, 'ovr', 'tableCells', target.cell.row, target.cell.column, 'text'],
       value,
       origin,
     };
@@ -116,7 +117,7 @@ export function inverseTextPatch(
     ? { op: 'del', path: ['elements', target.id, 'ovr', 'text'], origin }
     : {
       op: 'del',
-      path: ['elements', target.id, 'ovr', 'tableCells', target.cell.row, target.cell.c, 'text'],
+      path: ['elements', target.id, 'ovr', 'tableCells', target.cell.row, target.cell.column, 'text'],
       origin,
     };
 }

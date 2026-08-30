@@ -18,6 +18,7 @@ import { runParagraphFormatContract } from './lib/paragraph-format-contract.mjs'
 import { runRichTextClipboardContract } from './lib/rich-text-clipboard-contract.mjs';
 import { runTableCellTextContract } from './lib/table-cell-text-contract.mjs';
 import { runTableRowInsertContract } from './lib/table-row-insert-contract.mjs';
+import { runTableStructureContract } from './lib/table-structure-contract.mjs';
 import { runAddShapeContract } from './lib/add-shape-contract.mjs';
 import { runAddImageContract } from './lib/add-image-contract.mjs';
 import { runAddTableContract } from './lib/add-table-contract.mjs';
@@ -114,6 +115,7 @@ await runVertexGeometryContract({ edit, core, load, check });
 await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runTableRowInsertContract({ edit, core, load, check });
+await runTableStructureContract({ edit, core, load, check });
 await runTableStyleContract({ edit, core, load, check });
 await runAddShapeContract({ edit, core, load, check, eq });
 await runAddImageContract({ edit, core, load, check });

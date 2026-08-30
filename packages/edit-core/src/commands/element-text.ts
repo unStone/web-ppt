@@ -1,6 +1,6 @@
 import type { EditDoc, TableRowInsertion } from '../types';
 import { validateEmptyTextOverride, validateFlatTextOverride } from '../text-override-validation';
-import { tableCellAddressFromRowRef, tableCellOverrideKeyFromRowRef } from '../table-cell';
+import { tableCellAddressFromRefs, tableCellOverrideKeyFromRefs } from '../table-cell';
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 import { textTargetContextForRecord } from './text-target';
 
@@ -11,7 +11,8 @@ export function isElementTextPatch(patch: Patch): patch is ElementTextPatch {
     && ((patch.path.length === 4 && patch.path[3] === 'text')
       || (patch.path.length === 7 && patch.path[3] === 'tableCells'
         && (typeof patch.path[4] === 'number' || typeof patch.path[4] === 'string')
-        && typeof patch.path[5] === 'number' && patch.path[6] === 'text'));
+        && (typeof patch.path[5] === 'number' || typeof patch.path[5] === 'string')
+        && patch.path[6] === 'text'));
 }
 
 export function clearElementTextPatches(doc: EditDoc, id: string, origin: string): CommandPatches {
@@ -46,7 +47,7 @@ export function validateElementTextPatch(
     ? { ...sourceRecord, ovr: { ...sourceRecord.ovr, tableRows: stagedTableRows } }
     : sourceRecord;
   const cell = patch.path.length === 7 && record
-    ? tableCellAddressFromRowRef(record, patch.path[4], patch.path[5]) : null;
+    ? tableCellAddressFromRefs(record, patch.path[4], patch.path[5]) : null;
   if (patch.path.length === 7 && !cell) throw new Error(`Patch ${index} 的表格行身份或列坐标无效`);
   const target = patch.path.length === 4 ? { id: patch.path[1] } : { id: patch.path[1], cell: cell! };
   if (!record) throw new Error(`Patch ${index} 指向不存在的元素`);
@@ -66,7 +67,7 @@ export function applyElementTextPatch(doc: EditDoc, patch: ElementTextPatch): vo
     else delete record.ovr.text;
     return;
   }
-  const key = tableCellOverrideKeyFromRowRef(patch.path[4], patch.path[5]);
+  const key = tableCellOverrideKeyFromRefs(patch.path[4], patch.path[5]);
   if (patch.op === 'set') {
     const cells = record.ovr.tableCells ?? (record.ovr.tableCells = Object.create(null));
     const cell = cells[key] ?? (cells[key] = {});

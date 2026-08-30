@@ -61,6 +61,7 @@
     import {
       runEditorAddTableBrowserContract, runEditorAddTablePerformanceContract,
     } from '/tooling/lib/editor-add-table-browser-contract.mjs';
+    import { runEditorTableStructureBrowserContract } from '/tooling/lib/editor-table-structure-browser-contract.mjs';
     import { runEditorShapeFormatBrowserContract } from '/tooling/lib/editor-shape-format-browser-contract.mjs';
     import { runEditorSlidePropertiesBrowserContract } from '/tooling/lib/editor-slide-properties-browser-contract.mjs';
     import { runEditorTransitionBrowserContract } from '/tooling/lib/editor-transition-browser-contract.mjs';
@@ -527,6 +528,7 @@
       const environmentDuring = await sampleAnimationFrameEnvironment();
       const addTableResult = await runEditorAddTableBrowserContract({ openEditor, load });
       const addTablePerformance = await runEditorAddTablePerformanceContract({ openEditor, load });
+      const tableStructureResult = await runEditorTableStructureBrowserContract({ openEditor, load });
       await runEditorShapeFormatBrowserContract({ openEditor, load });
       const slidePropertiesResult = await runEditorSlidePropertiesBrowserContract({ openEditor, load });
       const transitionResult = await runEditorTransitionBrowserContract({
@@ -631,6 +633,7 @@
       report.dataset.changeLayoutPages = String(changeLayoutResult.pageCount);
       report.dataset.addTableError = addTableResult.geometryError.toFixed(3);
       report.dataset.addTableP95 = addTablePerformance.p95.toFixed(3);
+      report.dataset.tableStructureP95 = tableStructureResult.p95.toFixed(3);
       report.dataset.fontFaces = String(fontFaces);
       report.dataset.hyperlinkCommitP95 = hyperlinkResult.commitP95.toFixed(3);
       report.dataset.hyperlinkRouteP95 = hyperlinkResult.routeP95.toFixed(3);

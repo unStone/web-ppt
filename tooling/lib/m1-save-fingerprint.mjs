@@ -91,6 +91,34 @@ if (mode === 'projected') {
         to: { p: 0, r: 0, off: 0 }, text: scenario.text,
       }],
     });
+  } else if (scenario.type === 'tableStructure') {
+    const table = target?.src.kind === 'table' ? target
+      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    if (!table) throw new Error('M1 指纹固件缺少结构编辑表格');
+    const grid = edit.queryTableGrid(doc, table.id);
+    editor.exec({ type: 'InsertRow', id: table.id, at: { before: grid.rows[0].id } });
+    editor.exec({ type: 'InsertColumn', id: table.id, at: { before: grid.columns[1].id } });
+    const inserted = edit.queryTableGrid(doc, table.id);
+    editor.exec(
+      { type: 'SetRowHeight', id: table.id, row: inserted.rows[0].id, height: 88 },
+      { type: 'SetColumnWidth', id: table.id, column: inserted.columns[1].id, width: 72 },
+    );
+    const from = { row: inserted.rows[0].id, column: inserted.columns[0].id };
+    editor.exec({
+      type: 'MergeCells', id: table.id, from,
+      to: { row: inserted.rows[1].id, column: inserted.columns[1].id },
+    });
+    editor.exec({
+      type: 'SetCellProps', id: table.id, cell: from,
+      props: { fill: { type: 'solid', color: '#A1B2C3' }, margins: [3, 4, 5, 6], vAlign: 'middle' },
+    });
+    editor.exec({
+      type: 'EditText', id: table.id, cell: { r: 0, c: 0 },
+      ops: [{
+        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+        text: '结构写回',
+      }],
+    });
   } else if (scenario.type === 'addShape') {
     editor.exec({
       type: 'AddShape', slideId: doc.slideOrder[slideIndex], preset: scenario.preset, rect: scenario.rect,
@@ -308,6 +336,12 @@ const inlineAssets = (value) => {
   return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, inlineAssets(child)]));
 };
 slide = inlineAssets(slide);
+
+// 生成保存会把同页不支持对象转成自包含占位形状；表格结构契约只比较本次编辑目标，
+// 否则无关对象的既有生成语义会掩盖表格自身的写回等价性。
+if (scenario.type === 'tableStructure') {
+  slide = { ...slide, elements: slide.elements.filter((element) => element.name === scenario.targetName) };
+}
 
 const fingerprints = {};
 for (const textMode of ['html', 'svg']) {

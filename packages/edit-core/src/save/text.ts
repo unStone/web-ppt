@@ -5,6 +5,7 @@ import type { FlatTextParagraph, RunProperties, TextMark } from '../types';
 import { flattenTextBody } from '../text-model';
 import { tableCellKeyResolver } from '../table-cell';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
+import { hasComplexTableStructureOverrides, projectTableStructure } from '../table-grid-projection';
 import {
   cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild,
   replaceXmlChildren,
@@ -467,7 +468,8 @@ export function patchElementText(
   const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
   if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
   const rows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
-  const sourceRows = tableRowsWithoutTextOverrides(record);
+  const sourceRows = hasComplexTableStructureOverrides(record)
+    ? projectTableStructure(record, record.src).rows : tableRowsWithoutTextOverrides(record);
   const resolveCell = tableCellKeyResolver(record);
   for (const [key, cellOverride] of Object.entries(record.ovr.tableCells)) {
     if (!cellOverride.text) continue;

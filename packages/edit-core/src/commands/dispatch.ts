@@ -13,6 +13,10 @@ import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
 import { setBodyPropsPatches } from './set-body-props';
 import { insertRowPatches } from './insert-row';
+import {
+  insertColumnPatches, mergeCellsPatches, removeColumnPatches, removeRowPatches,
+  setCellPropsPatches, setColumnWidthPatches, setRowHeightPatches, splitCellPatches,
+} from './edit-table-grid';
 import { addShapePatches } from './add-shape';
 import { addImagePatches } from './add-image';
 import { addTablePatches } from './add-table';
@@ -44,7 +48,7 @@ import {
 } from './element-interaction';
 import type {
   AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRunPropsCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, UngroupCommand,
+  InsertColumnCommand, InsertRowCommand, MergeCellsCommand, RemoveColumnCommand, RemoveRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetCellPropsCommand, SetColumnWidthCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRowHeightCommand, SetRunPropsCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, SplitCellCommand, UngroupCommand,
 } from './types';
 import type { ConvertToCustomGeometryCommand, SetGeometryCommand } from './geometry-types';
 import type { ApplyFormatCommand } from './format-painter-types';
@@ -124,7 +128,15 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
   FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
   SetBodyProps: register<SetBodyPropsCommand>(['id', 'cell', 'props'], setBodyPropsPatches),
-  InsertRow: register<InsertRowCommand>(['id'], insertRowPatches),
+  InsertRow: register<InsertRowCommand>(['id', 'at'], insertRowPatches),
+  InsertColumn: register<InsertColumnCommand>(['id', 'at'], insertColumnPatches),
+  RemoveRow: register<RemoveRowCommand>(['id', 'row'], removeRowPatches),
+  RemoveColumn: register<RemoveColumnCommand>(['id', 'column'], removeColumnPatches),
+  SetRowHeight: register<SetRowHeightCommand>(['id', 'row', 'height'], setRowHeightPatches),
+  SetColumnWidth: register<SetColumnWidthCommand>(['id', 'column', 'width'], setColumnWidthPatches),
+  MergeCells: register<MergeCellsCommand>(['id', 'from', 'to'], mergeCellsPatches),
+  SplitCell: register<SplitCellCommand>(['id', 'cell'], splitCellPatches),
+  SetCellProps: register<SetCellPropsCommand>(['id', 'cell', 'props'], setCellPropsPatches),
   SetTableStyle: register<SetTableStyleCommand>([
     'id', 'styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol',
   ], setTableStylePatches),

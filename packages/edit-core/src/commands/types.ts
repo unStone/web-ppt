@@ -1,4 +1,4 @@
-import type { Effects, Fill, Stroke } from '@web-ppt/core';
+import type { CellBorders, Effects, Fill, Stroke, TableCell } from '@web-ppt/core';
 import type {
   EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
@@ -263,17 +263,78 @@ export interface SetBodyPropsCommand {
   readonly props: TextBodyPropertyOverrides;
 }
 
-/** 当前公开语义是尾部追加；指定位置插行要先解决纵向合并与坐标重基。 */
 export interface InsertRowCommand {
   readonly type: 'InsertRow';
   readonly id: ElementId;
+  /** 省略仍兼容尾部追加；null 也表示尾部。 */
+  readonly at?: { readonly before: import('../types').TableRowId | null };
+}
+
+export interface InsertColumnCommand {
+  readonly type: 'InsertColumn';
+  readonly id: ElementId;
+  readonly at?: { readonly before: import('../types').TableColumnId | null };
+}
+
+export interface RemoveRowCommand {
+  readonly type: 'RemoveRow';
+  readonly id: ElementId;
+  readonly row: import('../types').TableRowId;
+}
+
+export interface RemoveColumnCommand {
+  readonly type: 'RemoveColumn';
+  readonly id: ElementId;
+  readonly column: import('../types').TableColumnId;
+}
+
+export interface SetRowHeightCommand {
+  readonly type: 'SetRowHeight';
+  readonly id: ElementId;
+  readonly row: import('../types').TableRowId;
+  readonly height: number;
+}
+
+export interface SetColumnWidthCommand {
+  readonly type: 'SetColumnWidth';
+  readonly id: ElementId;
+  readonly column: import('../types').TableColumnId;
+  readonly width: number;
+}
+
+export interface MergeCellsCommand {
+  readonly type: 'MergeCells';
+  readonly id: ElementId;
+  readonly from: import('../types').TableCellRef;
+  readonly to: import('../types').TableCellRef;
+}
+
+export interface SplitCellCommand {
+  readonly type: 'SplitCell';
+  readonly id: ElementId;
+  readonly cell: import('../types').TableCellRef;
+}
+
+export interface SetCellPropsCommand {
+  readonly type: 'SetCellProps';
+  readonly id: ElementId;
+  readonly cell: import('../types').TableCellRef;
+  readonly props: {
+    readonly fill?: Exclude<Fill, { type: 'image' }> | null;
+    readonly borders?: CellBorders | null;
+    readonly margins?: [number, number, number, number] | null;
+    readonly vAlign?: TableCell['vAlign'] | null;
+    readonly vert?: TableCell['vert'] | null;
+  };
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
   | SetLockedCommand | SetElementHiddenCommand
   | ApplyFormatCommand | ReplaceTextCommand
   | AlignElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
-  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | SetFillCommand | SetStrokeCommand
+  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand
+  | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand
+  | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
   | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
@@ -380,12 +441,12 @@ export type ElementTextPatch = {
   readonly origin: string;
 } | {
   readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, number, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, import('../types').TableCellColumnRef, 'text'];
   readonly value: TextOverride;
   readonly origin: string;
 } | {
   readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, number, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, import('../types').TableCellColumnRef, 'text'];
   readonly origin: string;
 };
 
@@ -465,9 +526,44 @@ export type TableRowPatch = {
   readonly origin: string;
 };
 
+export type TableColumnPatch = {
+  readonly op: 'insert' | 'remove';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableColumns', string];
+  readonly value: import('../types').TableColumnInsertion;
+  readonly origin: string;
+};
+
+export type TableGridEntryPatch = {
+  readonly op: 'set' | 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr',
+    'tableRemovedRows' | 'tableRemovedColumns' | 'tableRowHeights' | 'tableColumnWidths', string];
+  readonly value?: true | number;
+  readonly origin: string;
+};
+
+export type TableMergePatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
+  readonly value: readonly import('../types').TableMergeRegion[];
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
+  readonly origin: string;
+};
+
+export type TableCellPropsPatch = {
+  readonly op: 'set' | 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', string,
+    'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'];
+  readonly value?: import('../types').TableCellOverrides[keyof Omit<import('../types').TableCellOverrides, 'text'>];
+  readonly origin: string;
+};
+
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementInteractionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
-  | SlideNotesPatch | TableRowPatch | ElementTableStylePatch;
+  | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
+  | TableCellPropsPatch | ElementTableStylePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

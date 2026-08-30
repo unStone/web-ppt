@@ -1,7 +1,8 @@
 import { assertDataObject } from './data-validation';
-import { orderedTableRowInsertions } from './table-rows';
+import { orderedTableColumns, orderedTableRows } from './table-grid';
 import type {
-  ElementRecord, TableCellAddress, TableCellKey, TableCellRowRef, TableRowId,
+  ElementRecord, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellRef,
+  TableCellRowRef, TableRowId,
 } from './types';
 
 export function tableCellKey(cell: TableCellAddress): TableCellKey {
@@ -19,8 +20,46 @@ function insertedTableCellKey(rowId: TableRowId, column: number): TableCellKey {
   return `@${rowId.length}:${rowId}:${column}`;
 }
 
+function refToken(ref: number | string): string { return typeof ref === 'number' ? `#${ref}` : ref; }
+
+function universalTableCellKey(row: TableCellRowRef, column: TableCellColumnRef): TableCellKey {
+  const rowToken = refToken(row);
+  const columnToken = refToken(column);
+  return `!${rowToken.length}:${rowToken}:${columnToken.length}:${columnToken}`;
+}
+
+function parseRefToken(token: string): number | string | null {
+  const source = /^#(0|[1-9]\d*)$/.exec(token);
+  if (!source) return token || null;
+  const index = Number(source[1]);
+  return Number.isSafeInteger(index) ? index : null;
+}
+
+function parseUniversalTableCellKey(value: string): {
+  row: TableCellRowRef; column: TableCellColumnRef;
+} | null {
+  if (!value.startsWith('!')) return null;
+  const rowLengthEnd = value.indexOf(':', 1);
+  if (rowLengthEnd < 0) return null;
+  const rowLength = Number(value.slice(1, rowLengthEnd));
+  if (!Number.isSafeInteger(rowLength) || rowLength <= 0) return null;
+  const rowFrom = rowLengthEnd + 1;
+  const rowTo = rowFrom + rowLength;
+  if (value[rowTo] !== ':') return null;
+  const columnLengthEnd = value.indexOf(':', rowTo + 1);
+  if (columnLengthEnd < 0) return null;
+  const columnLength = Number(value.slice(rowTo + 1, columnLengthEnd));
+  if (!Number.isSafeInteger(columnLength) || columnLength <= 0) return null;
+  const columnFrom = columnLengthEnd + 1;
+  if (columnFrom + columnLength !== value.length) return null;
+  const row = parseRefToken(value.slice(rowFrom, rowTo));
+  const column = parseRefToken(value.slice(columnFrom));
+  return row === null || column === null ? null : { row, column };
+}
+
 export function tableCellKeyBelongsToRow(key: string, rowId: TableRowId): boolean {
-  return key.startsWith(`@${rowId.length}:${rowId}:`);
+  return key.startsWith(`@${rowId.length}:${rowId}:`)
+    || parseUniversalTableCellKey(key)?.row === rowId;
 }
 
 function parseInsertedTableCellKey(value: string): { rowId: TableRowId; c: number } | null {
@@ -43,8 +82,15 @@ export function tableCellRowRef(
   cell: TableCellAddress,
 ): TableCellRowRef | null {
   if (record.src.kind !== 'table') return null;
-  if (cell.r < record.src.rows.length) return cell.r;
-  return orderedTableRowInsertions(record)[cell.r - record.src.rows.length]?.id ?? null;
+  return orderedTableRows(record)[cell.r]?.rowRef ?? null;
+}
+
+export function tableCellColumnRef(
+  record: ElementRecord,
+  cell: TableCellAddress,
+): TableCellColumnRef | null {
+  if (record.src.kind !== 'table') return null;
+  return orderedTableColumns(record)[cell.c]?.columnRef ?? null;
 }
 
 export function tableCellAddressFromRowRef(
@@ -54,12 +100,33 @@ export function tableCellAddressFromRowRef(
 ): TableCellAddress | null {
   if (record.src.kind !== 'table' || !Number.isSafeInteger(column) || Number(column) < 0) return null;
   if (typeof row === 'number') {
-    return Number.isSafeInteger(row) && row >= 0 && row < record.src.rows.length
-      ? { r: row, c: Number(column) } : null;
+    const r = orderedTableRows(record).findIndex((entry) => entry.rowRef === row);
+    return r < 0 ? null : { r, c: Number(column) };
   }
   if (typeof row !== 'string' || !row) return null;
-  const index = orderedTableRowInsertions(record).findIndex((insertion) => insertion.id === row);
-  return index < 0 ? null : { r: record.src.rows.length + index, c: Number(column) };
+  const index = orderedTableRows(record).findIndex((entry) => entry.rowRef === row);
+  return index < 0 ? null : { r: index, c: Number(column) };
+}
+
+export function tableCellAddressFromRefs(
+  record: ElementRecord,
+  row: unknown,
+  column: unknown,
+): TableCellAddress | null {
+  if (record.src.kind !== 'table') return null;
+  const r = orderedTableRows(record).findIndex((entry) => entry.rowRef === row);
+  const c = orderedTableColumns(record).findIndex((entry) => entry.columnRef === column);
+  return r < 0 || c < 0 ? null : { r, c };
+}
+
+export function tableCellAddressFromStableRef(
+  record: ElementRecord,
+  cell: TableCellRef,
+): TableCellAddress | null {
+  if (record.src.kind !== 'table') return null;
+  const r = orderedTableRows(record).findIndex((entry) => entry.id === cell.row);
+  const c = orderedTableColumns(record).findIndex((entry) => entry.id === cell.column);
+  return r < 0 || c < 0 ? null : { r, c };
 }
 
 export function tableCellOverrideKeyFromRowRef(
@@ -69,27 +136,43 @@ export function tableCellOverrideKeyFromRowRef(
   return typeof row === 'number' ? tableCellKey({ r: row, c: column }) : insertedTableCellKey(row, column);
 }
 
+export function tableCellOverrideKeyFromRefs(
+  row: TableCellRowRef,
+  column: TableCellColumnRef,
+): TableCellKey {
+  return typeof column === 'number' ? tableCellOverrideKeyFromRowRef(row, column)
+    : universalTableCellKey(row, column);
+}
+
 export function tableCellOverrideKey(record: ElementRecord, cell: TableCellAddress): TableCellKey {
   const row = tableCellRowRef(record, cell);
-  if (row === null) throw new Error(`表格单元格越界：${cell.r},${cell.c}`);
-  return tableCellOverrideKeyFromRowRef(row, cell.c);
+  const column = tableCellColumnRef(record, cell);
+  if (row === null || column === null) throw new Error(`表格单元格越界：${cell.r},${cell.c}`);
+  return tableCellOverrideKeyFromRefs(row, column);
 }
 
 export function tableCellKeyResolver(
   record: ElementRecord,
 ): (key: string) => TableCellAddress | null {
-  const insertedRows = new Map(orderedTableRowInsertions(record)
-    .map((insertion, index) => [insertion.id, record.src.kind === 'table'
-      ? record.src.rows.length + index : -1]));
+  const rows = orderedTableRows(record);
+  const sourceRows = new Map(rows.flatMap((entry, index) =>
+    entry.source === null ? [] : [[entry.source, index] as const]));
+  const insertedRows = new Map(rows.flatMap((entry, index) =>
+    entry.source === null ? [[entry.id, index] as const] : []));
   return (key) => {
     const source = parseTableCellKey(key);
     if (source) {
-      return record.src.kind === 'table' && source.r < record.src.rows.length ? source : null;
+      const r = sourceRows.get(source.r);
+      return record.src.kind === 'table' && r !== undefined ? { r, c: source.c } : null;
     }
     const inserted = parseInsertedTableCellKey(key);
-    if (!inserted) return null;
-    const r = insertedRows.get(inserted.rowId);
-    return r === undefined || r < 0 ? null : { r, c: inserted.c };
+    if (inserted) {
+      const r = insertedRows.get(inserted.rowId);
+      const c = orderedTableColumns(record).findIndex((entry) => entry.columnRef === inserted.c);
+      return r === undefined || r < 0 || c < 0 ? null : { r, c };
+    }
+    const universal = parseUniversalTableCellKey(key);
+    return universal ? tableCellAddressFromRefs(record, universal.row, universal.column) : null;
   };
 }
 

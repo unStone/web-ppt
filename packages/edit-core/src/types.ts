@@ -1,5 +1,5 @@
 import type {
-  CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  CellBorders, CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
@@ -16,9 +16,17 @@ export interface TableCellAddress {
   readonly c: number;
 }
 
+export type TableRowId = string;
+export type TableColumnId = string;
+export interface TableCellRef {
+  readonly row: TableRowId;
+  readonly column: TableColumnId;
+}
+
 /** 来源行沿用坐标；新增行把稳定 rowId 编进 key，避免并发追加改变文字归属。 */
-export type TableCellKey = `${number}:${number}` | `@${number}:${string}:${number}`;
+export type TableCellKey = `${number}:${number}` | `@${number}:${string}:${number}` | `!${string}`;
 export type TableCellRowRef = number | TableRowId;
+export type TableCellColumnRef = number | TableColumnId;
 
 export interface ElementInsertionSource {
   readonly markup: string;
@@ -131,6 +139,14 @@ export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
   tableCells?: Record<TableCellKey, TableCellOverrides>;
   /** 表格行使用稳定身份稀疏追加；不复制整张 rows，未来可沿同一身份扩展中间插入。 */
   tableRows?: Record<TableRowId, TableRowInsertion>;
+  /** 新增列与来源列分离；来源列身份由 #c{index} 确定性派生。 */
+  tableColumns?: Record<TableColumnId, TableColumnInsertion>;
+  tableRemovedRows?: Record<TableRowId, true>;
+  tableRemovedColumns?: Record<TableColumnId, true>;
+  tableRowHeights?: Record<TableRowId, number>;
+  tableColumnWidths?: Record<TableColumnId, number>;
+  /** 一旦存在便是完整合并真值；空数组明确表示拆掉全部来源合并。 */
+  tableMerges?: readonly TableMergeRegion[];
   /** 缺少字段表示来源；SetTableStyle(null) 删除整份覆盖。 */
   tableStyle?: TableStyleSettings;
 };
@@ -251,12 +267,27 @@ export interface ElementCropState {
 
 export interface TableCellOverrides {
   text?: TextOverride;
+  fill?: Fill | null;
+  borders?: CellBorders;
+  margins?: [number, number, number, number];
+  vAlign?: 'top' | 'middle' | 'bottom';
+  vert?: NonNullable<import('@web-ppt/core').TableCell['vert']>;
 }
-
-export type TableRowId = string;
 
 export interface TableRowInsertion {
   readonly order: FractionalIndex;
+  /** 来源行只提供空白格的格式模板；身份和文字不会被复制。 */
+  readonly template?: number;
+}
+
+export interface TableColumnInsertion {
+  readonly order: FractionalIndex;
+  readonly template?: number;
+}
+
+export interface TableMergeRegion {
+  readonly from: TableCellRef;
+  readonly to: TableCellRef;
 }
 
 export interface TextMark {

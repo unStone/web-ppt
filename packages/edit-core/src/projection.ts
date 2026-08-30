@@ -8,9 +8,13 @@ import { own } from './data-validation';
 import { renderLinkTarget } from './hyperlink';
 import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
 import { textBodyFromOverride } from './text-model';
-import { tableCellOverrideKeyFromRowRef } from './table-cell';
+import { tableCellOverrideKeyFromRefs } from './table-cell';
+import { orderedTableColumns, orderedTableRows } from './table-grid';
 import {
-  orderedTableRowInsertions, tableRowHeightDelta, tableRowsWithoutTextOverrides,
+  hasComplexTableStructureOverrides, hasTableStructureOverrides, projectTableStructure,
+} from './table-grid-projection';
+import {
+  tableRowHeightDelta, tableRowsWithoutTextOverrides,
 } from './table-rows';
 import {
   changedLayout, projectedLayoutElements, projectionContentIds, rebasedElementBase,
@@ -177,7 +181,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const record = elementRecord(doc, id);
   const layoutBase = rebasedElementBase(doc, slideOfElement(doc, id), record);
   const {
-    tableCells, tableRows, tableStyle, link: linkOverride, geometry: geometryOverride, ...overrides
+    tableCells, tableRows, tableColumns, tableRemovedRows, tableRemovedColumns,
+    tableRowHeights, tableColumnWidths, tableMerges, tableStyle,
+    link: linkOverride, geometry: geometryOverride, ...overrides
   } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
   if (own(record.ovr, 'link')) {
@@ -209,17 +215,21 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       ...out,
       text: textBodyFromOverride(record.ovr.text, baseText, (target) => renderLinkTarget(doc, target)),
     } as ShapeElement;
-  } else if (out.kind === 'table' && (tableCells || tableRows)) {
+  } else if (out.kind === 'table' && (tableCells || hasTableStructureOverrides(record))) {
     if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 的表格投影来源无效`);
-    const baseRows = tableRows ? tableRowsWithoutTextOverrides(record) : out.rows;
-    const insertions = tableRows ? orderedTableRowInsertions(record) : [];
-    const sourceRowCount = record.src.rows.length;
+    const complexTableStructure = hasComplexTableStructureOverrides(record);
+    if (complexTableStructure) out = projectTableStructure(record, out);
+    else if (tableRows) out = { ...out, rows: tableRowsWithoutTextOverrides(record) };
+    const baseRows = out.rows;
+    const gridRows = orderedTableRows(record);
+    const gridColumns = orderedTableColumns(record);
     const rows = baseRows.map((row, r) => {
       let changed = false;
       const cells = row.cells.map((cell, c) => {
-        const rowRef = r < sourceRowCount ? r : insertions[r - sourceRowCount]?.id;
-        const override = rowRef === undefined
-          ? undefined : tableCells?.[tableCellOverrideKeyFromRowRef(rowRef, c)]?.text;
+        const rowRef = gridRows[r]?.rowRef;
+        const columnRef = gridColumns[c]?.columnRef;
+        const override = rowRef === undefined || columnRef === undefined
+          ? undefined : tableCells?.[tableCellOverrideKeyFromRefs(rowRef, columnRef)]?.text;
         if (!override) return cell;
         changed = true;
         return {
@@ -230,10 +240,34 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       });
       return changed ? { ...row, cells } : row;
     });
-    out = { ...out, rows, h: out.h + tableRowHeightDelta(record) } as TableElement;
+    out = {
+      ...out, rows,
+      ...(!complexTableStructure && tableRows
+        ? { h: out.h + tableRowHeightDelta(record) } : {}),
+    } as TableElement;
   }
   if (out.kind === 'table' && tableStyle) {
     out = projectTableStyle(doc, slideOfElement(doc, id), out, tableStyle);
+  }
+  if (out.kind === 'table' && tableCells) {
+    const gridRows = orderedTableRows(record);
+    const gridColumns = orderedTableColumns(record);
+    let changed = false;
+    const rows = out.rows.map((row, r) => ({
+      ...row,
+      cells: row.cells.map((cell, c) => {
+        const rowRef = gridRows[r]?.rowRef;
+        const columnRef = gridColumns[c]?.columnRef;
+        if (rowRef === undefined || columnRef === undefined) return cell;
+        const cellOverride = tableCells[tableCellOverrideKeyFromRefs(rowRef, columnRef)];
+        if (!cellOverride) return cell;
+        const { text: _text, ...appearance } = cellOverride;
+        if (!Reflect.ownKeys(appearance).length) return cell;
+        changed = true;
+        return { ...cell, ...appearance };
+      }),
+    }));
+    if (changed) out = { ...out, rows };
   }
   if (out.kind === 'table' && (own(record.ovr, 'w') || own(record.ovr, 'h'))) {
     const sourceHeight = out.rows.reduce((sum, row) => sum + row.height, 0);

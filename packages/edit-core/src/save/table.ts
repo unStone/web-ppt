@@ -2,6 +2,11 @@ import { tableRowsWithoutTextOverrides, effectiveTableFrameHeight } from '../tab
 import { directTableCellMarkup } from '../table-direct-markup';
 import { own } from '../data-validation';
 import type { ElementRecord } from '../types';
+import { tableCellKeyResolver } from '../table-cell';
+import { orderedTableColumns, orderedTableRows } from '../table-grid';
+import {
+  hasComplexTableStructureOverrides, hasTableStructureOverrides, projectTableStructure,
+} from '../table-grid-projection';
 import {
   cloneXmlNode, createXmlText, insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren,
 } from '../xml/nodes';
@@ -16,7 +21,12 @@ import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
 
 export function hasTableRowOverrides(record: ElementRecord): boolean {
-  return !!record.ovr.tableRows && Object.keys(record.ovr.tableRows).length > 0;
+  return hasTableStructureOverrides(record);
+}
+
+export function hasTableCellAppearanceOverrides(record: ElementRecord): boolean {
+  return Object.values(record.ovr.tableCells ?? {}).some((cell) =>
+    ['fill', 'borders', 'margins', 'vAlign', 'vert'].some((field) => own(cell, field)));
 }
 
 export function hasTableStyleOverride(record: ElementRecord): boolean {
@@ -105,6 +115,13 @@ function clearRow(row: XmlElement): void {
   });
 }
 
+function clearCell(cell: XmlElement): void {
+  for (const attribute of ['rowSpan', 'gridSpan', 'hMerge', 'vMerge']) removeXmlAttribute(cell, attribute);
+  const body = findXmlChild(cell, { localName: 'txBody', namespaceUri: DRAWINGML_NS });
+  if (!body) throw new Error('表格单元格模板缺少 a:txBody');
+  emptyParagraph(body);
+}
+
 function applyDirectCellAppearance(target: XmlElement, source: Parameters<typeof directTableCellMarkup>[0]): void {
   const wrapper = parseXmlTree(`<root xmlns:a="${DRAWINGML_NS}">${directTableCellMarkup(source)}</root>`);
   const staged = xmlElementChildren(wrapper.root, { localName: 'tc', namespaceUri: DRAWINGML_NS })[0];
@@ -156,6 +173,155 @@ function frameHeight(host: XmlElement, record: ElementRecord): void {
   setXmlAttribute(extent, 'cy', String(emu));
 }
 
+function frameSize(host: XmlElement, record: ElementRecord, width: number, height: number): void {
+  const transform = findXmlChild(host, { localName: 'xfrm', namespaceUri: PRESENTATIONML_NS });
+  const extent = transform && findXmlChild(transform, { localName: 'ext', namespaceUri: DRAWINGML_NS });
+  if (!extent) throw new Error(`表格 ${record.id} 缺少 p:xfrm/a:ext`);
+  const cx = Math.round(width * 9525);
+  const cy = Math.round(height * 9525);
+  if (!Number.isSafeInteger(cx) || !Number.isSafeInteger(cy) || cx <= 0 || cy <= 0) {
+    throw new Error(`表格 ${record.id} 的结构 frame 超出安全范围`);
+  }
+  setXmlAttribute(extent, 'cx', String(cx));
+  setXmlAttribute(extent, 'cy', String(cy));
+}
+
+function replaceRepeatedChildren(
+  parent: XmlElement, localName: string, replacements: readonly XmlElement[],
+): void {
+  // 克隆行尚未挂树时 namespaceUri 仍为空；QName 的 localName 已足以识别同层 DrawingML 序位。
+  const current = parent.children.filter((child): child is XmlElement =>
+    child.type === 'element' && child.localName === localName
+      && (child.namespaceUri === DRAWINGML_NS || child.namespaceUri === null));
+  const last = current[current.length - 1];
+  const anchor = last ? parent.children[parent.children.indexOf(last) + 1] ?? null : null;
+  current.forEach((child) => removeXmlChild(parent, child));
+  replacements.forEach((child) => insertXmlChildUnchecked(parent, child, anchor));
+}
+
+function patchComplexTableStructure(document: XmlDocument, record: ElementRecord): void {
+  if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
+  const { host } = locateElementHost(document, record);
+  const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
+  const grid = table && findXmlChild(table, { localName: 'tblGrid', namespaceUri: DRAWINGML_NS });
+  if (!table || !grid) throw new Error(`表格 ${record.id} 缺少 a:tbl/a:tblGrid`);
+  const sourceRows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
+  const sourceColumns = xmlElementChildren(grid, { localName: 'gridCol', namespaceUri: DRAWINGML_NS });
+  if (sourceRows.length < record.src.rows.length || sourceColumns.length < record.src.colWidths.length) {
+    throw new Error(`表格 ${record.id} 的来源网格数量不一致`);
+  }
+  const rowEntries = orderedTableRows(record);
+  const columnEntries = orderedTableColumns(record);
+  const projected = projectTableStructure(record, record.src);
+  const widths = scaledEmu(projected.colWidths, Math.round(projected.w * 9525), `${record.id}.structure.w`);
+  const heights = scaledEmu(projected.rows.map((row) => row.height),
+    Math.round(projected.h * 9525), `${record.id}.structure.h`);
+  const columns = columnEntries.map((entry, index) => {
+    const template = sourceColumns[entry.source ?? entry.template ?? sourceColumns.length - 1];
+    if (!template) throw new Error(`表格 ${record.id} 缺少列模板`);
+    const column = cloneXmlNode(template);
+    setXmlAttribute(column, 'w', String(widths[index]));
+    return column;
+  });
+  replaceRepeatedChildren(grid, 'gridCol', columns);
+
+  const emptyTargets: XmlElement[] = [];
+  const rows = rowEntries.map((rowEntry, r) => {
+    const rowTemplateIndex = rowEntry.source ?? rowEntry.template ?? sourceRows.length - 1;
+    const template = sourceRows[rowTemplateIndex];
+    if (!template) throw new Error(`表格 ${record.id} 缺少行模板`);
+    const row = cloneXmlNode(template);
+    const templateCells = xmlElementChildren(template, { localName: 'tc', namespaceUri: DRAWINGML_NS });
+    const cellEntries = columnEntries.map((columnEntry) => {
+      const columnTemplate = columnEntry.source ?? columnEntry.template ?? templateCells.length - 1;
+      const cellTemplate = templateCells[columnTemplate] ?? templateCells[templateCells.length - 1];
+      if (!cellTemplate) throw new Error(`表格 ${record.id} 缺少单元格模板`);
+      const cell = cloneXmlNode(cellTemplate);
+      return {
+        cell,
+        empty: rowEntry.source === null || columnEntry.source === null
+          || projected.rows[r].cells[columnEntries.indexOf(columnEntry)].merged,
+      };
+    });
+    replaceRepeatedChildren(row, 'tc', cellEntries.map((entry) => entry.cell));
+    cellEntries.forEach(({ cell, empty }) => {
+      for (const attribute of ['rowSpan', 'gridSpan', 'hMerge', 'vMerge']) removeXmlAttribute(cell, attribute);
+      if (empty) emptyTargets.push(cell);
+    });
+    setXmlAttribute(row, 'h', String(heights[r]));
+    return row;
+  });
+  replaceRepeatedChildren(table, 'tr', rows);
+  emptyTargets.forEach(clearCell);
+  projected.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
+    const target = xmlElementChildren(rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS })[c];
+    if (cell.rowSpan > 1) setXmlAttribute(target, 'rowSpan', String(cell.rowSpan));
+    if (cell.colSpan > 1) setXmlAttribute(target, 'gridSpan', String(cell.colSpan));
+    if (!cell.merged) return;
+    let top = r;
+    while (top > 0 && projected.rows[top].cells[c].merged) top--;
+    let left = c;
+    while (left > 0 && projected.rows[r].cells[left].merged) left--;
+    if (c > left) setXmlAttribute(target, 'hMerge', '1');
+    if (r > top) setXmlAttribute(target, 'vMerge', '1');
+  }));
+  frameSize(host, record, projected.w, projected.h);
+}
+
+function replaceStagedPropertyChild(
+  target: XmlElement, staged: XmlElement, names: readonly string[],
+): void {
+  for (const child of [...xmlElementChildren(target)]) {
+    if (child.namespaceUri === DRAWINGML_NS && names.includes(child.localName)) removeXmlChild(target, child);
+  }
+  const anchor = findXmlChild(target, { localName: 'extLst', namespaceUri: DRAWINGML_NS });
+  for (const child of xmlElementChildren(staged)) {
+    if (child.namespaceUri === DRAWINGML_NS && names.includes(child.localName)) {
+      insertXmlChildUnchecked(target, cloneXmlNode(child), anchor);
+    }
+  }
+}
+
+export function patchTableCellAppearances(document: XmlDocument, record: ElementRecord): void {
+  if (!hasTableCellAppearanceOverrides(record)) return;
+  if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不能写回单元格格式`);
+  const { host } = locateElementHost(document, record);
+  const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
+  if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
+  const rows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
+  const projected = hasComplexTableStructureOverrides(record)
+    ? projectTableStructure(record, record.src) : { ...record.src, rows: tableRowsWithoutTextOverrides(record) };
+  const resolve = tableCellKeyResolver(record);
+  for (const [key, override] of Object.entries(record.ovr.tableCells ?? {})) {
+    if (!['fill', 'borders', 'margins', 'vAlign', 'vert'].some((field) => own(override, field))) continue;
+    const address = resolve(key);
+    const source = address && projected.rows[address.r]?.cells[address.c];
+    const target = address && rows[address.r]
+      ? xmlElementChildren(rows[address.r], { localName: 'tc', namespaceUri: DRAWINGML_NS })[address.c] : null;
+    if (!source || !target) throw new Error(`表格 ${record.id} 的单元格格式坐标无效：${key}`);
+    const { text: _text, ...appearance } = override;
+    const stagedWrapper = parseXmlTree(`<root xmlns:a="${DRAWINGML_NS}">${directTableCellMarkup({
+      ...source, ...appearance,
+    })}</root>`);
+    const stagedCell = xmlElementChildren(stagedWrapper.root, { localName: 'tc', namespaceUri: DRAWINGML_NS })[0];
+    const staged = stagedCell && findXmlChild(stagedCell, { localName: 'tcPr', namespaceUri: DRAWINGML_NS });
+    const properties = findXmlChild(target, { localName: 'tcPr', namespaceUri: DRAWINGML_NS });
+    if (!staged || !properties) throw new Error(`表格 ${record.id} 的单元格缺少 a:tcPr`);
+    if (override.margins) for (const [name, value] of [
+      ['marT', override.margins[0]], ['marR', override.margins[1]],
+      ['marB', override.margins[2]], ['marL', override.margins[3]],
+    ] as const) setXmlAttribute(properties, name, String(Math.round(value * 9525)));
+    if (override.vAlign) setXmlAttribute(properties, 'anchor', override.vAlign === 'middle' ? 'ctr'
+      : override.vAlign === 'bottom' ? 'b' : 't');
+    if (override.vert) setXmlAttribute(properties, 'vert', override.vert);
+    if (own(override, 'fill')) replaceStagedPropertyChild(properties, staged,
+      ['noFill', 'solidFill', 'gradFill', 'pattFill']);
+    if (override.borders) for (const [side, name] of [
+      ['l', 'lnL'], ['r', 'lnR'], ['t', 'lnT'], ['b', 'lnB'],
+    ] as const) if (own(override.borders, side)) replaceStagedPropertyChild(properties, staged, [name]);
+  }
+}
+
 /** 从首次触碰基线重建，连续保存不会重复烘入相同行。 */
 export function patchTableRows(document: XmlDocument, record: ElementRecord): void {
   if (!hasTableRowOverrides(record)) return;
@@ -163,6 +329,10 @@ export function patchTableRows(document: XmlDocument, record: ElementRecord): vo
     throw new Error(`元素 ${record.id} 不能写回表格行`);
   }
   const { host } = locateElementHost(document, record);
+  if (hasComplexTableStructureOverrides(record)) {
+    patchComplexTableStructure(document, record);
+    return;
+  }
   const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
   if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
   const sourceRows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
@@ -209,7 +379,8 @@ function scaledEmu(values: readonly number[], total: number, label: string): num
 
 /** frame 与内部网格必须同生共变；Office 不会替编辑模型猜测各行列的新整数尺寸。 */
 export function patchTableGeometry(document: XmlDocument, record: ElementRecord): void {
-  if (record.src.kind !== 'table' || (!own(record.ovr, 'w') && !own(record.ovr, 'h'))) return;
+  if (record.src.kind !== 'table' || hasComplexTableStructureOverrides(record)
+    || (!own(record.ovr, 'w') && !own(record.ovr, 'h'))) return;
   const { host } = locateElementHost(document, record);
   const table = findXmlDescendant(host, { localName: 'tbl', namespaceUri: DRAWINGML_NS });
   if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);

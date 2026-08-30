@@ -13,7 +13,7 @@ import { hasOrderOverride } from './order';
 import { hasShapeFormatOverrides } from './shape-format';
 import { hasEffectsOverride } from './effects';
 import { hasImageContentOverrides } from './image-content';
-import { hasTableRowOverrides, hasTableStyleOverride } from './table';
+import { hasTableCellAppearanceOverrides, hasTableRowOverrides, hasTableStyleOverride } from './table';
 import {
   createHyperlinkSaveContext, hasDanglingSlideRelationships, hasHyperlinkOverrides,
   patchHyperlinkRelationshipPart,
@@ -70,6 +70,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
       && !hasEffectsOverride(record)
       && !hasImageContentOverrides(record)
       && !hasTableRowOverrides(record)
+      && !hasTableCellAppearanceOverrides(record)
       && !hasTableStyleOverride(record)
       && !hasHyperlinkOverrides(record)
       && record.meta.sourceParent === undefined

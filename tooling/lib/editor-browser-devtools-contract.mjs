@@ -159,6 +159,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           tableCellTextP95: report.dataset.tableCellTextP95,
           tableInsertRowP95: report.dataset.tableInsertRowP95,
           tableCellGeometryError: report.dataset.tableCellGeometryError,
+          tableStructureP95: report.dataset.tableStructureP95,
           autofitBrowserP95: report.dataset.autofitBrowserP95,
           autofitEngineP95: report.dataset.autofitEngineP95,
           autofitCellP95: report.dataset.autofitCellP95,
