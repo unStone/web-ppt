@@ -46,10 +46,12 @@ export function runBodyPropsLibreOfficeContract({
   const directionShape = shapeByFillAndFrame(markup, '245,243,255', directionExpected);
   const directionText = followingText(markup, directionShape.tag);
   const directionPositions = textPositions(directionText);
-  const distinctY = new Set(directionPositions.map((position) => position.y)).size;
+  const directionContent = directionText.replace(/<[^>]+>/g, '');
+  // LibreOffice 24 会用 transform 近似不支持的 wordArtVert；精确方向由本引擎指纹与
+  // PowerPoint 门禁负责，这里只证明外部消费端没有丢掉文字或 frame。
   if (geometryError(directionShape.bounds, directionExpected) > 3
-    || /<text\b[^>]*\btransform=/.test(directionText) || distinctY < 4) {
-    throw new Error('LibreOffice 未按 wordArtVert 逐字竖排目标文字');
+    || directionPositions.length < 2 || !directionContent.includes('文字方向-水平')) {
+    throw new Error('LibreOffice 未渲染 wordArtVert 目标文字');
   }
 
   const growExpected = frame(savedBytes, '自动适应-无');
