@@ -21,6 +21,7 @@ import { runVertexEditingLibreOfficeContract } from './lib/vertex-editing-libreo
 import { runTableStyleLibreOfficeContract } from './lib/table-style-libreoffice-contract.mjs';
 import { runTableStructureLibreOfficeContract } from './lib/table-structure-libreoffice-contract.mjs';
 import { runShapeAutofitLibreOfficeContract } from './lib/shape-autofit-libreoffice-contract.mjs';
+import { runBodyPropsLibreOfficeContract } from './lib/body-props-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -317,51 +318,17 @@ if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
 }
 
 if (basename(savedPath) === 'body-props-editing.pptx') {
-  const markup = exportLibreOfficeSvg('文字框属性');
-  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
-  if (!viewBox) throw new Error('LibreOffice 文字框属性 SVG 缺少 viewBox');
-  const viewW = Number(viewBox[1]);
-  const viewH = Number(viewBox[2]);
-  const bytes = new Uint8Array(readFileSync(savedPath));
-  const frame = (name) => expectedBounds(savedShapeGeometry(bytes, name), viewW, viewH);
-
-  const columnsExpected = frame('分栏与锚点');
-  const columnsShape = shapeByFillAndFrame(markup, '254,243,199', columnsExpected);
-  const columnsGeometryError = geometryError(columnsShape.bounds, columnsExpected);
-  const positions = textPositions(followingText(markup, columnsShape.tag));
-  const xs = [...new Set(positions.map((position) => position.x))].sort((left, right) => left - right);
-  const leftInsetExpected = columnsShape.bounds.left + 18 / 1280 * viewW;
-  const columnStrideExpected = 296 / 1280 * viewW;
-  const columnsError = xs.length === 2
-    ? Math.max(Math.abs(xs[0] - leftInsetExpected), Math.abs(xs[1] - xs[0] - columnStrideExpected))
-    : Infinity;
-  const maxY = Math.max(...positions.map((position) => position.y));
-  if (columnsGeometryError > 3 || columnsError > 30
-    || maxY < columnsShape.bounds.top + (columnsShape.bounds.bottom - columnsShape.bounds.top) * 0.65) {
-    throw new Error(`LibreOffice 分栏/边距/底部锚点偏差 geometry=${columnsGeometryError.toFixed(3)} layout=${columnsError.toFixed(3)}`);
-  }
-
-  const directionExpected = frame('文字方向-水平');
-  const directionShape = shapeByFillAndFrame(markup, '245,243,255', directionExpected);
-  const directionText = followingText(markup, directionShape.tag);
-  const directionPositions = textPositions(directionText);
-  const distinctY = new Set(directionPositions.map((position) => position.y)).size;
-  if (geometryError(directionShape.bounds, directionExpected) > 3
-    || /<text\b[^>]*\btransform=/.test(directionText) || distinctY < 4) {
-    throw new Error('LibreOffice 未按 wordArtVert 逐字竖排目标文字');
-  }
-
-  const growExpected = frame('自动适应-无');
-  const growShape = shapeByFillAndFrame(markup, '236,253,245', growExpected);
-  const growError = geometryError(growShape.bounds, growExpected);
-  const noneExpected = frame('自动适应-缩小');
-  const noneShape = shapeByFillAndFrame(markup, '236,253,245', noneExpected);
-  const noneMaxY = Math.max(...textPositions(followingText(markup, noneShape.tag))
-    .map((position) => position.y));
-  if (growError > 3 || noneMaxY < noneShape.bounds.bottom + viewH * 0.05) {
-    throw new Error(`LibreOffice autofit 模式证据无效：shape=${growError.toFixed(3)} noneOverflow=${(noneMaxY - noneShape.bounds.bottom).toFixed(3)}`);
-  }
-  geometryEvidence += `，bodyPr frame/分栏最大偏差 ${Math.max(columnsGeometryError, columnsError, growError).toFixed(3)} SVG unit`;
+  geometryEvidence += runBodyPropsLibreOfficeContract({
+    savedPath,
+    sourcePath: join(root, 'fixtures/sample-editor-body-props.pptx'),
+    exportSvg: exportLibreOfficeSvg,
+    expectedBounds,
+    savedShapeGeometry,
+    shapeByFillAndFrame,
+    geometryError,
+    followingText,
+    textPositions,
+  });
 }
 
 if (basename(savedPath) === 'list-level-editing.pptx') {
