@@ -20,6 +20,7 @@ import { runListLevelLibreOfficeContract } from './lib/list-level-libreoffice-co
 import { runVertexEditingLibreOfficeContract } from './lib/vertex-editing-libreoffice-contract.mjs';
 import { runTableStyleLibreOfficeContract } from './lib/table-style-libreoffice-contract.mjs';
 import { runTableStructureLibreOfficeContract } from './lib/table-structure-libreoffice-contract.mjs';
+import { runShapeAutofitLibreOfficeContract } from './lib/shape-autofit-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -308,22 +309,11 @@ if (basename(savedPath) === 'table-style-oracle.pptx') {
   geometryEvidence += runTableStyleLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
 }
 if (basename(savedPath) === 'shape-autofit-text-editing.pptx') {
-  const markup = exportLibreOfficeSvg(' spAutoFit 几何');
-  const viewBox = markup.match(/\bviewBox="0 0 ([\d.]+) ([\d.]+)"/);
-  const pathTag = markup.match(/<path\b[^>]*>/g)?.find((tag) => {
-    const compact = tag.replace(/\s+/g, '').toLowerCase();
-    return compact.includes('fill="rgb(217,234,247)"') || compact.includes('fill="#d9eaf7"');
+  geometryEvidence = runShapeAutofitLibreOfficeContract({
+    savedPath,
+    sourcePath: join(root, 'fixtures/sample-editor-sp-autofit.pptx'),
+    exportSvg: exportLibreOfficeSvg,
   });
-  if (!viewBox || !pathTag) throw new Error('LibreOffice SVG 缺少唯一 spAutoFit 形状或 viewBox');
-  const actual = pathBounds(pathTag);
-  const expected = expectedBounds(
-    savedShapeGeometry(new Uint8Array(readFileSync(savedPath)), 'sp-autofit-rotated'),
-    Number(viewBox[1]), Number(viewBox[2]),
-  );
-  const error = geometryError(actual, expected);
-  // LibreOffice 的 SVG 坐标是 1/100 mm 整数，旋转后四边各自会有约 2.5 unit 的量化误差。
-  if (error > 3) throw new Error(`LibreOffice spAutoFit 渲染几何偏差 ${error.toFixed(3)} SVG unit`);
-  geometryEvidence = `，spAutoFit frame 最大偏差 ${error.toFixed(3)} SVG unit`;
 }
 
 if (basename(savedPath) === 'body-props-editing.pptx') {
