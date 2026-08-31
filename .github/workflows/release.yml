@@ -38,6 +38,11 @@ jobs:
 
       - run: npm ci
 
+      - name: 安装图元真实样本依赖
+        # test:metafile 会用 LibreOffice 把 showcase 转成真实 EMF/WMF；缺依赖时会
+        # 合法跳过 22 项，但 verify 仍会按发布文档声明的完整 130 项拒绝发布。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
+
       - name: 校验 tag 与包版本一致
         # tag 与 package.json 对不上时，发出去的版本号会让人迷惑，不如直接失败
         if: startsWith(github.ref, 'refs/tags/v')
