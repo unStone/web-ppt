@@ -44,8 +44,10 @@ jobs:
         continue-on-error: true
         run: npm run test:editor:performance
 
-      - name: 安装 LibreOffice
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress
+      - name: 安装 LibreOffice 与中文字体
+        # 外部 oracle 大量使用中文；缺字体时 LibreOffice 会按缺字占位宽度断行，
+        # 两栏与 spAutoFit 的几何证据就不再是在验证真实文本布局。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
 
       - name: 保存产物外部打开测试
         # 复用上一阶段通过最小差异合约的同一份字节，避免各自生成不同样本。
