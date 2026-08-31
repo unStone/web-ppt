@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/core",
-  "version": "0.5.0-beta.2",
+  "version": "0.5.0-beta.3",
   "description": "Render .pptx and .ppt entirely in the browser — no server, no Office, no upload. OOXML and binary OfficeArt into one JSON schema, out as SVG.",
   "keywords": [
     "pptx",
