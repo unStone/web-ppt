@@ -480,7 +480,7 @@ await runCollabHardeningContract({
 
 await runCollabProtocolContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
-  semanticDoc, stringDiff,
+  semanticDoc, seededShuffle, stringDiff,
 });
 
 await runCollabAtomicContract({

@@ -1,4 +1,5 @@
 import { isElementImageReplacementPatch } from './commands/element-image-content';
+import { isElementTextPatch } from './commands/element-text';
 import { isSlideBackgroundImagePatch } from './commands/slide-property';
 import type { HistoryEntry, Patch } from './commands/types';
 import type { EditDoc } from './types';
@@ -62,6 +63,8 @@ export function activeImageResourceHashes(doc: EditDoc): Set<string> {
     ...Object.values(doc.slides).flatMap((record) =>
       record.backgroundImage ? record.backgroundImage.resourceHashes : []),
   ]);
+  const seen = new WeakSet<object>();
+  for (const record of Object.values(doc.elements)) collectHashes(record.ovr, output, seen);
   // 生成式新图片没有 OOXML insertion 闭包，资源只由上面的 Schema token 引用。
   return output;
 }
@@ -69,5 +72,6 @@ export function activeImageResourceHashes(doc: EditDoc): Set<string> {
 export function imageReachabilityMayChange(patches: readonly Patch[]): boolean {
   return patches.some((patch) => isElementImageReplacementPatch(patch)
     || isSlideBackgroundImagePatch(patch)
+    || isElementTextPatch(patch)
     || (patch.path.length === 2 && (patch.path[0] === 'elements' || patch.path[0] === 'slides')));
 }

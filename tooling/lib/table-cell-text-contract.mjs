@@ -60,12 +60,17 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
   };
   editor.exec({ type: 'SetRunProps', id: record.id, cell, range, props: { b: true } });
   editor.exec({ type: 'SetParaProps', id: record.id, cell, range, props: { align: 'center' } });
+  editor.exec({
+    type: 'SetParaProps', id: record.id, cell, range,
+    props: { bullet: { kind: 'char', char: '→', color: '#336699' } },
+  });
   const formatted = editor.effectiveElement(record.id);
   const state = edit.queryRunProps(doc, record.id, range, cell);
   const paragraph = formatted.rows[0].cells[0].text.paragraphs[0];
   check('字符与段落格式复用同一单元格文字目标和三态查询',
     state.b.value === true && !state.b.mixed
       && paragraph.align === 'center' && paragraph.runs.every((run) => run.b)
+      && paragraph.bullet === '→' && paragraph.bulletColor === 'rgb(51,102,153)'
       && formatted.rows[0].cells[1] === record.src.rows[0].cells[1],
   `state=${JSON.stringify(state.b)} align=${paragraph.align}`
     + ` bold=${paragraph.runs.map((run) => run.b).join('/')} siblingIdentity=`
@@ -86,9 +91,11 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
   editor.undo();
   editor.undo();
   editor.undo();
-  check('撤销三类文字事务恢复来源表格且清掉稀疏覆盖',
+  editor.undo();
+  check('撤销四类文字事务恢复来源表格且清掉稀疏覆盖',
     cellText(editor.effectiveElement(record.id), 0, 0) === 'A'
       && record.ovr.tableCells === undefined && !editor.isDirty());
+  editor.redo();
   editor.redo();
   editor.redo();
   editor.redo();
@@ -102,6 +109,7 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
     saved.rewrittenEntries === 1 && reopenedTable?.kind === 'table'
       && cellText(reopenedTable, 0, 0) === '纯Web' && cellText(reopenedTable, 0, 1) === 'B'
       && reopenedTable.rows[0].cells[0].text.paragraphs[0].align === 'center'
+      && reopenedTable.rows[0].cells[0].text.paragraphs[0].bullet === '→'
       && reopenedTable.rows[0].cells[0].text.paragraphs[0].runs.every((run) => run.b));
   edit.disposeDoc(doc);
 

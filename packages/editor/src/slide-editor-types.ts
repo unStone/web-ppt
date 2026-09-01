@@ -1,5 +1,5 @@
 import type {
-  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
+  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideNotesState,
   SlideAnimationState, SlideTransitionInput, SlideTransitionState,
@@ -67,7 +67,7 @@ export interface SlideEditor {
   queryRunLink(): RunLinkState | null;
   setRunProps(props: RunPropertyOverrides): boolean;
   queryParaProps(): ParagraphPropertiesState | null;
-  setParaProps(props: ParagraphPropertyOverrides): boolean;
+  setParaProps(props: ParagraphPropertyInput): boolean;
   queryBodyProps(): TextBodyProperties | null;
   setBodyProps(props: TextBodyPropertyOverrides): boolean;
   insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;

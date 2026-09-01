@@ -50,7 +50,7 @@ export type { ImageInsertOptions } from './image-insertion';
 export type { ImageBackgroundOptions, ImageReplaceOptions } from './image-insertion';
 export type { TableInsertOptions } from './table-insertion';
 export type {
-  AddImageCommand, AddShapeCommand, AddTableCommand, EditAnimationStep, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyOverrides, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideLayoutState,
+  AddImageCommand, AddShapeCommand, AddTableCommand, EditAnimationStep, ElementClipboardPayload, ElementCropState, ElementEffectsState, ElementFillState, ElementLinkState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, ParagraphAutoNumberType, ParagraphBullet, ParagraphBulletInput, ParagraphBulletSize, ParagraphBulletStyle, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyInput, ParagraphPropertyOverrides, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideLayoutState,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, SlideTransitionInput, SlideTransitionState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
   ReplaceImageCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
   FormatMaskField,

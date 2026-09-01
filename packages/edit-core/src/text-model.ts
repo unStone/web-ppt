@@ -1,13 +1,17 @@
-import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
+import { formatDrawingAutoNumber } from '@web-ppt/core';
+import type { TextBody, TextRun } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
   FlatTextParagraph, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
   RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
-import { TEXT_ATOM, textRunEditLength } from './text-position';
 import { applyParagraphPropertyOverrides } from './paragraph-level';
+import { flattenTextBody } from './text-flatten';
+import { assertTextAtomBoundary, textPositionOffset } from './text-selection';
 
 export { textBodyFromOverride } from './text-override-projection';
+export { flattenTextBody } from './text-flatten';
+export { textFragmentFromRange } from './text-fragment';
 
 const DEFAULT_RUN: Omit<TextRun, 'text'> = {
   b: false, i: false, u: false, strike: false, size: 18, color: '#000000', fonts: [],
@@ -17,60 +21,6 @@ const DEFAULT_PROPERTIES: RunProperties = {
   font: null, size: DEFAULT_RUN.size, color: DEFAULT_RUN.color, b: DEFAULT_RUN.b, i: DEFAULT_RUN.i,
   u: DEFAULT_RUN.u, strike: DEFAULT_RUN.strike,
 };
-
-function runProps(run: TextRun): Omit<TextRun, 'text'> {
-  const { text: _text, editInfo: _editInfo, ...props } = run;
-  return props;
-}
-
-function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
-  const { runs: _runs, editInfo: _editInfo, ...props } = paragraph;
-  return props;
-}
-
-export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: 'flat' }> {
-  // editInfo 是只读来源事实；覆盖层只保存用户结果，防止历史与远端 patch 伪造继承来源。
-  const { paragraphs: _paragraphs, editInfo: _editInfo, ...bodyProps } = body;
-  return {
-    kind: 'flat',
-    body: bodyProps,
-    paragraphs: body.paragraphs.map((paragraph, paragraphIndex) => {
-      let offset = 0;
-      const marks = paragraph.runs.map((run, runIndex): TextMark => {
-        const text = run.math?.length ? TEXT_ATOM : run.text;
-        const from = offset;
-        offset += text.length;
-        return {
-          from, to: offset, props: runProps(run),
-          inheritedProps: run.editInfo?.inheritedRunProps
-            ? {
-              font: run.editInfo.inheritedRunProps.fonts[0] ?? null,
-              size: run.editInfo.inheritedRunProps.size,
-              color: run.editInfo.inheritedRunProps.color,
-              b: run.editInfo.inheritedRunProps.b,
-              i: run.editInfo.inheritedRunProps.i,
-              u: run.editInfo.inheritedRunProps.u,
-              strike: run.editInfo.inheritedRunProps.strike,
-            }
-            : undefined,
-          inheritedRunProps: run.editInfo?.inheritedRunProps,
-          inheritedFonts: run.editInfo?.inheritedRunProps.fonts,
-          inheritedFontSlots: run.editInfo?.inheritedFontSlots,
-          ...(run.editInfo?.readonlyLink ? { sourceLinkReadonly: true } : {}),
-          ...(run.math?.length ? { atomText: run.text } : {}),
-          source: { paragraph: paragraphIndex, run: runIndex },
-          preserveSource: true,
-        };
-      });
-      return {
-        text: paragraph.runs.map((run) => run.math?.length ? TEXT_ATOM : run.text).join(''),
-        props: paragraphProps(paragraph), marks, sourceParagraph: paragraphIndex,
-        inheritedParagraphProps: paragraph.editInfo?.inheritedParagraphProps,
-        directParagraphProps: paragraph.editInfo?.directParagraphProps,
-      };
-    }),
-  };
-}
 
 const STYLE_PROPERTY_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'link'] as const;
@@ -138,26 +88,6 @@ function normalizedParagraph(
   return { ...source, text, marks };
 }
 
-function displayLength(mark: TextMark): number {
-  return mark.atomText === undefined ? mark.to - mark.from : textRunEditLength({ text: '', math: mark.props.math });
-}
-
-function positionOffset(paragraph: FlatTextParagraph, position: TextPosition): number {
-  if (!Number.isInteger(position.r) || !Number.isInteger(position.off) || position.r < 0 || position.off < 0) {
-    throw new Error('文字位置必须是非负整数');
-  }
-  if (!paragraph.marks.length && position.r === 0 && position.off === 0) return 0;
-  const mark = paragraph.marks[position.r];
-  if (!mark || position.off > displayLength(mark)) throw new Error('文字位置超出段落范围');
-  return mark.from + position.off;
-}
-
-function assertAtomBoundary(paragraph: FlatTextParagraph, offset: number): void {
-  const inside = paragraph.marks.some((mark) => mark.atomText !== undefined
-    && offset > mark.from && offset < mark.to);
-  if (inside) throw new Error('公式只能作为整体选择');
-}
-
 function styleAt(paragraph: FlatTextParagraph, offset: number): TextMark {
   const mark = paragraph.marks.find((candidate) => offset >= candidate.from && offset < candidate.to)
     ?? [...paragraph.marks].reverse().find((candidate) => candidate.to <= offset)
@@ -199,11 +129,11 @@ function replace(
   }
   const first = paragraphs[from.p];
   const last = paragraphs[to.p];
-  const start = positionOffset(first, from);
-  const end = positionOffset(last, to);
+  const start = textPositionOffset(first, from);
+  const end = textPositionOffset(last, to);
   if (from.p === to.p && end < start) throw new Error('文字选择起点不能晚于终点');
-  assertAtomBoundary(first, start);
-  assertAtomBoundary(last, end);
+  assertTextAtomBoundary(first, start);
+  assertTextAtomBoundary(last, end);
   const segments = [
     ...sliceSegments(first, 0, start),
     ...(text ? [{ text, template: styleAt(first, start) }] : []),
@@ -222,8 +152,8 @@ function splitParagraph(
     throw new Error('拆分段落位置无效');
   }
   const paragraph = paragraphs[at.p];
-  const offset = positionOffset(paragraph, at);
-  assertAtomBoundary(paragraph, offset);
+  const offset = textPositionOffset(paragraph, at);
+  assertTextAtomBoundary(paragraph, offset);
   const empty = { text: '', template: styleAt(paragraph, offset) };
   const leftParts = sliceSegments(paragraph, 0, offset);
   const rightParts = sliceSegments(paragraph, offset, paragraph.text.length);
@@ -238,9 +168,10 @@ function replaceFragment(
   from: TextPosition,
   to: TextPosition,
   fragment: TextFragment,
+  imageOverrides: ReadonlyMap<number, import('./types').ElementImageReplacement> | undefined,
 ): FlatTextParagraph[] {
   // 复用普通替换统一校验跨段与公式边界，再在同一插入点展开已清洗片段。
-  const offset = positionOffset(paragraphs[from.p], from);
+  const offset = textPositionOffset(paragraphs[from.p], from);
   const inherited = styleAt(paragraphs[from.p], offset);
   const removed = replace(paragraphs, from, to, '');
   const source = removed[from.p];
@@ -252,10 +183,50 @@ function replaceFragment(
       template: formattedMark(inherited, mark.props),
     }))
     : [{ text: '', template: inherited }]);
-  const inserted = fragmentSegments.map((segments, index) => normalizedParagraph(source, [
-    ...(index === 0 ? prefix : []), ...segments,
-    ...(index === fragmentSegments.length - 1 ? suffix : []),
-  ]));
+  const inserted = fragmentSegments.map((segments, index) => {
+    const normalized = normalizedParagraph(source, [
+      ...(index === 0 ? prefix : []), ...segments,
+      ...(index === fragmentSegments.length - 1 ? suffix : []),
+    ]);
+    const bullet = fragment.paragraphs[index].bullet;
+    if (!bullet) return normalized;
+    const image = bullet.kind === 'blip' ? imageOverrides?.get(index) : undefined;
+    if (bullet.kind === 'blip' && !image) throw new Error('富文本图片项目符号缺少资源闭包');
+    // 片段中的缺省样式表示“跟随文字”，落到覆盖层时必须显式归一为 null；否则保存会保留目标 pPr 的旧样式。
+    const styledBullet = bullet.kind === 'none' ? bullet : {
+      ...bullet, font: bullet.font ?? null, color: bullet.color ?? null, size: bullet.size ?? null,
+    };
+    const storedBullet = styledBullet.kind === 'blip'
+      ? { ...styledBullet, image: { src: image!.src } } : styledBullet;
+    const props = { ...normalized.props };
+    if (storedBullet.kind === 'char') {
+      props.bullet = storedBullet.char;
+      delete props.bulletImage;
+    } else if (storedBullet.kind === 'autoNum') {
+      props.bullet = formatDrawingAutoNumber(storedBullet.type, storedBullet.startAt ?? 1);
+      delete props.bulletImage;
+    } else if (storedBullet.kind === 'blip') {
+      props.bullet = null;
+      props.bulletImage = storedBullet.image.src;
+    } else {
+      props.bullet = null;
+      delete props.bulletImage;
+    }
+    if (storedBullet.kind !== 'none') {
+      props.bulletFont = storedBullet.font ?? null;
+      props.bulletColor = storedBullet.color ?? null;
+      const maxSize = Math.max(...normalized.marks.map((mark) => mark.props.size), 1);
+      props.bulletSize = storedBullet.size?.kind === 'points'
+        ? storedBullet.size.value * (4 / 3) / maxSize
+        : storedBullet.size?.value ?? null;
+    }
+    return {
+      ...normalized,
+      props,
+      paragraphOverrides: { ...normalized.paragraphOverrides, bullet: storedBullet },
+      ...(image ? { bulletImageOverride: image } : {}),
+    };
+  });
   return [...removed.slice(0, from.p), ...inserted, ...removed.slice(from.p + 1)];
 }
 
@@ -263,58 +234,25 @@ export function applyTextEditOps(
   body: TextBody,
   ops: readonly TextEditOp[],
   initial?: Extract<TextOverride, { kind: 'flat' }>,
+  fragmentImageOverrides?: ReadonlyMap<number, ReadonlyMap<number,
+    import('./types').ElementImageReplacement>>,
 ): TextOverride {
   let override = initial ?? flattenTextBody(body);
-  for (const op of ops) {
+  for (let opIndex = 0; opIndex < ops.length; opIndex++) {
+    const op = ops[opIndex];
     const paragraphs = op.type === 'replace'
       ? replace(override.paragraphs, op.from, op.to, op.text)
       : op.type === 'splitParagraph'
         ? splitParagraph(override.paragraphs, op.at)
         : op.type === 'insertLineBreak'
           ? replace(override.paragraphs, op.at, op.at, '\n', true)
-          : replaceFragment(override.paragraphs, op.from, op.to, op.fragment);
+          : replaceFragment(
+            override.paragraphs, op.from, op.to, op.fragment,
+            fragmentImageOverrides?.get(opIndex),
+          );
     override = { ...override, paragraphs };
   }
   return override;
-}
-
-/** 把有效文字选区降成可跨实例传输的格式白名单，不泄漏 OOXML 来源身份。 */
-export function textFragmentFromRange(body: TextBody, range: TextRange): TextFragment {
-  const paragraphs = flattenTextBody(body).paragraphs;
-  if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= paragraphs.length) {
-    throw new Error('文字片段选区段落范围无效');
-  }
-  const from = positionOffset(paragraphs[range.from.p], range.from);
-  const to = positionOffset(paragraphs[range.to.p], range.to);
-  if (range.from.p === range.to.p && to < from) throw new Error('文字片段选区起点不能晚于终点');
-  return {
-    paragraphs: paragraphs.slice(range.from.p, range.to.p + 1).map((paragraph, relativeIndex) => {
-      const index = range.from.p + relativeIndex;
-      const start = index === range.from.p ? from : 0;
-      const end = index === range.to.p ? to : paragraph.text.length;
-      assertAtomBoundary(paragraph, start);
-      assertAtomBoundary(paragraph, end);
-      let text = '';
-      const marks: TextFragment['paragraphs'][number]['marks'][number][] = [];
-      for (const mark of paragraph.marks) {
-        const selectedFrom = Math.max(start, mark.from);
-        const selectedTo = Math.min(end, mark.to);
-        if (selectedTo <= selectedFrom) continue;
-        const value = mark.atomText ?? paragraph.text.slice(selectedFrom, selectedTo);
-        const markFrom = text.length;
-        text += value;
-        const font = mark.props.fonts[0];
-        marks.push({
-          from: markFrom, to: text.length,
-          props: {
-            ...(font ? { font } : {}), size: mark.props.size, color: mark.props.color,
-            b: mark.props.b, i: mark.props.i, u: mark.props.u, strike: mark.props.strike,
-          },
-        });
-      }
-      return { text, marks };
-    }),
-  };
 }
 
 function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
@@ -361,8 +299,8 @@ function formatParagraph(
   props: RunPropertyOverrides,
   includeEmpty = false,
 ): FlatTextParagraph {
-  assertAtomBoundary(paragraph, from);
-  assertAtomBoundary(paragraph, to);
+  assertTextAtomBoundary(paragraph, from);
+  assertTextAtomBoundary(paragraph, to);
   if (includeEmpty && !paragraph.text.length && paragraph.marks.length === 1) {
     return { ...paragraph, marks: [{ ...formattedMark(paragraph.marks[0], props), from: 0, to: 0 }] };
   }
@@ -400,8 +338,8 @@ export function applyRunProps(
   }
   const first = override.paragraphs[range.from.p];
   const last = override.paragraphs[range.to.p];
-  const from = positionOffset(first, range.from);
-  const to = positionOffset(last, range.to);
+  const from = textPositionOffset(first, range.from);
+  const to = textPositionOffset(last, range.to);
   if (range.from.p === range.to.p && to < from) throw new Error('字符格式选区起点不能晚于终点');
   if (range.from.p === range.to.p && to === from) return override;
   const paragraphs = [...override.paragraphs];
@@ -424,10 +362,13 @@ export function applyParagraphProps(
   initial?: Extract<TextOverride, { kind: 'flat' }>,
   levelTemplate?: TextBody,
   sourceBody: TextBody = body,
+  imageOverride?: import('./types').ElementImageReplacement,
 ): TextOverride {
   const override = initial ?? flattenTextBody(body);
   queryTextRunProps(body, range, override);
-  return applyParagraphPropertyOverrides(sourceBody, override, range, props, levelTemplate);
+  return applyParagraphPropertyOverrides(
+    sourceBody, override, range, props, levelTemplate, imageOverride,
+  );
 }
 
 export function queryTextParagraphProps(
@@ -438,6 +379,25 @@ export function queryTextParagraphProps(
   const override = initial ?? flattenTextBody(body);
   queryTextRunProps(body, range, override);
   const paragraphs = override.paragraphs.slice(range.from.p, range.to.p + 1);
+  const bullet = (paragraph: FlatTextParagraph) => {
+    if (Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'bullet')) {
+      return paragraph.paragraphOverrides?.bullet
+        ?? paragraph.inheritedBullet ?? { kind: 'none' as const };
+    }
+    if (paragraph.sourceBullet) return paragraph.sourceBullet;
+    if (paragraph.props.bullet === null || paragraph.props.bulletImage) return null;
+    return {
+      kind: 'char' as const,
+      char: paragraph.props.bullet,
+      ...(paragraph.props.bulletFont ? { font: paragraph.props.bulletFont } : {}),
+    };
+  };
+  const bulletValues = paragraphs.map(bullet);
+  const firstBullet = bulletValues[0] ?? null;
+  const bulletState: RunPropertyState<NonNullable<typeof firstBullet>> = {
+    value: firstBullet,
+    mixed: bulletValues.some((value) => JSON.stringify(value) !== JSON.stringify(firstBullet)),
+  };
   return {
     level: state(paragraphs.map((paragraph) => paragraph.props.lvl)),
     align: state(paragraphs.map((paragraph) => paragraph.props.align)),
@@ -446,6 +406,7 @@ export function queryTextParagraphProps(
     spaceAfter: state(paragraphs.map((paragraph) => paragraph.props.spaceAfter)),
     marginLeft: state(paragraphs.map((paragraph) => paragraph.props.marL)),
     indent: state(paragraphs.map((paragraph) => paragraph.props.indent)),
+    bullet: bulletState,
   };
 }
 
@@ -493,8 +454,8 @@ export function textMarksInRange(
   }
   const first = override.paragraphs[range.from.p];
   const last = override.paragraphs[range.to.p];
-  const from = positionOffset(first, range.from);
-  const to = positionOffset(last, range.to);
+  const from = textPositionOffset(first, range.from);
+  const to = textPositionOffset(last, range.to);
   if (range.from.p === range.to.p && to < from) throw new Error('字符格式查询起点不能晚于终点');
   const selected: TextMark[] = [];
   for (let index = range.from.p; index <= range.to.p; index++) {

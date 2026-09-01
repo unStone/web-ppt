@@ -570,6 +570,21 @@ export interface TextWarp {
   adj: Record<string, number>;
 }
 
+/** 编辑查询所需的项目符号来源语义；渲染仍只消费 Paragraph.bullet/bulletImage。 */
+export type ParagraphBulletInfo =
+  | { readonly kind: 'none' }
+  | ({ readonly kind: 'char'; readonly char: string } & ParagraphBulletStyleInfo)
+  | ({ readonly kind: 'autoNum'; readonly type: string; readonly startAt: number }
+    & ParagraphBulletStyleInfo)
+  | ({ readonly kind: 'image'; readonly rid: string; readonly src: string | null }
+    & ParagraphBulletStyleInfo);
+
+export interface ParagraphBulletStyleInfo {
+  readonly color?: string | null;
+  readonly font?: string | null;
+  readonly size?: { readonly kind: 'percent' | 'points'; readonly value: number } | null;
+}
+
 export interface Paragraph {
   align: 'left' | 'center' | 'right' | 'justify';
   lvl: number;
@@ -612,6 +627,9 @@ export interface Paragraph {
     directLayout: ParagraphLayoutDirectFlags;
     /** 自动编号语义只在编辑模式保留，投影改级后据此重算同级续号。 */
     autoNumbering?: { readonly scheme: string; readonly startAt: number };
+    /** 有效值与继承值分开保留，null 清除直设时不能退回来源直设。 */
+    bullet: ParagraphBulletInfo;
+    inheritedBullet: ParagraphBulletInfo;
   };
 }
 

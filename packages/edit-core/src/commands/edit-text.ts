@@ -1,9 +1,14 @@
 import { applyTextEditOps, flattenTextBody, textBodyFromOverride } from '../text-model';
 import { assertDataObject, assertTextPosition } from '../data-validation';
 import { assertRunPropertyOverrides } from '../run-property-schema';
-import type { EditDoc, TextFragment, TextOverride } from '../types';
-import type { CommandPatches, EditTextCommand } from './types';
+import { assertParagraphPropertyInput } from '../paragraph-property-schema';
+import type { EditDoc, ElementImageReplacement, TextFragment, TextOverride } from '../types';
+import type { CommandPatches, EditTextCommand, ImageResourcePatch } from './types';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
+import { renumberParagraphs } from '../paragraph-level';
+import {
+  prepareBulletImageResource, resolveBulletImageResource,
+} from './bullet-image-resource';
 
 function assertFragment(value: unknown, label: string): asserts value is TextFragment {
   assertDataObject(value, ['paragraphs'], label);
@@ -11,12 +16,13 @@ function assertFragment(value: unknown, label: string): asserts value is TextFra
   if (!Array.isArray(paragraphs) || !paragraphs.length) throw new Error(`${label}.paragraphs 不能为空`);
   paragraphs.forEach((paragraph, paragraphIndex) => {
     const paragraphLabel = `${label}.paragraphs[${paragraphIndex}]`;
-    assertDataObject(paragraph, ['text', 'marks'], paragraphLabel);
+    assertDataObject(paragraph, ['text', 'marks', 'bullet'], paragraphLabel);
     const data = paragraph as TextFragment['paragraphs'][number];
     if (typeof data.text !== 'string' || data.text.includes('\r') || data.text.includes('\uFFFC')) {
       throw new Error(`${paragraphLabel}.text 必须是不含 CR 与公式占位符的字符串`);
     }
     if (!Array.isArray(data.marks)) throw new Error(`${paragraphLabel}.marks 必须是数组`);
+    if (data.bullet) assertParagraphPropertyInput({ bullet: data.bullet }, paragraphLabel);
     let offset = 0;
     data.marks.forEach((mark, markIndex) => {
       const markLabel = `${paragraphLabel}.marks[${markIndex}]`;
@@ -67,15 +73,54 @@ export function editTextPatches(
 ): CommandPatches {
   assertOps(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
-  const { body: source, before, patchTarget } = textTargetContext(doc, target);
+  const { body: source, before, patchTarget, levelTemplate, record } = textTargetContext(doc, target);
+  const part = record.meta.origin?.part;
+  const fragmentImages = new Map<number, Map<number, ElementImageReplacement>>();
+  const newResources = new Map<string, ImageResourcePatch>();
+  const usedRelationships = new Set<string>();
+  command.ops.forEach((op, opIndex) => {
+    if (op.type !== 'replaceFragment') return;
+    op.fragment.paragraphs.forEach((paragraph, paragraphIndex) => {
+      if (paragraph.bullet?.kind !== 'blip') return;
+      if (!part || !doc.package) throw new Error('富文本图片项目符号缺少可写回来源');
+      const src = paragraph.bullet.image.src;
+      const resource = resolveBulletImageResource(
+        doc, src, 'EditText.fragment.bullet.image',
+      );
+      const prepared = prepareBulletImageResource(
+        doc, part, 'rIdBulletPaste', resource, origin,
+      );
+      let targetId = prepared.image.relationships[0].targetId;
+      const serial = /^rId(\d+)$/.exec(targetId);
+      let next = serial ? Number(serial[1]) : 1;
+      while (usedRelationships.has(targetId)) targetId = `rId${++next}`;
+      usedRelationships.add(targetId);
+      const image: ElementImageReplacement = {
+        ...prepared.image,
+        relationships: [{ ...prepared.image.relationships[0], targetId }],
+      };
+      const images = fragmentImages.get(opIndex) ?? new Map<number, ElementImageReplacement>();
+      images.set(paragraphIndex, image);
+      fragmentImages.set(opIndex, images);
+      if (prepared.resourcePatch && !newResources.has(resource.hash)) {
+        newResources.set(resource.hash, prepared.resourcePatch);
+      }
+    });
+  });
   const body = before?.kind === 'flat' ? textBodyFromOverride(before) : source;
-  const value: TextOverride = applyTextEditOps(
-    body, command.ops, before?.kind === 'flat' ? before : undefined,
+  const edited: TextOverride = applyTextEditOps(
+    body, command.ops, before?.kind === 'flat' ? before : undefined, fragmentImages,
   );
+  const value: TextOverride = edited.kind === 'flat' ? {
+    ...edited, paragraphs: renumberParagraphs(source, edited.paragraphs, levelTemplate),
+  } : edited;
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) return { forward: [], inverse: [] };
+  const resources = [...newResources.values()];
   return {
-    forward: [setTextPatch(patchTarget, value, origin)],
-    inverse: [inverseTextPatch(patchTarget, before, origin)],
+    forward: [...resources, setTextPatch(patchTarget, value, origin)],
+    inverse: [inverseTextPatch(patchTarget, before, origin), ...resources.map((patch) => ({
+      op: 'del' as const, path: patch.path, origin,
+    }))],
   };
 }

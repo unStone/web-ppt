@@ -2,7 +2,7 @@ import {
   paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS,
 } from '../edit-metadata';
 import type { ParagraphLayoutDirectFlags, TextRunDirectFlags } from '../edit-metadata';
-import type { Paragraph, TextRun } from '../types';
+import type { Paragraph, ParagraphBulletInfo, TextRun } from '../types';
 import { formatDrawingAutoNumber } from '../text-auto-number';
 import { directParagraphProps, effectiveParagraphProps } from './paragraph-props';
 import type { Bullet, ParaProps, TextEnv } from './text';
@@ -15,6 +15,10 @@ const SYMBOL_BULLETS: Record<string, string> = {
 };
 
 function bulletText(bullet: Bullet | undefined, counters: number[], lvl: number): string | null {
+  if (!bullet || bullet.kind !== 'auto') {
+    counters.length = lvl + 1;
+    delete counters[lvl];
+  }
   if (!bullet || bullet.kind === 'none' || bullet.kind === 'image') return null;
   if (bullet.kind === 'char') {
     const mapped = SYMBOL_BULLETS[bullet.char];
@@ -25,6 +29,34 @@ function bulletText(bullet: Bullet | undefined, counters: number[], lvl: number)
   counters.length = lvl + 1;
   counters[lvl] = (counters[lvl] ?? bullet.startAt - 1) + 1;
   return formatDrawingAutoNumber(bullet.scheme, counters[lvl]);
+}
+
+function bulletInfo(
+  props: ParaProps,
+  resolveImage: TextEnv['resolveImage'],
+): ParagraphBulletInfo {
+  const bullet = props.bullet;
+  if (!bullet || bullet.kind === 'none') return { kind: 'none' };
+  const style = {
+    ...(props.buColor !== undefined ? { color: props.buColor } : {}),
+    ...(props.buFont !== undefined ? { font: props.buFont } : {}),
+    ...(props.buSizePts !== undefined
+      ? { size: { kind: 'points' as const, value: props.buSizePts * 0.75 } }
+      : props.buSizePct !== undefined ? { size: props.buSizePct === null
+        ? null : { kind: 'percent' as const, value: props.buSizePct } } : {}),
+  };
+  if (bullet.kind === 'char') {
+    return {
+      kind: 'char', char: bullet.char,
+      ...(bullet.font && style.font === undefined ? { font: bullet.font } : {}), ...style,
+    };
+  }
+  if (bullet.kind === 'auto') {
+    return { kind: 'autoNum', type: bullet.scheme, startAt: bullet.startAt, ...style };
+  }
+  return {
+    kind: 'image', rid: bullet.rid, src: resolveImage?.(bullet.rid) ?? null, ...style,
+  };
 }
 
 function directParagraphLayoutBits(props: ParaProps): ParagraphLayoutDirectFlags {
@@ -88,6 +120,8 @@ export function materializeParagraph(input: ParagraphMaterialization): Paragraph
       ...(resolved.bullet?.kind === 'auto'
         ? { autoNumbering: { scheme: resolved.bullet.scheme, startAt: resolved.bullet.startAt } }
         : {}),
+      bullet: bulletInfo(resolved, env.resolveImage),
+      inheritedBullet: bulletInfo(inherited, env.resolveImage),
     } } : {}),
   };
 }

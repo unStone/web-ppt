@@ -4,6 +4,7 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   // Impress 打开零页 OOXML 后会在导出时补一张空白页；模型页数仍保持为零。
   Object.freeze({ file: 'generated-empty.pptx', slides: 0, libreOfficePages: 1 }),
   Object.freeze({ file: 'generated-content.pptx', slides: 1 }),
+  Object.freeze({ file: 'generated-bullets.pptx', slides: 1 }),
   Object.freeze({ file: 'generated-ppt-source.pptx', slides: 2 }),
   Object.freeze({ file: 'generated-ppt-edited.pptx', slides: 2 }),
   Object.freeze({ file: 'generated-ppt-unsupported.pptx', slides: 2 }),
@@ -18,6 +19,9 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'basic-text-editing.pptx', slides: 1 }),
   Object.freeze({ file: 'engine-text-editing.pptx', slides: 1 }),
   Object.freeze({ file: 'list-level-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'bullet-format-editing.pptx', slides: 1 }),
+  Object.freeze({ file: 'bullet-clear-direct.pptx', slides: 1 }),
+  Object.freeze({ file: 'bullet-image-editing.pptx', slides: 1 }),
   Object.freeze({ file: 'table-cell-text-editing.pptx', slides: 3 }),
   Object.freeze({ file: 'shape-autofit-text-editing.pptx', slides: 2 }),
   Object.freeze({ file: 'body-props-editing.pptx', slides: 1 }),

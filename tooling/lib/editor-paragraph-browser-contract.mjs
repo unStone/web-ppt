@@ -53,11 +53,31 @@ export async function runEditorParagraphBrowserContract({ openEditor, load }) {
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
   editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  selectAcross(editable);
+  if (!view.setParaProps({ bullet: { kind: 'autoNum', type: 'arabicPeriod', startAt: 3 } })) {
+    throw new Error('真实浏览器外置工具栏未接受自动编号');
+  }
+  const autoState = view.queryParaProps()?.bullet;
+  const autoBullets = session.editor.effectiveElement(record.id).text.paragraphs
+    .slice(0, 2).map((paragraph) => paragraph.bullet);
+  editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  const shortcutAccepted = editable.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '*', code: 'Digit8', ctrlKey: true, shiftKey: true,
+    bubbles: true, composed: true, cancelable: true,
+  }));
+  const bulletState = view.queryParaProps()?.bullet;
+  const bullets = session.editor.effectiveElement(record.id).text.paragraphs
+    .slice(0, 2).map((paragraph) => paragraph.bullet);
   const selection = getSelection();
   const paragraphs = session.editor.effectiveElement(record.id).text.paragraphs;
   const ok = before?.align.mixed
     && paragraphs[0].align === 'left' && paragraphs[1].align === 'left'
     && paragraphs[2].align === 'right'
+    && JSON.stringify(autoBullets) === JSON.stringify(['3.', '4.'])
+    && autoState?.value?.kind === 'autoNum' && autoState.value.startAt === 3
+    && !shortcutAccepted && JSON.stringify(bullets) === JSON.stringify(['•', '•'])
+    && bulletState?.value?.kind === 'char' && bulletState.value.char === '•'
+    && !bulletState.mixed
     && !!editable && selection?.rangeCount === 1 && !selection.getRangeAt(0).collapsed
     && secondaryMount.querySelector(`[data-edit-id="${record.id}"]`)?.outerHTML !== secondaryBefore;
   view.setMode('view');

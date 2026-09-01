@@ -1,4 +1,3 @@
-import { DEFAULT_TEXT_LINE_HEIGHT } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import type { ElementRecord, TextOverride } from '../types';
 import type { FlatTextParagraph, RunProperties, TextMark } from '../types';
@@ -13,7 +12,7 @@ import {
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
-import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
+import { setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
 import { locateElementHost } from './xfrm';
 import { namespacedElement } from './xml-element';
@@ -21,9 +20,8 @@ import { patchTextBodyProperties } from './text-body';
 import type { HyperlinkSaveContext } from './hyperlink';
 import { materializeParagraphLayout, materializeRunProperties } from './text-source-less';
 import { applyRunOverrides, clearedLevelRunFallback } from './run-overrides';
+import { applyParagraphOverrides } from './paragraph-overrides';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
-const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
 const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'oMath', 'oMathPara', 'AlternateContent']);
 
 export function hasTextOverrides(record: ElementRecord): boolean {
@@ -110,77 +108,6 @@ function patchSourceRunProperties(
 function hasPropertyContent(properties: XmlElement): boolean {
   return properties.attributes.some((attribute) => !attribute.name.startsWith('xmlns'))
     || properties.children.some((child) => child.type !== 'text' || !!child.value.trim());
-}
-
-function replaceSpacing(
-  properties: XmlElement,
-  containerName: 'lnSpc' | 'spcBef' | 'spcAft',
-  valueName: 'spcPct' | 'spcPts',
-  value: number | null,
-): void {
-  let container = findXmlChild(properties, { localName: containerName, namespaceUri: DRAWINGML_NS });
-  if (value === null) {
-    if (container) removeXmlChild(properties, container);
-    return;
-  }
-  if (!container) {
-    container = namespacedElement(properties, DRAWINGML_NS, containerName);
-    insertXmlInOrder(properties, container);
-  }
-  let spacing: XmlElement | null = null;
-  for (const child of xmlElementChildren(container)) {
-    if (child.namespaceUri !== DRAWINGML_NS || !['spcPct', 'spcPts'].includes(child.localName)) continue;
-    if (child.localName === valueName && !spacing) spacing = child;
-    else removeXmlChild(container, child);
-  }
-  if (!spacing) {
-    spacing = namespacedElement(container, DRAWINGML_NS, valueName);
-    insertXmlChildUnchecked(container, spacing);
-  }
-  setXmlAttribute(spacing, 'val', String(Math.round(value)));
-}
-
-function applyParagraphOverrides(
-  properties: XmlElement,
-  paragraph: FlatTextParagraph,
-  lnSpcReduction: number,
-): void {
-  const overrides = paragraph.paragraphOverrides;
-  if (!overrides) return;
-  if (own(overrides, 'level')) {
-    const value = overrides.level;
-    if (value === undefined) throw new Error('段落级别覆盖无效');
-    if (value === null) removeXmlAttribute(properties, 'lvl');
-    else setXmlAttribute(properties, 'lvl', String(value));
-  }
-  if (own(overrides, 'align')) {
-    const value = overrides.align;
-    if (value === undefined) throw new Error('段落对齐覆盖无效');
-    if (value === null) removeXmlAttribute(properties, 'algn');
-    else setXmlAttribute(properties, 'algn', ALIGN[value]);
-  }
-  for (const [field, attribute] of [['marginLeft', 'marL'], ['indent', 'indent']] as const) {
-    if (!own(overrides, field)) continue;
-    const value = overrides[field];
-    if (value === undefined) throw new Error(`段落格式 ${field} 覆盖无效`);
-    if (value === null) removeXmlAttribute(properties, attribute);
-    else setXmlAttribute(properties, attribute, String(Math.round(value * 9525)));
-  }
-  if (own(overrides, 'lineHeight')) {
-    const value = overrides.lineHeight;
-    if (value === undefined) throw new Error('段落行高覆盖无效');
-    const percentage = value === null ? null
-      : (value + lnSpcReduction) / DEFAULT_TEXT_LINE_HEIGHT * 100000;
-    replaceSpacing(properties, 'lnSpc', 'spcPct', percentage);
-  }
-  for (const [field, container] of [
-    ['spaceBefore', 'spcBef'], ['spaceAfter', 'spcAft'],
-  ] as const) {
-    if (!own(overrides, field)) continue;
-    const value = overrides[field];
-    if (value === undefined) throw new Error(`段落格式 ${field} 覆盖无效`);
-    replaceSpacing(properties, container, 'spcPts', value === null ? null : value * 75);
-  }
 }
 
 function paragraphProperties(

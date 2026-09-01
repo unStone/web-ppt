@@ -4,7 +4,7 @@ import {
   textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
-  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState,
+  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, Selection, TableCellAddress, TextEditOp, TextPosition,
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -112,7 +112,7 @@ export class TextEditorController {
       : null;
   }
 
-  setParaProps(props: ParagraphPropertyOverrides): boolean {
+  setParaProps(props: ParagraphPropertyInput): boolean {
     const context = this.textContext();
     if (!context || this.composing) return false;
     this.options.editor.transaction((transaction) => {

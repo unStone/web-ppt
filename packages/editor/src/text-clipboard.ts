@@ -1,14 +1,8 @@
-import type { RunPropertyOverrides, TextFragment } from '@web-ppt/edit-core';
+import type { ParagraphBullet, RunPropertyOverrides, TextFragment } from '@web-ppt/edit-core';
 
-const BLOCKS = new Set([
-  'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'figcaption', 'figure',
-  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'li', 'main', 'nav', 'ol',
-  'p', 'pre', 'section', 'table', 'tbody', 'tfoot', 'thead', 'tr', 'ul',
-]);
-const SKIPPED = new Set(['base', 'head', 'iframe', 'link', 'meta', 'noscript', 'object', 'script', 'style', 'template']);
-const FORMATTING_ELEMENTS = new Set([
-  ...BLOCKS, 'b', 'strong', 'i', 'em', 'u', 'ins', 's', 'strike', 'del', 'span', 'font',
-]);
+const BLOCKS = /^(?:address|article|aside|blockquote|dd|div|dl|dt|figcaption|figure|footer|form|h[1-6]|header|li|main|nav|ol|p|pre|section|table|tbody|tfoot|thead|tr|ul)$/;
+const SKIPPED = /^(?:base|head|iframe|link|meta|noscript|object|script|style|template)$/;
+const FORMATTING_ELEMENTS = /^(?:b|strong|i|em|u|ins|s|strike|del|span|font)$/;
 
 type ClipboardPort = Pick<DataTransfer, 'getData' | 'setData'>;
 type FragmentParagraph = TextFragment['paragraphs'][number];
@@ -16,6 +10,7 @@ type FragmentParagraph = TextFragment['paragraphs'][number];
 interface MutableParagraph {
   text: string;
   marks: { from: number; to: number; props: RunPropertyOverrides }[];
+  bullet?: ParagraphBullet;
 }
 
 const emptyParagraph = (): MutableParagraph => ({ text: '', marks: [] });
@@ -97,15 +92,20 @@ function htmlFragment(html: string, document: Document): TextFragment | null {
     if (node.nodeType === node.TEXT_NODE) { append(current, node.nodeValue ?? '', props); return; }
     if (node.nodeType !== node.ELEMENT_NODE) return;
     const element = node as HTMLElement;
-    if (SKIPPED.has(element.localName) || element.hidden || element.getAttribute('aria-hidden') === 'true'
+    if (SKIPPED.test(element.localName) || element.hidden || element.getAttribute('aria-hidden') === 'true'
       || element.style.display === 'none' || element.style.visibility === 'hidden') return;
     if (element.localName === 'br') { append(current, '\n', props); return; }
     if (element.localName === 'img' || element.localName === 'svg') return;
-    const block = BLOCKS.has(element.localName);
+    const block = BLOCKS.test(element.localName);
     if (block && current.text) flush();
+    const encodedBullet = block ? element.getAttribute('data-web-ppt-bullet') : null;
+    if (encodedBullet) {
+      try { current.bullet = JSON.parse(encodedBullet) as ParagraphBullet; } catch { /* 非法元数据降级为普通文本。 */ }
+    }
     const count = paragraphs.length;
     // 未知标签只保留后代文本，不能借自定义元素把任意样式带进文档模型。
-    const next = FORMATTING_ELEMENTS.has(element.localName) ? elementProps(element, props) : props;
+    const next = block || FORMATTING_ELEMENTS.test(element.localName)
+      ? elementProps(element, props) : props;
     for (const child of element.childNodes) walk(child, next);
     if (block) {
       if (current.text) flush();
@@ -151,7 +151,8 @@ function markHtml(text: string, props: RunPropertyOverrides): string {
 }
 
 export function textFragmentToHtml(fragment: TextFragment): string {
-  return fragment.paragraphs.map((paragraph) => `<div>${paragraph.marks.length
+  return fragment.paragraphs.map((paragraph) => `<div${paragraph.bullet
+    ? ` data-web-ppt-bullet="${escapeHtml(JSON.stringify(paragraph.bullet))}"` : ''}>${paragraph.marks.length
     ? paragraph.marks.map((mark) => markHtml(paragraph.text.slice(mark.from, mark.to), mark.props)).join('')
     : ''}</div>`).join('');
 }

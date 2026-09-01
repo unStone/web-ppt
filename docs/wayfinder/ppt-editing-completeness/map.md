@@ -34,6 +34,8 @@ tracker: local-markdown
 
 - [表格结构编辑](tickets/001-table-structure-editing.md)：稳定行列身份、tombstone 可见性与完整合并真值共同保证
   插删、合并、保存和协同始终指向同一逻辑单元格。
+- [项目符号与自动编号](tickets/002-bullets-and-numbering.md)：结构化 Source Value / Override 配合内容寻址图片
+  闭包，保证继承、续号与两种保存路径一致。
 
 ## Not yet specified
 

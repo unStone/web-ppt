@@ -160,7 +160,7 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 .inspector-actions button:disabled, .inspector-section > button:disabled { opacity: .4; cursor: not-allowed; }
 .inspector-actions button[aria-pressed="true"] { border-color: #e7ae94; background: var(--accent-soft); }
 .inspector-file { width: 100%; cursor: pointer; }
-#replaceImageInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+#replaceImageInput, #textBulletImageInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .inspector-section output, .inspector-section small { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .animation-timeline { display: grid; gap: 6px; margin: 10px 0; padding: 0; list-style: none; }
 .animation-timeline li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; padding: 7px; border: 1px solid var(--soft-line); border-radius: 7px; font-size: 10px; }

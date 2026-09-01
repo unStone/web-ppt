@@ -34,6 +34,7 @@ import { runAnimationSaveContract } from './lib/animation-save-contract.mjs';
 import { runGeneratedSaveContract } from './lib/generated-save-contract.mjs';
 import { runGroupUngroupSaveContract } from './lib/group-ungroup-save-contract.mjs';
 import { runListLevelSaveContract } from './lib/list-level-save-contract.mjs';
+import { runBulletFormatSaveContract } from './lib/bullet-format-save-contract.mjs';
 import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
 import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
 import {
@@ -97,10 +98,28 @@ await runGeneratedSaveContract({
     ], { cwd: root, encoding: 'utf8' });
     return JSON.parse(stdout);
   },
+  renderGeneratedBulletFingerprint: (file, mode) => {
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/generated-bullet-fingerprint.mjs'),
+      corePath, generatePath, file, mode,
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
 });
 
 await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 await runListLevelSaveContract({ edit, core, load, check, saveArtifact });
+await runBulletFormatSaveContract({
+  edit, core, load, check, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
 await runVertexSaveContract({ edit, core, load, check, saveArtifact });
 await runTableStyleSaveContract({
   edit, core, load, check, saveArtifact,

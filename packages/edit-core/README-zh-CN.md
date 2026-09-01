@@ -292,22 +292,29 @@ const state = queryRunProps(editor.doc, elementId, range);
 
 `SetParaProps` 会设置选区触及的全部段落，空段也包含在内；折叠选区立即作用于当前段。P0 属性包括
 对齐、有效行高倍数、段前/段后间距（幻灯片 px）、左边距（幻灯片 px）和可为负的首行缩进（幻灯片 px）。
-属性传 `null` 只删除对应的直接 `pPr` 字段并恢复级别样式继承；原本没有直设字段时是严格 no-op。
-`queryParaProps` 为每个属性独立返回 `{ value, mixed }`。
+`bullet` 支持显式无符号、单个 Unicode 字符、全部 DrawingML 自动编号制式及 `startAt`，也支持上传
+PNG/JPEG/GIF/WebP 图片；字符、编号和图片均可独立设置字体、颜色、相对大小或绝对磅值。`bullet: null`
+删除整组项目符号直设并恢复版式/母版级别继承，`{ kind: 'none' }` 则显式屏蔽继承。`queryParaProps`
+为每个属性独立返回 `{ value, mixed }`，项目符号保留结构语义而不是只返回渲染后的字符。
 
 ```ts
 import { queryParaProps } from '@web-ppt/edit-core';
 
 editor.exec({
   type: 'SetParaProps', id: elementId, range,
-  props: { align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12 },
+  props: {
+    align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12,
+    bullet: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 4 },
+  },
 });
 const paragraphState = queryParaProps(editor.doc, elementId, range);
 // paragraphState.align 为 { value: 'center', mixed: false }
+// paragraphState.bullet.value 为 { kind: 'autoNum', type: 'romanLcPeriod', startAt: 4 }
 ```
 
 `EditText` 还支持 `replaceFragment`，供剪贴板适配层提交纯 JSON 富文本片段。片段只包含段落字符串和连续的半开
-格式区间，区间只能携带六个 P0 字符属性；DOM、CSS 和 OOXML 来源身份都不能越过此边界。未声明属性继承被替换
+格式区间，区间只能携带六个 P0 字符属性；完整选中的段落还会携带结构化项目符号（图片按内容哈希传递），
+局部选区不会携带段落语义。DOM、CSS 和 OOXML 来源身份都不能越过此边界。未声明属性继承被替换
 范围起点的格式，块生成段落，字符串里的 `\n` 保持段内硬换行。复制/剪切可用 `textFragmentFromRange()` 生成
 反向传输结构，而不会泄漏保存溯源元数据。
 

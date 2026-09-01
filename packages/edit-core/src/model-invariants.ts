@@ -67,7 +67,12 @@ function assertTextBodies(record: ElementRecord): void {
   }
 }
 
-function assertTextOverride(value: unknown, label: string): asserts value is TextOverride {
+function assertTextOverride(
+  doc: EditDoc,
+  record: ElementRecord,
+  value: unknown,
+  label: string,
+): asserts value is TextOverride {
   if (!value || typeof value !== 'object') throw new Error(`${label} 无效`);
   const kind = (value as { kind?: unknown }).kind;
   if (kind === 'empty') {
@@ -76,16 +81,20 @@ function assertTextOverride(value: unknown, label: string): asserts value is Tex
   }
   if (kind !== 'flat') throw new Error(`${label} 类型无效`);
   assertDataObject(value, ['kind', 'body', 'bodyOverrides', 'paragraphs'], label);
-  validateFlatTextOverride(value as Extract<TextOverride, { kind: 'flat' }>);
+  validateFlatTextOverride(value as Extract<TextOverride, { kind: 'flat' }>, {
+    doc, part: record.meta.origin?.part, resources: doc.imageResources,
+  });
 }
 
 /** 稀疏文字覆盖是公开模型入口；不能只依赖命令曾经正确地产生过它。 */
 function assertTextOverrides(doc: EditDoc, record: ElementRecord): void {
   if (record.ovr.text !== undefined) {
     textTargetContext(doc, { id: record.id });
-    assertTextOverride(record.ovr.text, `元素 ${record.id} 的文字覆盖`);
+    assertTextOverride(doc, record, record.ovr.text, `元素 ${record.id} 的文字覆盖`);
   }
-  assertTableCellOverrides(doc, record, assertTextOverride);
+  assertTableCellOverrides(
+    doc, record, (value, label) => assertTextOverride(doc, record, value, label),
+  );
 }
 
 function assertParentChain(doc: EditDoc, id: ElementId): void {

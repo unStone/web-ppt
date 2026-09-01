@@ -310,23 +310,32 @@ const state = queryRunProps(editor.doc, elementId, range);
 `SetParaProps` applies paragraph formatting to every paragraph touched by a range, including empty paragraphs.
 A collapsed range formats its current paragraph immediately. The P0 property set is alignment, effective line-height
 multiplier, spacing before/after in slide pixels, left margin in slide pixels, and signed first-line indent in slide
-pixels. `null` removes only that direct `pPr` field and reveals its inherited level style; clearing a field that was
-never direct is a strict no-op. `queryParaProps` reports an independent `{ value, mixed }` state for every property.
+pixels. Its `bullet` field supports explicit none, a Unicode character, every DrawingML auto-number scheme with
+`startAt`, or uploaded PNG/JPEG/GIF/WebP bytes. Character, auto-number, and image bullets can carry an independent
+font, color, and relative or absolute size. `bullet: null` removes the complete direct bullet group and reveals the
+layout/master level value; `{ kind: 'none' }` explicitly blocks that inheritance. `queryParaProps` reports an
+independent `{ value, mixed }` state for every property and retains structured bullet semantics rather than a
+rendered marker string.
 
 ```ts
 import { queryParaProps } from '@web-ppt/edit-core';
 
 editor.exec({
   type: 'SetParaProps', id: elementId, range,
-  props: { align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12 },
+  props: {
+    align: 'center', lineHeight: 1.5, spaceAfter: 8, indent: -12,
+    bullet: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 4 },
+  },
 });
 const paragraphState = queryParaProps(editor.doc, elementId, range);
 // paragraphState.align: { value: 'center', mixed: false }
+// paragraphState.bullet.value: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 4 }
 ```
 
 `EditText` also accepts `replaceFragment`, a JSON-only rich-text splice for clipboard adapters. A fragment contains
 paragraph strings and contiguous half-open marks with only the six P0 character properties; DOM nodes, CSS, and
-OOXML source identities cannot cross this boundary. Unspecified fields inherit the replaced range's starting
+OOXML source identities cannot cross this boundary. A fully selected paragraph also carries its structured bullet,
+including content-addressed image bytes; partial selections do not. Unspecified fields inherit the replaced range's starting
 style, blocks create paragraphs, and embedded `\n` values remain hard line breaks. `textFragmentFromRange()`
 creates the inverse transport shape for copy/cut without exposing preservation metadata.
 

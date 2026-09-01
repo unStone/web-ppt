@@ -1,5 +1,5 @@
 import type {
-  EditAnimationStep, EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides, RunLinkState, RunPropertiesState,
+  EditAnimationStep, EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideAnimationState, SlideNotesState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
@@ -312,7 +312,7 @@ class DomSlideEditor implements SlideEditor {
   queryRunLink(): RunLinkState | null { return this.commands.queryRunLink(); }
   setRunProps(props: RunPropertyOverrides): boolean { return this.commands.setRunProps(props); }
   queryParaProps(): ParagraphPropertiesState | null { return this.commands.queryParaProps(); }
-  setParaProps(props: ParagraphPropertyOverrides): boolean { return this.commands.setParaProps(props); }
+  setParaProps(props: ParagraphPropertyInput): boolean { return this.commands.setParaProps(props); }
   queryBodyProps(): TextBodyProperties | null { return this.commands.queryBodyProps(); }
   setBodyProps(props: TextBodyPropertyOverrides): boolean { return this.commands.setBodyProps(props); }
 

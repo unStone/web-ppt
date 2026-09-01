@@ -1,5 +1,5 @@
 import {
-  paragraphLayoutDirectFlags, TEXT_RUN_DIRECT_BITS, textRunDirectFlags,
+  paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS, textRunDirectFlags,
 } from '@web-ppt/core';
 import type {
   Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo,
@@ -118,6 +118,28 @@ function projectedParagraphEditInfo(
   const inherited = useFlatLayout
     ? paragraph.inheritedParagraphProps ?? sourceInfo?.inheritedParagraphProps
     : sourceInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
+  let directLayout = sourceInfo?.directLayout ?? paragraphLayoutDirectFlags(0);
+  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')) {
+    directLayout = paragraphLayoutDirectFlags(overrides?.bullet === null
+      ? directLayout & ~PARAGRAPH_LAYOUT_DIRECT_BITS.bullet
+      : directLayout | PARAGRAPH_LAYOUT_DIRECT_BITS.bullet);
+  }
+  const requestedBullet = overrides?.bullet;
+  const requested = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')
+    ? requestedBullet?.kind === 'autoNum'
+      ? { ...requestedBullet, startAt: requestedBullet.startAt ?? 1 }
+      : requestedBullet ?? sourceInfo?.inheritedBullet ?? { kind: 'none' as const }
+    : sourceInfo?.bullet ?? { kind: 'none' as const };
+  const bullet: NonNullable<Paragraph['editInfo']>['bullet'] = requested.kind === 'blip'
+    ? {
+      kind: 'image', rid: paragraph.bulletImageOverride?.relationships[0]?.targetId
+        ?? (sourceInfo?.bullet.kind === 'image' ? sourceInfo.bullet.rid : ''),
+      src: requested.image.src,
+      ...(requested.color !== undefined ? { color: requested.color } : {}),
+      ...(requested.font !== undefined ? { font: requested.font } : {}),
+      ...(requested.size !== undefined ? { size: requested.size } : {}),
+    }
+    : requested;
   return {
     inheritedParagraphProps: structuredClone(inherited ?? {
       level: props.lvl,
@@ -130,8 +152,16 @@ function projectedParagraphEditInfo(
     }),
     directParagraphProps,
     directRun: sourceInfo?.directRun ?? textRunDirectFlags(0),
-    directLayout: sourceInfo?.directLayout ?? paragraphLayoutDirectFlags(0),
-    ...(sourceInfo?.autoNumbering ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) } : {}),
+    directLayout,
+    bullet: structuredClone(bullet),
+    inheritedBullet: structuredClone(sourceInfo?.inheritedBullet ?? { kind: 'none' as const }),
+    ...(overrides?.bullet?.kind === 'autoNum'
+      ? { autoNumbering: {
+        scheme: overrides.bullet.type, startAt: overrides.bullet.startAt ?? 1,
+      } }
+      : !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')
+        && sourceInfo?.autoNumbering
+        ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) } : {}),
   };
 }
 
@@ -225,6 +255,7 @@ function paragraphFromOverride(
   paragraph: FlatTextParagraph,
   source: Paragraph | undefined,
   useFlatLayout = false,
+  useFlatBullets = false,
 ): Omit<Paragraph, 'runs' | 'editInfo'> {
   const overrides = paragraph.paragraphOverrides;
   // level 会连带九级样式中的符号、缩进与字符默认值；投影必须采用已重基的扁平结果。
@@ -246,6 +277,13 @@ function paragraphFromOverride(
       : paragraph.props[paragraphField];
     props[paragraphField] = value as never;
   }
+  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet') || useFlatBullets) {
+    props.bullet = paragraph.props.bullet;
+    props.bulletFont = paragraph.props.bulletFont;
+    props.bulletColor = paragraph.props.bulletColor;
+    props.bulletSize = paragraph.props.bulletSize;
+    props.bulletImage = paragraph.props.bulletImage;
+  }
   return props;
 }
 
@@ -257,6 +295,8 @@ export function textBodyFromOverride(
 ): TextBody {
   const hasLevelChanges = override.paragraphs.some((paragraph) =>
     Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'level'));
+  const hasBulletChanges = override.paragraphs.some((paragraph) =>
+    Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'bullet'));
   return {
     ...bodyFromOverride(override, source),
     // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
@@ -265,12 +305,15 @@ export function textBodyFromOverride(
       const levelChanged = Object.prototype.hasOwnProperty.call(
         paragraph.paragraphOverrides ?? {}, 'level',
       );
-      const paragraphProps = paragraphFromOverride(paragraph, sourceParagraph, hasLevelChanges);
+      const paragraphProps = paragraphFromOverride(
+        paragraph, sourceParagraph, hasLevelChanges, hasBulletChanges,
+      );
+      const { bulletImage, ...orderedParagraphProps } = paragraphProps;
       const editInfo = projectedParagraphEditInfo(
         paragraph, paragraphProps, sourceParagraph, levelChanged || hasLevelChanges,
       );
       return {
-        ...paragraphProps,
+        ...orderedParagraphProps,
         ...(editInfo ? { editInfo } : {}),
         runs: paragraph.marks.map((mark, markIndex) => {
           const sourceRun = source?.paragraphs[
@@ -287,6 +330,7 @@ export function textBodyFromOverride(
           }
           return { ...run, link: resolveLink?.(overrideLink) };
         }),
+        ...(bulletImage !== undefined ? { bulletImage } : {}),
       };
     }),
   };

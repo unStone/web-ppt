@@ -182,7 +182,9 @@ export async function runRichTextClipboardEditorContract({ check, lib, root, win
   const roundTripped = session.editor.effectiveElement(record.id).text;
   check('包含空段的清洗 HTML 可复制回贴且不会把空段变成硬换行',
     roundTripPaste.defaultPrevented && emptyRoundTrip.getData('text/plain') === '嵌套\n\n末行'
-      && emptyRoundTrip.getData('text/html').includes('<div></div>')
+      && /<div(?: data-web-ppt-bullet="[^"]+")?><\/div>/.test(
+        emptyRoundTrip.getData('text/html'),
+      )
       && !emptyRoundTrip.getData('text/html').includes('<div><br></div>')
       && roundTripped.paragraphs[1].runs.every((run) => run.text === '')
       && !roundTripped.paragraphs.slice(0, 3)

@@ -58,6 +58,17 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
+  const editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  selectFirstCharacter(editable);
+  const bulletData = new DataTransfer();
+  bulletData.setData('text/plain', '列表');
+  bulletData.setData('text/html', '<div data-web-ppt-bullet="{&quot;kind&quot;:&quot;char&quot;,&quot;char&quot;:&quot;→&quot;}">列表</div>');
+  const bulletAccepted = editable.dispatchEvent(clipboardEvent('paste', bulletData));
+  if (bulletAccepted
+    || session.editor.effectiveElement(record.id).text.paragraphs[0].bullet !== '→') {
+    throw new Error('真实浏览器富文本粘贴没有保留段落项目符号语义');
+  }
+  session.editor.undo();
   if (session.editor.history.undoCount !== 0) throw new Error('2,000 字符富文本粘贴撤销后历史不一致');
   recordPerformanceBudget('2,000 字符富文本粘贴完整上屏 p95', p95, 30);
   return { session, view, mount, id: record.id, p95 };

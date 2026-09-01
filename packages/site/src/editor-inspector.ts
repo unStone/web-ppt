@@ -6,6 +6,7 @@ import {
   queryElementStroke,
   type EditorSession,
   type LinkTarget,
+  type ParagraphPropertyInput,
   type SlideEditor,
 } from '@web-ppt/editor';
 
@@ -21,6 +22,8 @@ export interface EditorInspector {
 }
 
 type Notice = (message: string, tone?: 'normal' | 'success' | 'error') => void;
+type BulletInput = NonNullable<ParagraphPropertyInput['bullet']>;
+type AutoNumberBullet = Extract<BulletInput, { readonly kind: 'autoNum' }>;
 const $ = <T extends Element>(root: ParentNode, selector: string): T => root.querySelector<T>(selector)!;
 
 function colorInputValue(value: string | undefined, fallback = '#000000'): string {
@@ -48,6 +51,16 @@ export function createEditorInspector(
   const textSize = $<HTMLInputElement>(element, '#textFontSize');
   const textColor = $<HTMLInputElement>(element, '#textColor');
   const textAlign = $<HTMLSelectElement>(element, '#textAlign');
+  const bulletKind = $<HTMLSelectElement>(element, '#textBulletKind');
+  const bulletChar = $<HTMLInputElement>(element, '#textBulletChar');
+  const bulletScheme = $<HTMLSelectElement>(element, '#textBulletScheme');
+  const bulletStart = $<HTMLInputElement>(element, '#textBulletStart');
+  const bulletFont = $<HTMLInputElement>(element, '#textBulletFont');
+  const bulletColorEnabled = $<HTMLInputElement>(element, '#textBulletColorEnabled');
+  const bulletColor = $<HTMLInputElement>(element, '#textBulletColor');
+  const bulletSizeKind = $<HTMLSelectElement>(element, '#textBulletSizeKind');
+  const bulletSize = $<HTMLInputElement>(element, '#textBulletSize');
+  const bulletImage = $<HTMLInputElement>(element, '#textBulletImageInput');
   const fillType = $<HTMLSelectElement>(element, '#shapeFillType');
   const fillColor = $<HTMLInputElement>(element, '#shapeFillColor');
   const strokeType = $<HTMLSelectElement>(element, '#shapeStrokeType');
@@ -80,6 +93,15 @@ export function createEditorInspector(
     return id && session ? session.editor.doc.elements[id]?.src.kind ?? null : null;
   };
 
+  const syncBulletFields = (): void => {
+    const kind = bulletKind.value;
+    $<HTMLElement>(element, '#textBulletCharField').hidden = kind !== 'char';
+    $<HTMLElement>(element, '#textBulletSchemeField').hidden = kind !== 'autoNum';
+    $<HTMLElement>(element, '#textBulletStartField').hidden = kind !== 'autoNum';
+    $<HTMLElement>(element, '#textBulletSizeField').hidden = bulletSizeKind.value === 'inherit';
+    bulletColor.disabled = bulletKind.disabled || !bulletColorEnabled.checked;
+  };
+
   const syncText = (): boolean => {
     const { view, writable } = context();
     const run = view?.queryRunProps() ?? null;
@@ -99,6 +121,30 @@ export function createEditorInspector(
     const paragraph = view?.queryParaProps();
     textAlign.disabled = !writable || !paragraph;
     if (paragraph?.align.value) textAlign.value = paragraph.align.value;
+    const bullet = paragraph?.bullet.value;
+    bulletKind.dataset.mixed = String(!!paragraph?.bullet.mixed);
+    bulletKind.value = paragraph?.bullet.mixed ? 'mixed'
+      : bullet?.kind === 'blip' ? 'image' : bullet?.kind ?? 'none';
+    if (bullet?.kind === 'char') bulletChar.value = bullet.char;
+    if (bullet?.kind === 'autoNum') {
+      if ([...bulletScheme.options].some((option) => option.value === bullet.type)) {
+        bulletScheme.value = bullet.type;
+      }
+      bulletStart.value = String(bullet.startAt ?? 1);
+    }
+    const styled = bullet && bullet.kind !== 'none' ? bullet : null;
+    bulletFont.value = styled?.font ?? '';
+    bulletColorEnabled.checked = !!styled?.color;
+    bulletColor.value = colorInputValue(styled?.color ?? undefined);
+    bulletSizeKind.value = styled?.size?.kind ?? 'inherit';
+    bulletSize.value = styled?.size
+      ? String(styled.size.kind === 'percent' ? styled.size.value * 100 : styled.size.value)
+      : '100';
+    for (const control of [
+      bulletKind, bulletChar, bulletScheme, bulletStart, bulletFont, bulletColorEnabled,
+      bulletSizeKind, bulletSize, bulletImage,
+    ]) control.disabled = !writable || !paragraph;
+    syncBulletFields();
     return true;
   };
 
@@ -196,6 +242,53 @@ export function createEditorInspector(
   }));
   textAlign.addEventListener('change', () => void act(() => {
     if (context().view?.setParaProps({ align: textAlign.value as 'left' | 'center' | 'right' | 'justify' })) sync();
+  }));
+
+  const bulletStyle = (): Pick<AutoNumberBullet, 'font' | 'color' | 'size'> => ({
+    ...(bulletFont.value.trim() ? { font: bulletFont.value.trim() } : {}),
+    ...(bulletColorEnabled.checked ? { color: bulletColor.value } : {}),
+    ...(bulletSizeKind.value === 'percent'
+      ? { size: { kind: 'percent', value: Number(bulletSize.value) / 100 } as const }
+      : bulletSizeKind.value === 'points'
+        ? { size: { kind: 'points', value: Number(bulletSize.value) } as const } : {}),
+  });
+  const setBullet = (): void => void act(() => {
+    const { view } = context();
+    if (!view || bulletKind.value === 'mixed') return;
+    let bullet: ParagraphPropertyInput['bullet'];
+    if (bulletKind.value === 'inherit') bullet = null;
+    else if (bulletKind.value === 'none') bullet = { kind: 'none' };
+    else if (bulletKind.value === 'char') {
+      const char = Array.from(bulletChar.value);
+      if (char.length !== 1) throw new Error('项目符号必须是一个字符');
+      bullet = { kind: 'char', char: char[0], ...bulletStyle() };
+    } else if (bulletKind.value === 'image') {
+      const current = view.queryParaProps()?.bullet.value;
+      if (current?.kind !== 'blip') return;
+      bullet = { kind: 'blip', image: current.image, ...bulletStyle() };
+    } else bullet = {
+      kind: 'autoNum', type: bulletScheme.value as AutoNumberBullet['type'],
+      startAt: Number(bulletStart.value), ...bulletStyle(),
+    };
+    if (view.setParaProps({ bullet })) sync();
+  });
+  for (const control of [
+    bulletKind, bulletChar, bulletScheme, bulletStart, bulletFont,
+    bulletColorEnabled, bulletColor, bulletSizeKind, bulletSize,
+  ]) control.addEventListener('change', () => {
+    syncBulletFields();
+    setBullet();
+  });
+  bulletImage.addEventListener('change', () => void act(async () => {
+    const file = bulletImage.files?.[0]; const { view } = context();
+    if (!file || !view) return;
+    if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
+      throw new Error('图片项目符号仅支持 PNG、JPEG、GIF 或 WebP');
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const image = { bytes, mime: file.type as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' };
+    if (view.setParaProps({ bullet: { kind: 'blip', image, ...bulletStyle() } })) sync();
+    bulletImage.value = '';
   }));
 
   const setFill = (): void => void act(() => {

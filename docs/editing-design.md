@@ -366,7 +366,7 @@ sequenceDiagram
 | 颜色 / 高亮 / 字距 / 大小写 | 同上 | `a:solidFill`、`a:highlight`、`@spc`、`@cap` | P1 |
 | 上下标 | 同上 | `a:rPr@baseline` | P1 |
 | 段落对齐 / 行距 / 段前后 / 缩进 | `SetParaProps{ id, range, props }` | `a:pPr@algn/@marL/@indent` + `a:lnSpc/a:spcBef/a:spcAft` | P0 |
-| 项目符号（字符 / 编号 / 图片 / 无） | 同上 | `a:buChar` / `a:buAutoNum` / `a:buBlip` / `a:buNone` + `a:buFont/a:buClr/a:buSzPct` | P1 |
+| 项目符号（字符 / 编号 / 图片 / 无） | 同上 | `a:buChar` / `a:buAutoNum` / `a:buBlip` / `a:buNone` + `a:buFont/a:buClr/a:buSzPct/a:buSzPts` | P0（已实现） |
 | 竖排 / 分栏 / 自动缩放 / 内边距 / 锚点 | `SetBodyProps{ id, props }` | `a:bodyPr@vert/@numCol/@spcCol/@anchor/@lIns…` + `a:normAutofit` | P1 |
 | run 级超链接 | `SetRunProps` | `a:rPr/a:hlinkClick` + rels | P1 |
 | 清除格式 | `ClearFormat{ id, range }` | 删 `a:rPr` 上的对应属性（回到继承） | P1 |

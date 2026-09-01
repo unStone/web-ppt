@@ -11,7 +11,7 @@ import { assertFrameRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { elementHasLockedAncestor } from './element-interaction';
 import type { CommandPatches, ElementHierarchyPatch, GroupCommand } from './types';
-import { cloneElementRecord } from './record-clone';
+import { cloneHierarchyRecord } from './hierarchy-record';
 
 interface GroupFrame { x: number; y: number; w: number; h: number }
 
@@ -83,8 +83,10 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
   const parent = records[0].parent;
   if (records.some((record) => record.parent !== parent)) throw new Error('只能组合同一父级的直属元素');
   const siblings = elementParentChildren(doc, parent);
-  if (records.some((record) => !siblings.includes(record.id))) throw new Error('组合元素不在父级 children 中');
-  const ordered = siblings.filter((id) => command.ids.includes(id));
+  const siblingIds = new Set(siblings);
+  if (records.some((record) => !siblingIds.has(record.id))) throw new Error('组合元素不在父级 children 中');
+  const requested = new Set(command.ids);
+  const ordered = siblings.filter((id) => requested.has(id));
   const part = records[0].meta.origin?.part;
   if (doc.package && (!part || records.some((record) => record.meta.origin?.part !== part))) {
     throw new Error('组合元素缺少统一的 OOXML 写回 part');
@@ -108,18 +110,19 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
   };
   const moved = Object.fromEntries(ordered.map((childId, index) => {
     const before = doc.elements[childId];
-    const { order: _order, ...withoutOrder } = cloneElementRecord(before);
+    const cloned = cloneHierarchyRecord(before);
+    const { order: _order, ...withoutOrder } = cloned;
     const z = initialFractionalIndex(index);
     return [childId, {
       ...withoutOrder, parent: id, z, order: z,
       meta: {
-        ...structuredClone(before.meta),
+        ...cloned.meta,
         ...(!before.meta.created && before.meta.sourceParent === undefined
           ? { sourceParent: before.parent } : {}),
       },
     } satisfies ElementRecord];
   }));
-  const nextSiblings = siblings.filter((childId) => !command.ids.includes(childId));
+  const nextSiblings = siblings.filter((childId) => !requested.has(childId));
   const insertionIndex = nextSiblings.findIndex((childId) =>
     elementOrder(doc.elements[childId]) > group.z);
   nextSiblings.splice(insertionIndex < 0 ? nextSiblings.length : insertionIndex, 0, id);
@@ -139,7 +142,7 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
       records: {
         [id]: null,
         ...Object.fromEntries(ordered.map((childId) => [
-          childId, cloneElementRecord(doc.elements[childId]),
+          childId, cloneHierarchyRecord(doc.elements[childId]),
         ])),
       },
       children: { [parent]: [...siblings] },

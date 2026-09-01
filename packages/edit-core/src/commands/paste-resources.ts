@@ -41,9 +41,19 @@ function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[]
     }] : [];
     const replacement = record.meta.imageReplacement;
     const resource = replacement && doc.imageResources[replacement.resourceHash];
+    const textOverrides = [record.ovr.text,
+      ...Object.values(record.ovr.tableCells ?? {}).map((cell) => cell.text)];
+    const bulletImages = textOverrides.flatMap((text) => text?.kind === 'flat'
+      ? text.paragraphs.flatMap((paragraph) => {
+        const image = paragraph.bulletImageOverride;
+        const imageResource = image && doc.imageResources[image.resourceHash];
+        return image && imageResource ? [{
+          relationships: [...image.relationships], resources: [imageResource],
+        }] : [];
+      }) : []);
     return [...insertion, ...(replacement && resource ? [{
       relationships: [...replacement.relationships], resources: [resource],
-    }] : [])];
+    }] : []), ...bulletImages];
   });
   const backgrounds = Object.values(doc.slides).flatMap((record) => {
     if (part !== undefined && record.origin?.part !== part) return [];
@@ -157,11 +167,19 @@ function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => s
 
 function directMediaTarget(
   doc: EditDoc,
-  source: Omit<ElementInsertionResource, 'targetPart' | 'created'>,
+  source: Omit<ElementInsertionResource, 'targetPart' | 'created'> & { readonly sourcePart?: string },
 ): string {
   const retained = doc.imageResources[source.hash];
   if (retained) return retained.targetPart;
   const pkg = doc.package!;
+  if (source.sourcePart) {
+    const bytes = pkg.parts[source.sourcePart];
+    const extension = source.sourcePart.split('.').pop() ?? source.extension;
+    if (bytes && sha256(bytes) === source.hash
+      && packageContentType(pkg, source.sourcePart, extension) === source.mime) {
+      return source.sourcePart;
+    }
+  }
   const stem = `web-ppt-${source.hash}`;
   const session = sha256(new TextEncoder().encode(logicalIdentityPrefix(doc.identity))).slice(0, 10);
   for (let serial = 0; ; serial++) {
@@ -184,12 +202,13 @@ export function prepareMediaResourceClosure(
   destinationPart: string,
   sourceId: string,
   type: string,
-  source: Omit<ElementInsertionResource, 'targetPart' | 'created'>,
+  source: Omit<ElementInsertionResource, 'targetPart' | 'created'> & { readonly sourcePart?: string },
 ): PreparedInsertionClosure {
   if (!doc.package) throw new Error('媒体关系资源需要可写 OPC 包');
   // 上传与替换已经计算内容哈希；内容寻址名让热路径只检查一个候选，不扫描整包媒体。
   const targetPart = directMediaTarget(doc, source);
-  const resource = { ...source, targetPart, created: !doc.package.parts[targetPart] };
+  const { sourcePart: _sourcePart, ...storedSource } = source;
+  const resource = { ...storedSource, targetPart, created: !doc.package.parts[targetPart] };
   return {
     relationships: [{
       sourceId, targetId: relationshipIdAllocator(doc, destinationPart)(), type,

@@ -3,13 +3,19 @@ import {
 } from '@web-ppt/core';
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type {
-  FlatTextParagraph, ParagraphProperties, ParagraphPropertyOverrides, RunProperties, TextMark,
+  ElementImageReplacement, FlatTextParagraph, ParagraphBullet, ParagraphProperties, ParagraphPropertyOverrides, RunProperties, TextMark,
   TextOverride,
 } from './types';
 import type { TextRange } from './commands/types';
+import { normalizeDrawingColor } from './shape-fill';
 
 const own = (value: object | undefined, field: PropertyKey): boolean =>
   Object.prototype.hasOwnProperty.call(value ?? {}, field);
+
+function normalizeBullet(bullet: ParagraphBullet | null | undefined): ParagraphBullet | null | undefined {
+  if (!bullet || bullet.kind === 'none' || typeof bullet.color !== 'string') return bullet;
+  return { ...bullet, color: normalizeDrawingColor(bullet.color) };
+}
 
 function sourceParagraph(
   body: TextBody,
@@ -162,6 +168,13 @@ function autoNumbering(
   index: number,
   template: TextBody | undefined,
 ): { readonly scheme: string; readonly startAt: number } | undefined {
+  const override = paragraph.paragraphOverrides?.bullet;
+  if (override !== undefined) {
+    const effective = override ?? paragraph.inheritedBullet;
+    return effective?.kind === 'autoNum'
+      ? { scheme: effective.type, startAt: effective.startAt ?? 1 }
+      : undefined;
+  }
   const source = sourceParagraph(body, paragraph, index);
   if (source?.editInfo && source.editInfo.directLayout & PARAGRAPH_LAYOUT_DIRECT_BITS.bullet) {
     return source.editInfo.autoNumbering;
@@ -179,18 +192,25 @@ export function renumberParagraphs(
   paragraphs: readonly FlatTextParagraph[],
   template: TextBody | undefined,
 ): FlatTextParagraph[] {
-  const counters: number[] = [];
+  const counters: Array<{ scheme: string; value: number } | undefined> = [];
   return paragraphs.map((paragraph, index) => {
     const numbering = autoNumbering(body, paragraph, index, template);
-    if (!numbering) return paragraph;
     const level = paragraph.props.lvl;
+    if (!numbering) {
+      counters.length = level + 1;
+      delete counters[level];
+      return paragraph;
+    }
     counters.length = level + 1;
-    counters[level] = (counters[level] ?? numbering.startAt - 1) + 1;
+    const previous = counters[level];
+    const value = previous?.scheme === numbering.scheme
+      ? previous.value + 1 : numbering.startAt;
+    counters[level] = { scheme: numbering.scheme, value };
     return {
       ...paragraph,
       props: {
         ...paragraph.props,
-        bullet: formatDrawingAutoNumber(numbering.scheme, counters[level]),
+        bullet: formatDrawingAutoNumber(numbering.scheme, value),
       },
     };
   });
@@ -203,9 +223,11 @@ export function applyParagraphPropertyOverrides(
   range: TextRange,
   changes: ParagraphPropertyOverrides,
   levelTemplate?: TextBody,
+  imageOverride?: ElementImageReplacement,
 ): TextOverride {
   const has = (field: keyof ParagraphPropertyOverrides): boolean =>
     Object.prototype.hasOwnProperty.call(changes, field);
+  const bulletChange = has('bullet') ? normalizeBullet(changes.bullet) : undefined;
   const current = (paragraph: FlatTextParagraph): ParagraphProperties => ({
     level: paragraph.props.lvl, align: paragraph.props.align, lineHeight: paragraph.props.lineHeight,
     spaceBefore: paragraph.props.spaceBefore, spaceAfter: paragraph.props.spaceAfter,
@@ -230,15 +252,24 @@ export function applyParagraphPropertyOverrides(
   const sparseOverrides = (
     paragraph: FlatTextParagraph,
     original: FlatTextParagraph,
+    index: number,
   ): ParagraphPropertyOverrides => {
     const next: Record<string, ParagraphPropertyOverrides[keyof ParagraphPropertyOverrides]> = {
       ...paragraph.paragraphOverrides,
     };
     const before = current(original);
     for (const field of Object.keys(changes) as (keyof ParagraphPropertyOverrides)[]) {
+      if (field === 'bullet') continue;
       if (Object.is(changes[field], before[field])) continue;
       if (changes[field] === null && !paragraph.directParagraphProps?.[field]) delete next[field];
       else next[field] = changes[field];
+    }
+    if (has('bullet')) {
+      const source = sourceParagraph(sourceBody, original, index);
+      const sourceDirect = !!((source?.editInfo?.directLayout ?? 0)
+        & PARAGRAPH_LAYOUT_DIRECT_BITS.bullet);
+      if (bulletChange === null && !sourceDirect) delete next.bullet;
+      else next.bullet = bulletChange;
     }
     return next;
   };
@@ -252,20 +283,68 @@ export function applyParagraphPropertyOverrides(
       )
       : paragraph;
     const next = formatted(rebased);
-    const nextOverrides = sparseOverrides(rebased, paragraph);
-    const { paragraphOverrides: _previous, ...base } = rebased;
+    const nextOverrides = sparseOverrides(rebased, paragraph, index);
+    const { paragraphOverrides: _previous, bulletImageOverride: previousImage, ...base } = rebased;
+    const props = {
+      ...rebased.props,
+      lvl: next.level,
+      align: next.align, lineHeight: next.lineHeight,
+      spaceBefore: next.spaceBefore, spaceAfter: next.spaceAfter,
+      marL: next.marginLeft, indent: next.indent,
+    };
+    const effectiveBullet = has('bullet') ? bulletChange ?? paragraph.inheritedBullet : undefined;
+    if (has('bullet')) {
+      const bullet = bulletChange;
+      if (bullet === null) {
+        props.bulletColor = null;
+        props.bulletFont = null;
+        props.bulletSize = null;
+      }
+      if (effectiveBullet?.kind === 'char') {
+        props.bullet = effectiveBullet.char;
+        delete props.bulletImage;
+      } else if (effectiveBullet?.kind === 'none') {
+        props.bullet = null;
+        delete props.bulletImage;
+      } else if (effectiveBullet?.kind === 'autoNum') {
+        props.bullet = formatDrawingAutoNumber(effectiveBullet.type, effectiveBullet.startAt ?? 1);
+        delete props.bulletImage;
+      } else if (effectiveBullet?.kind === 'blip') {
+        props.bullet = null;
+        props.bulletImage = effectiveBullet.image.src;
+      } else {
+        const source = sourceParagraph(sourceBody, paragraph, index);
+        if (source) {
+          props.bullet = source.bullet;
+          props.bulletColor = source.bulletColor;
+          props.bulletFont = source.bulletFont;
+          props.bulletSize = source.bulletSize;
+          props.bulletImage = source.bulletImage;
+        }
+      }
+      if (effectiveBullet && effectiveBullet.kind !== 'none') {
+        if (own(effectiveBullet, 'font')) props.bulletFont = effectiveBullet.font ?? null;
+        if (own(effectiveBullet, 'color')) props.bulletColor = effectiveBullet.color ?? null;
+        if (own(effectiveBullet, 'size')) {
+          const maxSize = Math.max(...rebased.marks.map((mark) => mark.props.size), 1);
+          props.bulletSize = effectiveBullet.size === null ? null
+            : effectiveBullet.size?.kind === 'points'
+              ? effectiveBullet.size.value * (4 / 3) / maxSize
+              : effectiveBullet.size?.value ?? null;
+        }
+      }
+    }
     return {
       ...base,
-      props: {
-        ...rebased.props,
-        lvl: next.level,
-        align: next.align, lineHeight: next.lineHeight,
-        spaceBefore: next.spaceBefore, spaceAfter: next.spaceAfter,
-        marL: next.marginLeft, indent: next.indent,
-      },
+      props,
       ...(Object.keys(nextOverrides).length ? { paragraphOverrides: nextOverrides } : {}),
+      ...(has('bullet') && effectiveBullet?.kind === 'blip' && imageOverride
+        ? { bulletImageOverride: structuredClone(imageOverride) }
+        : !has('bullet') && previousImage ? { bulletImageOverride: previousImage } : {}),
     };
   });
-  if (has('level')) paragraphs = renumberParagraphs(sourceBody, paragraphs, levelTemplate);
+  if (has('level') || has('bullet')) {
+    paragraphs = renumberParagraphs(sourceBody, paragraphs, levelTemplate);
+  }
   return { ...override, paragraphs };
 }

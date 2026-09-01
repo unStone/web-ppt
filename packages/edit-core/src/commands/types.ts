@@ -1,6 +1,6 @@
 import type { CellBorders, Effects, Fill, Stroke, TableCell } from '@web-ppt/core';
 import type {
-  EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyOverrides, ProjectionInvalidation,
+  EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyInput, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
@@ -248,7 +248,7 @@ export interface SetParaPropsCommand {
   readonly id: ElementId;
   readonly cell?: TableCellAddress;
   readonly range: TextRange;
-  readonly props: ParagraphPropertyOverrides;
+  readonly props: ParagraphPropertyInput;
 }
 
 export interface FitTextShapeCommand {

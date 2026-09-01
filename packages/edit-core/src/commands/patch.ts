@@ -125,6 +125,7 @@ function validatePatch(
       patch as import('./types').ElementTextPatch,
       index,
       stagedTableRows.get(patch.path[1]),
+      stagedImageResources,
     );
     return;
   }

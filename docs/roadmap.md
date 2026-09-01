@@ -92,7 +92,7 @@
 | 结构 | `RemoveElement` `SetZ` `PasteElements` `SetName` `SetLocked` `SetElementHidden` | **`SetAltText`** |
 | 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` | **`SetPreset`**（改形状类型）、**`SetAdj`**（调节手柄）、`SetScene3D` |
 | 图片 | `AddImage` `ReplaceImage` `SetCrop` | **`SetPictureFx`**（透明度/灰度/双色调） |
-| 文本 | `EditText` `SetRunProps` `SetParaProps` `SetBodyProps` `FitTextShape` `ReplaceText` | **项目符号/编号**、**高亮/字距/大小写/上下标/下划线类型**、**`ClearFormat`** |
+| 文本 | `EditText` `SetRunProps` `SetParaProps`（含项目符号/编号）`SetBodyProps` `FitTextShape` `ReplaceText` | **高亮/字距/大小写/上下标/下划线类型**、**`ClearFormat`** |
 | 表格 | `AddTable` `InsertRow` `InsertColumn` `RemoveRow` `RemoveColumn` `MergeCells` `SplitCell` `SetRowHeight` `SetColumnWidth` `SetCellProps` `SetTableStyle` + 单元格文字 | — |
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | **节（`p14:sectionLst`）**、**`SetSlideSize`** |
 | 链接 | `SetLink`（元素级 + run 级） | — |
@@ -139,7 +139,7 @@ flowchart TD
 |---|---|---|---|
 | 跨产物一致性 / collab 漏列 | 有（装错包、信错数字） | 有 | ✅ **已完成** |
 | 表格结构编辑 | 有（表格是 PPT 高频对象，只能追加行等于不可用） | 有（rowId 已有，缺 colId 与合并不变量） | ✅ **已完成** |
-| 项目符号 / 编号 | 有（做 PPT 必用） | 有（继承重基与自动编号求值都已具备） | **0.6 P0** |
+| 项目符号 / 编号 | 有（做 PPT 必用） | 有（继承重基与自动编号求值都已具备） | ✅ **已完成** |
 | 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 可从 ECMA 预设定义生成，惰性查表零体积） | **0.6 P0** |
 | 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | **0.6 P1** |
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | **0.6 P1** |
@@ -246,15 +246,15 @@ SetCellProps{ id, cells: CellAddr[], props }   // null 恢复来源，同 SetEff
 - 按预设名**惰性查表**，只在编辑器拖手柄时加载 → 默认渲染路径零增重，可 tree-shake
 - 拖动时按 min/max 夹逼，杜绝生成 PowerPoint 拒绝的几何
 
-### 5.3 [编辑项目符号与自动编号](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md)
+### 5.3 ✅ [编辑项目符号与自动编号](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md)
 
 `SetParaProps` 扩展一个 `bullet` 字段：
 
 ```ts
 bullet?: { kind: 'none' }
-       | { kind: 'char'; char: string; font?: string }
-       | { kind: 'autoNum'; type: AutoNumType; startAt?: number }
-       | { kind: 'blip'; image: ImageRef }
+       | ({ kind: 'char'; char: string } & BulletStyle)
+       | ({ kind: 'autoNum'; type: AutoNumType; startAt?: number } & BulletStyle)
+       | ({ kind: 'blip'; image: ImageRef } & BulletStyle)
        | null   // null = 删覆盖，回到版式/母版继承
 ```
 
@@ -264,7 +264,8 @@ bullet?: { kind: 'none' }
 | 级别默认项目符号来自版式/母版 `a:lvlNpPr` | 「无覆盖」≠「无项目符号」，必须走 `068` 建立的九级继承重基 |
 | 自动编号续号 | `text-auto-number.ts` 的 `formatDrawingAutoNumber` 已实现，投影直接复用 |
 
-配套 `a:buFont` / `a:buClr` / `a:buSzPct`。难度低、频次高，0.6 里性价比最高的一项。
+已贯通命令、查询、富文本剪贴板、格式刷、表格、恢复/协同、补丁与生成保存；配套
+`a:buFont` / `a:buClr` / `a:buSzPct` / `a:buSzPts`，图片资源按内容哈希去重并建立关系闭包。
 
 ### 5.4 [补齐字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md)
 
@@ -395,8 +396,8 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | 开始[补齐表格结构与单元格格式编辑](wayfinder/ppt-editing-completeness/tickets/001-table-structure-editing.md) | 无 | 最大的结构缺口闭环 |
-| 2 | 随后完成[编辑项目符号与自动编号](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md) | 无 | 0.6 P0 主线过半 |
+| 1 | 完成[预设形状切换与调节手柄](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md) | 无 | 收口 0.6 P0 主线 |
+| 2 | 随后完成[字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md) | 无 | 关闭高频文字格式缺口 |
 | 3 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
 
 第 3 项全程外部阻塞，**只挡 0.5.0 的 tag，不要让它挡住 0.6 的开发**。

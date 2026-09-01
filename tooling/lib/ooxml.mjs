@@ -271,7 +271,7 @@ ${body}
  */
 export function deck({
   name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '',
-  extraEntries = [], masterShapes = '', layoutShapes = '',
+  extraEntries = [], masterShapes = '', layoutShapes = '', slideRelationships = [],
 }) {
   const slideOverrides = slides.map((_, i) =>
     `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
@@ -341,8 +341,8 @@ ${slideOverrides}${extraTypes}
     ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', rel(
       `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`)],
   ];
-  const slideRels = rel(`<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`);
   slides.forEach((xml, i) => {
+    const slideRels = rel(`<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${slideRelationships[i] ?? ''}`);
     entries.push([`ppt/slides/slide${i + 1}.xml`, xml]);
     entries.push([`ppt/slides/_rels/slide${i + 1}.xml.rels`, slideRels]);
   });

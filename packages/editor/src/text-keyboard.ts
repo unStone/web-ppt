@@ -1,5 +1,5 @@
 import { textBodyEditText, textPositionAtIndex, textPositionToIndex } from '@web-ppt/edit-core';
-import type { Editor, ParagraphPropertyOverrides, TableCellAddress, TextPosition } from '@web-ppt/edit-core';
+import type { Editor, ParagraphPropertyInput, TableCellAddress, TextPosition } from '@web-ppt/edit-core';
 import type { TextEditorContext } from './text-editor-context';
 import { textTargetFields } from './text-editor-target';
 
@@ -13,7 +13,7 @@ interface TextKeyboardOptions {
   changeListLevel(delta: -1 | 1): void;
   formatSelection(field: 'b' | 'i' | 'u'): boolean;
   stepFontSize(direction: -1 | 1): boolean;
-  setParaProps(props: ParagraphPropertyOverrides): boolean;
+  setParaProps(props: ParagraphPropertyInput): boolean;
   restoreSelection(from: TextPosition, to: TextPosition): void;
   selectAllElements(): void;
   documentKeyDown(event: KeyboardEvent): boolean;
@@ -88,6 +88,12 @@ export class TextKeyboardController {
     if (!event.shiftKey && key === 'a') handled = this.selectAll(root);
     else if (!event.shiftKey && ['b', 'i', 'u'].includes(key)) {
       handled = this.options.formatSelection(key as 'b' | 'i' | 'u');
+    } else if (event.shiftKey && (event.code === 'Digit7' || event.code === 'Digit8')) {
+      handled = this.options.setParaProps({
+        bullet: event.code === 'Digit7'
+          ? { kind: 'autoNum', type: 'arabicPeriod' }
+          : { kind: 'char', char: '•' },
+      });
     } else if (event.shiftKey && (event.code === 'Period' || event.code === 'Comma'
       || key === '>' || key === '<')) {
       const direction = event.code === 'Comma' || key === '<' ? -1 : 1;

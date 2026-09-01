@@ -1,6 +1,7 @@
 ---
 title: 编辑项目符号与自动编号
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -20,3 +21,29 @@ blocked_by: []
 验收：确定性固件覆盖继承、显式 none、字符、自动编号续号、图片与九级切换；模型/查询/历史、资源闭包、
 补丁与生成保存、LibreOffice 文字几何 oracle、独立进程指纹和真实 Chrome 工具栏/键盘反馈全部通过，四段
 仓库门禁全绿。
+
+## Answer
+
+项目符号现在是段落 Source Value / Override 的结构化值：`null` 清除直接覆盖并恢复版式或母版来源，
+`{ kind: "none" }` 显式屏蔽来源，字符、自动编号和图片分别保存自己的类型参数，并共用字体、颜色、
+相对/绝对大小样式。图片使用内容寻址资源引用；命令、历史、恢复、协同和剪贴板只传纯数据，投影时再解析为
+可渲染资源。
+
+所有会改变段落边界或级别的路径都会重新计算编号连续性。补丁保存与无源生成保存统一替换互斥的
+`a:buNone`、`a:buChar`、`a:buAutoNum`、`a:buBlip` 标记，避免同一段落输出多个项目符号定义；图片资源会
+随编辑历史、复制粘贴和保存闭包一起保留。编辑器公开了字符项目符号、自动编号、取消项目符号、列表升降级及
+图片项目符号入口，工具栏与 `Ctrl/Cmd+Shift+7/8` 共享同一命令链路。
+
+## Evidence
+
+- 确定性固件 `sample-editor-bullets.pptx` 的 SHA-256 为
+  `076781687894c2a0c9c9b3d874a53ca012eb0428b5c016b8d756bd6db5755350`，覆盖继承、显式 none、字符、
+  自动编号续号、图片及九级列表。
+- 模型与编辑保存分别通过 988、464 项断言，协同通过 111 项断言；73 个固件、247 页产生 494 对独立进程
+  HTML/SVG 等价指纹，178 个渲染快照保持稳定。
+- LibreOffice 实际渲染验证 `bullet-format-editing.pptx`、`bullet-image-editing.pptx` 和
+  `generated-bullets.pptx`：字符/none/罗马数字/重新起号、九级缩进、图片坐标及无源生成三类项目符号均有
+  独立几何证据。
+- 真实 Chrome 验证工具栏、快捷键、图片项目符号样式以及保存后重新打开；图片字体、颜色和百分比大小未丢失。
+- `npm run check`、`npm test`、`npm run build`、`npm run verify` 全部通过，验证器完成 285 项一致性检查。
+- 规格完整性与工程标准双重复审均为 PASS。

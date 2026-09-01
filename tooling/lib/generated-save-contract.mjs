@@ -15,6 +15,7 @@ const tableAppearance = (table) => table.rows.map((row) => row.cells.map((cell) 
 /** 生成保存只从公开入口和最终 PPTX 观察，不读取生成器内部状态。 */
 export async function runGeneratedSaveContract({
   core, edit, generate, load, check, saveArtifact, renderFingerprint,
+  renderGeneratedBulletFingerprint,
 }) {
   console.log('\n\x1b[36m▸ 生成式 PPTX 保存\x1b[0m');
   if (!check('公开按需生成入口', typeof generate.generateEditDoc === 'function')) return;
@@ -84,6 +85,34 @@ export async function runGeneratedSaveContract({
       && blankDoc.elements[shapeId]?.src.kind === 'shape'
       && blankDoc.elements[tableId]?.src.kind === 'table'
       && blankDoc.elements[imageId]?.src.kind === 'image');
+    blankEditor.exec({
+      type: 'EditText', id: shapeId, ops: [{
+        type: 'replaceFragment',
+        from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 5 },
+        fragment: { paragraphs: [
+          { text: '字符列表', marks: [{ from: 0, to: 4, props: {} }] },
+          { text: '自动编号', marks: [{ from: 0, to: 4, props: {} }] },
+          { text: '图片列表', marks: [{ from: 0, to: 4, props: {} }] },
+        ] },
+      }],
+    });
+    blankEditor.exec({
+      type: 'SetParaProps', id: shapeId,
+      range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
+      props: { bullet: { kind: 'char', char: '→' } },
+    });
+    blankEditor.exec({
+      type: 'SetParaProps', id: shapeId,
+      range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 0 } },
+      props: { bullet: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 4 } },
+    });
+    blankEditor.exec({
+      type: 'SetParaProps', id: shapeId,
+      range: { from: { p: 2, r: 0, off: 0 }, to: { p: 2, r: 0, off: 0 } },
+      props: { bullet: { kind: 'blip', image: {
+        bytes: bytesOf(PNG_1PX), mime: 'image/png',
+      }, font: 'Wingdings', color: '#336699', size: { kind: 'percent', value: 1.35 } } },
+    });
     blankEditor.exec({ type: 'Group', ids: [shapeId, tableId] });
     const blankGroupId = blankEditor.selection.ids[0];
     const blankGrouped = blankDoc.elements[blankGroupId];
@@ -98,13 +127,20 @@ export async function runGeneratedSaveContract({
       && dynamicNumber.text?.paragraphs.some((paragraph) => paragraph.runs.some((run) =>
         run.field === 'slidenum' && run.text === '2')));
 
-    const projectionFingerprint = (slides) => JSON.stringify(slides, (key, value) => {
-      if (key === 'id' || key === 'editInfo' || key === 'name') return undefined;
+    const projectionFingerprint = (slides) => {
+      const canonical = (value) => {
+        if (value === null) return undefined;
+        if (typeof value === 'string' && /^(?:blob:|asset:|data:)/.test(value)) return '<asset>';
+        if (!value || typeof value !== 'object') return value;
+        if (Array.isArray(value)) return value.map(canonical);
+        return Object.fromEntries(Object.keys(value).sort()
+          .filter((key) => !['id', 'editInfo', 'name'].includes(key))
+          .map((key) => [key, canonical(value[key])])
+          .filter(([, child]) => child !== undefined));
+      };
       // 统一 Schema 中“显式无值”和“未写可选值”对投影等价；指纹只观察有效语义。
-      if (value === null) return undefined;
-      if (typeof value === 'string' && /^(?:blob:|asset:|data:)/.test(value)) return '<asset>';
-      return value;
-    });
+      return JSON.stringify(canonical(slides));
+    };
     const projected = projectionFingerprint(blankDoc.slideOrder.map((id) => blankEditor.toSlide(id)));
     const blankSaved = await blankEditor.saveDetailed();
     check('空白文稿保存保留插入图片的原始字节',
@@ -125,6 +161,51 @@ export async function runGeneratedSaveContract({
         + `${projected.slice(Math.max(0, mismatch - 120), mismatch + 180)} != `
         + reopenedProjection.slice(Math.max(0, mismatch - 120), mismatch + 180));
     edit.disposeDoc(blankReopenedDoc);
+    for (const id of [...blankDoc.slides[firstSlide].children]) {
+      if (id !== shapeId) blankEditor.exec({ type: 'RemoveElement', id });
+    }
+    blankEditor.exec({ type: 'RemoveSlide', id: secondSlide });
+    blankPresentation.dispose?.();
+    blankDoc.package?.dispose();
+    const generatedBullets = generate.generateEditDoc(blankDoc);
+    const generatedBulletPath = saveArtifact('generated-bullets.pptx', generatedBullets.bytes);
+    const generatedBulletXml = new TextDecoder().decode(
+      generatedBullets.package.parts['ppt/slides/slide1.xml'],
+    );
+    const generatedBulletParagraphs = [...generatedBulletXml.matchAll(/<a:pPr\b[\s\S]*?<\/a:pPr>/g)]
+      .map((match) => match[0]);
+    check('生成保存的字符、自动编号与图片项目符号严格互斥',
+      (generatedBulletXml.match(/<a:buChar\b/g)?.length ?? 0) === 1
+        && (generatedBulletXml.match(/<a:buAutoNum\b/g)?.length ?? 0) === 1
+        && (generatedBulletXml.match(/<a:buBlip\b/g)?.length ?? 0) === 1
+        && generatedBulletParagraphs.every((paragraph) =>
+          (paragraph.match(/<a:bu(?:None|Char|AutoNum|Blip)\b/g)?.length ?? 0) <= 1));
+    const generatedBulletsReopened = await core.parse(generatedBullets.bytes, {
+      edit: true, lazy: false, assets: 'defer',
+    });
+    const generatedList = generatedBulletsReopened.slides[0].elements
+      .find((element) => element.name === blankDoc.elements[shapeId].src.name).text.paragraphs;
+    check('生成保存保留字符、自动编号与图片项目符号语义',
+      generatedList[0].bullet === '→' && generatedList[1].bullet === 'iv.'
+        && generatedList[1].editInfo?.bullet.kind === 'autoNum'
+        && generatedList[2].bulletImage?.startsWith('asset:')
+        && generatedList[2].editInfo?.bullet.kind === 'image'
+        && generatedList[2].editInfo?.bullet.font === 'Wingdings'
+        && generatedList[2].editInfo?.bullet.color === 'rgb(51,102,153)'
+        && generatedList[2].editInfo?.bullet.size?.value === 1.35);
+    const generatedProjectedFingerprint = renderGeneratedBulletFingerprint(
+      generatedBulletPath, 'projected',
+    );
+    const generatedSavedFingerprint = renderGeneratedBulletFingerprint(generatedBulletPath, 'saved');
+    for (const textMode of ['html', 'svg']) check(
+      `生成项目符号 ${textMode} 指纹等于独立进程中的有效投影`,
+      generatedSavedFingerprint[textMode] === generatedProjectedFingerprint[textMode],
+      JSON.stringify({
+        projected: generatedProjectedFingerprint[textMode],
+        saved: generatedSavedFingerprint[textMode],
+      }),
+    );
+    generatedBulletsReopened.dispose?.();
     edit.disposeDoc(blankDoc);
   }
 

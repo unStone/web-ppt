@@ -3,7 +3,7 @@ import {
   querySlideNotes, querySlideTransition,
 } from '@web-ppt/edit-core';
 import type {
-  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyOverrides,
+  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState,
   SlideNotesState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideAnimationState, SlideTransitionInput, SlideTransitionState,
@@ -80,7 +80,7 @@ export class SlideEditorCommands {
     return this.options.textEditor.setRunProps(props);
   }
   queryParaProps(): ParagraphPropertiesState | null { return this.options.textEditor.queryParaProps(); }
-  setParaProps(props: ParagraphPropertyOverrides): boolean {
+  setParaProps(props: ParagraphPropertyInput): boolean {
     return this.options.textEditor.setParaProps(props);
   }
 

@@ -9,7 +9,7 @@ import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '..
 import type { CommandPatches, ElementHierarchyPatch, UngroupCommand, XfrmField } from './types';
 import { elementHasLockedAncestor } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
-import { cloneElementRecord } from './record-clone';
+import { cloneHierarchyRecord } from './hierarchy-record';
 
 const FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'];
 const EPSILON = 1e-8;
@@ -26,6 +26,7 @@ function decomposeFrame(
 function sparseTransform(
   record: ElementRecord,
   placement: ReturnType<typeof decomposeFrame>,
+  overrides: ElementRecord['ovr'] = structuredClone(record.ovr),
 ): ElementRecord['ovr'] {
   const effective = effectiveRecord(record);
   const target = {
@@ -36,7 +37,6 @@ function sparseTransform(
   if (record.meta.editable === 'frame' && Math.abs(target.rot - effective.rot) > EPSILON) {
     throw new Error(`框架对象 ${record.id} 不能无损写回解组后的旋转`);
   }
-  const overrides = structuredClone(record.ovr);
   for (const field of FIELDS) {
     if (typeof target[field] === 'number' && typeof record.src[field] === 'number'
       && Math.abs((target[field] as number) - (record.src[field] as number)) <= EPSILON) {
@@ -51,8 +51,11 @@ function effectiveRecord(record: ElementRecord) {
   return { ...record.src, ...record.ovr };
 }
 
-function movedMeta(record: ElementRecord, targetParent: string): ElementRecord['meta'] {
-  const meta = structuredClone(record.meta);
+function movedMeta(
+  record: ElementRecord,
+  targetParent: string,
+  meta: ElementRecord['meta'] = structuredClone(record.meta),
+): ElementRecord['meta'] {
   if (meta.created) return meta;
   if (meta.sourceParent === targetParent) delete meta.sourceParent;
   else if (meta.sourceParent === undefined) meta.sourceParent = record.parent;
@@ -108,9 +111,11 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     );
     const order = fractionalIndexBetween(previous, afterOrder, childId);
     previous = order;
+    const cloned = cloneHierarchyRecord(before);
     moved[childId] = {
-      ...cloneElementRecord(before), parent, z: order, order,
-      ovr: sparseTransform(before, placement), meta: movedMeta(before, parent),
+      ...cloned, parent, z: order, order,
+      ovr: sparseTransform(before, placement, cloned.ovr),
+      meta: movedMeta(before, parent, cloned.meta),
     };
   }
   const nextSiblings = [...siblings];
@@ -129,8 +134,8 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     value: {
       parent, affected: [group.id, ...children],
       records: {
-        [group.id]: cloneElementRecord(group),
-        ...Object.fromEntries(children.map((id) => [id, cloneElementRecord(doc.elements[id])])),
+        [group.id]: cloneHierarchyRecord(group),
+        ...Object.fromEntries(children.map((id) => [id, cloneHierarchyRecord(doc.elements[id])])),
       },
       children: { [parent]: [...siblings], [group.id]: children },
       removed: { [group.id]: null },

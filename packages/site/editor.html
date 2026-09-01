@@ -111,6 +111,16 @@
           <label class="inspector-field"><span>字号</span><input id="textFontSize" type="number" min="1" max="400" step="1" /></label>
           <label class="inspector-field"><span>颜色</span><input id="textColor" type="color" value="#000000" /></label>
           <label class="inspector-stack"><span>对齐</span><select id="textAlign"><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option><option value="justify">两端对齐</option></select></label>
+          <label class="inspector-stack"><span>项目符号</span><select id="textBulletKind"><option value="mixed" hidden>混合</option><option value="inherit">恢复继承</option><option value="none">无</option><option value="char">字符</option><option value="autoNum">自动编号</option><option value="image">图片</option></select></label>
+          <label class="inspector-field" id="textBulletCharField"><span>符号字符</span><input id="textBulletChar" type="text" value="•" maxlength="2" /></label>
+          <label class="inspector-stack" id="textBulletSchemeField"><span>编号样式</span><select id="textBulletScheme"><option value="arabicPeriod">1. 2. 3.</option><option value="arabicParenR">1) 2) 3)</option><option value="alphaLcPeriod">a. b. c.</option><option value="alphaUcPeriod">A. B. C.</option><option value="romanLcPeriod">i. ii. iii.</option><option value="romanUcPeriod">I. II. III.</option></select></label>
+          <label class="inspector-field" id="textBulletStartField"><span>起始编号</span><input id="textBulletStart" type="number" min="1" max="32767" step="1" value="1" /></label>
+          <label class="inspector-field"><span>符号字体</span><input id="textBulletFont" type="text" placeholder="跟随文字" /></label>
+          <label class="inspector-check"><input id="textBulletColorEnabled" type="checkbox" /><span>独立颜色</span><input id="textBulletColor" type="color" value="#000000" /></label>
+          <label class="inspector-stack"><span>符号大小</span><select id="textBulletSizeKind"><option value="inherit">跟随文字</option><option value="percent">相对大小</option><option value="points">固定磅值</option></select></label>
+          <label class="inspector-field" id="textBulletSizeField" hidden><span>大小</span><input id="textBulletSize" type="number" min="1" max="400" step="1" value="100" /></label>
+          <label class="button inspector-file" for="textBulletImageInput">选择图片项目符号</label>
+          <input id="textBulletImageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" />
         </section>
         <section class="inspector-section" id="shapeInspector" hidden>
           <h2>形状</h2>

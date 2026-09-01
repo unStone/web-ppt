@@ -5,9 +5,55 @@ const plainCell = (cell) => cell?.text?.paragraphs
 
 export async function runCollabProtocolContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
-  semanticDoc, stringDiff,
+  semanticDoc, seededShuffle, stringDiff,
 }) {
   console.log('\n\x1b[36m▸ 原子消息、页序意图与协议边界\x1b[0m');
+  {
+    const pair = await createPair('sample-editor-bullets.pptx', 'collab-bullet-format-');
+    const hub = new OfflineHub();
+    const errors = [];
+    const bindings = bindPair(pair, hub, errors);
+    const target = Object.values(pair.left.elements)
+      .find((record) => record.src.name === '项目符号编辑');
+    const png = Uint8Array.from(Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    ));
+    pair.leftEditor.exec({
+      type: 'SetParaProps', id: target.id,
+      range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
+      props: { bullet: { kind: 'blip', image: { bytes: png, mime: 'image/png' } } },
+    });
+    pair.rightEditor.exec({
+      type: 'SetParaProps', id: target.id,
+      range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 0 } },
+      props: { bullet: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 7 } },
+    });
+    hub.flush((items) => seededShuffle(items, 0xb011e7));
+    let projected = pair.leftEditor.effectiveElement(target.id).text.paragraphs;
+    check('并发编号覆盖图片项目符号时按字段 LWW 收敛且不残留孤儿资源',
+      semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0
+        && Object.keys(pair.left.imageResources).length === 0
+        && Object.keys(pair.right.imageResources).length === 0
+        && projected[0].bulletImage === null
+        && projected[1].bullet === 'vii.',
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    pair.leftEditor.exec({
+      type: 'SetParaProps', id: target.id,
+      range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
+      props: { bullet: { kind: 'blip', image: { bytes: png, mime: 'image/png' } } },
+    });
+    hub.flush();
+    projected = pair.rightEditor.effectiveElement(target.id).text.paragraphs;
+    check('图片项目符号资源、关系与文字覆盖作为同一消息传播',
+      semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0
+        && Object.keys(pair.left.imageResources).length === 1
+        && Object.keys(pair.right.imageResources).length === 1
+        && projected[0].bulletImage?.startsWith('data:image/png;base64,')
+        && projected[1].bullet === 'vii.',
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    bindings.forEach((binding) => binding.dispose());
+  }
   {
     const pair = await createPair('sample-edit-basic.pptx', 'collab-table-delete-props-');
     const hub = new OfflineHub();

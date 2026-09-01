@@ -22,6 +22,7 @@ import { runTableStyleLibreOfficeContract } from './lib/table-style-libreoffice-
 import { runTableStructureLibreOfficeContract } from './lib/table-structure-libreoffice-contract.mjs';
 import { runShapeAutofitLibreOfficeContract } from './lib/shape-autofit-libreoffice-contract.mjs';
 import { runBodyPropsLibreOfficeContract } from './lib/body-props-libreoffice-contract.mjs';
+import { runBulletFormatLibreOfficeContract } from './lib/bullet-format-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -333,6 +334,13 @@ if (basename(savedPath) === 'body-props-editing.pptx') {
 
 if (basename(savedPath) === 'list-level-editing.pptx') {
   geometryEvidence += runListLevelLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
+}
+
+if (['bullet-format-editing.pptx', 'bullet-image-editing.pptx', 'generated-bullets.pptx']
+  .includes(basename(savedPath))) {
+  geometryEvidence += runBulletFormatLibreOfficeContract({
+    savedPath, exportSvg: exportLibreOfficeSvg,
+  });
 }
 
 if (basename(savedPath) === 'shape-format.pptx') {

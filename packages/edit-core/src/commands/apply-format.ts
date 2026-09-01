@@ -13,20 +13,25 @@ import {
 import { textBodyEditText, textPositionAtIndex, textPositionToIndex } from '../text-position';
 import { assertTableCellAddress } from '../table-cell';
 import type {
-  EditDoc, ParagraphPropertyOverrides, RunPropertyOverrides, TextBodyPropertyOverrides, TextOverride,
+  EditDoc, ElementImageReplacement, ParagraphPropertyOverrides, RunPropertyOverrides,
+  TextBodyPropertyOverrides, TextOverride,
 } from '../types';
 import { assertFormatMask } from './format-painter-types';
 import type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
-import type { CommandPatches, Patch } from './types';
+import type { CommandPatches, ImageResourcePatch, Patch } from './types';
 import {
   directEffectsPatches, directFillPatches, directStrokePatches,
 } from './direct-format-patches';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
+import type { TextTargetContext } from './text-target';
+import {
+  prepareBulletImageResource, resolveBulletImageResource,
+} from './bullet-image-resource';
 
 const TEXT_FIELDS = new Set<FormatMaskField>(['run', 'paragraph', 'body']);
 const RUN_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const PARAGRAPH_FIELDS = [
-  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
+  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent', 'bullet',
 ] as const;
 
 function validate(command: ApplyFormatCommand): void {
@@ -99,15 +104,49 @@ function uniformParagraphProps(
   doc: EditDoc,
   command: ApplyFormatCommand,
   range: ReturnType<typeof wholeRange>,
-): ParagraphPropertyOverrides {
+  source: TextTargetContext,
+  target: TextTargetContext,
+  origin: string,
+): { readonly props: ParagraphPropertyOverrides;
+  readonly imageOverride?: ElementImageReplacement;
+  readonly resourcePatch?: ImageResourcePatch } {
   const state = queryParaProps(doc, command.from, range, command.fromCell);
-  const props: Record<string, string | number | null> = {};
+  const props: Record<string, unknown> = {};
   for (const field of PARAGRAPH_FIELDS) {
     if (state[field].mixed) throw new Error(`格式来源的段落属性 ${field} 不是单一有效值`);
     props[field] = field === 'lineHeight' && state[field].value === null
-      ? DEFAULT_TEXT_LINE_HEIGHT : state[field].value;
+      ? DEFAULT_TEXT_LINE_HEIGHT
+      : field === 'bullet' && state.bullet.value === null
+        ? { kind: 'none' } : state[field].value;
   }
-  return props as ParagraphPropertyOverrides;
+  let imageOverride: ElementImageReplacement | undefined;
+  let resourcePatch: ImageResourcePatch | undefined;
+  const bullet = props.bullet as import('../types').ParagraphBullet | null;
+  if (bullet?.kind === 'blip') {
+    const sourceParagraphs = source.before?.kind === 'flat'
+      ? source.before.paragraphs.slice(range.from.p, range.to.p + 1) : [];
+    const images = sourceParagraphs.flatMap((paragraph) =>
+      paragraph.bulletImageOverride ? [paragraph.bulletImageOverride] : []);
+    const hashes = new Set(images.map((image) => image.resourceHash));
+    const retained = hashes.size === 1 && images.length === sourceParagraphs.length
+      ? doc.imageResources[images[0].resourceHash] : undefined;
+    const resource = retained ?? resolveBulletImageResource(
+      doc, bullet.image.src, 'ApplyFormat.bullet.image',
+    );
+    const part = target.record.meta.origin?.part;
+    if (!part || !doc.package) throw new Error('格式目标缺少可写图片项目符号资源');
+    const prepared = prepareBulletImageResource(
+      doc, part, 'rIdBulletFormat', resource, origin,
+    );
+    imageOverride = prepared.image;
+    resourcePatch = prepared.resourcePatch;
+    props.bullet = { ...bullet, image: { src: imageOverride.src } };
+  }
+  return {
+    props: props as ParagraphPropertyOverrides,
+    ...(imageOverride ? { imageOverride } : {}),
+    ...(resourcePatch ? { resourcePatch } : {}),
+  };
 }
 
 function textFormatPatches(
@@ -141,13 +180,18 @@ function textFormatPatches(
   }
   let value = target.before?.kind === 'flat'
     ? target.before : flattenTextBody(targetBody);
+  let resourcePatch: ImageResourcePatch | undefined;
   if (copiesRun) value = applyRunProps(
     targetBody, toRange, uniformRunProps(doc, command, fromRange), value,
   ) as Extract<TextOverride, { kind: 'flat' }>;
-  if (copiesParagraph) value = applyParagraphProps(
-    targetBody, toRange, uniformParagraphProps(doc, command, fromRange), value,
-    target.levelTemplate, target.body,
-  ) as Extract<TextOverride, { kind: 'flat' }>;
+  if (copiesParagraph) {
+    const format = uniformParagraphProps(doc, command, fromRange, source, target, origin);
+    resourcePatch = format.resourcePatch;
+    value = applyParagraphProps(
+      targetBody, toRange, format.props, value,
+      target.levelTemplate, target.body, format.imageOverride,
+    ) as Extract<TextOverride, { kind: 'flat' }>;
+  }
   if (copiesBody) {
     const props = queryBodyProps(doc, command.from, command.fromCell) as TextBodyPropertyOverrides;
     value = applyBodyProps(value, props, target.body.editInfo);
@@ -162,8 +206,10 @@ function textFormatPatches(
     return { forward: [], inverse: [] };
   }
   return {
-    forward: [setTextPatch(target.patchTarget, finalValue, origin)],
-    inverse: [inverseTextPatch(target.patchTarget, target.before, origin)],
+    forward: [...(resourcePatch ? [resourcePatch] : []), setTextPatch(target.patchTarget, finalValue, origin)],
+    inverse: [inverseTextPatch(target.patchTarget, target.before, origin), ...(resourcePatch ? [{
+      op: 'del' as const, path: resourcePatch.path, origin,
+    }] : [])],
   };
 }
 

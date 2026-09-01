@@ -199,9 +199,23 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (record.meta.imageReplacement && !replacementResource) {
     throw new Error(`图片替换资源不存在：${record.meta.imageReplacement.resourceHash}`);
   }
+  const bulletHashes = new Set<string>();
+  const collectBulletResources = (text: import('./types').TextOverride | undefined): void => {
+    if (text?.kind !== 'flat') return;
+    for (const paragraph of text.paragraphs) {
+      if (paragraph.bulletImageOverride) bulletHashes.add(paragraph.bulletImageOverride.resourceHash);
+    }
+  };
+  collectBulletResources(record.ovr.text);
+  for (const cell of Object.values(record.ovr.tableCells ?? {})) collectBulletResources(cell.text);
+  const bulletResources = [...bulletHashes].map((hash) => doc.imageResources[hash]);
+  if (bulletResources.some((resource) => !resource)) {
+    throw new Error(`图片项目符号资源不存在：${[...bulletHashes].find((hash) => !doc.imageResources[hash])}`);
+  }
   const resources = [
     ...(record.meta.insertion?.resources ?? []),
     ...(replacementResource ? [replacementResource] : []),
+    ...bulletResources,
   ];
   if (resources.length) {
     out = hydrateElementInsertionAssets(out, resources);
@@ -251,6 +265,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       ...(!complexTableStructure && tableRows
         ? { h: out.h + tableRowHeightDelta(record) } : {}),
     } as TableElement;
+  }
+  if (bulletResources.length) {
+    out = hydrateElementInsertionAssets(out, bulletResources);
   }
   const effectiveTableStyle = tableStyle ?? (complexTableStructure && record.src.kind === 'table'
     ? record.src.editInfo?.tableStyle : undefined);

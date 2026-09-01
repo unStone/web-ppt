@@ -297,7 +297,8 @@ listeners symmetrically, so multiple React/Vue/Svelte/Web Component/vanilla view
 
 Double-clicking an editable shape opens the HTML text layer with native selection and IME composition. Selected
 text responds to `Ctrl/Cmd+B`, `I`, and `U` as one undo unit; the equivalent `beforeinput` format events are also
-handled. At a collapsed caret these shortcuts update view-local pending typing style, and the next insertion plus
+handled. `Ctrl/Cmd+Shift+7` applies decimal numbering and `Ctrl/Cmd+Shift+8` applies a character bullet to every
+paragraph touched by the native Range. At a collapsed caret, the run-format shortcuts update view-local pending typing style, and the next insertion plus
 its format commit as one history unit without creating a zero-width model run. The live DOM range is published as
 `session.editor.selection`; non-collapsed ranges can use headless `SetRunProps` / `queryRunProps` directly. A mounted
 toolbar uses the view seam below so collapsed-caret typing style stays with the owning input view. Every mounted
@@ -322,13 +323,17 @@ centerButton.addEventListener('pointerdown', (event) => {
 Paragraph controls use the same live DOM Range and remain framework-neutral. `setParaProps` formats every touched
 paragraph—including the current paragraph at a collapsed caret—in one undo unit, then restores the browser Range.
 `queryParaProps` returns per-property mixed state for alignment, effective line height, spacing, margin, and indent.
+It also returns structured character/auto-number/image bullet state. `setParaProps` accepts uploaded image bytes,
+independent bullet font/color/size, and distinguishes `bullet: null` (restore inheritance) from explicit none.
 The command refreshes all views sharing the session; an external toolbar registered with `registerTextUi` does not
 steal focus or accidentally close text editing.
 
 Text-mode `Ctrl/Cmd+C`, `X`, and `V` use the same synchronous browser clipboard events as native editors. Copy and
 cut publish sanitized `text/plain` plus `text/html`; default paste keeps only font, size, bold, italic, underline,
 and strike-through, while `Ctrl/Cmd+Shift+V` ignores HTML. Blocks become PPT paragraphs and `<br>` remains a hard
-line break. External HTML is parsed in a detached tree and never injected into the live editor; scripts, style
+line break. The editor's sanitized HTML carries a private paragraph attribute for structured bullets; external
+HTML cannot forge an invalid command because the edit-core boundary validates it before commit. External HTML is
+parsed in a detached tree and never injected into the live editor; scripts, style
 sheets, link targets, image sources, hidden metadata, and unsupported CSS are discarded. If sanitized HTML text
 does not equal `text/plain`, formatting is dropped instead of guessing offsets. A paste or cut is one undo unit.
 Image-only paste on the canvas routes through the same `AddImage` command and creates one undo unit. Text/table

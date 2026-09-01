@@ -42,6 +42,7 @@ export function validateElementTextPatch(
   patch: ElementTextPatch,
   index: number,
   stagedTableRows?: Record<string, TableRowInsertion>,
+  stagedImageResources: Readonly<Record<string, import('../types').ElementInsertionResource>> = doc.imageResources,
 ): void {
   const sourceRecord = doc.elements[patch.path[1]];
   const stagedRecord = sourceRecord && stagedTableRows
@@ -69,7 +70,9 @@ export function validateElementTextPatch(
     && tableCellMergeRole(record, { row: stable.row, column: stable.column }) === 'placeholder';
   if (!dormant) textTargetContextForRecord(record, target);
   if (patch.op === 'set') {
-    if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value);
+    if (patch.value.kind === 'flat') validateFlatTextOverride(patch.value, {
+      doc, part: record.meta.origin?.part, resources: stagedImageResources,
+    });
     else if (patch.value.kind === 'empty') validateEmptyTextOverride(patch.value);
     else throw new Error(`Patch ${index} 的文本覆盖无效`);
   }

@@ -346,6 +346,8 @@ export interface TextFragmentMark {
 export interface TextFragmentParagraph {
   readonly text: string;
   readonly marks: readonly TextFragmentMark[];
+  /** 只有复制了完整段落时存在；局部文字不会意外带走列表语义。 */
+  readonly bullet?: ParagraphBullet;
 }
 
 export interface TextFragment {
@@ -369,6 +371,54 @@ export interface RunPropertiesState {
 
 export type RunLinkState = ElementLinkState;
 
+export type ParagraphAutoNumberType =
+  | 'alphaLcParenBoth' | 'alphaLcParenR' | 'alphaLcPeriod'
+  | 'alphaUcParenBoth' | 'alphaUcParenR' | 'alphaUcPeriod'
+  | 'arabic1Minus' | 'arabic2Minus' | 'arabicDbPeriod' | 'arabicDbPlain'
+  | 'arabicParenBoth' | 'arabicParenR' | 'arabicPeriod' | 'arabicPlain'
+  | 'circleNumDbPlain' | 'circleNumWdBlackPlain' | 'circleNumWdWhitePlain'
+  | 'ea1ChsPeriod' | 'ea1ChsPlain' | 'ea1ChtPeriod' | 'ea1ChtPlain'
+  | 'ea1JpnChsDbPeriod' | 'ea1JpnKorPeriod' | 'ea1JpnKorPlain'
+  | 'hebrew2Minus' | 'hindiAlpha1Period' | 'hindiAlphaPeriod'
+  | 'hindiNumParenR' | 'hindiNumPeriod'
+  | 'romanLcParenBoth' | 'romanLcParenR' | 'romanLcPeriod'
+  | 'romanUcParenBoth' | 'romanUcParenR' | 'romanUcPeriod'
+  | 'thaiAlphaParenBoth' | 'thaiAlphaParenR' | 'thaiAlphaPeriod'
+  | 'thaiNumParenBoth' | 'thaiNumParenR' | 'thaiNumPeriod';
+
+export type ParagraphBulletSize = {
+  readonly kind: 'percent' | 'points';
+  readonly value: number;
+};
+
+export interface ParagraphBulletStyle {
+  readonly color?: string | null;
+  readonly font?: string | null;
+  readonly size?: ParagraphBulletSize | null;
+}
+
+export type ParagraphBullet = {
+  readonly kind: 'none';
+} | ({
+  readonly kind: 'char';
+  readonly char: string;
+} & ParagraphBulletStyle) | ({
+  readonly kind: 'autoNum';
+  readonly type: ParagraphAutoNumberType;
+  readonly startAt?: number;
+} & ParagraphBulletStyle) | ({
+  readonly kind: 'blip';
+  readonly image: { readonly src: string };
+} & ParagraphBulletStyle);
+
+export type ParagraphBulletInput = ParagraphBullet | ({
+  readonly kind: 'blip';
+  readonly image: {
+    readonly bytes: Uint8Array;
+    readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+  };
+} & ParagraphBulletStyle);
+
 export interface ParagraphPropertyOverrides {
   readonly level?: number | null;
   readonly align?: Paragraph['align'] | null;
@@ -377,7 +427,13 @@ export interface ParagraphPropertyOverrides {
   readonly spaceAfter?: number | null;
   readonly marginLeft?: number | null;
   readonly indent?: number | null;
+  /** null 删除本层项目符号直设；显式无项目符号会使用独立的 none 语义。 */
+  readonly bullet?: ParagraphBullet | null;
 }
+
+export type ParagraphPropertyInput = Omit<ParagraphPropertyOverrides, 'bullet'> & {
+  readonly bullet?: ParagraphBulletInput | null;
+};
 
 export interface ParagraphProperties {
   readonly level: number;
@@ -397,6 +453,7 @@ export interface ParagraphPropertiesState {
   readonly spaceAfter: RunPropertyState<number>;
   readonly marginLeft: RunPropertyState<number>;
   readonly indent: RunPropertyState<number>;
+  readonly bullet: RunPropertyState<ParagraphBullet>;
 }
 
 export type TextBodyAutoFit = 'none' | 'normal' | 'shape';
@@ -434,6 +491,11 @@ export interface FlatTextParagraph {
   readonly inheritedParagraphProps?: ParagraphProperties;
   /** 来源 pPr 的直接字段集合，用于区分“删除直设”与严格 no-op。 */
   readonly directParagraphProps?: Readonly<Partial<Record<keyof ParagraphProperties, true>>>;
+  /** 来源结构语义不混入 props，避免把自动编号派生字符串当字符项目符号。 */
+  readonly sourceBullet?: ParagraphBullet;
+  readonly inheritedBullet?: ParagraphBullet;
+  /** 上传图片项目符号的 OPC 关系闭包；字节只由 imageResources 按哈希持有。 */
+  readonly bulletImageOverride?: ElementImageReplacement;
 }
 
 export type TextBodyOverride = Omit<TextBody, 'paragraphs' | 'editInfo'>;

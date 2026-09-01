@@ -1,4 +1,4 @@
-import { TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
+import { PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
@@ -9,8 +9,8 @@ import { querySlideAnimations } from '../slide-animation';
 import { tableCellKey } from '../table-cell';
 import { flattenTextBody } from '../text-model';
 import type {
-  EditDoc, ElementInsertionResource, ElementInsertionSource,
-  ElementOverrides, ElementRecord, SlideId, TextOverride,
+  EditDoc, ElementImageReplacement, ElementInsertionResource, ElementInsertionSource,
+  ElementOverrides, ElementRecord, ParagraphBullet, SlideId, TextOverride,
 } from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
@@ -40,16 +40,64 @@ const esc = (value: string): string => value
 const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
 const NOTES_MASTER_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster';
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
+
+interface GeneratedTextContext {
+  readonly part: string;
+  readonly relationshipPrefix: string;
+  readonly resources: Map<string, ElementInsertionResource>;
+}
+
+function generatedParagraphBullet(
+  doc: EditDoc,
+  paragraph: TextBody['paragraphs'][number],
+  index: number,
+  context: GeneratedTextContext,
+): { readonly bullet?: ParagraphBullet; readonly image?: ElementImageReplacement } {
+  const info = paragraph.editInfo?.bullet;
+  const style = info && info.kind !== 'none' ? {
+    ...(info.color !== undefined ? { color: info.color } : {}),
+    ...(info.font !== undefined ? { font: info.font } : {}),
+    ...(info.size !== undefined ? { size: info.size } : {}),
+  } : {};
+  if (paragraph.bulletImage || info?.kind === 'image') {
+    const source = paragraph.bulletImage ?? (info?.kind === 'image' ? info.src : null);
+    if (!source) throw new Error('生成保存的图片项目符号缺少资源来源');
+    const closure = imageClosure(
+      doc, { src: source }, `${context.relationshipPrefix}P${index + 1}`, context.part,
+    );
+    if (!closure.resource) throw new Error('外链图片项目符号不能生成独立包');
+    context.resources.set(closure.resource.hash, closure.resource);
+    const src = insertionResourceToken(closure.resource.hash);
+    return {
+      bullet: { kind: 'blip', image: { src }, ...style },
+      image: { src, relationships: [closure.relationship], resourceHash: closure.resource.hash },
+    };
+  }
+  if (info?.kind === 'autoNum') return {
+    bullet: {
+      kind: 'autoNum', type: info.type as import('../types').ParagraphAutoNumberType,
+      startAt: info.startAt, ...style,
+    },
+  };
+  if (info?.kind === 'char') return { bullet: { kind: 'char', char: info.char, ...style } };
+  if (paragraph.bullet !== null) return {
+    bullet: { kind: 'char', char: paragraph.bullet, ...style },
+  };
+  return paragraph.editInfo?.directLayout &&
+    paragraph.editInfo.directLayout & PARAGRAPH_LAYOUT_DIRECT_BITS.bullet
+    ? { bullet: { kind: 'none' } } : {};
+}
+
 function textOverride(
   doc: EditDoc,
   slideId: SlideId,
   body: TextBody | null | undefined,
+  context: GeneratedTextContext,
   tableStyleAware = false,
 ): TextOverride | undefined {
   if (!body) return undefined;
   if (body.warp) throw new Error('生成保存暂不支持艺术字变形');
   for (const paragraph of body.paragraphs) {
-    if (paragraph.bulletImage) throw new Error('生成保存暂不支持图片项目符号');
     for (const run of paragraph.runs) {
       if (run.field || run.caps || run.outline || run.gradient || run.highlight
         || run.underlineColor || run.shadow || run.math) {
@@ -71,18 +119,22 @@ function textOverride(
       columnGap: body.columnGap ?? 0,
       autoFit,
     },
-    paragraphs: flat.paragraphs.map((paragraph, paragraphIndex) => ({
-      ...paragraph,
-      sourceParagraph: undefined,
-      paragraphOverrides: {
+    paragraphs: flat.paragraphs.map((paragraph, paragraphIndex) => {
+      const bullet = generatedParagraphBullet(doc, body.paragraphs[paragraphIndex], paragraphIndex, context);
+      return {
+        ...paragraph,
+        sourceParagraph: undefined,
+        paragraphOverrides: {
         align: paragraph.props.align,
         lineHeight: paragraph.props.lineHeight,
         spaceBefore: paragraph.props.spaceBefore,
         spaceAfter: paragraph.props.spaceAfter,
         marginLeft: paragraph.props.marL,
         indent: paragraph.props.indent,
-      },
-      marks: paragraph.marks.map((mark, markIndex) => {
+          ...(bullet.bullet ? { bullet: bullet.bullet } : {}),
+        },
+        ...(bullet.image ? { bulletImageOverride: bullet.image } : {}),
+        marks: paragraph.marks.map((mark, markIndex) => {
         const sourceParagraph = body.paragraphs[paragraphIndex];
         const sourceRun = sourceParagraph?.runs[markIndex];
         const direct = (sourceParagraph?.editInfo?.directRun ?? 0) | (sourceRun?.editInfo?.direct ?? 0);
@@ -102,12 +154,19 @@ function textOverride(
               ? { link: generatedLink(doc, slideId, mark.props.link, '文字链接') } : {}),
           },
         };
-      }),
-    })),
+        }),
+      };
+    }),
   };
 }
 
-function fullOverrides(doc: EditDoc, slideId: SlideId, record: ElementRecord): ElementOverrides {
+function fullOverrides(
+  doc: EditDoc,
+  slideId: SlideId,
+  record: ElementRecord,
+  part: string,
+  resources: Map<string, ElementInsertionResource>,
+): ElementOverrides {
   const source = record.src;
   const common: ElementOverrides = {
     x: source.x, y: source.y, w: source.w, h: source.h,
@@ -117,8 +176,11 @@ function fullOverrides(doc: EditDoc, slideId: SlideId, record: ElementRecord): E
     ...(source.link && supportsElementLink(source.kind)
       ? { link: generatedLink(doc, slideId, source.link, `元素 ${record.id} 链接`) } : {}),
   };
+  const textContext = (suffix = ''): GeneratedTextContext => ({
+    part, relationshipPrefix: `rIdBullet${record.meta.origin?.spid ?? record.id}${suffix}`, resources,
+  });
   if (source.kind === 'shape') {
-    const text = textOverride(doc, slideId, source.text);
+    const text = textOverride(doc, slideId, source.text, textContext());
     return {
       ...common,
       ...(source.fill && source.fill.type !== 'image' ? { fill: source.fill } : {}),
@@ -132,7 +194,7 @@ function fullOverrides(doc: EditDoc, slideId: SlideId, record: ElementRecord): E
     const tableCells: NonNullable<ElementOverrides['tableCells']> = {};
     source.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
       const text = !cell.merged && textOverride(
-        doc, slideId, cell.text,
+        doc, slideId, cell.text, textContext(`R${r + 1}C${c + 1}`),
         !!source.editInfo?.tableStyle && !!cell.editInfo?.styleBase,
       );
       if (text) tableCells[tableCellKey({ r, c })] = { text };
@@ -282,6 +344,7 @@ function materializeSlide(
   const part = `ppt/slides/slide${index + 1}.xml`;
   const spids = allocatedSpids(doc, slideId);
   const records: Record<string, ElementRecord> = Object.create(null);
+  const generatedTextResources = new Map<string, ElementInsertionResource>();
   for (const [id, sourceRecord] of Object.entries(doc.elements)) {
     if (!spids.has(id)) continue;
     const source = structuredClone(effectiveElement(doc, id));
@@ -293,7 +356,7 @@ function materializeSlide(
       },
     };
     record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
-    record.ovr = fullOverrides(doc, slideId, record);
+    record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
     records[id] = record;
   }
   const slide = structuredClone(doc.slides[slideId]);
@@ -337,6 +400,7 @@ function materializeSlide(
     slides, elements: records,
     imageResources: {
       ...structuredClone(doc.imageResources),
+      ...Object.fromEntries(generatedTextResources),
       ...(backgroundClosure?.resource
         ? { [backgroundClosure.resource.hash]: backgroundClosure.resource } : {}),
     },

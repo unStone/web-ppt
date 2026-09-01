@@ -1,13 +1,15 @@
 import type {
-  ParagraphProperties, ParagraphPropertyOverrides, TextOverride,
+  EditDoc, ElementInsertionResource, ParagraphProperties, ParagraphPropertyOverrides, TextOverride,
 } from './types';
 import { assertDataObject } from './data-validation';
 import {
-  assertParagraphPropertyOverrides, PARAGRAPH_ALIGNMENTS, PARAGRAPH_PROPERTY_FIELDS,
+  assertParagraphPropertyOverrides, assertSourceParagraphBullet,
+  PARAGRAPH_ALIGNMENTS, PARAGRAPH_PROPERTY_FIELDS,
 } from './paragraph-property-schema';
 import { TEXT_ATOM } from './text-position';
 import { assertTextBodyPropertyOverrides } from './body-property-schema';
 import { assertRunPropertyOverrides } from './run-property-schema';
+import { assertImageReplacement } from './commands/element-image-content';
 
 function validateParagraphOverrides(value: ParagraphPropertyOverrides): void {
   assertParagraphPropertyOverrides(value, '段落格式覆盖');
@@ -44,6 +46,11 @@ function validateDirect(value: Readonly<Partial<Record<keyof ParagraphProperties
 
 export function validateFlatTextOverride(
   override: Extract<TextOverride, { kind: 'flat' }>,
+  imageContext?: {
+    readonly doc: EditDoc;
+    readonly part: string | undefined;
+    readonly resources: Readonly<Record<string, ElementInsertionResource>>;
+  },
 ): void {
   if (!override.body || !Array.isArray(override.paragraphs) || !override.paragraphs.length) {
     throw new Error('扁平文本覆盖至少需要一个段落');
@@ -52,6 +59,11 @@ export function validateFlatTextOverride(
     assertTextBodyPropertyOverrides(override.bodyOverrides, '文字框属性覆盖');
   }
   for (const paragraph of override.paragraphs) {
+    assertDataObject(paragraph as unknown, [
+      'text', 'props', 'marks', 'sourceParagraph', 'paragraphOverrides',
+      'inheritedParagraphProps', 'directParagraphProps', 'sourceBullet', 'inheritedBullet',
+      'bulletImageOverride',
+    ], '扁平文本段落');
     if (!paragraph || typeof paragraph !== 'object'
       || typeof paragraph.text !== 'string' || !Array.isArray(paragraph.marks)) {
       throw new Error('扁平文本段落无效');
@@ -59,6 +71,23 @@ export function validateFlatTextOverride(
     if (paragraph.paragraphOverrides) validateParagraphOverrides(paragraph.paragraphOverrides);
     if (paragraph.inheritedParagraphProps) validateInherited(paragraph.inheritedParagraphProps);
     if (paragraph.directParagraphProps) validateDirect(paragraph.directParagraphProps);
+    if (paragraph.sourceBullet) assertSourceParagraphBullet(paragraph.sourceBullet, '来源项目符号');
+    if (paragraph.inheritedBullet) {
+      assertSourceParagraphBullet(paragraph.inheritedBullet, '继承项目符号');
+    }
+    if (paragraph.bulletImageOverride) {
+      if (!imageContext?.part) throw new Error('图片项目符号缺少可写回来源 part');
+      assertImageReplacement(
+        paragraph.bulletImageOverride, imageContext.part, imageContext.resources,
+        '图片项目符号资源闭包',
+      );
+      const bullet = paragraph.paragraphOverrides?.bullet;
+      if (bullet?.kind !== 'blip' || bullet.image.src !== paragraph.bulletImageOverride.src) {
+        throw new Error('图片项目符号语义与资源闭包不一致');
+      }
+    } else if (paragraph.paragraphOverrides?.bullet?.kind === 'blip') {
+      throw new Error('图片项目符号缺少资源闭包');
+    }
     let offset = 0;
     for (const mark of paragraph.marks) {
       if (!Number.isInteger(mark.from) || !Number.isInteger(mark.to)

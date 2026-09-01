@@ -52,6 +52,18 @@ export function mediaPackageParts(doc: EditDoc): MediaPackageParts {
       if (!closure) continue;
       collect(part, closure, record.meta.imageReplacement?.suppressedRelationshipId);
     }
+    const texts = [record.ovr.text,
+      ...Object.values(record.ovr.tableCells ?? {}).map((cell) => cell.text)];
+    for (const text of texts) {
+      if (text?.kind !== 'flat') continue;
+      for (const paragraph of text.paragraphs) {
+        const image = paragraph.bulletImageOverride;
+        if (!image) continue;
+        const resource = doc.imageResources[image.resourceHash];
+        if (!resource) throw new Error(`元素 ${record.id} 的图片项目符号资源不存在`);
+        collect(part, { relationships: image.relationships, resources: [resource] });
+      }
+    }
   }
   for (const record of Object.values(doc.slides)) {
     const part = record.origin?.part;
