@@ -84,7 +84,7 @@
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 可打印 HTML（按动画批次展开）。**无直接 PDF、无批量图片、无视频。**
 
-### 2.2 写：编辑命令（43 个已实现）
+### 2.2 写：编辑命令（51 个已实现）
 
 | 域 | 已实现 | 未实现 |
 |---|---|---|
@@ -93,7 +93,7 @@
 | 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` | **`SetPreset`**（改形状类型）、**`SetAdj`**（调节手柄）、`SetScene3D` |
 | 图片 | `AddImage` `ReplaceImage` `SetCrop` | **`SetPictureFx`**（透明度/灰度/双色调） |
 | 文本 | `EditText` `SetRunProps` `SetParaProps` `SetBodyProps` `FitTextShape` `ReplaceText` | **项目符号/编号**、**高亮/字距/大小写/上下标/下划线类型**、**`ClearFormat`** |
-| 表格 | `AddTable` `InsertRow`（**仅尾部追加**）`SetTableStyle` + 单元格文字 | **删行、插/删列、合并/拆分、行高列宽、`SetCellProps`** |
+| 表格 | `AddTable` `InsertRow` `InsertColumn` `RemoveRow` `RemoveColumn` `MergeCells` `SplitCell` `SetRowHeight` `SetColumnWidth` `SetCellProps` `SetTableStyle` + 单元格文字 | — |
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | **节（`p14:sectionLst`）**、**`SetSlideSize`** |
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
@@ -138,7 +138,7 @@ flowchart TD
 | 缺口 | 用户有成本？ | 有解法？ | 判定 |
 |---|---|---|---|
 | 跨产物一致性 / collab 漏列 | 有（装错包、信错数字） | 有 | ✅ **已完成** |
-| 表格结构编辑 | 有（表格是 PPT 高频对象，只能追加行等于不可用） | 有（rowId 已有，缺 colId 与合并不变量） | **0.6 P0** |
+| 表格结构编辑 | 有（表格是 PPT 高频对象，只能追加行等于不可用） | 有（rowId 已有，缺 colId 与合并不变量） | ✅ **已完成** |
 | 项目符号 / 编号 | 有（做 PPT 必用） | 有（继承重基与自动编号求值都已具备） | **0.6 P0** |
 | 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 可从 ECMA 预设定义生成，惰性查表零体积） | **0.6 P0** |
 | 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | **0.6 P1** |
