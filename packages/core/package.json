@@ -65,6 +65,10 @@
       "types": "./dist/geometry/handles/index.d.ts",
       "import": "./dist/geometry-handles.js"
     },
+    "./image-zip": {
+      "types": "./dist/image-zip.d.ts",
+      "import": "./dist/image-zip.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -74,7 +78,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.handles.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.handles.config.ts && vite build --config vite.image-zip.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && node ../../tooling/check-image-zip-boundary.mjs && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

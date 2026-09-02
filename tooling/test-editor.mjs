@@ -94,6 +94,11 @@ execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error', `--outfile=${coreBundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const imageZipBundle = join(out, 'image-zip.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error', `--outfile=${imageZipBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const viewerBundle = join(out, 'viewer-core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',

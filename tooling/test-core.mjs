@@ -19,6 +19,7 @@ import { recordCount } from './lib/measured.mjs';
 import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
+import { runCoreImageZipContract } from './lib/core-image-zip-contract.mjs';
 import { makeBmp, makeExifJpeg, makePng } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,6 +56,13 @@ execFileSync('npx', ['esbuild', join(root, 'packages/core/src/index.ts'), '--bun
 console.log(`  esbuild 打包完成 → ${bundle}`);
 
 const lib = await import(`file://${bundle}?t=${Date.now()}`);
+
+const imageZip = await (async () => {
+  const output = join(outDir, 'image-zip-bundle.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error', `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
+  return import(`file://${output}?t=${Date.now()}`);
+})();
 
 // viewer-core 是独立包，把 `web-ppt` 重定向到刚打好的 core 产物，避免依赖 dist
 const viewerBundle = join(outDir, 'viewer-core-bundle.mjs');
@@ -279,6 +287,7 @@ const FIXTURES = [
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
+  { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-editor-sp-autofit.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample-editor-body-props.pptx', minPages: 1, source: 'pptx' },
@@ -343,6 +352,9 @@ for (const fx of FIXTURES) {
 }
 
 // ---------------- 3. 渲染与导出 ----------------
+
+group('批量图片导出');
+await runCoreImageZipContract({ imageZip, parsed, check, eq });
 
 group('渲染');
 for (const [name, pres] of parsed) {

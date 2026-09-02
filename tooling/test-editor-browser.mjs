@@ -25,6 +25,7 @@ const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
+  '.png': 'image/png',
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
 const server = createServer((request, response) => {
@@ -239,6 +240,7 @@ try {
     + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`
     + ` · 页面图片背景200页模型/完整上屏 p95 `
     + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
+    + ` · 图片 ZIP 页数/并发/释放 ${result.imageZip}`
     + ` · 40种切换启动/200页批量/单页反馈 p95 ${result.transitionPreviewP95}/`
     + `${result.transitionBatchP95}/${result.transitionFeedbackP95}ms`
     + ` · 60元素动画启动/200页批量/单页反馈 p95 ${result.animationPreviewP95}/`

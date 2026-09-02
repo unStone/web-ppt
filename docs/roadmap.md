@@ -20,9 +20,9 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4407 项 | 2188 core + 1050 edit + 482 save + 9 PowerPoint + 418 editor + 9 adapters + 121 collab + 130 metafile |
-| 渲染快照 | 同上 | ✅ 180 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 506 对 | 77 份固件、253 页，独立进程原始 SVG 两条文本路径 |
+| 断言总量 | `npm test` | ✅ 4449 项 | 2230 core + 1050 edit + 482 save + 9 PowerPoint + 418 editor + 9 adapters + 121 collab + 130 metafile |
+| 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
+| 编辑等价指纹 | 同上 | ✅ 512 对 | 78 份固件、256 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 506 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 512 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -82,7 +82,7 @@
 | 嵌入字体 | ✅ EOT 剥壳 | — | MTX 压缩需外部 `setFontDecoder` |
 
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
-可打印 HTML（按动画批次展开）。**无直接 PDF、无批量图片、无视频。**
+批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。**无直接 PDF、无视频。**
 
 ### 2.2 写：编辑命令（61 个已实现）
 
@@ -144,7 +144,7 @@ flowchart TD
 | 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | ✅ **已完成** |
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | ✅ **已完成** |
 | 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | ✅ **已完成** |
-| 批量导出图片 | 有 | 有（`slideToPng` + fflate 已在依赖里） | **0.6 P2，成本近乎零** |
+| 批量导出图片 | 有 | 有（复用 `slideToPng` + fflate） | ✅ **已完成** |
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | **0.7 P0** |
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（补丁引擎能改任意 part，缺反向失效索引） | **0.7 P1** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（须同时改 cache 与 embedded xlsx，可做成按需入口） | **0.8 P0** |
@@ -319,8 +319,9 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 
 ### 5.7 [批量导出幻灯片图片](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md)
 
-`slideToPng` 已有，fflate 已在依赖里。加一个 `presentationToImageZip(pres, { scale })`，
-产品层不用自己循环 + 打包。成本接近零，直接做。
+按需入口 `@web-ppt/core/image-zip` 提供 `presentationToImageZip(pres, options)`：稳定原页码命名、
+隐藏页策略、动画终态、确定性 ZIP 元数据和 1–8 路有界并发都由 core 负责，产品层不再自行循环打包。
+单页仍复用 data URI + `foreignObject` 与 `SecurityError` 回退，默认 core 入口不暴露批量 API。
 
 **直接 PDF 不做**——`presentationToPrintableHtml` + 浏览器打印已经能出矢量、可搜索的 PDF。
 真正缺的是**无人值守导出**（不弹打印对话框），那要 PDF 写入器 + 字体子集化，收益不抵成本，排在母版之后再评估。

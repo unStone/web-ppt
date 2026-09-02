@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 320 180" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="320" height="180" fill="rgb(255,255,255)"/>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(10 10)">
+<path d="M 0 0 L 300 0 L 300 160 L 0 160 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+<text x="150" y="88.06" text-anchor="middle" xml:space="preserve">
+<tspan font-size="24" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">隐藏页仍保留原始页码</tspan>
+</text>
+</g>
+</g>
+</svg>

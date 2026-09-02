@@ -25,6 +25,7 @@
     import { createVertexEditor } from '/out/editor/vertex.mjs';
     import { createPresetAdjustmentEditor } from '/out/editor/adjustments.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
+    import { presentationToImageZip } from '/out/editor/image-zip.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
@@ -100,6 +101,7 @@
       runEditorPresetAdjustmentBrowserContract,
     } from '/tooling/lib/editor-preset-adjustment-browser-contract.mjs';
     import { runEditorTouchBrowserContract } from '/tooling/lib/editor-touch-browser-contract.mjs';
+    import { runCoreImageZipBrowserContract } from '/tooling/lib/core-image-zip-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -559,6 +561,7 @@
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
+      const imageZipResult = await runCoreImageZipBrowserContract({ presentationToImageZip, parse, load });
       const imageCropResult = await runEditorImageCropBrowserContract({ openEditor, load });
       publishEditorImageCropBrowserResult(report, imageCropResult);
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
@@ -580,6 +583,7 @@
       report.dataset.performanceFailures = JSON.stringify(readPerformanceFailures());
       report.dataset.performanceEnvironment = JSON.stringify(environment);
       report.dataset.status = 'pass';
+      report.dataset.imageZip = `${imageZipResult.pages}/${imageZipResult.concurrency}/${imageZipResult.released}`;
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
       report.dataset.selectionP95 = selectionP95.toFixed(3);

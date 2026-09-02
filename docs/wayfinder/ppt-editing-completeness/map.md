@@ -44,6 +44,8 @@ tracker: local-markdown
   稳定节成员与纯画布尺寸共同沿用原子历史；目标节寻址避免协同快照覆盖并发页面成员。
 - [触屏编辑手势](tickets/006-touch-editing-gestures.md)：视图局部触点状态机让单指沿用对象编辑、双指只发布
   viewport；真实 SVG 距离命中与长按请求均不产生模型补丁。
+- [批量导出幻灯片图片](tickets/007-batch-image-export.md)：按需入口复用唯一光栅化链路；固定元数据、原页码与
+  批次有界调度让 ZIP 在隐藏页、动画终态和逐页失败下仍保持确定、原子且可释放。
 
 ## Not yet specified
 

@@ -10,6 +10,7 @@
       "@web-ppt/core/worker": ["./packages/core/src/worker.ts"],
       "@web-ppt/core/geometry": ["./packages/core/src/geometry/index.ts"],
       "@web-ppt/core/geometry/handles": ["./packages/core/src/geometry/handles/index.ts"],
+      "@web-ppt/core/image-zip": ["./packages/core/src/image-zip.ts"],
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/edit-core/generate": ["./packages/edit-core/src/generate/index.ts"],
       "@web-ppt/collab": ["./packages/collab/src/index.ts"],
@@ -23,6 +24,7 @@
   },
   "include": [
     "packages/*/src",
-    "tooling/type-contracts/animation.ts"
+    "tooling/type-contracts/animation.ts",
+    "tooling/type-contracts/image-zip.ts"
   ]
 }

@@ -223,6 +223,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           failureKind: report.dataset.failureKind,
           performanceFailures: report.dataset.performanceFailures,
           performanceEnvironment: report.dataset.performanceEnvironment,
+          imageZip: report.dataset.imageZip,
           fontFaces: report.dataset.fontFaces,
           text: report.textContent } : { status: 'running' };
       })()`);
