@@ -1,0 +1,41 @@
+const $ = <T extends Element>(selector: string): T => document.querySelector<T>(selector)!;
+
+export const editorElements = {
+  app: $<HTMLElement>('#editorApp'),
+  toolbar: $<HTMLElement>('#editorToolbar'),
+  fileInput: $<HTMLInputElement>('#fileInput'),
+  fileName: $<HTMLElement>('#fileName'),
+  canvasViewport: $<HTMLElement>('#canvasViewport'),
+  canvasMount: $<HTMLElement>('#canvasMount'),
+  canvasState: $<HTMLElement>('#canvasState'),
+  objectList: $<HTMLElement>('#objectList'),
+  slideList: $<HTMLElement>('#slideList'),
+  slideCount: $<HTMLElement>('#slideCount'),
+  statusText: $<HTMLElement>('#statusText'),
+  documentKind: $<HTMLElement>('#documentKind'),
+  pageIndicator: $<HTMLElement>('#pageIndicator'),
+  zoomLabel: $<HTMLElement>('#zoomLabel'),
+  dropLayer: $<HTMLElement>('#dropLayer'),
+  inspectorElement: $<HTMLElement>('#editorInspector'),
+};
+
+export const editorButtons = {
+  newFile: $<HTMLButtonElement>('#newFile'),
+  edit: $<HTMLButtonElement>('#editMode'),
+  view: $<HTMLButtonElement>('#viewMode'),
+  undo: $<HTMLButtonElement>('#undo'),
+  redo: $<HTMLButtonElement>('#redo'),
+  addShape: $<HTMLButtonElement>('#addShape'),
+  addImage: $<HTMLButtonElement>('#addImage'),
+  addTable: $<HTMLButtonElement>('#addTable'),
+  addSlide: $<HTMLButtonElement>('#addSlide'),
+  play: $<HTMLButtonElement>('#playAnimations'),
+  inspector: $<HTMLButtonElement>('#inspectorToggle'),
+  zoomOut: $<HTMLButtonElement>('#zoomOut'),
+  fit: $<HTMLButtonElement>('#fitZoom'),
+  zoomIn: $<HTMLButtonElement>('#zoomIn'),
+  exportImages: $<HTMLButtonElement>('#exportImages'),
+  save: $<HTMLButtonElement>('#saveFile'),
+  prev: $<HTMLButtonElement>('#prevSlide'),
+  next: $<HTMLButtonElement>('#nextSlide'),
+};

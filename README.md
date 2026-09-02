@@ -32,8 +32,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 91.01KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 75.44KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 67.21KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 75.45KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 67.34KB |
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 11.70KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.34KB |
@@ -267,7 +267,7 @@ adjustments.start(elementId); // interaction 层预览，pointerup 形成一个�
 保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
 OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
 和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
-编辑模型主入口连静态共享 chunk 为 75.44KB gzip，首次调用保存再按需增加 8.30KB。
+编辑模型主入口连静态共享 chunk 为 75.45KB gzip，首次调用保存再按需增加 8.30KB。
 
 ### 接自己的 UI
 
@@ -413,7 +413,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
 | `npm run test:edit` | 编辑模型 1050 项 + 保存 490 项 + PowerPoint 证据 9 项 + 78 份固件、512 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 419 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:editor` | 420 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

@@ -50,23 +50,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
 
       - name: 保存产物外部打开测试
-        # 复用上一阶段通过最小差异合约的同一份字节，避免各自生成不同样本。
-        run: |
-          npm run test:edit:libreoffice -- out/edit-save/blank-new-document.pptx 2
-          npm run test:edit:libreoffice -- out/edit-save/generated-empty.pptx 1
-          npm run test:edit:libreoffice -- out/edit-save/generated-content.pptx 1
-          npm run test:edit:libreoffice -- out/edit-save/generated-ppt-source.pptx 2
-          npm run test:edit:libreoffice -- out/edit-save/generated-ppt-edited.pptx 2
-          npm run test:edit:libreoffice -- out/edit-save/generated-ppt-unsupported.pptx 2
-          npm run test:edit:libreoffice -- out/edit-save/generated-ppt-ole-preview.pptx 1
-          npm run test:edit:libreoffice -- out/edit-save/group-elements.pptx 1
-          npm run test:edit:libreoffice -- out/edit-save/ungroup-elements.pptx 1
-          npm run test:edit:libreoffice -- out/site-editor-browser/sample.pptx 2
-          npm run test:edit:libreoffice -- out/edit-save/single-move.pptx
-          npm run test:edit:libreoffice -- out/edit-save/engine-text-editing.pptx
-          npm run test:edit:libreoffice -- out/edit-save/table-cell-text-editing.pptx
-          npm run test:edit:libreoffice -- out/edit-save/shape-autofit-text-editing.pptx
-          npm run test:edit:libreoffice -- out/edit-save/body-props-editing.pptx
+        # manifest 是唯一产物清单；新增保存工件无需再维护第二份手写子集。
+        run: node tooling/test-edit-libreoffice-all.mjs
 
       - name: 编辑性能预算
         continue-on-error: true

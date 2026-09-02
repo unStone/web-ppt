@@ -57,6 +57,7 @@ export { querySelectionPane } from './selection-pane';
 export { applyPatches, assertPatchesApplicable, stageExternalPatches } from './commands/patch';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export { configureCollaborationIdentity } from './collaboration-identity';
+export { presentationSlideIdForPart } from './commands/add-slide-identity';
 export { assertIdentityAllocation, MAX_COLLABORATION_VERSION } from './identity-allocation';
 export {
   effectiveElement, invalidateAll, invalidateElement, invalidateElementStructure, invalidateSlide, invalidateSlideStructure,

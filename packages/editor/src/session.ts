@@ -1,6 +1,8 @@
 import { parse } from '@web-ppt/core';
 import type { ParseOptions, Presentation } from '@web-ppt/core';
-import { createDoc, disposeDoc, Editor } from '@web-ppt/edit-core';
+import {
+  createDoc, disposeDoc, Editor, presentationSlideIdForPart,
+} from '@web-ppt/edit-core';
 import type { CreateDocOptions, EditorOptions } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
 import { createSlideEditor } from './slide-editor';
@@ -104,7 +106,15 @@ class BrowserEditorSession implements EditorSession {
       return {
         id: section.presentationId,
         name: section.name,
-        slideIds: [],
+        slideIds: section.slideIds.map((slideId) => {
+          const part = this.editor.doc.slides[slideId]?.origin?.part;
+          const presentationId = part
+            ? presentationSlideIdForPart(this.editor.doc, part) : undefined;
+          if (presentationId === undefined) {
+            throw new Error(`节 ${section.id} 的页面缺少演示文稿数值身份：${slideId}`);
+          }
+          return presentationId;
+        }),
         slideIndexes: section.slideIds.flatMap((slideId) => positions.get(slideId) ?? []),
       };
     });

@@ -3,6 +3,8 @@ export async function runCommonObjectSlideEditorContract({ lib, load, check }) {
   console.log('\n\x1b[36m▸ 高频对象与页面公开编辑接口\x1b[0m');
   const source = load('sample-editor-common-commands.pptx');
   const session = await lib.openEditor(source, { idPrefix: 'common-editor-' });
+  const sourceSlides = [...session.editor.doc.slideOrder];
+  const sourceProjectedSections = session.toPresentation().sections;
   const mount = document.createElement('div');
   const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
   const byName = (name) => Object.values(session.editor.doc.elements)
@@ -43,6 +45,22 @@ export async function runCommonObjectSlideEditorContract({ lib, load, check }) {
       && view.setAltText({ title: null, descr: null }, alt.id) === false
       && view.distributeElements('vertical', ids) === false
       && view.renameSection(sections[1].id, '不应写入') === false);
+  const added = session.editor.exec({
+    type: 'AddSlide', layoutId: session.editor.doc.layoutOrder[0],
+    at: { after: sourceSlides[0] },
+  });
+  const addedSlide = [...added.createdSlides][0];
+  session.editor.exec({ type: 'MoveSlide', id: addedSlide, at: { after: sourceSlides[2] } });
+  session.editor.exec({ type: 'RemoveSlide', id: sourceSlides[1] });
+  const projectedSections = session.toPresentation().sections;
+  const createdPresentationId = session.editor.doc.slides[addedSlide].creation?.presentationSlideId;
+  check('当前 Presentation 投影在新增、移动与删除页后保留节的数值身份和现行页序',
+    JSON.stringify(sourceProjectedSections?.map((section) => section.slideIds))
+      === JSON.stringify([[701, 702], [703]])
+      && JSON.stringify(projectedSections?.map((section) => section.slideIds))
+        === JSON.stringify([[703], [701, createdPresentationId]])
+      && JSON.stringify(projectedSections?.map((section) => section.slideIndexes))
+        === JSON.stringify([[1], [0, 2]]));
   session.dispose();
 
   const headless = await lib.openEditor(source, { idPrefix: 'common-adapter-' });

@@ -17,47 +17,16 @@ import { createSlideInspector, type SlideInspector } from './editor-slide-inspec
 import { createProductTools } from './editor-product-tools';
 import { createSiteRecovery } from './editor-recovery';
 import { enableSlideReorder } from './editor-slide-reorder';
+import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
+import { editorButtons as buttons, editorElements } from './editor-elements';
 
 setFontDecoder(eotToTtf);
 
-const $ = <T extends Element>(selector: string): T => document.querySelector<T>(selector)!;
-const app = $<HTMLElement>('#editorApp');
-const toolbar = $<HTMLElement>('#editorToolbar');
-const fileInput = $<HTMLInputElement>('#fileInput');
-const fileName = $<HTMLElement>('#fileName');
-const canvasViewport = $<HTMLElement>('#canvasViewport');
-const canvasMount = $<HTMLElement>('#canvasMount');
-const canvasState = $<HTMLElement>('#canvasState');
-const objectList = $<HTMLElement>('#objectList');
-const slideList = $<HTMLElement>('#slideList');
-const slideCount = $<HTMLElement>('#slideCount');
-const statusText = $<HTMLElement>('#statusText');
-const documentKind = $<HTMLElement>('#documentKind');
-const pageIndicator = $<HTMLElement>('#pageIndicator');
-const zoomLabel = $<HTMLElement>('#zoomLabel');
-const dropLayer = $<HTMLElement>('#dropLayer');
-const inspectorElement = $<HTMLElement>('#editorInspector');
-
-const buttons = {
-  newFile: $<HTMLButtonElement>('#newFile'),
-  edit: $<HTMLButtonElement>('#editMode'),
-  view: $<HTMLButtonElement>('#viewMode'),
-  undo: $<HTMLButtonElement>('#undo'),
-  redo: $<HTMLButtonElement>('#redo'),
-  addShape: $<HTMLButtonElement>('#addShape'),
-  addImage: $<HTMLButtonElement>('#addImage'),
-  addTable: $<HTMLButtonElement>('#addTable'),
-  addSlide: $<HTMLButtonElement>('#addSlide'),
-  play: $<HTMLButtonElement>('#playAnimations'),
-  inspector: $<HTMLButtonElement>('#inspectorToggle'),
-  zoomOut: $<HTMLButtonElement>('#zoomOut'),
-  fit: $<HTMLButtonElement>('#fitZoom'),
-  zoomIn: $<HTMLButtonElement>('#zoomIn'),
-  exportImages: $<HTMLButtonElement>('#exportImages'),
-  save: $<HTMLButtonElement>('#saveFile'),
-  prev: $<HTMLButtonElement>('#prevSlide'),
-  next: $<HTMLButtonElement>('#nextSlide'),
-};
+const {
+  app, toolbar, fileInput, fileName, canvasViewport, canvasMount, canvasState,
+  objectList, slideList, slideCount, statusText, documentKind, pageIndicator,
+  zoomLabel, dropLayer, inspectorElement,
+} = editorElements;
 
 let session: EditorSession | null = null;
 let view: SlideEditor | null = null;
@@ -127,11 +96,13 @@ function outputName(): string {
 
 function syncControls(): void {
   const editor = session?.editor;
-  const ready = !!editor && !app.dataset.loading;
+  const loaded = !!editor && !app.dataset.loading;
+  const ready = loaded && !fileActions.busy;
   const capable = ready && canWriteDocument();
   const writable = capable && !needsPptConversion();
   const index = currentIndex();
-  buttons.newFile.disabled = !!app.dataset.loading;
+  buttons.newFile.disabled = !!app.dataset.loading || fileActions.busy;
+  fileInput.disabled = !!app.dataset.loading || fileActions.busy;
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
@@ -380,10 +351,18 @@ function confirmReplacement(): boolean {
 }
 
 function tryOpenLocalFile(file: File | undefined): void {
+  if (fileActions.busy) {
+    notice('文件任务完成前不能切换文稿');
+    return;
+  }
   if (file && confirmReplacement()) void openDocument(file, file.name);
 }
 
 async function createNewDocument(): Promise<void> {
+  if (fileActions.busy) {
+    notice('文件任务完成前不能新建文稿');
+    return;
+  }
   if (!confirmReplacement()) return;
   cancelPendingOpen();
   const generation = ++openGeneration;
@@ -407,58 +386,15 @@ async function createNewDocument(): Promise<void> {
   }
 }
 
-async function saveCopy(): Promise<void> {
-  if (!session || !canMutateDocument()) return;
-  buttons.save.disabled = true;
-  notice('正在生成 PPTX 副本…');
-  try {
-    const bytes = await session.editor.save();
-    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-    const url = URL.createObjectURL(new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    }));
-    const link = Object.assign(document.createElement('a'), {
-      href: url,
-      download: outputName(),
-    });
-    link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notice('已生成可继续编辑的 PPTX 副本', 'success');
-  } catch (error) {
-    reportError(error);
-  } finally {
-    syncControls();
-  }
-}
-
-async function exportImages(): Promise<void> {
-  if (!session) return;
-  buttons.exportImages.disabled = true;
-  notice('正在导出当前文稿的图片 ZIP…');
-  try {
-    // 图片导出是可选大能力；只有用户点击时才进入官网编辑器分块。
-    const { presentationToImageZip } = await import('@web-ppt/core/image-zip');
-    const blob = await presentationToImageZip(session.toPresentation(), {
-      onProgress: ({ completed, total }) => notice(`正在导出图片 ${completed} / ${total}…`),
-    });
-    const url = URL.createObjectURL(blob);
-    const stem = outputName().replace(/\.pptx$/i, '');
-    Object.assign(document.createElement('a'), { href: url, download: `${stem}-images.zip` }).click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notice('已导出当前编辑态的图片 ZIP', 'success');
-  } catch (error) {
-    reportError(error);
-  } finally {
-    syncControls();
-  }
-}
-
 async function run(action: () => void | Promise<void>): Promise<void> {
   try { await action(); } catch (error) { reportError(error); }
 }
 
 buttons.newFile.addEventListener('click', () => void createNewDocument());
-buttons.exportImages.addEventListener('click', () => void exportImages());
+buttons.exportImages.addEventListener('click', () => {
+  const current = session;
+  if (current) void fileActions.exportImages(current, outputName());
+});
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
 buttons.undo.addEventListener('click', () => {
@@ -524,37 +460,19 @@ buttons.inspector.addEventListener('click', () => {
 buttons.zoomOut.addEventListener('click', () => { fitWanted = false; applyZoom(zoom - .1); });
 buttons.zoomIn.addEventListener('click', () => { fitWanted = false; applyZoom(zoom + .1); });
 buttons.fit.addEventListener('click', () => { fitWanted = true; fitView(); });
-buttons.save.addEventListener('click', () => void saveCopy());
-
-fileInput.addEventListener('change', () => {
-  tryOpenLocalFile(fileInput.files?.[0]);
-  fileInput.value = '';
+buttons.save.addEventListener('click', () => {
+  const current = session;
+  if (current && canMutateDocument()) void fileActions.saveCopy(current, outputName());
 });
 
-let dragDepth = 0;
-window.addEventListener('dragenter', (event) => {
-  if (!event.dataTransfer?.types.includes('Files')) return;
-  event.preventDefault();
-  dragDepth++;
-  dropLayer.hidden = false;
-});
-window.addEventListener('dragover', (event) => {
-  if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
-});
-window.addEventListener('dragleave', () => {
-  if (--dragDepth <= 0) { dragDepth = 0; dropLayer.hidden = true; }
-});
-window.addEventListener('drop', (event) => {
-  event.preventDefault();
-  dragDepth = 0;
-  dropLayer.hidden = true;
-  tryOpenLocalFile(event.dataTransfer?.files[0]);
-});
+bindEditorFileOpen(fileInput, dropLayer, tryOpenLocalFile);
 
 window.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && canMutateDocument()) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's'
+    && canMutateDocument() && !fileActions.busy) {
     event.preventDefault();
-    void saveCopy();
+    const current = session;
+    if (current) void fileActions.saveCopy(current, outputName());
   }
 });
 window.addEventListener('beforeunload', (event) => {
@@ -575,6 +493,7 @@ function closeInspector(): void {
 }
 
 const recovery = createSiteRecovery(notice);
+const fileActions = createEditorFileActions({ notice, onError: reportError, onBusyChange: syncControls });
 const productTools = createProductTools(() => ({
   session, view, writable: canMutateDocument() && mode === 'edit', openInspector,
 }), notice);

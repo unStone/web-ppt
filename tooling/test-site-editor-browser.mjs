@@ -5,7 +5,7 @@ import {
 } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
@@ -13,7 +13,11 @@ import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/site-editor-browser');
 mkdirSync(out, { recursive: true });
-const bundle = join(out, 'editor-page.js');
+const bundleDir = join(out, 'bundle');
+rmSync(bundleDir, { recursive: true, force: true });
+mkdirSync(bundleDir, { recursive: true });
+const bundle = join(bundleDir, 'editor-page.js');
+const metafile = join(bundleDir, 'meta.json');
 const aliases = [
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
   ['@web-ppt/core/image-zip', join(root, 'packages/core/src/image-zip.ts')],
@@ -27,9 +31,50 @@ const aliases = [
 ];
 execFileSync('npx', [
   'esbuild', join(root, 'packages/site/src/editor-page.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${bundle}`,
+  '--platform=browser', '--splitting', '--entry-names=editor-page', '--chunk-names=chunk-[hash]',
+  '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+  `--outdir=${bundleDir}`, `--metafile=${metafile}`,
 ], { cwd: root, stdio: 'inherit' });
+
+const metadata = JSON.parse(readFileSync(metafile, 'utf8'));
+const outputs = metadata.outputs;
+const outputByAbsolute = new Map(Object.keys(outputs).map((key) => [resolve(root, key), key]));
+const importedOutput = (owner, path) => outputByAbsolute.get(resolve(dirname(resolve(root, owner)), path))
+  ?? outputByAbsolute.get(resolve(root, path));
+const pathEndsWith = (value, suffix) => {
+  const normalized = value?.replaceAll('\\', '/');
+  return normalized === suffix || normalized?.endsWith(`/${suffix}`);
+};
+const entry = Object.entries(outputs).find(([, info]) =>
+  pathEndsWith(info.entryPoint, 'packages/site/src/editor-page.ts'))?.[0];
+if (!entry) throw new Error('官网编辑器分块检查找不到入口产物');
+const closure = (roots, includeDynamic) => {
+  const seen = new Set();
+  const pending = [...roots];
+  while (pending.length) {
+    const current = pending.pop();
+    if (!current || seen.has(current)) continue;
+    seen.add(current);
+    for (const dependency of outputs[current]?.imports ?? []) {
+      if (!includeDynamic && dependency.kind === 'dynamic-import') continue;
+      const target = importedOutput(current, dependency.path);
+      if (target) pending.push(target);
+    }
+  }
+  return seen;
+};
+const hasImageZip = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'packages/core/src/image-zip.ts')));
+const initial = closure([entry], false);
+const dynamicTargets = new Set([...initial].flatMap((key) => (outputs[key]?.imports ?? [])
+  .filter((dependency) => dependency.kind === 'dynamic-import')
+  .map((dependency) => importedOutput(key, dependency.path)).filter(Boolean)));
+const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure([key], false)));
+if (hasImageZip(initial) || imageZipTargets.length !== 1) {
+  throw new Error('官网编辑入口必须通过唯一动态分块加载 image-zip，初始依赖图不得包含它');
+}
+const delayedChunks = new Set(imageZipTargets.map((key) =>
+  `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
 
 const browser = [
   process.env.CHROME_BIN,
@@ -44,7 +89,6 @@ const editorHtml = readFileSync(join(root, 'packages/site/editor.html'), 'utf8')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
-  ['/editor-page.js', ['text/javascript; charset=utf-8', readFileSync(bundle)]],
   ['/editor-page.css', ['text/css; charset=utf-8', readFileSync(join(root, 'packages/site/src/editor-page.css'))]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
@@ -60,9 +104,22 @@ const routes = new Map([
 const server = createServer((request, response) => {
   const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
   const route = routes.get(pathname);
-  if (!route) return void response.writeHead(404).end('Not found');
-  response.writeHead(200, { 'content-type': route[0] });
-  response.end(route[1]);
+  if (route) {
+    response.writeHead(200, { 'content-type': route[0] });
+    response.end(route[1]);
+    return;
+  }
+  const asset = resolve(bundleDir, `.${pathname}`);
+  if (!asset.startsWith(`${resolve(bundleDir)}${sep}`) || !existsSync(asset)) {
+    response.writeHead(404).end('Not found');
+    return;
+  }
+  const send = () => {
+    response.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+    response.end(readFileSync(asset));
+  };
+  // 人为拉开动态块加载窗口，竞态合约不依赖本机磁盘恰好有多快。
+  if (delayedChunks.has(pathname)) setTimeout(send, 100); else send();
 });
 
 const delay = (milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
@@ -300,15 +357,40 @@ async function runContract(webSocketDebuggerUrl) {
     if (blankEditedCount !== blankInitialCount + 1) throw new Error('空白文稿撤销重做没有恢复插入形状');
     await evaluate('globalThis.__capturedDownload = null');
     await click('#exportImages');
+    const exportBusy = await evaluate(`(() => ({
+      newDisabled: document.querySelector('#newFile')?.disabled,
+      inputDisabled: document.querySelector('#fileInput')?.disabled,
+      exportDisabled: document.querySelector('#exportImages')?.disabled,
+      saveDisabled: document.querySelector('#saveFile')?.disabled,
+      file: document.querySelector('#fileName')?.textContent,
+    }))()`);
+    if (!exportBusy.newDisabled || !exportBusy.inputDisabled || !exportBusy.exportDisabled
+      || !exportBusy.saveDisabled || !exportBusy.file.endsWith('未命名演示文稿.pptx')) {
+      throw new Error(`图片导出没有原子锁定文稿会话：${JSON.stringify(exportBusy)}`);
+    }
+    await evaluate(`(async () => {
+      const bytes = await fetch('/fixtures/sample-editor-text.pptx').then((response) => response.arrayBuffer());
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([bytes], '竞态替换.pptx', {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }));
+      const input = document.querySelector('#fileInput');
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`, true);
     await waitFor("globalThis.__capturedDownload?.name?.endsWith('-images.zip')", '当前编辑态图片 ZIP 下载');
     const imageZipDownload = await evaluate(`(async () => {
       const captured = globalThis.__capturedDownload;
       const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
-      return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)), dirty: document.querySelector('#fileName')?.textContent.startsWith('●') };
+      return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)),
+        dirty: document.querySelector('#fileName')?.textContent.startsWith('●'),
+        active: document.querySelector('#fileName')?.textContent,
+        newDisabled: document.querySelector('#newFile')?.disabled };
     })()`, true);
     if (imageZipDownload.name !== '未命名演示文稿-images.zip'
       || imageZipDownload.bytes[0] !== 0x50 || imageZipDownload.bytes[1] !== 0x4b
-      || !imageZipDownload.dirty) {
+      || !imageZipDownload.dirty || !imageZipDownload.active.endsWith('未命名演示文稿.pptx')
+      || imageZipDownload.newDisabled) {
       throw new Error(`当前编辑态图片 ZIP 无效或改变保存状态：${JSON.stringify(imageZipDownload)}`);
     }
     await evaluate('globalThis.__capturedDownload = null');

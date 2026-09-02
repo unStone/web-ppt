@@ -196,6 +196,8 @@ function appendMark(
       let properties = xmlElementChildren(field).find((child) => child.localName === 'rPr');
       if (!properties && (mark.runOverrides || mark.clearDirectFormatting)) {
         properties = namespacedElement(field, DRAWINGML_NS, 'rPr');
+        // 生成字段没有可继承的来源 rPr；只写覆盖会把字体、颜色等有效外观静默丢掉。
+        materializeRunProperties(properties, mark);
         insertXmlChildUnchecked(field, properties, xmlElementChildren(field)[0] ?? null);
       }
       if (properties) {

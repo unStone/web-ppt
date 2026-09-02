@@ -20,7 +20,7 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4459 项 | 2230 core + 1050 edit + 490 save + 9 PowerPoint + 419 editor + 9 adapters + 122 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4460 项 | 2230 core + 1050 edit + 490 save + 9 PowerPoint + 420 editor + 9 adapters + 122 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 512 对 | 78 份固件、256 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
@@ -46,7 +46,7 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,459 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,460 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.70KB gzip | 读取 `package.json#main` 后实测 gzip |

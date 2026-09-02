@@ -276,7 +276,7 @@ function generatedTextBody(body: TextBody, part: string, spid: number): string {
       const text = esc(run.text);
       if (!run.field) return `<a:r><a:t>${text}</a:t></a:r>`;
       const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
-      return `<a:fld id="${id}" type="${esc(run.field)}"><a:rPr/><a:t>${text}</a:t></a:fld>`;
+      return `<a:fld id="${id}" type="${esc(run.field)}"><a:t>${text}</a:t></a:fld>`;
     }).join('');
     return `<a:p>${runs}<a:endParaRPr/></a:p>`;
   }).join('');

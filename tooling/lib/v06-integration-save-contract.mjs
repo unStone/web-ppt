@@ -86,6 +86,34 @@ export function applyV06Journey(edit, editor) {
     ?? doc.layoutOrder[0];
   const result = editor.exec({ type: 'AddSlide', layoutId, at: { after: firstSlide } });
   const secondSlide = [...result.createdSlides][0];
+  const fieldId = doc.slides[secondSlide].dynamicSlideNumbers.find((id) =>
+    editor.effectiveElement(id).kind === 'shape');
+  const fieldShape = fieldId ? editor.effectiveElement(fieldId) : undefined;
+  const fieldParagraph = fieldShape?.kind === 'shape'
+    ? fieldShape.text?.paragraphs.findIndex((paragraph) =>
+      paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum')) ?? -1
+    : -1;
+  const fieldRun = fieldParagraph >= 0 && fieldShape?.kind === 'shape'
+    ? fieldShape.text?.paragraphs[fieldParagraph].runs.findIndex((run) =>
+      run.field?.toLowerCase() === 'slidenum') ?? -1
+    : -1;
+  const fieldText = fieldParagraph >= 0 && fieldRun >= 0 && fieldShape?.kind === 'shape'
+    ? fieldShape.text?.paragraphs[fieldParagraph].runs[fieldRun].text : undefined;
+  if (!fieldId || fieldParagraph < 0 || fieldRun < 0 || fieldText === undefined) {
+    throw new Error('0.6 生成旅程缺少动态页码字段');
+  }
+  editor.exec({
+    type: 'SetRunProps', id: fieldId,
+    range: {
+      from: { p: fieldParagraph, r: fieldRun, off: 0 },
+      to: { p: fieldParagraph, r: fieldRun, off: fieldText.length },
+    },
+    props: {
+      font: 'Courier New', size: 22, color: '#FF0000', b: true, i: true,
+      underline: 'wavyDbl', strikeType: 'dblStrike', highlight: '#00FF00',
+      spacing: 2, caps: 'small', baseline: 12,
+    },
+  });
   editor.exec({
     type: 'AddSection', name: '0.6 集成旅程', slideIds: [firstSlide, secondSlide],
     at: { after: null },
@@ -109,6 +137,11 @@ function reopenedEvidence(presentation) {
   const table = first?.elements.find((element) => element.name === '0.6 结构表格');
   const paragraphs = shape?.kind === 'shape' ? shape.text?.paragraphs : undefined;
   const firstRun = paragraphs?.[0]?.runs[0];
+  const formattedField = presentation.slides.flatMap((slide) => slide.elements)
+    .flatMap((element) => element.kind === 'shape' ? element.text?.paragraphs ?? [] : [])
+    .flatMap((paragraph) => paragraph.runs)
+    .find((run) => run.field?.toLowerCase() === 'slidenum'
+      && run.color === 'rgb(255,0,0)');
   return {
     complete: presentation.width === 1200 && presentation.height === 675
       && presentation.slides.length === 2
@@ -116,6 +149,11 @@ function reopenedEvidence(presentation) {
       && presentation.slides.some((slide) => slide.elements.some((element) =>
         element.kind === 'shape' && element.text?.paragraphs.some((paragraph) =>
           paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum'))))
+      && formattedField?.fonts[0] === 'Courier New' && formattedField.size === 22
+      && formattedField.b && formattedField.i
+      && formattedField.underline === 'wavyDbl' && formattedField.strikeType === 'dblStrike'
+      && formattedField.highlight === 'rgb(0,255,0)' && formattedField.spacing === 2
+      && formattedField.caps === 'small' && formattedField.baseline === 12
       && shape?.kind === 'shape'
       && shape.editInfo?.altText?.title === '0.6 集成形状'
       && shape.editInfo.altText.descr === '列表与高级字符格式'

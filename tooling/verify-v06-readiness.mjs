@@ -12,6 +12,8 @@ const contains = (file, tokens) => {
   const source = read(file);
   return tokens.every((token) => source.includes(token));
 };
+const isClosed = (source) => /^status: closed$/m
+  .test(source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '');
 
 const packages = packageDirs.map((dir) => ({
   dir, json: JSON.parse(read(`packages/${dir}/package.json`)),
@@ -40,12 +42,14 @@ check('adapter 与 React/Vue 共享 EditorSession',
     && contains('packages/vue/src/web-ppt-editor.ts', ['EditorSession']));
 check('官网工具栏覆盖 0.6 可视入口与按需图片导出',
   contains('packages/site/editor.html', ['addTable', 'exportImages', 'editorInspector'])
-    && contains('packages/site/src/editor-page.ts', [
-      "import('@web-ppt/core/image-zip')", 'session.toPresentation()', 'onTouchNavigate',
+    && contains('packages/site/src/editor-page.ts', ['createEditorFileActions', 'onTouchNavigate'])
+    && contains('packages/site/src/editor-file-actions.ts', [
+      "import('@web-ppt/core/image-zip')", 'session.toPresentation()', 'busy',
     ])
     && contains('packages/site/src/editor-inspector.ts', [
       'textBulletKind', 'shapePreset', 'textUnderlineStyle', 'textHighlight',
-    ]));
+    ])
+    && contains('tooling/test-site-editor-browser.mjs', ['--splitting', '--metafile=', 'dynamic-import']));
 check('中英文 API 文档不再声称表格只能追加',
   contains('packages/edit-core/README-zh-CN.md', ['queryTableGrid', 'MergeCells', 'SetCellProps'])
     && contains('packages/edit-core/README.md', ['queryTableGrid', 'MergeCells', 'SetCellProps'])
@@ -59,16 +63,27 @@ check('更新日志覆盖七类 0.6 能力与集成修复', contains('CHANGELOG.
   '动态页码字段', '替代文字',
 ]));
 
-const tickets = packageDirs.length === 8
-  ? Array.from({ length: 8 }, (_, index) =>
-    `docs/wayfinder/ppt-editing-completeness/tickets/${String(index + 1).padStart(3, '0')}-`)
-  : [];
-const ticketFiles = read('docs/wayfinder/ppt-editing-completeness/map.md')
+const expectedTickets = [
+  'tickets/001-table-structure-editing.md',
+  'tickets/002-bullets-and-numbering.md',
+  'tickets/003-preset-shape-adjustments.md',
+  'tickets/004-advanced-run-formatting.md',
+  'tickets/005-common-object-and-slide-commands.md',
+  'tickets/006-touch-editing-gestures.md',
+  'tickets/007-batch-image-export.md',
+  'tickets/008-v06-integration-readiness.md',
+];
+const mapSource = read('docs/wayfinder/ppt-editing-completeness/map.md');
+const ticketFiles = mapSource
   .match(/tickets\/\d{3}-[^)]+\.md/g) ?? [];
-check('0.6 地图与八张票全部关闭', read('docs/wayfinder/ppt-editing-completeness/map.md')
-  .includes('status: closed') && ticketFiles.length >= tickets.length
-  && ticketFiles.every((file) => read(`docs/wayfinder/ppt-editing-completeness/${file}`)
-    .includes('status: closed')));
+const exactTickets = [...new Set(ticketFiles)].sort();
+check('0.6 地图与八张票全部关闭', isClosed(mapSource)
+  && ticketFiles.length === expectedTickets.length
+  && exactTickets.length === expectedTickets.length
+  && exactTickets.every((file, index) => file === expectedTickets[index])
+  && exactTickets.every((file) => isClosed(
+    read(`docs/wayfinder/ppt-editing-completeness/${file}`),
+  )));
 
 if (failures.length) {
   console.error(`\x1b[31m✗ 0.6 发布面审计失败（${failures.length} 项）\x1b[0m`);
