@@ -116,6 +116,7 @@ execFileSync('npx', [
   `--outfile=${viewerBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
+const imageZip = await import(`file://${imageZipBundle}?run=${Date.now()}`);
 const vertex = await import(`file://${vertexBundle}?run=${Date.now()}`);
 const adjustments = await import(`file://${adjustmentsBundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
@@ -160,7 +161,7 @@ await runRecoveryPersistenceContract({ lib, load, check });
 await runRecoveryAdapterContract({ lib, load, check });
 await runTransitionEditorContract({ lib, viewer, load, check, window: domEnvironment.window });
 await runAnimationEditorContract({ lib, load, check, window: domEnvironment.window });
-await runCommonObjectSlideEditorContract({ lib, load, check });
+await runCommonObjectSlideEditorContract({ lib, imageZip, load, check });
 await runTouchGestureContract({ lib, root, check });
 await runTouchAdapterContract({ lib, load, check });
 

@@ -1,7 +1,7 @@
 import { parse } from '@web-ppt/core';
 import type { ParseOptions, Presentation } from '@web-ppt/core';
 import {
-  createDoc, disposeDoc, Editor, presentationSlideIdForPart,
+  createDoc, disposeDoc, Editor, presentationSlideIdsByPart,
 } from '@web-ppt/edit-core';
 import type { CreateDocOptions, EditorOptions } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
@@ -23,6 +23,7 @@ import { SessionTextSearch } from './text-search';
 import type { TextSearch } from './text-search-types';
 
 let recoverySessionSerial = 0;
+const MAX_PRESENTATION_SLIDE_ID = 0x7fff_ffff;
 
 function recoveryToken(): string {
   recoverySessionSerial++;
@@ -82,6 +83,10 @@ class BrowserEditorSession implements EditorSession {
   readonly formatPainter: SessionFormatPainter;
   readonly textSearch: SessionTextSearch;
   private isDisposed = false;
+  private readonly projectedSlideIds = new Map<string, number>();
+  private readonly usedProjectedSlideIds = new Set<number>();
+  private readonly sourceSlideIdsByPart: ReadonlyMap<string, number>;
+  private nextSyntheticSlideId = MAX_PRESENTATION_SLIDE_ID;
 
   constructor(
     editor: Editor,
@@ -92,10 +97,50 @@ class BrowserEditorSession implements EditorSession {
     this.recovery = recovery;
     this.formatPainter = new SessionFormatPainter(editor);
     this.textSearch = new SessionTextSearch(editor);
+    this.sourceSlideIdsByPart = presentationSlideIdsByPart(editor.doc);
+    const sectionIdByIndex = new Map<number, number>();
+    for (const section of presentation.sections ?? []) {
+      section.slideIndexes?.forEach((index, at) => {
+        const value = section.slideIds[at];
+        if (Number.isSafeInteger(value) && value >= 256 && value <= MAX_PRESENTATION_SLIDE_ID) {
+          sectionIdByIndex.set(index, value);
+        }
+      });
+    }
+    editor.doc.slideOrder.forEach((slideId, index) => {
+      const record = editor.doc.slides[slideId];
+      const value = record.creation?.presentationSlideId
+        ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined)
+        ?? sectionIdByIndex.get(index);
+      if (value !== undefined && !this.usedProjectedSlideIds.has(value)) {
+        this.projectedSlideIds.set(slideId, value);
+        this.usedProjectedSlideIds.add(value);
+      }
+    });
+    // 非 OOXML 没有 p:sldId；按初始页序从合法区间高端分配，重排/删除后身份仍不漂移。
+    for (const slideId of editor.doc.slideOrder) this.projectedSlideId(slideId);
     registerSession(this, presentation);
   }
 
   get disposed(): boolean { return this.isDisposed; }
+
+  private projectedSlideId(slideId: string): number {
+    const record = this.editor.doc.slides[slideId];
+    const exact = record?.creation?.presentationSlideId
+      ?? (record?.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
+    if (exact !== undefined) {
+      this.usedProjectedSlideIds.add(exact);
+      return exact;
+    }
+    const known = this.projectedSlideIds.get(slideId);
+    if (known !== undefined) return known;
+    while (this.usedProjectedSlideIds.has(this.nextSyntheticSlideId)) this.nextSyntheticSlideId--;
+    if (this.nextSyntheticSlideId < 256) throw new Error('演示文稿的投影页面身份已耗尽');
+    const allocated = this.nextSyntheticSlideId--;
+    this.projectedSlideIds.set(slideId, allocated);
+    this.usedProjectedSlideIds.add(allocated);
+    return allocated;
+  }
 
   toPresentation(): Presentation {
     if (this.isDisposed) throw new Error('不能读取已经释放的编辑会话');
@@ -106,15 +151,7 @@ class BrowserEditorSession implements EditorSession {
       return {
         id: section.presentationId,
         name: section.name,
-        slideIds: section.slideIds.map((slideId) => {
-          const part = this.editor.doc.slides[slideId]?.origin?.part;
-          const presentationId = part
-            ? presentationSlideIdForPart(this.editor.doc, part) : undefined;
-          if (presentationId === undefined) {
-            throw new Error(`节 ${section.id} 的页面缺少演示文稿数值身份：${slideId}`);
-          }
-          return presentationId;
-        }),
+        slideIds: section.slideIds.map((slideId) => this.projectedSlideId(slideId)),
         slideIndexes: section.slideIds.flatMap((slideId) => positions.get(slideId) ?? []),
       };
     });

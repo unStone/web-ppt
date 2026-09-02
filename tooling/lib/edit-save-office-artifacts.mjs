@@ -72,3 +72,15 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
 ]);
 
 export const EDIT_SAVE_OFFICE_MANIFEST = 'office-artifacts.json';
+
+/** CI 的 Office 真值同时覆盖模型保存与官网真实 Chrome 的 .ppt→PPTX 下载。 */
+export const ALL_OFFICE_ARTIFACTS = Object.freeze([
+  ...EDIT_SAVE_OFFICE_ARTIFACTS.map((artifact) => Object.freeze({
+    ...artifact, path: `out/edit-save/${artifact.file}`,
+  })),
+  Object.freeze({
+    file: 'site-editor-browser/sample.pptx',
+    path: 'out/site-editor-browser/sample.pptx',
+    slides: 2,
+  }),
+]);

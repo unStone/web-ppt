@@ -1,4 +1,5 @@
 import { diffPackageBytes } from '../diff-package.mjs';
+import { unzipSync, zipSync } from 'fflate';
 
 const decoder = new TextDecoder();
 const named = (records, name) => Object.values(records)
@@ -83,6 +84,39 @@ export async function runAdvancedRunFormatSaveContract({
         && run.link === 'https://example.com/advanced-format' && !run.u)
       && reopenedIdentity.some((run) => run.math?.length)
       && reopenedNoHighlight.highlight === 'rgba(0,0,0,0)');
+
+  const sparseParts = unzipSync(input.slice());
+  const sparsePart = 'ppt/slides/slide1.xml';
+  const sparseSource = decoder.decode(sparseParts[sparsePart]);
+  const sparseFieldSource = sparseSource.replace(
+    /(<a:fld\b[^>]*\btype="datetime1"[^>]*>)<a:rPr\b[\s\S]*?<\/a:rPr>/,
+    '$1',
+  );
+  if (sparseFieldSource === sparseSource) throw new Error('无 rPr 字段测试没有命中来源字段');
+  sparseParts[sparsePart] = new TextEncoder().encode(sparseFieldSource);
+  const sparseInput = zipSync(sparseParts, { level: 0 });
+  const sparsePresentation = await core.parse(sparseInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const sparseDoc = edit.createDoc(sparsePresentation, { idPrefix: 'advanced-run-sparse-field-' });
+  const sparseEditor = new edit.Editor(sparseDoc);
+  const sparseField = named(sparseDoc.elements, '字段链接公式格式身份');
+  sparseEditor.exec({
+    type: 'SetRunProps', id: sparseField.id,
+    range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 10 } },
+    props: { b: true },
+  });
+  const sparseSaved = await sparseEditor.saveDetailed();
+  const sparseXml = decoder.decode(sparseSaved.package.parts[sparsePart]);
+  const sparseFragment = shapeFragment(sparseXml, sparseField.src.name);
+  const sparseFieldXml = sparseFragment.slice(
+    sparseFragment.indexOf('<a:fld '), sparseFragment.indexOf('</a:fld>') + 8,
+  );
+  check('来源字段缺少 rPr 时补丁保存只写用户修改项，不固化继承外观',
+    sparseFieldXml.includes('<a:fld ') && /<a:rPr\b[^>]*\bb="1"\s*\/>/.test(sparseFieldXml)
+      && !/\b(?:sz|u|strike|spc|cap|baseline)=/.test(sparseFieldXml)
+      && !/<a:(?:solidFill|latin|ea|cs)\b/.test(sparseFieldXml));
+  edit.disposeDoc(sparseDoc);
   const scenario = {
     type: 'text', targetName: target.src.name, edits: [],
     formats: [{ targetName: target.src.name, range: targetRange, props }],

@@ -1,5 +1,5 @@
 /** 高频对象/页面工具栏只依赖发布视图与 adapter，不接触内部 DOM 控制器。 */
-export async function runCommonObjectSlideEditorContract({ lib, load, check }) {
+export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, check }) {
   console.log('\n\x1b[36m▸ 高频对象与页面公开编辑接口\x1b[0m');
   const source = load('sample-editor-common-commands.pptx');
   const session = await lib.openEditor(source, { idPrefix: 'common-editor-' });
@@ -62,6 +62,52 @@ export async function runCommonObjectSlideEditorContract({ lib, load, check }) {
       && JSON.stringify(projectedSections?.map((section) => section.slideIndexes))
         === JSON.stringify([[1], [0, 2]]));
   session.dispose();
+
+  const legacy = await lib.openEditor(load('sample.ppt'), { idPrefix: 'common-ppt-projection-' });
+  const legacySlides = [...legacy.editor.doc.slideOrder];
+  legacy.editor.exec({
+    type: 'AddSection', name: '旧格式投影节', slideIds: legacySlides, at: { after: null },
+  });
+  const legacyProjection = legacy.toPresentation();
+  const legacyAgain = legacy.toPresentation();
+  const legacyIds = legacyProjection.sections?.[0]?.slideIds ?? [];
+  const emptyZip = await imageZip.presentationToImageZip({
+    ...legacyProjection,
+    slides: legacyProjection.slides.map((slide) => ({ ...slide, hidden: true })),
+  }, { skipHidden: true });
+  const emptyZipBytes = new Uint8Array(await emptyZip.arrayBuffer());
+  check('.ppt 新增节可稳定投影唯一数值身份并继续进入图片 ZIP 边界',
+    legacyIds.length === legacySlides.length && new Set(legacyIds).size === legacyIds.length
+      && JSON.stringify(legacyAgain.sections?.[0]?.slideIds) === JSON.stringify(legacyIds)
+      && JSON.stringify(legacyProjection.sections?.[0]?.slideIndexes) === JSON.stringify([0, 1])
+      && emptyZipBytes[0] === 0x50 && emptyZipBytes[1] === 0x4b);
+  legacy.dispose();
+
+  const large = await lib.openEditor(load('sample-editor-add-slide.pptx'), {
+    idPrefix: 'common-large-section-',
+  });
+  const largeLayout = large.editor.doc.layoutOrder[0];
+  while (large.editor.doc.slideOrder.length < 210) {
+    const tail = large.editor.doc.slideOrder.at(-1);
+    large.editor.exec({ type: 'AddSlide', layoutId: largeLayout, at: { after: tail } });
+  }
+  large.editor.exec({
+    type: 'AddSection', name: '210 页节', slideIds: [...large.editor.doc.slideOrder], at: { after: null },
+  });
+  large.toPresentation();
+  const samples = Array.from({ length: 8 }, () => {
+    const started = performance.now();
+    const projection = large.toPresentation();
+    return { elapsed: performance.now() - started, projection };
+  });
+  const p95 = [...samples].sort((left, right) => left.elapsed - right.elapsed)[6].elapsed;
+  const largeSection = samples.at(-1).projection.sections?.[0];
+  check('210 页大节投影缓存数值身份并保持线性主线程预算',
+    largeSection?.slideIds.length === 210 && new Set(largeSection.slideIds).size === 210
+      && largeSection.slideIndexes?.length === 210 && p95 < 16,
+    `p95=${p95.toFixed(3)}ms`);
+  console.log(`  210 页 section 当前投影 p95 ${p95.toFixed(3)}ms`);
+  large.dispose();
 
   const headless = await lib.openEditor(source, { idPrefix: 'common-adapter-' });
   const adapter = lib.createWebPptAdapter();

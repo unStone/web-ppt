@@ -1,5 +1,5 @@
 import { PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
-import type { TextBody } from '@web-ppt/core';
+import type { TextBody, TextRun } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
 import { effectiveElement, toSlide } from '../projection';
@@ -15,7 +15,7 @@ import type {
   ElementOverrides, ElementRecord, ParagraphBullet, SlideId, TextOverride,
 } from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
-import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
+import { parseXmlTree, serializeXmlNode, serializeXmlTreeBytes } from '../xml/tree';
 import {
   mediaPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
 } from '../save/clipboard-parts';
@@ -27,6 +27,7 @@ import {
 import type { HyperlinkSaveContext } from '../save/hyperlink';
 import { materializeElementImageFill, materializeElementStroke } from '../save/shape-format';
 import { patchSlideProperties } from '../save/slide-properties';
+import { materializeRunProperties } from '../save/text-source-less';
 import {
   materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
 } from '../save/table-style-part';
@@ -270,13 +271,20 @@ function generatedFieldId(part: string, spid: number, paragraph: number, run: nu
   return `{00000000-0000-0000-${leftHex.slice(0, 4)}-${leftHex.slice(4)}${rightHex}}`.toUpperCase();
 }
 
+function generatedRunProperties(run: TextRun): string {
+  const properties = parseXmlTree(`<a:rPr xmlns:a="${DRAWINGML_NS}"/>`).root;
+  const { text: _text, ...props } = run;
+  materializeRunProperties(properties, { from: 0, to: run.text.length, props });
+  return serializeXmlNode(properties);
+}
+
 function generatedTextBody(body: TextBody, part: string, spid: number): string {
   const paragraphs = body.paragraphs.map((paragraph, paragraphIndex) => {
     const runs = paragraph.runs.map((run, runIndex) => {
       const text = esc(run.text);
       if (!run.field) return `<a:r><a:t>${text}</a:t></a:r>`;
       const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
-      return `<a:fld id="${id}" type="${esc(run.field)}"><a:t>${text}</a:t></a:fld>`;
+      return `<a:fld id="${id}" type="${esc(run.field)}">${generatedRunProperties(run)}<a:t>${text}</a:t></a:fld>`;
     }).join('');
     return `<a:p>${runs}<a:endParaRPr/></a:p>`;
   }).join('');

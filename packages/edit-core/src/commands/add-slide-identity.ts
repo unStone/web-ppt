@@ -133,14 +133,19 @@ export function prepareSlideOpcNamespaces(doc: EditDoc): void {
   ensureIdentityRange(doc.identity, 'notesPart', firstNotesPart);
 }
 
-export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined {
-  const created = Object.values(doc.slides).find((slide) => slide.origin?.part === part)?.creation;
-  if (created) return created.presentationSlideId;
-  if (!doc.package) return undefined;
+/** presentation 关系与列表只解析一次；调用方可按 part 批量取得稳定数值身份。 */
+export function presentationSlideIdsByPart(doc: EditDoc): ReadonlyMap<string, number> {
+  const result = new Map<string, number>();
+  for (const slide of Object.values(doc.slides)) {
+    if (slide.origin && slide.creation) {
+      result.set(slide.origin.part, slide.creation.presentationSlideId);
+    }
+  }
+  if (!doc.package) return result;
   const relsBytes = sourcePart(doc, 'ppt/_rels/presentation.xml.rels');
   const presentationBytes = sourcePart(doc, 'ppt/presentation.xml');
-  if (!relsBytes || !presentationBytes) return undefined;
-  let rid: string | undefined;
+  if (!relsBytes || !presentationBytes) return result;
+  const partByRelationship = new Map<string, string>();
   for (const relationship of xmlElementChildren(
     parseXmlTree(relsBytes).root, { localName: 'Relationship' },
   )) {
@@ -148,18 +153,25 @@ export function presentationSlideIdForPart(doc: EditDoc, part: string): number |
     const mode = findXmlAttribute(relationship, { localName: 'TargetMode', namespaceUri: null })?.value;
     const type = findXmlAttribute(relationship, { localName: 'Type', namespaceUri: null })?.value;
     if (target && mode !== 'External' && type?.endsWith('/slide')
-      && resolveRelationshipTarget('ppt/presentation.xml', target) === part) {
-      rid = findXmlAttribute(relationship, { localName: 'Id', namespaceUri: null })?.value;
-      break;
+    ) {
+      const rid = findXmlAttribute(relationship, { localName: 'Id', namespaceUri: null })?.value;
+      if (rid) partByRelationship.set(
+        rid, resolveRelationshipTarget('ppt/presentation.xml', target),
+      );
     }
   }
-  if (!rid) return undefined;
   const presentation = parseXmlTree(presentationBytes).root;
   const list = findXmlChild(presentation, { localName: 'sldIdLst', namespaceUri: PRESENTATIONML_NS });
-  const node = list && xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS })
-    .find((candidate) => findXmlAttribute(candidate, {
-      localName: 'id', namespaceUri: OFFICE_REL_NS,
-    })?.value === rid);
-  const value = Number(node && findXmlAttribute(node, { localName: 'id', namespaceUri: null })?.value);
-  return Number.isSafeInteger(value) && value >= 256 ? value : undefined;
+  for (const node of list
+    ? xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS }) : []) {
+    const rid = findXmlAttribute(node, { localName: 'id', namespaceUri: OFFICE_REL_NS })?.value;
+    const part = rid ? partByRelationship.get(rid) : undefined;
+    const value = Number(findXmlAttribute(node, { localName: 'id', namespaceUri: null })?.value);
+    if (part && Number.isSafeInteger(value) && value >= 256) result.set(part, value);
+  }
+  return result;
+}
+
+export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined {
+  return presentationSlideIdsByPart(doc).get(part);
 }
