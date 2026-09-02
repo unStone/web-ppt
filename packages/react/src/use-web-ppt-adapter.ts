@@ -40,6 +40,29 @@ export function useWebPptAdapter(binding: WebPptAdapterBinding): UseWebPptAdapte
 
   useEffect(() => {
     if (!adapter) return;
+    adapter.setCallbacks({
+      onReady: binding.onReady,
+      onError: binding.onError,
+      onProgress: binding.onProgress,
+      onChange: binding.onChange,
+      onViewChange: binding.onViewChange,
+      onTouchNavigate: binding.onTouchNavigate,
+      onContextRequest: binding.onContextRequest,
+      onRecovery: binding.onRecovery,
+    });
+  }, [
+    adapter,
+    binding.onReady, binding.onError, binding.onProgress, binding.onChange, binding.onViewChange,
+    binding.onTouchNavigate, binding.onContextRequest, binding.onRecovery,
+  ]);
+
+  useEffect(() => {
+    if (!adapter) return;
+    adapter.setView({ onLinkFollow: binding.onLinkFollow });
+  }, [adapter, binding.onLinkFollow]);
+
+  useEffect(() => {
+    if (!adapter) return;
     void applyWebPptAdapterBinding(adapter, binding).catch(() => {
       // onError 与 snapshot 已携带错误；effect 不制造未处理 rejection。
     });
@@ -47,9 +70,7 @@ export function useWebPptAdapter(binding: WebPptAdapterBinding): UseWebPptAdapte
     adapter,
     binding.source, binding.session, binding.sessionOwnership, binding.openOptions,
     binding.mode, binding.slideId, binding.zoom, binding.textMode, binding.snapping,
-    binding.snapMargins, binding.onLinkFollow,
-    binding.onReady, binding.onError, binding.onProgress, binding.onChange, binding.onViewChange,
-    binding.onRecovery,
+    binding.snapMargins,
   ]);
 
   return { adapter, snapshot, containerRef };

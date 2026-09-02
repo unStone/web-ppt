@@ -9,11 +9,12 @@ import { combineSelectionIds, selectionModifierActive } from './selection-combin
 import { isRotationHandleAt, resizeHandleAt } from './selection-handles';
 import {
   alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
-  outermostHitCandidate, tableCellAddressFromPath,
+  outermostHitCandidate, tableCellAddressFromPath, touchHitCandidate,
 } from './selection-hit';
 import type { TextEditorController } from './text-editor';
 import type { ImageCropGestureController } from './image-crop-gesture';
 import type { FormatPainterTarget } from './format-painter-types';
+import type { TouchGestureController } from './touch-gesture';
 
 interface SlidePointerControllerOptions {
   readonly editor: Editor;
@@ -27,6 +28,7 @@ interface SlidePointerControllerOptions {
   readonly resize: ResizeGestureController;
   readonly rotation: RotationGestureController;
   readonly crop: ImageCropGestureController;
+  readonly touch: TouchGestureController;
   editable(): boolean;
   slideId(): SlideId;
   hitCandidates(path: EventTarget[]): ElementId[];
@@ -45,7 +47,9 @@ export class SlidePointerController {
 
   readonly down = (event: PointerEvent): void => {
     const o = this.options;
-    if (!o.editable() || event.button !== 0 || event.isPrimary === false) return;
+    if (!o.editable() || event.button !== 0) return;
+    if (o.touch.down(event)) return;
+    if (event.isPrimary === false) return;
     if (shouldYieldPointerEvent(event) || o.textEditor.owns(event.target)) return;
     if (o.textEditor.isActive) o.textEditor.close(false);
     if (o.formatPainter.active()) {
@@ -108,6 +112,7 @@ export class SlidePointerController {
     if (!id) {
       o.move.cancel();
       o.marquee.begin(event, enteredGroup);
+      o.touch.armLongPress(event, null);
       event.preventDefault();
       o.root.focus({ preventScroll: true });
       return;
@@ -126,6 +131,7 @@ export class SlidePointerController {
       && nextSelection.ids.every((selectedId) => isSelectable(o.editor.doc, selectedId))) {
       o.move.begin(event, nextSelection.ids);
     }
+    o.touch.armLongPress(event, id);
     event.preventDefault();
     o.root.focus({ preventScroll: true });
   };
@@ -163,6 +169,12 @@ export class SlidePointerController {
     togglesSelection: boolean,
   ): ElementId | undefined {
     const o = this.options;
+    if (event.pointerType === 'touch' && !event.altKey) {
+      return touchHitCandidate(
+        o.editor.doc, o.root.ownerDocument, { x: event.clientX, y: event.clientY },
+        o.staticLayer, enteredGroup,
+      ) ?? outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
+    }
     return event.altKey
       ? alternateSelectableElementId(
         o.editor.doc,
@@ -176,6 +188,7 @@ export class SlidePointerController {
   }
 
   readonly move = (event: PointerEvent): void => {
+    if (this.options.touch.move(event)) return;
     this.options.marquee.move(event);
     this.options.rotation.move(event);
     this.options.resize.move(event);
@@ -184,6 +197,7 @@ export class SlidePointerController {
   };
 
   readonly up = (event: PointerEvent): void => {
+    if (this.options.touch.up(event)) return;
     this.options.marquee.finish(event);
     this.options.rotation.finish(event);
     this.options.resize.finish(event);
@@ -192,12 +206,15 @@ export class SlidePointerController {
   };
 
   readonly cancel = (event: PointerEvent): void => {
+    if (this.options.touch.cancelPointer(event)) return;
     this.options.marquee.cancelPointer(event);
     this.options.rotation.cancelPointer(event);
     this.options.resize.cancelPointer(event);
     this.options.crop.cancelPointer(event);
     this.options.move.cancelPointer(event);
   };
+
+  readonly click = (event: MouseEvent): void => { this.options.touch.click(event); };
 
   readonly doubleClick = (event: MouseEvent): void => {
     const o = this.options;

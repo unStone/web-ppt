@@ -2,7 +2,7 @@ import type {
   AddSectionCommand, DistributeElementsCommand, EditAnimationStep, ElementAltTextState, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
   SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideNotesState, SlideSizeState,
-  SlideAnimationState, SlideTransitionInput, SlideTransitionState,
+  SlideAnimationState, SlideTransitionInput, SlideTransitionState, SlideViewport,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { SnapMargins } from './snap';
@@ -21,6 +21,24 @@ export interface LinkFollowContext {
 /** 返回 true 表示宿主已经完成路由，编辑器不再执行默认跳转。 */
 export type LinkFollowHandler = (target: LinkTarget, context: LinkFollowContext) => boolean | void;
 
+export interface TouchNavigationChange {
+  readonly phase: 'start' | 'update' | 'end' | 'cancel';
+  /** 手势希望宿主呈现的舞台屏幕位置；left/top 可用于驱动外层滚动视口。 */
+  readonly viewport: SlideViewport;
+  readonly pointerCount: number;
+}
+
+export type TouchNavigationHandler = (change: TouchNavigationChange) => void;
+
+export interface EditorContextRequest {
+  readonly source: 'touch';
+  readonly screen: import('@web-ppt/edit-core').SpacePoint;
+  readonly slide: import('@web-ppt/edit-core').SpacePoint;
+  readonly targetId: ElementId | null;
+}
+
+export type EditorContextRequestHandler = (request: EditorContextRequest) => void;
+
 export interface SlideEditorOptions {
   slideId?: SlideId;
   mode?: EditorMode;
@@ -35,6 +53,10 @@ export interface SlideEditorOptions {
   onLinkFollow?: LinkFollowHandler;
   /** 页面级快捷键或内部链接切页后通知宿主同步侧栏、分页器和受控状态。 */
   onSlideChange?: (slideId: SlideId) => void;
+  /** 双指缩放/平移结果；缩放已同步到本视图，left/top 交由宿主管理外层滚动。 */
+  onTouchNavigate?: TouchNavigationHandler;
+  /** 长按只提出上下文请求；菜单内容与呈现仍由宿主决定。 */
+  onContextRequest?: EditorContextRequestHandler;
   /** 与自定义事件 webpptformaterror 同源，adapter 用它接入全局 onError。 */
   onError?: (error: unknown) => void;
 }

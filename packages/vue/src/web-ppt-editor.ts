@@ -3,6 +3,7 @@ import type { PropType } from 'vue';
 import type {
   EditorChange, EditorSession, SlideEditor, WebPptAdapter, WebPptAdapterBinding,
   WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptViewOptions, WebPptViewState,
+  EditorContextRequest, TouchNavigationChange,
 } from '@web-ppt/editor';
 import { useWebPptAdapter } from './use-web-ppt-adapter';
 
@@ -37,6 +38,8 @@ export const WebPptEditor = defineComponent({
     },
     onLinkFollow: { type: Function as PropType<BindingProp<'onLinkFollow'>>, default: undefined },
     onRecovery: { type: Function as PropType<BindingProp<'onRecovery'>>, default: undefined },
+    onTouchNavigate: { type: Function as PropType<BindingProp<'onTouchNavigate'>>, default: undefined },
+    onContextRequest: { type: Function as PropType<BindingProp<'onContextRequest'>>, default: undefined },
   },
   emits: {
     ready: (_session: EditorSession) => true,
@@ -44,6 +47,8 @@ export const WebPptEditor = defineComponent({
     progress: (_progress: WebPptAdapterProgress) => true,
     change: (_change: EditorChange) => true,
     viewChange: (_state: WebPptViewState) => true,
+    touchNavigate: (_change: TouchNavigationChange) => true,
+    contextRequest: (_request: EditorContextRequest) => true,
   },
   setup(props, { attrs, emit, expose }) {
     const binding = computed<WebPptAdapterBinding>(() => {
@@ -60,6 +65,8 @@ export const WebPptEditor = defineComponent({
       onProgress: (progress: WebPptAdapterProgress) => emit('progress', progress),
       onChange: (change: EditorChange) => emit('change', change),
       onViewChange: (state: WebPptViewState) => emit('viewChange', state),
+      onTouchNavigate: (change: TouchNavigationChange) => emit('touchNavigate', change),
+      onContextRequest: (request: EditorContextRequest) => emit('contextRequest', request),
       onRecovery: props.onRecovery,
       } satisfies WebPptViewOptions & WebPptAdapterCallbacks;
       if (props.session != null && props.source == null && props.sessionOwnership === 'external') {

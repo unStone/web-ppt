@@ -197,6 +197,7 @@ try {
     + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
     + ` · 分布偏差/p95 ${result.commonDistributionError}px/${result.commonDistributionP95}ms`
     + ` · 页面尺寸反馈 p95 ${result.commonSizeP95}ms`
+    + ` · 触屏细描边命中 ${result.touchHitDistance}px`
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
@@ -253,6 +254,9 @@ try {
     + ` · 查找替换60导航/替换 p95 ${result.findReplaceNavigationP95}/`
     + `${result.findReplaceReplaceP95}ms`
     + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
+    + ` · trusted touch ${result.trustedTouch} distance/center/pan `
+    + `${Number(result.touchZoomError).toFixed(3)}/${Number(result.touchCenterError).toFixed(3)}/`
+    + `${Number(result.touchPanError).toFixed(3)}，60元素 p95 ${Number(result.touchP95).toFixed(3)}ms`
     + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
     + `${result.trustedSnap}/${result.trustedMarquee}`
     + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`

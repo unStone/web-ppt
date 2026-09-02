@@ -32,6 +32,8 @@ export function Deck({ file }: { file: File }) {
       openOptions={{ recovery: { store: recoveryStore } }}
       onRecovery={(candidate) => openRecoveryModal(candidate)}
       onViewChange={(state) => setSlideId(state.slideId ?? undefined)}
+      onTouchNavigate={({ phase, viewport }) => applyCanvasViewport(phase, viewport)}
+      onContextRequest={(request) => openContextMenu(request)}
       onError={console.error}
       style={{ width: '100%', height: 600 }}
     />
@@ -63,6 +65,9 @@ Element-animation controls use the same adapter: `queryAnimations()`, `setAnimat
 does not mutate the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
 Distribution, alternative text, sections, and slide-size controls call the same adapter methods and need no
 React-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
+`onTouchNavigate` receives the framework-neutral pinch viewport and `onContextRequest` receives the 500ms
+long-press target. React adds no gesture state: the shared adapter applies zoom, while product layout owns outer
+scrolling and menu presentation. `TouchNavigationChange` and `EditorContextRequest` are re-exported.
 `snapshot.textSearch` follows the same rule: render its query, match count, current match, invalidation flag, and
 `canReplace` directly, then call adapter actions from the toolbar:
 
@@ -126,4 +131,4 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with React 19.2.8; the optional peer range supports React 18.2–19. The
-framework-excluded ESM is under 1KB gzip, ships declarations, and does not add React to the base packages.
+framework-excluded ESM is 1.12KB gzip, ships declarations, and does not add React to the base packages.

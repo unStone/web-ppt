@@ -35,10 +35,10 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 90.08 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 75.45 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 64.18 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 66.92 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 11.70 KB |
-| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.02 KB |
-| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.29 KB |
+| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
+| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 8.10 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.69 KB |
 
@@ -123,6 +123,11 @@ Elements and multi-selections can be moved directly. Eight resize handles suppor
 centered Alt resizing, and flips across the opposite anchor. Rotation stays continuous across ±180°, supports
 dynamic 15° Shift constraints, nested flipped groups, and shared-center multi-selection. Transform frames touch
 only transient ghost DOM; pointer-up creates one undoable, saveable transaction.
+
+Touch selection alone gets a 12px tolerance around thin SVG geometry; mouse and pen stay exact. One finger keeps
+the existing edit gestures, while a second finger upgrades to canvas zoom/pan without history. Hosts consume
+`onTouchNavigate` for the outer viewport and `onContextRequest` for a 500ms long-press menu. View mode binds no
+edit-touch handlers, so browser page scrolling retains ownership.
 
 `Delete` or `Backspace` removes the current selection as one transaction. Groups are recursive, while charts,
 SmartArt, OLE, and other frame-only objects retain potentially shared relationships and media. A populated
@@ -362,8 +367,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,188 assertions + 180 render snapshots |
-| `npm run test:edit` | 1,050 edit-model + 482 save + 9 PowerPoint-evidence assertions, plus 504 process-isolated SVG fingerprint pairs across 76 fixtures |
-| `npm run test:editor` | 405 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:edit` | 1,050 edit-model + 482 save + 9 PowerPoint-evidence assertions, plus 506 process-isolated SVG fingerprint pairs across 77 fixtures |
+| `npm run test:editor` | 418 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

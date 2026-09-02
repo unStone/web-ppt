@@ -45,7 +45,9 @@ export type {
 } from './framework-adapter-types';
 export type { WebPptSource } from './source-fingerprint';
 export type {
-  EditorMode, LinkFollowContext, LinkFollowHandler, LinkFollowSource, SlideEditor, SlideEditorOptions,
+  EditorContextRequest, EditorContextRequestHandler, EditorMode, LinkFollowContext, LinkFollowHandler,
+  LinkFollowSource, SlideEditor, SlideEditorOptions,
+  TouchNavigationChange, TouchNavigationHandler,
 } from './slide-editor-types';
 export type { ImageInsertOptions } from './image-insertion';
 export type { ImageBackgroundOptions, ImageReplaceOptions } from './image-insertion';

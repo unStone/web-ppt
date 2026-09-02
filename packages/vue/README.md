@@ -45,6 +45,8 @@ function download(bytes: Uint8Array) {
     :on-recovery="decideRecovery"
     style="width: 100%; height: 600px"
     @view-change="slideId = $event.slideId ?? undefined"
+    @touch-navigate="applyCanvasViewport($event.phase, $event.viewport)"
+    @context-request="openContextMenu($event)"
     @error="console.error"
   />
 </template>
@@ -64,6 +66,9 @@ Element-animation controls follow the same seam: `queryAnimations()`, `setAnimat
 mutating the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
 Distribution, alternative text, sections, and slide-size controls call the same adapter methods and need no
 Vue-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
+The `touch-navigate` event carries the framework-neutral pinch viewport and `context-request` carries the 500ms
+long-press target. Vue owns no gesture state: the shared adapter applies zoom, while product layout owns outer
+scrolling and menu presentation. `TouchNavigationChange` and `EditorContextRequest` are re-exported.
 `snapshot.value.textSearch` is the same shared find/replace state. A product toolbar binds it without maintaining
 another index:
 
@@ -133,4 +138,4 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with Vue 3.5.41; the optional peer range supports Vue 3.3–3.5. The
-framework-excluded ESM is about 1KB gzip, ships declarations, and does not add Vue to the base packages.
+framework-excluded ESM is 1.34KB gzip, ships declarations, and does not add Vue to the base packages.

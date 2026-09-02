@@ -420,6 +420,26 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 `Shift` 可在手势中动态吸附到 15°，单选旁实时显示角度。预览仍只改幽灵 wrapper；松手以一个事务
 精确写回 OOXML 的 1/60000 度，全部取消路径都不提交。
 
+编辑模式对触屏提供独立语义：手指点选有 12 个屏幕像素的细描边容差，鼠标和触控笔仍服从浏览器精确
+SVG 命中；单指继续进入既有移动、缩放、旋转、文字选择与图片裁剪，第二指按下才升级为画布导航。
+双指结果通过公开回调交给宿主，缩放会同步到本视图，`left` / `top` 是外层滚动容器应呈现的舞台屏幕
+位置；导航不写模型、历史、恢复日志或保存内容。长按 500ms 只提出上下文请求，菜单由产品层创建：
+
+```ts
+const view = session.mount(container, {
+  mode: 'edit',
+  onTouchNavigate: ({ phase, viewport }) => {
+    canvasLayout.applyTouchViewport(phase, viewport);
+  },
+  onContextRequest: ({ screen, slide, targetId }) => {
+    contextMenu.open({ screen, slide, targetId });
+  },
+});
+```
+
+移动超过 8px 会取消长按；`pointercancel` / capture 丢失、切页、切模式、宿主缩放和销毁视图都会收束
+手势并释放 capture。查看模式不绑定这些编辑事件且清空 `touch-action`，页面滚动与浏览器手势不受影响。
+
 `textMode: 'auto'` 是默认值：它复用 `viewer-core` 的运行时探测，在 Safari/iOS 无法正确缩放
 `foreignObject` 时自动切到原生 SVG 文本，并让 SVG 外的 `contenteditable` 直接消费 core 的 engine
 绝对行盒；也可显式指定 `html` 或 `svg`。软换行不会进入模型，硬换行、空段、RTL、竖排、分栏和公式
@@ -429,7 +449,7 @@ wrapper 与 interaction overlay；松手把全部选择根提交为一个撤销�
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 40.61KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 66.92KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

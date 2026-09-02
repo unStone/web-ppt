@@ -10,9 +10,10 @@ const p95 = (samples) => {
 const point = (pair) => { const [x, y] = pair.split(',').map(Number); return new DOMPoint(x, y); };
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
-const pointer = (type, position, pointerId) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, button: 0, buttons: type === 'pointerup' ? 0 : 1,
-  pointerId, pointerType: 'mouse', isPrimary: true, clientX: position.x, clientY: position.y,
+const pointer = (type, position, pointerId, pointerType = 'mouse') => new PointerEvent(type, {
+  bubbles: true, composed: true, cancelable: true, button: 0,
+  buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
+  pointerId, pointerType, isPrimary: true, clientX: position.x, clientY: position.y,
 });
 
 function mountElement() {
@@ -92,6 +93,19 @@ async function geometryContract(openEditor, load) {
     }
     if (geometryError > 0.5 || hitSizeError > 0.5) {
       throw new Error(`Chrome 裁剪矩阵/命中偏差 ${geometryError.toFixed(3)}/${hitSizeError.toFixed(3)}px`);
+    }
+    view.setZoom(1);
+    const touchCropBefore = JSON.stringify(queryElementCrop(session.editor.doc, [image.id]).value);
+    const touchCropHistory = session.editor.history.undoCount;
+    const touchHandle = mount.querySelector('[data-edit-crop-hit="w"]');
+    const touchStart = center(touchHandle.getBoundingClientRect());
+    const touchEnd = { x: touchStart.x + 12, y: touchStart.y };
+    touchHandle.dispatchEvent(pointer('pointerdown', touchStart, 401, 'touch'));
+    view.element.dispatchEvent(pointer('pointermove', touchEnd, 401, 'touch'));
+    view.element.dispatchEvent(pointer('pointercancel', touchEnd, 401, 'touch'));
+    if (JSON.stringify(queryElementCrop(session.editor.doc, [image.id]).value) !== touchCropBefore
+      || session.editor.history.undoCount !== touchCropHistory) {
+      throw new Error('单指触屏没有沿用图片裁剪取消事务');
     }
     view.setMode('view');
     if (mount.querySelector('[data-edit-crop-id]')

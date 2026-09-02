@@ -39,6 +39,7 @@ import { TextSearchViewBinding } from './text-search-view';
 import type { TextSearchOpenOptions } from './text-search-types';
 import { TransitionPreviewController } from './transition-preview';
 import { AnimationPreviewController } from './animation-preview';
+import { TouchGestureController } from './touch-gesture';
 
 class DomSlideEditor implements SlideEditor {
   readonly element: HTMLDivElement;
@@ -72,6 +73,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly textSearch: TextSearchViewBinding;
   private readonly commands: SlideEditorCommands;
   private readonly keyboardEvents: SlideEditorKeyboardEvents;
+  private readonly touchGesture: TouchGestureController;
   private transitionPreview: TransitionPreviewController | null = null;
   private animationPreview: AnimationPreviewController | null = null;
   private isDestroyed = false;
@@ -214,6 +216,13 @@ class DomSlideEditor implements SlideEditor {
       slideId: () => this.currentSlide, zoom: () => this.currentZoom,
       renderSelection: () => this.domRenderer.renderSelection(this.session.editor.selection),
     });
+    this.touchGesture = new TouchGestureController({
+      root: this.element, stage: this.stage, zoom: () => this.currentZoom,
+      cancelObjectGestures: () => this.cancelObjectGestures(),
+      applyZoom: (zoom) => this.applyZoom(zoom),
+      navigate: (change) => this.notifyGesture(() => options.onTouchNavigate?.(change)),
+      context: (request) => this.notifyGesture(() => options.onContextRequest?.(request)),
+    });
     this.formatPainter = new FormatPainterViewBinding(
       this.element, session.formatPainter, options.onError,
     );
@@ -228,6 +237,7 @@ class DomSlideEditor implements SlideEditor {
       textEditor: this.textEditor, imageInsertion: this.imageInsertion,
       marquee: this.marqueeGesture, move: this.moveGesture,
       resize: this.resizeGesture, rotation: this.rotationGesture, crop: this.imageCropGesture,
+      touch: this.touchGesture,
       editable: () => this.currentMode === 'edit', slideId: () => this.currentSlide,
       hitCandidates: (path) => this.hitCandidates(path),
       formatPainter: {
@@ -447,11 +457,7 @@ class DomSlideEditor implements SlideEditor {
       this.cancelGestures();
       this.keyboard.breakSequence();
     }
-    this.currentZoom = zoom;
-    this.stage.style.transform = `scale(${zoom})`;
-    this.domRenderer.renderSelection(this.session.editor.selection);
-    this.imageCropGesture.sync(this.session.editor.selection);
-    this.textSearch.sync();
+    this.applyZoom(zoom);
   }
 
   setSnapping(enabled: boolean): void {
@@ -498,6 +504,7 @@ class DomSlideEditor implements SlideEditor {
     this.unbindEditEvents = bindSlideEditorEditEvents(this.element, {
       pointerdown: this.pointer.down, pointermove: this.pointer.move,
       pointerup: this.pointer.up, pointercancel: this.pointer.cancel,
+      click: this.pointer.click,
       dblclick: this.pointer.doubleClick,
       keydown: this.keyboardEvents.keydown, keyup: this.keyboardEvents.keyup,
       blur: this.keyboardEvents.blur, copy: this.keyboardEvents.copy,
@@ -543,11 +550,30 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private cancelGestures(): void {
+    this.touchGesture.cancel();
+    this.cancelObjectGestures();
+  }
+
+  private cancelObjectGestures(): void {
     this.marqueeGesture.cancel();
     this.moveGesture.cancel();
     this.resizeGesture.cancel();
     this.rotationGesture.cancel();
     this.imageCropGesture.cancelGesture();
+  }
+
+  private applyZoom(zoom: number): void {
+    this.currentZoom = zoom;
+    this.stage.style.transform = `scale(${zoom})`;
+    this.domRenderer.renderSelection(this.session.editor.selection);
+    this.imageCropGesture.sync(this.session.editor.selection);
+    this.textSearch.sync();
+  }
+
+  private notifyGesture(notify: () => void): void {
+    try { notify(); } catch (error) {
+      try { this.onError?.(error); } catch { /* 宿主观察者不能破坏手势状态机。 */ }
+    }
   }
 
   private transitionPreviewController(): TransitionPreviewController {
@@ -586,7 +612,7 @@ class DomSlideEditor implements SlideEditor {
   }
 
   private hasActiveGesture(): boolean {
-    return this.marqueeGesture.isActive || this.moveGesture.isActive
+    return this.touchGesture.isActive || this.marqueeGesture.isActive || this.moveGesture.isActive
       || this.resizeGesture.isActive || this.rotationGesture.isActive
       || this.imageCropGesture.isGestureActive;
   }

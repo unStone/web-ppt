@@ -42,6 +42,8 @@ tracker: local-markdown
   mark 级清除意图让 Source Value、输入法、身份保留和最小 OOXML 写回同时成立。
 - [常用对象与页面命令](tickets/005-common-object-and-slide-commands.md)：世界空间分布、独立替代文字覆盖、
   稳定节成员与纯画布尺寸共同沿用原子历史；目标节寻址避免协同快照覆盖并发页面成员。
+- [触屏编辑手势](tickets/006-touch-editing-gestures.md)：视图局部触点状态机让单指沿用对象编辑、双指只发布
+  viewport；真实 SVG 距离命中与长按请求均不产生模型补丁。
 
 ## Not yet specified
 

@@ -7,7 +7,8 @@ import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
 import type { SelectionPane } from './selection-pane-types';
 import type {
-  EditorMode, LinkFollowHandler, SlideEditor, SlideEditorOptions,
+  EditorContextRequest, EditorMode, LinkFollowHandler, SlideEditor, SlideEditorOptions,
+  TouchNavigationChange,
 } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
 import type {
@@ -70,6 +71,8 @@ export interface WebPptAdapterCallbacks {
   readonly onProgress?: (progress: WebPptAdapterProgress) => void;
   readonly onChange?: (change: EditorChange) => void;
   readonly onViewChange?: (state: WebPptViewState) => void;
+  readonly onTouchNavigate?: (change: TouchNavigationChange) => void;
+  readonly onContextRequest?: (request: EditorContextRequest) => void;
   readonly onRecovery?: (candidate: RecoveryCandidate) => RecoveryDecision | Promise<RecoveryDecision>;
 }
 

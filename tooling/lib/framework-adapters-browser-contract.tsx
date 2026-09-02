@@ -1,4 +1,4 @@
-import React, { StrictMode, createRef } from 'react';
+import React, { StrictMode, createRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createApp, h, reactive } from 'vue';
 import { openEditor } from '@web-ppt/editor';
@@ -31,6 +31,25 @@ const mountPoint = (): HTMLDivElement => {
   element.className = 'contract-offscreen';
   document.body.append(element);
   return element;
+};
+
+const dispatchTouchPinch = async (view: NonNullable<ReactHandle['view']>): Promise<void> => {
+  const root = view.element;
+  const rect = root.querySelector<HTMLElement>('[data-ppt-stage]')!.getBoundingClientRect();
+  const center = { x: rect.left + Math.min(rect.width / 2, 300), y: rect.top + Math.min(rect.height / 2, 200) };
+  const dispatch = (type: string, pointerId: number, x: number, y: number, isPrimary: boolean) => {
+    root.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerType: 'touch', pointerId, isPrimary,
+      button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
+    }));
+  };
+  dispatch('pointerdown', 71, center.x - 50, center.y, true);
+  dispatch('pointerdown', 72, center.x + 50, center.y, false);
+  dispatch('pointermove', 71, center.x - 75, center.y + 10, true);
+  dispatch('pointermove', 72, center.x + 75, center.y + 10, false);
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  dispatch('pointerup', 72, center.x + 75, center.y + 10, false);
+  dispatch('pointerup', 71, center.x - 75, center.y + 10, true);
 };
 
 /** 真实框架运行时覆盖 StrictMode、受控更新、文件替换、共享 session 与 Vue 重挂载。 */
@@ -200,21 +219,34 @@ export async function runFrameworkAdaptersBrowserContract(
   const sharedReactMount = mountPoint();
   const sharedReactRoot = createRoot(sharedReactMount);
   const sharedReactRef = createRef<ReactHandle>();
-  sharedReactRoot.render(
-    <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
-      mode="edit" textMode="svg" />,
-  );
+  let reactTouchNavigation = 0;
+  const sharedReactPaneRef = createRef<ReactPaneHandle>();
+  const SharedReactHost = ({ pane = false }: { pane?: boolean }) => {
+    const [, setTouchRevision] = useState(0);
+    return <>
+      <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
+        mode="edit" textMode="svg" onLinkFollow={() => false} onTouchNavigate={() => {
+          reactTouchNavigation++;
+          setTouchRevision((value) => value + 1);
+        }} />
+      {pane && <ReactSelectionPane ref={sharedReactPaneRef}
+        adapter={sharedReactRef.current?.adapter ?? null} />}
+    </>;
+  };
+  sharedReactRoot.render(<SharedReactHost />);
 
   const vueMount = mountPoint();
   const vueState = reactive({ mode: 'view' as 'view' | 'edit', zoom: 1 });
   let vueHandle: VueHandle | null = null;
   let vueReady = 0;
+  let vueTouchNavigation = 0;
   const vueApp = createApp({
     setup: () => () => h(VueWebPptEditor, {
       ref: (value: unknown) => { vueHandle = value as VueHandle | null; },
       session: external, sessionOwnership: 'external', mode: vueState.mode,
       zoom: vueState.zoom, textMode: 'svg',
       onReady: () => { vueReady++; },
+      onTouchNavigate: () => { vueTouchNavigation++; },
     }),
   });
   vueApp.mount(vueMount);
@@ -250,12 +282,7 @@ export async function runFrameworkAdaptersBrowserContract(
     || !await vueAnimationPreview) {
     throw new Error('Vue 查看模式没有透传真实元素动画预览');
   }
-  const sharedReactPaneRef = createRef<ReactPaneHandle>();
-  sharedReactRoot.render(<>
-    <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
-      mode="edit" textMode="svg" />
-    <ReactSelectionPane ref={sharedReactPaneRef} adapter={sharedReactRef.current!.adapter} />
-  </>);
+  sharedReactRoot.render(<SharedReactHost pane />);
   const vuePaneMount = mountPoint();
   let vuePaneHandle: VuePaneHandle | null = null;
   const vuePaneApp = createApp({
@@ -303,6 +330,20 @@ export async function runFrameworkAdaptersBrowserContract(
   await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7,
     'Vue 受控模式更新');
   if (vuePaneHandle!.pane!.mode !== 'edit') throw new Error('Vue 选择窗格没有跟随受控模式');
+  const reactGestureView = sharedReactRef.current!.view!;
+  let callbackViewSetters = 0;
+  const originalSetMode = reactGestureView.setMode.bind(reactGestureView);
+  const originalSetZoom = reactGestureView.setZoom.bind(reactGestureView);
+  reactGestureView.setMode = (value) => { callbackViewSetters++; originalSetMode(value); };
+  reactGestureView.setZoom = (value) => { callbackViewSetters++; originalSetZoom(value); };
+  await dispatchTouchPinch(reactGestureView);
+  await dispatchTouchPinch(vueHandle!.view!);
+  if (reactTouchNavigation < 3 || vueTouchNavigation < 3
+    || (sharedReactRef.current?.view?.zoom ?? 0) < 1.49 || callbackViewSetters !== 0) {
+    throw new Error(`React/Vue 没有透传触屏导航或 React 回调重渲染中断缩放：`
+      + `${reactTouchNavigation}/${vueTouchNavigation} zoom=${sharedReactRef.current?.view?.zoom}`
+      + ` setters=${callbackViewSetters}`);
+  }
   const notesBeforeVueEdit = vueHandle!.view!.queryNotes().value;
   vueHandle!.view!.setNotes('Vue 编辑备注');
   if (vueHandle!.undo() === null || vueHandle!.view!.queryNotes().value !== notesBeforeVueEdit) {

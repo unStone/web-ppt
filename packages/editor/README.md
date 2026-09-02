@@ -471,6 +471,29 @@ selected roots around the shared AABB center. Angles accumulate continuously acr
 ghost wrappers; pointer-up writes OOXML's 1/60000-degree value in one transaction, while every cancellation path
 commits nothing.
 
+Edit mode gives touch input its own semantics. Finger selection gets a 12-screen-pixel tolerance around thin SVG
+geometry, while mouse and pen input keep the browser's exact hit testing. One finger still enters the existing
+move, resize, rotate, text-selection, and image-crop paths; only a second finger upgrades the view to canvas
+navigation. The public callbacks keep product layout and menus outside the package:
+
+```ts
+const view = session.mount(container, {
+  mode: 'edit',
+  onTouchNavigate: ({ phase, viewport }) => {
+    canvasLayout.applyTouchViewport(phase, viewport);
+  },
+  onContextRequest: ({ screen, slide, targetId }) => {
+    contextMenu.open({ screen, slide, targetId });
+  },
+});
+```
+
+Pinch zoom is applied to this view; `left` / `top` describe the desired stage position for the host's outer
+scroller. Navigation never writes the model, history, recovery journal, or saved bytes. A 500ms long press emits
+only a context request, and moving more than 8px cancels it. Pointer cancellation/capture loss, page or mode
+changes, host zoom, and view destruction release the gesture. View mode binds none of these edit handlers and
+clears `touch-action`, so page scrolling and browser gestures retain ownership.
+
 `textMode: 'auto'` is the default. It reuses `viewer-core`'s runtime probe and switches affected Safari/iOS
 engines to native SVG text when they fail to scale `foreignObject`. The out-of-SVG `contenteditable` then consumes
 the same absolute engine line boxes from core. Explicit `html` and `svg` modes are also available. Soft wraps stay
@@ -482,7 +505,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 40.61 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 66.92 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

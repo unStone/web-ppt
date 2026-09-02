@@ -9,5 +9,6 @@ export type {
   WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptTextSearchState, WebPptViewState,
   EditAnimationStep, ElementAltTextState, SectionId, SectionRecord, SlideAnimationState,
   SlideSizeState, SlideTransitionInput, SlideTransitionState,
+  EditorContextRequest, TouchNavigationChange,
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
 } from '@web-ppt/editor';

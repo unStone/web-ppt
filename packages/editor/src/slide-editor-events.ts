@@ -3,6 +3,7 @@ interface SlideEditorEventHandlers {
   pointermove: (event: PointerEvent) => void;
   pointerup: (event: PointerEvent) => void;
   pointercancel: (event: PointerEvent) => void;
+  click: (event: MouseEvent) => void;
   dblclick: (event: MouseEvent) => void;
   keydown: (event: KeyboardEvent) => void;
   keyup: (event: KeyboardEvent) => void;
@@ -18,10 +19,16 @@ export function bindSlideEditorEditEvents(
   handlers: SlideEditorEventHandlers,
 ): () => void {
   const entries = Object.entries(handlers) as [keyof SlideEditorEventHandlers, EventListener][];
-  for (const [type, handler] of entries) element.addEventListener(type, handler);
+  for (const [type, handler] of entries) {
+    if (type !== 'click') element.addEventListener(type, handler);
+  }
+  element.addEventListener('click', handlers.click, true);
   element.addEventListener('lostpointercapture', handlers.pointercancel);
   return () => {
-    for (const [type, handler] of entries) element.removeEventListener(type, handler);
+    for (const [type, handler] of entries) {
+      if (type !== 'click') element.removeEventListener(type, handler);
+    }
+    element.removeEventListener('click', handlers.click, true);
     element.removeEventListener('lostpointercapture', handlers.pointercancel);
   };
 }

@@ -1,6 +1,8 @@
 import { isElementDescendantOf } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId, Selection, SlideId, TableCellAddress } from '@web-ppt/edit-core';
 
+const TOUCH_HIT_RADIUS = 12;
+
 function elementsFromPath(path: EventTarget[], root: Element): Element[] {
   return path.filter((target): target is Element =>
     !!target && typeof target === 'object'
@@ -33,6 +35,102 @@ export function selectableElementIdsFromPath(
   return elementsFromPath(path, root)
     .map((element) => (element as SVGElement).dataset.editId)
     .filter((id): id is ElementId => !!id && isSelectable(doc, id));
+}
+
+/** 触摸才按离落点由近到远采样；鼠标/笔仍完全服从浏览器的原生 SVG 命中。 */
+export function touchHitCandidate(
+  doc: EditDoc,
+  document: Document,
+  screen: { x: number; y: number },
+  root: Element,
+  enteredGroup: ElementId | null,
+): ElementId | undefined {
+  if (document.elementsFromPoint) {
+    for (const element of document.elementsFromPoint(screen.x, screen.y)) {
+      if (!root.contains(element)) continue;
+      const path = pathWithinRoot(element, root);
+      const id = outermostHitCandidate(
+        doc, selectableElementIdsFromPath(doc, path, root), enteredGroup,
+      );
+      if (id) return id;
+    }
+  }
+  let nearestId: ElementId | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  let nearestOrder = -1;
+  const geometries = root.querySelectorAll<SVGGeometryElement>(
+    'path, rect, circle, ellipse, line, polyline, polygon',
+  );
+  geometries.forEach((geometry, order) => {
+    const rect = geometry.getBoundingClientRect();
+    if (screen.x < rect.left - TOUCH_HIT_RADIUS || screen.x > rect.right + TOUCH_HIT_RADIUS
+      || screen.y < rect.top - TOUCH_HIT_RADIUS || screen.y > rect.bottom + TOUCH_HIT_RADIUS) return;
+    const geometryPath = pathWithinRoot(geometry, root);
+    const candidateIds = selectableElementIdsFromPath(doc, geometryPath, root);
+    const id = outermostHitCandidate(doc, candidateIds, enteredGroup);
+    if (!id) return;
+    const distance = geometryScreenDistance(geometry, screen, rect);
+    if (distance > TOUCH_HIT_RADIUS) return;
+    if (distance < nearestDistance - 1e-6
+      || Math.abs(distance - nearestDistance) <= 1e-6 && order > nearestOrder) {
+      nearestId = id;
+      nearestDistance = distance;
+      nearestOrder = order;
+    }
+  });
+  return nearestId;
+}
+
+function pathWithinRoot(element: Element, root: Element): EventTarget[] {
+  const path: EventTarget[] = [];
+  for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
+    path.push(current);
+  }
+  return path;
+}
+
+function pointSegmentDistance(
+  point: { x: number; y: number },
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const t = lengthSquared > 0
+    ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared))
+    : 0;
+  return Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy);
+}
+
+function geometryScreenDistance(
+  geometry: SVGGeometryElement,
+  screen: { x: number; y: number },
+  rect: DOMRect,
+): number {
+  try {
+    const matrix = geometry.getScreenCTM();
+    const length = geometry.getTotalLength();
+    if (!matrix || !Number.isFinite(length) || length <= 0) return Number.POSITIVE_INFINITY;
+    const sampleCount = Math.max(8, Math.min(256, Math.ceil((rect.width + rect.height) * 2 / 4)));
+    const project = (offset: number) => {
+      const local = geometry.getPointAtLength(offset);
+      return {
+        x: matrix.a * local.x + matrix.c * local.y + matrix.e,
+        y: matrix.b * local.x + matrix.d * local.y + matrix.f,
+      };
+    };
+    let previous = project(0);
+    let nearest = Number.POSITIVE_INFINITY;
+    for (let index = 1; index <= sampleCount; index++) {
+      const next = project(length * index / sampleCount);
+      nearest = Math.min(nearest, pointSegmentDistance(screen, previous, next));
+      previous = next;
+    }
+    return nearest;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
 }
 
 export function alternateSelectableElementId(

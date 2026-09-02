@@ -20,9 +20,9 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4394 项 | 2188 core + 1050 edit + 482 save + 9 PowerPoint + 405 editor + 9 adapters + 121 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4407 项 | 2188 core + 1050 edit + 482 save + 9 PowerPoint + 418 editor + 9 adapters + 121 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 180 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 504 对 | 76 份固件、252 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 506 对 | 77 份固件、253 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 504 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 506 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -46,7 +46,7 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,394 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,407 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.70KB gzip | 读取 `package.json#main` 后实测 gzip |
@@ -107,13 +107,13 @@
 | 能力 | 状态 |
 |---|---|
 | 发布包 | ✅ 8 个（core / edit-core / viewer-core / editor / react / vue / fonts / collab），`@next` 同版本 |
-| 框架适配 | ✅ React 1.02KB + Vue 1.29KB gzip，单一 adapter contract，Svelte / WC 可直接复用 |
+| 框架适配 | ✅ React 1.12KB + Vue 1.34KB gzip，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
 | 无障碍 | ✅ 选择窗格键盘导航 / 锁定 / 隐藏；⚠️ **画布本身无 AT 语义** |
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
 | 官网编辑页 | ✅ 独立 `editor.html`，本机打开/编辑/保存/恢复 |
-| 触屏 / 移动 | ⚠️ Pointer Events 已统一，**无双指缩放、无长按菜单、无命中容差** |
+| 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
 | 国际化 | ❌ 编辑包零文案（好事）；官网**仅中文** |
 | 文件保存 UX | ⚠️ 仅 download，**未接 File System Access** |
 
@@ -143,7 +143,7 @@ flowchart TD
 | 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 从固定规范源生成，惰性查表零默认成本） | ✅ **已完成** |
 | 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | ✅ **已完成** |
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | ✅ **已完成** |
-| 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | **0.6 P1** |
+| 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | ✅ **已完成** |
 | 批量导出图片 | 有 | 有（`slideToPng` + fflate 已在依赖里） | **0.6 P2，成本近乎零** |
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | **0.7 P0** |
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（补丁引擎能改任意 part，缺反向失效索引） | **0.7 P1** |
@@ -305,15 +305,17 @@ editor/adapter seam。页面尺寸只改变画布，挂载视图在同一提交�
 
 ### 5.6 [补齐触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)
 
-Pointer Events 已统一，`slide-editor.ts` 也已按模式设 `touch-action: none`。缺的是三件事：
+Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编辑器交互层闭环：
 
-| 项 | 现状 | 方案 |
+| 项 | 实现 | 不变量 |
 |---|---|---|
-| 命中容差 | 按精确命中，手指点不中细描边 | 按 `pointerType==='touch'` 放大命中半径，只改交互层，不改模型 |
-| 双指缩放/平移 | 无 | 双指进入画布导航，**不进历史**；与既有 rAF 幽灵状态机同一层 |
-| 长按菜单 | 无 | 长按 = 右键语义，产品层决定菜单内容 |
+| 命中容差 | 手指在真实 SVG 几何外扩 12 个屏幕像素 | 鼠标/触控笔仍走浏览器精确命中；不改模型 |
+| 双指缩放/平移 | 单指升级双指，rAF 合帧发布 `viewport` | 只同步视图 zoom，外层滚动归宿主；不进历史/恢复/保存 |
+| 长按菜单 | 500ms 发布 `onContextRequest` | 移动 8px 即取消；菜单内容和呈现归产品层 |
 
-判定：`pointerType` 分支只在编辑器交互层，查看路径零影响。
+`pointercancel`、capture 丢失、切页/模式、宿主缩放和 destroy 统一收束；多视图不合并触点。真实 Chrome
+验证距离/中心误差均为 0、60 元素触屏帧 p95 约 1ms，并覆盖可信 capture 与长按阈值。查看模式不绑定
+编辑触屏事件且清空 `touch-action`，默认 viewer 路径没有新增依赖或运行时分支。
 
 ### 5.7 [批量导出幻灯片图片](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md)
 
@@ -405,7 +407,7 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | 完成[触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md) | 无 | 补齐平板高频交互 |
+| 1 | ✅ [触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)已完成 | — | 平板高频交互已闭环 |
 | 2 | 完成[批量图片导出](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md) | 无 | 补齐低成本批量交付 |
 | 3 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
 

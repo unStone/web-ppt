@@ -99,6 +99,7 @@
     import {
       runEditorPresetAdjustmentBrowserContract,
     } from '/tooling/lib/editor-preset-adjustment-browser-contract.mjs';
+    import { runEditorTouchBrowserContract } from '/tooling/lib/editor-touch-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -143,6 +144,8 @@
         openEditor, createWebPptAdapter, load,
       });
       await runEditorEngineAutoProbeBrowserContract();
+      const touchResult = await runEditorTouchBrowserContract({ openEditor, load, mount });
+      report.dataset.touchHitDistance = touchResult.hitDistance.toFixed(3);
       const session = await openEditor(await load('sample-edit-basic.pptx'), { idPrefix: 'browser-contract-' });
       const view = session.mount(mount, { mode: 'edit', zoom: 0.75 });
       const staticLayer = mount.querySelector('[data-ppt-layer="static"]');
@@ -727,6 +730,7 @@
       report.textContent += `\n2,000 字符备注提交 p95 ${slideNotesResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素选择窗格锁定往返 p95 ${selectionPaneResult.p95.toFixed(3)}ms`;
       report.textContent += `\n60 元素格式刷完整反馈 p95 ${formatPainterResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n触屏细描边命中半径 ${touchResult.hitDistance.toFixed(3)}px`;
       report.textContent += `\n查找替换 200 页索引/查询/增量 ${findReplaceResult.buildMs.toFixed(3)}/${findReplaceResult.queryP95.toFixed(3)}/${findReplaceResult.incrementalMs.toFixed(3)}ms`;
       report.textContent += `\n查找替换 60 元素导航/替换 p95 ${findReplaceResult.navigationP95.toFixed(3)}/${findReplaceResult.replaceP95.toFixed(3)}ms`;
       report.textContent += `\nnormAutofit browser/engine 输入 p95 `

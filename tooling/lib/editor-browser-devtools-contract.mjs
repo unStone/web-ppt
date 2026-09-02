@@ -14,7 +14,8 @@ import { runTrustedEngineTextContract } from './editor-engine-text-trusted-contr
 import { runTrustedRichTextClipboardContract } from './editor-rich-text-clipboard-trusted-contract.mjs';
 import { runTrustedTableCellTextContract } from './editor-table-cell-text-trusted-contract.mjs';
 import { runTrustedShortcutAuditContract } from './editor-shortcut-audit-trusted-contract.mjs';
-import { readPerformanceFailures } from './browser-performance-contract.mjs';
+import { runTrustedTouchContract } from './editor-touch-trusted-contract.mjs';
+import { readPerformanceFailures, recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const delay = (milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 
@@ -150,6 +151,12 @@ export async function browserResult(webSocketDebuggerUrl) {
           commonDistributionError: report.dataset.commonDistributionError,
           commonDistributionP95: report.dataset.commonDistributionP95,
           commonSizeP95: report.dataset.commonSizeP95,
+          touchHitDistance: report.dataset.touchHitDistance,
+          trustedTouch: report.dataset.trustedTouch,
+          touchZoomError: report.dataset.touchZoomError,
+          touchCenterError: report.dataset.touchCenterError,
+          touchPanError: report.dataset.touchPanError,
+          touchP95: report.dataset.touchP95,
           tabP95: report.dataset.tabP95,
           multiselectClickP95: report.dataset.multiselectClickP95,
           multiselectMarqueeP95: report.dataset.multiselectMarqueeP95,
@@ -419,6 +426,9 @@ export async function browserResult(webSocketDebuggerUrl) {
           throw new Error(`真实 pointer capture 旋转失败：${JSON.stringify(rotationResult)}`);
         }
 
+        const trustedTouchResult = await runTrustedTouchContract({ evaluate, request, delay });
+        recordPerformanceBudget('60 元素触屏导航帧 p95', trustedTouchResult.p95, 24);
+
         await runTrustedSnapContract({ evaluate, trustedMouseGesture });
         await runTrustedMarqueeContract({ evaluate, trustedMouseGesture });
         await runTrustedKeyboardContract({ evaluate, dispatchKey });
@@ -440,6 +450,11 @@ export async function browserResult(webSocketDebuggerUrl) {
           report.dataset.trustedDrag = 'pass';
           report.dataset.trustedResize = 'pass';
           report.dataset.trustedRotation = 'pass';
+          report.dataset.trustedTouch = 'pass';
+          report.dataset.touchZoomError = '${trustedTouchResult.zoomError.toFixed(3)}';
+          report.dataset.touchCenterError = '${trustedTouchResult.centerError.toFixed(3)}';
+          report.dataset.touchPanError = '${trustedTouchResult.panError.toFixed(3)}';
+          report.dataset.touchP95 = '${trustedTouchResult.p95.toFixed(3)}';
           report.dataset.trustedSnap = 'pass';
           report.dataset.trustedMarquee = 'pass';
           report.dataset.trustedKeyboard = 'pass';
@@ -460,6 +475,11 @@ export async function browserResult(webSocketDebuggerUrl) {
         })()`);
         return {
           ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
+          trustedTouch: 'pass',
+          touchZoomError: trustedTouchResult.zoomError,
+          touchCenterError: trustedTouchResult.centerError,
+          touchPanError: trustedTouchResult.panError,
+          touchP95: trustedTouchResult.p95,
           trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
           trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
           trustedLayer: 'pass',

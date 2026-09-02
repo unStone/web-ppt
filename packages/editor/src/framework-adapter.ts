@@ -9,7 +9,7 @@ import type { EditorSession, OpenEditorOptions } from './session';
 import { RecoveryOpenCancelledError } from './recovery-store';
 import { bindAdapterRecovery } from './adapter-recovery';
 import type {
-  LinkFollowContext, SlideEditor,
+  EditorContextRequest, LinkFollowContext, SlideEditor, TouchNavigationChange,
 } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
 import { openOptionsKey, sameMargins, validateViewOptions } from './adapter-options';
@@ -143,13 +143,13 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.view = next;
       old?.destroy();
     } else if (this.view) {
-      if (this.desired.mode !== undefined) this.view.setMode(this.desired.mode);
-      if (this.desired.slideId !== undefined
-        && this.session?.editor.doc.slides[this.desired.slideId]) {
-        this.view.setSlide(this.desired.slideId);
+      if (options.mode !== undefined) this.view.setMode(options.mode);
+      if (options.slideId !== undefined
+        && this.session?.editor.doc.slides[options.slideId]) {
+        this.view.setSlide(options.slideId);
       }
-      if (this.desired.zoom !== undefined) this.view.setZoom(this.desired.zoom);
-      if (this.desired.snapping !== undefined) this.view.setSnapping(this.desired.snapping);
+      if (options.zoom !== undefined) this.view.setZoom(options.zoom);
+      if (options.snapping !== undefined) this.view.setSnapping(options.snapping);
     }
     this.paneBinding.sync(this.session, this.desired);
     this.publishReadyState(true);
@@ -489,6 +489,8 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       slideId,
       onLinkFollow: (target, context) => this.followLink(target, context),
       onSlideChange: (nextSlide) => this.handleSlideChange(nextSlide),
+      onTouchNavigate: (change) => this.handleTouchNavigate(change),
+      onContextRequest: (request) => this.handleContextRequest(request),
       onError: (error) => this.emitError(error),
     });
   }
@@ -498,6 +500,18 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.desired = { ...this.desired, slideId };
     this.paneBinding.sync(this.session, { ...this.desired, slideId });
     this.publishReadyState(true);
+  }
+
+  private handleTouchNavigate(change: TouchNavigationChange): void {
+    if (change.phase !== 'cancel') {
+      this.desired = { ...this.desired, zoom: change.viewport.zoom };
+      this.publishReadyState(true);
+    }
+    this.notify((callbacks) => callbacks.onTouchNavigate?.(change));
+  }
+
+  private handleContextRequest(request: EditorContextRequest): void {
+    this.notify((callbacks) => callbacks.onContextRequest?.(request));
   }
 
   private followLink(target: LinkTarget, context: LinkFollowContext): boolean | void {

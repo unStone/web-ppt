@@ -33,10 +33,10 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 90.08KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 75.45KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 64.18KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 66.92KB |
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 11.70KB |
-| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.02KB |
-| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.29KB |
+| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
+| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.34KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 8.10KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
 
@@ -138,6 +138,9 @@ view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Com
 幽灵 DOM，松手才形成一个可撤销、可保存的事务。移动以屏幕 6px 为阈值吸附画布与同组兄弟的边缘、
 中线和等距位置，`Ctrl` 可临时关闭；参考线与等距箭头只进入 interaction SVG。空白画布拖过屏幕
 3px 后进入 PowerPoint 语义框选：只命中世界 OBB 四角完全落入的当前组直属元素，预览不改模型或静态 SVG。
+触屏点选只对手指增加 12px 细描边容差，鼠标和触控笔保持精确命中；单指沿用上述编辑手势，双指升级为
+不进历史的画布缩放/平移。宿主通过 `onTouchNavigate` 接管外层视口，通过 `onContextRequest` 呈现 500ms
+长按菜单；查看模式不绑定编辑触屏事件，页面滚动仍归浏览器。
 视图聚焦后，方向键以幻灯片空间微移 1px，`Shift`+方向键微移 10px；多选与嵌套组保持相同世界位移，
 一次物理长按只占一个可撤销、可保存的历史单元。`Tab` / `Shift+Tab` 按当前页或已进入组的直属绘制
 顺序循环选取可编辑元素；跨页共享选区从当前视图首项/末项重新开始。表单、Shadow DOM 与文本编辑焦点
@@ -392,8 +395,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2188 项断言 + 180 个渲染快照 |
-| `npm run test:edit` | 编辑模型 1050 项 + 保存 482 项 + PowerPoint 证据 9 项 + 76 份固件、504 对独立进程 SVG 指纹 |
-| `npm run test:editor` | 405 项会话 / adapter / 三层 DOM / 选择变换 / 文字与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:edit` | 编辑模型 1050 项 + 保存 482 项 + PowerPoint 证据 9 项 + 77 份固件、506 对独立进程 SVG 指纹 |
+| `npm run test:editor` | 418 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |

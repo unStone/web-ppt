@@ -23,13 +23,15 @@ const EditorComponent = forwardRef<WebPptEditorHandle, WebPptEditorProps>((props
   const {
     source, session, sessionOwnership, openOptions,
     mode, slideId, zoom, textMode, snapping, snapMargins, onLinkFollow,
-    onReady, onError, onProgress, onChange, onViewChange, onRecovery,
+    onReady, onError, onProgress, onChange, onViewChange, onTouchNavigate, onContextRequest,
+    onRecovery,
     ...containerProps
   } = props;
   const binding = {
     source, session, sessionOwnership, openOptions,
     mode, slideId, zoom, textMode, snapping, snapMargins, onLinkFollow,
-    onReady, onError, onProgress, onChange, onViewChange, onRecovery,
+    onReady, onError, onProgress, onChange, onViewChange, onTouchNavigate, onContextRequest,
+    onRecovery,
   } as WebPptAdapterBinding;
   const { adapter, containerRef } = useWebPptAdapter(binding);
   useImperativeHandle(ref, () => ({
