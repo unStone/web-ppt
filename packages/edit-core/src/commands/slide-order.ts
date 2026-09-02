@@ -40,6 +40,10 @@ export function applySlideOrderPatch(doc: EditDoc, patch: SlideOrderPatch): void
   const index = patch.value.after === null ? 0 : doc.slideOrder.indexOf(patch.value.after) + 1;
   if (index < 0) throw new Error(`页面锚点不在 slideOrder 中：${String(patch.value.after)}`);
   doc.slideOrder.splice(index, 0, id);
+  const positions = new Map(doc.slideOrder.map((slideId, at) => [slideId, at]));
+  for (const section of Object.values(doc.sections.records)) {
+    section.slideIds.sort((left, right) => positions.get(left)! - positions.get(right)!);
+  }
 }
 
 export function moveSlidePatches(doc: EditDoc, command: MoveSlideCommand, origin: string): CommandPatches {

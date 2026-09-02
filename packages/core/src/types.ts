@@ -102,6 +102,8 @@ export interface OpcPackageAsset {
 
 /** 演示文稿的「节」 */
 export interface Section {
+  /** p14:section@id；编辑层另行映射为会话内稳定身份。 */
+  id?: string;
   name: string;
   /** p:sldId@id 列表（与 presentation.xml 的 sldIdLst 对应） */
   slideIds: number[];
@@ -407,6 +409,8 @@ export interface ElementEditInfo {
   tableStyle?: TableStyleSettings;
   /** 来源存在链接但其 action/关系不能安全映射到公开目标；保存必须原样保留。 */
   readonlyLink?: true;
+  /** cNvPr 替代文字仅供编辑与无障碍查询，不参与视觉渲染。 */
+  altText?: { title?: string; descr?: string };
 }
 
 export type SlideElement =

@@ -40,6 +40,8 @@ tracker: local-markdown
   让规范生成式句柄在按需入口中完成拖动、保存、恢复与协同而不增重默认路径。
 - [字符高级格式与清除格式](tickets/004-advanced-run-formatting.md)：精确枚举与旧布尔别名共用一个 Schema；
   mark 级清除意图让 Source Value、输入法、身份保留和最小 OOXML 写回同时成立。
+- [常用对象与页面命令](tickets/005-common-object-and-slide-commands.md)：世界空间分布、独立替代文字覆盖、
+  稳定节成员与纯画布尺寸共同沿用原子历史；目标节寻址避免协同快照覆盖并发页面成员。
 
 ## Not yet specified
 

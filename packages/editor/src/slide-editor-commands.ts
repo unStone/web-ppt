@@ -3,9 +3,9 @@ import {
   querySlideNotes, querySlideTransition,
 } from '@web-ppt/edit-core';
 import type {
-  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput,
+  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, ElementAltTextState, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput,
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState,
-  SlideNotesState, TextBodyProperties, TextBodyPropertyOverrides,
+  SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideNotesState, SlideSizeState, TextBodyProperties, TextBodyPropertyOverrides,
   SlideAnimationState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
@@ -26,6 +26,9 @@ import type { TextSearchOpenOptions } from './text-search-types';
 import type { TextSearchViewBinding } from './text-search-view';
 import type { TransitionPreviewController } from './transition-preview';
 import type { AnimationPreviewController } from './animation-preview';
+import {
+  commonObjectSlideCommands, CommonObjectSlideCommands,
+} from './common-object-slide-commands';
 
 interface SlideEditorCommandsOptions {
   readonly session: EditorSession;
@@ -46,7 +49,11 @@ interface SlideEditorCommandsOptions {
 
 /** 把公开工具栏动作收敛为薄能力层，视图本体只负责 DOM 与生命周期装配。 */
 export class SlideEditorCommands {
-  constructor(private readonly options: SlideEditorCommandsOptions) {}
+  private readonly common: CommonObjectSlideCommands;
+
+  constructor(private readonly options: SlideEditorCommandsOptions) {
+    this.common = commonObjectSlideCommands(options.session.editor);
+  }
 
   startFormatPainter(options: FormatPainterStartOptions): boolean {
     const o = this.options;
@@ -93,6 +100,47 @@ export class SlideEditorCommands {
     const o = this.options;
     if (o.mode() !== 'edit' || o.textEditor.isComposing) return false;
     return setSelectionBodyProps(o.session.editor, o.slideId(), props);
+  }
+
+  distributeElements(
+    axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
+  ): boolean {
+    const o = this.options;
+    return this.common.distribute(!o.destroyed() && o.mode() === 'edit', axis, ids);
+  }
+
+  queryAltText(id?: ElementId): ElementAltTextState | null {
+    return this.common.queryAltText(id);
+  }
+
+  setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean {
+    const o = this.options;
+    return this.common.setAltText(!o.destroyed() && o.mode() === 'edit', value, id);
+  }
+
+  listSections(): SectionRecord[] { return this.common.listSections(); }
+
+  addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
+    const o = this.options;
+    return this.common.addSection(!o.destroyed() && o.mode() === 'edit', value);
+  }
+
+  renameSection(id: SectionId, name: string): boolean {
+    const o = this.options;
+    return this.common.renameSection(!o.destroyed() && o.mode() === 'edit', id, name);
+  }
+  moveSection(id: SectionId, after: SectionId | null): boolean {
+    const o = this.options;
+    return this.common.moveSection(!o.destroyed() && o.mode() === 'edit', id, after);
+  }
+  removeSection(id: SectionId): boolean {
+    const o = this.options;
+    return this.common.removeSection(!o.destroyed() && o.mode() === 'edit', id);
+  }
+  querySlideSize(): SlideSizeState { return this.common.querySlideSize(); }
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+    const o = this.options;
+    return this.common.setSlideSize(!o.destroyed() && o.mode() === 'edit', value);
   }
 
   insertImage(file: Blob, options: ImageInsertOptions): Promise<ElementId> {

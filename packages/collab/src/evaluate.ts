@@ -1,12 +1,14 @@
 import type {
-  EditDoc, ElementHierarchyPatch, ElementTreePatch, Patch, SlideTreePatch,
+  EditDoc, ElementHierarchyPatch, ElementTreePatch, Patch, SectionStatePatch, SlideTreePatch,
 } from '@web-ppt/edit-core';
+import { stageExternalPatches } from '@web-ppt/edit-core';
 import {
   hierarchyWithoutNewerMembers, hierarchyWithoutRemovedMembers,
   rebaseElementHierarchy, rebaseElementRemoval,
 } from './hierarchy-conflict';
 import { pathKey } from './message';
-import { rebaseSlideRemoval } from './slide-conflict';
+import { rebaseSlideInsertion, rebaseSlideRemoval } from './slide-conflict';
+import { rebaseSectionStatePatch } from './section-conflict';
 import {
   elementHierarchy, elementLifecycle, hierarchyKey, newer, slideLifecycle, slideMove, targetExists,
 } from './state';
@@ -79,6 +81,12 @@ function parentAvailable(doc: EditDoc, parent: string, available: PatchAvailabil
     || available.elements.has(parent) || available.slides.has(parent);
 }
 
+const isSectionStatePatch = (patch: Patch): patch is SectionStatePatch =>
+  patch.op === 'set' && patch.path.length === 4
+    && patch.path[0] === 'document' && patch.path[1] === 'sections'
+    && typeof patch.path[2] === 'string'
+    && ['state', 'name', 'order'].includes(patch.path[3]);
+
 /** 纯读求值；任一依赖缺失时调用方必须延迟整条消息，不能提交其中的结构子集。 */
 export function evaluateRemoteMessage(
   doc: EditDoc,
@@ -95,6 +103,14 @@ export function evaluateRemoteMessage(
     const slide = slideLifecycle(patch);
     const move = slideMove(patch);
     const hierarchy = elementHierarchy(patch);
+    if (isSectionStatePatch(patch)) {
+      if (!newer(raw.stamp, session.registers.get(pathKey(patch)))) continue;
+      const current = accepted.length ? stageExternalPatches(doc, accepted) : doc;
+      const candidate = rebaseSectionStatePatch(current, patch);
+      if (candidate) accepted.push(candidate);
+      recorded.push(patch);
+      continue;
+    }
     if (element) {
       if (element.state === 'removed') {
         const current = session.elementLifecycles.get(element.id);
@@ -130,7 +146,8 @@ export function evaluateRemoteMessage(
         continue;
       }
       if (!doc.slides[slide.id]) {
-        accepted.push(patch);
+        const current = accepted.length ? stageExternalPatches(doc, accepted) : doc;
+        accepted.push(rebaseSlideInsertion(current, patch as SlideTreePatch));
         available.slides.add(slide.id);
         Object.keys((patch as SlideTreePatch).value.records)
           .forEach((id) => available.elements.add(id));

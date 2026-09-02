@@ -6,10 +6,13 @@ import type {
   TextCapsStyle, TextStrikeStyle, TextUnderlineStyle,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
+import type { ElementId, FractionalIndex, SlideId } from './identities';
+import type { ElementAltTextOverrides, SectionState } from './common-object-slide-types';
 
-export type ElementId = string;
-export type SlideId = string;
-export type FractionalIndex = string;
+export type { ElementId, FractionalIndex, SectionId, SlideId } from './identities';
+export type {
+  ElementAltTextOverrides, ElementAltTextState, SectionRecord, SectionState, SlideSizeState,
+} from './common-object-slide-types';
 export type EditableKind = 'full' | 'frame' | 'none';
 
 export interface TableCellAddress {
@@ -123,6 +126,7 @@ export interface ElementLinkState {
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
+  altText?: ElementAltTextOverrides;
   /** 预设切换与调节值保持规范语义；path 仍由投影按当前 frame 求值。 */
   presetGeometry?: GeomSpec;
   /** 自定义几何是 path 的语义来源；path 本身仍保持派生字段，不能写入覆盖层。 */
@@ -672,6 +676,8 @@ export interface EditDocMeta {
   readonly: boolean;
   /** 来源演示文稿的表样式 part；省略表示保存时按需创建标准 part。 */
   tableStylesPart?: string;
+  sourceWidth: number;
+  sourceHeight: number;
 }
 
 export interface EditIdentityRange {
@@ -723,6 +729,7 @@ export interface EditDoc {
   identity: EditIdentity;
   slides: Record<SlideId, SlideRecord>;
   slideOrder: SlideId[];
+  sections: SectionState;
   layouts: Record<string, SlideLayoutTemplate>;
   layoutOrder: string[];
   elements: Record<ElementId, ElementRecord>;

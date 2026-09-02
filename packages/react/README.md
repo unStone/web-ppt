@@ -61,6 +61,8 @@ are re-exported for typed controls.
 Element-animation controls use the same adapter: `queryAnimations()`, `setAnimations(steps | null)`, and
 `previewAnimations(draft?)`. Targets are stable `ElementId`s; preview automatically runs every click group and
 does not mutate the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
+Distribution, alternative text, sections, and slide-size controls call the same adapter methods and need no
+React-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
 `snapshot.textSearch` follows the same rule: render its query, match count, current match, invalidation flag, and
 `canReplace` directly, then call adapter actions from the toolbar:
 

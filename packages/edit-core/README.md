@@ -157,6 +157,26 @@ flipped/non-uniformly scaled groups, and frame-only objects share the same world
 is one undo unit; already aligned targets create no empty history. A React, Vue, Web Component, or vanilla toolbar
 can map its six buttons directly to this JSON command without importing DOM internals.
 
+`DistributeElements { ids, axis: 'horizontal' | 'vertical' }` keeps the first and last visual AABBs fixed and
+spaces at least three movable top-level objects evenly. `SetAltText { id, title, descr }` edits the two
+accessibility attributes independently from the selection-pane name; `null` restores either source value.
+`listSections()` plus `AddSection`, `RenameSection`, `MoveSection`, and `RemoveSection` use stable `SlideId`
+memberships, including duplicate/delete-page history and field-level collaboration. `SetSlideSize { w, h }`
+changes the presentation canvas without silently moving or scaling any element; `null` restores the source size.
+All four groups are one-command/one-undo-unit APIs and round-trip through retained and generated PPTX saves.
+
+```ts
+import { listSections, queryElementAltText, querySlideSize } from '@web-ppt/edit-core';
+
+editor.exec({ type: 'DistributeElements', ids: selectedIds, axis: 'horizontal' });
+editor.exec({ type: 'SetAltText', id: elementId, title: 'Revenue chart', descr: 'Quarterly trend' });
+const section = listSections(editor.doc)[0];
+editor.exec({ type: 'RenameSection', id: section.id, name: 'Results' });
+editor.exec({ type: 'SetSlideSize', w: 1600, h: 900 });
+const size = querySlideSize(editor.doc);
+const alt = queryElementAltText(editor.doc, elementId);
+```
+
 `SetFill { id, fill }` edits vector fills on shapes: explicit no-fill, solid color, linear/radial gradients,
 and renderer-supported DrawingML patterns. `SetStroke { id, stroke }` edits shape outlines and image borders,
 including color, pixel width, preset dash, cap, join, compound line, and line ends. Colors are normalized to the

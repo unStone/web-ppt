@@ -10,6 +10,7 @@ import { patchElementImageContent } from './image-content';
 import { patchElementHyperlink } from './hyperlink';
 import type { HyperlinkSaveContext } from './hyperlink';
 import { patchElementName } from './name';
+import { patchElementAltText } from './alt-text';
 import { patchElementGeometry } from './geometry';
 
 /** 插入片段与整页保存必须经过同一条覆盖物化管线，避免二次复制丢失编辑。 */
@@ -27,6 +28,7 @@ export function materializeElementOverrides(
   patchElementOrders(document, doc, part, scope);
   for (const record of records) {
     patchElementName(document, record);
+    patchElementAltText(document, record);
     patchElementXfrm(document, record);
     patchElementGeometry(document, record);
     patchElementShapeFormat(document, record);

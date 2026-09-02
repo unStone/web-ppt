@@ -11,6 +11,7 @@ import { runElementDeleteSaveContract } from './lib/element-delete-save-contract
 import { runElementLayerContract } from './lib/element-layer-contract.mjs';
 import { runElementLayerSaveContract } from './lib/element-layer-save-contract.mjs';
 import { runElementAlignContract } from './lib/element-align-contract.mjs';
+import { runCommonObjectSlideContract } from './lib/common-object-slide-contract.mjs';
 import { runElementClipboardContract } from './lib/element-clipboard-contract.mjs';
 import { runTextEditContract } from './lib/text-edit-contract.mjs';
 import { runRunFormatContract } from './lib/run-format-contract.mjs';
@@ -113,6 +114,7 @@ const sourceCount = (pres) => {
 await runElementDeleteContract({ edit, core, load, check });
 await runElementLayerContract({ edit, core, load, check });
 await runElementAlignContract({ edit, core, load, check });
+await runCommonObjectSlideContract({ edit, core, load, check });
 await runGroupUngroupContract({ edit, core, load, check });
 await runElementClipboardContract({ edit, core, load, check });
 await runTextEditContract({ edit, core, load, check });

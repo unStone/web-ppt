@@ -62,6 +62,8 @@ edit-only. `SlideTransitionInput` and `SlideTransitionState` are re-exported for
 Element-animation controls follow the same seam: `queryAnimations()`, `setAnimations(steps | null)`, and
 `previewAnimations(draft?)`. Targets are stable `ElementId`s; preview automatically runs all click groups without
 mutating the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
+Distribution, alternative text, sections, and slide-size controls call the same adapter methods and need no
+Vue-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
 `snapshot.value.textSearch` is the same shared find/replace state. A product toolbar binds it without maintaining
 another index:
 

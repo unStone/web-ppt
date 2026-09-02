@@ -8,6 +8,7 @@ import {
   allocateNotesPart, allocateSlideOpcIdentity, presentationSlideIdForPart,
 } from './add-slide-identity';
 import type { CommandPatches, DuplicateSlideCommand, SlideTreePatch } from './types';
+import { sectionOfSlide } from '../sections';
 
 function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   layoutId: string;
@@ -179,6 +180,7 @@ export function duplicateSlidePatches(
       },
     },
     records: cloned.records,
+    ...(sectionOfSlide(doc, source.id) ? { sectionId: sectionOfSlide(doc, source.id)! } : {}),
   };
   const path = ['slides', id] as const;
   const forward: SlideTreePatch = { op: 'insert', path, value, origin };

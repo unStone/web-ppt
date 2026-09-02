@@ -1,7 +1,7 @@
 import type {
-  EditAnimationStep, EditorChange, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState, RunPropertiesState,
+  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, EditorChange, ElementAltTextState, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState, RunPropertiesState,
   RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideAnimationState, SlideNotesState, SlideTransitionInput, SlideTransitionState,
+  SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideAnimationState, SlideNotesState, SlideSizeState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import { foreignObjectScalesCorrectly } from '@web-ppt/viewer-core';
 import type { EditorSession } from './session';
@@ -316,6 +316,26 @@ class DomSlideEditor implements SlideEditor {
   setParaProps(props: ParagraphPropertyInput): boolean { return this.commands.setParaProps(props); }
   queryBodyProps(): TextBodyProperties | null { return this.commands.queryBodyProps(); }
   setBodyProps(props: TextBodyPropertyOverrides): boolean { return this.commands.setBodyProps(props); }
+  distributeElements(
+    axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
+  ): boolean { return this.commands.distributeElements(axis, ids); }
+  queryAltText(id?: ElementId): ElementAltTextState | null { return this.commands.queryAltText(id); }
+  setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean {
+    return this.commands.setAltText(value, id);
+  }
+  listSections(): SectionRecord[] { return this.commands.listSections(); }
+  addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
+    return this.commands.addSection(value);
+  }
+  renameSection(id: SectionId, name: string): boolean { return this.commands.renameSection(id, name); }
+  moveSection(id: SectionId, after: SectionId | null): boolean {
+    return this.commands.moveSection(id, after);
+  }
+  removeSection(id: SectionId): boolean { return this.commands.removeSection(id); }
+  querySlideSize(): SlideSizeState { return this.commands.querySlideSize(); }
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+    return this.commands.setSlideSize(value);
+  }
 
   insertImage(file: Blob, options: ImageInsertOptions = {}): Promise<ElementId> {
     return this.commands.insertImage(file, options);
@@ -494,6 +514,14 @@ class DomSlideEditor implements SlideEditor {
 
   private update(change: EditorChange): void {
     this.cancelGestures();
+    const { width, height } = this.session.editor.doc.meta;
+    const state = sessionState(this.session);
+    state.presentation.width = width;
+    state.presentation.height = height;
+    this.stage.style.width = `${width}px`;
+    this.stage.style.height = `${height}px`;
+    this.interactionLayer.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    this.staticLayer.querySelector('svg')?.setAttribute('viewBox', `0 0 ${width} ${height}`);
     if (change.dirtySlides.has(this.currentSlide)) {
       this.transitionPreview?.cancel();
       this.animationPreview?.cancel();

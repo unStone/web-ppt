@@ -11,6 +11,7 @@ import { tableRowsWithoutTextOverrides } from './table-rows';
 import { assertTableRowAppendEditInfo } from './table-row-append-validation';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import { detachedSlideBaselineParts } from './save/remove-slide-parts';
+import { assertSectionState } from './commands/sections';
 import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
@@ -25,11 +26,13 @@ import { assertLinkOverride, supportsElementLink } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 import { isNotesPart } from './notes-part';
 import { assertElementName } from './element-name';
+import { assertAltTextField } from './alt-text';
 import { assertStoredSlideTransition } from './slide-transition';
 import { assertStoredSlideAnimations } from './slide-animation';
 import { assertCustomGeometryOverride } from './custom-geometry';
 import { assertPresetGeometry } from './preset-geometry';
 import { assertTableStyleSettings } from './table-style';
+import { assertSlideSize } from './slide-size';
 import {
   assertTableCellOverrides, assertTableGridOverrides, assertTableRows,
 } from './table-invariants';
@@ -124,6 +127,18 @@ export function validateEditElements(doc: EditDoc, ids: Iterable<ElementId>): vo
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) assertLinkOverride(record.ovr.link, `元素 ${record.id} 的链接覆盖`);
     if (own(record.ovr, 'name')) assertElementName(record.ovr.name, `元素 ${record.id} 的名称覆盖`);
+    if (own(record.ovr, 'altText')) {
+      assertDataObject(record.ovr.altText, ['title', 'descr'], `元素 ${record.id} 的替代文字覆盖`);
+      if (own(record.ovr.altText!, 'title')) {
+        assertAltTextField(record.ovr.altText!.title, `元素 ${record.id} 的替代文字标题`);
+      }
+      if (own(record.ovr.altText!, 'descr')) {
+        assertAltTextField(record.ovr.altText!.descr, `元素 ${record.id} 的替代文字描述`);
+      }
+      if (!Reflect.ownKeys(record.ovr.altText!).length) {
+        throw new Error(`元素 ${record.id} 不能保留空替代文字覆盖`);
+      }
+    }
     if (own(record.ovr, 'tableStyle')) {
       assertTableStyleSettings(doc, record.id, record.ovr.tableStyle, `表格 ${record.id} 的样式覆盖`);
     }
@@ -153,10 +168,10 @@ function assertChildren(
 
 /** 在编辑会话入口验证全局结构；命令提交只需验证自己可能改变的局部不变量。 */
 export function validateEditDoc(doc: EditDoc): void {
-  if (!Number.isFinite(doc.meta.width) || doc.meta.width <= 0
-    || !Number.isFinite(doc.meta.height) || doc.meta.height <= 0) {
-    throw new Error('页面宽高必须是有限正数');
-  }
+  assertSlideSize(doc.meta.width, '页面宽度');
+  assertSlideSize(doc.meta.height, '页面高度');
+  assertSlideSize(doc.meta.sourceWidth, '来源页面宽度');
+  assertSlideSize(doc.meta.sourceHeight, '来源页面高度');
   if (doc.package?.disposed) throw new Error('编辑文档持有的 OPC 包已经释放');
   if (!doc.identity.nextSpid || typeof doc.identity.nextSpid !== 'object'
     || Object.entries(doc.identity.nextSpid).some(([part, value]) =>
@@ -193,6 +208,7 @@ export function validateEditDoc(doc: EditDoc): void {
   }
   if (new Set(doc.slideOrder).size !== doc.slideOrder.length) throw new Error('slideOrder 不能包含重复页');
   if (doc.slideOrder.length !== Object.keys(doc.slides).length) throw new Error('slideOrder 必须恰好包含全部幻灯片');
+  assertSectionState(doc, doc.sections, '编辑文档节状态');
   if (!doc.layouts || !Array.isArray(doc.layoutOrder)
     || new Set(doc.layoutOrder).size !== doc.layoutOrder.length
     || doc.layoutOrder.length !== Object.keys(doc.layouts).length

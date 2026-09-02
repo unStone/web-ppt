@@ -77,6 +77,22 @@ export async function runElementAlignContract({ edit, core, load, check }) {
     .find((record) => record.src.name === name);
   const nestedPlain = nestedByName('space-plain');
   const leaf = nestedByName('space-nested-leaf');
+  const rotated45 = nestedByName('space-rotated-45');
+  const distributed = [rotated45, nestedPlain, leaf];
+  const distributionBefore = distributed.map((record) => bounds(edit, nestedDoc, record.id));
+  nestedEditor.exec({
+    type: 'DistributeElements', ids: [leaf.id, nestedPlain.id, rotated45.id], axis: 'horizontal',
+  });
+  const distributionAfter = distributed.map((record) => bounds(edit, nestedDoc, record.id));
+  const distributionGaps = [
+    distributionAfter[1].left - distributionAfter[0].right,
+    distributionAfter[2].left - distributionAfter[1].right,
+  ];
+  check('水平分布按旋转后世界 AABB 等距并保持两端不动',
+    near(distributionAfter[0].left, distributionBefore[0].left)
+      && near(distributionAfter[2].right, distributionBefore[2].right)
+      && near(distributionGaps[0], distributionGaps[1], 1e-6));
+  nestedEditor.undo();
   const leafBefore = nestedEditor.effectiveElement(leaf.id);
   nestedEditor.exec({ type: 'AlignElements', ids: [nestedPlain.id, leaf.id], edge: 'left' });
   const leafAfter = nestedEditor.effectiveElement(leaf.id);

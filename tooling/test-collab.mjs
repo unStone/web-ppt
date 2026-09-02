@@ -103,6 +103,7 @@ const canonical = (value) => {
 const semanticDoc = (doc) => JSON.stringify(canonical({
   meta: doc.meta,
   slideOrder: doc.slideOrder,
+  sections: doc.sections,
   slides: doc.slides,
   elements: doc.elements,
   removedElements: doc.removedElements,
@@ -192,6 +193,108 @@ console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
     && pair.right.elements[textShape.id].ovr.x === expectedX);
   check('正常并发没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
+}
+
+console.log('\n\x1b[36m▸ 高频对象与页面字段协同\x1b[0m');
+{
+  const pair = await createPair('sample-editor-common-commands.pptx', 'collab-common-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  const byName = (doc, name) => Object.values(doc.elements)
+    .find((record) => record.src.name === name);
+  const ids = ['common-left', 'common-middle-a', 'common-middle-b', 'common-right']
+    .map((name) => byName(pair.left, name).id);
+  const alt = byName(pair.left, 'common-alt');
+  const firstSection = edit.listSections(pair.left)[0];
+  pair.leftEditor.transaction((transaction) => {
+    transaction.exec({ type: 'DistributeElements', ids, axis: 'horizontal' });
+    transaction.exec({ type: 'RenameSection', id: firstSection.id, name: '协同左节' });
+  }, '左侧公共命令');
+  pair.rightEditor.transaction((transaction) => {
+    transaction.exec({ type: 'SetAltText', id: alt.id, title: '协同标题', descr: '协同描述' });
+    transaction.exec({ type: 'SetSlideSize', w: 1600, h: 900 });
+    transaction.exec({ type: 'DuplicateSlide', id: pair.right.slideOrder[0] });
+  }, '右侧公共命令');
+  hub.flush((items) => items.reverse());
+  const leftBounds = ids.map((id) => edit.elementWorldBounds(pair.left, id))
+    .sort((a, b) => a.left - b.left);
+  const gaps = leftBounds.slice(1).map((item, index) => item.left - leftBounds[index].right);
+  check('分布、替代文字、节与页面尺寸跨副本乱序投递后收敛',
+    semanticDoc(pair.left) === semanticDoc(pair.right)
+      && Math.max(...gaps) - Math.min(...gaps) < 1e-6
+      && edit.queryElementAltText(pair.right, alt.id).title === '协同标题'
+      && edit.listSections(pair.right)[0].name === '协同左节'
+      && edit.listSections(pair.left)[0].slideIds.length === 3
+      && edit.listSections(pair.right)[0].slideIds.length === 3
+      && edit.querySlideSize(pair.left).w === 1600,
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check('公共字段协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
+}
+
+console.log('\n\x1b[36m▸ 节与页面结构并发收敛\x1b[0m');
+{
+  const pair = await createPair('sample-editor-common-commands.pptx', 'collab-section-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  const removedSection = edit.listSections(pair.left)[0];
+  const sourceSlide = removedSection.slideIds[0];
+  const beforeDuplicate = new Set(pair.right.slideOrder);
+  pair.leftEditor.exec({ type: 'RemoveSection', id: removedSection.id });
+  pair.rightEditor.exec({ type: 'DuplicateSlide', id: sourceSlide });
+  const duplicateId = pair.right.slideOrder.find((id) => !beforeDuplicate.has(id));
+  hub.flush((items) => items.reverse());
+  check('删节与成员页复制并发时删除归属且保留未分节副本',
+    semanticDoc(pair.left) === semanticDoc(pair.right)
+      && !!duplicateId && !!pair.left.slides[duplicateId]
+      && edit.sectionOfSlide(pair.left, duplicateId) === null,
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+
+  for (const section of edit.listSections(pair.left)) {
+    pair.leftEditor.exec({ type: 'RemoveSection', id: section.id });
+  }
+  hub.flush();
+  const leftSlide = pair.left.slideOrder[0];
+  const rightSlide = pair.right.slideOrder.at(-1);
+  const leftSectionsBefore = new Set(pair.left.sections.order);
+  pair.leftEditor.exec({
+    type: 'AddSection', name: '并发左节', slideIds: [leftSlide], at: { after: null },
+  });
+  const leftSectionId = pair.left.sections.order.find((id) => !leftSectionsBefore.has(id));
+  const rightSectionsBefore = new Set(pair.right.sections.order);
+  pair.rightEditor.exec({
+    type: 'AddSection', name: '并发右节', slideIds: [rightSlide], at: { after: null },
+  });
+  const rightSectionId = pair.right.sections.order.find((id) => !rightSectionsBefore.has(id));
+  hub.flush((items) => items.reverse());
+  const addConverged = semanticDoc(pair.left) === semanticDoc(pair.right)
+    && pair.left.sections.order[0] === rightSectionId
+    && pair.left.sections.order[1] === leftSectionId;
+
+  const assigned = new Set(edit.listSections(pair.left).flatMap((section) => section.slideIds));
+  const thirdSlide = pair.left.slideOrder.find((id) => !assigned.has(id));
+  pair.leftEditor.exec({
+    type: 'AddSection', name: '第三节', slideIds: [thirdSlide],
+    at: { after: pair.left.sections.order.at(-1) },
+  });
+  hub.flush();
+  const [first, second, third] = pair.left.sections.order;
+  pair.leftEditor.exec({ type: 'RenameSection', id: first, name: '提高左侧逻辑时钟' });
+  pair.leftEditor.exec({ type: 'MoveSection', id: first, at: { after: second } });
+  // 左侧已是 first→third；这个远端移动会局部 no-op，但仍须触发全量意图物化。
+  pair.rightEditor.exec({ type: 'MoveSection', id: third, at: { after: first } });
+  hub.flush((items) => items.reverse());
+  check('同锚点新增节与不同目标移动都按全量意图确定性收敛',
+    addConverged && semanticDoc(pair.left) === semanticDoc(pair.right)
+      && bindings[0].checkpoint().sectionMoves.length >= 3 && errors.length === 0,
+    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
 }
 
 console.log('\n\x1b[36m▸ 文字、层级与页序固定种子并发性质\x1b[0m');
@@ -496,6 +599,7 @@ await runAdvancedRunFormatCollabContract({
 
 await runCollabAtomicContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub, semanticDoc,
+  stringDiff,
 });
 
 console.log('\n\x1b[36m▸ BroadcastChannel 双标签页 provider\x1b[0m');

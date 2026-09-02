@@ -2,6 +2,7 @@ import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
 import type { Patch, SlideChangeSets, SlideTreePatch, SlideTreeSnapshot } from './types';
 import { isSlideNotesPatch } from './slide-notes';
 import { isSlideOrderPatch } from './slide-order';
+import { sectionOfSlide } from '../sections';
 
 export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
   return patch.path.length === 2 && patch.path[0] === 'slides';
@@ -13,6 +14,10 @@ function assertSnapshot(snapshot: SlideTreeSnapshot, id: SlideId, label: string)
     || (snapshot.before !== null && (typeof snapshot.before !== 'string' || !snapshot.before))
     || !snapshot.records || typeof snapshot.records !== 'object') {
     throw new Error(`${label} 的页面树快照无效`);
+  }
+  if (snapshot.sectionId !== undefined
+    && (typeof snapshot.sectionId !== 'string' || !snapshot.sectionId)) {
+    throw new Error(`${label} 的节身份无效`);
   }
   if (snapshot.slide.children.some((child) => !snapshot.records[child])) {
     throw new Error(`${label} 的页面树缺少直属元素记录`);
@@ -39,11 +44,17 @@ export function validateSlideTreePatch(doc: EditDoc, patch: SlideTreePatch, inde
     for (const elementId of Object.keys(patch.value.records)) {
       if (!doc.elements[elementId]) throw new Error(`Patch ${index} 删除的页面元素不存在：${elementId}`);
     }
+    if ((patch.value.sectionId ?? null) !== sectionOfSlide(doc, id)) {
+      throw new Error(`Patch ${index} 的页面节归属与当前模型不一致`);
+    }
     return;
   }
   if (doc.slides[id] || doc.slideOrder.includes(id)) throw new Error(`Patch ${index} 插入的页面已存在`);
   if (patch.value.after !== null && !doc.slides[patch.value.after]) {
     throw new Error(`Patch ${index} 插入页面的锚点不存在：${patch.value.after}`);
+  }
+  if (patch.value.sectionId !== undefined && !doc.sections.records[patch.value.sectionId]) {
+    throw new Error(`Patch ${index} 插入页面的节不存在：${patch.value.sectionId}`);
   }
   for (const elementId of Object.keys(patch.value.records)) {
     if (doc.elements[elementId] || doc.slides[elementId]) {
@@ -62,6 +73,10 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
     doc.slideOrder.splice(index, 1);
     for (const id of Object.keys(records)) delete doc.elements[id];
     delete doc.slides[slide.id];
+    for (const section of Object.values(doc.sections.records)) {
+      const member = section.slideIds.indexOf(slide.id);
+      if (member >= 0) section.slideIds.splice(member, 1);
+    }
     return;
   }
   doc.slides[slide.id] = structuredClone(slide);
@@ -69,6 +84,13 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   const index = after === null ? 0 : doc.slideOrder.indexOf(after) + 1;
   if (index < 0) throw new Error(`插入页面的锚点不在 slideOrder 中：${String(after)}`);
   doc.slideOrder.splice(index, 0, slide.id);
+  if (patch.value.sectionId) {
+    const section = doc.sections.records[patch.value.sectionId];
+    if (!section) throw new Error(`插入页面的节不存在：${patch.value.sectionId}`);
+    section.slideIds.push(slide.id);
+    const position = new Map(doc.slideOrder.map((id, at) => [id, at]));
+    section.slideIds.sort((left, right) => position.get(left)! - position.get(right)!);
+  }
 }
 
 export function slidePatchSets(doc: EditDoc, patches: readonly Patch[]): SlideChangeSets {

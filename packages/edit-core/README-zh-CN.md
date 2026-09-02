@@ -150,6 +150,25 @@ markup/defs 的元素；框架适配层无需猜 patch 类型。
 同一套世界坐标到父坐标换算；一个命令只生成一个撤销单元，已经对齐时不制造空历史。React、Vue、
 Web Component 或原生工具栏可把六个按钮直接映射到这条 JSON 命令，无需依赖 DOM 包内部结构。
 
+`DistributeElements { ids, axis: 'horizontal' | 'vertical' }` 固定首尾视觉 AABB，把至少三个可移动顶层
+对象等距分布。`SetAltText { id, title, descr }` 独立于选择窗格名称编辑两项无障碍属性，任一字段传
+`null` 都会恢复来源值。`listSections()` 配合 `AddSection`、`RenameSection`、`MoveSection`、
+`RemoveSection` 以稳定 `SlideId` 维护节成员，覆盖复制/删除页历史与字段级协同。`SetSlideSize { w, h }`
+只修改整份演示的画布，不暗中移动或缩放元素；`null` 恢复来源尺寸。四组能力都是一个命令对应一个撤销
+单元，并可在保留型与生成式 PPTX 保存后重开。
+
+```ts
+import { listSections, queryElementAltText, querySlideSize } from '@web-ppt/edit-core';
+
+editor.exec({ type: 'DistributeElements', ids: selectedIds, axis: 'horizontal' });
+editor.exec({ type: 'SetAltText', id: elementId, title: '营收图', descr: '季度趋势' });
+const section = listSections(editor.doc)[0];
+editor.exec({ type: 'RenameSection', id: section.id, name: '结果' });
+editor.exec({ type: 'SetSlideSize', w: 1600, h: 900 });
+const size = querySlideSize(editor.doc);
+const alt = queryElementAltText(editor.doc, elementId);
+```
+
 `SetFill { id, fill }` 修改形状的矢量填充：显式无填充、纯色、线性/径向渐变和渲染器支持的
 DrawingML 图案。`SetStroke { id, stroke }` 修改形状描边与图片边框，包括颜色、幻灯片像素线宽、
 预设虚线、端帽、连接、复合线和线端。颜色会在命令入口规范成 core 解析器使用的 `rgb()` / `rgba()`，

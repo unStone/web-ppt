@@ -195,6 +195,8 @@ try {
     + ` · 顶点偏差/p95 ${result.vertexError}px/${result.vertexP95}ms`
     + ` · 预设调节柄偏差/p95 ${result.presetAdjustmentError}px/${result.presetAdjustmentP95}ms`
     + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
+    + ` · 分布偏差/p95 ${result.commonDistributionError}px/${result.commonDistributionP95}ms`
+    + ` · 页面尺寸反馈 p95 ${result.commonSizeP95}ms`
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`

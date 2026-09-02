@@ -25,6 +25,7 @@ import { runBodyPropsLibreOfficeContract } from './lib/body-props-libreoffice-co
 import { runBulletFormatLibreOfficeContract } from './lib/bullet-format-libreoffice-contract.mjs';
 import { runPresetShapeLibreOfficeContract } from './lib/preset-shape-libreoffice-contract.mjs';
 import { runAdvancedRunFormatLibreOfficeContract } from './lib/advanced-run-format-libreoffice-contract.mjs';
+import { runCommonObjectSlideLibreOfficeContract } from './lib/common-object-slide-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -289,6 +290,10 @@ let geometryEvidence = '';
 geometryEvidence += runGroupUngroupLibreOfficeContract({ savedPath, exportSvg: exportLibreOfficeSvg });
 geometryEvidence += runTableStructureLibreOfficeContract({
   savedPath, exportSvg: exportLibreOfficeSvg,
+});
+geometryEvidence += runCommonObjectSlideLibreOfficeContract({
+  savedPath, exportSvg: exportLibreOfficeSvg, expectedBounds, savedShapeGeometry,
+  shapeByFillAndFrame, geometryError,
 });
 if (basename(savedPath) === 'slide-properties.pptx') {
   geometryEvidence = runSlidePropertiesLibreOfficeContract({

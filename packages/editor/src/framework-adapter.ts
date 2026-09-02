@@ -1,7 +1,8 @@
 import { querySlideAnimations, querySlideTransition } from '@web-ppt/edit-core';
 import type {
-  EditAnimationStep, EditorChange, LinkTarget, SlideAnimationState, SlideId, SlideTransitionInput,
-  SlideTransitionState, TextSearchMatch,
+  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, EditorChange, ElementAltTextState,
+  ElementId, LinkTarget, SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand,
+  SlideAnimationState, SlideId, SlideSizeState, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
 } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
@@ -27,6 +28,9 @@ import {
   DEFAULT_WEB_PPT_VIEW as DEFAULT_VIEW, WEB_PPT_IDLE_SNAPSHOT,
 } from './framework-adapter-state';
 import { followAdapterLink } from './adapter-link';
+import {
+  commonObjectSlideCommands, CommonObjectSlideCommands,
+} from './common-object-slide-commands';
 
 class BrowserWebPptAdapter implements WebPptAdapter {
   private callbacks: WebPptAdapterCallbacks;
@@ -237,6 +241,48 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   previousTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.previousMatch(); }
   replaceCurrentText(): boolean { this.assertReady(); return this.textSearchState().canReplace && this.textSearchBinding.replaceCurrent(); }
   replaceAllText(): number { this.assertReady(); return this.textSearchState().canReplace ? this.textSearchBinding.replaceAll() : 0; }
+
+  distributeElements(
+    axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
+  ): boolean {
+    this.assertReady();
+    return this.common().distribute(this.currentSnapshot.mode === 'edit', axis, ids);
+  }
+
+  queryAltText(id?: ElementId): ElementAltTextState | null {
+    this.assertReady();
+    return this.common().queryAltText(id);
+  }
+
+  setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean {
+    this.assertReady();
+    return this.common().setAltText(this.currentSnapshot.mode === 'edit', value, id);
+  }
+
+  listSections(): SectionRecord[] { this.assertReady(); return this.common().listSections(); }
+
+  addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
+    this.assertReady();
+    return this.common().addSection(this.currentSnapshot.mode === 'edit', value);
+  }
+
+  renameSection(id: SectionId, name: string): boolean {
+    this.assertReady();
+    return this.common().renameSection(this.currentSnapshot.mode === 'edit', id, name);
+  }
+  moveSection(id: SectionId, after: SectionId | null): boolean {
+    this.assertReady();
+    return this.common().moveSection(this.currentSnapshot.mode === 'edit', id, after);
+  }
+  removeSection(id: SectionId): boolean {
+    this.assertReady();
+    return this.common().removeSection(this.currentSnapshot.mode === 'edit', id);
+  }
+  querySlideSize(): SlideSizeState { this.assertReady(); return this.common().querySlideSize(); }
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+    this.assertReady();
+    return this.common().setSlideSize(this.currentSnapshot.mode === 'edit', value);
+  }
 
   queryTransition(): SlideTransitionState | null {
     this.assertReady();
@@ -569,6 +615,10 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private assertReady(): void {
     this.assertActive();
     if (!this.session || this.session.disposed) throw new Error('WebPptAdapter 尚未打开演示文稿');
+  }
+
+  private common(): CommonObjectSlideCommands {
+    return commonObjectSlideCommands(this.session!.editor);
   }
 }
 

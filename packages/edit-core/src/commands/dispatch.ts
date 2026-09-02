@@ -1,5 +1,6 @@
 import type { EditDoc, ElementId } from '../types';
 import { alignElementsPatches } from './align-elements';
+import { distributeElementsPatches } from './distribute-elements';
 import { groupPatches } from './group';
 import { ungroupPatches } from './ungroup';
 import { editTextPatches } from './edit-text';
@@ -25,6 +26,10 @@ import { addSlidePatches } from './add-slide';
 import { moveSlidePatches } from './slide-order';
 import { removeSlidePatches } from './remove-slide';
 import { duplicateSlidePatches } from './duplicate-slide';
+import {
+  addSectionPatches, moveSectionPatches, removeSectionPatches, renameSectionPatches,
+} from './sections';
+import { setSlideSizePatches } from './slide-size';
 import { setFillPatches } from './set-fill';
 import { setStrokePatches } from './set-stroke';
 import { setEffectsPatches } from './set-effects';
@@ -43,14 +48,15 @@ import { setNotesPatches } from './slide-notes';
 import { setAnimationsPatches } from './set-animations';
 import { setTableStylePatches } from './set-table-style';
 import { setNamePatches } from './element-name';
+import { setAltTextPatches } from './element-alt-text';
 import { applyFormatPatches } from './apply-format';
 import { replaceTextPatches } from './replace-text';
 import {
   assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
 } from './element-interaction';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, ClearFormatCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertColumnCommand, InsertRowCommand, MergeCellsCommand, RemoveColumnCommand, RemoveRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetCellPropsCommand, SetColumnWidthCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRowHeightCommand, SetRunPropsCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, SplitCellCommand, UngroupCommand,
+  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, ClearFormatCommand, Command, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSectionCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSectionCommand, RemoveSlideCommand, RenameSectionCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
+  InsertColumnCommand, InsertRowCommand, MergeCellsCommand, RemoveColumnCommand, RemoveRowCommand, SetAltTextCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetCellPropsCommand, SetColumnWidthCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRowHeightCommand, SetRunPropsCommand, SetSlideSizeCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, SplitCellCommand, UngroupCommand,
 } from './types';
 import type {
   ConvertToCustomGeometryCommand, SetAdjCommand, SetGeometryCommand, SetPresetCommand,
@@ -85,6 +91,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
   SetZ: register<SetZCommand>(['id', 'to'], setZPatches),
   SetName: register<SetNameCommand>(['id', 'name'], setNamePatches),
+  SetAltText: register<SetAltTextCommand>(['id', 'title', 'descr'], setAltTextPatches),
   SetLocked: register<SetLockedCommand>(['id', 'locked'], setLockedPatches),
   SetElementHidden: register<SetElementHiddenCommand>(['id', 'hidden'], setElementHiddenPatches),
   ApplyFormat: register<ApplyFormatCommand>([
@@ -94,6 +101,9 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
     'scope', 'from', 'to', 'matchCase', 'wholeWord',
   ], replaceTextPatches, { target: 'none' }),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
+  DistributeElements: register<DistributeElementsCommand>(
+    ['ids', 'axis'], distributeElementsPatches, { target: 'ids' },
+  ),
   Group: register<GroupCommand>(['ids'], groupPatches, { target: 'ids' }),
   Ungroup: register<UngroupCommand>(['id'], ungroupPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
@@ -113,6 +123,11 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   MoveSlide: register<MoveSlideCommand>(['id', 'at'], moveSlidePatches, { target: 'none' }),
   RemoveSlide: register<RemoveSlideCommand>(['id'], removeSlidePatches, { target: 'none' }),
   DuplicateSlide: register<DuplicateSlideCommand>(['id'], duplicateSlidePatches, { target: 'none' }),
+  AddSection: register<AddSectionCommand>(['name', 'slideIds', 'at'], addSectionPatches, { target: 'none' }),
+  RenameSection: register<RenameSectionCommand>(['id', 'name'], renameSectionPatches, { target: 'none' }),
+  MoveSection: register<MoveSectionCommand>(['id', 'at'], moveSectionPatches, { target: 'none' }),
+  RemoveSection: register<RemoveSectionCommand>(['id'], removeSectionPatches, { target: 'none' }),
+  SetSlideSize: register<SetSlideSizeCommand>(['w', 'h'], setSlideSizePatches, { target: 'none' }),
   SetBackground: register<SetBackgroundCommand>(['id', 'fill'], setBackgroundPatches, { target: 'none' }),
   SetBackgroundImage: register<SetBackgroundImageCommand>(
     ['id', 'bytes', 'mime', 'crop', 'alpha', 'tile'], setBackgroundImagePatches, { target: 'none' },
@@ -177,7 +192,7 @@ export function assertPureCommand(input: Command): void {
 export function commandTargetIds(command: Command): readonly ElementId[] {
   const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
   if (registration?.target === 'ids') {
-    const ids = (command as Partial<AlignElementsCommand | GroupCommand>).ids;
+    const ids = (command as Partial<AlignElementsCommand | DistributeElementsCommand | GroupCommand>).ids;
     return Array.isArray(ids) ? ids.filter((id): id is ElementId => typeof id === 'string' && !!id) : [];
   }
   if (registration?.target === 'to') {

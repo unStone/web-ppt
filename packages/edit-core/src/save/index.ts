@@ -40,6 +40,7 @@ import {
   materializeNotesParts, patchSlideNotesRelationship, prepareNotesSave,
 } from './notes';
 import { hasNameOverride } from './name';
+import { hasAltTextOverride } from './alt-text';
 import { hasGeometryOverride } from './geometry';
 import {
   materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
@@ -65,6 +66,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
   for (const record of Object.values(doc.elements)) {
     if (!hasXfrmOverrides(record) && !hasTextOverrides(record) && !hasOrderOverride(record)
       && !hasNameOverride(record)
+      && !hasAltTextOverride(record)
       && !hasGeometryOverride(record)
       && !hasShapeFormatOverrides(record)
       && !hasEffectsOverride(record)
@@ -177,9 +179,13 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const hyperlinkParts = new Set([...explicitHyperlinkParts, ...danglingHyperlinkParts]);
   const presentationOrderChanged = currentSlideParts.length !== doc.saveState.sourceSlideParts.length
     || currentSlideParts.some((part, index) => part !== doc.saveState.sourceSlideParts[index]);
+  const presentationMetadataChanged = doc.meta.width !== doc.meta.sourceWidth
+    || doc.meta.height !== doc.meta.sourceHeight
+    || doc.sections.edited;
   const hasSlideHistory = hasCreatedSlideHistory || hasRemovedSlideHistory || presentationOrderChanged
+    || presentationMetadataChanged
     || !!nextBaselines[presentationPart];
-  if (presentationOrderChanged && !nextBaselines[presentationPart]) {
+  if ((presentationOrderChanged || presentationMetadataChanged) && !nextBaselines[presentationPart]) {
     const source = doc.package.parts[presentationPart];
     if (!source) throw new Error('PPTX 缺少 ppt/presentation.xml');
     nextBaselines[presentationPart] = source.slice();

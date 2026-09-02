@@ -10,6 +10,7 @@ import type {
 } from './types';
 import { sourceAnimationSteps } from './slide-animation';
 import { logicalIdentityPrefix } from './identity-allocation';
+import { assertSlideSize } from './slide-size';
 
 let sessionSerial = 0;
 const disposers = new WeakMap<EditDoc, () => void>();
@@ -164,14 +165,31 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
   const patchable = pres.source === 'pptx'
     ? !!pkg && !pkg.disposed && slideOrder.every((id) => slides[id].origin !== null)
     : true;
+  const sectionState = (() => {
+    const records: EditDoc['sections']['records'] = {};
+    const order: EditDoc['sections']['order'] = [];
+    for (const [index, section] of (pres.sections ?? []).entries()) {
+      const id = `${prefix}section-${index + 1}`;
+      records[id] = {
+        id,
+        presentationId: section.id ?? `{00000000-0000-0000-0000-${String(index + 1).padStart(12, '0')}}`,
+        name: section.name,
+        slideIds: (section.slideIndexes ?? []).flatMap((slideIndex) => slideOrder[slideIndex] ?? []),
+      };
+      order.push(id);
+    }
+    return { records, order, edited: false };
+  })();
   const doc: EditDoc = {
     meta: {
       width: pres.width, height: pres.height, source: pres.source, readonly: !patchable,
+      sourceWidth: pres.width, sourceHeight: pres.height,
       ...(pres.editInfo?.tableStylesPart ? { tableStylesPart: pres.editInfo.tableStylesPart } : {}),
     },
     identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1, nextSpid: {} },
     slides,
     slideOrder,
+    sections: sectionState,
     layouts: Object.fromEntries((pres.editInfo?.layouts ?? []).map((layout) => [
       layout.id, structuredClone(layout),
     ])),
@@ -199,15 +217,18 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
 }
 
 export function createEmptyDoc(opts: { width: number; height: number; idPrefix?: string }): EditDoc {
-  if (!Number.isFinite(opts.width) || opts.width <= 0 || !Number.isFinite(opts.height) || opts.height <= 0) {
-    throw new Error('页面宽高必须是有限正数');
-  }
+  assertSlideSize(opts.width, '页面宽度');
+  assertSlideSize(opts.height, '页面高度');
   const prefix = sessionPrefix(opts.idPrefix);
   return {
-    meta: { width: opts.width, height: opts.height, source: 'pptx', readonly: false },
+    meta: {
+      width: opts.width, height: opts.height, source: 'pptx', readonly: false,
+      sourceWidth: opts.width, sourceHeight: opts.height,
+    },
     identity: { prefix, nextSlide: 1, nextElement: 1, nextSpid: {} },
     slides: {},
     slideOrder: [],
+    sections: { records: {}, order: [], edited: false },
     layouts: {},
     layoutOrder: [],
     elements: {},

@@ -1,5 +1,6 @@
 import type { EditDoc, ElementId, ElementRecord } from '../types';
 import type { CommandPatches, RemoveSlideCommand, SlideTreePatch, SlideTreeSnapshot } from './types';
+import { sectionOfSlide } from '../sections';
 
 function snapshotSlide(doc: EditDoc, id: string): SlideTreeSnapshot {
   const slide = doc.slides[id];
@@ -18,6 +19,7 @@ function snapshotSlide(doc: EditDoc, id: string): SlideTreeSnapshot {
     slide: structuredClone(slide), records,
     after: doc.slideOrder[index - 1] ?? null,
     before: doc.slideOrder[index + 1] ?? null,
+    ...(sectionOfSlide(doc, id) ? { sectionId: sectionOfSlide(doc, id)! } : {}),
   };
 }
 

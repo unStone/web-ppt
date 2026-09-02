@@ -154,6 +154,7 @@ function stageDoc(doc: EditDoc): EditDoc {
     identity: structuredClone(doc.identity),
     slides: structuredClone(doc.slides),
     slideOrder: [...doc.slideOrder],
+    sections: structuredClone(doc.sections),
     layouts: doc.layouts,
     layoutOrder: doc.layoutOrder,
     elements: structuredClone(doc.elements),
@@ -171,6 +172,7 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
   doc.identity = staged.identity;
   doc.slides = staged.slides;
   doc.slideOrder = staged.slideOrder;
+  doc.sections = staged.sections;
   doc.elements = staged.elements;
   doc.removedElements = staged.removedElements;
   doc.imageResources = staged.imageResources;

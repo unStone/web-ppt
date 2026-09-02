@@ -143,6 +143,11 @@ idle/opening/recovering/ready/error、进度、恢复候选、session、view、�
 演示文稿模型。启用持久化时可由 `onRecovery(candidate)` 返回 `restore`、`discard` 或 `cancel`；React/Vue
 组件透传同一个回调。
 
+PowerPoint 高频工具栏动作同样是 adapter 原生接口：`distributeElements()`、`queryAltText()` /
+`setAltText()`、节目录及四类节变更，以及 `querySlideSize()` / `setSlideSize()`。挂载后的 `SlideEditor`
+提供同一组方法；view 模式保留查询，写动作统一返回 `false`。画布尺寸变更会在同一提交帧同步舞台、静态
+SVG 与交互层 viewBox。框架控件可直接使用导出的 `ElementAltTextState`、`SectionRecord`、`SlideSizeState`。
+
 ### 会话级格式刷
 
 所有已挂载视图与框架 adapter 共用一个会话控制器。先单选 shape/image/group 或文字范围，

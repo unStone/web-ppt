@@ -13,6 +13,8 @@ import { isSlideOrderPatch, slideOrderPatchStart } from './slide-order';
 import { isSlidePropertyPatch } from './slide-property';
 import { isSlideTreePatch } from './slide-tree';
 import type { Patch } from './types';
+import { isSectionStatePatch } from './sections';
+import { isDocumentSizePatch } from './slide-size';
 
 function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
   const ids: ElementId[] = [];
@@ -30,7 +32,8 @@ export function collectPatchInvalidation(
   dirtyElements: Set<string>,
   dirtySlides: Set<string>,
 ): void {
-  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)) return;
+  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
+    || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return;
   if (isSlideOrderPatch(patch)) {
     const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
     for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
@@ -63,7 +66,8 @@ export function collectPatchInvalidation(
 }
 
 export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
-  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch) || isSlideTreePatch(patch)) return true;
+  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
+    || isSlideTreePatch(patch) || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return true;
   if (isSlideOrderPatch(patch)) {
     return !!doc.slides[patch.path[1]]
       && (patch.value.after === null || !!doc.slides[patch.value.after]);

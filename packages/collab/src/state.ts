@@ -14,6 +14,7 @@ export type SlideMove = {
   readonly after: string | null;
   readonly ordinal: number;
 };
+export type SectionMove = SlideMove;
 export interface DeferredPatch {
   readonly message: CollabMessage;
   readonly patch: Patch;
@@ -28,8 +29,10 @@ export interface CollaborationSession {
   readonly elementLifecycles: Map<string, Lifecycle>;
   readonly slideLifecycles: Map<string, Lifecycle>;
   readonly slideMoves: Map<string, SlideMove>;
+  readonly sectionMoves: Map<string, SectionMove>;
   readonly seen: SeenMap;
   readonly baseSlideOrder: readonly string[];
+  readonly baseSectionOrder: readonly string[];
   deferred: DeferredPatch[];
   clock: number;
   sequence: number;
@@ -53,6 +56,20 @@ export const slideMove = (patch: Patch): { id: string; after: string | null } | 
   const after = (patch as { value?: { after?: unknown } }).value?.after;
   return after === null || typeof after === 'string' && after
     ? { id: patch.path[1], after } : null;
+};
+
+export const sectionMove = (patch: Patch): { id: string; after: string | null } | null => {
+  if (patch.op !== 'set' || patch.path.length !== 4
+    || patch.path[0] !== 'document' || patch.path[1] !== 'sections'
+    || !['state', 'order'].includes(patch.path[3])) return null;
+  const id = patch.path[2];
+  const value = (patch as { value?: { order?: unknown; records?: unknown } }).value;
+  if (!value?.records || typeof value.records !== 'object' || !Array.isArray(value.order)
+    || !(id in value.records)) return null;
+  const index = value.order.indexOf(id);
+  if (index < 0) return null;
+  const after = value.order[index - 1] ?? null;
+  return after === null || typeof after === 'string' && after ? { id, after } : null;
 };
 
 export const elementHierarchy = (patch: Patch): Readonly<Record<string, unknown>> | null =>
@@ -90,6 +107,7 @@ export function recordPatches(
   const elements = new Map<string, Lifecycle['state']>();
   const slides = new Map<string, Lifecycle['state']>();
   const moves = new Map<string, { after: string | null; ordinal: number }>();
+  const sectionMoves = new Map<string, { after: string | null; ordinal: number }>();
   for (let ordinal = 0; ordinal < patches.length; ordinal++) {
     const patch = patches[ordinal];
     const hierarchy = elementHierarchy(patch);
@@ -138,6 +156,8 @@ export function recordPatches(
     }
     const move = slideMove(patch);
     if (move) moves.set(move.id, { after: move.after, ordinal });
+    const section = sectionMove(patch);
+    if (section) sectionMoves.set(section.id, { after: section.after, ordinal });
     if (!element && !slide && !move) registers.set(pathKey(patch), 'field');
   }
   for (const [key, kind] of registers) {
@@ -159,6 +179,9 @@ export function recordPatches(
   }
   for (const [id, move] of moves) {
     if (newer(stamp, session.slideMoves.get(id))) session.slideMoves.set(id, { stamp, ...move });
+  }
+  for (const [id, move] of sectionMoves) {
+    if (newer(stamp, session.sectionMoves.get(id))) session.sectionMoves.set(id, { stamp, ...move });
   }
 }
 

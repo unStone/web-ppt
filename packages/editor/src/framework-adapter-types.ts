@@ -1,6 +1,7 @@
 import type {
-  EditAnimationStep, EditorChange, SlideAnimationState, SlideId, SlideTransitionInput,
-  SlideTransitionState, TextSearchMatch,
+  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, EditorChange, ElementAltTextState,
+  ElementId, SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideAnimationState,
+  SlideId, SlideSizeState, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
 } from '@web-ppt/edit-core';
 import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
@@ -128,6 +129,16 @@ export interface WebPptAdapter {
   previousTextSearch(): TextSearchMatch | null;
   replaceCurrentText(): boolean;
   replaceAllText(): number;
+  distributeElements(axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[]): boolean;
+  queryAltText(id?: ElementId): ElementAltTextState | null;
+  setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean;
+  listSections(): SectionRecord[];
+  addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null;
+  renameSection(id: SectionId, name: string): boolean;
+  moveSection(id: SectionId, after: SectionId | null): boolean;
+  removeSection(id: SectionId): boolean;
+  querySlideSize(): SlideSizeState;
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean;
   queryTransition(): SlideTransitionState | null;
   setTransition(value: SlideTransitionInput | null): boolean;
   previewTransition(value?: SlideTransitionInput): Promise<boolean>;

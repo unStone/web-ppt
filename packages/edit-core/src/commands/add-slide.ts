@@ -4,6 +4,7 @@ import type { EditDoc } from '../types';
 import { allocateSlideOpcIdentity, presentationSlideIdForPart } from './add-slide-identity';
 import { layoutTemplateRecords } from './add-slide-template';
 import type { AddSlideCommand, CommandPatches, SlideTreePatch } from './types';
+import { sectionOfSlide } from '../sections';
 
 function assertCommand(doc: EditDoc, command: AddSlideCommand) {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
@@ -53,6 +54,8 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
       },
     },
     records: template.records,
+    ...(command.at.after && sectionOfSlide(doc, command.at.after)
+      ? { sectionId: sectionOfSlide(doc, command.at.after)! } : {}),
   };
   const path = ['slides', slideId] as const;
   const forward: SlideTreePatch = { op: 'insert', path, value, origin };

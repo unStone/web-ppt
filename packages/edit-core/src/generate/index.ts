@@ -4,6 +4,7 @@ import type { OpcPatchResult } from '../opc/types';
 import type { EditDoc } from '../types';
 import { materializeGeneratedParts } from './materialize';
 import { generatedTemplateParts } from './template';
+import { assertSlideSize } from '../slide-size';
 
 export interface CreateBlankPptxOptions {
   /** 页面单位与统一 Schema 一致，使用 CSS px；默认值等价于 12192000×6858000 EMU。 */
@@ -15,9 +16,8 @@ export interface CreateBlankPptxOptions {
 export function createBlankPptx(options: CreateBlankPptxOptions = {}): Uint8Array {
   const width = options.width ?? 1280;
   const height = options.height ?? 720;
-  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    throw new Error('页面宽高必须是有限正数');
-  }
+  assertSlideSize(width, '页面宽度');
+  assertSlideSize(height, '页面高度');
   const result = createOpcPackage(generatedTemplateParts(width, height, 1));
   disposeOpcPackage(result.package);
   return result.bytes;

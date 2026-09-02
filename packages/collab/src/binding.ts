@@ -8,6 +8,7 @@ import { foldInsertedElementOverrides } from './atomic-patches';
 import { evaluateRemoteMessage, patchAvailability } from './evaluate';
 import type { PatchAvailability } from './evaluate';
 import { desiredSlideOrder, materializeSlideOrder } from './slide-order';
+import { materializeSectionOrder } from './section-order';
 import { checkpointSeen, cloneSeen, hasSeen, hasSequenceGap, markSeen, restoreSeen } from './seen';
 import { recordPatches, slideLifecycle } from './state';
 import type { CollaborationSession, DeferredPatch } from './state';
@@ -38,8 +39,11 @@ function createSession(
     elementLifecycles: new Map(structuredClone(checkpoint?.elementLifecycles ?? [])),
     slideLifecycles: new Map(structuredClone(checkpoint?.slideLifecycles ?? [])),
     slideMoves: new Map(structuredClone(checkpoint?.slideMoves ?? [])),
+    sectionMoves: new Map(structuredClone(checkpoint?.sectionMoves ?? [])),
     seen: restoreSeen(checkpoint?.seen),
     baseSlideOrder: checkpoint ? [...checkpoint.baseSlideOrder] : [...editor.doc.slideOrder],
+    baseSectionOrder: checkpoint?.baseSectionOrder
+      ? [...checkpoint.baseSectionOrder] : [...editor.doc.sections.order],
     deferred: checkpoint?.deferred.map((entry) => structuredClone(entry)) ?? [],
     clock: allocation.clock,
     sequence: allocation.sequence,
@@ -56,10 +60,12 @@ function createCheckpoint(session: CollaborationSession): CollaborationCheckpoin
     clock: session.clock,
     sequence: session.sequence,
     baseSlideOrder: session.baseSlideOrder,
+    baseSectionOrder: session.baseSectionOrder,
     registers: [...session.registers].map(([key, register]) => [key, register] as const),
     elementLifecycles: [...session.elementLifecycles],
     slideLifecycles: [...session.slideLifecycles],
     slideMoves: [...session.slideMoves],
+    sectionMoves: [...session.sectionMoves],
     seen: checkpointSeen(session.seen),
     deferred: session.deferred,
   });
@@ -125,6 +131,7 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     elementLifecycles: new Map(activeSession.elementLifecycles),
     slideLifecycles: new Map(activeSession.slideLifecycles),
     slideMoves: new Map(activeSession.slideMoves),
+    sectionMoves: new Map(activeSession.sectionMoves),
     seen: cloneSeen(activeSession.seen),
     deferred: [...activeSession.deferred],
     clock: activeSession.clock,
@@ -138,6 +145,8 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     snapshot.slideLifecycles.forEach((value, key) => activeSession.slideLifecycles.set(key, value));
     activeSession.slideMoves.clear();
     snapshot.slideMoves.forEach((value, key) => activeSession.slideMoves.set(key, value));
+    activeSession.sectionMoves.clear();
+    snapshot.sectionMoves.forEach((value, key) => activeSession.sectionMoves.set(key, value));
     activeSession.seen.clear();
     snapshot.seen.forEach((value, key) => activeSession.seen.set(key, value));
     activeSession.deferred = [...snapshot.deferred];
@@ -156,7 +165,10 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     const desired = desiredSlideOrder(
       activeSession.baseSlideOrder, members, activeSession.slideMoves,
     );
-    return materializeSlideOrder(editor.doc.slideOrder, desired, folded);
+    const withSlideOrder = materializeSlideOrder(editor.doc.slideOrder, desired, folded);
+    return materializeSectionOrder(
+      activeSession.baseSectionOrder, activeSession.sectionMoves, withSlideOrder,
+    );
   };
 
   const collectReadyDeferred = (

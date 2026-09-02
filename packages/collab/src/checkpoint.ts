@@ -9,6 +9,10 @@ import type {
 const safeNonNegative = (value: unknown): value is number => typeof value === 'number'
   && Number.isSafeInteger(value) && value >= 0 && value <= MAX_COLLABORATION_VERSION;
 
+const validOrder = (value: unknown): value is readonly string[] => Array.isArray(value)
+  && value.every((id) => typeof id === 'string' && !!id)
+  && new Set(value).size === value.length;
+
 function assertStamp(value: unknown, label: string): asserts value is CollabStamp {
   const stamp = value as Partial<CollabStamp> | null;
   if (!stamp || typeof stamp !== 'object' || !Number.isSafeInteger(stamp.clock)
@@ -96,9 +100,8 @@ export function assertCollaborationCheckpoint(
     || checkpoint.replicaSlot !== expected.replicaSlot
     || !safeNonNegative(checkpoint.clock) || !safeNonNegative(checkpoint.sequence)
     || checkpoint.clock !== allocation.clock || checkpoint.sequence !== allocation.sequence
-    || !Array.isArray(checkpoint.baseSlideOrder)
-    || checkpoint.baseSlideOrder.some((id) => typeof id !== 'string' || !id)
-    || new Set(checkpoint.baseSlideOrder).size !== checkpoint.baseSlideOrder.length
+    || !validOrder(checkpoint.baseSlideOrder)
+    || checkpoint.baseSectionOrder !== undefined && !validOrder(checkpoint.baseSectionOrder)
     || !Array.isArray(checkpoint.deferred) || checkpoint.deferred.length > 10_000) {
     throw new Error('协同 checkpoint 与恢复文档不匹配');
   }
@@ -106,6 +109,9 @@ export function assertCollaborationCheckpoint(
   assertEntries(checkpoint.elementLifecycles, '协同 checkpoint elementLifecycles', assertLifecycle);
   assertEntries(checkpoint.slideLifecycles, '协同 checkpoint slideLifecycles', assertLifecycle);
   assertEntries(checkpoint.slideMoves, '协同 checkpoint slideMoves', assertMove);
+  if (checkpoint.sectionMoves !== undefined) {
+    assertEntries(checkpoint.sectionMoves, 'sectionMoves', assertMove);
+  }
   assertSeen(checkpoint.seen);
   checkpoint.deferred.forEach((entry, index) => {
     if (!entry || typeof entry !== 'object' || !Number.isSafeInteger(entry.ordinal)

@@ -34,6 +34,7 @@ import { generatedLink } from './links';
 import { imageClosure, imageInsertion } from './media';
 import { generatedTableStyleDefinitions, tableInsertion } from './table';
 import { generatedEmptySlideXml, generatedTemplateParts } from './template';
+import { patchGeneratedPresentationMetadata } from '../save/slide-parts';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -495,6 +496,9 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
   for (const [part, resource] of resources) parts[part] = resourceBytes(resource);
   parts['[Content_Types].xml'] = patchContentTypes(
     parts['[Content_Types].xml'], [...resources.values()],
+  );
+  parts['ppt/presentation.xml'] = patchGeneratedPresentationMetadata(
+    parts['ppt/presentation.xml'], doc,
   );
   return parts;
 }

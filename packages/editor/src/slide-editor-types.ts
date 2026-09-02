@@ -1,7 +1,7 @@
 import type {
-  EditAnimationStep, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
+  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, ElementAltTextState, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
   RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideNotesState,
+  SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideNotesState, SlideSizeState,
   SlideAnimationState, SlideTransitionInput, SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
@@ -72,6 +72,19 @@ export interface SlideEditor {
   setParaProps(props: ParagraphPropertyInput): boolean;
   queryBodyProps(): TextBodyProperties | null;
   setBodyProps(props: TextBodyPropertyOverrides): boolean;
+  /** 省略 ids 时使用当前多元素选区；查看模式不改模型。 */
+  distributeElements(axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[]): boolean;
+  /** 省略 id 时使用当前单元素选区。 */
+  queryAltText(id?: ElementId): ElementAltTextState | null;
+  setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean;
+  listSections(): SectionRecord[];
+  addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null;
+  renameSection(id: SectionId, name: string): boolean;
+  moveSection(id: SectionId, after: SectionId | null): boolean;
+  removeSection(id: SectionId): boolean;
+  querySlideSize(): SlideSizeState;
+  /** v1 仅改变画布，即 PowerPoint“最大化”语义。 */
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean;
   insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
   chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
   replaceImage(file: Blob, options?: ImageReplaceOptions): Promise<ElementId>;

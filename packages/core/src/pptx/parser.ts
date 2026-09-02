@@ -2,7 +2,7 @@ import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadat
 import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
   EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
-  Presentation, Section, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TextBody,
+  Presentation, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TextBody,
   UnsupportedElement,
 } from '../types';
 import type { PlaceholderDirectFlags } from '../edit-metadata';
@@ -24,6 +24,8 @@ import { hyperlinkOf, resolveLink } from './hyperlink';
 import { Env, findPh, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
 import { Pkg } from './package-reader';
 import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-style';
+import { parseElementAltText } from './alt-text';
+import { parseSections } from './sections';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
@@ -105,9 +107,11 @@ function editInfoOf(
   if (editable) editInfo.editable = editable;
   if (moveLocked) editInfo.moveLocked = true;
   if (readonlyLink) editInfo.readonlyLink = true;
+  const altText = parseElementAltText(cNvPr);
+  if (altText) editInfo.altText = altText;
   return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom
     || editInfo.customGeometry || editInfo.editable
-    || editInfo.moveLocked || editInfo.readonlyLink
+    || editInfo.moveLocked || editInfo.readonlyLink || editInfo.altText
     ? { editInfo } : {};
 }
 
@@ -1159,31 +1163,6 @@ function parseSlideComments(pkg: Pkg, slideRels: Rels, authors: Map<string, Auth
     }
   }
   out.sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
-  return out;
-}
-
-// ---------------- 节 ----------------
-
-/** p:extLst → p14:sectionLst；slideIds 为 p:sldId@id，同时给出对应页序号 */
-function parseSections(presRoot: Element, idToIndex: Map<number, number>): Section[] {
-  const out: Section[] = [];
-  const all = presRoot.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].localName !== 'sectionLst') continue;
-    for (const sec of kids(all[i], 'section')) {
-      const slideIds: number[] = [];
-      const slideIndexes: number[] = [];
-      for (const s of kids(kid(sec, 'sldIdLst'), 'sldId')) {
-        const id = numAttr(s, 'id');
-        if (id === null) continue;
-        slideIds.push(id);
-        const at = idToIndex.get(id);
-        if (at !== undefined) slideIndexes.push(at);
-      }
-      out.push({ name: attr(sec, 'name') ?? `节 ${out.length + 1}`, slideIds, slideIndexes });
-    }
-    break;
-  }
   return out;
 }
 

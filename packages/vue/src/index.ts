@@ -7,6 +7,7 @@ export type { WebPptSelectionPaneHandle } from './web-ppt-selection-pane';
 export type {
   FormatPainterStartOptions, WebPptAdapterBinding, WebPptAdapterProgress,
   WebPptAdapterSnapshot, WebPptFormatPainterState, WebPptTextSearchState, WebPptViewState,
-  EditAnimationStep, SlideAnimationState, SlideTransitionInput, SlideTransitionState,
+  EditAnimationStep, ElementAltTextState, SectionId, SectionRecord, SlideAnimationState,
+  SlideSizeState, SlideTransitionInput, SlideTransitionState,
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
 } from '@web-ppt/editor';

@@ -63,6 +63,9 @@ import {
   applyElementTableStylePatch, isElementTableStylePatch, validateElementTableStylePatch,
 } from './element-table-style';
 import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalidation';
+import {
+  applyCommonObjectSlidePatch, validateCommonObjectSlidePatch,
+} from './common-object-slide-patch';
 
 function validatePatch(
   doc: EditDoc,
@@ -80,6 +83,7 @@ function validatePatch(
   if (isImageResourcePatch(input)) {
     return;
   }
+  if (validateCommonObjectSlidePatch(doc, input, index)) return;
   if (isElementHierarchyPatch(input)) {
     validateElementHierarchyPatch(doc, input, index);
     return;
@@ -329,6 +333,7 @@ function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc 
     identity: structuredClone(doc.identity),
     slides: { ...doc.slides },
     slideOrder: [...doc.slideOrder],
+    sections: structuredClone(doc.sections),
     elements: { ...doc.elements },
     removedElements: { ...doc.removedElements },
     imageResources: { ...doc.imageResources },
@@ -372,6 +377,7 @@ function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc 
 function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
   const orderParents = new Set<string>();
   for (const patch of patches) {
+    if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);

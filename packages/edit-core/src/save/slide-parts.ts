@@ -11,6 +11,7 @@ import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import type { XmlElement } from '../xml/types';
 import { patchRelationshipPart } from './clipboard-parts';
 import { removedSlidePartNames } from './remove-slide-parts';
+import { canonicalSectionState } from '../sections';
 
 const SLIDE_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml';
 const NOTES_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml';
@@ -129,7 +130,89 @@ function insertBeforeTrailingUnknown(
   insertXmlChildUnchecked(parent, child, before);
 }
 
-function patchSections(
+function sectionListFor(root: XmlElement, create: boolean): XmlElement | null {
+  let sectionList = findXmlDescendant(root, {
+    localName: 'sectionLst', namespaceUri: POWERPOINT_2010_NS,
+  });
+  if (sectionList || !create) return sectionList;
+  let extensions = findXmlChild(root, { localName: 'extLst', namespaceUri: PRESENTATIONML_NS });
+  if (!extensions) {
+    extensions = namespacedElement(root, PRESENTATIONML_NS, 'extLst');
+    insertXmlChildUnchecked(root, extensions);
+  }
+  const extension = namespacedElement(extensions, PRESENTATIONML_NS, 'ext');
+  setXmlAttribute(extension, 'uri', '{521415D9-36F7-43E2-AB2F-B90AF26B5E84}');
+  insertXmlChildUnchecked(extensions, extension);
+  sectionList = namespacedElement(extension, POWERPOINT_2010_NS, 'sectionLst');
+  insertXmlChildUnchecked(extension, sectionList);
+  return sectionList;
+}
+
+function patchEditedSections(
+  root: XmlElement,
+  doc: EditDoc,
+  ids: ReadonlyMap<string, number>,
+): void {
+  const state = canonicalSectionState(doc);
+  const sectionList = sectionListFor(root, state.order.length > 0);
+  if (!sectionList) return;
+  const sourceSections = xmlElementChildren(sectionList, {
+    localName: 'section', namespaceUri: POWERPOINT_2010_NS,
+  });
+  const sourceById = new Map(sourceSections.flatMap((section) => {
+    const id = elementAttribute(section, 'id');
+    return id ? [[id, section] as const] : [];
+  }));
+  const desiredSections = state.order.map((sectionId) => {
+    const section = state.records[sectionId];
+    const node = sourceById.get(section.presentationId)
+      ?? namespacedElement(sectionList, POWERPOINT_2010_NS, 'section');
+    setXmlAttribute(node, 'name', section.name);
+    setXmlAttribute(node, 'id', section.presentationId);
+    let list = findXmlChild(node, {
+      localName: 'sldIdLst', namespaceUri: POWERPOINT_2010_NS,
+    });
+    if (!list) {
+      list = namespacedElement(node, POWERPOINT_2010_NS, 'sldIdLst');
+      insertXmlChildUnchecked(node, list);
+    }
+    const sourceNodes = xmlElementChildren(list, {
+      localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
+    });
+    const nodesById = new Map(sourceNodes.map((child) => [Number(elementAttribute(child, 'id')), child]));
+    const desired = section.slideIds.map((slideId) => {
+      const id = ids.get(slideId);
+      if (id === undefined) throw new Error(`节 ${section.id} 的页面无法映射 presentation id：${slideId}`);
+      const current = nodesById.get(id);
+      if (current) return [current];
+      const child = namespacedElement(list, POWERPOINT_2010_NS, 'sldId');
+      setXmlAttribute(child, 'id', String(id));
+      return [child];
+    }).flat();
+    for (const child of sourceNodes) {
+      if (!desired.includes(child)) removeXmlChild(list, child);
+    }
+    for (const child of desired) {
+      if (!xmlElementChildren(list).includes(child)) {
+        insertBeforeTrailingUnknown(list, child, 'sldId', POWERPOINT_2010_NS);
+      }
+    }
+    reorderXmlChildren(list, desired);
+    return node;
+  });
+  for (const section of sourceSections) {
+    if (!desiredSections.includes(section)) removeXmlChild(sectionList, section);
+  }
+  for (const section of desiredSections) {
+    if (!xmlElementChildren(sectionList).includes(section)) {
+      insertBeforeTrailingUnknown(sectionList, section, 'section', POWERPOINT_2010_NS);
+    }
+  }
+  reorderXmlChildren(sectionList, desiredSections);
+}
+
+/** 普通页面增删沿用来源节节点，只增删成员，避免重建时触碰未知扩展与词法细节。 */
+function patchSourceSections(
   root: XmlElement,
   slides: readonly SlideRecord[],
   finalSlideIds: readonly number[],
@@ -149,7 +232,7 @@ function patchSections(
     const sourceNodes = xmlElementChildren(list, {
       localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
     });
-    // 先记录来源归属；锚点页本次同时删除时，副本仍应继承复制瞬间的 section。
+    // 锚点页本次同时删除时，副本仍继承复制瞬间的节归属。
     const members = new Set(sourceNodes.flatMap((node) => {
       const id = elementAttribute(node, 'id');
       return id ? [Number(id)] : [];
@@ -182,7 +265,6 @@ function patchSections(
       nodesById.set(id, node);
       return [node];
     });
-    // 调用方按最终页序传入所有页面；同锚点连续新增因此不会被逐次插入反转。
     for (const node of desired) {
       if (!xmlElementChildren(list).includes(node)) {
         insertBeforeTrailingUnknown(list, node, 'sldId', POWERPOINT_2010_NS);
@@ -190,6 +272,25 @@ function patchSections(
     }
     reorderXmlChildren(list, desired);
   }
+}
+
+function patchSlideSize(root: XmlElement, doc: EditDoc): void {
+  let size = findXmlChild(root, { localName: 'sldSz', namespaceUri: PRESENTATIONML_NS });
+  if (!size) {
+    size = namespacedElement(root, PRESENTATIONML_NS, 'sldSz');
+    const notes = findXmlChild(root, { localName: 'notesSz', namespaceUri: PRESENTATIONML_NS });
+    insertXmlChildUnchecked(root, size, notes);
+  }
+  setXmlAttribute(size, 'cx', String(Math.round(doc.meta.width * 9525)));
+  setXmlAttribute(size, 'cy', String(Math.round(doc.meta.height * 9525)));
+}
+
+export function patchGeneratedPresentationMetadata(source: Uint8Array, doc: EditDoc): Uint8Array {
+  const tree = parseXmlTree(source);
+  const ids = new Map(doc.slideOrder.map((id, index) => [id, 256 + index]));
+  patchEditedSections(tree.root, doc, ids);
+  patchSlideSize(tree.root, doc);
+  return serializeXmlTreeBytes(tree);
 }
 
 export function patchPresentationSlides(
@@ -234,10 +335,17 @@ export function patchPresentationSlides(
     }
   }
   reorderXmlChildren(list, desired);
-  patchSections(
-    tree.root, activeCreated,
-    desired.map((node) => Number(elementAttribute(node, 'id'))), removedSlideIds,
-  );
+  const finalSlideIds = desired.map((node) => Number(elementAttribute(node, 'id')));
+  if (doc.sections.edited) {
+    patchEditedSections(tree.root, doc, new Map(doc.slideOrder.map((id, index) => [
+      id, finalSlideIds[index],
+    ])));
+  } else {
+    patchSourceSections(tree.root, activeCreated, finalSlideIds, removedSlideIds);
+  }
+  if (doc.meta.width !== doc.meta.sourceWidth || doc.meta.height !== doc.meta.sourceHeight) {
+    patchSlideSize(tree.root, doc);
+  }
   return serializeXmlTreeBytes(tree);
 }
 

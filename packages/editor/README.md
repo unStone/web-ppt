@@ -148,6 +148,12 @@ recovery candidate, session, view, mode, stable slide id, and zoom without intro
 When persistence is enabled, `onRecovery(candidate)` returns `restore`, `discard`, or `cancel`; React and Vue pass
 through this same callback.
 
+Common PowerPoint toolbar actions are also adapter-native: `distributeElements()`, `queryAltText()` /
+`setAltText()`, the section directory and four section mutations, and `querySlideSize()` / `setSlideSize()`.
+The same methods exist on a mounted `SlideEditor`; queries remain available in view mode while mutations return
+`false`. A canvas-size change synchronizes the stage, static SVG, and interaction viewBox in the same committed
+frame. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are exported for framework controls.
+
 ### Session format painter
 
 The format painter is one session controller shared by every mounted view and framework adapter. Select exactly one

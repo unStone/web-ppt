@@ -47,10 +47,13 @@ export interface CollaborationCheckpoint {
   readonly clock: number;
   readonly sequence: number;
   readonly baseSlideOrder: readonly string[];
+  /** 旧 checkpoint 没有节排序元数据；恢复时以已恢复模型为基线。 */
+  readonly baseSectionOrder?: readonly string[];
   readonly registers: readonly (readonly [string, CollabRegisterCheckpoint])[];
   readonly elementLifecycles: readonly (readonly [string, CollabLifecycleCheckpoint])[];
   readonly slideLifecycles: readonly (readonly [string, CollabLifecycleCheckpoint])[];
   readonly slideMoves: readonly (readonly [string, CollabSlideMoveCheckpoint])[];
+  readonly sectionMoves?: readonly (readonly [string, CollabSlideMoveCheckpoint])[];
   readonly seen: readonly CollabSeenCheckpoint[];
   readonly deferred: readonly CollabDeferredCheckpoint[];
 }

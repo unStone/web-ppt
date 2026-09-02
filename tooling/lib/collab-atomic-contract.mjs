@@ -1,5 +1,6 @@
 export async function runCollabAtomicContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub, semanticDoc,
+  stringDiff,
 }) {
   console.log('\n\x1b[36m▸ 协同消息单帧恢复与文档身份边界\x1b[0m');
   {
@@ -215,7 +216,7 @@ export async function runCollabAtomicContract({
       JSON.stringify(pair.leftEditor.toSlide(originalTail))
         === JSON.stringify(pair.rightEditor.toSlide(originalTail))
       && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / '));
+    `${stringDiff(semanticDoc(pair.left), semanticDoc(pair.right))} / ${errors.map(String).join(' / ')}`);
     bindings.forEach((binding) => binding.dispose());
   }
 

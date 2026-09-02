@@ -46,6 +46,7 @@ import { runListLevelEditorContract } from './lib/list-level-editor-contract.mjs
 import { runShortcutAuditContract } from './lib/shortcut-audit-contract.mjs';
 import { runVertexEditorContract } from './lib/vertex-editor-contract.mjs';
 import { runPresetAdjustmentEditorContract } from './lib/preset-adjustment-editor-contract.mjs';
+import { runCommonObjectSlideEditorContract } from './lib/common-object-slide-editor-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -143,6 +144,7 @@ await runRecoveryPersistenceContract({ lib, load, check });
 await runRecoveryAdapterContract({ lib, load, check });
 await runTransitionEditorContract({ lib, viewer, load, check, window: domEnvironment.window });
 await runAnimationEditorContract({ lib, load, check, window: domEnvironment.window });
+await runCommonObjectSlideEditorContract({ lib, load, check });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {

@@ -18,6 +18,11 @@ import type {
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
+import type {
+  AddSectionCommand, DistributeElementsCommand, DocumentSizePatch, ElementAltTextPatch,
+  MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
+  SetAltTextCommand, SetSlideSizeCommand,
+} from './common-object-slide-types';
 
 export type {
   ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
@@ -35,6 +40,11 @@ export type {
 } from './group-types';
 export type { ReplaceTextCommand, ReplaceTextScope } from '../text-search-types';
 export type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
+export type {
+  AddSectionCommand, DistributeElementsCommand, DocumentSizePatch, ElementAltTextPatch,
+  MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
+  SetAltTextCommand, SetSlideSizeCommand,
+} from './common-object-slide-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -338,10 +348,12 @@ export interface SetCellPropsCommand {
   };
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand | SetAltTextCommand
   | SetLockedCommand | SetElementHiddenCommand
   | ApplyFormatCommand | ReplaceTextCommand
-  | AlignElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand
+  | AlignElementsCommand | DistributeElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand
+  | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand
+  | SetSlideSizeCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand
   | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand
   | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand
@@ -513,6 +525,8 @@ export interface SlideTreeSnapshot {
   /** 删除视图优先切到原后继；插入 patch 不依赖它定位。 */
   readonly before: SlideId | null;
   readonly records: Readonly<Record<ElementId, ElementRecord>>;
+  /** 页面结构 Patch 同步维护稳定节成员；省略表示该页不属于任何节。 */
+  readonly sectionId?: import('../types').SectionId;
 }
 
 export type SlideTreePatch = {
@@ -570,8 +584,8 @@ export type TableCellPropsPatch = {
   readonly origin: string;
 };
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementInteractionPatch
-  | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SlidePropertyPatch | SlideLayoutPatch
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
+  | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
   | TableCellPropsPatch | ElementTableStylePatch;
 

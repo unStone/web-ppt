@@ -36,6 +36,9 @@
     import { runEditorLayerBrowserContract } from '/tooling/lib/editor-layer-browser-contract.mjs';
     import { runEditorGroupBrowserContract } from '/tooling/lib/editor-group-browser-contract.mjs';
     import { runEditorAlignBrowserContract } from '/tooling/lib/editor-align-browser-contract.mjs';
+    import {
+      runEditorCommonObjectSlideBrowserContract,
+    } from '/tooling/lib/editor-common-object-slide-browser-contract.mjs';
     import { runEditorTabBrowserContract } from '/tooling/lib/editor-tab-browser-contract.mjs';
     import { runEditorMultiselectBrowserContract } from '/tooling/lib/editor-multiselect-browser-contract.mjs';
     import { runEditorClipboardBrowserContract } from '/tooling/lib/editor-clipboard-browser-contract.mjs';
@@ -515,6 +518,9 @@
       const layerResult = await runEditorLayerBrowserContract({ openEditor, load });
       const groupResult = await runEditorGroupBrowserContract({ openEditor, load });
       const alignResult = await runEditorAlignBrowserContract({ openEditor, load });
+      const commonResult = await runEditorCommonObjectSlideBrowserContract({
+        createWebPptAdapter, load,
+      });
       const tabP95 = await runEditorTabBrowserContract({ openEditor, load });
       const multiselectResult = await runEditorMultiselectBrowserContract({ openEditor, load });
       const clipboardResult = await runEditorClipboardBrowserContract({ openEditor, load });
@@ -606,6 +612,9 @@
       report.dataset.ungroupP95 = groupResult.ungroupP95.toFixed(3);
       report.dataset.alignError = alignResult.geometryError.toFixed(3);
       report.dataset.alignP95 = alignResult.p95.toFixed(3);
+      report.dataset.commonDistributionError = commonResult.geometryError.toFixed(3);
+      report.dataset.commonDistributionP95 = commonResult.distributionP95.toFixed(3);
+      report.dataset.commonSizeP95 = commonResult.sizeP95.toFixed(3);
       report.dataset.tabP95 = tabP95.toFixed(3);
       report.dataset.multiselectClickP95 = multiselectResult.clickP95.toFixed(3);
       report.dataset.multiselectMarqueeP95 = multiselectResult.marqueeP95.toFixed(3);
@@ -688,6 +697,9 @@
         + `${historyResult.redoP95.toFixed(3)}ms`;
       report.textContent += `\n旋转/组合视觉对齐偏差 ${alignResult.geometryError.toFixed(3)}px，`
         + `60 元素页 10 选对齐 p95 ${alignResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n四对象分布偏差/p95 ${commonResult.geometryError.toFixed(3)}px / `
+        + `${commonResult.distributionP95.toFixed(3)}ms，页面尺寸反馈 p95 `
+        + `${commonResult.sizeP95.toFixed(3)}ms`;
       report.textContent += `\n60 元素 Tab 遍历 p95 ${tabP95.toFixed(3)}ms`;
       report.textContent += `\n元素剪贴板小批量粘贴 ${clipboardResult.pasteTime.toFixed(3)}ms`;
       report.textContent += `，60 元素 p95 ${clipboardResult.pasteP95.toFixed(3)}ms`;
