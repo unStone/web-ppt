@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-盘点 `0.5.0-beta.2` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
+盘点 `0.5.0-beta.3` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
 路径与技术方案。范围与词汇沿用 [编辑能力技术方案](editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
 
 判断做不做只用两条：**对使用者有没有成本**（运行时、体积、复杂度落不落到用户头上）、**有没有解法**。
@@ -12,15 +12,15 @@
 
 ### 1.1 一句话
 
-**引擎能力已经打穿，自动化交付缺口也已收口。** M0–M6 全部里程碑的技术内容都已验收；
-只剩 PowerPoint 真机验收与 0.5.0 转正两个外部动作，不阻塞 0.6 功能开发。
+**引擎能力与 0.6 高频编辑面已经打穿，自动化交付缺口也已收口。** M0–M6 与七类 0.6 能力全部验收；
+只剩 PowerPoint 真机验收与 0.5.0 转正两个外部发布动作。
 
 ### 1.2 门禁实测（2026-09-03）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4449 项 | 2230 core + 1050 edit + 482 save + 9 PowerPoint + 418 editor + 9 adapters + 121 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4459 项 | 2230 core + 1050 edit + 490 save + 9 PowerPoint + 419 editor + 9 adapters + 122 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 512 对 | 78 份固件、256 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
@@ -46,7 +46,7 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,407 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,459 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.70KB gzip | 读取 `package.json#main` 后实测 gzip |
@@ -164,7 +164,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    B["0.5.0-beta.2<br/>@next · 8 包"] --> S["0.5.0 转正<br/>只做交付动作"]
+    B["0.5.0-beta.3<br/>@next · 8 包"] --> S["0.5.0 转正<br/>只做交付动作"]
     S --> V6["0.6 编辑完整度<br/>让「能编辑」变「够用」"]
     V6 --> V7["0.7 模板与主题<br/>版式 · 母版 · 主题"]
     V7 --> V8["0.8 数据与保真<br/>图表数据 · chartex · 媒体"]
@@ -303,7 +303,7 @@ bullet?: { kind: 'none' }
 editor/adapter seam。页面尺寸只改变画布，挂载视图在同一提交帧同步舞台、静态 SVG 与交互 viewBox；
 节以稳定 `SlideId` 重建，复制/删除页不会留下漂移成员。
 
-### 5.6 [补齐触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)
+### 5.6 ✅ [补齐触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)
 
 Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编辑器交互层闭环：
 
@@ -317,7 +317,7 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 验证距离/中心误差均为 0、60 元素触屏帧 p95 约 1ms，并覆盖可信 capture 与长按阈值。查看模式不绑定
 编辑触屏事件且清空 `touch-action`，默认 viewer 路径没有新增依赖或运行时分支。
 
-### 5.7 [批量导出幻灯片图片](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md)
+### 5.7 ✅ [批量导出幻灯片图片](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md)
 
 按需入口 `@web-ppt/core/image-zip` 提供 `presentationToImageZip(pres, options)`：稳定原页码命名、
 隐藏页策略、动画终态、确定性 ZIP 元数据和 1–8 路有界并发都由 core 负责，产品层不再自行循环打包。
@@ -408,8 +408,8 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | ✅ [触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)已完成 | — | 平板高频交互已闭环 |
-| 2 | 完成[批量图片导出](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md) | 无 | 补齐低成本批量交付 |
-| 3 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
+| 1 | ✅ [0.6 集成验收](wayfinder/ppt-editing-completeness/tickets/008-v06-integration-readiness.md)已完成 | — | 七类能力形成同一产品面 |
+| 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
+| 3 | 为 0.7 建立主题 / 版式 / 母版编辑地图 | 0.6 已关闭 | 开始模板与主题主线 |
 
-第 3 项全程外部阻塞，**只挡 0.5.0 的 tag，不要让它挡住 0.6 的开发**。
+第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

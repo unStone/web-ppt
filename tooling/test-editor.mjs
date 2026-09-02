@@ -99,6 +99,15 @@ execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error', `--outfile=${imageZipBundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const generateBundle = join(out, 'generate.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/edit-core/src/generate/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--outfile=${generateBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const viewerBundle = join(out, 'viewer-core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
@@ -164,6 +173,12 @@ console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
   const pkg = session.editor.doc.package;
   check('openEditor 一步建立可写 headless Editor', session.editor.doc.meta.readonly === false
     && session.editor.doc.slideOrder.length === 1 && !!pkg && !pkg.disposed);
+  const projection = session.toPresentation();
+  check('编辑会话公开当前 Presentation 投影且读取不改变脏状态',
+    projection.width === session.editor.doc.meta.width
+      && projection.height === session.editor.doc.meta.height
+      && projection.slides.length === session.editor.doc.slideOrder.length
+      && !session.editor.isDirty() && projection.dispose === undefined && projection.package === undefined);
   session.dispose();
   session.dispose();
   check('会话释放幂等并释放原包', session.disposed === true && pkg.disposed === true);

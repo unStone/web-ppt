@@ -40,6 +40,7 @@ import { runPresetShapeSaveContract } from './lib/preset-shape-save-contract.mjs
 import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
 import { runAdvancedRunFormatSaveContract } from './lib/advanced-run-format-save-contract.mjs';
 import { runCommonObjectSlideSaveContract } from './lib/common-object-slide-save-contract.mjs';
+import { runV06IntegrationSaveContract } from './lib/v06-integration-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -112,6 +113,7 @@ await runGeneratedSaveContract({
 });
 
 await runCommonObjectSlideSaveContract({ edit, core, generate, load, check, saveArtifact });
+await runV06IntegrationSaveContract({ edit, core, generate, check, saveArtifact });
 
 await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 await runListLevelSaveContract({ edit, core, load, check, saveArtifact });

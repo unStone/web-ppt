@@ -1,10 +1,12 @@
 import { setFontDecoder } from '@web-ppt/core';
 import {
   openEditor,
+  type EditorContextRequest,
   type EditorMode,
   type EditorSession,
   type SelectionPane,
   type SlideEditor,
+  type TouchNavigationChange,
 } from '@web-ppt/editor';
 import { eotToTtf } from 'mtx-decompressor';
 import {
@@ -51,6 +53,7 @@ const buttons = {
   zoomOut: $<HTMLButtonElement>('#zoomOut'),
   fit: $<HTMLButtonElement>('#fitZoom'),
   zoomIn: $<HTMLButtonElement>('#zoomIn'),
+  exportImages: $<HTMLButtonElement>('#exportImages'),
   save: $<HTMLButtonElement>('#saveFile'),
   prev: $<HTMLButtonElement>('#prevSlide'),
   next: $<HTMLButtonElement>('#nextSlide'),
@@ -132,6 +135,7 @@ function syncControls(): void {
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
+  buttons.exportImages.disabled = !ready;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
   buttons.addTable.disabled = !writable || mode !== 'edit';
@@ -250,6 +254,25 @@ function fitView(): void {
   applyZoom(Math.min(1.5, availableWidth / width, availableHeight / height));
 }
 
+function handleTouchNavigate(change: TouchNavigationChange): void {
+  if (!session || !view || change.phase === 'cancel') return;
+  zoom = change.viewport.zoom;
+  fitWanted = false;
+  view.element.style.width = `${session.editor.doc.meta.width * zoom}px`;
+  view.element.style.height = `${session.editor.doc.meta.height * zoom}px`;
+  zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+  const stage = view.element.querySelector<HTMLElement>('[data-ppt-stage]');
+  const rect = stage?.getBoundingClientRect();
+  if (rect) {
+    canvasViewport.scrollLeft += rect.left - change.viewport.left;
+    canvasViewport.scrollTop += rect.top - change.viewport.top;
+  }
+}
+
+function handleContextRequest(request: EditorContextRequest): void {
+  notice(request.targetId ? '已长按选择对象；可用格式面板继续操作' : '已长按画布');
+}
+
 function disposeCurrent(): void {
   adjustments?.destroy();
   adjustments = null;
@@ -298,7 +321,9 @@ async function openDocument(
     pptConversionAccepted = false;
     mode = canWriteDocument() && next.editor.doc.meta.source !== 'ppt' ? 'edit' : 'view';
     view = next.mount(canvasMount, {
-      mode, zoom: 1, snapping: true, onSlideChange: handleViewSlideChange, onError: reportError,
+      mode, zoom: 1, snapping: true, onSlideChange: handleViewSlideChange,
+      onTouchNavigate: handleTouchNavigate, onContextRequest: handleContextRequest,
+      onError: reportError,
     });
     adjustments = createPresetAdjustmentEditor(next, view, { onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
@@ -406,11 +431,34 @@ async function saveCopy(): Promise<void> {
   }
 }
 
+async function exportImages(): Promise<void> {
+  if (!session) return;
+  buttons.exportImages.disabled = true;
+  notice('正在导出当前文稿的图片 ZIP…');
+  try {
+    // 图片导出是可选大能力；只有用户点击时才进入官网编辑器分块。
+    const { presentationToImageZip } = await import('@web-ppt/core/image-zip');
+    const blob = await presentationToImageZip(session.toPresentation(), {
+      onProgress: ({ completed, total }) => notice(`正在导出图片 ${completed} / ${total}…`),
+    });
+    const url = URL.createObjectURL(blob);
+    const stem = outputName().replace(/\.pptx$/i, '');
+    Object.assign(document.createElement('a'), { href: url, download: `${stem}-images.zip` }).click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notice('已导出当前编辑态的图片 ZIP', 'success');
+  } catch (error) {
+    reportError(error);
+  } finally {
+    syncControls();
+  }
+}
+
 async function run(action: () => void | Promise<void>): Promise<void> {
   try { await action(); } catch (error) { reportError(error); }
 }
 
 buttons.newFile.addEventListener('click', () => void createNewDocument());
+buttons.exportImages.addEventListener('click', () => void exportImages());
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
 buttons.undo.addEventListener('click', () => {

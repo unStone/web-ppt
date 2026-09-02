@@ -21,11 +21,13 @@
   <div id="perf-mount" class="contract-offscreen"></div>
   <div id="owned-mount" class="contract-offscreen"></div>
   <script type="module">
+    import * as editorLib from '/out/editor/editor.mjs';
     import { createWebPptAdapter, openEditor } from '/out/editor/editor.mjs';
     import { createVertexEditor } from '/out/editor/vertex.mjs';
     import { createPresetAdjustmentEditor } from '/out/editor/adjustments.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { presentationToImageZip } from '/out/editor/image-zip.mjs';
+    import { createBlankPptx } from '/out/editor/generate.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
@@ -102,6 +104,9 @@
     } from '/tooling/lib/editor-preset-adjustment-browser-contract.mjs';
     import { runEditorTouchBrowserContract } from '/tooling/lib/editor-touch-browser-contract.mjs';
     import { runCoreImageZipBrowserContract } from '/tooling/lib/core-image-zip-browser-contract.mjs';
+    import {
+      runV06IntegrationBrowserContract,
+    } from '/tooling/lib/v06-integration-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -562,6 +567,9 @@
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
       const imageZipResult = await runCoreImageZipBrowserContract({ presentationToImageZip, parse, load });
+      const v06Result = await runV06IntegrationBrowserContract({
+        lib: editorLib, createBlankPptx, presentationToImageZip, mount: ownedMount,
+      });
       const imageCropResult = await runEditorImageCropBrowserContract({ openEditor, load });
       publishEditorImageCropBrowserResult(report, imageCropResult);
       const trustedSnapSession = await openEditor(await load('sample-editor-snap.pptx'), {
@@ -584,6 +592,7 @@
       report.dataset.performanceEnvironment = JSON.stringify(environment);
       report.dataset.status = 'pass';
       report.dataset.imageZip = `${imageZipResult.pages}/${imageZipResult.concurrency}/${imageZipResult.released}`;
+      report.dataset.v06Integration = `${v06Result.pages}/${v06Result.frames}`;
       report.dataset.p95 = p95.toFixed(3);
       report.dataset.hitP95 = hitP95.toFixed(3);
       report.dataset.selectionP95 = selectionP95.toFixed(3);

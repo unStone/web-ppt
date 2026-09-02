@@ -63,15 +63,18 @@ function runImageOracle(markup) {
   const imageCount = markup.match(/ooo:numbering-type="image-style"/g)?.length ?? 0;
   const bitmapCount = markup.match(/class="EmbeddedBitmap"/g)?.length ?? 0;
   const gap = text.x - Number(list?.[1]);
+  const gapInEm = gap / text.size;
   if (!list || !use || !plainNone || imageCount < 2 || bitmapCount < 2
-    || gap < 450 || gap > 700
+    // LibreOffice 会随字体回退微调正文起点；用字号归一化才能验证同一版式语义，
+    // 固定 SVG unit 会把合法的 0.94em 间距误判成回归。
+    || gapInEm < 0.5 || gapInEm > 1.1
     || Math.abs(Number(use[1]) - Number(list[1])) > 2
     || Math.abs(Number(use[2]) - Number(list[2])) > 2) {
     throw new Error(`LibreOffice 图片项目符号几何无效：${JSON.stringify({
-      imageCount, bitmapCount, gap, list, use,
+      imageCount, bitmapCount, gap, gapInEm, list, use,
     })}`);
   }
-  return `，${imageCount} 个图片列表项与嵌入位图坐标一致、显式 none 无占位`;
+  return `，${imageCount} 个图片列表项与嵌入位图坐标一致、间距 ${gapInEm.toFixed(2)}em、显式 none 无占位`;
 }
 
 function runGeneratedOracle(markup) {

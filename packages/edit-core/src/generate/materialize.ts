@@ -4,6 +4,7 @@ import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
 import { effectiveElement, toSlide } from '../projection';
 import { supportsElementLink } from '../hyperlink';
+import { queryElementAltText } from '../alt-text';
 import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
 import { effectivePresetGeometry } from '../preset-geometry';
@@ -96,12 +97,13 @@ function textOverride(
   body: TextBody | null | undefined,
   context: GeneratedTextContext,
   tableStyleAware = false,
+  preserveFields = false,
 ): TextOverride | undefined {
   if (!body) return undefined;
   if (body.warp) throw new Error('生成保存暂不支持艺术字变形');
   for (const paragraph of body.paragraphs) {
     for (const run of paragraph.runs) {
-      if (run.field || run.outline || run.gradient
+      if ((run.field && !preserveFields) || run.outline || run.gradient
         || run.underlineColor || run.shadow || run.math) {
         throw new Error('生成保存暂不支持当前文字的高级字符语义');
       }
@@ -143,9 +145,11 @@ function textOverride(
         const underline = mark.props.underline ?? (mark.props.u ? 'sng' : 'none');
         const strikeType = mark.props.strikeType
           ?? (mark.props.strike ? 'sngStrike' : 'noStrike');
+        const preserveField = !!sourceRun?.field;
         return {
           ...mark,
-          source: undefined, preserveSource: undefined,
+          source: preserveField ? { paragraph: paragraphIndex, run: markIndex } : undefined,
+          preserveSource: preserveField ? true : undefined,
           // 生成包不再拥有原主题继承链；表样式控制的 b/color 只有真实直设才固定。
           runOverrides: {
             size: mark.props.size,
@@ -177,11 +181,15 @@ function fullOverrides(
   resources: Map<string, ElementInsertionResource>,
 ): ElementOverrides {
   const source = record.src;
+  const altText = queryElementAltText(doc, record.id);
   const common: ElementOverrides = {
     x: source.x, y: source.y, w: source.w, h: source.h,
     rot: source.rot, flipH: source.flipH, flipV: source.flipV,
     ...(source.name ? { name: source.name } : {}),
     ...(source.effects ? { effects: source.effects } : {}),
+    ...(altText.title || altText.descr ? {
+      altText: { title: altText.title, descr: altText.descr },
+    } : {}),
     ...(source.link && supportsElementLink(source.kind)
       ? { link: generatedLink(doc, slideId, source.link, `元素 ${record.id} 链接`) } : {}),
   };
@@ -189,7 +197,7 @@ function fullOverrides(
     part, relationshipPrefix: `rIdBullet${record.meta.origin?.spid ?? record.id}${suffix}`, resources,
   });
   if (source.kind === 'shape') {
-    const text = textOverride(doc, slideId, source.text, textContext());
+    const text = textOverride(doc, slideId, source.text, textContext(), false, true);
     return {
       ...common,
       ...(source.fill && source.fill.type !== 'image' ? { fill: source.fill } : {}),
@@ -228,8 +236,7 @@ function shapeInsertion(
     if (!Number.isSafeInteger(Math.round(value))) throw new Error(`形状 ${record.id} 的几何调整值无效`);
     return `<a:gd name="${esc(name)}" fmla="val ${Math.round(value)}"/>`;
     }).join('');
-  const text = source.text
-    ? '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr/></a:p></p:txBody>' : '';
+  const text = source.text ? generatedTextBody(source.text, part, spid) : '';
   const name = esc(source.name ?? `形状 ${spid}`);
   const textBox = source.path === null;
   const geometry = textBox ? '' : preset
@@ -248,6 +255,32 @@ function shapeInsertion(
     ...(fillClosure ? { relationships: [fillClosure.relationship] } : {}),
     ...(fillClosure?.resource ? { resources: [fillClosure.resource] } : {}),
   };
+}
+
+function generatedFieldId(part: string, spid: number, paragraph: number, run: number): string {
+  const seed = `${part}:${spid}:${paragraph}:${run}`;
+  let left = 0x811c9dc5;
+  let right = 0x9e3779b9;
+  for (let index = 0; index < seed.length; index++) {
+    left = Math.imul(left ^ seed.charCodeAt(index), 0x01000193) >>> 0;
+    right = Math.imul(right ^ seed.charCodeAt(index), 0x85ebca6b) >>> 0;
+  }
+  const leftHex = left.toString(16).padStart(8, '0');
+  const rightHex = right.toString(16).padStart(8, '0');
+  return `{00000000-0000-0000-${leftHex.slice(0, 4)}-${leftHex.slice(4)}${rightHex}}`.toUpperCase();
+}
+
+function generatedTextBody(body: TextBody, part: string, spid: number): string {
+  const paragraphs = body.paragraphs.map((paragraph, paragraphIndex) => {
+    const runs = paragraph.runs.map((run, runIndex) => {
+      const text = esc(run.text);
+      if (!run.field) return `<a:r><a:t>${text}</a:t></a:r>`;
+      const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
+      return `<a:fld id="${id}" type="${esc(run.field)}"><a:rPr/><a:t>${text}</a:t></a:fld>`;
+    }).join('');
+    return `<a:p>${runs}<a:endParaRPr/></a:p>`;
+  }).join('');
+  return `<p:txBody><a:bodyPr/><a:lstStyle/>${paragraphs}</p:txBody>`;
 }
 
 function groupCoordinate(value: number, label: string): string {

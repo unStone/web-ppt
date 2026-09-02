@@ -20,6 +20,7 @@ const view = session.mount(container, {
 const selectionPane = session.mountSelectionPane(paneContainer, {
   mode: 'edit', slideId: view.slideId,
 });
+const current = session.toPresentation(); // 当前编辑态只读投影；资源在 session.dispose() 前有效
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -449,7 +450,7 @@ const view = session.mount(container, {
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 66.92KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 67.21KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

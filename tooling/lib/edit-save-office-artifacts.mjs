@@ -10,6 +10,8 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'generated-ppt-unsupported.pptx', slides: 2 }),
   Object.freeze({ file: 'generated-ppt-ole-preview.pptx', slides: 1 }),
   Object.freeze({ file: 'common-object-slide.pptx', slides: 3 }),
+  Object.freeze({ file: 'v06-integration-patch.pptx', slides: 2 }),
+  Object.freeze({ file: 'v06-integration-generated.pptx', slides: 2 }),
   Object.freeze({ file: 'group-elements.pptx', slides: 1 }),
   Object.freeze({ file: 'ungroup-elements.pptx', slides: 1 }),
   Object.freeze({ file: 'single-move.pptx', slides: 1 }),

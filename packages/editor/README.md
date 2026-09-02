@@ -21,6 +21,7 @@ const view = session.mount(container, {
 const selectionPane = session.mountSelectionPane(paneContainer, {
   mode: 'edit', slideId: view.slideId,
 });
+const current = session.toPresentation(); // read-only current projection; valid until session.dispose()
 
 const slideId = session.editor.doc.slideOrder[0];
 const elementId = session.editor.doc.slides[slideId].children[0];
@@ -505,7 +506,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 66.92 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 67.21 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

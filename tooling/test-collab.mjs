@@ -10,6 +10,7 @@ import { runCollabAtomicContract } from './lib/collab-atomic-contract.mjs';
 import { runCollabProtocolContract } from './lib/collab-protocol-contract.mjs';
 import { runPresetShapeCollabContract } from './lib/preset-shape-collab-contract.mjs';
 import { runAdvancedRunFormatCollabContract } from './lib/advanced-run-format-collab-contract.mjs';
+import { applyV06Journey } from './lib/v06-integration-save-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -34,7 +35,7 @@ const runtimeFile = bundle(join(root, 'tooling/lib/collab-test-runtime.ts'), 'ru
 ]);
 const collabEntry = join(root, 'packages/collab/src/index.ts');
 const thinFile = bundle(collabEntry, 'collab-thin', [], ['@web-ppt/edit-core']);
-const { core, edit, collab } = await import(`${pathToFileURL(runtimeFile)}?t=${Date.now()}`);
+const { core, edit, generate, collab } = await import(`${pathToFileURL(runtimeFile)}?t=${Date.now()}`);
 
 let passed = 0;
 const failures = [];
@@ -79,6 +80,10 @@ const load = (name) => {
 
 const createPair = async (name, prefix) => {
   const bytes = load(name);
+  return createPairFromBytes(bytes, prefix);
+};
+
+const createPairFromBytes = async (bytes, prefix) => {
   const [leftPresentation, rightPresentation] = await Promise.all([
     core.parse(bytes, { edit: true, keepPackage: true, lazy: false }),
     core.parse(bytes, { edit: true, keepPackage: true, lazy: false }),
@@ -230,6 +235,47 @@ console.log('\n\x1b[36m▸ 高频对象与页面字段协同\x1b[0m');
       && edit.querySlideSize(pair.left).w === 1600,
     stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
   check('公共字段协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
+}
+
+console.log('\n\x1b[36m▸ 0.6 跨能力协同旅程\x1b[0m');
+{
+  const pair = await createPairFromBytes(generate.createBlankPptx(), 'collab-v06-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  applyV06Journey(edit, pair.leftEditor);
+  hub.flush((items) => items.reverse());
+  const shape = Object.values(pair.right.elements)
+    .find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 列表形状');
+  const table = Object.values(pair.right.elements)
+    .find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 结构表格');
+  const grid = edit.queryTableGrid(pair.right, table.id);
+  const initialConvergence = semanticDoc(pair.left) === semanticDoc(pair.right)
+    && edit.queryElementPresetGeometry(pair.right, [shape.id]).value?.adj.adj === 36_000
+    && edit.queryParaProps(pair.right, shape.id, {
+      from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+    }).bullet.value?.kind === 'char'
+    && grid.rows.length === 3 && grid.columns.length === 3
+    && edit.listSections(pair.right)[0]?.slideIds.length === 2
+    && edit.querySlideSize(pair.right).w === 1200;
+  pair.leftEditor.exec({
+    type: 'SetRunProps', id: shape.id,
+    range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 4 } },
+    props: { highlight: '#BFDBFE' },
+  });
+  pair.rightEditor.exec({
+    type: 'SetCellProps', id: table.id,
+    cell: { row: grid.rows[2].id, column: grid.columns[2].id },
+    props: { fill: { type: 'solid', color: '#DCFCE7' } },
+  });
+  hub.flush((items) => items.reverse());
+  check('新建文稿的七类 0.6 命令与后续并发字段通过同一协议收敛',
+    initialConvergence && semanticDoc(pair.left) === semanticDoc(pair.right)
+      && errors.length === 0,
+    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
   edit.disposeDoc(pair.right);

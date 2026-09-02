@@ -25,6 +25,7 @@
   "include": [
     "packages/*/src",
     "tooling/type-contracts/animation.ts",
-    "tooling/type-contracts/image-zip.ts"
+    "tooling/type-contracts/image-zip.ts",
+    "tooling/type-contracts/v06-integration.ts"
   ]
 }

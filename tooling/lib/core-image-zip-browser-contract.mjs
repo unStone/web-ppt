@@ -12,7 +12,7 @@ function readU32Be(bytes, offset) {
     | bytes[offset + 3]) >>> 0);
 }
 
-async function zipFiles(blob) {
+export async function zipFiles(blob) {
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let end = bytes.length - 22;
   while (end >= 0 && readU32(bytes, end) !== 0x06054b50) end--;

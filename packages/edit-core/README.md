@@ -385,13 +385,28 @@ Images are embedded as base64 plus SHA-256 and deduplicated against the destinat
 new relationships. Complex objects such as SmartArt can reuse a verified same-package OPC closure; a different
 package is rejected before any model identity is allocated instead of receiving a degraded preview.
 
-`InsertRow` intentionally exposes append-only table semantics for now, shared by last-cell Tab and an
-“add row at end” control. It does not accept an `at` value that would be unsafe across vertical merges. The new row
-keeps the former last row's height, direct/input formatting, and horizontal merge topology, clears its content,
-and recomputes `bandRow`, `lastRow`, and frame height. History stores one sparse stable-row patch, not a table copy.
+`queryTableGrid(doc, tableElementId)` exposes stable row/column identities, logical cell addresses, and merge
+regions. Structural commands target those identities, so prepending rows or columns cannot retarget recovery or
+collaboration patches. `InsertRow` / `InsertColumn` accept an identity-based `at` position and append when omitted;
+`RemoveRow` / `RemoveColumn` retain at least one row and column. `MergeCells` stores only its anchor and span while
+covered cell content remains dormant for `SplitCell`. `SetRowHeight`, `SetColumnWidth`, and `SetCellProps` update the
+frame atomically, and banded/first/last styles are reprojected from the final order.
 
 ```ts
-editor.exec({ type: 'InsertRow', id: tableElementId });
+const grid = queryTableGrid(editor.doc, tableElementId);
+editor.exec({ type: 'InsertRow', id: tableElementId, at: { before: grid.rows[1].id } });
+editor.exec({ type: 'InsertColumn', id: tableElementId, at: { before: grid.columns[1].id } });
+const next = queryTableGrid(editor.doc, tableElementId);
+editor.exec({
+  type: 'MergeCells', id: tableElementId,
+  from: { row: next.rows[0].id, column: next.columns[0].id },
+  to: { row: next.rows[0].id, column: next.columns[1].id },
+});
+editor.exec({
+  type: 'SetCellProps', id: tableElementId,
+  cell: { row: next.rows[0].id, column: next.columns[0].id },
+  props: { fill: { type: 'solid', color: '#DBEAFE' }, vAlign: 'middle' },
+});
 ```
 
 `AddShape { slideId, preset, rect }` inserts a top-level DrawingML preset shape into an existing writable

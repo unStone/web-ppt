@@ -361,12 +361,27 @@ OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原�
 携带并在目标包去重，超链接重建关系；SmartArt 等复杂对象只复用经过闭包哈希验证的同包 OPC part，
 跨文档无法无损迁移时会在分配身份前明确拒绝，不会静默变成截图。
 
-`InsertRow` 当前有意只提供表格尾部追加语义，供末格 Tab 和“在末尾添加行”按钮共用；它没有一个对
-纵向合并表格并不安全的 `at` 参数。新行保留原末行高度、直接格式、输入格式和横向合并拓扑，清空内容，
-并重新计算 `bandRow` / `lastRow` 与 frame 高度。命令只生成稳定行身份的稀疏 patch，不把整张表复制进历史。
+`queryTableGrid(doc, tableElementId)` 公开稳定的行列身份、逻辑格地址与合并区域。结构命令始终以这些身份
+寻址，因此在前方插删、恢复日志和协同时不会因数组下标漂移。`InsertRow` / `InsertColumn` 的 `at` 可指定
+目标身份，省略时仍分别追加到末尾；`RemoveRow` / `RemoveColumn` 至少保留一行一列。`MergeCells` 只保存
+锚格与跨度这一份真值，被覆盖格内容休眠，`SplitCell` 后恢复。`SetRowHeight`、`SetColumnWidth` 与
+`SetCellProps` 和 frame 尺寸作为同一原子历史提交，条纹与首末行列样式按最终序号重新投影。
 
 ```ts
-editor.exec({ type: 'InsertRow', id: tableElementId });
+const grid = queryTableGrid(editor.doc, tableElementId);
+editor.exec({ type: 'InsertRow', id: tableElementId, at: { before: grid.rows[1].id } });
+editor.exec({ type: 'InsertColumn', id: tableElementId, at: { before: grid.columns[1].id } });
+const next = queryTableGrid(editor.doc, tableElementId);
+editor.exec({
+  type: 'MergeCells', id: tableElementId,
+  from: { row: next.rows[0].id, column: next.columns[0].id },
+  to: { row: next.rows[0].id, column: next.columns[1].id },
+});
+editor.exec({
+  type: 'SetCellProps', id: tableElementId,
+  cell: { row: next.rows[0].id, column: next.columns[0].id },
+  props: { fill: { type: 'solid', color: '#DBEAFE' }, vAlign: 'middle' },
+});
 ```
 
 `AddShape { slideId, preset, rect }` 会在现有可写页面顶层插入 DrawingML 预设形状。命令校验预设名与
@@ -416,7 +431,7 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 `layoutText` 与原生 SVG 共用断行，并返回段落/run 身份和 UTF-16 光标停靠点；竖排用返回的
 `transform` 映射逻辑坐标。只需要行盒时可传 `{ includeCarets: false }` 跳过逐字测量。
 
-常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格追加行、新形状/页面、页面复制/删除、演讲者备注、占位符清空和元素删除写回 OOXML，
+常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格结构与单元格格式、新形状/页面、页面复制/删除、演讲者备注、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
 继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
 

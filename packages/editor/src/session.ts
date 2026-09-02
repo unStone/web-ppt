@@ -1,5 +1,5 @@
 import { parse } from '@web-ppt/core';
-import type { ParseOptions } from '@web-ppt/core';
+import type { ParseOptions, Presentation } from '@web-ppt/core';
 import { createDoc, disposeDoc, Editor } from '@web-ppt/edit-core';
 import type { CreateDocOptions, EditorOptions } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
@@ -64,6 +64,11 @@ export interface EditorSession {
   readonly formatPainter: FormatPainter;
   readonly textSearch: TextSearch;
   readonly disposed: boolean;
+  /**
+   * 取得当前编辑投影，供图片导出等只读能力直接消费。
+   * 资源 URL 仍由会话拥有，因此返回值只在会话释放前有效。
+   */
+  toPresentation(): Presentation;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
   mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
   dispose(): void;
@@ -89,6 +94,29 @@ class BrowserEditorSession implements EditorSession {
   }
 
   get disposed(): boolean { return this.isDisposed; }
+
+  toPresentation(): Presentation {
+    if (this.isDisposed) throw new Error('不能读取已经释放的编辑会话');
+    const source = sessionState(this).presentation;
+    const positions = new Map(this.editor.doc.slideOrder.map((id, index) => [id, index]));
+    const sections = this.editor.doc.sections.order.map((id) => {
+      const section = this.editor.doc.sections.records[id];
+      return {
+        id: section.presentationId,
+        name: section.name,
+        slideIds: [],
+        slideIndexes: section.slideIds.flatMap((slideId) => positions.get(slideId) ?? []),
+      };
+    });
+    return {
+      width: this.editor.doc.meta.width,
+      height: this.editor.doc.meta.height,
+      source: source.source,
+      slides: this.editor.doc.slideOrder.map((id) => this.editor.toSlide(id)),
+      ...(source.embeddedFonts ? { embeddedFonts: [...source.embeddedFonts] } : {}),
+      ...(sections.length ? { sections } : {}),
+    };
+  }
 
   mount(container: HTMLElement, options: SlideEditorOptions = {}): SlideEditor {
     if (this.isDisposed) throw new Error('不能挂载已经释放的编辑会话');

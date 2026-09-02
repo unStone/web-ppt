@@ -1,6 +1,6 @@
 ---
 title: 补齐 0.6 高频编辑能力
-status: open
+status: closed
 labels:
   - wayfinder:map
 tracker: local-markdown
@@ -46,12 +46,15 @@ tracker: local-markdown
   viewport；真实 SVG 距离命中与长按请求均不产生模型补丁。
 - [批量导出幻灯片图片](tickets/007-batch-image-export.md)：按需入口复用唯一光栅化链路；固定元数据、原页码与
   批次有界调度让 ZIP 在隐藏页、动画终态和逐页失败下仍保持确定、原子且可释放。
+- [0.6 集成验收](tickets/008-v06-integration-readiness.md)：当前编辑投影把七类命令、恢复/协同、真实 DOM、
+  批量导图与补丁/生成保存接成一条用户旅程；发布面审计让八包入口、版本、文档和按需边界共同闭环。
 
-## Not yet specified
+## Deferred decisions
 
-- 图片透明度/灰度/双色调、画布 AT 语义与 File System Access 都是真实缺口，但现有路线没有证据证明它们
-  应挤进 0.6。等七条既定能力产生产品使用证据后，再判断是补入本地图还是进入后续地图。
-- 0.6 的 beta 反馈周期、精确版本号与迁移提示取决于最终公开 API 形态；在集成验收票关闭前不提前写死。
+- 图片透明度/灰度/双色调进入后续“数据与保真”地图；画布 AT 语义进入独立的可访问性产品地图；
+  File System Access 保持产品增强项。三者都不改变 0.6 高频编辑能力的完成定义。
+- beta 反馈周期、对外版本号与迁移提示属于独立发布计划。本地图只把仓库推进到可发版状态，保持当前
+  `0.5.0-beta.3`，不创建 tag、不推送也不发布 npm。
 
 ## Out of scope
 

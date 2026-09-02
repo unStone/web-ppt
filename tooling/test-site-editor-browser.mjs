@@ -16,6 +16,7 @@ mkdirSync(out, { recursive: true });
 const bundle = join(out, 'editor-page.js');
 const aliases = [
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
+  ['@web-ppt/core/image-zip', join(root, 'packages/core/src/image-zip.ts')],
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
@@ -269,10 +270,12 @@ async function runContract(webSocketDebuggerUrl) {
       kind: document.querySelector('#documentKind')?.textContent,
       shapeDisabled: document.querySelector('#addShape')?.disabled,
       tableDisabled: document.querySelector('#addTable')?.disabled,
+      exportDisabled: document.querySelector('#exportImages')?.disabled,
       saveDisabled: document.querySelector('#saveFile')?.disabled,
       page: document.querySelector('#pageIndicator')?.textContent,
     }))()`);
     if (blank.kind !== 'PPTX · 可编辑' || blank.shapeDisabled || blank.tableDisabled
+      || blank.exportDisabled
       || blank.saveDisabled || blank.page !== '1 / 1') {
       throw new Error(`空白文稿没有进入可编辑状态：${JSON.stringify(blank)}`);
     }
@@ -295,6 +298,20 @@ async function runContract(webSocketDebuggerUrl) {
     await click('#redo');
     const blankEditedCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
     if (blankEditedCount !== blankInitialCount + 1) throw new Error('空白文稿撤销重做没有恢复插入形状');
+    await evaluate('globalThis.__capturedDownload = null');
+    await click('#exportImages');
+    await waitFor("globalThis.__capturedDownload?.name?.endsWith('-images.zip')", '当前编辑态图片 ZIP 下载');
+    const imageZipDownload = await evaluate(`(async () => {
+      const captured = globalThis.__capturedDownload;
+      const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
+      return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)), dirty: document.querySelector('#fileName')?.textContent.startsWith('●') };
+    })()`, true);
+    if (imageZipDownload.name !== '未命名演示文稿-images.zip'
+      || imageZipDownload.bytes[0] !== 0x50 || imageZipDownload.bytes[1] !== 0x4b
+      || !imageZipDownload.dirty) {
+      throw new Error(`当前编辑态图片 ZIP 无效或改变保存状态：${JSON.stringify(imageZipDownload)}`);
+    }
+    await evaluate('globalThis.__capturedDownload = null');
     await click('#saveFile');
     await waitFor('!!globalThis.__capturedDownload', '空白 PPTX 下载');
     const blankDownload = await evaluate(`(async () => {

@@ -44,16 +44,15 @@ function pngPixels(base64) {
       pixels[y * stride + x] = value & 0xff;
     }
   }
-  const colors = new Set();
-  for (let at = 0; at < pixels.length; at += 3) {
-    colors.add(`${pixels[at]},${pixels[at + 1]},${pixels[at + 2]}`);
-  }
-  return { width, height, colors, pixels };
+  return { width, height, pixels };
 }
 
 const pixelAt = (image, x, y) => [...image.pixels.subarray(
   (y * image.width + x) * 3, (y * image.width + x + 1) * 3,
 )].join(',');
+const rgbAt = (image, x, y) => [...image.pixels.subarray(
+  (y * image.width + x) * 3, (y * image.width + x + 1) * 3,
+)];
 
 /** 用 LibreOffice 的最终像素证明替换、裁剪与翻转共同生效，而不只证明包能打开。 */
 export function runImageContentLibreOfficeContract({ exportSvg }) {
@@ -61,14 +60,32 @@ export function runImageContentLibreOfficeContract({ exportSvg }) {
   const pngs = [...markup.matchAll(
     /<image\b[^>]*xlink:href="data:image\/png;base64,([^"]+)"/g,
   )].map((match) => pngPixels(match[1])).filter(Boolean);
-  const replacement = pngs.find((image) => image.width === 5 && image.height === 4
-    && pixelAt(image, 1, 1) === '195,70,144'
-    && pixelAt(image, 2, 2) === '160,125,144'
-    && pixelAt(image, 4, 3) === '90,180,120');
+  const replacement = pngs.find((image) => {
+    if (image.width !== 5 || image.height !== 4) return false;
+    const topLeft = rgbAt(image, 1, 1);
+    const topRight = rgbAt(image, 4, 1);
+    const bottomLeft = rgbAt(image, 1, 3);
+    const bottomRight = rgbAt(image, 4, 3);
+    // LibreOffice 版本之间会改变裁剪边缘的插值采样点，但四个方向的裁剪与
+    // 水平翻转必须继续保留固件的非对称 RGB 梯度及其跨度。
+    return Math.abs((topLeft[0] - topRight[0]) - 105) <= 3
+      && topLeft[1] >= 10 && topLeft[1] <= 40
+      && bottomLeft[1] >= 160 && bottomLeft[1] <= 190
+      && topLeft[2] - topRight[2] >= 65
+      && bottomLeft[2] - topLeft[2] >= 55
+      && bottomRight[0] === topRight[0]
+      && bottomRight[1] === bottomLeft[1];
+  });
   const reusedBitmaps = markup.match(/<use\b[^>]*xlink:href="#bitmap\(/g)?.length ?? 0;
   if (!replacement || reusedBitmaps < 2) {
     throw new Error(`LibreOffice 图片内容像素证据无效：${JSON.stringify({
-      pngs: pngs.map(({ width, height, colors }) => ({ width, height, colors: [...colors] })),
+      pngs: pngs.map((image) => ({
+        width: image.width,
+        height: image.height,
+        samples: image.width >= 5 && image.height >= 4
+          ? [pixelAt(image, 1, 1), pixelAt(image, 4, 1), pixelAt(image, 1, 3), pixelAt(image, 4, 3)]
+          : [],
+      })),
       reusedBitmaps,
     })}`);
   }
