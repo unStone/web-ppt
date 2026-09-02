@@ -183,7 +183,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const {
     tableCells, tableRows, tableColumns, tableRemovedRows, tableRemovedColumns,
     tableRowHeights, tableColumnWidths, tableMerges, tableStyle,
-    link: linkOverride, geometry: geometryOverride, ...overrides
+    link: linkOverride, geometry: geometryOverride, presetGeometry: presetGeometryOverride, ...overrides
   } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
   let complexTableStructure = false;
@@ -322,6 +322,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       ...out, scaleX, scaleY,
       children: (record.children ?? []).map((childId) => effectiveElement(doc, childId)),
     } as GroupElement;
+  } else if (out.kind === 'shape' && presetGeometryOverride) {
+    const geom = resolveGeomPath(presetGeometryOverride, out.w, out.h);
+    out = { ...out, path: geom.d, openGeom: geom.open || undefined } as ShapeElement;
   } else if (out.kind === 'shape' && (geometryOverride || record.meta.customGeometry)) {
     const geometry = resolveCustomGeometry(geometryOverride ?? record.meta.customGeometry!, out.w, out.h);
     out = { ...out, path: geometry.d, openGeom: geometry.open || undefined } as ShapeElement;

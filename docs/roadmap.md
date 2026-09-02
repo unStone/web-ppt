@@ -15,14 +15,14 @@
 **引擎能力已经打穿，自动化交付缺口也已收口。** M0–M6 全部里程碑的技术内容都已验收；
 只剩 PowerPoint 真机验收与 0.5.0 转正两个外部动作，不阻塞 0.6 功能开发。
 
-### 1.2 门禁实测（2026-08-31）
+### 1.2 门禁实测（2026-09-02）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4178 项 | 2168 core + 942 edit + 433 save + 9 PowerPoint + 389 editor + 9 adapters + 98 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4303 项 | 2168 core + 1009 edit + 469 save + 9 PowerPoint + 394 editor + 9 adapters + 115 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 178 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 490 对 | 独立进程原始 SVG，两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 496 对 | 74 份固件、248 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 490 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 496 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -46,7 +46,7 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按本轮 4,178 项实测同步 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,303 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 10.04KB gzip | 读取 `package.json#main` 后实测 gzip |
@@ -84,13 +84,13 @@
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 可打印 HTML（按动画批次展开）。**无直接 PDF、无批量图片、无视频。**
 
-### 2.2 写：编辑命令（51 个已实现）
+### 2.2 写：编辑命令（53 个已实现）
 
 | 域 | 已实现 | 未实现 |
 |---|---|---|
 | 变换 | `SetXfrm` `SetFlip` `AlignElements` `Group` `Ungroup` | **`DistributeElements`** |
 | 结构 | `RemoveElement` `SetZ` `PasteElements` `SetName` `SetLocked` `SetElementHidden` | **`SetAltText`** |
-| 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` | **`SetPreset`**（改形状类型）、**`SetAdj`**（调节手柄）、`SetScene3D` |
+| 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` `SetPreset` `SetAdj` | `SetScene3D` |
 | 图片 | `AddImage` `ReplaceImage` `SetCrop` | **`SetPictureFx`**（透明度/灰度/双色调） |
 | 文本 | `EditText` `SetRunProps` `SetParaProps`（含项目符号/编号）`SetBodyProps` `FitTextShape` `ReplaceText` | **高亮/字距/大小写/上下标/下划线类型**、**`ClearFormat`** |
 | 表格 | `AddTable` `InsertRow` `InsertColumn` `RemoveRow` `RemoveColumn` `MergeCells` `SplitCell` `SetRowHeight` `SetColumnWidth` `SetCellProps` `SetTableStyle` + 单元格文字 | — |
@@ -140,7 +140,7 @@ flowchart TD
 | 跨产物一致性 / collab 漏列 | 有（装错包、信错数字） | 有 | ✅ **已完成** |
 | 表格结构编辑 | 有（表格是 PPT 高频对象，只能追加行等于不可用） | 有（rowId 已有，缺 colId 与合并不变量） | ✅ **已完成** |
 | 项目符号 / 编号 | 有（做 PPT 必用） | 有（继承重基与自动编号求值都已具备） | ✅ **已完成** |
-| 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 可从 ECMA 预设定义生成，惰性查表零体积） | **0.6 P0** |
+| 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 从固定规范源生成，惰性查表零默认成本） | ✅ **已完成** |
 | 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | **0.6 P1** |
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | **0.6 P1** |
 | 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | **0.6 P1** |
@@ -229,22 +229,25 @@ SetCellProps{ id, cells: CellAddr[], props }   // null 恢复来源，同 SetEff
 **验收**：确定性固件 `sample-editor-table-structure.pptx`（含预置合并）+ LibreOffice 网格 oracle +
 独立进程等价指纹 + PowerPoint 无修复打开 + 60 格提交预算。
 
-### 5.2 [切换预设形状并拖动调节柄](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md)
+### 5.2 ✅ [切换预设形状并拖动调节柄](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md)
 
-模型侧几乎零新增——`003` 已让编辑投影保留 `preset + adj`，`geometry/` 能求值全部 187 个预设。
+编辑投影以互斥的 `presetGeometry` / `geometry` 稀疏覆盖保留语义；切换时用对侧 tombstone 保证
+历史、恢复与字段级 LWW 协同都只留下一个几何真值。
 
 | 命令 | 落点 | 说明 |
 |---|---|---|
 | `SetPreset{ id, preset }` | `a:prstGeom@prst` + 重置 `a:avLst` | 保留填充/描边/效果/`a:txBody`，只换几何 |
 | `SetAdj{ id, name, value }` | `a:avLst/a:gd@name@fmla="val N"` | 拖动调节柄 |
 
-**唯一的新东西是调节柄的位置**。ECMA-376 的预设定义里每个形状带 `a:ahLst`（adjust handle list）：
+调节柄来自预设定义里的 `a:ahLst`（adjust handle list）：
 `a:ahXY` 给出手柄坐标与 `minX/maxX/minY/maxY`，`a:ahPolar` 给出 `minR/maxR/minAng/maxAng`。
 现在的几何层只求值 path，没读 ahLst。
 
-- 表**从 ECMA 预设定义生成**，不手写——和 187 个预设本身同一来源
-- 按预设名**惰性查表**，只在编辑器拖手柄时加载 → 默认渲染路径零增重，可 tree-shake
-- 拖动时按 min/max 夹逼，杜绝生成 PowerPoint 拒绝的几何
+- 表由固定 Apache POI 预设源生成并校验 commit + SHA-256：187 个预设，120 个含句柄
+- `@web-ppt/core/geometry/handles` 与 `@web-ppt/editor/adjustments` 都是独立构建的按需入口；构建守卫
+  禁止句柄定义进入 core、edit-core 与 editor 主入口
+- 公式在 DrawingML EMU 空间求值，最终位置才转 CSS px；187 预设通过同点拖拽恒等性质
+- 旋转形状拖动只更新 interaction 层，提交为单一历史事务；补丁与生成保存都回写规范 `prstGeom/avLst`
 
 ### 5.3 ✅ [编辑项目符号与自动编号](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md)
 
@@ -396,8 +399,8 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | 完成[预设形状切换与调节手柄](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md) | 无 | 收口 0.6 P0 主线 |
-| 2 | 随后完成[字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md) | 无 | 关闭高频文字格式缺口 |
+| 1 | 完成[字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md) | 无 | 关闭高频文字格式缺口 |
+| 2 | 完成[常用对象与页面命令](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md) | 无 | 补齐 0.6 P1 对象操作 |
 | 3 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
 
 第 3 项全程外部阻塞，**只挡 0.5.0 的 tag，不要让它挡住 0.6 的开发**。

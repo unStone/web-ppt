@@ -436,6 +436,8 @@ export class Editor {
   private queuePatches(
     source: EditorPatchEvent['source'], patches: readonly Patch[], origin: string, label: string, time: number,
   ): void {
+    // 协同是可选能力；未订阅时不能为结构事务深拷贝整棵元素树。
+    if (!this.patchJournal.observed) return;
     const event: EditorPatchEvent = {
       source, patches: structuredClone([...patches]), identity: structuredClone(this.doc.identity),
       origin, label, time,

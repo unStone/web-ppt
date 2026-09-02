@@ -349,8 +349,8 @@ sequenceDiagram
 | 能力 | 命令 | 落点 | 依据 | P |
 |---|---|---|---|---|
 | 插入预设形状 | `AddShape{ preset, rect }` | 新 `p:sp` + `a:prstGeom` | 187 个预设已全量支持，形状库直接由 `geometry/` 驱动 | P0 |
-| 改形状类型 | `SetPreset{ id, preset }` | `a:prstGeom@prst` + 重置 `avLst` | 保留填充/描边/文本 | P1 |
-| 调节手柄 | `SetAdj{ id, name, v }` | `a:avLst/a:gd@fmla="val N"` | 预设求值器本就吃 `Adj`，手柄位置可从 `gd` 反推 | P1 |
+| 改形状类型（已实现） | `SetPreset{ id, preset }` | `a:prstGeom@prst` + 重置 `avLst` | 保留填充/描边/文本 | P1 |
+| 调节手柄（已实现） | `SetAdj{ id, name, v }` | `a:avLst/a:gd@fmla="val N"` | 规范生成式句柄表按需加载，EMU 求值 | P1 |
 | 填充 | `SetFill{ id, fill }` | `a:solidFill` / `a:gradFill` / `a:blipFill` / `a:pattFill` / `a:noFill` | 写时必须**先删同组其它 fill 元素**，且插在 geometry 之后（§11.4） | P0 |
 | 描边 | `SetStroke{ id, stroke }` | `a:ln`（`w` = 1/12700 磅，`a:prstDash`、`a:headEnd/a:tailEnd`） | — | P0 |
 | 效果 | `SetEffects{ id, effects }` | `a:effectLst`（`a:outerShdw` / `a:innerShdw` / `a:glow` / `a:softEdge` / `a:reflection`） | 解析侧已全支持 | P1 |

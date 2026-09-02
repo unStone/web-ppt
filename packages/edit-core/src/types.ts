@@ -122,6 +122,8 @@ export interface ElementLinkState {
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
+  /** 预设切换与调节值保持规范语义；path 仍由投影按当前 frame 求值。 */
+  presetGeometry?: GeomSpec;
   /** 自定义几何是 path 的语义来源；path 本身仍保持派生字段，不能写入覆盖层。 */
   geometry?: CustomGeometry;
   /** 缺少字段表示来源；none 表示明确移除，不能用 undefined 混淆二者。 */
@@ -262,6 +264,14 @@ export interface ElementCropState {
   readonly value: ImageElement['crop'];
   readonly mixed: boolean;
   /** 全零裁剪仍是直接格式；只有 SetCrop(null) 才恢复来源。 */
+  readonly direct: boolean;
+}
+
+export interface ElementPresetGeometryState {
+  readonly value: GeomSpec | null;
+  readonly source: GeomSpec | null;
+  readonly mixed: boolean;
+  readonly sourceMixed: boolean;
   readonly direct: boolean;
 }
 

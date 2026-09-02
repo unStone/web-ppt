@@ -16,6 +16,7 @@ import type {
 import type { EditDoc, ElementId, ElementMeta, ElementRecord } from './types';
 import type { XmlDocument, XmlElement } from './xml/types';
 import { copiedLinkMeta } from './clipboard-links';
+import { effectivePresetGeometry } from './preset-geometry';
 
 let clipboardBatchSerial = 0;
 
@@ -52,12 +53,13 @@ function copiedMeta(
   source?: SlideElement,
 ): ElementClipboardRecordMeta {
   const anchored = meta.origin?.part === sourcePart;
+  const geometry = source?.kind === 'shape' ? effectivePresetGeometry(doc, id) : meta.geom;
   return {
     copyBatchId,
     editable: meta.editable,
     anchored,
     ...(anchored ? { sourceSpid: meta.origin!.spid } : {}),
-    ...(meta.geom ? { geom: structuredClone(meta.geom) } : {}),
+    ...(geometry ? { geom: structuredClone(geometry) } : {}),
     ...(frameToSlide ? { frameToSlide } : {}),
     ...(source ? copiedLinkMeta(doc, id, source) : {}),
   };

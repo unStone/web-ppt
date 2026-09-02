@@ -9,11 +9,15 @@ import {
   type ParagraphPropertyInput,
   type SlideEditor,
 } from '@web-ppt/editor';
+import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
+import { queryElementPresetGeometry } from '@web-ppt/edit-core';
+import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
 
 interface InspectorContext {
   readonly session: EditorSession | null;
   readonly view: SlideEditor | null;
   readonly writable: boolean;
+  readonly adjustments: PresetAdjustmentEditor | null;
 }
 
 export interface EditorInspector {
@@ -62,6 +66,8 @@ export function createEditorInspector(
   const bulletSize = $<HTMLInputElement>(element, '#textBulletSize');
   const bulletImage = $<HTMLInputElement>(element, '#textBulletImageInput');
   const fillType = $<HTMLSelectElement>(element, '#shapeFillType');
+  const shapePreset = $<HTMLSelectElement>(element, '#shapePreset');
+  const startShapeAdjustments = $<HTMLButtonElement>(element, '#startShapeAdjustments');
   const fillColor = $<HTMLInputElement>(element, '#shapeFillColor');
   const strokeType = $<HTMLSelectElement>(element, '#shapeStrokeType');
   const strokeColor = $<HTMLInputElement>(element, '#shapeStrokeColor');
@@ -75,6 +81,12 @@ export function createEditorInspector(
   const linkSlide = $<HTMLSelectElement>(element, '#linkSlide');
   const linkHrefField = $<HTMLElement>(element, '#linkHrefField');
   const linkSlideField = $<HTMLElement>(element, '#linkSlideField');
+  shapePreset.replaceChildren(...PRESET_DEFINITION_NAMES.map((preset) => {
+    const option = document.createElement('option');
+    option.value = preset;
+    option.textContent = preset;
+    return option;
+  }));
 
   const act = async (action: () => void | Promise<void>): Promise<void> => {
     try { await action(); } catch (error) {
@@ -149,10 +161,16 @@ export function createEditorInspector(
   };
 
   const syncShape = (): boolean => {
-    const { session, writable } = context();
+    const { session, writable, adjustments } = context();
     const id = selectedKind() === 'shape' ? selectedId() : null;
+    if (adjustments?.elementId && adjustments.elementId !== id) adjustments.end();
     shapeSection.hidden = !id;
     if (!session || !id) return false;
+    const preset = queryElementPresetGeometry(session.editor.doc, [id]).value;
+    if (preset) shapePreset.value = preset.preset;
+    else shapePreset.selectedIndex = -1;
+    shapePreset.disabled = !writable;
+    startShapeAdjustments.disabled = !writable || !preset;
     const fill = queryElementFill(session.editor.doc, [id]).value;
     fillType.value = fill?.type === 'none' ? 'none' : fill?.type === 'solid' ? 'solid' : 'preserve';
     fillColor.value = colorInputValue(fill?.type === 'solid' ? fill.color : undefined);
@@ -302,6 +320,20 @@ export function createEditorInspector(
   });
   fillType.addEventListener('change', setFill);
   fillColor.addEventListener('change', setFill);
+
+  shapePreset.addEventListener('change', () => void act(() => {
+    const { adjustments } = context();
+    if (!adjustments?.setPreset(shapePreset.value)) return;
+    sync(); notice('已切换形状类型；原有文字和格式保持不变', 'success');
+  }));
+  startShapeAdjustments.addEventListener('click', () => void act(() => {
+    const { adjustments } = context();
+    const id = selectedId();
+    if (!adjustments || !id || !adjustments.start(id)) throw new Error('当前形状没有可用的预设调节柄');
+    notice(adjustments.handles.length
+      ? '拖动形状上的橙色圆点来调整外观'
+      : '当前形状没有可调参数');
+  }));
 
   const setStroke = (): void => void act(() => {
     const { session } = context(); const id = selectedId();

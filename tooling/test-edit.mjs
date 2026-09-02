@@ -50,6 +50,7 @@ import { runGroupUngroupContract } from './lib/group-ungroup-contract.mjs';
 import { runListLevelContract } from './lib/list-level-contract.mjs';
 import { runBulletFormatContract } from './lib/bullet-format-contract.mjs';
 import { runVertexGeometryContract } from './lib/vertex-geometry-contract.mjs';
+import { runPresetShapeContract } from './lib/preset-shape-contract.mjs';
 import { runTableStyleContract } from './lib/table-style-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
@@ -67,13 +68,18 @@ const bundle = (entry, name, aliases = []) => {
 };
 
 const core = await bundle(join(root, 'packages/core/src/index.ts'), 'core');
+const geometryHandles = await bundle(
+  join(root, 'packages/core/src/geometry/handles/index.ts'), 'geometry-handles',
+);
 const edit = await bundle(join(root, 'packages/edit-core/src/index.ts'), 'edit-core', [
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
 ]);
 const editXml = await bundle(join(root, 'packages/edit-core/src/xml/index.ts'), 'edit-xml');
 const editOpc = await bundle(join(root, 'packages/edit-core/src/opc/index.ts'), 'edit-opc');
 const editSave = await bundle(join(root, 'packages/edit-core/src/save/index.ts'), 'edit-save', [
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
 ]);
@@ -114,6 +120,7 @@ await runParagraphFormatContract({ edit, core, load, check });
 await runListLevelContract({ edit, core, load, check });
 await runBulletFormatContract({ edit, core, load, check });
 await runVertexGeometryContract({ edit, core, load, check });
+await runPresetShapeContract({ edit, core, geometryHandles, load, check });
 await runRichTextClipboardContract({ edit, core, load, check });
 await runTableCellTextContract({ edit, core, load, check });
 await runTableRowInsertContract({ edit, core, load, check });

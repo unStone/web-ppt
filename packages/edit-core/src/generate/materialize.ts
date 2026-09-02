@@ -6,6 +6,7 @@ import { effectiveElement, toSlide } from '../projection';
 import { supportsElementLink } from '../hyperlink';
 import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
+import { effectivePresetGeometry } from '../preset-geometry';
 import { tableCellKey } from '../table-cell';
 import { flattenTextBody } from '../text-model';
 import type {
@@ -348,11 +349,16 @@ function materializeSlide(
   for (const [id, sourceRecord] of Object.entries(doc.elements)) {
     if (!spids.has(id)) continue;
     const source = structuredClone(effectiveElement(doc, id));
+    const presetGeometry = source.kind === 'shape' ? effectivePresetGeometry(doc, id) : null;
     const record: ElementRecord = {
       ...structuredClone(sourceRecord), src: source, ovr: {},
       meta: {
         ...structuredClone(sourceRecord.meta), editable: 'full', created: true,
         inherited: undefined, origin: { part, spid: spids.get(id)! },
+        ...(source.kind === 'shape' ? {
+          geom: presetGeometry ?? undefined,
+          customGeometry: presetGeometry ? undefined : sourceRecord.meta.customGeometry,
+        } : {}),
       },
     };
     record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);

@@ -16,6 +16,7 @@ const password = 'web-ppt-2024';
 mkdirSync(outDir, { recursive: true });
 execFileSync('npx', [
   'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
   `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
   `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--outfile=${bundle}`,

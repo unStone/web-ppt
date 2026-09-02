@@ -36,6 +36,8 @@ tracker: local-markdown
   插删、合并、保存和协同始终指向同一逻辑单元格。
 - [项目符号与自动编号](tickets/002-bullets-and-numbering.md)：结构化 Source Value / Override 配合内容寻址图片
   闭包，保证继承、续号与两种保存路径一致。
+- [预设形状切换与调节柄](tickets/003-preset-shape-adjustments.md)：互斥几何覆盖配合对侧字段 tombstone，
+  让规范生成式句柄在按需入口中完成拖动、保存、恢复与协同而不增重默认路径。
 
 ## Not yet specified
 

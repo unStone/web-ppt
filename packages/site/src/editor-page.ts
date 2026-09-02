@@ -7,6 +7,9 @@ import {
   type SlideEditor,
 } from '@web-ppt/editor';
 import { eotToTtf } from 'mtx-decompressor';
+import {
+  createPresetAdjustmentEditor, type PresetAdjustmentEditor,
+} from '@web-ppt/editor/adjustments';
 import { createEditorInspector, type EditorInspector } from './editor-inspector';
 import { createSlideInspector, type SlideInspector } from './editor-slide-inspector';
 import { createProductTools } from './editor-product-tools';
@@ -61,6 +64,7 @@ let unregisterToolbar: (() => void) | null = null;
 let unregisterInspector: (() => void) | null = null;
 let inspector: EditorInspector | null = null;
 let slideInspector: SlideInspector | null = null;
+let adjustments: PresetAdjustmentEditor | null = null;
 let mode: EditorMode = 'edit';
 let zoom = 1;
 let fitWanted = true;
@@ -247,6 +251,8 @@ function fitView(): void {
 }
 
 function disposeCurrent(): void {
+  adjustments?.destroy();
+  adjustments = null;
   unsubscribeEditor?.();
   unregisterToolbar?.();
   unregisterInspector?.();
@@ -294,6 +300,7 @@ async function openDocument(
     view = next.mount(canvasMount, {
       mode, zoom: 1, snapping: true, onSlideChange: handleViewSlideChange, onError: reportError,
     });
+    adjustments = createPresetAdjustmentEditor(next, view, { onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     unregisterToolbar = view.registerTextUi(toolbar);
     unregisterInspector = view.registerTextUi(inspectorElement);
@@ -524,7 +531,7 @@ const productTools = createProductTools(() => ({
   session, view, writable: canMutateDocument() && mode === 'edit', openInspector,
 }), notice);
 inspector = createEditorInspector(inspectorElement, () => ({
-  session, view, writable: canMutateDocument() && mode === 'edit',
+  session, view, adjustments, writable: canMutateDocument() && mode === 'edit',
 }), notice);
 slideInspector = createSlideInspector(inspectorElement, () => ({
   session, view, writable: canMutateDocument() && mode === 'edit', showSlide,

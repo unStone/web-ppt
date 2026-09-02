@@ -168,6 +168,15 @@ if (mode === 'projected') {
         type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: scenario.text,
       }],
     });
+  } else if (scenario.type === 'presetShape') {
+    if (!target) throw new Error(`M1 指纹固件缺少预设形状：${scenario.targetName}`);
+    for (const [name, value] of Object.entries(scenario.adjustments)) {
+      editor.exec({ type: 'SetAdj', id: target.id, name, value });
+    }
+    const converted = Object.values(doc.elements)
+      .find((record) => record.src.name === scenario.convertTargetName);
+    if (!converted) throw new Error(`M1 指纹固件缺少形状：${scenario.convertTargetName}`);
+    editor.exec({ type: 'SetPreset', id: converted.id, preset: scenario.convertPreset });
   } else if (scenario.type === 'addImage') {
     for (const image of scenario.images) {
       const imageBytes = image.part

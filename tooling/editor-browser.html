@@ -23,6 +23,7 @@
   <script type="module">
     import { createWebPptAdapter, openEditor } from '/out/editor/editor.mjs';
     import { createVertexEditor } from '/out/editor/vertex.mjs';
+    import { createPresetAdjustmentEditor } from '/out/editor/adjustments.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
@@ -92,6 +93,9 @@
       sampleAnimationFrameEnvironment,
     } from '/tooling/lib/browser-performance-contract.mjs';
     import { runEditorVertexBrowserContract } from '/tooling/lib/editor-vertex-browser-contract.mjs';
+    import {
+      runEditorPresetAdjustmentBrowserContract,
+    } from '/tooling/lib/editor-preset-adjustment-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -106,6 +110,11 @@
     try {
       clearPerformanceFailures();
       const environmentBefore = await sampleAnimationFrameEnvironment();
+      const presetAdjustmentResult = await runEditorPresetAdjustmentBrowserContract({
+        openEditor, createPresetAdjustmentEditor, load,
+      });
+      report.dataset.presetAdjustmentP95 = presetAdjustmentResult.p95.toFixed(3);
+      report.dataset.presetAdjustmentError = presetAdjustmentResult.geometryError.toFixed(3);
       const vertexResult = await runEditorVertexBrowserContract({ openEditor, createVertexEditor, load });
       report.dataset.vertexP95 = vertexResult.p95.toFixed(3);
       report.dataset.vertexError = vertexResult.geometryError.toFixed(3);

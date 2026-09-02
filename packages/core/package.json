@@ -61,6 +61,10 @@
       "types": "./dist/geometry/index.d.ts",
       "import": "./dist/geometry.js"
     },
+    "./geometry/handles": {
+      "types": "./dist/geometry/handles/index.d.ts",
+      "import": "./dist/geometry-handles.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -70,7 +74,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.handles.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

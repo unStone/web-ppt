@@ -1,5 +1,5 @@
 import type {
-  CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar,
+  CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar, GeomSpec,
 } from '@web-ppt/core';
 import { own } from '../data-validation';
 import { insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren } from '../xml/nodes';
@@ -82,6 +82,36 @@ function newCustomGeometry(properties: XmlElement, geometry: CustomGeometry): Xm
   return custom;
 }
 
+function presetAdjustmentList(
+  namespaceContext: XmlElement,
+  parent: XmlElement,
+  geometry: GeomSpec,
+): XmlElement {
+  const list = namespacedElement(namespaceContext, DRAWINGML_NS, 'avLst');
+  for (const [name, value] of Object.entries(geometry.adj)) {
+    const guide = namespacedElement(namespaceContext, DRAWINGML_NS, 'gd');
+    setXmlAttribute(guide, 'name', name);
+    setXmlAttribute(guide, 'fmla', `val ${coordinate(value, `adj.${name}`)}`);
+    insertXmlChildUnchecked(list, guide);
+  }
+  return list;
+}
+
+function newPresetGeometry(properties: XmlElement, geometry: GeomSpec): XmlElement {
+  const preset = namespacedElement(properties, DRAWINGML_NS, 'prstGeom');
+  setXmlAttribute(preset, 'prst', geometry.preset);
+  insertXmlChildUnchecked(preset, presetAdjustmentList(properties, preset, geometry));
+  return preset;
+}
+
+function removeDuplicateGeometry(properties: XmlElement, keep: XmlElement): void {
+  // 畸形来源也必须收敛到一个几何节点，否则 Office 对“哪个生效”并不一致。
+  for (const child of [...xmlElementChildren(properties)]) {
+    if (child !== keep && child.namespaceUri === DRAWINGML_NS
+      && ['custGeom', 'prstGeom'].includes(child.localName)) removeXmlChild(properties, child);
+  }
+}
+
 function shapeProperties(document: XmlDocument, record: ElementRecord): XmlElement {
   const { host } = locateElementHost(document, record);
   const properties = findXmlChild(host, { localName: 'spPr', namespaceUri: PRESENTATIONML_NS });
@@ -90,17 +120,33 @@ function shapeProperties(document: XmlDocument, record: ElementRecord): XmlEleme
 }
 
 export function hasGeometryOverride(record: ElementRecord): boolean {
-  return own(record.ovr, 'geometry');
+  return own(record.ovr, 'geometry') || own(record.ovr, 'presetGeometry');
 }
 
 /** 来源 custGeom 只换 pathLst；调整公式、手柄、连接点和未知扩展继续占原槽位。 */
 export function patchElementGeometry(document: XmlDocument, record: ElementRecord): void {
   if (!hasGeometryOverride(record)) return;
-  const geometry = record.ovr.geometry!;
   const properties = shapeProperties(document, record);
   const current = xmlElementChildren(properties).find((child) =>
     child.namespaceUri === DRAWINGML_NS && ['custGeom', 'prstGeom'].includes(child.localName));
   if (!current) throw new Error(`元素 ${record.id} 缺少来源几何节点`);
+  if (own(record.ovr, 'presetGeometry')) {
+    const geometry = record.ovr.presetGeometry!;
+    if (current.localName === 'prstGeom') {
+      setXmlAttribute(current, 'prst', geometry.preset);
+      const existing = findXmlChild(current, { localName: 'avLst', namespaceUri: DRAWINGML_NS });
+      const replacement = presetAdjustmentList(current, current, geometry);
+      if (existing) replaceXmlChildren(current, existing, [replacement]);
+      else insertXmlChildUnchecked(current, replacement, current.children[0] ?? null);
+      removeDuplicateGeometry(properties, current);
+      return;
+    }
+    const replacement = newPresetGeometry(properties, geometry);
+    replaceXmlChildren(properties, current, [replacement]);
+    removeDuplicateGeometry(properties, replacement);
+    return;
+  }
+  const geometry = record.ovr.geometry!;
   if (current.localName === 'custGeom') {
     const existing = findXmlChild(current, { localName: 'pathLst', namespaceUri: DRAWINGML_NS });
     if (!existing) throw new Error(`元素 ${record.id} 的 custGeom 缺少 pathLst`);
@@ -109,9 +155,5 @@ export function patchElementGeometry(document: XmlDocument, record: ElementRecor
   }
   const replacement = newCustomGeometry(properties, geometry);
   replaceXmlChildren(properties, current, [replacement]);
-  // 同一 spPr 内不允许第二个几何节点；畸形来源也收敛成显式转换结果。
-  for (const child of [...xmlElementChildren(properties)]) {
-    if (child !== replacement && child.namespaceUri === DRAWINGML_NS
-      && ['custGeom', 'prstGeom'].includes(child.localName)) removeXmlChild(properties, child);
-  }
+  removeDuplicateGeometry(properties, replacement);
 }

@@ -15,6 +15,8 @@ const out = join(root, 'out/site-editor-browser');
 mkdirSync(out, { recursive: true });
 const bundle = join(out, 'editor-page.js');
 const aliases = [
+  ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core/generate', join(root, 'packages/edit-core/src/generate/index.ts')],
@@ -46,6 +48,7 @@ const routes = new Map([
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
   ['/fixtures/sample-editor-shape-format.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx'))]],
+  ['/fixtures/sample-editor-preset-shape.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-preset-shape.pptx'))]],
   ['/fixtures/sample-editor-text.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-text.pptx'))]],
   ['/fixtures/sample-editor-image-content.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-image-content.pptx'))]],
   ['/fixtures/sample-editor-format-painter.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-format-painter.pptx'))]],
@@ -378,6 +381,35 @@ async function runContract(webSocketDebuggerUrl) {
       throw new Error(`下载结果不符合 .ppt 另存契约：${JSON.stringify({ ...downloaded, bytes: downloaded.bytes.slice(0, 4) })}`);
     }
     writeFileSync(join(out, 'sample.pptx'), Uint8Array.from(downloaded.bytes));
+    await evaluate(`(async () => {
+      const bytes = await fetch('/fixtures/sample-editor-preset-shape.pptx')
+        .then((response) => response.arrayBuffer());
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([bytes], 'sample-editor-preset-shape.pptx', {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }));
+      const input = document.querySelector('#fileInput');
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`, true);
+    await waitFor(`document.querySelector('#fileName')?.textContent === 'sample-editor-preset-shape.pptx'
+      && document.querySelectorAll('[data-edit-id]').length >= 60
+      && !document.querySelector('#editorApp')?.dataset.loading`, '预设形状固件就绪');
+    await click('[data-edit-id]');
+    await waitFor(`!document.querySelector('#shapeInspector')?.hidden
+      && document.querySelector('#shapePreset')?.value === 'roundRect'`, '预设形状检查器');
+    await click('#startShapeAdjustments');
+    await waitFor("!!document.querySelector('[data-ppt-preset-handle]')", '预设形状调节柄');
+    const switched = await evaluate(`(() => {
+      const select = document.querySelector('#shapePreset');
+      select.value = 'hexagon';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return select.value;
+    })()`);
+    await waitFor(`document.querySelector('#shapePreset')?.value === 'hexagon'
+      && document.querySelector('#fileName')?.textContent.startsWith('●')
+      && !!document.querySelector('[data-ppt-preset-handle]')`, '官网预设形状切换');
+    if (switched !== 'hexagon') throw new Error('官网形状类型控件无法选择完整预设目录');
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {
@@ -394,7 +426,8 @@ try {
   const url = `http://127.0.0.1:${address.port}/editor.html`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(`\n\x1b[32m✓ 官网编辑工具栏与 .ppt 转换闭环通过（下载 ${result.bytes} bytes）\x1b[0m`);
+  console.log(`\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
+    + `（下载 ${result.bytes} bytes）\x1b[0m`);
 } finally {
   if (browserRunning()) {
     child.kill('SIGTERM');

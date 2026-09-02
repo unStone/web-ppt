@@ -8,6 +8,7 @@ import { runCollabSlideIdentityContract } from './lib/collab-slide-identity-cont
 import { runCollabHardeningContract } from './lib/collab-hardening-contract.mjs';
 import { runCollabAtomicContract } from './lib/collab-atomic-contract.mjs';
 import { runCollabProtocolContract } from './lib/collab-protocol-contract.mjs';
+import { runPresetShapeCollabContract } from './lib/preset-shape-collab-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,6 +26,7 @@ const bundle = (entry, name, aliases = [], externals = []) => {
 };
 
 const runtimeFile = bundle(join(root, 'tooling/lib/collab-test-runtime.ts'), 'runtime', [
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
@@ -481,6 +483,10 @@ await runCollabHardeningContract({
 await runCollabProtocolContract({
   bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
   semanticDoc, seededShuffle, stringDiff,
+});
+
+await runPresetShapeCollabContract({
+  bindPair, check, createPair, edit, OfflineHub, semanticDoc, seededShuffle, stringDiff,
 });
 
 await runCollabAtomicContract({

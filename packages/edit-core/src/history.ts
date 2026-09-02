@@ -7,6 +7,8 @@ interface StoredHistoryEntry extends HistoryEntry {
   readonly beforeState: number;
   readonly afterState: number;
   readonly links: readonly StoredPatchLink[];
+  /** 条目内容不可变；创建时精确计量一次，清理 redo 不再重复序列化大结构快照。 */
+  readonly storedBytes: number;
 }
 
 interface StoredPatchLink { readonly trigger: string; readonly related: readonly string[] }
@@ -176,11 +178,13 @@ export class HistoryStore implements History {
         const forward = entry.forward.filter((patch) => !conflicts(patch));
         if (forward.length === entry.forward.length) continue;
         const inverse = entry.inverse.filter((patch) => !conflicts(patch));
-        this.bytes -= this.sizeOf(entry);
+        this.bytes -= entry.storedBytes;
         if (!forward.length) list.splice(index, 1);
         else {
-          list[index] = { ...entry, forward, inverse, links: survivingLinks(entry.links, forward) };
-          this.bytes += this.sizeOf(list[index]);
+          list[index] = this.withStoredBytes({
+            ...entry, forward, inverse, links: survivingLinks(entry.links, forward),
+          });
+          this.bytes += list[index].storedBytes;
         }
       }
     };
@@ -208,28 +212,28 @@ export class HistoryStore implements History {
     afterState: number,
     links: readonly HistoryPatchLink[] = [],
   ): void {
-    const next: StoredHistoryEntry = {
+    const next = this.withStoredBytes({
       ...cloneHistoryEntry(entry), beforeState, afterState, links: storeLinks(links),
-    };
+    });
     const previous = this.peekUndo();
     if (!this.mergeBarrier && previous && canMerge(previous, next)) {
-      const merged: StoredHistoryEntry = {
+      const merged = this.withStoredBytes({
         ...next,
         forward: compactPatches([...previous.forward, ...next.forward]),
         inverse: compactPatches([...next.inverse, ...previous.inverse]),
         selectionBefore: cloneSelection(previous.selectionBefore),
         beforeState: previous.beforeState,
         links: mergeLinks(previous.links, next.links),
-      };
-      this.bytes -= this.sizeOf(previous);
+      });
+      this.bytes -= previous.storedBytes;
       this.undoList[this.undoList.length - 1] = merged;
-      this.bytes += this.sizeOf(merged);
+      this.bytes += merged.storedBytes;
     } else {
       this.undoList.push(next);
-      this.bytes += this.sizeOf(next);
+      this.bytes += next.storedBytes;
     }
     this.mergeBarrier = false;
-    for (const redo of this.redoList) this.bytes -= this.sizeOf(redo);
+    for (const redo of this.redoList) this.bytes -= redo.storedBytes;
     this.redoList.length = 0;
     this.rebudget();
   }
@@ -265,10 +269,16 @@ export class HistoryStore implements History {
       || this.bytes + this.externalBytes > this.byteLimit) {
       const removed = this.undoList.shift() ?? this.redoList.shift();
       if (!removed) break;
-      this.bytes -= this.sizeOf(removed);
+      this.bytes -= removed.storedBytes;
       measure();
     }
     this.hooks.changed?.(this.entries());
+  }
+
+  private withStoredBytes(
+    entry: Omit<StoredHistoryEntry, 'storedBytes'> | StoredHistoryEntry,
+  ): StoredHistoryEntry {
+    return { ...entry, storedBytes: this.sizeOf(entry) };
   }
 
   private sizeOf(entry: HistoryEntry): number {

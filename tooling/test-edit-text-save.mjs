@@ -8,6 +8,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-save');
 mkdirSync(out, { recursive: true });
 const aliases = [
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
 ];

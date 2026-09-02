@@ -17,6 +17,10 @@ export class EditorPatchJournal {
   private readonly pending: EditorPatchEvent[] = [];
   private dispatching = false;
 
+  get observed(): boolean {
+    return this.subscribers.size > 0 || this.beforeRecoverySubscribers.size > 0;
+  }
+
   subscribe(subscriber: EditorPatchSubscriber, options: EditorPatchSubscribeOptions = {}): () => void {
     if (typeof subscriber !== 'function') throw new Error('Patch 订阅者必须是函数');
     if (options.phase !== undefined && options.phase !== 'before-recovery'

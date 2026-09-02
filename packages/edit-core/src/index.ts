@@ -24,6 +24,7 @@ export { querySlideNotes } from './slide-notes';
 export { queryElementStroke } from './shape-stroke';
 export { queryElementEffects } from './shape-effects';
 export { queryElementCrop } from './image-content';
+export { queryElementPresetGeometry } from './preset-geometry';
 export { listTableStyles, queryTableStyle } from './table-style';
 export type { TableStyleCatalogItem, TableStyleState } from './table-style';
 export {
@@ -66,7 +67,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
+  CreateDocOptions, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphAutoNumberType, ParagraphBullet, ParagraphBulletInput, ParagraphBulletSize, ParagraphBulletStyle, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyInput, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SlideCreation, SlideNotesBinding, SlideRecord, SlideSource, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellOverrides, TableCellRef, TableCellRowRef, TableColumnId, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -85,7 +86,7 @@ export type {
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type {
-  ConvertToCustomGeometryCommand, ElementGeometryPatch, SetGeometryCommand,
+  ConvertToCustomGeometryCommand, ElementGeometryPatch, ElementPresetGeometryPatch, SetAdjCommand, SetGeometryCommand, SetPresetCommand,
 } from './commands/geometry-types';
 export type { SlideTransitionInput } from './slide-transition';
 export type {

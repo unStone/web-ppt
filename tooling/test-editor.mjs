@@ -45,6 +45,7 @@ import { runAnimationEditorContract } from './lib/animation-editor-contract.mjs'
 import { runListLevelEditorContract } from './lib/list-level-editor-contract.mjs';
 import { runShortcutAuditContract } from './lib/shortcut-audit-contract.mjs';
 import { runVertexEditorContract } from './lib/vertex-editor-contract.mjs';
+import { runPresetAdjustmentEditorContract } from './lib/preset-adjustment-editor-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,16 +57,29 @@ const bundle = join(out, 'editor.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
   `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
   `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
   `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
   `--outfile=${bundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const adjustmentsBundle = join(out, 'adjustments.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/editor/src/adjustments/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  `--outfile=${adjustmentsBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const vertexBundle = join(out, 'vertex.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/vertex/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
   `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
   `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
@@ -86,6 +100,7 @@ execFileSync('npx', [
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
 const vertex = await import(`file://${vertexBundle}?run=${Date.now()}`);
+const adjustments = await import(`file://${adjustmentsBundle}?run=${Date.now()}`);
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
 const viewer = await import(`file://${viewerBundle}?run=${Date.now()}`);
 const frameworkBundle = join(out, 'framework-adapters.mjs');
@@ -95,6 +110,7 @@ execFileSync('npx', [
   `--alias:@web-ppt/react=${join(root, 'packages/react/src/index.ts')}`,
   `--alias:@web-ppt/vue=${join(root, 'packages/vue/src/index.ts')}`,
   `--alias:@web-ppt/editor=${join(root, 'packages/editor/src/index.ts')}`,
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
   `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
   `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
@@ -292,6 +308,7 @@ await runParagraphFormatEditorContract({ check, lib, root, window: domEnvironmen
 await runListLevelEditorContract({ check, lib, root, window: domEnvironment.window });
 await runShortcutAuditContract({ check, lib, root, window: domEnvironment.window });
 await runVertexEditorContract({ check, lib, vertex, root });
+await runPresetAdjustmentEditorContract({ adjustments, check, lib, root });
 await runRichTextClipboardEditorContract({ check, lib, root, window: domEnvironment.window });
 await runEngineTextEditorContract({ check, lib, root, window: domEnvironment.window });
 await runTableCellTextEditorContract({ check, lib, root, window: domEnvironment.window });

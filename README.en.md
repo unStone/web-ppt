@@ -34,7 +34,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 90.08 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 72.56 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 73.80 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 61.95 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 10.70 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.02 KB |
@@ -199,12 +199,26 @@ logical coordinates through the returned `transform`; math runs are atomic with 
 
 When a preset shape is resized, projection recomputes its path from the retained `preset + adj`.
 `doc.meta.readonly` explicitly reports missing safe save context before the user starts editing.
+Submit `SetPreset` to change its type and `SetAdj` to write an adjustment value. Load the visual handles only
+when the editor needs them:
+
+```ts
+import { resolvePresetAdjustmentHandles } from '@web-ppt/core/geometry/handles';
+import { createPresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
+
+const handles = resolvePresetAdjustmentHandles({ preset: 'roundRect', adj: {} }, 320, 180);
+const adjustments = createPresetAdjustmentEditor(session, view);
+adjustments.start(elementId); // interaction-layer preview; pointerup creates one undo unit
+```
+
+The generated table covers all 187 standard presets, 120 with handles. Formulas evaluate in EMUs, and the
+default core, edit-core, and editor entries do not contain the table.
 The save path can lazy-load `@web-ppt/edit-core/xml`. Its preserving tree round-trips untouched parts byte
 for byte and retains declarations, comments, PIs, namespace prefixes, attribute order, self-closing form,
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. The main editing graph is 72.56 KB gzip including static shared chunks;
+return an explainable fallback reason. The main editing graph is 73.80 KB gzip including static shared chunks;
 the first save adds 8.30 KB on demand.
 
 ### Bring your own UI
@@ -348,8 +362,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,168 assertions + 178 render snapshots |
-| `npm run test:edit` | 988 edit-model + 464 save + 9 PowerPoint-evidence assertions, plus 494 process-isolated SVG fingerprint pairs across 73 fixtures |
-| `npm run test:editor` | 389 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:edit` | 1,009 edit-model + 469 save + 9 PowerPoint-evidence assertions, plus 496 process-isolated SVG fingerprint pairs across 74 fixtures |
+| `npm run test:editor` | 394 adapter/session/incremental DOM/selection/gesture/text/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |

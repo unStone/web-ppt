@@ -23,6 +23,7 @@ const editLib = EDIT_MODE() ? await (async () => {
   const file = join(root, 'out/core/bench-edit.mjs');
   execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/index.ts'), '--bundle', '--format=esm',
     '--platform=browser', '--log-level=error',
+    `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
     `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
     `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
   return import(`file://${file}?t=${Date.now()}`);
@@ -43,6 +44,7 @@ const editSaveLib = EDIT_MODE() ? await (async () => {
   const file = join(root, 'out/core/bench-edit-save.mjs');
   execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/save/index.ts'), '--bundle', '--format=esm',
     '--platform=browser', '--log-level=error',
+    `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
     `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
     `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
   return import(`file://${file}?t=${Date.now()}`);

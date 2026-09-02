@@ -5,6 +5,10 @@
 import { attr, kid, kids, numAttr } from '../xml';
 import { ep, n, rad } from '../geometry';
 import type { Adj, Geom, Pt } from '../geometry';
+import {
+  builtinGuideValues, DRAWINGML_DEGREE, evaluateGuideDefinitions, guideToken,
+} from '../geometry/guides';
+import type { GuideDefinition } from '../geometry/guides';
 import type {
   CustomGeometry, CustomGeometryCommand, CustomGeometryGuide, CustomGeometryPoint,
   CustomGeometryPointRole, CustomGeometryScalar,
@@ -29,80 +33,29 @@ export function parseAdjustments(avLst: Element | null): Adj {
 
 // ---------------- custGeom + guide 公式求值 ----------------
 
-const DEG = 60000;
-
-function builtinGuides(w: number, h: number): Record<string, number> {
-  const ss = Math.min(w, h);
-  const g: Record<string, number> = {
-    l: 0, t: 0, r: w, b: h, w, h, hc: w / 2, vc: h / 2,
-    ls: Math.max(w, h), ss,
-    cd2: 180 * DEG, cd4: 90 * DEG, cd8: 45 * DEG,
-    '3cd4': 270 * DEG, '3cd8': 135 * DEG, '5cd8': 225 * DEG, '7cd8': 315 * DEG,
-  };
-  for (const d of [2, 3, 4, 5, 6, 8, 10, 32]) {
-    g[`hd${d}`] = h / d;
-    g[`wd${d}`] = w / d;
-  }
-  for (const d of [2, 4, 6, 8, 16, 32]) g[`ssd${d}`] = ss / d;
-  return g;
-}
-
-function evalGuides(gdLst: Element | null, g: Record<string, number>): Record<string, number> {
-  const val = (tok: string): number => {
-    if (tok in g) return g[tok];
-    const num = Number(tok);
-    return Number.isFinite(num) ? num : 0;
-  };
-  for (const gd of kids(gdLst, 'gd')) {
-    const name = attr(gd, 'name');
-    const fmla = attr(gd, 'fmla');
-    if (!name || !fmla) continue;
-    const [op, ...args] = fmla.trim().split(/\s+/);
-    const x = val(args[0] ?? '0'), y = val(args[1] ?? '0'), z = val(args[2] ?? '0');
-    let r: number;
-    switch (op) {
-      case '*/': r = z === 0 ? 0 : (x * y) / z; break;
-      case '+-': r = x + y - z; break;
-      case '+/': r = z === 0 ? 0 : (x + y) / z; break;
-      case '?:': r = x > 0 ? y : z; break;
-      case 'abs': r = Math.abs(x); break;
-      case 'at2': r = (Math.atan2(y, x) * 180 * DEG) / Math.PI; break;
-      case 'cat2': r = x * Math.cos(Math.atan2(z, y)); break;
-      case 'cos': r = x * Math.cos(rad(y / DEG)); break;
-      case 'max': r = Math.max(x, y); break;
-      case 'min': r = Math.min(x, y); break;
-      case 'mod': r = Math.sqrt(x * x + y * y + z * z); break;
-      case 'pin': r = y < x ? x : y > z ? z : y; break;
-      case 'sat2': r = x * Math.sin(Math.atan2(z, y)); break;
-      case 'sin': r = x * Math.sin(rad(y / DEG)); break;
-      case 'sqrt': r = Math.sqrt(Math.max(x, 0)); break;
-      case 'tan': r = x * Math.tan(rad(y / DEG)); break;
-      case 'val': r = x; break;
-      default: r = 0;
-    }
-    g[name] = Number.isFinite(r) ? r : 0;
-  }
-  return g;
-}
-
-function geometryGuides(list: Element | null): CustomGeometryGuide[] {
+function geometryGuideDefinitions(list: Element | null): GuideDefinition[] {
   return kids(list, 'gd').flatMap((guide) => {
     const name = attr(guide, 'name');
     const formula = attr(guide, 'fmla');
-    return name && formula ? [{ name, formula }] : [];
+    return name && formula ? [[name, formula] as const] : [];
   });
 }
 
+const geometryGuides = (definitions: readonly GuideDefinition[]): CustomGeometryGuide[] =>
+  definitions.map(([name, formula]) => ({ name, formula }));
+
 /** edit 模式专用：表达式原样保留，交互使用同一 guide 求值后的数值。 */
 export function customGeometryModel(custGeom: Element, w: number, h: number): CustomGeometry {
-  const adjustments = geometryGuides(kid(custGeom, 'avLst'));
-  const guides = geometryGuides(kid(custGeom, 'gdLst'));
+  const adjustmentDefinitions = geometryGuideDefinitions(kid(custGeom, 'avLst'));
+  const guideDefinitions = geometryGuideDefinitions(kid(custGeom, 'gdLst'));
+  const adjustments = geometryGuides(adjustmentDefinitions);
+  const guides = geometryGuides(guideDefinitions);
   const paths = kids(kid(custGeom, 'pathLst'), 'path').map((path, pathIndex) => {
     const width = numAttr(path, 'w') || w * 9525;
     const height = numAttr(path, 'h') || h * 9525;
-    const values = builtinGuides(width, height);
-    evalGuides(kid(custGeom, 'avLst'), values);
-    evalGuides(kid(custGeom, 'gdLst'), values);
+    const values = builtinGuideValues(width, height);
+    evaluateGuideDefinitions(adjustmentDefinitions, values);
+    evaluateGuideDefinitions(guideDefinitions, values);
     const scalar = (expression: string | null): CustomGeometryScalar => {
       const source = expression ?? '0';
       const parsed = source in values ? values[source] : Number(source);
@@ -178,6 +131,8 @@ export function customGeometryModel(custGeom: Element, w: number, h: number): Cu
 export function custGeomPath(custGeom: Element, w: number, h: number): Geom | null {
   const paths = kids(kid(custGeom, 'pathLst'), 'path');
   if (!paths.length) return null;
+  const adjustmentDefinitions = geometryGuideDefinitions(kid(custGeom, 'avLst'));
+  const guideDefinitions = geometryGuideDefinitions(kid(custGeom, 'gdLst'));
 
   const out: string[] = [];
   let anyFill = false;
@@ -189,19 +144,14 @@ export function custGeomPath(custGeom: Element, w: number, h: number): Geom | nu
     // 路径坐标空间：path 自带 w/h 时用它，否则用形状的 EMU 尺寸
     const spaceW = pw || w * 9525;
     const spaceH = ph || h * 9525;
-    const g = builtinGuides(spaceW, spaceH);
-    evalGuides(kid(custGeom, 'avLst'), g);
-    evalGuides(kid(custGeom, 'gdLst'), g);
+    const g = builtinGuideValues(spaceW, spaceH);
+    evaluateGuideDefinitions(adjustmentDefinitions, g);
+    evaluateGuideDefinitions(guideDefinitions, g);
 
     const sx = spaceW ? w / spaceW : 1;
     const sy = spaceH ? h / spaceH : 1;
 
-    const num = (v: string | null): number => {
-      if (v === null) return 0;
-      if (v in g) return g[v];
-      const parsed = Number(v);
-      return Number.isFinite(parsed) ? parsed : 0;
-    };
+    const num = (v: string | null): number => guideToken(v, g);
     const ptOf = (el: Element | null): Pt => [num(attr(el, 'x')) * sx, num(attr(el, 'y')) * sy];
 
     if ((attr(p, 'fill') ?? 'norm') !== 'none') anyFill = true;
@@ -237,8 +187,8 @@ export function custGeomPath(custGeom: Element, w: number, h: number): Geom | nu
         case 'arcTo': {
           const wr = num(attr(cmd, 'wR')) * sx;
           const hr = num(attr(cmd, 'hR')) * sy;
-          const stAng = num(attr(cmd, 'stAng')) / DEG;
-          const swAng = num(attr(cmd, 'swAng')) / DEG;
+          const stAng = num(attr(cmd, 'stAng')) / DRAWINGML_DEGREE;
+          const swAng = num(attr(cmd, 'swAng')) / DRAWINGML_DEGREE;
           const ccx = cx - wr * Math.cos(rad(stAng));
           const ccy = cy - hr * Math.sin(rad(stAng));
           const steps = Math.max(1, Math.ceil(Math.abs(swAng) / 180));

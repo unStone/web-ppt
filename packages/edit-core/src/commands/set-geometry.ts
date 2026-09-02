@@ -2,7 +2,9 @@ import { own } from '../data-validation';
 import { assertCustomGeometryOverride } from '../custom-geometry';
 import type { EditDoc } from '../types';
 import type { CommandPatches } from './types';
-import type { ElementGeometryPatch, SetGeometryCommand } from './geometry-types';
+import type {
+  ElementGeometryPatch, ElementPresetGeometryPatch, SetGeometryCommand,
+} from './geometry-types';
 
 export function setGeometryPatches(
   doc: EditDoc,
@@ -24,11 +26,22 @@ export function setGeometryPatches(
   }
   const path = ['elements', command.id, 'ovr', 'geometry'] as const;
   const hadOverride = own(record.ovr, 'geometry');
+  const presetPath = ['elements', command.id, 'ovr', 'presetGeometry'] as const;
+  const hadPresetOverride = own(record.ovr, 'presetGeometry');
+  const presetForward: ElementPresetGeometryPatch = { op: 'del', path: presetPath, origin };
+  const presetInverse: ElementPresetGeometryPatch[] = hadPresetOverride
+    ? [{
+      op: 'set', path: presetPath,
+      value: structuredClone(record.ovr.presetGeometry!), origin,
+    }] : [];
   if (command.geometry === null) {
     if (!hadOverride) return { forward: [], inverse: [] };
     return {
-      forward: [{ op: 'del', path, origin }],
-      inverse: [{ op: 'set', path, value: structuredClone(record.ovr.geometry!), origin }],
+      forward: [presetForward, { op: 'del', path, origin }],
+      inverse: [
+        { op: 'set', path, value: structuredClone(record.ovr.geometry!), origin },
+        ...presetInverse,
+      ],
     };
   }
   if (hadOverride && JSON.stringify(record.ovr.geometry) === JSON.stringify(command.geometry)) {
@@ -40,5 +53,5 @@ export function setGeometryPatches(
   const inverse: ElementGeometryPatch = hadOverride
     ? { op: 'set', path, value: structuredClone(record.ovr.geometry!), origin }
     : { op: 'del', path, origin };
-  return { forward: [forward], inverse: [inverse] };
+  return { forward: [presetForward, forward], inverse: [inverse, ...presetInverse] };
 }

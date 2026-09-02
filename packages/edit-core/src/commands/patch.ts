@@ -55,7 +55,9 @@ import {
   applyElementInteractionPatch, isElementInteractionPatch, validateElementInteractionPatch,
 } from './element-interaction';
 import {
-  applyElementGeometryPatch, isElementGeometryPatch, validateElementGeometryPatch,
+  applyElementGeometryPatch, applyElementPresetGeometryPatch,
+  isElementGeometryPatch, isElementPresetGeometryPatch,
+  validateElementGeometryPatch, validateElementPresetGeometryPatch,
 } from './element-geometry';
 import {
   applyElementTableStylePatch, isElementTableStylePatch, validateElementTableStylePatch,
@@ -182,6 +184,10 @@ function validatePatch(
   }
   if (isElementGeometryPatch(input)) {
     validateElementGeometryPatch(doc, input, index);
+    return;
+  }
+  if (isElementPresetGeometryPatch(input)) {
+    validateElementPresetGeometryPatch(doc, input, index);
     return;
   }
   if (isElementTableStylePatch(input)) {
@@ -379,6 +385,7 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
     else if (isElementLinkPatch(patch)) applyElementLinkPatch(doc, patch);
     else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
     else if (isElementGeometryPatch(patch)) applyElementGeometryPatch(doc, patch);
+    else if (isElementPresetGeometryPatch(patch)) applyElementPresetGeometryPatch(doc, patch);
     else if (isElementTableStylePatch(patch)) applyElementTableStylePatch(doc, patch);
     else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);

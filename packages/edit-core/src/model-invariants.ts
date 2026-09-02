@@ -28,6 +28,7 @@ import { assertElementName } from './element-name';
 import { assertStoredSlideTransition } from './slide-transition';
 import { assertStoredSlideAnimations } from './slide-animation';
 import { assertCustomGeometryOverride } from './custom-geometry';
+import { assertPresetGeometry } from './preset-geometry';
 import { assertTableStyleSettings } from './table-style';
 import {
   assertTableCellOverrides, assertTableGridOverrides, assertTableRows,
@@ -456,6 +457,13 @@ export function validateEditDoc(doc: EditDoc): void {
         record.ovr.geometry,
         `元素 ${id} 的自定义几何覆盖`,
       );
+    }
+    if (own(record.ovr, 'presetGeometry')) {
+      if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
+        throw new Error(`元素 ${id} 不支持预设几何覆盖`);
+      }
+      if (own(record.ovr, 'geometry')) throw new Error(`元素 ${id} 不能同时覆盖预设与自由几何`);
+      assertPresetGeometry(record.ovr.presetGeometry, `元素 ${id} 的预设几何覆盖`);
     }
     if (record.meta.imageReplacement) {
       if (record.src.kind !== 'image' || !isEditablePicture(record.src)

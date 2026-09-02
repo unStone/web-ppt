@@ -1,4 +1,4 @@
-import type { CustomGeometry } from '@web-ppt/core';
+import type { CustomGeometry, GeomSpec } from '@web-ppt/core';
 import type { ElementId } from '../types';
 
 export interface SetGeometryCommand {
@@ -13,6 +13,20 @@ export interface ConvertToCustomGeometryCommand {
   readonly id: ElementId;
 }
 
+export interface SetPresetCommand {
+  readonly type: 'SetPreset';
+  readonly id: ElementId;
+  /** 切换预设会按规范清空旧 avLst；其它形状属性不进入该命令。 */
+  readonly preset: string;
+}
+
+export interface SetAdjCommand {
+  readonly type: 'SetAdj';
+  readonly id: ElementId;
+  readonly name: string;
+  readonly value: number;
+}
+
 export type ElementGeometryPatch = {
   readonly op: 'set';
   readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
@@ -21,5 +35,16 @@ export type ElementGeometryPatch = {
 } | {
   readonly op: 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
+  readonly origin: string;
+};
+
+export type ElementPresetGeometryPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
+  readonly value: GeomSpec;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
   readonly origin: string;
 };

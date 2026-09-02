@@ -36,6 +36,7 @@ import { runGroupUngroupSaveContract } from './lib/group-ungroup-save-contract.m
 import { runListLevelSaveContract } from './lib/list-level-save-contract.mjs';
 import { runBulletFormatSaveContract } from './lib/bullet-format-save-contract.mjs';
 import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
+import { runPresetShapeSaveContract } from './lib/preset-shape-save-contract.mjs';
 import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
@@ -53,6 +54,7 @@ for (const { file } of EDIT_SAVE_OFFICE_ARTIFACTS) {
 if (existsSync(manifestPath)) unlinkSync(manifestPath);
 
 const aliases = [
+  ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
 ];
@@ -121,6 +123,17 @@ await runBulletFormatSaveContract({
   },
 });
 await runVertexSaveContract({ edit, core, load, check, saveArtifact });
+await runPresetShapeSaveContract({
+  core, edit, generate, load, check, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
 await runTableStyleSaveContract({
   edit, core, load, check, saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
