@@ -246,6 +246,13 @@ export interface SetRunPropsCommand {
   readonly props: RunPropertyOverrides;
 }
 
+export interface ClearFormatCommand {
+  readonly type: 'ClearFormat';
+  readonly id: ElementId;
+  readonly cell?: TableCellAddress;
+  readonly range: TextRange;
+}
+
 export interface SetParaPropsCommand {
   readonly type: 'SetParaProps';
   readonly id: ElementId;
@@ -334,7 +341,7 @@ export interface SetCellPropsCommand {
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand
   | SetLockedCommand | SetElementHiddenCommand
   | ApplyFormatCommand | ReplaceTextCommand
-  | AlignElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | SetParaPropsCommand
+  | AlignElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand
   | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand
   | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand
   | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand

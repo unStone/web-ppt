@@ -1,6 +1,6 @@
-import { TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import type { FlatTextParagraph, RunProperties, TextMark } from '../types';
+import { FONT_DIRECT_BITS, RUN_STYLE_DIRECT_FIELDS } from '../run-property-fields';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS } from '../xml/qname';
 import { removeXmlChild } from '../xml/nodes';
@@ -43,6 +43,14 @@ function setColor(properties: XmlElement, color: string | null): void {
   insertXmlInOrder(properties, fill);
 }
 
+function setHighlight(properties: XmlElement, color: string | null): void {
+  removePropertyChildren(properties, ['highlight']);
+  if (color === null) return;
+  const highlight = namespacedElement(properties, DRAWINGML_NS, 'highlight');
+  appendDrawingColor(highlight, color);
+  insertXmlInOrder(properties, highlight);
+}
+
 export function applyRunOverrides(
   properties: XmlElement,
   mark: TextMark,
@@ -50,6 +58,16 @@ export function applyRunOverrides(
   clearedFallback?: Partial<RunProperties>,
 ): void {
   const overrides = mark.runOverrides;
+  if (mark.clearDirectFormatting) {
+    for (const name of [
+      'kumimoji', 'sz', 'b', 'i', 'u', 'strike', 'kern', 'cap', 'spc', 'normalizeH', 'baseline',
+    ]) removeXmlAttribute(properties, name);
+    removePropertyChildren(properties, [
+      'ln', 'noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill',
+      'effectLst', 'effectDag', 'highlight', 'uLnTx', 'uLn', 'uFillTx', 'uFill',
+      'latin', 'ea', 'cs',
+    ]);
+  }
   if (!overrides) return;
   if (own(overrides, 'font')) {
     const value = overrides.font === null && own(clearedFallback ?? {}, 'font')
@@ -65,8 +83,9 @@ export function applyRunOverrides(
     size: ['sz', (value: number) => String(Math.round(value * 75))],
     b: ['b', (value: boolean) => value ? '1' : '0'],
     i: ['i', (value: boolean) => value ? '1' : '0'],
-    u: ['u', (value: boolean) => value ? 'sng' : 'none'],
-    strike: ['strike', (value: boolean) => value ? 'sngStrike' : 'noStrike'],
+    spacing: ['spc', (value: number) => String(Math.round(value * 75))],
+    caps: ['cap', (value: string) => value],
+    baseline: ['baseline', (value: number) => String(Math.round(value * 1000))],
   } as const;
   for (const field of Object.keys(attributes) as (keyof typeof attributes)[]) {
     if (!own(overrides, field)) continue;
@@ -75,6 +94,30 @@ export function applyRunOverrides(
       ? clearedFallback![field] : overrides[field];
     if (value === null) removeXmlAttribute(properties, name);
     else setXmlAttribute(properties, name, (serialize as (input: never) => string)(value as never));
+  }
+  const underline = own(overrides, 'underline') ? overrides.underline
+    : own(overrides, 'u') ? overrides.u === null ? null : overrides.u ? 'sng' : 'none'
+      : undefined;
+  if (underline !== undefined) {
+    const value = underline === null && own(clearedFallback ?? {}, 'underline')
+      ? clearedFallback!.underline : underline;
+    if (value === null || value === undefined) removeXmlAttribute(properties, 'u');
+    else setXmlAttribute(properties, 'u', value);
+  }
+  const strikeType = own(overrides, 'strikeType') ? overrides.strikeType
+    : own(overrides, 'strike')
+      ? overrides.strike === null ? null : overrides.strike ? 'sngStrike' : 'noStrike'
+      : undefined;
+  if (strikeType !== undefined) {
+    const value = strikeType === null && own(clearedFallback ?? {}, 'strikeType')
+      ? clearedFallback!.strikeType : strikeType;
+    if (value === null || value === undefined) removeXmlAttribute(properties, 'strike');
+    else setXmlAttribute(properties, 'strike', value);
+  }
+  if (own(overrides, 'highlight')) {
+    const value = overrides.highlight === null && own(clearedFallback ?? {}, 'highlight')
+      ? clearedFallback!.highlight ?? null : overrides.highlight ?? null;
+    setHighlight(properties, value);
   }
   if (links && own(overrides, 'link') && overrides.link !== null) {
     patchHyperlinkNode(properties, overrides.link!, links);
@@ -96,14 +139,12 @@ export function clearedLevelRunFallback(
   const inherited = mark.inheritedProps;
   if (!direct || !inherited) return undefined;
   let fallback: Partial<RunProperties> = {};
-  for (const field of ['size', 'color', 'b', 'i', 'u', 'strike'] as const) {
-    if (mark.runOverrides[field] === null && direct & TEXT_RUN_DIRECT_BITS[field]) {
+  for (const [field, bit] of RUN_STYLE_DIRECT_FIELDS) {
+    if (mark.runOverrides[field] === null && direct & bit) {
       fallback = { ...fallback, [field]: inherited[field] };
     }
   }
-  const fontBits = TEXT_RUN_DIRECT_BITS.fonts | TEXT_RUN_DIRECT_BITS.fontLatin
-    | TEXT_RUN_DIRECT_BITS.fontEastAsian | TEXT_RUN_DIRECT_BITS.fontComplexScript;
-  if (mark.runOverrides.font === null && direct & fontBits) {
+  if (mark.runOverrides.font === null && direct & FONT_DIRECT_BITS) {
     fallback = { ...fallback, font: mark.inheritedFonts?.[0] ?? inherited.font };
   }
   return Object.keys(fallback).length ? fallback : undefined;

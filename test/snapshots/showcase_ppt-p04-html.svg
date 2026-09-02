@@ -28,7 +28,9 @@
 <span style="font-size:24px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">普通 </span>
 <span style="font-size:24px;color:rgb(0,0,0);font-weight:700;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">加粗</span>
 <span style="font-size:24px;color:rgb(0,0,0);font-style:italic;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 斜体</span>
-<span style="font-size:24px;color:rgb(0,0,0);text-decoration:underline;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 下划线</span>
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid"> 下划线</span>
+</span>
 <span style="font-size:24px;color:rgb(0,0,0);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 删除线</span>
 </div>
 <div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
@@ -153,12 +155,16 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:560px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:3.6px 7.2px 3.6px 7.2px;overflow:visible;">
 <div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <a href="https://example.com" target="_blank" rel="noopener noreferrer">
-<span style="font-size:18.67px;color:rgb(5,99,193);text-decoration:underline;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">外部超链接（example.com）</span>
+<span style="font-size:18.67px;color:rgb(5,99,193);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid">外部超链接（example.com）</span>
+</span>
 </a>
 </div>
 <div style="margin:0px 0 2px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <a data-slide="1" tabindex="0" role="link" style="cursor:pointer;text-decoration:underline">
-<span style="font-size:18.67px;color:rgb(5,99,193);text-decoration:underline;font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">跳转到第 1 页</span>
+<span style="font-size:18.67px;color:rgb(5,99,193);font-family:'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid">跳转到第 1 页</span>
+</span>
 </a>
 </div>
 </div>

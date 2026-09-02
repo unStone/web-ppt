@@ -205,4 +205,37 @@ export async function runEngineTextEditorContract({ check, lib, root, window }) 
     !browserContainer.querySelector('[data-layout="engine"]')
       && !browserContainer.querySelector('[data-engine-line]'));
   browserView.destroy(); browserSession.dispose(); browserContainer.remove();
+
+  const advancedBytes = new Uint8Array(readFileSync(
+    join(root, 'fixtures/sample-editor-advanced-run-format.pptx'),
+  ));
+  const advancedSession = await lib.openEditor(advancedBytes, { idPrefix: 'editor-advanced-engine-' });
+  const advancedRecord = Object.values(advancedSession.editor.doc.elements)
+    .find((candidate) => candidate.src.name === '高级字符格式直接值');
+  const advancedContainer = document.createElement('div');
+  document.body.append(advancedContainer);
+  const advancedView = advancedSession.mount(advancedContainer, { mode: 'edit', textMode: 'svg' });
+  advancedContainer.querySelector(`[data-edit-id="${advancedRecord.id}"]`).dispatchEvent(
+    new window.MouseEvent('dblclick', { bubbles: true, composed: true }),
+  );
+  const advancedEditable = advancedContainer
+    .querySelector(`[data-ppt-text-editor="${advancedRecord.id}"]`);
+  const advancedMarker = advancedEditable.querySelector('[data-r="0.0"][data-from]');
+  const advancedText = firstText(advancedMarker);
+  range = window.document.createRange();
+  range.setStart(advancedText, 0); range.setEnd(advancedText, 2);
+  window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+  const advancedCleared = advancedView.clearFormat();
+  const advancedRuns = advancedSession.editor.effectiveElement(advancedRecord.id)
+    .text.paragraphs[0].runs;
+  const rerenderedEngine = advancedContainer
+    .querySelector(`[data-ppt-text-editor="${advancedRecord.id}"] [data-layout="engine"]`);
+  check('Safari engine 行盒清除局部高级格式后保留源 run 边界与其余精确样式',
+    advancedCleared && !!rerenderedEngine
+      && advancedRuns.map((run) => run.text).join('') === 'Advanced Format'
+      && advancedRuns[0].text === 'Ad'
+      && advancedRuns[0].underline !== 'wavyDbl' && advancedRuns[0].strikeType !== 'dblStrike'
+      && advancedRuns[1].underline === 'wavyDbl' && advancedRuns[1].strikeType === 'dblStrike'
+      && advancedRuns[1].caps === 'all' && advancedRuns[1].baseline === 30);
+  advancedView.destroy(); advancedSession.dispose(); advancedContainer.remove();
 }

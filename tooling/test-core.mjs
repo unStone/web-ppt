@@ -288,6 +288,7 @@ const FIXTURES = [
   { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-embedfont.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-editor-engine-text.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-editor-advanced-run-format.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-editor-table-text.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample-editor-table-style.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample.ppt', minPages: 2, source: 'ppt' },

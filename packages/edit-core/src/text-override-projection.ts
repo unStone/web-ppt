@@ -1,10 +1,10 @@
-import {
-  paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS, textRunDirectFlags,
-} from '@web-ppt/core';
+import { paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS, textRunDirectFlags } from '@web-ppt/core';
 import type {
   Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo,
 } from '@web-ppt/core';
 import type { FlatTextParagraph, LinkOverride, TextMark, TextOverride } from './types';
+import { runProperties } from './run-style';
+import { FONT_DIRECT_BITS, FONT_OVERRIDE_BIT, RUN_DIRECT_FIELDS } from './run-property-fields';
 
 function runProps(run: TextRun): Omit<TextRun, 'text'> {
   const { text: _text, editInfo: _editInfo, ...props } = run;
@@ -15,14 +15,6 @@ function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
   const { runs: _runs, editInfo: _editInfo, ...props } = paragraph;
   return props;
 }
-
-const RUN_DIRECT_FIELDS = [
-  ['size', TEXT_RUN_DIRECT_BITS.size], ['color', TEXT_RUN_DIRECT_BITS.color],
-  ['b', TEXT_RUN_DIRECT_BITS.b], ['i', TEXT_RUN_DIRECT_BITS.i],
-  ['u', TEXT_RUN_DIRECT_BITS.u], ['strike', TEXT_RUN_DIRECT_BITS.strike],
-] as const;
-const FONT_DIRECT_BITS = TEXT_RUN_DIRECT_BITS.fonts | TEXT_RUN_DIRECT_BITS.fontLatin
-  | TEXT_RUN_DIRECT_BITS.fontEastAsian | TEXT_RUN_DIRECT_BITS.fontComplexScript;
 
 function fontSlots(fonts: readonly string[]): TextFontSlots {
   return {
@@ -44,15 +36,16 @@ function projectedRunEditInfo(
   useMarkProps = false,
 ): TextRunEditInfo | undefined {
   const overrides = mark.runOverrides;
-  let bits = sourceRun?.editInfo?.direct ?? 0;
+  let bits = mark.clearDirectFormatting ? 0 : sourceRun?.editInfo?.direct ?? 0;
   for (const [field, bit] of RUN_DIRECT_FIELDS) {
     if (!Object.prototype.hasOwnProperty.call(overrides ?? {}, field)) continue;
     bits = overrides?.[field] === null ? bits & ~bit : bits | bit;
   }
   if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'font')) {
-    bits = overrides?.font === null ? bits & ~FONT_DIRECT_BITS : bits | TEXT_RUN_DIRECT_BITS.fonts;
+    bits = overrides?.font === null ? bits & ~FONT_DIRECT_BITS : bits | FONT_OVERRIDE_BIT;
   }
-  if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly) return undefined;
+  if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly
+    && !mark.clearDirectFormatting) return undefined;
 
   const sourceInfo = sourceRun?.editInfo;
   const inheritedRunProps = useMarkProps
@@ -79,6 +72,12 @@ function projectedRunEditInfo(
         size: mark.inheritedProps?.size ?? props.size,
         color: mark.inheritedProps?.color ?? props.color,
         fonts: inheritedFonts,
+        underline: mark.inheritedProps?.underline,
+        strikeType: mark.inheritedProps?.strikeType,
+        highlight: mark.inheritedProps?.highlight,
+        spacing: mark.inheritedProps?.spacing || undefined,
+        caps: mark.inheritedProps?.caps === 'none' ? undefined : mark.inheritedProps?.caps,
+        baseline: mark.inheritedProps?.baseline || undefined,
       },
     inheritedFontSlots: structuredClone(inheritedSlots),
     direct: textRunDirectFlags(bits),
@@ -176,6 +175,26 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     }
   }
   const overrides = mark.runOverrides;
+  const sourceInherited = sourceRun?.editInfo?.inheritedRunProps
+    ? runProperties(sourceRun.editInfo.inheritedRunProps) : undefined;
+  const inherited = (useMarkProps ? mark.inheritedProps ?? sourceInherited
+    : sourceInherited ?? mark.inheritedProps) ?? runProperties(props);
+  if (mark.clearDirectFormatting) {
+    const full = (useMarkProps ? mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps
+      : sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps) ?? mark.props;
+    Object.assign(props, {
+      b: full.b, i: full.i, u: full.u, strike: full.strike,
+      size: full.size, color: full.color, fonts: [...full.fonts],
+      outline: full.outline ?? null, gradient: full.gradient ?? null,
+      highlight: full.highlight ?? null, underlineColor: full.underlineColor ?? null,
+    });
+    for (const field of ['underline', 'strikeType', 'baseline', 'spacing', 'caps'] as const) {
+      const value = full[field];
+      if (value === undefined || value === 'none' || value === 'noStrike' || value === 0) {
+        delete props[field];
+      } else props[field] = value as never;
+    }
+  }
   if (overrides?.font !== undefined) {
     const inheritedFonts = useMarkProps
       ? mark.inheritedFonts ?? sourceRun?.editInfo?.inheritedRunProps.fonts
@@ -184,14 +203,42 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
       ? [...(inheritedFonts ?? mark.props.fonts)]
       : overrides.font ? [overrides.font] : [];
   }
-  for (const field of ['size', 'color', 'b', 'i', 'u', 'strike'] as const) {
+  for (const field of ['size', 'color', 'b', 'i', 'highlight'] as const) {
     const value = overrides?.[field];
     if (value !== undefined) {
-      const inherited = useMarkProps
-        ? mark.inheritedProps?.[field] ?? sourceRun?.editInfo?.inheritedRunProps[field]
-        : sourceRun?.editInfo?.inheritedRunProps[field] ?? mark.inheritedProps?.[field];
-      (props as unknown as Record<string, unknown>)[field] = value === null ? inherited : value;
+      (props as unknown as Record<string, unknown>)[field] = value === null ? inherited[field] : value;
     }
+  }
+  const underlineOverride = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'underline')
+    ? overrides?.underline
+    : Object.prototype.hasOwnProperty.call(overrides ?? {}, 'u')
+      ? overrides?.u === null ? null : overrides?.u ? 'sng' : 'none'
+      : undefined;
+  if (underlineOverride !== undefined) {
+    const value = underlineOverride === null ? inherited.underline : underlineOverride;
+    props.u = value !== 'none';
+    if (value === 'none') delete props.underline;
+    else props.underline = value;
+  }
+  const strikeOverride = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'strikeType')
+    ? overrides?.strikeType
+    : Object.prototype.hasOwnProperty.call(overrides ?? {}, 'strike')
+      ? overrides?.strike === null ? null : overrides?.strike ? 'sngStrike' : 'noStrike'
+      : undefined;
+  if (strikeOverride !== undefined) {
+    const value = strikeOverride === null ? inherited.strikeType : strikeOverride;
+    props.strike = value !== 'noStrike';
+    if (value === 'noStrike') delete props.strikeType;
+    else props.strikeType = value;
+  }
+  for (const [field, empty] of [
+    ['spacing', 0], ['caps', 'none'], ['baseline', 0],
+  ] as const) {
+    const value = overrides?.[field];
+    if (value === undefined) continue;
+    const effective = value === null ? inherited[field] : value;
+    if (Object.is(effective, empty)) delete props[field];
+    else (props as unknown as Record<string, unknown>)[field] = effective;
   }
   if (props.field && sourceRun) {
     const preservesField = mark.preserveSource

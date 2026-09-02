@@ -65,7 +65,9 @@
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">自动编号二</tspan>
 </text>
 <text x="557.33" y="162.37" text-anchor="end" xml:space="preserve">
-<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="line-through">右对齐删除线</tspan>
+<tspan font-size="21.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:line-through;text-decoration-style:solid">右对齐删除线</tspan>
+</tspan>
 </text>
 </g>
 </g>

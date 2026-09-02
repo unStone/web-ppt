@@ -43,7 +43,9 @@
 <span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">混排：</span>
 <span style="font-size:32px;color:rgb(26,26,26);font-weight:700;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">加粗</span>
 <span style="font-size:32px;color:rgb(26,26,26);font-style:italic;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 斜体 </span>
-<span style="font-size:32px;color:rgb(237,125,49);text-decoration:underline;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">主题色下划线</span>
+<span style="font-size:32px;color:rgb(237,125,49);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid">主题色下划线</span>
+</span>
 <span style="font-size:18.67px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;"> 小字号</span>
 </div>
 </div>

@@ -100,7 +100,7 @@ function textOverride(
   if (body.warp) throw new Error('生成保存暂不支持艺术字变形');
   for (const paragraph of body.paragraphs) {
     for (const run of paragraph.runs) {
-      if (run.field || run.caps || run.outline || run.gradient || run.highlight
+      if (run.field || run.outline || run.gradient
         || run.underlineColor || run.shadow || run.math) {
         throw new Error('生成保存暂不支持当前文字的高级字符语义');
       }
@@ -139,6 +139,9 @@ function textOverride(
         const sourceParagraph = body.paragraphs[paragraphIndex];
         const sourceRun = sourceParagraph?.runs[markIndex];
         const direct = (sourceParagraph?.editInfo?.directRun ?? 0) | (sourceRun?.editInfo?.direct ?? 0);
+        const underline = mark.props.underline ?? (mark.props.u ? 'sng' : 'none');
+        const strikeType = mark.props.strikeType
+          ?? (mark.props.strike ? 'sngStrike' : 'noStrike');
         return {
           ...mark,
           source: undefined, preserveSource: undefined,
@@ -149,8 +152,12 @@ function textOverride(
             ...(tableStyleAware && direct & TEXT_RUN_DIRECT_BITS.color
               ? { color: mark.props.color } : {}),
             i: mark.props.i,
-            u: mark.props.u,
-            strike: mark.props.strike,
+            ...(underline !== 'none' ? { underline } : {}),
+            ...(strikeType !== 'noStrike' ? { strikeType } : {}),
+            ...(mark.props.highlight ? { highlight: mark.props.highlight } : {}),
+            ...(mark.props.spacing ? { spacing: mark.props.spacing } : {}),
+            ...(mark.props.caps && mark.props.caps !== 'none' ? { caps: mark.props.caps } : {}),
+            ...(mark.props.baseline ? { baseline: mark.props.baseline } : {}),
             ...(mark.props.link
               ? { link: generatedLink(doc, slideId, mark.props.link, '文字链接') } : {}),
           },

@@ -9,6 +9,7 @@ import type {
 } from './text-layout-types';
 import { publicSegments } from './text-layout-carets';
 import { warpSupported } from './text-warp-presets';
+import { bulletTextRun } from './text-decoration';
 
 export type {
   TextLayout,
@@ -222,7 +223,10 @@ function layoutParagraphs(t: TextBody, boxW: number, scale: number, measurer?: T
   return t.paragraphs.map((p) => {
     const first = p.runs[0];
     const bulletRun: TextRun | null = p.bullet && first
-      ? { ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1), color: p.bulletColor ?? first.color, u: false, strike: false }
+      ? bulletTextRun({
+        ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1),
+        color: p.bulletColor ?? first.color,
+      })
       : null;
     const runs: IndexedRun[] = [
       ...(bulletRun ? [{ run: bulletRun, runIndex: -1, bullet: true }] : []),

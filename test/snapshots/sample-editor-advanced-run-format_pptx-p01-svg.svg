@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="801" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 55)">
+<path d="M 0 0 L 1140 0 L 1140 86 L 0 86 Z" fill="none" fill-rule="nonzero"/>
+<rect x="9.6" y="38.27" width="171.6" height="17.47" fill="rgb(112,173,71)"/>
+<text x="9.6" y="51.06" text-anchor="start" xml:space="preserve">
+<tspan font-size="15.6" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(46,117,182)" letter-spacing="2" font-variant="small-caps" dy="3.9">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">
+<tspan style="text-decoration-line:line-through;text-decoration-style:double">Inherited small caps</tspan>
+</tspan>
+</tspan>
+<tspan dy="-3.9">
+</tspan>
+</text>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 165)">
+<path d="M 0 0 L 1140 0 L 1140 150 L 0 150 Z" fill="rgb(248,250,252)" fill-rule="nonzero"/>
+<text x="9.6" y="19.15" text-anchor="start" xml:space="preserve">
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">none </tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid;text-decoration-skip-spaces:all">words </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid">sng </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:double">dbl </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid;text-decoration-thickness:0.12em">heavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dotted">dotted </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dotted;text-decoration-thickness:0.12em">dottedHeavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed">dash </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dashHeavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed">dashLong </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dashLongHeavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed">dotDash </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dotDashHeavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed">dotDotDash </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dotDotDashHeavy </tspan>
+</tspan>
+</text>
+<text x="9.6" y="37.55" text-anchor="start" xml:space="preserve">
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:wavy">wavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:wavy;text-decoration-thickness:0.12em">wavyHeavy </tspan>
+</tspan>
+<tspan font-size="15.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:wavy">wavyDbl </tspan>
+</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 340)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(255,247,237)" fill-rule="nonzero"/>
+<rect x="9.6" y="39.22" width="157.3" height="21.35" fill="rgb(255,192,0)"/>
+<text x="9.6" y="54.86" text-anchor="start" xml:space="preserve">
+<tspan font-size="19.07" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(112,48,160)" letter-spacing="-3" dy="-8.58">
+<tspan style="text-decoration-line:underline;text-decoration-style:wavy">
+<tspan style="text-decoration-line:line-through;text-decoration-style:double">ADVANCED FORMAT</tspan>
+</tspan>
+</tspan>
+<tspan dy="8.58">
+</tspan>
+</text>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 455)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<text x="9.6" y="52.78" text-anchor="start" xml:space="preserve">
+<a href="https://example.com/advanced-format" target="_blank" rel="noopener noreferrer">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">2026-09-03</tspan>
+</tspan>
+</a>
+</text>
+<text x="134.27" y="52.78" text-anchor="start" xml:space="preserve">
+<tspan font-size="22.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:line-through;text-decoration-style:solid"> 公式 </tspan>
+</tspan>
+</text>
+<g transform="translate(204.53 52.78)">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+</g>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 570)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(240,253,244)" fill-rule="nonzero"/>
+<rect x="9.6" y="39.19" width="24000" height="13.44" fill="rgb(224,242,254)"/>
+<text x="9.6" y="49.03" text-anchor="start" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" letter-spacing="1">
+<tspan style="text-decoration-line:underline;text-decoration-style:dotted;text-decoration-thickness:0.12em">字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字</tspan>
+</tspan>
+</text>
+</g>
+</g>
+</svg>

@@ -22,7 +22,9 @@
 <tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">普通 </tspan>
 <tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">加粗</tspan>
 <tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic"> 斜体</tspan>
-<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline"> 下划线</tspan>
+<tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid"> 下划线</tspan>
+</tspan>
 <tspan font-size="24" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)"> 删除线</tspan>
 </text>
 <text x="7.2" y="56.86" text-anchor="start" xml:space="preserve">
@@ -136,12 +138,16 @@
 <path d="M 0 0 L 560 0 L 560 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
 <text x="7.2" y="21.07" text-anchor="start" xml:space="preserve">
 <a href="https://example.com" target="_blank" rel="noopener noreferrer">
-<tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)" text-decoration="underline">外部超链接（example.com）</tspan>
+<tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid">外部超链接（example.com）</tspan>
+</tspan>
 </a>
 </text>
 <text x="7.2" y="45.47" text-anchor="start" xml:space="preserve">
 <a data-slide="1" tabindex="0" role="link" style="cursor:pointer;text-decoration:underline">
-<tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)" text-decoration="underline">跳转到第 1 页</tspan>
+<tspan font-size="18.67" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(5,99,193)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid">跳转到第 1 页</tspan>
+</tspan>
 </a>
 </text>
 </g>

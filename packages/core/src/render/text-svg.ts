@@ -4,6 +4,7 @@ import { layoutText } from './text-layout';
 import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
 import { warpSupported } from './text-warp-presets';
 import { withHyperlink } from './hyperlink';
+import { bulletTextRun, decorateText } from './text-decoration';
 
 /**
  * 纯 SVG <text> 输出。断行和坐标统一由 text-layout 提供；这里仅负责 SVG 序列化、
@@ -89,8 +90,10 @@ export function renderTextSvg(
     const segs: Seg[] = line.segments.map((segment) => {
       const run = segment.runIndex >= 0
         ? para.runs[segment.runIndex]
-        : { ...first, text: `${para.bullet} `, size: first.size * (para.bulletSize ?? 1),
-          color: para.bulletColor ?? first.color, u: false, strike: false };
+        : bulletTextRun({
+          ...first, text: `${para.bullet} `, size: first.size * (para.bulletSize ?? 1),
+          color: para.bulletColor ?? first.color,
+        });
       return {
         text: segment.text, run, width: segment.naturalWidth,
         paragraphIndex: line.paragraphIndex, runIndex: segment.runIndex,
@@ -240,17 +243,14 @@ function spanSvg(
   if (run.b) attrs.push('font-weight="700"');
   if (run.i) attrs.push('font-style="italic"');
   if (run.spacing) attrs.push(`letter-spacing="${r(run.spacing)}"`);
-  const deco: string[] = [];
-  if (run.u) deco.push('underline');
-  if (run.strike) deco.push('line-through');
-  if (deco.length) attrs.push(`text-decoration="${deco.join(' ')}"`);
+  if (run.caps === 'small') attrs.push('font-variant="small-caps"');
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
   if (run.outline) attrs.push(`stroke="${esc(run.outline.color)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
   if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
   const marker = includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0
     ? ` data-r="${seg.paragraphIndex}.${seg.runIndex}" data-from="${seg.from}" data-to="${seg.to}"`
     : '';
-  const span = `<tspan${marker} ${attrs.join(' ')}>${esc(seg.text)}</tspan>`;
+  const span = `<tspan${marker} ${attrs.join(' ')}>${decorateText(esc(seg.text), run, 'tspan')}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
   const restored = run.baseline
     ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;

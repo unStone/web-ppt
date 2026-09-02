@@ -15,14 +15,14 @@
 **引擎能力已经打穿，自动化交付缺口也已收口。** M0–M6 全部里程碑的技术内容都已验收；
 只剩 PowerPoint 真机验收与 0.5.0 转正两个外部动作，不阻塞 0.6 功能开发。
 
-### 1.2 门禁实测（2026-09-02）
+### 1.2 门禁实测（2026-09-03）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4303 项 | 2168 core + 1009 edit + 469 save + 9 PowerPoint + 394 editor + 9 adapters + 115 collab + 130 metafile |
-| 渲染快照 | 同上 | ✅ 178 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 496 对 | 74 份固件、248 页，独立进程原始 SVG 两条文本路径 |
+| 断言总量 | `npm test` | ✅ 4351 项 | 2188 core + 1025 edit + 475 save + 9 PowerPoint + 398 editor + 9 adapters + 117 collab + 130 metafile |
+| 渲染快照 | 同上 | ✅ 180 个 | `test/snapshots/` |
+| 编辑等价指纹 | 同上 | ✅ 498 对 | 75 份固件、249 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 496 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 498 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -46,7 +46,7 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,303 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,351 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 10.04KB gzip | 读取 `package.json#main` 后实测 gzip |
@@ -84,7 +84,7 @@
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 可打印 HTML（按动画批次展开）。**无直接 PDF、无批量图片、无视频。**
 
-### 2.2 写：编辑命令（53 个已实现）
+### 2.2 写：编辑命令（54 个已实现）
 
 | 域 | 已实现 | 未实现 |
 |---|---|---|
@@ -92,7 +92,7 @@
 | 结构 | `RemoveElement` `SetZ` `PasteElements` `SetName` `SetLocked` `SetElementHidden` | **`SetAltText`** |
 | 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` `SetPreset` `SetAdj` | `SetScene3D` |
 | 图片 | `AddImage` `ReplaceImage` `SetCrop` | **`SetPictureFx`**（透明度/灰度/双色调） |
-| 文本 | `EditText` `SetRunProps` `SetParaProps`（含项目符号/编号）`SetBodyProps` `FitTextShape` `ReplaceText` | **高亮/字距/大小写/上下标/下划线类型**、**`ClearFormat`** |
+| 文本 | `EditText` `SetRunProps`（含高亮/字距/大小写/上下标/精确下划线与单双删除线）`ClearFormat` `SetParaProps`（含项目符号/编号）`SetBodyProps` `FitTextShape` `ReplaceText` | — |
 | 表格 | `AddTable` `InsertRow` `InsertColumn` `RemoveRow` `RemoveColumn` `MergeCells` `SplitCell` `SetRowHeight` `SetColumnWidth` `SetCellProps` `SetTableStyle` + 单元格文字 | — |
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | **节（`p14:sectionLst`）**、**`SetSlideSize`** |
 | 链接 | `SetLink`（元素级 + run 级） | — |
@@ -141,7 +141,7 @@ flowchart TD
 | 表格结构编辑 | 有（表格是 PPT 高频对象，只能追加行等于不可用） | 有（rowId 已有，缺 colId 与合并不变量） | ✅ **已完成** |
 | 项目符号 / 编号 | 有（做 PPT 必用） | 有（继承重基与自动编号求值都已具备） | ✅ **已完成** |
 | 形状预设切换 + 调节柄 | 有（形状库不能变形等于半个形状库） | 有（`a:ahLst` 从固定规范源生成，惰性查表零默认成本） | ✅ **已完成** |
-| 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | **0.6 P1** |
+| 字符高级属性 + 清除格式 | 有 | 有（双层模型天然支持删覆盖） | ✅ **已完成** |
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | **0.6 P1** |
 | 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | **0.6 P1** |
 | 批量导出图片 | 有 | 有（`slideToPng` + fflate 已在依赖里） | **0.6 P2，成本近乎零** |
@@ -270,9 +270,9 @@ bullet?: { kind: 'none' }
 已贯通命令、查询、富文本剪贴板、格式刷、表格、恢复/协同、补丁与生成保存；配套
 `a:buFont` / `a:buClr` / `a:buSzPct` / `a:buSzPts`，图片资源按内容哈希去重并建立关系闭包。
 
-### 5.4 [补齐字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md)
+### 5.4 ✅ [补齐字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md)
 
-`SetRunProps` 现在只有 `font / size / color / b / i / u / strike` 七个字段。补齐：
+`SetRunProps` 与 `TextRun` 现已贯通全部目标字段：
 
 | 属性 | 落点 |
 |---|---|
@@ -283,8 +283,10 @@ bullet?: { kind: 'none' }
 | 下划线类型 | `a:rPr@u`（17 种，现在只有布尔） |
 | 删除线类型 | `a:rPr@strike="sngStrike\|dblStrike"` |
 
-`ClearFormat{ id, range }` 删除 `a:rPr` 上的**直接**属性回到继承——这正是 `src`/`ovr` 双层模型的
-免费红利（`delete ovr`），几乎零新增代码。
+精确 `underline` / `strikeType` 与旧 `u` / `strike` 布尔别名并存：读取始终给旧消费者派生布尔值，
+旧写入在首次编辑时迁移到精确值。`ClearFormat{ id, range }` 以 mark 级清除意图删除来源 `a:rPr` 的
+视觉直设并回到 Source Value；文字、段落、超链接、动态字段和公式原子不变。折叠光标的清除留在视图，
+与下一次可信输入或 IME 原子提交，不制造零宽 OOXML run。
 
 ### 5.5 [补齐分布、替代文字、节与页面尺寸](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md)
 
@@ -399,8 +401,8 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | 完成[字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md) | 无 | 关闭高频文字格式缺口 |
-| 2 | 完成[常用对象与页面命令](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md) | 无 | 补齐 0.6 P1 对象操作 |
+| 1 | 完成[常用对象与页面命令](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md) | 无 | 补齐 0.6 P1 对象操作 |
+| 2 | 完成[触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md) | 无 | 补齐平板高频交互 |
 | 3 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
 
 第 3 项全程外部阻塞，**只挡 0.5.0 的 tag，不要让它挡住 0.6 的开发**。

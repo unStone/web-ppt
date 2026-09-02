@@ -304,6 +304,9 @@ its format commit as one history unit without creating a zero-width model run. T
 toolbar uses the view seam below so collapsed-caret typing style stays with the owning input view. Every mounted
 view refreshes while the active browser range is preserved. Switching to view mode closes the input layer and keeps
 the high-fidelity static preview.
+The same seam accepts exact underline/strike styles, highlight, spacing, caps, and baseline shift. Calling
+`view.clearFormat()` clears a selected range immediately; at a collapsed caret it clears pending typing style and
+applies source formatting to the next trusted input or IME commit.
 
 ```ts
 const unregister = view.registerTextUi(toolbarElement);
@@ -329,8 +332,9 @@ The command refreshes all views sharing the session; an external toolbar registe
 steal focus or accidentally close text editing.
 
 Text-mode `Ctrl/Cmd+C`, `X`, and `V` use the same synchronous browser clipboard events as native editors. Copy and
-cut publish sanitized `text/plain` plus `text/html`; default paste keeps only font, size, bold, italic, underline,
-and strike-through, while `Ctrl/Cmd+Shift+V` ignores HTML. Blocks become PPT paragraphs and `<br>` remains a hard
+cut publish sanitized `text/plain` plus `text/html`; default paste keeps only font, size, color, bold, italic,
+exact underline/strike styles, highlight, spacing, caps, and baseline shift, while `Ctrl/Cmd+Shift+V` ignores HTML.
+Blocks become PPT paragraphs and `<br>` remains a hard
 line break. The editor's sanitized HTML carries a private paragraph attribute for structured bullets; external
 HTML cannot forge an invalid command because the edit-core boundary validates it before commit. External HTML is
 parsed in a detached tree and never injected into the live editor; scripts, style

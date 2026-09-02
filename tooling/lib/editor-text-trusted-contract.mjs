@@ -99,6 +99,14 @@ export async function runTrustedTextContract({ evaluate, request }) {
       '[data-ppt-text-editor="' + state.id + '"]') === state.compositionNode;
   })()`);
   await request('Input.insertText', { text: '中文' });
+  const clearPending = await evaluate(`(() => {
+    const state = globalThis.editorContract.textResult;
+    const before = state.session.editor.history.undoCount;
+    const cleared = state.view.clearFormat();
+    state.clearFormatDidNotCreateHistory = state.session.editor.history.undoCount === before;
+    return cleared;
+  })()`);
+  await request('Input.insertText', { text: '净' });
   const result = await evaluate(`(() => {
     const state = globalThis.editorContract.textResult;
     const current = state.mount.querySelector('[data-ppt-text-editor="' + state.id + '"]');
@@ -108,11 +116,12 @@ export async function runTrustedTextContract({ evaluate, request }) {
       .flatMap((paragraph) => paragraph.runs);
     const trusted = state.events.filter((event) =>
       ['beforeinput', 'compositionstart', 'compositionupdate', 'compositionend'].includes(event.type));
+    const clearedRun = runs.findLast((run) => run.text.includes('净'));
     state.trustedTextSamples.sort((left, right) => left - right);
     const p95 = state.trustedTextSamples[Math.floor(state.trustedTextSamples.length * 0.95)];
     const result = {
       stable: state.stableDuringComposition,
-      inserted: text.endsWith('真'.repeat(80) + '中文') && text !== state.beforeText,
+      inserted: text.endsWith('真'.repeat(80) + '中文净') && text !== state.beforeText,
       p95,
       trustedBeforeInput: trusted.some((event) => event.type === 'beforeinput' && event.trusted),
       // CDP 以 Input.insertText 提交 IME 时，Chrome 会把最后的 compositionend 标成 untrusted；
@@ -120,7 +129,9 @@ export async function runTrustedTextContract({ evaluate, request }) {
       trustedComposition: trusted.some((event) => event.type === 'compositionstart' && event.trusted)
         && trusted.some((event) => event.type === 'compositionupdate' && event.trusted)
         && state.events.some((event) => event.type === 'compositionend'),
-      formatted: runs.at(-1)?.b === true,
+      formatted: runs.some((run) => run.text.includes('中文') && run.b === true),
+      clearedPendingFormat: state.clearFormatDidNotCreateHistory
+        && clearedRun?.b !== true && clearedRun?.i !== true && clearedRun?.u !== true,
       selectedFormatted: state.selectedFormatted && state.selectedRangePreserved,
       trustedShortcut: state.keyEvents.length === 2
         && state.keyEvents.map((event) => event.key).join('') === 'ub'
@@ -130,9 +141,9 @@ export async function runTrustedTextContract({ evaluate, request }) {
     state.view.destroy(); state.session.dispose(); state.mount.remove();
     return result;
   })()`);
-  const passed = stable && result.stable && result.inserted
+  const passed = stable && clearPending && result.stable && result.inserted
     && result.trustedBeforeInput && result.trustedComposition && result.formatted
-    && result.selectedFormatted && result.trustedShortcut;
+    && result.clearedPendingFormat && result.selectedFormatted && result.trustedShortcut;
   if (!passed) {
     throw new Error(`真实文字/IME 输入失败：${JSON.stringify({ stable, ...result })}`);
   }

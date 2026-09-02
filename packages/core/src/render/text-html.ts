@@ -11,6 +11,7 @@ import { layoutText, paraNeedsSqueeze, resolveTextScale } from './text-layout';
 import type { TextLayoutLine } from './text-layout-types';
 import { mathOf } from './text-measure';
 import { withHyperlink } from './hyperlink';
+import { bulletTextRun, decorateText } from './text-decoration';
 
 const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
 
@@ -93,13 +94,6 @@ function runStyle(run: TextRun, scale: number): string {
     : `color:${run.color};`;
   if (run.b) css += 'font-weight:700;';
   if (run.i) css += 'font-style:italic;';
-  const deco: string[] = [];
-  if (run.u) deco.push('underline');
-  if (run.strike) deco.push('line-through');
-  if (deco.length) {
-    css += `text-decoration:${deco.join(' ')};`;
-    if (run.underlineColor) css += `text-decoration-color:${run.underlineColor};`;
-  }
   if (run.fonts.length) css += `font-family:${stack(run.fonts, FONT_FALLBACK)};`;
   if (run.spacing) css += `letter-spacing:${r(run.spacing)}px;`;
   if (run.caps === 'all') css += 'text-transform:uppercase;';
@@ -147,7 +141,7 @@ function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string
     ? (squeeze ? squeezedHtml(run.text) : esc(run.text).replace(/\n/g, '<br/>'))
     : '&#160;';
   const emptyMarker = marker && empty ? ' data-empty="true"' : '';
-  const span = `<span${marker}${emptyMarker} style="${esc(runStyle(run, scale))}">${content}</span>`;
+  const span = `<span${marker}${emptyMarker} style="${esc(runStyle(run, scale))}">${decorateText(content, run, 'span')}</span>`;
   return withHyperlink(span, run.link);
 }
 
@@ -244,14 +238,12 @@ function renderEngineParagraph(
       if (segment.bullet) {
         const first = paragraph.runs[0];
         if (first) {
-          const bullet: TextRun = {
+          const bullet = bulletTextRun({
             ...first,
             text: segment.text,
             size: first.size * (paragraph.bulletSize ?? 1),
             color: paragraph.bulletColor ?? first.color,
-            u: false,
-            strike: false,
-          };
+          });
           state.pieces.push(positionedEngineRun(
             bullet, segment.text, scale, state.line.squeezed,
             ' data-bullet="true" contenteditable="false"',

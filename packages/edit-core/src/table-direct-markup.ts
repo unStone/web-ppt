@@ -77,10 +77,12 @@ function runProperties(run: TextRun, options: DirectTableCellMarkupOptions): str
     'lang="zh-CN"', `sz="${Math.max(100, Math.round(run.size * 75))}"`,
     ...(!options.omitTextBold ? [`b="${run.b ? 1 : 0}"`] : []),
     `i="${run.i ? 1 : 0}"`,
-    `u="${run.u ? 'sng' : 'none'}"`, `strike="${run.strike ? 'sngStrike' : 'noStrike'}"`,
+    `u="${run.underline ?? (run.u ? 'sng' : 'none')}"`,
+    `strike="${run.strikeType ?? (run.strike ? 'sngStrike' : 'noStrike')}"`,
   ];
   if (run.baseline) attributes.push(`baseline="${Math.round(run.baseline * 1000)}"`);
   if (run.spacing) attributes.push(`spc="${Math.round(run.spacing * 75)}"`);
+  if (run.caps && run.caps !== 'none') attributes.push(`cap="${run.caps}"`);
   const latin = run.fonts[0] ? escapeAttribute(run.fonts[0]) : null;
   const ea = run.fonts[1] ? escapeAttribute(run.fonts[1]) : latin;
   const cs = run.fonts[2] ? escapeAttribute(run.fonts[2]) : ea;
@@ -88,7 +90,9 @@ function runProperties(run: TextRun, options: DirectTableCellMarkupOptions): str
     ? `<a:latin typeface="${latin}"/><a:ea typeface="${ea}"/><a:cs typeface="${cs}"/>` : '';
   const color = options.omitTextColor
     ? '' : `<a:solidFill>${colorMarkup(run.color)}</a:solidFill>`;
-  return `<a:endParaRPr ${attributes.join(' ')}>${color}${fonts}</a:endParaRPr>`;
+  const highlight = run.highlight
+    ? `<a:highlight>${colorMarkup(run.highlight)}</a:highlight>` : '';
+  return `<a:endParaRPr ${attributes.join(' ')}>${color}${highlight}${fonts}</a:endParaRPr>`;
 }
 
 /** 新表格把已求值视觉写成直接格式，跨文档粘贴不再依赖来源 tableStyles/theme。 */

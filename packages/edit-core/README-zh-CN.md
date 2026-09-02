@@ -271,9 +271,13 @@ const runLink = queryRunLink(doc, elementId, range);
 始终持有 `SlideId`。相对动作和不支持的来源仍可查询并只读保留。
 
 `SetRunProps` 给半开文字区间写入稀疏字符格式覆盖，支持跨 run、跨段落设置字体、幻灯片像素字号、
-粗体、斜体、下划线和删除线。属性传 `null` 会删除直接格式并恢复 OOXML 继承值；公式保持不可拆且保留格式的原子，
+粗体、斜体、高亮、字距、大小写、基线偏移、`none` 加 17 种 DrawingML 下划线及单双删除线。
+属性传 `null` 会删除直接格式并恢复 OOXML 继承值；公式保持不可拆且保留格式的原子，
 动态字段保存后仍是原字段。headless 的折叠选区刻意不写模型——待输入格式属于挂载的输入适配层，
 从而避免向 OOXML 制造零宽 run。
+旧布尔输入 `u` / `strike` 继续兼容，分别映射为 `sng`/`none` 与 `sngStrike`/`noStrike`；新代码应使用
+`underline` / `strikeType` 保持精确往返。`ClearFormat` 会删除选区全部视觉字符直设，同时保留文字、
+段落属性、超链接、动态字段和公式原子。
 
 ```ts
 import { queryRunProps } from '@web-ppt/edit-core';
@@ -284,10 +288,14 @@ const range = {
 };
 editor.exec({
   type: 'SetRunProps', id: elementId, range,
-  props: { font: 'Inter', size: 24, b: true },
+  props: {
+    font: 'Inter', size: 24, b: true, highlight: '#fff176', spacing: 2,
+    caps: 'small', baseline: 30, underline: 'wavyDbl', strikeType: 'dblStrike',
+  },
 });
 const state = queryRunProps(editor.doc, elementId, range);
 // state.b 为 { value: true, mixed: false }；每个属性独立报告 mixed 状态。
+editor.exec({ type: 'ClearFormat', id: elementId, range });
 ```
 
 `SetParaProps` 会设置选区触及的全部段落，空段也包含在内；折叠选区立即作用于当前段。P0 属性包括

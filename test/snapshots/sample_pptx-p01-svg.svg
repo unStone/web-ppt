@@ -37,7 +37,9 @@
 <tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">混排：</tspan>
 <tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" font-weight="700">加粗</tspan>
 <tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" font-style="italic"> 斜体 </tspan>
-<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)" text-decoration="underline">主题色下划线</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(237,125,49)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid">主题色下划线</tspan>
+</tspan>
 <tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)"> 小字号</tspan>
 </text>
 </g>

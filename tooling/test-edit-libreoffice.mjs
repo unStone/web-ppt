@@ -24,6 +24,7 @@ import { runShapeAutofitLibreOfficeContract } from './lib/shape-autofit-libreoff
 import { runBodyPropsLibreOfficeContract } from './lib/body-props-libreoffice-contract.mjs';
 import { runBulletFormatLibreOfficeContract } from './lib/bullet-format-libreoffice-contract.mjs';
 import { runPresetShapeLibreOfficeContract } from './lib/preset-shape-libreoffice-contract.mjs';
+import { runAdvancedRunFormatLibreOfficeContract } from './lib/advanced-run-format-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -311,6 +312,9 @@ if (basename(savedPath) === 'vertex-editing.pptx') {
 }
 if (basename(savedPath) === 'preset-shape-editing.pptx') {
   geometryEvidence = runPresetShapeLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
+}
+if (basename(savedPath) === 'advanced-run-format-editing.pptx') {
+  geometryEvidence += runAdvancedRunFormatLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
 }
 if (basename(savedPath) === 'table-style-oracle.pptx') {
   geometryEvidence += runTableStyleLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });

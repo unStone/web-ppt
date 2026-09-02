@@ -12,7 +12,7 @@ async function selectFirstCharacter(context, name) {
     const partition = id && document.querySelector('[data-edit-id="' + CSS.escape(id) + '"]');
     partition?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
     const marker = id && document.querySelector('[data-ppt-text-editor="' + CSS.escape(id) + '"] [data-r="0.0"]');
-    const text = marker?.firstChild;
+    const text = marker && document.createTreeWalker(marker, NodeFilter.SHOW_TEXT).nextNode();
     if (!marker || !text) return;
     const range = document.createRange(); range.setStart(text, 0); range.setEnd(text, 1);
     const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
@@ -58,6 +58,36 @@ export async function runSiteEditorTextToolbarContract(context) {
   await waitFor("document.querySelector('#textColor').value === '#aabbcc'", '文字颜色写入');
   await click('#undo'); await waitFor(`document.querySelector('#textColor').value === ${JSON.stringify(colorBefore)}`, '文字颜色撤销');
   await click('#redo'); await waitFor("document.querySelector('#textColor').value === '#aabbcc'", '文字颜色重做');
+
+  await changeValue(context, '#textUnderlineStyle', 'wavyDbl');
+  await changeValue(context, '#textStrikeStyle', 'dblStrike');
+  await evaluate(`(() => {
+    const control = document.querySelector('#textHighlightEnabled');
+    control.checked = true;
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`);
+  await changeValue(context, '#textHighlight', '#fff176');
+  await changeValue(context, '#textSpacing', '2');
+  await changeValue(context, '#textCaps', 'small');
+  await changeValue(context, '#textBaseline', '-25');
+  await waitFor(`document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
+    && document.querySelector('#textStrikeStyle').value === 'dblStrike'
+    && document.querySelector('#textHighlightEnabled').checked
+    && document.querySelector('#textHighlight').value === '#fff176'
+    && document.querySelector('#textSpacing').value === '2'
+    && document.querySelector('#textCaps').value === 'small'
+    && document.querySelector('#textBaseline').value === '-25'`, '高级字符格式写入');
+  await click('#textClearFormat');
+  await waitFor(`document.querySelector('#textUnderlineStyle').value !== 'wavyDbl'
+    && document.querySelector('#textStrikeStyle').value !== 'dblStrike'
+    && !document.querySelector('#textHighlightEnabled').checked`, '清除字符格式');
+  await click('#undo');
+  await waitFor(`document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
+    && document.querySelector('#textStrikeStyle').value === 'dblStrike'
+    && document.querySelector('#textHighlightEnabled').checked
+    && document.querySelector('#textSpacing').value === '2'
+    && document.querySelector('#textCaps').value === 'small'
+    && document.querySelector('#textBaseline').value === '-25'`, '清除字符格式撤销');
 
   const alignBefore = await evaluate("document.querySelector('#textAlign').value");
   await changeValue(context, '#textAlign', 'center');
@@ -122,6 +152,13 @@ export async function runSiteEditorTextToolbarContract(context) {
     underline: document.querySelector('#textUnderline').getAttribute('aria-pressed'),
     size: document.querySelector('#textFontSize').value,
     color: document.querySelector('#textColor').value,
+    underlineStyle: document.querySelector('#textUnderlineStyle').value,
+    strikeStyle: document.querySelector('#textStrikeStyle').value,
+    highlight: document.querySelector('#textHighlightEnabled').checked
+      ? document.querySelector('#textHighlight').value : null,
+    spacing: document.querySelector('#textSpacing').value,
+    caps: document.querySelector('#textCaps').value,
+    baseline: document.querySelector('#textBaseline').value,
     align: document.querySelector('#textAlign').value,
     bulletKind: document.querySelector('#textBulletKind').value,
     bulletFont: document.querySelector('#textBulletFont').value,
@@ -132,6 +169,11 @@ export async function runSiteEditorTextToolbarContract(context) {
   const reopenedFormattingOk = reopenedFormatting.bold === 'true'
     && reopenedFormatting.italic === 'true' && reopenedFormatting.underline === 'true'
     && reopenedFormatting.size === '37' && reopenedFormatting.color === '#aabbcc'
+    && reopenedFormatting.underlineStyle === 'wavyDbl'
+    && reopenedFormatting.strikeStyle === 'dblStrike'
+    && reopenedFormatting.highlight === '#fff176'
+    && reopenedFormatting.spacing === '2' && reopenedFormatting.caps === 'small'
+    && reopenedFormatting.baseline === '-25'
     && reopenedFormatting.align === 'center' && reopenedFormatting.bulletKind === 'image'
     && reopenedFormatting.bulletFont === 'Wingdings'
     && reopenedFormatting.bulletColor === '#336699'
@@ -144,6 +186,13 @@ export async function runSiteEditorTextToolbarContract(context) {
     && document.querySelector('#textUnderline').getAttribute('aria-pressed') === 'true'
     && document.querySelector('#textFontSize').value === '37'
     && document.querySelector('#textColor').value === '#aabbcc'
+    && document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
+    && document.querySelector('#textStrikeStyle').value === 'dblStrike'
+    && document.querySelector('#textHighlightEnabled').checked
+    && document.querySelector('#textHighlight').value === '#fff176'
+    && document.querySelector('#textSpacing').value === '2'
+    && document.querySelector('#textCaps').value === 'small'
+    && document.querySelector('#textBaseline').value === '-25'
     && document.querySelector('#textAlign').value === 'center'
     && document.querySelector('#textBulletKind').value === 'image'
     && document.querySelector('#textBulletFont').value === 'Wingdings'

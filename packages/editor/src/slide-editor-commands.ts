@@ -79,6 +79,7 @@ export class SlideEditorCommands {
   setRunProps(props: RunPropertyOverrides): boolean {
     return this.options.textEditor.setRunProps(props);
   }
+  clearFormat(): boolean { return this.options.textEditor.clearFormat(); }
   queryParaProps(): ParagraphPropertiesState | null { return this.options.textEditor.queryParaProps(); }
   setParaProps(props: ParagraphPropertyInput): boolean {
     return this.options.textEditor.setParaProps(props);

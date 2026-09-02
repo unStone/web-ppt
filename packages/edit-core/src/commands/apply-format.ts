@@ -27,9 +27,9 @@ import type { TextTargetContext } from './text-target';
 import {
   prepareBulletImageResource, resolveBulletImageResource,
 } from './bullet-image-resource';
+import { NO_HIGHLIGHT, STYLE_PROPERTY_FIELDS } from '../run-style';
 
 const TEXT_FIELDS = new Set<FormatMaskField>(['run', 'paragraph', 'body']);
-const RUN_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
 const PARAGRAPH_FIELDS = [
   'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent', 'bullet',
 ] as const;
@@ -90,12 +90,13 @@ function wholeRange(body: Parameters<typeof textBodyEditText>[0]) {
 
 function uniformRunProps(doc: EditDoc, command: ApplyFormatCommand, range: ReturnType<typeof wholeRange>) {
   const state = queryRunProps(doc, command.from, range, command.fromCell);
-  const props: Record<string, string | number | boolean> = {};
-  for (const field of RUN_FIELDS) {
-    if (state[field].mixed || state[field].value === null) {
+  const props: Record<string, unknown> = {};
+  for (const field of STYLE_PROPERTY_FIELDS) {
+    if (state[field].mixed || (state[field].value === null && field !== 'highlight')) {
       throw new Error(`格式来源的字符属性 ${field} 不是单一有效值`);
     }
-    props[field] = state[field].value;
+    props[field] = field === 'highlight' && state.highlight.value === null
+      ? NO_HIGHLIGHT : state[field].value;
   }
   return props as RunPropertyOverrides;
 }

@@ -1,3 +1,6 @@
+import {
+  TEXT_CAPS_STYLES, TEXT_STRIKE_STYLES, TEXT_UNDERLINE_STYLES,
+} from '@web-ppt/edit-core';
 import type { ParagraphBullet, RunPropertyOverrides, TextFragment } from '@web-ppt/edit-core';
 
 const BLOCKS = /^(?:address|article|aside|blockquote|dd|div|dl|dt|figcaption|figure|footer|form|h[1-6]|header|li|main|nav|ol|p|pre|section|table|tbody|tfoot|thead|tr|ul)$/;
@@ -56,8 +59,50 @@ function fontSize(value: string, inherited?: number | null): number | null {
   return Number.isFinite(size) && size > 0 && size <= 1000 ? Math.round(size * 1000) / 1000 : null;
 }
 
+function drawingColor(value: string): string | null {
+  const color = value.trim();
+  if (/^#[0-9a-f]{6}$/i.test(color)) return color;
+  const match = /^(rgb|rgba)\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d+(?:\.\d+)?|\.\d+)\s*)?\)$/i.exec(color);
+  if (!match || (match[1].toLowerCase() === 'rgb') !== (match[5] === undefined)) return null;
+  const channels = match.slice(2, 5).map(Number);
+  const alpha = match[5] === undefined ? 1 : Number(match[5]);
+  return channels.every((channel) => channel >= 0 && channel <= 255)
+    && alpha >= 0 && alpha <= 1 ? color : null;
+}
+
+function finiteAttribute(element: HTMLElement, name: string, limit: number): number | null | undefined {
+  if (!element.hasAttribute(name)) return undefined;
+  const value = Number(element.getAttribute(name));
+  return Number.isFinite(value) && Math.abs(value) <= limit ? value : undefined;
+}
+
+function exactMetadata(element: HTMLElement, next: Record<string, unknown>): void {
+  const underline = element.getAttribute('data-web-ppt-underline');
+  if (underline && (TEXT_UNDERLINE_STYLES as readonly string[]).includes(underline)) {
+    next.underline = underline;
+    delete next.u;
+  }
+  const strikeType = element.getAttribute('data-web-ppt-strike');
+  if (strikeType && (TEXT_STRIKE_STYLES as readonly string[]).includes(strikeType)) {
+    next.strikeType = strikeType;
+    delete next.strike;
+  }
+  const caps = element.getAttribute('data-web-ppt-caps');
+  if (caps && (TEXT_CAPS_STYLES as readonly string[]).includes(caps)) next.caps = caps;
+  const spacing = finiteAttribute(element, 'data-web-ppt-spacing', 400000 / 75);
+  if (spacing !== undefined) next.spacing = spacing;
+  const baseline = finiteAttribute(element, 'data-web-ppt-baseline', 2147483.647);
+  if (baseline !== undefined) next.baseline = baseline;
+  if (element.hasAttribute('data-web-ppt-highlight')) {
+    const value = element.getAttribute('data-web-ppt-highlight') ?? '';
+    const highlight = drawingColor(value);
+    if (!value) next.highlight = null;
+    else if (highlight) next.highlight = highlight;
+  }
+}
+
 function elementProps(element: HTMLElement, inherited: RunPropertyOverrides): RunPropertyOverrides {
-  const next: { -readonly [K in keyof RunPropertyOverrides]: RunPropertyOverrides[K] } = { ...inherited };
+  const next: Record<string, unknown> = { ...inherited };
   const tag = element.localName;
   if (tag === 'b' || tag === 'strong') next.b = true;
   if (tag === 'i' || tag === 'em') next.i = true;
@@ -68,14 +113,34 @@ function elementProps(element: HTMLElement, inherited: RunPropertyOverrides): Ru
   if (family) next.font = family;
   const size = fontSize(style.fontSize, typeof next.size === 'number' ? next.size : null);
   if (size) next.size = size;
+  const color = drawingColor(style.color);
+  if (color) next.color = color;
   if (/^(bold|bolder)$/i.test(style.fontWeight) || Number(style.fontWeight) >= 600) next.b = true;
   else if (/^(normal|lighter)$/i.test(style.fontWeight) || /^[1-5]00$/.test(style.fontWeight)) next.b = false;
   if (/^(italic|oblique)/i.test(style.fontStyle)) next.i = true;
   else if (/^normal$/i.test(style.fontStyle)) next.i = false;
   const decoration = style.textDecorationLine || style.textDecoration;
   if (/\bnone\b/i.test(decoration)) { next.u = false; next.strike = false; }
-  if (/\bunderline\b/i.test(decoration)) next.u = true;
-  if (/\bline-through\b/i.test(decoration)) next.strike = true;
+  const decorationStyle = style.textDecorationStyle;
+  if (/\bunderline\b/i.test(decoration)) {
+    next.underline = decorationStyle === 'double' ? 'dbl'
+      : decorationStyle === 'dotted' ? 'dotted'
+        : decorationStyle === 'dashed' ? 'dash' : decorationStyle === 'wavy' ? 'wavy' : 'sng';
+    delete next.u;
+  }
+  if (/\bline-through\b/i.test(decoration)) {
+    next.strikeType = decorationStyle === 'double' ? 'dblStrike' : 'sngStrike';
+    delete next.strike;
+  }
+  const highlight = drawingColor(style.backgroundColor);
+  if (highlight) next.highlight = highlight;
+  const spacing = /^(-?[0-9]+(?:\.[0-9]+)?)px$/i.exec(style.letterSpacing.trim());
+  if (spacing && Math.abs(Number(spacing[1])) <= 400000 / 75) next.spacing = Number(spacing[1]);
+  if (style.textTransform === 'uppercase') next.caps = 'all';
+  if (style.fontVariantCaps === 'small-caps' || style.fontVariant === 'small-caps') next.caps = 'small';
+  if (style.verticalAlign === 'super') next.baseline = 30;
+  if (style.verticalAlign === 'sub') next.baseline = -25;
+  exactMetadata(element, next);
   return next as RunPropertyOverrides;
 }
 
@@ -144,10 +209,39 @@ function markHtml(text: string, props: RunPropertyOverrides): string {
   if (props.size) style.push(`font-size:${props.size}px`);
   if (props.b !== undefined) style.push(`font-weight:${props.b ? '700' : '400'}`);
   if (props.i !== undefined) style.push(`font-style:${props.i ? 'italic' : 'normal'}`);
-  const decoration = [props.u ? 'underline' : '', props.strike ? 'line-through' : ''].filter(Boolean).join(' ');
-  if (props.u !== undefined || props.strike !== undefined) style.push(`text-decoration:${decoration || 'none'}`);
+  if (props.color) style.push(`color:${props.color}`);
+  const underline = props.underline ?? (props.u === undefined ? undefined : props.u ? 'sng' : 'none');
+  const strikeType = props.strikeType
+    ?? (props.strike === undefined ? undefined : props.strike ? 'sngStrike' : 'noStrike');
+  const decoration = [underline && underline !== 'none' ? 'underline' : '',
+    strikeType && strikeType !== 'noStrike' ? 'line-through' : ''].filter(Boolean).join(' ');
+  if (underline !== undefined || strikeType !== undefined) {
+    const decorationStyle = underline === 'dbl' || strikeType === 'dblStrike' ? 'double'
+      : underline?.startsWith('wavy') ? 'wavy'
+        : underline?.includes('dotted') ? 'dotted'
+          : underline?.includes('dash') ? 'dashed' : 'solid';
+    style.push(`text-decoration-line:${decoration || 'none'}`, `text-decoration-style:${decorationStyle}`);
+  }
+  if (props.highlight) style.push(`background-color:${props.highlight}`);
+  if (props.spacing !== undefined && props.spacing !== null) style.push(`letter-spacing:${props.spacing}px`);
+  if (props.caps === 'all') style.push('text-transform:uppercase');
+  else if (props.caps === 'small') style.push('font-variant-caps:small-caps');
+  if (props.baseline && props.baseline > 0) style.push('vertical-align:super');
+  else if (props.baseline && props.baseline < 0) style.push('vertical-align:sub');
+  const metadata = [
+    underline !== undefined ? ` data-web-ppt-underline="${underline}"` : '',
+    strikeType !== undefined ? ` data-web-ppt-strike="${strikeType}"` : '',
+    props.highlight !== undefined
+      ? ` data-web-ppt-highlight="${escapeHtml(props.highlight ?? '')}"` : '',
+    props.spacing !== undefined && props.spacing !== null
+      ? ` data-web-ppt-spacing="${props.spacing}"` : '',
+    props.caps !== undefined && props.caps !== null ? ` data-web-ppt-caps="${props.caps}"` : '',
+    props.baseline !== undefined && props.baseline !== null
+      ? ` data-web-ppt-baseline="${props.baseline}"` : '',
+  ].join('');
   const body = escapeHtml(text).replace(/\n/g, '<br>');
-  return style.length ? `<span style="${escapeHtml(style.join(';'))}">${body}</span>` : body;
+  return style.length || metadata ? `<span${metadata}${style.length
+    ? ` style="${escapeHtml(style.join(';'))}"` : ''}>${body}</span>` : body;
 }
 
 export function textFragmentToHtml(fragment: TextFragment): string {

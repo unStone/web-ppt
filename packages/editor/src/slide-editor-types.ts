@@ -66,6 +66,8 @@ export interface SlideEditor {
   queryRunProps(): RunPropertiesState | null;
   queryRunLink(): RunLinkState | null;
   setRunProps(props: RunPropertyOverrides): boolean;
+  /** 清除选区直设字符格式；折叠光标时作用于后续输入。 */
+  clearFormat(): boolean;
   queryParaProps(): ParagraphPropertiesState | null;
   setParaProps(props: ParagraphPropertyInput): boolean;
   queryBodyProps(): TextBodyProperties | null;

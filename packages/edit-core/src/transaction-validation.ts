@@ -15,7 +15,7 @@ export function shapeTextCommandTarget(command: Command): ElementId | null {
       && command.mask.some((field) => field === 'run' || field === 'paragraph' || field === 'body')
       ? command.to : null;
   }
-  if (command.type !== 'EditText' && command.type !== 'SetRunProps'
+  if (command.type !== 'EditText' && command.type !== 'SetRunProps' && command.type !== 'ClearFormat'
     && command.type !== 'SetParaProps' && command.type !== 'SetBodyProps') {
     return null;
   }

@@ -107,9 +107,17 @@
             <button id="textBold" type="button" aria-pressed="false"><b>B</b></button>
             <button id="textItalic" type="button" aria-pressed="false"><i>I</i></button>
             <button id="textUnderline" type="button" aria-pressed="false"><u>U</u></button>
+            <button id="textStrike" type="button" aria-pressed="false"><s>S</s></button>
+            <button id="textClearFormat" type="button">清除格式</button>
           </div>
           <label class="inspector-field"><span>字号</span><input id="textFontSize" type="number" min="1" max="400" step="1" /></label>
           <label class="inspector-field"><span>颜色</span><input id="textColor" type="color" value="#000000" /></label>
+          <label class="inspector-stack"><span>下划线样式</span><select id="textUnderlineStyle"><option value="none">无</option><option value="words">仅文字</option><option value="sng">单线</option><option value="dbl">双线</option><option value="heavy">粗线</option><option value="dotted">点线</option><option value="dottedHeavy">粗点线</option><option value="dash">短划线</option><option value="dashHeavy">粗短划线</option><option value="dashLong">长划线</option><option value="dashLongHeavy">粗长划线</option><option value="dotDash">点划线</option><option value="dotDashHeavy">粗点划线</option><option value="dotDotDash">双点划线</option><option value="dotDotDashHeavy">粗双点划线</option><option value="wavy">波浪线</option><option value="wavyHeavy">粗波浪线</option><option value="wavyDbl">双波浪线</option></select></label>
+          <label class="inspector-stack"><span>删除线</span><select id="textStrikeStyle"><option value="noStrike">无</option><option value="sngStrike">单删除线</option><option value="dblStrike">双删除线</option></select></label>
+          <label class="inspector-check"><input id="textHighlightEnabled" type="checkbox" /><span>文字高亮</span><input id="textHighlight" type="color" value="#fff176" /></label>
+          <label class="inspector-field"><span>字距 px</span><input id="textSpacing" type="number" min="-100" max="100" step="0.1" /></label>
+          <label class="inspector-stack"><span>大小写</span><select id="textCaps"><option value="none">原样</option><option value="all">全部大写</option><option value="small">小型大写字母</option></select></label>
+          <label class="inspector-field"><span>基线 %</span><input id="textBaseline" type="number" min="-100" max="100" step="1" /></label>
           <label class="inspector-stack"><span>对齐</span><select id="textAlign"><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option><option value="justify">两端对齐</option></select></label>
           <label class="inspector-stack"><span>项目符号</span><select id="textBulletKind"><option value="mixed" hidden>混合</option><option value="inherit">恢复继承</option><option value="none">无</option><option value="char">字符</option><option value="autoNum">自动编号</option><option value="image">图片</option></select></label>
           <label class="inspector-field" id="textBulletCharField"><span>符号字符</span><input id="textBulletChar" type="text" value="•" maxlength="2" /></label>

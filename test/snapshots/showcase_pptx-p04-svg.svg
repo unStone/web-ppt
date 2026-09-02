@@ -26,8 +26,12 @@
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">普通 </tspan>
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-weight="700">加粗</tspan>
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-style="italic"> 斜体</tspan>
-<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline"> 下划线</tspan>
-<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="line-through"> 删除线</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid"> 下划线</tspan>
+</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:line-through;text-decoration-style:solid"> 删除线</tspan>
+</tspan>
 </text>
 <text x="9.6" y="56.06" text-anchor="start" xml:space="preserve">
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">化学式 H</tspan>
@@ -49,7 +53,7 @@
 <text x="9.6" y="113.66" text-anchor="start" xml:space="preserve">
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">ALL CAPS TEXT</tspan>
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">  |  </tspan>
-<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">small caps text</tspan>
+<tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" font-variant="small-caps">small caps text</tspan>
 </text>
 <text x="9.6" y="154.94" text-anchor="start" xml:space="preserve">
 <tspan font-size="37.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)" font-weight="700" stroke="rgb(68,114,196)" stroke-width="1.33" paint-order="stroke">描边文字</tspan>

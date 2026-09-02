@@ -116,9 +116,39 @@ export async function runRunFormatEditorContract({ check, lib, root, window }) {
         && run.fonts[0] === 'Noto Sans'));
   reopened.dispose();
 
+  editable = container.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  const italicRun = [...editable.querySelectorAll('[data-r]')]
+    .find((node) => node.textContent === '斜');
+  selectOffsets(window, italicRun, 1);
+  const pendingClear = view.clearFormat();
+  editable.dispatchEvent(new window.CompositionEvent('compositionstart', {
+    bubbles: true, composed: true,
+  }));
+  window.getSelection().getRangeAt(0).insertNode(document.createTextNode('净'));
+  editable.dispatchEvent(new window.CompositionEvent('compositionend', {
+    bubbles: true, composed: true, data: '净',
+  }));
+  const clearedInput = session.editor.effectiveElement(record.id).text.paragraphs[0].runs
+    .find((run) => run.text === '净');
+  check('折叠光标清除格式延续到 IME 提交且不制造一次空历史',
+    pendingClear && clearedInput && !clearedInput.b && !clearedInput.i
+      && clearedInput.fonts[0] !== 'Noto Sans');
+
+  editable = container.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  const firstRun = [...editable.querySelectorAll('[data-r]')]
+    .find((node) => node.textContent?.includes('新'));
+  selectOffsets(window, firstRun, 0, 1);
+  const clearSelected = view.clearFormat();
+  const selectedCleared = session.editor.effectiveElement(record.id).text.paragraphs[0].runs[0];
+  check('公开 clearFormat 清除真实 Range 的直设格式并保持文字选择',
+    clearSelected && selectedCleared.text === '新' && !selectedCleared.b
+      && selectedCleared.fonts[0] !== 'Noto Sans'
+      && session.editor.selection.kind === 'text');
+
   view.setMode('view');
   check('view 模式关闭输入所有权且不能误触视图字符格式命令',
-    view.queryRunProps() === null && view.setRunProps({ b: false }) === false);
+    view.queryRunProps() === null && view.setRunProps({ b: false }) === false
+      && view.clearFormat() === false);
 
   unregisterToolbar();
   secondaryView.destroy();

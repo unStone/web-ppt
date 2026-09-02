@@ -3,6 +3,7 @@ import type { TextRange } from './commands/types';
 import type { TextFragment } from './types';
 import { flattenTextBody, sourceParagraphBullet } from './text-flatten';
 import { assertTextAtomBoundary, textPositionOffset } from './text-selection';
+import { NO_HIGHLIGHT } from './run-style';
 
 /** 把有效文字选区降成可跨实例传输的格式白名单，不泄漏 OOXML 来源身份。 */
 export function textFragmentFromRange(body: TextBody, range: TextRange): TextFragment {
@@ -34,7 +35,11 @@ export function textFragmentFromRange(body: TextBody, range: TextRange): TextFra
           from: markFrom, to: text.length,
           props: {
             ...(font ? { font } : {}), size: mark.props.size, color: mark.props.color,
-            b: mark.props.b, i: mark.props.i, u: mark.props.u, strike: mark.props.strike,
+            b: mark.props.b, i: mark.props.i,
+            underline: mark.props.underline ?? (mark.props.u ? 'sng' : 'none'),
+            strikeType: mark.props.strikeType ?? (mark.props.strike ? 'sngStrike' : 'noStrike'),
+            highlight: mark.props.highlight ?? NO_HIGHLIGHT, spacing: mark.props.spacing ?? 0,
+            caps: mark.props.caps ?? 'none', baseline: mark.props.baseline ?? 0,
           },
         });
       }

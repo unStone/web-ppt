@@ -38,6 +38,7 @@ import { runBulletFormatSaveContract } from './lib/bullet-format-save-contract.m
 import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
 import { runPresetShapeSaveContract } from './lib/preset-shape-save-contract.mjs';
 import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
+import { runAdvancedRunFormatSaveContract } from './lib/advanced-run-format-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -124,6 +125,17 @@ await runBulletFormatSaveContract({
 });
 await runVertexSaveContract({ edit, core, load, check, saveArtifact });
 await runPresetShapeSaveContract({
+  core, edit, generate, load, check, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
+await runAdvancedRunFormatSaveContract({
   core, edit, generate, load, check, saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);

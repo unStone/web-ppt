@@ -38,6 +38,8 @@ tracker: local-markdown
   闭包，保证继承、续号与两种保存路径一致。
 - [预设形状切换与调节柄](tickets/003-preset-shape-adjustments.md)：互斥几何覆盖配合对侧字段 tombstone，
   让规范生成式句柄在按需入口中完成拖动、保存、恢复与协同而不增重默认路径。
+- [字符高级格式与清除格式](tickets/004-advanced-run-formatting.md)：精确枚举与旧布尔别名共用一个 Schema；
+  mark 级清除意图让 Source Value、输入法、身份保留和最小 OOXML 写回同时成立。
 
 ## Not yet specified
 

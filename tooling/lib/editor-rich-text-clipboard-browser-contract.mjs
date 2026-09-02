@@ -70,6 +70,36 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   }
   session.editor.undo();
   if (session.editor.history.undoCount !== 0) throw new Error('2,000 字符富文本粘贴撤销后历史不一致');
+
+  let editableForAdvanced = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  selectFirstCharacter(editableForAdvanced);
+  if (!view.setRunProps({
+    highlight: '#AABBCC', spacing: 2, caps: 'small', baseline: 20,
+    underline: 'wavyDbl', strikeType: 'dblStrike',
+  })) throw new Error('高级格式测试无法设置来源文字');
+  editableForAdvanced = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  selectFirstCharacter(editableForAdvanced);
+  const copiedAdvanced = new DataTransfer();
+  if (editableForAdvanced.dispatchEvent(clipboardEvent('copy', copiedAdvanced))) {
+    throw new Error('高级格式复制未接管浏览器默认行为');
+  }
+  const target = [...editableForAdvanced.querySelectorAll('[data-r]')].at(-1);
+  const targetText = target.firstChild;
+  const targetRange = document.createRange();
+  targetRange.setStart(targetText, targetText.textContent.length - 1);
+  targetRange.setEnd(targetText, targetText.textContent.length);
+  getSelection().removeAllRanges();
+  getSelection().addRange(targetRange);
+  const pastedAdvanced = editableForAdvanced.dispatchEvent(clipboardEvent('paste', copiedAdvanced));
+  const advancedRun = session.editor.effectiveElement(record.id).text.paragraphs[0].runs.at(-1);
+  if (pastedAdvanced || advancedRun.highlight !== 'rgb(170,187,204)'
+    || advancedRun.spacing !== 2 || advancedRun.caps !== 'small' || advancedRun.baseline !== 20
+    || advancedRun.underline !== 'wavyDbl' || advancedRun.strikeType !== 'dblStrike') {
+    throw new Error(`内部富文本剪贴板丢失高级格式：${JSON.stringify(advancedRun)}`);
+  }
+  session.editor.undo();
+  session.editor.undo();
+  if (session.editor.history.undoCount !== 0) throw new Error('高级格式剪贴板撤销后历史不一致');
   recordPerformanceBudget('2,000 字符富文本粘贴完整上屏 p95', p95, 30);
   return { session, view, mount, id: record.id, p95 };
 }

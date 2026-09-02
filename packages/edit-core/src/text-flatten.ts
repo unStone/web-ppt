@@ -1,6 +1,7 @@
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type { ParagraphBullet, TextMark, TextOverride } from './types';
 import { TEXT_ATOM } from './text-position';
+import { runProperties } from './run-style';
 
 function runProps(run: TextRun): Omit<TextRun, 'text'> {
   const { text: _text, editInfo: _editInfo, ...props } = run;
@@ -10,6 +11,19 @@ function runProps(run: TextRun): Omit<TextRun, 'text'> {
 function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
   const { runs: _runs, editInfo: _editInfo, ...props } = paragraph;
   return props;
+}
+
+function sourceInheritedRunProps(run: TextRun): NonNullable<TextRun['editInfo']>['inheritedRunProps'] {
+  if (run.editInfo?.inheritedRunProps) return run.editInfo.inheritedRunProps;
+  return {
+    b: run.b, i: run.i, u: run.u, strike: run.strike,
+    ...(run.underline ? { underline: run.underline } : {}),
+    ...(run.strikeType ? { strikeType: run.strikeType } : {}),
+    size: run.size, color: run.color, fonts: [...run.fonts],
+    baseline: run.baseline, spacing: run.spacing, caps: run.caps,
+    outline: run.outline, gradient: run.gradient, highlight: run.highlight,
+    underlineColor: run.underlineColor,
+  };
 }
 
 export function sourceParagraphBullet(
@@ -44,21 +58,12 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
         const text = run.math?.length ? TEXT_ATOM : run.text;
         const from = offset;
         offset += text.length;
+        const inheritedRunProps = sourceInheritedRunProps(run);
         return {
           from, to: offset, props: runProps(run),
-          inheritedProps: run.editInfo?.inheritedRunProps
-            ? {
-              font: run.editInfo.inheritedRunProps.fonts[0] ?? null,
-              size: run.editInfo.inheritedRunProps.size,
-              color: run.editInfo.inheritedRunProps.color,
-              b: run.editInfo.inheritedRunProps.b,
-              i: run.editInfo.inheritedRunProps.i,
-              u: run.editInfo.inheritedRunProps.u,
-              strike: run.editInfo.inheritedRunProps.strike,
-            }
-            : undefined,
-          inheritedRunProps: run.editInfo?.inheritedRunProps,
-          inheritedFonts: run.editInfo?.inheritedRunProps.fonts,
+          inheritedProps: runProperties(inheritedRunProps),
+          inheritedRunProps,
+          inheritedFonts: inheritedRunProps.fonts,
           inheritedFontSlots: run.editInfo?.inheritedFontSlots,
           ...(run.editInfo?.readonlyLink ? { sourceLinkReadonly: true } : {}),
           ...(run.math?.length ? { atomText: run.text } : {}),

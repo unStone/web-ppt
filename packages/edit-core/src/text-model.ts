@@ -1,45 +1,27 @@
 import { formatDrawingAutoNumber } from '@web-ppt/core';
-import type { TextBody, TextRun } from '@web-ppt/core';
+import type { TextBody } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
-  FlatTextParagraph, ParagraphPropertiesState, ParagraphPropertyOverrides, RunProperties,
+  FlatTextParagraph, ParagraphPropertiesState, ParagraphPropertyOverrides,
   RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
 } from './types';
 import { applyParagraphPropertyOverrides } from './paragraph-level';
 import { flattenTextBody } from './text-flatten';
 import { assertTextAtomBoundary, textPositionOffset } from './text-selection';
+import {
+  clearedMark, DEFAULT_RUN, formattedMark, sameInherited, sameRunOverrides, visibleHighlight,
+} from './run-style';
 
 export { textBodyFromOverride } from './text-override-projection';
 export { flattenTextBody } from './text-flatten';
 export { textFragmentFromRange } from './text-fragment';
-
-const DEFAULT_RUN: Omit<TextRun, 'text'> = {
-  b: false, i: false, u: false, strike: false, size: 18, color: '#000000', fonts: [],
-};
-
-const DEFAULT_PROPERTIES: RunProperties = {
-  font: null, size: DEFAULT_RUN.size, color: DEFAULT_RUN.color, b: DEFAULT_RUN.b, i: DEFAULT_RUN.i,
-  u: DEFAULT_RUN.u, strike: DEFAULT_RUN.strike,
-};
-
-const STYLE_PROPERTY_FIELDS = ['font', 'size', 'color', 'b', 'i', 'u', 'strike'] as const;
-const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'link'] as const;
-
-function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
-  return RUN_OVERRIDE_FIELDS.every((field) => Object.prototype.hasOwnProperty.call(left ?? {}, field)
-    === Object.prototype.hasOwnProperty.call(right ?? {}, field)
-    && Object.is(left?.[field], right?.[field]));
-}
-
-function sameInherited(left?: RunProperties, right?: RunProperties): boolean {
-  return STYLE_PROPERTY_FIELDS.every((field) => Object.is(left?.[field], right?.[field]));
-}
 
 function sameStyle(left: TextMark, right: TextMark): boolean {
   return left.atomText === right.atomText
     && JSON.stringify(left.props) === JSON.stringify(right.props)
     && left.preserveSource === right.preserveSource
     && sameRunOverrides(left.runOverrides, right.runOverrides)
+    && left.clearDirectFormatting === right.clearDirectFormatting
     && sameInherited(left.inheritedProps, right.inheritedProps)
     && JSON.stringify(left.inheritedRunProps) === JSON.stringify(right.inheritedRunProps)
     && JSON.stringify(left.inheritedFonts) === JSON.stringify(right.inheritedFonts)
@@ -255,54 +237,17 @@ export function applyTextEditOps(
   return override;
 }
 
-function formattedMark(mark: TextMark, props: RunPropertyOverrides): TextMark {
-  const inherited = mark.inheritedProps ?? DEFAULT_PROPERTIES;
-  const font = props.font === null ? inherited.font : props.font;
-  const size = props.size === null ? inherited.size : props.size;
-  const color = props.color === null ? inherited.color : props.color;
-  const b = props.b === null ? inherited.b : props.b;
-  const i = props.i === null ? inherited.i : props.i;
-  const u = props.u === null ? inherited.u : props.u;
-  const strike = props.strike === null ? inherited.strike : props.strike;
-  const nextOverrides: Record<string, unknown> = { ...mark.runOverrides };
-  for (const field of STYLE_PROPERTY_FIELDS) {
-    if (Object.prototype.hasOwnProperty.call(props, field)) nextOverrides[field] = props[field];
-  }
-  if (Object.prototype.hasOwnProperty.call(props, 'link')) {
-    if (props.link === null) delete nextOverrides.link;
-    else nextOverrides.link = props.link;
-  }
-  return {
-    ...mark,
-    props: {
-      ...mark.props,
-      ...(font !== undefined
-        ? { fonts: props.font === null ? [...(mark.inheritedFonts ?? (font ? [font] : []))] : font ? [font] : [] }
-        : {}),
-      ...(size !== undefined ? { size } : {}),
-      ...(color !== undefined ? { color } : {}),
-      ...(b !== undefined ? { b } : {}),
-      ...(i !== undefined ? { i } : {}),
-      ...(u !== undefined ? { u } : {}),
-      ...(strike !== undefined ? { strike } : {}),
-    },
-    ...(Object.keys(nextOverrides).length
-      ? { runOverrides: nextOverrides as RunPropertyOverrides }
-      : { runOverrides: undefined }),
-  };
-}
-
-function formatParagraph(
+function transformParagraph(
   paragraph: FlatTextParagraph,
   from: number,
   to: number,
-  props: RunPropertyOverrides,
+  transform: (mark: TextMark) => TextMark,
   includeEmpty = false,
 ): FlatTextParagraph {
   assertTextAtomBoundary(paragraph, from);
   assertTextAtomBoundary(paragraph, to);
   if (includeEmpty && !paragraph.text.length && paragraph.marks.length === 1) {
-    return { ...paragraph, marks: [{ ...formattedMark(paragraph.marks[0], props), from: 0, to: 0 }] };
+    return { ...paragraph, marks: [{ ...transform(paragraph.marks[0]), from: 0, to: 0 }] };
   }
   const segments: Segment[] = [];
   for (const mark of paragraph.marks) {
@@ -312,12 +257,17 @@ function formatParagraph(
       segments.push({ text: paragraph.text.slice(mark.from, mark.to), template: mark });
       continue;
     }
+    // fld 的显示缓存不是普通文字：rPr 只能作用于整个 fld，局部格式必须提升为字段原子操作。
+    if (mark.preserveSource && mark.props.field) {
+      segments.push({ text: paragraph.text.slice(mark.from, mark.to), template: transform(mark) });
+      continue;
+    }
     if (mark.from < selectedFrom) {
       segments.push({ text: paragraph.text.slice(mark.from, selectedFrom), template: mark });
     }
     segments.push({
       text: paragraph.text.slice(selectedFrom, selectedTo),
-      template: formattedMark(mark, props),
+      template: transform(mark),
     });
     if (selectedTo < mark.to) {
       segments.push({ text: paragraph.text.slice(selectedTo, mark.to), template: mark });
@@ -347,8 +297,34 @@ export function applyRunProps(
     const paragraph = paragraphs[index];
     const start = index === range.from.p ? from : 0;
     const end = index === range.to.p ? to : paragraph.text.length;
-    paragraphs[index] = formatParagraph(
-      paragraph, start, end, props,
+    paragraphs[index] = transformParagraph(
+      paragraph, start, end, (mark) => formattedMark(mark, props),
+      range.from.p !== range.to.p && !paragraph.text.length,
+    );
+  }
+  return { ...override, paragraphs };
+}
+
+export function clearRunFormat(
+  body: TextBody,
+  range: TextRange,
+  initial?: Extract<TextOverride, { kind: 'flat' }>,
+): TextOverride {
+  const override = initial ?? flattenTextBody(body);
+  queryTextRunProps(body, range, override);
+  const first = override.paragraphs[range.from.p];
+  const last = override.paragraphs[range.to.p];
+  const from = textPositionOffset(first, range.from);
+  const to = textPositionOffset(last, range.to);
+  if (range.from.p === range.to.p && to === from) return override;
+  const paragraphs = [...override.paragraphs];
+  for (let index = range.from.p; index <= range.to.p; index++) {
+    const paragraph = paragraphs[index];
+    paragraphs[index] = transformParagraph(
+      paragraph,
+      index === range.from.p ? from : 0,
+      index === range.to.p ? to : paragraph.text.length,
+      clearedMark,
       range.from.p !== range.to.p && !paragraph.text.length,
     );
   }
@@ -439,6 +415,13 @@ export function queryTextRunProps(
     i: state(selected.map((mark) => mark.props.i)),
     u: state(selected.map((mark) => mark.props.u)),
     strike: state(selected.map((mark) => mark.props.strike)),
+    underline: state(selected.map((mark) => mark.props.underline ?? (mark.props.u ? 'sng' : 'none'))),
+    strikeType: state(selected.map((mark) => mark.props.strikeType
+      ?? (mark.props.strike ? 'sngStrike' : 'noStrike'))),
+    highlight: state(selected.map((mark) => visibleHighlight(mark.props.highlight))),
+    spacing: state(selected.map((mark) => mark.props.spacing ?? 0)),
+    caps: state(selected.map((mark) => mark.props.caps ?? 'none')),
+    baseline: state(selected.map((mark) => mark.props.baseline ?? 0)),
   };
 }
 

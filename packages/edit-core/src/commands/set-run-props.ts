@@ -26,6 +26,8 @@ export function setRunPropsPatches(
     ...command.props,
     ...(own(command.props, 'color') && command.props.color !== null
       ? { color: normalizeDrawingColor(command.props.color!) } : {}),
+    ...(own(command.props, 'highlight') && command.props.highlight !== null
+      ? { highlight: normalizeDrawingColor(command.props.highlight!) } : {}),
     ...(own(command.props, 'link') && command.props.link !== null
       ? { link: normalizeLinkTarget(doc, command.props.link!, 'SetRunProps.props.link') } : {}),
   };

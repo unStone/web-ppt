@@ -76,7 +76,9 @@
 <span style="font-size:24px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">自动编号二</span>
 </div>
 <div style="margin:0px 0 0px 0;text-align:right;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
-<span style="font-size:21.33px;color:rgb(0,0,0);text-decoration:line-through;font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">右对齐删除线</span>
+<span style="font-size:21.33px;color:rgb(0,0,0);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:line-through;text-decoration-style:solid">右对齐删除线</span>
+</span>
 </div>
 </div>
 </foreignObject>

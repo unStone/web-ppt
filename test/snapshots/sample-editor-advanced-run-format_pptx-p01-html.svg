@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="801" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 55)">
+<path d="M 0 0 L 1140 0 L 1140 86 L 0 86 Z" fill="none" fill-rule="nonzero"/>
+<foreignObject width="1140" height="86" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1140px;height:86px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(46,117,182);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:2px;font-variant:small-caps;background-color:rgb(112,173,71);vertical-align:sub;font-size:15.6px;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">
+<span style="text-decoration-line:line-through;text-decoration-style:double">Inherited small caps</span>
+</span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 165)">
+<path d="M 0 0 L 1140 0 L 1140 150 L 0 150 Z" fill="rgb(248,250,252)" fill-rule="nonzero"/>
+<foreignObject width="1140" height="150" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1140px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">none </span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid;text-decoration-skip-spaces:all">words </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid">sng </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:double">dbl </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid;text-decoration-thickness:0.12em">heavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dotted">dotted </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dotted;text-decoration-thickness:0.12em">dottedHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed">dash </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dashHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed">dashLong </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dashLongHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed">dotDash </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dotDashHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed">dotDotDash </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">dotDotDashHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:wavy">wavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:wavy;text-decoration-thickness:0.12em">wavyHeavy </span>
+</span>
+<span style="font-size:15.33px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:wavy">wavyDbl </span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 340)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(255,247,237)" fill-rule="nonzero"/>
+<foreignObject width="1140" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1140px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:29.33px;color:rgb(112,48,160);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:-3px;text-transform:uppercase;background-color:rgb(255,192,0);vertical-align:super;font-size:19.07px;">
+<span style="text-decoration-line:underline;text-decoration-style:wavy">
+<span style="text-decoration-line:line-through;text-decoration-style:double">Advanced Format</span>
+</span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 455)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(239,246,255)" fill-rule="nonzero"/>
+<foreignObject width="1140" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1140px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<a href="https://example.com/advanced-format" target="_blank" rel="noopener noreferrer">
+<span style="font-size:22.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:dashed;text-decoration-thickness:0.12em">2026-09-03</span>
+</span>
+</a>
+<span style="font-size:22.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:line-through;text-decoration-style:solid"> 公式 </span>
+</span>
+<svg xmlns="http://www.w3.org/2000/svg" width="23.66" height="27.8" viewBox="0 -22.52 23.66 27.8" style="display:inline-block;vertical-align:-5.28px;overflow:visible">
+<text x="0" y="0" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:24px;font-style:italic;" fill="rgb(0,0,0)" xml:space="preserve">x</text>
+<text x="13.68" y="-10.08" style="font-family:'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif;font-size:17.28px;" fill="rgb(0,0,0)" xml:space="preserve">2</text>
+</svg>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(70 570)">
+<path d="M 0 0 L 1140 0 L 1140 90 L 0 90 Z" fill="rgb(240,253,244)" fill-rule="nonzero"/>
+<foreignObject width="1140" height="90" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:1140px;height:90px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre;word-break:break-word;">
+<span style="font-size:12px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:1px;background-color:rgb(224,242,254);">
+<span style="text-decoration-line:underline;text-decoration-style:dotted;text-decoration-thickness:0.12em">字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字</span>
+</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+</svg>

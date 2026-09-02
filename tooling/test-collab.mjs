@@ -9,6 +9,7 @@ import { runCollabHardeningContract } from './lib/collab-hardening-contract.mjs'
 import { runCollabAtomicContract } from './lib/collab-atomic-contract.mjs';
 import { runCollabProtocolContract } from './lib/collab-protocol-contract.mjs';
 import { runPresetShapeCollabContract } from './lib/preset-shape-collab-contract.mjs';
+import { runAdvancedRunFormatCollabContract } from './lib/advanced-run-format-collab-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -486,6 +487,10 @@ await runCollabProtocolContract({
 });
 
 await runPresetShapeCollabContract({
+  bindPair, check, createPair, edit, OfflineHub, semanticDoc, seededShuffle, stringDiff,
+});
+
+await runAdvancedRunFormatCollabContract({
   bindPair, check, createPair, edit, OfflineHub, semanticDoc, seededShuffle, stringDiff,
 });
 

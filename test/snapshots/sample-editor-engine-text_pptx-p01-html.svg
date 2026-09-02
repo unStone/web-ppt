@@ -10,8 +10,10 @@
 <div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">中文，EnglishWords 日本語 mixed run wraps here </span>
 <span style="font-size:26.67px;color:rgb(0,0,0);font-weight:700;font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">第二格式跨越视觉行</span>
-<span style="font-size:26.67px;color:rgb(0,0,0);text-decoration:underline;font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">
+<span style="text-decoration-line:underline;text-decoration-style:solid">
 <br/>
+</span>
 </span>
 <span style="font-size:26.67px;color:rgb(0,0,0);font-style:italic;font-family:'Arial','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">硬换行后😀</span>
 <span style="font-size:26.67px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">&#160;</span>

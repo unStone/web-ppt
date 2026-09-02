@@ -43,13 +43,21 @@ export function materializeRunProperties(properties: XmlElement, mark: TextMark)
   setXmlAttribute(properties, 'sz', String(Math.round(mark.props.size * 75)));
   if (mark.props.b) setXmlAttribute(properties, 'b', '1');
   if (mark.props.i) setXmlAttribute(properties, 'i', '1');
-  if (mark.props.u) setXmlAttribute(properties, 'u', 'sng');
-  if (mark.props.strike) setXmlAttribute(properties, 'strike', 'sngStrike');
+  const underline = mark.props.underline ?? (mark.props.u ? 'sng' : 'none');
+  const strikeType = mark.props.strikeType ?? (mark.props.strike ? 'sngStrike' : 'noStrike');
+  if (underline !== 'none') setXmlAttribute(properties, 'u', underline);
+  if (strikeType !== 'noStrike') setXmlAttribute(properties, 'strike', strikeType);
   if (mark.props.baseline) {
     setXmlAttribute(properties, 'baseline', String(Math.round(mark.props.baseline * 1000)));
   }
   if (mark.props.spacing) {
     setXmlAttribute(properties, 'spc', String(Math.round(mark.props.spacing * 75)));
+  }
+  if (mark.props.caps && mark.props.caps !== 'none') setXmlAttribute(properties, 'cap', mark.props.caps);
+  if (mark.props.highlight) {
+    const highlight = namespacedElement(properties, DRAWINGML_NS, 'highlight');
+    appendDrawingColor(highlight, mark.props.highlight);
+    insertXmlInOrder(properties, highlight);
   }
   if (mark.props.color) {
     const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');

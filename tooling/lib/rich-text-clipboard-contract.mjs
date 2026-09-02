@@ -23,7 +23,10 @@ export async function runRichTextClipboardContract({ edit, core, load, check }) 
       fragment: {
         paragraphs: [{
           text: '粗常', marks: [
-            { from: 0, to: 1, props: { b: true, font: 'Arial', size: 20 } },
+            { from: 0, to: 1, props: {
+              b: true, font: 'Arial', size: 20, highlight: '#FFF176', spacing: 2,
+              caps: 'small', baseline: 25, underline: 'dotDashHeavy', strikeType: 'dblStrike',
+            } },
             { from: 1, to: 2, props: { i: true } },
           ],
         }],
@@ -36,7 +39,11 @@ export async function runRichTextClipboardContract({ edit, core, load, check }) 
   check('纯 JSON replaceFragment 原子替换选区并保留白名单格式',
     textOf(effective) === '同粗常同' && inserted.length === 2
       && inserted[0].b === true && inserted[0].fonts[0] === 'Arial' && inserted[0].size === 20
-      && inserted[1].i === true && editor.history.undoCount === 1);
+      && inserted[0].highlight === '#FFF176' && inserted[0].spacing === 2
+      && inserted[0].caps === 'small' && inserted[0].baseline === 25
+      && inserted[0].underline === 'dotDashHeavy' && inserted[0].strikeType === 'dblStrike'
+      && inserted[1].i === true && editor.history.undoCount === 1,
+    JSON.stringify(inserted));
   editor.undo();
   check('富文本片段用一次撤销恢复来源投影', textOf(editor.effectiveElement(record.id)) === '同同同'
     && editor.history.undoCount === 0 && editor.history.redoCount === 1);
@@ -91,6 +98,10 @@ export async function runRichTextClipboardContract({ edit, core, load, check }) 
       && reopenedRuns.some((run) => run.text === 'B' && run.u)
       && reopenedRuns.some((run) => run.text === '\n')
       && reopenedRuns.some((run) => run.text === 'C' && run.strike)
+      && reopenedRuns.some((run) => run.text === '粗'
+        && run.highlight === 'rgb(255,241,118)' && run.spacing === 2
+        && run.caps === 'small' && run.baseline === 25
+        && run.underline === 'dotDashHeavy' && run.strikeType === 'dblStrike')
       && reopenedText.paragraphs[1].align === reopenedText.paragraphs[0].align,
   `text=${textOf({ text: reopenedText })} paragraphs=${reopenedText.paragraphs.length}`
     + ` runs=${JSON.stringify(reopenedRuns.map((run) => ({ text: run.text, u: run.u, strike: run.strike })))}`

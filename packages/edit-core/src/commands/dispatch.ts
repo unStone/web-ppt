@@ -8,6 +8,7 @@ import { pasteElementsPatches } from './paste-elements';
 import { removeElementPatches } from './element-tree';
 import { setZPatches } from './set-z';
 import { setRunPropsPatches } from './set-run-props';
+import { clearFormatPatches } from './clear-format';
 import { setParaPropsPatches } from './set-para-props';
 import { SET_FLIP_COMMAND_FIELDS, setFlipPatches } from './set-flip';
 import { setXfrmPatches } from './set-xfrm';
@@ -48,7 +49,7 @@ import {
   assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
 } from './element-interaction';
 import type {
-  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
+  AddImageCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, ClearFormatCommand, Command, CommandPatches, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSlideCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
   InsertColumnCommand, InsertRowCommand, MergeCellsCommand, RemoveColumnCommand, RemoveRowCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetCellPropsCommand, SetColumnWidthCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRowHeightCommand, SetRunPropsCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, SplitCellCommand, UngroupCommand,
 } from './types';
 import type {
@@ -130,6 +131,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetLink: register<SetLinkCommand>(['id', 'target'], setLinkPatches),
   EditText: register<EditTextCommand>(['id', 'cell', 'ops'], editTextPatches),
   SetRunProps: register<SetRunPropsCommand>(['id', 'cell', 'range', 'props'], setRunPropsPatches),
+  ClearFormat: register<ClearFormatCommand>(['id', 'cell', 'range'], clearFormatPatches),
   SetParaProps: register<SetParaPropsCommand>(['id', 'cell', 'range', 'props'], setParaPropsPatches),
   FitTextShape: register<FitTextShapeCommand>(['id'], fitTextShapePatches),
   SetBodyProps: register<SetBodyPropsCommand>(['id', 'cell', 'props'], setBodyPropsPatches),

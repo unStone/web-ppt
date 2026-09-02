@@ -79,7 +79,9 @@
 <g transform="translate(540 340)">
 <rect width="270" height="170" fill="none"/>
 <text x="9.6" y="24.77" text-anchor="start" xml:space="preserve">
-<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" text-decoration="underline">末行二</tspan>
+<tspan font-size="21.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">
+<tspan style="text-decoration-line:underline;text-decoration-style:solid">末行二</tspan>
+</tspan>
 </text>
 </g>
 <g transform="translate(810 340)">

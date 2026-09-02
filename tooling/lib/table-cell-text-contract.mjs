@@ -76,6 +76,23 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
     + ` bold=${paragraph.runs.map((run) => run.b).join('/')} siblingIdentity=`
     + `${formatted.rows[0].cells[1] === record.src.rows[0].cells[1]}`);
 
+  editor.exec({
+    type: 'SetRunProps', id: record.id, cell, range,
+    props: {
+      highlight: '#FDE68A', spacing: 2, caps: 'all', baseline: -25,
+      underline: 'dashLongHeavy', strikeType: 'dblStrike',
+    },
+  });
+  editor.exec({ type: 'ClearFormat', id: record.id, cell, range });
+  const clearedCell = editor.effectiveElement(record.id).rows[0].cells[0];
+  check('ClearFormat 在表格文字中仅清字符直设并保持内容与段落格式',
+    cellText(editor.effectiveElement(record.id), 0, 0) === '纯Web'
+      && clearedCell.text.paragraphs[0].align === 'center'
+      && clearedCell.text.paragraphs[0].bullet === '→'
+      && clearedCell.text.paragraphs[0].runs.every((run) => !run.b && !run.u && !run.strike
+        && run.highlight === null && run.spacing === undefined));
+  editor.undo();
+
   let rejected = 0;
   for (const badCell of [{ r: -1, c: 0 }, { r: 0, c: 2 }, { r: 0.5, c: 0 }]) {
     try {
@@ -92,9 +109,11 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
   editor.undo();
   editor.undo();
   editor.undo();
-  check('撤销四类文字事务恢复来源表格且清掉稀疏覆盖',
+  editor.undo();
+  check('撤销五类文字事务恢复来源表格且清掉稀疏覆盖',
     cellText(editor.effectiveElement(record.id), 0, 0) === 'A'
       && record.ovr.tableCells === undefined && !editor.isDirty());
+  editor.redo();
   editor.redo();
   editor.redo();
   editor.redo();
@@ -110,7 +129,10 @@ export async function runTableCellTextContract({ edit, core, load, check }) {
       && cellText(reopenedTable, 0, 0) === '纯Web' && cellText(reopenedTable, 0, 1) === 'B'
       && reopenedTable.rows[0].cells[0].text.paragraphs[0].align === 'center'
       && reopenedTable.rows[0].cells[0].text.paragraphs[0].bullet === '→'
-      && reopenedTable.rows[0].cells[0].text.paragraphs[0].runs.every((run) => run.b));
+      && reopenedTable.rows[0].cells[0].text.paragraphs[0].runs.every((run) => run.b
+        && run.highlight === 'rgb(253,230,138)' && run.spacing === 2
+        && run.caps === 'all' && run.baseline === -25
+        && run.underline === 'dashLongHeavy' && run.strikeType === 'dblStrike'));
   edit.disposeDoc(doc);
 
   const advancedPresentation = await core.parse(load('sample-editor-table-text.pptx'), {

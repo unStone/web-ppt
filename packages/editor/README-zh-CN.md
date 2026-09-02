@@ -241,6 +241,8 @@ view.followLink({ kind: 'external', href: 'https://example.com/docs' });
 `session.editor.selection`；非折叠选区可直接调用 headless `SetRunProps` / `queryRunProps`，折叠光标的
 待输入格式则通过下方视图 seam 留在拥有输入权的视图。所有挂载视图同步刷新，同时活动浏览器选区保持
 不丢。切到 view 模式会关闭输入层并保留同一份高保真静态预览。
+同一 seam 也接受精确下划线/删除线、高亮、字距、大小写和基线偏移。`view.clearFormat()` 对非折叠选区
+立即清除字符直设；折叠光标下会清掉待输入格式，让下一次可信输入或 IME 提交使用 Source Value。
 
 ```ts
 const unregister = view.registerTextUi(toolbarElement);
@@ -263,7 +265,8 @@ centerButton.addEventListener('pointerdown', (event) => {
 意外关闭文字编辑。
 
 文字态的 `Ctrl/Cmd+C`、`X`、`V` 直接使用浏览器同步剪贴板事件。复制和剪切会写入清洗后的 `text/plain` 与
-`text/html`；默认粘贴只保留字体、字号、粗体、斜体、下划线和删除线，`Ctrl/Cmd+Shift+V` 忽略 HTML。
+`text/html`；默认粘贴只保留字体、字号、颜色、粗体、斜体、精确下划线/删除线、高亮、字距、大小写和基线，
+`Ctrl/Cmd+Shift+V` 忽略 HTML。
 块节点映射为 PPT 段落，`<br>` 保持段内硬换行。外部 HTML 只在脱离页面的树中解析，绝不注入活动编辑面；脚本、
 样式表、链接目标、图片源、隐藏元数据和白名单外 CSS 都会丢弃。清洗后的 HTML 文本若与 `text/plain` 不一致，
 就退化为纯文本而不猜索引。每次粘贴或剪切只形成一个撤销单元。当前图片载荷会被安全拦截且不改 DOM，后续由

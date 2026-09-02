@@ -659,6 +659,18 @@ export type MathNode =
   /** 多行公式组 */
   | { kind: 'stack'; rows: MathNode[][] };
 
+/** DrawingML `ST_TextUnderlineType`；`none` 是显式关闭，其余 17 项保留原生精确样式。 */
+export const TEXT_UNDERLINE_STYLES = Object.freeze([
+  'none', 'words', 'sng', 'dbl', 'heavy', 'dotted', 'dottedHeavy', 'dash', 'dashHeavy',
+  'dashLong', 'dashLongHeavy', 'dotDash', 'dotDashHeavy', 'dotDotDash',
+  'dotDotDashHeavy', 'wavy', 'wavyHeavy', 'wavyDbl',
+] as const);
+export const TEXT_STRIKE_STYLES = Object.freeze(['noStrike', 'sngStrike', 'dblStrike'] as const);
+export const TEXT_CAPS_STYLES = Object.freeze(['none', 'all', 'small'] as const);
+export type TextUnderlineStyle = (typeof TEXT_UNDERLINE_STYLES)[number];
+export type TextStrikeStyle = (typeof TEXT_STRIKE_STYLES)[number];
+export type TextCapsStyle = (typeof TEXT_CAPS_STYLES)[number];
+
 export interface TextRun {
   text: string;
   /** 动态字段类型（如 slidenum）；显示文字只是跨应用缓存，字段身份不能被抹平。 */
@@ -667,6 +679,9 @@ export interface TextRun {
   i: boolean;
   u: boolean;
   strike: boolean;
+  /** 精确下划线/删除线样式；旧消费者可继续读取上面的布尔兼容字段。 */
+  underline?: TextUnderlineStyle;
+  strikeType?: TextStrikeStyle;
   /** px */
   size: number;
   color: string;
@@ -676,7 +691,7 @@ export interface TextRun {
   /** 字间距 px */
   spacing?: number;
   /** 全大写 / 小型大写 */
-  caps?: 'none' | 'all' | 'small';
+  caps?: TextCapsStyle;
   /** 文字描边 */
   outline?: { color: string; width: number } | null;
   /** 渐变文字：CSS background-image 值 */

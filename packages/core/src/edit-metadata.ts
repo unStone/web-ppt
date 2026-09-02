@@ -10,12 +10,14 @@ export interface TextRunEditInfo {
     readonly i: boolean;
     readonly u: boolean;
     readonly strike: boolean;
+    readonly underline?: import('./types').TextUnderlineStyle;
+    readonly strikeType?: import('./types').TextStrikeStyle;
     readonly size: number;
     readonly color: string;
     readonly fonts: string[];
     readonly baseline?: number;
     readonly spacing?: number;
-    readonly caps?: 'none' | 'all' | 'small';
+    readonly caps?: import('./types').TextCapsStyle;
     readonly outline?: { color: string; width: number } | null;
     readonly gradient?: string | null;
     readonly highlight?: string | null;

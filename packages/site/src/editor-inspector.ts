@@ -10,6 +10,7 @@ import {
   type SlideEditor,
 } from '@web-ppt/editor';
 import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
+import type { TextCapsStyle, TextStrikeStyle, TextUnderlineStyle } from '@web-ppt/core';
 import { queryElementPresetGeometry } from '@web-ppt/edit-core';
 import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
 
@@ -52,8 +53,17 @@ export function createEditorInspector(
   const textBold = $<HTMLButtonElement>(element, '#textBold');
   const textItalic = $<HTMLButtonElement>(element, '#textItalic');
   const textUnderline = $<HTMLButtonElement>(element, '#textUnderline');
+  const textStrike = $<HTMLButtonElement>(element, '#textStrike');
+  const textClearFormat = $<HTMLButtonElement>(element, '#textClearFormat');
   const textSize = $<HTMLInputElement>(element, '#textFontSize');
   const textColor = $<HTMLInputElement>(element, '#textColor');
+  const textUnderlineStyle = $<HTMLSelectElement>(element, '#textUnderlineStyle');
+  const textStrikeStyle = $<HTMLSelectElement>(element, '#textStrikeStyle');
+  const textHighlightEnabled = $<HTMLInputElement>(element, '#textHighlightEnabled');
+  const textHighlight = $<HTMLInputElement>(element, '#textHighlight');
+  const textSpacing = $<HTMLInputElement>(element, '#textSpacing');
+  const textCaps = $<HTMLSelectElement>(element, '#textCaps');
+  const textBaseline = $<HTMLInputElement>(element, '#textBaseline');
   const textAlign = $<HTMLSelectElement>(element, '#textAlign');
   const bulletKind = $<HTMLSelectElement>(element, '#textBulletKind');
   const bulletChar = $<HTMLInputElement>(element, '#textBulletChar');
@@ -120,7 +130,7 @@ export function createEditorInspector(
     textSection.hidden = !run;
     if (!run) return false;
     for (const [button, state] of [
-      [textBold, run.b], [textItalic, run.i], [textUnderline, run.u],
+      [textBold, run.b], [textItalic, run.i], [textUnderline, run.u], [textStrike, run.strike],
     ] as const) {
       button.disabled = !writable;
       button.setAttribute('aria-pressed', String(!state.mixed && state.value === true));
@@ -130,6 +140,22 @@ export function createEditorInspector(
     textSize.value = run.size.value === null ? '' : String(run.size.value);
     textColor.disabled = !writable;
     textColor.value = colorInputValue(run.color.value ?? undefined);
+    textUnderlineStyle.dataset.mixed = String(run.underline.mixed);
+    textUnderlineStyle.value = run.underline.mixed ? '' : run.underline.value ?? 'none';
+    textStrikeStyle.dataset.mixed = String(run.strikeType.mixed);
+    textStrikeStyle.value = run.strikeType.mixed ? '' : run.strikeType.value ?? 'noStrike';
+    textHighlightEnabled.dataset.mixed = String(run.highlight.mixed);
+    textHighlightEnabled.checked = !run.highlight.mixed && run.highlight.value !== null;
+    textHighlight.value = colorInputValue(run.highlight.value ?? undefined, '#fff176');
+    textSpacing.value = run.spacing.mixed ? '' : String(run.spacing.value ?? 0);
+    textCaps.dataset.mixed = String(run.caps.mixed);
+    textCaps.value = run.caps.mixed ? '' : run.caps.value ?? 'none';
+    textBaseline.value = run.baseline.mixed ? '' : String(run.baseline.value ?? 0);
+    for (const control of [
+      textUnderlineStyle, textStrikeStyle, textHighlightEnabled, textSpacing, textCaps, textBaseline,
+      textClearFormat,
+    ]) control.disabled = !writable;
+    textHighlight.disabled = !writable || !textHighlightEnabled.checked;
     const paragraph = view?.queryParaProps();
     textAlign.disabled = !writable || !paragraph;
     if (paragraph?.align.value) textAlign.value = paragraph.align.value;
@@ -244,7 +270,7 @@ export function createEditorInspector(
     empty.hidden = contexts.some(Boolean);
   };
 
-  const setRunBoolean = (field: 'b' | 'i' | 'u'): void => void act(() => {
+  const setRunBoolean = (field: 'b' | 'i' | 'u' | 'strike'): void => void act(() => {
     const { view } = context();
     const state = view?.queryRunProps()?.[field];
     if (state && view?.setRunProps({ [field]: state.mixed || !state.value })) sync();
@@ -252,11 +278,42 @@ export function createEditorInspector(
   textBold.addEventListener('click', () => setRunBoolean('b'));
   textItalic.addEventListener('click', () => setRunBoolean('i'));
   textUnderline.addEventListener('click', () => setRunBoolean('u'));
+  textStrike.addEventListener('click', () => setRunBoolean('strike'));
+  textClearFormat.addEventListener('click', () => void act(() => {
+    if (context().view?.clearFormat()) sync();
+  }));
   textSize.addEventListener('change', () => void act(() => {
     if (context().view?.setRunProps({ size: Number(textSize.value) })) sync();
   }));
   textColor.addEventListener('change', () => void act(() => {
     if (context().view?.setRunProps({ color: textColor.value })) sync();
+  }));
+  textUnderlineStyle.addEventListener('change', () => void act(() => {
+    if (context().view?.setRunProps({
+      underline: textUnderlineStyle.value as TextUnderlineStyle,
+    })) sync();
+  }));
+  textStrikeStyle.addEventListener('change', () => void act(() => {
+    if (context().view?.setRunProps({
+      strikeType: textStrikeStyle.value as TextStrikeStyle,
+    })) sync();
+  }));
+  const setHighlight = (): void => void act(() => {
+    textHighlight.disabled = !context().writable || !textHighlightEnabled.checked;
+    if (context().view?.setRunProps({
+      highlight: textHighlightEnabled.checked ? textHighlight.value : null,
+    })) sync();
+  });
+  textHighlightEnabled.addEventListener('change', setHighlight);
+  textHighlight.addEventListener('change', setHighlight);
+  textSpacing.addEventListener('change', () => void act(() => {
+    if (context().view?.setRunProps({ spacing: Number(textSpacing.value) })) sync();
+  }));
+  textCaps.addEventListener('change', () => void act(() => {
+    if (context().view?.setRunProps({ caps: textCaps.value as TextCapsStyle })) sync();
+  }));
+  textBaseline.addEventListener('change', () => void act(() => {
+    if (context().view?.setRunProps({ baseline: Number(textBaseline.value) })) sync();
   }));
   textAlign.addEventListener('change', () => void act(() => {
     if (context().view?.setParaProps({ align: textAlign.value as 'left' | 'center' | 'right' | 'justify' })) sync();

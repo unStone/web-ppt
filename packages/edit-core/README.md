@@ -287,10 +287,15 @@ through page reorder, undo/redo, save/reopen, and same/cross-document element co
 actions remain queryable and preserved as read-only source values.
 
 `SetRunProps` applies sparse character-format overrides to a half-open text range. It supports font family,
-font size in slide pixels, bold, italic, underline, and strike-through across run and paragraph boundaries.
+font size in slide pixels, bold, italic, highlight, letter spacing, caps, baseline shift, all 18 DrawingML
+underline values (`none` plus 17 styles), and single/double strike-through across run and paragraph boundaries.
 Use `null` to remove a direct override and reveal the inherited OOXML value; formulas remain indivisible,
 format-preserving atoms while dynamic fields retain their field identity on save. A collapsed headless range is intentionally a no-op—
 pending typing style belongs to the mounted input adapter, so the document never stores zero-width OOXML runs.
+The legacy boolean `u` and `strike` inputs remain supported and map to `sng`/`none` and
+`sngStrike`/`noStrike`; new code should use `underline` and `strikeType` for exact round trips.
+`ClearFormat` removes every direct visual run property in the selected range while preserving text,
+paragraph properties, hyperlinks, dynamic fields, and formula atoms.
 
 ```ts
 import { queryRunProps } from '@web-ppt/edit-core';
@@ -301,10 +306,14 @@ const range = {
 };
 editor.exec({
   type: 'SetRunProps', id: elementId, range,
-  props: { font: 'Inter', size: 24, b: true },
+  props: {
+    font: 'Inter', size: 24, b: true, highlight: '#fff176', spacing: 2,
+    caps: 'small', baseline: 30, underline: 'wavyDbl', strikeType: 'dblStrike',
+  },
 });
 const state = queryRunProps(editor.doc, elementId, range);
 // state.b: { value: true, mixed: false }; each property reports mixed state independently.
+editor.exec({ type: 'ClearFormat', id: elementId, range });
 ```
 
 `SetParaProps` applies paragraph formatting to every paragraph touched by a range, including empty paragraphs.

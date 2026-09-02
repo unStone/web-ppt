@@ -1,14 +1,18 @@
 import { textRunDirectFlags, TEXT_RUN_DIRECT_BITS } from '../edit-metadata';
+import { TEXT_STRIKE_STYLES, TEXT_UNDERLINE_STYLES } from '../types';
 import type {
-  Paragraph, TextBody, TextRun, TextWarp,
+  Paragraph, TextBody, TextCapsStyle, TextRun, TextStrikeStyle, TextUnderlineStyle, TextWarp,
 } from '../types';
-import type { TextFontSlots, TextRunDirectFlags } from '../edit-metadata';
+import type { TextRunDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
 import { mathPlainText, parseOmml } from './omml';
 import { mergeParagraphProps, resolveParagraphLevel } from './paragraph-props';
 import { materializeParagraph } from './text-materialization';
 import { directTextBodyProperties, parseTextBodyLayout } from './text-body';
+import { finalizeRun } from './text-run';
+
+export { finalizeRun } from './text-run';
 
 /**
  * 文本样式继承链：
@@ -25,9 +29,9 @@ export interface RunProps {
   sz?: number;
   b?: boolean;
   i?: boolean;
-  u?: boolean;
+  u?: TextUnderlineStyle;
   uColor?: string | null;
-  strike?: boolean;
+  strike?: TextStrikeStyle;
   color?: string;
   gradient?: string | null;
   latin?: string;
@@ -36,7 +40,7 @@ export interface RunProps {
   cs?: string;
   baseline?: number;
   spc?: number;
-  caps?: 'none' | 'all' | 'small';
+  caps?: TextCapsStyle;
   outline?: { color: string; width: number } | null;
   highlight?: string | null;
   link?: string;
@@ -185,9 +189,17 @@ export function parseRunPropsDetailed(
   if (attr(rPr, 'b') !== null) { out.b = boolAttr(rPr, 'b'); bits |= TEXT_RUN_DIRECT_BITS.b; }
   if (attr(rPr, 'i') !== null) { out.i = boolAttr(rPr, 'i'); bits |= TEXT_RUN_DIRECT_BITS.i; }
   const u = attr(rPr, 'u');
-  if (u !== null) { out.u = u !== 'none'; bits |= TEXT_RUN_DIRECT_BITS.u; }
+  if (u !== null) {
+    out.u = (TEXT_UNDERLINE_STYLES as readonly string[]).includes(u)
+      ? u as TextUnderlineStyle : 'sng';
+    bits |= TEXT_RUN_DIRECT_BITS.u;
+  }
   const strike = attr(rPr, 'strike');
-  if (strike !== null) { out.strike = strike !== 'noStrike'; bits |= TEXT_RUN_DIRECT_BITS.strike; }
+  if (strike !== null) {
+    out.strike = (TEXT_STRIKE_STYLES as readonly string[]).includes(strike)
+      ? strike as TextStrikeStyle : 'sngStrike';
+    bits |= TEXT_RUN_DIRECT_BITS.strike;
+  }
   const baseline = numAttr(rPr, 'baseline');
   if (baseline !== null) { out.baseline = baseline / 1000; bits |= TEXT_RUN_DIRECT_BITS.baseline; }
   const spc = numAttr(rPr, 'spc');
@@ -414,85 +426,4 @@ function fieldText(type: string | null, env: TextEnv): string {
   if (type.startsWith('datetime')) return env.dateText ?? new Date().toLocaleDateString();
   if (type === 'footer') return env.footerText ?? '';
   return '';
-}
-
-function effectiveFontSlots(rp: RunProps, env: TextEnv): TextFontSlots {
-  // run 里没写 a:latin 不等于「没有字体」——ECMA-376 的继承链走到最后落在
-  // 主题的 minorFont 上。不补这一层，渲染会掉到 CSS 的通用回退（Helvetica）
-  // 上，字宽与 PowerPoint 对不齐；collectFonts 也会以为这份文件没用字体。
-  return {
-    latin: rp.latin ?? env.fonts.minor.latin,
-    eastAsian: rp.ea ?? env.fonts.minor.ea,
-    complexScript: rp.cs ?? env.fonts.minor.cs ?? null,
-  };
-}
-
-function fontStack(slots: TextFontSlots): string[] {
-  const { latin, eastAsian: ea, complexScript: cs } = slots;
-
-  // 字体栈按 latin → ea → cs 排，浏览器会逐个回退直到找到含该字形的字体
-  const fonts: string[] = [];
-  if (latin) fonts.push(latin);
-  if (ea && ea !== latin) fonts.push(ea);
-  if (cs && cs !== latin && cs !== ea) fonts.push(cs);
-  return fonts;
-}
-
-function effectiveFonts(rp: RunProps, env: TextEnv): string[] {
-  return fontStack(effectiveFontSlots(rp, env));
-}
-
-function inheritedRunProps(rp: RunProps, env: TextEnv): NonNullable<TextRun['editInfo']>['inheritedRunProps'] {
-  return {
-    b: rp.b ?? false,
-    i: rp.i ?? false,
-    u: rp.u ?? false,
-    strike: rp.strike ?? false,
-    size: pt100(rp.sz ?? 1800),
-    color: rp.color ?? env.defaultColor ?? 'rgb(0,0,0)',
-    fonts: effectiveFonts(rp, env),
-    baseline: rp.baseline || undefined,
-    spacing: rp.spc || undefined,
-    caps: rp.caps && rp.caps !== 'none' ? rp.caps : undefined,
-    outline: rp.outline ?? null,
-    gradient: rp.gradient ?? null,
-    highlight: rp.highlight ?? null,
-    underlineColor: rp.uColor ?? null,
-  };
-}
-
-export function finalizeRun(
-  text: string,
-  rp: RunProps,
-  env: TextEnv,
-  inherited?: RunProps,
-  direct: TextRunDirectFlags = textRunDirectFlags(0),
-): TextRun {
-  const fontSlots = effectiveFontSlots(rp, env);
-  const fonts = fontStack(fontSlots);
-  const size = pt100(rp.sz ?? 1800);
-  return {
-    text,
-    b: rp.b ?? false,
-    i: rp.i ?? false,
-    u: rp.u ?? false,
-    strike: rp.strike ?? false,
-    size,
-    color: rp.color ?? env.defaultColor ?? 'rgb(0,0,0)',
-    fonts,
-    baseline: rp.baseline || undefined,
-    spacing: rp.spc || undefined,
-    caps: rp.caps && rp.caps !== 'none' ? rp.caps : undefined,
-    outline: rp.outline ?? null,
-    gradient: rp.gradient ?? null,
-    link: rp.link,
-    highlight: rp.highlight ?? null,
-    underlineColor: rp.uColor ?? null,
-    ...(env.edit && inherited ? { editInfo: {
-      inheritedRunProps: inheritedRunProps(inherited, env),
-      inheritedFontSlots: effectiveFontSlots(inherited, env),
-      direct,
-      fontSlots,
-    } } : {}),
-  };
 }

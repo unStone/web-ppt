@@ -194,7 +194,7 @@ function appendMark(
     if (!sourceText || sourceText === text) {
       const field = cloneXmlNode(source);
       let properties = xmlElementChildren(field).find((child) => child.localName === 'rPr');
-      if (!properties && mark.runOverrides) {
+      if (!properties && (mark.runOverrides || mark.clearDirectFormatting)) {
         properties = namespacedElement(field, DRAWINGML_NS, 'rPr');
         insertXmlChildUnchecked(field, properties, xmlElementChildren(field)[0] ?? null);
       }
@@ -301,7 +301,7 @@ function patchFormatOnly(
     const sourceParagraph = sourceParagraphs[paragraphIndex];
     paragraphProperties(sourceParagraph, paragraph, flat.body.lnSpcReduction ?? 0);
     const changed = new Set(paragraph.marks
-      .filter((mark) => mark.runOverrides)
+      .filter((mark) => mark.runOverrides || mark.clearDirectFormatting)
       .map((mark) => mark.source!.run));
     if (!changed.size) return;
     const units = textUnits(sourceParagraph);

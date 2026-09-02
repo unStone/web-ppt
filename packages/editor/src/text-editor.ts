@@ -1,6 +1,6 @@
 import {
-  applyRunProps, applyTextEditOps, slideOfElement, tableCellOverrideKey,
-  queryParaProps as queryHeadlessParaProps, queryRunLink as queryHeadlessRunLink, queryRunProps, textBodyEditText, textBodyFromOverride,
+  slideOfElement, queryParaProps as queryHeadlessParaProps,
+  queryRunLink as queryHeadlessRunLink, queryRunProps, textBodyEditText,
   textPositionAtIndex, textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
@@ -20,6 +20,8 @@ import { resolveTextEditorContext } from './text-editor-context';
 import { changeTextListLevel } from './text-list-level';
 import { TextKeyboardController } from './text-keyboard';
 import { stepSelectedFontSize } from './text-font-step';
+import { commitTextInput } from './text-edit-commit';
+import type { PendingTextFormat } from './text-edit-commit';
 
 export class TextEditorController {
   private readonly options: TextEditorControllerOptions;
@@ -31,7 +33,7 @@ export class TextEditorController {
   private root: HTMLDivElement | null = null;
   private composing = false;
   private composition: CompositionSnapshot | null = null;
-  private pendingRunProps: RunPropertyOverrides = {};
+  private pendingFormat: PendingTextFormat = { props: {}, clearSource: false };
   private staticStale = false;
   private readonly hidden = new Map<HTMLElement | SVGElement, string>();
   private readonly externalUi = new Set<HTMLElement>();
@@ -47,7 +49,7 @@ export class TextEditorController {
     this.clipboard = new TextClipboardController({
       enabled: () => !this.composing,
       context: () => this.textContext(),
-      pendingProps: () => this.pendingRunProps,
+      pendingProps: () => this.pendingFormat.props,
       commit: (ops, nextIndex, label) => this.commit(ops, nextIndex, label),
     });
     this.keyboard = new TextKeyboardController({
@@ -91,7 +93,7 @@ export class TextEditorController {
     if (textPositionToIndex(context.text, context.positions.from)
       !== textPositionToIndex(context.text, context.positions.to)) return state;
     return Object.fromEntries(Object.entries(state).map(([field, value]) => {
-      const pending = this.pendingRunProps[field as keyof RunPropertyOverrides];
+      const pending = this.pendingFormat.props[field as keyof RunPropertyOverrides];
       return [field, pending === undefined ? value : { value: pending, mixed: false }];
     })) as unknown as RunPropertiesState;
   }
@@ -142,13 +144,15 @@ export class TextEditorController {
     if (from === to) {
       // headless no-op 仍负责统一校验；视图只保存不能进入 OOXML 的待输入状态。
       this.options.editor.exec(command);
-      this.pendingRunProps = { ...this.pendingRunProps, ...props };
+      this.pendingFormat = {
+        ...this.pendingFormat, props: { ...this.pendingFormat.props, ...props },
+      };
       this.options.editor.select({
         kind: 'text', id: context.id, ...textTargetFields(context.cell),
         anchor: context.positions.from, focus: context.positions.to,
       });
     } else {
-      this.pendingRunProps = {};
+      this.resetPendingFormat();
       this.options.editor.transaction((transaction) => {
         transaction.exec(command);
         transaction.select({
@@ -156,6 +160,37 @@ export class TextEditorController {
           anchor: context.positions.from, focus: context.positions.to,
         });
       }, '设置字符格式');
+    }
+    this.root?.focus({ preventScroll: true });
+    this.setSelection(context.positions.from, context.positions.to);
+    return true;
+  }
+
+  clearFormat(): boolean {
+    const context = this.textContext();
+    if (!context || this.composing) return false;
+    const from = textPositionToIndex(context.text, context.positions.from);
+    const to = textPositionToIndex(context.text, context.positions.to);
+    const command = {
+      type: 'ClearFormat' as const, id: context.id, ...textTargetFields(context.cell),
+      range: context.positions,
+    };
+    this.resetPendingFormat();
+    if (from === to) {
+      this.options.editor.exec(command);
+      this.pendingFormat = { props: {}, clearSource: true };
+      this.options.editor.select({
+        kind: 'text', id: context.id, ...textTargetFields(context.cell),
+        anchor: context.positions.from, focus: context.positions.to,
+      });
+    } else {
+      this.options.editor.transaction((transaction) => {
+        transaction.exec(command);
+        transaction.select({
+          kind: 'text', id: context.id, ...textTargetFields(context.cell),
+          anchor: context.positions.from, focus: context.positions.to,
+        });
+      }, '清除字符格式');
     }
     this.root?.focus({ preventScroll: true });
     this.setSelection(context.positions.from, context.positions.to);
@@ -180,7 +215,7 @@ export class TextEditorController {
     this.options.claim();
     this.activeId = id;
     this.activeCell = cell ? { ...cell } : null;
-    this.pendingRunProps = {};
+    this.resetPendingFormat();
     this.staticStale = false;
     this.autofit.reset();
     this.render();
@@ -203,7 +238,7 @@ export class TextEditorController {
     this.activeCell = null;
     this.composing = false;
     this.composition = null;
-    this.pendingRunProps = {};
+    this.resetPendingFormat();
     this.staticStale = false;
     this.autofit.reset();
     this.clipboard.release();
@@ -233,7 +268,7 @@ export class TextEditorController {
       }
       this.staticStale = false;
       this.activeCell = change.selection.cell ? { ...change.selection.cell } : null;
-      this.pendingRunProps = {};
+      this.resetPendingFormat();
       if (!this.activeText()) return this.close(false);
       this.autofit.reset();
       this.render(change.selection);
@@ -348,7 +383,7 @@ export class TextEditorController {
     if (this.staticStale) this.options.syncStatic(this.activeId);
     this.staticStale = false;
     this.activeCell = { ...next };
-    this.pendingRunProps = {};
+    this.resetPendingFormat();
     const active = this.activeText();
     if (!active) return this.close(false);
     this.autofit.reset();
@@ -396,45 +431,11 @@ export class TextEditorController {
   ): void {
     const active = this.activeText();
     if (!active) return;
-    const { id, cell, text } = active;
-    const record = this.options.editor.doc.elements[id];
-    const currentOverride = cell
-      ? record.ovr.tableCells?.[tableCellOverrideKey(record, cell)]?.text
-      : record.ovr.text;
-    // 选区必须按命令实际使用的 flat mark 身份预测；从投影重新 flatten 会丢失来源边界。
-    const predicted = applyTextEditOps(
-      text, ops, currentOverride?.kind === 'flat' ? currentOverride : undefined,
+    const caret = commitTextInput(
+      this.options.editor, active, ops, nextIndex, label, insertedFrom,
+      this.pendingFormat,
     );
-    if (predicted.kind !== 'flat') return;
-    const predictedBody = textBodyFromOverride(predicted);
-    const formatRange = insertedFrom !== null && nextIndex > insertedFrom
-      && Object.keys(this.pendingRunProps).length
-      ? {
-        from: textPositionAtIndex(predictedBody, insertedFrom),
-        to: textPositionAtIndex(predictedBody, nextIndex),
-      } : null;
-    const formatted = formatRange
-      ? applyRunProps(predictedBody, formatRange, this.pendingRunProps, predicted)
-      : predicted;
-    if (formatted.kind !== 'flat') return;
-    const caret = textPositionAtIndex(textBodyFromOverride(formatted), nextIndex);
-    const selection: Selection = {
-      kind: 'text', id, ...textTargetFields(cell ?? null), anchor: caret, focus: caret,
-    };
-    this.options.editor.transaction((transaction) => {
-      transaction.exec({ type: 'EditText', id, ...textTargetFields(cell ?? null), ops });
-      if (formatRange) {
-        transaction.exec({
-          type: 'SetRunProps', id, ...textTargetFields(cell ?? null),
-          range: formatRange,
-          props: this.pendingRunProps,
-        });
-      }
-      transaction.select(selection);
-    }, label, label === '文字输入'
-      ? { mergeKey: `text:${id}${cell ? `:${cell.r}:${cell.c}` : ''}` }
-      : {});
-    this.setCaret(caret);
+    if (caret) this.setCaret(caret);
   }
 
   private endComposition(): void {
@@ -481,7 +482,7 @@ export class TextEditorController {
     const state = queryRunProps(
       this.options.editor.doc, this.activeId, positions, this.activeCell ?? undefined,
     )[field];
-    const pending = this.pendingRunProps[field];
+    const pending = this.pendingFormat.props[field];
     const current = from === to && typeof pending === 'boolean'
       ? pending : !state.mixed && state.value === true;
     const value = !current;
@@ -492,7 +493,7 @@ export class TextEditorController {
     if (from === to) {
       return this.setRunProps({ [field]: value });
     }
-    this.pendingRunProps = {};
+    this.resetPendingFormat();
     const labels = { b: '粗体', i: '斜体', u: '下划线' } as const;
     this.options.editor.transaction((transaction) => {
       transaction.exec({
@@ -509,6 +510,10 @@ export class TextEditorController {
   }
 
   private setCaret(position: TextPosition): void { this.setSelection(position, position); }
+
+  private resetPendingFormat(): void {
+    this.pendingFormat = { props: {}, clearSource: false };
+  }
 
   private hideStaticText(): void {
     this.restoreStaticText();

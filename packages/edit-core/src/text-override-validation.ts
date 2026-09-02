@@ -101,6 +101,9 @@ export function validateFlatTextOverride(
       if (mark.runOverrides) {
         assertRunPropertyOverrides(mark.runOverrides, '文字字符格式覆盖');
       }
+      if (mark.clearDirectFormatting !== undefined && mark.clearDirectFormatting !== true) {
+        throw new Error('清除字符直设标记必须为 true');
+      }
       offset = mark.to;
     }
     if (offset !== paragraph.text.length || (!paragraph.marks.length && paragraph.text.length)) {

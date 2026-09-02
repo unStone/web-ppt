@@ -37,6 +37,7 @@ export function fieldTextWithoutDirect(source: TextBody): TextBody {
       if (inheritedRun) {
         Object.assign(run, {
           b: inheritedRun.b, i: inheritedRun.i, u: inheritedRun.u, strike: inheritedRun.strike,
+          underline: inheritedRun.underline, strikeType: inheritedRun.strikeType,
           size: inheritedRun.size, color: inheritedRun.color, fonts: [...inheritedRun.fonts],
           baseline: inheritedRun.baseline, spacing: inheritedRun.spacing, caps: inheritedRun.caps,
           outline: structuredClone(inheritedRun.outline),

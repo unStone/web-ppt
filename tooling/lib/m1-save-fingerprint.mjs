@@ -62,6 +62,27 @@ if (mode === 'projected') {
         ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
       });
     }
+    for (const change of scenario.formatPainters ?? []) {
+      const source = Object.values(doc.elements)
+        .find((record) => record.src.name === change.fromName);
+      const destination = Object.values(doc.elements)
+        .find((record) => record.src.name === change.toName);
+      if (!source || !destination) throw new Error('M1 指纹固件缺少格式刷来源或目标');
+      editor.exec({
+        type: 'ApplyFormat', from: source.id, to: destination.id, mask: change.mask,
+        ...(change.fromRange ? { fromRange: change.fromRange } : {}),
+        ...(change.toRange ? { toRange: change.toRange } : {}),
+      });
+    }
+    for (const change of scenario.clears ?? []) {
+      const textTarget = Object.values(doc.elements)
+        .find((record) => record.src.name === change.targetName);
+      if (!textTarget) throw new Error(`M1 指纹固件缺少清除格式目标：${change.targetName}`);
+      editor.exec({
+        type: 'ClearFormat', id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}), range: change.range,
+      });
+    }
     for (const change of scenario.paragraphFormats ?? []) {
       const textTarget = Object.values(doc.elements)
         .find((record) => record.src.name === change.targetName);

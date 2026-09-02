@@ -4,17 +4,7 @@ import {
 import type {
   Paragraph, TextBody, TextRun, TextRunDirectFlags,
 } from '@web-ppt/core';
-
-const RUN_FIELDS = [
-  ['b', TEXT_RUN_DIRECT_BITS.b], ['i', TEXT_RUN_DIRECT_BITS.i],
-  ['u', TEXT_RUN_DIRECT_BITS.u], ['strike', TEXT_RUN_DIRECT_BITS.strike],
-  ['size', TEXT_RUN_DIRECT_BITS.size],
-  ['color', TEXT_RUN_DIRECT_BITS.color], ['baseline', TEXT_RUN_DIRECT_BITS.baseline],
-  ['spacing', TEXT_RUN_DIRECT_BITS.spacing], ['caps', TEXT_RUN_DIRECT_BITS.caps],
-  ['outline', TEXT_RUN_DIRECT_BITS.outline], ['gradient', TEXT_RUN_DIRECT_BITS.gradient],
-  ['highlight', TEXT_RUN_DIRECT_BITS.highlight],
-  ['underlineColor', TEXT_RUN_DIRECT_BITS.underlineColor],
-] as const;
+import { FONT_DIRECT_BITS, LAYOUT_RUN_DIRECT_FIELDS } from './run-property-fields';
 
 function stackFromSlots(slots: NonNullable<TextRun['editInfo']>['fontSlots']): string[] {
   return [...new Set([
@@ -44,13 +34,10 @@ function rebasedRun(
     };
     out.fonts = stackFromSlots(fontSlots);
     out.editInfo = { ...source.editInfo!, fontSlots };
-  } else if (!(direct & (TEXT_RUN_DIRECT_BITS.fonts
-    | TEXT_RUN_DIRECT_BITS.fontLatin
-    | TEXT_RUN_DIRECT_BITS.fontEastAsian
-    | TEXT_RUN_DIRECT_BITS.fontComplexScript))) {
+  } else if (!(direct & FONT_DIRECT_BITS)) {
     out.fonts = structuredClone(target.fonts);
   }
-  for (const [field, bit] of RUN_FIELDS) {
+  for (const [field, bit] of LAYOUT_RUN_DIRECT_FIELDS) {
     if (direct & bit) continue;
     const value = target[field];
     if (value === undefined) delete values[field];

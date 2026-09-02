@@ -1,6 +1,4 @@
-import {
-  formatDrawingAutoNumber, PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS,
-} from '@web-ppt/core';
+import { formatDrawingAutoNumber, PARAGRAPH_LAYOUT_DIRECT_BITS } from '@web-ppt/core';
 import type { Paragraph, TextBody, TextRun } from '@web-ppt/core';
 import type {
   ElementImageReplacement, FlatTextParagraph, ParagraphBullet, ParagraphProperties, ParagraphPropertyOverrides, RunProperties, TextMark,
@@ -8,6 +6,8 @@ import type {
 } from './types';
 import type { TextRange } from './commands/types';
 import { normalizeDrawingColor } from './shape-fill';
+import { runProperties as effectiveRunProperties } from './run-style';
+import { directRunBit, FONT_DIRECT_BITS, RUN_REBASE_FIELDS } from './run-property-fields';
 
 const own = (value: object | undefined, field: PropertyKey): boolean =>
   Object.prototype.hasOwnProperty.call(value ?? {}, field);
@@ -39,15 +39,7 @@ function paragraphDirect(
 }
 
 function runProperties(run: TextRun): RunProperties {
-  return {
-    font: run.fonts[0] ?? null,
-    size: run.size,
-    color: run.color,
-    b: run.b,
-    i: run.i,
-    u: run.u,
-    strike: run.strike,
-  };
+  return effectiveRunProperties(run);
 }
 
 function sourceRun(
@@ -68,13 +60,8 @@ function runDirect(
 ): boolean {
   if (own(mark.runOverrides, field)) return mark.runOverrides?.[field] !== null;
   const bits = (source.paragraph?.editInfo?.directRun ?? 0) | (source.run?.editInfo?.direct ?? 0);
-  if (field === 'font') {
-    return !!(bits & (TEXT_RUN_DIRECT_BITS.fonts
-      | TEXT_RUN_DIRECT_BITS.fontLatin
-      | TEXT_RUN_DIRECT_BITS.fontEastAsian
-      | TEXT_RUN_DIRECT_BITS.fontComplexScript));
-  }
-  return !!(bits & TEXT_RUN_DIRECT_BITS[field]);
+  if (field === 'font') return !!(bits & FONT_DIRECT_BITS);
+  return !!(bits & directRunBit(field));
 }
 
 function rebasedMark(
@@ -87,7 +74,7 @@ function rebasedMark(
   const source = sourceRun(body, paragraph, paragraphIndex, mark);
   const props = { ...mark.props };
   if (!runDirect(mark, source, 'font')) props.fonts = [...target.fonts];
-  for (const field of ['size', 'color', 'b', 'i', 'u', 'strike'] as const) {
+  for (const field of RUN_REBASE_FIELDS) {
     if (!runDirect(mark, source, field)) props[field] = target[field] as never;
   }
   return {

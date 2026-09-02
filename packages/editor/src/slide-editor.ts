@@ -311,6 +311,7 @@ class DomSlideEditor implements SlideEditor {
   queryRunProps(): RunPropertiesState | null { return this.commands.queryRunProps(); }
   queryRunLink(): RunLinkState | null { return this.commands.queryRunLink(); }
   setRunProps(props: RunPropertyOverrides): boolean { return this.commands.setRunProps(props); }
+  clearFormat(): boolean { return this.commands.clearFormat(); }
   queryParaProps(): ParagraphPropertiesState | null { return this.commands.queryParaProps(); }
   setParaProps(props: ParagraphPropertyInput): boolean { return this.commands.setParaProps(props); }
   queryBodyProps(): TextBodyProperties | null { return this.commands.queryBodyProps(); }

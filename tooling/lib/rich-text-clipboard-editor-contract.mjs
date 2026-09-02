@@ -20,9 +20,19 @@ function clipboardEvent(window, type, data) {
 }
 
 function selectAcross(window, first, firstOffset, last, lastOffset) {
+  const textNode = (root, atEnd) => {
+    const walker = window.document.createTreeWalker(root, window.NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    if (!atEnd) return node;
+    let tail = node;
+    while (node) { tail = node; node = walker.nextNode(); }
+    return tail;
+  };
+  const firstText = textNode(first, false);
+  const lastText = textNode(last, true);
   const range = window.document.createRange();
-  range.setStart(first.firstChild, firstOffset);
-  range.setEnd(last.firstChild, lastOffset);
+  range.setStart(firstText, firstOffset);
+  range.setEnd(lastText, lastOffset);
   const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
@@ -68,6 +78,26 @@ export async function runRichTextClipboardEditorContract({ check, lib, root, win
     .find((run) => run.text === '未知');
   check('未知标签只贡献文本且不能携带自己的内联样式',
     unknown.defaultPrevented && !!unknownRun && !unknownRun.b && unknownRun.size !== 99);
+  session.editor.undo();
+
+  editable = container.querySelector(`[data-ppt-text-editor="${record.id}"]`);
+  markers = editable.querySelectorAll('[data-r]');
+  selectAcross(window, markers[0], 0, markers[0], 1);
+  const forged = clipboardEvent(window, 'paste', clipboardData({
+    'text/plain': '越界',
+    'text/html': '<span data-web-ppt-highlight="rgb(999,0,0)" '
+      + 'data-web-ppt-spacing="Infinity" data-web-ppt-baseline="NaN" '
+      + 'data-web-ppt-underline="invented">越界</span>',
+  }));
+  editable.dispatchEvent(forged);
+  const forgedRun = session.editor.effectiveElement(record.id).text.paragraphs[0].runs
+    .find((run) => run.text === '越界');
+  check('伪造的内部高级格式元数据越界时只接纳文字，不让非法值进入命令',
+    forged.defaultPrevented && !!forgedRun
+      && forgedRun.highlight !== 'rgb(999,0,0)'
+      && Number.isFinite(forgedRun.spacing ?? 0)
+      && Number.isFinite(forgedRun.baseline ?? 0)
+      && forgedRun.underline !== 'invented');
   session.editor.undo();
 
   editable = container.querySelector(`[data-ppt-text-editor="${record.id}"]`);

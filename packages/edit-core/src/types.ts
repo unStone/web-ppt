@@ -3,6 +3,7 @@ import type {
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
+  TextCapsStyle, TextStrikeStyle, TextUnderlineStyle,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 
@@ -312,6 +313,8 @@ export interface TextMark {
   readonly preserveSource?: true;
   /** 用户对来源 rPr 的稀疏覆盖；null 表示删除直接格式、回到继承。 */
   readonly runOverrides?: RunPropertyOverrides;
+  /** 先删除来源 rPr 的全部视觉直设，再叠加 runOverrides；链接与字段身份不属于格式。 */
+  readonly clearDirectFormatting?: true;
   /** 删除直接格式后用于恢复继承所得的有效值；只含字符格式 P0 字段。 */
   readonly inheritedProps?: RunProperties;
   /** 完整继承字符元数据；改级后不能继续沿用旧层级的非面板字段。 */
@@ -332,6 +335,14 @@ export interface RunProperties {
   readonly i: boolean;
   readonly u: boolean;
   readonly strike: boolean;
+  readonly underline: TextUnderlineStyle;
+  readonly strikeType: TextStrikeStyle;
+  readonly highlight: string | null;
+  /** 编辑 API 沿用统一 Schema 的 CSS px；保存时换算为 `a:rPr@spc` 的 1/100 pt。 */
+  readonly spacing: number;
+  readonly caps: TextCapsStyle;
+  /** 百分比；30 表示上移 30%，-25 表示下移 25%。 */
+  readonly baseline: number;
 }
 
 export interface RunPropertyOverrides {
@@ -342,6 +353,13 @@ export interface RunPropertyOverrides {
   readonly i?: boolean | null;
   readonly u?: boolean | null;
   readonly strike?: boolean | null;
+  /** 精确样式优先；不能与对应的旧布尔字段同时传入。 */
+  readonly underline?: TextUnderlineStyle | null;
+  readonly strikeType?: TextStrikeStyle | null;
+  readonly highlight?: string | null;
+  readonly spacing?: number | null;
+  readonly caps?: TextCapsStyle | null;
+  readonly baseline?: number | null;
   /** null 恢复来源；none 明确去掉选区链接。 */
   readonly link?: LinkOverride | null;
 }
@@ -377,6 +395,12 @@ export interface RunPropertiesState {
   readonly i: RunPropertyState<boolean>;
   readonly u: RunPropertyState<boolean>;
   readonly strike: RunPropertyState<boolean>;
+  readonly underline: RunPropertyState<TextUnderlineStyle>;
+  readonly strikeType: RunPropertyState<TextStrikeStyle>;
+  readonly highlight: RunPropertyState<string>;
+  readonly spacing: RunPropertyState<number>;
+  readonly caps: RunPropertyState<TextCapsStyle>;
+  readonly baseline: RunPropertyState<number>;
 }
 
 export type RunLinkState = ElementLinkState;
