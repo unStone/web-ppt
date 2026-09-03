@@ -86,7 +86,6 @@ class BrowserEditorSession implements EditorSession {
   private readonly projectedSlideIds = new Map<string, number>();
   private readonly projectedSlideIdOwners = new Map<number, string>();
   private readonly sourceSlideIdsByPart: ReadonlyMap<string, number>;
-  private nextSyntheticSlideId = MAX_PRESENTATION_SLIDE_ID;
 
   constructor(
     editor: Editor,
@@ -107,15 +106,31 @@ class BrowserEditorSession implements EditorSession {
         }
       });
     }
-    editor.doc.slideOrder.forEach((slideId, index) => {
+    const initialSlides = presentation.slides.map((slide, index) => ({
+      id: `${editor.doc.identity.prefix}s${(index + 1).toString(36)}`,
+      index,
+      part: slide.editInfo?.origin?.part,
+    }));
+    // 先为原始来源页保留身份，即使恢复日志已删除该页，剩余页也不能趁机换号。
+    for (const slide of initialSlides) {
+      const value = (slide.part ? this.sourceSlideIdsByPart.get(slide.part) : undefined)
+        ?? sectionIdByIndex.get(slide.index);
+      if (value !== undefined) this.claimProjectedSlideId(slide.id, value);
+    }
+    for (const slide of initialSlides) {
+      if (!this.projectedSlideIds.has(slide.id)) this.allocateProjectedSlideId(slide.id);
+    }
+    const currentSlides = Object.keys(editor.doc.slides).sort();
+    for (const slideId of currentSlides) {
+      if (this.projectedSlideIds.has(slideId)) continue;
       const record = editor.doc.slides[slideId];
-      const value = record.creation?.presentationSlideId
-        ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined)
-        ?? sectionIdByIndex.get(index);
-      if (value !== undefined) this.claimProjectedSlideId(slideId, value);
-    });
-    // 非 OOXML 没有 p:sldId；按初始页序从合法区间高端分配，重排/删除后身份仍不漂移。
-    for (const slideId of editor.doc.slideOrder) this.projectedSlideId(slideId);
+      const exact = record.creation?.presentationSlideId
+        ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
+      if (exact !== undefined) this.claimProjectedSlideId(slideId, exact);
+    }
+    for (const slideId of currentSlides) {
+      if (!this.projectedSlideIds.has(slideId)) this.allocateProjectedSlideId(slideId);
+    }
     registerSession(this, presentation);
   }
 
@@ -139,11 +154,32 @@ class BrowserEditorSession implements EditorSession {
     const exact = record?.creation?.presentationSlideId
       ?? (record?.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
     if (exact !== undefined && this.claimProjectedSlideId(slideId, exact)) return exact;
-    while (this.projectedSlideIdOwners.has(this.nextSyntheticSlideId)) this.nextSyntheticSlideId--;
-    if (this.nextSyntheticSlideId < 256) throw new Error('演示文稿的投影页面身份已耗尽');
-    const allocated = this.nextSyntheticSlideId--;
-    this.claimProjectedSlideId(slideId, allocated);
-    return allocated;
+    return this.allocateProjectedSlideId(slideId);
+  }
+
+  private allocateProjectedSlideId(slideId: string): number {
+    const marker = `${this.editor.doc.identity.prefix}s`;
+    const suffix = slideId.startsWith(marker) ? slideId.slice(marker.length) : '';
+    const serial = /^[0-9a-z]+$/.test(suffix) ? Number.parseInt(suffix, 36) : 0;
+    const range = MAX_PRESENTATION_SLIDE_ID - 255;
+    let candidate: number;
+    if (Number.isSafeInteger(serial) && serial > 0 && serial <= range) {
+      candidate = MAX_PRESENTATION_SLIDE_ID - serial + 1;
+    } else {
+      let hash = 0x811c9dc5;
+      for (let index = 0; index < slideId.length; index++) {
+        hash = Math.imul(hash ^ slideId.charCodeAt(index), 0x01000193);
+      }
+      candidate = 256 + ((hash >>> 0) % range);
+    }
+    for (let tried = 0; tried < range; tried++) {
+      if (!this.projectedSlideIdOwners.has(candidate)) {
+        this.claimProjectedSlideId(slideId, candidate);
+        return candidate;
+      }
+      candidate = candidate === 256 ? MAX_PRESENTATION_SLIDE_ID : candidate - 1;
+    }
+    throw new Error('演示文稿的投影页面身份已耗尽');
   }
 
   toPresentation(): Presentation {

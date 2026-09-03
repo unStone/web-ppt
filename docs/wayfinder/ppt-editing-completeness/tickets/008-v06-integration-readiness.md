@@ -43,7 +43,7 @@ editor 根入口补齐表格、段落、字符和预设几何查询，官网工�
 因而 API、产品入口和文档指向同一条路径。
 
 默认查看链路没有吸收可选实现：图片 ZIP、生成保存、预设调节柄继续是独立入口，发布包保持 `sideEffects: false`；
-editor 主入口只为必要的当前投影与数值身份缓存 seam 增加 822B gzip。图片透明度/灰度/双色调进入后续数据与保真地图，画布
+editor 主入口只为必要的当前投影与持久数值身份 seam 增加 1192B gzip。图片透明度/灰度/双色调进入后续数据与保真地图，画布
 AT 语义进入后续可访问性产品地图，File System Access 保持产品增强项；它们没有证据应改变本地图的 0.6 范围。
 
 ## Evidence
@@ -55,7 +55,8 @@ AT 语义进入后续可访问性产品地图，File System Access 保持产品�
 - 真实 Chrome 覆盖同一跨能力旅程、三层 DOM、恢复、当前编辑投影与两页图片 ZIP；210 页压力样本保持
   并发上限 3，并释放 210 张位图。官网真实浏览器构建验证 image-zip 不在初始依赖图而由唯一动态块加载；
   人为延迟该分块时，新建/打开/重复文件任务均被隔离，最终下载 9098B ZIP 且 dirty 状态不变。
-- `.ppt` 新增节可投影为稳定且唯一的合法数值页面身份，并继续进入图片 ZIP 边界；PPTX 的数值身份只解析
+- `.ppt` 新增节可投影为稳定且唯一的合法数值页面身份，移动或删除后恢复重开仍与同一页面绑定，并继续进入
+  图片 ZIP 边界；PPTX 的数值身份只解析
   一次。210 个真实来源 part 的大节还注入了重复 ID 与合法上界碰撞，连续投影仍保持唯一、稳定，本轮 p95
   低于 0.1ms，避免按节成员重复扫描包结构。
 - 模型保存清单精确登记 68 份 PPTX，并与官网 Chrome 生成的 `.ppt→PPTX` 下载共同组成 69 份 Office 清单；
@@ -65,6 +66,6 @@ AT 语义进入后续可访问性产品地图，File System Access 保持产品�
   Windows PowerPoint 只校验当前提交、工件字节和页数绑定的 9 项证据契约，没有伪造本机成功报告。
 - `npm run build`：八个发布包均为 `0.5.0-beta.3`，README、许可证、公开入口完整；core 图片 ZIP、
   edit-core 生成保存、editor 顶点/调节柄继续按需。默认入口实测 core 91.01KB、edit-core 75.47KB、
-  editor 67.72KB、viewer-core 8.10KB、React 1.12KB、Vue 1.34KB、fonts 2.69KB、collab 11.70KB gzip。
+  editor 68.08KB、viewer-core 8.10KB、React 1.12KB、Vue 1.34KB、fonts 2.69KB、collab 11.70KB gzip。
 - `npm run verify`：290 项跨产物一致性检查与 28 项 0.6 发布面审计通过；中英文 README、CHANGELOG、
   官网能力入口、八包边界以及本地图的八张票都由静态门禁直接覆盖。

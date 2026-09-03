@@ -68,12 +68,38 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
 
   const legacy = await lib.openEditor(load('sample.ppt'), { idPrefix: 'common-ppt-projection-' });
   const legacySlides = [...legacy.editor.doc.slideOrder];
+  const recoveryFrames = [];
+  const stopRecovery = legacy.editor.subscribeRecovery((frame) => {
+    recoveryFrames.push(structuredClone(frame));
+  });
   legacy.editor.exec({
     type: 'AddSection', name: '旧格式投影节', slideIds: legacySlides, at: { after: null },
   });
   const legacyProjection = legacy.toPresentation();
   const legacyAgain = legacy.toPresentation();
   const legacyIds = legacyProjection.sections?.[0]?.slideIds ?? [];
+  const sectionIdentity = (target, projection) => {
+    const section = target.editor.doc.sections.records[target.editor.doc.sections.order[0]];
+    return new Map(section.slideIds.map((slideId, index) => [
+      slideId, projection.sections?.[0]?.slideIds[index],
+    ]));
+  };
+  const initialIdentity = sectionIdentity(legacy, legacyProjection);
+  legacy.editor.exec({ type: 'MoveSlide', id: legacySlides[1], at: { after: null } });
+  const movedProjection = legacy.toPresentation();
+  const movedIdentity = sectionIdentity(legacy, movedProjection);
+  const movedRecovered = await lib.openEditor(load('sample.ppt'), {
+    idPrefix: 'common-ppt-projection-', recoveryFrames: structuredClone(recoveryFrames),
+  });
+  const movedRecoveredIdentity = sectionIdentity(movedRecovered, movedRecovered.toPresentation());
+  legacy.editor.exec({ type: 'RemoveSlide', id: legacySlides[1] });
+  const deletedIdentity = sectionIdentity(legacy, legacy.toPresentation());
+  const deletedRecovered = await lib.openEditor(load('sample.ppt'), {
+    idPrefix: 'common-ppt-projection-', recoveryFrames: structuredClone(recoveryFrames),
+  });
+  const deletedRecoveredIdentity = sectionIdentity(
+    deletedRecovered, deletedRecovered.toPresentation(),
+  );
   const emptyZip = await imageZip.presentationToImageZip({
     ...legacyProjection,
     slides: legacyProjection.slides.map((slide) => ({ ...slide, hidden: true })),
@@ -83,7 +109,14 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
     legacyIds.length === legacySlides.length && new Set(legacyIds).size === legacyIds.length
       && JSON.stringify(legacyAgain.sections?.[0]?.slideIds) === JSON.stringify(legacyIds)
       && JSON.stringify(legacyProjection.sections?.[0]?.slideIndexes) === JSON.stringify([0, 1])
+      && legacySlides.every((id) => movedIdentity.get(id) === initialIdentity.get(id)
+        && movedRecoveredIdentity.get(id) === initialIdentity.get(id))
+      && deletedIdentity.get(legacySlides[0]) === initialIdentity.get(legacySlides[0])
+      && deletedRecoveredIdentity.get(legacySlides[0]) === initialIdentity.get(legacySlides[0])
       && emptyZipBytes[0] === 0x50 && emptyZipBytes[1] === 0x4b);
+  stopRecovery();
+  movedRecovered.dispose();
+  deletedRecovered.dispose();
   legacy.dispose();
 
   const sourceDeckParts = unzipSync(deck({
