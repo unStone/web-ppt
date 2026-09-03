@@ -177,7 +177,7 @@ flowchart LR
 | **0.5.0** | 转正，零新能力 | 一致性闸门 ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
 | **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 | 无 |
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
-| **0.8** | 数据与保真 | 图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n | 需真实语料 |
+| **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) | 需真实语料 |
 | **1.0** | 稳定 API | API 冻结 · 语料回归 · 文档完整 | 依赖 beta 反馈周期 |
 
 一致性闸门已完成。PowerPoint 真机验收全程外部阻塞，不要让它挡住 0.6 的开发，只挡 0.5.0 的 tag。
@@ -354,7 +354,7 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 隔离、撤销重做、恢复后续编、字段级协同、直接覆盖、占位符身份与无关 DOM 身份；补丁保存、生成保存和 `.ppt`
 另存汇入唯一 11 件清单，由 LibreOffice 逐件打开，Windows PowerPoint 工作流消费同一清单并绑定提交与字节。
 
-### 5.9 图表数据编辑（0.8）
+### 5.9 [图表数据编辑（0.8）](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md)
 
 图表是 PPT 里第二高频的对象，现在是 `editable: 'frame'`。做完整需要**同时改两处**：
 
@@ -419,6 +419,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | ✅ [0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md)已完成 | — | 设计来源与模板形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | 拆解并实现 0.8 图表数据编辑 | 需要真实图表 + 内嵌工作簿语料 | 同步改 chart cache 与 xlsx，进入下一能力前沿 |
+| 3 | [实现 0.8 图表数据编辑](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md) | 需要真实图表 + 内嵌工作簿语料 | 同步改 chart cache 与 xlsx，进入下一能力前沿 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。
