@@ -30,9 +30,12 @@ export async function runLayoutEditContract({ edit, core, load, check }) {
     element.meta.origin?.part === layout.id && element.src.name === '目标版式角标');
   const masterElement = record.children.map((id) => doc.elements[id]).find((element) =>
     element.meta.origin?.part === record.origin.masterPart);
-  check('版式画布为来源节点建立稳定身份并隔离母版只读节点',
+  check('版式只拥有直属节点并从独立母版树投影只读图形',
     !!ownElement && ownElement.meta.editable === 'full'
-      && !!masterElement && masterElement.meta.editable === 'none');
+      && !masterElement
+      && doc.masters[record.origin.masterPart].children.some((id) =>
+        editor.toDesignCanvas(layout.target).elements.some((element) =>
+          element.name === doc.elements[id].src.name)));
   if (!ownElement) return;
 
   const sourceSlide = doc.slideOrder[0];

@@ -168,21 +168,21 @@ export async function runEditorSelectionPaneBrowserContract({
     idPrefix: 'browser-selection-layout-',
   });
   const layoutPane = layoutSession.mountSelectionPane(layoutMount, { mode: 'edit' });
-  const staleInherited = new Set([...layoutMount.querySelectorAll('[data-pane-element]')]
-    .map((row) => row.dataset.paneElement)
-    .filter((id) => layoutSession.editor.doc.elements[id]?.meta.inherited));
+  const sourcePaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
+    .map((row) => row.dataset.paneElement);
   const targetLayout = layoutSession.editor.doc.layoutOrder.find((id) =>
     layoutSession.editor.doc.layouts[id].name === '重点内容');
   layoutSession.editor.exec({ type: 'SetLayout', id: layoutPane.slideId, layoutId: targetLayout });
   const projectedIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
     .map((row) => row.dataset.paneElement);
-  if (projectedIds.some((id) => staleInherited.has(id))) {
-    throw new Error('换版式后选择窗格没有移除旧继承对象');
+  if (projectedIds.some((id) => layoutSession.editor.doc.elements[id]?.meta.inherited)) {
+    throw new Error('换版式后选择窗格暴露了无页面身份的继承对象');
   }
   layoutSession.editor.undo();
-  if (![...layoutMount.querySelectorAll('[data-pane-element]')]
-    .some((row) => staleInherited.has(row.dataset.paneElement))) {
-    throw new Error('撤销换版式没有恢复来源交互树');
+  const restoredPaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
+    .map((row) => row.dataset.paneElement);
+  if (restoredPaneIds.join(',') !== sourcePaneIds.join(',')) {
+    throw new Error('撤销换版式没有恢复页面直属交互树');
   }
   layoutPane.destroy();
   layoutSession.dispose();

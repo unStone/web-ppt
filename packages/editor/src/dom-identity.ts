@@ -78,9 +78,18 @@ export function bindSlideIdentities(root: ParentNode, doc: EditDoc, slideId: Sli
 }
 
 export function bindDesignIdentities(root: ParentNode, doc: EditDoc, target: DesignTarget): void {
+  if (target.kind === 'master') {
+    const master = doc.masters[target.id];
+    if (!master) throw new Error(`找不到母版设计目标：${target.id}`);
+    bindProjectedIdentities(root, doc, elementIds(doc, master.children));
+    return;
+  }
   const layout = doc.layouts[target.id];
   if (!layout) throw new Error(`找不到版式设计目标：${target.id}`);
-  bindProjectedIdentities(root, doc, elementIds(doc, layout.children));
+  const master = layout.showMasterShapes === false ? undefined : doc.masters[layout.origin.masterPart];
+  bindProjectedIdentities(root, doc, elementIds(doc, [
+    ...(master?.children ?? []), ...layout.children,
+  ]));
 }
 
 export function findElementPartition(root: ParentNode, id: ElementId): SVGElement | null {

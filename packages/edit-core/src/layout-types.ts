@@ -2,7 +2,9 @@ import type { Fill, SlideLayoutTemplate, Transition } from '@web-ppt/core';
 import type { ElementId } from './identities';
 
 /** 设计来源必须带领域种类，调用方不能把 OPC part 冒充普通 SlideId。 */
-export type DesignTarget = { readonly kind: 'layout'; readonly id: string };
+export type LayoutDesignTarget = { readonly kind: 'layout'; readonly id: string };
+export type MasterDesignTarget = { readonly kind: 'master'; readonly id: string };
+export type DesignTarget = LayoutDesignTarget | MasterDesignTarget;
 
 export interface LayoutOverrides {
   /** 缺少字段表示来源；显式无背景使用 Fill.none。 */
@@ -22,7 +24,7 @@ export interface LayoutCatalogItem {
   readonly name: string;
   readonly masterId: string;
   readonly themeId?: string;
-  readonly target: DesignTarget;
+  readonly target: LayoutDesignTarget;
 }
 
 export interface LayoutPropertyState<T> {

@@ -147,7 +147,7 @@ function detachedHost(doc: EditDoc, record: ElementRecord): XmlElement {
 }
 
 function targetParent(document: XmlDocument, doc: EditDoc, record: ElementRecord): XmlElement {
-  if (doc.slides[record.parent] || doc.layouts[record.parent]) {
+  if (doc.slides[record.parent] || doc.layouts[record.parent] || doc.masters[record.parent]) {
     const common = findXmlDescendant(document.root, { localName: 'cSld' });
     const tree = common && findXmlChild(common, { localName: 'spTree' });
     if (!tree) throw new Error(`目标画布缺少 p:spTree：${record.id}`);

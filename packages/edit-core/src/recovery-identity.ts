@@ -86,6 +86,7 @@ function owningParts(doc: EditDoc): Map<string, string | null> {
   const owners = new Map([
     ...Object.values(doc.slides).map((slide) => [slide.id, slide.origin?.part ?? null] as const),
     ...Object.values(doc.layouts).map((layout) => [layout.id, layout.origin.part] as const),
+    ...Object.values(doc.masters).map((master) => [master.id, master.id] as const),
   ]);
   const records = new Map([...Object.values(doc.elements), ...Object.values(doc.removedElements)]
     .map((record) => [record.id, record] as const));
@@ -134,6 +135,7 @@ function inheritedSources(doc: EditDoc): Map<string, Set<string>> {
     if (element.kind === 'group') for (const child of element.children) visit(child);
   };
   for (const layout of Object.values(doc.layouts)) for (const element of layout.elements) visit(element);
+  for (const master of Object.values(doc.masters)) for (const element of master.elements) visit(element);
   return sources;
 }
 

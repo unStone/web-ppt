@@ -12,7 +12,8 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {
-  createDoc, Editor, listLayouts, listThemes, queryLayout, querySelectionPane, queryTheme,
+  createDoc, Editor, listLayouts, listMasters, listThemes, queryLayout, queryMaster,
+  querySelectionPane, queryTheme,
 } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
@@ -64,6 +65,14 @@ editor.execDesign(layout.target, {
   fill: { type: 'solid', color: '#112233' },
 });
 const layoutCanvas = editor.toDesignCanvas(layout.target); // 与页面渲染共用 Slide Schema
+
+const master = listMasters(doc)[0];
+const masterState = queryMaster(doc, master.target); // 背景与 title/body/other × 9 级来源/有效值/direct 状态
+editor.execDesign(master.target, {
+  type: 'SetMasterTextStyle', target: master.target, category: 'body', level: 1,
+  paragraph: { align: 'right' }, run: { font: '思源黑体', size: 30 },
+});
+const masterCanvas = editor.toDesignCanvas(master.target);
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });

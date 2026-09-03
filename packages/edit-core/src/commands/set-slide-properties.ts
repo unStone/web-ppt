@@ -17,6 +17,7 @@ import { UPLOAD_BACKGROUND_SOURCE_ID } from './slide-property';
 import { assertDesignTarget } from '../design-target';
 import type {
   CommandPatches, ImageResourcePatch, LayoutBackgroundPatch, LayoutTransitionPatch,
+  MasterBackgroundPatch,
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
   SetHiddenCommand, SetTransitionCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
   SlideTransitionPatch,
@@ -50,6 +51,27 @@ export function setBackgroundPatches(
   if ('target' in command && command.target) {
     assertDesignTarget(doc, command.target);
     if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
+    if (command.target.kind === 'master') {
+      const record = doc.masters[command.target.id];
+      const path = ['masters', command.target.id, 'ovr', 'background'] as const;
+      const hadOverride = own(record.ovr, 'background');
+      if (command.fill === null) {
+        if (!hadOverride) return { forward: [], inverse: [] };
+        return {
+          forward: [{ op: 'del', path, origin }],
+          inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin }],
+        };
+      }
+      const value = normalizeVectorFill(command.fill);
+      if (hadOverride && JSON.stringify(record.ovr.background) === JSON.stringify(value)) {
+        return { forward: [], inverse: [] };
+      }
+      const forward: MasterBackgroundPatch = { op: 'set', path, value, origin };
+      const inverse: MasterBackgroundPatch = hadOverride
+        ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin }
+        : { op: 'del', path, origin };
+      return { forward: [forward], inverse: [inverse] };
+    }
     const record = doc.layouts[command.target.id];
     const path = ['layouts', command.target.id, 'ovr', 'background'] as const;
     const hadOverride = own(record.ovr, 'background');

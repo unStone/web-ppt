@@ -30,7 +30,7 @@ class DomDesignEditor implements DesignEditor {
       ? options.textMode
       : foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg';
     this.element = container.ownerDocument.createElement('div');
-    this.element.dataset.pptDesignEditor = 'layout';
+    this.element.dataset.pptDesignEditor = this.currentTarget.kind;
     this.element.style.position = 'relative';
     this.element.style.width = '100%';
     this.element.style.height = '100%';
@@ -46,6 +46,7 @@ class DomDesignEditor implements DesignEditor {
     this.assertAlive();
     this.session.editor.toDesignCanvas(target);
     this.currentTarget = structuredClone(target);
+    this.element.dataset.pptDesignEditor = target.kind;
     this.render();
   }
 
@@ -76,7 +77,7 @@ class DomDesignEditor implements DesignEditor {
   }
 
   private assertAlive(): void {
-    if (this.isDestroyed || this.session.disposed) throw new Error('版式设计视图已经销毁');
+    if (this.isDestroyed || this.session.disposed) throw new Error('设计视图已经销毁');
   }
 
   private update(change: EditorChange): void {

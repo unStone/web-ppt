@@ -19,9 +19,14 @@ import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
 import type { AssetMode, DeferredAsset } from './asset-store';
-import { layoutCatalogPaths, layoutPlaceholderTemplate } from './layout-catalog';
+import {
+  layoutCatalogPaths, layoutPlaceholderTemplate, masterCatalogPaths,
+} from './layout-catalog';
 import { hyperlinkOf, resolveLink } from './hyperlink';
-import { Env, findPh, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
+import {
+  Env, findPh, masterInheritance, relByType, Rels, slideInheritance, SlideInheritance,
+} from './slide-inheritance';
+import type { SharedDocDefaults } from './slide-inheritance';
 import { Pkg } from './package-reader';
 import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-style';
 import { parseElementAltText } from './alt-text';
@@ -1232,7 +1237,7 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const tableStylesPath = relByType(presRels, '/tableStyles');
   const tableStyles = tableStylesPath ? pkg.xml(tableStylesPath) : null;
-  const docDefaults: LevelStyles = { lvls: [] };
+  const docDefaults: SharedDocDefaults = new Map();
 
   const slideIds = kids(kid(presRoot, 'sldIdLst'), 'sldId');
 
@@ -1308,6 +1313,9 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   const layouts = themeCatalog
     ? parseLayoutCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap, themeCatalog.themeByMaster)
     : undefined;
+  const masters = themeCatalog
+    ? parseMasterCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap, themeCatalog.themeByMaster)
+    : undefined;
 
   const opcPackage = pkg.opcPackage;
   return {
@@ -1316,12 +1324,64 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
     ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
     sections: sections.length ? sections : undefined,
-    ...(layouts ? { editInfo: {
+    ...(layouts && masters ? { editInfo: {
       layouts,
+      masters,
       themes: themeCatalog!.themes,
       ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
     } } : {}),
   };
+}
+
+function masterTextTemplate(
+  env: Env,
+  category: keyof Env['masterStyles'],
+): TextBody {
+  const seed: TextBody = {
+    anchor: 'top', insets: [0, 0, 0, 0], wrap: true, fontScale: 1, paragraphs: [],
+  };
+  return completeTextTemplateLevels(seed, {
+    ctx: env.ctx,
+    fonts: env.theme.fonts,
+    chain: [env.docDefaults, env.masterStyles[category]],
+    slideNum: 1,
+    edit: true,
+  });
+}
+
+export function parseMasterCatalog(
+  pkg: Pkg,
+  presRoot: Element,
+  presRels: Rels,
+  tableStyles: Element | null,
+  slideIdMap: Record<string, number>,
+  themeByMaster: Readonly<Record<string, string>>,
+): NonNullable<Presentation['editInfo']>['masters'] {
+  return masterCatalogPaths(
+    presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path),
+  ).flatMap(({ part, layoutIds }) => {
+    const inheritance = masterInheritance(
+      pkg, part, presRoot, tableStyles, slideIdMap, 1, true,
+    );
+    if (!inheritance.masterRoot || inheritance.masterPath !== part) return [];
+    const env = inheritance.envFor(part, false);
+    return [{
+      id: part,
+      name: attr(walk(inheritance.masterRoot, 'cSld'), 'name') ?? part,
+      ...(themeByMaster[part] ? { themeId: themeByMaster[part] } : {}),
+      layoutIds: [...layoutIds],
+      background: resolvedSlideBackground(inheritance.masterRoot, part, inheritance),
+      elements: parseShapeTree(inheritance.masterTree, env, false),
+      textStyles: {
+        title: masterTextTemplate(env, 'title'),
+        body: masterTextTemplate(env, 'body'),
+        other: masterTextTemplate(env, 'other'),
+      },
+      defaultShape: defaultShapeEditInfo(env)!,
+      defaultTable: defaultTableEditInfo(env, TABLE_FORMAT_READER),
+      tableStyles: tableStyleCatalog(tableStyles, env, TABLE_FORMAT_READER),
+    }];
+  });
 }
 
 function resolvedSlideBackground(
@@ -1394,6 +1454,8 @@ export function parseLayoutCatalog(
       origin: { part: layoutPath, masterPart: inheritance.masterPath },
       themeId: themeByMaster[inheritance.masterPath],
       background: resolvedSlideBackground(null, null, inheritance),
+      ...(walk(inheritance.layoutRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
+      showMasterShapes: boolAttr(inheritance.layoutRoot, 'showMasterSp', true),
       elements: [...staticElements, ...placeholders],
       transition: parseTransition(inheritance.layoutRoot) ?? undefined,
       defaultShape: defaultShapeEditInfo(editEnv)!,
@@ -1413,7 +1475,7 @@ export function parseSlide(
   authors: Map<string, AuthorInfo>,
   edit: boolean,
   layoutOverride?: string,
-  docDefaults?: LevelStyles,
+  docDefaults?: SharedDocDefaults,
 ): Slide {
   const slideRoot = pkg.xml(slidePath);
   const slideRels = pkg.rels(slidePath);

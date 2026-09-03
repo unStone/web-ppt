@@ -1,7 +1,7 @@
 import { isKnownPreset, resolveGeomPath } from '@web-ppt/core/geometry';
 import type { ShapeCreationDefaults, ShapeElement } from '@web-ppt/core';
 import { allocateElementId } from '../document';
-import { currentShapeDefaults, resolvedLayoutTemplate } from '../layout-projection';
+import { currentShapeDefaults, resolvedLayoutTemplate, resolvedMasterTemplate } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
@@ -66,6 +66,8 @@ function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   const canvas = resolveInsertionCanvas(doc, command, '新增形状');
   const defaults = canvas.kind === 'layout'
     ? resolvedLayoutTemplate(doc, canvas.id)?.defaultShape ?? doc.layouts[canvas.id].defaultShape
+    : canvas.kind === 'master'
+      ? resolvedMasterTemplate(doc, canvas.id)?.defaultShape ?? doc.masters[canvas.id].defaultShape
     : currentShapeDefaults(doc, canvas.id) ?? (canvas.part ? undefined : GENERATED_SHAPE_DEFAULTS);
   const target = { ...canvas, defaults };
   if (!target.defaults) throw new Error(`新增形状目标画布缺少主题默认值：${target.id}`);

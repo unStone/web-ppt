@@ -12,6 +12,7 @@ import { sourceAnimationSteps } from './slide-animation';
 import { logicalIdentityPrefix } from './identity-allocation';
 import { assertSlideSize } from './slide-size';
 import { releaseThemeProjectionPackage } from './theme-projection';
+import { releaseDesignProjectionPackage } from './design-projection-package';
 import { releaseDesignDependencies } from './design-dependencies';
 
 let sessionSerial = 0;
@@ -109,6 +110,12 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     return id;
   });
 
+  const elementsOwnedBy = (source: readonly SlideElement[], part: string | null): SlideElement[] =>
+    source.filter((element) => {
+      const origin = element.editInfo?.origin;
+      return !part || !origin || origin.part === part;
+    });
+
   // 访问每一项会固化惰性 getter；EditDoc 自身最终只有普通对象和数组。
   for (const slide of pres.slides) {
     const id = `${prefix}s${(++slideSeq).toString(36)}`;
@@ -144,7 +151,19 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     slides[id] = record;
     slideOrder.push(id);
     record.children = addElements(
-      slide.elements, id, 'full', record.origin?.part ?? null, dynamicSlideNumbers, dynamicSlideLinks,
+      elementsOwnedBy(slide.elements, record.origin?.part ?? null),
+      id, 'full', record.origin?.part ?? null, dynamicSlideNumbers, dynamicSlideLinks,
+    );
+  }
+
+  const masters: EditDoc['masters'] = Object.create(null);
+  for (const source of pres.editInfo?.masters ?? []) {
+    const master = {
+      ...structuredClone(source), children: [] as ElementId[], ovr: {},
+    } satisfies EditDoc['masters'][string];
+    masters[master.id] = master;
+    master.children = addElements(
+      elementsOwnedBy(source.elements, master.id), master.id, 'full', master.id, [], [],
     );
   }
 
@@ -154,8 +173,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       ...structuredClone(source), children: [] as ElementId[], ovr: {},
     } satisfies EditDoc['layouts'][string];
     layouts[layout.id] = layout;
-    // 版式画布显示母版节点但只把 layout part 当作写入宿主；动态页码在设计来源中只是字段模板。
-    layout.children = addElements(source.elements, layout.id, 'full', layout.id, [], []);
+    // 母版图形只在母版树保留一份；版式画布在投影阶段组合只读母版层。
+    layout.children = addElements(
+      elementsOwnedBy(source.elements, layout.id), layout.id, 'full', layout.id, [], [],
+    );
   }
 
   if (pres.source === 'pptx') {
@@ -205,6 +226,8 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     sections: sectionState,
     layouts,
     layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
+    masters,
+    masterOrder: pres.editInfo?.masters.map((master) => master.id) ?? [],
     themes: Object.fromEntries((pres.editInfo?.themes ?? []).map((theme) => [theme.id, {
       id: theme.id,
       name: theme.name,
@@ -249,6 +272,8 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     sections: { records: {}, order: [], edited: false },
     layouts: {},
     layoutOrder: [],
+    masters: {},
+    masterOrder: [],
     themes: {},
     themeOrder: [],
     elements: {},
@@ -277,6 +302,7 @@ function assignPackage(doc: EditDoc, pkg: EditDoc['package']): void {
   const previous = doc.package;
   if (previous !== pkg) {
     releaseLayoutProjectionCache(doc);
+    releaseDesignProjectionPackage(doc);
     releaseProjectionCache(doc);
     releaseThemeProjectionPackage(doc);
     releaseDesignDependencies(doc);

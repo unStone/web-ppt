@@ -29,6 +29,7 @@
     "tooling/type-contracts/image-zip.ts",
     "tooling/type-contracts/v06-integration.ts",
     "tooling/type-contracts/v07-theme.ts",
-    "tooling/type-contracts/v07-layout.ts"
+    "tooling/type-contracts/v07-layout.ts",
+    "tooling/type-contracts/v07-master.ts"
   ]
 }

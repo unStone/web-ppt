@@ -2,9 +2,9 @@ import type { Slide } from '@web-ppt/core';
 import { own } from './data-validation';
 import { assertDesignTarget } from './design-target';
 import { effectiveElement } from './projection';
-import { resolvedLayoutTemplate } from './layout-projection';
+import { layoutShowsMaster, resolvedLayoutTemplate } from './layout-projection';
 import type {
-  DesignTarget, EditDoc, LayoutCatalogItem, LayoutDesignState,
+  EditDoc, LayoutCatalogItem, LayoutDesignState, LayoutDesignTarget,
 } from './types';
 
 export function listLayouts(doc: EditDoc): LayoutCatalogItem[] {
@@ -18,7 +18,7 @@ export function listLayouts(doc: EditDoc): LayoutCatalogItem[] {
   });
 }
 
-export function queryLayout(doc: EditDoc, target: DesignTarget): LayoutDesignState {
+export function queryLayout(doc: EditDoc, target: LayoutDesignTarget): LayoutDesignState {
   assertDesignTarget(doc, target);
   const layout = doc.layouts[target.id];
   const source = resolvedLayoutTemplate(doc, target.id) ?? layout;
@@ -40,14 +40,19 @@ export function queryLayout(doc: EditDoc, target: DesignTarget): LayoutDesignSta
   };
 }
 
-export function toDesignCanvas(doc: EditDoc, target: DesignTarget): Slide {
+export function toLayoutCanvas(doc: EditDoc, target: LayoutDesignTarget): Slide {
   assertDesignTarget(doc, target);
   const layout = doc.layouts[target.id];
   const source = resolvedLayoutTemplate(doc, target.id) ?? layout;
+  const master = doc.masters[layout.origin.masterPart];
   return {
     background: structuredClone(own(layout.ovr, 'background')
       ? layout.ovr.background! : source.background),
-    elements: layout.children.map((id) => effectiveElement(doc, id)),
+    elements: [
+      ...(layoutShowsMaster(doc, layout.id) && master
+        ? master.children.map((id) => effectiveElement(doc, id)) : []),
+      ...layout.children.map((id) => effectiveElement(doc, id)),
+    ],
     layoutName: layout.name,
     ...(own(layout.ovr, 'transition')
       ? { transition: structuredClone(layout.ovr.transition!) }

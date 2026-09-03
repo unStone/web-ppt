@@ -39,6 +39,7 @@ import { generatedEmptySlideXml, generatedTemplateParts } from './template';
 import { patchGeneratedPresentationMetadata } from '../save/slide-parts';
 import { effectiveTheme } from '../theme';
 import { allocatedProjectionSpids, generatedProjectionTree } from './projection-tree';
+import { materializeGeneratedMasterDefaults } from './master-defaults';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -486,6 +487,7 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
   const parts = generatedTemplateParts(
     doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides, theme,
   );
+  materializeGeneratedMasterDefaults(doc, projections, parts);
   const tableStyles = generatedTableStyleDefinitions(doc);
   if (tableStyles.length) {
     const part = 'ppt/tableStyles.xml';

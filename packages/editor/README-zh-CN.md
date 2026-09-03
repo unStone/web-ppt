@@ -11,7 +11,9 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
-import { createDesignEditor, listLayouts } from '@web-ppt/editor/design';
+import {
+  createDesignEditor, listLayouts, listMasters, queryMaster,
+} from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -50,6 +52,13 @@ design.exec({
   type: 'SetBackground', target: layout.target,
   fill: { type: 'solid', color: '#112233' },
 }); // 同一提交帧内更新使用该版式的全部页面
+const master = listMasters(session.editor.doc)[0];
+design.setTarget(master.target);
+const masterState = queryMaster(session.editor.doc, master.target);
+design.exec({
+  type: 'SetMasterTextStyle', target: master.target, category: 'body', level: 1,
+  paragraph: { align: 'right' }, run: { font: '思源黑体', size: 30 },
+}); // 只传播到该母版直属版式和页面，子级直设继续优先
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();

@@ -1,8 +1,8 @@
-import type { OpcPackage, Slide, SlideLayoutTemplate } from '../types';
+import type { OpcPackage, Slide, SlideLayoutTemplate, SlideMasterTemplate } from '../types';
 import { attr, kid, kids } from '../xml';
 import type { DeferredAsset } from './asset-store';
 import {
-  parseCommentAuthors, parseLayoutCatalog, parseSlide,
+  parseCommentAuthors, parseLayoutCatalog, parseMasterCatalog, parseSlide,
 } from './parser';
 import { Pkg } from './package-reader';
 import { relByType } from './slide-inheritance';
@@ -25,6 +25,12 @@ export interface PptxLayoutReparseResult {
 export interface PptxLayoutTemplateReparseResult {
   layout: SlideLayoutTemplate;
   /** 旧包缺少资源索引时产生；调用方必须兑现 layout 内同编号的 asset:N。 */
+  assets: readonly DeferredAsset[];
+}
+
+export interface PptxMasterTemplateReparseResult {
+  master: SlideMasterTemplate;
+  /** 旧包缺少资源索引时产生；调用方必须兑现 master 内同编号的 asset:N。 */
   assets: readonly DeferredAsset[];
 }
 
@@ -113,6 +119,40 @@ export function reparsePptxLayoutTemplate(
     ).find((candidate) => candidate.id === layoutPath);
     if (!layout) throw new Error(`版式目录不存在：${layoutPath}`);
     return { layout, assets: session.pkg.deferred };
+  } finally {
+    for (const part of session.pkg.endCacheTrace(trace)) {
+      const shared = part === 'ppt/presentation.xml'
+        || part.startsWith('ppt/slideLayouts/')
+        || part.startsWith('ppt/slideMasters/')
+        || part.startsWith('ppt/theme/')
+        || part.startsWith('ppt/tableStyles');
+      if (shared) continue;
+      if (part.endsWith('.rels')) session.pkg.forgetXml(part);
+      else session.pkg.forgetPart(part);
+    }
+  }
+}
+
+/** 主题或母版覆盖后的母版目录仍由 core 的完整 OOXML 继承链重新求值。 */
+export function reparsePptxMasterTemplate(
+  source: OpcPackage,
+  masterPath: string,
+): PptxMasterTemplateReparseResult {
+  if (!source.parts[masterPath]) throw new Error(`找不到母版 part：${masterPath}`);
+  const session = sessionFor(source);
+  const trace = session.pkg.beginCacheTrace();
+  try {
+    const presRels = session.pkg.rels('ppt/presentation.xml');
+    const themes = parseThemeCatalog(
+      session.presRoot, presRels,
+      (path) => session.pkg.xml(path), (path) => session.pkg.rels(path),
+    );
+    const master = parseMasterCatalog(
+      session.pkg, session.presRoot, presRels, session.tableStyles,
+      session.slideIdMap, themes.themeByMaster,
+    ).find((candidate) => candidate.id === masterPath);
+    if (!master) throw new Error(`母版目录不存在：${masterPath}`);
+    return { master, assets: session.pkg.deferred };
   } finally {
     for (const part of session.pkg.endCacheTrace(trace)) {
       const shared = part === 'ppt/presentation.xml'

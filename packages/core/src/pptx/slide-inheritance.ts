@@ -63,6 +63,8 @@ export interface SlideInheritance {
   envFor: (partPath: string | null, phAware: boolean) => Env;
 }
 
+export type SharedDocDefaults = Map<string, LevelStyles>;
+
 export function relByType(rels: Rels, suffix: string): string | null {
   for (const relationship of Object.values(rels)) {
     if (relationship.type.endsWith(suffix)) return relationship.target;
@@ -113,12 +115,49 @@ export function slideInheritance(
   slideIdMap: Record<string, number>,
   slideNum: number,
   edit: boolean,
-  sharedDocDefaults?: LevelStyles,
+  sharedDocDefaults?: SharedDocDefaults,
 ): SlideInheritance {
   const layoutRoot = layoutPath ? pkg.xml(layoutPath) : null;
   const layoutRels = layoutPath ? pkg.rels(layoutPath) : {};
   const masterPath = layoutPath ? relByType(layoutRels, '/slideMaster') : null;
   const masterRoot = masterPath ? pkg.xml(masterPath) : null;
+  return buildInheritance(
+    pkg, slideRoot, layoutPath, layoutRoot, masterPath, masterRoot,
+    presentationRoot, tableStyles, slideIdMap, slideNum, edit, sharedDocDefaults,
+  );
+}
+
+/** 母版目录必须从母版本身求值；借用任一直属版式会把 clrMapOvr、hf 和背景倒灌进母版。 */
+export function masterInheritance(
+  pkg: PptxPackageReader,
+  masterPath: string,
+  presentationRoot: Element,
+  tableStyles: Element | null,
+  slideIdMap: Record<string, number>,
+  slideNum: number,
+  edit: boolean,
+  sharedDocDefaults?: SharedDocDefaults,
+): SlideInheritance {
+  return buildInheritance(
+    pkg, null, null, null, masterPath, pkg.xml(masterPath),
+    presentationRoot, tableStyles, slideIdMap, slideNum, edit, sharedDocDefaults,
+  );
+}
+
+function buildInheritance(
+  pkg: PptxPackageReader,
+  slideRoot: Element | null,
+  layoutPath: string | null,
+  layoutRoot: Element | null,
+  masterPath: string | null,
+  masterRoot: Element | null,
+  presentationRoot: Element,
+  tableStyles: Element | null,
+  slideIdMap: Record<string, number>,
+  slideNum: number,
+  edit: boolean,
+  sharedDocDefaults?: SharedDocDefaults,
+): SlideInheritance {
   const masterRels = masterPath ? pkg.rels(masterPath) : {};
   const themePath = masterPath ? relByType(masterRels, '/theme') : null;
   const theme = parseTheme(themePath ? pkg.xml(themePath) : null);
@@ -131,11 +170,17 @@ export function slideInheritance(
     ?? walk(layoutRoot, 'clrMapOvr', 'overrideClrMapping');
   if (override) for (const attribute of Array.from(override.attributes)) clrMap[attribute.localName] = attribute.value;
   const ctx: ColorCtx = { theme: theme.colors, clrMap };
-  const docDefaults = sharedDocDefaults ?? { lvls: [] };
-  if (!docDefaults.def && !docDefaults.lvls.length) {
+  // defaultTextStyle 可以引用主题字体和方案色；共享已求值结果时必须包含完整颜色映射上下文。
+  const defaultsKey = `${themePath ?? ''}\0${Object.entries(clrMap)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, value]) => `${name}=${value}`).join(';')}`;
+  let docDefaults = sharedDocDefaults?.get(defaultsKey);
+  if (!docDefaults) {
+    docDefaults = { lvls: [] };
     const defaults = extractLstStyle(kid(presentationRoot, 'defaultTextStyle'), ctx, theme.fonts);
     docDefaults.def = defaults.def;
     docDefaults.lvls = defaults.lvls;
+    sharedDocDefaults?.set(defaultsKey, docDefaults);
   }
   const textStyles = kid(masterRoot, 'txStyles');
   const masterStyles = {

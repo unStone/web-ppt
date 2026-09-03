@@ -39,6 +39,8 @@ import {
 } from './table-invariants';
 import { THEME_COLOR_SLOTS } from '@web-ppt/core';
 import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme';
+import { assertParagraphPropertyOverrides } from './paragraph-property-schema';
+import { assertRunPropertyOverrides } from './run-property-schema';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -112,7 +114,7 @@ function assertParentChain(doc: EditDoc, id: ElementId): void {
     seen.add(current);
     const record = doc.elements[current];
     if (!record) throw new Error(`元素不存在：${current}`);
-    if (doc.slides[record.parent] || doc.layouts[record.parent]) return;
+    if (doc.slides[record.parent] || doc.layouts[record.parent] || doc.masters[record.parent]) return;
     if (!doc.elements[record.parent]) throw new Error(`元素 ${current} 的父节点不存在：${record.parent}`);
     current = record.parent;
   }
@@ -219,6 +221,13 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('版式目录与 layoutOrder 不一致');
   }
   const layoutIds = new Set(doc.layoutOrder);
+  if (!doc.masters || !Array.isArray(doc.masterOrder)
+    || new Set(doc.masterOrder).size !== doc.masterOrder.length
+    || doc.masterOrder.length !== Object.keys(doc.masters).length
+    || doc.masterOrder.some((id) => doc.masters[id]?.id !== id)) {
+    throw new Error('母版目录与 masterOrder 不一致');
+  }
+  const masterIds = new Set(doc.masterOrder);
   if (!doc.themes || !Array.isArray(doc.themeOrder)
     || new Set(doc.themeOrder).size !== doc.themeOrder.length
     || doc.themeOrder.length !== Object.keys(doc.themes).length
@@ -250,6 +259,9 @@ export function validateEditDoc(doc: EditDoc): void {
     assertThemeOverrides(theme.ovr, `主题 ${id} 的覆盖`);
   }
   for (const layout of Object.values(doc.layouts)) {
+    if (!masterIds.has(layout.origin.masterPart)) {
+      throw new Error(`版式 ${layout.id} 指向不存在的母版：${layout.origin.masterPart}`);
+    }
     if (layout.themeId !== undefined && !themeIds.has(layout.themeId)) {
       throw new Error(`版式 ${layout.id} 指向不存在的主题：${layout.themeId}`);
     }
@@ -263,6 +275,46 @@ export function validateEditDoc(doc: EditDoc): void {
       assertStoredSlideTransition(layout.ovr.transition, `版式 ${layout.id} 的切换覆盖`);
     }
   }
+  for (const master of Object.values(doc.masters)) {
+    if (master.themeId !== undefined && !themeIds.has(master.themeId)) {
+      throw new Error(`母版 ${master.id} 指向不存在的主题：${master.themeId}`);
+    }
+    if (doc.elements[master.id] || doc.slides[master.id] || doc.layouts[master.id]) {
+      throw new Error(`母版与页面、版式或元素 id 冲突：${master.id}`);
+    }
+    if (master.layoutIds.some((id) => !layoutIds.has(id)
+      || doc.layouts[id].origin.masterPart !== master.id)) {
+      throw new Error(`母版 ${master.id} 的直属版式集合无效`);
+    }
+    if (own(master.ovr, 'background')) {
+      assertVectorFill(master.ovr.background, `母版 ${master.id} 的背景覆盖`);
+    }
+    assertDataObject(master.ovr, ['background', 'textStyles'], `母版 ${master.id} 的覆盖`);
+    if (master.ovr.textStyles) {
+      assertDataObject(master.ovr.textStyles, ['title', 'body', 'other'], `母版 ${master.id} 的文字覆盖`);
+      for (const [category, levels] of Object.entries(master.ovr.textStyles)) {
+        assertDataObject(levels, Object.keys(levels), `母版 ${master.id} 的 ${category} 文字层级`);
+        for (const [level, value] of Object.entries(levels)) {
+          if (!/^[0-8]$/.test(level)) throw new Error(`母版 ${master.id} 的文字层级无效：${level}`);
+          assertDataObject(value, ['paragraph', 'run'], `母版 ${master.id} 的 ${category} 第 ${level} 级覆盖`);
+          if (value.paragraph) {
+            if (own(value.paragraph, 'level')) throw new Error(`母版 ${master.id} 不能覆盖文字层级身份`);
+            assertParagraphPropertyOverrides(value.paragraph, `母版 ${master.id} 的段落覆盖`);
+            if (value.paragraph.bullet?.kind === 'blip') throw new Error(`母版 ${master.id} 不支持图片项目符号覆盖`);
+          }
+          if (value.run) {
+            if (own(value.run, 'link')) throw new Error(`母版 ${master.id} 不能覆盖文字超链接`);
+            assertRunPropertyOverrides(value.run, `母版 ${master.id} 的字符覆盖`);
+          }
+        }
+      }
+    }
+    for (const category of ['title', 'body', 'other'] as const) {
+      if (master.textStyles[category].paragraphs.length !== 9) {
+        throw new Error(`母版 ${master.id} 的 ${category} 文字来源必须包含九级`);
+      }
+    }
+  }
 
   const createdParts = new Set(Object.values(doc.slides)
     .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));
@@ -272,6 +324,9 @@ export function validateEditDoc(doc: EditDoc): void {
   const sessionNotesParts = new Set<string>();
 
   const referenced = new Map<ElementId, SlideId | ElementId>();
+  for (const masterId of doc.masterOrder) {
+    assertChildren(doc, masterId, doc.masters[masterId].children, referenced);
+  }
   for (const layoutId of doc.layoutOrder) {
     assertChildren(doc, layoutId, doc.layouts[layoutId].children, referenced);
   }

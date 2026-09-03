@@ -9,6 +9,7 @@ export function elementOrder(record: Pick<ElementRecord, 'z' | 'order'>): Fracti
 
 export function elementParentChildren(doc: EditDoc, parent: string): ElementId[] {
   const children = doc.slides[parent]?.children ?? doc.layouts[parent]?.children
+    ?? doc.masters[parent]?.children
     ?? doc.elements[parent]?.children;
   if (!children) throw new Error(`元素父节点不存在或不能包含子元素：${parent}`);
   return children;

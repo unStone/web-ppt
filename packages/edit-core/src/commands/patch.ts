@@ -64,6 +64,8 @@ import { isThemePatch, validateThemePatch } from './theme';
 import {
   isLayoutPropertyPatch, validateLayoutPropertyPatch,
 } from './layout-property';
+import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master-property';
+import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
 import { applyPatchValues } from './patch-apply';
 import { structuralPatchStage } from './patch-stage';
 
@@ -89,6 +91,14 @@ function validatePatch(
   }
   if (isLayoutPropertyPatch(input)) {
     validateLayoutPropertyPatch(doc, input, index);
+    return;
+  }
+  if (isMasterBackgroundPatch(input)) {
+    validateMasterBackgroundPatch(doc, input, index);
+    return;
+  }
+  if (isMasterTextStylePatch(input)) {
+    validateMasterTextStylePatch(doc, input, index);
     return;
   }
   if (validateCommonObjectSlidePatch(doc, input, index)) return;

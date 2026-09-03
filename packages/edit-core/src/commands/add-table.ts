@@ -1,6 +1,6 @@
 import type { TableCell, TableCreationDefaults, TableElement, TableRow } from '@web-ppt/core';
 import { allocateElementId } from '../document';
-import { currentTableDefaults, resolvedLayoutTemplate } from '../layout-projection';
+import { currentTableDefaults, resolvedLayoutTemplate, resolvedMasterTemplate } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import { directTableCellMarkup } from '../table-direct-markup';
@@ -107,6 +107,8 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
   const target = resolveInsertionCanvas(doc, command, '新增表格');
   const defaults = target.kind === 'layout'
     ? resolvedLayoutTemplate(doc, target.id)?.defaultTable ?? doc.layouts[target.id].defaultTable
+    : target.kind === 'master'
+      ? resolvedMasterTemplate(doc, target.id)?.defaultTable ?? doc.masters[target.id].defaultTable
     : currentTableDefaults(doc, target.id) ?? (target.part ? undefined : GENERATED_TABLE_DEFAULTS);
   const canvas = { ...target, defaults };
   if (!canvas.defaults) throw new Error(`新增表格目标画布缺少主题默认值：${canvas.id}`);

@@ -4,7 +4,7 @@ import type {
 } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
 import { canvasTargetOfElement } from './design-target';
-import { resolvedLayoutTemplate } from './layout-projection';
+import { resolvedLayoutTemplate, resolvedMasterTemplate } from './layout-projection';
 import type { CanvasTarget } from './design-target';
 import type { DesignTarget, EditDoc, ElementId, SlideId } from './types';
 
@@ -35,6 +35,11 @@ function definitionsForTarget(
   target: CanvasTarget,
 ): readonly TableStyleDefinition[] {
   if (target.kind === 'slide') return definitionsForSlide(doc, target.id);
+  if (target.kind === 'master') {
+    const master = doc.masters[target.id];
+    if (!master) throw new Error(`找不到母版：${target.id}`);
+    return resolvedMasterTemplate(doc, target.id)?.tableStyles ?? master.tableStyles ?? [];
+  }
   const layout = doc.layouts[target.id];
   if (!layout) throw new Error(`找不到版式：${target.id}`);
   return resolvedLayoutTemplate(doc, target.id)?.tableStyles ?? layout.tableStyles ?? [];

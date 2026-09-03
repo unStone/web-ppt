@@ -14,6 +14,7 @@ import { cloneSelection, normalizeSelection } from './selection';
 import { sessionAsset } from './session-assets';
 import type { EditDoc, EditIdentity } from './types';
 import { releaseThemeProjectionPackage } from './theme-projection';
+import { releaseDesignProjectionPackage } from './design-projection-package';
 import { releaseDesignDependencies } from './design-dependencies';
 
 export const EDITOR_RECOVERY_VERSION = 1 as const;
@@ -159,6 +160,8 @@ function stageDoc(doc: EditDoc): EditDoc {
     sections: structuredClone(doc.sections),
     layouts: structuredClone(doc.layouts),
     layoutOrder: [...doc.layoutOrder],
+    masters: structuredClone(doc.masters),
+    masterOrder: [...doc.masterOrder],
     themes: structuredClone(doc.themes),
     themeOrder: [...doc.themeOrder],
     elements: structuredClone(doc.elements),
@@ -171,6 +174,7 @@ function stageDoc(doc: EditDoc): EditDoc {
 
 function commitStage(doc: EditDoc, staged: EditDoc): void {
   releaseLayoutProjectionCache(doc);
+  releaseDesignProjectionPackage(doc);
   releaseProjectionCache(doc);
   releaseThemeProjectionPackage(doc);
   releaseDesignDependencies(doc);
@@ -181,6 +185,8 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
   doc.sections = staged.sections;
   doc.layouts = staged.layouts;
   doc.layoutOrder = staged.layoutOrder;
+  doc.masters = staged.masters;
+  doc.masterOrder = staged.masterOrder;
   doc.themes = staged.themes;
   doc.themeOrder = staged.themeOrder;
   doc.elements = staged.elements;

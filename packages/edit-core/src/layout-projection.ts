@@ -1,21 +1,25 @@
 import {
   findPlaceholderByIdentity, PLACEHOLDER_DIRECT_BITS,
-  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxSlideWithLayout,
+  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
+  reparsePptxSlideWithLayout,
 } from '@web-ppt/core';
 import type {
-  GeomSpec, ShapeCreationDefaults, Slide, SlideElement, SlideLayoutTemplate,
+  Fill, GeomSpec, ShapeCreationDefaults, Slide, SlideElement, SlideLayoutTemplate, SlideMasterTemplate,
   TableCreationDefaults, TextBody,
 } from '@web-ppt/core';
 import {
-  hydrateLayoutSlideAssets, hydrateLayoutTemplateAssets, releaseLayoutAssetCache,
+  hydrateLayoutSlideAssets, hydrateLayoutTemplateAssets, hydrateMasterTemplateAssets,
+  releaseLayoutAssetCache,
 } from './layout-assets';
 import { fieldTextWithoutDirect } from './field-text';
 import { rebaseLayoutText } from './layout-text-rebase';
 import { renderLinkTarget } from './hyperlink';
 import { textBodyFromOverride } from './text-model';
 import type { EditDoc, ElementId, SlideId } from './types';
-import { themeProjectionPackage } from './theme-projection';
+import { designProjectionPackage, masterSourceProjectionPackage } from './design-projection-package';
 import { layoutHasEdits } from './layout-state';
+import { masterHasEdits } from './master-state';
+import { own } from './data-validation';
 
 type LayoutElementResolver = (id: ElementId) => SlideElement;
 
@@ -29,6 +33,7 @@ interface LayoutSourceCache {
   readonly package: EditDoc['package'];
   readonly variants: Map<string, LayoutResolvedVariant>;
   readonly templates: Map<string, { layout: SlideLayoutTemplate; origins: Map<string, SlideElement | null> }>;
+  readonly masters: Map<string, { master: SlideMasterTemplate; origins: Map<string, SlideElement | null> }>;
 }
 
 const layoutSourceCaches = new WeakMap<EditDoc, LayoutSourceCache>();
@@ -37,7 +42,7 @@ const MAX_LAYOUT_SOURCE_VARIANTS = 16;
 function sourceCache(doc: EditDoc, pkg: NonNullable<EditDoc['package']>): LayoutSourceCache {
   let cache = layoutSourceCaches.get(doc);
   if (!cache || cache.package !== pkg) {
-    cache = { package: pkg, variants: new Map(), templates: new Map() };
+    cache = { package: pkg, variants: new Map(), templates: new Map(), masters: new Map() };
     layoutSourceCaches.set(doc, cache);
   }
   return cache;
@@ -69,7 +74,7 @@ function sourcePartForLayout(doc: EditDoc, slideId: SlideId): string | null {
 
 function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVariant | null {
   const slide = doc.slides[slideId];
-  const pkg = themeProjectionPackage(doc);
+  const pkg = designProjectionPackage(doc);
   const sourcePart = sourcePartForLayout(doc, slideId);
   if (!pkg || !slide?.origin || !sourcePart || !slide.layoutId
     || (slide.layoutId === slide.sourceLayoutId && pkg === doc.package)) return null;
@@ -100,7 +105,7 @@ function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVa
 
 /** 主题覆盖后的版式来源仍由 core 的 OOXML 继承器求值，编辑层只按来源身份对回稳定节点。 */
 export function resolvedLayoutTemplate(doc: EditDoc, layoutId: string): SlideLayoutTemplate | null {
-  const pkg = themeProjectionPackage(doc);
+  const pkg = designProjectionPackage(doc);
   if (!pkg || pkg === doc.package) return null;
   const cache = sourceCache(doc, pkg);
   let resolved = cache.templates.get(layoutId);
@@ -125,6 +130,34 @@ export function resolvedLayoutElementSource(
   const template = resolvedLayoutTemplate(doc, layoutId);
   if (!template) return null;
   return layoutSourceCaches.get(doc)?.templates.get(layoutId)
+    ?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
+}
+
+export function resolvedMasterTemplate(doc: EditDoc, masterId: string): SlideMasterTemplate | null {
+  const pkg = masterSourceProjectionPackage(doc);
+  if (!pkg || pkg === doc.package) return null;
+  const cache = sourceCache(doc, pkg);
+  let resolved = cache.masters.get(masterId);
+  if (!resolved) {
+    const result = reparsePptxMasterTemplate(pkg, masterId);
+    const master = hydrateMasterTemplateAssets(doc, result.master, result.assets);
+    const origins = new Map<string, SlideElement | null>();
+    for (const element of master.elements) indexOrigins(element, origins);
+    resolved = { master, origins };
+    cache.masters.set(masterId, resolved);
+  }
+  return resolved.master;
+}
+
+export function resolvedMasterElementSource(
+  doc: EditDoc,
+  masterId: string,
+  record: EditDoc['elements'][string],
+): SlideElement | null {
+  const origin = record.meta.origin;
+  if (!origin || record.meta.created) return null;
+  if (!resolvedMasterTemplate(doc, masterId)) return null;
+  return layoutSourceCaches.get(doc)?.masters.get(masterId)
     ?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
 }
 
@@ -156,9 +189,33 @@ function resolvedLayoutSource(
 
 export function changedLayout(doc: EditDoc, slideId: SlideId) {
   const slide = doc.slides[slideId];
-  return slide?.layoutId && (slide.layoutId !== slide.sourceLayoutId
-    || layoutHasEdits(doc, slide.layoutId))
-    ? doc.layouts[slide.layoutId] : undefined;
+  return slide?.layoutId ? doc.layouts[slide.layoutId] : undefined;
+}
+
+function slideDesignChanged(doc: EditDoc, slideId: SlideId): boolean {
+  const slide = doc.slides[slideId];
+  if (!slide?.layoutId) return false;
+  return slide.layoutId !== slide.sourceLayoutId
+    || layoutHasEdits(doc, slide.layoutId)
+    || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? '');
+}
+
+export function layoutShowsMaster(doc: EditDoc, layoutId: string): boolean {
+  return doc.layouts[layoutId]?.showMasterShapes !== false;
+}
+
+export function effectiveLayoutBackground(
+  doc: EditDoc,
+  layoutId: string,
+  resolved?: { readonly background: Fill | null } | null,
+): Fill | null {
+  const layout = doc.layouts[layoutId];
+  if (!layout) return null;
+  if (own(layout.ovr, 'background')) return layout.ovr.background!;
+  if (layout.directBackground) return resolved?.background ?? layout.background;
+  const master = doc.masters[layout.origin.masterPart];
+  if (master && own(master.ovr, 'background')) return master.ovr.background!;
+  return resolved?.background ?? layout.background;
 }
 
 export function currentShapeDefaults(
@@ -199,9 +256,16 @@ export function projectedLayoutElements(
 ): SlideElement[] {
   const layout = changedLayout(doc, slideId);
   if (!layout) return [];
-  if (layoutHasEdits(doc, layout.id)) {
-    const elements = layout.children.map((id) =>
+  const masterEdited = masterHasEdits(doc, layout.origin.masterPart);
+  if (layoutHasEdits(doc, layout.id) || masterEdited) {
+    const master = doc.masters[layout.origin.masterPart];
+    const masterElements = layoutShowsMaster(doc, layout.id) && master
+      ? master.children.map((id) =>
+        resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src)
+      : [];
+    const layoutElements = layout.children.map((id) =>
       resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src);
+    const elements = [...masterElements, ...layoutElements];
     return doc.slides[slideId].sourceHideMasterShapes
       ? elements.filter((element) => element.editInfo?.origin?.part !== layout.origin.masterPart)
       : elements;
@@ -233,10 +297,11 @@ function targetPlaceholder(
   const slide = doc.slides[slideId];
   if (!slide.layoutId) return null;
   const sourceLayout = slide.layoutId === slide.sourceLayoutId;
-  const editedSourceLayout = sourceLayout && layoutHasEdits(doc, slide.layoutId);
-  if (sourceLayout && !editedSourceLayout
+  const editedSourceDesign = sourceLayout && (layoutHasEdits(doc, slide.layoutId)
+    || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? ''));
+  if (sourceLayout && !editedSourceDesign
     && !(record.meta.created && record.meta.fieldPlaceholder)) return null;
-  const elements = sourceLayout && !editedSourceLayout
+  const elements = sourceLayout && !editedSourceDesign
     ? doc.layouts[slide.layoutId]?.elements ?? []
     : projectedLayoutElements(doc, slideId, resolveLayoutElement);
   const placeholders = elements.filter((element) =>
@@ -279,7 +344,7 @@ export function projectionContentIds(doc: EditDoc, slideId: SlideId): ElementId[
 
 /** 目标没有宿主且来源变换本来只靠旧版式继承时，保存必须把有效 frame 降级为页面直设。 */
 export function layoutFallbackElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
-  if (!changedLayout(doc, slideId)) return [];
+  if (!slideDesignChanged(doc, slideId)) return [];
   const slide = doc.slides[slideId];
   return slide.children.filter((id) => {
     const record = doc.elements[id];

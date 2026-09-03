@@ -77,7 +77,7 @@ function targetAvailable(doc: EditDoc, patch: Patch, available: PatchAvailabilit
 }
 
 function parentAvailable(doc: EditDoc, parent: string, available: PatchAvailability): boolean {
-  return !!doc.elements[parent] || !!doc.slides[parent] || !!doc.layouts[parent]
+  return !!doc.elements[parent] || !!doc.slides[parent] || !!doc.layouts[parent] || !!doc.masters[parent]
     || available.elements.has(parent) || available.slides.has(parent);
 }
 

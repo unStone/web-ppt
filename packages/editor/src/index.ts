@@ -61,6 +61,8 @@ export type {
   FormatMaskField,
   SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, ThemeState,
   DesignCommand, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutPropertyPatch,
+  MasterCatalogItem, MasterDesignState, MasterDesignTarget, MasterTextLevelState,
+  SetMasterTextStyleCommand,
 } from '@web-ppt/edit-core';
 export type {
   EditorChange, FindTextRequest, ReplaceTextCommand, ReplaceTextScope, SlideId, TextSearchMatch,

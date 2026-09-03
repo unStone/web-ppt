@@ -9,6 +9,8 @@ import { isSlideBackgroundPatch } from './commands/slide-property';
 import { isSlideTreePatch } from './commands/slide-tree';
 import { isThemePatch } from './commands/theme';
 import { isLayoutPropertyPatch } from './commands/layout-property';
+import { isMasterBackgroundPatch } from './commands/master-property';
+import { isMasterTextStylePatch } from './commands/master-text-style';
 import type { Patch } from './commands/types';
 import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
 import { canvasTargetOfElement } from './design-target';
@@ -28,12 +30,16 @@ export function renderPatchSlides(
   const result = new Set(patches
     .filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
     .map((patch) => patch.path[1]));
-  const layoutCanvasChanged = patches.some((patch) => isLayoutPropertyPatch(patch)
+  const designCanvasChanged = patches.some((patch) => isLayoutPropertyPatch(patch)
+    || isMasterBackgroundPatch(patch)
+    || isMasterTextStylePatch(patch)
     || isElementHierarchyPatch(patch) && !!doc.layouts[patch.value.parent]
-    || isElementTreePatch(patch) && !!doc.layouts[patch.value.parent]
+    || isElementHierarchyPatch(patch) && !!doc.masters[patch.value.parent]
+    || isElementTreePatch(patch) && (!!doc.layouts[patch.value.parent]
+      || !!doc.masters[patch.value.parent])
     || patch.path[0] === 'elements' && !!doc.elements[patch.path[1]]
-      && canvasTargetOfElement(doc, patch.path[1]).kind === 'layout');
-  if (patches.some(isThemePatch) || layoutCanvasChanged) {
+      && canvasTargetOfElement(doc, patch.path[1]).kind !== 'slide');
+  if (patches.some(isThemePatch) || designCanvasChanged) {
     for (const id of dirtySlides) result.add(id);
   }
   return result;

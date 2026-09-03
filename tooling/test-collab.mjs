@@ -112,6 +112,8 @@ const semanticDoc = (doc) => JSON.stringify(canonical({
   slides: doc.slides,
   layouts: doc.layouts,
   layoutOrder: doc.layoutOrder,
+  masters: doc.masters,
+  masterOrder: doc.masterOrder,
   themes: doc.themes,
   elements: doc.elements,
   removedElements: doc.removedElements,
@@ -203,6 +205,45 @@ console.log('\n\x1b[36m▸ 版式设计画布字段级 LWW\x1b[0m');
       && semanticDoc(pair.left) === semanticDoc(pair.right),
     stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
   check('版式协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
+}
+
+console.log('\n\x1b[36m▸ 母版文字默认值字段级 LWW\x1b[0m');
+{
+  const pair = await createPair('sample-editor-master-editing.pptx', 'collab-master-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  const masterId = pair.left.masterOrder[1];
+  const target = { kind: 'master', id: masterId };
+  pair.leftEditor.execDesign(target, {
+    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    paragraph: { align: 'right' },
+  });
+  pair.rightEditor.execDesign(target, {
+    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    run: { size: 27 },
+  });
+  hub.flush((items) => items.reverse());
+  pair.leftEditor.execDesign(target, {
+    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    run: { font: '协同母版 A' },
+  });
+  pair.rightEditor.execDesign(target, {
+    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    run: { font: '协同母版 B' },
+  });
+  hub.flush((items) => seededShuffle(items, 0x0707003));
+  const state = edit.queryMaster(pair.left, target).textStyles.body[1];
+  check('母版类别、级别与段落/run 字段独立收敛',
+    state.value.paragraph.align === 'right' && state.value.run.size === 27
+      && state.direct.paragraph.includes('align')
+      && state.direct.run.includes('size') && state.direct.run.includes('font')
+      && semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check('母版协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
   edit.disposeDoc(pair.right);

@@ -19,7 +19,7 @@ installDomEnv();
 const core = await import(`${pathToFileURL(corePath).href}?worker=${process.pid}`);
 const edit = await import(`${pathToFileURL(editPath).href}?worker=${process.pid}`);
 const bytes = new Uint8Array(readFileSync(file));
-const savedProjection = mode === 'saved' && scenario.type === 'layout';
+const savedProjection = mode === 'saved' && ['layout', 'master'].includes(scenario.type);
 const pres = await core.parse(bytes, {
   edit: mode === 'projected' || savedProjection, keepPackage: true, lazy: false, assets: 'defer',
 });
@@ -406,6 +406,20 @@ if (mode === 'projected' || savedProjection) {
     editor.execDesign(layout.target,
       { type: 'SetName', id: addedId, name: scenario.added.name },
       { type: 'SetFill', id: addedId, fill: scenario.added.fill });
+  } else if (scenario.type === 'master') {
+    const master = edit.listMasters(doc).find((item) => item.id === scenario.masterId);
+    if (!master) throw new Error(`M1 指纹固件缺少母版：${scenario.masterId}`);
+    const marker = doc.masters[master.id].children.map((id) => doc.elements[id])
+      .find((record) => record.src.name === scenario.markerName);
+    if (!marker) throw new Error(`M1 指纹固件缺少母版元素：${scenario.markerName}`);
+    editor.execDesign(master.target,
+      { type: 'SetXfrm', id: marker.id, x: scenario.x },
+      { type: 'SetBackground', target: master.target, fill: scenario.background },
+      {
+        type: 'SetMasterTextStyle', target: master.target,
+        category: scenario.text.category, level: scenario.text.level,
+        paragraph: scenario.text.paragraph, run: scenario.text.run,
+      });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

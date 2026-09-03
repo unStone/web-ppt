@@ -91,7 +91,7 @@ export function textTargetContext(
   const record = doc.elements[target.id];
   if (!record) throw new Error(`找不到可编辑文字的元素：${target.id}`);
   const canvas = canvasTargetOfElement(doc, target.id);
-  if (canvas.kind === 'layout') return textTargetContextForRecord(record, target);
+  if (canvas.kind !== 'slide') return textTargetContextForRecord(record, target);
   if (target.cell === undefined) {
     const body = rebasedTextBase(
       doc, slideOfElement(doc, target.id), target.id,

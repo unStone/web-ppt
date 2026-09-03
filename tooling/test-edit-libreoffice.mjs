@@ -28,6 +28,7 @@ import { runAdvancedRunFormatLibreOfficeContract } from './lib/advanced-run-form
 import { runCommonObjectSlideLibreOfficeContract } from './lib/common-object-slide-libreoffice-contract.mjs';
 import { runThemeEditLibreOfficeContract } from './lib/theme-edit-libreoffice-contract.mjs';
 import { runLayoutEditLibreOfficeContract } from './lib/layout-edit-libreoffice-contract.mjs';
+import { runMasterEditLibreOfficeContract } from './lib/master-edit-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -270,7 +271,7 @@ if (existsSync(pdf)) unlinkSync(pdf);
 // 换版式固件故意只有一张隐藏页；默认 PDF 过滤会导出零页并误报 IO 失败。
 const pdfFormat = [
   'change-layout.pptx', 'slide-transition-inherited-none.pptx', 'theme-editing.pptx',
-  'layout-editing.pptx',
+  'layout-editing.pptx', 'master-editing.pptx',
 ].includes(basename(savedPath))
   ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
   : 'pdf';
@@ -332,6 +333,11 @@ if (basename(savedPath) === 'theme-editing.pptx') {
 }
 if (basename(savedPath) === 'layout-editing.pptx') {
   geometryEvidence += runLayoutEditLibreOfficeContract({
+    savedPath, out, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
+  });
+}
+if (basename(savedPath) === 'master-editing.pptx') {
+  geometryEvidence += runMasterEditLibreOfficeContract({
     savedPath, out, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
   });
 }

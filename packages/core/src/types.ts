@@ -54,6 +54,8 @@ export interface Presentation {
 export interface PresentationEditInfo {
   /** 演示文稿内可用于新增页的真实版式；id 使用 OPC part，跨解析保持稳定。 */
   layouts: SlideLayoutTemplate[];
+  /** 按 presentation.xml 声明顺序保留的真实母版设计来源。 */
+  masters: SlideMasterTemplate[];
   /** 多母版可共享同一主题；目录按 presentation.xml 的母版声明顺序去重。 */
   themes: PresentationTheme[];
   /** 非 OPC 输入在 edit 模式保留会话 URL 的原字节，供复制、转换与崩溃恢复同步取用。 */
@@ -75,6 +77,10 @@ export interface SlideLayoutTemplate {
   /** 当前版式经母版引用的主题 OPC part。 */
   themeId?: string;
   background: Fill | null;
+  /** 版式自身声明了 p:cSld/p:bg；否则背景继续来自母版。 */
+  directBackground?: true;
+  /** p:sldLayout/showMasterSp；省略按 OOXML 默认值 true 处理。 */
+  showMasterShapes?: boolean;
   /** 母版/版式静态图形在前，已清空普通提示文字的占位符模板在后。 */
   elements: SlideElement[];
   transition?: Transition;
@@ -82,6 +88,26 @@ export interface SlideLayoutTemplate {
   /** 当前主题与默认表样式求值后的新表格默认值；旧生产者可不提供。 */
   defaultTable?: TableCreationDefaults;
   /** 按当前版式主题求值后的表样式目录，仅编辑解析存在。 */
+  tableStyles?: TableStyleDefinition[];
+}
+
+export type MasterTextCategory = 'title' | 'body' | 'other';
+
+/** p:txStyles 以独立九级模板暴露，不能伪装成母版画布里的普通文本框。 */
+export type MasterTextStyles = Readonly<Record<MasterTextCategory, TextBody>>;
+
+export interface SlideMasterTemplate {
+  /** OPC part 是跨解析稳定身份。 */
+  id: string;
+  name: string;
+  themeId?: string;
+  /** 只列直属版式，顺序来自 p:sldLayoutIdLst。 */
+  layoutIds: string[];
+  background: Fill | null;
+  elements: SlideElement[];
+  textStyles: MasterTextStyles;
+  defaultShape: ShapeCreationDefaults;
+  defaultTable?: TableCreationDefaults;
   tableStyles?: TableStyleDefinition[];
 }
 

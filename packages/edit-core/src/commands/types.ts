@@ -13,7 +13,8 @@ import type {
 import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetAnimationsCommand, SetTransitionCommand,
-  SetLayoutCommand, SetNotesCommand, LayoutPropertyPatch, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
+  SetLayoutCommand, SetNotesCommand, LayoutPropertyPatch, MasterBackgroundPatch, SlideLayoutPatch,
+  SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
@@ -24,6 +25,7 @@ import type {
   SetAltTextCommand, SetSlideSizeCommand,
 } from './common-object-slide-types';
 import type { SetThemeCommand, ThemePatch } from './theme-types';
+import type { MasterTextStylePatch, SetMasterTextStyleCommand } from './master-text-style-types';
 
 export type {
   ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
@@ -33,6 +35,7 @@ export type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetAnimationsCommand, SetTransitionCommand, SetLayoutCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
   SlideTransitionPatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch,
+  MasterBackgroundPatch,
   SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
@@ -47,6 +50,10 @@ export type {
   SetAltTextCommand, SetSlideSizeCommand,
 } from './common-object-slide-types';
 export type { SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch } from './theme-types';
+export type {
+  MasterParagraphTextStylePatch, MasterRunTextStylePatch, MasterTextStylePatch,
+  SetMasterTextStyleCommand,
+} from './master-text-style-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -383,7 +390,7 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
   | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
-  | SetTableStyleCommand | SetThemeCommand;
+  | SetTableStyleCommand | SetThemeCommand | SetMasterTextStyleCommand;
 
 type PageOnlyCommand = AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand
   | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand
@@ -624,7 +631,8 @@ export type TableCellPropsPatch = {
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
-  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch;
+  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch
+  | MasterBackgroundPatch | MasterTextStylePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

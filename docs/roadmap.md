@@ -12,7 +12,7 @@
 
 ### 1.1 一句话
 
-**引擎能力与 0.6 高频编辑面已经打穿，0.7 的主题与版式编辑也已闭环。** 自动化交付缺口已收口；
+**引擎能力与 0.6 高频编辑面已经打穿，0.7 的主题、版式与母版编辑也已闭环。** 自动化交付缺口已收口；
 0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
 ### 1.2 门禁实测（2026-09-03）
@@ -20,9 +20,9 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4528 项 | 2230 core + 1095 edit + 507 save + 9 PowerPoint + 422 editor + 9 adapters + 126 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4561 项 | 2230 core + 1119 edit + 514 save + 9 PowerPoint + 422 editor + 9 adapters + 128 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 518 对 | 80 份固件、259 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 524 对 | 81 份固件、262 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 518 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 524 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |

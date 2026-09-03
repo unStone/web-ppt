@@ -15,4 +15,6 @@ export type {
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
   SetThemeCommand, ThemeState,
   DesignCommand, DesignEditor, DesignEditorOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState,
+  MasterCatalogItem, MasterDesignState, MasterDesignTarget, MasterTextLevelState,
+  SetMasterTextStyleCommand,
 } from '@web-ppt/editor';

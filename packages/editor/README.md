@@ -12,7 +12,9 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
-import { createDesignEditor, listLayouts } from '@web-ppt/editor/design';
+import {
+  createDesignEditor, listLayouts, listMasters, queryMaster,
+} from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -51,6 +53,13 @@ design.exec({
   type: 'SetBackground', target: layout.target,
   fill: { type: 'solid', color: '#112233' },
 }); // updates every slide using this layout in the same committed frame
+const master = listMasters(session.editor.doc)[0];
+design.setTarget(master.target);
+const masterState = queryMaster(session.editor.doc, master.target);
+design.exec({
+  type: 'SetMasterTextStyle', target: master.target, category: 'body', level: 1,
+  paragraph: { align: 'right' }, run: { font: 'Aptos', size: 30 },
+}); // updates only layouts/slides owned by this master; direct child formatting still wins
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();

@@ -1,6 +1,7 @@
 ---
 title: 把母版与文字默认值作为设计画布编辑
 status: open
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md

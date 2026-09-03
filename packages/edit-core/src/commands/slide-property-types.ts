@@ -1,7 +1,8 @@
 import type { Fill, ImageTilePlacement, Transition } from '@web-ppt/core';
 import type { SlideTransitionInput } from '../slide-transition';
 import type {
-  DesignTarget, EditAnimationStep, ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding,
+  DesignTarget, EditAnimationStep, ImageCrop, LayoutDesignTarget, SlideId, SlideImageBackground,
+  SlideNotesBinding,
 } from '../types';
 
 export type SetBackgroundCommand = {
@@ -51,7 +52,7 @@ export type SetTransitionCommand = {
   readonly t: SlideTransitionInput | null;
 } | {
   readonly type: 'SetTransition';
-  readonly target: DesignTarget;
+  readonly target: LayoutDesignTarget;
   readonly id?: never;
   readonly t: SlideTransitionInput | null;
 };
@@ -187,3 +188,14 @@ export type LayoutTransitionPatch = {
 };
 
 export type LayoutPropertyPatch = LayoutBackgroundPatch | LayoutTransitionPatch;
+
+export type MasterBackgroundPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['masters', string, 'ovr', 'background'];
+  readonly value: Exclude<Fill, { type: 'image' }>;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['masters', string, 'ovr', 'background'];
+  readonly origin: string;
+};

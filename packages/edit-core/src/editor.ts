@@ -42,7 +42,7 @@ import {
 } from './identity-allocation';
 import { EditorPatchJournal, reportEditorSubscriberError } from './patch-events';
 import { assertDesignTarget, canvasTargetOfElement, sameCanvas } from './design-target';
-import { toDesignCanvas } from './layout';
+import { toDesignCanvas } from './design';
 
 class TransactionCollector implements Transaction {
   readonly commands: Command[] = [];
@@ -149,7 +149,14 @@ export class Editor {
 
   exec(...commands: Command[]): TransactionResult {
     if (!commands.length) throw new Error('exec 至少需要一个命令');
-    for (const command of commands) assertPureCommand(command);
+    for (const command of commands) {
+      assertPureCommand(command);
+      const designElement = commandTargetIds(command).find((id) => {
+        try { return canvasTargetOfElement(this.doc, id).kind !== 'slide'; }
+        catch { return false; }
+      });
+      if (designElement) throw new Error('母版或版式元素必须经 execDesign 编辑');
+    }
     return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑', {});
   }
 
@@ -159,6 +166,7 @@ export class Editor {
     for (const command of commands) {
       assertPureCommand(command);
       if (command.type === 'SetBackground' || command.type === 'SetTransition'
+        || command.type === 'SetMasterTextStyle'
         || command.type === 'AddShape' || command.type === 'AddImage' || command.type === 'AddTable') {
         if (!('target' in command) || !command.target || !sameCanvas(command.target, target)) {
           throw new Error('版式画布属性命令必须指向当前设计目标');

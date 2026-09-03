@@ -5,6 +5,8 @@ const modelJson = (doc) => JSON.stringify({
   slideOrder: doc.slideOrder,
   layouts: doc.layouts,
   layoutOrder: doc.layoutOrder,
+  masters: doc.masters,
+  masterOrder: doc.masterOrder,
   elements: doc.elements,
   removedElements: doc.removedElements,
   imageResources: doc.imageResources,

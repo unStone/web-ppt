@@ -365,6 +365,14 @@ export async function runGeneratedSaveContract({
     edit: true, lazy: false, assets: 'defer',
   });
   const generatedLegacyTheme = legacyReopened.editInfo?.themes[0];
+  const generatedLegacyMaster = legacyReopened.editInfo?.masters[0];
+  const legacyRuns = legacySource.slides.flatMap((slide) => slide.elements.flatMap((element) =>
+    element.kind === 'shape' && element.text
+      ? element.text.paragraphs.flatMap((paragraph) => paragraph.runs) : []));
+  const largestLegacySize = Math.max(...legacyRuns.map((run) => run.size));
+  const generatedMasterXml = new TextDecoder().decode(
+    legacySaved.package.parts['ppt/slideMasters/slideMaster1.xml'],
+  );
   check('.ppt EditDoc 自动另存为可重开的 PPTX', legacyDoc.meta.source === 'ppt'
     && legacyReopened.source === 'pptx'
     && legacyReopened.slides.length === legacySource.slides.length
@@ -377,6 +385,16 @@ export async function runGeneratedSaveContract({
       && Object.entries(legacyTheme.colors).every(([slot, value]) =>
         generatedLegacyTheme?.colors[slot] === value)
       && JSON.stringify(generatedLegacyTheme?.fonts) === JSON.stringify(legacyTheme.fonts));
+  check('.ppt 另存把有效背景与三类九级文字默认值物化到母版',
+    JSON.stringify(generatedLegacyMaster?.background)
+      === JSON.stringify(legacySource.slides[0].background)
+      && generatedLegacyMaster?.textStyles.title.paragraphs.length === 9
+      && generatedLegacyMaster?.textStyles.body.paragraphs.length === 9
+      && generatedLegacyMaster?.textStyles.other.paragraphs.length === 9
+      && generatedLegacyMaster.textStyles.title.paragraphs[0].runs[0].size === largestLegacySize
+      && ['titleStyle', 'bodyStyle', 'otherStyle'].every((name) =>
+        generatedMasterXml.includes(`<p:${name}><a:lvl1pPr`))
+      && generatedMasterXml.includes('<a:lvl9pPr'));
   legacyReopened.dispose?.();
   const legacyBefore = renderFingerprint('sample.ppt', 'projected');
   const legacyAfter = renderFingerprint(legacyPath, 'saved');

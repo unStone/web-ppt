@@ -16,10 +16,22 @@ import type { Patch } from './types';
 import { isSectionStatePatch } from './sections';
 import { isDocumentSizePatch } from './slide-size';
 import { isThemePatch } from './theme';
-import { slidesForLayout, slidesForTheme } from '../design-dependencies';
+import { slidesForLayout, slidesForMaster, slidesForTheme } from '../design-dependencies';
 import { releaseLayoutProjectionCache } from '../layout-projection';
 import { releaseThemeProjectionPackage } from '../theme-projection';
 import { isLayoutPropertyPatch } from './layout-property';
+import { isMasterBackgroundPatch } from './master-property';
+import { isMasterTextStylePatch } from './master-text-style';
+import { releaseDesignProjectionPackage } from '../design-projection-package';
+import { canvasTargetOfElement } from '../design-target';
+
+function masterElementPatch(doc: EditDoc, patch: Patch): boolean {
+  if (isElementTreePatch(patch) || isElementHierarchyPatch(patch)) {
+    if (doc.masters[patch.value.parent]) return true;
+  }
+  if (patch.path[0] !== 'elements' || !doc.elements[patch.path[1]]) return false;
+  return canvasTargetOfElement(doc, patch.path[1]).kind === 'master';
+}
 
 function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
   const ids: ElementId[] = [];
@@ -37,6 +49,16 @@ export function collectPatchInvalidation(
   dirtyElements: Set<string>,
   dirtySlides: Set<string>,
 ): void {
+  if (masterElementPatch(doc, patch)) {
+    releaseLayoutProjectionCache(doc);
+    releaseDesignProjectionPackage(doc);
+    const target = patch.path[0] === 'elements' && doc.elements[patch.path[1]]
+      ? canvasTargetOfElement(doc, patch.path[1]) : null;
+    if (target?.kind === 'master') {
+      const layoutElements = invalidateLayoutElementCaches(doc, doc.masters[target.id].layoutIds);
+      for (const id of layoutElements) dirtyElements.add(id);
+    }
+  }
   if (isLayoutPropertyPatch(patch)) {
     const layout = doc.layouts[patch.path[1]];
     for (const id of layout.children) dirtyElements.add(id);
@@ -46,9 +68,31 @@ export function collectPatchInvalidation(
     }
     return;
   }
+  if (isMasterBackgroundPatch(patch) || isMasterTextStylePatch(patch)) {
+    releaseLayoutProjectionCache(doc);
+    releaseDesignProjectionPackage(doc);
+    const master = doc.masters[patch.path[1]];
+    for (const id of master.children) dirtyElements.add(id);
+    for (const slideId of slidesForMaster(doc, master.id)) {
+      if (isMasterTextStylePatch(patch)) {
+        const dirty = invalidateSlideStructure(doc, slideId, slideElementIds(doc, slideId));
+        for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
+        for (const id of dirty.dirtySlides) dirtySlides.add(id);
+      } else {
+        dirtySlides.add(slideId);
+        invalidateSlide(doc, slideId);
+      }
+    }
+    if (isMasterTextStylePatch(patch)) {
+      const layoutElements = invalidateLayoutElementCaches(doc, master.layoutIds);
+      for (const id of layoutElements) dirtyElements.add(id);
+    }
+    return;
+  }
   if (isThemePatch(patch)) {
     const slides = [...slidesForTheme(doc, patch.path[1])];
     releaseLayoutProjectionCache(doc);
+    releaseDesignProjectionPackage(doc);
     releaseThemeProjectionPackage(doc);
     const layoutElements = invalidateLayoutElementCaches(
       doc, doc.layoutOrder.filter((id) => doc.layouts[id].themeId === patch.path[1]),
@@ -97,6 +141,7 @@ export function collectPatchInvalidation(
 export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
   if (isThemePatch(patch)) return !!doc.themes[patch.path[1]];
   if (isLayoutPropertyPatch(patch)) return !!doc.layouts[patch.path[1]];
+  if (isMasterBackgroundPatch(patch) || isMasterTextStylePatch(patch)) return !!doc.masters[patch.path[1]];
   if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
     || isSlideTreePatch(patch) || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return true;
   if (isSlideOrderPatch(patch)) {
@@ -108,10 +153,12 @@ export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
   }
   if (isElementTreePatch(patch)) {
     return !!doc.slides[patch.value.parent] || !!doc.layouts[patch.value.parent]
+      || !!doc.masters[patch.value.parent]
       || !!doc.elements[patch.value.parent];
   }
   if (isElementHierarchyPatch(patch)) {
     return !!doc.slides[patch.value.parent] || !!doc.layouts[patch.value.parent]
+      || !!doc.masters[patch.value.parent]
       || !!doc.elements[patch.value.parent];
   }
   return !!doc.elements[patch.path[1]];

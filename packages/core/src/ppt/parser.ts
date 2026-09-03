@@ -1369,6 +1369,7 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
     width, height, slides, source: 'ppt',
     ...(edit ? { editInfo: {
       layouts: [],
+      masters: [],
       themes: [legacyPresentationTheme(
         (primaryMaster as MasterInfo | null)?.scheme ?? DEFAULT_SCHEME,
         themeFonts(primaryMaster as MasterInfo | null, shared),

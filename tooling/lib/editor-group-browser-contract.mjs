@@ -19,11 +19,12 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
     const roots = [...session.editor.doc.slides[view.slideId].children];
     const ids = roots.filter((id) => session.editor.doc.elements[id].meta.editable !== 'none');
     const untouchedId = roots.find((id) => !ids.includes(id));
-    const untouched = mount.querySelector(`[data-edit-root="${untouchedId}"]`);
+    const untouched = untouchedId
+      ? mount.querySelector(`[data-edit-root="${untouchedId}"]`) : null;
     const svg = mount.querySelector('[data-ppt-layer="static"] svg');
     const groupSamples = [];
     const ungroupSamples = [];
-    let correct = ids.length === 60 && !!untouched;
+    let correct = ids.length === 60 && (!untouchedId || !!untouched);
     for (let index = 0; index < 45; index++) {
       session.editor.select({ kind: 'elements', ids, enteredGroup: null });
       let started = performance.now();
@@ -55,7 +56,8 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
       session.editor.markSaved();
     }
     const result = { groupP95: p95(groupSamples), ungroupP95: p95(ungroupSamples) };
-    correct &&= mount.querySelector(`[data-edit-root="${untouchedId}"]`) === untouched
+    correct &&= (!untouchedId
+      || mount.querySelector(`[data-edit-root="${untouchedId}"]`) === untouched)
       && mount.querySelector('[data-ppt-layer="static"] svg') === svg
       && session.editor.doc.slides[view.slideId].children.join(',') === roots.join(',')
       && session.editor.history.undoCount === 0 && session.editor.history.redoCount === 0

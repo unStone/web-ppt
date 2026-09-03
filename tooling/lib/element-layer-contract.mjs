@@ -162,14 +162,16 @@ export async function runElementLayerContract({ edit, core, load, check }) {
   const writableTop = coverageDoc.slides[coverageDoc.slideOrder[0]].children
     .map((id) => coverageDoc.elements[id])
     .filter((record) => record.meta.editable !== 'none');
-  check('确定性层级固件覆盖 60 个可写顶层、超链接、frame 与版式只读投影',
-    writableTop.length === 60 && inherited?.meta.editable === 'none'
+  check('确定性层级固件覆盖 60 个可写顶层、超链接、frame 与独立版式投影',
+    writableTop.length === 60 && inherited?.meta.editable === 'full'
       && inherited.meta.origin?.part === 'ppt/slideLayouts/slideLayout1.xml'
+      && inherited.parent === 'ppt/slideLayouts/slideLayout1.xml'
+      && !coverageDoc.slides[coverageDoc.slideOrder[0]].children.includes(inherited.id)
+      && coverageEditor.toSlide(coverageDoc.slideOrder[0]).elements.some((element) =>
+        element.name === inherited.src.name)
       && link?.src.link === 'https://example.com/layer'
       && coverageFrame?.meta.editable === 'frame');
-  const inheritedIndex = coverageDoc.slides[coverageDoc.slideOrder[0]].children.indexOf(inherited.id);
   coverageEditor.exec({ type: 'SetZ', id: link.id, to: 'back' });
-  const afterInheritedIndex = coverageDoc.slides[coverageDoc.slideOrder[0]].children.indexOf(inherited.id);
   let inheritedRejected = false;
   try { coverageEditor.exec({ type: 'SetZ', id: inherited.id, to: 'front' }); } catch {
     inheritedRejected = true;
@@ -180,8 +182,8 @@ export async function runElementLayerContract({ edit, core, load, check }) {
     readonlyRejected = true;
   }
   coverageDoc.meta.readonly = false;
-  check('层级只重排同 part 可写槽位，继承投影固定且不能成为命令目标',
-    inheritedIndex === afterInheritedIndex && inheritedRejected && readonlyRejected
+  check('层级只重排页面直属树，设计元素不能经页面命令编辑',
+    inheritedRejected && readonlyRejected
       && coverageEditor.history.undoCount === 1);
 
   coverageEditor.undo();

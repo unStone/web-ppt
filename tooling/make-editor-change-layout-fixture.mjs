@@ -101,7 +101,7 @@ replace('ppt/slideMasters/slideMaster1.xml', (xml) => xml.replace(
 replace('ppt/slideMasters/_rels/slideMaster1.xml.rels', (xml) => xml.replace(
   `<Relationship Id="rId9" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout2.xml"/>`, '',
 ));
-const targetMasterMarker = `<p:sp><p:nvSpPr><p:cNvPr id="160" name="目标母版标记"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(1040, 18, 180, 28)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`;
+const targetMasterMarker = `<p:sp><p:nvSpPr><p:cNvPr id="160" name="目标母版标记"><a:hlinkClick action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(1040, 18, 180, 28)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`;
 files['ppt/slideMasters/slideMaster2.xml'] = encoder.encode(`${XML}<p:sldMaster xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld><p:spTree>${nvGrp}${targetMasterMarker}</p:spTree></p:cSld>
 <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
@@ -158,3 +158,52 @@ layoutFiles['[Content_Types].xml'] = encoder.encode(
 const layoutBytes = makeZip(Object.entries(layoutFiles));
 writeFileSync(join(root, 'fixtures/sample-editor-layout-editing.pptx'), layoutBytes);
 console.log(`fixtures/sample-editor-layout-editing.pptx 已生成（${(layoutBytes.length / 1024).toFixed(1)} KB）`);
+
+// 母版固件单独补齐同母版多版式、三级文字继承与局部直设，避免版式语料承担相反前提。
+const masterFiles = Object.fromEntries(Object.entries(layoutFiles).map(([part, value]) => [part, value.slice()]));
+const targetMasterTable = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="161" name="母版源表格"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>
+<p:xfrm><a:off x="${px(860)}" y="${px(80)}"/><a:ext cx="${px(280)}" cy="${px(44)}"/></p:xfrm>
+<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1"/><a:tblGrid><a:gridCol w="${px(280)}"/></a:tblGrid>
+<a:tr h="${px(44)}"><a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${run('母版表格', 1200)}</a:txBody><a:tcPr/></a:tc></a:tr>
+</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+const inheritedBody = `<p:sp><p:nvSpPr><p:cNvPr id="210" name="母版继承正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="22"/></p:nvPr></p:nvSpPr>
+<p:spPr>${xfrm(180, 150, 880, 420)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
+<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr/></a:p></p:txBody></p:sp>`;
+masterFiles['ppt/slideLayouts/slideLayout3.xml'] = encoder.encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj" showMasterSp="1">
+<p:cSld name="母版文字继承"><p:spTree>${nvGrp}${inheritedBody}</p:spTree></p:cSld>
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+masterFiles['ppt/slideLayouts/_rels/slideLayout3.xml.rels'] = encoder.encode(
+  `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster2.xml"/></Relationships>`,
+);
+const inheritedParagraph = (level, text, direct = '') => `<a:p><a:pPr lvl="${level}"/><a:r>${direct}<a:t>${text}</a:t></a:r></a:p>`;
+masterFiles['ppt/slides/slide9.xml'] = encoder.encode(`${XML}<p:sld xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
+<p:cSld><p:spTree>${nvGrp}<p:sp><p:nvSpPr><p:cNvPr id="910" name="母版继承正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="22"/></p:nvPr></p:nvSpPr>
+<p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/>${inheritedParagraph(0, '母版一级')}${inheritedParagraph(1, '母版二级')}${inheritedParagraph(2, '局部粗体', '<a:rPr b="1"/>')}</p:txBody></p:sp>
+</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+masterFiles['ppt/slides/_rels/slide9.xml.rels'] = encoder.encode(
+  `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout3.xml"/></Relationships>`,
+);
+replaceIn(masterFiles, 'ppt/presentation.xml', (xml) => xml.replace(
+  '</p:sldIdLst>', '<p:sldId id="301" r:id="rId43"/></p:sldIdLst>',
+));
+replaceIn(masterFiles, 'ppt/_rels/presentation.xml.rels', (xml) => xml.replace(
+  '</Relationships>', `<Relationship Id="rId43" Type="${REL}/slide" Target="slides/slide9.xml"/></Relationships>`,
+));
+replaceIn(masterFiles, 'ppt/slideMasters/slideMaster2.xml', (xml) => xml
+  .replace('</p:spTree>', `${targetMasterTable}</p:spTree>`)
+  .replace('</p:sldLayoutIdLst>', '<p:sldLayoutId id="2147483660" r:id="rId3"/></p:sldLayoutIdLst>')
+  .replace('<p:bodyStyle><a:lvl1pPr><a:defRPr sz="2000"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:defRPr></a:lvl1pPr></p:bodyStyle>',
+    '<p:bodyStyle><a:lvl1pPr><a:buChar char="•"/><a:defRPr sz="2000"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl1pPr><a:lvl2pPr marL="457200" indent="-171450"><a:buChar char="◦"/><a:defRPr sz="1800"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl2pPr><a:lvl3pPr marL="685800" indent="-171450"><a:buChar char="▪"/><a:defRPr sz="1600"><a:solidFill><a:schemeClr val="accent2"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl3pPr></p:bodyStyle>')
+  .replace('</p:txStyles>', '</p:txStyles><p:hf sldNum="0"/><p:extLst><p:ext uri="urn:web-ppt:master-keep"><p200:masterData xmlns:p200="urn:web-ppt:future" keep="yes"/></p:ext></p:extLst>'));
+replaceIn(masterFiles, 'ppt/slideMasters/_rels/slideMaster2.xml.rels', (xml) => xml.replace(
+  '</Relationships>', `<Relationship Id="rId3" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout3.xml"/></Relationships>`,
+));
+replaceIn(masterFiles, '[Content_Types].xml', (xml) => xml.replace('</Types>',
+  '<Override PartName="/ppt/slideLayouts/slideLayout3.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slides/slide9.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>'));
+const masterBytes = makeZip(Object.entries(masterFiles));
+writeFileSync(join(root, 'fixtures/sample-editor-master-editing.pptx'), masterBytes);
+console.log(`fixtures/sample-editor-master-editing.pptx 已生成（${(masterBytes.length / 1024).toFixed(1)} KB）`);
+
+function replaceIn(target, part, fn) {
+  target[part] = encoder.encode(fn(decoder.decode(target[part])));
+}

@@ -49,6 +49,7 @@ import {
 import { materializeThemePart } from '../theme-xml';
 import { themeHasOverrides } from '../theme';
 import { hasLayoutPropertyOverrides, patchLayoutProperties } from './layout-properties';
+import { hasMasterPropertyOverrides, patchMasterProperties } from './master-properties';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -120,6 +121,13 @@ function layoutPropertiesByPart(doc: EditDoc) {
   }));
 }
 
+function masterPropertiesByPart(doc: EditDoc) {
+  return new Map(doc.masterOrder.flatMap((id) => {
+    const master = doc.masters[id];
+    return hasMasterPropertyOverrides(master) ? [[master.id, master] as const] : [];
+  }));
+}
+
 /** 始终从首次触碰的基线重建 part，避免连续保存把旧覆盖烘进源树而破坏撤销。 */
 export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   validateEditDoc(doc);
@@ -131,6 +139,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const grouped = recordsByPart(doc);
   const slideProperties = slidePropertiesByPart(doc);
   const layoutProperties = layoutPropertiesByPart(doc);
+  const masterProperties = masterPropertiesByPart(doc);
   const explicitHyperlinkParts = new Set([...grouped].flatMap(([part, records]) =>
     records.some(hasHyperlinkOverrides) ? [part] : []));
   const removals = removalsByPart(doc);
@@ -212,6 +221,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const slideNumbers = hasSlideHistory ? dynamicSlideNumberParts(doc) : new Map<string, number>();
   for (const part of new Set([
     ...grouped.keys(), ...slideProperties.keys(), ...layoutProperties.keys(),
+    ...masterProperties.keys(),
     ...removals.keys(), ...slideNumbers.keys(),
     ...hyperlinkParts, ...layoutFallbacks.keys(),
   ])) {
@@ -342,6 +352,26 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     materializeElementTreeState(tree, doc, part, records, removals.get(part) ?? [], { links });
     const properties = layoutProperties.get(part);
     if (properties) patchLayoutProperties(tree, properties);
+    changes[part] = serializeXmlTreeBytes(tree);
+  }
+
+  const masterParts = new Set(doc.masterOrder.filter((id) => nextBaselines[id]
+    || grouped.has(id) || removals.has(id) || masterProperties.has(id)));
+  for (const part of masterParts) {
+    const source = nextBaselines[part];
+    if (!source) throw new Error(`找不到母版保存基线：${part}`);
+    const tree = parseXmlTree(source);
+    const records = grouped.get(part) ?? [];
+    const relationSource = nextBaselines[relationshipPartFor(part)];
+    const links = hyperlinkParts.has(part)
+      ? createHyperlinkSaveContext(
+        doc, part, relationSource, media.relationships.get(part) ?? [],
+      ) : undefined;
+    if (links) hyperlinkContexts.set(part, links);
+    links?.removeDanglingHyperlinks(tree);
+    materializeElementTreeState(tree, doc, part, records, removals.get(part) ?? [], { links });
+    const properties = masterProperties.get(part);
+    if (properties) patchMasterProperties(tree, properties);
     changes[part] = serializeXmlTreeBytes(tree);
   }
 

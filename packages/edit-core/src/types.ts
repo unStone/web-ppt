@@ -10,15 +10,21 @@ import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './ani
 import type { ElementId, FractionalIndex, SlideId } from './identities';
 import type { ElementAltTextOverrides, SectionState } from './common-object-slide-types';
 import type { LayoutRecord } from './layout-types';
+import type { MasterRecord } from './master-types';
 
 export type { ElementId, FractionalIndex, SectionId, SlideId } from './identities';
 export type {
   ElementAltTextOverrides, ElementAltTextState, SectionRecord, SectionState, SlideSizeState,
 } from './common-object-slide-types';
 export type {
-  DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutOverrides,
-  LayoutPropertyState, LayoutRecord,
+  DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutDesignTarget, LayoutOverrides,
+  LayoutPropertyState, LayoutRecord, MasterDesignTarget,
 } from './layout-types';
+export type {
+  MasterCatalogItem, MasterDesignState, MasterOverrides, MasterParagraphPropertyInput,
+  MasterParagraphPropertyOverrides, MasterParagraphStyle, MasterRecord, MasterRunPropertyOverrides, MasterTextLevelOverrides,
+  MasterTextLevelState, MasterTextStyleOverrides,
+} from './master-types';
 export type EditableKind = 'full' | 'frame' | 'none';
 
 export interface TableCellAddress {
@@ -771,6 +777,8 @@ export interface EditDoc {
   sections: SectionState;
   layouts: Record<string, LayoutRecord>;
   layoutOrder: string[];
+  masters: Record<string, MasterRecord>;
+  masterOrder: string[];
   themes: Record<string, ThemeRecord>;
   themeOrder: string[];
   elements: Record<ElementId, ElementRecord>;

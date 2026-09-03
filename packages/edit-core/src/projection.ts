@@ -6,7 +6,7 @@ import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './type
 import { hydrateElementInsertionAssets, hydrateInsertionResourceSource } from './session-assets';
 import { own } from './data-validation';
 import { renderLinkTarget } from './hyperlink';
-import { hasDynamicSlideNumber } from './dynamic-slide-fields';
+import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import { projectElementSlideFields, projectVirtualSlideFields } from './dynamic-projection';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRefs } from './table-cell';
@@ -18,14 +18,14 @@ import {
   tableRowHeightDelta, tableRowsWithoutTextOverrides,
 } from './table-rows';
 import {
-  changedLayout, projectedLayoutElements, projectionContentIds, rebasedElementBase,
-  rebasedTextBase, resolvedLayoutElementSource, resolvedLayoutSlide,
+  changedLayout, effectiveLayoutBackground, projectedLayoutElements, projectionContentIds, rebasedElementBase,
+  rebasedTextBase, resolvedLayoutElementSource, resolvedLayoutSlide, resolvedMasterElementSource,
 } from './layout-projection';
 import { projectAnimationSteps } from './slide-animation';
 import { projectTableStyle } from './table-style';
 import { scaledDimensions, scaledTableEditInfo } from './table-scale';
 import { canvasTargetOfElement } from './design-target';
-import { slidesForLayout } from './design-dependencies';
+import { slidesForLayout, slidesForMaster } from './design-dependencies';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -63,8 +63,11 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const target = canvasTargetOfElement(doc, id);
   const layoutBase = target.kind === 'slide'
     ? rebasedElementBase(doc, target.id, record, (layoutId) => effectiveElement(doc, layoutId))
-    : {
+    : target.kind === 'layout' ? {
       base: resolvedLayoutElementSource(doc, target.id, record) ?? record.src,
+      ...(record.meta.geom ? { geom: record.meta.geom } : {}),
+    } : {
+      base: resolvedMasterElementSource(doc, target.id, record) ?? record.src,
       ...(record.meta.geom ? { geom: record.meta.geom } : {}),
     };
   const {
@@ -246,8 +249,7 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
   const layoutSource = layout ? {
     background: structuredClone(record.sourceDirectBackground
       ? resolved?.background ?? record.src.background
-      : own(layout.ovr, 'background')
-        ? layout.ovr.background! : resolved?.background ?? layout.background),
+      : effectiveLayoutBackground(doc, layout.id, resolved)),
     layoutName: layout.name,
     transition: structuredClone(record.sourceDirectTransition
       ? resolved?.transition ?? record.src.transition
@@ -338,6 +340,14 @@ export function invalidateElement(doc: EditDoc, id: ElementId): ProjectionInvali
       for (const slideId of invalidateLayoutDependents(
         doc, current.parent, cache, dirtyElements,
       )) dirtySlides.add(slideId);
+      break;
+    }
+    if (doc.masters[current.parent]) {
+      for (const slideId of slidesForMaster(doc, current.parent)) {
+        dirtySlides.add(slideId);
+        cache.slides.delete(slideId);
+        invalidateSlideElementCaches(doc, slideId, cache, dirtyElements);
+      }
       break;
     }
     current = elementRecord(doc, current.parent as ElementId);
@@ -433,14 +443,32 @@ export function invalidateSlideSequence(doc: EditDoc, start: number): Projection
       if (!current) break;
     }
   };
+  const virtualTreeHas = (
+    element: SlideElement,
+    predicate: (candidate: SlideElement) => boolean,
+  ): boolean => predicate(element)
+    || (element.kind === 'group' && element.children.some((child) => virtualTreeHas(child, predicate)));
+  const invalidateVirtual = (
+    slideId: SlideId,
+    predicate: (candidate: SlideElement) => boolean,
+  ): void => {
+    if (!projectedLayoutElements(doc, slideId)
+      .filter((element) => !element.editInfo?.placeholder)
+      .some((element) => virtualTreeHas(element, predicate))) return;
+    dirtySlides.add(slideId);
+    cache.slides.delete(slideId);
+  };
   for (const slideId of doc.slideOrder.slice(Math.max(0, start))) {
     const slide = doc.slides[slideId];
     for (const id of slide?.dynamicSlideNumbers ?? []) {
       if (indexedSlideNumberStillEffective(doc, id)) invalidate(slideId, id);
     }
+    // 母版/版式静态节点没有页面 ElementId，只能让整页投影缓存失效。
+    invalidateVirtual(slideId, hasDynamicSlideNumber);
   }
   for (const slideId of doc.slideOrder) {
     for (const id of doc.slides[slideId]?.dynamicSlideLinks ?? []) invalidate(slideId, id);
+    invalidateVirtual(slideId, hasDynamicSlideLink);
   }
   // 稳定 SlideId 覆盖不会进入来源字段索引；页序与目标存在性变化时仍只扫描稀疏覆盖。
   for (const record of Object.values(doc.elements)) {
@@ -469,6 +497,16 @@ export function invalidateElementStructure(
       ? (() => {
         const dirtyElements = new Set<ElementId>();
         const dirtySlides = invalidateLayoutDependents(doc, parent, cache, dirtyElements);
+        return { dirtyElements, dirtySlides };
+      })()
+    : doc.masters[parent]
+      ? (() => {
+        const dirtyElements = new Set<ElementId>();
+        const dirtySlides = new Set(slidesForMaster(doc, parent));
+        for (const slideId of dirtySlides) {
+          cache.slides.delete(slideId);
+          invalidateSlideElementCaches(doc, slideId, cache, dirtyElements);
+        }
         return { dirtyElements, dirtySlides };
       })()
       : invalidateElement(doc, parent as ElementId);

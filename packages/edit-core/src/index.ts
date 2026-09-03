@@ -31,7 +31,9 @@ export { queryElementPresetGeometry } from './preset-geometry';
 export { listTableStyles, queryTableStyle } from './table-style';
 export type { TableStyleCatalogItem, TableStyleState } from './table-style';
 export { listThemes, queryTheme } from './theme';
-export { listLayouts, queryLayout, toDesignCanvas } from './layout';
+export { listLayouts, queryLayout } from './layout';
+export { listMasters, queryMaster } from './master';
+export { toDesignCanvas } from './design';
 export {
   assertCustomGeometry, moveCustomGeometryPoint, queryElementCustomGeometry,
   setCustomGeometryClosed, setCustomGeometrySegmentType,
@@ -79,7 +81,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutPropertyState, LayoutOverrides, LayoutRecord, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementAltTextOverrides, ElementAltTextState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
+  CreateDocOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutDesignTarget, LayoutPropertyState, LayoutOverrides, LayoutRecord, MasterCatalogItem, MasterDesignState, MasterDesignTarget, MasterOverrides, MasterParagraphPropertyInput, MasterParagraphPropertyOverrides, MasterParagraphStyle, MasterRecord, MasterRunPropertyOverrides, MasterTextLevelOverrides, MasterTextLevelState, MasterTextStyleOverrides, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementAltTextOverrides, ElementAltTextState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphAutoNumberType, ParagraphBullet, ParagraphBulletInput, ParagraphBulletSize, ParagraphBulletStyle, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyInput, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SectionId, SectionRecord, SectionState, SlideCreation, SlideNotesBinding, SlideRecord, SlideSizeState, SlideSource, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellOverrides, TableCellRef, TableCellRowRef, TableColumnId, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -96,7 +98,7 @@ export type {
   ApplyFormatCommand, ClearFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetAltTextCommand, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch, TableRowPatch,
   ElementTableStylePatch, SetTableStyleCommand,
-  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch,
+  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch, MasterBackgroundPatch, MasterParagraphTextStylePatch, MasterRunTextStylePatch, MasterTextStylePatch, SetMasterTextStyleCommand,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type {

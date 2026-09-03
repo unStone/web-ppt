@@ -32,7 +32,8 @@ export async function runSelectionPaneContract({ edit, core, load, check }) {
   const childNames = initial.filter((item) => item.parentId === group?.id).map((item) => item.name);
   check('目录按绘制序自顶向下展开当前页稳定元素树',
     initial[0]?.name === 'layer-front'
-      && initial.at(-2)?.name === 'layer-back' && initial.at(-1)?.name === 'layer-inherited'
+      && initial.at(-1)?.name === 'layer-back'
+      && !initial.some((item) => item.name === 'layer-inherited')
       && group?.depth === 0 && group.hasChildren
       && childNames.join(',') === 'layer-child-b,layer-child-a'
       && new Set(initial.map((item) => item.id)).size === initial.length);
@@ -219,8 +220,7 @@ export async function runSelectionPaneContract({ edit, core, load, check }) {
   const layoutEditor = new edit.Editor(layoutDoc);
   const layoutSlide = layoutDoc.slideOrder[0];
   const targetLayout = layoutDoc.layoutOrder.find((id) => layoutDoc.layouts[id].name === '重点内容');
-  const staleInherited = new Set(edit.querySelectionPane(layoutDoc, layoutSlide)
-    .filter((item) => layoutDoc.elements[item.id].meta.inherited).map((item) => item.id));
+  const sourcePaneIds = edit.querySelectionPane(layoutDoc, layoutSlide).map((item) => item.id);
   layoutEditor.exec({ type: 'SetLayout', id: layoutSlide, layoutId: targetLayout });
   const projectedPane = edit.querySelectionPane(layoutDoc, layoutSlide);
   const projectedRoots = projectedPane.filter((item) => item.depth === 0).map((item) => item.id).sort();
@@ -228,9 +228,10 @@ export async function runSelectionPaneContract({ edit, core, load, check }) {
     .filter((id) => !layoutDoc.elements[id].meta.inherited).sort();
   check('换版式后窗格移除旧继承幽灵对象并只暴露带稳定身份的当前交互树',
     projectedRoots.join(',') === expectedRoots.join(',')
-      && projectedPane.every((item) => !staleInherited.has(item.id)));
+      && projectedPane.every((item) => !layoutDoc.elements[item.id].meta.inherited));
   layoutEditor.undo();
-  check('撤销换版式恢复来源交互树',
-    edit.querySelectionPane(layoutDoc, layoutSlide).some((item) => staleInherited.has(item.id)));
+  check('撤销换版式恢复页面直属交互树',
+    edit.querySelectionPane(layoutDoc, layoutSlide).map((item) => item.id).join(',')
+      === sourcePaneIds.join(','));
   edit.disposeDoc(layoutDoc);
 }

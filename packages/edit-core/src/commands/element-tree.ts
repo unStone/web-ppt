@@ -69,7 +69,7 @@ export function removeElementPatches(
   const path = ['elements', command.id] as const;
   const removedIds = new Set(Object.keys(value.records));
   const target = canvasTargetOfElement(doc, command.id);
-  if (target.kind === 'layout') {
+  if (target.kind !== 'slide') {
     return {
       forward: [{ op: 'remove', path, value, origin }],
       inverse: [{ op: 'insert', path, value, origin }],
@@ -226,5 +226,6 @@ export function elementTreeSlide(doc: EditDoc, snapshot: ElementTreeSnapshot): s
 function elementTreeCanvas(doc: EditDoc, snapshot: ElementTreeSnapshot) {
   if (doc.slides[snapshot.parent]) return { kind: 'slide' as const, id: snapshot.parent };
   if (doc.layouts[snapshot.parent]) return { kind: 'layout' as const, id: snapshot.parent };
+  if (doc.masters[snapshot.parent]) return { kind: 'master' as const, id: snapshot.parent };
   return canvasTargetOfElement(doc, snapshot.parent as ElementId);
 }

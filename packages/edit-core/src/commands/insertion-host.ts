@@ -1,10 +1,10 @@
 import { assertDesignTarget } from '../design-target';
 import type {
-  DesignTarget, EditDoc, ElementId, LayoutRecord, SlideId, SlideRecord,
+  DesignTarget, EditDoc, ElementId, LayoutRecord, MasterRecord, SlideId, SlideRecord,
 } from '../types';
 
 export interface InsertionCanvas {
-  readonly kind: 'slide' | 'layout';
+  readonly kind: 'slide' | 'layout' | 'master';
   readonly id: SlideId | string;
   readonly children: readonly ElementId[];
   readonly part: string | null;
@@ -27,6 +27,13 @@ export function incrementalLayoutInsertionPart(doc: EditDoc, layout: LayoutRecor
   return part;
 }
 
+export function incrementalMasterInsertionPart(doc: EditDoc, master: MasterRecord): string | null {
+  if (doc.meta.source !== 'pptx' || !doc.package || doc.package.disposed) return null;
+  const part = master.id;
+  if (!doc.package.parts[part]) throw new Error(`母版 ${master.id} 缺少可写 OOXML 宿主`);
+  return part;
+}
+
 /** 三种插入命令共享同一画布寻址，避免各自近似处理版式与页面宿主。 */
 export function resolveInsertionCanvas(
   doc: EditDoc,
@@ -38,6 +45,13 @@ export function resolveInsertionCanvas(
   if (hasTarget === hasSlide) throw new Error(`${label} 必须且只能指定一个画布目标`);
   if (command.target) {
     assertDesignTarget(doc, command.target);
+    if (command.target.kind === 'master') {
+      const master = doc.masters[command.target.id];
+      return {
+        kind: 'master', id: master.id, children: master.children,
+        part: incrementalMasterInsertionPart(doc, master),
+      };
+    }
     const layout = doc.layouts[command.target.id];
     return {
       kind: 'layout', id: layout.id, children: layout.children,

@@ -34,7 +34,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 91.50 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 78.43 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 80.57 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 68.11 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 11.70 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
@@ -97,7 +97,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 
 ```ts
 import { openEditor } from '@web-ppt/editor';
-import { createDesignEditor, listLayouts } from '@web-ppt/editor/design';
+import { createDesignEditor, listLayouts, listMasters, queryMaster } from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
 const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
@@ -108,6 +108,13 @@ session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
 const layout = listLayouts(session.editor.doc)[0];
 const designView = createDesignEditor(layoutContainer, session, { target: layout.target });
 designView.exec({ type: 'SetBackground', target: layout.target, fill: { type: 'solid', color: '#112233' } });
+const master = listMasters(session.editor.doc)[0];
+designView.setTarget(master.target);
+const masterState = queryMaster(session.editor.doc, master.target); // background and title/body/other × 9 source/value/override
+designView.exec({
+  type: 'SetMasterTextStyle', target: master.target, category: 'body', level: 1,
+  paragraph: { align: 'right' }, run: { font: 'Aptos', size: 30 },
+});
 const current = session.toPresentation();             // read-only current edited state; no savepoint
 const imageZip = await import('@web-ppt/core/image-zip');
 const currentImages = await imageZip.presentationToImageZip(current);
@@ -245,7 +252,7 @@ for byte and retains declarations, comments, PIs, namespace prefixes, attribute 
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. The main editing graph is 78.43 KB gzip including static shared chunks;
+return an explainable fallback reason. The main editing graph is 80.57 KB gzip including static shared chunks;
 the first save adds 8.30 KB on demand.
 
 ### Bring your own UI
@@ -389,7 +396,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
-| `npm run test:edit` | 1,095 edit-model + 507 save + 9 PowerPoint-evidence assertions, plus 518 process-isolated SVG fingerprint pairs across 80 fixtures |
+| `npm run test:edit` | 1,119 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 524 process-isolated SVG fingerprint pairs across 81 fixtures |
 | `npm run test:editor` | 422 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |

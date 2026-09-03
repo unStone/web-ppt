@@ -56,6 +56,7 @@ import { runPresetShapeContract } from './lib/preset-shape-contract.mjs';
 import { runTableStyleContract } from './lib/table-style-contract.mjs';
 import { runThemeEditContract } from './lib/theme-edit-contract.mjs';
 import { runLayoutEditContract } from './lib/layout-edit-contract.mjs';
+import { runMasterEditContract } from './lib/master-edit-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -109,8 +110,13 @@ const walk = (elements, fn) => {
 };
 const sourceCount = (pres) => {
   let count = 0;
-  for (const slide of pres.slides) walk(slide.elements, () => count++);
-  for (const layout of pres.editInfo?.layouts ?? []) walk(layout.elements, () => count++);
+  const owned = (elements, part) => elements.filter((element) =>
+    !part || !element.editInfo?.origin || element.editInfo.origin.part === part);
+  for (const slide of pres.slides) {
+    walk(owned(slide.elements, slide.editInfo?.origin?.part), () => count++);
+  }
+  for (const layout of pres.editInfo?.layouts ?? []) walk(owned(layout.elements, layout.id), () => count++);
+  for (const master of pres.editInfo?.masters ?? []) walk(owned(master.elements, master.id), () => count++);
   return count;
 };
 
@@ -135,6 +141,7 @@ await runTableStructureContract({ edit, core, load, check });
 await runTableStyleContract({ edit, core, load, check });
 await runThemeEditContract({ edit, core, load, check });
 await runLayoutEditContract({ edit, core, load, check });
+await runMasterEditContract({ edit, core, load, check });
 await runAddShapeContract({ edit, core, load, check, eq });
 await runAddImageContract({ edit, core, load, check });
 await runAddTableContract({ edit, core, load, check });
@@ -193,7 +200,7 @@ else {
   const same = edit.createDoc(pres, { idPrefix: 'fixture-' });
 
   eq('页数保持不变', doc.slideOrder.length, pres.slides.length);
-  eq('扁平元素数与源树一致', Object.keys(doc.elements).length, sourceCount(pres));
+  eq('扁平元素数与按 OPC 宿主去重后的源树一致', Object.keys(doc.elements).length, sourceCount(pres));
   eq('相同前缀和输入产生相同页身份', JSON.stringify(same.slideOrder), JSON.stringify(doc.slideOrder));
   eq('相同前缀和输入产生相同元素身份', JSON.stringify(Object.keys(same.elements)), JSON.stringify(Object.keys(doc.elements)));
   eq('全部身份在文档内唯一', new Set([...doc.slideOrder, ...Object.keys(doc.elements)]).size,

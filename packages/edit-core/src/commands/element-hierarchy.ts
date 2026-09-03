@@ -38,7 +38,8 @@ export function validateElementHierarchyPatch(
   }
   assertRecordMap(state.records, label);
   assertRemovedMap(state.removed, label);
-  if (!doc.slides[state.parent] && !doc.layouts[state.parent] && !doc.elements[state.parent]
+  if (!doc.slides[state.parent] && !doc.layouts[state.parent] && !doc.masters[state.parent]
+    && !doc.elements[state.parent]
     && !state.records[state.parent]) throw new Error(`${label} 的外部父级不存在`);
   if (!state.children || typeof state.children !== 'object') throw new Error(`${label} 的 children 状态无效`);
   for (const [parent, children] of Object.entries(state.children)) {
@@ -70,6 +71,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
   for (const [parent, children] of Object.entries(patch.value.children)) {
     if (doc.slides[parent]) doc.slides[parent].children = [...children];
     else if (doc.layouts[parent]) doc.layouts[parent].children = [...children];
+    else if (doc.masters[parent]) doc.masters[parent].children = [...children];
     else {
       const record = doc.elements[parent];
       if (!record || record.src.kind !== 'group') throw new Error(`层级 Patch 的父级不是组合：${parent}`);
@@ -112,5 +114,6 @@ export function elementHierarchySlide(doc: EditDoc, state: ElementHierarchyState
 function elementHierarchyCanvas(doc: EditDoc, state: ElementHierarchyState) {
   if (doc.slides[state.parent]) return { kind: 'slide' as const, id: state.parent };
   if (doc.layouts[state.parent]) return { kind: 'layout' as const, id: state.parent };
+  if (doc.masters[state.parent]) return { kind: 'master' as const, id: state.parent };
   return canvasTargetOfElement(doc, state.parent as ElementId);
 }

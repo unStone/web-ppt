@@ -10,7 +10,8 @@ import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
 import {
-  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxSlideWithLayout,
+  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
+  reparsePptxSlideWithLayout,
 } from './pptx/layout-reparse';
 import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
@@ -28,7 +29,10 @@ export * from './placeholder-match';
 export * from './text-body-edit';
 export { formatDrawingAutoNumber } from './text-auto-number';
 export { fitTextShapeHeight, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
-export { releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxSlideWithLayout };
+export {
+  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
+  reparsePptxSlideWithLayout,
+};
 export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';
 export type { RenderTextBodyHtmlOptions } from './render/text-html';
 export type {

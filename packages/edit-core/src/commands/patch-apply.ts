@@ -20,6 +20,8 @@ import { applyElementTextPatch, isElementTextPatch } from './element-text';
 import { applyElementTransformPatch } from './element-transform';
 import { applyElementTreePatch, isElementTreePatch } from './element-tree';
 import { applyLayoutPropertyPatch, isLayoutPropertyPatch } from './layout-property';
+import { applyMasterBackgroundPatch, isMasterBackgroundPatch } from './master-property';
+import { applyMasterTextStylePatch, isMasterTextStylePatch } from './master-text-style';
 import { applySlideLayoutPatch, isSlideLayoutPatch } from './slide-layout';
 import { applySlideNotesPatch, isSlideNotesPatch } from './slide-notes';
 import { applySlideOrderPatch, isSlideOrderPatch } from './slide-order';
@@ -38,6 +40,8 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
     else if (isLayoutPropertyPatch(patch)) applyLayoutPropertyPatch(doc, patch);
+    else if (isMasterBackgroundPatch(patch)) applyMasterBackgroundPatch(doc, patch);
+    else if (isMasterTextStylePatch(patch)) applyMasterTextStylePatch(doc, patch);
     else if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
@@ -65,7 +69,7 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
   for (const parent of orderParents) {
-    if (doc.slides[parent] || doc.layouts[parent]
+    if (doc.slides[parent] || doc.layouts[parent] || doc.masters[parent]
       || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
   }
 }

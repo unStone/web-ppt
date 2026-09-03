@@ -130,11 +130,12 @@ export async function runElementAlignContract({ edit, core, load, check }) {
   const coverageLocked = coverageByName('align-locked');
   const inherited = coverageByName('align-inherited');
   const secondPage = coverageByName('align-second-page');
-  check('专用固件覆盖组合、框架对象、来源移动锁、继承只读与跨页目标',
+  check('专用固件覆盖组合、框架对象、来源移动锁、独立版式层与跨页目标',
     coverageGroup?.children?.includes(coverageLeaf?.id)
       && coverageFrame?.meta.editable === 'frame'
       && coverageLocked?.meta.moveLocked === true
-      && inherited?.meta.editable === 'none'
+      && inherited?.parent === 'ppt/slideLayouts/slideLayout1.xml'
+      && !coverageDoc.slides[coverageDoc.slideOrder[0]].children.includes(inherited.id)
       && secondPage && edit.slideOfElement(coverageDoc, coveragePlain.id)
         !== edit.slideOfElement(coverageDoc, secondPage.id));
 
