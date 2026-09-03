@@ -12,19 +12,19 @@
 
 ### 1.1 一句话
 
-**引擎能力与 0.6 高频编辑面已经打穿，0.7 的四张能力票已闭环，等待集成验收。** 自动化交付缺口已收口；
-0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
+**引擎能力、0.6 高频编辑面与 0.7 模板/主题产品链已经打穿，下一前沿是 0.8 图表数据编辑。** 自动化交付
+缺口已收口；0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
 ### 1.2 门禁实测（2026-09-03）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4593 项 | 2230 core + 1119 edit + 514 save + 29 templates + 9 PowerPoint + 422 editor + 10 adapters + 130 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4628 项 | 2230 core + 1119 edit + 514 save + 29 templates + 31 v07 + 9 PowerPoint + 422 editor + 10 adapters + 134 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 524 对 | 81 份固件、262 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 / 0.7 发布面 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
 
 ### 1.3 里程碑
@@ -38,6 +38,7 @@
 | M4 | 内容能力：插入形状/图片/表格、填充描边效果、裁剪、超链接、页管理、备注 | ✅ |
 | M5 | 打磨：格式刷、查找替换、选择窗格、锁定、崩溃恢复、切换效果 | ✅ |
 | M6 | 扩展：动画、顶点、表样式、协同适配包 | ✅ 四项全部独立验收 |
+| M7 | 设计：主题、母版、版式、三套按需模板与统一交付旅程 | ✅ Chrome + 11 件 Office 清单 |
 
 ### 1.4 本次交付审计（已收口）
 
@@ -46,11 +47,11 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,528 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,628 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
-| 4 | collab 体积无发布入口声明 | 补 11.70KB gzip | 读取 `package.json#main` 后实测 gzip |
-| 5 | 14,245B 与 11.70KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
+| 4 | collab 体积无发布入口声明 | 补 11.73KB gzip | 读取 `package.json#main` 后实测 gzip |
+| 5 | 14,262B 与 11.73KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
 | 6 | 稳定版清单仍写七包 | 改为八包及真实发布顺序 | 发布包版本与构建清单同步比对 |
 
 ---
@@ -175,7 +176,7 @@ flowchart LR
 |---|---|---|---|
 | **0.5.0** | 转正，零新能力 | 一致性闸门 ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
 | **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 | 无 |
-| **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板](wayfinder/ppt-template-theme/map.md) | 依赖 0.6 的继承重基经验 |
+| **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
 | **0.8** | 数据与保真 | 图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n | 需真实语料 |
 | **1.0** | 稳定 API | API 冻结 · 语料回归 · 文档完整 | 依赖 beta 反馈周期 |
 
@@ -326,7 +327,7 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 **直接 PDF 不做**——`presentationToPrintableHtml` + 浏览器打印已经能出矢量、可搜索的 PDF。
 真正缺的是**无人值守导出**（不弹打印对话框），那要 PDF 写入器 + 字体子集化，收益不抵成本，留待后续评估。
 
-### 5.8 [模板与主题编辑（0.7，能力实现完成，待集成验收）](wayfinder/ppt-template-theme/map.md)
+### 5.8 ✅ [模板与主题编辑（0.7，已完成）](wayfinder/ppt-template-theme/map.md)
 
 **收益排序：主题 > 版式 > 母版。** 改一处主题，全文档立刻变样，而 `phClr` / `fillRef` / `lnRef`
 的求值链路解析侧已经全通。
@@ -348,6 +349,10 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 内置模板不是复制一批固定 `.pptx`。`@web-ppt/edit-core/templates` 复用生成保存的确定性骨架，提供极光、
 刊页、夜幕三套主题、母版和五种常用版式配方；现有 `createBlankPptx()` 保持字节兼容，未打开新建选择器的用户
 不加载模板目录或模板数据。
+
+**0.7 集成验收已闭环**：三套模板逐一走完“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，覆盖权限
+隔离、撤销重做、恢复后续编、字段级协同、直接覆盖、占位符身份与无关 DOM 身份；补丁保存、生成保存和 `.ppt`
+另存汇入唯一 11 件清单，由 LibreOffice 逐件打开，Windows PowerPoint 工作流消费同一清单并绑定提交与字节。
 
 ### 5.9 图表数据编辑（0.8）
 
@@ -412,8 +417,8 @@ flowchart LR
 
 | 顺序 | 动作 | 阻塞 | 产出 |
 |---|---|---|---|
-| 1 | ✅ [0.6 集成验收](wayfinder/ppt-editing-completeness/tickets/008-v06-integration-readiness.md)已完成 | — | 七类能力形成同一产品面 |
+| 1 | ✅ [0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md)已完成 | — | 设计来源与模板形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | [完成 0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md) | 四张能力票已关闭 | 当前前沿是跨能力产品与发布边界验收 |
+| 3 | 拆解并实现 0.8 图表数据编辑 | 需要真实图表 + 内嵌工作簿语料 | 同步改 chart cache 与 xlsx，进入下一能力前沿 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

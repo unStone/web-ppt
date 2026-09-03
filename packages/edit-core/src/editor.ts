@@ -149,37 +149,30 @@ export class Editor {
 
   exec(...commands: Command[]): TransactionResult {
     if (!commands.length) throw new Error('exec 至少需要一个命令');
-    for (const command of commands) {
-      assertPureCommand(command);
-      const designElement = commandTargetIds(command).find((id) => {
-        try { return canvasTargetOfElement(this.doc, id).kind !== 'slide'; }
-        catch { return false; }
-      });
-      if (designElement) throw new Error('母版或版式元素必须经 execDesign 编辑');
-    }
-    return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑', {});
+    return this.commit(commands, null, '', {});
   }
 
   execDesign(target: DesignTarget, ...commands: DesignCommand[]): TransactionResult {
     assertDesignTarget(this.doc, target);
-    if (!commands.length) throw new Error('execDesign 至少需要一个命令');
+    if (!commands.length) throw new Error('execDesign 缺少命令');
     for (const command of commands) {
       assertPureCommand(command);
       if (command.type === 'SetBackground' || command.type === 'SetTransition'
         || command.type === 'SetMasterTextStyle'
         || command.type === 'AddShape' || command.type === 'AddImage' || command.type === 'AddTable') {
         if (!('target' in command) || !command.target || !sameCanvas(command.target, target)) {
-          throw new Error('版式画布属性命令必须指向当前设计目标');
+          throw new Error('设计目标不一致');
         }
         continue;
       }
       const ids = commandTargetIds(command);
       if (!ids.length || ids.some((id) =>
         !sameCanvas(canvasTargetOfElement(this.doc, id), target))) {
-        throw new Error(`命令 ${command.type} 不能作用于当前版式画布`);
+        throw new Error(`${command.type} 设计目标不一致`);
       }
     }
-    return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑版式', {});
+    return this.commit(commands, null,
+      commands[1] ? '批量设计' : commands[0].type, {}, target);
   }
 
   transaction(
@@ -295,8 +288,17 @@ export class Editor {
     requestedSelection: Selection | null,
     label: string,
     options: TransactionOptions,
+    designTarget?: DesignTarget,
   ): TransactionResult {
-    for (const command of commands) assertPureCommand(command);
+    for (const command of commands) {
+      assertPureCommand(command);
+      if (!designTarget && ('target' in command && (command.target as DesignTarget | null)?.id
+        || commandTargetIds(command).some((id) =>
+          this.doc.elements[id] && canvasTargetOfElement(this.doc, id).kind !== 'slide'))) {
+        throw new Error('用execDesign');
+      }
+    }
+    label ||= commands[1] ? '批量编辑' : commands[0].type;
     validateCommandRelations(this.doc, commands);
     const operationTime = options.time ?? Date.now();
     if (!Number.isFinite(operationTime)) throw new Error('事务时间必须是有限数字');

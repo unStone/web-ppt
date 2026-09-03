@@ -30,10 +30,11 @@ npm run test:edit:powerpoint
 运行前 `git status --short` 必须为空。生成端和独立校验端都会拒绝已修改、已暂存或未跟踪的非忽略文件；
 否则未提交源码可能借用 HEAD 的 commit ID，产生无法复现的假证据。
 
-命令先重新生成保存产物，再用 `Presentations.Open2007(..., OpenAndRepair = msoFalse)` 逐份只读
-打开。`DisplayAlerts = ppAlertsAll` 让警告以自动化错误返回，避免默认选择把修复提示吞掉。
+命令先从三套内置模板走完主题、母版、版式、普通页面、恢复与保存重开，同时生成 `.ppt` 另存结果；再用
+`Presentations.Open2007(..., OpenAndRepair = msoFalse)` 逐份只读打开统一清单中的 11 件产物。
+`DisplayAlerts = ppAlertsAll` 让警告以自动化错误返回，避免默认选择把修复提示吞掉。
 
-成功后 `out/edit-save/powerpoint-report.json` 会记录：
+成功后 `out/v07-integration/powerpoint-report.json` 会记录：
 
 | 证据 | 防止的误判 |
 |---|---|
@@ -45,4 +46,5 @@ npm run test:edit:powerpoint
 | 生成时间、失败原因 | 过期或失败报告被当成绿灯 |
 
 Node 校验器会独立重读清单和文件字节，只接受一小时内、与当前 HEAD 完全绑定且全部成功的报告。
-工作流无论成功失败都会上传清单、报告和对应 `.pptx`，便于复核。
+LibreOffice 门禁读取同一个 `out/v07-integration/office-artifacts.json`，逐件验证页数与无修复打开；Windows
+工作流无论成功失败都会上传这份清单、报告和对应 `.pptx`，便于复核。

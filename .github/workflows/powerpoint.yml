@@ -37,8 +37,8 @@ jobs:
         with:
           name: powerpoint-evidence-${{ github.sha }}
           path: |
-            out/edit-save/office-artifacts.json
-            out/edit-save/powerpoint-report.json
-            out/edit-save/*.pptx
+            out/v07-integration/office-artifacts.json
+            out/v07-integration/powerpoint-report.json
+            out/v07-integration/*.pptx
           if-no-files-found: warn
           retention-days: 30

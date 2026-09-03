@@ -19,6 +19,7 @@ import {
 } from '../clipboard-links';
 import { assertElementUnlocked } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
+import { canvasTargetOfElement } from '../design-target';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
@@ -96,6 +97,10 @@ function resolvePasteDestination(doc: EditDoc, parentId: string): { parent: Slid
   }
   const group = doc.elements[parentId];
   if (!group || group.src.kind !== 'group' || group.meta.editable !== 'full') {
+    throw new Error('粘贴目标必须是可写幻灯片或组合');
+  }
+  // PasteElements 不是设计命令；嵌套组合也不能成为普通编辑器进入设计画布的暗门。
+  if (canvasTargetOfElement(doc, parentId).kind !== 'slide') {
     throw new Error('粘贴目标必须是可写幻灯片或组合');
   }
   assertElementUnlocked(doc, parentId);

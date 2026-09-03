@@ -1,6 +1,6 @@
 ---
 title: 完成 0.7 模板与主题编辑
-status: open
+status: closed
 labels:
   - wayfinder:map
 tracker: local-markdown
@@ -45,11 +45,12 @@ tracker: local-markdown
   SlideId 复用命令；结构校验以显式设计变化信号决定是否重算投影，避免常规编辑退化为全页扫描。
 - [内置模板](tickets/004-builtin-templates.md)复用生成保存模块的结构配方；三套模板、框架转发、官网选择、
   编辑/恢复/协同与保存证据闭环，目录、DOM/CSS 和配方只从独立按需入口加载。
-- [0.7 集成验收](tickets/005-v07-integration-readiness.md)在四条能力全部关闭后统一证明产品入口、包边界和文档一致。
+- [0.7 集成验收](tickets/005-v07-integration-readiness.md)已用三套模板的统一旅程、普通页/设计画布权限边界、
+  真实 Chrome、协同、确定性固件和单一 11 件 Office 清单证明产品入口、包边界与文档一致。
 
 ## Frontier
 
-- [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md)
+- 无；0.7 地图已完成，下一前沿见[总路线图 0.8](../../roadmap.md)。
 
 ## Completed
 
@@ -59,6 +60,8 @@ tracker: local-markdown
   最小保存、局部传播与跨环境证据闭环。
 - [提供按需确定性内置模板](tickets/004-builtin-templates.md) — 三套结构配方、统一编辑模型、框架适配、官网选择、
   默认入口零配方成本与跨环境证据闭环。
+- [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md) — 三套模板统一产品旅程、权限隔离、真实 Chrome、
+  协同、确定性固件与单一 Office 清单全部闭环，规格和标准复审均为零发现。
 
 ## Not yet specified
 

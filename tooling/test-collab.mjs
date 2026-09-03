@@ -11,6 +11,7 @@ import { runCollabProtocolContract } from './lib/collab-protocol-contract.mjs';
 import { runPresetShapeCollabContract } from './lib/preset-shape-collab-contract.mjs';
 import { runAdvancedRunFormatCollabContract } from './lib/advanced-run-format-collab-contract.mjs';
 import { applyV06Journey } from './lib/v06-integration-save-contract.mjs';
+import { runV07CollabContract } from './lib/v07-collab-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -251,34 +252,10 @@ console.log('\n\x1b[36m▸ 母版文字默认值字段级 LWW\x1b[0m');
   edit.disposeDoc(pair.right);
 }
 
-console.log('\n\x1b[36m▸ 内置模板复用统一协同模型\x1b[0m');
-{
-  const pair = await createPairFromBytes(
-    templates.createPptxFromTemplate('editorial'), 'collab-template-',
-  );
-  const hub = new OfflineHub();
-  const errors = [];
-  const bindings = bindPair(pair, hub, errors);
-  const themeId = pair.left.themeOrder[0];
-  const layoutId = pair.left.layoutOrder[1];
-  const target = { kind: 'layout', id: layoutId };
-  pair.leftEditor.exec({
-    type: 'SetTheme', id: themeId, clrScheme: { accent1: '#345678' },
-  });
-  pair.rightEditor.execDesign(target, {
-    type: 'SetBackground', target, fill: { type: 'solid', color: '#F0E5D8' },
-  });
-  hub.flush((items) => items.reverse());
-  check('模板新建文稿直接复用主题、版式与字段级协同补丁',
-    edit.queryTheme(pair.left, themeId).colors.accent1 === 'rgb(52,86,120)'
-      && edit.queryLayout(pair.left, target).background.value.color === 'rgb(240,229,216)'
-      && semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
-  check('模板协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
-  bindings.forEach((binding) => binding.dispose());
-  edit.disposeDoc(pair.left);
-  edit.disposeDoc(pair.right);
-}
+await runV07CollabContract({
+  templates, edit, createPairFromBytes, OfflineHub, bindPair, seededShuffle,
+  semanticDoc, stringDiff, check,
+});
 
 console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
 {

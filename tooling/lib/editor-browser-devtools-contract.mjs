@@ -196,6 +196,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           themeP95: report.dataset.themeP95,
           themePages: report.dataset.themePages,
           masterPages: report.dataset.masterPages,
+          v07Integration: report.dataset.v07Integration,
           addTableError: report.dataset.addTableError,
           addTableP95: report.dataset.addTableP95,
           hyperlinkCommitP95: report.dataset.hyperlinkCommitP95,

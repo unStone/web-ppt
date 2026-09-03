@@ -119,6 +119,17 @@ execFileSync('npx', [
   `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
   `--outfile=${generateBundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const templatesBundle = join(out, 'templates.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/editor/src/templates/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core/templates=${join(root, 'packages/edit-core/src/templates/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--outfile=${templatesBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const viewerBundle = join(out, 'viewer-core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',

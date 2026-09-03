@@ -38,6 +38,9 @@ jobs:
       - name: 浏览器 DOM 编辑层功能测试
         run: npm run test:editor:functional
 
+      - name: 0.7 模板到保存跨能力旅程
+        run: npm run test:v07
+
       # runner 的固定计算基线会随宿主并行负载从 5ms 漂到 40ms；beta.2 先保留
       # 采样与红灯证据，但不让已被环境自检判定受扰的 p95 阻断功能发布。
       - name: 浏览器 DOM 编辑层性能采样
@@ -52,6 +55,10 @@ jobs:
       - name: 保存产物外部打开测试
         # manifest 是唯一产物清单；新增保存工件无需再维护第二份手写子集。
         run: node tooling/test-edit-libreoffice-all.mjs --include-site
+
+      - name: 0.7 统一清单外部打开测试
+        # 共用唯一清单，避免两套真实软件门禁的验收范围分叉。
+        run: node tooling/test-v07-libreoffice-all.mjs
 
       - name: 编辑性能预算
         continue-on-error: true

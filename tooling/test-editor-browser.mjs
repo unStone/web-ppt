@@ -237,6 +237,7 @@ try {
     + ` · 换版式${result.changeLayoutPages}页单页完整上屏 p95 ${result.changeLayoutP95}ms`
     + ` · 主题${result.themePages}页局部整页上屏 p95 ${result.themeP95}ms`
     + ` · 母版${result.masterPages}页跨版式传播`
+    + ` · 0.7 跨能力模板 ${result.v07Integration}/3`
     + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`
     + ` · 超链接提交/路由 p95 ${result.hyperlinkCommitP95}/${result.hyperlinkRouteP95}ms`
     + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`

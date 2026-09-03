@@ -2,7 +2,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$Manifest,
 
-  [string]$Report = 'out/edit-save/powerpoint-report.json'
+  [string]$Report = 'out/v07-integration/powerpoint-report.json'
 )
 
 $ErrorActionPreference = 'Stop'

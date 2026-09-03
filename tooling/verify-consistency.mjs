@@ -225,7 +225,8 @@ if (!siteStat) {
 } else if (counts) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
-    'core', 'edit', 'save', 'templates', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile',
+    'core', 'edit', 'save', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
+    'metafile',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -332,6 +333,7 @@ if (!counts) {
     ['README.md', /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
       ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],
     ['README.md', /内置模板 ([\d,]+) 项断言/, ['templates']],
+    ['README.md', /0\.7 跨能力集成 ([\d,]+) 项断言/, ['v07']],
     ['README.md', /([\d,]+) 项会话 \/ adapter/, ['editor']],
     ['README.md', /EMF \/ WMF \/ PICT 解码器，([\d,]+) 项断言/, ['metafile']],
     ['README.md', /React \/ Vue 的 ([\d,]+) 项 SSR/, ['adapters']],
@@ -339,11 +341,13 @@ if (!counts) {
     ['README.en.md', /([\d,]+) edit-model \+ ([\d,]+) save \+ ([\d,]+) PowerPoint-evidence assertions, plus ([\d,]+) process-isolated SVG fingerprint pairs across ([\d,]+) fixtures/,
       ['edit', 'save', 'powerpoint', 'equivalence', 'fixtures']],
     ['README.en.md', /([\d,]+) built-in-template assertions/, ['templates']],
+    ['README.en.md', /([\d,]+) 0\.7 cross-capability integration assertions/, ['v07']],
     ['README.en.md', /([\d,]+) adapter\/session/, ['editor']],
     ['README.en.md', /decoders — ([\d,]+) assertions/, ['metafile']],
     ['README.en.md', /([\d,]+) React \/ Vue SSR/, ['adapters']],
-    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
-      ['core', 'edit', 'save', 'templates', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile']],
+    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
+      ['core', 'edit', 'save', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
+        'metafile']],
     ['AGENTS.md', /([\d,]+) 对编辑等价指纹/, ['equivalence']],
   ];
   let countClaims = 0;

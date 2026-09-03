@@ -29,6 +29,7 @@
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { presentationToImageZip } from '/out/editor/image-zip.mjs';
     import { createBlankPptx } from '/out/editor/generate.mjs';
+    import * as templates from '/out/editor/templates.mjs';
     import { Viewer } from '/out/editor/viewer-core.mjs';
     import { runEditorResizeBrowserContract } from '/tooling/lib/editor-resize-browser-contract.mjs';
     import { runEditorRotationBrowserContract } from '/tooling/lib/editor-rotation-browser-contract.mjs';
@@ -111,6 +112,9 @@
     import { runEditorThemeBrowserContract } from '/tooling/lib/editor-theme-browser-contract.mjs';
     import { runEditorLayoutBrowserContract } from '/tooling/lib/editor-layout-browser-contract.mjs';
     import { runEditorMasterBrowserContract } from '/tooling/lib/editor-master-browser-contract.mjs';
+    import {
+      runV07IntegrationBrowserContract,
+    } from '/tooling/lib/v07-integration-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -135,6 +139,10 @@
       report.dataset.layoutPages = String(layoutResult.pageCount);
       const masterResult = await runEditorMasterBrowserContract({ openEditor, createDesignEditor, load });
       report.dataset.masterPages = String(masterResult.pageCount);
+      const v07Result = await runV07IntegrationBrowserContract({
+        openEditor, createDesignEditor, templates,
+      });
+      report.dataset.v07Integration = String(v07Result.templates);
       const presetAdjustmentResult = await runEditorPresetAdjustmentBrowserContract({
         openEditor, createPresetAdjustmentEditor, load,
       });

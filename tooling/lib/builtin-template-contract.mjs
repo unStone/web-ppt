@@ -38,7 +38,6 @@ export async function runBuiltinTemplateContract({
   for (const template of catalog) {
     const first = templates.createPptxFromTemplate(template.id);
     const second = templates.createPptxFromTemplate(template.id);
-    saveArtifact(`${template.id}.pptx`, first);
     fingerprints.push(sha256(first));
     check(`${template.name}连续生成逐字节一致`, equalBytes(first, second));
     const presentation = await core.parse(first, {

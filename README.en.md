@@ -33,10 +33,10 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 91.50 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 91.78 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 80.57 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 68.11 KB |
-| [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 11.70 KB |
+| [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 11.73 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 8.10 KB |
@@ -105,6 +105,10 @@ import { openEditor } from '@web-ppt/editor';
 const catalog = listBuiltinTemplates(); // Aurora / Editorial / Midnight plus lightweight preview tokens
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
+
+The 0.7 gate exercises `template → theme → master → layout → ordinary slide → reopen` for all three templates.
+`SetTheme` uses `exec`; masters and layouts use `execDesign`. They share history, recovery, collaboration, and save
+protocols, while ordinary-slide commands cannot mutate a design canvas.
 
 ```ts
 import { openEditor } from '@web-ppt/editor';
@@ -409,9 +413,13 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
 | `npm run test:edit` | 1,119 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 524 process-isolated SVG fingerprint pairs across 81 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
+| `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:editor` | 422 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
-| `npm run test:templates:libreoffice` | Open all three templates and one edited save in LibreOffice without repair |
+| `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |
+| `npm run test:v07:libreoffice` | Open all 11 artifacts from the single 0.7 manifest in LibreOffice without repair |
+| `npm run test:edit:m1` | Open all 71 model-save artifacts in LibreOffice without repair |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
+| `npm run test:edit:powerpoint` | On Windows, open the same 11-artifact 0.7 manifest in desktop PowerPoint with repair disabled |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
