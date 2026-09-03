@@ -9,6 +9,17 @@
 npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
 ```
 
+只有用户打开新建选择器时才加载模板入口。它转发唯一共享目录，生成的普通 PPTX 字节直接交给
+`openEditor()`：
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/editor/templates';
+import { openEditor } from '@web-ppt/editor';
+
+const catalog = listBuiltinTemplates();
+const session = await openEditor(createPptxFromTemplate(catalog[0].id));
+```
+
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 import {

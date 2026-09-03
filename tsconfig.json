@@ -13,12 +13,16 @@
       "@web-ppt/core/image-zip": ["./packages/core/src/image-zip.ts"],
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/edit-core/generate": ["./packages/edit-core/src/generate/index.ts"],
+      "@web-ppt/edit-core/templates": ["./packages/edit-core/src/templates/index.ts"],
       "@web-ppt/collab": ["./packages/collab/src/index.ts"],
       "@web-ppt/editor": ["./packages/editor/src/index.ts"],
       "@web-ppt/editor/adjustments": ["./packages/editor/src/adjustments/index.ts"],
       "@web-ppt/editor/design": ["./packages/editor/src/design/index.ts"],
+      "@web-ppt/editor/templates": ["./packages/editor/src/templates/index.ts"],
       "@web-ppt/react": ["./packages/react/src/index.ts"],
+      "@web-ppt/react/templates": ["./packages/react/src/templates/index.ts"],
       "@web-ppt/vue": ["./packages/vue/src/index.ts"],
+      "@web-ppt/vue/templates": ["./packages/vue/src/templates/index.ts"],
       "@web-ppt/viewer-core": ["./packages/viewer-core/src/index.ts"],
       "@web-ppt/fonts": ["./packages/fonts/src/index.ts"]
     }
@@ -30,6 +34,7 @@
     "tooling/type-contracts/v06-integration.ts",
     "tooling/type-contracts/v07-theme.ts",
     "tooling/type-contracts/v07-layout.ts",
-    "tooling/type-contracts/v07-master.ts"
+    "tooling/type-contracts/v07-master.ts",
+    "tooling/type-contracts/v07-templates.ts"
   ]
 }

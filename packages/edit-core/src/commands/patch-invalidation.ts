@@ -26,11 +26,10 @@ import { releaseDesignProjectionPackage } from '../design-projection-package';
 import { canvasTargetOfElement } from '../design-target';
 
 function masterElementPatch(doc: EditDoc, patch: Patch): boolean {
-  if (isElementTreePatch(patch) || isElementHierarchyPatch(patch)) {
-    if (doc.masters[patch.value.parent]) return true;
-  }
-  if (patch.path[0] !== 'elements' || !doc.elements[patch.path[1]]) return false;
-  return canvasTargetOfElement(doc, patch.path[1]).kind === 'master';
+  return (isElementTreePatch(patch) || isElementHierarchyPatch(patch))
+    && !!doc.masters[patch.value.parent]
+    || patch.path[0] === 'elements' && !!doc.elements[patch.path[1]]
+    && canvasTargetOfElement(doc, patch.path[1]).kind === 'master';
 }
 
 function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
@@ -94,10 +93,11 @@ export function collectPatchInvalidation(
     releaseLayoutProjectionCache(doc);
     releaseDesignProjectionPackage(doc);
     releaseThemeProjectionPackage(doc);
-    const layoutElements = invalidateLayoutElementCaches(
+    const designElements = invalidateLayoutElementCaches(
       doc, doc.layoutOrder.filter((id) => doc.layouts[id].themeId === patch.path[1]),
+      patch.path[1],
     );
-    for (const id of layoutElements) dirtyElements.add(id);
+    for (const id of designElements) dirtyElements.add(id);
     for (const slideId of slides) {
       const dirty = invalidateSlideStructure(doc, slideId, slideElementIds(doc, slideId));
       for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);

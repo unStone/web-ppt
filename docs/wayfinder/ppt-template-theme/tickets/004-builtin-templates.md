@@ -1,6 +1,7 @@
 ---
 title: 提供按需确定性内置模板
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -27,3 +28,15 @@ blocked_by:
 验收覆盖确定性生成、全部版式可新增、主题切换后传播、母版/版式继续编辑、恢复与保存重开、LibreOffice 无修复
 打开和真实 Chrome 模板选择；构建守卫证明模板目录及配方只存在于独立动态块，默认 core/edit-core/editor/site
 初始依赖图与体积不增长。最终四段仓库门禁全绿。
+
+## Outcome
+
+- `@web-ppt/edit-core/templates` 公开冻结目录与 `createPptxFromTemplate()`；极光、刊页、夜幕三套结构化配方
+  各自物化主题、母版、五种常用版式和可编辑标题页，连续生成逐字节一致，原有 `createBlankPptx()` 哈希不变。
+- editor / React / Vue 只转发同一按需入口；官网选择器连 DOM、CSS 与配方一起延迟加载，初始入口实测
+  215,418B gzip，不超过本票前 215,467B 基线；edit-core 默认入口为 82,500B gzip，不超过 82,503B 基线，
+  默认发布入口均无配方泄漏。
+- 新建文稿直接进入既有 `EditDoc`：主题、母版、版式、新增页、撤销重做、恢复、字段级协同与保存重开全部通过；
+  两条文字路径的独立进程指纹一致，真实 Chrome 完成模板选择，LibreOffice 无修复打开三套模板及编辑产物。
+- `npm run check && npm test && npm run build && npm run verify` 全绿：4,593 项断言、186 个快照、524 对编辑
+  等价指纹及 311 项跨产物一致性检查通过。

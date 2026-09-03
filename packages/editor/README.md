@@ -10,6 +10,17 @@ slide views without uploading the file.
 npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
 ```
 
+Load the optional template entry only when a user opens a new-deck picker. It forwards the one shared catalog
+and returns ordinary PPTX bytes accepted by `openEditor()`:
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/editor/templates';
+import { openEditor } from '@web-ppt/editor';
+
+const catalog = listBuiltinTemplates();
+const session = await openEditor(createPptxFromTemplate(catalog[0].id));
+```
+
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 import {

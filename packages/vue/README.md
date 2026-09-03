@@ -7,6 +7,14 @@ lifecycle; parsing, preview, editing, history, and saving remain in the shared e
 npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next @web-ppt/vue@next vue
 ```
 
+For a new-deck picker, lazy-load `@web-ppt/vue/templates`. It forwards the shared frozen catalog and
+`createPptxFromTemplate()` without adding recipes to the Vue component entry.
+
+```ts
+const templates = await import('@web-ppt/vue/templates');
+const bytes = templates.createPptxFromTemplate(templates.listBuiltinTemplates()[0].id);
+```
+
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';

@@ -17,9 +17,11 @@ const aliases = [
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+  ['@web-ppt/edit-core/templates', join(root, 'packages/edit-core/src/templates/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
   ['@web-ppt/editor', join(root, 'packages/editor/src/index.ts')],
+  ['@web-ppt/editor/templates', join(root, 'packages/editor/src/templates/index.ts')],
 ];
 const bundle = (entry, name, framework) => {
   const file = join(out, `${name}.mjs`);
@@ -43,8 +45,12 @@ const reactEntry = join(root, 'packages/react/src/index.ts');
 const vueEntry = join(root, 'packages/vue/src/index.ts');
 const reactFile = bundle(reactEntry, 'react-ssr', 'react');
 const vueFile = bundle(vueEntry, 'vue-ssr', 'vue');
+const reactTemplatesFile = bundle(join(root, 'packages/react/src/templates/index.ts'), 'react-templates', 'react');
+const vueTemplatesFile = bundle(join(root, 'packages/vue/src/templates/index.ts'), 'vue-templates', 'vue');
 const react = await import(`${pathToFileURL(reactFile)}?t=${Date.now()}`);
 const vue = await import(`${pathToFileURL(vueFile)}?t=${Date.now()}`);
+const reactTemplates = await import(`${pathToFileURL(reactTemplatesFile)}?t=${Date.now()}`);
+const vueTemplates = await import(`${pathToFileURL(vueTemplatesFile)}?t=${Date.now()}`);
 
 let passed = 0;
 const failures = [];
@@ -74,6 +80,11 @@ check('React 入口公开组件、选择窗格与 hook', !!react.WebPptEditor &&
   && typeof react.useWebPptAdapter === 'function');
 check('Vue 入口公开组件、选择窗格与 composable', !!vue.WebPptEditor && !!vue.WebPptSelectionPane
   && typeof vue.useWebPptAdapter === 'function');
+check('React/Vue 按需入口消费同一内置模板目录',
+  JSON.stringify(reactTemplates.listBuiltinTemplates())
+    === JSON.stringify(vueTemplates.listBuiltinTemplates())
+    && reactTemplates.createPptxFromTemplate('aurora') instanceof Uint8Array
+    && vueTemplates.createPptxFromTemplate('midnight') instanceof Uint8Array);
 const reactMarkup = renderReact(React.createElement(react.WebPptEditor, { mode: 'view' }));
 const vueMarkup = await renderVue(createSSRApp({
   render: () => h(vue.WebPptEditor, { mode: 'view' }),

@@ -224,7 +224,9 @@ if (!siteStat) {
   check('官网能定位断言 / 快照统计', false, '首屏文案改了就来这里同步');
 } else if (counts) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
-  const suites = ['core', 'edit', 'save', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile'];
+  const suites = [
+    'core', 'edit', 'save', 'templates', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile',
+  ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
   if (measured === null) console.log('  \x1b[33m跳过官网断言总数：counts.json 不全\x1b[0m');
@@ -329,17 +331,19 @@ if (!counts) {
     ['README.md', /核心解析 \/ 渲染，([\d,]+) 项断言/, ['core']],
     ['README.md', /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
       ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],
+    ['README.md', /内置模板 ([\d,]+) 项断言/, ['templates']],
     ['README.md', /([\d,]+) 项会话 \/ adapter/, ['editor']],
     ['README.md', /EMF \/ WMF \/ PICT 解码器，([\d,]+) 项断言/, ['metafile']],
     ['README.md', /React \/ Vue 的 ([\d,]+) 项 SSR/, ['adapters']],
     ['README.en.md', /— ([\d,]+) assertions \+ [\d,]+ render snapshots/, ['core']],
     ['README.en.md', /([\d,]+) edit-model \+ ([\d,]+) save \+ ([\d,]+) PowerPoint-evidence assertions, plus ([\d,]+) process-isolated SVG fingerprint pairs across ([\d,]+) fixtures/,
       ['edit', 'save', 'powerpoint', 'equivalence', 'fixtures']],
+    ['README.en.md', /([\d,]+) built-in-template assertions/, ['templates']],
     ['README.en.md', /([\d,]+) adapter\/session/, ['editor']],
     ['README.en.md', /decoders — ([\d,]+) assertions/, ['metafile']],
     ['README.en.md', /([\d,]+) React \/ Vue SSR/, ['adapters']],
-    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
-      ['core', 'edit', 'save', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile']],
+    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
+      ['core', 'edit', 'save', 'templates', 'powerpoint', 'editor', 'adapters', 'collab', 'metafile']],
     ['AGENTS.md', /([\d,]+) 对编辑等价指纹/, ['equivalence']],
   ];
   let countClaims = 0;

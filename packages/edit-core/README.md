@@ -10,6 +10,19 @@ an editable document back to the existing high-fidelity `Slide` schema. It has n
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```
 
+Built-in templates are a separate opt-in entry. The catalog is frozen pure data suitable for a custom picker;
+generation needs no network, bundled font bytes, random values, or timestamps:
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/edit-core/templates';
+
+const catalog = listBuiltinTemplates();
+const bytes = createPptxFromTemplate('aurora', { width: 1280, height: 720 });
+```
+
+`aurora`, `editorial`, and `midnight` each produce an editable theme, master, title/content/two-content/section/
+blank layout set, and title slide. `createBlankPptx()` keeps its existing byte-compatible minimal output.
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {

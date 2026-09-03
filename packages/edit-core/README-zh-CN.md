@@ -9,6 +9,19 @@
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```
 
+内置模板位于独立按需入口。目录是可直接渲染自定义选择器的冻结纯数据；生成不依赖网络、内置字体字节、
+随机数或时间戳：
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/edit-core/templates';
+
+const catalog = listBuiltinTemplates();
+const bytes = createPptxFromTemplate('aurora', { width: 1280, height: 720 });
+```
+
+`aurora`、`editorial`、`midnight` 各自生成可编辑主题、母版、标题页/标题和内容/双内容/章节页/空白版式及
+初始标题页；`createBlankPptx()` 继续保持既有最小输出的字节兼容。
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {

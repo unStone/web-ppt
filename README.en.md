@@ -95,6 +95,17 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 # React / Vue apps can additionally install @web-ppt/react@next react or @web-ppt/vue@next vue
 ```
 
+New decks can lazy-load the built-in template catalog. Its three deterministic theme/master/layout recipes stay
+out of every default entry:
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/editor/templates';
+import { openEditor } from '@web-ppt/editor';
+
+const catalog = listBuiltinTemplates(); // Aurora / Editorial / Midnight plus lightweight preview tokens
+const session = await openEditor(createPptxFromTemplate(catalog[0].id));
+```
+
 ```ts
 import { openEditor } from '@web-ppt/editor';
 import { createDesignEditor, listLayouts, listMasters, queryMaster } from '@web-ppt/editor/design';
@@ -397,14 +408,16 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
 | `npm run test:edit` | 1,119 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 524 process-isolated SVG fingerprint pairs across 81 fixtures |
+| `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:editor` | 422 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:templates:libreoffice` | Open all three templates and one edited save in LibreOffice without repair |
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |
-| `npm run test:adapters` | 9 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
+| `npm run test:adapters` | 10 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
 | `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |

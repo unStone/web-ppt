@@ -1,5 +1,5 @@
 import { THEME_COLOR_SLOTS } from '@web-ppt/core';
-import type { PresentationTheme, ThemeFontCollection } from '@web-ppt/core';
+import type { PresentationTheme, ThemeColorSlot, ThemeFontCollection } from '@web-ppt/core';
 
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 const A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
@@ -204,4 +204,174 @@ export function generatedEmptySlideXml(): string {
   return `${XML}<p:sld xmlns:a="${A}" xmlns:r="${R}" xmlns:p="${P}">
 <p:cSld><p:spTree>${rootGroup}</p:spTree></p:cSld>
 <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
+}
+
+export type GeneratedTemplateColor = (
+  | { readonly slot: ThemeColorSlot; readonly rgb?: never }
+  | { readonly slot?: never; readonly rgb: string }
+) & { readonly alpha?: number };
+
+export interface GeneratedTemplateDecoration {
+  readonly name: string;
+  readonly preset: 'rect' | 'ellipse' | 'line';
+  readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+  readonly fill?: GeneratedTemplateColor;
+  readonly stroke?: GeneratedTemplateColor & { readonly width?: number };
+  readonly rotation?: number;
+}
+
+export interface GeneratedTemplatePlaceholder {
+  readonly name: string;
+  readonly type: 'ctrTitle' | 'title' | 'subTitle' | 'body' | 'sldNum';
+  readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+  readonly index?: number;
+}
+
+export interface GeneratedTemplateLayout {
+  readonly part: number;
+  readonly type: 'title' | 'obj' | 'twoObj' | 'secHead' | 'blank';
+  readonly name: string;
+  readonly placeholders: readonly GeneratedTemplatePlaceholder[];
+  readonly decorations?: readonly GeneratedTemplateDecoration[];
+  readonly background?: GeneratedTemplateColor;
+}
+
+export interface GeneratedTemplateTextStyle {
+  readonly font: 'major' | 'minor';
+  readonly color: GeneratedTemplateColor;
+  readonly size: number;
+  readonly step?: number;
+  readonly align?: 'l' | 'ctr' | 'r';
+  readonly bold?: boolean;
+  readonly bullet?: boolean;
+}
+
+export interface GeneratedTemplateDesign {
+  readonly theme: PresentationTheme;
+  readonly masterBackground: GeneratedTemplateColor;
+  readonly masterDecorations: readonly GeneratedTemplateDecoration[];
+  readonly textStyles: {
+    readonly title: GeneratedTemplateTextStyle;
+    readonly body: GeneratedTemplateTextStyle;
+    readonly other: GeneratedTemplateTextStyle;
+  };
+  readonly layouts: readonly GeneratedTemplateLayout[];
+  readonly initialLayoutPart: number;
+}
+
+function generatedColor(color: GeneratedTemplateColor): string {
+  if ((color.slot === undefined) === (color.rgb === undefined)) {
+    throw new Error('模板颜色必须且只能指定主题槽或 RGB');
+  }
+  const value = color.slot
+    ? `<a:schemeClr val="${color.slot}"`
+    : `<a:srgbClr val="${themeColor(color.rgb!, '模板颜色')}"`;
+  if (color.alpha === undefined) return `${value}/>`;
+  if (!Number.isFinite(color.alpha) || color.alpha < 0 || color.alpha > 1) {
+    throw new Error('模板颜色透明度必须位于 0 到 1');
+  }
+  return `${value}><a:alpha val="${Math.round(color.alpha * 100000)}"/></${color.slot ? 'a:schemeClr' : 'a:srgbClr'}>`;
+}
+
+function generatedFill(color: GeneratedTemplateColor | undefined): string {
+  return color ? `<a:solidFill>${generatedColor(color)}</a:solidFill>` : '<a:noFill/>';
+}
+
+function generatedDecoration(
+  decoration: GeneratedTemplateDecoration,
+  id: number,
+  sx: number,
+  sy: number,
+): string {
+  const { rect } = decoration;
+  const xfrm = `<a:xfrm${decoration.rotation === undefined ? '' : ` rot="${Math.round(decoration.rotation * 60000)}"`}><a:off x="${emu(rect.x * sx, `${decoration.name} x`)}" y="${emu(rect.y * sy, `${decoration.name} y`)}"/><a:ext cx="${emu(rect.w * sx, `${decoration.name} 宽度`)}" cy="${emu(rect.h * sy, `${decoration.name} 高度`)}"/></a:xfrm>`;
+  const stroke = decoration.stroke
+    ? `<a:ln w="${emu(decoration.stroke.width ?? 1, `${decoration.name} 描边`)}"><a:solidFill>${generatedColor(decoration.stroke)}</a:solidFill></a:ln>`
+    : '<a:ln><a:noFill/></a:ln>';
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${escapeAttribute(decoration.name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:spPr>${xfrm}<a:prstGeom prst="${decoration.preset}"><a:avLst/></a:prstGeom>${generatedFill(decoration.fill)}${stroke}</p:spPr></p:sp>`;
+}
+
+function generatedTextStyle(style: GeneratedTemplateTextStyle): string {
+  const levels = Array.from({ length: 9 }, (_, index) => {
+    const size = Math.max(12, style.size - (style.step ?? 0) * index);
+    const paragraph = [
+      style.align ? `algn="${style.align}"` : '',
+      style.bullet ? `marL="${emu(18 + index * 18, '文字缩进')}" indent="${emu(-14, '文字悬挂')}"` : '',
+    ].filter(Boolean).join(' ');
+    const role = style.font === 'major' ? 'mj' : 'mn';
+    const bullet = style.bullet ? '<a:buChar char="&#x2022;"/>' : '<a:buNone/>';
+    return `<a:lvl${index + 1}pPr${paragraph ? ` ${paragraph}` : ''}>${bullet}<a:defRPr lang="zh-CN" sz="${Math.round(size * 100)}"${style.bold ? ' b="1"' : ''}><a:solidFill>${generatedColor(style.color)}</a:solidFill><a:latin typeface="+${role}-lt"/><a:ea typeface="+${role}-ea"/><a:cs typeface="+${role}-cs"/></a:defRPr></a:lvl${index + 1}pPr>`;
+  });
+  return levels.join('');
+}
+
+function generatedSlidePlaceholder(id: number, item: GeneratedTemplatePlaceholder): string {
+  const ph = `<p:ph type="${item.type}"${item.index === undefined ? '' : ` idx="${item.index}"`}/>`;
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${escapeAttribute(item.name)}"/><p:cNvSpPr/><p:nvPr>${ph}</p:nvPr></p:nvSpPr>
+<p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN"/></a:p></p:txBody></p:sp>`;
+}
+
+/** 内置设计配方复用生成保存骨架；默认空白入口不经过本函数，因而保持原字节。 */
+export function generatedDesignedTemplateParts(
+  width: number,
+  height: number,
+  design: GeneratedTemplateDesign,
+): Record<string, Uint8Array> {
+  if (design.layouts.length < 5 || !design.layouts.some(({ part }) => part === design.initialLayoutPart)) {
+    throw new Error('内置模板必须提供至少五种版式及有效初始版式');
+  }
+  const parts = generatedTemplateParts(width, height, 1, [], design.theme);
+  const sx = width / 1280;
+  const sy = height / 720;
+  const scaledRect = (rect: GeneratedTemplatePlaceholder['rect']) => ({
+    x: rect.x * sx, y: rect.y * sy, w: rect.w * sx, h: rect.h * sy,
+  });
+  const contentTypes = new TextDecoder().decode(parts['[Content_Types].xml']);
+  const extraLayouts = design.layouts.filter(({ part }) => part > 3).map(({ part }) =>
+    `<Override PartName="/ppt/slideLayouts/slideLayout${part}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>`).join('\n');
+  parts['[Content_Types].xml'] = bytes(contentTypes.replace(
+    '<Override PartName="/ppt/theme/theme1.xml"',
+    `${extraLayouts}${extraLayouts ? '\n' : ''}<Override PartName="/ppt/theme/theme1.xml"`,
+  ));
+  const masterShapes = design.masterDecorations.map((shape, index) =>
+    generatedDecoration(shape, index + 2, sx, sy)).join('');
+  const layoutIds = design.layouts.map(({ part }, index) =>
+    `<p:sldLayoutId id="${2147483649 + index}" r:id="rId${part}"/>`).join('');
+  parts['ppt/slideMasters/slideMaster1.xml'] = bytes(`${XML}<p:sldMaster xmlns:a="${A}" xmlns:r="${R}" xmlns:p="${P}">
+<p:cSld name="${escapeAttribute(design.theme.name)}"><p:bg><p:bgPr><a:solidFill>${generatedColor(design.masterBackground)}</a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree>${rootGroup}${masterShapes}</p:spTree></p:cSld>
+<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
+<p:sldLayoutIdLst>${layoutIds}</p:sldLayoutIdLst>
+<p:txStyles><p:titleStyle>${generatedTextStyle(design.textStyles.title)}</p:titleStyle><p:bodyStyle>${generatedTextStyle(design.textStyles.body)}</p:bodyStyle><p:otherStyle>${generatedTextStyle(design.textStyles.other)}</p:otherStyle></p:txStyles></p:sldMaster>`);
+  parts['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = bytes(relationships(
+    design.layouts.map(({ part }) =>
+      `<Relationship Id="rId${part}" Type="${R}/slideLayout" Target="../slideLayouts/slideLayout${part}.xml"/>`).join('')
+      + `<Relationship Id="rIdTheme" Type="${R}/theme" Target="../theme/theme1.xml"/>`,
+  ));
+  for (const layout of design.layouts) {
+    const decorations = (layout.decorations ?? []).map((shape, index) =>
+      generatedDecoration(shape, index + 2, sx, sy)).join('');
+    const placeholderOffset = (layout.decorations?.length ?? 0) + 2;
+    const placeholders = layout.placeholders.map((item, index) => item.type === 'sldNum'
+      ? slideNumberPlaceholder(placeholderOffset + index, layout.part, scaledRect(item.rect))
+      : placeholder(placeholderOffset + index, item.name, item.type, scaledRect(item.rect), item.index)).join('');
+    const background = layout.background
+      ? `<p:bg><p:bgPr><a:solidFill>${generatedColor(layout.background)}</a:solidFill><a:effectLst/></p:bgPr></p:bg>` : '';
+    parts[`ppt/slideLayouts/slideLayout${layout.part}.xml`] = bytes(`${XML}<p:sldLayout xmlns:a="${A}" xmlns:r="${R}" xmlns:p="${P}" type="${layout.type}" showMasterSp="1">
+<p:cSld name="${escapeAttribute(layout.name)}">${background}<p:spTree>${rootGroup}${decorations}${placeholders}</p:spTree></p:cSld>
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+    parts[`ppt/slideLayouts/_rels/slideLayout${layout.part}.xml.rels`] = bytes(relationships(
+      `<Relationship Id="rId1" Type="${R}/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`,
+    ));
+  }
+  const initialLayout = design.layouts.find(({ part }) => part === design.initialLayoutPart)!;
+  const initialPlaceholders = initialLayout.placeholders.filter(({ type }) => type !== 'sldNum')
+    .map((item, index) => generatedSlidePlaceholder(index + 2, item)).join('');
+  parts['ppt/slides/slide1.xml'] = bytes(`${XML}<p:sld xmlns:a="${A}" xmlns:r="${R}" xmlns:p="${P}">
+<p:cSld><p:spTree>${rootGroup}${initialPlaceholders}</p:spTree></p:cSld>
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+  parts['ppt/slides/_rels/slide1.xml.rels'] = bytes(relationships(
+    `<Relationship Id="rId1" Type="${R}/slideLayout" Target="../slideLayouts/slideLayout${design.initialLayoutPart}.xml"/>`,
+  ));
+  return parts;
 }

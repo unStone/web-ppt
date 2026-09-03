@@ -92,6 +92,16 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 # React / Vue 项目再安装 @web-ppt/react@next react 或 @web-ppt/vue@next vue
 ```
 
+新建文稿可按需加载内置模板目录；三套模板只包含确定性主题、母版与版式配方，不进入默认入口：
+
+```ts
+import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/editor/templates';
+import { openEditor } from '@web-ppt/editor';
+
+const catalog = listBuiltinTemplates(); // 极光 / 刊页 / 夜幕，以及轻量预览色 token
+const session = await openEditor(createPptxFromTemplate(catalog[0].id));
+```
+
 ```ts
 import { openEditor } from '@web-ppt/editor';
 import { createDesignEditor, listLayouts, listMasters, queryMaster } from '@web-ppt/editor/design';
@@ -425,7 +435,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
 | `npm run test:edit` | 编辑模型 1119 项 + 保存 514 项 + PowerPoint 证据 9 项 + 81 份固件、524 对独立进程 SVG 指纹 |
+| `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:editor` | 422 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:templates:libreoffice` | 三套模板与编辑保存产物的 LibreOffice 无修复打开验收 |
 | `npm run test:edit:m1` | M1 最小写回验收 + 68 份模型保存产物的 LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开 M1 产物 |
@@ -434,7 +446,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
-| `npm run test:adapters` | React / Vue 的 9 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
+| `npm run test:adapters` | React / Vue 的 10 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |

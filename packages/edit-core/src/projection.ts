@@ -369,10 +369,11 @@ function invalidateSlideElementCaches(
   for (const elementId of doc.slides[slideId]?.children ?? []) visit(elementId);
 }
 
-/** 主题变化只清使用该主题的设计画布；不能破坏无关页面的投影引用稳定性。 */
+/** 设计来源变化只清对应版式/母版画布；不能破坏无关页面的投影引用稳定性。 */
 export function invalidateLayoutElementCaches(
   doc: EditDoc,
   layoutIds: readonly string[],
+  themeId?: string,
 ): Set<ElementId> {
   const cache = cacheOf(doc);
   const dirty = new Set<ElementId>();
@@ -384,6 +385,13 @@ export function invalidateLayoutElementCaches(
   };
   for (const layoutId of layoutIds) {
     for (const id of doc.layouts[layoutId]?.children ?? []) visit(id);
+  }
+  if (themeId) {
+    for (const masterId of doc.masterOrder) {
+      const master = doc.masters[masterId];
+      if (master.themeId !== themeId) continue;
+      for (const id of master.children) visit(id);
+    }
   }
   return dirty;
 }

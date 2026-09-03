@@ -3,6 +3,8 @@ import { changeValue, saveAndReopen } from './site-editor-browser-helpers.mjs';
 export async function runSiteEditorSlideToolbarContract(context) {
   const { evaluate, waitFor, click } = context;
   await click('#newFile');
+  await waitFor("document.querySelector('#templateDialog')?.open && document.querySelectorAll('[data-template-id]').length === 4", '模板选择器');
+  await click('[data-template-id="blank"]');
   await waitFor(`document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
     && document.querySelector('#slideCount')?.textContent === '1'`, '页面能力空白文稿');
   const layouts = await evaluate("document.querySelector('#slideLayout').options.length");

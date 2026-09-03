@@ -364,15 +364,17 @@ async function createNewDocument(): Promise<void> {
     return;
   }
   if (!confirmReplacement()) return;
+  const created = await import('./editor-template-picker')
+    .then(({ chooseNewDocument }) => chooseNewDocument())
+    .catch((error: unknown) => (reportError(error), null));
+  if (!created) return;
   cancelPendingOpen();
   const generation = ++openGeneration;
-  setLoading('正在新建演示文稿');
-  notice('正在准备空白演示文稿…');
+  setLoading(created.loadingMessage);
+  notice(created.noticeMessage);
   try {
-    // 默认主题与版式只属于新建/生成路径；打开已有文件不会下载这段代码。
-    const { createBlankPptx } = await import('@web-ppt/edit-core/generate');
     if (generation !== openGeneration) return;
-    await openDocument(createBlankPptx(), '未命名演示文稿.pptx', { newDocument: true });
+    await openDocument(created.bytes, created.fileName, { newDocument: true });
   } catch (error) {
     if (generation !== openGeneration) return;
     const failure = new Error(`新建失败：${explain(error)}`);

@@ -12,7 +12,7 @@
 
 ### 1.1 一句话
 
-**引擎能力与 0.6 高频编辑面已经打穿，0.7 的主题、版式与母版编辑也已闭环。** 自动化交付缺口已收口；
+**引擎能力与 0.6 高频编辑面已经打穿，0.7 的四张能力票已闭环，等待集成验收。** 自动化交付缺口已收口；
 0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
 ### 1.2 门禁实测（2026-09-03）
@@ -20,7 +20,7 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4561 项 | 2230 core + 1119 edit + 514 save + 9 PowerPoint + 422 editor + 9 adapters + 128 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4593 项 | 2230 core + 1119 edit + 514 save + 29 templates + 9 PowerPoint + 422 editor + 10 adapters + 130 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 524 对 | 81 份固件、262 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
@@ -97,7 +97,7 @@
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `AddSection` `RenameSection` `MoveSection` `RemoveSection` `SetSlideSize` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | — |
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
-| 版式/母版/主题 | `SetTheme` + 主题目录；版式设计画布 + 复用元素/背景/切换命令 | **母版编辑 / `p:txStyles`** |
+| 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
 | 图表/SmartArt/OLE/墨迹/媒体 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑、**图表数据** |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`。
@@ -112,7 +112,7 @@
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
 | 无障碍 | ✅ 选择窗格键盘导航 / 锁定 / 隐藏；⚠️ **画布本身无 AT 语义** |
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
-| 官网编辑页 | ✅ 独立 `editor.html`，本机打开/编辑/保存/恢复 |
+| 官网编辑页 | ✅ 独立 `editor.html`，本机打开/模板新建/编辑/保存/恢复 |
 | 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
 | 国际化 | ❌ 编辑包零文案（好事）；官网**仅中文** |
 | 文件保存 UX | ⚠️ 仅 download，**未接 File System Access** |
@@ -146,7 +146,7 @@ flowchart TD
 | 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | ✅ **已完成** |
 | 批量导出图片 | 有 | 有（复用 `slideToPng` + fflate） | ✅ **已完成** |
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | ✅ **已完成** |
-| 版式 / 母版编辑 | 有（企业模板定制） | 有（版式已建立设计画布与反向失效索引） | 版式 ✅；**母版 0.7 P1** |
+| 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（须同时改 cache 与 embedded xlsx，可做成按需入口） | **0.8 P0** |
 | chartex 解析 | 部分（PowerPoint 自带 fallback 预览，不会白屏） | 有，除 `regionMap` | **0.8 P1**，地图无解 |
 | 媒体插入 | 有 | 有 | **0.8 P2** |
@@ -324,9 +324,9 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 单页仍复用 data URI + `foreignObject` 与 `SecurityError` 回退，默认 core 入口不暴露批量 API。
 
 **直接 PDF 不做**——`presentationToPrintableHtml` + 浏览器打印已经能出矢量、可搜索的 PDF。
-真正缺的是**无人值守导出**（不弹打印对话框），那要 PDF 写入器 + 字体子集化，收益不抵成本，排在母版之后再评估。
+真正缺的是**无人值守导出**（不弹打印对话框），那要 PDF 写入器 + 字体子集化，收益不抵成本，留待后续评估。
 
-### 5.8 [主题 / 版式 / 母版编辑（0.7，主题与版式已完成）](wayfinder/ppt-template-theme/map.md)
+### 5.8 [模板与主题编辑（0.7，能力实现完成，待集成验收）](wayfinder/ppt-template-theme/map.md)
 
 **收益排序：主题 > 版式 > 母版。** 改一处主题，全文档立刻变样，而 `phClr` / `fillRef` / `lnRef`
 的求值链路解析侧已经全通。
@@ -335,18 +335,19 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 |---|---|---|---|
 | 主题 ✅ | `SetTheme{ clrScheme?, fontScheme? }` | `ppt/theme/themeN.xml` | 按主题分支精确失效 |
 | 版式 ✅ | 以 `DesignTarget` 复用通用画布命令 | `ppt/slideLayouts/slideLayoutN.xml` | 反向索引 + 占位符重绑 |
-| 母版 | 同上 | `ppt/slideMasters/slideMasterN.xml` | 同上，再加 `p:txStyles` |
+| 母版 ✅ | 同上 | `ppt/slideMasters/slideMasterN.xml` | 同上，再加 `p:txStyles` |
 
 **继承倒灌已由增量反向索引闭环**：`layoutId → SlideId[]` 在 `SetLayout` / `AddSlide` / `RemoveSlide`
-时维护，改版式只失效引用它的页面；母版票据将在这条链上增加 `masterId → layoutId[]`。
+时维护，`masterId → layoutId[]` 接入同一条链；改设计来源只失效真正依赖它的后代。
 
 **占位符反向重绑也已完成**：版式改动后仍可匹配的页面占位符保留逻辑身份和直接覆盖，失去宿主的占位符
 固定必要外观并安全降级。
 
 写回无新基础设施：补丁引擎本来就能改任意 part。
 
-内置模板不是复制一批固定 `.pptx`。它复用生成保存的确定性骨架，以按需入口提供多套主题、母版和版式配方；
-现有 `createBlankPptx()` 保持兼容，未新建文稿的用户不加载模板目录或模板数据。
+内置模板不是复制一批固定 `.pptx`。`@web-ppt/edit-core/templates` 复用生成保存的确定性骨架，提供极光、
+刊页、夜幕三套主题、母版和五种常用版式配方；现有 `createBlankPptx()` 保持字节兼容，未打开新建选择器的用户
+不加载模板目录或模板数据。
 
 ### 5.9 图表数据编辑（0.8）
 
@@ -413,6 +414,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | ✅ [0.6 集成验收](wayfinder/ppt-editing-completeness/tickets/008-v06-integration-readiness.md)已完成 | — | 七类能力形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | ✅ [继续 0.7 模板与主题编辑](wayfinder/ppt-template-theme/map.md) | 主题、版式已关闭 | 当前前沿是母版与文字默认值编辑 |
+| 3 | [完成 0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md) | 四张能力票已关闭 | 当前前沿是跨能力产品与发布边界验收 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

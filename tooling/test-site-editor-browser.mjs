@@ -7,6 +7,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import WebSocket from 'ws';
 import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
 
@@ -24,6 +25,7 @@ const aliases = [
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+  ['@web-ppt/edit-core/templates', join(root, 'packages/edit-core/src/templates/index.ts')],
   ['@web-ppt/edit-core/generate', join(root, 'packages/edit-core/src/generate/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
@@ -65,13 +67,24 @@ const closure = (roots, includeDynamic) => {
 };
 const hasImageZip = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
   .some((input) => pathEndsWith(input, 'packages/core/src/image-zip.ts')));
+const hasBuiltinTemplates = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'packages/edit-core/src/templates/recipes.ts')));
+const hasTemplatePicker = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'packages/site/src/editor-template-picker.ts')));
 const initial = closure([entry], false);
-const dynamicTargets = new Set([...initial].flatMap((key) => (outputs[key]?.imports ?? [])
-  .filter((dependency) => dependency.kind === 'dynamic-import')
-  .map((dependency) => importedOutput(key, dependency.path)).filter(Boolean)));
+const dynamicTargets = new Set([...closure([entry], true)].filter((key) => !initial.has(key)));
 const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure([key], false)));
+const templateTargets = [...dynamicTargets].filter((key) => hasBuiltinTemplates(closure([key], false)));
 if (hasImageZip(initial) || imageZipTargets.length !== 1) {
   throw new Error('官网编辑入口必须通过唯一动态分块加载 image-zip，初始依赖图不得包含它');
+}
+if (hasTemplatePicker(initial) || hasBuiltinTemplates(initial) || templateTargets.length !== 1) {
+  throw new Error('官网编辑入口必须按需加载选择器和唯一模板配方块，初始依赖图不得包含它们');
+}
+// 0.7 模板票开始前的同配置实测值；选择器连 DOM/CSS 一起延迟，首包不能为它付费。
+const initialGzip = gzipSync(readFileSync(resolve(root, entry))).length;
+if (initialGzip > 215467) {
+  throw new Error(`官网编辑初始入口由模板功能增大：${initialGzip}B gzip > 215467B`);
 }
 const delayedChunks = new Set(imageZipTargets.map((key) =>
   `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
@@ -84,12 +97,17 @@ const browser = [
 ].filter(Boolean).find((candidate) => existsSync(candidate));
 if (!browser) throw new Error('找不到 Chrome/Chromium；可通过 CHROME_BIN 指定真实浏览器');
 
-const editorHtml = readFileSync(join(root, 'packages/site/editor.html'), 'utf8')
+const editorShell = readFileSync(join(root, 'packages/site/editor.html'), 'utf8');
+const editorStyle = readFileSync(join(root, 'packages/site/src/editor-page.css'));
+if (editorShell.includes('templateDialog') || editorStyle.includes('.template-dialog')) {
+  throw new Error('模板选择器的 DOM 与样式必须和实现一起按需加载，不能增加初始 HTML/CSS');
+}
+const editorHtml = editorShell
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
-  ['/editor-page.css', ['text/css; charset=utf-8', readFileSync(join(root, 'packages/site/src/editor-page.css'))]],
+  ['/editor-page.css', ['text/css; charset=utf-8', editorStyle]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
   ['/fixtures/sample-editor-shape-format.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx'))]],
@@ -320,6 +338,33 @@ async function runContract(webSocketDebuggerUrl) {
       width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
     });
     await click('#newFile');
+    await waitFor(`document.querySelector('#templateDialog')?.open
+      && document.querySelectorAll('[data-template-id]').length === 4`, '模板选择器');
+    const templatePicker = await evaluate(`(() => ({
+      names: [...document.querySelectorAll('.template-card > strong')].map((node) => node.textContent),
+      midnightSurface: document.querySelector('[data-template-id="midnight"]')?.style
+        .getPropertyValue('--template-surface'),
+    }))()`);
+    if (templatePicker.names.join('|') !== '空白|极光|刊页|夜幕'
+      || templatePicker.midnightSurface !== '#101827') {
+      throw new Error(`模板选择器没有消费公开预览目录：${JSON.stringify(templatePicker)}`);
+    }
+    await click('[data-template-id="midnight"]');
+    await waitFor(`document.querySelector('#fileName')?.textContent === '夜幕演示文稿.pptx'
+      && document.querySelector('#slideCount')?.textContent === '1'
+      && document.querySelector('#slideLayout')?.options.length === 5
+      && !document.querySelector('#editorApp')?.dataset.loading`, '夜幕模板文稿就绪');
+    const midnight = await evaluate(`(() => ({
+      page: document.querySelector('#pageIndicator')?.textContent,
+      elements: document.querySelectorAll('[data-edit-id]').length,
+      background: document.querySelector('[data-web-ppt-editor] svg > rect')?.getAttribute('fill'),
+    }))()`);
+    if (midnight.page !== '1 / 1' || midnight.background !== 'rgb(16,24,39)') {
+      throw new Error(`模板文稿没有进入统一编辑会话：${JSON.stringify(midnight)}`);
+    }
+    await click('#newFile');
+    await waitFor("document.querySelector('#templateDialog')?.open", '再次打开模板选择器');
+    await click('[data-template-id="blank"]');
     await waitFor(`document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
       && document.querySelector('#slideCount')?.textContent === '1'
       && !document.querySelector('#editorApp')?.dataset.loading`, '空白文稿就绪');

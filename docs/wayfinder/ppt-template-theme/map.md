@@ -43,16 +43,13 @@ tracker: local-markdown
 - [版式编辑](tickets/002-layout-editing.md)已建立“设计画布”接口与增量依赖失效；
   [母版编辑](tickets/003-master-editing.md)已复用这条 seam，页面、版式和母版仍是不同领域对象，调用方不能靠伪造
   SlideId 复用命令；结构校验以显式设计变化信号决定是否重算投影，避免常规编辑退化为全页扫描。
-- [内置模板](tickets/004-builtin-templates.md)复用生成保存模块的结构配方；模板目录和数据只从独立按需入口加载。
+- [内置模板](tickets/004-builtin-templates.md)复用生成保存模块的结构配方；三套模板、框架转发、官网选择、
+  编辑/恢复/协同与保存证据闭环，目录、DOM/CSS 和配方只从独立按需入口加载。
 - [0.7 集成验收](tickets/005-v07-integration-readiness.md)在四条能力全部关闭后统一证明产品入口、包边界和文档一致。
 
 ## Frontier
 
-- [提供按需确定性内置模板](tickets/004-builtin-templates.md)
-
-## Later
-
-- [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md) — 被全部能力票阻塞。
+- [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md)
 
 ## Completed
 
@@ -60,6 +57,8 @@ tracker: local-markdown
 - [把版式作为设计画布编辑](tickets/002-layout-editing.md) — 稳定设计画布、继承重绑、保存与跨环境证据闭环。
 - [把母版与文字默认值作为设计画布编辑](tickets/003-master-editing.md) — 母版目录、设计画布、九级文字默认值、
   最小保存、局部传播与跨环境证据闭环。
+- [提供按需确定性内置模板](tickets/004-builtin-templates.md) — 三套结构配方、统一编辑模型、框架适配、官网选择、
+  默认入口零配方成本与跨环境证据闭环。
 
 ## Not yet specified
 

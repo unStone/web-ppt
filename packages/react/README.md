@@ -7,6 +7,14 @@ lifecycle; parsing, preview, editing, history, and saving remain in the shared e
 npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next @web-ppt/react@next react
 ```
 
+For a new-deck picker, lazy-load `@web-ppt/react/templates`. It forwards the shared frozen catalog and
+`createPptxFromTemplate()` without adding recipes to the React component entry.
+
+```ts
+const templates = await import('@web-ppt/react/templates');
+const bytes = templates.createPptxFromTemplate(templates.listBuiltinTemplates()[0].id);
+```
+
 ```tsx
 import { useRef, useState } from 'react';
 import { WebPptEditor, type WebPptEditorHandle } from '@web-ppt/react';
