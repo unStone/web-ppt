@@ -11,6 +11,7 @@ import { locateElementHost, locateElementHosts } from './xfrm';
 import { materializeElementOverrides } from './materialize';
 import { patchRemovedElement } from './remove-element';
 import type { HyperlinkSaveContext } from './hyperlink';
+import { isCanvasRoot } from '../design-target';
 
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
@@ -146,10 +147,10 @@ function detachedHost(doc: EditDoc, record: ElementRecord): XmlElement {
 }
 
 function targetParent(document: XmlDocument, doc: EditDoc, record: ElementRecord): XmlElement {
-  if (doc.slides[record.parent]) {
+  if (doc.slides[record.parent] || doc.layouts[record.parent]) {
     const common = findXmlDescendant(document.root, { localName: 'cSld' });
     const tree = common && findXmlChild(common, { localName: 'spTree' });
-    if (!tree) throw new Error(`目标幻灯片缺少 p:spTree：${record.id}`);
+    if (!tree) throw new Error(`目标画布缺少 p:spTree：${record.id}`);
     return tree;
   }
   const parent = doc.elements[record.parent];
@@ -171,7 +172,7 @@ export function patchInsertedElements(
   const depth = (record: ElementRecord): number => {
     let value = 0;
     let parent = record.parent;
-    while (!doc.slides[parent]) {
+    while (!isCanvasRoot(doc, parent)) {
       value++;
       const ancestor = doc.elements[parent];
       if (!ancestor) break;
@@ -190,7 +191,7 @@ export function patchInsertedElements(
     if (!candidates.has(record.id)) continue;
     let ancestor = record.parent;
     let covered = false;
-    while (!doc.slides[ancestor]) {
+    while (!isCanvasRoot(doc, ancestor)) {
       if (candidates.has(ancestor) && doc.elements[ancestor]?.meta.insertion?.containsDescendants !== false) {
         covered = true;
         break;

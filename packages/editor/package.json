@@ -38,6 +38,10 @@
       "types": "./dist/adjustments/index.d.ts",
       "import": "./dist/adjustments.js"
     },
+    "./design": {
+      "types": "./dist/design/index.d.ts",
+      "import": "./dist/design.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -47,7 +51,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && node ../../tooling/check-editor-main-size.mjs && vite build --config vite.vertex.config.ts && vite build --config vite.adjustments.config.ts && tsc -p tsconfig.build.json",
+    "build": "vite build && node ../../tooling/check-editor-main-size.mjs && vite build --config vite.vertex.config.ts && vite build --config vite.adjustments.config.ts && vite build --config vite.design.config.ts && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

@@ -1,5 +1,5 @@
 import type {
-  Fill, Slide, SlideElement, TableCell, TableCreationDefaults, TableRow, TextBody,
+  Fill, Slide, SlideElement, SlideLayoutTemplate, TableCell, TableCreationDefaults, TableRow, TextBody,
 } from '@web-ppt/core';
 import { bytesToBase64 } from './clipboard-binary';
 import type { EditDoc } from './types';
@@ -106,6 +106,19 @@ export function hydrateLayoutSlideAssets(
   hydrateText(doc, defaults?.textTemplate, assets);
   hydrateTableDefaults(doc, slide.editInfo?.defaultTable, assets);
   return slide;
+}
+
+export function hydrateLayoutTemplateAssets(
+  doc: EditDoc,
+  layout: SlideLayoutTemplate,
+  assets: readonly LayoutAsset[],
+): SlideLayoutTemplate {
+  hydrateFill(doc, layout.background, assets);
+  for (const element of layout.elements) hydrateElement(doc, element, assets);
+  hydrateFill(doc, layout.defaultShape.fill, assets);
+  hydrateText(doc, layout.defaultShape.textTemplate, assets);
+  hydrateTableDefaults(doc, layout.defaultTable, assets);
+  return layout;
 }
 
 export function releaseLayoutAssetCache(doc: EditDoc): void {

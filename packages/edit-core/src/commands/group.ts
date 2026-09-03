@@ -12,6 +12,7 @@ import { allocateElementSpid } from './spid';
 import { elementHasLockedAncestor } from './element-interaction';
 import type { CommandPatches, ElementHierarchyPatch, GroupCommand } from './types';
 import { cloneHierarchyRecord } from './hierarchy-record';
+import { isCanvasRoot } from '../design-target';
 
 interface GroupFrame { x: number; y: number; w: number; h: number }
 
@@ -151,6 +152,6 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
   };
   return {
     forward: [forward], inverse: [inverse],
-    selection: { kind: 'elements', ids: [id], enteredGroup: doc.slides[parent] ? null : parent },
+    selection: { kind: 'elements', ids: [id], enteredGroup: isCanvasRoot(doc, parent) ? null : parent },
   };
 }

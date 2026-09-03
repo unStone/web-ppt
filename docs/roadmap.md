@@ -12,17 +12,17 @@
 
 ### 1.1 一句话
 
-**引擎能力与 0.6 高频编辑面已经打穿，自动化交付缺口也已收口。** M0–M6 与七类 0.6 能力全部验收；
-只剩 PowerPoint 真机验收与 0.5.0 转正两个外部发布动作。
+**引擎能力与 0.6 高频编辑面已经打穿，0.7 的主题与版式编辑也已闭环。** 自动化交付缺口已收口；
+0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
 ### 1.2 门禁实测（2026-09-03）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4489 项 | 2230 core + 1065 edit + 500 save + 9 PowerPoint + 422 editor + 9 adapters + 124 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4528 项 | 2230 core + 1095 edit + 507 save + 9 PowerPoint + 422 editor + 9 adapters + 126 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 514 对 | 79 份固件、257 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 518 对 | 80 份固件、259 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
@@ -31,7 +31,7 @@
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 514 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 518 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -46,11 +46,11 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,463 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,528 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.70KB gzip | 读取 `package.json#main` 后实测 gzip |
-| 5 | 14,228B 与 11.70KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
+| 5 | 14,245B 与 11.70KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
 | 6 | 稳定版清单仍写七包 | 改为八包及真实发布顺序 | 发布包版本与构建清单同步比对 |
 
 ---
@@ -97,7 +97,7 @@
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `AddSection` `RenameSection` `MoveSection` `RemoveSection` `SetSlideSize` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | — |
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
-| 版式/母版/主题 | — | **全部未实现**（`EditDoc.layouts` 只是只读目录，母版不在模型里） |
+| 版式/母版/主题 | `SetTheme` + 主题目录；版式设计画布 + 复用元素/背景/切换命令 | **母版编辑 / `p:txStyles`** |
 | 图表/SmartArt/OLE/墨迹/媒体 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑、**图表数据** |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`。
@@ -145,8 +145,8 @@ flowchart TD
 | 分布 / 替代文字 / 节 / 页面尺寸 | 有（各自小，合起来是「像不像 PowerPoint」） | 有（全是既有基础设施的加法） | ✅ **已完成** |
 | 触屏手势 | 有（平板打不开等于少一半设备） | 有（Pointer Events 已统一） | ✅ **已完成** |
 | 批量导出图片 | 有 | 有（复用 `slideToPng` + fflate） | ✅ **已完成** |
-| 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | **0.7 P0** |
-| 版式 / 母版编辑 | 有（企业模板定制） | 有（补丁引擎能改任意 part，缺反向失效索引） | **0.7 P1** |
+| 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | ✅ **已完成** |
+| 版式 / 母版编辑 | 有（企业模板定制） | 有（版式已建立设计画布与反向失效索引） | 版式 ✅；**母版 0.7 P1** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（须同时改 cache 与 embedded xlsx，可做成按需入口） | **0.8 P0** |
 | chartex 解析 | 部分（PowerPoint 自带 fallback 预览，不会白屏） | 有，除 `regionMap` | **0.8 P1**，地图无解 |
 | 媒体插入 | 有 | 有 | **0.8 P2** |
@@ -326,22 +326,22 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 **直接 PDF 不做**——`presentationToPrintableHtml` + 浏览器打印已经能出矢量、可搜索的 PDF。
 真正缺的是**无人值守导出**（不弹打印对话框），那要 PDF 写入器 + 字体子集化，收益不抵成本，排在母版之后再评估。
 
-### 5.8 [主题 / 版式 / 母版编辑（0.7）](wayfinder/ppt-template-theme/map.md)
+### 5.8 [主题 / 版式 / 母版编辑（0.7，主题与版式已完成）](wayfinder/ppt-template-theme/map.md)
 
 **收益排序：主题 > 版式 > 母版。** 改一处主题，全文档立刻变样，而 `phClr` / `fillRef` / `lnRef`
 的求值链路解析侧已经全通。
 
 | 阶段 | 命令 | 落点 | 难点 |
 |---|---|---|---|
-| 主题 | `SetTheme{ clrScheme?, fontScheme? }` | `ppt/theme/themeN.xml` | 全文档失效，不能按元素增量 |
-| 版式 | 复用 slide 的全部命令，把 layout 当特殊投影 | `ppt/slideLayouts/slideLayoutN.xml` | **继承倒灌** |
+| 主题 ✅ | `SetTheme{ clrScheme?, fontScheme? }` | `ppt/theme/themeN.xml` | 按主题分支精确失效 |
+| 版式 ✅ | 以 `DesignTarget` 复用通用画布命令 | `ppt/slideLayouts/slideLayoutN.xml` | 反向索引 + 占位符重绑 |
 | 母版 | 同上 | `ppt/slideMasters/slideMasterN.xml` | 同上，再加 `p:txStyles` |
 
-**核心难点是继承倒灌**：现有 WeakMap 精确缓存按「元素 / 页」设计，改版式要让引用它的**所有页**
-失效。需要新建一层反向索引 `layoutId → SlideId[]`，在 `SetLayout` / `AddSlide` / `RemoveSlide` 时维护。
+**继承倒灌已由增量反向索引闭环**：`layoutId → SlideId[]` 在 `SetLayout` / `AddSlide` / `RemoveSlide`
+时维护，改版式只失效引用它的页面；母版票据将在这条链上增加 `masterId → layoutId[]`。
 
-第二个难点是**占位符反向重绑**：`053` 解决的是「页换版式」，这里是「版式改了，页上已绑定的占位符
-失去宿主」——同一套 `placeholder-match` 逻辑反着跑一遍。
+**占位符反向重绑也已完成**：版式改动后仍可匹配的页面占位符保留逻辑身份和直接覆盖，失去宿主的占位符
+固定必要外观并安全降级。
 
 写回无新基础设施：补丁引擎本来就能改任意 part。
 
@@ -413,6 +413,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | ✅ [0.6 集成验收](wayfinder/ppt-editing-completeness/tickets/008-v06-integration-readiness.md)已完成 | — | 七类能力形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | ✅ [为 0.7 建立模板与主题编辑地图](wayfinder/ppt-template-theme/map.md) | 0.6 已关闭 | 首个前沿票据是主题编辑闭环 |
+| 3 | ✅ [继续 0.7 模板与主题编辑](wayfinder/ppt-template-theme/map.md) | 主题、版式已关闭 | 当前前沿是母版与文字默认值编辑 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

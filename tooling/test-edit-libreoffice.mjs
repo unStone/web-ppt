@@ -27,6 +27,7 @@ import { runPresetShapeLibreOfficeContract } from './lib/preset-shape-libreoffic
 import { runAdvancedRunFormatLibreOfficeContract } from './lib/advanced-run-format-libreoffice-contract.mjs';
 import { runCommonObjectSlideLibreOfficeContract } from './lib/common-object-slide-libreoffice-contract.mjs';
 import { runThemeEditLibreOfficeContract } from './lib/theme-edit-libreoffice-contract.mjs';
+import { runLayoutEditLibreOfficeContract } from './lib/layout-edit-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -247,11 +248,11 @@ function exportLibreOfficeSvg(label, sourcePath = savedPath) {
   return readFileSync(svg, 'utf8');
 }
 
-function exportLibreOfficePng(label) {
-  const png = join(out, `${basename(savedPath, extname(savedPath))}.png`);
+function exportLibreOfficePng(label, sourcePath = savedPath) {
+  const png = join(out, `${basename(sourcePath, extname(sourcePath))}.png`);
   if (existsSync(png)) unlinkSync(png);
   const exported = spawnSync(soffice, [
-    '--headless', '--norestore', '--convert-to', 'png', '--outdir', out, savedPath,
+    '--headless', '--norestore', '--convert-to', 'png', '--outdir', out, sourcePath,
   ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
   if (exported.error) throw exported.error;
   if (exported.status !== 0 || !existsSync(png)) {
@@ -269,6 +270,7 @@ if (existsSync(pdf)) unlinkSync(pdf);
 // 换版式固件故意只有一张隐藏页；默认 PDF 过滤会导出零页并误报 IO 失败。
 const pdfFormat = [
   'change-layout.pptx', 'slide-transition-inherited-none.pptx', 'theme-editing.pptx',
+  'layout-editing.pptx',
 ].includes(basename(savedPath))
   ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
   : 'pdf';
@@ -327,6 +329,11 @@ if (basename(savedPath) === 'advanced-run-format-editing.pptx') {
 }
 if (basename(savedPath) === 'theme-editing.pptx') {
   geometryEvidence += runThemeEditLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
+}
+if (basename(savedPath) === 'layout-editing.pptx') {
+  geometryEvidence += runLayoutEditLibreOfficeContract({
+    savedPath, out, exportSvg: exportLibreOfficeSvg, exportPng: exportLibreOfficePng,
+  });
 }
 if (basename(savedPath) === 'table-style-oracle.pptx') {
   geometryEvidence += runTableStyleLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });

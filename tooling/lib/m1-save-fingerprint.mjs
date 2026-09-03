@@ -19,17 +19,20 @@ installDomEnv();
 const core = await import(`${pathToFileURL(corePath).href}?worker=${process.pid}`);
 const edit = await import(`${pathToFileURL(editPath).href}?worker=${process.pid}`);
 const bytes = new Uint8Array(readFileSync(file));
+const savedProjection = mode === 'saved' && scenario.type === 'layout';
 const pres = await core.parse(bytes, {
-  edit: mode === 'projected', keepPackage: true, lazy: false, assets: 'defer',
+  edit: mode === 'projected' || savedProjection, keepPackage: true, lazy: false, assets: 'defer',
 });
 const slideIndex = scenario.resultSlideIndex ?? scenario.slideIndex ?? 0;
 let slide = pres.slides[slideIndex];
 let doc;
-if (mode === 'projected') {
+if (mode === 'projected' || savedProjection) {
   doc = edit.createDoc(pres, { idPrefix: 'm1-fingerprint-' });
   const editor = new edit.Editor(doc);
   const target = Object.values(doc.elements).find((record) => record.src.name === scenario.targetName);
-  if (scenario.type === 'clipboard') {
+  if (savedProjection) {
+    slide = editor.toSlide(doc.slideOrder[slideIndex]);
+  } else if (scenario.type === 'clipboard') {
     const sourceBytes = new Uint8Array(readFileSync(join(dirname(file), scenario.sourceFile)));
     const sourcePres = await core.parse(sourceBytes, {
       edit: true, keepPackage: true, lazy: false, assets: 'defer',
@@ -385,6 +388,24 @@ if (mode === 'projected') {
       type: 'SetTheme', id: theme.id,
       clrScheme: scenario.clrScheme, fontScheme: scenario.fontScheme,
     });
+  } else if (scenario.type === 'layout') {
+    const layout = edit.listLayouts(doc).find((item) => item.name === scenario.layoutName);
+    if (!layout) throw new Error(`M1 指纹固件缺少版式：${scenario.layoutName}`);
+    const host = doc.layouts[layout.id].children.map((id) => doc.elements[id])
+      .find((record) => record.meta.editable === 'full'
+        && record.meta.ph?.type === scenario.placeholderType);
+    if (!host) throw new Error(`M1 指纹固件缺少版式占位符：${scenario.placeholderType}`);
+    editor.execDesign(layout.target,
+      { type: 'SetXfrm', id: host.id, x: scenario.x },
+      { type: 'SetBackground', target: layout.target, fill: scenario.background });
+    editor.execDesign(layout.target, {
+      type: 'AddShape', target: layout.target,
+      preset: scenario.added.preset, rect: scenario.added.rect,
+    });
+    const addedId = editor.selection.ids[0];
+    editor.execDesign(layout.target,
+      { type: 'SetName', id: addedId, name: scenario.added.name },
+      { type: 'SetFill', id: addedId, fill: scenario.added.fill });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

@@ -1,4 +1,4 @@
-import { slideOfElement } from '../projection';
+import { canvasTargetOfElement } from '../design-target';
 import { elementOrder, elementParentChildren } from '../element-order';
 import type { EditDoc, ElementId, ElementRecord } from '../types';
 import type {
@@ -68,7 +68,14 @@ export function removeElementPatches(
   const value = snapshotTree(doc, command.id);
   const path = ['elements', command.id] as const;
   const removedIds = new Set(Object.keys(value.records));
-  const slideId = slideOfElement(doc, command.id);
+  const target = canvasTargetOfElement(doc, command.id);
+  if (target.kind === 'layout') {
+    return {
+      forward: [{ op: 'remove', path, value, origin }],
+      inverse: [{ op: 'insert', path, value, origin }],
+    };
+  }
+  const slideId = target.id;
   const slide = doc.slides[slideId];
   const animations = querySlideAnimations(doc, [slideId]).value;
   const remainingAnimations = animations
@@ -131,7 +138,8 @@ export function validateElementTreePatch(doc: EditDoc, patch: ElementTreePatch, 
 
 export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): void {
   const snapshot = patch.value;
-  const slide = doc.slides[elementTreeSlide(doc, snapshot)];
+  const canvas = elementTreeCanvas(doc, snapshot);
+  const slide = canvas.kind === 'slide' ? doc.slides[canvas.id] : undefined;
   const dynamicIds = Object.values(snapshot.records)
     .filter((record) => hasDynamicSlideNumber(record.src)).map((record) => record.id);
   const dynamicLinkIds = Object.values(snapshot.records)
@@ -143,11 +151,11 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
     siblings.splice(index, 1);
     for (const id of Object.keys(snapshot.records)) delete doc.elements[id];
-    if (dynamicIds.length) {
+    if (slide && dynamicIds.length) {
       const removed = new Set(dynamicIds);
       slide.dynamicSlideNumbers = slide.dynamicSlideNumbers.filter((id) => !removed.has(id));
     }
-    if (dynamicLinkIds.length) {
+    if (slide && dynamicLinkIds.length) {
       const removed = new Set(dynamicLinkIds);
       slide.dynamicSlideLinks = slide.dynamicSlideLinks.filter((id) => !removed.has(id));
     }
@@ -176,11 +184,11 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
       doc.identity.nextSpid[anchor.part] = anchor.spid + 1;
     }
   }
-  if (dynamicIds.length) {
+  if (slide && dynamicIds.length) {
     const known = new Set(slide.dynamicSlideNumbers);
     slide.dynamicSlideNumbers.push(...dynamicIds.filter((id) => !known.has(id)));
   }
-  if (dynamicLinkIds.length) {
+  if (slide && dynamicLinkIds.length) {
     const known = new Set(slide.dynamicSlideLinks);
     slide.dynamicSlideLinks.push(...dynamicLinkIds.filter((id) => !known.has(id)));
   }
@@ -210,7 +218,13 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
 }
 
 export function elementTreeSlide(doc: EditDoc, snapshot: ElementTreeSnapshot): string {
-  return doc.slides[snapshot.parent]
-    ? snapshot.parent
-    : slideOfElement(doc, snapshot.parent as ElementId);
+  const canvas = elementTreeCanvas(doc, snapshot);
+  if (canvas.kind !== 'slide') throw new Error(`元素树不属于页面：${snapshot.root}`);
+  return canvas.id;
+}
+
+function elementTreeCanvas(doc: EditDoc, snapshot: ElementTreeSnapshot) {
+  if (doc.slides[snapshot.parent]) return { kind: 'slide' as const, id: snapshot.parent };
+  if (doc.layouts[snapshot.parent]) return { kind: 'layout' as const, id: snapshot.parent };
+  return canvasTargetOfElement(doc, snapshot.parent as ElementId);
 }

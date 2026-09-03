@@ -1,5 +1,7 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
-import { assertPureCommand, commandPatches, commandSelectsInsertedElement } from './commands/dispatch';
+import {
+  assertPureCommand, commandPatches, commandSelectsInsertedElement, commandTargetIds,
+} from './commands/dispatch';
 import { isElementTreePatch } from './commands/element-tree';
 import { isElementHierarchyPatch } from './commands/element-hierarchy';
 import { isElementOrderPatch } from './commands/element-order';
@@ -13,7 +15,7 @@ import {
   renderPatchSlides,
 } from './change-classification';
 import type {
-  Command, EditorChange, EditorOptions, EditorPatchEvent, EditorPatchSubscriber,
+  Command, DesignCommand, EditorChange, EditorOptions, EditorPatchEvent, EditorPatchSubscriber,
   EditorPatchSubscribeOptions, EditorSubscriber,
   ExternalPatchOptions, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
   TransactionOptions, TransactionResult,
@@ -32,13 +34,15 @@ import {
   cloneSelection, normalizeSelection, selectionAfterInteractionState, selectionAfterStructure,
 } from './selection';
 import { validateCommandRelations } from './transaction-validation';
-import type { EditDoc, ElementId, SlideId } from './types';
+import type { DesignTarget, EditDoc, ElementId, SlideId } from './types';
 import { changeFromPatches } from './patch-change';
 import { assertEditIdentityWatermark, mergeEditIdentityWatermark } from './identity-watermark';
 import {
   advanceCollaborationVersion, assertCollaborationVersionAvailable,
 } from './identity-allocation';
 import { EditorPatchJournal, reportEditorSubscriberError } from './patch-events';
+import { assertDesignTarget, canvasTargetOfElement, sameCanvas } from './design-target';
+import { toDesignCanvas } from './layout';
 
 class TransactionCollector implements Transaction {
   readonly commands: Command[] = [];
@@ -149,6 +153,27 @@ export class Editor {
     return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑', {});
   }
 
+  execDesign(target: DesignTarget, ...commands: DesignCommand[]): TransactionResult {
+    assertDesignTarget(this.doc, target);
+    if (!commands.length) throw new Error('execDesign 至少需要一个命令');
+    for (const command of commands) {
+      assertPureCommand(command);
+      if (command.type === 'SetBackground' || command.type === 'SetTransition'
+        || command.type === 'AddShape' || command.type === 'AddImage' || command.type === 'AddTable') {
+        if (!('target' in command) || !command.target || !sameCanvas(command.target, target)) {
+          throw new Error('版式画布属性命令必须指向当前设计目标');
+        }
+        continue;
+      }
+      const ids = commandTargetIds(command);
+      if (!ids.length || ids.some((id) =>
+        !sameCanvas(canvasTargetOfElement(this.doc, id), target))) {
+        throw new Error(`命令 ${command.type} 不能作用于当前版式画布`);
+      }
+    }
+    return this.commit(commands, null, commands.length === 1 ? commands[0].type : '批量编辑版式', {});
+  }
+
   transaction(
     callback: (transaction: Transaction) => void,
     label: string,
@@ -254,6 +279,7 @@ export class Editor {
   }
 
   toSlide(id: SlideId) { return toSlide(this.doc, id); }
+  toDesignCanvas(target: DesignTarget) { return toDesignCanvas(this.doc, target); }
   effectiveElement(id: ElementId) { return effectiveElement(this.doc, id); }
 
   private commit(
@@ -288,7 +314,7 @@ export class Editor {
       if (affectsSlideSequence(patches.forward)) {
         for (const id of dirty.dirtyElements) renderElements.add(id);
       }
-      for (const id of renderPatchSlides(patches.forward, dirty.dirtySlides)) renderSlides.add(id);
+      for (const id of renderPatchSlides(this.doc, patches.forward, dirty.dirtySlides)) renderSlides.add(id);
       for (const patch of patches.forward) {
         if (isElementHierarchyPatch(patch)) {
           for (const id of patch.value.affected) {

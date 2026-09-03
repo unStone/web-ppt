@@ -20,7 +20,7 @@ export function changeFromPatches(
     selection,
     touchedElements: patchElements(patches),
     renderElements: renderPatchElements(patches, dirty.dirtyElements),
-    renderSlides: renderPatchSlides(patches, dirty.dirtySlides),
+    renderSlides: renderPatchSlides(doc, patches, dirty.dirtySlides),
     bodyPropsElements: bodyPropsPatchElements(patches, inverse),
     reorderedElements: reorderedPatchElements(patches),
     paneElements: panePatchElements(patches),

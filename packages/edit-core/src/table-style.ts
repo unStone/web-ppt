@@ -3,7 +3,10 @@ import type {
   CellBorders, TableElement, TableStyleDefinition, TableStylePart, TableStyleSettings, TextBody,
 } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
-import type { EditDoc, ElementId, SlideId } from './types';
+import { canvasTargetOfElement } from './design-target';
+import { resolvedLayoutTemplate } from './layout-projection';
+import type { CanvasTarget } from './design-target';
+import type { DesignTarget, EditDoc, ElementId, SlideId } from './types';
 
 export interface TableStyleCatalogItem {
   readonly styleId: string;
@@ -27,23 +30,23 @@ function definitionsForSlide(doc: EditDoc, slideId: SlideId): readonly TableStyl
     : slide.tableStyles ?? doc.layouts[slide.layoutId ?? '']?.tableStyles ?? [];
 }
 
-function elementSlideId(doc: EditDoc, id: ElementId): SlideId {
-  let current = doc.elements[id];
-  if (!current) throw new Error(`找不到元素：${id}`);
-  while (!doc.slides[current.parent]) {
-    current = doc.elements[current.parent];
-    if (!current) throw new Error(`元素 ${id} 的父链无效`);
-  }
-  return current.parent;
+function definitionsForTarget(
+  doc: EditDoc,
+  target: CanvasTarget,
+): readonly TableStyleDefinition[] {
+  if (target.kind === 'slide') return definitionsForSlide(doc, target.id);
+  const layout = doc.layouts[target.id];
+  if (!layout) throw new Error(`找不到版式：${target.id}`);
+  return resolvedLayoutTemplate(doc, target.id)?.tableStyles ?? layout.tableStyles ?? [];
 }
 
 function definitionFor(
   doc: EditDoc,
-  slideId: SlideId,
+  target: CanvasTarget,
   styleId: string,
 ): TableStyleDefinition | undefined {
   const key = styleId.toUpperCase();
-  return definitionsForSlide(doc, slideId)
+  return definitionsForTarget(doc, target)
     .find((definition) => definition.styleId.toUpperCase() === key);
 }
 
@@ -52,12 +55,16 @@ export function tableStyleDefinitionForElement(
   id: ElementId,
   styleId: string,
 ): TableStyleDefinition | undefined {
-  return definitionFor(doc, elementSlideId(doc, id), styleId);
+  return definitionFor(doc, canvasTargetOfElement(doc, id), styleId);
 }
 
-/** 目录以页面主题为上下文；返回值不泄露 OOXML，也不要求 UI 复刻样式优先级。 */
-export function listTableStyles(doc: EditDoc, slideId: SlideId): readonly TableStyleCatalogItem[] {
-  return definitionsForSlide(doc, slideId).map((definition) => ({
+/** 目录以页面或版式主题为上下文；返回值不泄露 OOXML，也不要求 UI 复刻样式优先级。 */
+export function listTableStyles(
+  doc: EditDoc,
+  target: SlideId | DesignTarget,
+): readonly TableStyleCatalogItem[] {
+  const canvas = typeof target === 'string' ? { kind: 'slide' as const, id: target } : target;
+  return definitionsForTarget(doc, canvas).map((definition) => ({
     styleId: definition.styleId,
     name: definition.name,
     source: definition.source,
@@ -81,8 +88,8 @@ export function assertTableStyleSettings(
   for (const field of ['firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'] as const) {
     if (typeof value[field] !== 'boolean') throw new Error(`${label}.${field} 必须是布尔值`);
   }
-  const definition = definitionFor(doc, elementSlideId(doc, id), value.styleId);
-  if (!definition) throw new Error(`${label}.styleId 不在当前页面的表样式目录中：${value.styleId}`);
+  const definition = definitionFor(doc, canvasTargetOfElement(doc, id), value.styleId);
+  if (!definition) throw new Error(`${label}.styleId 不在当前画布的表样式目录中：${value.styleId}`);
   return { ...value, styleId: definition.styleId };
 }
 
@@ -125,12 +132,12 @@ function styledTextBody(
 /** 来源直设基线最后叠加，因此样式切换不会清洗单元格直接格式。 */
 export function projectTableStyle(
   doc: EditDoc,
-  slideId: SlideId,
+  target: CanvasTarget,
   table: TableElement,
   settings: TableStyleSettings,
 ): TableElement {
-  const definition = definitionFor(doc, slideId, settings.styleId);
-  if (!definition) throw new Error(`表样式不在当前页面目录中：${settings.styleId}`);
+  const definition = definitionFor(doc, target, settings.styleId);
+  if (!definition) throw new Error(`表样式不在当前画布目录中：${settings.styleId}`);
   const rowCount = table.rows.length;
   return {
     ...table,

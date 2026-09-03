@@ -40,24 +40,25 @@ tracker: local-markdown
 
 - [主题编辑闭环](tickets/001-theme-editing.md)是唯一首个前沿：先证明资源图、继承重算和全文档传播，再让版式、
   母版复用同一失效机制。
-- [版式编辑](tickets/002-layout-editing.md)与[母版编辑](tickets/003-master-editing.md)共享一个“设计画布”接口；
-  页面、版式和母版仍是不同领域对象，调用方不能靠伪造 SlideId 复用命令。
+- [版式编辑](tickets/002-layout-editing.md)已建立“设计画布”接口与增量依赖失效；
+  [母版编辑](tickets/003-master-editing.md)复用这条 seam，页面、版式和母版仍是不同领域对象，调用方不能靠伪造
+  SlideId 复用命令。
 - [内置模板](tickets/004-builtin-templates.md)复用生成保存模块的结构配方；模板目录和数据只从独立按需入口加载。
 - [0.7 集成验收](tickets/005-v07-integration-readiness.md)在四条能力全部关闭后统一证明产品入口、包边界和文档一致。
 
 ## Frontier
 
-- [把版式作为设计画布编辑](tickets/002-layout-editing.md)
+- [把母版与文字默认值作为设计画布编辑](tickets/003-master-editing.md)
 
 ## Later
 
-- [把母版与文字默认值作为设计画布编辑](tickets/003-master-editing.md) — 被版式编辑阻塞。
 - [提供按需确定性内置模板](tickets/004-builtin-templates.md) — 被主题、版式与母版编辑阻塞。
 - [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md) — 被全部能力票阻塞。
 
 ## Completed
 
 - [编辑主题并传播到依赖页面](tickets/001-theme-editing.md) — 主题目录、继承传播、最小保存、协同和多环境证据闭环。
+- [把版式作为设计画布编辑](tickets/002-layout-editing.md) — 稳定设计画布、继承重绑、保存与跨环境证据闭环。
 
 ## Not yet specified
 

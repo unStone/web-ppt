@@ -17,7 +17,7 @@ import { createImageResource } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { assertElementUnlocked } from './element-interaction';
-import { incrementalInsertionPart } from './insertion-host';
+import { resolveInsertionCanvas } from './insertion-host';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -75,9 +75,8 @@ export function addImagePatches(
   origin: string,
 ): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增图片');
-  const slide = doc.slides[command.slideId];
-  if (!slide) throw new Error(`找不到新增图片目标页：${command.slideId}`);
-  const part = incrementalInsertionPart(doc, slide);
+  const canvas = resolveInsertionCanvas(doc, command, '新增图片');
+  const part = canvas.part;
   const placeholder = command.placeholderId === undefined
     ? undefined : doc.elements[command.placeholderId];
   const placeholderTextIsEmpty = placeholder?.src.kind === 'shape'
@@ -85,7 +84,7 @@ export function addImagePatches(
       || (placeholder.ovr.text === undefined && placeholder.src.text === null));
   if (placeholder) assertElementUnlocked(doc, placeholder.id);
   if (command.placeholderId !== undefined && (typeof command.placeholderId !== 'string'
-    || !placeholder || placeholder.parent !== slide.id || placeholder.meta.ph?.type !== 'pic'
+    || !placeholder || placeholder.parent !== canvas.id || placeholder.meta.ph?.type !== 'pic'
     || placeholder.meta.editable !== 'full' || placeholder.meta.locked || !placeholderTextIsEmpty)) {
     throw new Error(`AddImage.placeholderId 必须是目标页中的空图片占位符：${String(command.placeholderId)}`);
   }
@@ -110,17 +109,17 @@ export function addImagePatches(
       resources: closure.resources,
     };
   }
-  const siblings = slide.children;
+  const siblings = canvas.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent: slide.id, z: fractionalIndexBetween(previous, null, id),
+    id, parent: canvas.id, z: fractionalIndexBetween(previous, null, id),
     src: sourceImage(spid, name, command.rect, resource), ovr: {},
     meta: {
       editable: 'full', created: true,
       ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };
-  const value = { root: id, parent: slide.id, records: { [id]: record } };
+  const value = { root: id, parent: canvas.id, records: { [id]: record } };
   const forward: ElementTreePatch = { op: 'insert', path: ['elements', id], value, origin };
   const inverse: ElementTreePatch = { op: 'remove', path: ['elements', id], value, origin };
   const retained = doc.imageResources[resource.hash];

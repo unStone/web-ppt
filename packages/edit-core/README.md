@@ -12,7 +12,9 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, Editor, listThemes, querySelectionPane, queryTheme } from '@web-ppt/edit-core';
+import {
+  createDoc, Editor, listLayouts, listThemes, queryLayout, querySelectionPane, queryTheme,
+} from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
@@ -55,6 +57,14 @@ editor.exec({
   fontScheme: { minor: { latin: 'Aptos' } },
 });
 const effectiveTheme = queryTheme(doc, theme.id); // source, effective value, and direct state
+
+const layout = listLayouts(doc)[0];
+const layoutState = queryLayout(doc, layout.target); // source, effective value, and direct state
+editor.execDesign(layout.target, {
+  type: 'SetBackground', target: layout.target,
+  fill: { type: 'solid', color: '#112233' },
+});
+const layoutCanvas = editor.toDesignCanvas(layout.target); // same Slide schema as page rendering
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });

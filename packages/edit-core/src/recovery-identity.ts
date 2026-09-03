@@ -83,8 +83,10 @@ function anchorKey(record: Pick<ElementRecord, 'meta'>): string | null {
 }
 
 function owningParts(doc: EditDoc): Map<string, string | null> {
-  const owners = new Map(Object.values(doc.slides)
-    .map((slide) => [slide.id, slide.origin?.part ?? null] as const));
+  const owners = new Map([
+    ...Object.values(doc.slides).map((slide) => [slide.id, slide.origin?.part ?? null] as const),
+    ...Object.values(doc.layouts).map((layout) => [layout.id, layout.origin.part] as const),
+  ]);
   const records = new Map([...Object.values(doc.elements), ...Object.values(doc.removedElements)]
     .map((record) => [record.id, record] as const));
   const resolve = (id: string, visiting = new Set<string>()): string | null => {

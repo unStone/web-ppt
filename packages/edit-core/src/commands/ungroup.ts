@@ -10,6 +10,7 @@ import type { CommandPatches, ElementHierarchyPatch, UngroupCommand, XfrmField }
 import { elementHasLockedAncestor } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
 import { cloneHierarchyRecord } from './hierarchy-record';
+import { isCanvasRoot } from '../design-target';
 
 const FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'];
 const EPSILON = 1e-8;
@@ -143,6 +144,6 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
   };
   return {
     forward: [forward], inverse: [inverse],
-    selection: { kind: 'elements', ids: children, enteredGroup: doc.slides[parent] ? null : parent },
+    selection: { kind: 'elements', ids: children, enteredGroup: isCanvasRoot(doc, parent) ? null : parent },
   };
 }

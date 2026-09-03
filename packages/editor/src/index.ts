@@ -22,6 +22,7 @@ export {
   SHAPE_PATTERN_PRESETS, SLIDE_TRANSITION_TYPES, transitionDirections, listThemes, queryTheme,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
+export type { DesignEditor, DesignEditorOptions } from './design-editor-types';
 export type {
   FormatPainter, FormatPainterSnapshot, FormatPainterSource, FormatPainterStartOptions,
   FormatPainterSubscriber, FormatPainterTarget,
@@ -59,6 +60,7 @@ export type {
   MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, ReplaceImageCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
   FormatMaskField,
   SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, ThemeState,
+  DesignCommand, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutPropertyPatch,
 } from '@web-ppt/edit-core';
 export type {
   EditorChange, FindTextRequest, ReplaceTextCommand, ReplaceTextScope, SlideId, TextSearchMatch,

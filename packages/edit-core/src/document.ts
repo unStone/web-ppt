@@ -148,6 +148,16 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     );
   }
 
+  const layouts: EditDoc['layouts'] = Object.create(null);
+  for (const source of pres.editInfo?.layouts ?? []) {
+    const layout = {
+      ...structuredClone(source), children: [] as ElementId[], ovr: {},
+    } satisfies EditDoc['layouts'][string];
+    layouts[layout.id] = layout;
+    // 版式画布显示母版节点但只把 layout part 当作写入宿主；动态页码在设计来源中只是字段模板。
+    layout.children = addElements(source.elements, layout.id, 'full', layout.id, [], []);
+  }
+
   if (pres.source === 'pptx') {
     const origins = new Map<string, ElementRecord[]>();
     for (const record of Object.values(elements)) {
@@ -157,9 +167,10 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       owners.push(record);
       origins.set(key, owners);
     }
-    // 畸形文件可能复用 cNvPr@id；仅有 part+spid 时无法无歧义写回，宁可降级查看也不能改错节点。
+    // 页面投影会重复同一继承锚点；只有多个可写节点争用锚点才是真歧义。
     for (const owners of origins.values()) {
-      if (owners.length > 1) for (const record of owners) record.meta.editable = 'none';
+      const writable = owners.filter((record) => record.meta.editable !== 'none');
+      if (writable.length > 1) for (const record of writable) record.meta.editable = 'none';
     }
   }
 
@@ -192,9 +203,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     slides,
     slideOrder,
     sections: sectionState,
-    layouts: Object.fromEntries((pres.editInfo?.layouts ?? []).map((layout) => [
-      layout.id, structuredClone(layout),
-    ])),
+    layouts,
     layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
     themes: Object.fromEntries((pres.editInfo?.themes ?? []).map((theme) => [theme.id, {
       id: theme.id,

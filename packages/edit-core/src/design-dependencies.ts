@@ -2,7 +2,9 @@ import type { EditDoc, SlideId } from './types';
 
 interface DesignDependencyIndex {
   readonly slidesByTheme: Map<string, Set<SlideId>>;
+  readonly slidesByLayout: Map<string, Set<SlideId>>;
   readonly themeBySlide: Map<SlideId, string>;
+  readonly layoutBySlide: Map<SlideId, string>;
 }
 
 const indexes = new WeakMap<EditDoc, DesignDependencyIndex>();
@@ -13,13 +15,23 @@ function themeOfSlide(doc: EditDoc, slideId: SlideId): string | null {
 }
 
 function build(doc: EditDoc): DesignDependencyIndex {
-  const index: DesignDependencyIndex = { slidesByTheme: new Map(), themeBySlide: new Map() };
+  const index: DesignDependencyIndex = {
+    slidesByTheme: new Map(), slidesByLayout: new Map(),
+    themeBySlide: new Map(), layoutBySlide: new Map(),
+  };
   for (const slideId of doc.slideOrder) add(index, doc, slideId);
   indexes.set(doc, index);
   return index;
 }
 
 function add(index: DesignDependencyIndex, doc: EditDoc, slideId: SlideId): void {
+  const layoutId = doc.slides[slideId]?.layoutId;
+  if (layoutId) {
+    index.layoutBySlide.set(slideId, layoutId);
+    let layoutSlides = index.slidesByLayout.get(layoutId);
+    if (!layoutSlides) index.slidesByLayout.set(layoutId, layoutSlides = new Set());
+    layoutSlides.add(slideId);
+  }
   const themeId = themeOfSlide(doc, slideId);
   if (!themeId) return;
   index.themeBySlide.set(slideId, themeId);
@@ -29,6 +41,13 @@ function add(index: DesignDependencyIndex, doc: EditDoc, slideId: SlideId): void
 }
 
 function remove(index: DesignDependencyIndex, slideId: SlideId): void {
+  const layoutId = index.layoutBySlide.get(slideId);
+  if (layoutId) {
+    index.layoutBySlide.delete(slideId);
+    const slides = index.slidesByLayout.get(layoutId);
+    slides?.delete(slideId);
+    if (!slides?.size) index.slidesByLayout.delete(layoutId);
+  }
   const themeId = index.themeBySlide.get(slideId);
   if (!themeId) return;
   index.themeBySlide.delete(slideId);
@@ -39,6 +58,10 @@ function remove(index: DesignDependencyIndex, slideId: SlideId): void {
 
 export function slidesForTheme(doc: EditDoc, themeId: string): ReadonlySet<SlideId> {
   return (indexes.get(doc) ?? build(doc)).slidesByTheme.get(themeId) ?? new Set();
+}
+
+export function slidesForLayout(doc: EditDoc, layoutId: string): ReadonlySet<SlideId> {
+  return (indexes.get(doc) ?? build(doc)).slidesByLayout.get(layoutId) ?? new Set();
 }
 
 /** 页面树与换版式命令在模型落地前后各调用一次，热路径无需重扫全部页面。 */

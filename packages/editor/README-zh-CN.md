@@ -11,6 +11,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
+import { createDesignEditor, listLayouts } from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -40,6 +41,15 @@ view.setSlide([...duplicated.createdSlides][0]);
 const theme = listThemes(session.editor.doc)[0];
 session.editor.exec({ type: 'SetTheme', id: theme.id, clrScheme: { accent1: '#112233' } });
 const effectiveTheme = queryTheme(session.editor.doc, theme.id);
+
+const layout = listLayouts(session.editor.doc)[0];
+const design = createDesignEditor(layoutContainer, session, {
+  target: layout.target, textMode: 'auto',
+});
+design.exec({
+  type: 'SetBackground', target: layout.target,
+  fill: { type: 'solid', color: '#112233' },
+}); // 同一提交帧内更新使用该版式的全部页面
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();
@@ -74,6 +84,7 @@ view.setAnimations(null);             // 恢复未触碰的解析来源
 
 const bytes = await session.editor.save();
 view.destroy();             // 只销毁这一份视图
+design.destroy();
 selectionPane.destroy();
 session.dispose();          // 销毁剩余视图并释放 ZIP 字节 / blob URL
 ```

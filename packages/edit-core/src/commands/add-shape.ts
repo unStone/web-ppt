@@ -1,7 +1,7 @@
 import { isKnownPreset, resolveGeomPath } from '@web-ppt/core/geometry';
 import type { ShapeCreationDefaults, ShapeElement } from '@web-ppt/core';
 import { allocateElementId } from '../document';
-import { currentShapeDefaults } from '../layout-projection';
+import { currentShapeDefaults, resolvedLayoutTemplate } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
@@ -9,7 +9,7 @@ import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import type { AddShapeCommand, CommandPatches, ElementTreePatch } from './types';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
-import { incrementalInsertionPart } from './insertion-host';
+import { resolveInsertionCanvas } from './insertion-host';
 import { GENERATED_SHAPE_DEFAULTS } from './generated-creation-defaults';
 
 function shapeMarkup(
@@ -63,16 +63,17 @@ function sourceShape(
 
 function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增形状');
-  const slide = doc.slides[command.slideId];
-  if (!slide) throw new Error(`找不到新增形状目标页：${command.slideId}`);
-  const part = incrementalInsertionPart(doc, slide);
-  const defaults = currentShapeDefaults(doc, slide.id) ?? (part ? undefined : GENERATED_SHAPE_DEFAULTS);
-  if (!defaults) throw new Error(`新增形状目标页缺少主题默认值：${command.slideId}`);
+  const canvas = resolveInsertionCanvas(doc, command, '新增形状');
+  const defaults = canvas.kind === 'layout'
+    ? resolvedLayoutTemplate(doc, canvas.id)?.defaultShape ?? doc.layouts[canvas.id].defaultShape
+    : currentShapeDefaults(doc, canvas.id) ?? (canvas.part ? undefined : GENERATED_SHAPE_DEFAULTS);
+  const target = { ...canvas, defaults };
+  if (!target.defaults) throw new Error(`新增形状目标画布缺少主题默认值：${target.id}`);
   if (typeof command.preset !== 'string' || !isKnownPreset(command.preset)) {
     throw new Error(`未知预设形状：${String(command.preset)}`);
   }
   assertInsertionRect(command.rect, 'AddShape.rect');
-  return { slide, defaults, part };
+  return target as typeof target & { defaults: ShapeCreationDefaults };
 }
 
 /** 新形状和 OOXML 宿主由同一组默认值构造，再走既有结构 patch 与保存主干。 */
@@ -81,14 +82,13 @@ export function addShapePatches(
   command: AddShapeCommand,
   origin: string,
 ): CommandPatches {
-  const { slide, defaults, part } = assertCommand(doc, command);
+  const { id: parent, children: siblings, defaults, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '形状' : `形状 ${spid}`;
-  const siblings = slide.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent: slide.id, z: fractionalIndexBetween(previous, null, id),
+    id, parent, z: fractionalIndexBetween(previous, null, id),
     src: sourceShape(spid, name, command.preset, command.rect, defaults), ovr: {},
     meta: {
       editable: 'full', created: true, themeDefaultShape: true,
@@ -100,7 +100,7 @@ export function addShapePatches(
       } : {}),
     },
   };
-  const value = { root: id, parent: slide.id, records: { [id]: record } };
+  const value = { root: id, parent, records: { [id]: record } };
   const forward: ElementTreePatch = { op: 'insert', path: ['elements', id], value, origin };
   const inverse: ElementTreePatch = { op: 'remove', path: ['elements', id], value, origin };
   return { forward: [forward], inverse: [inverse] };

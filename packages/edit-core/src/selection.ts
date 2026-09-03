@@ -1,11 +1,12 @@
 import type { TextBody } from '@web-ppt/core';
-import { effectiveElement, slideOfElement } from './projection';
+import { effectiveElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 import type { Selection, TextPosition } from './commands/types';
 import { textRunEditLength } from './text-position';
 import { assertTableCellAddress } from './table-cell';
 import { elementHasLockedAncestor } from './commands/element-interaction';
 import { elementOrAncestorMatches } from './element-ancestry';
+import { canvasTargetOfElement, sameCanvas } from './design-target';
 
 const clonePosition = (position: TextPosition): TextPosition => ({ ...position });
 
@@ -71,10 +72,12 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
     case 'elements': {
       if (!selection.ids.length) return { kind: 'none' };
       if (new Set(selection.ids).size !== selection.ids.length) throw new Error('元素选区不能包含重复 id');
-      const slide = slideOfElement(doc, selection.ids[0]);
+      const canvas = canvasTargetOfElement(doc, selection.ids[0]);
       for (const id of selection.ids) {
         if (!doc.elements[id]) throw new Error(`选区指向不存在的元素：${id}`);
-        if (slideOfElement(doc, id) !== slide) throw new Error('一个元素选区不能跨幻灯片');
+        if (!sameCanvas(canvasTargetOfElement(doc, id), canvas)) {
+          throw new Error('一个元素选区不能跨页面或版式画布');
+        }
       }
       if (selection.enteredGroup !== null) {
         const group = doc.elements[selection.enteredGroup];

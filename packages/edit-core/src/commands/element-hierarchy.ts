@@ -1,4 +1,4 @@
-import { slideOfElement } from '../projection';
+import { canvasTargetOfElement } from '../design-target';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { ElementHierarchyPatch, ElementHierarchyState, Patch } from './types';
@@ -38,7 +38,7 @@ export function validateElementHierarchyPatch(
   }
   assertRecordMap(state.records, label);
   assertRemovedMap(state.removed, label);
-  if (!doc.slides[state.parent] && !doc.elements[state.parent]
+  if (!doc.slides[state.parent] && !doc.layouts[state.parent] && !doc.elements[state.parent]
     && !state.records[state.parent]) throw new Error(`${label} 的外部父级不存在`);
   if (!state.children || typeof state.children !== 'object') throw new Error(`${label} 的 children 状态无效`);
   for (const [parent, children] of Object.entries(state.children)) {
@@ -50,7 +50,8 @@ export function validateElementHierarchyPatch(
 }
 
 export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchyPatch): void {
-  const slide = doc.slides[elementHierarchySlide(doc, patch.value)];
+  const canvas = elementHierarchyCanvas(doc, patch.value);
+  const slide = canvas.kind === 'slide' ? doc.slides[canvas.id] : undefined;
   const before = new Map(Object.keys(patch.value.records).flatMap((id) =>
     doc.elements[id] ? [[id, doc.elements[id]] as const] : []));
   // 统一 Patch seam 已整批隔离；这里直接接管，避免再次复制驻留目录。
@@ -68,6 +69,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
   }
   for (const [parent, children] of Object.entries(patch.value.children)) {
     if (doc.slides[parent]) doc.slides[parent].children = [...children];
+    else if (doc.layouts[parent]) doc.layouts[parent].children = [...children];
     else {
       const record = doc.elements[parent];
       if (!record || record.src.kind !== 'group') throw new Error(`层级 Patch 的父级不是组合：${parent}`);
@@ -82,6 +84,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
     key: 'dynamicSlideNumbers' | 'dynamicSlideLinks',
     predicate: (record: ElementRecord) => boolean,
   ): void => {
+    if (!slide) return;
     const affected = new Set(patch.value.affected);
     const retained = slide[key].filter((id) => !affected.has(id));
     for (const id of patch.value.affected) {
@@ -101,5 +104,13 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
 }
 
 export function elementHierarchySlide(doc: EditDoc, state: ElementHierarchyState): string {
-  return doc.slides[state.parent] ? state.parent : slideOfElement(doc, state.parent as ElementId);
+  const canvas = elementHierarchyCanvas(doc, state);
+  if (canvas.kind !== 'slide') throw new Error('元素层级状态不属于页面');
+  return canvas.id;
+}
+
+function elementHierarchyCanvas(doc: EditDoc, state: ElementHierarchyState) {
+  if (doc.slides[state.parent]) return { kind: 'slide' as const, id: state.parent };
+  if (doc.layouts[state.parent]) return { kind: 'layout' as const, id: state.parent };
+  return canvasTargetOfElement(doc, state.parent as ElementId);
 }

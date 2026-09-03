@@ -1,8 +1,8 @@
 import { isKnownPreset } from '@web-ppt/core/geometry';
 import type { GeomSpec } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
+import { canvasTargetOfElement } from './design-target';
 import { rebasedElementBase } from './layout-projection';
-import { slideOfElement } from './projection';
 import type { EditDoc, ElementId, ElementPresetGeometryState } from './types';
 
 const signature = (value: GeomSpec | null): string => JSON.stringify(value);
@@ -26,7 +26,11 @@ export function sourcePresetGeometry(doc: EditDoc, id: ElementId): GeomSpec | nu
   const record = doc.elements[id];
   if (!record || record.src.kind !== 'shape') throw new Error(`元素不支持预设几何：${id}`);
   if (record.meta.customGeometry) return null;
-  return structuredClone(rebasedElementBase(doc, slideOfElement(doc, id), record).geom ?? null);
+  const canvas = canvasTargetOfElement(doc, id);
+  const geom = canvas.kind === 'slide'
+    ? rebasedElementBase(doc, canvas.id, record).geom
+    : record.meta.geom;
+  return structuredClone(geom ?? null);
 }
 
 export function effectivePresetGeometry(doc: EditDoc, id: ElementId): GeomSpec | null {

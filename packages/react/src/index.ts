@@ -14,4 +14,5 @@ export type {
   EditorContextRequest, TouchNavigationChange,
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
   SetThemeCommand, ThemeState,
+  DesignCommand, DesignEditor, DesignEditorOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState,
 } from '@web-ppt/editor';

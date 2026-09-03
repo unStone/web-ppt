@@ -191,5 +191,6 @@ export function targetExists(doc: EditDoc, patch: Patch): boolean {
   if ((root === 'slides' || root === 'slideOrder') && typeof id === 'string') {
     return !!doc.slides[id];
   }
+  if (root === 'layouts' && typeof id === 'string') return !!doc.layouts[id];
   return true;
 }

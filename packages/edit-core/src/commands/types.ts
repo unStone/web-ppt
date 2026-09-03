@@ -1,6 +1,6 @@
 import type { CellBorders, Effects, Fill, Stroke, TableCell } from '@web-ppt/core';
 import type {
-  EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyInput, ProjectionInvalidation,
+  DesignTarget, EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyInput, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
   SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
 } from '../types';
@@ -13,7 +13,7 @@ import type {
 import type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetAnimationsCommand, SetTransitionCommand,
-  SetLayoutCommand, SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
+  SetLayoutCommand, SetNotesCommand, LayoutPropertyPatch, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
@@ -32,7 +32,7 @@ export type {
 export type {
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
   SetAnimationsCommand, SetTransitionCommand, SetLayoutCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
-  SlideTransitionPatch,
+  SlideTransitionPatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch,
   SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
 } from './slide-property-types';
 export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
@@ -126,22 +126,36 @@ export interface PasteElementsCommand {
   readonly at: { readonly parentId: SlideId | ElementId; readonly x: number; readonly y: number };
 }
 
-export interface AddShapeCommand {
+interface AddShapeFields {
   readonly type: 'AddShape';
-  readonly slideId: SlideId;
   readonly preset: string;
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
-export interface AddImageCommand {
-  readonly type: 'AddImage';
+export type AddShapeCommand = AddShapeFields & ({
   readonly slideId: SlideId;
+  readonly target?: never;
+} | {
+  readonly target: DesignTarget;
+  readonly slideId?: never;
+});
+
+interface AddImageFields {
+  readonly type: 'AddImage';
   /** 空图片占位符可由同一历史单元原子替换。 */
   readonly placeholderId?: ElementId;
   readonly bytes: Uint8Array;
   readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
+
+export type AddImageCommand = AddImageFields & ({
+  readonly slideId: SlideId;
+  readonly target?: never;
+} | {
+  readonly target: DesignTarget;
+  readonly slideId?: never;
+});
 
 export interface ReplaceImageCommand {
   readonly type: 'ReplaceImage';
@@ -157,15 +171,22 @@ export interface SetCropCommand {
   readonly crop: ImageCrop | null;
 }
 
-export interface AddTableCommand {
+interface AddTableFields {
   readonly type: 'AddTable';
-  readonly slideId: SlideId;
   readonly rows: number;
   readonly cols: number;
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
   /** 空内容占位符可由同一历史单元原子替换。 */
   readonly placeholderId?: ElementId;
 }
+
+export type AddTableCommand = AddTableFields & ({
+  readonly slideId: SlideId;
+  readonly target?: never;
+} | {
+  readonly target: DesignTarget;
+  readonly slideId?: never;
+});
 
 export interface AddSlideCommand {
   readonly type: 'AddSlide';
@@ -363,6 +384,20 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | SetBackgroundImageCommand
   | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
   | SetTableStyleCommand | SetThemeCommand;
+
+type PageOnlyCommand = AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand
+  | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand
+  | SetSlideSizeCommand | SetBackgroundCropCommand | SetBackgroundImageCommand | SetHiddenCommand
+  | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand | SetThemeCommand
+  | AddShapeCommand | AddImageCommand | AddTableCommand | PasteElementsCommand | ReplaceTextCommand;
+
+/** 版式命令沿用元素命令语言；只有画布属性命令显式携带 DesignTarget。 */
+export type DesignCommand = Exclude<Command, PageOnlyCommand | SetBackgroundCommand | SetTransitionCommand>
+  | Extract<SetBackgroundCommand, { readonly target: import('../types').DesignTarget }>
+  | Extract<SetTransitionCommand, { readonly target: import('../types').DesignTarget }>
+  | Extract<AddShapeCommand, { readonly target: import('../types').DesignTarget }>
+  | Extract<AddImageCommand, { readonly target: import('../types').DesignTarget }>
+  | Extract<AddTableCommand, { readonly target: import('../types').DesignTarget }>;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -589,7 +624,7 @@ export type TableCellPropsPatch = {
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
-  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch;
+  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

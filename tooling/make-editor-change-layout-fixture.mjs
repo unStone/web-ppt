@@ -28,8 +28,10 @@ const placeholder = ({
 const sourceOnlyLayoutPlaceholder = placeholder({
   id: 94, name: '来源独有占位符', type: 'cust', idx: '6', x: 60, y: 610, w: 360, h: 48,
 });
+const lastSlideLayoutLink = `<p:sp><p:nvSpPr><p:cNvPr id="95" name="版式末页链接"><a:hlinkClick action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:spPr>${xfrm(1180, 20, 20, 20)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr></p:sp>`;
 replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml.replace(
-  '</p:spTree></p:cSld>', `${sourceOnlyLayoutPlaceholder}</p:spTree></p:cSld>`,
+  '</p:spTree></p:cSld>', `${sourceOnlyLayoutPlaceholder}${lastSlideLayoutLink}</p:spTree></p:cSld>`,
 ).replace('</p:sldLayout>', '<p:transition advTm="3000"/></p:sldLayout>'));
 
 const targetShapes = [
@@ -126,3 +128,33 @@ files['ppt/notesSlides/notesSlide7.xml'] = encoder.encode(`${XML}<p:notes xmlns:
 const bytes = makeZip(Object.entries(files));
 writeFileSync(join(root, 'fixtures/sample-editor-change-layout.pptx'), bytes);
 console.log(`fixtures/sample-editor-change-layout.pptx 已生成（${(bytes.length / 1024).toFixed(1)} KB）`);
+
+// 版式编辑固件让两个来源页面共享同一版式；其余复杂度继续复用换版式语料，避免两套样本漂移。
+const layoutFiles = Object.fromEntries(Object.entries(files).map(([part, value]) => [part, value.slice()]));
+layoutFiles['ppt/slides/slide8.xml'] = encoder.encode(
+  decoder.decode(layoutFiles['ppt/slides/slide7.xml'])
+    // 只读解析保留 OOXML 字段缓存，复制成第 2 页时必须同步页码，才能与运行时动态求值一致。
+    .replace(
+      /(<a:fld[^>]*type="slidenum"[\s\S]*?<a:t>)1(<\/a:t>)/,
+      (_match, before, after) => `${before}2${after}`,
+    ),
+);
+layoutFiles['ppt/slides/_rels/slide8.xml.rels'] = encoder.encode(
+  decoder.decode(layoutFiles['ppt/slides/_rels/slide7.xml.rels'])
+    .replace(/<Relationship Id="rId4"[^>]*\/>\s*/, ''),
+);
+layoutFiles['ppt/presentation.xml'] = encoder.encode(
+  decoder.decode(layoutFiles['ppt/presentation.xml'])
+    .replace('</p:sldIdLst>', '<p:sldId id="300" r:id="rId42"/></p:sldIdLst>'),
+);
+layoutFiles['ppt/_rels/presentation.xml.rels'] = encoder.encode(
+  decoder.decode(layoutFiles['ppt/_rels/presentation.xml.rels'])
+    .replace('</Relationships>', `<Relationship Id="rId42" Type="${REL}/slide" Target="slides/slide8.xml"/></Relationships>`),
+);
+layoutFiles['[Content_Types].xml'] = encoder.encode(
+  decoder.decode(layoutFiles['[Content_Types].xml'])
+    .replace('</Types>', '<Override PartName="/ppt/slides/slide8.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>'),
+);
+const layoutBytes = makeZip(Object.entries(layoutFiles));
+writeFileSync(join(root, 'fixtures/sample-editor-layout-editing.pptx'), layoutBytes);
+console.log(`fixtures/sample-editor-layout-editing.pptx 已生成（${(layoutBytes.length / 1024).toFixed(1)} KB）`);

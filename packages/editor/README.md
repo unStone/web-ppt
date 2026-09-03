@@ -12,6 +12,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
+import { createDesignEditor, listLayouts } from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -41,6 +42,15 @@ view.setSlide([...duplicated.createdSlides][0]);
 const theme = listThemes(session.editor.doc)[0];
 session.editor.exec({ type: 'SetTheme', id: theme.id, clrScheme: { accent1: '#112233' } });
 const effectiveTheme = queryTheme(session.editor.doc, theme.id);
+
+const layout = listLayouts(session.editor.doc)[0];
+const design = createDesignEditor(layoutContainer, session, {
+  target: layout.target, textMode: 'auto',
+});
+design.exec({
+  type: 'SetBackground', target: layout.target,
+  fill: { type: 'solid', color: '#112233' },
+}); // updates every slide using this layout in the same committed frame
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();
@@ -75,6 +85,7 @@ view.setAnimations(null);             // restore the untouched parsed source
 
 const bytes = await session.editor.save();
 view.destroy();             // destroys only this mounted view
+design.destroy();
 selectionPane.destroy();
 session.dispose();          // destroys remaining views and releases ZIP bytes / blob URLs
 ```

@@ -11,7 +11,9 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, Editor, listThemes, querySelectionPane, queryTheme } from '@web-ppt/edit-core';
+import {
+  createDoc, Editor, listLayouts, listThemes, queryLayout, querySelectionPane, queryTheme,
+} from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
@@ -54,6 +56,14 @@ editor.exec({
   fontScheme: { minor: { latin: '思源黑体' } },
 });
 const effectiveTheme = queryTheme(doc, theme.id); // 同时给出来源值、有效值与 direct 状态
+
+const layout = listLayouts(doc)[0];
+const layoutState = queryLayout(doc, layout.target); // 同时给出来源值、有效值与 direct 状态
+editor.execDesign(layout.target, {
+  type: 'SetBackground', target: layout.target,
+  fill: { type: 'solid', color: '#112233' },
+});
+const layoutCanvas = editor.toDesignCanvas(layout.target); // 与页面渲染共用 Slide Schema
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });

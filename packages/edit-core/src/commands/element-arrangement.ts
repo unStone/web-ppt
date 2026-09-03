@@ -1,4 +1,5 @@
-import { effectiveElement, slideOfElement } from '../projection';
+import { canvasTargetOfElement, sameCanvas } from '../design-target';
+import { effectiveElement } from '../projection';
 import { outermostSelectedElementIds } from '../selection';
 import {
   elementFrameToSlideMatrix, elementParentToSlideMatrix, inverseTransformSpaceVector,
@@ -58,9 +59,9 @@ export function arrangementTargets(
     if (record.meta.locked || record.meta.moveLocked) throw new Error(`元素已锁定：${id}`);
     return record;
   });
-  const slide = slideOfElement(doc, records[0].id);
-  if (records.some((record) => slideOfElement(doc, record.id) !== slide)) {
-    throw new Error(`${label} 不能跨幻灯片`);
+  const canvas = canvasTargetOfElement(doc, records[0].id);
+  if (records.some((record) => !sameCanvas(canvasTargetOfElement(doc, record.id), canvas))) {
+    throw new Error(`${label} 不能跨画布`);
   }
   const outermost = outermostSelectedElementIds(doc, ids);
   if (outermost.length < minimum) {

@@ -110,6 +110,8 @@ const semanticDoc = (doc) => JSON.stringify(canonical({
   slideOrder: doc.slideOrder,
   sections: doc.sections,
   slides: doc.slides,
+  layouts: doc.layouts,
+  layoutOrder: doc.layoutOrder,
   themes: doc.themes,
   elements: doc.elements,
   removedElements: doc.removedElements,
@@ -170,6 +172,37 @@ console.log('\n\x1b[36m▸ 主题颜色与字体槽字段级 LWW\x1b[0m');
       && semanticDoc(pair.left) === semanticDoc(pair.right),
     stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
   check('主题协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
+}
+
+console.log('\n\x1b[36m▸ 版式设计画布字段级 LWW\x1b[0m');
+{
+  const pair = await createPair('sample-editor-change-layout.pptx', 'collab-layout-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  const layoutId = pair.left.layoutOrder[0];
+  const target = { kind: 'layout', id: layoutId };
+  const element = pair.left.layouts[layoutId].children
+    .map((id) => pair.left.elements[id]).find((record) => record.meta.editable === 'full');
+  pair.leftEditor.execDesign(target, {
+    type: 'SetBackground', target, fill: { type: 'solid', color: '#112233' },
+  });
+  pair.rightEditor.execDesign(target, {
+    type: 'SetTransition', target, t: { type: 'push', dir: 'r' },
+  });
+  hub.flush((items) => items.reverse());
+  pair.leftEditor.execDesign(target, { type: 'SetXfrm', id: element.id, x: element.src.x + 21 });
+  pair.rightEditor.execDesign(target, { type: 'SetXfrm', id: element.id, x: element.src.x + 34 });
+  hub.flush((items) => seededShuffle(items, 0x0707002));
+  check('版式不同字段独立保留且同字段并发确定性收敛',
+    pair.left.layouts[layoutId].ovr.background?.type === 'solid'
+      && pair.left.layouts[layoutId].ovr.transition?.type === 'push'
+      && semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check('版式协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
   edit.disposeDoc(pair.right);

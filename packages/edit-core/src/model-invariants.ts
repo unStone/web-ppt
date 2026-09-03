@@ -1,4 +1,5 @@
 import { effectiveElement, slideOfElement } from './projection';
+import { canvasTargetOfElement } from './design-target';
 import { changedLayout } from './layout-projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex } from './fractional-index';
@@ -42,9 +43,9 @@ import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
-  const source = changedLayout(doc, slideOfElement(doc, record.id))
-    ? effectiveElement(doc, record.id)
-    : record.src;
+  const target = canvasTargetOfElement(doc, record.id);
+  const source = target.kind === 'slide' && changedLayout(doc, target.id)
+    ? effectiveElement(doc, record.id) : record.src;
   for (const field of XFRM_FIELDS) {
     const value = own(record.ovr, field) ? record.ovr[field] : source[field];
     assertXfrmValue(field, value, `元素 ${record.id} 的 ${field}`);
@@ -111,7 +112,7 @@ function assertParentChain(doc: EditDoc, id: ElementId): void {
     seen.add(current);
     const record = doc.elements[current];
     if (!record) throw new Error(`元素不存在：${current}`);
-    if (doc.slides[record.parent]) return;
+    if (doc.slides[record.parent] || doc.layouts[record.parent]) return;
     if (!doc.elements[record.parent]) throw new Error(`元素 ${current} 的父节点不存在：${record.parent}`);
     current = record.parent;
   }
@@ -252,6 +253,15 @@ export function validateEditDoc(doc: EditDoc): void {
     if (layout.themeId !== undefined && !themeIds.has(layout.themeId)) {
       throw new Error(`版式 ${layout.id} 指向不存在的主题：${layout.themeId}`);
     }
+    if (doc.elements[layout.id] || doc.slides[layout.id]) {
+      throw new Error(`版式与页面或元素 id 冲突：${layout.id}`);
+    }
+    if (own(layout.ovr, 'background')) {
+      assertVectorFill(layout.ovr.background, `版式 ${layout.id} 的背景覆盖`);
+    }
+    if (own(layout.ovr, 'transition')) {
+      assertStoredSlideTransition(layout.ovr.transition, `版式 ${layout.id} 的切换覆盖`);
+    }
   }
 
   const createdParts = new Set(Object.values(doc.slides)
@@ -262,6 +272,9 @@ export function validateEditDoc(doc: EditDoc): void {
   const sessionNotesParts = new Set<string>();
 
   const referenced = new Map<ElementId, SlideId | ElementId>();
+  for (const layoutId of doc.layoutOrder) {
+    assertChildren(doc, layoutId, doc.layouts[layoutId].children, referenced);
+  }
   for (const slideId of doc.slideOrder) {
     const slide = doc.slides[slideId];
     if (!slide) throw new Error(`slideOrder 指向不存在的幻灯片：${slideId}`);
@@ -399,7 +412,8 @@ export function validateEditDoc(doc: EditDoc): void {
     if (record.meta.sourceParent !== undefined) {
       const sourceParent = record.meta.sourceParent;
       if (record.meta.created || sourceParent === record.parent
-        || (!doc.slides[sourceParent] && !doc.elements[sourceParent] && !doc.removedElements[sourceParent])) {
+        || (!doc.slides[sourceParent] && !doc.layouts[sourceParent]
+          && !doc.elements[sourceParent] && !doc.removedElements[sourceParent])) {
         throw new Error(`元素 ${id} 的来源父级无效`);
       }
     }
@@ -436,10 +450,11 @@ export function validateEditDoc(doc: EditDoc): void {
     }
   }
   for (const record of Object.values(doc.elements)) {
-    if (hasDynamicSlideNumber(record.src) && !indexedSlideNumbers.has(record.id)) {
+    const target = canvasTargetOfElement(doc, record.id);
+    if (target.kind === 'slide' && hasDynamicSlideNumber(record.src) && !indexedSlideNumbers.has(record.id)) {
       throw new Error(`动态页码元素未进入所属页索引：${record.id}`);
     }
-    if (hasDynamicSlideLink(record.src) && !indexedSlideLinks.has(record.id)) {
+    if (target.kind === 'slide' && hasDynamicSlideLink(record.src) && !indexedSlideLinks.has(record.id)) {
       throw new Error(`动态跳转元素未进入所属页索引：${record.id}`);
     }
   }

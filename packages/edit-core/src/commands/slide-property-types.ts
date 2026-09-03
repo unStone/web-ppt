@@ -1,15 +1,22 @@
 import type { Fill, ImageTilePlacement, Transition } from '@web-ppt/core';
 import type { SlideTransitionInput } from '../slide-transition';
 import type {
-  EditAnimationStep, ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding,
+  DesignTarget, EditAnimationStep, ImageCrop, SlideId, SlideImageBackground, SlideNotesBinding,
 } from '../types';
 
-export interface SetBackgroundCommand {
+export type SetBackgroundCommand = {
   readonly type: 'SetBackground';
   readonly id: SlideId;
+  readonly target?: never;
   /** null 恢复来源；显式无背景使用 { type: 'none' }。 */
   readonly fill: Exclude<Fill, { type: 'image' }> | null;
-}
+} | {
+  readonly type: 'SetBackground';
+  readonly target: DesignTarget;
+  readonly id?: never;
+  /** null 恢复来源；版式背景不接受图片，避免隐式扩张 OPC 资源闭包。 */
+  readonly fill: Exclude<Fill, { type: 'image' }> | null;
+};
 
 export interface SetBackgroundImageCommand {
   readonly type: 'SetBackgroundImage';
@@ -36,12 +43,18 @@ export interface SetHiddenCommand {
   readonly v: boolean | null;
 }
 
-export interface SetTransitionCommand {
+export type SetTransitionCommand = {
   readonly type: 'SetTransition';
   readonly id: SlideId;
+  readonly target?: never;
   /** null 恢复来源；type=none 明确关闭切换。 */
   readonly t: SlideTransitionInput | null;
-}
+} | {
+  readonly type: 'SetTransition';
+  readonly target: DesignTarget;
+  readonly id?: never;
+  readonly t: SlideTransitionInput | null;
+};
 
 export interface SetAnimationsCommand {
   readonly type: 'SetAnimations';
@@ -150,3 +163,27 @@ export type SlideAnimationsPatch = {
 
 export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch
   | SlideTransitionPatch | SlideAnimationsPatch;
+
+export type LayoutBackgroundPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['layouts', string, 'ovr', 'background'];
+  readonly value: Exclude<Fill, { type: 'image' }>;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['layouts', string, 'ovr', 'background'];
+  readonly origin: string;
+};
+
+export type LayoutTransitionPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['layouts', string, 'ovr', 'transition'];
+  readonly value: Transition;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['layouts', string, 'ovr', 'transition'];
+  readonly origin: string;
+};
+
+export type LayoutPropertyPatch = LayoutBackgroundPatch | LayoutTransitionPatch;

@@ -1,12 +1,13 @@
 import { resolveCustomGeometry, resolveGeomPath } from '@web-ppt/core/geometry';
 import type {
-  GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement, TableRow, TextBody,
+  GroupElement, ImageElement, ShapeElement, Slide, SlideElement, TableElement,
 } from '@web-ppt/core';
 import type { EditDoc, ElementId, ProjectionInvalidation, SlideId } from './types';
 import { hydrateElementInsertionAssets, hydrateInsertionResourceSource } from './session-assets';
 import { own } from './data-validation';
 import { renderLinkTarget } from './hyperlink';
-import { hasDynamicSlideNumber, isDynamicSlideLink } from './dynamic-slide-fields';
+import { hasDynamicSlideNumber } from './dynamic-slide-fields';
+import { projectElementSlideFields, projectVirtualSlideFields } from './dynamic-projection';
 import { textBodyFromOverride } from './text-model';
 import { tableCellOverrideKeyFromRefs } from './table-cell';
 import { orderedTableColumns, orderedTableRows, tableCellMergeRole } from './table-grid';
@@ -18,10 +19,13 @@ import {
 } from './table-rows';
 import {
   changedLayout, projectedLayoutElements, projectionContentIds, rebasedElementBase,
-  rebasedTextBase, resolvedLayoutSlide,
+  rebasedTextBase, resolvedLayoutElementSource, resolvedLayoutSlide,
 } from './layout-projection';
 import { projectAnimationSteps } from './slide-animation';
 import { projectTableStyle } from './table-style';
+import { scaledDimensions, scaledTableEditInfo } from './table-scale';
+import { canvasTargetOfElement } from './design-target';
+import { slidesForLayout } from './design-dependencies';
 
 interface ProjectionCache {
   elements: Map<ElementId, SlideElement>;
@@ -33,38 +37,6 @@ const caches = new WeakMap<EditDoc, ProjectionCache>();
 /** 文档换包或释放后，投影不能继续持有旧资源 URL 与整页 Schema。 */
 export function releaseProjectionCache(doc: EditDoc): void {
   caches.delete(doc);
-}
-
-/** 最后一格吃掉浮点余量，保证即时网格与选择 frame 在 JS 数值上也严格闭合。 */
-function scaledDimensions(values: readonly number[], total: number): number[] {
-  const sourceTotal = values.reduce((sum, value) => sum + value, 0);
-  if (!values.length || sourceTotal <= 0) return [...values];
-  let remaining = total;
-  return values.map((value, index) => {
-    if (index === values.length - 1) return remaining;
-    const scaled = value / sourceTotal * total;
-    remaining -= scaled;
-    return scaled;
-  });
-}
-
-function scaledTableRow(row: TableRow, scale: number): TableRow {
-  return scale === 1 ? row : { ...row, height: row.height * scale };
-}
-
-function scaledTableEditInfo(
-  editInfo: TableElement['editInfo'], scale: number,
-): TableElement['editInfo'] {
-  const append = editInfo?.tableRowAppend;
-  if (!append || scale === 1) return editInfo;
-  return {
-    ...editInfo,
-    tableRowAppend: {
-      ...(append.previousLast ? { previousLast: scaledTableRow(append.previousLast, scale) } : {}),
-      regular: [scaledTableRow(append.regular[0], scale), scaledTableRow(append.regular[1], scale)],
-      last: [scaledTableRow(append.last[0], scale), scaledTableRow(append.last[1], scale)],
-    },
-  };
 }
 
 function cacheOf(doc: EditDoc): ProjectionCache {
@@ -82,104 +54,19 @@ function elementRecord(doc: EditDoc, id: ElementId) {
   return record;
 }
 
-function projectedSlideNumberText(text: TextBody | null, value: string): TextBody | null {
-  if (!text) return text;
-  let changed = false;
-  const paragraphs = text.paragraphs.map((paragraph) => ({
-    ...paragraph,
-    runs: paragraph.runs.map((run) => {
-      if (run.field?.toLowerCase() !== 'slidenum') return run;
-      changed = true;
-      return { ...run, text: value };
-    }),
-  }));
-  return changed ? { ...text, paragraphs } : text;
-}
-
-function dynamicSlideNumber(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {
-  if (!hasDynamicSlideNumber(element)) return element;
-  const value = String(doc.slideOrder.indexOf(slideOfElement(doc, id)) + 1);
-  if (element.kind === 'shape') {
-    const text = projectedSlideNumberText(element.text, value);
-    return text === element.text ? element : { ...element, text };
-  }
-  if (element.kind !== 'table') return element;
-  let changed = false;
-  const rows = element.rows.map((row) => ({
-    ...row,
-    cells: row.cells.map((cell) => {
-      const text = projectedSlideNumberText(cell.text, value);
-      if (text === cell.text) return cell;
-      changed = true;
-      return { ...cell, text };
-    }),
-  }));
-  return changed ? { ...element, rows } : element;
-}
-
-function resolvedSlideLink(doc: EditDoc, id: ElementId, link: string | undefined): string | undefined {
-  if (!isDynamicSlideLink(link)) return link;
-  const current = doc.slideOrder.indexOf(slideOfElement(doc, id));
-  let target: number | undefined;
-  if (link === 'slide:next') target = current + 2;
-  else if (link === 'slide:previous') target = current;
-  else if (link === 'slide:first') target = 1;
-  else if (link === 'slide:last') target = doc.slideOrder.length;
-  else if (link?.startsWith('slide-part:')) {
-    try {
-      const part = decodeURIComponent(link.slice('slide-part:'.length));
-      const index = doc.slideOrder.findIndex((slideId) => doc.slides[slideId].origin?.part === part);
-      if (index >= 0) target = index + 1;
-    } catch { return link; }
-  }
-  return target === undefined ? link : `slide:${target}`;
-}
-
-function projectedTextLinks(doc: EditDoc, id: ElementId, text: TextBody | null): TextBody | null {
-  if (!text) return null;
-  let changed = false;
-  const paragraphs = text.paragraphs.map((paragraph) => ({
-    ...paragraph,
-    runs: paragraph.runs.map((run) => {
-      const link = resolvedSlideLink(doc, id, run.link);
-      if (link === run.link) return run;
-      changed = true;
-      return { ...run, link };
-    }),
-  }));
-  return changed ? { ...text, paragraphs } : text;
-}
-
-function projectedSlideLinks(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {
-  let out = element;
-  const link = resolvedSlideLink(doc, id, out.link);
-  if (link !== out.link) out = { ...out, link } as SlideElement;
-  if (out.kind === 'shape') {
-    const text = projectedTextLinks(doc, id, out.text);
-    if (text !== out.text) out = { ...out, text };
-  } else if (out.kind === 'table') {
-    let changed = false;
-    const rows = out.rows.map((row) => ({
-      ...row,
-      cells: row.cells.map((cell) => {
-        const text = projectedTextLinks(doc, id, cell.text);
-        if (text === cell.text) return cell;
-        changed = true;
-        return { ...cell, text };
-      }),
-    }));
-    if (changed) out = { ...out, rows };
-  }
-  return out;
-}
-
 export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const cache = cacheOf(doc);
   const cached = cache.elements.get(id);
   if (cached) return cached;
 
   const record = elementRecord(doc, id);
-  const layoutBase = rebasedElementBase(doc, slideOfElement(doc, id), record);
+  const target = canvasTargetOfElement(doc, id);
+  const layoutBase = target.kind === 'slide'
+    ? rebasedElementBase(doc, target.id, record, (layoutId) => effectiveElement(doc, layoutId))
+    : {
+      base: resolvedLayoutElementSource(doc, target.id, record) ?? record.src,
+      ...(record.meta.geom ? { geom: record.meta.geom } : {}),
+    };
   const {
     tableCells, tableRows, tableColumns, tableRemovedRows, tableRemovedColumns,
     tableRowHeights, tableColumnWidths, tableMerges, tableStyle,
@@ -224,7 +111,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     out = { ...out, text: null } as ShapeElement;
   } else if (out.kind === 'shape' && record.ovr.text?.kind === 'flat') {
     const baseText = layoutBase.base.kind === 'shape'
-      ? layoutBase.base.text ?? rebasedTextBase(doc, slideOfElement(doc, id), id)
+      ? layoutBase.base.text ?? (target.kind === 'slide'
+        ? rebasedTextBase(doc, target.id, id, (layoutId) => effectiveElement(doc, layoutId))
+        : record.meta.textTemplate ?? null)
       : null;
     out = {
       ...out,
@@ -272,7 +161,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const effectiveTableStyle = tableStyle ?? (complexTableStructure && record.src.kind === 'table'
     ? record.src.editInfo?.tableStyle : undefined);
   if (out.kind === 'table' && effectiveTableStyle) {
-    out = projectTableStyle(doc, slideOfElement(doc, id), out, effectiveTableStyle);
+    out = projectTableStyle(doc, target, out, effectiveTableStyle);
   }
   if (out.kind === 'table' && tableCells) {
     const gridRows = orderedTableRows(record);
@@ -338,8 +227,9 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
       clipPath: layoutBase.geom.preset === 'rect' ? null : geom.d,
     } as ImageElement;
   }
-  out = dynamicSlideNumber(doc, id, out);
-  out = projectedSlideLinks(doc, id, out);
+  if (target.kind === 'slide') {
+    out = projectElementSlideFields(doc, target.id, out);
+  }
   cache.elements.set(id, out);
   return out;
 }
@@ -353,14 +243,20 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
   const layout = changedLayout(doc, id);
   const resolved = resolvedLayoutSlide(doc, id);
   const contentIds = projectionContentIds(doc, id);
-  const layoutSource = resolved ? {
+  const layoutSource = layout ? {
+    background: structuredClone(record.sourceDirectBackground
+      ? resolved?.background ?? record.src.background
+      : own(layout.ovr, 'background')
+        ? layout.ovr.background! : resolved?.background ?? layout.background),
+    layoutName: layout.name,
+    transition: structuredClone(record.sourceDirectTransition
+      ? resolved?.transition ?? record.src.transition
+      : own(layout.ovr, 'transition')
+        ? layout.ovr.transition! : resolved?.transition ?? layout.transition),
+  } : resolved ? {
     background: structuredClone(resolved.background),
     layoutName: resolved.layoutName ?? (record.layoutId ? doc.layouts[record.layoutId]?.name : undefined),
     transition: structuredClone(resolved.transition),
-  } : layout ? {
-    background: structuredClone(layout.background),
-    layoutName: layout.name,
-    transition: structuredClone(layout.transition),
   } : {};
   const { animations: animationOverride, ...slideOverrides } = record.ovr;
   let slide: Slide = {
@@ -368,8 +264,9 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
     ...layoutSource,
     ...slideOverrides,
     elements: [
-      ...(layout ? projectedLayoutElements(doc, id)
-        .filter((element) => !element.editInfo?.placeholder) : []),
+      ...(layout ? projectedLayoutElements(doc, id, (layoutId) => effectiveElement(doc, layoutId))
+        .filter((element) => !element.editInfo?.placeholder)
+        .map((element) => projectVirtualSlideFields(doc, id, element)) : []),
       ...contentIds.map((elementId) => effectiveElement(doc, elementId)),
     ],
   };
@@ -402,14 +299,23 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
 }
 
 export function slideOfElement(doc: EditDoc, id: ElementId): SlideId {
-  let current = elementRecord(doc, id);
-  const seen = new Set<ElementId>();
-  for (;;) {
-    if (seen.has(current.id)) throw new Error(`元素父链成环：${current.id}`);
-    seen.add(current.id);
-    if (doc.slides[current.parent]) return current.parent as SlideId;
-    current = elementRecord(doc, current.parent as ElementId);
+  const target = canvasTargetOfElement(doc, id);
+  if (target.kind !== 'slide') throw new Error(`元素不属于普通幻灯片：${id}`);
+  return target.id;
+}
+
+function invalidateLayoutDependents(
+  doc: EditDoc,
+  layoutId: string,
+  cache: ProjectionCache,
+  dirtyElements: Set<ElementId>,
+): Set<SlideId> {
+  const dirtySlides = new Set(slidesForLayout(doc, layoutId));
+  for (const slideId of dirtySlides) {
+    cache.slides.delete(slideId);
+    invalidateSlideElementCaches(doc, slideId, cache, dirtyElements);
   }
+  return dirtySlides;
 }
 
 /** 元素变化会沿组祖先传播到所属页；无需扫描或比较整份文档。 */
@@ -428,9 +334,48 @@ export function invalidateElement(doc: EditDoc, id: ElementId): ProjectionInvali
       cache.slides.delete(slideId);
       break;
     }
+    if (doc.layouts[current.parent]) {
+      for (const slideId of invalidateLayoutDependents(
+        doc, current.parent, cache, dirtyElements,
+      )) dirtySlides.add(slideId);
+      break;
+    }
     current = elementRecord(doc, current.parent as ElementId);
   }
   return { dirtyElements, dirtySlides };
+}
+
+function invalidateSlideElementCaches(
+  doc: EditDoc,
+  slideId: SlideId,
+  cache: ProjectionCache,
+  dirtyElements: Set<ElementId>,
+): void {
+  const visit = (elementId: ElementId): void => {
+    dirtyElements.add(elementId);
+    cache.elements.delete(elementId);
+    for (const child of doc.elements[elementId]?.children ?? []) visit(child);
+  };
+  for (const elementId of doc.slides[slideId]?.children ?? []) visit(elementId);
+}
+
+/** 主题变化只清使用该主题的设计画布；不能破坏无关页面的投影引用稳定性。 */
+export function invalidateLayoutElementCaches(
+  doc: EditDoc,
+  layoutIds: readonly string[],
+): Set<ElementId> {
+  const cache = cacheOf(doc);
+  const dirty = new Set<ElementId>();
+  const visit = (id: ElementId): void => {
+    if (dirty.has(id)) return;
+    dirty.add(id);
+    cache.elements.delete(id);
+    for (const child of doc.elements[id]?.children ?? []) visit(child);
+  };
+  for (const layoutId of layoutIds) {
+    for (const id of doc.layouts[layoutId]?.children ?? []) visit(id);
+  }
+  return dirty;
 }
 
 export function invalidateSlide(doc: EditDoc, id: SlideId): ProjectionInvalidation {
@@ -520,7 +465,13 @@ export function invalidateElementStructure(
   for (const id of ids) cache.elements.delete(id);
   const dirty = doc.slides[parent]
     ? invalidateSlide(doc, parent as SlideId)
-    : invalidateElement(doc, parent as ElementId);
+    : doc.layouts[parent]
+      ? (() => {
+        const dirtyElements = new Set<ElementId>();
+        const dirtySlides = invalidateLayoutDependents(doc, parent, cache, dirtyElements);
+        return { dirtyElements, dirtySlides };
+      })()
+      : invalidateElement(doc, parent as ElementId);
   for (const id of ids) dirty.dirtyElements.add(id);
   return dirty;
 }

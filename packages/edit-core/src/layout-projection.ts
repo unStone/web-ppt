@@ -1,15 +1,23 @@
 import {
   findPlaceholderByIdentity, PLACEHOLDER_DIRECT_BITS,
-  releasePptxLayoutReparseSession, reparsePptxSlideWithLayout,
+  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxSlideWithLayout,
 } from '@web-ppt/core';
 import type {
-  GeomSpec, ShapeCreationDefaults, Slide, SlideElement, TableCreationDefaults, TextBody,
+  GeomSpec, ShapeCreationDefaults, Slide, SlideElement, SlideLayoutTemplate,
+  TableCreationDefaults, TextBody,
 } from '@web-ppt/core';
-import { hydrateLayoutSlideAssets, releaseLayoutAssetCache } from './layout-assets';
+import {
+  hydrateLayoutSlideAssets, hydrateLayoutTemplateAssets, releaseLayoutAssetCache,
+} from './layout-assets';
 import { fieldTextWithoutDirect } from './field-text';
 import { rebaseLayoutText } from './layout-text-rebase';
+import { renderLinkTarget } from './hyperlink';
+import { textBodyFromOverride } from './text-model';
 import type { EditDoc, ElementId, SlideId } from './types';
 import { themeProjectionPackage } from './theme-projection';
+import { layoutHasEdits } from './layout-state';
+
+type LayoutElementResolver = (id: ElementId) => SlideElement;
 
 interface LayoutResolvedVariant {
   readonly sourcePart: string;
@@ -20,10 +28,20 @@ interface LayoutResolvedVariant {
 interface LayoutSourceCache {
   readonly package: EditDoc['package'];
   readonly variants: Map<string, LayoutResolvedVariant>;
+  readonly templates: Map<string, { layout: SlideLayoutTemplate; origins: Map<string, SlideElement | null> }>;
 }
 
 const layoutSourceCaches = new WeakMap<EditDoc, LayoutSourceCache>();
 const MAX_LAYOUT_SOURCE_VARIANTS = 16;
+
+function sourceCache(doc: EditDoc, pkg: NonNullable<EditDoc['package']>): LayoutSourceCache {
+  let cache = layoutSourceCaches.get(doc);
+  if (!cache || cache.package !== pkg) {
+    cache = { package: pkg, variants: new Map(), templates: new Map() };
+    layoutSourceCaches.set(doc, cache);
+  }
+  return cache;
+}
 
 function originKey(element: SlideElement): string | null {
   const origin = element.editInfo?.origin;
@@ -55,11 +73,7 @@ function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVa
   const sourcePart = sourcePartForLayout(doc, slideId);
   if (!pkg || !slide?.origin || !sourcePart || !slide.layoutId
     || (slide.layoutId === slide.sourceLayoutId && pkg === doc.package)) return null;
-  let cache = layoutSourceCaches.get(doc);
-  if (!cache || cache.package !== pkg) {
-    cache = { package: pkg, variants: new Map() };
-    layoutSourceCaches.set(doc, cache);
-  }
+  const cache = sourceCache(doc, pkg);
   const slideNum = doc.slideOrder.indexOf(slideId) + 1;
   const variantKey = `${sourcePart}\0${slide.layoutId}\0${slideNum}`;
   let variant = cache.variants.get(variantKey);
@@ -82,6 +96,36 @@ function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVa
     cache.variants.set(variantKey, variant);
   }
   return variant;
+}
+
+/** 主题覆盖后的版式来源仍由 core 的 OOXML 继承器求值，编辑层只按来源身份对回稳定节点。 */
+export function resolvedLayoutTemplate(doc: EditDoc, layoutId: string): SlideLayoutTemplate | null {
+  const pkg = themeProjectionPackage(doc);
+  if (!pkg || pkg === doc.package) return null;
+  const cache = sourceCache(doc, pkg);
+  let resolved = cache.templates.get(layoutId);
+  if (!resolved) {
+    const result = reparsePptxLayoutTemplate(pkg, layoutId);
+    const layout = hydrateLayoutTemplateAssets(doc, result.layout, result.assets);
+    const origins = new Map<string, SlideElement | null>();
+    for (const element of layout.elements) indexOrigins(element, origins);
+    resolved = { layout, origins };
+    cache.templates.set(layoutId, resolved);
+  }
+  return resolved.layout;
+}
+
+export function resolvedLayoutElementSource(
+  doc: EditDoc,
+  layoutId: string,
+  record: EditDoc['elements'][string],
+): SlideElement | null {
+  const origin = record.meta.origin;
+  if (!origin || record.meta.created) return null;
+  const template = resolvedLayoutTemplate(doc, layoutId);
+  if (!template) return null;
+  return layoutSourceCaches.get(doc)?.templates.get(layoutId)
+    ?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
 }
 
 export function resolvedLayoutSlide(doc: EditDoc, slideId: SlideId): Slide | null {
@@ -112,7 +156,8 @@ function resolvedLayoutSource(
 
 export function changedLayout(doc: EditDoc, slideId: SlideId) {
   const slide = doc.slides[slideId];
-  return slide?.layoutId && slide.layoutId !== slide.sourceLayoutId
+  return slide?.layoutId && (slide.layoutId !== slide.sourceLayoutId
+    || layoutHasEdits(doc, slide.layoutId))
     ? doc.layouts[slide.layoutId] : undefined;
 }
 
@@ -147,9 +192,20 @@ export function currentTableDefaults(
 }
 
 /** 页面级 showMasterSp=false 必须继续压过新关系指向的版式/母版。 */
-export function projectedLayoutElements(doc: EditDoc, slideId: SlideId): SlideElement[] {
+export function projectedLayoutElements(
+  doc: EditDoc,
+  slideId: SlideId,
+  resolveLayoutElement?: LayoutElementResolver,
+): SlideElement[] {
   const layout = changedLayout(doc, slideId);
   if (!layout) return [];
+  if (layoutHasEdits(doc, layout.id)) {
+    const elements = layout.children.map((id) =>
+      resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src);
+    return doc.slides[slideId].sourceHideMasterShapes
+      ? elements.filter((element) => element.editInfo?.origin?.part !== layout.origin.masterPart)
+      : elements;
+  }
   const variant = resolvedLayoutVariant(doc, slideId);
   const elements = variant
     ? [
@@ -170,21 +226,48 @@ function targetPlaceholder(
   doc: EditDoc,
   slideId: SlideId,
   record: EditDoc['elements'][string],
+  resolveLayoutElement?: LayoutElementResolver,
 ): SlideElement | null {
   const ph = record.meta.ph;
   if (!ph) return null;
   const slide = doc.slides[slideId];
   if (!slide.layoutId) return null;
   const sourceLayout = slide.layoutId === slide.sourceLayoutId;
-  if (sourceLayout && !(record.meta.created && record.meta.fieldPlaceholder)) return null;
-  const elements = sourceLayout
+  const editedSourceLayout = sourceLayout && layoutHasEdits(doc, slide.layoutId);
+  if (sourceLayout && !editedSourceLayout
+    && !(record.meta.created && record.meta.fieldPlaceholder)) return null;
+  const elements = sourceLayout && !editedSourceLayout
     ? doc.layouts[slide.layoutId]?.elements ?? []
-    : projectedLayoutElements(doc, slideId);
+    : projectedLayoutElements(doc, slideId, resolveLayoutElement);
   const placeholders = elements.filter((element) =>
     !!element.editInfo?.placeholder) ?? [];
   return findPlaceholderByIdentity(
     placeholders, (element) => element.editInfo?.placeholder, ph,
   ) ?? null;
+}
+
+function inheritedLayoutText(
+  doc: EditDoc,
+  slideId: SlideId,
+  target: SlideElement,
+  fallback: TextBody | null,
+): TextBody | null {
+  if (!fallback) return null;
+  const layoutId = doc.slides[slideId]?.layoutId;
+  const origin = target.editInfo?.origin;
+  const host = layoutId && origin ? doc.layouts[layoutId]?.children
+    .map((id) => doc.elements[id])
+    .find((record) => record.meta.origin?.part === origin.part
+      && record.meta.origin.spid === origin.spid) : undefined;
+  // 版式提示文字自身的 rPr 不会传给页面内容；用户建立的文字覆盖则要叠在继承模板上。
+  const source = fieldTextWithoutDirect(fallback);
+  // textLevelTemplate 的数组位置就是九级样式地址；清理提示文字直设时不能把各级都折回 0 级。
+  source.paragraphs.forEach((paragraph, index) => {
+    paragraph.lvl = fallback.paragraphs[index]?.lvl ?? paragraph.lvl;
+  });
+  return host?.ovr.text?.kind === 'flat'
+    ? textBodyFromOverride(host.ovr.text, source, (link) => renderLinkTarget(doc, link))
+    : source;
 }
 
 export function projectionContentIds(doc: EditDoc, slideId: SlideId): ElementId[] {
@@ -253,9 +336,10 @@ export function rebasedElementBase(
   doc: EditDoc,
   slideId: SlideId,
   record: EditDoc['elements'][string],
+  resolveLayoutElement?: LayoutElementResolver,
 ): { base: SlideElement; geom?: GeomSpec } {
   const slide = doc.slides[slideId];
-  const target = targetPlaceholder(doc, slideId, record);
+  const target = targetPlaceholder(doc, slideId, record, resolveLayoutElement);
   const resolved = resolvedLayoutSource(doc, slideId, record);
   const missingTarget = !!record.meta.ph && !!changedLayout(doc, slideId)
     && record.meta.origin?.part === slide?.origin?.part && !target;
@@ -303,7 +387,7 @@ export function rebasedElementBase(
       ...(base.editInfo?.geom ? { geom: structuredClone(base.editInfo.geom) } : {}),
     };
   }
-  const creationDefaults = record.meta.themeDefaultShape
+  const creationDefaults = record.meta.created && record.meta.themeDefaultShape
     ? currentShapeDefaults(doc, slideId) : undefined;
   if (creationDefaults && record.src.kind === 'shape') {
     const base = structuredClone(record.src);
@@ -338,13 +422,14 @@ export function rebasedElementBase(
     if (!(direct & (PLACEHOLDER_DIRECT_BITS.effects | PLACEHOLDER_DIRECT_BITS.style))) {
       base.effects = structuredClone(target.effects);
     }
-    const targetText = target.editInfo?.textLevelTemplate
+    const rawTargetText = target.editInfo?.textLevelTemplate
       ?? target.editInfo?.textTemplate ?? target.text;
+    const targetText = inheritedLayoutText(doc, slideId, target, rawTargetText);
     base.text = record.meta.created && !record.meta.fieldPlaceholder
       ? structuredClone(target.text)
       : rebaseLayoutText(
         base.text,
-        record.meta.fieldPlaceholder && targetText ? fieldTextWithoutDirect(targetText) : targetText,
+        targetText,
       );
   } else if (base.kind === 'image') {
     if (!(direct & PLACEHOLDER_DIRECT_BITS.geometry)) {
@@ -363,13 +448,18 @@ export function rebasedElementBase(
 }
 
 /** 文字命令从当前版式的重基值起步，不能把旧版式有效值烘进首次覆盖。 */
-export function rebasedTextBase(doc: EditDoc, slideId: SlideId, id: ElementId): TextBody | null {
+export function rebasedTextBase(
+  doc: EditDoc,
+  slideId: SlideId,
+  id: ElementId,
+  resolveLayoutElement?: LayoutElementResolver,
+): TextBody | null {
   const record = doc.elements[id];
   if (!record) throw new Error(`找不到元素：${id}`);
-  const base = rebasedElementBase(doc, slideId, record).base;
+  const base = rebasedElementBase(doc, slideId, record, resolveLayoutElement).base;
   if (base.kind !== 'shape') return null;
   if (base.text) return base.text;
-  const target = targetPlaceholder(doc, slideId, record);
+  const target = targetPlaceholder(doc, slideId, record, resolveLayoutElement);
   const template = target?.editInfo?.textLevelTemplate
     ?? target?.editInfo?.textTemplate
     ?? (target?.kind === 'shape' ? target.text : null)

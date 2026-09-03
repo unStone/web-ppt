@@ -1,72 +1,71 @@
-import { sortElementChildrenByOrder } from '../element-order';
 import { validateEditDoc } from '../model-invariants';
-import { releaseProjectionCache, slideOfElement } from '../projection';
+import { releaseProjectionCache } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRefs } from '../table-cell';
 import type {
   EditDoc, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
   SlideImageBackground, TableRowInsertion,
 } from '../types';
-import { applyElementTransformPatch } from './element-transform';
-import { applyElementFillPatch, isElementFillPatch, validateElementFillPatch } from './element-fill';
-import { applyElementStrokePatch, isElementStrokePatch, validateElementStrokePatch } from './element-stroke';
-import { applyElementEffectsPatch, isElementEffectsPatch, validateElementEffectsPatch } from './element-effects';
-import { applyElementLinkPatch, isElementLinkPatch, validateElementLinkPatch } from './element-link';
+import { validateElementFillPatch } from './element-fill';
+import { validateElementStrokePatch } from './element-stroke';
+import { validateElementEffectsPatch } from './element-effects';
+import { validateElementLinkPatch } from './element-link';
 import {
-  applyElementCropPatch, applyElementImageReplacementPatch, applyImageResourcePatch,
   assertImageReplacement, assertImageResourceTargets,
-  isElementCropPatch, isElementImageReplacementPatch, isImageResourcePatch,
+  isElementImageReplacementPatch, isImageResourcePatch,
   validateElementCropPatch, validateElementImageReplacementPatch, validateImageResourcePatch,
 } from './element-image-content';
 import {
-  applyElementOrderValue, isElementOrderPatch, validateElementOrderPatch, validateElementOrderPatchSet,
+  validateElementOrderPatch, validateElementOrderPatchSet,
 } from './element-order';
-import { applyElementTreePatch, isElementTreePatch, validateElementTreePatch } from './element-tree';
+import { isElementTreePatch, validateElementTreePatch } from './element-tree';
 import {
-  applyElementHierarchyPatch, isElementHierarchyPatch, validateElementHierarchyPatch,
+  isElementHierarchyPatch, validateElementHierarchyPatch,
 } from './element-hierarchy';
-import { applyElementTextPatch, isElementTextPatch, validateElementTextPatch } from './element-text';
-import { applyTableRowPatch, isTableRowPatch, validateTableRowPatch } from './table-row';
+import { isElementTextPatch, validateElementTextPatch } from './element-text';
+import { isTableRowPatch, validateTableRowPatch } from './table-row';
 import {
-  applyTableGridPatch, isTableCellPropsPatch, isTableColumnPatch, isTableGridEntryPatch,
+  isTableCellPropsPatch, isTableColumnPatch, isTableGridEntryPatch,
   isTableMergePatch, validateTableCellPropsPatch, validateTableColumnPatch,
   validateTableGridEntryPatch, validateTableMergePatch,
 } from './table-grid-patch';
-import { applySlideTreePatch, isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
+import { isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
+import { validateSlideOrderPatch } from './slide-order';
 import {
-  applySlideOrderPatch, isSlideOrderPatch, validateSlideOrderPatch,
-} from './slide-order';
-import {
-  applySlidePropertyPatch, isSlideBackgroundImagePatch, isSlideBackgroundPatch,
+  isSlideBackgroundImagePatch, isSlideBackgroundPatch,
   isSlideAnimationsPatch, isSlidePropertyPatch, validateSlidePropertyPatch, assertSlideImageBackground,
   assertSlideImageBackgroundDimensions,
 } from './slide-property';
 import {
-  applySlideLayoutPatch, isSlideLayoutPatch, validateSlideLayoutPatch,
+  isSlideLayoutPatch, validateSlideLayoutPatch,
 } from './slide-layout';
-import { applySlideNotesPatch, isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
+import { isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
 import type {
-  ElementTransformPatch, ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
+  ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 import {
-  applyElementNamePatch, isElementNamePatch, validateElementNamePatch,
+  isElementNamePatch, validateElementNamePatch,
 } from './element-name';
 import {
-  applyElementInteractionPatch, isElementInteractionPatch, validateElementInteractionPatch,
+  isElementInteractionPatch, validateElementInteractionPatch,
 } from './element-interaction';
 import {
-  applyElementGeometryPatch, applyElementPresetGeometryPatch,
   isElementGeometryPatch, isElementPresetGeometryPatch,
   validateElementGeometryPatch, validateElementPresetGeometryPatch,
 } from './element-geometry';
 import {
-  applyElementTableStylePatch, isElementTableStylePatch, validateElementTableStylePatch,
+  isElementTableStylePatch, validateElementTableStylePatch,
 } from './element-table-style';
 import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalidation';
 import {
-  applyCommonObjectSlidePatch, validateCommonObjectSlidePatch,
+  validateCommonObjectSlidePatch,
 } from './common-object-slide-patch';
-import { applyThemePatch, isThemePatch, validateThemePatch } from './theme';
+import { isThemePatch, validateThemePatch } from './theme';
+import {
+  isLayoutPropertyPatch, validateLayoutPropertyPatch,
+} from './layout-property';
+import { applyPatchValues } from './patch-apply';
+import { structuralPatchStage } from './patch-stage';
 
 function validatePatch(
   doc: EditDoc,
@@ -86,6 +85,10 @@ function validatePatch(
   }
   if (isThemePatch(input)) {
     validateThemePatch(doc, input, index);
+    return;
+  }
+  if (isLayoutPropertyPatch(input)) {
+    validateLayoutPropertyPatch(doc, input, index);
     return;
   }
   if (validateCommonObjectSlidePatch(doc, input, index)) return;
@@ -330,90 +333,6 @@ function validatePatchRelations(
       throw new Error(`Patch ${index} 与 Patch ${tree} 同时修改将被移除的元素：${patch.path[1]}`);
     }
   });
-}
-
-function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc {
-  const stage: EditDoc = {
-    ...doc,
-    identity: structuredClone(doc.identity),
-    slides: { ...doc.slides },
-    slideOrder: [...doc.slideOrder],
-    sections: structuredClone(doc.sections),
-    themes: structuredClone(doc.themes),
-    elements: { ...doc.elements },
-    removedElements: { ...doc.removedElements },
-    imageResources: { ...doc.imageResources },
-  };
-  const clonedSlides = new Set<string>();
-  const clonedElements = new Set<string>();
-  const cloneSlide = (id: string): void => {
-    if (clonedSlides.has(id) || !stage.slides[id]) return;
-    stage.slides[id] = structuredClone(stage.slides[id]);
-    clonedSlides.add(id);
-  };
-  const cloneElement = (id: string): void => {
-    if (clonedElements.has(id) || !stage.elements[id]) return;
-    stage.elements[id] = structuredClone(stage.elements[id]);
-    clonedElements.add(id);
-  };
-  const cloneParent = (id: string): void => {
-    if (stage.slides[id]) cloneSlide(id);
-    else cloneElement(id);
-  };
-  for (const patch of patches) {
-    if (patch.path[0] === 'slides' && patch.path.length > 2) cloneSlide(patch.path[1]);
-    if (patch.path[0] === 'elements' && patch.path.length > 2) cloneElement(patch.path[1]);
-    if (isElementTreePatch(patch)) {
-      cloneParent(patch.value.parent);
-      // 父级可能由同一外部批次里的前序结构 Patch 创建；它尚不在基线中，也无需写时复制。
-      if (doc.slides[patch.value.parent]) cloneSlide(patch.value.parent);
-      else if (doc.elements[patch.value.parent]) cloneSlide(slideOfElement(doc, patch.value.parent));
-    } else if (isElementHierarchyPatch(patch)) {
-      for (const parent of Object.keys(patch.value.children)) cloneParent(parent);
-      if (doc.slides[patch.value.parent]) cloneSlide(patch.value.parent);
-      else if (doc.elements[patch.value.parent]) cloneSlide(slideOfElement(doc, patch.value.parent));
-    } else if (isElementOrderPatch(patch)) {
-      const parent = doc.elements[patch.path[1]]?.parent;
-      if (parent) cloneParent(parent);
-    }
-  }
-  return stage;
-}
-
-function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
-  const orderParents = new Set<string>();
-  for (const patch of patches) {
-    if (applyCommonObjectSlidePatch(doc, patch)) continue;
-    if (isThemePatch(patch)) applyThemePatch(doc, patch);
-    else if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
-    else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
-    else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
-    else if (isSlideLayoutPatch(patch)) applySlideLayoutPatch(doc, patch);
-    else if (isSlideNotesPatch(patch)) applySlideNotesPatch(doc, patch);
-    else if (isElementTreePatch(patch)) applyElementTreePatch(doc, patch);
-    else if (isElementHierarchyPatch(patch)) applyElementHierarchyPatch(doc, patch);
-    else if (isElementFillPatch(patch)) applyElementFillPatch(doc, patch);
-    else if (isElementStrokePatch(patch)) applyElementStrokePatch(doc, patch);
-    else if (isElementEffectsPatch(patch)) applyElementEffectsPatch(doc, patch);
-    else if (isElementLinkPatch(patch)) applyElementLinkPatch(doc, patch);
-    else if (isElementCropPatch(patch)) applyElementCropPatch(doc, patch);
-    else if (isElementGeometryPatch(patch)) applyElementGeometryPatch(doc, patch);
-    else if (isElementPresetGeometryPatch(patch)) applyElementPresetGeometryPatch(doc, patch);
-    else if (isElementTableStylePatch(patch)) applyElementTableStylePatch(doc, patch);
-    else if (isElementImageReplacementPatch(patch)) applyElementImageReplacementPatch(doc, patch);
-    else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
-    else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
-    else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
-    else if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
-      || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) applyTableGridPatch(doc, patch);
-    else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
-    else if (isElementNamePatch(patch)) applyElementNamePatch(doc, patch);
-    else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
-    else applyElementTransformPatch(doc, patch as ElementTransformPatch);
-  }
-  for (const parent of orderParents) {
-    if (doc.slides[parent] || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
-  }
 }
 
 function applyPatchBatch(

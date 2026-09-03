@@ -67,6 +67,9 @@ Distribution, alternative text, sections, and slide-size controls call the same 
 React-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
 Theme toolbars use `snapshot.session.editor.exec({ type: 'SetTheme', ... })`; `SetThemeCommand` and `ThemeState`
 are re-exported so React does not own a second theme model.
+Layout designers use `createDesignEditor(container, snapshot.session, { target })` from the opt-in
+`@web-ppt/editor/design` entry; `DesignEditor`, `DesignTarget`,
+`LayoutCatalogItem`, and `LayoutDesignState` are re-exported for typed React-owned UI controls.
 `onTouchNavigate` receives the framework-neutral pinch viewport and `onContextRequest` receives the 500ms
 long-press target. React adds no gesture state: the shared adapter applies zoom, while product layout owns outer
 scrolling and menu presentation. `TouchNavigationChange` and `EditorContextRequest` are re-exported.

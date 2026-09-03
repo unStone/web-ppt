@@ -157,10 +157,10 @@ function stageDoc(doc: EditDoc): EditDoc {
     slides: structuredClone(doc.slides),
     slideOrder: [...doc.slideOrder],
     sections: structuredClone(doc.sections),
-    layouts: doc.layouts,
-    layoutOrder: doc.layoutOrder,
+    layouts: structuredClone(doc.layouts),
+    layoutOrder: [...doc.layoutOrder],
     themes: structuredClone(doc.themes),
-    themeOrder: doc.themeOrder,
+    themeOrder: [...doc.themeOrder],
     elements: structuredClone(doc.elements),
     removedElements: structuredClone(doc.removedElements),
     imageResources: structuredClone(doc.imageResources),
@@ -179,6 +179,8 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
   doc.slides = staged.slides;
   doc.slideOrder = staged.slideOrder;
   doc.sections = staged.sections;
+  doc.layouts = staged.layouts;
+  doc.layoutOrder = staged.layoutOrder;
   doc.themes = staged.themes;
   doc.themeOrder = staged.themeOrder;
   doc.elements = staged.elements;

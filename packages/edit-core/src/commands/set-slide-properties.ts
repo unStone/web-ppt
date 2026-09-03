@@ -14,8 +14,10 @@ import {
 import { normalizeSlideImageTilePlacement } from './slide-image';
 import { normalizeSlideTransition, querySlideTransition } from '../slide-transition';
 import { UPLOAD_BACKGROUND_SOURCE_ID } from './slide-property';
+import { assertDesignTarget } from '../design-target';
 import type {
-  CommandPatches, ImageResourcePatch, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
+  CommandPatches, ImageResourcePatch, LayoutBackgroundPatch, LayoutTransitionPatch,
+  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
   SetHiddenCommand, SetTransitionCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
   SlideTransitionPatch,
 } from './types';
@@ -45,6 +47,29 @@ export function setBackgroundPatches(
   origin: string,
 ): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面背景');
+  if ('target' in command && command.target) {
+    assertDesignTarget(doc, command.target);
+    if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
+    const record = doc.layouts[command.target.id];
+    const path = ['layouts', command.target.id, 'ovr', 'background'] as const;
+    const hadOverride = own(record.ovr, 'background');
+    if (command.fill === null) {
+      if (!hadOverride) return { forward: [], inverse: [] };
+      return {
+        forward: [{ op: 'del', path, origin }],
+        inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin }],
+      };
+    }
+    const value = normalizeVectorFill(command.fill);
+    if (hadOverride && JSON.stringify(record.ovr.background) === JSON.stringify(value)) {
+      return { forward: [], inverse: [] };
+    }
+    const forward: LayoutBackgroundPatch = { op: 'set', path, value, origin };
+    const inverse: LayoutBackgroundPatch = hadOverride
+      ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin }
+      : { op: 'del', path, origin };
+    return { forward: [forward], inverse: [inverse] };
+  }
   const record = doc.slides[command.id];
   if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
   if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
@@ -264,6 +289,31 @@ export function setTransitionPatches(
   origin: string,
 ): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面切换');
+  if ('target' in command && command.target) {
+    assertDesignTarget(doc, command.target);
+    const record = doc.layouts[command.target.id];
+    const path = ['layouts', command.target.id, 'ovr', 'transition'] as const;
+    const hadOverride = own(record.ovr, 'transition');
+    if (command.t === null) {
+      if (!hadOverride) return { forward: [], inverse: [] };
+      return {
+        forward: [{ op: 'del', path, origin }],
+        inverse: [{ op: 'set', path, value: structuredClone(record.ovr.transition!), origin }],
+      };
+    }
+    const currentAdvance = (hadOverride ? record.ovr.transition : record.transition)?.advanceAfterMs;
+    const normalizedInput = command.t.advanceAfterMs === undefined && currentAdvance !== undefined
+      ? { ...command.t, advanceAfterMs: currentAdvance } : command.t;
+    const value = normalizeSlideTransition(normalizedInput, 'SetTransition.t');
+    if (hadOverride && JSON.stringify(record.ovr.transition) === JSON.stringify(value)) {
+      return { forward: [], inverse: [] };
+    }
+    const forward: LayoutTransitionPatch = { op: 'set', path, value, origin };
+    const inverse: LayoutTransitionPatch = hadOverride
+      ? { op: 'set', path, value: structuredClone(record.ovr.transition!), origin }
+      : { op: 'del', path, origin };
+    return { forward: [forward], inverse: [inverse] };
+  }
   const record = doc.slides[command.id];
   if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
   const path = ['slides', command.id, 'ovr', 'transition'] as const;

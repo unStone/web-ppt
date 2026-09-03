@@ -1,6 +1,6 @@
 import type { TableCell, TableCreationDefaults, TableElement, TableRow } from '@web-ppt/core';
 import { allocateElementId } from '../document';
-import { currentTableDefaults } from '../layout-projection';
+import { currentTableDefaults, resolvedLayoutTemplate } from '../layout-projection';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import { directTableCellMarkup } from '../table-direct-markup';
@@ -12,7 +12,7 @@ import type { AddTableCommand, CommandPatches, ElementTreePatch } from './types'
 import { assertInsertionRect, EMU_PER_PX, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { assertElementUnlocked } from './element-interaction';
-import { incrementalInsertionPart } from './insertion-host';
+import { resolveInsertionCanvas } from './insertion-host';
 import { GENERATED_TABLE_DEFAULTS } from './generated-creation-defaults';
 
 const TABLE_URI = 'http://schemas.openxmlformats.org/drawingml/2006/table';
@@ -104,11 +104,12 @@ ${rowEmu.map(row).join('\n')}
 
 function assertCommand(doc: EditDoc, command: AddTableCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增表格');
-  const slide = doc.slides[command.slideId];
-  if (!slide) throw new Error(`找不到新增表格目标页：${command.slideId}`);
-  const part = incrementalInsertionPart(doc, slide);
-  const defaults = currentTableDefaults(doc, slide.id) ?? (part ? undefined : GENERATED_TABLE_DEFAULTS);
-  if (!defaults) throw new Error(`新增表格目标页缺少主题默认值：${command.slideId}`);
+  const target = resolveInsertionCanvas(doc, command, '新增表格');
+  const defaults = target.kind === 'layout'
+    ? resolvedLayoutTemplate(doc, target.id)?.defaultTable ?? doc.layouts[target.id].defaultTable
+    : currentTableDefaults(doc, target.id) ?? (target.part ? undefined : GENERATED_TABLE_DEFAULTS);
+  const canvas = { ...target, defaults };
+  if (!canvas.defaults) throw new Error(`新增表格目标画布缺少主题默认值：${canvas.id}`);
   assertTableDimension(command.rows, 'AddTable.rows');
   assertTableDimension(command.cols, 'AddTable.cols');
   assertInsertionRect(command.rect, 'AddTable.rect');
@@ -116,7 +117,7 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
     ? undefined : doc.elements[command.placeholderId];
   if (placeholder) assertElementUnlocked(doc, placeholder.id);
   if (command.placeholderId !== undefined
-    && !isEmptyContentPlaceholder(doc, slide.id, command.placeholderId)) {
+    && !isEmptyContentPlaceholder(doc, canvas.id, command.placeholderId)) {
     throw new Error(`AddTable.placeholderId 必须是目标页中的空内容占位符：${String(command.placeholderId)}`);
   }
   const frameEmu = {
@@ -132,7 +133,9 @@ function assertCommand(doc: EditDoc, command: AddTableCommand) {
   };
   const columns = distributeEmu(frameEmu.w, command.cols, 'AddTable.rect.w');
   const rows = distributeEmu(frameEmu.h, command.rows, 'AddTable.rect.h');
-  return { slide, defaults, placeholder, columns, rows, normalized, part };
+  return { ...canvas, defaults: canvas.defaults, placeholder, columns, rows, normalized } as
+    typeof canvas & { defaults: TableCreationDefaults; placeholder: typeof placeholder;
+      columns: number[]; rows: number[]; normalized: AddTableCommand; part: string | null };
 }
 
 /** 表格视觉默认值、即时模型和 OOXML 宿主共用一个来源，再交给既有结构历史与保存主干。 */
@@ -141,7 +144,7 @@ export function addTablePatches(
   command: AddTableCommand,
   origin: string,
 ): CommandPatches {
-  const { slide, defaults, placeholder, columns, rows, normalized, part } = assertCommand(doc, command);
+  const { id: parent, children: siblings, defaults, placeholder, columns, rows, normalized, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '表格' : `表格 ${spid}`;
@@ -151,10 +154,9 @@ export function addTablePatches(
     namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
     spids: { [String(spid)]: spid },
   } : undefined;
-  const siblings = slide.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent: slide.id,
+    id, parent,
     z: placeholder ? elementOrder(placeholder) : fractionalIndexBetween(previous, null, id),
     ...(placeholder ? { order: elementOrder(placeholder) } : {}),
     src: source, ovr: {},
@@ -163,7 +165,7 @@ export function addTablePatches(
       ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };
-  const value = { root: id, parent: slide.id, records: { [id]: record } };
+  const value = { root: id, parent, records: { [id]: record } };
   const forward: ElementTreePatch = { op: 'insert', path: ['elements', id], value, origin };
   const inverse: ElementTreePatch = { op: 'remove', path: ['elements', id], value, origin };
   if (!placeholder) return { forward: [forward], inverse: [inverse] };

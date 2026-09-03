@@ -1353,7 +1353,7 @@ function resolvedSlideBackground(
   return null;
 }
 
-function parseLayoutCatalog(
+export function parseLayoutCatalog(
   pkg: Pkg,
   presRoot: Element,
   presRels: Rels,

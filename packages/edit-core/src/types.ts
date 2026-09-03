@@ -2,18 +2,23 @@ import type {
   CellBorders, CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
-  SlideElement, SlideLayoutTemplate, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
+  SlideElement, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
   TextCapsStyle, TextStrikeStyle, TextUnderlineStyle, ThemeColorScheme, ThemeColorSlot,
   ThemeFontScheme,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 import type { ElementId, FractionalIndex, SlideId } from './identities';
 import type { ElementAltTextOverrides, SectionState } from './common-object-slide-types';
+import type { LayoutRecord } from './layout-types';
 
 export type { ElementId, FractionalIndex, SectionId, SlideId } from './identities';
 export type {
   ElementAltTextOverrides, ElementAltTextState, SectionRecord, SectionState, SlideSizeState,
 } from './common-object-slide-types';
+export type {
+  DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutOverrides,
+  LayoutPropertyState, LayoutRecord,
+} from './layout-types';
 export type EditableKind = 'full' | 'frame' | 'none';
 
 export interface TableCellAddress {
@@ -764,7 +769,7 @@ export interface EditDoc {
   slides: Record<SlideId, SlideRecord>;
   slideOrder: SlideId[];
   sections: SectionState;
-  layouts: Record<string, SlideLayoutTemplate>;
+  layouts: Record<string, LayoutRecord>;
   layoutOrder: string[];
   themes: Record<string, ThemeRecord>;
   themeOrder: string[];

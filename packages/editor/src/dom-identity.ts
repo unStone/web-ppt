@@ -1,5 +1,5 @@
 import { projectedSlideElementIds } from '@web-ppt/edit-core';
-import type { EditDoc, ElementId, SlideId } from '@web-ppt/edit-core';
+import type { DesignTarget, EditDoc, ElementId, SlideId } from '@web-ppt/edit-core';
 
 export function elementIds(doc: EditDoc, roots: readonly ElementId[]): ElementId[] {
   const output: ElementId[] = [];
@@ -75,6 +75,12 @@ export function bindSingleElementIdentity(root: ParentNode, doc: EditDoc, id: El
 
 export function bindSlideIdentities(root: ParentNode, doc: EditDoc, slideId: SlideId): void {
   bindProjectedIdentities(root, doc, projectedSlideElementIds(doc, slideId));
+}
+
+export function bindDesignIdentities(root: ParentNode, doc: EditDoc, target: DesignTarget): void {
+  const layout = doc.layouts[target.id];
+  if (!layout) throw new Error(`找不到版式设计目标：${target.id}`);
+  bindProjectedIdentities(root, doc, elementIds(doc, layout.children));
 }
 
 export function findElementPartition(root: ParentNode, id: ElementId): SVGElement | null {

@@ -68,6 +68,9 @@ Distribution, alternative text, sections, and slide-size controls call the same 
 Vue-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
 Theme toolbars use `snapshot.value.session.editor.exec({ type: 'SetTheme', ... })`; `SetThemeCommand` and
 `ThemeState` are re-exported so Vue does not own a second theme model.
+Layout designers use `createDesignEditor(container, snapshot.value.session, { target })` from the opt-in
+`@web-ppt/editor/design` entry; `DesignEditor`, `DesignTarget`,
+`LayoutCatalogItem`, and `LayoutDesignState` are re-exported for typed Vue-owned UI controls.
 The `touch-navigate` event carries the framework-neutral pinch viewport and `context-request` carries the 500ms
 long-press target. Vue owns no gesture state: the shared adapter applies zoom, while product layout owns outer
 scrolling and menu presentation. `TouchNavigationChange` and `EditorContextRequest` are re-exported.

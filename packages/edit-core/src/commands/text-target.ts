@@ -6,7 +6,8 @@ import {
   assertTableCellAddress, tableCellColumnRef, tableCellOverrideKey, tableCellRowRef,
 } from '../table-cell';
 import { rebasedTextBase, rebasedTextLevelTemplate } from '../layout-projection';
-import { slideOfElement } from '../projection';
+import { effectiveElement, slideOfElement } from '../projection';
+import { canvasTargetOfElement } from '../design-target';
 import {
   hasComplexTableStructureOverrides, projectTableStructure,
 } from '../table-grid-projection';
@@ -89,8 +90,13 @@ export function textTargetContext(
 ): TextTargetContext {
   const record = doc.elements[target.id];
   if (!record) throw new Error(`找不到可编辑文字的元素：${target.id}`);
+  const canvas = canvasTargetOfElement(doc, target.id);
+  if (canvas.kind === 'layout') return textTargetContextForRecord(record, target);
   if (target.cell === undefined) {
-    const body = rebasedTextBase(doc, slideOfElement(doc, target.id), target.id);
+    const body = rebasedTextBase(
+      doc, slideOfElement(doc, target.id), target.id,
+      (layoutId) => effectiveElement(doc, layoutId),
+    );
     if (record.meta.editable !== 'full' || record.src.kind !== 'shape' || !body) {
       throw new Error(`找不到可编辑文字的形状：${target.id}`);
     }

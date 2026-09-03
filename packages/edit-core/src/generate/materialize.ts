@@ -38,6 +38,7 @@ import { generatedTableStyleDefinitions, tableInsertion } from './table';
 import { generatedEmptySlideXml, generatedTemplateParts } from './template';
 import { patchGeneratedPresentationMetadata } from '../save/slide-parts';
 import { effectiveTheme } from '../theme';
+import { allocatedProjectionSpids, generatedProjectionTree } from './projection-tree';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -183,7 +184,12 @@ function fullOverrides(
   resources: Map<string, ElementInsertionResource>,
 ): ElementOverrides {
   const source = record.src;
-  const altText = queryElementAltText(doc, record.id);
+  const altText = doc.elements[record.id]
+    ? queryElementAltText(doc, record.id)
+    : {
+      title: source.editInfo?.altText?.title ?? '',
+      descr: source.editInfo?.altText?.descr ?? '',
+    };
   const common: ElementOverrides = {
     x: source.x, y: source.y, w: source.w, h: source.h,
     rot: source.rot, flipH: source.flipH, flipV: source.flipV,
@@ -368,24 +374,6 @@ function elementInsertion(
   throw new Error(`生成保存遇到未知元素类型：${String(unknown)}`);
 }
 
-function allocatedSpids(doc: EditDoc, slideId: SlideId): Map<string, number> {
-  const used = new Set<number>([1]);
-  const result = new Map<string, number>();
-  let next = 2;
-  const visit = (id: string): void => {
-    const sourceId = doc.elements[id].src.id;
-    let spid = sourceId && Number.isSafeInteger(sourceId) && sourceId > 1 && !used.has(sourceId)
-      ? sourceId : 0;
-    while (!spid && used.has(next)) next++;
-    if (!spid) spid = next++;
-    used.add(spid);
-    result.set(id, spid);
-    for (const child of doc.elements[id].children ?? []) visit(child);
-  };
-  for (const id of doc.slides[slideId].children) visit(id);
-  return result;
-}
-
 function materializeSlide(
   doc: EditDoc,
   slideId: SlideId,
@@ -393,13 +381,17 @@ function materializeSlide(
   relationshipSource: Uint8Array,
 ): { bytes: Uint8Array; work: EditDoc; links: HyperlinkSaveContext } {
   const part = `ppt/slides/slide${index + 1}.xml`;
-  const spids = allocatedSpids(doc, slideId);
+  const projectionTree = generatedProjectionTree(doc, slideId);
+  const spids = allocatedProjectionSpids(projectionTree.sourceRecords, projectionTree.roots);
   const records: Record<string, ElementRecord> = Object.create(null);
   const generatedTextResources = new Map<string, ElementInsertionResource>();
-  for (const [id, sourceRecord] of Object.entries(doc.elements)) {
-    if (!spids.has(id)) continue;
-    const source = structuredClone(effectiveElement(doc, id));
-    const presetGeometry = source.kind === 'shape' ? effectivePresetGeometry(doc, id) : null;
+  for (const [id, sourceRecord] of Object.entries(projectionTree.sourceRecords)) {
+    const source = structuredClone(doc.elements[id] ? effectiveElement(doc, id) : sourceRecord.src);
+    const presetGeometry = source.kind === 'shape'
+      ? doc.elements[id]
+        ? effectivePresetGeometry(doc, id)
+        : source.editInfo?.geom ?? sourceRecord.meta.geom ?? null
+      : null;
     const record: ElementRecord = {
       ...structuredClone(sourceRecord), src: source, ovr: {},
       meta: {
@@ -462,7 +454,7 @@ function materializeSlide(
     },
     removedElements: {}, package: null,
   };
-  const roots = [...slide.children].sort((left, right) =>
+  const roots = [...projectionTree.roots].sort((left, right) =>
     elementOrder(records[left]).localeCompare(elementOrder(records[right])));
   slide.children = roots;
   const tree = parseXmlTree(generatedEmptySlideXml());

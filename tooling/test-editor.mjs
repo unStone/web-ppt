@@ -78,6 +78,17 @@ execFileSync('npx', [
   `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
   `--outfile=${adjustmentsBundle}`,
 ], { cwd: root, stdio: 'inherit' });
+const designBundle = join(out, 'design.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'packages/editor/src/design/index.ts'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  `--outfile=${designBundle}`,
+], { cwd: root, stdio: 'inherit' });
 const vertexBundle = join(out, 'vertex.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/vertex/index.ts'), '--bundle', '--format=esm',

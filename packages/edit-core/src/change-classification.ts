@@ -2,13 +2,16 @@ import { isElementInteractionPatch } from './commands/element-interaction';
 import { isElementNamePatch } from './commands/element-name';
 import { isElementOrderPatch } from './commands/element-order';
 import { isElementHierarchyPatch } from './commands/element-hierarchy';
+import { isElementTreePatch } from './commands/element-tree';
 import { isSlideLayoutPatch } from './commands/slide-layout';
 import { isSlideOrderPatch } from './commands/slide-order';
 import { isSlideBackgroundPatch } from './commands/slide-property';
 import { isSlideTreePatch } from './commands/slide-tree';
 import { isThemePatch } from './commands/theme';
+import { isLayoutPropertyPatch } from './commands/layout-property';
 import type { Patch } from './commands/types';
-import type { ElementId, SlideId, TextOverride } from './types';
+import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
+import { canvasTargetOfElement } from './design-target';
 
 export function patchElements(patches: readonly Patch[]): Set<ElementId> {
   return new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
@@ -20,12 +23,19 @@ export function affectsSlideSequence(patches: readonly Patch[]): boolean {
 }
 
 export function renderPatchSlides(
-  patches: readonly Patch[], dirtySlides: ReadonlySet<SlideId> = new Set(),
+  doc: EditDoc, patches: readonly Patch[], dirtySlides: ReadonlySet<SlideId> = new Set(),
 ): Set<SlideId> {
   const result = new Set(patches
     .filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
     .map((patch) => patch.path[1]));
-  if (patches.some(isThemePatch)) for (const id of dirtySlides) result.add(id);
+  const layoutCanvasChanged = patches.some((patch) => isLayoutPropertyPatch(patch)
+    || isElementHierarchyPatch(patch) && !!doc.layouts[patch.value.parent]
+    || isElementTreePatch(patch) && !!doc.layouts[patch.value.parent]
+    || patch.path[0] === 'elements' && !!doc.elements[patch.path[1]]
+      && canvasTargetOfElement(doc, patch.path[1]).kind === 'layout');
+  if (patches.some(isThemePatch) || layoutCanvasChanged) {
+    for (const id of dirtySlides) result.add(id);
+  }
   return result;
 }
 

@@ -55,6 +55,7 @@ import { runVertexGeometryContract } from './lib/vertex-geometry-contract.mjs';
 import { runPresetShapeContract } from './lib/preset-shape-contract.mjs';
 import { runTableStyleContract } from './lib/table-style-contract.mjs';
 import { runThemeEditContract } from './lib/theme-edit-contract.mjs';
+import { runLayoutEditContract } from './lib/layout-edit-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -109,6 +110,7 @@ const walk = (elements, fn) => {
 const sourceCount = (pres) => {
   let count = 0;
   for (const slide of pres.slides) walk(slide.elements, () => count++);
+  for (const layout of pres.editInfo?.layouts ?? []) walk(layout.elements, () => count++);
   return count;
 };
 
@@ -132,6 +134,7 @@ await runTableRowInsertContract({ edit, core, load, check });
 await runTableStructureContract({ edit, core, load, check });
 await runTableStyleContract({ edit, core, load, check });
 await runThemeEditContract({ edit, core, load, check });
+await runLayoutEditContract({ edit, core, load, check });
 await runAddShapeContract({ edit, core, load, check, eq });
 await runAddImageContract({ edit, core, load, check });
 await runAddTableContract({ edit, core, load, check });

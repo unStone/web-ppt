@@ -31,6 +31,7 @@ export { queryElementPresetGeometry } from './preset-geometry';
 export { listTableStyles, queryTableStyle } from './table-style';
 export type { TableStyleCatalogItem, TableStyleState } from './table-style';
 export { listThemes, queryTheme } from './theme';
+export { listLayouts, queryLayout, toDesignCanvas } from './layout';
 export {
   assertCustomGeometry, moveCustomGeometryPoint, queryElementCustomGeometry,
   setCustomGeometryClosed, setCustomGeometrySegmentType,
@@ -78,7 +79,7 @@ export {
   transformSpaceVector,
 } from './space';
 export type {
-  CreateDocOptions, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementAltTextOverrides, ElementAltTextState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
+  CreateDocOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutPropertyState, LayoutOverrides, LayoutRecord, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementAltTextOverrides, ElementAltTextState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
   ElementRecord, FractionalIndex, ProjectionInvalidation, RemovedElementRecord, SlideId, SlideOverrides,
   FlatTextParagraph, ParagraphAutoNumberType, ParagraphBullet, ParagraphBulletInput, ParagraphBulletSize, ParagraphBulletStyle, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyInput, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SectionId, SectionRecord, SectionState, SlideCreation, SlideNotesBinding, SlideRecord, SlideSizeState, SlideSource, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellOverrides, TableCellRef, TableCellRowRef, TableColumnId, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
@@ -89,13 +90,13 @@ export type {
   RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
 } from './recovery-types';
 export type {
-  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, EditorChange, GroupCommand, MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, UngroupCommand,
+  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, DesignCommand, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, EditorChange, GroupCommand, MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, UngroupCommand,
   EditorOptions, EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions, EditorSubscriber, ExternalPatchOptions, ElementAltTextPatch, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   DocumentSizePatch, ElementHierarchyPatch, ElementHierarchyState, ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertColumnCommand, InsertRowCommand, MergeCellsCommand, MoveSlideCommand, Patch, RemoveColumnCommand, RemoveElementCommand, RemoveRowCommand, RemoveSlideCommand, SectionStatePatch, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCellPropsCommand, SetColumnWidthCommand, SetHiddenCommand, SetRowHeightCommand, SetSlideSizeCommand, SetTransitionCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideTransitionPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot, SplitCellCommand,
   ApplyFormatCommand, ClearFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetAltTextCommand, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch, TableRowPatch,
   ElementTableStylePatch, SetTableStyleCommand,
-  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch,
+  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type {

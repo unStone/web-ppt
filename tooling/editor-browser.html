@@ -25,6 +25,7 @@
     import { createWebPptAdapter, openEditor } from '/out/editor/editor.mjs';
     import { createVertexEditor } from '/out/editor/vertex.mjs';
     import { createPresetAdjustmentEditor } from '/out/editor/adjustments.mjs';
+    import { createDesignEditor } from '/out/editor/design.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
     import { presentationToImageZip } from '/out/editor/image-zip.mjs';
     import { createBlankPptx } from '/out/editor/generate.mjs';
@@ -108,6 +109,7 @@
       runV06IntegrationBrowserContract,
     } from '/tooling/lib/v06-integration-browser-contract.mjs';
     import { runEditorThemeBrowserContract } from '/tooling/lib/editor-theme-browser-contract.mjs';
+    import { runEditorLayoutBrowserContract } from '/tooling/lib/editor-layout-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -127,6 +129,9 @@
       });
       report.dataset.themeP95 = themeResult.p95.toFixed(3);
       report.dataset.themePages = String(themeResult.pageCount);
+      const layoutResult = await runEditorLayoutBrowserContract({ openEditor, createDesignEditor, load });
+      report.dataset.layoutP95 = layoutResult.p95.toFixed(3);
+      report.dataset.layoutPages = String(layoutResult.pageCount);
       const presetAdjustmentResult = await runEditorPresetAdjustmentBrowserContract({
         openEditor, createPresetAdjustmentEditor, load,
       });

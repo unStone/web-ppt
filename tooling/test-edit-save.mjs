@@ -42,6 +42,7 @@ import { runAdvancedRunFormatSaveContract } from './lib/advanced-run-format-save
 import { runCommonObjectSlideSaveContract } from './lib/common-object-slide-save-contract.mjs';
 import { runV06IntegrationSaveContract } from './lib/v06-integration-save-contract.mjs';
 import { runThemeEditSaveContract } from './lib/theme-edit-save-contract.mjs';
+import { runLayoutEditSaveContract } from './lib/layout-edit-save-contract.mjs';
 import {
   EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
 } from './lib/edit-save-office-artifacts.mjs';
@@ -165,6 +166,18 @@ await runTableStyleSaveContract({
 });
 await runThemeEditSaveContract({
   edit, core, load, check, saveArtifact,
+  renderFingerprint: (file, mode, scenario) => {
+    const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
+    const stdout = execFileSync(process.execPath, [
+      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
+      JSON.stringify(scenario),
+    ], { cwd: root, encoding: 'utf8' });
+    return JSON.parse(stdout);
+  },
+});
+
+await runLayoutEditSaveContract({
+  core, edit, load, check, saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
     const stdout = execFileSync(process.execPath, [
