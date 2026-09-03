@@ -23,6 +23,7 @@ import type {
   MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
   SetAltTextCommand, SetSlideSizeCommand,
 } from './common-object-slide-types';
+import type { SetThemeCommand, ThemePatch } from './theme-types';
 
 export type {
   ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
@@ -45,6 +46,7 @@ export type {
   MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
   SetAltTextCommand, SetSlideSizeCommand,
 } from './common-object-slide-types';
+export type { SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch } from './theme-types';
 
 export type NumericXfrmField = 'x' | 'y' | 'w' | 'h' | 'rot';
 export type FlipField = 'flipH' | 'flipV';
@@ -360,7 +362,7 @@ export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | S
   | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
   | SetBackgroundImageCommand
   | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
-  | SetTableStyleCommand;
+  | SetTableStyleCommand | SetThemeCommand;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -587,7 +589,7 @@ export type TableCellPropsPatch = {
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
-  | TableCellPropsPatch | ElementTableStylePatch;
+  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];

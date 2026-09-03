@@ -3,6 +3,7 @@ import type { Patch, SlideChangeSets, SlideTreePatch, SlideTreeSnapshot } from '
 import { isSlideNotesPatch } from './slide-notes';
 import { isSlideOrderPatch } from './slide-order';
 import { sectionOfSlide } from '../sections';
+import { afterSlideDesignChange, beforeSlideDesignChange } from '../design-dependencies';
 
 export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
   return patch.path.length === 2 && patch.path[0] === 'slides';
@@ -68,6 +69,7 @@ const cloneRecord = (record: ElementRecord): ElementRecord => structuredClone(re
 export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   const { slide, after, records } = patch.value;
   if (patch.op === 'remove') {
+    beforeSlideDesignChange(doc, slide.id);
     const index = doc.slideOrder.indexOf(slide.id);
     if (index < 0) throw new Error(`删除页面不在 slideOrder 中：${slide.id}`);
     doc.slideOrder.splice(index, 1);
@@ -84,6 +86,7 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   const index = after === null ? 0 : doc.slideOrder.indexOf(after) + 1;
   if (index < 0) throw new Error(`插入页面的锚点不在 slideOrder 中：${String(after)}`);
   doc.slideOrder.splice(index, 0, slide.id);
+  afterSlideDesignChange(doc, slide.id);
   if (patch.value.sectionId) {
     const section = doc.sections.records[patch.value.sectionId];
     if (!section) throw new Error(`插入页面的节不存在：${patch.value.sectionId}`);

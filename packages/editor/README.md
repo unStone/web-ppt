@@ -11,7 +11,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 ```
 
 ```ts
-import { openEditor } from '@web-ppt/editor';
+import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -37,6 +37,10 @@ view.setSlide([...added.createdSlides][0]);
 session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
 const duplicated = session.editor.exec({ type: 'DuplicateSlide', id: view.slideId });
 view.setSlide([...duplicated.createdSlides][0]);
+
+const theme = listThemes(session.editor.doc)[0];
+session.editor.exec({ type: 'SetTheme', id: theme.id, clrScheme: { accent1: '#112233' } });
+const effectiveTheme = queryTheme(session.editor.doc, theme.id);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // Or from a toolbar click: const imageId = await view.chooseImage();
@@ -506,7 +510,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 68.08 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 68.11 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

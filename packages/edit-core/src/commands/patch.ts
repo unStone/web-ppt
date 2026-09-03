@@ -66,6 +66,7 @@ import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalida
 import {
   applyCommonObjectSlidePatch, validateCommonObjectSlidePatch,
 } from './common-object-slide-patch';
+import { applyThemePatch, isThemePatch, validateThemePatch } from './theme';
 
 function validatePatch(
   doc: EditDoc,
@@ -81,6 +82,10 @@ function validatePatch(
   }
   if (typeof patch.origin !== 'string' || !patch.origin) throw new Error(`Patch ${index} 缺少 origin`);
   if (isImageResourcePatch(input)) {
+    return;
+  }
+  if (isThemePatch(input)) {
+    validateThemePatch(doc, input, index);
     return;
   }
   if (validateCommonObjectSlidePatch(doc, input, index)) return;
@@ -334,6 +339,7 @@ function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc 
     slides: { ...doc.slides },
     slideOrder: [...doc.slideOrder],
     sections: structuredClone(doc.sections),
+    themes: structuredClone(doc.themes),
     elements: { ...doc.elements },
     removedElements: { ...doc.removedElements },
     imageResources: { ...doc.imageResources },
@@ -378,7 +384,8 @@ function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
   const orderParents = new Set<string>();
   for (const patch of patches) {
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
-    if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
+    if (isThemePatch(patch)) applyThemePatch(doc, patch);
+    else if (isSlideOrderPatch(patch)) applySlideOrderPatch(doc, patch);
     else if (isSlideTreePatch(patch)) applySlideTreePatch(doc, patch);
     else if (isSlidePropertyPatch(patch)) applySlidePropertyPatch(doc, patch);
     else if (isSlideLayoutPatch(patch)) applySlideLayoutPatch(doc, patch);

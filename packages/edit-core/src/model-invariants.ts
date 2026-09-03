@@ -36,6 +36,8 @@ import { assertSlideSize } from './slide-size';
 import {
   assertTableCellOverrides, assertTableGridOverrides, assertTableRows,
 } from './table-invariants';
+import { THEME_COLOR_SLOTS } from '@web-ppt/core';
+import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme';
 
 const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
@@ -216,6 +218,41 @@ export function validateEditDoc(doc: EditDoc): void {
     throw new Error('版式目录与 layoutOrder 不一致');
   }
   const layoutIds = new Set(doc.layoutOrder);
+  if (!doc.themes || !Array.isArray(doc.themeOrder)
+    || new Set(doc.themeOrder).size !== doc.themeOrder.length
+    || doc.themeOrder.length !== Object.keys(doc.themes).length
+    || doc.themeOrder.some((id) => doc.themes[id]?.id !== id)) {
+    throw new Error('主题目录与 themeOrder 不一致');
+  }
+  const themeIds = new Set(doc.themeOrder);
+  for (const id of doc.themeOrder) {
+    const theme = doc.themes[id];
+    if (!theme.name || typeof theme.name !== 'string') throw new Error(`主题名称无效：${id}`);
+    assertDataObject(theme.src, ['colors', 'fonts'], `主题 ${id} 的来源`);
+    assertDataObject(theme.src.colors, THEME_COLOR_SLOTS, `主题 ${id} 的来源颜色`);
+    for (const slot of THEME_COLOR_SLOTS) {
+      assertThemeColor(theme.src.colors[slot], `主题 ${id} 的来源颜色 ${slot}`);
+    }
+    assertDataObject(theme.src.fonts, ['major', 'minor'], `主题 ${id} 的来源字体`);
+    for (const role of ['major', 'minor'] as const) {
+      const font = theme.src.fonts[role];
+      assertDataObject(font, ['latin', 'ea', 'cs', 'scripts'], `主题 ${id} 的来源字体 ${role}`);
+      for (const field of ['latin', 'ea', 'cs'] as const) {
+        assertThemeFont(font[field], `主题 ${id} 的来源字体 ${role}.${field}`);
+      }
+      assertDataObject(font.scripts, Object.keys(font.scripts), `主题 ${id} 的来源脚本 ${role}`);
+      for (const [script, typeface] of Object.entries(font.scripts)) {
+        if (!/^[A-Za-z]{4}$/.test(script)) throw new Error(`主题 ${id} 的脚本代码无效：${script}`);
+        assertThemeFont(typeface, `主题 ${id} 的来源脚本 ${role}.${script}`);
+      }
+    }
+    assertThemeOverrides(theme.ovr, `主题 ${id} 的覆盖`);
+  }
+  for (const layout of Object.values(doc.layouts)) {
+    if (layout.themeId !== undefined && !themeIds.has(layout.themeId)) {
+      throw new Error(`版式 ${layout.id} 指向不存在的主题：${layout.themeId}`);
+    }
+  }
 
   const createdParts = new Set(Object.values(doc.slides)
     .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));

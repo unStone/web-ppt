@@ -64,6 +64,8 @@ import type {
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
+import { setThemePatches } from './theme';
+import type { SetThemeCommand } from './theme-types';
 
 interface CommandRegistration {
   readonly keys: ReadonlySet<PropertyKey>;
@@ -86,6 +88,7 @@ function register<C extends Command>(
 }
 
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
+  SetTheme: register<SetThemeCommand>(['id', 'clrScheme', 'fontScheme'], setThemePatches, { target: 'none' }),
   SetXfrm: register<SetXfrmCommand>(['id', ...NUMERIC_XFRM_FIELDS], setXfrmPatches),
   SetFlip: register<SetFlipCommand>(['id', ...SET_FLIP_COMMAND_FIELDS], setFlipPatches),
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),

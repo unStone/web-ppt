@@ -26,6 +26,7 @@ import { Pkg } from './package-reader';
 import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-style';
 import { parseElementAltText } from './alt-text';
 import { parseSections } from './sections';
+import { parseThemeCatalog } from './theme-catalog';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
@@ -1301,8 +1302,11 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   }
 
   const sections = parseSections(presRoot, idToIndex);
-  const layouts = opts.edit
-    ? parseLayoutCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap)
+  const themeCatalog = opts.edit
+    ? parseThemeCatalog(presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path))
+    : undefined;
+  const layouts = themeCatalog
+    ? parseLayoutCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap, themeCatalog.themeByMaster)
     : undefined;
 
   const opcPackage = pkg.opcPackage;
@@ -1314,6 +1318,7 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
     sections: sections.length ? sections : undefined,
     ...(layouts ? { editInfo: {
       layouts,
+      themes: themeCatalog!.themes,
       ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
     } } : {}),
   };
@@ -1354,6 +1359,7 @@ function parseLayoutCatalog(
   presRels: Rels,
   tableStyles: Element | null,
   slideIdMap: Record<string, number>,
+  themeByMaster: Readonly<Record<string, string>>,
 ): NonNullable<Presentation['editInfo']>['layouts'] {
   const layoutPaths = layoutCatalogPaths(
     presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path),
@@ -1386,6 +1392,7 @@ function parseLayoutCatalog(
       id: layoutPath,
       name: attr(walk(inheritance.layoutRoot, 'cSld'), 'name') ?? layoutPath,
       origin: { part: layoutPath, masterPart: inheritance.masterPath },
+      themeId: themeByMaster[inheritance.masterPath],
       background: resolvedSlideBackground(null, null, inheritance),
       elements: [...staticElements, ...placeholders],
       transition: parseTransition(inheritance.layoutRoot) ?? undefined,

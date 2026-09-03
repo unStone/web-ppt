@@ -1,6 +1,7 @@
 import { assertDataObject, own } from '../data-validation';
 import type { EditDoc } from '../types';
 import type { CommandPatches, SetLayoutCommand, SlideLayoutPatch } from './types';
+import { afterSlideDesignChange, beforeSlideDesignChange } from '../design-dependencies';
 
 export function isSlideLayoutPatch(patch: { readonly path: readonly unknown[] }): patch is SlideLayoutPatch {
   return patch.path.length === 3 && patch.path[0] === 'slides' && patch.path[2] === 'layoutId';
@@ -24,8 +25,10 @@ export function validateSlideLayoutPatch(
 }
 
 export function applySlideLayoutPatch(doc: EditDoc, patch: SlideLayoutPatch): void {
+  beforeSlideDesignChange(doc, patch.path[1]);
   if (patch.op === 'set') doc.slides[patch.path[1]].layoutId = patch.value;
   else delete doc.slides[patch.path[1]].layoutId;
+  afterSlideDesignChange(doc, patch.path[1]);
 }
 
 export function setLayoutPatches(

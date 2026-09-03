@@ -37,6 +37,7 @@ import { imageClosure, imageInsertion } from './media';
 import { generatedTableStyleDefinitions, tableInsertion } from './table';
 import { generatedEmptySlideXml, generatedTemplateParts } from './template';
 import { patchGeneratedPresentationMetadata } from '../save/slide-parts';
+import { effectiveTheme } from '../theme';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -486,8 +487,12 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
   const projections = doc.slideOrder.map((slideId) => toSlide(doc, slideId));
   const notesSlides = doc.slideOrder.map((slideId, index) =>
     !!doc.slides[slideId].notes || projections[index].notes !== undefined);
+  const firstLayout = doc.slides[doc.slideOrder[0]]?.layoutId;
+  const themeId = (firstLayout ? doc.layouts[firstLayout]?.themeId : undefined) ?? doc.themeOrder[0];
+  const themeRecord = themeId ? doc.themes[themeId] : undefined;
+  const theme = themeRecord ? { id: themeRecord.id, name: themeRecord.name, ...effectiveTheme(themeRecord) } : undefined;
   const parts = generatedTemplateParts(
-    doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides,
+    doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides, theme,
   );
   const tableStyles = generatedTableStyleDefinitions(doc);
   if (tableStyles.length) {

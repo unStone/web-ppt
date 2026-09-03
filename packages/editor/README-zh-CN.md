@@ -10,7 +10,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-
 ```
 
 ```ts
-import { openEditor } from '@web-ppt/editor';
+import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 
 const session = await openEditor(file);
 const view = session.mount(container, {
@@ -36,6 +36,10 @@ view.setSlide([...added.createdSlides][0]);
 session.editor.exec({ type: 'MoveSlide', id: view.slideId, at: { after: null } });
 const duplicated = session.editor.exec({ type: 'DuplicateSlide', id: view.slideId });
 view.setSlide([...duplicated.createdSlides][0]);
+
+const theme = listThemes(session.editor.doc)[0];
+session.editor.exec({ type: 'SetTheme', id: theme.id, clrScheme: { accent1: '#112233' } });
+const effectiveTheme = queryTheme(session.editor.doc, theme.id);
 
 await view.insertImage(imageFile, { rect: { x: 420, y: 180, w: 320, h: 220 } });
 // 或在工具栏点击中调用：const imageId = await view.chooseImage();
@@ -450,7 +454,7 @@ const view = session.mount(container, {
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 68.08KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 68.11KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

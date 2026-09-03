@@ -46,6 +46,8 @@ import {
   materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
   tableStyleSavePlan,
 } from './table-style-part';
+import { materializeThemePart } from '../theme-xml';
+import { themeHasOverrides } from '../theme';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -142,6 +144,14 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
   const presentationPart = 'ppt/presentation.xml';
   const presentationRelsPart = 'ppt/_rels/presentation.xml.rels';
   const tableStyles = tableStyleSavePlan(doc);
+  const themeParts = doc.themeOrder.filter((id) =>
+    themeHasOverrides(doc.themes[id]) || !!nextBaselines[id]);
+  for (const part of themeParts) {
+    if (nextBaselines[part]) continue;
+    const source = doc.package.parts[part];
+    if (!source) throw new Error(`找不到主题 OPC part：${part}`);
+    nextBaselines[part] = source.slice();
+  }
   if (tableStyles?.definitions.length && !nextBaselines[tableStyles.part]) {
     const source = doc.package.parts[tableStyles.part];
     if (source) nextBaselines[tableStyles.part] = source.slice();
@@ -381,6 +391,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (tableStyles.definitions.length) {
       changes[tableStyles.part] = materializeTableStyles(source, tableStyles.definitions);
     } else if (source) changes[tableStyles.part] = source;
+  }
+  for (const part of themeParts) {
+    changes[part] = materializeThemePart(nextBaselines[part], doc.themes[part]);
   }
 
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);

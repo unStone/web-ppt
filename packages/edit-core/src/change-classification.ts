@@ -6,6 +6,7 @@ import { isSlideLayoutPatch } from './commands/slide-layout';
 import { isSlideOrderPatch } from './commands/slide-order';
 import { isSlideBackgroundPatch } from './commands/slide-property';
 import { isSlideTreePatch } from './commands/slide-tree';
+import { isThemePatch } from './commands/theme';
 import type { Patch } from './commands/types';
 import type { ElementId, SlideId, TextOverride } from './types';
 
@@ -18,9 +19,14 @@ export function affectsSlideSequence(patches: readonly Patch[]): boolean {
   return patches.some((patch) => isSlideTreePatch(patch) || isSlideOrderPatch(patch));
 }
 
-export function renderPatchSlides(patches: readonly Patch[]): Set<SlideId> {
-  return new Set(patches.filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
+export function renderPatchSlides(
+  patches: readonly Patch[], dirtySlides: ReadonlySet<SlideId> = new Set(),
+): Set<SlideId> {
+  const result = new Set(patches
+    .filter((patch) => isSlideBackgroundPatch(patch) || isSlideLayoutPatch(patch))
     .map((patch) => patch.path[1]));
+  if (patches.some(isThemePatch)) for (const id of dirtySlides) result.add(id);
+  return result;
 }
 
 export function renderPatchElements(

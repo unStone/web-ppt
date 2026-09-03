@@ -223,7 +223,9 @@ export async function runGeneratedSaveContract({
 
   const reopened = await core.parse(first.bytes, { edit: true, lazy: false, assets: 'defer' });
   check('空白生成物可由公开解析器重开并保持尺寸与页数', reopened.source === 'pptx'
-    && reopened.width === 1280 && reopened.height === 720 && reopened.slides.length === 0);
+    && reopened.width === 1280 && reopened.height === 720 && reopened.slides.length === 0
+    && reopened.editInfo?.themes.length === 1
+    && Object.keys(reopened.editInfo.themes[0].colors).length === 12);
   reopened.dispose?.();
   saveArtifact('generated-empty.pptx', first.bytes);
 
@@ -356,12 +358,25 @@ export async function runGeneratedSaveContract({
     edit: true, lazy: false, assets: 'defer',
   });
   const legacyDoc = edit.createDoc(legacySource, { idPrefix: 'generated-ppt-' });
+  const legacyTheme = edit.listThemes(legacyDoc)[0];
   const legacySaved = await new edit.Editor(legacyDoc).saveDetailed();
   const legacyPath = saveArtifact('generated-ppt-source.pptx', legacySaved.bytes);
-  const legacyReopened = await core.parse(legacySaved.bytes, { lazy: false, assets: 'defer' });
+  const legacyReopened = await core.parse(legacySaved.bytes, {
+    edit: true, lazy: false, assets: 'defer',
+  });
+  const generatedLegacyTheme = legacyReopened.editInfo?.themes[0];
   check('.ppt EditDoc 自动另存为可重开的 PPTX', legacyDoc.meta.source === 'ppt'
     && legacyReopened.source === 'pptx'
-    && legacyReopened.slides.length === legacySource.slides.length);
+    && legacyReopened.slides.length === legacySource.slides.length
+    && legacyReopened.editInfo?.themes.length === 1
+    && Object.keys(legacyReopened.editInfo.themes[0].colors).length === 12);
+  check('.ppt 另存物化来源有效主题而非固定生成模板',
+    legacyTheme.colors.accent1 === 'rgb(204,255,255)'
+      && legacyTheme.colors.hlink === 'rgb(51,51,204)'
+      && generatedLegacyTheme?.name === legacyTheme.name
+      && Object.entries(legacyTheme.colors).every(([slot, value]) =>
+        generatedLegacyTheme?.colors[slot] === value)
+      && JSON.stringify(generatedLegacyTheme?.fonts) === JSON.stringify(legacyTheme.fonts));
   legacyReopened.dispose?.();
   const legacyBefore = renderFingerprint('sample.ppt', 'projected');
   const legacyAfter = renderFingerprint(legacyPath, 'saved');
@@ -505,14 +520,25 @@ export async function runGeneratedSaveContract({
   const groupDoc = edit.createDoc(groupSource, { idPrefix: 'generated-group-' });
   const sourceGroups = groupSource.slides.flatMap((slide) => slide.elements)
     .filter((element) => element.kind === 'group').length;
+  const groupTheme = edit.listThemes(groupDoc)[0];
   const groupSaved = generate.generateEditDoc(groupDoc);
-  const groupReopened = await core.parse(groupSaved.bytes, { lazy: false, assets: 'defer' });
+  const groupReopened = await core.parse(groupSaved.bytes, {
+    edit: true, lazy: false, assets: 'defer',
+  });
+  const reopenedGroupTheme = groupReopened.editInfo?.themes[0];
   const reopenedGroups = groupReopened.slides.flatMap((slide) => slide.elements)
     .filter((element) => element.kind === 'group').length;
   check('.ppt 完整图文表格与组合树可生成并重开',
     groupReopened.slides.length === groupSource.slides.length
     && sourceGroups > 0 && reopenedGroups === sourceGroups,
     `${groupSource.slides.length}/${sourceGroups} != ${groupReopened.slides.length}/${reopenedGroups}`);
+  check('.ppt 母版字体与配色在生成主题中保持有效值',
+    groupTheme.fonts.major.latin === 'Trebuchet MS'
+      && groupTheme.fonts.major.ea === 'PingFang SC'
+      && groupTheme.fonts.minor.latin === 'Arial'
+      && Object.entries(groupTheme.colors).every(([slot, value]) =>
+        reopenedGroupTheme?.colors[slot] === value)
+      && JSON.stringify(reopenedGroupTheme?.fonts) === JSON.stringify(groupTheme.fonts));
   groupReopened.dispose?.();
   edit.disposeDoc(groupDoc);
 }

@@ -110,6 +110,7 @@ const semanticDoc = (doc) => JSON.stringify(canonical({
   slideOrder: doc.slideOrder,
   sections: doc.sections,
   slides: doc.slides,
+  themes: doc.themes,
   elements: doc.elements,
   removedElements: doc.removedElements,
   imageResources: doc.imageResources,
@@ -146,6 +147,33 @@ const editableShapes = (doc) => Object.values(doc.elements)
 
 const flatText = (record) => record.ovr.text?.kind === 'flat'
   ? record.ovr.text.paragraphs.map((paragraph) => paragraph.text).join('\n') : '';
+
+console.log('\n\x1b[36m▸ 主题颜色与字体槽字段级 LWW\x1b[0m');
+{
+  const pair = await createPair('sample-editor-theme.pptx', 'collab-theme-');
+  const hub = new OfflineHub();
+  const errors = [];
+  const bindings = bindPair(pair, hub, errors);
+  const themeId = pair.left.themeOrder[0];
+  pair.leftEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent1: '#112233' } });
+  pair.rightEditor.exec({
+    type: 'SetTheme', id: themeId, fontScheme: { minor: { latin: 'Collaborative Theme' } },
+  });
+  hub.flush((items) => items.reverse());
+  const independent = edit.queryTheme(pair.left, themeId);
+  pair.leftEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent2: '#223344' } });
+  pair.rightEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent2: '#334455' } });
+  hub.flush((items) => seededShuffle(items, 0x7007001));
+  check('不同主题槽独立保留且同槽并发确定性收敛',
+    independent.colors.accent1 === 'rgb(17,34,51)'
+      && independent.fonts.minor.latin === 'Collaborative Theme'
+      && semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check('主题协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
+  bindings.forEach((binding) => binding.dispose());
+  edit.disposeDoc(pair.left);
+  edit.disposeDoc(pair.right);
+}
 
 console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
 {

@@ -47,14 +47,17 @@ tracker: local-markdown
 
 ## Frontier
 
-- [编辑主题并传播到依赖页面](tickets/001-theme-editing.md)
+- [把版式作为设计画布编辑](tickets/002-layout-editing.md)
 
 ## Later
 
-- [把版式作为设计画布编辑](tickets/002-layout-editing.md) — 被主题编辑闭环阻塞。
 - [把母版与文字默认值作为设计画布编辑](tickets/003-master-editing.md) — 被版式编辑阻塞。
 - [提供按需确定性内置模板](tickets/004-builtin-templates.md) — 被主题、版式与母版编辑阻塞。
 - [完成 0.7 集成验收](tickets/005-v07-integration-readiness.md) — 被全部能力票阻塞。
+
+## Completed
+
+- [编辑主题并传播到依赖页面](tickets/001-theme-editing.md) — 主题目录、继承传播、最小保存、协同和多环境证据闭环。
 
 ## Not yet specified
 

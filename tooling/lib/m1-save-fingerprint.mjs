@@ -378,6 +378,13 @@ if (mode === 'projected') {
   } else if (scenario.type === 'tableStyle') {
     if (!target || target.src.kind !== 'table') throw new Error('M1 指纹固件缺少表样式目标');
     editor.exec({ type: 'SetTableStyle', id: target.id, ...scenario.settings });
+  } else if (scenario.type === 'theme') {
+    const theme = edit.listThemes(doc).find((item) => item.name === scenario.themeName);
+    if (!theme) throw new Error(`M1 指纹固件缺少主题：${scenario.themeName}`);
+    editor.exec({
+      type: 'SetTheme', id: theme.id,
+      clrScheme: scenario.clrScheme, fontScheme: scenario.fontScheme,
+    });
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });

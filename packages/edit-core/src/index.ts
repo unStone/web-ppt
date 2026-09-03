@@ -30,6 +30,7 @@ export { queryElementCrop } from './image-content';
 export { queryElementPresetGeometry } from './preset-geometry';
 export { listTableStyles, queryTableStyle } from './table-style';
 export type { TableStyleCatalogItem, TableStyleState } from './table-style';
+export { listThemes, queryTheme } from './theme';
 export {
   assertCustomGeometry, moveCustomGeometryPoint, queryElementCustomGeometry,
   setCustomGeometryClosed, setCustomGeometrySegmentType,
@@ -82,6 +83,7 @@ export type {
   FlatTextParagraph, ParagraphAutoNumberType, ParagraphBullet, ParagraphBulletInput, ParagraphBulletSize, ParagraphBulletStyle, ParagraphProperties, ParagraphPropertiesState, ParagraphPropertyInput, ParagraphPropertyOverrides, RunLinkState, RunProperties, RunPropertiesState, RunPropertyOverrides, RunPropertyState,
   SectionId, SectionRecord, SectionState, SlideCreation, SlideNotesBinding, SlideRecord, SlideSizeState, SlideSource, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellOverrides, TableCellRef, TableCellRowRef, TableColumnId, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion, TextFragment, TextFragmentMark, TextFragmentParagraph, TextMark, TextOverride,
   TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
+  ThemeFontCollectionOverrides, ThemeOverrides, ThemeRecord, ThemeState,
 } from './types';
 export type {
   RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
@@ -93,6 +95,7 @@ export type {
   ApplyFormatCommand, ClearFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetAltTextCommand, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,
   ReplaceImageCommand, SetBodyPropsCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetLayoutCommand, SetLinkCommand, SetNotesCommand, SetStrokeCommand, SlideLayoutPatch, SlideNotesPatch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch, TableRowPatch,
   ElementTableStylePatch, SetTableStyleCommand,
+  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch,
   TextEditOp, TransactionOptions, TransactionResult, XfrmField, XfrmValueByField,
 } from './commands/types';
 export type {

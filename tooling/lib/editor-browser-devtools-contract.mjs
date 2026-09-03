@@ -193,6 +193,8 @@ export async function browserResult(webSocketDebuggerUrl) {
           moveSlidePages: report.dataset.moveSlidePages,
           changeLayoutP95: report.dataset.changeLayoutP95,
           changeLayoutPages: report.dataset.changeLayoutPages,
+          themeP95: report.dataset.themeP95,
+          themePages: report.dataset.themePages,
           addTableError: report.dataset.addTableError,
           addTableP95: report.dataset.addTableP95,
           hyperlinkCommitP95: report.dataset.hyperlinkCommitP95,

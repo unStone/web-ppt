@@ -65,6 +65,8 @@ Element-animation controls use the same adapter: `queryAnimations()`, `setAnimat
 does not mutate the model or history. `EditAnimationStep` and `SlideAnimationState` are re-exported.
 Distribution, alternative text, sections, and slide-size controls call the same adapter methods and need no
 React-owned document state. `ElementAltTextState`, `SectionRecord`, and `SlideSizeState` are re-exported.
+Theme toolbars use `snapshot.session.editor.exec({ type: 'SetTheme', ... })`; `SetThemeCommand` and `ThemeState`
+are re-exported so React does not own a second theme model.
 `onTouchNavigate` receives the framework-neutral pinch viewport and `onContextRequest` receives the 500ms
 long-press target. React adds no gesture state: the shared adapter applies zoom, while product layout owns outer
 scrolling and menu presentation. `TouchNavigationChange` and `EditorContextRequest` are re-exported.

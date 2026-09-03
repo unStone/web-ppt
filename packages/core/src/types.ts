@@ -54,6 +54,8 @@ export interface Presentation {
 export interface PresentationEditInfo {
   /** 演示文稿内可用于新增页的真实版式；id 使用 OPC part，跨解析保持稳定。 */
   layouts: SlideLayoutTemplate[];
+  /** 多母版可共享同一主题；目录按 presentation.xml 的母版声明顺序去重。 */
+  themes: PresentationTheme[];
   /** 非 OPC 输入在 edit 模式保留会话 URL 的原字节，供复制、转换与崩溃恢复同步取用。 */
   assets?: PresentationEditAsset[];
   /** 当前演示文稿的表样式 part；省略表示保存时需要按需创建。 */
@@ -70,6 +72,8 @@ export interface SlideLayoutTemplate {
   id: string;
   name: string;
   origin: { part: string; masterPart: string };
+  /** 当前版式经母版引用的主题 OPC part。 */
+  themeId?: string;
   background: Fill | null;
   /** 母版/版式静态图形在前，已清空普通提示文字的占位符模板在后。 */
   elements: SlideElement[];
@@ -79,6 +83,36 @@ export interface SlideLayoutTemplate {
   defaultTable?: TableCreationDefaults;
   /** 按当前版式主题求值后的表样式目录，仅编辑解析存在。 */
   tableStyles?: TableStyleDefinition[];
+}
+
+export const THEME_COLOR_SLOTS = [
+  'dk1', 'lt1', 'dk2', 'lt2',
+  'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6',
+  'hlink', 'folHlink',
+] as const;
+
+export type ThemeColorSlot = typeof THEME_COLOR_SLOTS[number];
+export type ThemeColorScheme = Readonly<Record<ThemeColorSlot, string>>;
+
+export interface ThemeFontCollection {
+  latin: string;
+  ea: string;
+  cs: string;
+  /** ISO 15924 script → typeface；只保留源主题实际声明的映射。 */
+  scripts: Readonly<Record<string, string>>;
+}
+
+export interface ThemeFontScheme {
+  major: ThemeFontCollection;
+  minor: ThemeFontCollection;
+}
+
+/** 编辑目录里的主题来源；PPTX 的 id 是 OPC part，旧格式转换使用稳定的格式内身份。 */
+export interface PresentationTheme {
+  id: string;
+  name: string;
+  colors: ThemeColorScheme;
+  fonts: ThemeFontScheme;
 }
 
 /** 编辑写回使用的只读 OPC 包句柄。字节视为只读，修改它们属于未定义行为。 */

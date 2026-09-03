@@ -13,6 +13,8 @@ import type {
 import { cloneSelection, normalizeSelection } from './selection';
 import { sessionAsset } from './session-assets';
 import type { EditDoc, EditIdentity } from './types';
+import { releaseThemeProjectionPackage } from './theme-projection';
+import { releaseDesignDependencies } from './design-dependencies';
 
 export const EDITOR_RECOVERY_VERSION = 1 as const;
 
@@ -157,6 +159,8 @@ function stageDoc(doc: EditDoc): EditDoc {
     sections: structuredClone(doc.sections),
     layouts: doc.layouts,
     layoutOrder: doc.layoutOrder,
+    themes: structuredClone(doc.themes),
+    themeOrder: doc.themeOrder,
     elements: structuredClone(doc.elements),
     removedElements: structuredClone(doc.removedElements),
     imageResources: structuredClone(doc.imageResources),
@@ -168,11 +172,15 @@ function stageDoc(doc: EditDoc): EditDoc {
 function commitStage(doc: EditDoc, staged: EditDoc): void {
   releaseLayoutProjectionCache(doc);
   releaseProjectionCache(doc);
+  releaseThemeProjectionPackage(doc);
+  releaseDesignDependencies(doc);
   doc.meta = staged.meta;
   doc.identity = staged.identity;
   doc.slides = staged.slides;
   doc.slideOrder = staged.slideOrder;
   doc.sections = staged.sections;
+  doc.themes = staged.themes;
+  doc.themeOrder = staged.themeOrder;
   doc.elements = staged.elements;
   doc.removedElements = staged.removedElements;
   doc.imageResources = staged.imageResources;

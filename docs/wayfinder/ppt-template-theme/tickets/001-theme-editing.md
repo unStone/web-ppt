@@ -1,6 +1,7 @@
 ---
 title: 编辑主题并传播到依赖页面
-status: open
+status: closed
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -28,3 +29,12 @@ fillRef/lnRef`、主题字体、页面直设与两个母版分支，并用独立
 
 公开类型、editor 会话 seam、React/Vue adapter 与中英文包文档必须可发现；未开启 `edit` 的 core 解析结果和
 core/edit-core/editor 默认入口体积不吸收模板目录或重复主题 XML。最终四段仓库门禁全绿。
+
+## Outcome
+
+- `core` 在编辑模式下保留 OOXML 与二进制 PPT 的主题身份、12 色槽和 major/minor 字体来源，普通解析路径不增加
+  主题目录；`.ppt → .pptx` 生成保存会物化有效主题。
+- `edit-core` 交付 `SetTheme`、来源/直接值查询、字段级恢复、主题 XML 最小写回与增量反向依赖索引；主题变化仅
+  重算依赖页面，并保留页面与元素直接覆盖、撤销重做、恢复及字段级 LWW。
+- 确定性多主题固件覆盖投影、保存重开、两条文本路径指纹、LibreOffice 与真实 Chrome 200 页局部传播；公开类型
+  契约和各适配包入口同步完成。

@@ -16,6 +16,7 @@ import {
 import { ansi, findAll, findRec, Rec, records, RT, utf16 } from './records';
 import { parseAnimations, parseSlideShowInfo } from './timing';
 import { customPath } from './custom-path';
+import { legacyPresentationTheme } from './theme';
 
 /**
  * .ppt（PowerPoint 97-2003）纯浏览器解析。
@@ -1098,6 +1099,29 @@ interface MasterInfo {
   elements: SlideElement[];
 }
 
+function themeFontIndex(
+  master: MasterStyles | undefined,
+  environment: MasterStyles,
+  types: readonly number[],
+  field: 'fontIdx' | 'asianFontIdx',
+): number | undefined {
+  const styles = [environment.get(TX.OTHER)?.[0], master?.get(TX.OTHER)?.[0]];
+  for (const type of types) styles.push(master?.get(type)?.[0]);
+  let result: number | undefined;
+  for (const style of styles) if (style?.char[field] !== undefined) result = style.char[field];
+  return result;
+}
+
+function themeFonts(master: MasterInfo | null, shared: Shared) {
+  const name = (index: number | undefined): string => index === undefined ? '' : shared.fonts[index] ?? '';
+  return {
+    majorLatin: name(themeFontIndex(master?.styles, shared.envStyles, [TX.TITLE, TX.CENTER_TITLE], 'fontIdx')),
+    majorEa: name(themeFontIndex(master?.styles, shared.envStyles, [TX.TITLE, TX.CENTER_TITLE], 'asianFontIdx')),
+    minorLatin: name(themeFontIndex(master?.styles, shared.envStyles, [TX.BODY, TX.CENTER_BODY], 'fontIdx')),
+    minorEa: name(themeFontIndex(master?.styles, shared.envStyles, [TX.BODY, TX.CENTER_BODY], 'asianFontIdx')),
+  };
+}
+
 /** 幻灯片 / 母版容器里的 ColorSchemeAtom → 8 色配色方案 */
 function readScheme(dv: DataView, rec: Rec, instance: number): Scheme | null {
   for (const r of findAll(dv, rec.start, rec.start + rec.len, RT.ColorSchemeAtom)) {
@@ -1308,6 +1332,7 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
   const hyperlinks = docRec ? collectHyperlinks(dv, docRec) : new Map<number, string>();
 
   const count = slideEntries.length;
+  let primaryMaster: MasterInfo | null = null;
   let slides: Slide[] = slideEntries.map((entry, i) => {
     const atom = findRec(dv, entry.rec.start, entry.rec.start + entry.rec.len, RT.SlideAtom);
     const masterIdRef = atom && atom.len >= 24 ? dv.getUint32(atom.start + 12, true) : 0;
@@ -1315,8 +1340,10 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
     // [MS-PPT] SlideFlags：bit0 = 跟随母版图形，bit2 = 跟随母版背景
     const flags = atom && atom.len >= 24 ? dv.getUint16(atom.start + 20, true) : 0x7;
     const notes = notesById.get(notesIdRef) ?? notesBySlideId.get(entry.slideId) ?? null;
+    const master = masterFor(masterIdRef);
+    primaryMaster ??= master;
     return parseSlide(dv, entry.rec, shared, {
-      master: masterFor(masterIdRef),
+      master,
       followMasterObjects: (flags & 0x1) !== 0,
       followMasterBackground: (flags & 0x4) !== 0,
       notes: notes ? notesText(dv, notes) : '',
@@ -1340,7 +1367,14 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
   let disposed = false;
   return {
     width, height, slides, source: 'ppt',
-    ...(edit ? { editInfo: { layouts: [], assets: editAssets } } : {}),
+    ...(edit ? { editInfo: {
+      layouts: [],
+      themes: [legacyPresentationTheme(
+        (primaryMaster as MasterInfo | null)?.scheme ?? DEFAULT_SCHEME,
+        themeFonts(primaryMaster as MasterInfo | null, shared),
+      )],
+      assets: editAssets,
+    } } : {}),
     dispose: () => {
       if (disposed) return;
       disposed = true;

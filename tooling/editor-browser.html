@@ -107,6 +107,7 @@
     import {
       runV06IntegrationBrowserContract,
     } from '/tooling/lib/v06-integration-browser-contract.mjs';
+    import { runEditorThemeBrowserContract } from '/tooling/lib/editor-theme-browser-contract.mjs';
 
     const report = document.querySelector('#report');
     const mount = document.querySelector('#mount');
@@ -121,6 +122,11 @@
     try {
       clearPerformanceFailures();
       const environmentBefore = await sampleAnimationFrameEnvironment();
+      const themeResult = await runEditorThemeBrowserContract({
+        openEditor, listThemes: editorLib.listThemes, load,
+      });
+      report.dataset.themeP95 = themeResult.p95.toFixed(3);
+      report.dataset.themePages = String(themeResult.pageCount);
       const presetAdjustmentResult = await runEditorPresetAdjustmentBrowserContract({
         openEditor, createPresetAdjustmentEditor, load,
       });

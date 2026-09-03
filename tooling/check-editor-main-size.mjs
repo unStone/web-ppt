@@ -5,8 +5,8 @@ import { gzipSync } from 'node:zlib';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const bytes = readFileSync(join(root, 'packages/editor/dist/editor.js'));
-// 008 集成接缝后实测基线；viewer 零增量，图片 ZIP、顶点/调节柄仍不得进入主入口。
-const baseline = { raw: 282_240, gzip: 69_718 };
+// 0.7 主题公开 seam 后实测基线；viewer 零增量，图片 ZIP、顶点/调节柄仍不得进入主入口。
+const baseline = { raw: 282_316, gzip: 69_746 };
 const actual = { raw: bytes.length, gzip: gzipSync(bytes).length };
 if (actual.raw !== baseline.raw || actual.gzip !== baseline.gzip) {
   throw new Error(`editor 主入口体积回归：${JSON.stringify({ baseline, actual })}`);

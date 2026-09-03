@@ -5,6 +5,7 @@ import type { LevelStyles, ThemeFonts } from './text';
 import type { ImageMetadata } from '../image-metadata';
 import { findPlaceholderByIdentity } from '../placeholder-match';
 import type { TextBody } from '../types';
+import { parseThemeSource, themeColorsForInheritance } from './theme-catalog';
 
 export type Rels = Record<string, { type: string; target: string }>;
 
@@ -70,26 +71,7 @@ export function relByType(rels: Rels, suffix: string): string | null {
 }
 
 function parseTheme(root: Element | null): Theme {
-  const colors: Record<string, string> = {};
-  const scheme = walk(root, 'themeElements', 'clrScheme');
-  if (scheme) {
-    for (let current = scheme.firstElementChild; current; current = current.nextElementSibling) {
-      const color = current.firstElementChild;
-      if (!color) continue;
-      colors[current.localName] = color.localName === 'srgbClr'
-        ? (attr(color, 'val') ?? '000000')
-        : (attr(color, 'lastClr') ?? (attr(color, 'val') === 'window' ? 'FFFFFF' : '000000'));
-    }
-  }
-  const fontScheme = walk(root, 'themeElements', 'fontScheme');
-  const font = (name: string): { latin: string | null; ea: string | null; cs: string | null } => {
-    const source = kid(fontScheme, name);
-    return {
-      latin: attr(kid(source, 'latin'), 'typeface') || null,
-      ea: attr(kid(source, 'ea'), 'typeface') || null,
-      cs: attr(kid(source, 'cs'), 'typeface') || null,
-    };
-  };
+  const source = parseThemeSource(root);
   const format = walk(root, 'themeElements', 'fmtScheme');
   const elements = (name: string): Element[] => {
     const out: Element[] = [];
@@ -98,8 +80,8 @@ function parseTheme(root: Element | null): Theme {
     return out;
   };
   return {
-    colors,
-    fonts: { major: font('majorFont'), minor: font('minorFont') },
+    colors: themeColorsForInheritance(source),
+    fonts: source.fonts,
     fillStyles: elements('fillStyleLst'),
     lnStyles: elements('lnStyleLst'),
     effectStyles: elements('effectStyleLst'),

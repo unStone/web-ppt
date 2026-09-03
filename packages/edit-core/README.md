@@ -12,7 +12,7 @@ npm i @web-ppt/core@next @web-ppt/edit-core@next
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, Editor, querySelectionPane } from '@web-ppt/edit-core';
+import { createDoc, Editor, listThemes, querySelectionPane, queryTheme } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
@@ -47,6 +47,14 @@ const newSlideId = [...added.createdSlides][0];
 editor.exec({ type: 'MoveSlide', id: newSlideId, at: { after: null } });
 const duplicated = editor.exec({ type: 'DuplicateSlide', id: newSlideId });
 const duplicateSlideId = [...duplicated.createdSlides][0];
+
+const theme = listThemes(doc)[0];
+editor.exec({
+  type: 'SetTheme', id: theme.id,
+  clrScheme: { accent1: '#112233' },
+  fontScheme: { minor: { latin: 'Aptos' } },
+});
+const effectiveTheme = queryTheme(doc, theme.id); // source, effective value, and direct state
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });

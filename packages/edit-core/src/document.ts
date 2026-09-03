@@ -11,6 +11,8 @@ import type {
 import { sourceAnimationSteps } from './slide-animation';
 import { logicalIdentityPrefix } from './identity-allocation';
 import { assertSlideSize } from './slide-size';
+import { releaseThemeProjectionPackage } from './theme-projection';
+import { releaseDesignDependencies } from './design-dependencies';
 
 let sessionSerial = 0;
 const disposers = new WeakMap<EditDoc, () => void>();
@@ -194,6 +196,13 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       layout.id, structuredClone(layout),
     ])),
     layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
+    themes: Object.fromEntries((pres.editInfo?.themes ?? []).map((theme) => [theme.id, {
+      id: theme.id,
+      name: theme.name,
+      src: { colors: structuredClone(theme.colors), fonts: structuredClone(theme.fonts) },
+      ovr: {},
+    }])),
+    themeOrder: pres.editInfo?.themes.map((theme) => theme.id) ?? [],
     elements,
     removedElements: {},
     imageResources: {},
@@ -231,6 +240,8 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
     sections: { records: {}, order: [], edited: false },
     layouts: {},
     layoutOrder: [],
+    themes: {},
+    themeOrder: [],
     elements: {},
     removedElements: {},
     imageResources: {},
@@ -258,6 +269,8 @@ function assignPackage(doc: EditDoc, pkg: EditDoc['package']): void {
   if (previous !== pkg) {
     releaseLayoutProjectionCache(doc);
     releaseProjectionCache(doc);
+    releaseThemeProjectionPackage(doc);
+    releaseDesignDependencies(doc);
   }
   (doc as { package: EditDoc['package'] }).package = pkg;
   if (previous !== pkg) (previous as OwnedOpcPackage | null)?.dispose?.();

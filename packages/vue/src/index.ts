@@ -11,4 +11,5 @@ export type {
   SlideSizeState, SlideTransitionInput, SlideTransitionState,
   EditorContextRequest, TouchNavigationChange,
   TextSearchMatch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
+  SetThemeCommand, ThemeState,
 } from '@web-ppt/editor';

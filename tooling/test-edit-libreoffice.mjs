@@ -26,6 +26,7 @@ import { runBulletFormatLibreOfficeContract } from './lib/bullet-format-libreoff
 import { runPresetShapeLibreOfficeContract } from './lib/preset-shape-libreoffice-contract.mjs';
 import { runAdvancedRunFormatLibreOfficeContract } from './lib/advanced-run-format-libreoffice-contract.mjs';
 import { runCommonObjectSlideLibreOfficeContract } from './lib/common-object-slide-libreoffice-contract.mjs';
+import { runThemeEditLibreOfficeContract } from './lib/theme-edit-libreoffice-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/edit-libreoffice');
@@ -73,6 +74,7 @@ const candidates = [
   '/Applications/LibreOffice.app/Contents/MacOS/soffice',
   '/usr/bin/soffice',
   '/usr/local/bin/soffice',
+  '/opt/homebrew/bin/soffice',
 ];
 const soffice = candidates.find((candidate) => existsSync(candidate));
 if (!soffice) throw new Error('未找到 LibreOffice；CI 与本地验收必须安装 soffice');
@@ -265,7 +267,9 @@ function pdfPageCount(path) {
 const pdf = join(out, `${basename(savedPath, extname(savedPath))}.pdf`);
 if (existsSync(pdf)) unlinkSync(pdf);
 // 换版式固件故意只有一张隐藏页；默认 PDF 过滤会导出零页并误报 IO 失败。
-const pdfFormat = ['change-layout.pptx', 'slide-transition-inherited-none.pptx'].includes(basename(savedPath))
+const pdfFormat = [
+  'change-layout.pptx', 'slide-transition-inherited-none.pptx', 'theme-editing.pptx',
+].includes(basename(savedPath))
   ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
   : 'pdf';
 const opened = spawnSync(soffice, [
@@ -320,6 +324,9 @@ if (basename(savedPath) === 'preset-shape-editing.pptx') {
 }
 if (basename(savedPath) === 'advanced-run-format-editing.pptx') {
   geometryEvidence += runAdvancedRunFormatLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
+}
+if (basename(savedPath) === 'theme-editing.pptx') {
+  geometryEvidence += runThemeEditLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });
 }
 if (basename(savedPath) === 'table-style-oracle.pptx') {
   geometryEvidence += runTableStyleLibreOfficeContract({ exportSvg: exportLibreOfficeSvg });

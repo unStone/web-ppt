@@ -288,7 +288,7 @@ export class Editor {
       if (affectsSlideSequence(patches.forward)) {
         for (const id of dirty.dirtyElements) renderElements.add(id);
       }
-      for (const id of renderPatchSlides(patches.forward)) renderSlides.add(id);
+      for (const id of renderPatchSlides(patches.forward, dirty.dirtySlides)) renderSlides.add(id);
       for (const patch of patches.forward) {
         if (isElementHierarchyPatch(patch)) {
           for (const id of patch.value.affected) {

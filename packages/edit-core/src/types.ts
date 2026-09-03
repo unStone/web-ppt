@@ -3,7 +3,8 @@ import type {
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, SlideLayoutTemplate, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
-  TextCapsStyle, TextStrikeStyle, TextUnderlineStyle,
+  TextCapsStyle, TextStrikeStyle, TextUnderlineStyle, ThemeColorScheme, ThemeColorSlot,
+  ThemeFontScheme,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 import type { ElementId, FractionalIndex, SlideId } from './identities';
@@ -644,6 +645,39 @@ export interface SlideRecord {
   tableStyles?: TableStyleDefinition[];
 }
 
+export interface ThemeFontCollectionOverrides {
+  latin?: string;
+  ea?: string;
+  cs?: string;
+  scripts?: Record<string, string>;
+}
+
+export interface ThemeOverrides {
+  colors?: Partial<Record<ThemeColorSlot, string>>;
+  fonts?: {
+    major?: ThemeFontCollectionOverrides;
+    minor?: ThemeFontCollectionOverrides;
+  };
+}
+
+/** src 永远是解析来源，用户更改只进入稀疏 ovr。 */
+export interface ThemeRecord {
+  id: string;
+  name: string;
+  src: { colors: ThemeColorScheme; fonts: ThemeFontScheme };
+  ovr: ThemeOverrides;
+}
+
+export interface ThemeState {
+  id: string;
+  name: string;
+  colors: ThemeColorScheme;
+  fonts: ThemeFontScheme;
+  source: { colors: ThemeColorScheme; fonts: ThemeFontScheme };
+  mixed: false;
+  direct: boolean;
+}
+
 export interface SlideNotesBinding {
   readonly sourcePart?: string;
   readonly targetPart: string;
@@ -732,6 +766,8 @@ export interface EditDoc {
   sections: SectionState;
   layouts: Record<string, SlideLayoutTemplate>;
   layoutOrder: string[];
+  themes: Record<string, ThemeRecord>;
+  themeOrder: string[];
   elements: Record<ElementId, ElementRecord>;
   removedElements: Record<ElementId, RemovedElementRecord>;
   /** 会话图片按内容寻址；未被当前元素引用的条目仍可供历史逆向 Patch 恢复。 */

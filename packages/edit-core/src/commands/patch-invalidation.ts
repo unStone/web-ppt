@@ -15,6 +15,10 @@ import { isSlideTreePatch } from './slide-tree';
 import type { Patch } from './types';
 import { isSectionStatePatch } from './sections';
 import { isDocumentSizePatch } from './slide-size';
+import { isThemePatch } from './theme';
+import { slidesForTheme } from '../design-dependencies';
+import { releaseLayoutProjectionCache } from '../layout-projection';
+import { releaseThemeProjectionPackage } from '../theme-projection';
 
 function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
   const ids: ElementId[] = [];
@@ -32,6 +36,17 @@ export function collectPatchInvalidation(
   dirtyElements: Set<string>,
   dirtySlides: Set<string>,
 ): void {
+  if (isThemePatch(patch)) {
+    const slides = [...slidesForTheme(doc, patch.path[1])];
+    releaseLayoutProjectionCache(doc);
+    releaseThemeProjectionPackage(doc);
+    for (const slideId of slides) {
+      const dirty = invalidateSlideStructure(doc, slideId, slideElementIds(doc, slideId));
+      for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
+      for (const id of dirty.dirtySlides) dirtySlides.add(id);
+    }
+    return;
+  }
   if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
     || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return;
   if (isSlideOrderPatch(patch)) {
@@ -66,6 +81,7 @@ export function collectPatchInvalidation(
 }
 
 export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
+  if (isThemePatch(patch)) return !!doc.themes[patch.path[1]];
   if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
     || isSlideTreePatch(patch) || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return true;
   if (isSlideOrderPatch(patch)) {

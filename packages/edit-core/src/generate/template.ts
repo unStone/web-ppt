@@ -1,3 +1,6 @@
+import { THEME_COLOR_SLOTS } from '@web-ppt/core';
+import type { PresentationTheme, ThemeFontCollection } from '@web-ppt/core';
+
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 const A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 const P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -7,6 +10,34 @@ const CT = 'http://schemas.openxmlformats.org/package/2006/content-types';
 const encoder = new TextEncoder();
 
 const bytes = (value: string): Uint8Array => encoder.encode(value);
+const escapeAttribute = (value: string): string => value
+  .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+function themeColor(value: string, label: string): string {
+  const channels = /^rgb\((\d+),(\d+),(\d+)\)$/.exec(value)?.slice(1).map(Number);
+  if (!channels || channels.some((channel) => channel < 0 || channel > 255)) {
+    throw new Error(`${label} 不是有效主题颜色`);
+  }
+  return channels.map((channel) => channel.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function generatedThemeColors(theme: PresentationTheme | undefined): string {
+  if (!theme) return `<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>
+<a:dk2><a:srgbClr val="1F3864"/></a:dk2><a:lt2><a:srgbClr val="F2F2F2"/></a:lt2>
+<a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2>
+<a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4>
+<a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6>
+<a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink>`;
+  return THEME_COLOR_SLOTS.map((slot) =>
+    `<a:${slot}><a:srgbClr val="${themeColor(theme.colors[slot], `主题 ${slot}`)}"/></a:${slot}>`).join('');
+}
+
+function generatedThemeFont(collection: ThemeFontCollection): string {
+  const base = `<a:latin typeface="${escapeAttribute(collection.latin)}"/><a:ea typeface="${escapeAttribute(collection.ea)}"/><a:cs typeface="${escapeAttribute(collection.cs)}"/>`;
+  const scripts = Object.entries(collection.scripts).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+    .map(([script, typeface]) => `<a:font script="${escapeAttribute(script)}" typeface="${escapeAttribute(typeface)}"/>`).join('');
+  return base + scripts;
+}
 
 function emu(value: number, label: string): string {
   const result = Math.round(value * 9525);
@@ -74,6 +105,7 @@ export function generatedTemplateParts(
   height: number,
   slideCount = 0,
   notesSlides: readonly boolean[] = [],
+  theme?: PresentationTheme,
 ): Record<string, Uint8Array> {
   const parts: Record<string, Uint8Array> = Object.create(null);
   const hasNotes = notesSlides.some(Boolean);
@@ -113,17 +145,17 @@ ${hasNotes ? `<p:notesMasterIdLst><p:notesMasterId r:id="rId${slideCount + 2}"/>
         ? `<Relationship Id="rId${slideCount + 2}" Type="${R}/notesMaster" Target="notesMasters/notesMaster1.xml"/>`
         : ''),
   ));
-  parts['ppt/theme/theme1.xml'] = bytes(`${XML}<a:theme xmlns:a="${A}" name="Web PPT">
-<a:themeElements><a:clrScheme name="Web PPT">
-<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>
-<a:dk2><a:srgbClr val="1F3864"/></a:dk2><a:lt2><a:srgbClr val="F2F2F2"/></a:lt2>
-<a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2>
-<a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4>
-<a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6>
-<a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink>
-</a:clrScheme><a:fontScheme name="Web PPT">
-<a:majorFont><a:latin typeface=""/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>
-<a:minorFont><a:latin typeface=""/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont>
+  const themeName = escapeAttribute(theme?.name ?? 'Web PPT');
+  const majorFont = theme ? generatedThemeFont(theme.fonts.major)
+    : '<a:latin typeface=""/><a:ea typeface=""/><a:cs typeface=""/>';
+  const minorFont = theme ? generatedThemeFont(theme.fonts.minor)
+    : '<a:latin typeface=""/><a:ea typeface=""/><a:cs typeface=""/>';
+  parts['ppt/theme/theme1.xml'] = bytes(`${XML}<a:theme xmlns:a="${A}" name="${themeName}">
+<a:themeElements><a:clrScheme name="${themeName}">
+${generatedThemeColors(theme)}
+</a:clrScheme><a:fontScheme name="${themeName}">
+<a:majorFont>${majorFont}</a:majorFont>
+<a:minorFont>${minorFont}</a:minorFont>
 </a:fontScheme><a:fmtScheme name="Web PPT">
 <a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>
 <a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>

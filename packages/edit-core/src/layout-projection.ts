@@ -9,6 +9,7 @@ import { hydrateLayoutSlideAssets, releaseLayoutAssetCache } from './layout-asse
 import { fieldTextWithoutDirect } from './field-text';
 import { rebaseLayoutText } from './layout-text-rebase';
 import type { EditDoc, ElementId, SlideId } from './types';
+import { themeProjectionPackage } from './theme-projection';
 
 interface LayoutResolvedVariant {
   readonly sourcePart: string;
@@ -50,10 +51,10 @@ function sourcePartForLayout(doc: EditDoc, slideId: SlideId): string | null {
 
 function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVariant | null {
   const slide = doc.slides[slideId];
-  const pkg = doc.package;
+  const pkg = themeProjectionPackage(doc);
   const sourcePart = sourcePartForLayout(doc, slideId);
   if (!pkg || !slide?.origin || !sourcePart || !slide.layoutId
-    || slide.layoutId === slide.sourceLayoutId) return null;
+    || (slide.layoutId === slide.sourceLayoutId && pkg === doc.package)) return null;
   let cache = layoutSourceCaches.get(doc);
   if (!cache || cache.package !== pkg) {
     cache = { package: pkg, variants: new Map() };
@@ -102,9 +103,11 @@ function resolvedLayoutSource(
 ): SlideElement | null {
   const slide = doc.slides[slideId];
   const origin = record.meta.origin;
-  if (!slide?.origin || !origin || record.meta.created || origin.part !== slide.origin.part) return null;
+  if (!slide?.origin || !origin || record.meta.created) return null;
   const variant = resolvedLayoutVariant(doc, slideId);
-  return variant?.origins.get(`${variant.sourcePart}\0${origin.spid}`) ?? null;
+  // 复制页沿用来源 slide part 重解析，但元素已获得新 part 身份；版式/母版来源则必须保留自己的 part。
+  const part = origin.part === slide.origin.part ? variant?.sourcePart : origin.part;
+  return variant?.origins.get(`${part}\0${origin.spid}`) ?? null;
 }
 
 export function changedLayout(doc: EditDoc, slideId: SlideId) {
@@ -120,7 +123,8 @@ export function currentShapeDefaults(
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return slide?.defaultShape;
   if (slide.layoutId === slide.sourceLayoutId) {
-    return slide.defaultShape ?? doc.layouts[slide.layoutId]?.defaultShape;
+    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape
+      ?? slide.defaultShape ?? doc.layouts[slide.layoutId]?.defaultShape;
   }
   return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape
     ?? doc.layouts[slide.layoutId]?.defaultShape
@@ -134,7 +138,8 @@ export function currentTableDefaults(
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return slide?.defaultTable;
   if (slide.layoutId === slide.sourceLayoutId) {
-    return slide.defaultTable ?? doc.layouts[slide.layoutId]?.defaultTable;
+    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable
+      ?? slide.defaultTable ?? doc.layouts[slide.layoutId]?.defaultTable;
   }
   return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable
     ?? doc.layouts[slide.layoutId]?.defaultTable

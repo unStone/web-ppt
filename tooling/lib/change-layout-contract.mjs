@@ -173,7 +173,15 @@ export async function runChangeLayoutContract({ edit, core, load, check }) {
       && textOf(editor.effectiveElement(duplicateTitle.id)) === '现有页面'
       && duplicateBody && editor.effectiveElement(duplicateBody.id).fill?.color === 'rgb(51,102,204)'
       && duplicateOrdinary
-      && editor.effectiveElement(duplicateOrdinary.id).fill?.color === 'rgb(0,153,204)');
+      && editor.effectiveElement(duplicateOrdinary.id).fill?.color === 'rgb(0,153,204)',
+  JSON.stringify({
+    layoutId: doc.slides[duplicateId].layoutId,
+    sourceLayoutId: doc.slides[duplicateId].sourceLayoutId,
+    titleX: duplicateTitle && editor.effectiveElement(duplicateTitle.id).x,
+    titleText: duplicateTitle && textOf(editor.effectiveElement(duplicateTitle.id)),
+    bodyFill: duplicateBody && editor.effectiveElement(duplicateBody.id).fill?.color,
+    ordinaryFill: duplicateOrdinary && editor.effectiveElement(duplicateOrdinary.id).fill?.color,
+  }));
   editor.undo();
   check('撤销复制不影响原页版式和身份', !doc.slides[duplicateId]
     && doc.slides[slideId].layoutId === targetLayout);

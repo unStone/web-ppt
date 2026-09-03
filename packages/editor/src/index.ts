@@ -19,7 +19,7 @@ export {
   listSections, queryElementAltText, querySlideAnimations, querySlideSize, querySlideTransition,
   sectionOfSlide, ANIMATION_EFFECTS, MAX_ANIMATION_STEPS, animationDirections,
   animationEffectsForKind,
-  SHAPE_PATTERN_PRESETS, SLIDE_TRANSITION_TYPES, transitionDirections,
+  SHAPE_PATTERN_PRESETS, SLIDE_TRANSITION_TYPES, transitionDirections, listThemes, queryTheme,
 } from '@web-ppt/edit-core';
 export type { EditorSession, OpenEditorOptions } from './session';
 export type {
@@ -58,6 +58,7 @@ export type {
   RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideNotesState, SlideTransitionInput, SlideTransitionState, TextBodyAutoFit, TextBodyProperties, TextBodyPropertyOverrides,
   MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, ReplaceImageCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCropCommand, SetEffectsCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetStrokeCommand, StrokeCommandValue, VectorFill,
   FormatMaskField,
+  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch, ThemeState,
 } from '@web-ppt/edit-core';
 export type {
   EditorChange, FindTextRequest, ReplaceTextCommand, ReplaceTextScope, SlideId, TextSearchMatch,

@@ -351,12 +351,16 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
   const record = doc.slides[id];
   if (!record) throw new Error(`找不到幻灯片：${id}`);
   const layout = changedLayout(doc, id);
-  const resolved = layout ? resolvedLayoutSlide(doc, id) : null;
+  const resolved = resolvedLayoutSlide(doc, id);
   const contentIds = projectionContentIds(doc, id);
-  const layoutSource = layout ? {
-    background: structuredClone(resolved?.background ?? layout.background),
+  const layoutSource = resolved ? {
+    background: structuredClone(resolved.background),
+    layoutName: resolved.layoutName ?? (record.layoutId ? doc.layouts[record.layoutId]?.name : undefined),
+    transition: structuredClone(resolved.transition),
+  } : layout ? {
+    background: structuredClone(layout.background),
     layoutName: layout.name,
-    transition: structuredClone(resolved?.transition ?? layout.transition),
+    transition: structuredClone(layout.transition),
   } : {};
   const { animations: animationOverride, ...slideOverrides } = record.ovr;
   let slide: Slide = {
