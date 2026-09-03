@@ -192,7 +192,7 @@ export function changedLayout(doc: EditDoc, slideId: SlideId) {
   return slide?.layoutId ? doc.layouts[slide.layoutId] : undefined;
 }
 
-function slideDesignChanged(doc: EditDoc, slideId: SlideId): boolean {
+export function slideDesignChanged(doc: EditDoc, slideId: SlideId): boolean {
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return false;
   return slide.layoutId !== slide.sourceLayoutId

@@ -1,6 +1,6 @@
 import { effectiveElement, slideOfElement } from './projection';
 import { canvasTargetOfElement } from './design-target';
-import { changedLayout } from './layout-projection';
+import { slideDesignChanged } from './layout-projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex } from './fractional-index';
 import { assertDataObject } from './data-validation';
@@ -46,7 +46,7 @@ const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasO
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
   const target = canvasTargetOfElement(doc, record.id);
-  const source = target.kind === 'slide' && changedLayout(doc, target.id)
+  const source = target.kind === 'slide' && slideDesignChanged(doc, target.id)
     ? effectiveElement(doc, record.id) : record.src;
   for (const field of XFRM_FIELDS) {
     const value = own(record.ovr, field) ? record.ovr[field] : source[field];

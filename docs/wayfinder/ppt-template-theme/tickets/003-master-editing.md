@@ -1,6 +1,6 @@
 ---
 title: 把母版与文字默认值作为设计画布编辑
-status: open
+status: closed
 assignee: /root
 labels:
   - wayfinder:task
@@ -23,3 +23,12 @@ blocked_by:
 `.ppt → .pptx` 物化有效母版和 `p:txStyles`。确定性固件覆盖一个母版多版式、两个母版、母版静态图形、三级以上
 文字继承、局部直设和 master-shape 屏蔽；独立进程指纹、LibreOffice 几何/文字 oracle、真实 Chrome 多页传播、
 历史/恢复/协同及公开 adapter 全部通过，最终四段仓库门禁全绿。
+
+## Outcome
+
+- `core` 与 `edit-core` 交付母版目录、稳定设计画布和 title/body/other × 9 级文字默认值查询/覆盖；母版元素、
+  背景与文字默认值沿既有继承链局部传播，同时保留 `showMasterSp`、占位符、段落和 run 直设优先级。
+- 补丁保存最小修改 master part 并保留未知 XML，生成保存与 `.ppt → .pptx` 物化有效母版和 `p:txStyles`；历史、
+  恢复、字段级协同、公开 adapter、确定性固件、独立指纹、LibreOffice 与真实 Chrome 证据均完成。
+- 修复结构编辑校验误把当前版式当成“设计已变化”而对全部页面元素重复投影的性能回归；改用显式设计变化判定后，
+  浏览器结构编辑预算与 `npm run check && npm test && npm run build && npm run verify` 全部通过。
