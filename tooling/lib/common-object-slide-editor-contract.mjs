@@ -1,3 +1,6 @@
+import { unzipSync, zipSync } from 'fflate';
+import { deck, slideXml } from './ooxml.mjs';
+
 /** 高频对象/页面工具栏只依赖发布视图与 adapter，不接触内部 DOM 控制器。 */
 export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, check }) {
   console.log('\n\x1b[36m▸ 高频对象与页面公开编辑接口\x1b[0m');
@@ -83,14 +86,23 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
       && emptyZipBytes[0] === 0x50 && emptyZipBytes[1] === 0x4b);
   legacy.dispose();
 
-  const large = await lib.openEditor(load('sample-editor-add-slide.pptx'), {
+  const sourceDeckParts = unzipSync(deck({
+    name: '210 source slides', width: 1280, height: 720,
+    slides: Array.from({ length: 210 }, () => slideXml('')),
+  }));
+  const presentationPart = 'ppt/presentation.xml';
+  const sourceDeckXml = new TextDecoder().decode(sourceDeckParts[presentationPart]);
+  if (!sourceDeckXml.includes('<p:sldId id="257"')
+    || !sourceDeckXml.includes('<p:sldId id="465"')) {
+    throw new Error('来源页身份碰撞测试缺少预期页身份');
+  }
+  const collisionDeckXml = sourceDeckXml
+    .replace('<p:sldId id="257"', '<p:sldId id="256"')
+    .replace('<p:sldId id="465"', '<p:sldId id="2147483647"');
+  sourceDeckParts[presentationPart] = new TextEncoder().encode(collisionDeckXml);
+  const large = await lib.openEditor(zipSync(sourceDeckParts, { level: 0 }), {
     idPrefix: 'common-large-section-',
   });
-  const largeLayout = large.editor.doc.layoutOrder[0];
-  while (large.editor.doc.slideOrder.length < 210) {
-    const tail = large.editor.doc.slideOrder.at(-1);
-    large.editor.exec({ type: 'AddSlide', layoutId: largeLayout, at: { after: tail } });
-  }
   large.editor.exec({
     type: 'AddSection', name: '210 页节', slideIds: [...large.editor.doc.slideOrder], at: { after: null },
   });
@@ -102,9 +114,15 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
   });
   const p95 = [...samples].sort((left, right) => left.elapsed - right.elapsed)[6].elapsed;
   const largeSection = samples.at(-1).projection.sections?.[0];
-  check('210 页大节投影缓存数值身份并保持线性主线程预算',
+  check('210 个来源 part 只解析一次，重复及高位身份碰撞仍投影为唯一身份',
     largeSection?.slideIds.length === 210 && new Set(largeSection.slideIds).size === 210
-      && largeSection.slideIndexes?.length === 210 && p95 < 16,
+      && largeSection.slideIds[0] === 256
+      && largeSection.slideIds[1] === 2147483646
+      && largeSection.slideIds[209] === 2147483647
+      && largeSection.slideIndexes?.length === 210
+      && large.editor.doc.slideOrder.every((id) => large.editor.doc.slides[id].origin
+        && !large.editor.doc.slides[id].creation)
+      && p95 < 16,
     `p95=${p95.toFixed(3)}ms`);
   console.log(`  210 页 section 当前投影 p95 ${p95.toFixed(3)}ms`);
   large.dispose();

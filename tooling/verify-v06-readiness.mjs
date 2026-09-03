@@ -49,7 +49,11 @@ check('官网工具栏覆盖 0.6 可视入口与按需图片导出',
     && contains('packages/site/src/editor-inspector.ts', [
       'textBulletKind', 'shapePreset', 'textUnderlineStyle', 'textHighlight',
     ])
-    && contains('tooling/test-site-editor-browser.mjs', ['--splitting', '--metafile=', 'dynamic-import']));
+    && contains('tooling/test-site-editor-browser.mjs', ['--splitting', '--metafile=', 'dynamic-import'])
+    && contains('.github/workflows/ci.yml', ['test-edit-libreoffice-all.mjs --include-site'])
+    && contains('tooling/test-edit-libreoffice-all.mjs', [
+      '--include-site', 'ALL_OFFICE_ARTIFACTS', 'EDIT_SAVE_OFFICE_ARTIFACTS',
+    ]));
 check('中英文 API 文档不再声称表格只能追加',
   contains('packages/edit-core/README-zh-CN.md', ['queryTableGrid', 'MergeCells', 'SetCellProps'])
     && contains('packages/edit-core/README.md', ['queryTableGrid', 'MergeCells', 'SetCellProps'])

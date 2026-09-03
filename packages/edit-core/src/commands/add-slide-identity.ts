@@ -167,7 +167,9 @@ export function presentationSlideIdsByPart(doc: EditDoc): ReadonlyMap<string, nu
     const rid = findXmlAttribute(node, { localName: 'id', namespaceUri: OFFICE_REL_NS })?.value;
     const part = rid ? partByRelationship.get(rid) : undefined;
     const value = Number(findXmlAttribute(node, { localName: 'id', namespaceUri: null })?.value);
-    if (part && Number.isSafeInteger(value) && value >= 256) result.set(part, value);
+    if (part && Number.isSafeInteger(value) && value >= 256 && value <= MAX_PRESENTATION_SLIDE_ID) {
+      result.set(part, value);
+    }
   }
   return result;
 }
