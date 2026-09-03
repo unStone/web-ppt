@@ -92,7 +92,7 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
     idPrefix: 'common-ppt-projection-', recoveryFrames: structuredClone(recoveryFrames),
   });
   const movedRecoveredIdentity = sectionIdentity(movedRecovered, movedRecovered.toPresentation());
-  legacy.editor.exec({ type: 'RemoveSlide', id: legacySlides[1] });
+  legacy.editor.exec({ type: 'RemoveSlide', id: legacySlides[0] });
   const deletedIdentity = sectionIdentity(legacy, legacy.toPresentation());
   const deletedRecovered = await lib.openEditor(load('sample.ppt'), {
     idPrefix: 'common-ppt-projection-', recoveryFrames: structuredClone(recoveryFrames),
@@ -111,8 +111,8 @@ export async function runCommonObjectSlideEditorContract({ lib, imageZip, load, 
       && JSON.stringify(legacyProjection.sections?.[0]?.slideIndexes) === JSON.stringify([0, 1])
       && legacySlides.every((id) => movedIdentity.get(id) === initialIdentity.get(id)
         && movedRecoveredIdentity.get(id) === initialIdentity.get(id))
-      && deletedIdentity.get(legacySlides[0]) === initialIdentity.get(legacySlides[0])
-      && deletedRecoveredIdentity.get(legacySlides[0]) === initialIdentity.get(legacySlides[0])
+      && deletedIdentity.get(legacySlides[1]) === initialIdentity.get(legacySlides[1])
+      && deletedRecoveredIdentity.get(legacySlides[1]) === initialIdentity.get(legacySlides[1])
       && emptyZipBytes[0] === 0x50 && emptyZipBytes[1] === 0x4b);
   stopRecovery();
   movedRecovered.dispose();
