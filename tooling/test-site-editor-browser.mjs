@@ -383,7 +383,18 @@ async function runContract(webSocketDebuggerUrl) {
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
     if (productionLanguages) {
-      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls });
+      const onEvent = (listener) => {
+        const receive = (data) => listener(JSON.parse(data.toString()));
+        socket.on('message', receive);
+        return () => socket.off('message', receive);
+      };
+      const consumeConsoleFailure = (fragment) => {
+        const index = consoleFailures.findIndex((failure) => failure.includes(fragment));
+        if (index < 0) return false;
+        consoleFailures.splice(index, 1);
+        return true;
+      };
+      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls, onEvent, consumeConsoleFailure });
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }

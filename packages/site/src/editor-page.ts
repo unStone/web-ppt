@@ -17,7 +17,8 @@ import { enableSlideReorder } from './editor-slide-reorder';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
-import { languageReady, setText } from './i18n/runtime';
+import { languageReady, setMessage, setText, t } from './i18n/runtime';
+import { message, type SiteNotice, type SiteMessage } from './i18n/message';
 
 const {
   app, toolbar, fileInput, fileName, canvasViewport, canvasMount, canvasState,
@@ -45,21 +46,21 @@ let openController: AbortController | null = null;
 let pptConversionAccepted = false;
 let newDocument = false;
 let closeMediaTools: (() => void) | undefined;
+let languageInitialized = false;
 
 function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function notice(message: string, tone: 'normal' | 'success' | 'error' = 'normal'): void {
-  statusText.removeAttribute('data-site-dynamic');
-  statusText.textContent = message;
+const notice: SiteNotice = (value, tone = 'normal') => {
+  setMessage(statusText, value);
   statusText.dataset.tone = tone;
-}
+};
 
-function setLoading(message: string): void {
+function setLoading(value: string | SiteMessage): void {
   canvasState.hidden = false;
-  canvasState.querySelector('strong')!.textContent = message;
-  canvasState.querySelector('small')!.textContent = '解析和渲染完全在浏览器中进行';
+  setMessage(canvasState.querySelector('strong')!, value);
+  setText(canvasState.querySelector('small')!, '解析和渲染完全在浏览器中进行');
   canvasState.querySelector('.spinner')?.removeAttribute('hidden');
   app.dataset.loading = 'true';
   syncControls();
@@ -102,8 +103,8 @@ function syncControls(): void {
   const capable = ready && canWriteDocument();
   const writable = capable && !needsPptConversion();
   const index = currentIndex();
-  buttons.newFile.disabled = !!app.dataset.loading || fileActions.busy;
-  fileInput.disabled = !!app.dataset.loading || fileActions.busy;
+  buttons.newFile.disabled = !languageInitialized || !!app.dataset.loading || fileActions.busy;
+  fileInput.disabled = !languageInitialized || !!app.dataset.loading || fileActions.busy;
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
@@ -209,13 +210,13 @@ function setMode(next: EditorMode): void {
   if (!session || !view || next === 'edit' && !canWriteDocument()) return;
   if (next === 'edit' && needsPptConversion()) {
     const targetName = outputName();
-    const accepted = window.confirm(
-      `${activeName} 是旧版 .ppt。进入编辑后将另存为 ${targetName}，不会覆盖原文件。`
-      + '未建模的旧格式内容将显示为带原因的框架占位，仅支持移动、缩放等框架级编辑。继续吗？',
-    );
+    const accepted = window.confirm(t(
+      '{name} 是旧版 .ppt。进入编辑后将另存为 {output}，不会覆盖原文件。未建模的旧格式内容将显示为带原因的框架占位，仅支持移动、缩放等框架级编辑。继续吗？',
+      { name: activeName, output: targetName },
+    ));
     if (!accepted) {
       syncControls();
-      notice('已取消格式转换，继续以预览模式打开');
+      notice(message('已取消格式转换，继续以预览模式打开'));
       return;
     }
     pptConversionAccepted = true;
@@ -224,7 +225,7 @@ function setMode(next: EditorMode): void {
   view.setMode(next);
   pane?.setMode(next);
   syncControls();
-  notice(next === 'edit' ? '编辑模式：双击文字，拖动或缩放元素' : '预览模式：点击链接并播放动画');
+  notice(message(next === 'edit' ? '编辑模式：双击文字，拖动或缩放元素' : '预览模式：点击链接并播放动画'));
 }
 
 function applyZoom(next: number): void {
@@ -298,9 +299,11 @@ async function openDocument(
   const generation = ++openGeneration;
   const controller = new AbortController();
   openController = controller;
-  setLoading(`正在打开 ${name}`);
-  notice(`正在解析 ${name}…`);
+  setLoading(message('正在打开 {name}', { name }));
+  notice(message('正在解析 {name}…', { name }));
   try {
+    // 拖放可绕过文件按钮的 disabled；先记录打开意图，再等待词库，防止迟到示例覆盖它。
+    await languageReady;
     const { eotToTtf } = await import('mtx-decompressor');
     if (generation !== openGeneration) return;
     setFontDecoder(eotToTtf);
@@ -342,19 +345,19 @@ async function openDocument(
     fitWanted = true;
     requestAnimationFrame(fitView);
     hideLoading();
-    const message = next.editor.doc.meta.source === 'ppt'
-      ? `${name} 已打开；进入编辑时会先确认另存为 ${outputName()}`
+    const readyMessage = next.editor.doc.meta.source === 'ppt'
+      ? message('{name} 已打开；进入编辑时会先确认另存为 {output}', { name, output: outputName() })
       : next.editor.doc.meta.readonly
-        ? `${name} 已打开；当前文件缺少安全写回上下文，只能预览`
-        : `${name} 已就绪，可直接选择、拖动或双击编辑文字`;
-    notice(message, canWriteDocument() ? 'success' : 'normal');
+        ? message('{name} 已打开；当前文件缺少安全写回上下文，只能预览', { name })
+        : message('{name} 已就绪，可直接选择、拖动或双击编辑文字', { name });
+    notice(readyMessage, canWriteDocument() ? 'success' : 'normal');
     view.element.focus();
   } catch (error) {
     if (generation !== openGeneration) return;
-    const failure = new Error(`打开失败：${explain(error)}`);
+    const failure = message('打开失败：{detail}', { detail: explain(error) });
     if (session) {
       hideLoading();
-      reportError(failure);
+      notice(failure, 'error');
       view?.element.focus();
     } else {
       showOpenFailure(failure);
@@ -368,23 +371,23 @@ function reportError(error: unknown): void {
   notice(explain(error), 'error');
 }
 
-function showOpenFailure(error: unknown): void {
+function showOpenFailure(error: SiteMessage): void {
   canvasState.hidden = false;
   canvasState.querySelector('.spinner')?.setAttribute('hidden', '');
-  canvasState.querySelector('strong')!.textContent = '演示文稿打开失败';
-  canvasState.querySelector('small')!.textContent = explain(error);
+  setText(canvasState.querySelector('strong')!, '演示文稿打开失败');
+  setMessage(canvasState.querySelector('small')!, error);
   delete app.dataset.loading;
-  reportError(error);
+  notice(error, 'error');
   syncControls();
 }
 
 function confirmReplacement(): boolean {
-  return !session?.editor.isDirty() || window.confirm('当前修改还没有保存，仍然打开另一份文件吗？');
+  return !session?.editor.isDirty() || window.confirm(t('当前修改还没有保存，仍然打开另一份文件吗？'));
 }
 
 function tryOpenLocalFile(file: File | undefined): void {
   if (fileActions.busy) {
-    notice('文件任务完成前不能切换文稿');
+    notice(message('文件任务完成前不能切换文稿'));
     return;
   }
   if (file && confirmReplacement()) void openDocument(file, file.name);
@@ -392,13 +395,13 @@ function tryOpenLocalFile(file: File | undefined): void {
 
 async function createNewDocument(): Promise<void> {
   if (fileActions.busy) {
-    notice('文件任务完成前不能新建文稿');
+    notice(message('文件任务完成前不能新建文稿'));
     return;
   }
   if (!confirmReplacement()) return;
   const created = await import('./editor-template-picker')
     .then(({ chooseNewDocument }) => chooseNewDocument())
-    .catch((error: unknown) => (reportError(error), null));
+    .catch((error: unknown) => (notice(message('新建失败：{detail}', { detail: explain(error) }), 'error'), null));
   if (!created) return;
   cancelPendingOpen();
   const generation = ++openGeneration;
@@ -409,10 +412,10 @@ async function createNewDocument(): Promise<void> {
     await openDocument(created.bytes, created.fileName, { newDocument: true });
   } catch (error) {
     if (generation !== openGeneration) return;
-    const failure = new Error(`新建失败：${explain(error)}`);
+    const failure = message('新建失败：{detail}', { detail: explain(error) });
     if (session) {
       hideLoading();
-      reportError(failure);
+      notice(failure, 'error');
       view?.element.focus();
     } else {
       showOpenFailure(failure);
@@ -536,7 +539,7 @@ function closeInspector(): void {
 }
 
 const recovery = createSiteRecovery(notice);
-const fileActions = createEditorFileActions({ notice, onError: reportError, onBusyChange: syncControls });
+const fileActions = createEditorFileActions({ notice, onBusyChange: syncControls });
 const productTools = createProductTools(() => ({
   session, view, writable: canMutateDocument() && mode === 'edit', openInspector,
 }), notice);
@@ -547,11 +550,17 @@ slideInspector = createSlideInspector(inspectorElement, () => ({
   session, view, writable: canMutateDocument() && mode === 'edit', showSlide,
 }), notice);
 
-void languageReady.then(() => fetch(new URL('./demo/showcase.pptx', document.baseURI)))
+buttons.newFile.disabled = true;
+fileInput.disabled = true;
+void languageReady.then(() => {
+  languageInitialized = true;
+  syncControls();
+  return fetch(new URL('./demo/showcase.pptx', document.baseURI));
+})
   .then((response) => {
     if (!response.ok) throw new Error(`示例下载失败（HTTP ${response.status}）`);
     return response.arrayBuffer();
   })
   // 用户可能在示例下载完成前已经选择了本地文件；迟到的示例不能覆盖用户意图。
   .then((bytes) => openGeneration ? undefined : openDocument(bytes, 'showcase.pptx'))
-  .catch((error) => { if (!openGeneration) showOpenFailure(error); });
+  .catch((error) => { if (!openGeneration) showOpenFailure(message('打开失败：{detail}', { detail: explain(error) })); });

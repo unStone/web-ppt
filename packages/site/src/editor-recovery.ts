@@ -6,6 +6,9 @@ import {
   type RecoveryDecision,
   type RecoveryStoreJournal,
 } from '@web-ppt/editor';
+import { message, type SiteNotice } from './i18n/message';
+import { setText } from './i18n/runtime';
+import { moveLanguageControl } from './i18n/controls';
 
 export interface SiteRecovery {
   openOptions(signal: AbortSignal): Pick<OpenEditorOptions, 'recovery'>;
@@ -14,7 +17,6 @@ export interface SiteRecovery {
   sync(session: EditorSession | null): void;
 }
 
-type Notice = (message: string, tone?: 'normal' | 'success' | 'error') => void;
 const PREFERENCE = 'web-ppt:site:recovery-enabled';
 const store = createIndexedDbRecoveryStore({
   databaseName: 'web-ppt-site-editor', namespace: 'site-editor', maxJournals: 8,
@@ -32,7 +34,7 @@ function needsMedia(journal: RecoveryStoreJournal | null): boolean {
   })) ?? false;
 }
 
-export function createSiteRecovery(notice: Notice): SiteRecovery {
+export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
   const toggle = document.querySelector<HTMLInputElement>('#recoveryToggle')!;
   const prompt = document.querySelector<HTMLElement>('#recoveryPrompt')!;
   const summary = document.querySelector<HTMLElement>('#recoverySummary')!;
@@ -43,9 +45,12 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
   let decide: ((decision: RecoveryDecision) => void) | null = null;
   let syncedSession: EditorSession | null = null;
   let flushGeneration = 0;
+  let restoreLanguageControl: (() => void) | undefined;
 
   const choose = (decision: RecoveryDecision): void => {
     prompt.hidden = true;
+    restoreLanguageControl?.();
+    restoreLanguageControl = undefined;
     const resolve = decide;
     decide = null;
     resolve?.(decision);
@@ -55,17 +60,19 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
   toggle.addEventListener('change', () => {
     enabled = toggle.checked;
     localStorage.setItem(PREFERENCE, String(enabled));
-    notice(enabled
+    notice(message(enabled
       ? '本机恢复将在下次打开文稿时启用'
-      : '本机恢复将在下次打开文稿时停用；已有记录不会被远程上传');
+      : '本机恢复将在下次打开文稿时停用；已有记录不会被远程上传'));
   });
 
   const decision = (candidate: RecoveryCandidate): Promise<RecoveryDecision> => {
     // 新打开已取代旧打开时，必须释放旧 Promise；否则过期解析会永远占着一条任务链。
-    decide?.('cancel');
+    if (decide) choose('cancel');
     prompt.hidden = false;
-    const updated = new Date(candidate.updatedAt).toLocaleString();
-    summary.textContent = `记录于 ${updated} 更新，共 ${candidate.frameCount} 步；最近操作：${candidate.latestLabel}。`;
+    restoreLanguageControl = moveLanguageControl(prompt.querySelector('span')!);
+    setText(summary, '记录于 {updated} 更新，共 {count} 步；最近操作：{label}。', {
+      updated: new Date(candidate.updatedAt), count: candidate.frameCount, label: candidate.latestLabel,
+    });
     return new Promise((resolve) => { decide = resolve; });
   };
 
@@ -94,7 +101,9 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
           }
           return signal.aborted ? 'cancel' : choice;
         },
-        onError: (error) => notice(`本机恢复记录失败：${error instanceof Error ? error.message : String(error)}`, 'error'),
+        onError: (error) => notice(message('本机恢复记录失败：{detail}', {
+          detail: error instanceof Error ? error.message : String(error),
+        }), 'error'),
       } };
     },
     cancelPending() {
@@ -103,16 +112,16 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
     async flush(session) {
       if (!enabled || !session?.recovery) return;
       const generation = ++flushGeneration;
-      state.textContent = '正在写入本机恢复记录…';
+      setText(state, '正在写入本机恢复记录…');
       try {
         await session.recovery.flush();
         if (generation === flushGeneration && session === syncedSession) {
-          state.textContent = '恢复记录已写入本机';
+          setText(state, '恢复记录已写入本机');
         }
       } catch (error) {
         if (generation === flushGeneration && session === syncedSession) {
-          state.textContent = '恢复记录写入失败';
-          notice(error instanceof Error ? error.message : String(error), 'error');
+          setText(state, '恢复记录写入失败');
+          notice(message('本机恢复记录失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
         }
       }
     },
@@ -123,7 +132,7 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
       }
       toggle.checked = enabled;
       toggle.disabled = !session;
-      if (!session) state.textContent = '打开文稿后会在本机保存恢复记录';
+      if (!session) setText(state, '打开文稿后会在本机保存恢复记录');
     },
   };
 }

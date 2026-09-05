@@ -3,17 +3,27 @@ import type {
 } from '@web-ppt/edit-core/templates';
 import { createBlankPptx } from '@web-ppt/edit-core/generate';
 import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/edit-core/templates';
+import { message, type SiteMessage } from './i18n/message';
+import { languageReady, setText, setMessage, setAttributeText, t } from './i18n/runtime';
+import { moveLanguageControl } from './i18n/controls';
+import type { Message } from './i18n/messages';
 
 export type NewDocumentChoice =
-  | { readonly kind: 'blank'; readonly name: '空白' }
-  | { readonly kind: 'template'; readonly id: BuiltinTemplateId; readonly name: string };
+  | { readonly kind: 'blank'; readonly name: SiteMessage }
+  | { readonly kind: 'template'; readonly id: BuiltinTemplateId; readonly name: SiteMessage };
 
 export interface NewDocumentResult {
   readonly bytes: Uint8Array;
   readonly fileName: string;
-  readonly loadingMessage: string;
-  readonly noticeMessage: string;
+  readonly loadingMessage: SiteMessage;
+  readonly noticeMessage: SiteMessage;
 }
+
+const labels = {
+  aurora: { name: '极光', description: '明亮留白与流动色彩' },
+  editorial: { name: '刊页', description: '纸张质感与编辑式分栏' },
+  midnight: { name: '夜幕', description: '深色画布与高对比光束' },
+} as const satisfies Record<BuiltinTemplateId, { name: Message; description: Message }>;
 
 const pickerCss = `
 .template-dialog{width:min(840px,calc(100vw - 32px));padding:0;border:0;border-radius:16px;color:var(--ink);background:#fff;box-shadow:0 24px 80px #11182738}
@@ -53,14 +63,14 @@ function pickerElements(): {
   const heading = document.createElement('div');
   const title = document.createElement('strong');
   title.id = 'templateDialogTitle';
-  title.textContent = '新建演示文稿';
+  setText(title, '新建演示文稿');
   const subtitle = document.createElement('small');
-  subtitle.textContent = '选择一个可继续编辑的设计起点';
+  setText(subtitle, '选择一个可继续编辑的设计起点');
   heading.append(title, subtitle);
   const close = document.createElement('button');
   close.id = 'closeTemplateDialog';
   close.type = 'button';
-  close.ariaLabel = '关闭模板选择';
+  setAttributeText(close, 'aria-label', '关闭模板选择');
   close.textContent = '×';
   const grid = document.createElement('div');
   grid.id = 'templateGrid';
@@ -78,7 +88,7 @@ const blankPreview: BuiltinTemplatePreviewToken = {
 
 function card(
   choice: NewDocumentChoice,
-  description: string,
+  description: SiteMessage,
   preview: BuiltinTemplatePreviewToken,
 ): HTMLButtonElement {
   const button = document.createElement('button');
@@ -94,24 +104,25 @@ function card(
   canvas.setAttribute('aria-hidden', 'true');
   canvas.append(document.createElement('i'), document.createElement('b'));
   const title = document.createElement('strong');
-  title.textContent = choice.name;
+  setMessage(title, choice.name);
   const detail = document.createElement('small');
-  detail.textContent = description;
+  setMessage(detail, description);
   button.append(canvas, title, detail);
   return button;
 }
 
 /** 目录与配方只在用户打开选择器后加载；取消不会改变当前文稿。 */
 export async function chooseNewDocument(): Promise<NewDocumentResult | null> {
+  await languageReady;
   const { dialog, grid, close } = pickerElements();
   const choices = [
     {
-      choice: { kind: 'blank', name: '空白' } as const,
-      description: '兼容原有最小文稿', preview: blankPreview,
+      choice: { kind: 'blank', name: message('空白') } as const,
+      description: message('兼容原有最小文稿'), preview: blankPreview,
     },
     ...listBuiltinTemplates().map((template) => ({
-      choice: { kind: 'template', id: template.id, name: template.name } as const,
-      description: template.description, preview: template.preview,
+      choice: { kind: 'template', id: template.id, name: message(labels[template.id].name) } as const,
+      description: message(labels[template.id].description), preview: template.preview,
     })),
   ];
   grid.replaceChildren(...choices.map(({ choice, description, preview }) =>
@@ -126,7 +137,9 @@ export async function chooseNewDocument(): Promise<NewDocumentResult | null> {
       dialog.close();
     };
     grid.addEventListener('click', select);
+    const restoreLanguageControl = moveLanguageControl(dialog.querySelector('.template-dialog-head')!);
     dialog.addEventListener('close', () => {
+      restoreLanguageControl();
       grid.removeEventListener('click', select);
       resolve(selected);
     }, { once: true });
@@ -137,8 +150,8 @@ export async function chooseNewDocument(): Promise<NewDocumentResult | null> {
   if (!selected) return null;
   return {
     bytes: selected.kind === 'blank' ? createBlankPptx() : createPptxFromTemplate(selected.id),
-    fileName: selected.kind === 'blank' ? '未命名演示文稿.pptx' : `${selected.name}演示文稿.pptx`,
-    loadingMessage: `正在新建${selected.name}演示文稿`,
-    noticeMessage: `正在准备${selected.name}演示文稿…`,
+    fileName: selected.kind === 'blank' ? t('未命名演示文稿.pptx') : t('{template}演示文稿.pptx', { template: selected.name }),
+    loadingMessage: message('正在新建{template}演示文稿', { template: selected.name }),
+    noticeMessage: message('正在准备{template}演示文稿…', { template: selected.name }),
   };
 }

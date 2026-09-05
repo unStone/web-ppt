@@ -3,6 +3,7 @@ import { updateSiteMetadata } from './metadata';
 import { bindSiteLinks } from './links';
 import { languageUrl, normalizeLanguage, resolveLanguage, type SiteLanguage } from './locale';
 import type { Message } from './messages';
+import { message, type MessageArguments, type MessageParameter, type SiteMessage } from './message';
 
 const preferenceKey = 'web-ppt:site:language';
 const applyStatic = bindStaticText(document);
@@ -12,32 +13,54 @@ let dictionary: Readonly<Record<string, string>> | undefined;
 let loading: Promise<void> | undefined;
 let generation = 0;
 
-type ParametersIn<S extends string> = S extends `${string}{${infer P}}${infer Rest}` ? P | ParametersIn<Rest> : never;
-type Arguments<S extends string> = [ParametersIn<S>] extends [never] ? [] : [Record<ParametersIn<S>, string | number>];
-interface BoundMessage { source: Message; parameters: Record<string, string | number> }
-const dynamic = new WeakMap<Element, BoundMessage>();
+interface ElementMessages { text?: SiteMessage; attributes: Record<string, SiteMessage> }
+const dynamic = new WeakMap<Element, ElementMessages>();
 
-function format(source: string, parameters: Record<string, string | number> = {}): string {
+function format(source: string, parameters: Readonly<Record<string, MessageParameter>> = {}): string {
   const template = language === 'en' ? dictionary?.[source] : source;
   if (template === undefined) throw new Error(`Missing site message: ${source}`);
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     if (!Object.prototype.hasOwnProperty.call(parameters, key)) throw new Error(`Missing message argument: ${key}`);
-    return String(parameters[key]);
+    const value = parameters[key];
+    if (value instanceof Date) return value.toLocaleString(language);
+    return typeof value === 'object' ? format(value.source, value.parameters) : String(value);
   });
 }
 
-export function t<S extends Message>(source: S, ...args: Arguments<S>): string {
+export function t<S extends Message>(source: S, ...args: MessageArguments<S>): string {
   return format(source, args[0]);
 }
 
 /** 保存消息身份和参数，不反向匹配已渲染文本，因此文件名和用户内容永远不是词条。 */
-export function setText<S extends Message>(target: Element, source: S, ...args: Arguments<S>): void {
-  const parameters = args[0] ?? {};
-  dynamic.set(target, { source, parameters });
+export function setText<S extends Message>(target: Element, source: S, ...args: MessageArguments<S>): void {
+  setMessage(target, message(source, ...args));
+}
+
+export function setMessage(target: Element, value: string | SiteMessage): void {
+  const binding = dynamic.get(target) ?? { attributes: {} };
+  if (typeof value === 'string') {
+    delete binding.text;
+    if (!Object.keys(binding.attributes).length) { dynamic.delete(target); target.removeAttribute('data-site-dynamic'); }
+    target.textContent = value;
+    return;
+  }
+  binding.text = value;
+  dynamic.set(target, binding);
   target.setAttribute('data-site-dynamic', '');
   // 英文静态页的模块初始化早于按需词库；先登记，词库就绪后统一兑现。
   if (language === 'en' && !dictionary) return;
-  target.textContent = format(source, parameters);
+  target.textContent = format(value.source, value.parameters);
+}
+
+export function setAttributeText<S extends Message>(
+  target: Element, attribute: 'aria-label' | 'title' | 'placeholder', source: S, ...args: MessageArguments<S>
+): void {
+  const binding = dynamic.get(target) ?? { attributes: {} };
+  binding.attributes[attribute] = message(source, ...args);
+  dynamic.set(target, binding);
+  target.setAttribute('data-site-dynamic', '');
+  if (language === 'en' && !dictionary) return;
+  target.setAttribute(attribute, t(source, ...args));
 }
 
 function savedLanguage(): string | null {
@@ -62,8 +85,11 @@ async function changeLanguage(next: SiteLanguage, explicit: boolean): Promise<vo
   applyStatic((source) => format(source));
   applyLinks(language, new URL(location.href));
   for (const element of document.querySelectorAll('[data-site-dynamic]')) {
-    const message = dynamic.get(element);
-    if (message) element.textContent = format(message.source, message.parameters);
+    const binding = dynamic.get(element);
+    if (binding?.text) element.textContent = format(binding.text.source, binding.text.parameters);
+    for (const [attribute, value] of Object.entries(binding?.attributes ?? {})) {
+      element.setAttribute(attribute, format(value.source, value.parameters));
+    }
   }
   updateSiteMetadata(document, language, (source) => format(source));
   document.querySelector('#siteLanguage [role="alert"]')?.remove();
@@ -75,7 +101,7 @@ function reportFailure(error: unknown): void {
   if (!control) return;
   let status = control.querySelector('[role="alert"]');
   if (!status) { status = document.createElement('span'); status.setAttribute('role', 'alert'); control.append(status); }
-  status.textContent = 'Language unavailable / 语言暂不可用';
+  status.textContent = 'Language unavailable; save and reload / 语言不可用，请保存后刷新';
 }
 
 document.querySelector('#siteLanguage')?.addEventListener('click', (event) => {
@@ -86,4 +112,8 @@ document.querySelector('#siteLanguage')?.addEventListener('click', (event) => {
 });
 
 export const languageReady = changeLanguage(resolveLanguage(new URL(location.href), savedLanguage(), navigator.language), false)
-  .catch(reportFailure);
+  .catch(async (error) => {
+    // 中文源词条随页面交付；首次词库失败必须先恢复可用语言，不能把请求结束当成已就绪。
+    await changeLanguage('zh-CN', false);
+    reportFailure(error);
+  });

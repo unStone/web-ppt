@@ -1,5 +1,10 @@
 import { runSiteEditorLanguageContract } from './site-editor-language-contract.mjs';
 import { runSiteLanguageInputContract } from './site-language-input-contract.mjs';
+import { runSiteI18nFilesContract } from './site-i18n-files-contract.mjs';
+import { runSiteI18nErrorsContract, runSiteI18nConversionContract } from './site-i18n-errors-contract.mjs';
+import { runSiteI18nTemplateContract } from './site-i18n-template-contract.mjs';
+import { runSiteI18nRecoveryContract } from './site-i18n-recovery-contract.mjs';
+import { runSiteI18nStartupContract, runSiteI18nDictionaryFailureContract } from './site-i18n-startup-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const { evaluate, request, waitFor, click, dictionaryUrls } = context;
@@ -7,6 +12,11 @@ export async function runSiteI18nProductionContract(context) {
     ${JSON.stringify(dictionaryUrls)}.includes(new URL(entry.name).pathname))`)) {
     throw new Error('中文默认页面不应下载英文目录');
   }
+  await runSiteI18nFilesContract(context);
+  await runSiteI18nErrorsContract(context);
+  await runSiteI18nConversionContract(context);
+  await runSiteI18nTemplateContract(context);
+  await runSiteI18nRecoveryContract(context);
   await runSiteEditorLanguageContract(context);
   const directory = await evaluate("new URL('.', location.href).href");
   for (const page of ['index', 'samples', 'editor']) {
@@ -33,4 +43,6 @@ export async function runSiteI18nProductionContract(context) {
     await waitFor("document.documentElement.lang === 'en'", `${page} 再切英文`);
     await runSiteLanguageInputContract(context, page);
   }
+  await runSiteI18nStartupContract(context);
+  await runSiteI18nDictionaryFailureContract(context);
 }

@@ -189,6 +189,7 @@ kbd { padding: 2px 5px; border: 1px solid #d5d5cf; border-bottom-width: 2px; bor
 .recovery-prompt > div { width: min(430px, 100%); padding: 22px; border-radius: 14px; background: white; box-shadow: var(--shadow); }
 .recovery-prompt p { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .recovery-prompt span { display: flex; justify-content: flex-end; gap: 8px; }
+.recovery-prompt > div > span { flex-wrap: wrap; }
 .recovery-prompt span > button:not(.button) { padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white; cursor: pointer; }
 
 @media (max-width: 1050px) {
