@@ -150,7 +150,7 @@ flowchart TD
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | ✅ **已完成** |
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
-| chartex 解析 | 原生未完成；真实漏斗图片回退已验证，缺原包保存未完成 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续回退保存与真实语料 |
+| chartex 解析 | 原生未完成；真实漏斗回退、缺原包保存与数据引用取证已补 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与原生布局 |
 | 媒体插入 | 有 | 有 | **0.8 P2** |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | **产品层双路径**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
@@ -390,6 +390,8 @@ Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、�
 新建/嵌套分组、解组、单独复制孩子及冷恢复后的来源转交已贯通；解组不重复物化表格追加行，生成保存保持有效层级顺序。
 另外八个真实 XLSX 只有公式引用与文字回退，不能替代其余六类 PPTX 的验收；完整证据见
 [回退与真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)。
+现已补齐这 9 个文件的定义名称、单元格类型与内嵌工作簿引用取证；层级空槽及重复标签不能直接压平，
+[统一输入约束](wayfinder/ppt-data-fidelity/research/chartex-data-model.md)仍是原生布局的设计边界，不是已实现能力。
 
 真要实现，六种都是纯几何，`chart/plots.ts` 已有同类代码：squarify（树状图）、极坐标堆叠（旭日）、
 累计基线（瀑布）、五数概括（箱线）、梯形（漏斗）、分箱 + 累计线（直方图/Pareto）。
@@ -430,6 +432,6 @@ Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、�
 |---|---|---|---|
 | 1 | ✅ [0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md)已完成 | — | 设计来源与模板形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | [修复未知扩展对象阻断兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) | 真实漏斗显示与补丁保存已通过 | 补缺原包保存；继续其他类型真实语料 |
+| 3 | [修复未知扩展对象阻断兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) | 回退、两条保存、分组/解组复制已完成 | 继续其他类型真实语料与原生布局 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

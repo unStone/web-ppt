@@ -43,7 +43,7 @@ tracker: local-markdown
 ## In progress
 
 - [确认扩展图表回退与真实语料边界](tickets/002-chartex-fallback-corpus.md)已补真实漏斗的 Chrome/独立 SVG
-  视觉证据；其他类型 PPTX 和数据边界仍缺证。
+  视觉证据和 9 个源文件的数据引用取证；其他类型原始 PPTX、层级空槽规则与原生布局仍缺证。
 
 ## Frontier
 

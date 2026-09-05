@@ -1,18 +1,19 @@
 /** 只读 ChartEx 语料探针：区分源文件有回退与公开解析/渲染实际采用回退。 */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { basename, dirname, posix, relative, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { parse, renderSlideToSvg } from '../packages/core/dist/core.js';
 import { parseXmlTree, xmlElementChildren } from '../packages/edit-core/dist/xml.js';
+import { chartWorkbook } from './lib/chartex-workbook-probe.mjs';
+import { relationships } from './lib/chartex-probe-opc.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, 'fixtures/chartex-corpus.json'), 'utf8'));
 const CX = 'http://schemas.microsoft.com/office/drawing/2014/chartex';
 const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
-const REL = 'http://schemas.openxmlformats.org/package/2006/relationships';
 const SS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const XMLNS = 'http://www.w3.org/2000/xmlns/';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -29,28 +30,15 @@ const descendants = (node, name, ns) => [...walk(node)].map((entry) => entry.nod
   .filter((n) => n.localName === name && (ns === undefined || n.namespaceUri === ns));
 const children = (node, name, ns) => node ? xmlElementChildren(node, { localName: name, namespaceUri: ns }) : [];
 
-function relationships(parts, part) {
-  const path = posix.join(posix.dirname(part), '_rels', `${posix.basename(part)}.rels`);
-  if (!parts[path]) return [];
-  return children(parseXmlTree(parts[path]).root, 'Relationship', REL).map((node) => {
-    const target = attr(node, 'Target');
-    const external = attr(node, 'TargetMode') === 'External';
-    // 外部目标仅记录，不访问；不得把一次语料调查变成联网解引用。
-    const resolved = target && !external
-      ? posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join(posix.dirname(part), target))
-      : null;
-    return { id: attr(node, 'Id'), type: attr(node, 'Type'), target, external, resolved,
-      exists: resolved !== null && Object.hasOwn(parts, resolved) };
-  });
-}
-
 function inspectChart(part, tree, parts) {
   const rels = relationships(parts, part);
+  const workbook = chartWorkbook(parts, part, tree);
   return {
     part, namespace: tree.namespaceUri,
     rootAttributes: tree.attributes.filter((a) => a.namespaceUri !== XMLNS)
       .map(({ name, value }) => ({ name, value })),
     relationships: rels,
+    workbookSource: workbook.source,
     series: descendants(tree, 'series', CX).map((series) => ({
       layoutId: attr(series, 'layoutId'), hidden: attr(series, 'hidden'),
       dataId: attr(children(series, 'dataId', CX)[0], 'val'),
@@ -63,6 +51,9 @@ function inspectChart(part, tree, parts) {
         .map((dim) => ({
           dataId: attr(entry, 'id'), kind: dim.localName, type: attr(dim, 'type'),
           formulas: descendants(dim, 'f', CX).map(text),
+          workbookReferences: children(dim, 'f', CX).map((formula) => ({
+            formula: text(formula), direction: attr(formula, 'dir') ?? 'col', ...workbook.resolve(text(formula)),
+          })),
           levels: descendants(dim, 'lvl', CX).map((level) => ({
             ptCount: attr(level, 'ptCount'),
             points: descendants(level, 'pt', CX).map((pt) => ({ idx: attr(pt, 'idx'), value: text(pt) })),

@@ -21,6 +21,7 @@
     "test:v07": "npm run test:edit:save && npm run test:templates && node tooling/test-v07-integration.mjs",
     "test:v07:libreoffice": "npm run test:v07 && node tooling/test-v07-libreoffice-all.mjs",
     "test:v08": "node tooling/test-chart-data.mjs && node tooling/test-chartex-fallback.mjs",
+    "test:chartex:probe": "node tooling/test-chartex-workbook-probe.mjs",
     "test:v08:libreoffice": "npm run test:v08 && node tooling/test-v08-libreoffice.mjs",
     "test:v08:powerpoint": "npm run test:v08 && powershell -NoProfile -ExecutionPolicy Bypass -File tooling/test-edit-powerpoint.ps1 -Manifest out/v08-integration/office-artifacts.json -Report out/v08-integration/powerpoint-report.json && node tooling/validate-edit-powerpoint-report.mjs --manifest out/v08-integration/office-artifacts.json --report out/v08-integration/powerpoint-report.json",
     "test:edit:text": "node tooling/test-edit-text-save.mjs",
