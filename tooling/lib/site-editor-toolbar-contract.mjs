@@ -3,6 +3,7 @@ import { runSiteEditorTextToolbarContract } from './site-editor-text-toolbar-con
 import { runSiteEditorImageToolbarContract } from './site-editor-image-toolbar-contract.mjs';
 import { runSiteEditorProductToolbarContract } from './site-editor-product-toolbar-contract.mjs';
 import { runSiteEditorSlideToolbarContract } from './site-editor-slide-toolbar-contract.mjs';
+import { runSiteEditorMediaToolbarContract } from './site-editor-media-toolbar-contract.mjs';
 
 export async function runSiteEditorToolbarContract(context) {
   await runSiteEditorShapeToolbarContract(context);
@@ -10,4 +11,5 @@ export async function runSiteEditorToolbarContract(context) {
   await runSiteEditorImageToolbarContract(context);
   await runSiteEditorProductToolbarContract(context);
   await runSiteEditorSlideToolbarContract(context);
+  await runSiteEditorMediaToolbarContract(context);
 }

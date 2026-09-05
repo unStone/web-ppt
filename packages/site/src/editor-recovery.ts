@@ -4,6 +4,7 @@ import {
   type OpenEditorOptions,
   type RecoveryCandidate,
   type RecoveryDecision,
+  type RecoveryStoreJournal,
 } from '@web-ppt/editor';
 
 export interface SiteRecovery {
@@ -18,6 +19,18 @@ const PREFERENCE = 'web-ppt:site:recovery-enabled';
 const store = createIndexedDbRecoveryStore({
   databaseName: 'web-ppt-site-editor', namespace: 'site-editor', maxJournals: 8,
 });
+
+function needsMedia(journal: RecoveryStoreJournal | null): boolean {
+  return journal?.frames.some((frame) => frame.patches.some((patch) => {
+    if (patch.op === 'insert' || patch.op === 'remove') {
+      return 'records' in patch.value && Object.values(patch.value.records).some((record) =>
+        record.src.kind === 'image' && !!record.src.media);
+    }
+    const value = 'value' in patch ? patch.value : null;
+    return patch.path[0] === 'imageResources' && !!value && typeof value === 'object'
+      && 'mime' in value && typeof value.mime === 'string' && /^(audio|video)\//.test(value.mime);
+  })) ?? false;
+}
 
 export function createSiteRecovery(notice: Notice): SiteRecovery {
   const toggle = document.querySelector<HTMLInputElement>('#recoveryToggle')!;
@@ -57,12 +70,33 @@ export function createSiteRecovery(notice: Notice): SiteRecovery {
   };
 
   return {
-    openOptions: (signal) => enabled ? {
-      recovery: {
-        store, decide: decision, signal,
+    openOptions: (signal) => {
+      if (!enabled) return {};
+      let mediaRequired = false;
+      return { recovery: {
+        signal,
+        store: {
+          async load(source) {
+            const journal = await store.load(source);
+            mediaRequired = needsMedia(journal);
+            return journal;
+          },
+          reset: (request) => store.reset(request),
+          append: (request) => store.append(request),
+          remove: (source) => store.remove(source),
+        },
+        decide: async (candidate) => {
+          const choice = await decision(candidate);
+          if (choice === 'restore' && mediaRequired && !signal.aborted) {
+            // 恢复校验发生在 Editor 构造中，不能等打开成功后再注册媒体资源类型。
+            const { registerMediaEditing } = await import('@web-ppt/editor/media');
+            if (!signal.aborted) registerMediaEditing();
+          }
+          return signal.aborted ? 'cancel' : choice;
+        },
         onError: (error) => notice(`本机恢复记录失败：${error instanceof Error ? error.message : String(error)}`, 'error'),
-      },
-    } : {},
+      } };
+    },
     cancelPending() {
       if (decide) choose('cancel');
     },

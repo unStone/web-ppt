@@ -44,7 +44,7 @@ tracker: local-markdown
 
 - [确认扩展图表回退与真实语料边界](tickets/002-chartex-fallback-corpus.md)已补真实漏斗的 Chrome/独立 SVG
   视觉证据和 9 个源文件的数据引用取证；其他类型原始 PPTX、层级空槽规则与原生布局仍缺证。
-- [插入可交付的音视频](tickets/005-media-insertion.md)已实现 WAV / MP4（含分片）、显式外链、默认音频图标、海报替换与框架按需入口；历史/恢复/协同与两条保存共用现有资源模型。官网入口、失效外链降级及 PowerPoint 实测仍未完成。
+- [插入可交付的音视频](tickets/005-media-insertion.md)已实现 WAV / MP4（含分片）、显式外链、默认音频图标、海报替换与框架/官网按需入口；历史/恢复/协同与两条保存共用现有资源模型。官网原生播放、失效外链降级与冷启动媒体恢复已接通，PowerPoint 实测仍待完成。
 
 ## Frontier
 

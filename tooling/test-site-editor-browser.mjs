@@ -22,6 +22,8 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/editor/media', join(root, 'packages/editor/src/media/index.ts')],
+  ['@web-ppt/edit-core/media', join(root, 'packages/edit-core/src/media/index.ts')],
   ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
   ['@web-ppt/core/chart-edit', join(root, 'packages/core/src/chart-edit.ts')],
@@ -85,6 +87,13 @@ const hasFontDecoder = (keys) => [...keys].some((key) => Object.keys(outputs[key
 const hasAdjustments = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
   .some((input) => pathEndsWith(input, 'packages/editor/src/adjustments/preset-adjustment-editor.ts')));
 const initial = closure([entry], false);
+const mediaOutputs = Object.keys(outputs).filter((key) => Object.keys(outputs[key].inputs).some((input) =>
+  pathEndsWith(input, 'packages/edit-core/src/media/resource.ts')
+  || pathEndsWith(input, 'packages/site/src/editor-media-tools.ts')));
+if (mediaOutputs.length !== 2 || mediaOutputs.some((key) => initial.has(key))) {
+  throw new Error('媒体工具和共享校验实现必须在按需闭包，不能重复打包或进入首屏');
+}
+const lazyMediaUrls = mediaOutputs.map((key) => `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`);
 const dynamicTargets = new Set([...closure([entry], true)].filter((key) => !initial.has(key)));
 const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure([key], false)));
 const templateTargets = [...dynamicTargets].filter((key) => hasBuiltinTemplates(closure([key], false)));
@@ -133,10 +142,16 @@ const editorStyle = readFileSync(join(root, 'packages/site/src/editor-page.css')
 if (editorShell.includes('templateDialog') || editorStyle.includes('.template-dialog')) {
   throw new Error('模板选择器的 DOM 与样式必须和实现一起按需加载，不能增加初始 HTML/CSS');
 }
+if (editorShell.includes('mediaDialog') || editorStyle.includes('#mediaDialog')) {
+  throw new Error('媒体弹窗 DOM 与样式必须按需加载');
+}
 const editorHtml = editorShell
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-editor-add-media.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'))]],
+  ['/fixtures/sample-editor-media.wav', ['audio/wav', readFileSync(join(root, 'fixtures/sample-editor-media.wav'))]],
+  ['/fixtures/sample-editor-media.mp4', ['video/mp4', readFileSync(join(root, 'fixtures/sample-editor-media.mp4'))]],
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
   ['/editor-page.css', ['text/css; charset=utf-8', editorStyle]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
@@ -165,6 +180,13 @@ if (existsSync(realChartex)) {
 }
 const server = createServer((request, response) => {
   const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+  if (pathname === '/slow-media.wav') {
+    setTimeout(() => {
+      response.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' });
+      response.end(routes.get('/fixtures/sample-editor-media.wav')[1]);
+    }, 1000);
+    return;
+  }
   const route = routes.get(pathname);
   if (route) {
     response.writeHead(200, { 'content-type': route[0] });
@@ -251,6 +273,9 @@ async function runContract(webSocketDebuggerUrl) {
   const consoleFailures = [];
   socket.on('message', (data) => {
     const message = JSON.parse(data.toString());
+    if (message.method === 'Page.javascriptDialogOpening' && message.params.type === 'beforeunload') {
+      void request('Page.handleJavaScriptDialog', { accept: true });
+    }
     if (message.method === 'Runtime.consoleAPICalled'
       && (message.params.type === 'warning' || message.params.type === 'error')) {
       consoleFailures.push(message.params.args.map((arg) => arg.value ?? arg.description).join(' '));
@@ -258,11 +283,11 @@ async function runContract(webSocketDebuggerUrl) {
     if (message.method === 'Runtime.exceptionThrown') {
       consoleFailures.push(message.params.exceptionDetails.exception?.description ?? '页面异常');
     }
-    const request = pending.get(message.id);
-    if (!request) return;
+    const response = pending.get(message.id);
+    if (!response) return;
     pending.delete(message.id);
-    clearTimeout(request.timeout);
-    message.error ? request.reject(new Error(message.error.message)) : request.resolve(message);
+    clearTimeout(response.timeout);
+    message.error ? response.reject(new Error(message.error.message)) : response.resolve(message);
   });
   const request = (method, params = {}) => new Promise((resolveRequest, rejectRequest) => {
     const id = ++serial;
@@ -292,6 +317,10 @@ async function runContract(webSocketDebuggerUrl) {
       file: document.querySelector('#fileName')?.textContent,
       animations: document.querySelectorAll('#animationTimeline li').length,
       animationHtml: document.querySelector('#animationTimeline')?.innerHTML,
+      media: { open: document.querySelector('#mediaDialog')?.open,
+        source: document.querySelector('#mediaSource')?.value,
+        error: document.querySelector('#mediaError')?.textContent,
+        playback: document.querySelector('#mediaPlaybackStatus')?.textContent },
     }))()`);
     throw new Error(`等待${label}超时：${JSON.stringify(state)}`);
   };
@@ -304,12 +333,14 @@ async function runContract(webSocketDebuggerUrl) {
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     })()`);
     if (!point) throw new Error(`找不到 ${selector}`);
-    await request('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: point.x, y: point.y, button: 'left', buttons: 1, clickCount: 1,
-    });
-    await request('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
-    });
+    try {
+      await request('Input.dispatchMouseEvent', {
+        type: 'mousePressed', x: point.x, y: point.y, button: 'left', buttons: 1, clickCount: 1,
+      });
+      await request('Input.dispatchMouseEvent', {
+        type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
+      });
+    } catch (error) { throw new Error(`点击 ${selector} (${point.x}, ${point.y}) 失败：${error.message}`); }
   };
   const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0) => {
     const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode, modifiers };
@@ -318,6 +349,7 @@ async function runContract(webSocketDebuggerUrl) {
   };
   try {
     await request('Runtime.enable');
+    await request('Page.enable');
     await request('Emulation.setDeviceMetricsOverride', {
       width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
     });
@@ -335,7 +367,7 @@ async function runContract(webSocketDebuggerUrl) {
         return original.call(this);
       };
     })()`);
-    await runSiteEditorToolbarContract({ evaluate, waitFor, click });
+    await runSiteEditorToolbarContract({ evaluate, waitFor, click, request, lazyMediaUrls });
     await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
     const desktopLayout = await evaluate(`(() => {
       const panel = document.querySelector('.object-panel').getBoundingClientRect();

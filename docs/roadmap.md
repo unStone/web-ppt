@@ -100,7 +100,7 @@
 | 格式 | `ApplyFormat`（格式刷） | — |
 | 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
 | 经典图表 | 框架级操作 + 按需数据集增删改、cache/内嵌工作簿同步 | 类型切换、格式样式编辑 |
-| 媒体 | 按需 `AddMedia`：PCM WAV / MP4（含分片）/ 显式外链、默认音频图标、`ReplaceMediaPoster`；框架按需入口、历史与保存 | 官网入口与失效外链提示；无原包复制需先保存重开 |
+| 媒体 | 按需 `AddMedia`：PCM WAV / MP4（含分片）/ 显式外链、默认音频图标、`ReplaceMediaPoster`；框架/官网入口、历史与保存、选中媒体播放与失败提示 | Windows PowerPoint 实测；无原包复制需先保存重开 |
 | SmartArt/OLE/墨迹 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑 |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`。
@@ -152,7 +152,7 @@ flowchart TD
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
 | chartex 解析 | 原生未完成；真实漏斗回退、缺原包保存与数据引用取证已补 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与原生布局 |
-| 媒体插入 | WAV / MP4 / 外链 + 海报编辑及框架入口已实现；官网入口和失效链接提示待补 | 有，独立按需入口 | **0.8 P2 进行中**，见[阶段 API](media-insertion.md) |
+| 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **0.8 P2 进行中**，见[媒体操作与 API](media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | **产品层双路径**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
 | Safari LBSE | 无（engine 行盒已兜住） | 上游未默认开启 | **保留兜底，不要删** |

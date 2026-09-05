@@ -43,6 +43,7 @@ let openGeneration = 0;
 let openController: AbortController | null = null;
 let pptConversionAccepted = false;
 let newDocument = false;
+let closeMediaTools: (() => void) | undefined;
 
 function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -107,6 +108,7 @@ function syncControls(): void {
   buttons.exportImages.disabled = !ready;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
+  buttons.media.disabled = !writable || mode !== 'edit';
   buttons.addTable.disabled = !writable || mode !== 'edit';
   buttons.addSlide.disabled = !writable || mode !== 'edit' || !editor!.doc.layoutOrder.length;
   buttons.play.disabled = !ready;
@@ -287,6 +289,8 @@ async function openDocument(
   name: string,
   options: { newDocument?: boolean } = {},
 ): Promise<void> {
+  closeMediaTools?.();
+  closeMediaTools = undefined;
   cancelPendingOpen();
   const generation = ++openGeneration;
   const controller = new AbortController();
@@ -418,6 +422,15 @@ async function run(action: () => void | Promise<void>): Promise<void> {
 }
 
 buttons.newFile.addEventListener('click', () => void createNewDocument());
+buttons.media.addEventListener('click', () => void run(async () => {
+  const current = session, generation = openGeneration;
+  const { showMediaTools } = await import('./editor-media-tools');
+  if (current !== session || generation !== openGeneration) return;
+  const close = showMediaTools(() => ({ session, view,
+    writable: canMutateDocument() && mode === 'edit' && !app.dataset.loading && !fileActions.busy }), notice,
+  () => { if (closeMediaTools === close) closeMediaTools = undefined; });
+  closeMediaTools = close ?? closeMediaTools;
+}));
 buttons.exportImages.addEventListener('click', () => {
   const current = session;
   if (current) void fileActions.exportImages(current, outputName());

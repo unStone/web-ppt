@@ -2,7 +2,22 @@
 
 按需入口 `@web-ppt/edit-core/media`，不导入 DOM 或编码器。支持 PCM WAV / MP4 字节、显式外链、
 默认音频图标与海报替换；`editor/media`、`react/media`、`vue/media` 薄转发同一接口。
-官网工具栏与失效外链提示仍在[任务 005](wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)中。
+官网通过「媒体」工具转发同一接口；[任务 005](wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)仍保留
+Windows PowerPoint 实测待办。
+
+## 官网操作
+
+| 入口 | 行为 |
+|---|---|
+| 编辑模式 → 工具栏「媒体」 | 选择 WAV / MP4 本机文件或显式 HTTP(S) 外链；视频必选海报，音频可用内置图标 |
+| 选中媒体 →「媒体」→ 替换海报 | 仅替换海报，不改变媒体源；锁定对象与 MC 兼容外壳不开放此操作 |
+| 选中媒体 →「媒体」→ 播放 | 使用浏览器原生控件试听 / 播放；不改变画布投影、编辑历史或保存内容 |
+| 外链加载失败 / 解码失败 / 超时 | 明确提示并保留海报与源，可重试或继续保存；不会将外链偷偷转为嵌入 |
+| 恢复媒体日志 | 确认恢复后自动按需注册；普通文字、形状编辑与恢复不加载媒体模块 |
+| 取消 / 切换文稿 | 停止播放器并释放工具；媒体输入内拖放不会触发打开 PPT |
+
+工具的代码、DOM 和样式均按需加载；外链直到明确点击播放才赋给播放器，不依赖 `preload` 提示来保证
+零提前请求。官网不上传文件、不转码，也不提供离线外链播放保证。
 
 ## 公开入口
 
@@ -79,6 +94,7 @@ registerMediaEditing();
 | `npm run test:media` | Editor/OPC 公开契约、输入拒绝与零网络请求、注册恢复、并发及撤销重做协同、`.ppt` 来源与两种保存、严格 DOM XML 解析 |
 | `node tooling/test-media-insertion.mjs --dist` | 相同契约消费构建后的发布入口；先执行 build |
 | `npm run test:editor` | Chrome 真实点击嵌入/外链媒体、解码默认及替换海报，视频产生实际画面帧；不关闭自动播放策略 |
+| `node tooling/test-site-editor-browser.mjs` | 官网插入、海报替换、撤销重做、冷启动恢复、保存重开；MP4 断网播放、外链延迟访问、404 降级、连续重试及关闭后的资源释放 |
 | `npm run test:media:libreoffice` | 共享媒体产物清单由 LibreOffice 打开并导出 PDF；不等价于 PowerPoint 播放证据 |
 | `node tooling/check-media-boundary.mjs` | 默认静态依赖不包含上传校验或图标；三种框架按需入口转发同一实现 |
 

@@ -25,19 +25,31 @@ export function bindEditorFileOpen(
     input.value = '';
   });
   let dragDepth = 0;
+  const inDialog = (event: DragEvent): boolean => {
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('dialog[open]')) return false;
+    dragDepth = 0;
+    dropLayer.hidden = true;
+    // 模态工具中的文件属于该工具；文件输入仍保留浏览器原生拖放默认行为。
+    if (!(target instanceof HTMLInputElement && target.type === 'file')) event.preventDefault();
+    return true;
+  };
   window.addEventListener('dragenter', (event) => {
+    if (inDialog(event)) return;
     if (!event.dataTransfer?.types.includes('Files')) return;
     event.preventDefault();
     dragDepth++;
     dropLayer.hidden = false;
   });
   window.addEventListener('dragover', (event) => {
+    if (inDialog(event)) return;
     if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
   });
   window.addEventListener('dragleave', () => {
     if (--dragDepth <= 0) { dragDepth = 0; dropLayer.hidden = true; }
   });
   window.addEventListener('drop', (event) => {
+    if (inDialog(event)) return;
     event.preventDefault();
     dragDepth = 0;
     dropLayer.hidden = true;

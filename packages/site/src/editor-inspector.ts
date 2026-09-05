@@ -217,11 +217,14 @@ export function createEditorInspector(
 
   const syncImage = (): boolean => {
     const { session } = context();
-    const id = selectedKind() === 'image' ? selectedId() : null;
+    const selected = selectedId();
+    const record = selected ? session?.editor.doc.elements[selected] : undefined;
+    const id = record?.src.kind === 'image' && !record.src.media && record.meta.editable === 'full'
+      ? record.id : null;
     const image = !!id;
     imageSection.hidden = !image;
     for (const control of imageSection.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button,input')) {
-      control.disabled = !context().writable;
+      control.disabled = !context().writable || !!record?.meta.locked;
     }
     if (session && id) {
       const crop = queryElementCrop(session.editor.doc, [id]).value;
