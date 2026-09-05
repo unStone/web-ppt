@@ -528,7 +528,7 @@ const pptxBytes = saved.bytes;
 
 未触碰的声明、注释、处理指令、前缀、属性顺序、自闭合形态和 `AlternateContent` 保持原词法；
 `insertXmlInOrder` 统一执行 OOXML sequence，`reorderXmlChildren` 只替换既有目标槽位。UTF-8 / UTF-16
-字节序和 BOM 均保留；实测编辑入口文件为 80.46KB gzip，不含静态共享 chunk 和 peer 依赖；
+字节序和 BOM 均保留；实测编辑入口文件为 80.57KB gzip，不含静态共享 chunk 和 peer 依赖；
 保存实现按需加载。净条目的本地头、extra field 与压缩流逐字直通；zip64、数据描述符、
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 

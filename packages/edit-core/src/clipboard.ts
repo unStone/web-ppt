@@ -5,17 +5,13 @@ import { effectiveElement } from './projection';
 import { orderedTableRowInsertions } from './table-rows';
 import { outermostSelectedElementIds } from './selection';
 import { elementFrameToSlideMatrix, elementFrameToSlidePoint } from './space';
-import { clipboardClosure, insertionOwner } from './clipboard-source';
-import { materializeElementRoots, materializeInsertionFragment } from './save/insertion';
-import { locateElementHosts } from './save/xfrm';
-import { serializeXmlNode } from './xml/tree';
-import { shapeIds as hostSpids } from './xml/shape-ids';
+import { insertionOwner } from './clipboard-source';
+import { elementTreeSources } from './clipboard-trees';
 import type {
-  ClipboardElementRecord, ClipboardResource, ClipboardXmlRoot, ElementClipboardPayload,
+  ClipboardElementRecord, ElementClipboardPayload,
   ElementClipboardRecordMeta,
 } from './commands/types';
-import type { EditDoc, ElementId, ElementMeta, ElementRecord } from './types';
-import type { XmlDocument, XmlElement } from './xml/types';
+import type { EditDoc, ElementId, ElementMeta } from './types';
 import { copiedLinkMeta } from './clipboard-links';
 import { effectivePresetGeometry } from './preset-geometry';
 
@@ -51,16 +47,6 @@ function copiedMeta(
     ...(frameToSlide ? { frameToSlide } : {}),
     ...(source ? copiedLinkMeta(doc, id, source) : {}),
   };
-}
-
-function namespaces(document: XmlDocument): Record<string, string> {
-  const result: Record<string, string> = Object.create(null);
-  for (const attribute of document.root.attributes) {
-    if (attribute.name === 'xmlns' || attribute.name.startsWith('xmlns:')) {
-      result[attribute.name] = attribute.value;
-    }
-  }
-  return result;
 }
 
 function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>): SlideElement {
@@ -129,14 +115,8 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     if (!record || record.meta.editable === 'none') throw new Error(`元素不可复制：${id}`);
     if (record.meta.locked) throw new Error(`元素已锁定：${id}`);
   }
-  const sourcePart = doc.elements[roots[0]].meta.origin?.part;
-  const pkg = doc.package;
-  const sourceBytes = sourcePart && (doc.saveState.baselines[sourcePart] ?? pkg?.parts[sourcePart]);
-  if (!sourcePart || !sourceBytes || !pkg) throw new Error('复制元素缺少可读取的 OOXML 来源 part');
-  if (roots.some((id) => doc.elements[id].meta.origin?.part !== sourcePart)) {
-    throw new Error('一次复制的元素树必须来自同一 OOXML part');
-  }
-
+  const sources = elementTreeSources(doc, roots);
+  const sourcePart = doc.elements[roots[0]].meta.origin!.part;
   const records: Record<string, ClipboardElementRecord> = Object.create(null);
   const rootIds: string[] = [];
   const copyBatchId = createCopyBatchId();
@@ -162,49 +142,7 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     return clipboardId;
   };
   for (const id of roots) rootIds.push(visit(id, null));
-  const hosts = new Map<ElementId, { host: XmlElement; namespaces: Record<string, string> }>();
-  const inserted = new Map<ElementRecord, ElementId[]>();
-  const original: ElementId[] = [];
-  for (const id of roots) {
-    const owner = insertionOwner(doc, id);
-    if (!owner) original.push(id);
-    else inserted.set(owner, [...(inserted.get(owner) ?? []), id]);
-  }
-  if (original.length) {
-    const document = materializeElementRoots(doc, original.map((id) => doc.elements[id]), sourceBytes);
-    const located = locateElementHosts(document, original.map((id) => doc.elements[id]));
-    const declarations = namespaces(document);
-    for (const id of original) hosts.set(id, { host: located.get(id)!.host, namespaces: declarations });
-  }
-  for (const [owner, ids] of inserted) {
-    const document = materializeInsertionFragment(doc, owner);
-    const located = locateElementHosts(document, ids.map((id) => doc.elements[id]));
-    const declarations = namespaces(document);
-    for (const id of ids) hosts.set(id, { host: located.get(id)!.host, namespaces: declarations });
-  }
-  const insertions = Object.values(doc.elements).flatMap((record) => {
-    if (record.meta.origin?.part !== sourcePart) return [];
-    return [
-      ...(record.meta.insertion ? [record.meta.insertion] : []),
-      ...(record.meta.imageReplacement ? [{
-        relationships: record.meta.imageReplacement.relationships,
-        resources: [doc.imageResources[record.meta.imageReplacement.resourceHash]!],
-      }] : []),
-    ];
-  });
-  const xmlRoots: Record<string, ClipboardXmlRoot> = Object.create(null);
-  const resources = new Map<string, ClipboardResource>();
-  roots.forEach((id, index) => {
-    const resolved = hosts.get(id)!;
-    const closure = clipboardClosure(pkg, sourcePart, resolved.host, insertions);
-    for (const resource of closure.resources) resources.set(resource.hash, resource);
-    xmlRoots[rootIds[index]] = {
-      markup: serializeXmlNode(resolved.host),
-      namespaces: { ...resolved.namespaces },
-      hostSpids: hostSpids(resolved.host),
-      ...(closure.relationships.length ? { relationships: closure.relationships } : {}),
-    };
-  });
+  const resources = new Set(sources.resources.map((resource) => resource.hash));
   for (const hash of assetHashes) {
     if (!resources.has(hash)) throw new Error(`元素投影资源未包含在 OOXML 闭包中：${hash}`);
   }
@@ -215,7 +153,7 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     bounds: rootBounds(doc, roots),
     roots: rootIds,
     records,
-    ooxml: { roots: xmlRoots },
-    resources: [...resources.values()],
+    ooxml: { roots: Object.fromEntries(roots.map((id, index) => [rootIds[index], sources.ooxml.roots[id]])) },
+    resources: sources.resources,
   };
 }

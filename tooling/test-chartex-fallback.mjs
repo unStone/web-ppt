@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
@@ -10,6 +10,7 @@ import { runInsertionIdentityValidationContract } from './lib/alternate-content-
 import { runCompatibilityGeneratedCopiesContract, runCompatibilityGeneratedOpaqueContract, runCompatibilityGeneratedSaveContract } from './lib/compatibility-generated-save-contract.mjs';
 import { runCompatibilityGeneratedDeduplicatedContract, runCompatibilityGeneratedMissingDependencyContract, runCompatibilitySourceOwnershipContract } from './lib/compatibility-source-ownership-contract.mjs';
 import { runCompatibilityGeneratedConnectionsContract, runCompatibilityGeneratedParentContract } from './lib/compatibility-generated-connections-contract.mjs';
+import { runCompatibilityGroupedChildCopyContract, runCompatibilityGroupedCopyContract, runCompatibilityGroupedRecoveryContract, runCompatibilityRegroupedCopyContract, runCompatibilityUngroupedCopyContract, runCompatibilityUngroupedTableContract } from './lib/compatibility-group-clipboard-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/chartex-fallback');
@@ -45,6 +46,13 @@ await runCompatibilityGeneratedMissingDependencyContract({ core, edit, bytes, ch
 await runCompatibilityGeneratedDeduplicatedContract({ core, edit, bytes, check, eq });
 await runCompatibilityGeneratedConnectionsContract({ core, edit, bytes, eq });
 await runCompatibilityGeneratedParentContract({ core, edit, bytes, eq });
+await runCompatibilityGroupedCopyContract({ core, edit, bytes, eq, check,
+  saveArtifact: (name, saved) => writeFileSync(join(out, name), saved) });
+await runCompatibilityGroupedChildCopyContract({ core, edit, bytes, eq });
+await runCompatibilityRegroupedCopyContract({ core, edit, bytes, eq, check });
+await runCompatibilityGroupedRecoveryContract({ core, edit, bytes, eq, check });
+await runCompatibilityUngroupedCopyContract({ core, edit, bytes, eq, check });
+await runCompatibilityUngroupedTableContract({ core, edit, bytes, eq });
 const distinctIds = rewriteCompatibilityFixture(bytes,
   (xml) => xml.replace('<p:cNvPr id="6" name="fallback-chart"/><p:cNvPicPr>', '<p:cNvPr id="9" name="fallback-chart"/><p:cNvPicPr>'));
 await runAlternateContentSaveContract({ core, edit, check, eq, bytes: distinctIds });

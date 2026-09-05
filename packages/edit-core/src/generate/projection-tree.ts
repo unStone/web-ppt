@@ -77,7 +77,9 @@ export function generatedProjectionTree(doc: EditDoc, slideId: SlideId): Generat
     visitSource(id);
   }
   roots.forEach((id, index) => {
-    sourceRecords[id] = { ...sourceRecords[id], z: initialFractionalIndex(index) };
+    // 投影顺序已包含层级覆盖；重新编号时不能让旧 order 再盖过生成后的 z。
+    const { order: _order, ...record } = sourceRecords[id];
+    sourceRecords[id] = { ...record, z: initialFractionalIndex(index) };
   });
   return { roots, sourceRecords };
 }

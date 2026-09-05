@@ -66,16 +66,17 @@ export function materializeElementTreeState(
   removals: readonly RemovedElementRecord[],
   options: {
     skipInsertions?: ReadonlySet<string>;
-    skipReparents?: boolean;
+    skipReparents?: ReadonlySet<string>;
     scope?: ReadonlySet<string>;
     links?: HyperlinkSaveContext;
+    sourceOnly?: boolean;
   } = {},
 ): void {
-  const inserted = patchInsertedElements(document, doc, records, options.skipInsertions);
-  if (!options.skipReparents) patchReparentedElements(document, doc, records);
+  const inserted = patchInsertedElements(document, doc, records, options.skipInsertions, options.sourceOnly);
+  patchReparentedElements(document, doc, records, options.skipReparents);
   // 解组要先把仍存活的孩子移出来源组，再删除旧组宿主。
   for (const removal of removals) patchRemovedElement(document, removal);
-  materializeElementOverrides(document, doc, part, records, options.scope, inserted, options.links);
+  if (!options.sourceOnly) materializeElementOverrides(document, doc, part, records, options.scope, inserted, options.links);
 }
 
 /** 从来源基线构造当前有效元素树，供复制原始宿主及其所有后代。 */
@@ -83,6 +84,7 @@ export function materializeElementRoots(
   doc: EditDoc,
   roots: readonly ElementRecord[],
   source: Uint8Array,
+  sourceOnly = false,
 ): XmlDocument {
   const document = parseXmlTree(source);
   const records = collectRecords(doc, roots.map((record) => record.id));
@@ -93,7 +95,7 @@ export function materializeElementRoots(
   }
   const removals = Object.values(doc.removedElements).filter((record) =>
     record.meta.origin?.part === part && scope.has(record.parent));
-  materializeElementTreeState(document, doc, part, records, removals, { scope });
+  materializeElementTreeState(document, doc, part, records, removals, { scope, sourceOnly });
   // 剪贴板复制的是逻辑对象：把备用分支的别名收敛到模型身份，粘贴时一起分配新 spid。
   for (const record of records) {
     if (record.meta.editable !== 'frame' || record.meta.origin?.part !== part) continue;
@@ -104,7 +106,7 @@ export function materializeElementRoots(
   return document;
 }
 
-export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord): XmlDocument {
+export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord, sourceOnly = false): XmlDocument {
   const source = record.meta.insertion!;
   const declarations = Object.entries(source.namespaces)
     .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`).join('');
@@ -142,14 +144,15 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   pruneInactiveInsertionHosts(wrapper, source, records, part);
   const removals = Object.values(doc.removedElements).filter((removed) =>
     removed.meta.origin?.part === part && scope.has(removed.parent));
+  const roots = new Set([record.id]);
   materializeElementTreeState(wrapper, doc, part, records, removals, {
-    skipInsertions: new Set([record.id]), skipReparents: true, scope,
+    skipInsertions: roots, skipReparents: roots, scope, sourceOnly,
   });
   return wrapper;
 }
 
-function detachedHost(doc: EditDoc, record: ElementRecord): XmlElement {
-  const wrapper = materializeInsertionFragment(doc, record);
+function detachedHost(doc: EditDoc, record: ElementRecord, sourceOnly: boolean): XmlElement {
+  const wrapper = materializeInsertionFragment(doc, record, sourceOnly);
   const host = xmlElementChildren(wrapper.root)[0]!;
   if (!removeXmlChild(wrapper.root, host)) throw new Error(`无法分离新建元素宿主：${record.id}`);
   return host;
@@ -173,6 +176,7 @@ export function patchInsertedElements(
   doc: EditDoc,
   records: readonly ElementRecord[],
   skip: ReadonlySet<string> = new Set(),
+  sourceOnly = false,
 ): Set<string> {
   const materialized = new Set<string>();
   const candidates = new Set(records
@@ -210,7 +214,7 @@ export function patchInsertedElements(
       ancestor = parent.parent;
     }
     if (covered) continue;
-    insertXmlChild(targetParent(document, doc, record), detachedHost(doc, record));
+    insertXmlChild(targetParent(document, doc, record), detachedHost(doc, record, sourceOnly));
     const mark = (id: string): void => {
       if (materialized.has(id)) return;
       materialized.add(id);
@@ -226,8 +230,12 @@ export function patchReparentedElements(
   document: XmlDocument,
   doc: EditDoc,
   records: readonly ElementRecord[],
+  skip?: ReadonlySet<string>,
 ): void {
-  const moved = records.filter((record) => record.meta.sourceParent !== undefined);
+  // 粘贴片段里的可编辑孩子没有独立插入来源，仍须按当前父链移动；只读兼容投影不拆壳。
+  const moved = records.filter((record) => !skip?.has(record.id)
+    && (record.meta.sourceParent !== undefined
+      || (record.meta.created && !record.meta.insertion && record.meta.origin && record.meta.editable !== 'none')));
   if (!moved.length) return;
   const located = locateElementHosts(document, moved);
   for (const record of moved) {

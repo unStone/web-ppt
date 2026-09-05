@@ -32,7 +32,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 91.76KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 80.46KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 80.57KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 68.10KB |
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 11.73KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
@@ -292,7 +292,7 @@ adjustments.start(elementId); // interaction 层预览，pointerup 形成一个�
 保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
 OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
 和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
-编辑模型主入口文件为 80.46KB gzip，不含静态共享 chunk 和 peer；保存代码按需加载。
+编辑模型主入口文件为 80.57KB gzip，不含静态共享 chunk 和 peer；保存代码按需加载。
 
 ### 接自己的 UI
 
@@ -440,7 +440,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:edit` | 编辑模型 1120 项 + 保存 514 项 + PowerPoint 证据 9 项 + 83 份固件、546 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
-| `npm run test:v08` | 经典图表数据编辑 194 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 159 项断言 |
+| `npm run test:v08` | 经典图表数据编辑 194 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
 | `npm run test:editor` | 424 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
 | `npm run test:v07:libreoffice` | 用 LibreOffice 无修复打开 0.7 单一清单中的 11 份跨能力产物 |

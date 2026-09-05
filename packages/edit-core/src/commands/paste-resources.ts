@@ -4,7 +4,7 @@ import {
   resolvePackageTarget, resolveRelationshipTarget,
 } from '../clipboard-source';
 import type {
-  EditDoc, ElementInsertionRelationship, ElementInsertionResource,
+  EditDoc, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
 } from '../types';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
 import { parseXmlTree } from '../xml/tree';
@@ -14,8 +14,8 @@ import type { OpcPackage } from '@web-ppt/core';
 import { allocateIdentityRange, logicalIdentityPrefix } from '../identity-allocation';
 
 export interface PreparedInsertionClosure {
-  relationships: ElementInsertionRelationship[];
-  resources: ElementInsertionResource[];
+  readonly relationships: readonly ElementInsertionRelationship[];
+  readonly resources: readonly ElementInsertionResource[];
 }
 
 const mediaHashes = new WeakMap<object, Map<string, string>>();
@@ -32,13 +32,12 @@ function packageMedia(doc: EditDoc): Map<string, string> {
   return new Map(result);
 }
 
-function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[] {
+export function activeClosures(
+  doc: EditDoc, part?: string,
+): Pick<ElementInsertionSource, 'relationships' | 'resources'>[] {
   const elements = Object.values(doc.elements).flatMap((record) => {
     if (part !== undefined && record.meta.origin?.part !== part) return [];
-    const insertion = record.meta.insertion ? [{
-      relationships: [...(record.meta.insertion.relationships ?? [])],
-      resources: [...(record.meta.insertion.resources ?? [])],
-    }] : [];
+    const insertion = record.meta.insertion ? [record.meta.insertion] : [];
     const replacement = record.meta.imageReplacement;
     const resource = replacement && doc.imageResources[replacement.resourceHash];
     const textOverrides = [record.ovr.text,
@@ -48,11 +47,11 @@ function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[]
         const image = paragraph.bulletImageOverride;
         const imageResource = image && doc.imageResources[image.resourceHash];
         return image && imageResource ? [{
-          relationships: [...image.relationships], resources: [imageResource],
+          relationships: image.relationships, resources: [imageResource],
         }] : [];
       }) : []);
     return [...insertion, ...(replacement && resource ? [{
-      relationships: [...replacement.relationships], resources: [resource],
+      relationships: replacement.relationships, resources: [resource],
     }] : []), ...bulletImages];
   });
   const backgrounds = Object.values(doc.slides).flatMap((record) => {
@@ -60,7 +59,7 @@ function activeClosures(doc: EditDoc, part?: string): PreparedInsertionClosure[]
     const image = record.backgroundImage;
     const resources = image?.resourceHashes.map((hash) => doc.imageResources[hash]).filter(Boolean) ?? [];
     return image && resources.length === image.resourceHashes.length
-      ? [{ relationships: [...image.relationships], resources }] : [];
+      ? [{ relationships: image.relationships, resources }] : [];
   });
   return [...elements, ...backgrounds];
 }
@@ -75,7 +74,7 @@ function relationshipIds(doc: EditDoc, part: string): Set<string> {
     }
   }
   for (const closure of activeClosures(doc, part)) {
-    for (const relationship of closure.relationships) used.add(relationship.targetId);
+    for (const relationship of closure.relationships ?? []) used.add(relationship.targetId);
   }
   const createdSlide = Object.values(doc.slides).find((slide) =>
     slide.origin?.part === part && slide.creation);
@@ -113,17 +112,16 @@ function mediaAllocation(doc: EditDoc): {
   targetByHash: Map<string, string>;
   allocateMediaPart: (prefix: string, extension: string) => string;
 } {
-  const active = activeClosures(doc);
-  const retained = Object.values(doc.imageResources);
+  const resources = [
+    ...activeClosures(doc).flatMap((closure) => closure.resources ?? []),
+    ...Object.values(doc.imageResources),
+  ];
   const targetByHash = packageMedia(doc);
-  for (const resource of [...active.flatMap((closure) => closure.resources), ...retained]) {
+  const usedParts = new Set(Object.keys(doc.package!.parts));
+  for (const resource of resources) {
     targetByHash.set(resource.hash, resource.targetPart);
+    usedParts.add(resource.targetPart);
   }
-  const usedParts = new Set([
-    ...Object.keys(doc.package!.parts),
-    ...active.flatMap((closure) => closure.resources.map((resource) => resource.targetPart)),
-    ...retained.map((resource) => resource.targetPart),
-  ]);
   return { targetByHash, allocateMediaPart: mediaPartAllocator(usedParts) };
 }
 
@@ -321,7 +319,7 @@ export function prepareExistingSourceClosure(
 /** 先验证完整闭包并分配所有目标名；调用返回前不得触碰 EditDoc。 */
 export function prepareInsertionClosures(
   doc: EditDoc,
-  payload: ElementClipboardPayload,
+  payload: Pick<ElementClipboardPayload, 'ooxml' | 'resources'>,
   roots: readonly string[],
   destinationPart: string,
   options: { readonly preverifiedResourceHashes?: ReadonlySet<string> } = {},

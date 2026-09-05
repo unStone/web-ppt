@@ -1,6 +1,6 @@
 ---
 title: 修复未知扩展对象阻断兼容回退
-status: open
+status: closed
 assignee: /root
 labels:
   - wayfinder:task
@@ -42,14 +42,16 @@ blocked_by: []
 | 框架编辑 | 移动/改名/替代文字同步全部表示；整壳复制、层级、删除、撤销、恢复和补丁保存保留 ChartEx、关系、工作簿与图片 |
 | 身份 | 复制、外部结构补丁、恢复和连续整页复制均越过未选分支 ID；拒绝未建模身份与可删除孩子重叠及重复目标映射 |
 | 所有权 | OPC 中央目录改写与 part 快照不再共享 Node Buffer 的可变切片；保存不污染输入包 |
-| 回归 | 159 项专项已接入 `npm test` / `test:v08`；生成器接入 `npm run fixtures`，前次 86 个文件重生成两次字节一致，本次未改生成器；原快照未更新 |
+| 回归 | 197 项专项已接入 `npm test` / `test:v08`；生成器接入 `npm run fixtures`，前次 86 个文件重生成两次字节一致，本次复用确定性固件执行公开命令旅程，未改生成器与原快照 |
 | 生成保存 | 只在 edit 模式按引用保留兼容外壳、CT 和引用闭包；原包释放后保留 XML、工作簿、图片、命名空间和关系；源数据缺失或 part 冲突时拒绝 |
 | 副本与恢复 | 同哈希图片与同闭包 ChartEx 改道后，统一结构 Patch 入口保留实际目标；本地命令、日志恢复、外部 Patch 与整页复制走同一所有权规则 |
 | 嵌套组 | 保留未建模分支孩子；统一重编号并同步内部连接引用；两条表示不会各自变成普通图片 |
 | 办公软件 | 自制移动固件与真实漏斗的生成包均通过 LibreOffice 打开，均 1 页，PDF 分别 7431B / 14881B；真实来源含 noMove，探针尊重锁定，未冒充移动成功 |
-| 门禁 | 最终四项仓库门禁全部通过；edit-core 入口文件实测 82392B gzip，原 82503B 文件上限未变（不把入口文件当完整静态依赖图） |
+| 门禁 | 最终四项仓库门禁全部通过：5024 项断言、186 快照、546 对指纹；edit-core 入口文件实测 82500B gzip，原 82503B 文件上限未变（不把入口文件当完整静态依赖图） |
 | 会话边界 | 释放原包后支持生成导出，不承诺继续在已释放的原会话上执行编辑命令；后续编辑重开生成文件。旧解析器未保留源数据时仍明确拒绝 |
-| 尚未完成 | 新建 `Group` 包住兼容对象后，复制阶段仍可能因空容器插入闭包缺少图片资源失败；不是本次生成保存回归，但影响完整组合能力，票据保持 open，下一增量继续处理 |
+| 分组闭环 | 空组从来源上下文物化实际孩子；新建组、粘贴组内再分组、复制内组/外组/单独孩子均保留完整兼容外壳及实际引用资源 |
+| 解组闭环 | 删除完整插入来源父组前，孩子获得独立来源；原覆盖不烘焙，表格追加不重复，撤销/重做与 recovery/external 回放两路保存均通过；生成树重编号时清除旧 order，保留有效层级 |
+| 分组产物 | `grouped-copy-patch.pptx` / `grouped-copy-generated.pptx` 均经 LibreOffice 打开为 1 页，PDF 7765B / 7770B；ChartEx XML、关系、工作簿和图片仍逐字节一致 |
 
 可复验入口：
 
@@ -61,6 +63,8 @@ fnm exec --using=v24.3.0 node tooling/probe-chartex-generated.mjs
 fnm exec --using=v24.3.0 node tooling/probe-chartex-generated.mjs corpus/chartex/libreoffice-funnel-pp1.pptx
 fnm exec --using=v24.3.0 node tooling/test-edit-libreoffice.mjs out/chartex-generated/sample-chartex-fallback-generated.pptx 1
 fnm exec --using=v24.3.0 node tooling/test-edit-libreoffice.mjs out/chartex-generated/libreoffice-funnel-pp1-generated.pptx 1
+fnm exec --using=v24.3.0 node tooling/test-edit-libreoffice.mjs out/chartex-fallback/grouped-copy-patch.pptx 1
+fnm exec --using=v24.3.0 node tooling/test-edit-libreoffice.mjs out/chartex-fallback/grouped-copy-generated.pptx 1
 ```
 
 浏览器报告在忽略目录 `out/site-editor-browser/chartex-visual-report.json`，包含源文件哈希、回退图哈希、截图和

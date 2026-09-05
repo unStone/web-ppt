@@ -20,7 +20,7 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4986 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 159 MC fallback + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 5024 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 197 MC fallback + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 546 对 | 83 份固件、273 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
@@ -385,9 +385,9 @@ PowerPoint 继续消费同一工件清单提供提交绑定证据。图表类型
 **实测纠正（2026-09-05）：有预览图不等于回退已生效。** LibreOffice 官方语料中的 PowerPoint 漏斗 PPTX
 确实带有 `Fallback/p:pic`，旧解析器却把 Choice 的未知图表占位当成非空成功结果，两条 SVG 均丢图。
 [兼容回退修复](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md)现已恢复真实漏斗图片，并通过
-Chrome 屏幕与独立 SVG 解码；159 项专项守住整壳编辑、身份、补丁与生成保存。编辑会话按引用保留兼容
+Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、补丁与生成保存。编辑会话按引用保留兼容
 源文件及实际依赖，原包释放后仍可导出；源数据缺失或与生成包冲突时明确拒绝，不能把预览图片等同于原生图表数据。
-新建分组后再复制仍有独立的剪贴板闭包缺口，008 票据保持开放。
+新建/嵌套分组、解组、单独复制孩子及冷恢复后的来源转交已贯通；解组不重复物化表格追加行，生成保存保持有效层级顺序。
 另外八个真实 XLSX 只有公式引用与文字回退，不能替代其余六类 PPTX 的验收；完整证据见
 [回退与真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)。
 

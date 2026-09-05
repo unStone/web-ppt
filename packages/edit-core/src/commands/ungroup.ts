@@ -11,6 +11,7 @@ import { elementHasLockedAncestor } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
 import { cloneHierarchyRecord } from './hierarchy-record';
 import { isCanvasRoot } from '../design-target';
+import { ungroupInsertionSources } from './ungroup-source';
 
 const FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'];
 const EPSILON = 1e-8;
@@ -93,6 +94,7 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
   const groupIndex = siblings.indexOf(group.id);
   if (groupIndex < 0) throw new Error(`组合 ${group.id} 不在父级 children 中`);
   const children = [...group.children];
+  const sources = ungroupInsertionSources(doc, group);
   const groupToParent = composeSpaceMatrices(
     invertSpaceMatrix(elementParentToSlideMatrix(doc, group.id)),
     elementChildrenToSlideMatrix(doc, group.id),
@@ -116,7 +118,9 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     moved[childId] = {
       ...cloned, parent, z: order, order,
       ovr: sparseTransform(before, placement, cloned.ovr),
-      meta: movedMeta(before, parent, cloned.meta),
+      meta: { ...movedMeta(before, parent, cloned.meta),
+        ...(sources.has(childId) ? { insertion: sources.get(childId)! } : {}),
+      },
     };
   }
   const nextSiblings = [...siblings];

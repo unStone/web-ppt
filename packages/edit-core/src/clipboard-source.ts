@@ -13,12 +13,16 @@ const MEDIA_REL_TYPES = new Set(['image', 'audio', 'video', 'media']);
 
 export function insertionOwner(doc: EditDoc, id: string): ElementRecord | null {
   let current = doc.elements[id];
+  let container: ElementRecord | null = null;
   while (current) {
-    if (current.meta.insertion) return current;
-    if (doc.slides[current.parent]) return null;
+    if (current.meta.insertion) {
+      if (current.meta.insertion.containsDescendants !== false) return current;
+      // 空组不拥有孩子来源；继续找完整插入片段，否则返回待物化的最外层容器。
+      container = current;
+    }
     current = doc.elements[current.parent];
   }
-  return null;
+  return container;
 }
 
 export function relationshipPartFor(part: string): string {
