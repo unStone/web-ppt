@@ -13,6 +13,11 @@ interface DocAsset {
 }
 
 const docAssets = new WeakMap<EditDoc, Map<string, DocAsset>>();
+function sessionAssets(doc: EditDoc): Map<string, DocAsset> {
+  let assets = docAssets.get(doc);
+  if (!assets) docAssets.set(doc, assets = new Map());
+  return assets;
+}
 interface InsertionAssetIndex {
   readonly hashByDataUrl: ReadonlyMap<string, string>;
   readonly hashes: ReadonlySet<string>;
@@ -46,7 +51,8 @@ export function registerSessionAssets(
   editAssets: readonly PresentationEditAsset[] = [],
 ): void {
   const pkg = doc.package;
-  const assets = new Map<string, DocAsset>(editAssets.map((asset) => [asset.url, { ...asset }]));
+  const assets = sessionAssets(doc);
+  for (const asset of editAssets) assets.set(asset.url, { ...asset });
   const capture = (value: string): string => {
     if (!value.startsWith('blob:') && !value.startsWith('asset:')) return value;
     const asset = pkg?.assets?.[value];
@@ -55,7 +61,6 @@ export function registerSessionAssets(
   };
   for (const record of Object.values(doc.elements)) walkStrings(record.src, capture, false);
   for (const record of Object.values(doc.slides)) walkStrings(record.src, capture, false);
-  docAssets.set(doc, assets);
 }
 
 export function sessionAsset(doc: EditDoc, url: string): DocAsset | undefined {
@@ -64,6 +69,19 @@ export function sessionAsset(doc: EditDoc, url: string): DocAsset | undefined {
 
 export function releaseSessionAssets(doc: EditDoc): void {
   docAssets.delete(doc);
+}
+
+export function retainPackageSource(doc: EditDoc, parts: readonly string[]): void {
+  const assets = sessionAssets(doc);
+  for (const part of ['[Content_Types].xml', ...parts]) {
+    const bytes = doc.package?.parts[part];
+    if (bytes) assets.set(`web-ppt-source:${part}`, { bytes, mime: 'application/octet-stream' });
+  }
+}
+
+export function mergeSessionAssets(target: EditDoc, source: EditDoc): void {
+  const assets = sessionAssets(target);
+  for (const [url, asset] of docAssets.get(source) ?? []) assets.set(url, asset);
 }
 
 export function tokenizeElementAssets(

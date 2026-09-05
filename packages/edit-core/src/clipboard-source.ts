@@ -2,7 +2,7 @@ import type { OpcPackage } from '@web-ppt/core';
 import { bytesToBase64, sha256 } from './clipboard-binary';
 import type { ClipboardRelationship, ClipboardResource } from './commands/types';
 import type {
-  ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
+  EditDoc, ElementRecord, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
 } from './types';
 import { findXmlAttribute, xmlElementChildren } from './xml/query';
 import { parseXmlTree } from './xml/tree';
@@ -10,6 +10,16 @@ import type { XmlElement } from './xml/types';
 
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const MEDIA_REL_TYPES = new Set(['image', 'audio', 'video', 'media']);
+
+export function insertionOwner(doc: EditDoc, id: string): ElementRecord | null {
+  let current = doc.elements[id];
+  while (current) {
+    if (current.meta.insertion) return current;
+    if (doc.slides[current.parent]) return null;
+    current = doc.elements[current.parent];
+  }
+  return null;
+}
 
 export function relationshipPartFor(part: string): string {
   const split = part.lastIndexOf('/');
@@ -50,6 +60,7 @@ export interface PackageTargetIdentity {
 
 const packageIdentities = new WeakMap<object, Map<string, PackageTargetIdentity>>();
 const packagePartHashes = new WeakMap<object, Map<string, string>>();
+const packageTargetSources = new WeakMap<PackageTargetIdentity, readonly string[]>();
 
 function partHash(pkg: OpcPackage, part: string): string {
   let hashes = packagePartHashes.get(pkg);
@@ -106,7 +117,13 @@ export function packageTargetIdentity(pkg: OpcPackage, targetPart: string): Pack
     closureHash: sha256(new TextEncoder().encode(JSON.stringify(nodes.sort()))),
   };
   cached.set(targetPart, identity);
+  packageTargetSources.set(identity, [...visited].flatMap((part) => [part, relationshipPartFor(part)]));
   return identity;
+}
+
+/** 内容寻址选中的路径可能不是原宿主路径；复用身份遍历结果保留确切依赖，不再扫描全包。 */
+export function packageTargetParts(pkg: OpcPackage, part: string): readonly string[] {
+  return packageTargetSources.get(packageTargetIdentity(pkg, part))!;
 }
 
 export function resolvePackageTarget(pkg: OpcPackage, identity: PackageTargetIdentity): string | null {
@@ -161,11 +178,11 @@ export function packageContentTypeOverride(pkg: OpcPackage, part: string): strin
   return contentTypes(pkg).overrides.get(`/${part}`);
 }
 
-function relationshipIds(host: XmlElement): string[] {
+export function relationshipIds(host: XmlElement, includeEmpty = false): string[] {
   const ids = new Set<string>();
   const visit = (element: XmlElement): void => {
     for (const attribute of element.attributes) {
-      if (attribute.namespaceUri === OFFICE_REL_NS && attribute.value) ids.add(attribute.value);
+      if (attribute.namespaceUri === OFFICE_REL_NS && (includeEmpty || attribute.value)) ids.add(attribute.value);
     }
     for (const child of xmlElementChildren(element)) visit(child);
   };

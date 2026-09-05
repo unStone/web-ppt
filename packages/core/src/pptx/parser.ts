@@ -33,6 +33,7 @@ import { parseElementAltText } from './alt-text';
 import { parseSections } from './sections';
 import { parseThemeCatalog } from './theme-catalog';
 import { parseCompatibleShapes } from './shape-compatibility';
+import { compatibilityAssets, releaseCompatibilitySource, retainCompatibilitySource } from './compatibility-source';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
@@ -384,6 +385,7 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
         el = parseContentPart(node, env);
         break;
       case 'AlternateContent': {
+        if (env.edit) retainCompatibilitySource(env.pkg, node, env.partPath);
         return parseCompatibleShapes(node, (branch) => parseShapeTree(branch, env, skipPh),
           (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit);
       }
@@ -1312,7 +1314,7 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
   const opcPackage = pkg.opcPackage;
   return {
     width, height, slides, source: 'pptx',
-    dispose: () => pkg.dispose(),
+    dispose: () => { releaseCompatibilitySource(pkg); pkg.dispose(); },
     ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
     sections: sections.length ? sections : undefined,
@@ -1320,6 +1322,8 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
       layouts,
       masters,
       themes: themeCatalog!.themes,
+      // 延迟页在 createDoc 时才解析；资源目录必须等页面投影完成后再读取。
+      get assets() { return compatibilityAssets(pkg); },
       ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
     } } : {}),
   };

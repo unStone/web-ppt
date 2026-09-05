@@ -10,6 +10,7 @@ import { parseThemeSource, themeColorsForInheritance } from './theme-catalog';
 export type Rels = Record<string, { type: string; target: string }>;
 
 export interface PptxPackageReader {
+  readonly files?: Readonly<Record<string, Uint8Array>>;
   xml(path: string): Element | null;
   rels(partPath: string): Rels;
   blobUrl(path: string, mime: string): string | null;

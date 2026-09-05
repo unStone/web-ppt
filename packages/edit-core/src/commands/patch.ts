@@ -69,6 +69,7 @@ import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master
 import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
 import { applyPatchValues } from './patch-apply';
 import { structuralPatchStage } from './patch-stage';
+import { retainInsertionSources } from '../source-retention';
 import {
   isExtensionPatch, validateExtensionPatch, validateExtensionPatchBatches,
 } from '../extension-runtime';
@@ -492,6 +493,11 @@ function applyPatchBatch(
         releaseProjectionCache(doc);
         released = true;
       }
+    }
+  }
+  if (structural) for (const patch of appliedPatches) {
+    if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
+      retainInsertionSources(doc, Object.values(patch.value.records));
     }
   }
   applyPatchValues(doc, appliedPatches);

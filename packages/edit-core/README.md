@@ -568,8 +568,8 @@ result outside an `EditDoc`, call `disposeOpcPackage(saved.package)` when it is 
 Untouched declarations, comments, processing instructions, prefixes, attribute order, self-closing form,
 and `AlternateContent` remain lexical matches. `insertXmlInOrder` enforces OOXML sequence ordering, while
 `reorderXmlChildren` replaces only existing target slots. UTF-8 and UTF-16 byte order/BOM are retained.
-Measured Vite output, including each entry's static shared chunks, is 62.33 KB gzip for the editing entry,
-8.07 KB for `xml`, and 4.38 KB for `opc`; calling save after the main entry adds 8.30 KB on demand. Clean local
+The measured editing entry file is 80.46 KB gzip, excluding static shared chunks and peer dependencies.
+The save implementation loads on demand. Clean local
 headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, descriptors, archive comments,
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 

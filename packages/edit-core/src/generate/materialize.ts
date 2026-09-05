@@ -40,6 +40,8 @@ import { patchGeneratedPresentationMetadata } from '../save/slide-parts';
 import { effectiveTheme } from '../theme';
 import { allocatedProjectionSpids, generatedProjectionTree } from './projection-tree';
 import { materializeGeneratedMasterDefaults } from './master-defaults';
+import { CompatibilityParts } from './compatibility-parts';
+import { compatibilityInsertion } from './compatibility';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -383,13 +385,22 @@ function materializeSlide(
   slideId: SlideId,
   index: number,
   relationshipSource: Uint8Array,
+  compatibility: CompatibilityParts,
 ): { bytes: Uint8Array; work: EditDoc; links: HyperlinkSaveContext } {
   const part = `ppt/slides/slide${index + 1}.xml`;
   const projectionTree = generatedProjectionTree(doc, slideId);
   const spids = allocatedProjectionSpids(projectionTree.sourceRecords, projectionTree.roots);
+  const usedSpids = new Set([1, ...spids.values()]);
   const records: Record<string, ElementRecord> = Object.create(null);
   const generatedTextResources = new Map<string, ElementInsertionResource>();
   for (const [id, sourceRecord] of Object.entries(projectionTree.sourceRecords)) {
+    let ancestor = projectionTree.sourceRecords[sourceRecord.parent];
+    let opaque = false;
+    while (ancestor) {
+      if (ancestor.src.editInfo?.requiresOriginal) { opaque = true; break; }
+      ancestor = projectionTree.sourceRecords[ancestor.parent];
+    }
+    if (opaque) continue;
     const source = structuredClone(doc.elements[id] ? effectiveElement(doc, id) : sourceRecord.src);
     const presetGeometry = source.kind === 'shape'
       ? doc.elements[id]
@@ -407,8 +418,15 @@ function materializeSlide(
         } : {}),
       },
     };
-    record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
-    record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
+    if (sourceRecord.src.editInfo?.requiresOriginal) {
+      record.meta.editable = 'frame';
+      record.meta.insertion = compatibilityInsertion(doc, sourceRecord, part, spids.get(id)!, usedSpids, compatibility);
+      record.children = undefined;
+      record.ovr = { ...structuredClone(sourceRecord.ovr), x: source.x, y: source.y, w: source.w, h: source.h };
+    } else {
+      record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
+      record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
+    }
     records[id] = record;
   }
   const slide = structuredClone(doc.slides[slideId]);
@@ -469,6 +487,7 @@ function materializeSlide(
   materializeElementTreeState(tree, work, part, roots.map((id) => records[id]), [], { links });
   patchSlideProperties(tree, work, slide);
   for (const record of Object.values(records)) {
+    if (record.src.editInfo?.requiresOriginal) continue;
     if (record.src.kind === 'shape' && record.src.fill?.type === 'image') {
       materializeElementImageFill(tree, record, record.src.fill, `rIdFill${spids.get(record.id)!}`);
     }
@@ -501,10 +520,11 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
     );
   }
   const resources = new Map<string, ElementInsertionResource>();
+  const compatibility = new CompatibilityParts(doc);
   doc.slideOrder.forEach((slideId, index) => {
     const slidePart = `ppt/slides/slide${index + 1}.xml`;
     const relsPart = relationshipPartFor(slidePart);
-    const materialized = materializeSlide(doc, slideId, index, parts[relsPart]);
+    const materialized = materializeSlide(doc, slideId, index, parts[relsPart], compatibility);
     parts[slidePart] = materialized.bytes;
     const media = mediaPackageParts(materialized.work);
     for (const [part, relationships] of media.relationships) {
@@ -543,5 +563,6 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
   parts['ppt/presentation.xml'] = patchGeneratedPresentationMetadata(
     parts['ppt/presentation.xml'], doc,
   );
+  compatibility.mergeInto(parts);
   return parts;
 }

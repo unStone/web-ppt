@@ -58,7 +58,7 @@ export interface PresentationEditInfo {
   masters: SlideMasterTemplate[];
   /** 多母版可共享同一主题；目录按 presentation.xml 的母版声明顺序去重。 */
   themes: PresentationTheme[];
-  /** 非 OPC 输入在 edit 模式保留会话 URL 的原字节，供复制、转换与崩溃恢复同步取用。 */
+  /** edit 模式保留会话资源及不透明兼容对象的原字节，供复制与转换同步取用。 */
   assets?: PresentationEditAsset[];
   /** 当前演示文稿的表样式 part；省略表示保存时需要按需创建。 */
   tableStylesPart?: string;

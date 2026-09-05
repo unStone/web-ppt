@@ -195,6 +195,8 @@ export async function runCompatibilityLockContract({ core, edit, bytes, check })
 
 export async function runCompatibilityMissingSourceContract({ core, edit, bytes, check }) {
   const presentation = await core.parse(bytes, { lazy: false, edit: true, keepPackage: true });
+  // 模拟旧解析器未提供兼容源资源的输入，仍必须拒绝把原始数据降级成 PNG。
+  delete presentation.editInfo.assets;
   const doc = edit.createDoc(presentation, { idPrefix: 'mc-generated-' });
   const editor = new edit.Editor(doc);
   try {

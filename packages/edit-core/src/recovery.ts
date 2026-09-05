@@ -1,4 +1,5 @@
 import { applyPatches } from './commands/patch';
+import { mergeSessionAssets } from './session-assets';
 import type { Patch, Selection } from './commands/types';
 import { bytesToBase64 } from './clipboard-binary';
 import { releaseLayoutProjectionCache } from './layout-projection';
@@ -173,6 +174,7 @@ function stageDoc(doc: EditDoc): EditDoc {
 }
 
 function commitStage(doc: EditDoc, staged: EditDoc): void {
+  mergeSessionAssets(doc, staged);
   releaseLayoutProjectionCache(doc);
   releaseDesignProjectionPackage(doc);
   releaseProjectionCache(doc);

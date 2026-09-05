@@ -41,8 +41,8 @@ tracker: local-markdown
 
 ## In progress
 
-- [修复未知扩展对象阻断兼容回退](tickets/008-alternate-content-fallback.md)已恢复真实漏斗图片，93 项专项覆盖
-  整壳编辑保存和身份；缺原包生成保存仍明确拒绝，尚未完成两条保存保留。
+- [修复未知扩展对象阻断兼容回退](tickets/008-alternate-content-fallback.md)已恢复真实漏斗图片，159 项专项覆盖
+  整壳编辑、身份、恢复和两条保存；生成产物已通过 LibreOffice 打开，仍需修复新建分组后复制的资源闭包。
 - [确认扩展图表回退与真实语料边界](tickets/002-chartex-fallback-corpus.md)已补真实漏斗的 Chrome/独立 SVG
   视觉证据；其他类型 PPTX 和数据边界仍缺证。
 

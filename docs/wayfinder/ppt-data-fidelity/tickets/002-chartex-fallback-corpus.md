@@ -65,4 +65,4 @@ part/ID 唯一目标图片后通过；临时改写包的来源标为未知，不
 票 008 当前实现已让上述原文件探针退出 `0`：`actualKinds=["image"]`、`matchedImages=1`、两条序列化均为
 `true`，源 PPTX 与 PNG 哈希均未变化。另经真实 Chrome 截图确认屏幕预览和独立 SVG 均可见，抽样 MAE 均为 0。
 自制确定性固件只提炼 envelope 结构，图片和图表数据自行生成；没有重新分发上游媒体。详细命令、视觉证据和
-原包丢失后的生成保存缺口见[实现进度](008-alternate-content-fallback.md)。这些结果只覆盖真实漏斗，不替代其余类型。
+原包释放后的生成保存进度见[实现进度](008-alternate-content-fallback.md)。这些结果只覆盖真实漏斗，不替代其余类型。

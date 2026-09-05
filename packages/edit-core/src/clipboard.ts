@@ -5,7 +5,7 @@ import { effectiveElement } from './projection';
 import { orderedTableRowInsertions } from './table-rows';
 import { outermostSelectedElementIds } from './selection';
 import { elementFrameToSlideMatrix, elementFrameToSlidePoint } from './space';
-import { clipboardClosure } from './clipboard-source';
+import { clipboardClosure, insertionOwner } from './clipboard-source';
 import { materializeElementRoots, materializeInsertionFragment } from './save/insertion';
 import { locateElementHosts } from './save/xfrm';
 import { serializeXmlNode } from './xml/tree';
@@ -51,16 +51,6 @@ function copiedMeta(
     ...(frameToSlide ? { frameToSlide } : {}),
     ...(source ? copiedLinkMeta(doc, id, source) : {}),
   };
-}
-
-function insertionOwner(doc: EditDoc, id: ElementId): ElementRecord | null {
-  let current = doc.elements[id];
-  while (current) {
-    if (current.meta.insertion) return current;
-    if (doc.slides[current.parent]) return null;
-    current = doc.elements[current.parent];
-  }
-  return null;
 }
 
 function namespaces(document: XmlDocument): Record<string, string> {

@@ -7,6 +7,9 @@ import { rewriteCompatibilityFixture, runCompatibilitySelectionContract } from '
 import { runCompatibilityLockContract, runCompatibilityMissingSourceContract, runCompatibilityOpaqueIdentityContract, runCompatibilityRecoveryContract, runCompatibilityStructureContract, runNestedCompatibilityContract } from './lib/alternate-content-structure-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
 import { runInsertionIdentityValidationContract } from './lib/alternate-content-structure-contract.mjs';
+import { runCompatibilityGeneratedCopiesContract, runCompatibilityGeneratedOpaqueContract, runCompatibilityGeneratedSaveContract } from './lib/compatibility-generated-save-contract.mjs';
+import { runCompatibilityGeneratedDeduplicatedContract, runCompatibilityGeneratedMissingDependencyContract, runCompatibilitySourceOwnershipContract } from './lib/compatibility-source-ownership-contract.mjs';
+import { runCompatibilityGeneratedConnectionsContract, runCompatibilityGeneratedParentContract } from './lib/compatibility-generated-connections-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/chartex-fallback');
@@ -34,6 +37,14 @@ await runInsertionIdentityValidationContract({ core, edit, bytes: readFileSync(j
 await runNestedCompatibilityContract({ core, edit, bytes, eq });
 await runCompatibilityLockContract({ core, edit, bytes, check });
 await runCompatibilityMissingSourceContract({ core, edit, bytes, check });
+await runCompatibilityGeneratedSaveContract({ core, edit, bytes, check, eq });
+await runCompatibilityGeneratedCopiesContract({ core, edit, bytes, check, eq });
+await runCompatibilityGeneratedOpaqueContract({ core, edit, bytes, check, eq });
+await runCompatibilitySourceOwnershipContract({ core, edit, bytes, check, eq });
+await runCompatibilityGeneratedMissingDependencyContract({ core, edit, bytes, check });
+await runCompatibilityGeneratedDeduplicatedContract({ core, edit, bytes, check, eq });
+await runCompatibilityGeneratedConnectionsContract({ core, edit, bytes, eq });
+await runCompatibilityGeneratedParentContract({ core, edit, bytes, eq });
 const distinctIds = rewriteCompatibilityFixture(bytes,
   (xml) => xml.replace('<p:cNvPr id="6" name="fallback-chart"/><p:cNvPicPr>', '<p:cNvPr id="9" name="fallback-chart"/><p:cNvPicPr>'));
 await runAlternateContentSaveContract({ core, edit, check, eq, bytes: distinctIds });
