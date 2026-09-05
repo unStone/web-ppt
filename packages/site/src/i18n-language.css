@@ -1,0 +1,4 @@
+.site-language { display: inline-flex; align-items: center; flex: none; gap: 8px; white-space: nowrap; font-size: 12px; }
+.site-language a { color: inherit; text-decoration: none; padding: 4px 2px; }
+.site-language a[aria-current="true"] { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.site-language a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

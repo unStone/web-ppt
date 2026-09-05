@@ -1,7 +1,7 @@
 /** 官网产品层的 .ppt 转换确认、零命令拒绝与下载命名必须在真实浏览器观察。 */
 import { execFileSync, spawn } from 'node:child_process';
 import {
-  existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
+  existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -12,8 +12,12 @@ import WebSocket from 'ws';
 import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runChartExBrowserContract } from './lib/chartex-browser-contract.mjs';
+import { runSiteLanguagePreferencesContract } from './lib/site-editor-language-contract.mjs';
+import { runSiteI18nProductionContract } from './lib/site-i18n-production-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const productionLanguages = process.argv.includes('--i18n-dist');
+const productionDirectory = join(root, 'packages/site/dist');
 const out = join(root, 'out/site-editor-browser');
 mkdirSync(out, { recursive: true });
 const bundleDir = join(out, 'bundle');
@@ -145,7 +149,7 @@ if (editorShell.includes('templateDialog') || editorStyle.includes('.template-di
 if (editorShell.includes('mediaDialog') || editorStyle.includes('#mediaDialog')) {
   throw new Error('媒体弹窗 DOM 与样式必须按需加载');
 }
-const editorHtml = editorShell
+const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 'editor.html'), 'utf8') : editorShell
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
@@ -153,6 +157,9 @@ const routes = new Map([
   ['/fixtures/sample-editor-media.wav', ['audio/wav', readFileSync(join(root, 'fixtures/sample-editor-media.wav'))]],
   ['/fixtures/sample-editor-media.mp4', ['video/mp4', readFileSync(join(root, 'fixtures/sample-editor-media.mp4'))]],
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
+  ['/editor.en.html', ['text/html; charset=utf-8', productionLanguages
+    ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml]],
+  ['/src/i18n-language.css', ['text/css', readFileSync(join(root, 'packages/site/src/i18n-language.css'))]],
   ['/editor-page.css', ['text/css; charset=utf-8', editorStyle]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
@@ -166,6 +173,20 @@ const routes = new Map([
   ['/fixtures/sample-chart-data.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart-data.pptx'))]],
   ['/assets/replacement.png', ['image/png', readFileSync(join(root, 'packages/site/public/og.png'))]],
 ]);
+const productionBase = productionLanguages
+  ? new URL(/<script[^>]+src="([^"]+)"/.exec(editorHtml)[1], 'http://localhost').pathname.split('/assets/')[0] : '';
+const dictionaryUrls = [];
+if (productionLanguages) {
+  for (const page of ['index', 'samples']) for (const suffix of ['', '.en']) {
+    routes.set(`/${page}${suffix}.html`, ['text/html; charset=utf-8', readFileSync(join(productionDirectory, `${page}${suffix}.html`))]);
+  }
+  for (const name of readdirSync(join(productionDirectory, 'assets'))) {
+    const bytes = readFileSync(join(productionDirectory, 'assets', name));
+    routes.set(`/assets/${name}`, [name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8', bytes]);
+    if (name.endsWith('.js') && bytes.includes('Fidelity needs a reference')) dictionaryUrls.push(`${productionBase}/assets/${name}`);
+  }
+  if (dictionaryUrls.length !== 1) throw new Error('生产英文词库必须在唯一按需块中');
+}
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
 routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
@@ -179,7 +200,8 @@ if (existsSync(realChartex)) {
     imageHash: '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096' });
 }
 const server = createServer((request, response) => {
-  const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+  const rawPath = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
+  const pathname = productionBase && rawPath.startsWith(`${productionBase}/`) ? rawPath.slice(productionBase.length) : rawPath;
   if (pathname === '/slow-media.wav') {
     setTimeout(() => {
       response.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' });
@@ -315,6 +337,10 @@ async function runContract(webSocketDebuggerUrl) {
       status: document.querySelector('#statusText')?.textContent,
       loading: document.querySelector('#editorApp')?.dataset.loading,
       file: document.querySelector('#fileName')?.textContent,
+      language: document.documentElement.lang,
+      url: location.href,
+      dialogs: [...document.querySelectorAll('dialog[open],[role="dialog"]')]
+        .filter((dialog) => !dialog.hidden).map((dialog) => dialog.id),
       animations: document.querySelectorAll('#animationTimeline li').length,
       animationHtml: document.querySelector('#animationTimeline')?.innerHTML,
       media: { open: document.querySelector('#mediaDialog')?.open,
@@ -322,7 +348,7 @@ async function runContract(webSocketDebuggerUrl) {
         error: document.querySelector('#mediaError')?.textContent,
         playback: document.querySelector('#mediaPlaybackStatus')?.textContent },
     }))()`);
-    throw new Error(`等待${label}超时：${JSON.stringify(state)}`);
+    throw new Error(`等待${label}超时：${JSON.stringify(state)}；控制台：${consoleFailures.join(' | ')}`);
   };
   const click = async (selector) => {
     const point = await evaluate(`(() => {
@@ -356,6 +382,11 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    if (productionLanguages) {
+      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls });
+      if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
+      return { bytes: 0 };
+    }
     await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
     await evaluate(`(() => {
       const original = HTMLAnchorElement.prototype.click;
@@ -688,6 +719,7 @@ async function runContract(webSocketDebuggerUrl) {
       && document.querySelector('#fileName')?.textContent.startsWith('●')
       && !!document.querySelector('[data-ppt-preset-handle]')`, '官网预设形状切换');
     if (switched !== 'hexagon') throw new Error('官网形状类型控件无法选择完整预设目录');
+    await runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor });
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {
@@ -701,10 +733,10 @@ try {
     server.once('error', rejectAddress);
     server.listen(0, '127.0.0.1', () => resolveAddress(server.address()));
   });
-  const url = `http://127.0.0.1:${address.port}/editor.html`;
+  const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(`\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
+  console.log(productionLanguages ? '\n\x1b[32m✓ 官网三张生产页面中英文静态切换通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);
 } finally {
   if (browserRunning()) {

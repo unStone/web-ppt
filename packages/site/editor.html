@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#f7f7f5" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23d95622'/><path d='M10 8h7.5a5.5 5.5 0 010 11H14v5h-4V8zm4 3.4v4.2h3.2a2.1 2.1 0 000-4.2H14z' fill='%23fff'/></svg>" />
 <link rel="stylesheet" href="./src/editor-page.css" />
+<link rel="stylesheet" href="./src/i18n-language.css" />
 </head>
 <body>
 <div class="editor-app" id="editorApp">
@@ -20,6 +21,7 @@
     <span class="beta-badge">编辑器 beta</span>
     <span class="file-name" id="fileName">内置示例</span>
     <span class="privacy-note"><i></i>文件仅在本机处理</span>
+    <span class="site-language" id="siteLanguage" data-site-language role="group" aria-label="Language / 语言"><a href="./editor.html?lang=zh-CN" data-site-locale="zh-CN" lang="zh-CN">中文</a><a href="./editor.en.html" data-site-locale="en" lang="en">English</a></span>
     <button class="button" id="newFile" type="button">新建</button>
     <label class="button primary file-button" for="fileInput">打开本地文件</label>
     <input id="fileInput" type="file" accept=".pptx,.ppt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" />

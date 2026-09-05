@@ -203,8 +203,10 @@ kbd { padding: 2px 5px; border: 1px solid #d5d5cf; border-bottom-width: 2px; bor
   .toolbar #zoomLabel { display: inline; }
 }
 @media (max-width: 680px) {
-  .editor-app { grid-template-rows: 48px auto minmax(0, 1fr) 28px; }
-  .app-header { padding: 0 9px; }
+  .editor-app { grid-template-rows: auto auto minmax(0, 1fr) 28px; }
+  /* 英文按钮不能挤成三行后被固定行高裁掉，窄屏让文件入口自然换行。 */
+  .app-header { flex-wrap: wrap; min-height: 48px; padding: 6px 9px; }
+  .app-header .button { flex-shrink: 0; white-space: nowrap; }
   .beta-badge, .file-name { display: none; }
   .file-button { margin-left: auto; }
   .toolbar { flex-wrap: wrap; gap: 4px; padding: 5px 7px; }

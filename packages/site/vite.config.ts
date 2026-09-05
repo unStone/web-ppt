@@ -5,13 +5,14 @@ import { defineConfig } from 'vite';
 // 而一致性检查要能不构建就给出同一结论，两处分叉迟早会有一边失效。
 import { SITE_PAGES, duplicateIds } from '../../tooling/lib/unique-ids.mjs';
 import { fetchSamples, type Sample } from './src/samples-index';
+import { siteI18n } from './i18n-build';
 
 // GitHub Pages 部署在 /web-ppt/ 子路径下；本地 dev 用根路径
 const base = process.env.SITE_BASE ?? '/';
 
 /** 构建期从样本库拉到的清单，供 samples.html 预渲染 */
 let prerendered: Sample[] = [];
-/** 已内联进 HTML、可以从产物里删掉的样式表 */
+/** 已内联进 HTML 的样式表；是否可删除还取决于动态模块的引用。 */
 const inlined = new Set<string>();
 
 /** 外部数据一律转义后才拼进 HTML */
@@ -30,15 +31,15 @@ function cardHtml(s: Sample): string {
   const bits = [s.author, s.license].filter(Boolean).map(esc);
   let credit = bits.join(' · ');
   if (s.source) {
-    credit += `${credit ? ' · ' : ''}<a href="${esc(s.source)}" target="_blank" rel="noopener noreferrer nofollow">出处</a>`;
+    credit += `${credit ? ' · ' : ''}<a data-site-message href="${esc(s.source)}" target="_blank" rel="noopener noreferrer nofollow">出处</a>`;
   }
   return (
     `<article class="sample-card" data-file="${esc(s.file)}" data-url="${esc(s.url)}">` +
     `<h3>${esc(s.title)}</h3>` +
     (s.highlight ? `<p class="sample-highlight">${esc(s.highlight)}</p>` : '') +
     '<div class="sample-foot">' +
-    '<button class="chip act" data-preview>预览</button>' +
-    `<a class="chip" href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与全屏演示的完整查看器">在首页打开</a>` +
+    '<button class="chip act" data-preview data-site-message>预览</button>' +
+    `<a class="chip" data-site-message href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与全屏演示的完整查看器">在首页打开</a>` +
     '</div>' +
     (credit ? `<p class="sample-credit">${credit}</p>` : '') +
     '</article>'
@@ -78,6 +79,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    siteI18n(),
     {
       /**
        * 样本卡构建时预渲染进 samples.html。
@@ -114,12 +116,13 @@ export default defineConfig({
        * 4KB 的样式表换一整个往返：HTML 到齐了浏览器才知道要它，拿到它才敢画第一帧。
        * 实测这一下让 LCP 多等 1.1s——首屏能不能画，卡在一个比图标还小的文件上。
        *
-       * 内联之后产物里那份 .css 就没人引了，顺手从 bundle 里删掉，免得留个
-       * 谁也不会去下载的孤儿文件。
+       * 共享样式可能仍在动态模块的预加载清单中；只删除真正无引用的产物，
+       * 否则首屏正常、打开编辑器时却会因 CSS 404 而中断模块加载。
        */
       name: 'inline-css',
       apply: 'build',
       enforce: 'post',
+      buildStart() { inlined.clear(); },
       transformIndexHtml: {
         order: 'post',
         handler(html, ctx) {
@@ -135,8 +138,15 @@ export default defineConfig({
           });
         },
       },
-      generateBundle(_options, bundle) {
-        for (const name of inlined) delete bundle[name];
+      generateBundle: {
+        // Vite 的预加载清单也在 generateBundle 中生成，必须等它写完再判断引用。
+        order: 'post',
+        handler(_options, bundle) {
+          const chunks = Object.values(bundle).filter((artifact) => artifact.type === 'chunk');
+          for (const name of inlined) {
+            if (!chunks.some((chunk) => chunk.code.includes(name))) delete bundle[name];
+          }
+        },
       },
     },
     {

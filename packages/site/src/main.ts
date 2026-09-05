@@ -477,7 +477,9 @@ const requested = params.get('sample');
 let pendingPage = Math.max(1, Math.trunc(Number(params.get('p'))) || 1);
 // 参数读完就把地址还原成干净的主页。首页不写地址，留着这串参数只会在换了
 // 样本之后变成一个会撒谎的地址——指着 A 却显示着 B。
-if (location.search) history.replaceState(null, '', location.pathname + location.hash);
+const cleanUrl = new URL(location.href);
+cleanUrl.searchParams.delete('sample'); cleanUrl.searchParams.delete('p');
+history.replaceState(history.state, '', cleanUrl);
 
 const builtinChip = requested
   ? [...document.querySelectorAll<HTMLElement>('.samples .chip[data-src]')]

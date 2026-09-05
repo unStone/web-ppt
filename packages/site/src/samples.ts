@@ -5,6 +5,7 @@ import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { fetchBytes, whyFailed } from './fetch-bytes';
 import { fetchSamples, type Sample } from './samples-index';
+import { languageReady } from './i18n/runtime';
 
 /**
  * 样本页：先挑，再看。
@@ -175,8 +176,8 @@ function closePreview(): void {
 /** 地址栏等于「正在预览哪一份」，复制出去就能分享 */
 function syncUrl(file?: string): void {
   const url = new URL(location.href);
-  url.search = file ? `?sample=${encodeURIComponent(file)}` : '';
-  history.replaceState(null, '', url.pathname + url.search);
+  if (file) url.searchParams.set('sample', file); else url.searchParams.delete('sample');
+  history.replaceState(history.state, '', url.pathname + url.search + url.hash);
 }
 
 async function openSample(s: Sample): Promise<void> {
@@ -334,4 +335,4 @@ async function build(): Promise<void> {
   if (hit) void openSample(hit);
 }
 
-void build();
+void languageReady.then(build);

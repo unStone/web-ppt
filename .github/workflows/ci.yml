@@ -77,6 +77,11 @@ jobs:
       - name: 构建
         run: npm run build
 
+      - name: 官网双语生产回归
+        run: npm run test:site:i18n
+        env:
+          SITE_BASE: /web-ppt/
+
       # 放在构建之后：体积核对要读 dist 产物。
       # 守的是单测碰不到的一类问题——LICENSE 与各处声明不符、npm 链接指向不存在的包、
       # 文档里的体积和快照数照抄旧值。

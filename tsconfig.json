@@ -48,6 +48,7 @@
     "tooling/type-contracts/v07-master.ts",
     "tooling/type-contracts/v07-templates.ts",
     "tooling/type-contracts/v08-chart.ts",
-    "tooling/type-contracts/media.ts"
+    "tooling/type-contracts/media.ts",
+    "tooling/type-contracts/site-i18n.ts"
   ]
 }

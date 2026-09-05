@@ -1,3 +1,5 @@
+import { languageReady } from './i18n/runtime';
+
 /**
  * 首页入口：只决定「什么时候把引擎拉下来」，自己一行引擎代码都不碰。
  *
@@ -17,7 +19,7 @@ let started = false;
 function start(): void {
   if (started) return;
   started = true;
-  void import('./main');
+  void languageReady.then(() => import('./main'));
 }
 
 const demo = document.querySelector<HTMLElement>('#demoRoot');

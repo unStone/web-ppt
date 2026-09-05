@@ -17,6 +17,7 @@ import { enableSlideReorder } from './editor-slide-reorder';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
+import { languageReady, setText } from './i18n/runtime';
 
 const {
   app, toolbar, fileInput, fileName, canvasViewport, canvasMount, canvasState,
@@ -50,6 +51,7 @@ function explain(error: unknown): string {
 }
 
 function notice(message: string, tone: 'normal' | 'success' | 'error' = 'normal'): void {
+  statusText.removeAttribute('data-site-dynamic');
   statusText.textContent = message;
   statusText.dataset.tone = tone;
 }
@@ -125,14 +127,15 @@ function syncControls(): void {
   const total = editor?.doc.slideOrder.length ?? 0;
   pageIndicator.textContent = index < 0 ? '— / —' : `${index + 1} / ${total}`;
   slideCount.textContent = String(total);
-  documentKind.textContent = !editor ? 'PPTX · 可编辑'
-    : editor.doc.meta.readonly ? `${editor.doc.meta.source.toUpperCase()} · 只读预览`
-      : editor.doc.meta.source === 'ppt'
-        ? pptConversionAccepted ? 'PPT → PPTX · 可编辑' : 'PPT · 转换后可编辑'
-        : 'PPTX · 可编辑';
+  if (editor?.doc.meta.readonly) {
+    setText(documentKind, '{format} · 只读预览', { format: editor.doc.meta.source.toUpperCase() });
+  } else {
+    setText(documentKind, editor?.doc.meta.source === 'ppt'
+      ? pptConversionAccepted ? 'PPT → PPTX · 可编辑' : 'PPT · 转换后可编辑' : 'PPTX · 可编辑');
+  }
   const dirty = editor?.isDirty() ?? false;
   fileName.textContent = `${dirty ? '● ' : ''}${activeName}`;
-  document.title = `${dirty ? '● ' : ''}${activeName} · Web-PPT 编辑器`;
+  setText(document.querySelector('title')!, '{name} · Web-PPT 编辑器', { name: `${dirty ? '● ' : ''}${activeName}` });
   syncSlideSelection();
   inspector?.sync();
   syncChartInspector();
@@ -438,11 +441,11 @@ buttons.exportImages.addEventListener('click', () => {
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
 buttons.undo.addEventListener('click', () => {
-  if (session?.editor.undo()) notice('已撤销上一步');
+  if (session?.editor.undo()) { setText(statusText, '已撤销上一步'); statusText.dataset.tone = 'normal'; }
   syncControls();
 });
 buttons.redo.addEventListener('click', () => {
-  if (session?.editor.redo()) notice('已重做上一步');
+  if (session?.editor.redo()) { setText(statusText, '已重做上一步'); statusText.dataset.tone = 'normal'; }
   syncControls();
 });
 buttons.prev.addEventListener('click', () => {
@@ -544,7 +547,7 @@ slideInspector = createSlideInspector(inspectorElement, () => ({
   session, view, writable: canMutateDocument() && mode === 'edit', showSlide,
 }), notice);
 
-void fetch(new URL('./demo/showcase.pptx', document.baseURI))
+void languageReady.then(() => fetch(new URL('./demo/showcase.pptx', document.baseURI)))
   .then((response) => {
     if (!response.ok) throw new Error(`示例下载失败（HTTP ${response.status}）`);
     return response.arrayBuffer();
