@@ -26,16 +26,17 @@ export function addMediaPatches(doc: EditDoc, extension: ExtensionCommand, origi
   if (command.source.kind !== 'embedded') throw new Error('媒体来源无效');
   assertDataObject(command.poster, ['bytes', 'mime'], 'AddMedia.poster');
   const media = createMediaResource(command.source.bytes, command.source.mime);
+  const kind = media.mime === 'video/mp4' ? 'video' : 'audio';
   const poster = createImageResource(command.poster.bytes, command.poster.mime, 'AddMedia.poster', 5 * 1024 * 1024);
   const id = allocateElementId(doc);
   const part = canvas.part;
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   let insertion: ElementInsertionSource | undefined;
   if (part && spid !== undefined) {
-    const markup = mediaMarkup(spid, command.rect);
+    const markup = mediaMarkup(spid, command.rect, kind);
     const root = { markup, namespaces: MEDIA_NAMESPACES, hostSpids: [String(spid)], relationships: [
       { sourceId: 'rIdPoster', type: `${OFFICE_REL}/image`, resourceHash: poster.hash },
-      { sourceId: 'rIdAudio', type: `${OFFICE_REL}/audio`, resourceHash: media.hash },
+      { sourceId: 'rIdSource', type: `${OFFICE_REL}/${kind}`, resourceHash: media.hash },
       { sourceId: 'rIdMedia', type: MEDIA_REL, resourceHash: media.hash },
     ] };
     const closure = prepareInsertionClosures(doc, { ooxml: { roots: { media: root } }, resources: [poster, media] },
@@ -48,9 +49,9 @@ export function addMediaPatches(doc: EditDoc, extension: ExtensionCommand, origi
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
     id, parent: canvas.id, z: fractionalIndexBetween(previous, null, id), ovr: {},
-    src: { kind: 'image', ...(spid === undefined ? {} : { id: spid }), name: '音频', ...command.rect,
+    src: { kind: 'image', ...(spid === undefined ? {} : { id: spid }), name: kind === 'audio' ? '音频' : '视频', ...command.rect,
       rot: 0, flipH: false, flipV: false, src: source(poster), crop: null, stroke: null,
-      media: { kind: 'audio', src: source(media), mime: media.mime } },
+      media: { kind, src: source(media), mime: media.mime } },
     meta: { editable: 'frame', created: true, ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}) },
   };
   const value = { root: record.id, parent: canvas.id, records: { [record.id]: record } };

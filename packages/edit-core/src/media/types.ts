@@ -8,7 +8,7 @@ export interface AddMediaCommand {
   readonly source: {
     readonly kind: 'embedded';
     readonly bytes: Uint8Array;
-    readonly mime: 'audio/wav';
+    readonly mime: 'audio/wav' | 'video/mp4';
   };
   readonly poster: {
     readonly bytes: Uint8Array;

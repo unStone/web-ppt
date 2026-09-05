@@ -1,4 +1,5 @@
 import { makePng, makeWav } from './ooxml.mjs';
+import { makeMp4 } from './media-mp4-fixture.mjs';
 
 export function runMediaInsertionBoundaries({ editor, media, assert }) {
   const wav = makeWav(0.1), poster = makePng(8, 8, () => [40, 80, 120]);
@@ -35,7 +36,9 @@ export function runMediaInsertionBoundaries({ editor, media, assert }) {
 }
 
 export async function runMediaInsertionCollaboration({ core, edit, collab, media, source, assert }) {
-  for (const generated of [false, true]) {
+  const cases = [{ bytes: makeWav(0.1), mime: 'audio/wav' },
+    { bytes: makeMp4(), mime: 'video/mp4' }, { bytes: makeMp4(true), mime: 'video/mp4' }];
+  for (const sample of cases) for (const generated of [false, true]) {
     const peers = await Promise.all(['left', 'right'].map(async (name) => {
       const presentation = await core.parse(source, { edit: true, keepPackage: true, lazy: false });
       const doc = edit.createDoc(presentation, { idPrefix: 'media-collab-' });
@@ -52,7 +55,7 @@ export async function runMediaInsertionCollaboration({ core, edit, collab, media
     try {
       const ids = peers.map(({ doc, editor }) => media.createMediaEditor(editor).exec({
         type: 'AddMedia', slideId: doc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
-        source: { kind: 'embedded', bytes: makeWav(0.1), mime: 'audio/wav' },
+        source: { kind: 'embedded', bytes: sample.bytes, mime: sample.mime },
         poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
       }));
       assert.notEqual(...ids, '并发插入使用副本槽分配不同身份');
@@ -63,7 +66,7 @@ export async function runMediaInsertionCollaboration({ core, edit, collab, media
       assert.deepEqual(peers[0].doc.slides[peers[0].doc.slideOrder[0]].children,
         peers[1].doc.slides[peers[1].doc.slideOrder[0]].children, '并发媒体顺序收敛');
       for (const peer of peers) {
-        for (const id of ids) assert.equal(peer.editor.effectiveElement(id).media.mime, 'audio/wav');
+        for (const id of ids) assert.equal(peer.editor.effectiveElement(id).media.mime, sample.mime);
         if (generated) peer.presentation.dispose();
         const reopened = await core.parse(await peer.editor.save(), { lazy: false });
         try { assert.equal(reopened.slides[0].elements.filter((el) => el.media).length, 2); }

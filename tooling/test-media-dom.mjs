@@ -5,7 +5,7 @@ import { installDomEnv } from './lib/dom-env.mjs';
 
 const dom = installDomEnv();
 try {
-  for (const mode of ['patched', 'generated']) {
+  for (const mode of ['patched', 'generated', 'mp4-patched', 'mp4-generated', 'fmp4-patched', 'fmp4-generated']) {
     const parts = unzipSync(readFileSync(new URL(`../out/media-insertion/${mode}.pptx`, import.meta.url)));
     for (const [part, bytes] of Object.entries(parts)) {
       if (!part.endsWith('.xml') && !part.endsWith('.rels')) continue;

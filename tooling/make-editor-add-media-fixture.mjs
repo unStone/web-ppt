@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deck, slideXml, solid, sp } from './lib/ooxml.mjs';
+import { makeMp4 } from './lib/media-mp4-fixture.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const bytes = deck({
@@ -14,4 +15,6 @@ const bytes = deck({
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 writeFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'), bytes);
+writeFileSync(join(root, 'fixtures/sample-editor-media.mp4'), makeMp4());
+writeFileSync(join(root, 'fixtures/sample-editor-media-fragmented.mp4'), makeMp4(true));
 console.log(`媒体插入固件已生成（${bytes.length} 字节）`);

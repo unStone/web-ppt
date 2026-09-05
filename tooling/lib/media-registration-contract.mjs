@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const [out, sourcePath] = process.argv.slice(2);
+const [out, sourcePath, recoveryFile = 'recovery.json'] = process.argv.slice(2);
 const core = await import(pathToFileURL(join(out, 'core.mjs')).href);
 const edit = await import(pathToFileURL(join(out, 'edit.mjs')).href);
-const frames = JSON.parse(readFileSync(join(out, 'recovery.json'), 'utf8'));
+const frames = JSON.parse(readFileSync(join(out, recoveryFile), 'utf8'));
 const source = new Uint8Array(readFileSync(sourcePath));
 const presentation = await core.parse(source, { edit: true, keepPackage: true, lazy: false });
 const doc = edit.createDoc(presentation, { idPrefix: 'media-' });

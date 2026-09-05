@@ -8,6 +8,7 @@ import { makePng, makeWav } from './lib/ooxml.mjs';
 import { unzipSync, strFromU8 } from 'fflate';
 import { recordCount } from './lib/measured.mjs';
 import { runMediaInsertionBoundaries, runMediaInsertionCollaboration } from './lib/media-insertion-boundaries.mjs';
+import { runMp4InsertionContract } from './lib/media-mp4-insertion-contract.mjs';
 let passed = 0;
 const assert = new Proxy(nodeAssert, { get: (target, key) => (...args) => {
   const result = target[key](...args); passed++; return result;
@@ -124,6 +125,7 @@ for (const generated of [false, true]) {
   }
 }
 await runMediaInsertionCollaboration({ core, edit, collab, media, source, assert });
+await runMp4InsertionContract({ core, edit, media, source, assert, root, out });
 const legacy = await core.parse(new Uint8Array(readFileSync(join(root, 'fixtures/sample.ppt'))), { edit: true });
 const legacyDoc = edit.createDoc(legacy, { idPrefix: 'media-legacy-' });
 const legacyEditor = new edit.Editor(legacyDoc);

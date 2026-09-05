@@ -1,6 +1,7 @@
 import { bytesToBase64, sha256 } from '../clipboard-binary';
 import { copyImageBytes } from '../commands/image-resource';
 import type { ClipboardResource } from '../commands/types';
+import { assertMp4 } from './mp4';
 
 export const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
 const ascii = (bytes: Uint8Array, offset: number, count: number): string =>
@@ -36,15 +37,18 @@ function assertWav(bytes: Uint8Array): void {
 }
 
 export function validateMediaResource(resource: Pick<ClipboardResource, 'mime' | 'extension'>, bytes: Uint8Array): boolean {
-  if (resource.mime !== 'audio/wav' || resource.extension !== 'wav') return false;
+  const wav = resource.mime === 'audio/wav' && resource.extension === 'wav';
+  const mp4 = resource.mime === 'video/mp4' && resource.extension === 'mp4';
+  if (!wav && !mp4) return false;
   if (bytes.length > MAX_MEDIA_BYTES) throw new Error(`媒体不能超过 ${MAX_MEDIA_BYTES} 字节`);
-  assertWav(bytes);
+  if (wav) assertWav(bytes);
+  else assertMp4(bytes);
   return true;
 }
 
 export function createMediaResource(value: unknown, mime: unknown): ClipboardResource {
   const bytes = copyImageBytes(value, 'AddMedia.source.bytes', MAX_MEDIA_BYTES);
-  const descriptor = { mime: typeof mime === 'string' ? mime : '', extension: 'wav' };
+  const descriptor = { mime: typeof mime === 'string' ? mime : '', extension: mime === 'video/mp4' ? 'mp4' : 'wav' };
   if (!validateMediaResource(descriptor, bytes)) throw new Error('不支持的媒体 MIME');
   return { ...descriptor, bytes: bytesToBase64(bytes), hash: sha256(bytes) };
 }

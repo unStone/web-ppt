@@ -14,7 +14,7 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "node tooling/test-core.mjs && node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-chart-data.mjs && node tooling/test-chartex-fallback.mjs && npm run test:media && node tooling/test-builtin-templates.mjs && node tooling/test-v07-integration.mjs && node tooling/test-edit-powerpoint-report.mjs && npm run test:editor && npm run test:adapters && npm run test:collab && node tooling/test-edit-equivalence.mjs && node tooling/test-metafile.mjs",
     "test:media": "node tooling/test-media-insertion.mjs",
-    "test:media:libreoffice": "npm run test:media && node tooling/test-edit-libreoffice.mjs out/media-insertion/patched.pptx 1 && node tooling/test-edit-libreoffice.mjs out/media-insertion/generated.pptx 1",
+    "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
     "test:core": "node tooling/test-core.mjs",
     "test:edit": "node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-chart-data.mjs && node tooling/test-edit-powerpoint-report.mjs && node tooling/test-edit-equivalence.mjs",
     "test:edit:save": "node tooling/test-edit-save.mjs",
