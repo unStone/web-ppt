@@ -20,18 +20,18 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 5024 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 197 MC fallback + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 5206 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 197 MC fallback + 182 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 546 对 | 83 份固件、273 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 548 对 | 84 份固件、274 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 341 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 355 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 546 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 548 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -100,7 +100,8 @@
 | 格式 | `ApplyFormat`（格式刷） | — |
 | 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
 | 经典图表 | 框架级操作 + 按需数据集增删改、cache/内嵌工作簿同步 | 类型切换、格式样式编辑 |
-| SmartArt/OLE/墨迹/媒体 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑 |
+| 媒体 | 按需 `AddMedia`：PCM WAV + 自定义海报；框架变换、复制、历史与保存 | MP4、外链、默认音频图标、海报替换和框架/官网入口 |
+| SmartArt/OLE/墨迹 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑 |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`。
 
@@ -151,7 +152,7 @@ flowchart TD
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
 | chartex 解析 | 原生未完成；真实漏斗回退、缺原包保存与数据引用取证已补 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与原生布局 |
-| 媒体插入 | 有 | 有 | **0.8 P2** |
+| 媒体插入 | WAV + 自定义海报核心链路已实现；MP4/外链/UI 待补 | 有，独立按需入口 | **0.8 P2 进行中**，见[阶段 API](media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | **产品层双路径**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
 | Safari LBSE | 无（engine 行盒已兜住） | 上游未默认开启 | **保留兜底，不要删** |

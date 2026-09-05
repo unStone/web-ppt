@@ -7,6 +7,7 @@ import {
 } from '../clipboard-source';
 import type { ElementCropPatch, ElementImageReplacementPatch, ImageResourcePatch, Patch } from './types';
 import { validateStoredImageFormat } from './image-format';
+import { registeredEditExtensions } from '../extension-runtime';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 interface ValidatedResource {
@@ -132,10 +133,11 @@ export function assertImageResource(
       );
     }
   } else {
-    if (!packageBound || resource.created) {
+    packageSource = packageBound && !resource.created;
+    if (!packageSource && ![...registeredEditExtensions().values()]
+      .some((runtime) => runtime.validateResource?.(resource, bytes))) {
       throw new Error(`${label} 的非图片媒体不是当前文档的 OPC 来源`);
     }
-    packageSource = true;
   }
   validatedResources.set(resource, {
     targetPart: resource.targetPart, hash: resource.hash, mime: resource.mime,

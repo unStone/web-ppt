@@ -112,10 +112,18 @@ export async function browserResult(webSocketDebuggerUrl) {
   });
   try {
     for (let attempt = 0; attempt < 600; attempt++) {
+      const mediaPlay = await evaluate(`(() => {
+        const button = document.querySelector('[data-media-playback]:not(:disabled)');
+        if (!button) return null;
+        const rect = button.getBoundingClientRect();
+        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      })()`);
+      if (mediaPlay) await trustedClick(mediaPlay);
       const result = await evaluate(`(() => {
         const report = document.querySelector('#report');
         return report ? { status: report.dataset.status ?? 'running', p95: report.dataset.p95,
           hitP95: report.dataset.hitP95, selectionP95: report.dataset.selectionP95,
+          mediaPlayback: report.dataset.mediaPlayback,
           spaceError: report.dataset.spaceError, handleError: report.dataset.handleError,
           nestedDragError: report.dataset.nestedDragError,
           dragP95: report.dataset.dragP95, resizeError: report.dataset.resizeError,

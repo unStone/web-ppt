@@ -18,6 +18,7 @@
       "@web-ppt/edit-core/generate": ["./packages/edit-core/src/generate/index.ts"],
       "@web-ppt/edit-core/templates": ["./packages/edit-core/src/templates/index.ts"],
       "@web-ppt/edit-core/chart": ["./packages/edit-core/src/chart/index.ts"],
+      "@web-ppt/edit-core/media": ["./packages/edit-core/src/media/index.ts"],
       "@web-ppt/collab": ["./packages/collab/src/index.ts"],
       "@web-ppt/editor": ["./packages/editor/src/index.ts"],
       "@web-ppt/editor/adjustments": ["./packages/editor/src/adjustments/index.ts"],
@@ -43,6 +44,7 @@
     "tooling/type-contracts/v07-layout.ts",
     "tooling/type-contracts/v07-master.ts",
     "tooling/type-contracts/v07-templates.ts",
-    "tooling/type-contracts/v08-chart.ts"
+    "tooling/type-contracts/v08-chart.ts",
+    "tooling/type-contracts/media.ts"
   ]
 }

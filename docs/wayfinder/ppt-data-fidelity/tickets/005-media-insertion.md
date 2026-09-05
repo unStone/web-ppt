@@ -1,6 +1,7 @@
 ---
 title: 插入可交付的音视频
 status: open
+assignee: /root
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -20,3 +21,23 @@ blocked_by: []
 验收覆盖 MP4、WAV、外链、重复字节、替换海报、复制/删除、撤销重做、恢复/协同、补丁/生成保存、离线重开、
 真实 Chrome 播放控件和 LibreOffice 无修复打开；恶意 MIME、超限字节与失效 URL 明确拒绝或降级，默认入口无
 媒体编码器和示例字节。
+
+## 阶段增量（票据保持 open）
+
+| 已实现 | 尚未完成 |
+|---|---|
+| PCM WAV + 自定义海报，独立 `edit-core/media` 入口 | MP4、显式外链、确定性内置音频图标 |
+| 原子插入/选中、复制删除、撤销重做、注册恢复、并发协同 | 海报替换与框架/官网入口 |
+| 两种保存的双关系、原字节去重、严格 XML | 完整音视频矩阵与 Windows PowerPoint 实测 |
+
+API、明确的输入范围与验证命令见[媒体插入](../../../media-insertion.md)。此次修复了通用插入宿主离开临时
+XML 祖先时丢失命名空间闭包的问题；严格 DOM 解析与 Chrome 播放作为独立回归，不能以宽松解析或
+LibreOffice 能打开代替它们。
+
+| WAV 阶段实测 | 结果 |
+|---|---|
+| 全仓门禁 | check / test / build / verify 全绿；5206 项断言、548 对等价指纹 |
+| 发布入口 | 构建后的媒体插入契约通过；默认入口 82498 B gzip，原预算不变 |
+| Chrome | 真实点击后，两种保存产物均解码并播放至结束（0.4 秒） |
+| LibreOffice | 两种保存产物均打开并导出单页 PDF；不是 PowerPoint 播放证据 |
+| 审查 | Standards / Spec 双路审查通过；完整票据的未完成项仍保留 |

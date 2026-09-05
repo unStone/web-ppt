@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const [out, sourcePath] = process.argv.slice(2);
+const core = await import(pathToFileURL(join(out, 'core.mjs')).href);
+const edit = await import(pathToFileURL(join(out, 'edit.mjs')).href);
+const frames = JSON.parse(readFileSync(join(out, 'recovery.json'), 'utf8'));
+const source = new Uint8Array(readFileSync(sourcePath));
+const presentation = await core.parse(source, { edit: true, keepPackage: true, lazy: false });
+const doc = edit.createDoc(presentation, { idPrefix: 'media-' });
+assert.throws(() => new edit.Editor(doc, { recoveryFrames: frames }), /非图片媒体不是当前文档的 OPC 来源/);
+await import(pathToFileURL(join(out, 'registration.mjs')).href);
+const restored = new edit.Editor(doc, { recoveryFrames: frames });
+const reopened = await core.parse(await restored.save(), { lazy: false });
+assert.equal(reopened.slides[0].elements.filter((element) => element.media).length, 2);
+reopened.dispose();
+restored.dispose();
+presentation.dispose();

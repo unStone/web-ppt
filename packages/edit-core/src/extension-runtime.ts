@@ -1,6 +1,6 @@
 import type { SlideElement } from '@web-ppt/core';
 import type { CommandPatches, ExtensionCommand, ExtensionPatch } from './commands/types';
-import type { EditDoc, ElementId, SlideId } from './types';
+import type { EditDoc, ElementId, ElementInsertionResource, SlideId } from './types';
 import type { OpcPartChanges } from './opc/types';
 import { invalidateElement } from './projection';
 
@@ -10,6 +10,7 @@ export interface EditExtensionSavePlan {
 }
 
 export interface EditExtensionRuntime {
+  readonly validateResource?: (resource: ElementInsertionResource, bytes: Uint8Array) => boolean;
   readonly command: (
     doc: EditDoc, command: ExtensionCommand, origin: string,
   ) => CommandPatches;

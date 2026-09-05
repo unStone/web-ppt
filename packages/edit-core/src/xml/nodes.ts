@@ -65,16 +65,19 @@ export function cloneXmlNode(source: XmlNode): XmlNode {
   return clone;
 }
 
-/** 子树离开来源祖先时，把有效前缀物化到新根，避免未知扩展序列化成未绑定 QName。 */
-export function cloneXmlNodeWithNamespaceClosure(source: XmlElement): XmlElement {
+/** 子树离开来源祖先时固化有效前缀；立即移入 destination 时，可复用该父级的相同绑定。 */
+export function cloneXmlNodeWithNamespaceClosure(source: XmlElement, destination?: XmlElement): XmlElement {
   const clone = cloneXmlNode(source);
+  const inherited = destination ? elementStates.get(destination)!.namespaces : undefined;
   const declared = new Set(clone.attributes
     .filter((attribute) => attribute.name === 'xmlns' || attribute.name.startsWith('xmlns:'))
     .map((attribute) => attribute.name === 'xmlns' ? '' : attribute.name.slice(6)));
   for (const [prefix, uri] of elementStates.get(source)!.namespaces) {
-    if (prefix === 'xml' || declared.has(prefix)) continue;
+    if (prefix === 'xml' || declared.has(prefix) || inherited?.get(prefix) === uri) continue;
     setXmlAttribute(clone, prefix ? `xmlns:${prefix}` : 'xmlns', uri);
   }
+  // 插入前的 OOXML 序位检查已经读取展开名，不能等挂载时才采用目标上下文。
+  if (inherited) rebindXmlNamespaces(clone, inherited);
   return clone;
 }
 

@@ -1,4 +1,4 @@
-import { removeXmlChild } from '../xml/nodes';
+import { cloneXmlNodeWithNamespaceClosure, removeXmlChild } from '../xml/nodes';
 import { insertXmlChild } from '../xml/order';
 import { findXmlAttribute, findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
 import { setXmlAttribute } from '../xml/mutate';
@@ -151,11 +151,11 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   return wrapper;
 }
 
-function detachedHost(doc: EditDoc, record: ElementRecord, sourceOnly: boolean): XmlElement {
+function detachedHost(doc: EditDoc, record: ElementRecord, sourceOnly: boolean, parent: XmlElement): XmlElement {
   const wrapper = materializeInsertionFragment(doc, record, sourceOnly);
   const host = xmlElementChildren(wrapper.root)[0]!;
-  if (!removeXmlChild(wrapper.root, host)) throw new Error(`无法分离新建元素宿主：${record.id}`);
-  return host;
+  // 片段在临时祖先上绑定前缀；移入页面前必须带走闭包，否则浏览器会拒绝整页 XML。
+  return cloneXmlNodeWithNamespaceClosure(host, parent);
 }
 
 function targetParent(document: XmlDocument, doc: EditDoc, record: ElementRecord): XmlElement {
@@ -214,7 +214,8 @@ export function patchInsertedElements(
       ancestor = parent.parent;
     }
     if (covered) continue;
-    insertXmlChild(targetParent(document, doc, record), detachedHost(doc, record, sourceOnly));
+    const parent = targetParent(document, doc, record);
+    insertXmlChild(parent, detachedHost(doc, record, sourceOnly, parent));
     const mark = (id: string): void => {
       if (materialized.has(id)) return;
       materialized.add(id);

@@ -103,6 +103,15 @@ execFileSync('npx', [
 ], { cwd: root, stdio: 'inherit' });
 const coreBundle = join(out, 'core.mjs');
 execFileSync('npx', [
+  'esbuild', join(root, 'tooling/lib/media-browser-api.mjs'), '--bundle', '--format=esm',
+  '--platform=browser', '--log-level=error',
+  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
+  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  `--alias:@web-ppt/edit-core/media=${join(root, 'packages/edit-core/src/media/index.ts')}`,
+  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  `--outfile=${join(out, 'media.mjs')}`,
+], { cwd: root, stdio: 'inherit' });
+execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error', `--outfile=${coreBundle}`,
 ], { cwd: root, stdio: 'inherit' });

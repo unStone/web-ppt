@@ -4,6 +4,7 @@ import { relativeTarget } from '../clipboard-source';
 import { validateStoredImageFormat } from '../commands/image-format';
 import { createImageResource } from '../commands/image-resource';
 import { sessionAsset } from '../session-assets';
+import { OFFICE_MEDIA_REL, POWERPOINT_2010_NS, mediaPropertiesMarkup } from '../media-properties';
 import type {
   EditDoc, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
   ElementRecord,
@@ -128,12 +129,17 @@ export function imageInsertion(
   const image = source.src ? imageClosure(doc, source, `rIdImage${spid}`, part) : null;
   const media = source.media
     ? mediaClosure(doc, source.media, `rIdMedia${spid}`, part) : null;
+  const compatible = media?.relationship ? {
+    ...media.relationship, sourceId: `rIdMediaCompat${spid}`, targetId: `rIdMediaCompat${spid}`,
+    type: OFFICE_MEDIA_REL,
+  } : undefined;
   const link = image?.resource ? 'embed' : 'link';
   const alpha = source.alpha === undefined ? ''
     : `<a:alphaModFix amt="${Math.round(source.alpha * 100000)}"/>`;
   const name = esc(source.name ?? `图片 ${spid}`);
   const mediaMarkup = source.media
-    ? `<a:${source.media.kind}File${media?.relationship ? ` r:link="${media.relationship.targetId}"` : ''}/>`
+    ? mediaPropertiesMarkup(source.media.kind, media?.relationship?.targetId,
+      compatible?.targetId, compatible?.targetMode === 'External')
     : '';
   const blip = image
     ? `<a:blip r:${link}="${image.relationship.targetId}">${alpha}</a:blip>` : '';
@@ -151,7 +157,7 @@ export function imageInsertion(
     : source.clipPath
       ? customGeometryMarkup(source.clipPath, source.w, source.h, false)
       : '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>';
-  const relationships = [image?.relationship, media?.relationship]
+  const relationships = [image?.relationship, media?.relationship, compatible]
     .filter((value): value is ElementInsertionRelationship => !!value);
   const resources = [image?.resource, media?.resource]
     .filter((value): value is ElementInsertionResource => !!value);
@@ -161,6 +167,7 @@ export function imageInsertion(
 <p:spPr><a:xfrm/>${geometry}</p:spPr></p:pic>`,
     namespaces: {
       'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS, 'xmlns:r': OFFICE_REL_NS,
+      ...(compatible ? { 'xmlns:p14': POWERPOINT_2010_NS } : {}),
     },
     spids: { [String(spid)]: spid },
     ...(relationships.length ? { relationships } : {}),

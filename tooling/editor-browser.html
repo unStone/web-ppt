@@ -27,6 +27,8 @@
     import { createPresetAdjustmentEditor } from '/out/editor/adjustments.mjs';
     import { createDesignEditor } from '/out/editor/design.mjs';
     import { layoutText, parse } from '/out/editor/core.mjs';
+    import * as mediaCore from '/out/editor/core.mjs';
+    import { runMediaInsertionBrowserContract } from '/tooling/lib/media-insertion-browser-contract.mjs';
     import { presentationToImageZip } from '/out/editor/image-zip.mjs';
     import { createBlankPptx } from '/out/editor/generate.mjs';
     import * as templates from '/out/editor/templates.mjs';
@@ -588,6 +590,8 @@
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
+      const mediaPlayback = await runMediaInsertionBrowserContract({ core: mediaCore, load });
+      report.dataset.mediaPlayback = mediaPlayback.map(({ mode, duration }) => `${mode} ${duration}s`).join(' / ');
       const imageZipResult = await runCoreImageZipBrowserContract({ presentationToImageZip, parse, load });
       const v06Result = await runV06IntegrationBrowserContract({
         lib: editorLib, createBlankPptx, presentationToImageZip, mount: ownedMount,
@@ -787,7 +791,7 @@
       report.style.color = '#b91c1c';
       report.dataset.status = 'fail';
       report.dataset.failureKind = 'functional';
-      report.textContent = `FAIL\n${error instanceof Error ? error.stack : String(error)}`;
+      report.textContent = `FAIL\n${error?.stack ?? String(error)}`;
       throw error;
     }
   </script>
