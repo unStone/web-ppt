@@ -42,7 +42,7 @@ import { isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
 import type {
   ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
-import { MAX_PATCHES_PER_TRANSACTION } from './types';
+import { assertPatchCount } from './patch-count';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 import {
   isElementNamePatch, validateElementNamePatch,
@@ -360,9 +360,7 @@ function applyPatchBatch(
   patches: readonly Patch[],
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
-  if (patches.length > MAX_PATCHES_PER_TRANSACTION) {
-    throw new Error(`单个编辑事务不能超过 ${MAX_PATCHES_PER_TRANSACTION} 个补丁`);
-  }
+  assertPatchCount(patches.length);
   validatePatchRelations(doc, patches, stageStructuralModel);
   const structural = patches.some((patch) =>
     isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
@@ -435,9 +433,9 @@ function applyPatchBatch(
     for (const record of Object.values(consistencyDoc.elements)) {
       const replacement = replacements.has(record.id)
         ? replacements.get(record.id) : record.meta.imageReplacement;
-      if (replacement && resourceHashes.has(replacement.resourceHash) && record.meta.origin) {
+      if (replacement && resourceHashes.has(replacement.resourceHash)) {
         assertImageReplacement(
-          replacement, record.meta.origin.part, stagedImageResources,
+          replacement, record.meta.origin?.part, stagedImageResources,
           `元素 ${record.id} 的最终图片替换资源`,
         );
       }

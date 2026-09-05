@@ -4,7 +4,7 @@ import type {
   EditDoc, ElementImageReplacement, ElementInsertionResource,
 } from '../types';
 import type { ImageResourcePatch } from './types';
-import { createImageResource } from './image-resource';
+import { createImageResource, imageResourcePatches } from './image-resource';
 import { prepareMediaResourceClosure } from './paste-resources';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
@@ -48,11 +48,6 @@ export function prepareBulletImageResource(
     relationships: closure.relationships,
     resourceHash: resource.hash,
   };
-  const resourcePatch = doc.imageResources[resource.hash] ? undefined : {
-    op: 'set' as const,
-    path: ['imageResources', resource.hash] as const,
-    value: closure.resources[0],
-    origin,
-  };
+  const resourcePatch = imageResourcePatches(doc, closure.resources, origin).forward[0];
   return { image, ...(resourcePatch ? { resourcePatch } : {}) };
 }

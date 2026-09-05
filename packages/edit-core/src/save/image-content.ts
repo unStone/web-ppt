@@ -39,8 +39,10 @@ export function patchElementImageContent(document: XmlDocument, record: ElementR
   if (record.src.kind !== 'image') throw new Error(`元素 ${record.id} 不是图片`);
   const fill = blipFill(document, record);
   if (record.meta.imageReplacement) {
-    const blip = findXmlChild(fill, { localName: 'blip', namespaceUri: DRAWINGML_NS });
-    if (!blip) throw new Error(`图片 ${record.id} 缺少 a:blip`);
+    const previous = findXmlChild(fill, { localName: 'blip', namespaceUri: DRAWINGML_NS });
+    const blip = previous ?? namespacedElement(fill, DRAWINGML_NS, 'blip');
+    // 媒体可以没有原海报；CT_BlipFillProperties 的 blip 必须位于裁剪和填充模式之前。
+    if (!previous) insertXmlChildUnchecked(fill, blip, fill.children[0] ?? null);
     setXmlAttribute(blip, 'r:embed', record.meta.imageReplacement.relationships[0].targetId);
     removeXmlAttribute(blip, 'r:link');
   }

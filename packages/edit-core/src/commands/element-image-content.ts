@@ -1,6 +1,6 @@
 import { base64ToBytes, sha256 } from '../clipboard-binary';
 import { assertDataObject } from '../data-validation';
-import { assertImageCrop, isEditablePicture } from '../image-content';
+import { assertImageCrop, canEditImageContent } from '../image-content';
 import type { EditDoc, ElementImageReplacement, ElementInsertionResource } from '../types';
 import {
   packageContentType, packageContentTypeOverride, resolveRelationshipTarget,
@@ -59,35 +59,40 @@ function assertResourceTargetState(
   return true;
 }
 
-function assertTarget(doc: EditDoc, id: string, index: number): void {
+function assertTarget(doc: EditDoc, id: string, index: number, poster = false): void {
   const record = doc.elements[id];
   if (!record) throw new Error(`Patch 指向不存在的元素：${id}`);
-  if (record.src.kind !== 'image' || !isEditablePicture(record.src)
-    || record.meta.editable !== 'full') {
+  if (!canEditImageContent(record, poster)) {
     throw new Error(`Patch ${index} 指向不支持图片内容编辑的元素`);
   }
 }
 
 export function assertImageReplacement(
   value: unknown,
-  sourcePart: string,
+  sourcePart: string | undefined,
   resources: Readonly<Record<string, ElementInsertionResource>>,
   label: string,
 ): asserts value is ElementImageReplacement {
   assertDataObject(value, ['src', 'relationships', 'resourceHash', 'suppressedRelationshipId'], label);
   const replacement = value as ElementImageReplacement;
-  if (!Array.isArray(replacement.relationships) || replacement.relationships.length !== 1) {
-    throw new Error(`${label} 必须包含一条图片关系`);
+  const resource = resources[replacement.resourceHash];
+  if (!/^[0-9a-f]{64}$/.test(replacement.resourceHash) || !resource
+    || !resource.mime.startsWith('image/') || replacement.src !== `web-ppt-resource:${resource.hash}`) {
+    throw new Error(`${label} 的资源身份无效`);
+  }
+  if (!Array.isArray(replacement.relationships) || replacement.relationships.length !== (sourcePart ? 1 : 0)) {
+    throw new Error(`${label} 的图片关系与来源不一致`);
+  }
+  // 无 OOXML 原包的编辑只记录图片资源，生成保存再分配真实的 part 和关系。
+  if (!sourcePart) {
+    if (replacement.suppressedRelationshipId !== undefined) throw new Error(`${label} 没有可替换的来源关系`);
+    return;
   }
   assertDataObject(replacement.relationships[0], ['sourceId', 'targetId', 'type', 'target', 'targetMode'], `${label}.relationships[0]`);
   const relationship = replacement.relationships[0] as ElementImageReplacement['relationships'][number];
-  const resource = resources[replacement.resourceHash];
   if (!relationship.sourceId || !/^rId\d+$/.test(relationship.targetId)
     || relationship.type !== IMAGE_REL || !relationship.target || relationship.targetMode !== undefined
-    || !/^[0-9a-f]{64}$/.test(replacement.resourceHash) || !resource
-    || !resource.mime.startsWith('image/')
-    || resolveRelationshipTarget(sourcePart, relationship.target) !== resource.targetPart
-    || replacement.src !== `web-ppt-resource:${resource.hash}`) {
+    || resolveRelationshipTarget(sourcePart, relationship.target) !== resource.targetPart) {
     throw new Error(`${label} 的关系或资源身份无效`);
   }
   if (replacement.suppressedRelationshipId !== undefined
@@ -207,10 +212,9 @@ export function validateElementImageReplacementPatch(
   index: number,
   resources: Readonly<Record<string, ElementInsertionResource>> = doc.imageResources,
 ): void {
-  assertTarget(doc, patch.path[1], index);
+  assertTarget(doc, patch.path[1], index, true);
   if (patch.op !== 'set') return;
   const part = doc.elements[patch.path[1]].meta.origin?.part;
-  if (!part) throw new Error(`Patch ${index} 的图片缺少来源 part`);
   assertImageReplacement(patch.value, part, resources, `Patch ${index} 的 imageReplacement`);
 }
 

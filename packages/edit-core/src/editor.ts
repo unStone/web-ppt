@@ -1,4 +1,5 @@
 import { applyLocalPatches, applyPatches } from './commands/patch';
+import { assertPatchCount } from './commands/patch-count';
 import {
   assertPureCommand, commandPatches, commandSelectsInsertedElement, commandTargetIds,
 } from './commands/dispatch';
@@ -23,7 +24,7 @@ import type {
 import { HistoryStore } from './history';
 import type { HistoryPatchLink } from './history';
 import {
-  activeImageResourceHashes, historyImageResourceHashes, imageReachabilityMayChange,
+  activeImageResourceHashes, historyImageResourceHashes, imageReachabilityMayChange, imageResourcePatchClosure,
 } from './image-resource-history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
@@ -96,6 +97,10 @@ export class Editor {
     this.historyStore = new HistoryStore(options.historyLimit, options.historyByteLimit, {
       externalByteSize: (entries) => this.historyImageResourceBytes(entries),
       changed: (entries) => this.pruneImageResources(entries),
+      canMerge: ({ forward, inverse }) => {
+        try { this.assertReplayableHistory(forward, inverse); return true; }
+        catch { return false; }
+      },
     });
     this.history = this.historyStore;
     this.pruneImageResources([]);
@@ -205,6 +210,7 @@ export class Editor {
     if (!entry) return null;
     const patches = undo ? entry.inverse : entry.forward;
     const inverse = undo ? entry.forward : entry.inverse;
+    const outgoing = this.transportPatches(patches, this.origin);
     assertCollaborationVersionAvailable(this.doc.identity);
     // 远端 Patch 可能改变模型或占用 OPC 身份，两个方向都须在完整暂存模型上重新验真。
     const dirty = applyPatches(this.doc, patches);
@@ -216,7 +222,7 @@ export class Editor {
     const change = changeFromPatches(this.doc, patches, inverse, source, this.selection, dirty);
     const time = Date.now();
     advanceCollaborationVersion(this.doc.identity);
-    this.queuePatches(source, patches, this.origin, entry.label, time);
+    this.queuePatches(source, outgoing, this.origin, entry.label, time);
     this.emitRecovery(source, patches, entry.label, time);
     this.emitPatchChange(change);
     this.patchJournal.flush();
@@ -237,6 +243,7 @@ export class Editor {
       if (options.identity) this.emitRecovery('transaction', [], label, time);
       return null;
     }
+    const outgoing = this.transportPatches(patches, origin);
     const dirty = applyPatches(this.doc, patches);
     if (options.identity) mergeEditIdentityWatermark(this.doc.identity, options.identity);
     const structural = patches.some((patch) =>
@@ -249,7 +256,7 @@ export class Editor {
     if (hasDocumentPatch(patches)) this.currentState = this.nextState++;
     this.historyStore.rebaseUnrecorded(patches, this.currentState, () => this.nextState++);
     const change = changeFromPatches(this.doc, patches, [], 'external', this.selection, dirty);
-    this.queuePatches('external', patches, origin, label, time);
+    this.queuePatches('external', outgoing, origin, label, time);
     this.emitRecovery('transaction', patches, label, time);
     this.emitPatchChange(change);
     this.patchJournal.flush();
@@ -286,6 +293,7 @@ export class Editor {
     const operationTime = options.time ?? Date.now();
     if (!Number.isFinite(operationTime)) throw new Error('事务时间必须是有限数字');
     const forward: Patch[] = [];
+    let outgoing: readonly Patch[] = forward;
     const inverse: Patch[] = [];
     const dirtyElements = new Set<ElementId>();
     const dirtySlides = new Set<SlideId>();
@@ -295,12 +303,15 @@ export class Editor {
     const reorderedElements = new Set<ElementId>();
     const bodyPropsElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
+    const recordsHistory = options.recordHistory !== false && origin === this.origin;
+    let historyForward: Patch[] = [], historyInverse: Patch[] = [];
     const autoFitTargets = new Set<ElementId>();
     const historyLinks: HistoryPatchLink[] = [];
     let commandSelection: Selection | null = null;
     const selectionBefore = this.selection;
     const identityBefore = structuredClone(this.doc.identity);
     const applyCommandPatches = (patches: { forward: Patch[]; inverse: Patch[] }): void => {
+      assertPatchCount(Math.max(forward.length + patches.forward.length, inverse.length + patches.inverse.length));
       const dirty = applyLocalPatches(this.doc, patches.forward);
       for (const id of dirty.dirtyElements) dirtyElements.add(id);
       for (const id of dirty.dirtySlides) dirtySlides.add(id);
@@ -373,6 +384,13 @@ export class Editor {
       if (structural) validateEditDoc(this.doc);
       else validateEditElements(this.doc, forward
         .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
+      outgoing = this.transportPatches(forward, origin);
+      if (recordsHistory) {
+        // 历史不存资源表 Patch，但两个重放方向补齐资源后也必须可传输。
+        historyForward = forward.filter((patch) => !isImageResourcePatch(patch));
+        historyInverse = inverse.filter((patch) => !isImageResourcePatch(patch));
+        this.assertReplayableHistory(historyForward, historyInverse);
+      }
       if (forward.length) advanceCollaborationVersion(this.doc.identity);
     } catch (error) {
       // 多命令事务的逆补丁依赖前序恢复的行列/元素；失败回滚也必须按顺序暂存验证。
@@ -393,11 +411,8 @@ export class Editor {
     const slideChanges = slidePatchSets(this.doc, forward);
     const beforeState = this.currentState;
     if (hasDocumentPatch(forward)) this.currentState = this.nextState++;
-    const recordsHistory = forward.length && options.recordHistory !== false && origin === this.origin;
-    if (recordsHistory) {
+    if (forward.length && recordsHistory) {
       // 资源表是按哈希寻址的会话缓存；撤销只切换元素引用，避免新旧 Base64 同时挤占历史预算。
-      const historyForward = forward.filter((patch) => !isImageResourcePatch(patch));
-      const historyInverse = inverse.filter((patch) => !isImageResourcePatch(patch));
       const entry: HistoryEntry = {
         forward: historyForward,
         inverse: historyInverse,
@@ -417,7 +432,7 @@ export class Editor {
     for (const id of bodyPropsPatchElements(forward, inverse)) bodyPropsElements.add(id);
     if (!forward.length && selectionChanged) this.historyStore.breakMerge();
     if (forward.length || selectionChanged) {
-      if (forward.length) this.queuePatches('transaction', forward, origin, label, operationTime);
+      if (forward.length) this.queuePatches('transaction', outgoing, origin, label, operationTime);
       this.emitRecovery(forward.length ? 'transaction' : 'selection', forward, label, operationTime);
       this.emit(
         'transaction', dirtyElements, dirtySlides, touchedElements,
@@ -452,16 +467,23 @@ export class Editor {
     });
   }
 
+  private transportPatches(patches: readonly Patch[], origin: string): readonly Patch[] {
+    return this.patchJournal.observed ? imageResourcePatchClosure(this.doc, patches, origin) : patches;
+  }
+
+  private assertReplayableHistory(...directions: readonly Patch[][]): void {
+    for (const patches of directions) imageResourcePatchClosure(this.doc, patches, this.origin);
+  }
+
   private queuePatches(
     source: EditorPatchEvent['source'], patches: readonly Patch[], origin: string, label: string, time: number,
   ): void {
     // 协同是可选能力；未订阅时不能为结构事务深拷贝整棵元素树。
     if (!this.patchJournal.observed) return;
-    const event: EditorPatchEvent = {
-      source, patches: structuredClone([...patches]), identity: structuredClone(this.doc.identity),
+    this.patchJournal.queue({
+      source, patches: structuredClone(patches), identity: structuredClone(this.doc.identity),
       origin, label, time,
-    };
-    this.patchJournal.queue(event);
+    });
   }
 
   private emitPatchChange(change: EditorChange): void {

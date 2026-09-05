@@ -8,9 +8,13 @@ export async function runMediaInsertionBrowserContract({ core, load }) {
   const sound = original.package.assets[audioSource.media.src];
   const poster = original.package.assets[audioSource.src];
   const cases = [
-    { name: 'WAV', kind: 'audio', bytes: sound.bytes, mime: 'audio/wav' },
+    { name: 'WAV 默认图标', kind: 'audio', bytes: sound.bytes, mime: 'audio/wav', defaultPoster: true },
+    { name: 'WAV 换海报', kind: 'audio', bytes: sound.bytes, mime: 'audio/wav', replace: true },
     { name: 'MP4', kind: 'video', bytes: new Uint8Array(await load('sample-editor-media.mp4')), mime: 'video/mp4' },
+    { name: 'MP4 换海报', kind: 'video', bytes: new Uint8Array(await load('sample-editor-media.mp4')), mime: 'video/mp4', replace: true },
     { name: 'fMP4', kind: 'video', bytes: new Uint8Array(await load('sample-editor-media-fragmented.mp4')), mime: 'video/mp4' },
+    { name: '外链 WAV', kind: 'audio', url: `${location.origin}/fixtures/sample-editor-media.wav`, defaultPoster: true },
+    { name: '外链 MP4', kind: 'video', url: `${location.origin}/fixtures/sample-editor-media.mp4` },
   ];
   const mount = document.createElement('div');
   mount.style.cssText = 'position:fixed;left:0;top:0;width:960px;height:540px;background:white';
@@ -23,19 +27,32 @@ export async function runMediaInsertionBrowserContract({ core, load }) {
       const editor = new Editor(doc);
       let reopened;
       try {
-        createMediaEditor(editor).exec({
+        const api = createMediaEditor(editor);
+        const id = api.exec({
           type: 'AddMedia', slideId: doc.slideOrder[0],
           rect: { x: 30, y: 30, w: 300, h: 100 },
-          source: { kind: 'embedded', bytes: sample.bytes, mime: sample.mime },
-          poster: { bytes: poster.bytes, mime: poster.mime },
+          source: sample.url ? { kind: 'external', mediaKind: sample.kind, url: sample.url }
+            : { kind: 'embedded', bytes: sample.bytes, mime: sample.mime },
+          ...(sample.defaultPoster ? {} : { poster: { bytes: poster.bytes, mime: poster.mime } }),
         });
+        if (sample.replace) api.exec({ type: 'ReplaceMediaPoster', id,
+          poster: { bytes: new Uint8Array(await load('sample-editor-audio-icon.png')), mime: 'image/png' } });
         if (generated) presentation.dispose();
         const saved = await editor.save();
         reopened = await core.parse(saved, { lazy: false });
         mount.innerHTML = core.renderSlideToSvg(reopened, reopened.slides[0], { textMode: 'html', media: 'player' });
         const player = mount.querySelector(sample.kind);
-        if (!player?.controls || !/^(blob:|data:(audio|video)\/)/.test(player.src)) {
+        if (!player?.controls || (sample.url ? player.src !== sample.url : !/^(blob:|data:(audio|video)\/)/.test(player.src))) {
           throw new Error(`保存重开未产生离线原生控件：${player?.outerHTML ?? mount.innerHTML.slice(-1000)}`);
+        }
+        if (sample.url && !core.renderSlideToSvg(reopened, reopened.slides[0], { media: 'badge' }).includes('（外链）')) {
+          throw new Error('外链保存重开缺少可识别来源标识');
+        }
+        if (sample.replace || sample.defaultPoster) {
+          const artwork = new Image();
+          artwork.src = reopened.slides[0].elements.find((element) => element.media).src;
+          await artwork.decode();
+          if (artwork.naturalWidth !== 128 || artwork.naturalHeight !== 128) throw new Error('保存后默认/替换海报无法解码');
         }
         player.muted = true;
         const play = document.createElement('button');
@@ -70,6 +87,6 @@ export async function runMediaInsertionBrowserContract({ core, load }) {
       } finally { mount.replaceChildren(); reopened?.dispose(); editor.dispose(); disposeDoc(doc); }
     }
   } finally { mount.remove(); original.dispose(); }
-  console.log('媒体原生控件离线播放通过', results);
+  console.log('媒体原生控件播放通过（嵌入/显式外链）', results);
   return results;
 }

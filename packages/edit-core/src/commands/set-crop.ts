@@ -1,5 +1,5 @@
 import { own } from '../data-validation';
-import { assertImageCrop, isEditablePicture, normalizeImageCrop } from '../image-content';
+import { assertImageCrop, canEditImageContent, normalizeImageCrop } from '../image-content';
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementCropPatch, SetCropCommand } from './types';
 
@@ -11,8 +11,7 @@ export function setCropPatches(
   if (doc.meta.readonly) throw new Error('只读编辑文档不能裁剪图片');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
-  if (record.src.kind !== 'image' || !isEditablePicture(record.src)
-    || record.meta.editable !== 'full') {
+  if (!canEditImageContent(record)) {
     throw new Error(`元素不支持图片裁剪：${command.id}`);
   }
   if (record.meta.locked) throw new Error(`元素已锁定：${command.id}`);

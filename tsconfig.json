@@ -25,12 +25,15 @@
       "@web-ppt/editor/design": ["./packages/editor/src/design/index.ts"],
       "@web-ppt/editor/templates": ["./packages/editor/src/templates/index.ts"],
       "@web-ppt/editor/chart": ["./packages/editor/src/chart/index.ts"],
+      "@web-ppt/editor/media": ["./packages/editor/src/media/index.ts"],
       "@web-ppt/react": ["./packages/react/src/index.ts"],
       "@web-ppt/react/templates": ["./packages/react/src/templates/index.ts"],
       "@web-ppt/react/chart": ["./packages/react/src/chart/index.ts"],
+      "@web-ppt/react/media": ["./packages/react/src/media/index.ts"],
       "@web-ppt/vue": ["./packages/vue/src/index.ts"],
       "@web-ppt/vue/templates": ["./packages/vue/src/templates/index.ts"],
       "@web-ppt/vue/chart": ["./packages/vue/src/chart/index.ts"],
+      "@web-ppt/vue/media": ["./packages/vue/src/media/index.ts"],
       "@web-ppt/viewer-core": ["./packages/viewer-core/src/index.ts"],
       "@web-ppt/fonts": ["./packages/fonts/src/index.ts"]
     }

@@ -1,7 +1,7 @@
 import type { ImageElement } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
 import { effectiveElement } from './projection';
-import type { EditDoc, ElementCropState, ElementId, ImageCrop } from './types';
+import type { EditDoc, ElementCropState, ElementId, ElementRecord, ImageCrop } from './types';
 
 const FIELDS = ['l', 't', 'r', 'b'] as const;
 
@@ -28,15 +28,17 @@ export function normalizeImageCrop(crop: ImageCrop): ImageCrop {
   return normalized;
 }
 
-export function isEditablePicture(element: ImageElement): boolean {
-  return !element.media;
+/** 海报只能改普通媒体宿主的 blip，不能越过兼容分支或开放媒体裁剪。 */
+export function canEditImageContent(record: ElementRecord, poster = false): record is ElementRecord & { src: ImageElement } {
+  return record.src.kind === 'image' && !record.src.editInfo?.requiresOriginal
+    && record.meta.editable === (record.src.media ? (poster ? 'frame' : null) : 'full');
 }
 
 export function queryElementCrop(doc: EditDoc, ids: readonly ElementId[]): ElementCropState {
   if (!ids.length) throw new Error('图片裁剪查询至少需要一个元素');
   const values = ids.map((id) => {
     const element = effectiveElement(doc, id);
-    if (element.kind !== 'image' || !isEditablePicture(element)) {
+    if (element.kind !== 'image' || element.media) {
       throw new Error(`元素不支持图片裁剪：${id}`);
     }
     return element.crop;

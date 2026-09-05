@@ -2,11 +2,11 @@ import { insertionResourceToken } from '../session-assets';
 import type { ImageElement } from '@web-ppt/core';
 import { sha256 } from '../clipboard-binary';
 import { resolveRelationshipTarget } from '../clipboard-source';
-import { isEditablePicture } from '../image-content';
+import { canEditImageContent } from '../image-content';
 import type { EditDoc, ElementImageReplacement } from '../types';
 import { prepareMediaResourceClosure } from './paste-resources';
-import type { CommandPatches, ElementImageReplacementPatch, ImageResourcePatch, ReplaceImageCommand } from './types';
-import { createImageResource, MAX_REPLACE_IMAGE_BYTES } from './image-resource';
+import type { ClipboardResource, CommandPatches, ElementImageReplacementPatch, ReplaceImageCommand } from './types';
+import { createImageResource, generatedImageResource, imageResourcePatches, MAX_REPLACE_IMAGE_BYTES } from './image-resource';
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 const SOURCE_RID = 'rIdImageReplacement';
@@ -50,44 +50,48 @@ export function replaceImagePatches(
   if (doc.meta.readonly) throw new Error('只读编辑文档不能替换图片');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
-  if (record.src.kind !== 'image' || !isEditablePicture(record.src)
-    || record.meta.editable !== 'full') {
+  if (!canEditImageContent(record)) {
     throw new Error(`元素不支持图片替换：${command.id}`);
   }
   if (record.meta.locked) throw new Error(`元素已锁定：${command.id}`);
-  const part = record.meta.origin?.part;
-  if (!part || !doc.package) throw new Error(`图片缺少可写回来源：${command.id}`);
+  if (!record.meta.origin?.part || !doc.package) throw new Error(`图片缺少可写回来源：${command.id}`);
   const resource = createImageResource(
     command.bytes, command.mime, 'ReplaceImage', MAX_REPLACE_IMAGE_BYTES,
   );
+  return replaceImageResourcePatches(doc, record as typeof record & { src: ImageElement }, resource, origin);
+}
+
+/** 普通图片与媒体海报只替换同一张 blip；资源、历史和保存不能各维护一套。 */
+export function replaceImageResourcePatches(
+  doc: EditDoc, record: EditDoc['elements'][string] & { src: ImageElement },
+  resource: ClipboardResource, origin: string,
+): CommandPatches {
+  const part = record.meta.origin?.part;
   const currentHash = record.meta.imageReplacement?.resourceHash
-    ?? sourceImageHash(doc, record as typeof record & { src: ImageElement });
+    ?? sourceImageHash(doc, record);
   if (currentHash === resource.hash) return { forward: [], inverse: [] };
-  const closure = prepareMediaResourceClosure(doc, part, SOURCE_RID, IMAGE_REL, resource);
+  const closure = part ? prepareMediaResourceClosure(doc, part, SOURCE_RID, IMAGE_REL, resource) : {
+    relationships: [],
+    resources: [generatedImageResource(resource)],
+  };
   const suppressedRelationshipId = record.meta.imageReplacement?.suppressedRelationshipId
-    ?? insertionImageRelationshipId(record as typeof record & { src: ImageElement });
+    ?? insertionImageRelationshipId(record);
   const value: ElementImageReplacement = {
     src: insertionResourceToken(resource.hash),
     relationships: closure.relationships,
     resourceHash: resource.hash,
     ...(suppressedRelationshipId ? { suppressedRelationshipId } : {}),
   };
-  const path = ['elements', command.id, 'meta', 'imageReplacement'] as const;
+  const path = ['elements', record.id, 'meta', 'imageReplacement'] as const;
   const forward: ElementImageReplacementPatch = {
     op: 'set', path, value: structuredClone(value), origin,
   };
   const inverse: ElementImageReplacementPatch = record.meta.imageReplacement
     ? { op: 'set', path, value: structuredClone(record.meta.imageReplacement), origin }
     : { op: 'del', path, origin };
-  const existing = doc.imageResources[resource.hash];
-  const resourceForward: ImageResourcePatch[] = existing ? [] : [{
-    op: 'set', path: ['imageResources', resource.hash], value: closure.resources[0], origin,
-  }];
-  const resourceInverse: ImageResourcePatch[] = existing ? [] : [{
-    op: 'del', path: ['imageResources', resource.hash], origin,
-  }];
+  const resources = imageResourcePatches(doc, closure.resources, origin);
   return {
-    forward: [...resourceForward, forward],
-    inverse: [inverse, ...resourceInverse],
+    forward: [...resources.forward, forward],
+    inverse: [inverse, ...resources.inverse],
   };
 }

@@ -4,16 +4,15 @@ import { allocateElementId } from '../document';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import type {
-  EditDoc, ElementInsertionResource, ElementInsertionSource, ElementRecord,
+  EditDoc, ElementInsertionSource, ElementRecord,
 } from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { prepareInsertionClosures } from './paste-resources';
 import { removeElementPatches } from './element-tree';
 import type {
   AddImageCommand, ClipboardResource, CommandPatches, ElementClipboardPayload, ElementTreePatch,
-  ImageResourcePatch,
 } from './types';
-import { createImageResource } from './image-resource';
+import { createImageResource, generatedImageResource, imageResourcePatches } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
 import { assertElementUnlocked } from './element-interaction';
@@ -22,10 +21,6 @@ import { resolveInsertionCanvas } from './insertion-host';
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const SOURCE_RID = 'rIdImage';
-
-function imageResource(command: AddImageCommand): ClipboardResource {
-  return createImageResource(command.bytes, command.mime, 'AddImage');
-}
 
 function pictureMarkup(spid: number, name: string, rect: AddImageCommand['rect']): string {
   return `<p:pic>
@@ -89,7 +84,7 @@ export function addImagePatches(
     throw new Error(`AddImage.placeholderId 必须是目标页中的空图片占位符：${String(command.placeholderId)}`);
   }
   assertInsertionRect(command.rect, 'AddImage.rect');
-  const resource = imageResource(command);
+  const resource = createImageResource(command.bytes, command.mime, 'AddImage');
   const id = allocateElementId(doc);
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '图片' : `图片 ${spid}`;
@@ -97,7 +92,7 @@ export function addImagePatches(
   if (part && spid !== undefined) {
     const markup = pictureMarkup(spid, name, command.rect);
     const payload = closurePayload(resource, markup, spid);
-    // 字节刚在 imageResource 中完成拷贝、容器校验和哈希；避免为 2MB 图片再做一次 Base64 解码与 SHA-256。
+    // 字节刚完成拷贝、容器校验和哈希；避免为 2MB 图片再做一次 Base64 解码与 SHA-256。
     const closure = prepareInsertionClosures(doc, payload, payload.roots, part, {
       preverifiedResourceHashes: new Set([resource.hash]),
     }).get('image')!;
@@ -122,25 +117,16 @@ export function addImagePatches(
   const value = { root: id, parent: canvas.id, records: { [id]: record } };
   const forward: ElementTreePatch = { op: 'insert', path: ['elements', id], value, origin };
   const inverse: ElementTreePatch = { op: 'remove', path: ['elements', id], value, origin };
-  const retained = doc.imageResources[resource.hash];
-  const generatedResource: ElementInsertionResource = retained ?? {
-    ...resource, targetPart: `ppt/media/web-ppt-${resource.hash}.${resource.extension}`, created: true,
-  };
-  const resourceForward: ImageResourcePatch[] = !part && !retained ? [{
-    op: 'set', path: ['imageResources', resource.hash], value: generatedResource, origin,
-  }] : [];
-  const resourceInverse: ImageResourcePatch[] = !part && !retained ? [{
-    op: 'del', path: ['imageResources', resource.hash], origin,
-  }] : [];
+  const resources = imageResourcePatches(doc, part ? [] : [generatedImageResource(resource)], origin);
   if (!placeholder) {
     return {
-      forward: [...resourceForward, forward],
-      inverse: [inverse, ...resourceInverse],
+      forward: [...resources.forward, forward],
+      inverse: [inverse, ...resources.inverse],
     };
   }
   const removal = removeElementPatches(doc, { type: 'RemoveElement', id: placeholder.id }, origin);
   return {
-    forward: [...resourceForward, ...removal.forward, forward],
-    inverse: [inverse, ...removal.inverse, ...resourceInverse],
+    forward: [...resources.forward, ...removal.forward, forward],
+    inverse: [inverse, ...removal.inverse, ...resources.inverse],
   };
 }

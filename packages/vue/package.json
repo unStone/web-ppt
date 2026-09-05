@@ -20,11 +20,12 @@
     ".": { "types": "./dist/index.d.ts", "import": "./dist/vue.js" },
     "./templates": { "types": "./dist/templates/index.d.ts", "import": "./dist/templates.js" },
     "./chart": { "types": "./dist/chart/index.d.ts", "import": "./dist/chart.js" },
+    "./media": { "types": "./dist/media/index.d.ts", "import": "./dist/media.js" },
     "./package.json": "./package.json"
   },
   "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
   "scripts": {
-    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

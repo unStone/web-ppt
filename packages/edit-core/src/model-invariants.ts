@@ -16,7 +16,7 @@ import { assertSectionState } from './commands/sections';
 import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
-import { assertImageCrop, isEditablePicture } from './image-content';
+import { assertImageCrop, canEditImageContent } from './image-content';
 import {
   assertImageReplacement, assertImageResource, assertImageResourceTargets,
 } from './commands/element-image-content';
@@ -564,8 +564,7 @@ export function validateEditDoc(doc: EditDoc): void {
       assertEffects(record.ovr.effects, `元素 ${id} 的二维效果覆盖`);
     }
     if (own(record.ovr, 'crop')) {
-      if (record.src.kind !== 'image' || !isEditablePicture(record.src)
-        || record.meta.editable !== 'full') {
+      if (!canEditImageContent(record)) {
         throw new Error(`元素 ${id} 不支持图片裁剪覆盖`);
       }
       assertImageCrop(record.ovr.crop, `元素 ${id} 的图片裁剪覆盖`);
@@ -588,12 +587,11 @@ export function validateEditDoc(doc: EditDoc): void {
       assertPresetGeometry(record.ovr.presetGeometry, `元素 ${id} 的预设几何覆盖`);
     }
     if (record.meta.imageReplacement) {
-      if (record.src.kind !== 'image' || !isEditablePicture(record.src)
-        || record.meta.editable !== 'full' || !record.meta.origin) {
+      if (!canEditImageContent(record, true)) {
         throw new Error(`元素 ${id} 不支持图片替换资源`);
       }
       assertImageReplacement(
-        record.meta.imageReplacement, record.meta.origin.part, doc.imageResources,
+        record.meta.imageReplacement, record.meta.origin?.part, doc.imageResources,
         `元素 ${id} 的图片替换资源`,
       );
     }

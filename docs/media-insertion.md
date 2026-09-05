@@ -1,7 +1,8 @@
-# 媒体插入：WAV / MP4 阶段
+# 媒体插入与海报编辑
 
-按需入口 `@web-ppt/edit-core/media`，不导入 DOM 或编码器。当前交付 **PCM WAV / MP4 字节 + 自定义海报**；
-外链、默认音频图标、海报替换和框架/官网工具栏仍在[任务 005](wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)中。
+按需入口 `@web-ppt/edit-core/media`，不导入 DOM 或编码器。支持 PCM WAV / MP4 字节、显式外链、
+默认音频图标与海报替换；`editor/media`、`react/media`、`vue/media` 薄转发同一接口。
+官网工具栏与失效外链提示仍在[任务 005](wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)中。
 
 ## 公开入口
 
@@ -13,12 +14,24 @@ const id = createMediaEditor(editor).exec({
   slideId: editor.doc.slideOrder[0],
   rect: { x: 40, y: 60, w: 300, h: 120 },
   source: { kind: 'embedded', bytes: wavBytes, mime: 'audio/wav' },
-  poster: { bytes: posterBytes, mime: 'image/png' },
 });
 await editor.save();
 ```
 
-视频使用相同命令，将 `source` 换为 `{ kind: 'embedded', bytes: mp4Bytes, mime: 'video/mp4' }`。
+音频省略 `poster` 时采用确定性 PNG 喇叭图标，也可自定义。视频使用相同命令，将 `source` 换为
+`{ kind: 'embedded', bytes: mp4Bytes, mime: 'video/mp4' }`，并提供 `poster: { bytes: posterBytes, mime: 'image/png' }`。
+
+```ts
+const media = createMediaEditor(editor);
+const linked = media.exec({
+  type: 'AddMedia', slideId: editor.doc.slideOrder[0],
+  rect: { x: 40, y: 60, w: 300, h: 180 },
+  source: { kind: 'external', mediaKind: 'video', url: 'https://example.test/video' },
+  poster: { bytes: posterBytes, mime: 'image/png' },
+});
+media.exec({ type: 'ReplaceMediaPoster', id: linked,
+  poster: { bytes: newPosterBytes, mime: 'image/png' } });
+```
 
 | 边界 | 契约 |
 |---|---|
@@ -27,12 +40,17 @@ await editor.save();
 | MP4 品牌 | 主品牌或兼容品牌包含 `isom`、`iso2`–`iso9`、`mp41`、`mp42`、`avc1`、`dash` 或 `M4V ` |
 | MP4 校验 | 受控品牌、box 边界、轨道头、时间基准/样本数、数据引用、样本描述与所有样本地址；零时长样本允许，外部数据引用拒绝 |
 | 海报 | PNG/JPEG/GIF/WebP，签名与 MIME 一致，最大 5 MiB；与音视频分别存储 |
+| 外链 | 显式 `mediaKind` + 绝对 HTTP(S) URL，最多 8192 字符；拒绝凭据、控制字符、反斜杠及其他协议。不抓取、不猜 MIME，不保证 URL 可达或浏览器可播放 |
 | 文件名 | 不接收或猜测扩展名，不按文件名信任格式 |
 | 历史 | 插入、身份分配、选中同一事务；复制、删除、撤销、重做沿用结构 Patch |
-| 几何 | 媒体是框架对象；可移动/缩放，不开放普通图片内容替换 |
+| 几何与海报 | 媒体可移动/缩放；用专用命令换海报，不改媒体源，不开放普通图片替换/裁剪。原本无海报也可添加；MC 兼容分支仍只能整壳编辑 |
 | 资源 | 内容哈希去重；不建立第二套媒体仓库，不发网络请求 |
-| 保存 | 补丁与生成保存均保留原始字节，经典 audio/video 与 Office 2010 media 关系指向同一资源 |
+| 保存 | 嵌入媒体的两种保存均保留原字节与双关系；外链的经典 audio/video 与 p14 关系均标记 External，离线重开仍是外链 |
 | 播放 | 不解码或转码，容器与地址校验不保证码流有效或所有浏览器/Office 均支持其编码；真实播放验收覆盖 PCM WAV 与 H.264/AAC MP4 |
+
+`.ppt` 无 OOXML 原包时支持媒体插入、海报替换、历史、恢复及另存 PPTX；原有 `copyElements` 仍要求
+OOXML 来源，先保存并重开后再复制。不要提前释放被编辑器借用的原包再继续编辑；释放后的救援式生成保存
+与真正无原包的 `.ppt` 编辑是两种不同生命周期。
 
 ## 恢复与协同接收端
 
@@ -49,21 +67,28 @@ registerMediaEditing();
 未注册时，新音视频资源会被已有模型校验拒绝，不会作为未经验证的上传写入原包。
 已经保存的 PPTX 仍可通过默认解析入口查看，不需要媒体插入扩展。
 
+普通 Patch 传输使用 `subscribePatches` → `applyExternalPatches`；事件包含被引用的图片资源，避免接收端
+撤销回收后无法重做。恢复日志使用 `recoveryFrames`，不要把恢复帧当作传输协议。完整传输闭包仍受既有
+事务上限约束，提交前同时校验历史的撤销与重做闭包，即使暂未订阅也不会产生以后无法传输的历史。
+超限原子拒绝，不拆散事务或推进协同序号；连续操作合并后超限时保留独立撤销单元。
+
 ## 验证与格式依据
 
 | 命令 | 证据 |
 |---|---|
-| `npm run test:media` | Editor/OPC 公开契约、输入拒绝、零时长/重复样本引用、独立进程注册恢复、协同、`.ppt` 来源与两种保存、严格 DOM XML 解析 |
+| `npm run test:media` | Editor/OPC 公开契约、输入拒绝与零网络请求、注册恢复、并发及撤销重做协同、`.ppt` 来源与两种保存、严格 DOM XML 解析 |
 | `node tooling/test-media-insertion.mjs --dist` | 相同契约消费构建后的发布入口；先执行 build |
-| `npm run test:editor` | Chrome 真实点击原生媒体播放，三种格式 × 两种保存均播放完成，视频产生实际画面帧；不关闭自动播放策略 |
-| `npm run test:media:libreoffice` | 六种产物由 LibreOffice 打开并导出 PDF；不等价于 PowerPoint 播放证据 |
-| `node tooling/check-media-boundary.mjs` | 默认入口及其静态依赖不包含上传签名校验实现 |
+| `npm run test:editor` | Chrome 真实点击嵌入/外链媒体、解码默认及替换海报，视频产生实际画面帧；不关闭自动播放策略 |
+| `npm run test:media:libreoffice` | 共享媒体产物清单由 LibreOffice 打开并导出 PDF；不等价于 PowerPoint 播放证据 |
+| `node tooling/check-media-boundary.mjs` | 默认静态依赖不包含上传校验或图标；三种框架按需入口转发同一实现 |
 
 `p:extLst` 使用 PresentationML 命名空间，扩展中的 `p14:media` 使用独立的 Office 2010 命名空间；
 从临时包装节点移出宿主时必须携带命名空间闭包，否则 Node 宽松解析可能通过而浏览器拒绝整页。
 格式依据为 Microsoft 的 [p:extLst 定义](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.linq.p.extlst?view=openxml-3.0.1)、
 [CT_Media](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-pptx/f8b7e1cb-976e-4f38-8139-f9e5ffa826e8) 和
 [Media Part 关系](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-pptx/922b7818-6e5f-4641-a9c5-fab4063ec124)。
+海报沿用 [p:blipFill](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.presentation.blipfill?view=openxml-3.0.1)
+中的 DrawingML 图片引用，不触碰音视频关系；新增 blip 位于裁剪与填充模式之前。
 
 MP4 的 MIME 依据 [RFC 4337](https://www.rfc-editor.org/rfc/rfc4337.html)；普通样本地址联合读取
 [stsc](https://developer.apple.com/documentation/quicktime-file-format/sample-to-chunk_atom)、

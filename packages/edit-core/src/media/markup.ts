@@ -10,9 +10,9 @@ export const MEDIA_NAMESPACES = {
   'xmlns:p14': POWERPOINT_2010_NS,
 };
 
-export function mediaMarkup(spid: number, rect: InsertionRect, kind: 'audio' | 'video'): string {
+export function mediaMarkup(spid: number, rect: InsertionRect, kind: 'audio' | 'video', external = false): string {
   return `<p:pic><p:nvPicPr><p:cNvPr id="${spid}" name="${kind === 'audio' ? '音频' : '视频'}"/><p:cNvPicPr/>
-<p:nvPr>${mediaPropertiesMarkup(kind, 'rIdSource', 'rIdMedia')}</p:nvPr></p:nvPicPr>
+<p:nvPr>${mediaPropertiesMarkup(kind, 'rIdSource', 'rIdMedia', external)}</p:nvPr></p:nvPicPr>
 <p:blipFill><a:blip r:embed="rIdPoster"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
 <p:spPr><a:xfrm><a:off x="${pxToEmu(rect.x)}" y="${pxToEmu(rect.y)}"/><a:ext cx="${pxToEmu(rect.w)}" cy="${pxToEmu(rect.h)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;

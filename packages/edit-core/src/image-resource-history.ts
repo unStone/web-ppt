@@ -1,19 +1,29 @@
-import { isElementImageReplacementPatch } from './commands/element-image-content';
+import { isElementImageReplacementPatch, isImageResourcePatch } from './commands/element-image-content';
+import { assertPatchCount } from './commands/patch-count';
 import { isElementTextPatch } from './commands/element-text';
 import { isSlideBackgroundImagePatch } from './commands/slide-property';
 import type { HistoryEntry, Patch } from './commands/types';
 import type { EditDoc } from './types';
 
-const entryHashes = new WeakMap<HistoryEntry, readonly string[]>();
-
-function resourceTokenHash(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  return /^web-ppt-resource:([0-9a-f]{64})$/.exec(value)?.[1] ?? null;
+/** 接收端没有本地历史，撤销后可以回收图片；传输引用必须同时补齐内容寻址资源。 */
+export function imageResourcePatchClosure(doc: EditDoc, patches: readonly Patch[], origin: string): Patch[] {
+  const hashes = new Set<string>();
+  collectHashes(patches, hashes, new WeakSet());
+  for (const patch of patches) if (isImageResourcePatch(patch)) hashes.delete(patch.path[1]);
+  const resources: Patch[] = [];
+  for (const hash of hashes) {
+    const value = doc.imageResources[hash];
+    if (value) resources.push({ op: 'set', path: ['imageResources', hash], value, origin });
+  }
+  assertPatchCount(resources.length + patches.length);
+  return [...resources, ...patches];
 }
+
+const entryHashes = new WeakMap<HistoryEntry, readonly string[]>();
 
 function collectHashes(value: unknown, output: Set<string>, seen: WeakSet<object>): void {
   if (typeof value === 'string') {
-    const token = resourceTokenHash(value);
+    const token = /^web-ppt-resource:([0-9a-f]{64})$/.exec(value)?.[1];
     if (token) output.add(token);
     return;
   }
@@ -51,20 +61,16 @@ export function historyImageResourceHashes(entries: readonly HistoryEntry[]): Se
 }
 
 export function activeImageResourceHashes(doc: EditDoc): Set<string> {
-  const output = new Set([
-    ...Object.values(doc.elements).flatMap((record) => {
-      const hashes = record.meta.imageReplacement ? [record.meta.imageReplacement.resourceHash] : [];
-      const source = record.src;
-      const token = source.kind === 'image' ? resourceTokenHash(source.src)
-        : source.kind === 'shape' && source.fill?.type === 'image'
-          ? resourceTokenHash(source.fill.src) : null;
-      return token ? [...hashes, token] : hashes;
-    }),
-    ...Object.values(doc.slides).flatMap((record) =>
-      record.backgroundImage ? record.backgroundImage.resourceHashes : []),
-  ]);
+  const output = new Set<string>();
   const seen = new WeakSet<object>();
-  for (const record of Object.values(doc.elements)) collectHashes(record.ovr, output, seen);
+  for (const record of Object.values(doc.elements)) {
+    collectHashes(record.meta.imageReplacement, output, seen);
+    collectHashes(record.ovr, output, seen);
+    const source = record.src;
+    collectHashes(source.kind === 'image' ? source.src
+      : source.kind === 'shape' && source.fill?.type === 'image' ? source.fill.src : null, output, seen);
+  }
+  for (const record of Object.values(doc.slides)) collectHashes(record.backgroundImage, output, seen);
   // 生成式新图片没有 OOXML insertion 闭包，资源只由上面的 Schema token 引用。
   return output;
 }

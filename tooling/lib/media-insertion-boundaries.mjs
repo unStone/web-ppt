@@ -24,7 +24,7 @@ export function runMediaInsertionBoundaries({ editor, media, assert }) {
     ['海报类型伪造', (c) => { c.poster.mime = 'image/jpeg'; }],
     ['海报签名伪造', (c) => { c.poster.bytes = wav; }],
     ['额外命令字段', (c) => { c.extra = true; }],
-    ['外链尚未启用', (c) => { c.source = { kind: 'external', url: 'javascript:alert(1)' }; }],
+    ['危险外链', (c) => { c.source = { kind: 'external', mediaKind: 'audio', url: 'javascript:alert(1)' }; }],
   ];
   const identity = structuredClone(editor.doc.identity), history = editor.history.undoCount;
   for (const [label, mutate] of cases) {
@@ -36,8 +36,10 @@ export function runMediaInsertionBoundaries({ editor, media, assert }) {
 }
 
 export async function runMediaInsertionCollaboration({ core, edit, collab, media, source, assert }) {
-  const cases = [{ bytes: makeWav(0.1), mime: 'audio/wav' },
-    { bytes: makeMp4(), mime: 'video/mp4' }, { bytes: makeMp4(true), mime: 'video/mp4' }];
+  const cases = [{ kind: 'embedded', bytes: makeWav(0.1), mime: 'audio/wav' },
+    { kind: 'embedded', bytes: makeMp4(), mime: 'video/mp4' }, { kind: 'embedded', bytes: makeMp4(true), mime: 'video/mp4' },
+    { kind: 'external', mediaKind: 'audio', url: 'https://media.example.test/audio' },
+    { kind: 'external', mediaKind: 'video', url: 'https://media.example.test/video' }];
   for (const sample of cases) for (const generated of [false, true]) {
     const peers = await Promise.all(['left', 'right'].map(async (name) => {
       const presentation = await core.parse(source, { edit: true, keepPackage: true, lazy: false });
@@ -45,6 +47,11 @@ export async function runMediaInsertionCollaboration({ core, edit, collab, media
       return { name, presentation, doc, editor: new edit.Editor(doc) };
     }));
     const listeners = new Map(), queue = [], errors = [];
+    const deliver = () => {
+      for (const event of queue.splice(0).reverse()) for (const peer of peers) {
+        if (peer.name !== event.from) listeners.get(peer.name)(event.message);
+      }
+    };
     const bindings = peers.map((peer, index) => collab.bindCollaboration(peer.editor, {
       documentId: 'media', replicaId: peer.name, replicaSlot: index + 1,
       onError: (error) => errors.push(error), provider: {
@@ -55,18 +62,36 @@ export async function runMediaInsertionCollaboration({ core, edit, collab, media
     try {
       const ids = peers.map(({ doc, editor }) => media.createMediaEditor(editor).exec({
         type: 'AddMedia', slideId: doc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
-        source: { kind: 'embedded', bytes: sample.bytes, mime: sample.mime },
+        source: sample,
         poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
       }));
       assert.notEqual(...ids, '并发插入使用副本槽分配不同身份');
-      for (const event of queue.splice(0).reverse()) for (const peer of peers) {
-        if (peer.name !== event.from) listeners.get(peer.name)(event.message);
-      }
+      deliver();
       assert.deepEqual(errors, [], '真实协同适配器接收媒体插入');
       assert.deepEqual(peers[0].doc.slides[peers[0].doc.slideOrder[0]].children,
         peers[1].doc.slides[peers[1].doc.slideOrder[0]].children, '并发媒体顺序收敛');
+      media.createMediaEditor(peers[0].editor).exec({ type: 'ReplaceMediaPoster', id: ids[0],
+        poster: { bytes: makePng(16, 12, () => [80, 90, 210]), mime: 'image/png' } });
+      deliver();
+      const replaced = peers[0].editor.effectiveElement(ids[0]).src;
+      peers[0].editor.undo(); deliver();
+      peers[0].editor.redo(); deliver();
+      assert.deepEqual(errors, [], '接收端回收海报后仍可接收重做');
+      assert.equal(peers[1].editor.effectiveElement(ids[0]).src, replaced);
+      for (const [index, peer] of peers.entries()) media.createMediaEditor(peer.editor).exec({
+        type: 'ReplaceMediaPoster', id: ids[0],
+        poster: { bytes: makePng(16, 12, () => [10 + index * 40, 170, 90]), mime: 'image/png' },
+      });
+      deliver();
+      assert.deepEqual(errors, [], '并发海报替换通过真实协同适配器');
+      assert.equal(peers[0].editor.effectiveElement(ids[0]).src, peers[1].editor.effectiveElement(ids[0]).src,
+        '同一媒体并发替换海报按字段规则收敛');
       for (const peer of peers) {
-        for (const id of ids) assert.equal(peer.editor.effectiveElement(id).media.mime, sample.mime);
+        for (const id of ids) {
+          const playback = peer.editor.effectiveElement(id).media;
+          if (sample.kind === 'embedded') assert.equal(playback.mime, sample.mime);
+          else assert.deepEqual(playback, { kind: sample.mediaKind, src: sample.url, external: true });
+        }
         if (generated) peer.presentation.dispose();
         const reopened = await core.parse(await peer.editor.save(), { lazy: false });
         try { assert.equal(reopened.slides[0].elements.filter((el) => el.media).length, 2); }

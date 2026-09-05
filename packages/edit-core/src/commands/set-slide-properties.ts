@@ -7,7 +7,7 @@ import { assertVectorFill, normalizeVectorFill } from '../shape-fill';
 import type { EditDoc, SlideImageBackground } from '../types';
 import { resolveRelationshipTarget } from '../clipboard-source';
 import { sourceImageBackground } from '../slide-background-source';
-import { createImageResource, MAX_REPLACE_IMAGE_BYTES } from './image-resource';
+import { createImageResource, imageResourcePatches, MAX_REPLACE_IMAGE_BYTES } from './image-resource';
 import {
   prepareExistingSourceClosure, prepareMediaResourceClosure, prepareTrustedSourceClosure,
 } from './paste-resources';
@@ -16,7 +16,7 @@ import { normalizeSlideTransition, querySlideTransition } from '../slide-transit
 import { UPLOAD_BACKGROUND_SOURCE_ID } from './slide-property';
 import { assertDesignTarget } from '../design-target';
 import type {
-  CommandPatches, ImageResourcePatch, LayoutBackgroundPatch, LayoutTransitionPatch,
+  CommandPatches, LayoutBackgroundPatch, LayoutTransitionPatch,
   MasterBackgroundPatch,
   SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
   SetHiddenCommand, SetTransitionCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
@@ -51,45 +51,27 @@ export function setBackgroundPatches(
   if ('target' in command && command.target) {
     assertDesignTarget(doc, command.target);
     if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
-    if (command.target.kind === 'master') {
-      const record = doc.masters[command.target.id];
-      const path = ['masters', command.target.id, 'ovr', 'background'] as const;
-      const hadOverride = own(record.ovr, 'background');
-      if (command.fill === null) {
-        if (!hadOverride) return { forward: [], inverse: [] };
-        return {
-          forward: [{ op: 'del', path, origin }],
-          inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin }],
-        };
-      }
-      const value = normalizeVectorFill(command.fill);
-      if (hadOverride && JSON.stringify(record.ovr.background) === JSON.stringify(value)) {
-        return { forward: [], inverse: [] };
-      }
-      const forward: MasterBackgroundPatch = { op: 'set', path, value, origin };
-      const inverse: MasterBackgroundPatch = hadOverride
-        ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin }
-        : { op: 'del', path, origin };
-      return { forward: [forward], inverse: [inverse] };
-    }
-    const record = doc.layouts[command.target.id];
-    const path = ['layouts', command.target.id, 'ovr', 'background'] as const;
+    const target = command.target;
+    const record = target.kind === 'master' ? doc.masters[target.id] : doc.layouts[target.id];
+    const path = target.kind === 'master'
+      ? ['masters', target.id, 'ovr', 'background'] as const
+      : ['layouts', target.id, 'ovr', 'background'] as const;
     const hadOverride = own(record.ovr, 'background');
     if (command.fill === null) {
       if (!hadOverride) return { forward: [], inverse: [] };
       return {
-        forward: [{ op: 'del', path, origin }],
-        inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin }],
+        forward: [{ op: 'del', path, origin } as LayoutBackgroundPatch | MasterBackgroundPatch],
+        inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin } as LayoutBackgroundPatch | MasterBackgroundPatch],
       };
     }
     const value = normalizeVectorFill(command.fill);
     if (hadOverride && JSON.stringify(record.ovr.background) === JSON.stringify(value)) {
       return { forward: [], inverse: [] };
     }
-    const forward: LayoutBackgroundPatch = { op: 'set', path, value, origin };
-    const inverse: LayoutBackgroundPatch = hadOverride
+    const forward = { op: 'set', path, value, origin } as LayoutBackgroundPatch | MasterBackgroundPatch;
+    const inverse = (hadOverride
       ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin }
-      : { op: 'del', path, origin };
+      : { op: 'del', path, origin }) as LayoutBackgroundPatch | MasterBackgroundPatch;
     return { forward: [forward], inverse: [inverse] };
   }
   const record = doc.slides[command.id];
@@ -186,16 +168,10 @@ export function setBackgroundImagePatches(
   const backgroundInverse: SlideBackgroundPatch = hadBackground
     ? { op: 'set', path: backgroundPath, value: structuredClone(record.ovr.background!), origin }
     : { op: 'del', path: backgroundPath, origin };
-  const existing = doc.imageResources[resource.hash];
-  const resourceForward: ImageResourcePatch[] = existing ? [] : [{
-    op: 'set', path: ['imageResources', resource.hash], value: closure.resources[0], origin,
-  }];
-  const resourceInverse: ImageResourcePatch[] = existing ? [] : [{
-    op: 'del', path: ['imageResources', resource.hash], origin,
-  }];
+  const resources = imageResourcePatches(doc, closure.resources, origin);
   return {
-    forward: [...resourceForward, ...metadataPatches.forward, backgroundForward],
-    inverse: [backgroundInverse, ...metadataPatches.inverse, ...resourceInverse],
+    forward: [...resources.forward, ...metadataPatches.forward, backgroundForward],
+    inverse: [backgroundInverse, ...metadataPatches.inverse, ...resources.inverse],
   };
 }
 
@@ -245,16 +221,10 @@ export function setBackgroundCropPatches(
     };
     const path = ['slides', command.id, 'ovr', 'background'] as const;
     const metadataPatches = imageMetadataPatches(record, command.id, metadata, origin);
-    const createdResources = closure.resources.filter((candidate) => !doc.imageResources[candidate.hash]);
-    const resourceForward: ImageResourcePatch[] = createdResources.map((candidate) => ({
-      op: 'set', path: ['imageResources', candidate.hash], value: candidate, origin,
-    }));
-    const resourceInverse: ImageResourcePatch[] = createdResources.map((candidate) => ({
-      op: 'del', path: ['imageResources', candidate.hash], origin,
-    }));
+    const resources = imageResourcePatches(doc, closure.resources, origin);
     return {
-      forward: [...resourceForward, ...metadataPatches.forward, { op: 'set', path, value, origin }],
-      inverse: [{ op: 'del', path, origin }, ...metadataPatches.inverse, ...resourceInverse],
+      forward: [...resources.forward, ...metadataPatches.forward, { op: 'set', path, value, origin }],
+      inverse: [{ op: 'del', path, origin }, ...metadataPatches.inverse, ...resources.inverse],
     };
   }
   if (record.ovr.background?.type !== 'image') {

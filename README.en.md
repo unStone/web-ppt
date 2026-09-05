@@ -411,11 +411,11 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
-| `npm run test:edit` | 1,120 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 548 process-isolated SVG fingerprint pairs across 84 fixtures |
+| `npm run test:edit` | 1,120 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 550 process-isolated SVG fingerprint pairs across 85 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 194 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
-| `npm run test:media` | 348 media-insertion assertions: WAV/MP4 validation, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/media-insertion.md) |
+| `npm run test:media` | 870 media-insertion assertions: WAV/MP4, external links, posters, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/media-insertion.md) |
 | `npm run test:editor` | 424 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |
 | `npm run test:v07:libreoffice` | Open all 11 artifacts from the single 0.7 manifest in LibreOffice without repair |

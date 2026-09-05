@@ -226,7 +226,8 @@ function advanceRecord(
   if (!insert) throw new Error(`恢复日志删除了未分配的元素身份：${record.id}`);
   floor.knownElements.set(record.id, anchor);
   floor.owningParts.set(record.id, owner);
-  if (!record.meta.origin && !embedded) {
+  // .ppt 来源的新对象由 Schema 生成宿主；仅有 OOXML 所属页才必须分配原包锚点。
+  if (!record.meta.origin && !embedded && (owner !== null || !record.meta.created)) {
     throw new Error(`恢复日志的新元素缺少可持久化宿主：${record.id}`);
   }
   if (record.meta.origin && record.meta.origin.part !== owner) {

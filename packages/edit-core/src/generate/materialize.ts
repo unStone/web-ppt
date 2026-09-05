@@ -424,6 +424,8 @@ function materializeSlide(
       record.children = undefined;
       record.ovr = { ...structuredClone(sourceRecord.ovr), x: source.x, y: source.y, w: source.w, h: source.h };
     } else {
+      // 有效投影已经吸收图片/海报替换；新宿主必须使用新关系，不能再重放旧包的 rId。
+      record.meta.imageReplacement = undefined;
       record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
       record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
     }

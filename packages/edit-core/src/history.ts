@@ -19,6 +19,8 @@ export interface HistoryPatchLink {
 }
 
 export interface HistoryStoreHooks {
+  /** 资源闭包等宿主约束也适用于合并历史；不满足时仍保留两个独立撤销单元。 */
+  readonly canMerge?: (entry: HistoryEntry) => boolean;
   /** 不复制进 Patch、但仅因历史可达而常驻的外部资源字节。 */
   readonly externalByteSize?: (entries: readonly HistoryEntry[]) => number;
   /** 历史驱逐/清空后通知资源所有者做可达性回收。 */
@@ -212,12 +214,12 @@ export class HistoryStore implements History {
     afterState: number,
     links: readonly HistoryPatchLink[] = [],
   ): void {
-    const next = this.withStoredBytes({
+    let next = this.withStoredBytes({
       ...cloneHistoryEntry(entry), beforeState, afterState, links: storeLinks(links),
     });
     const previous = this.peekUndo();
     if (!this.mergeBarrier && previous && canMerge(previous, next)) {
-      const merged = this.withStoredBytes({
+      const candidate = this.withStoredBytes({
         ...next,
         forward: compactPatches([...previous.forward, ...next.forward]),
         inverse: compactPatches([...next.inverse, ...previous.inverse]),
@@ -225,13 +227,14 @@ export class HistoryStore implements History {
         beforeState: previous.beforeState,
         links: mergeLinks(previous.links, next.links),
       });
-      this.bytes -= previous.storedBytes;
-      this.undoList[this.undoList.length - 1] = merged;
-      this.bytes += merged.storedBytes;
-    } else {
-      this.undoList.push(next);
-      this.bytes += next.storedBytes;
+      if (this.hooks.canMerge?.(candidate) !== false) {
+        this.bytes -= previous.storedBytes;
+        this.undoList.pop();
+        next = candidate;
+      }
     }
+    this.undoList.push(next);
+    this.bytes += next.storedBytes;
     this.mergeBarrier = false;
     for (const redo of this.redoList) this.bytes -= redo.storedBytes;
     this.redoList.length = 0;
