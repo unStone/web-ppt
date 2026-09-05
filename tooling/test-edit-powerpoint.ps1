@@ -52,6 +52,11 @@ try {
 
   foreach ($artifact in $payload.artifacts) {
     $presentation = $null
+    $chartShape = $null
+    $chartObject = $null
+    $chartSeries = $null
+    $chartWorkbook = $null
+    $chartWorksheet = $null
     if ([string]::IsNullOrWhiteSpace($artifact.file) -or
         [IO.Path]::GetFileName($artifact.file) -ne $artifact.file) {
       throw "PowerPoint 验收清单只能引用同目录文件：$($artifact.file)"
@@ -62,17 +67,60 @@ try {
       if ($presentation.Slides.Count -ne $artifact.slides) {
         throw "PowerPoint 打开 $($artifact.file) 得到 $($presentation.Slides.Count) 页，预期 $($artifact.slides) 页"
       }
-      $evidence += [ordered]@{
+      $chartDataEvidence = $null
+      if ($null -ne $artifact.chartData) {
+        $slide = $presentation.Slides.Item([int]$artifact.chartData.slide)
+        foreach ($shape in @($slide.Shapes)) {
+          if ($shape.HasChart -eq -1) { $chartShape = $shape; break }
+        }
+        if ($null -eq $chartShape) { throw "$($artifact.file) 缺少清单指定的经典图表" }
+        $chartObject = $chartShape.Chart
+        $chartSeries = $chartObject.SeriesCollection([int]$artifact.chartData.series)
+        $values = $chartSeries.Values
+        $categories = $chartSeries.XValues
+        $pointAt = [int]$artifact.chartData.point - 1
+        $displayValue = if ($values -is [Array]) { [double]$values.GetValue($pointAt) } else { [double]$values }
+        $category = if ($categories -is [Array]) { [string]$categories.GetValue($pointAt) } else { [string]$categories }
+        $seriesName = [string]$chartSeries.Name
+        $chartObject.ChartData.Activate()
+        $chartWorkbook = $chartObject.ChartData.Workbook
+        $chartWorksheet = $chartWorkbook.Worksheets.Item(1)
+        $workbookValue = [double]$chartWorksheet.Range([string]$artifact.chartData.workbookCell).Value2
+        if ($displayValue -ne [double]$artifact.chartData.value -or
+            $workbookValue -ne [double]$artifact.chartData.value -or
+            $seriesName -ne [string]$artifact.chartData.seriesName -or
+            $category -ne [string]$artifact.chartData.category) {
+          throw "PowerPoint 图表显示值与双击工作簿不一致：display=$displayValue workbook=$workbookValue series=$seriesName category=$category"
+        }
+        $chartDataEvidence = [ordered]@{
+          synchronized = $true
+          displayValue = $displayValue
+          workbookValue = $workbookValue
+          seriesName = $seriesName
+          category = $category
+        }
+      }
+      $entry = [ordered]@{
         file = [string]$artifact.file
         sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $resolved).Hash.ToLowerInvariant()
         expectedSlides = [int]$artifact.slides
         actualSlides = [int]$presentation.Slides.Count
         openedWithoutRepair = $true
       }
+      if ($null -ne $chartDataEvidence) { $entry.chartData = $chartDataEvidence }
+      $evidence += $entry
       $opened++
       Write-Host "PowerPoint 未启用修复即打开 $($presentation.Slides.Count) 页：$resolved"
     }
     finally {
+      if ($null -ne $chartWorkbook) {
+        try { $chartWorkbook.Close($false) } catch {}
+      }
+      foreach ($comObject in @($chartWorksheet, $chartWorkbook, $chartSeries, $chartObject, $chartShape)) {
+        if ($null -ne $comObject) {
+          try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($comObject) } catch {}
+        }
+      }
       if ($null -ne $presentation) {
         $presentation.Saved = -1
         $presentation.Close()

@@ -4,7 +4,7 @@ import { reorderXmlChildren } from '../xml/nodes';
 import type { XmlDocument, XmlElement } from '../xml/types';
 import { locateElementHosts } from './xfrm';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 export function hasOrderOverride(record: ElementRecord): boolean {
   return own(record, 'order');

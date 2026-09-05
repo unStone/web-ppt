@@ -12,7 +12,7 @@ import type {
   ElementTreeSnapshot, PasteElementsCommand,
 } from './types';
 import { prepareInsertionClosures } from './paste-resources';
-import { partSpidAllocator } from './spid';
+import { allocateElementSpid } from './spid';
 import { assertTableRowAppendEditInfo } from '../table-row-append-validation';
 import {
   applyCopiedLinks, assertClipboardPortableLink, assertClipboardTextLinks,
@@ -167,7 +167,7 @@ export function pasteElementsPatches(
   }));
   const idMap = new Map<string, ElementId>();
   for (const id of Object.keys(payload.records)) idMap.set(id, allocateElementId(doc));
-  const allocateSpid = partSpidAllocator(doc, destination.part);
+  const allocateSpid = () => allocateElementSpid(doc, destination.part);
   const siblings = elementParentChildren(doc, destination.parent);
   let previousOrder = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
 
@@ -175,18 +175,14 @@ export function pasteElementsPatches(
   for (const rootId of payload.roots) {
     const records: Record<ElementId, ElementRecord> = Object.create(null);
     const spids: Record<string, number> = Object.create(null);
-    const hostSpids = new Set(payload.ooxml.roots[rootId].hostSpids);
+    const sourceRoot = payload.ooxml.roots[rootId];
+    const hostSpids = new Set(sourceRoot.hostSpids);
     const visit = (clipboardId: string, parent: SlideId | ElementId, root: boolean, index: number): ElementId => {
       const copied = payload.records[clipboardId];
       const id = idMap.get(clipboardId)!;
-      const spid = copied.meta.anchored && copied.meta.sourceSpid !== undefined
-        && hostSpids.has(String(copied.meta.sourceSpid)) ? allocateSpid() : undefined;
-      if (spid !== undefined && copied.meta.sourceSpid !== undefined) {
-        if (Object.prototype.hasOwnProperty.call(spids, String(copied.meta.sourceSpid))) {
-          throw new Error(`剪贴板来源 spid 重复：${copied.meta.sourceSpid}`);
-        }
-        spids[String(copied.meta.sourceSpid)] = spid;
-      }
+      // assertPayload 已整树确认锚点有效、唯一且属于该宿主；此处只负责分配。
+      const spid = copied.meta.anchored ? allocateSpid() : undefined;
+      if (spid !== undefined) spids[copied.meta.sourceSpid!] = spid;
       let src = hydrateElementAssets(copied.src);
       const links = applyCopiedLinks(doc, src, copied.meta);
       src = links.element;
@@ -206,8 +202,8 @@ export function pasteElementsPatches(
           ...(links.sourceLinkReadonly ? { sourceLinkReadonly: true } : {}),
           ...(root ? {
             insertion: {
-              markup: payload.ooxml.roots[rootId].markup,
-              namespaces: structuredClone(payload.ooxml.roots[rootId].namespaces),
+              markup: sourceRoot.markup,
+              namespaces: structuredClone(sourceRoot.namespaces),
               spids,
               relationships: structuredClone(closures.get(rootId)!.relationships),
               resources: structuredClone(closures.get(rootId)!.resources),
@@ -219,6 +215,11 @@ export function pasteElementsPatches(
       return id;
     };
     const root = visit(rootId, destination.parent, true, 0);
+    const unmodeledSpids = [...hostSpids].filter((spid) => spids[spid] === undefined)
+      .map((spid) => (spids[spid] = allocateSpid()));
+    if (unmodeledSpids.length) {
+      records[root].meta.insertion = { ...records[root].meta.insertion!, unmodeledSpids };
+    }
     snapshots.push({ root, parent: destination.parent, records });
   }
   const forward: ElementTreePatch[] = snapshots.map((value) => ({

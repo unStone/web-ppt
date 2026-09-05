@@ -22,6 +22,19 @@ const bytes = createPptxFromTemplate('aurora', { width: 1280, height: 720 });
 `aurora`、`editorial`、`midnight` 各自生成可编辑主题、母版、标题页/标题和内容/双内容/章节页/空白版式及
 初始标题页；`createBlankPptx()` 继续保持既有最小输出的字节兼容。
 
+经典图表数据编辑也位于独立按需入口，默认编辑入口不会加载图表与 SpreadsheetML 补丁器：
+
+```ts
+const charts = await import('@web-ppt/edit-core/chart');
+const chart = charts.listEditableCharts(doc)[0];
+const dataset = charts.queryChartData(doc, chart.id);
+const dataEditor = charts.createChartDataEditor(editor);
+dataEditor.setValue(chart.id, dataset.series[0].id, dataset.categories[0].id, 4096);
+```
+
+`binding.mode` 明确说明保存能力：`workbook` 同步更新图表缓存、公式与内嵌 XLSX；`cache` 只改
+literal/cache；工作簿公式无法安全解释时为 `readonly` 并拒绝编辑，不伪造 Excel 已同步。
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {

@@ -26,8 +26,10 @@ import { projectTableStyle } from './table-style';
 import { scaledDimensions, scaledTableEditInfo } from './table-scale';
 import { canvasTargetOfElement } from './design-target';
 import { slidesForLayout, slidesForMaster } from './design-dependencies';
+import { editExtensionGeneration, projectEditExtensions } from './extension-runtime';
 
 interface ProjectionCache {
+  generation: number;
   elements: Map<ElementId, SlideElement>;
   slides: Map<SlideId, Slide>;
 }
@@ -41,8 +43,9 @@ export function releaseProjectionCache(doc: EditDoc): void {
 
 function cacheOf(doc: EditDoc): ProjectionCache {
   let cache = caches.get(doc);
-  if (!cache) {
-    cache = { elements: new Map(), slides: new Map() };
+  const generation = editExtensionGeneration();
+  if (!cache || cache.generation !== generation) {
+    cache = { generation, elements: new Map(), slides: new Map() };
     caches.set(doc, cache);
   }
   return cache;
@@ -73,6 +76,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   const {
     tableCells, tableRows, tableColumns, tableRemovedRows, tableRemovedColumns,
     tableRowHeights, tableColumnWidths, tableMerges, tableStyle,
+    extensions: _extensions,
     link: linkOverride, geometry: geometryOverride, presetGeometry: presetGeometryOverride, ...overrides
   } = record.ovr;
   let out = { ...layoutBase.base, ...overrides } as unknown as SlideElement;
@@ -233,6 +237,7 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
   if (target.kind === 'slide') {
     out = projectElementSlideFields(doc, target.id, out);
   }
+  out = projectEditExtensions(doc, id, out);
   cache.elements.set(id, out);
   return out;
 }

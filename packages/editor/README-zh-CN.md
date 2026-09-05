@@ -20,6 +20,18 @@ const catalog = listBuiltinTemplates();
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
 
+用户选中经典图表后再加载数据工具。editor、React 与 Vue 的图表入口转发同一数据集和命令 API：
+
+```ts
+const charts = await import('@web-ppt/editor/chart');
+const chart = charts.listEditableCharts(session.editor.doc)[0];
+const dataset = charts.queryChartData(session.editor.doc, chart.id);
+charts.createChartDataEditor(session.editor).setSeriesName(chart.id, dataset.series[0].id, '预测');
+```
+
+显示控件前先检查 `chart.binding.mode`：`workbook` 表示完整同步，`cache` 表示只改缓存，`readonly`
+会给出无法安全编辑的原因。
+
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 import {
@@ -485,7 +497,7 @@ const view = session.mount(container, {
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 68.11KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 68.10KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

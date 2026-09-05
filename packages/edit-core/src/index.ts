@@ -59,6 +59,7 @@ export { listSections, MAX_SECTION_NAME_LENGTH, sectionOfSlide } from './section
 export { MAX_SLIDE_SIZE, MIN_SLIDE_SIZE, querySlideSize } from './slide-size';
 export { querySelectionPane } from './selection-pane';
 export { applyPatches, assertPatchesApplicable, stageExternalPatches } from './commands/patch';
+export { MAX_PATCHES_PER_TRANSACTION } from './commands/types';
 export { allocateElementId, allocateSlideId, createDoc, createEmptyDoc, disposeDoc, replaceDocPackage } from './document';
 export { configureCollaborationIdentity } from './collaboration-identity';
 export {
@@ -92,7 +93,7 @@ export type {
   RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
 } from './recovery-types';
 export type {
-  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, DesignCommand, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, EditorChange, GroupCommand, MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, UngroupCommand,
+  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, DesignCommand, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, EditorChange, ExtensionCommand, ExtensionPatch, GroupCommand, MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, UngroupCommand,
   EditorOptions, EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions, EditorSubscriber, ExternalPatchOptions, ElementAltTextPatch, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
   DocumentSizePatch, ElementHierarchyPatch, ElementHierarchyState, ElementTreePatch, ElementTreeSnapshot, ElementXfrmPath, FitTextShapeCommand, History, HistoryEntry, InsertColumnCommand, InsertRowCommand, MergeCellsCommand, MoveSlideCommand, Patch, RemoveColumnCommand, RemoveElementCommand, RemoveRowCommand, RemoveSlideCommand, SectionStatePatch, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetCellPropsCommand, SetColumnWidthCommand, SetHiddenCommand, SetRowHeightCommand, SetSlideSizeCommand, SetTransitionCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideChangeSets, SlideHiddenPatch, SlideTransitionPatch, SlideOrderPatch, SlidePropertyPatch, SlideTreePatch, SlideTreeSnapshot, SplitCellCommand,
   ApplyFormatCommand, ClearFormatCommand, FormatMaskField, PasteElementsCommand, Selection, ElementLayerTarget, FlipField, NumericXfrmField, SetAltTextCommand, SetElementHiddenCommand, SetFlipCommand, SetLockedCommand, SetNameCommand, SetParaPropsCommand, SetRunPropsCommand, SetXfrmCommand, SetZCommand, TextPosition, TextRange, Transaction,

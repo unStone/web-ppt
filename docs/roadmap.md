@@ -12,26 +12,26 @@
 
 ### 1.1 一句话
 
-**引擎能力、0.6 高频编辑面与 0.7 模板/主题产品链已经打穿，下一前沿是 0.8 图表数据编辑。** 自动化交付
+**引擎能力、0.6 高频编辑面、0.7 模板/主题产品链及 0.8 经典图表数据编辑已完成。** ChartEx 真实漏斗回退已恢复并通过视觉验收，缺原包保存与其他类型仍未完成。自动化交付
 缺口已收口；0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
-### 1.2 门禁实测（2026-09-03）
+### 1.2 门禁实测（2026-09-05，整轮通过）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 4628 项 | 2230 core + 1119 edit + 514 save + 29 templates + 31 v07 + 9 PowerPoint + 422 editor + 10 adapters + 134 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 4920 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 93 MC fallback + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 524 对 | 81 份固件、262 页，独立进程原始 SVG 两条文本路径 |
-| 构建 | `npm run build` | ✅ 8 包 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 许可证 / 版本 / 链接 / HTML id / 文档规模 / 八包清单与体积 / 0.7 发布面 |
+| 编辑等价指纹 | 同上 | ✅ 546 对 | 83 份固件、273 页，独立进程原始 SVG 两条文本路径 |
+| 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 341 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 524 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 546 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -47,11 +47,11 @@
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,628 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,741 项 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.73KB gzip | 读取 `package.json#main` 后实测 gzip |
-| 5 | 14,262B 与 11.73KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
+| 5 | 14,288B 与 11.76KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
 | 6 | 稳定版清单仍写七包 | 改为八包及真实发布顺序 | 发布包版本与构建清单同步比对 |
 
 ---
@@ -99,7 +99,8 @@
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
 | 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
-| 图表/SmartArt/OLE/墨迹/媒体 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑、**图表数据** |
+| 经典图表 | 框架级操作 + 按需数据集增删改、cache/内嵌工作簿同步 | 类型切换、格式样式编辑 |
+| SmartArt/OLE/墨迹/媒体 | 仅框架级 `SetXfrm` / `SetZ` / `RemoveElement` | 内部编辑 |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`。
 
@@ -148,8 +149,8 @@ flowchart TD
 | 批量导出图片 | 有 | 有（复用 `slideToPng` + fflate） | ✅ **已完成** |
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | ✅ **已完成** |
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
-| 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（须同时改 cache 与 embedded xlsx，可做成按需入口） | **0.8 P0** |
-| chartex 解析 | 部分（PowerPoint 自带 fallback 预览，不会白屏） | 有，除 `regionMap` | **0.8 P1**，地图无解 |
+| 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
+| chartex 解析 | 原生未完成；真实漏斗图片回退已验证，缺原包保存未完成 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续回退保存与真实语料 |
 | 媒体插入 | 有 | 有 | **0.8 P2** |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | **产品层双路径**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
@@ -354,9 +355,10 @@ Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编�
 隔离、撤销重做、恢复后续编、字段级协同、直接覆盖、占位符身份与无关 DOM 身份；补丁保存、生成保存和 `.ppt`
 另存汇入唯一 11 件清单，由 LibreOffice 逐件打开，Windows PowerPoint 工作流消费同一清单并绑定提交与字节。
 
-### 5.9 [图表数据编辑（0.8）](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md)
+### 5.9 [图表数据编辑（0.8，已完成）](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md)
 
-图表是 PPT 里第二高频的对象，现在是 `editable: 'frame'`。做完整需要**同时改两处**：
+经典图表保留 `editable: 'frame'` 的原子画布身份，数据编辑通过独立按需入口完成。一个 `ChartDataset` 是唯一
+语义真值，保存时**同时投影到两处**：
 
 ```mermaid
 flowchart LR
@@ -366,19 +368,27 @@ flowchart LR
     X --> E["双击「编辑数据」时 Excel 看到的值"]
 ```
 
-只改缓存 → 显示对，但用户一点「编辑数据」就看到旧数；只改工作簿 → 显示不变。**必须同时改。**
+实现覆盖柱/线/饼/面积等类别图、散点图、气泡图和组合图的系列、类别、点位增删改；稳定语义 ID、撤销重做、
+恢复帧与字段级 LWW 协同共用既有编辑模型。保存事务原子更新 cache、公式范围、工作表及 shared strings；共享
+图表 part、共享工作簿、歧义绑定和不可写来源显式只读，不能假装 Excel 已同步。
 
-- xlsx 写回需要一个最小 SpreadsheetML 补丁器，**复用 `edit-core/opc` 与 `edit-core/xml` 两个按需入口**，不引新依赖
-- 做成 `@web-ppt/edit-core/chart` 独立按需入口 → 主包零增长
-- 范围只到**数值与类别的增删改**。图表类型切换要重建整棵 `c:plotArea`，收益低，不做
+`@web-ppt/core/chart-edit`、`@web-ppt/edit-core/chart`、`@web-ppt/editor/chart` 及 React/Vue 转发均为按需入口，
+官网数据表同样动态加载；默认 core / edit-core / editor 和官网初始依赖闭包没有增长。确定性固件来自 Apache POI
+真实嵌入工作簿语料；194 项专项断言、真实 Chrome、LibreOffice 打开与缓存/工作簿一致性均通过，Windows
+PowerPoint 继续消费同一工件清单提供提交绑定证据。图表类型切换仍不在本阶段范围内。
 
 ### 5.10 chartex（0.8）
 
-`cx:chartSpace` 是**另一套 schema**，7 种布局：树状图、旭日、直方图（含 Pareto）、箱线、瀑布、漏斗、地图。
+`cx:chartSpace` 是**另一套 schema**，按用户功能分为 7 类：树状图、旭日、直方图（含 Pareto）、箱线、瀑布、漏斗、地图。
 落在 `ppt/charts/chartEx1.xml`，通过 `p:graphicFrame` 的 `<mc:AlternateContent>` 挂载。
 
-**关键情报：PowerPoint 自己就在 `Fallback` 里放一份 `p:pic` 预览图**，所以不实现 cx 也不会白屏——
-需要拿真实样本实测确认当前 fallback 路径确实走通了，这是排优先级的前提。
+**实测纠正（2026-09-05）：有预览图不等于回退已生效。** LibreOffice 官方语料中的 PowerPoint 漏斗 PPTX
+确实带有 `Fallback/p:pic`，旧解析器却把 Choice 的未知图表占位当成非空成功结果，两条 SVG 均丢图。
+[兼容回退修复](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md)现已恢复真实漏斗图片，并通过
+Chrome 屏幕与独立 SVG 解码；93 项专项守住整壳编辑、身份和补丁保存。原包丢失后生成保存仍明确拒绝，
+尚未达到完整保留，不能把预览图片等同于原生图表数据。
+另外八个真实 XLSX 只有公式引用与文字回退，不能替代其余六类 PPTX 的验收；完整证据见
+[回退与真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)。
 
 真要实现，六种都是纯几何，`chart/plots.ts` 已有同类代码：squarify（树状图）、极坐标堆叠（旭日）、
 累计基线（瀑布）、五数概括（箱线）、梯形（漏斗）、分箱 + 累计线（直方图/Pareto）。
@@ -419,6 +429,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | ✅ [0.7 集成验收](wayfinder/ppt-template-theme/tickets/005-v07-integration-readiness.md)已完成 | — | 设计来源与模板形成同一产品面 |
 | 2 | 找一台 Windows + 桌面 PowerPoint 跑自托管 runner | **外部** | 解开 0.5.0 转正 |
-| 3 | [实现 0.8 图表数据编辑](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md) | 需要真实图表 + 内嵌工作簿语料 | 同步改 chart cache 与 xlsx，进入下一能力前沿 |
+| 3 | [修复未知扩展对象阻断兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) | 真实漏斗显示与补丁保存已通过 | 补缺原包保存；继续其他类型真实语料 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。

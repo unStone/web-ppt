@@ -33,9 +33,13 @@ import { applyTableGridPatch, isTableCellPropsPatch, isTableColumnPatch,
 import { applyTableRowPatch, isTableRowPatch } from './table-row';
 import { applyThemePatch, isThemePatch } from './theme';
 import type { ElementTransformPatch, Patch } from './types';
+import {
+  applyExtensionPatch, finalizeExtensionPatch, isExtensionPatch,
+} from '../extension-runtime';
 
 export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
   const orderParents = new Set<string>();
+  const extensionTargets = new Map<string, readonly [string, string]>();
   for (const patch of patches) {
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
@@ -66,10 +70,17 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
     else if (isElementNamePatch(patch)) applyElementNamePatch(doc, patch);
     else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
+    else if (isExtensionPatch(patch)) {
+      applyExtensionPatch(doc, patch);
+      extensionTargets.set(`${patch.path[1]}\0${patch.path[4]}`, [patch.path[1], patch.path[4]]);
+    }
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
   for (const parent of orderParents) {
     if (doc.slides[parent] || doc.layouts[parent] || doc.masters[parent]
       || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
+  }
+  for (const [id, namespace] of extensionTargets.values()) {
+    finalizeExtensionPatch(doc, id, namespace);
   }
 }

@@ -1,3 +1,4 @@
+import { own } from './data-validation';
 import { paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS, textRunDirectFlags } from '@web-ppt/core';
 import type {
   Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo,
@@ -38,10 +39,10 @@ function projectedRunEditInfo(
   const overrides = mark.runOverrides;
   let bits = mark.clearDirectFormatting ? 0 : sourceRun?.editInfo?.direct ?? 0;
   for (const [field, bit] of RUN_DIRECT_FIELDS) {
-    if (!Object.prototype.hasOwnProperty.call(overrides ?? {}, field)) continue;
+    if (!own(overrides ?? {}, field)) continue;
     bits = overrides?.[field] === null ? bits & ~bit : bits | bit;
   }
-  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'font')) {
+  if (own(overrides ?? {}, 'font')) {
     bits = overrides?.font === null ? bits & ~FONT_DIRECT_BITS : bits | FONT_OVERRIDE_BIT;
   }
   if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly
@@ -81,7 +82,7 @@ function projectedRunEditInfo(
       },
     inheritedFontSlots: structuredClone(inheritedSlots),
     direct: textRunDirectFlags(bits),
-    fontSlots: Object.prototype.hasOwnProperty.call(overrides ?? {}, 'font')
+    fontSlots: own(overrides ?? {}, 'font')
       ? overrides?.font === null
         ? structuredClone(inheritedSlots)
         : uniformFontSlots(effectiveFonts[0] ?? null)
@@ -108,7 +109,7 @@ function projectedParagraphEditInfo(
     ...(sourceInfo?.directParagraphProps ?? paragraph.directParagraphProps),
   };
   for (const field of PARAGRAPH_DIRECT_FIELDS) {
-    if (!Object.prototype.hasOwnProperty.call(overrides ?? {}, field)) continue;
+    if (!own(overrides ?? {}, field)) continue;
     if (overrides?.[field] === null) delete directParagraphProps[field];
     else directParagraphProps[field] = true;
   }
@@ -118,13 +119,13 @@ function projectedParagraphEditInfo(
     ? paragraph.inheritedParagraphProps ?? sourceInfo?.inheritedParagraphProps
     : sourceInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
   let directLayout = sourceInfo?.directLayout ?? paragraphLayoutDirectFlags(0);
-  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')) {
+  if (own(overrides ?? {}, 'bullet')) {
     directLayout = paragraphLayoutDirectFlags(overrides?.bullet === null
       ? directLayout & ~PARAGRAPH_LAYOUT_DIRECT_BITS.bullet
       : directLayout | PARAGRAPH_LAYOUT_DIRECT_BITS.bullet);
   }
   const requestedBullet = overrides?.bullet;
-  const requested = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')
+  const requested = own(overrides ?? {}, 'bullet')
     ? requestedBullet?.kind === 'autoNum'
       ? { ...requestedBullet, startAt: requestedBullet.startAt ?? 1 }
       : requestedBullet ?? sourceInfo?.inheritedBullet ?? { kind: 'none' as const }
@@ -158,7 +159,7 @@ function projectedParagraphEditInfo(
       ? { autoNumbering: {
         scheme: overrides.bullet.type, startAt: overrides.bullet.startAt ?? 1,
       } }
-      : !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet')
+      : !own(overrides ?? {}, 'bullet')
         && sourceInfo?.autoNumbering
         ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) } : {}),
   };
@@ -209,9 +210,9 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
       (props as unknown as Record<string, unknown>)[field] = value === null ? inherited[field] : value;
     }
   }
-  const underlineOverride = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'underline')
+  const underlineOverride = own(overrides ?? {}, 'underline')
     ? overrides?.underline
-    : Object.prototype.hasOwnProperty.call(overrides ?? {}, 'u')
+    : own(overrides ?? {}, 'u')
       ? overrides?.u === null ? null : overrides?.u ? 'sng' : 'none'
       : undefined;
   if (underlineOverride !== undefined) {
@@ -220,9 +221,9 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     if (value === 'none') delete props.underline;
     else props.underline = value;
   }
-  const strikeOverride = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'strikeType')
+  const strikeOverride = own(overrides ?? {}, 'strikeType')
     ? overrides?.strikeType
-    : Object.prototype.hasOwnProperty.call(overrides ?? {}, 'strike')
+    : own(overrides ?? {}, 'strike')
       ? overrides?.strike === null ? null : overrides?.strike ? 'sngStrike' : 'noStrike'
       : undefined;
   if (strikeOverride !== undefined) {
@@ -306,7 +307,7 @@ function paragraphFromOverride(
 ): Omit<Paragraph, 'runs' | 'editInfo'> {
   const overrides = paragraph.paragraphOverrides;
   // level 会连带九级样式中的符号、缩进与字符默认值；投影必须采用已重基的扁平结果。
-  const levelChanged = Object.prototype.hasOwnProperty.call(overrides ?? {}, 'level');
+  const levelChanged = own(overrides ?? {}, 'level');
   const props = source && !levelChanged && !useFlatLayout
     ? paragraphProps(source) : { ...paragraph.props };
   const fields = [
@@ -324,7 +325,7 @@ function paragraphFromOverride(
       : paragraph.props[paragraphField];
     props[paragraphField] = value as never;
   }
-  if (Object.prototype.hasOwnProperty.call(overrides ?? {}, 'bullet') || useFlatBullets) {
+  if (own(overrides ?? {}, 'bullet') || useFlatBullets) {
     props.bullet = paragraph.props.bullet;
     props.bulletFont = paragraph.props.bulletFont;
     props.bulletColor = paragraph.props.bulletColor;
@@ -341,15 +342,15 @@ export function textBodyFromOverride(
   resolveLink?: (link: Exclude<LinkOverride, { kind: 'none' }>) => string | undefined,
 ): TextBody {
   const hasLevelChanges = override.paragraphs.some((paragraph) =>
-    Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'level'));
+    own(paragraph.paragraphOverrides ?? {}, 'level'));
   const hasBulletChanges = override.paragraphs.some((paragraph) =>
-    Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'bullet'));
+    own(paragraph.paragraphOverrides ?? {}, 'bullet'));
   return {
     ...bodyFromOverride(override, source),
     // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
     paragraphs: override.paragraphs.map((paragraph, paragraphIndex): Paragraph => {
       const sourceParagraph = source?.paragraphs[paragraph.sourceParagraph ?? paragraphIndex];
-      const levelChanged = Object.prototype.hasOwnProperty.call(
+      const levelChanged = own(
         paragraph.paragraphOverrides ?? {}, 'level',
       );
       const paragraphProps = paragraphFromOverride(

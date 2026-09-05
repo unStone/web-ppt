@@ -1,6 +1,7 @@
 import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
+import { MC_NAMESPACE as MARKUP_COMPATIBILITY_NS, selectAlternateContent } from './markup-compatibility';
 import {
   MAX_TIMING_NODES, selectSlideTiming, timingHasUnsupportedContent,
 } from './animation-timing';
@@ -17,7 +18,6 @@ const SPEED_MS: Record<string, number> = { slow: 1000, med: 750, fast: 500 };
 const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main';
 const POWERPOINT_2010_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 const POWERPOINT_2015_NS = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
-const MARKUP_COMPATIBILITY_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const SUPPORTED_TRANSITION_NAMESPACES = new Set([
   POWERPOINT_2010_NS, POWERPOINT_2015_NS,
 ]);
@@ -93,14 +93,6 @@ function childrenByName(
   return found;
 }
 
-function supportedChoice(choice: Element): boolean {
-  const requires = choice.getAttribute('Requires')?.trim().split(/\s+/).filter(Boolean) ?? [];
-  return requires.length > 0 && requires.every((prefix) => {
-    const namespace = choice.lookupNamespaceURI(prefix);
-    return namespace !== null && SUPPORTED_TRANSITION_NAMESPACES.has(namespace);
-  });
-}
-
 export function parseTransition(root: Element | null): Transition | undefined {
   // p:transition 可能在 p:sld 直属，也可能在 mc:AlternateContent 里的 p14 变体
   const el = findTransition(root);
@@ -148,9 +140,7 @@ function findTransition(root: Element | null): Element | null {
   if (direct) return direct;
   for (const alternate of childrenByName(root, MARKUP_COMPATIBILITY_NS, 'AlternateContent')) {
     // MCE 先原子选择一个分支，再解释其内容；不能因所选 Choice 无 transition 改投 Fallback。
-    const selected = childrenByName(alternate, MARKUP_COMPATIBILITY_NS, 'Choice')
-      .find(supportedChoice)
-      ?? childByName(alternate, MARKUP_COMPATIBILITY_NS, 'Fallback');
+    const selected = selectAlternateContent(alternate, SUPPORTED_TRANSITION_NAMESPACES);
     const transition = childByName(selected, PRESENTATIONML_NS, 'transition');
     if (transition) return transition;
   }

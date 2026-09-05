@@ -2,7 +2,7 @@ import { assertElementName } from '../element-name';
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementNamePatch, SetNameCommand } from './types';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 function assertElementNameWritable(doc: EditDoc, id: string): EditDoc['elements'][string] {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能重命名元素');

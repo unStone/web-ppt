@@ -1,33 +1,35 @@
 import { parseXmlTree } from '../xml/tree';
-import type { XmlElement } from '../xml/types';
+import { shapeIds } from '../xml/shape-ids';
 import type { EditDoc } from '../types';
 import { allocateIdentityRange } from '../identity-allocation';
+import { maxElementSpid } from '../element-spids';
 
 const MAX_SPID = 0xffff_ffff;
 
 function maxSourceSpid(doc: EditDoc, part: string): number {
-  const bytes = doc.saveState.baselines[part] ?? doc.package?.parts[part];
+  const creation = Object.values(doc.slides).find((slide) => slide.origin?.part === part)?.creation;
+  const source = creation?.duplicateSourcePart ?? part;
+  const bytes = doc.saveState.baselines[part] ?? doc.package?.parts[part]
+    ?? doc.saveState.baselines[source] ?? doc.package?.parts[source];
   if (!bytes) {
-    if (Object.values(doc.slides).some((slide) => slide.creation && slide.origin?.part === part)) return 0;
+    if (creation && !creation.duplicateSourcePart) return 0;
     throw new Error(`无法读取元素目标 part：${part}`);
   }
   let maximum = 0;
-  const visit = (element: XmlElement): void => {
-    if (element.localName === 'cNvPr') {
-      const raw = element.attributes.find((attribute) =>
-        attribute.localName === 'id' && attribute.namespaceUri === null)?.value;
-      const value = raw === undefined ? NaN : Number(raw);
-      if (Number.isSafeInteger(value) && value >= 0) maximum = Math.max(maximum, value);
-    }
-    for (const child of element.children) if (child.type === 'element') visit(child);
-  };
-  visit(parseXmlTree(bytes).root);
+  for (const raw of shapeIds(parseXmlTree(bytes).root)) {
+    const value = Number(raw);
+    if (Number.isSafeInteger(value) && value >= 0) maximum = Math.max(maximum, value);
+  }
   return maximum;
 }
 
 function maxModelSpid(doc: EditDoc, part: string): number {
   return Math.max(0, ...[...Object.values(doc.elements), ...Object.values(doc.removedElements)]
-    .flatMap((record) => record.meta.origin?.part === part ? [record.meta.origin.spid] : []));
+    .map((record) => record.meta.origin?.part === part ? maxElementSpid(record) : 0));
+}
+
+export function maxPartSpid(doc: EditDoc, part: string): number {
+  return Math.max(maxSourceSpid(doc, part), maxModelSpid(doc, part));
 }
 
 function preparePartRange(doc: EditDoc, part: string): void {
@@ -44,7 +46,7 @@ function preparePartRange(doc: EditDoc, part: string): void {
   }
   // 每个 slot 固守自己的模 count 余数；即使副本首次看到新 part 的时刻不同，也不可能取到同一 id。
   const first = allocation.slot + 1;
-  const highest = Math.max(maxSourceSpid(doc, part), maxModelSpid(doc, part));
+  const highest = maxPartSpid(doc, part);
   const rounds = highest < first ? 0 : Math.floor((highest - first) / allocation.count) + 1;
   const next = first + rounds * allocation.count;
   if (!Number.isSafeInteger(next) || next > MAX_SPID) throw new Error(`目标 part 的 spid 已耗尽：${part}`);
@@ -70,12 +72,8 @@ export function allocateElementSpid(doc: EditDoc, part: string): number {
     return next;
   }
   const cached = doc.identity.nextSpid[part];
-  const next = cached ?? Math.max(maxSourceSpid(doc, part), maxModelSpid(doc, part)) + 1;
+  const next = cached ?? maxPartSpid(doc, part) + 1;
   if (!Number.isSafeInteger(next) || next <= 0) throw new Error(`目标 part 的 spid 已耗尽：${part}`);
   doc.identity.nextSpid[part] = next + 1;
   return next;
-}
-
-export function partSpidAllocator(doc: EditDoc, part: string): () => number {
-  return () => allocateElementSpid(doc, part);
 }

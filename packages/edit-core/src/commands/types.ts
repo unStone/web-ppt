@@ -313,6 +313,14 @@ export interface SetBodyPropsCommand {
   readonly props: TextBodyPropertyOverrides;
 }
 
+/** 子路径只用纯数据命令接入主历史；payload 的语义由已加载命名空间校验。 */
+export interface ExtensionCommand {
+  readonly type: 'Extension';
+  readonly namespace: string;
+  readonly id: ElementId;
+  readonly payload: unknown;
+}
+
 export interface InsertRowCommand {
   readonly type: 'InsertRow';
   readonly id: ElementId;
@@ -379,6 +387,7 @@ export interface SetCellPropsCommand {
 }
 
 export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand | SetAltTextCommand
+  | ExtensionCommand
   | SetLockedCommand | SetElementHiddenCommand
   | ApplyFormatCommand | ReplaceTextCommand
   | AlignElementsCommand | DistributeElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand
@@ -628,7 +637,22 @@ export type TableCellPropsPatch = {
   readonly origin: string;
 };
 
+export type ExtensionPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'extensions', string, ...string[]];
+  readonly value: unknown;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['elements', ElementId, 'ovr', 'extensions', string, ...string[]];
+  readonly origin: string;
+};
+
+/** 单个事务必须能作为一条协同消息原子传输。 */
+export const MAX_PATCHES_PER_TRANSACTION = 10_000;
+
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
+  | ExtensionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
   | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch

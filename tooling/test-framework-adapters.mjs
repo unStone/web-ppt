@@ -14,14 +14,19 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/framework-adapters');
 mkdirSync(out, { recursive: true });
 const aliases = [
+  ['@web-ppt/core/chart-edit', join(root, 'packages/core/src/chart-edit.ts')],
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core/templates', join(root, 'packages/edit-core/src/templates/index.ts')],
+  ['@web-ppt/edit-core/chart', join(root, 'packages/edit-core/src/chart/index.ts')],
+  ['@web-ppt/edit-core/xml', join(root, 'packages/edit-core/src/xml/index.ts')],
+  ['@web-ppt/edit-core/opc', join(root, 'packages/edit-core/src/opc/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
   ['@web-ppt/editor', join(root, 'packages/editor/src/index.ts')],
   ['@web-ppt/editor/templates', join(root, 'packages/editor/src/templates/index.ts')],
+  ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
 ];
 const bundle = (entry, name, framework) => {
   const file = join(out, `${name}.mjs`);
@@ -47,10 +52,14 @@ const reactFile = bundle(reactEntry, 'react-ssr', 'react');
 const vueFile = bundle(vueEntry, 'vue-ssr', 'vue');
 const reactTemplatesFile = bundle(join(root, 'packages/react/src/templates/index.ts'), 'react-templates', 'react');
 const vueTemplatesFile = bundle(join(root, 'packages/vue/src/templates/index.ts'), 'vue-templates', 'vue');
+const reactChartFile = bundle(join(root, 'packages/react/src/chart/index.ts'), 'react-chart', 'react');
+const vueChartFile = bundle(join(root, 'packages/vue/src/chart/index.ts'), 'vue-chart', 'vue');
 const react = await import(`${pathToFileURL(reactFile)}?t=${Date.now()}`);
 const vue = await import(`${pathToFileURL(vueFile)}?t=${Date.now()}`);
 const reactTemplates = await import(`${pathToFileURL(reactTemplatesFile)}?t=${Date.now()}`);
 const vueTemplates = await import(`${pathToFileURL(vueTemplatesFile)}?t=${Date.now()}`);
+const reactChart = await import(`${pathToFileURL(reactChartFile)}?t=${Date.now()}`);
+const vueChart = await import(`${pathToFileURL(vueChartFile)}?t=${Date.now()}`);
 
 let passed = 0;
 const failures = [];
@@ -85,6 +94,9 @@ check('React/Vue 按需入口消费同一内置模板目录',
     === JSON.stringify(vueTemplates.listBuiltinTemplates())
     && reactTemplates.createPptxFromTemplate('aurora') instanceof Uint8Array
     && vueTemplates.createPptxFromTemplate('midnight') instanceof Uint8Array);
+check('React/Vue 图表 seam 公开同一按需 API',
+  ['createChartDataEditor', 'listEditableCharts', 'queryChartData'].every((name) =>
+    typeof reactChart[name] === 'function' && typeof vueChart[name] === 'function'));
 const reactMarkup = renderReact(React.createElement(react.WebPptEditor, { mode: 'view' }));
 const vueMarkup = await renderVue(createSSRApp({
   render: () => h(vue.WebPptEditor, { mode: 'view' }),
@@ -94,8 +106,14 @@ check('Vue SSR 不访问 window/document', vueMarkup.startsWith('<div'));
 
 const reactThin = thinBundle(reactEntry, 'react', ['react', '@web-ppt/editor']);
 const vueThin = thinBundle(vueEntry, 'vue', ['vue', '@web-ppt/editor']);
+const reactChartThin = thinBundle(join(root, 'packages/react/src/chart/index.ts'),
+  'react-chart', ['@web-ppt/editor/chart']);
+const vueChartThin = thinBundle(join(root, 'packages/vue/src/chart/index.ts'),
+  'vue-chart', ['@web-ppt/editor/chart']);
 check('React 排除 peer 后 gzip 小于 5KB', reactThin.gzip < 5 * 1024, `${reactThin.gzip} bytes`);
 check('Vue 排除 peer 后 gzip 小于 5KB', vueThin.gzip < 5 * 1024, `${vueThin.gzip} bytes`);
+check('框架图表入口只保留薄转发', reactChartThin.gzip < 256 && vueChartThin.gzip < 256,
+  `React ${reactChartThin.gzip} / Vue ${vueChartThin.gzip} bytes`);
 
 if (failures.length) {
   console.error(`\n\x1b[31m✗ ${failures.length} 项框架适配包验收失败\x1b[0m`);

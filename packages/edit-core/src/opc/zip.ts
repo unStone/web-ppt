@@ -254,7 +254,8 @@ function rewriteCentral(
   dirty: DirtyLocal | null,
   localOffset: number,
 ): Uint8Array {
-  const output = entry.centralRaw.slice();
+  // Buffer.slice() 共享原包内存；中央目录必须拥有独立字节才能改写偏移与校验和。
+  const output = new Uint8Array(entry.centralRaw);
   const view = viewOf(output);
   if (dirty) {
     view.setUint32(16, dirty.checksum, true);

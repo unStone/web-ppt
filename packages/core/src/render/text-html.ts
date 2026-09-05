@@ -12,11 +12,7 @@ import type { TextLayoutLine } from './text-layout-types';
 import { mathOf } from './text-measure';
 import { withHyperlink } from './hyperlink';
 import { bulletTextRun, decorateText } from './text-decoration';
-
-const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
-
-const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+import { escapeXml as esc, round as r } from './serialize';
 
 const ANCHOR_CSS: Record<TextBody['anchor'], string> = {
   top: 'flex-start',

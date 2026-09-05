@@ -1,7 +1,5 @@
 import { parseSafeExternalUrl } from '../types';
-
-const esc = (value: string): string => value
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+import { escapeXml as esc } from './serialize';
 
 export function hyperlinkAttributes(link: string): string {
   if (link.startsWith('slide:')) {

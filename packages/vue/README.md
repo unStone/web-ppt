@@ -15,6 +15,16 @@ const templates = await import('@web-ppt/vue/templates');
 const bytes = templates.createPptxFromTemplate(templates.listBuiltinTemplates()[0].id);
 ```
 
+Classic chart data uses the same opt-in seam without adding it to the component bundle:
+
+```ts
+const charts = await import('@web-ppt/vue/chart');
+const session = editor.value!.session!;
+const chart = charts.listEditableCharts(session.editor.doc)[0];
+const data = charts.queryChartData(session.editor.doc, chart.id);
+charts.createChartDataEditor(session.editor).setSeriesName(chart.id, data.series[0].id, 'Forecast');
+```
+
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';

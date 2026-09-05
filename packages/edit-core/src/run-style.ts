@@ -1,6 +1,7 @@
 import type { TextRun, TextStrikeStyle, TextUnderlineStyle } from '@web-ppt/core';
 import type { RunProperties, RunPropertyOverrides, TextMark } from './types';
 import { STYLE_PROPERTY_FIELDS } from './run-property-fields';
+import { own } from './data-validation';
 
 export { STYLE_PROPERTY_FIELDS } from './run-property-fields';
 const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'u', 'strike', 'link'] as const;
@@ -36,16 +37,14 @@ export function visibleHighlight(value: string | null | undefined): string | nul
 }
 
 export function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
-  return RUN_OVERRIDE_FIELDS.every((field) => Object.prototype.hasOwnProperty.call(left ?? {}, field)
-    === Object.prototype.hasOwnProperty.call(right ?? {}, field)
+  return RUN_OVERRIDE_FIELDS.every((field) => own(left ?? {}, field)
+    === own(right ?? {}, field)
     && Object.is(left?.[field], right?.[field]));
 }
 
 export function sameInherited(left?: RunProperties, right?: RunProperties): boolean {
   return STYLE_PROPERTY_FIELDS.every((field) => Object.is(left?.[field], right?.[field]));
 }
-
-const own = (value: object, field: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(value, field);
 
 function canonicalInput(props: RunPropertyOverrides): RunPropertyOverrides {
   const out: Record<string, unknown> = { ...props };

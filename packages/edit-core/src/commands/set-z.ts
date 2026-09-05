@@ -4,7 +4,7 @@ import type { EditDoc, ElementId, FractionalIndex } from '../types';
 import type { CommandPatches, ElementOrderPatch, SetZCommand } from './types';
 import { assertElementUnlocked } from './element-interaction';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 const TARGETS = new Set<SetZCommand['to']>(['front', 'back', 'forward', 'backward']);
 
 export function assertSetZCommand(doc: EditDoc, command: SetZCommand) {

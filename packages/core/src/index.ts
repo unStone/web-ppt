@@ -48,6 +48,7 @@ export { presentationToPrintableHtml, slideToPng, slideToSvgFile } from './brows
 export type { PrintableOptions } from './browser-export';
 export { setChartParser, setChartRenderer } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
+
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
 export { setFontDecoder, hasFontDecoder } from './font/eot';
 export type { FontDecoder } from './font/eot';

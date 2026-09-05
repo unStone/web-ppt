@@ -18,7 +18,7 @@ function effectiveReplacements(
       if (current) replacements.set(name, null);
     } else if (!current || !equalBytes(current, bytes)) {
       // 调用方常复用序列化缓冲；保存边界必须拍快照，不能让包内容与 ZIP 字节随后分叉。
-      replacements.set(name, bytes.slice());
+      replacements.set(name, new Uint8Array(bytes));
     }
   }
   return replacements;

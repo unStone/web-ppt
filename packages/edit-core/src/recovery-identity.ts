@@ -8,6 +8,7 @@ import type {
   EditDoc, EditIdentity, EditIdentityAllocation, ElementRecord, SlideNotesBinding, SlideRecord,
 } from './types';
 import { assertIdentityAllocation } from './identity-allocation';
+import { maxElementSpid } from './element-spids';
 
 export function assertRecoveryIdentity(
   value: unknown,
@@ -236,7 +237,7 @@ function advanceRecord(
     if (!inherited) throw new Error(`恢复日志的新元素没有归属当前页面 part：${record.id}`);
   }
   if (record.meta.origin?.part === owner) floor.nextSpid.set(record.meta.origin.part, Math.max(
-    floor.nextSpid.get(record.meta.origin.part) ?? 1, record.meta.origin.spid + 1,
+    floor.nextSpid.get(record.meta.origin.part) ?? 1, maxElementSpid(record) + 1,
   ));
 }
 

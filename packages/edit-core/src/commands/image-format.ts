@@ -1,3 +1,4 @@
+import { own } from '../data-validation';
 import { detectMetafile, readImageMetadata } from '@web-ppt/core';
 
 export type SupportedImageMime = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
@@ -179,7 +180,7 @@ export function validateImageFormat(
   mime: unknown,
   command = 'AddImage',
 ): { extension: string } {
-  if (typeof mime !== 'string' || !Object.prototype.hasOwnProperty.call(FORMATS, mime)) {
+  if (typeof mime !== 'string' || !own(FORMATS, mime)) {
     throw new Error(`${command}.mime 不支持：${String(mime)}`);
   }
   const format = FORMATS[mime as SupportedImageMime];
@@ -200,7 +201,7 @@ export function validateStoredImageFormat(
   if (typeof mime !== 'string' || typeof extension !== 'string') {
     throw new Error(`${label} 的 MIME 或扩展名无效`);
   }
-  if (Object.prototype.hasOwnProperty.call(FORMATS, mime)) {
+  if (own(FORMATS, mime)) {
     const detected = detectImageMime(bytes);
     const allowed = mime === 'image/jpeg' ? new Set(['jpg', 'jpeg'])
       : new Set([FORMATS[mime as SupportedImageMime].extension]);

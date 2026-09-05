@@ -5,7 +5,7 @@ import { orderedTableColumns, orderedTableRows, tableCellMergeRole } from '../ta
 import type { CommandPatches, ElementTextPatch, Patch } from './types';
 import { textTargetContextForRecord } from './text-target';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 export function isElementTextPatch(patch: Patch): patch is ElementTextPatch {
   return patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'ovr'

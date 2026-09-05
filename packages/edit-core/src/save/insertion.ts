@@ -7,7 +7,7 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import type { EditDoc, ElementRecord, RemovedElementRecord } from '../types';
 import { elementOrder } from '../element-order';
 import { compareFractionalIndex } from '../fractional-index';
-import { locateElementHost, locateElementHosts } from './xfrm';
+import { elementNonVisualProperties, locateElementHost, locateElementHosts } from './xfrm';
 import { materializeElementOverrides } from './materialize';
 import { patchRemovedElement } from './remove-element';
 import type { HyperlinkSaveContext } from './hyperlink';
@@ -39,6 +39,7 @@ function pruneInactiveInsertionHosts(
 ): void {
   const activeSpids = new Set(records.flatMap((record) =>
     record.meta.origin?.part === part ? [record.meta.origin.spid] : []));
+  for (const spid of source?.unmodeledSpids ?? []) activeSpids.add(spid);
   const inactive = Object.values(source!.spids).filter((spid) => !activeSpids.has(spid));
   if (!inactive.length) return;
   const probes = inactive.map((spid) => ({
@@ -93,6 +94,13 @@ export function materializeElementRoots(
   const removals = Object.values(doc.removedElements).filter((record) =>
     record.meta.origin?.part === part && scope.has(record.parent));
   materializeElementTreeState(document, doc, part, records, removals, { scope });
+  // 剪贴板复制的是逻辑对象：把备用分支的别名收敛到模型身份，粘贴时一起分配新 spid。
+  for (const record of records) {
+    if (record.meta.editable !== 'frame' || record.meta.origin?.part !== part) continue;
+    for (const properties of elementNonVisualProperties(document, record)) {
+      setXmlAttribute(properties, 'id', String(record.meta.origin.spid));
+    }
+  }
   return document;
 }
 
@@ -105,13 +113,14 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   if (!host || xmlElementChildren(wrapper.root).length !== 1) {
     throw new Error(`新建元素 ${record.id} 的 OOXML 宿主片段无效`);
   }
-  const pending = new Map(Object.entries(source.spids));
+  const spids = new Map(Object.entries(source.spids));
+  const pending = new Set(spids.keys());
   const relationships = new Map((source.relationships ?? [])
     .map((relationship) => [relationship.sourceId, relationship.targetId]));
   const visit = (element: XmlElement): void => {
     if (element.localName === 'cNvPr') {
       const id = findXmlAttribute(element, { localName: 'id', namespaceUri: null });
-      const next = id && pending.get(id.value);
+      const next = id && spids.get(id.value);
       if (id && next !== undefined) {
         const previous = id.value;
         setXmlAttribute(element, id.name, String(next));

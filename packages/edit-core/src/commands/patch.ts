@@ -42,6 +42,7 @@ import { isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
 import type {
   ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
+import { MAX_PATCHES_PER_TRANSACTION } from './types';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
 import {
   isElementNamePatch, validateElementNamePatch,
@@ -68,6 +69,9 @@ import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master
 import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
 import { applyPatchValues } from './patch-apply';
 import { structuralPatchStage } from './patch-stage';
+import {
+  isExtensionPatch, validateExtensionPatch, validateExtensionPatchBatches,
+} from '../extension-runtime';
 
 function validatePatch(
   doc: EditDoc,
@@ -76,6 +80,7 @@ function validatePatch(
   stagedTableRows: ReadonlyMap<string, Record<string, TableRowInsertion>>,
   stagedImageResources: Readonly<Record<string, ElementInsertionResource>>,
   animationDoc: EditDoc,
+  runtimeExtensionValidated: boolean,
 ): void {
   const patch = input as Partial<Patch> & { path?: unknown; value?: unknown };
   if (!['set', 'del', 'remove', 'insert', 'move'].includes(String(patch.op))) {
@@ -99,6 +104,10 @@ function validatePatch(
   }
   if (isMasterTextStylePatch(input)) {
     validateMasterTextStylePatch(doc, input, index);
+    return;
+  }
+  if (isExtensionPatch(input)) {
+    validateExtensionPatch(doc, input, index, runtimeExtensionValidated);
     return;
   }
   if (validateCommonObjectSlidePatch(doc, input, index)) return;
@@ -350,6 +359,9 @@ function applyPatchBatch(
   patches: readonly Patch[],
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
+  if (patches.length > MAX_PATCHES_PER_TRANSACTION) {
+    throw new Error(`单个编辑事务不能超过 ${MAX_PATCHES_PER_TRANSACTION} 个补丁`);
+  }
   validatePatchRelations(doc, patches, stageStructuralModel);
   const structural = patches.some((patch) =>
     isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
@@ -378,9 +390,17 @@ function applyPatchBatch(
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
+  const extensionEntries = patches.flatMap((patch, index) =>
+    isExtensionPatch(patch) ? [{ patch, index }] : []);
+  // 结构批次依赖逐条暂存后的模型；普通扩展批次可共享一次昂贵的来源解析。
+  const batchValidatedExtensions = structural
+    ? new Set<number>() : validateExtensionPatchBatches(doc, extensionEntries);
   patches.forEach((patch, index) => {
     const patchDoc = validationStage ?? doc;
-    validatePatch(patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc);
+    validatePatch(
+      patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc,
+      batchValidatedExtensions.has(index),
+    );
     if (isTableRowPatch(patch)) {
       const current = stagedTableRows.get(patch.path[1])
         ?? { ...patchDoc.elements[patch.path[1]]?.ovr.tableRows };

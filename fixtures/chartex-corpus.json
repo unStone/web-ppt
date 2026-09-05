@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "note": "只记录可追溯的本地调查输入，不再分发原文件。downloadPath 是建议下载位置，不代表文件已存在。PPTX 和 XLSX 证据不可互换。",
+  "upstream": "https://github.com/LibreOffice/core",
+  "pin": "5c7c41ef9e216bbe95dd6b5e8770ee6483728d55",
+  "licenseBoundary": "上游仓库含 MPL/GPL/LGPL 许可文本，但未核清各二进制文件独立权利；仅从原址获取作本地测试，不纳入 MIT 发布包。",
+  "files": [
+    {
+      "name": "funnel-pp1.pptx",
+      "kind": "funnel",
+      "evidence": "PowerPoint 保存的 PPTX，具有图片回退和数据缓存",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/pptx/funnel-pp1.pptx",
+      "downloadPath": "corpus/chartex/libreoffice-funnel-pp1.pptx",
+      "bytes": 51094,
+      "sha256": "8f971346a21010dfdb22799be79bbb883497cc260129cba41d5c9b06967fc3e3"
+    },
+    {
+      "name": "treemap.xlsx",
+      "kind": "treemap",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/treemap.xlsx",
+      "downloadPath": "corpus/chartex/treemap.xlsx",
+      "bytes": 13631,
+      "sha256": "2f08a53fb19ddd8468ec5b52d8428503f0ede06dfb9afc3c4cd02d7cfe2be3eb"
+    },
+    {
+      "name": "sunburst.xlsx",
+      "kind": "sunburst",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/sunburst.xlsx",
+      "downloadPath": "corpus/chartex/sunburst.xlsx",
+      "bytes": 11094,
+      "sha256": "8baf66751b6afa7b28f7e9fbc35ea5d9f7ce39d33c8840d9a67cf21a92dadfa4"
+    },
+    {
+      "name": "SimpleHistogram.xlsx",
+      "kind": "histogram",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/SimpleHistogram.xlsx",
+      "downloadPath": "corpus/chartex/SimpleHistogram.xlsx",
+      "bytes": 12936,
+      "sha256": "dfe40e742cf92aad408273d17bb0733e1571c309678ec3a3148e10e45a946e56"
+    },
+    {
+      "name": "paretoLine.xlsx",
+      "kind": "pareto",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/paretoLine.xlsx",
+      "downloadPath": "corpus/chartex/paretoLine.xlsx",
+      "bytes": 11615,
+      "sha256": "46f96c30f6de3a0bcd8a990d950854bc696aec5a7d2c1c4d051836b4f9c733ac"
+    },
+    {
+      "name": "boxWhisker.xlsx",
+      "kind": "boxWhisker",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/boxWhisker.xlsx",
+      "downloadPath": "corpus/chartex/boxWhisker.xlsx",
+      "bytes": 13397,
+      "sha256": "7c725dda9da6f571ea58824f603bf6eff7bc6c49d122ac4322cc0d6129fa7f92"
+    },
+    {
+      "name": "waterfall.xlsx",
+      "kind": "waterfall",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/waterfall.xlsx",
+      "downloadPath": "corpus/chartex/waterfall.xlsx",
+      "bytes": 13218,
+      "sha256": "f23626e52b75c7e57a6b3a6c69361bdacdbf2648a77c198963daacc4cba2e660"
+    },
+    {
+      "name": "funnel1.xlsx",
+      "kind": "funnel",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/funnel1.xlsx",
+      "downloadPath": "corpus/chartex/funnel1.xlsx",
+      "bytes": 11503,
+      "sha256": "d3dbb6c78a650d51d2d42e1c1daed23e84be58d0193134e51898a5485e38adf5"
+    },
+    {
+      "name": "regionMap.xlsx",
+      "kind": "regionMap",
+      "evidence": "XLSX：公式引用、无 ChartEx 数据缓存、文字回退；不证明存在离线行政区几何数据",
+      "url": "https://raw.githubusercontent.com/LibreOffice/core/5c7c41ef9e216bbe95dd6b5e8770ee6483728d55/chart2/qa/extras/data/xlsx/regionMap.xlsx",
+      "downloadPath": "corpus/chartex/regionMap.xlsx",
+      "bytes": 201594,
+      "sha256": "aef6b18c702bd09476b02972f1fb02a95b297de219da42df510812e8b5177215"
+    }
+  ]
+}

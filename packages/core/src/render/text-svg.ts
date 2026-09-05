@@ -5,16 +5,12 @@ import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
 import { warpSupported } from './text-warp-presets';
 import { withHyperlink } from './hyperlink';
 import { bulletTextRun, decorateText } from './text-decoration';
+import { escapeXml as esc, round as r } from './serialize';
 
 /**
  * 纯 SVG <text> 输出。断行和坐标统一由 text-layout 提供；这里仅负责 SVG 序列化、
  * 字体样式、公式与艺术字路径，避免编辑命中与独立 SVG 形成两套布局结果。
  */
-
-const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
-
-const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const ANCHOR: Record<Paragraph['align'], string> = {
   left: 'start', center: 'middle', right: 'end', justify: 'start',

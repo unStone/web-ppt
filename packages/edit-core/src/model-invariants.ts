@@ -3,7 +3,7 @@ import { canvasTargetOfElement } from './design-target';
 import { slideDesignChanged } from './layout-projection';
 import { elementOrder } from './element-order';
 import { assertFractionalIndex } from './fractional-index';
-import { assertDataObject } from './data-validation';
+import { assertDataObject, own } from './data-validation';
 import { validateEmptyTextOverride, validateFlatTextOverride } from './text-override-validation';
 import type { EditDoc, ElementId, ElementRecord, SlideId, TextOverride } from './types';
 import { assertXfrmValue, XFRM_FIELDS } from './commands/xfrm';
@@ -42,7 +42,6 @@ import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme
 import { assertParagraphPropertyOverrides } from './paragraph-property-schema';
 import { assertRunPropertyOverrides } from './run-property-schema';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
   const target = canvasTargetOfElement(doc, record.id);

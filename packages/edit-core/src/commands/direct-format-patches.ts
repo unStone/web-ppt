@@ -5,83 +5,30 @@ import type {
   CommandPatches, ElementEffectsPatch, ElementFillPatch, ElementStrokePatch,
 } from './types';
 
-const same = (left: unknown, right: unknown): boolean =>
-  JSON.stringify(left) === JSON.stringify(right);
+type DirectFormatPatch = ElementFillPatch | ElementStrokePatch | ElementEffectsPatch;
+type FormatField = 'fill' | 'stroke' | 'effects';
+type FormatValue = { fill: Exclude<Fill, { type: 'image' }>; stroke: Stroke | null; effects: Effects };
 
-export function directFillPatches(
+/** 三种直设格式共用覆盖/继承语义；字段的值域仍由各命令入口校验。 */
+export function directFormatPatches<F extends FormatField>(
   doc: EditDoc,
   id: string,
-  value: Exclude<Fill, { type: 'image' }>,
+  field: F,
+  value: FormatValue[F],
   origin: string,
 ): CommandPatches {
-  const path = ['elements', id, 'ovr', 'fill'] as const;
-  const before = doc.elements[id].ovr.fill;
-  const direct = own(doc.elements[id].ovr, 'fill');
-  const forward: ElementFillPatch = {
+  const path = ['elements', id, 'ovr', field] as const;
+  const before = doc.elements[id].ovr[field];
+  const direct = own(doc.elements[id].ovr, field);
+  if (direct) {
+    if (before === undefined) throw new Error(`元素 ${id} 的 ${field} 覆盖无效`);
+    if (JSON.stringify(before) === JSON.stringify(value)) return { forward: [], inverse: [] };
+  }
+  const forward = {
     op: 'set', path, value: structuredClone(value), origin,
-  };
-  if (!direct) {
-    const inverse: ElementFillPatch = { op: 'del', path, origin };
-    return { forward: [forward], inverse: [inverse] };
-  }
-  if (before === undefined) throw new Error(`元素填充覆盖无效：${id}`);
-  if (same(before, value)) return { forward: [], inverse: [] };
-  {
-    const inverse: ElementFillPatch = {
-      op: 'set', path, value: structuredClone(before), origin,
-    };
-    return { forward: [forward], inverse: [inverse] };
-  }
-}
-
-export function directStrokePatches(
-  doc: EditDoc,
-  id: string,
-  value: Stroke | null,
-  origin: string,
-): CommandPatches {
-  const path = ['elements', id, 'ovr', 'stroke'] as const;
-  const before = doc.elements[id].ovr.stroke;
-  const direct = own(doc.elements[id].ovr, 'stroke');
-  const forward: ElementStrokePatch = {
-    op: 'set', path, value: structuredClone(value), origin,
-  };
-  if (!direct) {
-    const inverse: ElementStrokePatch = { op: 'del', path, origin };
-    return { forward: [forward], inverse: [inverse] };
-  }
-  if (before === undefined) throw new Error(`元素描边覆盖无效：${id}`);
-  if (same(before, value)) return { forward: [], inverse: [] };
-  {
-    const inverse: ElementStrokePatch = {
-      op: 'set', path, value: structuredClone(before), origin,
-    };
-    return { forward: [forward], inverse: [inverse] };
-  }
-}
-
-export function directEffectsPatches(
-  doc: EditDoc,
-  id: string,
-  value: Effects,
-  origin: string,
-): CommandPatches {
-  const path = ['elements', id, 'ovr', 'effects'] as const;
-  const before = doc.elements[id].ovr.effects;
-  const direct = own(doc.elements[id].ovr, 'effects');
-  const forward: ElementEffectsPatch = {
-    op: 'set', path, value: structuredClone(value), origin,
-  };
-  if (!direct) {
-    const inverse: ElementEffectsPatch = { op: 'del', path, origin };
-    return { forward: [forward], inverse: [inverse] };
-  }
-  if (before === undefined) throw new Error(`元素效果覆盖无效：${id}`);
-  if (same(before, value)) return { forward: [], inverse: [] };
-  {
-    const inverse: ElementEffectsPatch = {
-      op: 'set', path, value: structuredClone(before), origin,
-    };
-    return { forward: [forward], inverse: [inverse] };
-  }
+  } as DirectFormatPatch;
+  const inverse = (direct
+    ? { op: 'set', path, value: structuredClone(before), origin }
+    : { op: 'del', path, origin }) as DirectFormatPatch;
+  return { forward: [forward], inverse: [inverse] };
 }

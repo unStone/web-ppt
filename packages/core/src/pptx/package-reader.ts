@@ -48,7 +48,8 @@ export class Pkg {
     const borrowed = !(source instanceof Uint8Array);
     this.files = borrowed
       ? source.parts as Record<string, Uint8Array>
-      : unzipSync(source);
+      // Buffer 的 slice 共享原内存；只在解包边界换成普通视图，保留原包零拷贝身份。
+      : unzipSync(new Uint8Array(source.buffer, source.byteOffset, source.byteLength));
     this.assetStore = new PackageAssetStore(keepPackage, borrowed ? 'layout-asset:' : 'asset:');
     if (borrowed) {
       for (const [url, asset] of Object.entries(source.assets ?? {})) {

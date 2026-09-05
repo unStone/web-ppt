@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import WebSocket from 'ws';
 import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
+import { bundleBrowser } from './lib/bundle-browser.mjs';
+import { runChartExBrowserContract } from './lib/chartex-browser-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/site-editor-browser');
@@ -20,13 +22,18 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
+  ['@web-ppt/core/chart-edit', join(root, 'packages/core/src/chart-edit.ts')],
   ['@web-ppt/core/image-zip', join(root, 'packages/core/src/image-zip.ts')],
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core/templates', join(root, 'packages/edit-core/src/templates/index.ts')],
+  ['@web-ppt/edit-core/chart', join(root, 'packages/edit-core/src/chart/index.ts')],
   ['@web-ppt/edit-core/generate', join(root, 'packages/edit-core/src/generate/index.ts')],
+  ['@web-ppt/edit-core/xml', join(root, 'packages/edit-core/src/xml/index.ts')],
+  ['@web-ppt/edit-core/opc', join(root, 'packages/edit-core/src/opc/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
   ['@web-ppt/editor', join(root, 'packages/editor/src/index.ts')],
@@ -71,20 +78,44 @@ const hasBuiltinTemplates = (keys) => [...keys].some((key) => Object.keys(output
   .some((input) => pathEndsWith(input, 'packages/edit-core/src/templates/recipes.ts')));
 const hasTemplatePicker = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
   .some((input) => pathEndsWith(input, 'packages/site/src/editor-template-picker.ts')));
+const hasChartData = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'packages/edit-core/src/chart/workbook.ts')));
+const hasFontDecoder = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'node_modules/mtx-decompressor/dist/index.mjs')));
+const hasAdjustments = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
+  .some((input) => pathEndsWith(input, 'packages/editor/src/adjustments/preset-adjustment-editor.ts')));
 const initial = closure([entry], false);
 const dynamicTargets = new Set([...closure([entry], true)].filter((key) => !initial.has(key)));
 const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure([key], false)));
 const templateTargets = [...dynamicTargets].filter((key) => hasBuiltinTemplates(closure([key], false)));
+const chartTargets = [...dynamicTargets].filter((key) => hasChartData(closure([key], false)));
+const decoderTargets = [...dynamicTargets].filter((key) => hasFontDecoder(closure([key], false)));
+const adjustmentTargets = [...dynamicTargets].filter((key) => hasAdjustments(closure([key], false)));
 if (hasImageZip(initial) || imageZipTargets.length !== 1) {
   throw new Error('官网编辑入口必须通过唯一动态分块加载 image-zip，初始依赖图不得包含它');
 }
 if (hasTemplatePicker(initial) || hasBuiltinTemplates(initial) || templateTargets.length !== 1) {
   throw new Error('官网编辑入口必须按需加载选择器和唯一模板配方块，初始依赖图不得包含它们');
 }
-// 0.7 模板票开始前的同配置实测值；选择器连 DOM/CSS 一起延迟，首包不能为它付费。
+if (hasChartData(initial) || chartTargets.length !== 1) {
+  throw new Error('官网图表数据编辑器与工作簿补丁器必须只存在于一个按需分块');
+}
+if (hasFontDecoder(initial) || decoderTargets.length !== 1
+  || hasAdjustments(initial) || adjustmentTargets.length !== 1) {
+  throw new Error('官网字体解码器与调节柄实现必须各自通过唯一按需分块加载');
+}
+// 0.7 模板票开始前的同配置实测值；图表、模板、图片 ZIP 与调节柄都不能进入首包。
 const initialGzip = gzipSync(readFileSync(resolve(root, entry))).length;
 if (initialGzip > 215467) {
-  throw new Error(`官网编辑初始入口由模板功能增大：${initialGzip}B gzip > 215467B`);
+  throw new Error(`官网编辑初始入口体积回归：${initialGzip}B gzip > 215467B`);
+}
+const initialSize = [...initial].reduce((sum, key) => {
+  const bytes = readFileSync(resolve(root, key));
+  return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
+}, { raw: 0, gzip: 0 });
+const initialBudget = { raw: 2_254_902, gzip: 509_849 };
+if (initialSize.raw > initialBudget.raw || initialSize.gzip > initialBudget.gzip) {
+  throw new Error(`官网编辑首屏依赖闭包体积回归：${JSON.stringify({ initialBudget, initialSize })}`);
 }
 const delayedChunks = new Set(imageZipTargets.map((key) =>
   `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
@@ -117,8 +148,21 @@ const routes = new Map([
   ['/fixtures/sample-editor-format-painter.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-format-painter.pptx'))]],
   ['/fixtures/sample-editor-transitions.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-transitions.pptx'))]],
   ['/fixtures/sample-editor-animations.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-animations.pptx'))]],
+  ['/fixtures/sample-chart-data.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart-data.pptx'))]],
   ['/assets/replacement.png', ['image/png', readFileSync(join(root, 'packages/site/public/og.png'))]],
 ]);
+const chartexCore = join(out, 'chartex-core.mjs');
+await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
+routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
+routes.set('/fixtures/sample-chartex-fallback.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-fallback.pptx'))]);
+const chartexSources = [{ name: 'fixture', path: '/fixtures/sample-chartex-fallback.pptx' }];
+const realChartex = join(root, 'corpus/chartex/libreoffice-funnel-pp1.pptx');
+if (existsSync(realChartex)) {
+  routes.set('/fixtures/real-chartex.pptx', ['application/octet-stream', readFileSync(realChartex)]);
+  chartexSources.push({ name: 'libreoffice-funnel', path: '/fixtures/real-chartex.pptx',
+    sha256: '8f971346a21010dfdb22799be79bbb883497cc260129cba41d5c9b06967fc3e3',
+    imageHash: '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096' });
+}
 const server = createServer((request, response) => {
   const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
   const route = routes.get(pathname);
@@ -280,6 +324,7 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
     await evaluate(`(() => {
       const original = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function () {
@@ -525,6 +570,63 @@ async function runContract(webSocketDebuggerUrl) {
       throw new Error(`下载结果不符合 .ppt 另存契约：${JSON.stringify({ ...downloaded, bytes: downloaded.bytes.slice(0, 4) })}`);
     }
     writeFileSync(join(out, 'sample.pptx'), Uint8Array.from(downloaded.bytes));
+    await evaluate(`(async () => {
+      const bytes = await fetch('/fixtures/sample-chart-data.pptx').then((response) => response.arrayBuffer());
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([bytes], 'sample-chart-data.pptx', {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }));
+      const input = document.querySelector('#fileInput');
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`, true);
+    await waitFor(`document.querySelector('#fileName')?.textContent === 'sample-chart-data.pptx'
+      && !document.querySelector('#editorApp')?.dataset.loading`, '图表数据固件就绪');
+    await evaluate(`(() => {
+      const row = [...document.querySelectorAll('[data-pane-element]')]
+        .find((candidate) => candidate.querySelector('[data-pane-name]')?.textContent === '图表');
+      if (!row) throw new Error('找不到图表对象');
+      row.click();
+    })()`);
+    await waitFor(`!document.querySelector('#chartInspector')?.hidden
+      && !!document.querySelector('[data-chart-grid="category"]')`, '图表数据表按需加载');
+    await evaluate(`(() => {
+      const name = document.querySelector('[data-chart-grid="category"] thead th:nth-child(2) input');
+      name.value = '浏览器营收';
+      name.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await waitFor(`document.querySelector('#canvasMount')?.textContent.includes('浏览器营收')`, '图表系列投影更新');
+    await evaluate(`(() => {
+      const value = document.querySelector('[data-chart-grid="category"] tbody tr:first-child td:nth-child(2) input');
+      value.value = '7777';
+      value.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await waitFor(`document.querySelector('#fileName')?.textContent.startsWith('●')
+      && document.querySelector('[data-chart-grid="category"] tbody tr:first-child td:nth-child(2) input')?.value === '7777'`, '图表数值编辑');
+    await evaluate('globalThis.__capturedDownload = null');
+    await click('#saveFile');
+    await waitFor('!!globalThis.__capturedDownload', '图表数据 PPTX 下载');
+    const chartDownload = await evaluate(`(async () => {
+      const captured = globalThis.__capturedDownload;
+      const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
+      return { name: captured.name, signature: Array.from(bytes.slice(0, 4)) };
+    })()`, true);
+    if (chartDownload.name !== 'sample-chart-data-edited.pptx'
+      || chartDownload.signature[0] !== 0x50 || chartDownload.signature[1] !== 0x4b) {
+      throw new Error(`图表数据保存下载无效：${JSON.stringify(chartDownload)}`);
+    }
+    await evaluate(`(() => {
+      const remove = () => document.querySelector('[data-chart-grid="category"] thead th:nth-child(2) button');
+      remove()?.click();
+    })()`);
+    await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 2`, '图表删至一个系列');
+    await evaluate(`document.querySelector('[data-chart-grid="category"] thead th:nth-child(2) button')?.click()`);
+    await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 1
+      && [...document.querySelectorAll('#chartInspector button')]
+        .some((button) => button.textContent === '增加系列')`, '图表删空后保留重建入口');
+    await evaluate(`[...document.querySelectorAll('#chartInspector button')]
+      .find((button) => button.textContent === '增加系列')?.click()`);
+    await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 2`, '图表删空后重建系列');
     await evaluate(`(async () => {
       const bytes = await fetch('/fixtures/sample-editor-preset-shape.pptx')
         .then((response) => response.arrayBuffer());

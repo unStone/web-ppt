@@ -199,7 +199,8 @@ export async function runAddSlideSaveContract({
     type: 'AddSlide', layoutId: relationLayout, at: { after: relationDoc.slideOrder[0] },
   });
   const relationSlide = [...relationResult.createdSlides][0];
-  const mediaPresentation = await core.parse(load('sample-media.pptx'), {
+  // 关系分配测试需要普通图片；墨迹兼容图还承载不能丢弃的原对象关系。
+  const mediaPresentation = await core.parse(load('sample-editor-image-content.pptx'), {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',
   });
   const mediaDoc = edit.createDoc(mediaPresentation, { idPrefix: 'add-slide-media-' });

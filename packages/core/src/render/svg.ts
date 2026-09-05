@@ -11,6 +11,7 @@ import { warpSupported } from './text-warp-presets';
 import { paint } from './fill';
 import { effectFilter, reflectionLayer } from './effect-svg';
 import { bevelOverlay, extrusionLayers, mixShapeColor } from './shape-3d';
+import { escapeXml as esc, round as r } from './serialize';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -22,22 +23,12 @@ const nextGlobalId = (p: string): string => `${p}${++uid}`;
  * 只保留无歧义的安全字符，其余码点编码；下划线本身也编码，避免两个前缀归一后碰撞。
  */
 function encodeIdPrefix(value: string): string {
-  let out = '';
-  let first = true;
-  for (const ch of value) {
-    const safe = first ? /[A-Za-z]/.test(ch) : /[A-Za-z0-9-]/.test(ch);
-    out += safe ? ch : `_u${ch.codePointAt(0)!.toString(16)}_`;
-    first = false;
-  }
-  return out;
+  return value.replace(/^[0-9-]|[^A-Za-z0-9-]/gu,
+    (ch) => `_u${ch.codePointAt(0)!.toString(16)}_`);
 }
 
-const r = (v: number): string => (Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '0');
 // DrawingML srcRect 以十万分数存储；合法编辑值最小可见比例是 1/100000，不能擅自钳到 1%。
 const MIN_CROP_FRACTION = 1 / 100000;
-
-const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 interface Ctx {
   defs: string[];
@@ -45,7 +36,8 @@ interface Ctx {
   textMode: 'html' | 'svg';
   media: 'badge' | 'player';
   hidden: ReadonlySet<number> | null;
-  includeEditMarkers: boolean;
+  /** null 表示 frame 内部投影：既无编辑身份，也不暴露来源形状 ID。 */
+  includeEditMarkers: boolean | null;
   resolveLink: (link: string | undefined) => string | undefined;
 }
 
@@ -108,7 +100,7 @@ function createCtx(opts: RenderElementOptions): Ctx {
     textMode,
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
-    hidden: opts.hiddenElements?.length ? new Set(opts.hiddenElements) : null,
+    hidden: opts.hiddenElements && opts.hiddenElements.length ? new Set(opts.hiddenElements) : null,
     includeEditMarkers: opts.includeEditMarkers === true,
     resolveLink: (link) => link,
   };
@@ -124,7 +116,8 @@ function presentationLinkResolver(
     if (link.startsWith('slide-part:')) {
       try {
         const part = decodeURIComponent(link.slice('slide-part:'.length));
-        const index = pres.slides.findIndex((candidate) => candidate.editInfo?.origin.part === part);
+        const index = pres.slides.findIndex((candidate) =>
+          candidate.editInfo && candidate.editInfo.origin.part === part);
         return index < 0 ? link : `slide:${index + 1}`;
       } catch { return link; }
     }
@@ -182,7 +175,7 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
 /** 元素外层包装：定位 + 效果滤镜 + 倒影 */
 function wrapEl(el: ElementBase, inner: string, ctx: Ctx): string {
   const filter = effectFilter(el.effects, ctx);
-  if (!el.effects?.reflection) return `<g transform="${baseTransform(el)}"${filter}>${inner}</g>`;
+  if (!el.effects || !el.effects.reflection) return `<g transform="${baseTransform(el)}"${filter}>${inner}</g>`;
   const rid = ctx.nextId('rc');
   const body = `<g id="${rid}">${inner}</g>`;
   return (
@@ -239,10 +232,9 @@ function strokeAttrs(stroke: Stroke | null | undefined, ctx: Ctx): string {
 // ---------------- 变换 ----------------
 
 function baseTransform(el: ElementBase): string {
-  const parts: string[] = [];
-  if (el.rot) parts.push(`rotate(${r(el.rot)} ${r(el.x + el.w / 2)} ${r(el.y + el.h / 2)})`);
-  parts.push(`translate(${r(el.x)} ${r(el.y)})`);
-  return parts.join(' ');
+  const rotate = el.rot
+    ? `rotate(${r(el.rot)} ${r(el.x + el.w / 2)} ${r(el.y + el.h / 2)}) ` : '';
+  return `${rotate}translate(${r(el.x)} ${r(el.y)})`;
 }
 
 function flipTransform(el: ElementBase): string {
@@ -290,7 +282,7 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
     out = renderFailure(el, e);
   }
   // 动画需要按形状 id 定位到具体节点
-  if (el.id !== undefined || ctx.includeEditMarkers) {
+  if (ctx.includeEditMarkers !== null && (el.id !== undefined || ctx.includeEditMarkers)) {
     const hide = el.id !== undefined && ctx.hidden?.has(el.id) ? 'visibility:hidden;' : '';
     // .ppt 合法元素可能没有 spid；编辑标记仍要占一个顺序槽，默认渲染则保持原样。
     out = `<g data-el="${el.id ?? ''}" style="${hide}transform-box:fill-box;transform-origin:center">${out}</g>`;
@@ -419,7 +411,10 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
 
 function renderGroup(el: GroupElement, ctx: Ctx): string {
   const childXf = `scale(${r(el.scaleX || 1)} ${r(el.scaleY || 1)}) translate(${r(-el.childX)} ${r(-el.childY)})`;
-  const children = el.children.map((c) => renderEl(c, ctx)).join('');
+  // frame 的后代来自外部语义投影，数量可变化；编辑 DOM 只把框架本身当成稳定身份。
+  const childCtx = ctx.includeEditMarkers && el.editInfo && el.editInfo.editable === 'frame'
+    ? { ...ctx, includeEditMarkers: null } : ctx;
+  const children = el.children.map((c) => renderEl(c, childCtx)).join('');
   const marker = ctx.includeEditMarkers ? ' data-edit-group-children="1"' : '';
   return wrapEl(el, `<g${marker} transform="${flipTransform(el)} ${childXf}">${children}</g>`, ctx);
 }
@@ -559,14 +554,14 @@ function renderText(
     };
     return renderTextSvg(
       vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
-      w, h, addDef, marginsOverride, vAlignOverride, ctx.includeEditMarkers,
+      w, h, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers,
     );
   }
   const html = renderTextBodyToHtml(t, w, h, {
     insets: marginsOverride,
     anchor: vAlignOverride,
     vert: vertOverride,
-    includeEditMarkers: ctx.includeEditMarkers,
+    includeEditMarkers: !!ctx.includeEditMarkers,
   });
   return `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">${html}</foreignObject>`;
 }

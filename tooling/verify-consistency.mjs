@@ -225,7 +225,7 @@ if (!siteStat) {
 } else if (counts) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
-    'core', 'edit', 'save', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
+    'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
@@ -334,6 +334,8 @@ if (!counts) {
       ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],
     ['README.md', /内置模板 ([\d,]+) 项断言/, ['templates']],
     ['README.md', /0\.7 跨能力集成 ([\d,]+) 项断言/, ['v07']],
+    ['README.md', /经典图表数据编辑 ([\d,]+) 项断言/, ['chartData']],
+    ['README.md', /兼容回退 ([\d,]+) 项断言/, ['chartexFallback']],
     ['README.md', /([\d,]+) 项会话 \/ adapter/, ['editor']],
     ['README.md', /EMF \/ WMF \/ PICT 解码器，([\d,]+) 项断言/, ['metafile']],
     ['README.md', /React \/ Vue 的 ([\d,]+) 项 SSR/, ['adapters']],
@@ -342,11 +344,13 @@ if (!counts) {
       ['edit', 'save', 'powerpoint', 'equivalence', 'fixtures']],
     ['README.en.md', /([\d,]+) built-in-template assertions/, ['templates']],
     ['README.en.md', /([\d,]+) 0\.7 cross-capability integration assertions/, ['v07']],
+    ['README.en.md', /([\d,]+) classic-chart data assertions/, ['chartData']],
+    ['README.en.md', /([\d,]+) compatibility-fallback assertions/, ['chartexFallback']],
     ['README.en.md', /([\d,]+) adapter\/session/, ['editor']],
     ['README.en.md', /decoders — ([\d,]+) assertions/, ['metafile']],
     ['README.en.md', /([\d,]+) React \/ Vue SSR/, ['adapters']],
-    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
-      ['core', 'edit', 'save', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
+    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
+      ['core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
         'metafile']],
     ['AGENTS.md', /([\d,]+) 对编辑等价指纹/, ['equivalence']],
   ];

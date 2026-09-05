@@ -1,5 +1,6 @@
 import { canvasTargetOfElement } from '../design-target';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
+import { advanceElementSpid } from '../element-spids';
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { ElementHierarchyPatch, ElementHierarchyState, Patch } from './types';
 
@@ -60,12 +61,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
     if (record === null) delete doc.elements[id];
     else {
       doc.elements[id] = record as ElementRecord;
-      const anchor = record.meta.origin;
-      const next = anchor && doc.identity.nextSpid[anchor.part];
-      // 远端层级 Patch 也可能携带新组；分配水位必须越过它，避免下一次本地组合撞 spid。
-      if (anchor && next !== undefined && next <= anchor.spid) {
-        doc.identity.nextSpid[anchor.part] = anchor.spid + 1;
-      }
+      advanceElementSpid(doc, record);
     }
   }
   for (const [parent, children] of Object.entries(patch.value.children)) {

@@ -1,3 +1,4 @@
+import { own } from '../data-validation';
 import { fractionalIndexBetween } from '../fractional-index';
 import { logicalIdentityPrefix } from '../identity-allocation';
 import { normalizeVectorFill } from '../shape-fill';
@@ -38,7 +39,7 @@ function allocateColumnId(doc: EditDoc, record: ElementRecord, origin: string): 
 function assertBefore(value: unknown, label: string): { readonly before: string | null } | undefined {
   if (value === undefined) return undefined;
   if (!value || typeof value !== 'object' || Reflect.ownKeys(value).length !== 1
-    || !Object.prototype.hasOwnProperty.call(value, 'before')) throw new Error(`${label} 无效`);
+    || !own(value, 'before')) throw new Error(`${label} 无效`);
   const before = (value as { before?: unknown }).before;
   if (before !== null && (typeof before !== 'string' || !before)) throw new Error(`${label}.before 无效`);
   return { before } as { readonly before: string | null };
@@ -245,7 +246,7 @@ export function setCellPropsPatches(
   const forward: TableCellPropsPatch[] = [];
   const inverse: TableCellPropsPatch[] = [];
   for (const field of allowed) {
-    if (!Object.prototype.hasOwnProperty.call(command.props, field)) continue;
+    if (!own(command.props, field)) continue;
     const input = command.props[field as keyof SetCellPropsCommand['props']];
     const value = input === null ? null
       : field === 'fill' && input ? normalizeVectorFill(input as Exclude<import('@web-ppt/core').Fill, { type: 'image' }>)

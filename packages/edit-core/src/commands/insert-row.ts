@@ -1,3 +1,4 @@
+import { own } from '../data-validation';
 import { fractionalIndexBetween } from '../fractional-index';
 import { logicalIdentityPrefix } from '../identity-allocation';
 import type { EditDoc, ElementRecord } from '../types';
@@ -24,7 +25,7 @@ export function insertRowPatches(
   if (!record.src.rows.length || !record.src.colWidths.length) throw new Error(`表格没有可复制的行列：${command.id}`);
   if (command.at !== undefined) {
     if (!command.at || typeof command.at !== 'object'
-      || Reflect.ownKeys(command.at).length !== 1 || !Object.prototype.hasOwnProperty.call(command.at, 'before')
+      || Reflect.ownKeys(command.at).length !== 1 || !own(command.at, 'before')
       || (command.at.before !== null && (typeof command.at.before !== 'string' || !command.at.before))) {
       throw new Error('InsertRow.at 必须是只含稳定 before 行身份的纯数据对象');
     }

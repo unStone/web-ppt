@@ -10,10 +10,6 @@ function svgChildren(document: Document, markup: string): SVGElement[] {
   return [...wrapper.children] as SVGElement[];
 }
 
-function ownedDefs(defs: SVGDefsElement, id: ElementId): Element[] {
-  return [...defs.children].filter((node) => (node as SVGElement).dataset.editDefs === id);
-}
-
 function referencedIds(root: Element): Set<string> {
   const ids = new Set<string>();
   for (const element of [root, ...root.querySelectorAll('*')]) {
@@ -45,17 +41,26 @@ function initialDefs(defs: SVGDefsElement, current: Element): Element[] {
   return [...remove];
 }
 
+function removeElementDefs(defs: SVGDefsElement, current: Element, id: ElementId): void {
+  for (const node of initialDefs(defs, current)) node.remove();
+  for (const node of [...defs.children]) {
+    if ((node as SVGElement).dataset.editDefs === id) node.remove();
+  }
+}
+
 function renderElementParts(
   staticLayer: HTMLElement,
   editor: Editor,
   id: ElementId,
   idPrefix: string,
   textMode: 'html' | 'svg',
+  inserting = false,
 ): { next: SVGElement; nextDefs: SVGElement[] } | null {
   const element = editor.effectiveElement(id);
-  const record = editor.doc.elements[id];
-  const structuralShell = element.kind === 'group'
-    && record?.meta.insertion?.containsDescendants === false;
+  const record = editor.doc.elements[id]!;
+  // 插入组合时可复用现有孩子；重绘现存组合必须带上孩子，否则替换容器会把内容一并清空。
+  const structuralShell = inserting
+    && record.meta.insertion && record.meta.insertion.containsDescendants === false;
   const projected = structuralShell ? { ...element, children: [] } : element;
   const rendered = renderElementToSvg(projected, {
     textMode, idPrefix: `${idPrefix}${id}-`, includeEditMarkers: true,
@@ -86,8 +91,7 @@ export function patchElement(
   const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode);
   if (!rendered) return false;
 
-  const staleDefs = new Set([...ownedDefs(defs, id), ...initialDefs(defs, current)]);
-  for (const node of staleDefs) node.remove();
+  removeElementDefs(defs, current, id);
   defs.append(...rendered.nextDefs);
   current.replaceWith(rendered.next);
   return true;
@@ -98,8 +102,7 @@ export function removeElementPartition(staticLayer: HTMLElement, id: ElementId):
   const current = findElementPartition(staticLayer, id);
   const defs = staticLayer.querySelector<SVGDefsElement>('svg defs');
   if (!current || !defs) return false;
-  const staleDefs = new Set([...ownedDefs(defs, id), ...initialDefs(defs, current)]);
-  for (const node of staleDefs) node.remove();
+  removeElementDefs(defs, current, id);
   current.remove();
   return true;
 }
@@ -133,7 +136,7 @@ export function insertElementPartition(
   }
   const defs = staticLayer.querySelector<SVGDefsElement>('svg defs');
   if ((!anchor && !fallbackParent) || !defs) return false;
-  const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode);
+  const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode, true);
   if (!rendered) return false;
   const reusableChildren = record.meta.insertion?.containsDescendants === false
     && !!record.children?.length

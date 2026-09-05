@@ -19,9 +19,7 @@ import type {
 import { assertFormatMask } from './format-painter-types';
 import type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
 import type { CommandPatches, ImageResourcePatch, Patch } from './types';
-import {
-  directEffectsPatches, directFillPatches, directStrokePatches,
-} from './direct-format-patches';
+import { directFormatPatches } from './direct-format-patches';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
 import type { TextTargetContext } from './text-target';
 import {
@@ -233,8 +231,8 @@ function objectFormatPatches(
         throw new Error('填充格式只能在形状之间复制');
       }
       if (source.fill?.type === 'image') throw new Error('图片填充属于媒体内容，不能通过格式刷复制');
-      append(directFillPatches(
-        doc, command.to, structuredClone(source.fill ?? { type: 'none' }), origin,
+      append(directFormatPatches(
+        doc, command.to, field, source.fill ?? { type: 'none' }, origin,
       ));
     } else if (field === 'stroke') {
       if ((source.kind !== 'shape' && source.kind !== 'image')
@@ -242,14 +240,14 @@ function objectFormatPatches(
         throw new Error('描边格式只支持形状或图片');
       }
       const stroke = source.stroke ? normalizeStroke(source.stroke) : null;
-      append(directStrokePatches(doc, command.to, stroke, origin));
+      append(directFormatPatches(doc, command.to, field, stroke, origin));
     } else if (field === 'effects') {
       if (!['shape', 'image', 'group'].includes(source.kind)
         || !['shape', 'image', 'group'].includes(target.src.kind)) {
         throw new Error('二维效果格式只支持形状、图片或组合');
       }
-      append(directEffectsPatches(
-        doc, command.to, normalizeEffects(source.effects ?? {}), origin,
+      append(directFormatPatches(
+        doc, command.to, field, normalizeEffects(source.effects ?? {}), origin,
       ));
     }
   }

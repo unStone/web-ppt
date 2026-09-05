@@ -1,4 +1,6 @@
-import { assertIdentityAllocation, MAX_COLLABORATION_VERSION } from '@web-ppt/edit-core';
+import {
+  assertIdentityAllocation, MAX_COLLABORATION_VERSION, MAX_PATCHES_PER_TRANSACTION,
+} from '@web-ppt/edit-core';
 import type { EditIdentity, Patch } from '@web-ppt/edit-core';
 import type { CollabMessage, CollabStamp } from './types';
 
@@ -47,7 +49,7 @@ export function assertCollabMessage(value: unknown): asserts value is CollabMess
     || !positiveInteger(message.sequence) || message.sequence > MAX_COLLABORATION_VERSION
     || !stamp || !positiveInteger(stamp.clock) || stamp.clock > MAX_COLLABORATION_VERSION
     || stamp.replicaId !== message.replicaId || !Array.isArray(message.patches)
-    || !message.patches.length || message.patches.length > 10_000
+    || !message.patches.length || message.patches.length > MAX_PATCHES_PER_TRANSACTION
     || message.patches.some((patch) => !patch || typeof patch !== 'object'
       || !Array.isArray(patch.path) || !patch.path.length
       || typeof patch.op !== 'string' || typeof patch.origin !== 'string')

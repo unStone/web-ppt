@@ -43,6 +43,8 @@ import {
 import { EditorPatchJournal, reportEditorSubscriberError } from './patch-events';
 import { assertDesignTarget, canvasTargetOfElement, sameCanvas } from './design-target';
 import { toDesignCanvas } from './design';
+import { observeEditExtensionRegistration } from './extension-runtime';
+import { own } from './data-validation';
 
 class TransactionCollector implements Transaction {
   readonly commands: Command[] = [];
@@ -75,12 +77,13 @@ export class Editor {
   private savedState = 0;
   private nextState = 1;
   private activeImageResources: Set<string>;
+  private readonly unsubscribeExtensions: () => void;
 
   constructor(doc: EditDoc, options: EditorOptions = {}) {
     validateEditDoc(doc);
     this.doc = doc;
     this.origin = options.origin ?? 'local';
-    const recovered = options.recoveryFrames?.length
+    const recovered = options.recoveryFrames && options.recoveryFrames.length
       ? restoreRecoveryFrames(doc, options.recoveryFrames)
       : { selection: { kind: 'none' } as const, dirty: false, sequence: 0 };
     this.currentSelection = cloneSelection(recovered.selection);
@@ -96,6 +99,8 @@ export class Editor {
     });
     this.history = this.historyStore;
     this.pruneImageResources([]);
+    this.unsubscribeExtensions = observeEditExtensionRegistration(doc,
+      (render, slides) => this.emit('external', render, slides, new Set(), render, new Set()));
   }
 
   get selection(): Selection { return cloneSelection(this.currentSelection); }
@@ -108,7 +113,7 @@ export class Editor {
 
   async saveDetailed(): Promise<OpcPatchResult> {
     const result = this.doc.meta.source === 'pptx' && this.doc.package && !this.doc.package.disposed
-      ? (await import('./save/index')).saveEditDoc(this.doc)
+      ? await (await import('./save/index')).saveEditDocWithExtensions(this.doc)
       : (await import('./generate/index')).generateEditDoc(this.doc);
     this.markSaved();
     return result;
@@ -190,55 +195,31 @@ export class Editor {
     return this.commit(transaction.commands, transaction.selection, label, options);
   }
 
-  undo(): EditorChange | null {
-    const entry = this.historyStore.peekUndo();
-    if (!entry) return null;
-    assertCollaborationVersionAvailable(this.doc.identity);
-    // 历史创建后可能已有远端 Patch 改变模型；重放必须重新在完整暂存模型上验真。
-    const dirty = applyPatches(this.doc, entry.inverse);
-    this.refreshActiveImageResources(entry.inverse);
-    this.currentSelection = cloneSelection(entry.selectionBefore);
-    this.historyStore.moveToRedo();
-    this.currentState = this.currentState === entry.afterState ? entry.beforeState : this.nextState++;
-    const change = changeFromPatches(this.doc, entry.inverse, entry.forward, 'undo', this.selection, dirty);
-    const time = Date.now();
-    advanceCollaborationVersion(this.doc.identity);
-    this.queuePatches('undo', entry.inverse, this.origin, entry.label, time);
-    this.emitRecovery('undo', entry.inverse, entry.label, time);
-    this.emit(
-      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change,
-      change.renderSlides,
-      change.paneElements,
-    );
-    this.flushPatches();
-    return change;
-  }
+  undo(): EditorChange | null { return this.replayHistory('undo'); }
 
-  redo(): EditorChange | null {
-    const entry = this.historyStore.peekRedo();
+  redo(): EditorChange | null { return this.replayHistory('redo'); }
+
+  private replayHistory(source: 'undo' | 'redo'): EditorChange | null {
+    const undo = source === 'undo';
+    const entry = undo ? this.historyStore.peekUndo() : this.historyStore.peekRedo();
     if (!entry) return null;
+    const patches = undo ? entry.inverse : entry.forward;
+    const inverse = undo ? entry.forward : entry.inverse;
     assertCollaborationVersionAvailable(this.doc.identity);
-    // redo 尤其可能与远端新增的 OPC 身份相撞，不能沿用命令事务内的可信快速路径。
-    const dirty = applyPatches(this.doc, entry.forward);
-    this.refreshActiveImageResources(entry.forward);
-    this.currentSelection = cloneSelection(entry.selectionAfter);
-    this.historyStore.moveToUndo();
-    this.currentState = this.currentState === entry.beforeState ? entry.afterState : this.nextState++;
-    const change = changeFromPatches(this.doc, entry.forward, entry.inverse, 'redo', this.selection, dirty);
+    // 远端 Patch 可能改变模型或占用 OPC 身份，两个方向都须在完整暂存模型上重新验真。
+    const dirty = applyPatches(this.doc, patches);
+    this.refreshActiveImageResources(patches);
+    this.currentSelection = cloneSelection(undo ? entry.selectionBefore : entry.selectionAfter);
+    if (undo) this.historyStore.moveToRedo(); else this.historyStore.moveToUndo();
+    this.currentState = this.currentState === (undo ? entry.afterState : entry.beforeState)
+      ? (undo ? entry.beforeState : entry.afterState) : this.nextState++;
+    const change = changeFromPatches(this.doc, patches, inverse, source, this.selection, dirty);
     const time = Date.now();
     advanceCollaborationVersion(this.doc.identity);
-    this.queuePatches('redo', entry.forward, this.origin, entry.label, time);
-    this.emitRecovery('redo', entry.forward, entry.label, time);
-    this.emit(
-      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change,
-      change.renderSlides,
-      change.paneElements,
-    );
-    this.flushPatches();
+    this.queuePatches(source, patches, this.origin, entry.label, time);
+    this.emitRecovery(source, patches, entry.label, time);
+    this.emitPatchChange(change);
+    this.patchJournal.flush();
     return change;
   }
 
@@ -246,7 +227,7 @@ export class Editor {
     if (!Array.isArray(patches)) throw new Error('外部补丁必须是数组');
     const time = options.time ?? Date.now();
     const origin = options.origin ?? 'external';
-    const label = options.label?.trim() || '外部编辑';
+    const label = options.label && options.label.trim() || '外部编辑';
     if (!Number.isFinite(time)) throw new Error('外部补丁时间必须是有限数字');
     if (typeof origin !== 'string' || !origin) throw new Error('外部补丁 origin 必须是非空字符串');
     if (options.identity) assertEditIdentityWatermark(options.identity);
@@ -270,18 +251,19 @@ export class Editor {
     const change = changeFromPatches(this.doc, patches, [], 'external', this.selection, dirty);
     this.queuePatches('external', patches, origin, label, time);
     this.emitRecovery('transaction', patches, label, time);
-    this.emit(
-      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change, change.renderSlides, change.paneElements,
-    );
-    this.flushPatches();
+    this.emitPatchChange(change);
+    this.patchJournal.flush();
     return change;
   }
 
   toSlide(id: SlideId) { return toSlide(this.doc, id); }
   toDesignCanvas(target: DesignTarget) { return toDesignCanvas(this.doc, target); }
   effectiveElement(id: ElementId) { return effectiveElement(this.doc, id); }
+
+  dispose(): void {
+    this.unsubscribeExtensions();
+    this.subscribers.clear();
+  }
 
   private commit(
     commands: readonly Command[],
@@ -292,7 +274,8 @@ export class Editor {
   ): TransactionResult {
     for (const command of commands) {
       assertPureCommand(command);
-      if (!designTarget && ('target' in command && (command.target as DesignTarget | null)?.id
+      if (!designTarget && ('target' in command && (command.target as DesignTarget | null)
+        && (command.target as DesignTarget).id
         || commandTargetIds(command).some((id) =>
           this.doc.elements[id] && canvasTargetOfElement(this.doc, id).kind !== 'slide'))) {
         throw new Error('用execDesign');
@@ -358,7 +341,7 @@ export class Editor {
       }
       for (const id of autoFitTargets) {
         const element = effectiveElement(this.doc, id);
-        if (element.kind === 'shape' && element.text?.autoFitShape) {
+        if (element.kind === 'shape' && element.text && element.text.autoFitShape) {
           const fitted = fitTextShapePatches(this.doc, { type: 'FitTextShape', id }, origin);
           if (fitted.forward.length) historyLinks.push({
             trigger: ['elements', id, 'ovr', 'text'],
@@ -379,9 +362,9 @@ export class Editor {
             ? null : commands[0].at.parentId,
         });
       } else if (commands.length === 1 && commandSelectsInsertedElement(commands[0])) {
-        const id = forward.find((patch) => patch.path.length === 2 && patch.op === 'insert')?.path[1];
-        if (id) this.currentSelection = normalizeSelection(this.doc, {
-          kind: 'elements', ids: [id], enteredGroup: null,
+        const inserted = forward.find((patch) => patch.path.length === 2 && patch.op === 'insert');
+        if (inserted) this.currentSelection = normalizeSelection(this.doc, {
+          kind: 'elements', ids: [inserted.path[1]], enteredGroup: null,
         });
       } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
       if (forward.some(isElementInteractionPatch)) {
@@ -396,7 +379,7 @@ export class Editor {
       if (inverse.length) applyPatches(this.doc, inverse);
       // AddSlide 会惰性创建 OPC 水位；只 Object.assign 会把失败事务新增的字段残留在文档中。
       for (const key of Object.keys(this.doc.identity)) {
-        if (!Object.prototype.hasOwnProperty.call(identityBefore, key)) {
+        if (!own(identityBefore, key)) {
           delete (this.doc.identity as unknown as Record<string, unknown>)[key];
         }
       }
@@ -443,7 +426,7 @@ export class Editor {
         renderSlides,
         paneElements,
       );
-      this.flushPatches();
+      this.patchJournal.flush();
     }
     return {
       forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
@@ -481,7 +464,13 @@ export class Editor {
     this.patchJournal.queue(event);
   }
 
-  private flushPatches(): void { this.patchJournal.flush(); }
+  private emitPatchChange(change: EditorChange): void {
+    this.emit(
+      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
+      change.renderElements, change.reorderedElements, change.bodyPropsElements,
+      change, change.renderSlides, change.paneElements,
+    );
+  }
 
   private emit(
     source: EditorChange['source'],

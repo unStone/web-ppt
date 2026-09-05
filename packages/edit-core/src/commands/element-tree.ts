@@ -1,3 +1,4 @@
+import { own } from '../data-validation';
 import { canvasTargetOfElement } from '../design-target';
 import { elementOrder, elementParentChildren } from '../element-order';
 import type { EditDoc, ElementId, ElementRecord } from '../types';
@@ -9,6 +10,7 @@ import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fie
 import { querySlideAnimations } from '../slide-animation';
 import { setAnimationsPatches } from './set-animations';
 import { cloneElementRecord } from './record-clone';
+import { advanceElementSpid } from '../element-spids';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -83,7 +85,7 @@ export function removeElementPatches(
     .map((step, index) => index === 0 && step.trigger !== 'click'
       ? { ...step, trigger: 'click' as const } : step);
   const sourceNeedsPreservingCleanup = slide.sourceAnimationsReadonly === true
-    && !Object.prototype.hasOwnProperty.call(slide.ovr, 'animations');
+    && !own(slide.ovr, 'animations');
   const animationPatches = remainingAnimations.length === animations.length || sourceNeedsPreservingCleanup
     ? { forward: [], inverse: [] }
     : setAnimationsPatches(doc, {
@@ -177,12 +179,7 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   // Patch 批次已在统一 seam 隔离；这里直接接管记录才能保留跨根的共享目录。
   for (const [id, record] of Object.entries(snapshot.records)) {
     doc.elements[id] = record;
-    const anchor = record.meta.origin;
-    const next = anchor && doc.identity.nextSpid[anchor.part];
-    // 远端结构 patch 不经过本地分配器；已初始化的 part 计数仍必须越过它的 spid。
-    if (anchor && next !== undefined && next <= anchor.spid) {
-      doc.identity.nextSpid[anchor.part] = anchor.spid + 1;
-    }
+    advanceElementSpid(doc, record);
   }
   if (slide && dynamicIds.length) {
     const known = new Set(slide.dynamicSlideNumbers);

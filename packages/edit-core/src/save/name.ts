@@ -1,10 +1,9 @@
 import type { ElementRecord } from '../types';
 import { setXmlAttribute } from '../xml/mutate';
-import { findXmlChild } from '../xml/query';
 import type { XmlDocument } from '../xml/types';
-import { locateElementHost } from './xfrm';
+import { elementNonVisualProperties } from './xfrm';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 export function hasNameOverride(record: ElementRecord): boolean {
   return own(record.ovr, 'name');
@@ -14,13 +13,7 @@ export function hasNameOverride(record: ElementRecord): boolean {
 export function patchElementName(document: XmlDocument, record: ElementRecord): void {
   if (!hasNameOverride(record)) return;
   if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可重命名`);
-  const { host, spec } = locateElementHost(document, record);
-  const nonVisual = findXmlChild(host, {
-    localName: spec.nonVisual, namespaceUri: spec.namespaceUri,
-  });
-  const properties = nonVisual && findXmlChild(nonVisual, {
-    localName: 'cNvPr', namespaceUri: spec.namespaceUri,
-  });
-  if (!properties) throw new Error(`元素 ${record.id} 缺少 cNvPr 名称宿主`);
-  setXmlAttribute(properties, 'name', record.ovr.name as string);
+  for (const properties of elementNonVisualProperties(document, record)) {
+    setXmlAttribute(properties, 'name', record.ovr.name as string);
+  }
 }

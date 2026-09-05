@@ -227,6 +227,7 @@ class BrowserEditorSession implements EditorSession {
     const state = sessionState(this);
     for (const view of [...state.views]) view.destroy();
     for (const pane of [...state.panes]) pane.destroy();
+    this.editor.dispose();
     disposeDoc(this.editor.doc);
     releaseSession(this);
   }

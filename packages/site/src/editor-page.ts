@@ -8,10 +8,7 @@ import {
   type SlideEditor,
   type TouchNavigationChange,
 } from '@web-ppt/editor';
-import { eotToTtf } from 'mtx-decompressor';
-import {
-  createPresetAdjustmentEditor, type PresetAdjustmentEditor,
-} from '@web-ppt/editor/adjustments';
+import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
 import { createEditorInspector, type EditorInspector } from './editor-inspector';
 import { createSlideInspector, type SlideInspector } from './editor-slide-inspector';
 import { createProductTools } from './editor-product-tools';
@@ -19,8 +16,7 @@ import { createSiteRecovery } from './editor-recovery';
 import { enableSlideReorder } from './editor-slide-reorder';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
-
-setFontDecoder(eotToTtf);
+import type { ChartInspector } from './editor-chart-inspector';
 
 const {
   app, toolbar, fileInput, fileName, canvasViewport, canvasMount, canvasState,
@@ -37,6 +33,8 @@ let unregisterInspector: (() => void) | null = null;
 let inspector: EditorInspector | null = null;
 let slideInspector: SlideInspector | null = null;
 let adjustments: PresetAdjustmentEditor | null = null;
+let chartInspector: ChartInspector | null = null;
+let chartInspectorLoading: Promise<void> | null = null;
 let mode: EditorMode = 'edit';
 let zoom = 1;
 let fitWanted = true;
@@ -135,9 +133,25 @@ function syncControls(): void {
   document.title = `${dirty ? '● ' : ''}${activeName} · Web-PPT 编辑器`;
   syncSlideSelection();
   inspector?.sync();
+  syncChartInspector();
   slideInspector?.sync();
   productTools.sync();
   recovery.sync(session);
+}
+
+function syncChartInspector(): void {
+  if (chartInspector) { chartInspector.sync(); return; }
+  const selection = session?.editor.selection;
+  const id = selection?.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
+  const record = id && session?.editor.doc.elements[id];
+  if (!record || record.src.kind !== 'group' || record.meta.editable !== 'frame' || chartInspectorLoading) return;
+  chartInspectorLoading = import('./editor-chart-inspector').then(({ createChartInspector }) => {
+    chartInspector = createChartInspector(
+      inspectorElement.querySelector<HTMLElement>('#chartInspector')!,
+      () => ({ session, writable: canMutateDocument() && mode === 'edit' }), notice,
+    );
+    chartInspector.sync();
+  }).catch(reportError).finally(() => { chartInspectorLoading = null; });
 }
 
 function syncSlideSelection(): void {
@@ -280,10 +294,21 @@ async function openDocument(
   setLoading(`正在打开 ${name}`);
   notice(`正在解析 ${name}…`);
   try {
-    const next = await openEditor(source, recovery.openOptions(controller.signal));
+    const { eotToTtf } = await import('mtx-decompressor');
+    if (generation !== openGeneration) return;
+    setFontDecoder(eotToTtf);
+    const [next, { createPresetAdjustmentEditor }] = await Promise.all([
+      openEditor(source, recovery.openOptions(controller.signal)),
+      import('@web-ppt/editor/adjustments'),
+    ]);
     if (generation !== openGeneration) {
       next.dispose();
       return;
+    }
+    if (Object.values(next.editor.doc.elements).some((record) =>
+      record.ovr.extensions?.['chart-data'] !== undefined)) {
+      await import('@web-ppt/editor/chart');
+      if (generation !== openGeneration) { next.dispose(); return; }
     }
     disposeCurrent();
     session = next;

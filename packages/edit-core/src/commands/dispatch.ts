@@ -68,6 +68,9 @@ import { setThemePatches } from './theme';
 import type { SetThemeCommand } from './theme-types';
 import { setMasterTextStylePatches } from './master-text-style';
 import type { SetMasterTextStyleCommand } from './master-text-style-types';
+import { extensionCommandPatches } from '../extension-runtime';
+import type { ExtensionCommand } from './types';
+import { assertDataObject } from '../data-validation';
 
 interface CommandRegistration {
   readonly keys: ReadonlySet<PropertyKey>;
@@ -84,12 +87,13 @@ function register<C extends Command>(
   return {
     keys: new Set(['type', ...fields]),
     target: options.target,
-    ...(options.selectInserted ? { selectInserted: true } : {}),
-    patches: (doc, command, origin) => handler(doc, command as C, origin),
+    selectInserted: options.selectInserted,
+    patches: handler as CommandRegistration['patches'],
   };
 }
 
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
+  Extension: register<ExtensionCommand>(['namespace', 'id', 'payload'], extensionCommandPatches),
   SetTheme: register<SetThemeCommand>(['id', 'clrScheme', 'fontScheme'], setThemePatches, { target: 'none' }),
   SetMasterTextStyle: register<SetMasterTextStyleCommand>(
     ['target', 'category', 'level', 'paragraph', 'run'], setMasterTextStylePatches, { target: 'none' },
@@ -173,24 +177,14 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
 };
 
 export function assertPureCommand(input: Command): void {
-  if (!input || typeof input !== 'object'
-    || (Object.getPrototypeOf(input) !== Object.prototype && Object.getPrototypeOf(input) !== null)) {
-    throw new Error('命令必须是纯数据对象');
-  }
-  const typeDescriptor = Object.getOwnPropertyDescriptor(input, 'type');
-  if (!typeDescriptor?.enumerable || !('value' in typeDescriptor)) {
+  const typeDescriptor = input && Object.getOwnPropertyDescriptor(input, 'type');
+  if (!typeDescriptor || !('value' in typeDescriptor)) {
     throw new Error('命令 type 必须是可序列化的数据字段');
   }
   const type = typeDescriptor.value as Command['type'];
   const registration = COMMANDS[type];
-  const allowed = registration?.keys ?? new Set<PropertyKey>(['type', 'id']);
-  for (const key of Reflect.ownKeys(input)) {
-    const descriptor = Object.getOwnPropertyDescriptor(input, key);
-    if (!allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
-      throw new Error(`命令包含不可序列化或未知字段：${String(key)}`);
-    }
-  }
-  if ((registration?.target ?? 'id') === 'id') {
+  assertDataObject(input, registration ? registration.keys : ['type', 'id'], '命令');
+  if (!registration || registration.target === 'id') {
     const id = (input as Partial<Command> & { id?: unknown }).id;
     if (typeof id !== 'string' || !id) throw new Error('命令 id 必须是非空字符串');
   }
@@ -199,23 +193,19 @@ export function assertPureCommand(input: Command): void {
 /** 批处理冲突检测与命令注册共享目标语义；非法动态输入留给纯数据校验给出具体错误。 */
 export function commandTargetIds(command: Command): readonly ElementId[] {
   const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
-  if (registration?.target === 'ids') {
+  const target = registration ? registration.target : 'id';
+  if (target === 'none') return [];
+  if (target === 'ids') {
     const ids = (command as Partial<AlignElementsCommand | DistributeElementsCommand | GroupCommand>).ids;
     return Array.isArray(ids) ? ids.filter((id): id is ElementId => typeof id === 'string' && !!id) : [];
   }
-  if (registration?.target === 'to') {
-    const id = (command as Partial<ApplyFormatCommand>).to;
-    return typeof id === 'string' && id ? [id] : [];
-  }
-  if ((registration?.target ?? 'id') === 'id') {
-    const id = (command as Partial<Command> & { id?: unknown }).id;
-    return typeof id === 'string' && id ? [id] : [];
-  }
-  return [];
+  const id = (command as unknown as Record<string, unknown>)[target];
+  return typeof id === 'string' && id ? [id] : [];
 }
 
 export function commandSelectsInsertedElement(command: Command): boolean {
-  return COMMANDS[(command as Partial<Command>).type as Command['type']]?.selectInserted === true;
+  const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
+  return !!registration && registration.selectInserted === true;
 }
 
 export function commandPatches(doc: EditDoc, command: Command, origin: string): CommandPatches {

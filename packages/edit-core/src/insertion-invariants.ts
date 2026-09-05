@@ -1,4 +1,4 @@
-import { assertDataObject } from './data-validation';
+import { assertDataObject, own } from './data-validation';
 import { relationshipPartFor, resolveRelationshipTarget } from './clipboard-source';
 import type {
   EditDoc, ElementInsertionRelationship, ElementRecord,
@@ -8,7 +8,6 @@ import { findXmlAttribute, xmlElementChildren } from './xml/query';
 import { parseXmlTree } from './xml/tree';
 
 const MEDIA_REL_TYPES = new Set(['image', 'audio', 'video', 'media']);
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 function relationshipSource(
   doc: EditDoc,
@@ -36,7 +35,7 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
   const label = `元素 ${record.id} 的插入闭包`;
   if (!record.meta.created || !record.meta.origin) throw new Error(`${label} 缺少新建宿主身份`);
   assertDataObject(source, [
-    'markup', 'namespaces', 'spids', 'relationships', 'resources', 'containsDescendants',
+    'markup', 'namespaces', 'spids', 'relationships', 'resources', 'containsDescendants', 'unmodeledSpids',
   ], label);
   if (source.containsDescendants !== undefined && source.containsDescendants !== false) {
     throw new Error(`${label}.containsDescendants 只能显式为 false`);
@@ -55,6 +54,28 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
     || Object.entries(source.spids).some(([spid, value]) =>
       !/^\d+$/.test(spid) || !Number.isSafeInteger(value) || value <= 0)) {
     throw new Error(`${label} 的命名空间或 spid 映射无效`);
+  }
+  const unmodeled = source.unmodeledSpids ?? [];
+  const targets = Object.values(source.spids);
+  if (new Set(targets).size !== targets.length) throw new Error(`${label} 的目标身份重复`);
+  if (!Array.isArray(unmodeled) || new Set(unmodeled).size !== unmodeled.length
+    || unmodeled.some((spid) => !targets.includes(spid))) {
+    throw new Error(`${label} 的未建模宿主身份无效`);
+  }
+  if (unmodeled.length) {
+    const pending = [record.id];
+    const visited = new Set<string>();
+    while (pending.length) {
+      const id = pending.pop()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const child = doc.elements[id];
+      if (!child) continue;
+      if (child.meta.origin?.part === record.meta.origin.part && unmodeled.includes(child.meta.origin.spid)) {
+        throw new Error(`${label} 的未建模身份与元素树重叠`);
+      }
+      pending.push(...child.children ?? []);
+    }
   }
   const resources = source.resources ?? [];
   const byTarget = new Map<string, typeof resources[number]>();

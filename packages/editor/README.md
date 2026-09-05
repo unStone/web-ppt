@@ -21,6 +21,19 @@ const catalog = listBuiltinTemplates();
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
 
+Load classic chart data tools only after the user selects a chart. The editor, React, and Vue chart entries all
+forward this same dataset and command API:
+
+```ts
+const charts = await import('@web-ppt/editor/chart');
+const chart = charts.listEditableCharts(session.editor.doc)[0];
+const dataset = charts.queryChartData(session.editor.doc, chart.id);
+charts.createChartDataEditor(session.editor).setSeriesName(chart.id, dataset.series[0].id, 'Forecast');
+```
+
+Check `chart.binding.mode` before showing controls: `workbook` is fully synchronized, `cache` is cache-only, and
+`readonly` includes the reason editing is unsafe.
+
 ```ts
 import { listThemes, openEditor, queryTheme } from '@web-ppt/editor';
 import {
@@ -541,7 +554,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 68.11 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 68.10 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

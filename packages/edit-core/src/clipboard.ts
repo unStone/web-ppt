@@ -9,6 +9,7 @@ import { clipboardClosure } from './clipboard-source';
 import { materializeElementRoots, materializeInsertionFragment } from './save/insertion';
 import { locateElementHosts } from './save/xfrm';
 import { serializeXmlNode } from './xml/tree';
+import { shapeIds as hostSpids } from './xml/shape-ids';
 import type {
   ClipboardElementRecord, ClipboardResource, ClipboardXmlRoot, ElementClipboardPayload,
   ElementClipboardRecordMeta,
@@ -28,19 +29,6 @@ function createCopyBatchId(): string {
     new DataView(bytes.buffer).setUint32(12, clipboardBatchSerial);
   }
   return [...bytes].map((value) => value.toString(16).padStart(2, '0')).join('');
-}
-
-function hostSpids(host: XmlElement): string[] {
-  const values: string[] = [];
-  const visit = (element: XmlElement): void => {
-    if (element.localName === 'cNvPr') {
-      const id = element.attributes.find((attribute) => attribute.localName === 'id' && !attribute.namespaceUri);
-      if (id) values.push(id.value);
-    }
-    for (const child of element.children) if (child.type === 'element') visit(child);
-  };
-  visit(host);
-  return values;
 }
 
 function copiedMeta(
@@ -109,8 +97,11 @@ function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>): SlideEl
     };
   }
   // 来源锚点等解析期身份不能跨文档传播；表格追加模板则是后续结构编辑的必要语义。
+  const requiresOriginal = portable.editInfo?.requiresOriginal;
   delete portable.editInfo;
-  if (tableRowAppend) portable.editInfo = { tableRowAppend };
+  if (tableRowAppend || requiresOriginal) portable.editInfo = {
+    ...(tableRowAppend ? { tableRowAppend } : {}), ...(requiresOriginal ? { requiresOriginal } : {}),
+  };
   delete portable.id;
   return portable;
 }

@@ -361,14 +361,18 @@ export function layoutFallbackGeometry(record: EditDoc['elements'][string]): Geo
 
 function flattenVirtualElement(element: SlideElement, output: Array<ElementId | null>): void {
   output.push(null);
-  if (element.kind === 'group') {
+  if (element.kind === 'group'
+    && (!element.editInfo || element.editInfo.editable !== 'frame')) {
     for (const child of element.children) flattenVirtualElement(child, output);
   }
 }
 
 function flattenRecordElement(doc: EditDoc, id: ElementId, output: Array<ElementId | null>): void {
+  const record = doc.elements[id];
   output.push(id);
-  for (const child of doc.elements[id].children ?? []) flattenRecordElement(doc, child, output);
+  if (record.meta.editable !== 'frame') {
+    for (const child of record.children ?? []) flattenRecordElement(doc, child, output);
+  }
 }
 
 /** 整页 SVG 可混入没有 EditDoc 身份的目标版式静态节点；DOM 绑定按同一投影序列跳过它们。 */

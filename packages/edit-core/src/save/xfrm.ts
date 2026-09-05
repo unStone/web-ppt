@@ -2,13 +2,13 @@ import type { SlideElement } from '@web-ppt/core';
 import type { ElementRecord } from '../types';
 import { isFrameSaveXfrmField, XFRM_FIELDS } from '../commands/xfrm';
 import { insertXmlInOrder } from '../xml/order';
-import { DRAWINGML_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qname';
+import { DRAWINGML_NS, MARKUP_COMPATIBILITY_NS, POWERPOINT_2010_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlAttribute, findXmlChild, xmlElementChildren } from '../xml/query';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import type { XmlDocument, XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 export interface HostSpec {
   readonly namespaceUri: string;
@@ -45,10 +45,41 @@ function hostSpid(host: XmlElement, spec: HostSpec): number | null {
   return properties ? numericId(properties) : null;
 }
 
-export interface LocatedHost {
+export interface HostVariant {
   host: XmlElement;
-  parent: XmlElement;
   spec: HostSpec;
+}
+
+export interface LocatedHost extends HostVariant {
+  parent: XmlElement;
+  /** 兼容对象只有一个层级宿主，但每个分支都有自己的可写框架。 */
+  variants?: readonly HostVariant[];
+}
+
+interface HostMatch extends LocatedHost {
+  alternate?: { host: XmlElement; parent: XmlElement };
+}
+
+function alternateVariants(alternate: XmlElement): HostVariant[] | null {
+  const branches = xmlElementChildren(alternate);
+  if (!branches.length) return null;
+  const variants: HostVariant[] = [];
+  for (const branch of branches) {
+    const children = xmlElementChildren(branch);
+    const host = children[0];
+    if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS
+      || !['Choice', 'Fallback'].includes(branch.localName) || children.length !== 1) return null;
+    if (host.namespaceUri === MARKUP_COMPATIBILITY_NS && host.localName === 'AlternateContent') {
+      const nested = alternateVariants(host);
+      if (!nested) return null;
+      variants.push(...nested);
+    } else {
+      const spec = HOSTS[host.localName];
+      if (!spec || host.namespaceUri !== spec.namespaceUri || hostSpid(host, spec) === null) return null;
+      variants.push({ host, spec });
+    }
+  }
+  return variants;
 }
 
 /** 批量定位同一 part 的宿主只遍历 XML 一次，避免大页层级保存退化为节点数平方。 */
@@ -57,7 +88,7 @@ export function locateElementHosts(
   records: readonly Pick<ElementRecord, 'id' | 'meta'>[],
 ): Map<string, LocatedHost> {
   const wanted = new Map<number, Pick<ElementRecord, 'id' | 'meta'>[]>();
-  const matches = new Map<string, LocatedHost[]>();
+  const matches = new Map<string, HostMatch[]>();
   for (const record of records) {
     const origin = record.meta.origin;
     if (!origin) throw new Error(`元素 ${record.id} 缺少 OOXML 回写锚点`);
@@ -66,14 +97,22 @@ export function locateElementHosts(
     wanted.set(origin.spid, owners);
     matches.set(record.id, []);
   }
-  const visit = (parent: XmlElement): void => {
+  const visit = (parent: XmlElement, alternate?: HostMatch['alternate']): void => {
     for (const child of xmlElementChildren(parent)) {
+      if (child.namespaceUri === MARKUP_COMPATIBILITY_NS && child.localName === 'AlternateContent') {
+        for (const branch of xmlElementChildren(child)) {
+          const isBranch = branch.namespaceUri === MARKUP_COMPATIBILITY_NS
+            && (branch.localName === 'Choice' || branch.localName === 'Fallback');
+          visit(branch, isBranch ? alternate ?? { host: child, parent } : undefined);
+        }
+        continue;
+      }
       const spec = HOSTS[child.localName];
       const supported = spec?.namespaceUri === child.namespaceUri ? spec : undefined;
       if (supported) {
         const spid = hostSpid(child, supported);
         for (const record of spid === null ? [] : wanted.get(spid) ?? []) {
-          matches.get(record.id)!.push({ host: child, parent, spec: supported });
+          matches.get(record.id)!.push({ host: child, parent, spec: supported, alternate });
         }
       }
       visit(child);
@@ -81,8 +120,23 @@ export function locateElementHosts(
   };
   visit(document.root);
   const located = new Map<string, LocatedHost>();
+  const claimedAlternates = new Set<XmlElement>();
   for (const record of records) {
     const found = matches.get(record.id)!;
+    const alternate = found[0]?.alternate;
+    if (alternate) {
+      const variants = alternateVariants(alternate.host);
+      // Office 可以给备用图分配不同 spid；身份由一对一的 MC 外壳确定，不能跨对象合并。
+      const coherent = variants && record.meta.editable === 'frame' && !claimedAlternates.has(alternate.host)
+        && found.every((match) => match.alternate?.host === alternate.host);
+      if (!coherent) throw new Error(`元素 ${record.id} 的兼容分支不是同一框架对象`);
+      claimedAlternates.add(alternate.host);
+      located.set(record.id, {
+        host: alternate.host, parent: alternate.parent, spec: found[0].spec,
+        variants,
+      });
+      continue;
+    }
     if (found.length !== 1) {
       const origin = record.meta.origin!;
       throw new Error(found.length
@@ -92,6 +146,24 @@ export function locateElementHosts(
     located.set(record.id, found[0]);
   }
   return located;
+}
+
+export function elementHostVariants(
+  document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>,
+): readonly HostVariant[] {
+  const location = locateElementHost(document, record);
+  return location.variants ?? [location];
+}
+
+export function elementNonVisualProperties(
+  document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>,
+): XmlElement[] {
+  return elementHostVariants(document, record).map(({ host, spec }) => {
+    const nonVisual = findXmlChild(host, { localName: spec.nonVisual, namespaceUri: spec.namespaceUri });
+    const properties = nonVisual && findXmlChild(nonVisual, { localName: 'cNvPr', namespaceUri: spec.namespaceUri });
+    if (!properties) throw new Error(`元素 ${record.id} 缺少 cNvPr 属性宿主`);
+    return properties;
+  });
 }
 
 export function locateElementHost(
@@ -133,8 +205,7 @@ function materializeTransform(xfrm: XmlElement, effective: SlideElement, label: 
   }
 }
 
-function transformNode(document: XmlDocument, record: ElementRecord): { xfrm: XmlElement; created: boolean } {
-  const { host, spec } = locateElementHost(document, record);
+function transformNode({ host, spec }: HostVariant, record: ElementRecord): { xfrm: XmlElement; created: boolean } {
   const container = spec.properties
     ? findXmlChild(host, { localName: spec.properties, namespaceUri: spec.namespaceUri })
     : host;
@@ -160,11 +231,12 @@ export function patchElementXfrm(document: XmlDocument, record: ElementRecord): 
     && XFRM_FIELDS.some((field) => own(record.ovr, field) && !isFrameSaveXfrmField(field))) {
     throw new Error(`框架对象 ${record.id} 只允许写回位置、尺寸与粘贴补偿翻转`);
   }
-  const { xfrm, created } = transformNode(document, record);
-  if (created) materializeTransform(
-    xfrm, { ...record.src, ...record.ovr } as SlideElement, record.id,
-  );
+  for (const variant of elementHostVariants(document, record)) patchVariantXfrm(variant, record);
+}
 
+function patchVariantXfrm(variant: HostVariant, record: ElementRecord): void {
+  const { xfrm, created } = transformNode(variant, record);
+  if (created) materializeTransform(xfrm, { ...record.src, ...record.ovr } as SlideElement, record.id);
   const effective = { ...record.src, ...record.ovr };
   const hasOff = own(record.ovr, 'x') || own(record.ovr, 'y');
   const hasExt = own(record.ovr, 'w') || own(record.ovr, 'h');
@@ -206,6 +278,7 @@ export function materializeElementXfrm(
   effective: SlideElement,
 ): void {
   if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可写回`);
-  const { xfrm } = transformNode(document, record);
-  materializeTransform(xfrm, effective, record.id);
+  for (const variant of elementHostVariants(document, record)) {
+    materializeTransform(transformNode(variant, record).xfrm, effective, record.id);
+  }
 }

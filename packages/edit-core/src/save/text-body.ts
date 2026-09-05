@@ -7,7 +7,7 @@ import { xmlElementChildren } from '../xml/query';
 import type { XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 const EMU_PER_PX = 9525;
 
 function setOrRemove<T>(

@@ -49,6 +49,8 @@ export interface ElementInsertionSource {
   readonly namespaces: Readonly<Record<string, string>>;
   /** 来源 spid 字符串 → 目标 part 新 spid。 */
   readonly spids: Readonly<Record<string, number>>;
+  /** 未进入编辑记录的原始宿主仍需重编号，但不能按“已删除后代”裁掉。 */
+  readonly unmodeledSpids?: readonly number[];
   readonly relationships?: readonly ElementInsertionRelationship[];
   readonly resources?: readonly ElementInsertionResource[];
   /** false 表示宿主只是空容器，后代要按当前模型层级分别插入或从来源树移动。 */
@@ -138,6 +140,8 @@ export interface ElementLinkState {
  * `id` / `editInfo` 则属于源文件身份，二者都不能进入覆盖层。
  */
 export type ElementOverrides = Partial<Pick<ElementBase, BaseOverrideKey>> & {
+  /** 按需能力的稀疏语义覆盖；命名空间由对应子路径负责校验。 */
+  extensions?: Record<string, unknown>;
   altText?: ElementAltTextOverrides;
   /** 预设切换与调节值保持规范语义；path 仍由投影按当前 frame 求值。 */
   presetGeometry?: GeomSpec;

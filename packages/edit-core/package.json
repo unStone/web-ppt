@@ -50,6 +50,10 @@
       "types": "./dist/templates/index.d.ts",
       "import": "./dist/templates.js"
     },
+    "./chart": {
+      "types": "./dist/chart/index.d.ts",
+      "import": "./dist/chart.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -59,7 +63,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.templates.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

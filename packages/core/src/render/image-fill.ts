@@ -1,4 +1,5 @@
 import type { Fill, ImageTileAlignment } from '../types';
+import { escapeXml, round } from './serialize';
 
 type ImageFill = Extract<Fill, { type: 'image' }>;
 
@@ -6,10 +7,6 @@ export interface ImageFillContext {
   readonly defs: string[];
   readonly nextId: (prefix: string) => string;
 }
-const round = (value: number): string =>
-  Number.isFinite(value) ? String(Math.round(value * 100) / 100) : '0';
-const escapeXml = (value: string): string => value
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // DrawingML srcRect 以十万分数存储；合法编辑值最小可见比例是 1/100000。
 const MIN_CROP_FRACTION = 1 / 100000;
 const MIN_TILE_SIZE = 0.01;

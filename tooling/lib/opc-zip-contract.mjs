@@ -128,6 +128,14 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
     equalBytes(snapshotted.package.parts[nextTarget], expectedSnapshot)
     && equalBytes(unzipSync(snapshotted.bytes)[nextTarget], expectedSnapshot)
     && opc.patchOpcPackage(snapshotted.package, { [nextTarget]: expectedSnapshot }).mode === 'identity');
+  const bufferInput = Buffer.from('buffer-owned-payload');
+  const bufferExpected = new Uint8Array(bufferInput);
+  const bufferPatched = opc.patchOpcPackage(source, { 'customXml/buffer.bin': bufferInput });
+  bufferInput.fill(0);
+  check('补丁保存对 Buffer 输入取得独立所有权',
+    equalBytes(bufferPatched.package.parts['customXml/buffer.bin'], bufferExpected)
+    && equalBytes(unzipSync(bufferPatched.bytes)['customXml/buffer.bin'], bufferExpected));
+  opc.disposeOpcPackage(bufferPatched.package);
   reparsed.dispose?.();
 
   const deletedPart = 'ppt/notesSlides/notesSlide7.xml';

@@ -5,18 +5,19 @@ export const own = (object: object, key: PropertyKey): boolean =>
 
 export function assertDataObject(
   value: unknown,
-  fields: readonly string[],
+  fields: readonly string[] | ReadonlySet<PropertyKey>,
   label: string,
 ): asserts value is object {
   if (!value || typeof value !== 'object'
     || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
     throw new Error(`${label} 必须是纯数据对象`);
   }
-  const allowed = new Set(fields);
+  const allowed: ReadonlySet<PropertyKey> = Array.isArray(fields) ? new Set(fields)
+    : fields as ReadonlySet<PropertyKey>;
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     if (typeof key !== 'string' || !allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {
-      throw new Error(`${label} 包含未知或不可序列化字段：${String(key)}`);
+      throw new Error(`${label} 包含不可序列化或未知字段：${String(key)}`);
     }
   }
 }

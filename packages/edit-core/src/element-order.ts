@@ -1,7 +1,7 @@
 import { compareFractionalIndex } from './fractional-index';
 import type { EditDoc, ElementId, ElementRecord, FractionalIndex } from './types';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from './data-validation';
 
 export function elementOrder(record: Pick<ElementRecord, 'z' | 'order'>): FractionalIndex {
   return own(record, 'order') ? record.order! : record.z;

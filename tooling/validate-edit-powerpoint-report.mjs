@@ -121,6 +121,15 @@ const validate = () => {
     if (evidence.openedWithoutRepair !== true) {
       throw new Error(`${artifact.file} 没有“未修复打开”的成功证据`);
     }
+    if (artifact.chartData) {
+      const expected = artifact.chartData;
+      const chartData = evidence.chartData;
+      if (!isRecord(chartData) || chartData.synchronized !== true
+        || chartData.displayValue !== expected.value || chartData.workbookValue !== expected.value
+        || chartData.seriesName !== expected.seriesName || chartData.category !== expected.category) {
+        throw new Error(`${artifact.file} 缺少图表显示值与双击工作簿一致的证据`);
+      }
+    }
   }
   if (reportsByFile.size !== expectedFiles.size) {
     throw new Error('PowerPoint 报告包含清单之外的产物');

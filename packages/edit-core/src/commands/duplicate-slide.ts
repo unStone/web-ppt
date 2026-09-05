@@ -9,6 +9,7 @@ import {
 } from './add-slide-identity';
 import type { CommandPatches, DuplicateSlideCommand, SlideTreePatch } from './types';
 import { sectionOfSlide } from '../sections';
+import { maxPartSpid } from './spid';
 
 function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   layoutId: string;
@@ -125,8 +126,7 @@ export function duplicateSlidePatches(
   const notesPart = source.notes ? allocateNotesPart(doc) : undefined;
   const removedSpids = duplicateRemovedSpids(doc, source.id);
   const cloned = duplicateRecords(doc, source.id, id, opc.part);
-  const spids = Object.values(cloned.records).flatMap((record) => record.meta.origin?.spid ?? []);
-  doc.identity.nextSpid[opc.part] = Math.max(1, ...spids) + 1;
+  doc.identity.nextSpid[opc.part] = Math.max(1, maxPartSpid(doc, source.origin.part)) + 1;
   const sourceIndex = doc.slideOrder.indexOf(source.id);
   if (sourceIndex < 0) throw new Error(`页面不在 slideOrder 中：${source.id}`);
   const value = {

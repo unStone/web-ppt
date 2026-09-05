@@ -33,9 +33,9 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 91.78 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 80.57 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 68.11 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 91.76 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 80.56 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 68.10 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 11.73 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
@@ -267,7 +267,7 @@ for byte and retains declarations, comments, PIs, namespace prefixes, attribute 
 and `AlternateContent` around point edits. New nodes share one OOXML sequence table. The optional
 `@web-ppt/edit-core/opc` entry then merges dirty parts into the source archive while copying clean local headers,
 extra fields, and compressed streams byte-for-byte. Identity saves reuse the original bytes; unusual ZIP features
-return an explainable fallback reason. The main editing graph is 80.57 KB gzip including static shared chunks;
+return an explainable fallback reason. The main editing graph is 80.56 KB gzip including static shared chunks;
 the first save adds 8.30 KB on demand.
 
 ### Bring your own UI
@@ -394,7 +394,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | 3D | Isometric approximation, not true projection; steep camera angles don't switch to a top-down view |
 | EMF+ | Not handled. Every metafile examined so far is **dual-mode** — the GDI records already carry the full drawing (16,125 GDI records vs 3 EMF+ comments in `sample-metafile.pptx`), so the GDI path suffices. Only pure EMF+ files would need it, and no sample has turned up |
 | Raster operation codes | SVG/CSS has no XOR/AND bitwise blending; `mix-blend-mode` is not equivalent |
-| chartex chart types | Treemap / sunburst / histogram / box-and-whisker / waterfall / funnel / map (Office 2016+ `cx:chartSpace`) — the whole pipeline is unimplemented. All 16 classic chart types are supported |
+| chartex chart types | Native `cx:chartSpace` rendering is pending. MC image fallback is verified with a real funnel PPTX; other types still need corpus evidence. Compatibility objects are frame-only; saving after source-package disposal explicitly fails rather than flattening the chart into its preview |
 | Region OR / XOR / DIFF | Needs region boolean operations, which SVG clipping can't express; COPY and AND work |
 | MTX-compressed embedded fonts | PowerPoint's `fntdata` is an EOT container, usually with MTX compression on. Uncompressed containers are unwrapped by core itself (including the XOR obfuscation); compressed ones need an injected decoder: `setFontDecoder(eotToTtf)` from [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor). Without it those fonts are skipped in favour of a substitute, rather than handing the browser bytes it's guaranteed to reject |
 | Line breaking when fonts are missing | Line breaks are decided by **the actual font's metrics**. If the deck's font isn't installed locally, something else is substituted, advance widths differ, and breaks land differently than in PowerPoint. This isn't a parsing problem — installing the original font, using the file's own embedded fonts, or wiring up [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) for metric-compatible free substitutes (Calibri→Carlito and friends, where every advance width matches) all fix it |
@@ -411,10 +411,11 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
-| `npm run test:edit` | 1,119 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 524 process-isolated SVG fingerprint pairs across 81 fixtures |
+| `npm run test:edit` | 1,120 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 546 process-isolated SVG fingerprint pairs across 83 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
-| `npm run test:editor` | 422 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
+| `npm run test:v08` | 194 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 93 compatibility-fallback assertions |
+| `npm run test:editor` | 424 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |
 | `npm run test:v07:libreoffice` | Open all 11 artifacts from the single 0.7 manifest in LibreOffice without repair |
 | `npm run test:edit:m1` | Open all 71 model-save artifacts in LibreOffice without repair |
@@ -425,7 +426,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |
-| `npm run test:adapters` | 10 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
+| `npm run test:adapters` | 12 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
 | `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
 | `npm run build:site` | Build the site's static output |
 | `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |

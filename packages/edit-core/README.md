@@ -23,6 +23,20 @@ const bytes = createPptxFromTemplate('aurora', { width: 1280, height: 720 });
 `aurora`, `editorial`, and `midnight` each produce an editable theme, master, title/content/two-content/section/
 blank layout set, and title slide. `createBlankPptx()` keeps its existing byte-compatible minimal output.
 
+Classic chart data editing is also opt-in, so the default editor entry does not load the chart or SpreadsheetML
+patcher:
+
+```ts
+const charts = await import('@web-ppt/edit-core/chart');
+const chart = charts.listEditableCharts(doc)[0];
+const dataset = charts.queryChartData(doc, chart.id);
+const dataEditor = charts.createChartDataEditor(editor);
+dataEditor.setValue(chart.id, dataset.series[0].id, dataset.categories[0].id, 4096);
+```
+
+`binding.mode` is explicit: `workbook` updates the chart cache, formulas, and embedded XLSX together; `cache`
+updates only literal/cache data; `readonly` rejects edits when a workbook formula cannot be interpreted safely.
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {

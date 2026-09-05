@@ -99,11 +99,10 @@ function schemaFor(parent: XmlElement): ChildOrderSchema | undefined {
     : undefined;
 }
 
-function alternateContentRelation(
+function alternateContentRanks(
   candidate: XmlElement,
   schema: ChildOrderSchema,
-  childRank: number,
-): 'before' | 'after' {
+): number[] {
   const branches = candidate.children.filter((node): node is XmlElement => node.type === 'element'
     && node.namespaceUri === MARKUP_COMPATIBILITY_NS
     && (node.localName === 'Choice' || node.localName === 'Fallback'));
@@ -113,6 +112,10 @@ function alternateContentRelation(
     const elements = branch.children.filter((node): node is XmlElement => node.type === 'element');
     if (!elements.length) throw new Error(`mc:${branch.localName} 没有可判断序位的元素`);
     for (const element of elements) {
+      if (element.namespaceUri === MARKUP_COMPATIBILITY_NS && element.localName === 'AlternateContent') {
+        ranks.push(...alternateContentRanks(element, schema));
+        continue;
+      }
       const elementRank = rank(schema.groups, element.namespaceUri, element.localName);
       if (elementRank < 0) {
         throw new Error(`无法判断 mc:${branch.localName}/${element.name} 的 OOXML 序位`);
@@ -120,9 +123,7 @@ function alternateContentRelation(
       ranks.push(elementRank);
     }
   }
-  if (ranks.every((value) => value > childRank)) return 'after';
-  if (ranks.every((value) => value <= childRank)) return 'before';
-  throw new Error('mc:AlternateContent 各分支横跨插入位置，拒绝猜测');
+  return ranks;
 }
 
 function relationToChild(
@@ -131,7 +132,10 @@ function relationToChild(
   childRank: number,
 ): 'before' | 'after' | 'ignore' {
   if (candidate.namespaceUri === MARKUP_COMPATIBILITY_NS && candidate.localName === 'AlternateContent') {
-    return alternateContentRelation(candidate, schema, childRank);
+    const ranks = alternateContentRanks(candidate, schema);
+    if (ranks.every((value) => value > childRank)) return 'after';
+    if (ranks.every((value) => value <= childRank)) return 'before';
+    throw new Error('mc:AlternateContent 各分支横跨插入位置，拒绝猜测');
   }
   const candidateRank = rank(schema.groups, candidate.namespaceUri, candidate.localName);
   if (candidateRank < 0) return 'ignore';
@@ -146,7 +150,12 @@ export function insertXmlInOrder(parent: XmlElement, child: XmlElement): number 
   const schema = schemaFor(parent);
   if (!schema) return insertXmlChildUnchecked(parent, child);
   const childNamespaceUri = namespaceUriOnAttach(parent, child);
-  const childRank = rank(schema.groups, childNamespaceUri, child.localName);
+  const ranks = childNamespaceUri === MARKUP_COMPATIBILITY_NS && child.localName === 'AlternateContent'
+    ? alternateContentRanks(child, schema) : [rank(schema.groups, childNamespaceUri, child.localName)];
+  const childRank = ranks[0];
+  if (ranks.some((value) => value !== childRank)) {
+    throw new Error('待插入 mc:AlternateContent 各分支不在同一序位');
+  }
   if (childRank < 0) {
     throw new Error(`OOXML 顺序表缺少 ${parent.name}/${child.name}，拒绝无依据追加`);
   }

@@ -50,6 +50,8 @@ import { materializeThemePart } from '../theme-xml';
 import { themeHasOverrides } from '../theme';
 import { hasLayoutPropertyOverrides, patchLayoutProperties } from './layout-properties';
 import { hasMasterPropertyOverrides, patchMasterProperties } from './master-properties';
+import { registeredEditExtensions } from '../extension-runtime';
+import type { EditExtensionSavePlan } from '../extension-runtime';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
   const parts = new Map<string, number>();
@@ -128,8 +130,48 @@ function masterPropertiesByPart(doc: EditDoc) {
   }));
 }
 
+async function extensionSavePlan(doc: EditDoc): Promise<EditExtensionSavePlan> {
+  const extensions = registeredEditExtensions();
+  const unloaded = new Set<string>();
+  for (const record of Object.values(doc.elements)) {
+    for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
+      if (!extensions.has(namespace)) unloaded.add(namespace);
+    }
+  }
+  if (unloaded.size) throw new Error(`保存前必须加载编辑扩展：${[...unloaded].join('、')}`);
+  const changes: Record<string, Uint8Array | null> = Object.create(null);
+  const baselines: Record<string, Uint8Array> = Object.create(null);
+  for (const extension of extensions.values()) {
+    const plan = await extension.beforeSave?.(doc);
+    if (!plan) continue;
+    for (const [part, bytes] of Object.entries(plan.changes)) {
+      if (Object.prototype.hasOwnProperty.call(changes, part)) {
+        throw new Error(`多个编辑扩展同时修改 OPC part：${part}`);
+      }
+      changes[part] = bytes;
+    }
+    for (const [part, bytes] of Object.entries(plan.baselines)) {
+      const current = baselines[part];
+      if (current && (current.length !== bytes.length
+        || !current.every((value, index) => value === bytes[index]))) {
+        throw new Error(`多个编辑扩展的保存基线冲突：${part}`);
+      }
+      baselines[part] = bytes;
+    }
+  }
+  return { changes, baselines };
+}
+
+/** 编辑器入口延迟到首次保存才加载扩展保存聚合器。 */
+export async function saveEditDocWithExtensions(doc: EditDoc): Promise<OpcPatchResult> {
+  return saveEditDoc(doc, await extensionSavePlan(doc));
+}
+
 /** 始终从首次触碰的基线重建 part，避免连续保存把旧覆盖烘进源树而破坏撤销。 */
-export function saveEditDoc(doc: EditDoc): OpcPatchResult {
+export function saveEditDoc(
+  doc: EditDoc,
+  extensionPlan: EditExtensionSavePlan = { changes: {}, baselines: {} },
+): OpcPatchResult {
   validateEditDoc(doc);
   if (doc.meta.readonly) throw new Error('只读编辑文档不能保存');
   if (doc.meta.source !== 'pptx' || !doc.package) {
@@ -155,7 +197,7 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     slide.origin ? [[slide.origin.part, slide] as const] : []));
   const fallbackGeometrySource = createLayoutFallbackGeometryResolver(doc);
   const nextBaselines: Record<string, Uint8Array> = Object.assign(
-    Object.create(null), doc.saveState.baselines,
+    Object.create(null), doc.saveState.baselines, extensionPlan.baselines,
   );
   const nextCreatedParts = new Set(doc.saveState.createdParts);
   const contentTypesPart = '[Content_Types].xml';
@@ -282,7 +324,9 @@ export function saveEditDoc(doc: EditDoc): OpcPatchResult {
     if (resource.created) nextCreatedParts.add(resource.targetPart);
   }
 
-  const changes: Record<string, Uint8Array | null> = Object.create(null);
+  const changes: Record<string, Uint8Array | null> = Object.assign(
+    Object.create(null), extensionPlan.changes,
+  );
   for (const part of nextCreatedParts) changes[part] = null;
   for (const [part, source] of Object.entries(nextBaselines)) {
     if (!doc.package.parts[part] && !removedSlideParts.packageParts.has(part)

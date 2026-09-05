@@ -3,7 +3,7 @@ import type { CommandPatches, ElementTransformPatch, Patch, XfrmField, XfrmValue
 import { assertXfrmValue, isFrameXfrmField } from './xfrm';
 import { assertElementUnlocked } from './element-interaction';
 
-const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
+import { own } from '../data-validation';
 
 /** 变换命令共用权限与 patch 语义，避免位置和翻转两条路径逐渐分叉。 */
 export function elementTransformPatches(
@@ -33,6 +33,9 @@ export function elementTransformPatches(
     const hadOverride = own(record.ovr, field);
     const before = (hadOverride ? record.ovr[field] : record.src[field]) as XfrmValueByField[typeof field];
     if (Object.is(before, value)) continue;
+    if (record.meta.moveLocked && (field === 'x' || field === 'y')) {
+      throw new Error(`来源文件禁止移动元素：${id}`);
+    }
     const path = ['elements', id, 'ovr', field] as const;
     forward.push({ op: 'set', path, value, origin } as Patch);
     inverse.unshift((hadOverride

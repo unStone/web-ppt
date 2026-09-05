@@ -459,6 +459,8 @@ export interface ElementEditInfo {
   textLevelTemplate?: TextBody;
   /** 内部内容不可安全写回时只允许框架级变换；省略表示由元素类型推断为 full */
   editable?: 'full' | 'frame' | 'none';
+  /** 渲染投影不足以重建源对象；失去原包时不得静默生成普通图形。 */
+  requiresOriginal?: true;
   /** OOXML `noMove` 约束；只禁止改变位置，不扩大成通用编辑锁。 */
   moveLocked?: boolean;
   /** 编辑解析保留空 txBody 的段落与默认 run 格式；不参与普通渲染。 */

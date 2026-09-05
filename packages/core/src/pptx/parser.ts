@@ -32,6 +32,7 @@ import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-sty
 import { parseElementAltText } from './alt-text';
 import { parseSections } from './sections';
 import { parseThemeCatalog } from './theme-catalog';
+import { parseCompatibleShapes } from './shape-compatibility';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
@@ -383,14 +384,8 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
         el = parseContentPart(node, env);
         break;
       case 'AlternateContent': {
-        // Choice 里多为 a14/p14 扩展（墨迹等）；解析不出内容时回退到 Fallback 的图片
-        const choice = kid(node, 'Choice');
-        let got = choice ? parseShapeTree(choice, env, skipPh) : [];
-        if (!got.length) {
-          const fb = kid(node, 'Fallback');
-          if (fb) got = parseShapeTree(fb, env, skipPh);
-        }
-        return got;
+        return parseCompatibleShapes(node, (branch) => parseShapeTree(branch, env, skipPh),
+          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit);
       }
     }
     return el;
@@ -400,7 +395,7 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
 /** 解析失败时给一个可见但不打断阅读的占位，方便定位问题而不是整页丢失 */
 function brokenShapePlaceholder(node: Element, err: unknown, env: Env): UnsupportedElement | null {
   const nv = kid(node, 'nvSpPr') ?? kid(node, 'nvPicPr') ?? kid(node, 'nvGrpSpPr')
-    ?? kid(node, 'nvCxnSpPr') ?? kid(node, 'nvGraphicFramePr');
+    ?? kid(node, 'nvCxnSpPr') ?? kid(node, 'nvGraphicFramePr') ?? kid(node, 'nvContentPartPr');
   const xf = parseXfrm(walk(node, 'spPr', 'xfrm') ?? walk(node, 'grpSpPr', 'xfrm') ?? kid(node, 'xfrm'));
   if (!xf || xf.w <= 0 || xf.h <= 0) return null;
   const cNvPr = kid(nv, 'cNvPr');
@@ -409,6 +404,7 @@ function brokenShapePlaceholder(node: Element, err: unknown, env: Env): Unsuppor
   return {
     kind: 'unsupported',
     ...base(xf),
+    id: numAttr(cNvPr, 'id') ?? undefined,
     label: `${name}（解析失败：${reason.slice(0, 40)}）`,
     ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame', movementLocked(nv)),
   };
@@ -826,14 +822,10 @@ function parseContentPart(node: Element, env: Env): GroupElement | null {
   const rid = attr(node, 'r:id');
   const target = rid ? env.rels[rid]?.target : null;
   const root = target ? env.pkg.xml(target) : null;
-  if (!root) return null;
-  let children: ShapeElement[];
-  try {
-    children = inkStrokes(root, xf.w, xf.h);
-  } catch {
-    return null;
-  }
-  if (!children.length) return null;
+  // 数据缺失不是有意留空的 Choice；交给形状级诊断才能继续尝试兼容图片。
+  if (!root) throw new Error('缺少 InkML 内容');
+  const children = inkStrokes(root, xf.w, xf.h);
+  if (!children.length) throw new Error('InkML 没有可用笔迹');
   const cNvPr = walk(node, 'nvContentPartPr', 'cNvPr');
   return {
     kind: 'group', ...base(xf),

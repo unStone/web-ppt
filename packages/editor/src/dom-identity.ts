@@ -6,8 +6,8 @@ export function elementIds(doc: EditDoc, roots: readonly ElementId[]): ElementId
   const walk = (ids: readonly ElementId[]): void => {
     for (const id of ids) {
       output.push(id);
-      const children = doc.elements[id]?.children;
-      if (children) walk(children);
+      const record = doc.elements[id];
+      if (record && record.meta.editable !== 'frame' && record.children) walk(record.children);
     }
   };
   walk(roots);

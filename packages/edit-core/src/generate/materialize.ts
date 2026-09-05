@@ -362,6 +362,9 @@ function elementInsertion(
   spid: number,
   part: string,
 ): ElementInsertionSource {
+  if (record.src.editInfo?.requiresOriginal) {
+    throw new Error(`兼容对象 ${record.id} 需要原包；请重新打开原文件并使用补丁保存`);
+  }
   if (record.src.scene3d) throw new Error(`生成保存暂不支持三维元素：${record.id}`);
   if (record.src.kind === 'image' && record.src.filter) {
     throw new Error(`生成保存暂不支持图片滤镜：${record.id}`);
