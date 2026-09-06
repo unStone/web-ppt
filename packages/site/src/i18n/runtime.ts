@@ -63,15 +63,21 @@ export function setMessage(target: Element, value: string | SiteMessage): void {
   target.textContent = format(value.source, value.parameters);
 }
 
-export function setAttributeText<S extends Message>(
-  target: Element, attribute: 'aria-label' | 'title' | 'placeholder' | 'alt', source: S, ...args: MessageArguments<S>
-): void {
+type MessageAttribute = 'aria-label' | 'title' | 'placeholder' | 'alt';
+
+export function setAttributeMessage(target: Element, attribute: MessageAttribute, value: SiteMessage): void {
   const binding = dynamic.get(target) ?? { attributes: {} };
-  binding.attributes[attribute] = message(source, ...args);
+  binding.attributes[attribute] = value;
   dynamic.set(target, binding);
   target.setAttribute('data-site-dynamic', '');
   if (language === 'en' && !dictionary) return;
-  target.setAttribute(attribute, t(source, ...args));
+  target.setAttribute(attribute, format(value.source, value.parameters));
+}
+
+export function setAttributeText<S extends Message>(
+  target: Element, attribute: MessageAttribute, source: S, ...args: MessageArguments<S>
+): void {
+  setAttributeMessage(target, attribute, message(source, ...args));
 }
 
 function savedLanguage(): string | null {
@@ -114,6 +120,18 @@ function reportFailure(error: unknown): void {
   if (!status) { status = document.createElement('span'); status.setAttribute('role', 'alert'); control.append(status); }
   status.textContent = 'Language unavailable; save and reload / 语言不可用，请保存后刷新';
 }
+
+document.querySelector<HTMLElement>('#siteLanguage')?.addEventListener('pointerdown', (event) => {
+  const active = document.activeElement;
+  const editing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
+    || active instanceof HTMLElement && active.isContentEditable;
+  if (!editing || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  if (event.target instanceof Element && event.target.closest('[data-site-locale]')) {
+    // 切语言不是提交输入；阻止指针转移焦点，避免原生 change 先提交并重建编辑控件。
+    // 点击仍正常激活语言入口；Tab 移焦与修饰键新开页面保持浏览器默认行为。
+    event.preventDefault();
+  }
+});
 
 document.querySelector('#siteLanguage')?.addEventListener('click', (event) => {
   const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('[data-site-locale]') : null;

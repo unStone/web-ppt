@@ -176,6 +176,7 @@ const routes = new Map([
 const productionBase = productionLanguages
   ? new URL(/<script[^>]+src="([^"]+)"/.exec(editorHtml)[1], 'http://localhost').pathname.split('/assets/')[0] : '';
 const dictionaryUrls = [];
+const chartChunks = { tools: [], data: [] };
 if (productionLanguages) {
   for (const page of ['index', 'samples']) for (const suffix of ['', '.en']) {
     routes.set(`/${page}${suffix}.html`, ['text/html; charset=utf-8', readFileSync(join(productionDirectory, `${page}${suffix}.html`))]);
@@ -184,8 +185,11 @@ if (productionLanguages) {
     const bytes = readFileSync(join(productionDirectory, 'assets', name));
     routes.set(`/assets/${name}`, [name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8', bytes]);
     if (name.endsWith('.js') && bytes.includes('Fidelity needs a reference')) dictionaryUrls.push(`${productionBase}/assets/${name}`);
+    if (name.endsWith('.js') && bytes.includes('chart-xy-series')) chartChunks.tools.push(`${productionBase}/assets/${name}`);
+    if (name.endsWith('.js') && bytes.includes('图表数据点命令没有修改字段')) chartChunks.data.push(`${productionBase}/assets/${name}`);
   }
   if (dictionaryUrls.length !== 1) throw new Error('生产英文词库必须在唯一按需块中');
+  if (chartChunks.tools.length !== 1 || chartChunks.data.length !== 1) throw new Error('找不到生产图表工具与数据模块边界');
 }
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
@@ -397,7 +401,7 @@ async function runContract(webSocketDebuggerUrl) {
         consoleFailures.splice(index, 1);
         return true;
       };
-      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls, onEvent, consumeConsoleFailure });
+      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls, chartChunks, onEvent, consumeConsoleFailure });
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }

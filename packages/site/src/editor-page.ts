@@ -151,13 +151,18 @@ function syncChartInspector(): void {
   const id = selection?.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
   const record = id && session?.editor.doc.elements[id];
   if (!record || record.src.kind !== 'group' || record.meta.editable !== 'frame' || chartInspectorLoading) return;
+  const owner = session;
   chartInspectorLoading = import('./editor-chart-inspector').then(({ createChartInspector }) => {
     chartInspector = createChartInspector(
       inspectorElement.querySelector<HTMLElement>('#chartInspector')!,
       () => ({ session, writable: canMutateDocument() && mode === 'edit' }), notice,
     );
     chartInspector.sync();
-  }).catch(reportError).finally(() => { chartInspectorLoading = null; });
+  }).catch((error) => {
+    const current = session?.editor.selection;
+    if (session !== owner || current?.kind !== 'elements' || current.ids.length !== 1 || current.ids[0] !== id) return;
+    notice(message('无法加载图表工具：{detail}', { detail: explain(error) }), 'error');
+  }).finally(() => { chartInspectorLoading = null; });
 }
 
 function syncSlideSelection(): void {
