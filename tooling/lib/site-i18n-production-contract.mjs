@@ -7,6 +7,8 @@ import { runSiteI18nRecoveryContract } from './site-i18n-recovery-contract.mjs';
 import { runSiteI18nStartupContract, runSiteI18nDictionaryFailureContract } from './site-i18n-startup-contract.mjs';
 import { runSiteI18nViewerContract } from './site-i18n-viewer-contract.mjs';
 import { runSiteI18nGalleryContract } from './site-i18n-gallery-contract.mjs';
+import { runSiteI18nMediaContract } from './site-i18n-media-contract.mjs';
+import { runSiteI18nHomeContract } from './site-i18n-home-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const { evaluate, request, waitFor, click, dictionaryUrls } = context;
@@ -19,6 +21,7 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nConversionContract(context);
   await runSiteI18nTemplateContract(context);
   await runSiteI18nRecoveryContract(context);
+  await runSiteI18nMediaContract(context);
   await runSiteEditorLanguageContract(context);
   const directory = await evaluate("new URL('.', location.href).href");
   for (const page of ['index', 'samples', 'editor']) {
@@ -49,4 +52,5 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nDictionaryFailureContract(context);
   await runSiteI18nViewerContract(context);
   await runSiteI18nGalleryContract(context);
+  await runSiteI18nHomeContract(context);
 }

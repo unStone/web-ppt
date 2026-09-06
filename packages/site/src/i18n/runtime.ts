@@ -64,7 +64,7 @@ export function setMessage(target: Element, value: string | SiteMessage): void {
 }
 
 export function setAttributeText<S extends Message>(
-  target: Element, attribute: 'aria-label' | 'title' | 'placeholder', source: S, ...args: MessageArguments<S>
+  target: Element, attribute: 'aria-label' | 'title' | 'placeholder' | 'alt', source: S, ...args: MessageArguments<S>
 ): void {
   const binding = dynamic.get(target) ?? { attributes: {} };
   binding.attributes[attribute] = message(source, ...args);

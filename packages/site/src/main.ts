@@ -5,7 +5,7 @@ import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { featuredOf, fetchSamples, type Sample } from './samples-index';
 import { fetchBytes, whyFailed } from './fetch-bytes';
-import { refreshSiteLinks, setMessage, setText } from './i18n/runtime';
+import { refreshSiteLinks, setMessage, setText, setAttributeText, setSiteLink } from './i18n/runtime';
 import { createViewerStatus } from './viewer-status';
 import { message } from './i18n/message';
 import { drawArch, initializeHardCases } from './home-illustrations';
@@ -276,7 +276,9 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 /** 把误点到的链接摆出来，让人自己决定去不去，而不是直接跳走 */
 function showLinkToast(href: string): void {
   linkToast.textContent = '';
-  linkToast.append('这一处是超链接：');
+  const label = document.createElement('span');
+  setText(label, '这一处是超链接：');
+  linkToast.append(label);
   const a = document.createElement('a');
   a.href = href;
   a.target = '_blank';
@@ -464,9 +466,9 @@ async function loadRemoteSamples(): Promise<void> {
   if (rest <= 0) return;
   const more = document.createElement('a');
   more.className = 'chip more';
-  more.href = 'samples.html';
-  more.textContent = `更多 ${rest} 个`;
-  more.title = '样本库全部条目，逐个挑着看';
+  setSiteLink(more, 'samples.html');
+  setText(more, '更多 {count} 个', { count: rest });
+  setAttributeText(more, 'title', '样本库全部条目，逐个挑着看');
   bar.appendChild(more);
 
   openRequestedSample(all, bar);

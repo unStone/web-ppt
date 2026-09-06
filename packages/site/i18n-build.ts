@@ -2,10 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import type { Plugin } from 'vite';
-import { messages } from './src/i18n/messages';
-import { homeMessages } from './src/i18n/en-home';
-import { editorMessages } from './src/i18n/en-editor';
-import { sampleMessages } from './src/i18n/en-samples';
+import { messages, messageCatalogs } from './src/i18n/messages';
 import { bindStaticText } from './src/i18n/static-text';
 import { updateSiteMetadata } from './src/i18n/metadata';
 import type { SiteLanguage } from './src/i18n/locale';
@@ -30,7 +27,7 @@ function localizedHtml(html: string, language: SiteLanguage): string {
 export function siteI18n(): Plugin {
   const seen = new Map<string, string>();
   const parameters = (value: string): string => [...new Set([...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]))].sort().join(',');
-  for (const catalog of [homeMessages, editorMessages, sampleMessages]) for (const [source, target] of Object.entries(catalog)) {
+  for (const catalog of messageCatalogs) for (const [source, target] of Object.entries(catalog)) {
     if (seen.has(source) && seen.get(source) !== target) throw new Error(`官网词条翻译冲突：${source}`);
     if (parameters(source) !== parameters(target)) throw new Error(`官网词条参数不一致：${source}`);
     seen.set(source, target);

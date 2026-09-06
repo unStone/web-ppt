@@ -1,5 +1,10 @@
 /** 中文源文案即词条身份；缺少英文的静态文案由构建守卫拒绝。 */
 export const homeMessages = {
+  'Web-PPT 架构图': 'Web-PPT architecture diagram', '输入': 'Input', '中间表示': 'Intermediate representation',
+  '统一 Schema': 'Unified schema', '与文件格式无关': 'Format-independent', '渲染': 'Rendering',
+  'HTML 文本': 'HTML text', 'SVG 文本': 'SVG text', '自实现断行': 'Built-in wrapping', '可选中': 'Selectable',
+  '样本载入失败': 'Could not load the sample', '这一处是超链接：': 'This is a hyperlink: ',
+  '更多 {count} 个': 'More samples: {count}', '样本库全部条目，逐个挑着看': 'Browse all entries in the sample gallery',
   '{name} · {kb}KB · {pages} 页 · {network}解析 {parse}ms · 首屏 {paint}ms': '{name} · {kb}KB · Slides: {pages} · {network}Parse {parse}ms · First view {paint}ms',
   '下载 {time} · ': 'Download {time} · ',
   '下载中…': 'Downloading…', '下载中 · {size}': 'Downloading · {size}',

@@ -1,6 +1,10 @@
 import { parse, renderSlideToSvg } from '@web-ppt/core';
+import { message, type SiteMessage } from './i18n/message';
+import { setText, setMessage, setAttributeText } from './i18n/runtime';
 
 export function drawArch(): void {
+  const labels: SiteMessage[] = [];
+  const label = (value: SiteMessage): string => `<tspan data-arch-label="${labels.push(value) - 1}"></tspan>`;
   const box = (x: number, y: number, w: number, h: number, title: string, sub: string, accent = false): string => `
     <g>
       <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8"
@@ -20,9 +24,10 @@ export function drawArch(): void {
         fill="var(--fg-faint)" font-size="10" font-family="var(--mono)">${label}</text>` : ''}
     </g>`;
 
-  document.querySelector('#archDiagram')!.innerHTML = `
-<svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Web-PPT 架构图">
-  <text x="92" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">输入</text>
+  const host = document.querySelector('#archDiagram')!;
+  host.innerHTML = `
+<svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img">
+  <text x="92" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">${label(message('输入'))}</text>
   ${box(20, 28, 145, 56, '.pptx', 'Zip + OOXML')}
   ${box(20, 100, 145, 56, '.ppt', 'CFB + OfficeArt')}
   ${box(20, 172, 145, 56, 'EMF / WMF / PICT', 'GDI / QuickDraw')}
@@ -31,22 +36,24 @@ export function drawArch(): void {
   ${arrow(165, 128, 285, 118, 'Escher')}
   ${arrow(165, 200, 285, 146, 'GDI')}
 
-  <text x="368" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">中间表示</text>
-  ${box(285, 72, 166, 92, '统一 Schema', 'types.ts', true)}
-  <text x="368" y="180" text-anchor="middle" fill="var(--fg-faint)" font-size="10">与文件格式无关</text>
+  <text x="368" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">${label(message('中间表示'))}</text>
+  ${box(285, 72, 166, 92, label(message('统一 Schema')), 'types.ts', true)}
+  <text x="368" y="180" text-anchor="middle" fill="var(--fg-faint)" font-size="10">${label(message('与文件格式无关'))}</text>
 
   ${arrow(451, 100, 570, 62)}
   ${arrow(451, 136, 570, 174)}
 
-  <text x="647" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">渲染</text>
-  ${box(570, 34, 154, 56, 'HTML 文本', 'foreignObject')}
-  ${box(570, 146, 154, 56, 'SVG 文本', '自实现断行')}
+  <text x="647" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">${label(message('渲染'))}</text>
+  ${box(570, 34, 154, 56, label(message('HTML 文本')), 'foreignObject')}
+  ${box(570, 146, 154, 56, label(message('SVG 文本')), label(message('自实现断行')))}
 
   ${arrow(724, 62, 790, 62)}
   ${arrow(724, 174, 790, 174)}
-  ${box(790, 34, 92, 56, '预览', '可选中')}
-  ${box(790, 146, 92, 56, '导出', 'PNG/PDF')}
+  ${box(790, 34, 92, 56, label(message('预览')), label(message('可选中')))}
+  ${box(790, 146, 92, 56, label(message('导出')), 'PNG/PDF')}
 </svg>`;
+  setAttributeText(host.querySelector('svg')!, 'aria-label', 'Web-PPT 架构图');
+  labels.forEach((value, index) => setMessage(host.querySelector(`[data-arch-label="${index}"]`)!, value));
 }
 
 
@@ -75,7 +82,7 @@ async function renderHardCases(): Promise<void> {
     });
   } catch {
     // 案例展示不该拖垮整页：取不到固件就只留天真侧，不弹错
-    panes.forEach((p) => { p.textContent = '样本载入失败'; });
+    panes.forEach((p) => setText(p, '样本载入失败'));
   }
 }
 
