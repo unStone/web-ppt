@@ -19,6 +19,7 @@ import { createEditorFeedback } from './editor-feedback';
 import { bindPaneLabels } from './editor-pane-labels';
 import { bindViewLabels } from './editor-view-labels';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
+import { whyFailed } from './fetch-bytes';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
 import { languageReady, setMessage, setText, t } from './i18n/runtime';
@@ -130,7 +131,9 @@ function syncControls(): void {
   const total = editor?.doc.slideOrder.length ?? 0;
   pageIndicator.textContent = index < 0 ? '— / —' : `${index + 1} / ${total}`;
   slideCount.textContent = String(total);
-  if (editor?.doc.meta.readonly) {
+  if (!editor) {
+    setText(documentKind, '未打开文稿');
+  } else if (editor.doc.meta.readonly) {
     setText(documentKind, '{format} · 只读预览', { format: editor.doc.meta.source.toUpperCase() });
   } else {
     setText(documentKind, editor?.doc.meta.source === 'ppt'
@@ -512,9 +515,11 @@ void languageReady.then(() => {
   return fetch(new URL('./demo/showcase.pptx', document.baseURI));
 })
   .then((response) => {
-    if (!response.ok) throw new Error(`示例下载失败（HTTP ${response.status}）`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.arrayBuffer();
   })
   // 用户可能在示例下载完成前已经选择了本地文件；迟到的示例不能覆盖用户意图。
   .then((bytes) => openGeneration ? undefined : openDocument(bytes, 'showcase.pptx'))
-  .catch((error) => { if (!openGeneration) showOpenFailure(message('打开失败：{detail}', { detail: explain(error) })); });
+  .catch((error) => {
+    if (!openGeneration) showOpenFailure(message('示例下载失败：{detail}。仍可打开本地文件或新建文稿。', { detail: whyFailed(error) }));
+  });

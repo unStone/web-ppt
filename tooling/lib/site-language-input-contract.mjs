@@ -19,10 +19,19 @@ export async function runSiteLanguageInputContract({ request, evaluate, waitFor 
   await request('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
   await request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await waitFor("document.documentElement.lang === 'zh-CN'", `${page} 触屏切中文`);
-  await evaluate("document.querySelector('[data-site-locale=\"en\"]').focus()");
-  const key = { key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 };
-  await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
-  await request('Input.dispatchKeyEvent', { type: 'keyUp', ...key });
+  // 种子焦点不是可达性证据；两个方向的原生 Tab 都必须命中，tabindex=-1 不能蒙混过关。
+  await evaluate("document.querySelector('[data-site-locale=\"zh-CN\"]').focus()");
+  const key = async (name, code, windowsVirtualKeyCode, modifiers = 0) => {
+    for (const type of ['rawKeyDown', 'keyUp']) {
+      await request('Input.dispatchKeyEvent', { type, key: name, code, windowsVirtualKeyCode, modifiers });
+    }
+  };
+  await key('Tab', 'Tab', 9);
+  await waitFor("document.activeElement === document.querySelector('[data-site-locale=en]')", `${page} Tab 到英文入口`);
+  await key('Tab', 'Tab', 9, 8);
+  await waitFor("document.activeElement === document.querySelector('[data-site-locale=zh-CN]')", `${page} Shift+Tab 到中文入口`);
+  await key('Tab', 'Tab', 9);
+  await key('Enter', 'Enter', 13);
   await waitFor("document.documentElement.lang === 'en'", `${page} 键盘切英文`);
   await request('Emulation.setTouchEmulationEnabled', { enabled: false });
   await request('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });

@@ -1,4 +1,4 @@
-import { runSiteEditorLanguageContract } from './site-editor-language-contract.mjs';
+import { runSiteEditorLanguageContract, runSiteLanguagePreferencesContract } from './site-editor-language-contract.mjs';
 import { runSiteLanguageInputContract } from './site-language-input-contract.mjs';
 import { runSiteI18nFilesContract } from './site-i18n-files-contract.mjs';
 import { runSiteI18nErrorsContract, runSiteI18nConversionContract } from './site-i18n-errors-contract.mjs';
@@ -20,6 +20,7 @@ import { runSiteI18nFeedbackContract } from './site-i18n-feedback-contract.mjs';
 import { runSiteI18nAccessibilityContract } from './site-i18n-accessibility-contract.mjs';
 import { runSiteI18nViewLabelsContract } from './site-i18n-view-labels-contract.mjs';
 import { runSiteI18nPlaceholderContract } from './site-i18n-placeholder-contract.mjs';
+import { runSiteI18nBootstrapContract } from './site-i18n-bootstrap-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const only = process.env.SITE_I18N_ONLY;
@@ -27,7 +28,9 @@ export async function runSiteI18nProductionContract(context) {
     const contract = { inspector: runSiteI18nInspectorContract, image: runSiteI18nImageContract,
       text: runSiteI18nTextContract, content: runSiteI18nContentContract, feedback: runSiteI18nFeedbackContract,
       slides: runSiteI18nSlideToolsContract, accessibility: runSiteI18nAccessibilityContract,
-      'view-labels': runSiteI18nViewLabelsContract, placeholders: runSiteI18nPlaceholderContract }[only];
+      'view-labels': runSiteI18nViewLabelsContract, placeholders: runSiteI18nPlaceholderContract,
+      bootstrap: runSiteI18nBootstrapContract, recovery: runSiteI18nRecoveryContract,
+      preferences: runSiteLanguagePreferencesContract }[only];
     if (!contract) throw new Error(`未知的官网专项：${only}`);
     await contract(context); return;
   }
@@ -78,9 +81,11 @@ export async function runSiteI18nProductionContract(context) {
     await waitFor("document.documentElement.lang === 'en'", `${page} 再切英文`);
     await runSiteLanguageInputContract(context, page);
   }
+  await runSiteI18nBootstrapContract(context);
   await runSiteI18nStartupContract(context);
   await runSiteI18nDictionaryFailureContract(context);
   await runSiteI18nViewerContract(context);
   await runSiteI18nGalleryContract(context);
   await runSiteI18nHomeContract(context);
+  await runSiteLanguagePreferencesContract(context);
 }

@@ -4,6 +4,8 @@ export const editorMessages = {
   '文件任务完成前不能切换文稿': 'Wait for the file task to finish before opening another presentation',
   '文件任务完成前不能新建文稿': 'Wait for the file task to finish before creating a presentation',
   '演示文稿打开失败': 'Could not open the presentation',
+  '未打开文稿': 'No presentation open',
+  '示例下载失败：{detail}。仍可打开本地文件或新建文稿。': 'Could not download the example: {detail}. You can still open a local file or create a presentation.',
   '当前修改还没有保存，仍然打开另一份文件吗？': 'Your changes have not been saved. Open another presentation anyway?',
   '{name} 是旧版 .ppt。进入编辑后将另存为 {output}，不会覆盖原文件。未建模的旧格式内容将显示为带原因的框架占位，仅支持移动、缩放等框架级编辑。继续吗？': '{name} uses the legacy .ppt format. Editing will save a copy as {output} without overwriting the original. Unsupported legacy content will appear as placeholders with reasons and only support frame-level changes such as moving and resizing. Continue?',
   '已取消格式转换，继续以预览模式打开': 'Conversion cancelled. The presentation remains in preview mode.',

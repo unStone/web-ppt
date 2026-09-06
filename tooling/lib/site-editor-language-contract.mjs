@@ -29,30 +29,46 @@ export async function runSiteEditorLanguageContract({ evaluate, click, waitFor }
   await waitFor(`document.querySelectorAll('[data-pane-element]').length === ${before.count}`, '切回中文保留重做历史');
 }
 
-export async function runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor }) {
+export async function runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor }, pages = ['editor', 'index', 'samples']) {
   const origin = await evaluate('location.origin');
+  const directory = await evaluate("new URL('.', location.href).href");
   const userAgent = await evaluate('navigator.userAgent');
+  const acceptLanguage = await evaluate("navigator.languages.join(',')");
   const navigate = async (path, language) => {
-    await request('Page.navigate', { url: origin + path });
-    await waitFor(`location.href === ${JSON.stringify(origin + path)} && document.documentElement.lang === ${JSON.stringify(language)}
-      && document.querySelector('#fileName')?.textContent === 'showcase.pptx'
-      && document.querySelector('#canvasMount')?.firstElementChild
-      && !document.querySelector('#editorApp')?.dataset.loading`, `${path} 语言解析`);
+    const url = new URL(path, directory).href;
+    await request('Page.navigate', { url });
+    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement.lang === ${JSON.stringify(language)}
+      && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`, `${path} 语言解析`);
+    if (!path.startsWith('editor')) return;
+    const ready = `document.querySelector('#fileName')?.textContent === 'showcase.pptx'
+      && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading`;
+    await waitFor(`document.querySelector('#recoveryPrompt')?.hidden === false || (${ready})`, '语言优先级测试文稿或恢复决策');
+    if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
+    await waitFor(ready, '语言优先级测试文稿就绪');
   };
   await request('Network.enable');
-  await request('Network.setUserAgentOverride', { userAgent, acceptLanguage: 'zh-TW' });
-  await request('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
-  await navigate('/editor.html', 'zh-CN');
-  await click('[data-site-locale="en"]');
-  await waitFor("document.documentElement.lang === 'en'", '用户选择英文');
-  await navigate('/editor.html', 'en');
-  await navigate('/editor.html?lang=zh-CN&sample=kept&p=2#kept', 'zh-CN');
-  if (!await evaluate("location.search.includes('sample=kept') && location.search.includes('p=2') && location.hash === '#kept'")) {
-    throw new Error('语言初始化不能清除文件、页码和位置深链接');
+  try {
+    for (const page of pages) {
+      await request('Network.setUserAgentOverride', { userAgent, acceptLanguage: 'zh-TW' });
+      await request('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
+      await navigate(`${page}.html`, 'zh-CN');
+      await click('[data-site-locale="en"]');
+      await waitFor("document.documentElement.lang === 'en'", '用户选择英文');
+      await navigate(`${page}.html`, 'en');
+      await navigate(`${page}.html?lang=zh-CN&sample=kept&p=2#kept`, 'zh-CN');
+      if (!await evaluate("location.search.includes('sample=kept') && location.search.includes('p=2') && location.hash === '#kept'")) {
+        throw new Error('语言初始化不能清除文件、页码和位置深链接');
+      }
+      await click('[data-site-locale="zh-CN"]');
+      await navigate(`${page}.en.html`, 'en');
+      await navigate(`${page}.html?lang=unknown`, 'en');
+      await request('Page.reload');
+      await waitFor("document.documentElement.lang === 'en' && document.querySelector('[data-site-locale=\"en\"]')?.getAttribute('aria-current') === 'true'", '未知语言刷新仍回退英文');
+      await request('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
+      await request('Network.setUserAgentOverride', { userAgent, acceptLanguage: 'fr-FR' });
+      await navigate(`${page}.html`, 'en');
+    }
+  } finally {
+    await request('Network.setUserAgentOverride', { userAgent, acceptLanguage });
   }
-  await click('[data-site-locale="zh-CN"]');
-  await navigate('/editor.en.html', 'en');
-  await navigate('/editor.html?lang=unknown', 'en');
-  await request('Page.reload');
-  await waitFor("document.documentElement.lang === 'en' && document.querySelector('#canvasMount')?.firstElementChild && document.querySelector('#fileName')?.textContent === 'showcase.pptx'", '未知语言刷新仍回退英文');
 }

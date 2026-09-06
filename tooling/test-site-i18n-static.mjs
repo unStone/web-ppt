@@ -53,6 +53,8 @@ for (const page of ['index', 'samples', 'editor']) {
     assert.equal(document.querySelector('meta[property="og:title"]').content, document.title, `${file} 分享标题`);
     const description = document.querySelector('meta[name="description"]').content;
     assert.equal(document.querySelector('meta[property="og:description"]').content, description, `${file} 分享描述`);
+    assert.equal(document.querySelector('meta[name="twitter:title"]').content, document.title, `${file} Twitter 标题`);
+    assert.equal(document.querySelector('meta[name="twitter:description"]').content, description, `${file} Twitter 描述`);
     const schema = JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent);
     for (const item of schema['@graph'] ?? [schema]) {
       assert.equal(item.inLanguage, language, `${file} JSON-LD 语言`);

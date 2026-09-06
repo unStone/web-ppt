@@ -746,7 +746,8 @@ async function runContract(webSocketDebuggerUrl) {
       && document.querySelector('#fileName')?.textContent.startsWith('●')
       && !!document.querySelector('[data-ppt-preset-handle]')`, '官网预设形状切换');
     if (switched !== 'hexagon') throw new Error('官网形状类型控件无法选择完整预设目录');
-    await runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor });
+    // 源码薄包服务器只有编辑页；三页完整矩阵由生产入口执行。
+    await runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor }, ['editor']);
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {
@@ -765,7 +766,7 @@ try {
   const result = await runContract(await pageTarget(port, url));
   console.log(productionLanguages ? process.env.SITE_I18N_ONLY
     ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
-    : '\n\x1b[32m✓ 官网三张生产页面中英文静态切换通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
+    : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);
 } finally {
   if (browserRunning()) {

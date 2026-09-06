@@ -20,11 +20,11 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 5894 项，原性能门禁通过 | 2230 core + 1120 edit + 514 save + 194 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 5896 项，原性能门禁通过 | 2230 core + 1122 edit + 514 save + 194 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 550 对 | 85 份固件、275 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 355 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 389 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
 | PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
 
 ### 1.3 里程碑
@@ -117,7 +117,7 @@
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
 | 官网编辑页 | ✅ 独立 `editor.html`，本机打开/模板新建/编辑/保存/恢复 |
 | 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
-| 国际化 | ⚠️ 官网三页静态中英文、SEO、原地切换，编辑文件/模板/本机恢复、首页动态展示、查看器/样本预览、媒体、图表、查找替换/格式刷、页面备注/切换/动画时间线、对象格式/图片裁剪/链接、常用插入、187 种形状名称、动画预览/长按状态、选择窗格/搜索/文字编辑/图片选择无障碍名称及空占位符提示已接入；完整语言矩阵仍待验收，发布包不含站点词条 |
+| 国际化 | ✅ 官网三页完整中英文、SEO、原地切换、动态工具/上下文名称及错误恢复；键盘/触屏、根路径/子路径生产回归通过，发布包不含站点词条，详见[验收矩阵](site-i18n.md) |
 | 文件保存 UX | ⚠️ 仅 download，**未接 File System Access** |
 
 ---
