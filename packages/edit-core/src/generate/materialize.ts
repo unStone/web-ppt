@@ -43,6 +43,7 @@ import { allocatedProjectionSpids, generatedProjectionTree } from './projection-
 import { materializeGeneratedMasterDefaults } from './master-defaults';
 import { CompatibilityParts } from './compatibility-parts';
 import { compatibilityInsertion } from './compatibility';
+import { materializeGeneratedComments } from './comments';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -568,5 +569,6 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
     parts['ppt/presentation.xml'], doc,
   );
   compatibility.mergeInto(parts);
+  materializeGeneratedComments(parts, projections);
   return parts;
 }

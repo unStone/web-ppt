@@ -126,5 +126,5 @@ if (process.argv.includes('--corpus')) {
 }
 presentation.dispose();
 core.setChartExParser(null);
-recordCount('chartexNative', passed);
+if (!process.argv.includes('--corpus')) recordCount('chartexNative', passed);
 console.log(`ChartEx 原生专项通过（${passed} 项）`);

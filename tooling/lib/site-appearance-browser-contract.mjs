@@ -1,3 +1,4 @@
+import { runSiteMixedBrowserContract } from './site-mixed-browser-contract.mjs';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { openFixture, captureSaveAndReopen, selectPaneObject, changeValue } from './site-editor-browser-helpers.mjs';
@@ -62,6 +63,7 @@ export async function runSiteAppearanceBrowserContract(context) {
   await waitFor(mixed, '现代图表自动原生解析与经典数据共存');
   await captureSaveAndReopen(context, 'mixed-features-reopened.pptx');
   await waitFor(mixed, '混合功能保存重开');
+  await runSiteMixedBrowserContract(context);
   const screenshot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   writeFileSync(join(out, 'mixed-features.png'), Buffer.from(screenshot.result.data, 'base64'));
   writeFileSync(join(out, 'appearance-pixels.json'), JSON.stringify({ png:pixels[0], svg:pixels[1] }, null, 2)+'\n');

@@ -1,3 +1,4 @@
+import { download } from './download';
 import type { EditorSession } from '@web-ppt/editor';
 import { message, type SiteNotice } from './i18n/message';
 
@@ -13,7 +14,7 @@ export interface EditorFileActions {
   localTarget(session: EditorSession | null): string | undefined;
   saveLocal(session: EditorSession, name: string, chooseAgain?: boolean): Promise<void>;
   saveCopy(session: EditorSession, name: string): Promise<void>;
-  exportImages(session: EditorSession, name: string): Promise<void>;
+  exportImages(session: EditorSession, name: string, showComments?: boolean): Promise<void>;
 }
 
 type WritableHandle = FileSystemFileHandle & {
@@ -71,11 +72,6 @@ export function bindEditorFileOpen(
   });
 }
 
-function download(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  try { Object.assign(document.createElement('a'), { href: url, download: name }).click(); }
-  finally { window.setTimeout(() => URL.revokeObjectURL(url), 1000); }
-}
 
 /** 文件任务持有入口快照；异步期间不能改用后来打开的会话或文件名。 */
 export function createEditorFileActions(options: EditorFileActionsOptions): EditorFileActions {
@@ -152,7 +148,7 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
         } finally { prepared.release(); }
       });
     },
-    exportImages(session, name) {
+    exportImages(session, name, showComments = false) {
       return run('导出失败：{detail}', async () => {
         // 投影必须在首次 await 前固定；文档切换由 busy 隔离，避免释放其中的资源句柄。
         const presentation = session.toPresentation();
@@ -160,6 +156,7 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
         // 图片导出是可选大能力；只有用户点击时才进入官网编辑器分块。
         const { presentationToImageZip } = await import('@web-ppt/core/image-zip');
         const blob = await presentationToImageZip(presentation, {
+          showComments,
           onProgress: ({ completed, total }) => options.notice(message('正在导出图片 {completed} / {total}…', { completed, total })),
         });
         const stem = name.replace(/\.pptx$/i, '');

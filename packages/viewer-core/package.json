@@ -36,7 +36,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/viewer-core.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./comments": {
+      "types": "./dist/comments.d.ts",
+      "import": "./dist/comments.js"
+    }
   },
   "files": [
     "dist",
@@ -45,7 +49,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.comments.config.ts && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

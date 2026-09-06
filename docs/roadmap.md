@@ -13,7 +13,7 @@
 ### 1.1 一句话
 
 **路线图中已确定范围的功能已实现**：0.6 编辑、0.7 模板/主题、0.8 图表数据/现代图表/媒体，
-以及图片效果、立体编辑、画布读屏语义、EditContext 与官网自动按需加载。混合内容编辑与两条保存已接通。
+以及图片效果、立体编辑、画布读屏语义、EditContext、只读批注与官网自动按需加载。完整混合文稿已贯通历史、恢复、协同、本机文件及下载重开。
 用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
 beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api-stability.md)。
 
@@ -22,18 +22,18 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 6135 项，原性能门禁通过 | 2230 core + 1132 edit + 555 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx |
+| 断言总量 | `npm test` | ✅ 6186 项，原性能门禁通过 | 2230 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 588 对 | 88 份固件、294 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 594 对 | 89 份固件、297 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 432 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 458 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计 + 15 项 0.8 审计；原体积预算不变 |
 | PowerPoint 真机 | Windows 自托管工作流 | ⏸ 按用户要求跳过 | 已修复经典图表系列标题和子节点顺序；未将修复标为完整 Windows 验收通过 |
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 588 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 594 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -49,7 +49,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 
 | # | 首次发现 | 处理结果 | 固化守卫 |
 |---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，当前 4,741 项 | 各套件全绿后落盘，verify 定点比对 |
+| 1 | 三份文档的断言数全线过期 | 按实测同步，见上方门禁表 | 各套件全绿后落盘，verify 定点比对 |
 | 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
 | 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
 | 4 | collab 体积无发布入口声明 | 补 11.73KB gzip | 读取 `package.json#main` 后实测 gzip |
@@ -182,7 +182,7 @@ flowchart LR
 | **0.5.0** | 转正，零新能力 | 一致性闸门 ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
 | **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 | 无 |
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
-| **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) | 需真实语料 |
+| **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) | 功能完成；真实语料单独验收 |
 | **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
 一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
@@ -398,7 +398,7 @@ Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、�
 [统一输入约束](wayfinder/ppt-data-fidelity/research/chartex-data-model.md)已用于原生实现；歧义来源继续回退。
 
 `@web-ppt/core/chart-ex` 已实现 squarify、分层圆弧、分箱/Pareto、箱线、累计瀑布和源顺序比例漏斗，
-输出统一 Schema；默认不加载实现，官网暂保留回退。104 项专项、八页 Chrome 四类导出及两条保存通过。
+输出统一 Schema；SDK 默认不加载实现，官网按内容类型自动加载，失败时保留回退。104 项专项、八页 Chrome 四类导出及两条保存通过。
 Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布局 oracle。详见[按需 API 与验收边界](chartex-native.md)。
 
 **`regionMap` 明确不做**：需要几 MB 的世界行政区边界数据，塞进包里把成本落到每个用户头上，
@@ -441,11 +441,13 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。
 
-### 5.11 剩余编辑与交互面（已实现）
+### 5.12 剩余编辑与交互面（已实现）
 
 | 能力 | 入口与证据 |
 |---|---|
 | 图片/立体效果 | [appearance 按需 API](appearance-editing.md)，两条保存、清除/恢复、零厚度、历史/恢复/外部补丁与跨文稿复制 |
 | AT / EditContext | [浏览器增强](browser-editing.md)，对象身份/阅读顺序与真实 Chromium 原生输入、按需块失败回退 |
-| 产品集成 | 经典数据、ChartEx、媒体、图片与立体效果混合保存；PNG/独立 SVG 颜色及官网重开 |
+| 只读批注 | [面板与导出](comments.md)：四入口、默认关闭、跟随翻页，四种导出与两条 PPTX 保存 |
+| 产品集成 | 十页全类型混合、系列/类别/数值增删改、WAV/MP4、外观及批注；历史/冷恢复/协同、本机文件与下载重开 |
+| 0.8 门禁 | `verify-v08-readiness` 与包名产物契约，Office 清单统一，语料专项不污染默认计数 |
 | 1.0 准备 | [公开 API 契约与迁移](api-stability.md)，源码类型负例与产物 exports 构建守卫 |

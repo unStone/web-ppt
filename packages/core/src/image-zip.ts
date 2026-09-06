@@ -15,6 +15,8 @@ export interface PresentationImageZipProgress {
 }
 
 export interface PresentationImageZipOptions {
+  /** 导出图片包含批注标记；默认 false。 */
+  showComments?: boolean;
   /** 相对演示文稿原始像素尺寸的倍数，默认 2。 */
   scale?: number;
   /** 是否跳过被标记为隐藏的页；默认 false。 */
@@ -48,14 +50,14 @@ interface PageJob {
 
 function optionsOf(options: PresentationImageZipOptions): Required<Pick<
   PresentationImageZipOptions, 'scale' | 'skipHidden' | 'concurrency'
->> & Pick<PresentationImageZipOptions, 'onProgress'> {
+>> & Pick<PresentationImageZipOptions, 'onProgress' | 'showComments'> {
   const scale = options.scale ?? 2;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   if (!Number.isFinite(scale) || scale <= 0) throw new RangeError('scale 必须是大于 0 的有限数');
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_CONCURRENCY) {
     throw new RangeError(`concurrency 必须是 1–${MAX_CONCURRENCY} 的整数`);
   }
-  return { scale, concurrency, skipHidden: options.skipHidden ?? false, onProgress: options.onProgress };
+  return { scale, concurrency, skipHidden: options.skipHidden ?? false, onProgress: options.onProgress, showComments: options.showComments };
 }
 
 function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
@@ -67,10 +69,11 @@ function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
   });
 }
 
-async function renderPage(pres: Presentation, job: PageJob, scale: number): Promise<Uint8Array> {
+async function renderPage(pres: Presentation, job: PageJob, scale: number, showComments?: boolean): Promise<Uint8Array> {
   try {
     const blob = await slideToPngWithOptions(pres, job.slide, {
       scale,
+      showComments,
       hiddenElements: [...staticHidden(job.slide)],
       strictResources: true,
     });
@@ -107,7 +110,7 @@ export async function presentationToImageZip(
     for (let start = 0; start < jobs.length; start += normalized.concurrency) {
       const batch = jobs.slice(start, start + normalized.concurrency);
       const outcomes = await Promise.allSettled(
-        batch.map((job) => renderPage(pres, job, normalized.scale)),
+        batch.map((job) => renderPage(pres, job, normalized.scale, normalized.showComments)),
       );
       const failed = outcomes.find((outcome) => outcome.status === 'rejected');
       if (failed?.status === 'rejected') throw failed.reason;

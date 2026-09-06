@@ -63,6 +63,18 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...escape });
     await waitFor("document.querySelector('.preview').hidden && !document.querySelector('.preview #siteLanguage')", '错误时 Esc 归还入口');
     for (const code of [503, 200]) await runGalleryLateResponseContract(context, card, pending, body, code);
+    await click(`${card} button`);
+    await waitFor("!!document.querySelector('.preview-stage .loading-label')", '批注样本加载');
+    const commentBody = await evaluate("fetch('/fixtures/sample-editor-comments.pptx').then(r=>r.arrayBuffer()).then(b=>btoa(String.fromCharCode(...new Uint8Array(b))))", true);
+    await request('Fetch.fulfillRequest', { requestId: pending.shift(), responseCode: 200, body: commentBody,
+      responseHeaders: [{ name: 'Access-Control-Allow-Origin', value: '*' }] });
+    await waitFor("document.querySelector('.preview-stage svg')", '批注样本渲染');
+    await click('.preview-comments');
+    await waitFor("document.querySelectorAll('#commentsPanel li').length === 2", '样本批注');
+    await click('.preview-next');
+    await waitFor("document.querySelectorAll('#commentsPanel li').length === 1", '样本批注翻页');
+    await click('.preview-close');
+    if (await evaluate("!!document.querySelector('#commentsPanel')")) throw new Error('关闭预览未释放批注');
   } finally {
     for (const requestId of pending) await request('Fetch.failRequest', { requestId, errorReason: 'Aborted' });
     await Promise.all(transfers);

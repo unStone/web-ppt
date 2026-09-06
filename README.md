@@ -439,11 +439,12 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 555 项 + PowerPoint 证据 9 项 + 88 份固件、588 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 89 份固件、594 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
 | `npm run test:chartex` | ChartEx 原生 104 项断言：层级与统计边界、配置继承、两种文本及保存路径 |
+| `npm run test:comments` | 批注保存与导出 31 项断言：复制/恢复、两条保存、只读面板、默认关闭与安全转义；[批注交付](docs/comments.md) |
 | `npm run test:media` | 媒体插入 870 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存和严格 XML；[阶段 API](docs/media-insertion.md) |
 | `npm run test:editor` | 444 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
@@ -576,3 +577,5 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 ## 许可
 
 [MIT](LICENSE)
+
+[只读批注与导出](docs/comments.md)：`@web-ppt/viewer-core/comments`、`showComments`。

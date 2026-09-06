@@ -1,3 +1,4 @@
+import { runCommentsSaveContract } from './lib/comments-save-contract.mjs';
 /** M1 只从发布入口取证，避免保存器内部 helper 与测试共享同一个错误。 */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -468,6 +469,7 @@ await runFindReplaceSaveContract({ edit, core, load, check, saveArtifact });
 await runTransitionSaveContract({ edit, core, load, check, saveArtifact });
 await runAnimationSaveContract({ edit, core, load, check, saveArtifact });
 
+await runCommentsSaveContract({ core, edit, load, out, check });
 await runAppearanceSaveContract({ core, edit, load, check, eq, root, out });
 await runMixedEditingContract({ root, out, check, eq });
 const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();

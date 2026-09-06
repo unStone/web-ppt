@@ -40,6 +40,7 @@
       "@web-ppt/vue/templates": ["./packages/vue/src/templates/index.ts"],
       "@web-ppt/vue/chart": ["./packages/vue/src/chart/index.ts"],
       "@web-ppt/vue/media": ["./packages/vue/src/media/index.ts"],
+      "@web-ppt/viewer-core/comments": ["./packages/viewer-core/src/comments.ts"],
       "@web-ppt/viewer-core": ["./packages/viewer-core/src/index.ts"],
       "@web-ppt/fonts": ["./packages/fonts/src/index.ts"]
     }
@@ -57,6 +58,7 @@
     "tooling/type-contracts/media.ts",
     "tooling/type-contracts/appearance-browser.ts",
     "tooling/type-contracts/chartex.ts",
+    "tooling/type-contracts/comments.ts",
     "tooling/type-contracts/site-i18n.ts"
   ]
 }

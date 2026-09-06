@@ -1,3 +1,4 @@
+import { bindCommentsTools } from './comments-tools';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
@@ -42,6 +43,11 @@ const pPager = $<HTMLElement>('#pPager');
 const cjkBtn = $<HTMLButtonElement>('#cjkFonts');
 
 let viewer: Viewer | null = null;
+let activeName = 'presentation';
+const commentsTools = bindCommentsTools($<HTMLButtonElement>('#commentsTools'), () => {
+  const current = viewer;
+  return current ? { owner: current, slide: current.slide, presentation: () => current.presentation, name: activeName } : null;
+});
 /** 当前这份文件的字节，供「下载」直接用——已经在内存里，不必再走一次网络 */
 let currentUrl: string | null = null;
 
@@ -88,6 +94,8 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   }
   const parseMs = performance.now() - t0;
 
+  commentsTools.reset();
+  activeName = label;
   viewer?.destroy();
   stage.innerHTML = '';
   viewer = new Viewer(stage, pres, { skipHidden: true });
@@ -176,6 +184,7 @@ cjkBtn.addEventListener('click', () => {
 });
 
 function sync(): void {
+  commentsTools.sync();
   if (!viewer) return;
   pager.textContent = `${viewer.index + 1} / ${viewer.count}`;
   pPager.textContent = pager.textContent;

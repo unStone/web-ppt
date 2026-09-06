@@ -1,6 +1,6 @@
 ---
 title: 原生渲染统计与流程扩展图表
-status: open
+status: closed
 assignee: /root
 labels:
   - wayfinder:task
@@ -21,12 +21,16 @@ blocked_by:
 验收覆盖六类原生 cx 与 regionMap fallback 的混合文稿，真实 Chrome、独立 SVG、打印、PNG、LibreOffice、
 主题继承和性能门禁全绿；未知 cx 扩展逐字节保留，未启用入口时默认包体积不增长。
 
-## 已实现，等待来源验收
+## 功能完成，来源验收单列
 
 固定/自动分箱、左右闭合与上下溢出、类别聚合及 Pareto、四分位/均值/异常点、累计瀑布及漏斗已实现。
 分箱计数和标签共用区间，隐藏异常点时可见均值仍留在轴域中；非有限值和歧义来源逐对象回退。
 真实漏斗按 Office 输入采用横条比例，原先“梯形”描述不作为未经证实的要求。
 
 与层级能力共享 104 项专项、八页 Chrome 四类导出和两条保存；真实漏斗另有三项输入回归。
-本票保持开放：其余类型原始 PPTX 与 Office 原生布局对照尚缺，官网已按内容类型自动加载原生入口，失败和不支持的类型保持 Office fallback。
+本票按用户确认的功能交付标准关闭；独立来源验收仍缺：其余类型原始 PPTX 与 Office 原生布局对照尚缺，官网已按内容类型自动加载原生入口，失败和不支持的类型保持 Office fallback。
 见[能力与来源边界](../../../chartex-native.md)。
+
+## 功能交付决定（2026-09-07）
+
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。

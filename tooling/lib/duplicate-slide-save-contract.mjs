@@ -42,9 +42,9 @@ export async function runDuplicateSlideSaveContract({
   check('页面复制保存耗时已实测', Number.isFinite(elapsedMs) && elapsedMs >= 0);
 
   const diff = diffPackageBytes(input, saved.bytes);
-  check('最小保存只新增副本 slide/notes 闭包并改写页索引与后续页码',
+  check('最小保存只新增副本 slide/notes/comments 闭包并改写页索引与后续页码',
     diff.added.join(',') === [
-      'ppt/notesSlides/_rels/notesSlide5.xml.rels',
+      'ppt/comments/web-ppt-slide5.xml', 'ppt/notesSlides/_rels/notesSlide5.xml.rels',
       'ppt/notesSlides/notesSlide5.xml',
       'ppt/slides/_rels/slide5.xml.rels',
       'ppt/slides/slide5.xml',
@@ -69,11 +69,12 @@ export async function runDuplicateSlideSaveContract({
       && presentationXml.includes('value="presentation-tail"')
       && presentationRels.includes('Id="rId301"')
       && presentationRels.includes('Target="slides/slide5.xml"'));
-  check('slide rels 保留 rId、共享与未知目标，只把 notes 指向独立 part',
+  check('slide rels 保留 rId、共享与未知目标，notes 与批注指向独立 part',
     slideRels.includes('Id="rId8"') && slideRels.includes('../media/shared.png')
       && slideRels.includes('Id="rId9"') && slideRels.includes('../notesSlides/notesSlide5.xml')
       && !slideRels.includes('../notesSlides/notesSlide2.xml')
-      && slideRels.includes('Id="rId96"') && slideRels.includes('../comments/commentKeep.xml')
+      && slideRels.includes('Id="rId96"') && slideRels.includes('../comments/web-ppt-slide5.xml')
+      && decode(parts, 'ppt/comments/web-ppt-slide5.xml').includes('只保留不级联')
       && slideRels.includes('Id="rId97"') && slideRels.includes('../charts/chartKeep.xml')
       && slideRels.includes('Id="rId99" Type="urn:web-ppt:unknown"'));
   check('独立 notes 保留外链与 notesMaster，并把回指改到新 slide',

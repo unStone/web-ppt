@@ -1,3 +1,4 @@
+import { escapeXml } from './render/serialize';
 import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 import { renderSlideToSvg } from './render/svg';
 import type { Presentation, Slide } from './types';
@@ -96,7 +97,12 @@ async function loadSvgImage(svg: string): Promise<HTMLImageElement> {
   return image;
 }
 
-interface RasterOptions {
+export interface CommentExportOptions {
+  /** 包含来源批注标记，默认 false；打印同时附上批注正文。 */
+  showComments?: boolean;
+}
+
+interface RasterOptions extends CommentExportOptions {
   scale: number;
   hiddenElements?: readonly number[];
   strictResources?: boolean;
@@ -113,6 +119,7 @@ async function rasterize(
   const svg = await inlineImages(renderSlideToSvg(pres, slide, {
     textMode,
     hiddenElements: options.hiddenElements,
+    showComments: options.showComments,
   }), options.strictResources);
   const image = await loadSvgImage(svg);
   const canvas = document.createElement('canvas');
@@ -149,8 +156,8 @@ export async function slideToPngWithOptions(
 }
 
 /** 单页导出为 PNG Blob；优先复用浏览器 HTML 排版，污染画布时退回原生 SVG 文本。 */
-export function slideToPng(pres: Presentation, slide: Slide, scale = 2): Promise<Blob> {
-  return slideToPngWithOptions(pres, slide, { scale });
+export function slideToPng(pres: Presentation, slide: Slide, scale = 2, options: CommentExportOptions = {}): Promise<Blob> {
+  return slideToPngWithOptions(pres, slide, { scale, showComments: options.showComments });
 }
 
 /** 单页导出为不含 foreignObject、可交付给设计工具的自包含 SVG。 */
@@ -158,11 +165,12 @@ export async function slideToSvgFile(
   pres: Presentation,
   slide: Slide,
   hiddenElements?: readonly number[],
+  options: CommentExportOptions = {},
 ): Promise<string> {
-  return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg', hiddenElements }));
+  return inlineImages(renderSlideToSvg(pres, slide, { textMode: 'svg', hiddenElements, showComments: options.showComments }));
 }
 
-export interface PrintableOptions {
+export interface PrintableOptions extends CommentExportOptions {
   /** 有动画的页按点击批次展开；默认每页只导出动画终态。 */
   animationSteps?: boolean;
 }
@@ -176,20 +184,14 @@ export async function presentationToPrintableHtml(
   for (const slide of pres.slides) {
     const groups = options.animationSteps ? groupSteps(slide.animations) : [];
     if (!groups.length) {
-      jobs.push(slideToSvgFile(pres, slide, [...staticHidden(slide)]));
+      jobs.push(slideToSvgFile(pres, slide, [...staticHidden(slide)], options));
       continue;
     }
     for (let index = 0; index <= groups.length; index++) {
-      jobs.push(slideToSvgFile(pres, slide, [...hiddenBefore(groups, index)]));
+      jobs.push(slideToSvgFile(pres, slide, [...hiddenBefore(groups, index)], options));
     }
   }
   const pages = await Promise.all(jobs);
-  return '<!doctype html><html><head><meta charset="utf-8"><title>slides</title><style>'
-    + `@page{size:${Math.round(pres.width)}px ${Math.round(pres.height)}px;margin:0}`
-    + 'html,body{margin:0;padding:0}'
-    + '.pg{page-break-after:always;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}'
-    + '.pg svg{width:100%;height:100%}'
-    + '</style></head><body>'
-    + pages.map((page) => `<div class="pg">${page}</div>`).join('')
-    + '</body></html>';
+  const { printDocument } = await import('./comment-export');
+  return printDocument(pres, pages, options.showComments, escapeXml);
 }

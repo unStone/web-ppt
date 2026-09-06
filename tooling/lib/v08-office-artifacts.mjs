@@ -3,6 +3,7 @@ import { mediaArtifacts } from './media-artifacts.mjs';
 
 export const V08_EXTRA_SOURCES = Object.freeze([
   ...['patched', 'generated'].flatMap((mode) => [
+    { file: `comments-${mode}.pptx`, slides: 4, source: `out/edit-save/comments-${mode}.pptx` },
     { file: `appearance-${mode}.pptx`, slides: 1, source: `out/edit-save/appearance-${mode}.pptx` },
     { file: `mixed-${mode}.pptx`, slides: 10, source: `out/edit-save/mixed-${mode}.pptx` },
   ]),

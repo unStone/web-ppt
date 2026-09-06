@@ -1,5 +1,6 @@
+import { bindCommentsTools } from './comments-tools';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
-import { parse, presentationToPrintableHtml, slideToSvgFile, slideText } from '@web-ppt/core';
+import { parse, presentationToPrintableHtml, slideToPng, slideToSvgFile, slideText } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 import type { Presentation } from '@web-ppt/core';
 
@@ -21,6 +22,7 @@ const animInfo = $('animInfo');
 const presenter = $('presenter');
 
 let viewer: Viewer | null = null;
+const commentsTools = bindCommentsTools($<HTMLButtonElement>('btnComments'), () => viewer);
 let pres: Presentation | null = null;
 let toastTimer = 0;
 let fitMode = true;
@@ -68,6 +70,7 @@ function stepZoom(dir: 1 | -1): void {
 // ---------- 渲染 ----------
 
 function updateChrome(): void {
+  commentsTools.sync();
   if (!viewer) return;
   pageIndicator.textContent = `${viewer.index + 1} / ${viewer.count}`;
   thumbs.querySelectorAll('.thumb').forEach((t, i) => t.classList.toggle('active', i === viewer!.index));
@@ -83,6 +86,7 @@ async function openData(data: ArrayBuffer, name: string): Promise<void> {
     const ms = Math.round(performance.now() - t0);
     pres = parsed;
 
+    commentsTools.reset();
     viewer?.destroy();
     stage.innerHTML = '';
     viewer = new Viewer(stage, parsed, { animate: false, autoAdvance: false, skipHidden: true });
@@ -266,20 +270,20 @@ async function withToast(label: string, fn: () => Promise<void>): Promise<void> 
 const exportPng = (): Promise<void> =>
   withToast('导出 PNG', async () => {
     if (!viewer) return;
-    download(await viewer.exportPng(2), `slide-${viewer.index + 1}.png`);
+    download(await slideToPng(viewer.presentation, viewer.slide, 2, { showComments: commentsTools.showComments }), `slide-${viewer.index + 1}.png`);
   });
 
 const exportSvg = (): Promise<void> =>
   withToast('导出 SVG', async () => {
     if (!viewer || !pres) return;
-    const svg = await slideToSvgFile(pres, viewer.slide);
+    const svg = await slideToSvgFile(pres, viewer.slide, undefined, { showComments: commentsTools.showComments });
     download(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `slide-${viewer.index + 1}.svg`);
   });
 
 const exportPdf = (): Promise<void> =>
   withToast('生成打印视图', async () => {
     if (!pres) return;
-    const html = await presentationToPrintableHtml(pres);
+    const html = await presentationToPrintableHtml(pres, { showComments: commentsTools.showComments });
     const win = window.open('', '_blank');
     if (!win) throw new Error('浏览器阻止了新窗口，请允许弹窗');
     win.document.write(html);

@@ -1,6 +1,6 @@
 ---
 title: 完成 0.8 集成验收
-status: open
+status: closed
 labels:
   - wayfinder:task
 parent: ../map.md
@@ -30,8 +30,8 @@ README、CHANGELOG 与路线图按实测同步。`npm run check && npm test && n
 
 ## 已推进
 
-- 全部现有媒体保存矩阵与 ChartEx 补丁/生成保存已纳入 34 件统一 Office 清单，LibreOffice 与 Windows 工作流同源。
-- 34 件工件已逐件通过 LibreOffice 打开和 PDF 导出；这不代替现代 Office 的原生图表或媒体播放验收。
+- 全部现有媒体保存矩阵与 ChartEx 补丁/生成保存已纳入 36 件统一 Office 清单，LibreOffice 与 Windows 工作流同源。
+- 36 件工件已逐件通过 LibreOffice 打开和 PDF 导出；这不代替现代 Office 的原生图表或媒体播放验收。
 - 默认入口无 ChartEx 布局/工作簿实现，独立 OPC 子包不因解析上下文继承引入 core。
 - 八页原生/地图回退的屏幕、独立 SVG、PNG、打印与编辑保存专项已接入全量测试。
 
@@ -42,3 +42,7 @@ Chrome 重开、双色调 PNG/SVG 像素与原生 IME 已通过专项验证。AP
 用户于 2026-09-06 明确要求跳过 Windows 真机，本轮不继续传输或执行远程验证。
 经典图表保存问题已定位并修正：系列标题应为 `c:tx/c:v` 或 `c:strRef`，`c:ser` 必须位于绘图设置之前；
 严格 XML 回归覆盖工作簿和缓存数据源，不将修复本身标为 Windows 整轮通过。
+
+## 功能交付决定（2026-09-07）
+
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。

@@ -500,7 +500,7 @@ function applyPatchBatch(
   }
   if (structural) for (const patch of appliedPatches) {
     if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
-      retainInsertionSources(doc, Object.values(patch.value.records));
+      retainInsertionSources(doc, patch.value);
     }
   }
   applyPatchValues(doc, appliedPatches);

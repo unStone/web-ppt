@@ -1,3 +1,5 @@
+import { runStandaloneCommentsBrowserContract } from './lib/standalone-comments-browser-contract.mjs';
+import { runSiteCommentsBrowserContract } from './lib/site-comments-browser-contract.mjs';
 import { runSiteAppearanceBrowserContract } from './lib/site-appearance-browser-contract.mjs';
 import { runSiteEditContextFailureContract } from './lib/site-edit-context-browser-contract.mjs';
 /** 官网产品层的 .ppt 转换确认、零命令拒绝与下载命名必须在真实浏览器观察。 */
@@ -29,6 +31,7 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/viewer-core/comments', join(root, 'packages/viewer-core/src/comments.ts')],
   ['@web-ppt/core/modern-charts', join(root, 'packages/core/src/modern-charts.ts')],
   ['@web-ppt/core/chart-ex', join(root, 'packages/core/src/chart-ex.ts')],
   ['@web-ppt/edit-core/appearance', join(root, 'packages/edit-core/src/appearance/index.ts')],
@@ -162,6 +165,8 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-editor-comments.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-comments.pptx'))]],
+  ['/fixtures/sample-editor-audio-icon.png', ['image/png', readFileSync(join(root, 'fixtures/sample-editor-audio-icon.png'))]],
   ['/fixtures/sample-editor-appearance.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-appearance.pptx'))]],
   ['/fixtures/mixed-patched.pptx', ['application/octet-stream', readFileSync(join(root, 'out/edit-save/mixed-patched.pptx'))]],
   ['/fixtures/sample-editor-add-media.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'))]],
@@ -209,6 +214,13 @@ if (productionLanguages) {
   if (saveChunks.length !== 1) throw new Error('找不到生产序列化模块边界');
   if (chartChunks.tools.length !== 1 || chartChunks.data.length !== 1) throw new Error('找不到生产图表工具与数据模块边界');
 }
+const standaloneBundle = join(out, 'standalone.mjs');
+execFileSync('npx', ['esbuild', join(root, 'packages/viewer/src/main.ts'), '--bundle', '--format=esm', '--platform=browser',
+  '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${standaloneBundle}`], { cwd: root, stdio: 'inherit' });
+routes.set('/standalone.mjs', ['text/javascript', readFileSync(standaloneBundle)]);
+routes.set('/standalone.css', ['text/css', readFileSync(join(root, 'packages/viewer/src/style.css'))]);
+routes.set('/standalone.html', ['text/html', readFileSync(join(root, 'packages/viewer/index.html'), 'utf8')
+  .replace('/src/main.ts', '/standalone.mjs').replace('/src/style.css', '/standalone.css')]);
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
 routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
@@ -375,6 +387,7 @@ async function runContract(webSocketDebuggerUrl) {
       status: document.querySelector('#statusText')?.textContent,
       loading: document.querySelector('#editorApp')?.dataset.loading,
       file: document.querySelector('#fileName')?.textContent,
+      chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
       language: document.documentElement.lang,
       viewer: { pager: document.querySelector('#pager')?.textContent, meta: document.querySelector('#meta')?.textContent,
         preview: document.querySelector('.preview-meta')?.textContent, stage: document.querySelector('.stage .err')?.textContent },
@@ -446,12 +459,14 @@ async function runContract(webSocketDebuggerUrl) {
       await waitFor(`(${featureReady}) || document.querySelector('#recoveryPrompt')?.hidden === false`, '生产外观页面就绪');
       if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
       await waitFor(featureReady, '生产外观文稿就绪');
+      await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
       await runSiteAppearanceBrowserContract({ evaluate, request, waitFor, click, out });
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }
     await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
     await runNativeChartExBrowserContract({ evaluate, request, out });
+    await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
     await evaluate(`(() => {
       const original = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function () {
@@ -580,6 +595,7 @@ async function runContract(webSocketDebuggerUrl) {
       exportDisabled: document.querySelector('#exportImages')?.disabled,
       saveDisabled: document.querySelector('#saveFile')?.disabled,
       file: document.querySelector('#fileName')?.textContent,
+      chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
     }))()`);
     if (!exportBusy.newDisabled || !exportBusy.inputDisabled || !exportBusy.exportDisabled
       || !exportBusy.saveDisabled || !exportBusy.file.endsWith('未命名演示文稿.pptx')) {
@@ -788,6 +804,8 @@ async function runContract(webSocketDebuggerUrl) {
     const checkedInputFailure = await runSiteEditContextFailureContract({ evaluate, click, request, waitFor }, () => { rejectEditContext = true; });
     if (checkedInputFailure && !rejectedEditContextLoads) throw new Error('未实际触发 EditContext 模块下载失败');
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
+    await runStandaloneCommentsBrowserContract({ evaluate, request, waitFor, click });
+    if (consoleFailures.length) throw new Error(`独立查看器错误：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {
     socket.terminate();

@@ -20,7 +20,10 @@ export function generatedValidationDoc(doc: EditDoc): EditDoc {
       ...insertion, resources: insertion.resources?.map(resource),
     } } }];
   }));
-  for (const slide of Object.values(doc.slides)) retain(slide.creation?.duplicateSourcePart);
+  for (const slide of Object.values(doc.slides)) {
+    retain(slide.creation?.duplicateSourcePart);
+    retain(slide.creation?.duplicateNotesSourcePart);
+  }
   return {
     ...doc, elements, meta: { ...doc.meta, readonly: true }, package: null,
     imageResources: Object.fromEntries(Object.entries(doc.imageResources).map(([key, value]) => [key, resource(value)])),

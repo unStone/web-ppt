@@ -1,3 +1,4 @@
+import { materializeDuplicateComments } from './comments';
 import { commitSavedPackage } from '../document';
 import { hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { validateEditDoc } from '../model-invariants';
@@ -509,6 +510,7 @@ export function saveEditDoc(
     changes[part] = materializeThemePart(nextBaselines[part], doc.themes[part]);
   }
 
+  materializeDuplicateComments(doc, activeCreatedSlides, nextBaselines, nextCreatedParts, changes);
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);
   commitSavedPackage(doc, result.package, nextBaselines, [...nextCreatedParts].sort());
   return result;

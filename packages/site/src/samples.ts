@@ -1,3 +1,4 @@
+import { bindCommentsTools } from './comments-tools';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
@@ -110,7 +111,7 @@ overlay.innerHTML =
   '<button class="chip act preview-share">复制链接</button>' +
   // download 属性等预览真的拿到文件、有了 href 再补上，理由同 index.html
   '<a class="chip act preview-dl">下载</a>' +
-  '<button class="chip act preview-full">全屏演示</button>' +
+  '<button class="chip preview-comments" type="button"></button><button class="chip act preview-full">全屏演示</button>' +
   '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>' +
   '</div>' +
   '<div class="stage-wrap preview-wrap"><div class="stage preview-stage"></div></div>' +
@@ -161,7 +162,15 @@ async function ensureFonts(): Promise<void> {
   v.refresh();
 }
 
+const commentsButton = q<HTMLButtonElement>('.preview-comments');
+setText(commentsButton, '批注');
+const commentsTools = bindCommentsTools(commentsButton, () => {
+  const current = viewer;
+  return current ? { owner: current, slide: current.slide, presentation: () => current.presentation, name: pTitle.textContent ?? 'sample' } : null;
+});
+
 function syncPager(): void {
+  commentsTools.sync();
   if (!viewer) return;
   pPager.textContent = `${viewer.index + 1} / ${viewer.count}`;
 }
@@ -174,6 +183,7 @@ function closePreview(): void {
   releaseFullscreenLanguage();
   restoreLanguage?.(); restoreLanguage = undefined;
   syncUrl();
+  commentsTools.reset();
   viewer?.destroy();
   viewer = null;
   if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
@@ -202,6 +212,7 @@ async function openSample(s: Sample): Promise<void> {
   setText(pMeta, '下载中…');
   pPager.textContent = '— / —';
   pDl.hidden = true;
+  commentsTools.reset();
   viewer?.destroy();
   viewer = null;
   setProgress(0, 0);

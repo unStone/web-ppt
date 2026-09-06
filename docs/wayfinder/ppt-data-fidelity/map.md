@@ -1,6 +1,6 @@
 ---
 title: 完成 0.8 数据与保真
-status: open
+status: closed
 labels:
   - wayfinder:map
 tracker: local-markdown
@@ -10,7 +10,7 @@ tracker: local-markdown
 
 让 Web-PPT 0.8 能在浏览器内安全编辑经典图表数据、解析并原生渲染除地图外的现代扩展图表、插入可交付的
 音视频，并让官网完整支持中英文和本机文件双路径保存；每项能力都沿用统一 Schema、历史、恢复、协同和两种保存路径，默认查看及
-未使用能力不承担新增代码、模型或网络成本。完成态是仓库达到可发版状态，不包含 tag、推送或 npm 发布。
+未使用能力不承担新增代码、模型或网络成本。本轮完成态按用户确认的功能交付标准验收；外部来源/真机验证另列，不包含 tag、推送或 npm 发布。
 
 ## Notes
 
@@ -31,7 +31,7 @@ tracker: local-markdown
 - 完成代码后运行 `npm run check && npm test && npm run build && npm run verify`；不放宽现有性能、体积或
   确定性预算。
 - 本地 Markdown 票据以 `tickets/*.md` 表示；`status: open`、无 `assignee` 且 `blocked_by` 全部关闭的票据
-  位于前沿。一次会话最多关闭一张票，开始实现前先写 `assignee: /root`。
+  位于前沿。本轮按用户“全部功能”要求统一收口；开始实现前登记 `assignee: /root`。
 
 ## Decisions so far
 
@@ -42,19 +42,21 @@ tracker: local-markdown
 - [让官网完整支持中英文](tickets/006-site-i18n.md)已关闭：三页静态与动态产品界面、键盘/触屏、错误恢复及原文隔离完整验收，四项门禁和根/子路径生产回归通过。
 - [本机文件双路径保存](tickets/009-local-file-save.md)已关闭：选择器/会话目标、显式下载与延迟保存点，故障/历史/冷恢复及四项门禁、根/子路径生产回归通过。
 
-## In progress
+## 外部验收（不阻塞功能交付）
 
 - [确认扩展图表回退与真实语料边界](tickets/002-chartex-fallback-corpus.md)已补真实漏斗的 Chrome/独立 SVG
   视觉证据、9 个源文件的缓存／工作簿核对与层级主来源调查；其他类型原始 PPTX、完整层级语义与原生布局仍缺证。
 - [层级](tickets/003-chartex-hierarchy-rendering.md)与[统计](tickets/004-chartex-statistical-rendering.md)原生实现已提供按需入口；
   104 项专项、八页 Chrome 导出、配置继承及两条保存已通过。真实漏斗另有三项语料回归，其他类型原始 PPTX
-  和 Office 原生布局仍待验收，因此未关闭票据。详见[能力边界](../../chartex-native.md)。
-- [集成验收](tickets/007-v08-integration-readiness.md)的统一 Office 清单已扩至 34 件经典图表、ChartEx 与媒体产物，
+  和 Office 原生布局仍待独立验收；功能票已关闭。详见[能力边界](../../chartex-native.md)。
+- [集成验收](tickets/007-v08-integration-readiness.md)的统一 Office 清单已扩至 36 件经典图表、ChartEx 与媒体产物，
   Windows 工作流接入同一清单。已连接的 PowerPoint 16.0 Build 4266 可运行交互桌面探针，但现代图表全部显示图片。
 - [插入可交付的音视频](tickets/005-media-insertion.md)已实现 WAV / MP4（含分片）、显式外链、默认音频图标、海报替换与框架/官网按需入口；历史/恢复/协同与两条保存共用现有资源模型。官网原生播放、失效外链降级与冷启动媒体恢复已接通，PowerPoint 实测仍待完成。
 
 ## 功能收口
 
+- [批注与全类型混合交付](tickets/011-roadmap-functional-completion.md)已完成：四入口只读批注、四类导出、复制/两条保存与完整混合旅程。
+- [0.8 统一完成度](tickets/007-v08-integration-readiness.md)进入 `verify`；源码与包名产物共用批注和混合契约，来源专项不污染默认计数。
 - [剩余编辑与浏览器交互](tickets/010-remaining-editing-surfaces.md)：图片效果、立体设置、AT 与 EditContext，
   官网现代图表自动按需加载，以及混合内容的浏览器/保存旅程已实现。
 - [API 契约与迁移准备](../../api-stability.md)已补公开类型与 exports 回归；正式 1.0 冻结等待 beta 反馈。

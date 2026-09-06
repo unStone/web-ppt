@@ -1,3 +1,4 @@
+import { bindCommentsTools } from './comments-tools';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { setFontDecoder } from '@web-ppt/core';
 import {
@@ -153,6 +154,8 @@ function syncControls(): void {
   syncChartInspector();
   slideInspector?.sync();
   productTools.sync();
+  commentsTools.sync();
+  commentsButton.disabled = !ready;
   recovery.sync(session);
 }
 
@@ -263,6 +266,7 @@ function handleContextRequest(request: EditorContextRequest): void {
 }
 
 function disposeCurrent(): void {
+  commentsTools.reset();
   releaseLabels.forEach((release) => release());
   releaseLabels = [];
   adjustments?.destroy();
@@ -451,7 +455,7 @@ buttons.media.addEventListener('click', () => void run(async () => {
 }));
 buttons.exportImages.addEventListener('click', () => {
   const current = session;
-  if (current) void fileActions.exportImages(current, outputName());
+  if (current) void fileActions.exportImages(current, outputName(), commentsTools.showComments);
 });
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
@@ -522,6 +526,11 @@ function closeInspector(): void {
   buttons.inspector.setAttribute('aria-expanded', 'false');
 }
 
+const commentsButton = document.querySelector<HTMLButtonElement>('#commentsTools')!;
+const commentsTools = bindCommentsTools(commentsButton, () => {
+  const current = session, slideId = view?.slideId;
+  return current && slideId ? { owner: current, slide: current.editor.toSlide(slideId), presentation: () => current.toPresentation(), name: activeName } : null;
+});
 const recovery = createSiteRecovery(notice);
 const fileActions = createEditorFileActions({
   notice, onBusyChange: syncControls, onSaved: (saved) => { void recovery.flush(saved); },

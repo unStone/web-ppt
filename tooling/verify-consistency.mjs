@@ -226,7 +226,7 @@ if (!siteStat) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'media', 'chartexNative',
+    'metafile', 'media', 'chartexNative', 'comments',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -338,6 +338,7 @@ if (!counts) {
     ['README.md', /兼容回退 ([\d,]+) 项断言/, ['chartexFallback']],
     ['README.md', /ChartEx 原生 ([\d,]+) 项断言/, ['chartexNative']],
     ['README.md', /媒体插入 ([\d,]+) 项断言/, ['media']],
+    ['README.md', /批注保存与导出 ([\d,]+) 项断言/, ['comments']],
     ['README.md', /([\d,]+) 项会话 \/ adapter/, ['editor']],
     ['README.md', /EMF \/ WMF \/ PICT 解码器，([\d,]+) 项断言/, ['metafile']],
     ['README.md', /React \/ Vue 的 ([\d,]+) 项 SSR/, ['adapters']],
@@ -350,12 +351,13 @@ if (!counts) {
     ['README.en.md', /([\d,]+) compatibility-fallback assertions/, ['chartexFallback']],
     ['README.en.md', /([\d,]+) native-ChartEx assertions/, ['chartexNative']],
     ['README.en.md', /([\d,]+) media-insertion assertions/, ['media']],
+    ['README.en.md', /([\d,]+) comment assertions/, ['comments']],
     ['README.en.md', /([\d,]+) adapter\/session/, ['editor']],
     ['README.en.md', /decoders — ([\d,]+) assertions/, ['metafile']],
     ['README.en.md', /([\d,]+) React \/ Vue SSR/, ['adapters']],
-    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
+    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
       ['core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-        'metafile', 'media', 'chartexNative']],
+        'metafile', 'media', 'chartexNative', 'comments']],
     ['AGENTS.md', /([\d,]+) 对编辑等价指纹/, ['equivalence']],
   ];
   let countClaims = 0;

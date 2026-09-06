@@ -33,6 +33,18 @@ export async function runSiteI18nViewerContract({ evaluate, request, click, wait
   await click('[data-site-locale="en"]');
   await waitFor("document.querySelector('#meta').textContent.includes('Slides: 1') && document.querySelector('#meta').textContent.includes('Parse ')", '本地文件元数据切英文');
   if (!await evaluate("document.querySelector('#meta').textContent.startsWith('<本地 & 文件>.pptx') && document.querySelector('#download').hidden && !document.querySelector('#meta').children.length")) throw new Error('本地文件名被翻译、解析为 HTML 或错误显示下载按钮');
+  await evaluate(`(async () => {
+    const bytes = await fetch('/fixtures/sample-editor-comments.pptx').then(r=>r.arrayBuffer());
+    const files = new DataTransfer(); files.items.add(new File([bytes], 'comments.pptx'));
+    const input = document.querySelector('#pick'); input.files = files.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`, true);
+  await waitFor("document.querySelector('#meta').textContent.includes('comments.pptx')", '首页批注文稿');
+  await click('#commentsTools');
+  await waitFor("document.querySelectorAll('#commentsPanel li').length === 2", '首页批注');
+  await click('#next');
+  await waitFor("document.querySelectorAll('#commentsPanel li').length === 1", '首页批注跟随翻页');
+  await click('#commentsPanel [data-close]');
   await runViewerFailureContract({ evaluate, click, waitFor });
 }
 

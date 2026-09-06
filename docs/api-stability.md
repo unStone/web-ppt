@@ -31,3 +31,5 @@ Windows 验收与发布仍是后续交付条件，不通过修改版本号代替
 
 语料回归使用 `npm run test:edit:equivalence`；新增功能使用确定性固件及真实浏览器像素，真实 ChartEx 原文件证据
 继续在 [ChartEx 能力边界](chartex-native.md) 登记。外部语料不足时保留已知边界，不能用人工固件冒充 Office 证据。
+
+只读批注新增可选 `@web-ppt/viewer-core/comments`，导出通过尾部 `CommentExportOptions` 开关扩展，既有调用保持兼容；见[批注交付](comments.md)。

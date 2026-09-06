@@ -1,6 +1,6 @@
 ---
 title: 插入可交付的音视频
-status: open
+status: closed
 assignee: /root
 labels:
   - wayfinder:task
@@ -47,3 +47,7 @@ LibreOffice 能打开代替它们。
 | LibreOffice | 26 种保存产物均打开并导出预期页数 PDF；不是 PowerPoint 播放证据 |
 | 固件 | 92 份固件连续生成两次逐字节相同；视频码流由仓库自制，固定字节保证跨编码器版本确定性 |
 | 审查回归 | 无海报导入后保存、MC 原壳保护、无原包资源保留、协同撤销重做资源闭包、双向历史超限原子拒绝及合并超限保留独立单元均有回归 |
+
+## 功能交付决定（2026-09-07）
+
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。

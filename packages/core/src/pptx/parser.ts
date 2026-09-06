@@ -1140,7 +1140,7 @@ export function parseCommentAuthors(pkg: Pkg, presRels: Rels): Map<string, Autho
       const id = attr(el, 'id');
       const name = attr(el, 'name');
       if (id === null || !name) continue;
-      out.set(id, { name, initials: attr(el, 'initials') ?? undefined });
+      out.set(id, { name, initials: attr(el, 'initials') || undefined });
     }
   }
   return out;

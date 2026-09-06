@@ -1,6 +1,6 @@
 import { packageTargetParts, resolveRelationshipTarget } from './clipboard-source';
 import { retainPackageSource } from './session-assets';
-import type { EditDoc, ElementRecord } from './types';
+import type { EditDoc, ElementRecord, SlideRecord } from './types';
 
 export function insertionPackageTargets(record: ElementRecord | null): string[] {
   const insertion = record?.meta.insertion;
@@ -14,13 +14,12 @@ export function insertionPackageTargets(record: ElementRecord | null): string[] 
 }
 
 /** 命令、协同和恢复都在结构补丁落模前保留依赖，不能依赖本地命令的准备过程。 */
-export function retainInsertionSources(doc: EditDoc, records: readonly (ElementRecord | null)[]): void {
+export function retainInsertionSources(doc: EditDoc, tree: { records: Readonly<Record<string, ElementRecord | null>>; slide?: SlideRecord }): void {
   const pkg = doc.package;
   if (!pkg || pkg.disposed) return;
-  for (const record of records) {
-    for (const target of insertionPackageTargets(record)) {
-      if (!pkg.parts[target]) continue;
-      retainPackageSource(doc, packageTargetParts(pkg, target));
-    }
+  const creation = tree.slide?.creation;
+  if (creation) retainPackageSource(doc, [creation.duplicateSourcePart ?? '', creation.duplicateNotesSourcePart ?? '']);
+  for (const target of new Set(Object.values(tree.records).flatMap(insertionPackageTargets))) {
+    if (pkg.parts[target]) retainPackageSource(doc, packageTargetParts(pkg, target));
   }
 }
