@@ -15,6 +15,7 @@ import { runTrustedRichTextClipboardContract } from './editor-rich-text-clipboar
 import { runTrustedTableCellTextContract } from './editor-table-cell-text-trusted-contract.mjs';
 import { runTrustedShortcutAuditContract } from './editor-shortcut-audit-trusted-contract.mjs';
 import { runTrustedTouchContract } from './editor-touch-trusted-contract.mjs';
+import { runTrustedDoubleClickContract } from './editor-double-click-trusted-contract.mjs';
 import { readPerformanceFailures, recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const delay = (milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
@@ -26,6 +27,7 @@ export async function browserResult(webSocketDebuggerUrl) {
     socket.once('error', reject);
   });
   let serial = 0;
+  let phase = '页面初始化';
   const pending = new Map();
   const rejectPending = (error) => {
     for (const request of pending.values()) {
@@ -49,7 +51,7 @@ export async function browserResult(webSocketDebuggerUrl) {
     const id = ++serial;
     const timeout = setTimeout(() => {
       pending.delete(id);
-      rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
+      rejectRequest(new Error(`Chrome DevTools ${method} 请求超时（${phase}）${params?.expression ? '：' + params.expression.slice(0, 180) : ''}`));
     }, 15000);
     pending.set(id, {
       resolve: (message) => message.error
@@ -93,7 +95,8 @@ export async function browserResult(webSocketDebuggerUrl) {
   const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0, commands = undefined) => {
     const params = {
       key, code, modifiers,
-      windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode,
+      // Windows 键码不是 macOS 原生扫描码；混用会让未消费的 Esc 落入 AppKit 键等价循环。
+      windowsVirtualKeyCode: virtualKeyCode,
     };
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params, ...(commands ? { commands } : {}) });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
@@ -451,12 +454,20 @@ export async function browserResult(webSocketDebuggerUrl) {
         await runTrustedGroupContract({ evaluate, dispatchKey });
         await runTrustedTabContract({ evaluate, dispatchKey });
         await runTrustedModifierSelectionContract({ evaluate, trustedClick });
+        phase = '原生双击';
+        await runTrustedDoubleClickContract({ evaluate, request, dispatchKey });
+        phase = '剪贴板';
         await runTrustedClipboardContract({ evaluate, dispatchKey });
+        phase = '富文本剪贴板';
         await runTrustedRichTextClipboardContract({ evaluate, dispatchKey });
+        phase = '原生文本';
         const trustedTextP95 = await runTrustedTextContract({ evaluate, request });
+        phase = '引擎文本';
         await runTrustedEngineTextContract({ evaluate, request });
+        phase = '表格文字';
         await runTrustedTableCellTextContract({ evaluate, request });
         // IME 中投递页面键会让 Chromium 延迟 Process key；放在其他文字契约后隔离输入队列。
+        phase = '快捷键审计';
         await runTrustedShortcutAuditContract({ evaluate, dispatchKey, request });
         await evaluate(`(() => {
           const report = document.querySelector('#report');

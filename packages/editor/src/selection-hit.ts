@@ -37,6 +37,10 @@ export function selectableElementIdsFromPath(
     .filter((id): id is ElementId => !!id && isSelectable(doc, id));
 }
 
+function hitFromElement(doc: EditDoc, element: Element, root: Element, group: ElementId | null) {
+  return outermostHitCandidate(doc, selectableElementIdsFromPath(doc, pathWithinRoot(element, root), root), group);
+}
+
 /** 触摸才按离落点由近到远采样；鼠标/笔仍完全服从浏览器的原生 SVG 命中。 */
 export function touchHitCandidate(
   doc: EditDoc,
@@ -47,11 +51,7 @@ export function touchHitCandidate(
 ): ElementId | undefined {
   if (document.elementsFromPoint) {
     for (const element of document.elementsFromPoint(screen.x, screen.y)) {
-      if (!root.contains(element)) continue;
-      const path = pathWithinRoot(element, root);
-      const id = outermostHitCandidate(
-        doc, selectableElementIdsFromPath(doc, path, root), enteredGroup,
-      );
+      const id = hitFromElement(doc, element, root, enteredGroup);
       if (id) return id;
     }
   }
@@ -65,9 +65,7 @@ export function touchHitCandidate(
     const rect = geometry.getBoundingClientRect();
     if (screen.x < rect.left - TOUCH_HIT_RADIUS || screen.x > rect.right + TOUCH_HIT_RADIUS
       || screen.y < rect.top - TOUCH_HIT_RADIUS || screen.y > rect.bottom + TOUCH_HIT_RADIUS) return;
-    const geometryPath = pathWithinRoot(geometry, root);
-    const candidateIds = selectableElementIdsFromPath(doc, geometryPath, root);
-    const id = outermostHitCandidate(doc, candidateIds, enteredGroup);
+    const id = hitFromElement(doc, geometry, root, enteredGroup);
     if (!id) return;
     const distance = geometryScreenDistance(geometry, screen, rect);
     if (distance > TOUCH_HIT_RADIUS) return;
@@ -81,8 +79,9 @@ export function touchHitCandidate(
   return nearestId;
 }
 
-function pathWithinRoot(element: Element, root: Element): EventTarget[] {
+export function pathWithinRoot(element: Element | null | undefined, root: Element): EventTarget[] {
   const path: EventTarget[] = [];
+  if (!element || !root.contains(element)) return path;
   for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
     path.push(current);
   }
@@ -143,14 +142,7 @@ export function alternateSelectableElementId(
 ): ElementId | undefined {
   const candidates: ElementId[] = [];
   for (const element of elements) {
-    if (!root.contains(element)) continue;
-    const path: EventTarget[] = [];
-    for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
-      path.push(current);
-    }
-    const id = outermostHitCandidate(
-      doc, selectableElementIdsFromPath(doc, path, root), enteredGroup,
-    );
+    const id = hitFromElement(doc, element, root, enteredGroup);
     if (id && !candidates.includes(id)) candidates.push(id);
   }
   const currentId = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;

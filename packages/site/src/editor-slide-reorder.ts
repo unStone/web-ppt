@@ -1,4 +1,5 @@
 import type { EditorSession } from '@web-ppt/editor';
+import { setAttributeText } from './i18n/runtime';
 
 interface ReorderContext {
   readonly session: EditorSession | null;
@@ -7,6 +8,24 @@ interface ReorderContext {
 }
 
 let draggedSlide: string | null = null;
+
+export function renderSlideNavigation(list: HTMLElement, context: () => ReorderContext): void {
+  list.replaceChildren();
+  const ids = context().session?.editor.doc.slideOrder ?? [];
+  ids.forEach((id, index) => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'slide-item'; button.dataset.slideId = id;
+    setAttributeText(button, 'aria-label', '打开第 {index} 页', { index: index + 1 });
+    const number = document.createElement('span');
+    number.className = 'slide-number'; number.textContent = String(index + 1);
+    const mini = document.createElement('span');
+    mini.className = 'slide-mini'; mini.textContent = `P${index + 1}`;
+    button.append(number, mini);
+    button.addEventListener('click', () => context().showSlide(id));
+    enableSlideReorder(button, id, context);
+    list.append(button);
+  });
+}
 
 /** DOM 只负责表达拖放意图；稳定页身份与分数序仍由公开 MoveSlide 命令决定。 */
 export function enableSlideReorder(

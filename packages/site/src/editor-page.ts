@@ -13,7 +13,8 @@ import { createEditorInspector, type EditorInspector } from './editor-inspector'
 import { createSlideInspector, type SlideInspector } from './editor-slide-inspector';
 import { createProductTools } from './editor-product-tools';
 import { createSiteRecovery } from './editor-recovery';
-import { enableSlideReorder } from './editor-slide-reorder';
+import { renderSlideNavigation } from './editor-slide-reorder';
+import { bindContentTools } from './editor-content-tools';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
@@ -173,25 +174,7 @@ function syncSlideSelection(): void {
 }
 
 function renderSlideList(): void {
-  slideList.replaceChildren();
-  const ids = session?.editor.doc.slideOrder ?? [];
-  ids.forEach((id, index) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'slide-item';
-    button.dataset.slideId = id;
-    button.setAttribute('aria-label', `打开第 ${index + 1} 页`);
-    const number = document.createElement('span');
-    number.className = 'slide-number';
-    number.textContent = String(index + 1);
-    const mini = document.createElement('span');
-    mini.className = 'slide-mini';
-    mini.textContent = `P${index + 1}`;
-    button.append(number, mini);
-    button.addEventListener('click', () => showSlide(id));
-    enableSlideReorder(button, id, () => ({ session, showSlide, onError: reportError }));
-    slideList.append(button);
-  });
+  renderSlideNavigation(slideList, () => ({ session, showSlide, onError: reportError }));
   syncControls();
 }
 
@@ -338,7 +321,10 @@ async function openDocument(
     });
     adjustments = createPresetAdjustmentEditor(next, view, { onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
-    unregisterToolbar = view.registerTextUi(toolbar);
+    // 语言入口属于宿主编辑工具；否则 document 捕获阶段会先关闭文字编辑，晚于此的防失焦无效。
+    const releaseTools = [toolbar, document.querySelector<HTMLElement>('#siteLanguage')!]
+      .map((element) => view!.registerTextUi(element));
+    unregisterToolbar = () => releaseTools.forEach((release) => release());
     unregisterInspector = view.registerTextUi(inspectorElement);
     productTools.bindSession();
     unsubscribeEditor = next.editor.subscribe((change) => {
@@ -466,40 +452,7 @@ buttons.next.addEventListener('click', () => {
   const id = index >= 0 ? session?.editor.doc.slideOrder[index + 1] : undefined;
   if (id) showSlide(id);
 });
-buttons.addSlide.addEventListener('click', () => void run(() => {
-  if (!session || !view) return;
-  const current = session.editor.doc.slides[view.slideId];
-  const layoutId = current.layoutId && session.editor.doc.layouts[current.layoutId]
-    ? current.layoutId : session.editor.doc.layoutOrder[0];
-  if (!layoutId) throw new Error('当前文稿没有可用版式');
-  const result = session.editor.exec({
-    type: 'AddSlide', layoutId, at: { after: view.slideId },
-  });
-  const added = [...result.createdSlides][0];
-  if (added) showSlide(added);
-  notice('已新增幻灯片', 'success');
-}));
-buttons.addShape.addEventListener('click', () => void run(() => {
-  if (!session || !view) return;
-  const { width, height } = session.editor.doc.meta;
-  session.editor.exec({
-    type: 'AddShape', slideId: view.slideId, preset: 'roundRect',
-    rect: { x: width * .35, y: height * .34, w: width * .3, h: height * .22 },
-  });
-  view.element.focus();
-  notice('已插入圆角矩形；拖动可移动，双击可输入文字', 'success');
-}));
-buttons.addImage.addEventListener('click', () => void run(async () => {
-  if (!view) return;
-  const id = await view.chooseImage();
-  if (id) notice('图片已插入', 'success');
-}));
-buttons.addTable.addEventListener('click', () => void run(() => {
-  if (!session || !view) return;
-  const { width, height } = session.editor.doc.meta;
-  view.insertTable(3, 3, { rect: { x: width * .2, y: height * .25, w: width * .6, h: height * .42 } });
-  notice('已插入 3 × 3 表格；双击单元格即可输入', 'success');
-}));
+bindContentTools(() => ({ session, view, showSlide }), notice);
 buttons.play.addEventListener('click', () => void run(async () => {
   if (!view) return;
   const played = await view.previewAnimations();

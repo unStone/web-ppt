@@ -8,7 +8,7 @@ import {
   type SlideEditor,
 } from '@web-ppt/editor';
 import { message, type SiteNotice, type SiteMessage } from './i18n/message';
-import { setMessage, setAttributeText } from './i18n/runtime';
+import { setMessage, setAttributeText, setText } from './i18n/runtime';
 import { colorInputValue } from './editor-color-input';
 
 interface SlideInspectorContext {
@@ -121,7 +121,9 @@ export function createSlideInspector(
     hidden.checked = querySlideHidden(session.editor.doc, [slideId]).value;
     layout.replaceChildren(...session.editor.doc.layoutOrder.map((id, index) => {
       const option = document.createElement('option'); option.value = id;
-      option.textContent = session.editor.doc.layouts[id]?.name || `版式 ${index + 1}`;
+      const name = session.editor.doc.layouts[id]?.name;
+      if (name) option.textContent = name;
+      else setText(option, '版式 {index}', { index: index + 1 });
       return option;
     }));
     const layoutState = view.queryLayout();

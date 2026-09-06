@@ -447,7 +447,8 @@ function renderTable(el: TableElement, ctx: Ctx): string {
 
       parts.push(
         `<g${ctx.includeEditMarkers ? ` data-table-cell="${ri}:${ci}"` : ''} transform="translate(${r(x)} ${r(y)})">` +
-        `<rect width="${r(cw)}" height="${r(ch)}" fill="${fillVal}"/>` +
+        // 原生 SVG 文本不覆盖整格；空白也须命中，但隐藏表格必须让出落点。
+        `<rect width="${r(cw)}" height="${r(ch)}" fill="${fillVal}"${ctx.includeEditMarkers ? ' pointer-events="visibleFill"' : ''}/>` +
         (cell.text ? renderText(cell.text, cw, ch, ctx, cell.margins, cell.vAlign, cell.vert) : '') +
         '</g>',
       );

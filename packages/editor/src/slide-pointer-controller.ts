@@ -9,7 +9,7 @@ import { combineSelectionIds, selectionModifierActive } from './selection-combin
 import { isRotationHandleAt, resizeHandleAt } from './selection-handles';
 import {
   alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
-  outermostHitCandidate, tableCellAddressFromPath, touchHitCandidate,
+  outermostHitCandidate, pathWithinRoot, tableCellAddressFromPath, touchHitCandidate,
 } from './selection-hit';
 import type { TextEditorController } from './text-editor';
 import type { ImageCropGestureController } from './image-crop-gesture';
@@ -219,13 +219,18 @@ export class SlidePointerController {
   readonly doubleClick = (event: MouseEvent): void => {
     const o = this.options;
     if (!o.editable()) return;
-    const candidates = o.hitCandidates(event.composedPath());
+    // 捕获期间的 pointerup 会把后续 click/dblclick 留在根节点；释放 capture 不会恢复命中路径。
+    // 只恢复原生落点的祖先链，不能穿透遮挡或把所有重叠对象合成一条路径。
+    const path = event.target === o.root && event.isTrusted
+      ? pathWithinRoot((o.root.getRootNode() as Document | ShadowRoot)
+        .elementFromPoint?.(event.clientX, event.clientY), o.staticLayer) : event.composedPath();
+    const candidates = o.hitCandidates(path);
     const selection = o.editor.selection;
     const enteredGroup = enteredGroupOnSlide(
       o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
     );
     const textId = outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
-    const cell = tableCellAddressFromPath(event.composedPath(), o.staticLayer);
+    const cell = tableCellAddressFromPath(path, o.staticLayer);
     const picture = textId && o.editor.doc.elements[textId]?.meta.ph?.type === 'pic'
       ? o.editor.doc.elements[textId] : null;
     if (picture) {

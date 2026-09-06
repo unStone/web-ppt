@@ -314,7 +314,7 @@ async function runContract(webSocketDebuggerUrl) {
     if (!response) return;
     pending.delete(message.id);
     clearTimeout(response.timeout);
-    message.error ? response.reject(new Error(message.error.message)) : response.resolve(message);
+    message.error ? response.reject(new Error(`Chrome DevTools ${response.method}: ${message.error.message}`)) : response.resolve(message);
   });
   const request = (method, params = {}) => new Promise((resolveRequest, rejectRequest) => {
     const id = ++serial;
@@ -322,7 +322,7 @@ async function runContract(webSocketDebuggerUrl) {
       pending.delete(id);
       rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
     }, 15000);
-    pending.set(id, { resolve: resolveRequest, reject: rejectRequest, timeout });
+    pending.set(id, { resolve: resolveRequest, reject: rejectRequest, timeout, method });
     socket.send(JSON.stringify({ id, method, params }));
   });
   const evaluate = async (expression, awaitPromise = false) => {
@@ -755,7 +755,9 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(productionLanguages ? '\n\x1b[32m✓ 官网三张生产页面中英文静态切换通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
+  console.log(productionLanguages ? process.env.SITE_I18N_ONLY
+    ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
+    : '\n\x1b[32m✓ 官网三张生产页面中英文静态切换通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);
 } finally {
   if (browserRunning()) {

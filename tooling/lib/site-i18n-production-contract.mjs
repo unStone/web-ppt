@@ -12,8 +12,19 @@ import { runSiteI18nHomeContract } from './site-i18n-home-contract.mjs';
 import { runSiteI18nChartContract } from './site-i18n-chart-contract.mjs';
 import { runSiteI18nProductToolsContract } from './site-i18n-product-tools-contract.mjs';
 import { runSiteI18nSlideToolsContract } from './site-i18n-slide-tools-contract.mjs';
+import { runSiteI18nInspectorContract } from './site-i18n-inspector-contract.mjs';
+import { runSiteI18nImageContract } from './site-i18n-image-contract.mjs';
+import { runSiteI18nTextContract } from './site-i18n-text-contract.mjs';
+import { runSiteI18nContentContract } from './site-i18n-content-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
+  const only = process.env.SITE_I18N_ONLY;
+  if (only) {
+    const contract = { inspector: runSiteI18nInspectorContract, image: runSiteI18nImageContract,
+      text: runSiteI18nTextContract, content: runSiteI18nContentContract }[only];
+    if (!contract) throw new Error(`未知的官网专项：${only}`);
+    await contract(context); return;
+  }
   const { evaluate, request, waitFor, click, dictionaryUrls } = context;
   if (await evaluate(`performance.getEntriesByType('resource').some((entry) =>
     ${JSON.stringify(dictionaryUrls)}.includes(new URL(entry.name).pathname))`)) {
@@ -28,6 +39,10 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nChartContract(context);
   await runSiteI18nProductToolsContract(context);
   await runSiteI18nSlideToolsContract(context);
+  await runSiteI18nInspectorContract(context);
+  await runSiteI18nImageContract(context);
+  await runSiteI18nTextContract(context);
+  await runSiteI18nContentContract(context);
   await runSiteEditorLanguageContract(context);
   const directory = await evaluate("new URL('.', location.href).href");
   for (const page of ['index', 'samples', 'editor']) {

@@ -13,6 +13,8 @@ import type { TextCapsStyle, TextStrikeStyle, TextUnderlineStyle } from '@web-pp
 import { queryElementPresetGeometry } from '@web-ppt/edit-core';
 import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
 import { colorInputValue } from './editor-color-input';
+import { message, type SiteNotice } from './i18n/message';
+import { setText } from './i18n/runtime';
 
 interface InspectorContext {
   readonly session: EditorSession | null;
@@ -26,7 +28,6 @@ export interface EditorInspector {
   sync(): void;
 }
 
-type Notice = (message: string, tone?: 'normal' | 'success' | 'error') => void;
 type BulletInput = NonNullable<ParagraphPropertyInput['bullet']>;
 type AutoNumberBullet = Extract<BulletInput, { readonly kind: 'autoNum' }>;
 const $ = <T extends Element>(root: ParentNode, selector: string): T => root.querySelector<T>(selector)!;
@@ -34,7 +35,7 @@ const $ = <T extends Element>(root: ParentNode, selector: string): T => root.que
 export function createEditorInspector(
   element: HTMLElement,
   context: () => InspectorContext,
-  notice: Notice,
+  notice: SiteNotice,
 ): EditorInspector {
   const textSection = $<HTMLElement>(element, '#textInspector');
   const shapeSection = $<HTMLElement>(element, '#shapeInspector');
@@ -84,8 +85,10 @@ export function createEditorInspector(
   const linkSlideField = $<HTMLElement>(element, '#linkSlideField');
 
   const act = async (action: () => void | Promise<void>): Promise<void> => {
+    const owner = context().view;
     try { await action(); } catch (error) {
-      notice(error instanceof Error ? error.message : String(error), 'error');
+      if (context().view !== owner) return;
+      notice(message('对象操作失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
     }
   };
 
@@ -238,7 +241,7 @@ export function createEditorInspector(
     linkSlide.replaceChildren(...session.editor.doc.slideOrder.map((slideId, index) => {
       const option = document.createElement('option');
       option.value = slideId;
-      option.textContent = `第 ${index + 1} 页`;
+      setText(option, '第 {index} 页', { index: index + 1 });
       return option;
     }));
     const value = state.value;
@@ -323,7 +326,7 @@ export function createEditorInspector(
     else if (bulletKind.value === 'none') bullet = { kind: 'none' };
     else if (bulletKind.value === 'char') {
       const char = Array.from(bulletChar.value);
-      if (char.length !== 1) throw new Error('项目符号必须是一个字符');
+      if (char.length !== 1) { notice(message('项目符号必须是一个字符'), 'error'); return; }
       bullet = { kind: 'char', char: char[0], ...bulletStyle() };
     } else if (bulletKind.value === 'image') {
       const current = view.queryParaProps()?.bullet.value;
@@ -333,7 +336,7 @@ export function createEditorInspector(
       kind: 'autoNum', type: bulletScheme.value as AutoNumberBullet['type'],
       startAt: Number(bulletStart.value), ...bulletStyle(),
     };
-    if (view.setParaProps({ bullet })) sync();
+    if (view.setParaProps({ bullet })) { sync(); notice(message('项目符号已更新'), 'success'); }
   });
   for (const control of [
     bulletKind, bulletChar, bulletScheme, bulletStart, bulletFont,
@@ -342,16 +345,35 @@ export function createEditorInspector(
     syncBulletFields();
     setBullet();
   });
+  let bulletRead = 0;
   bulletImage.addEventListener('change', () => void act(async () => {
-    const file = bulletImage.files?.[0]; const { view } = context();
+    const generation = ++bulletRead;
+    const file = bulletImage.files?.[0]; const { view, session } = context();
     if (!file || !view) return;
     if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
-      throw new Error('图片项目符号仅支持 PNG、JPEG、GIF 或 WebP');
+      notice(message('图片项目符号仅支持 PNG、JPEG、GIF 或 WebP'), 'error'); return;
     }
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const selected = (): string => JSON.stringify(session?.editor.selection);
+    const selection = selected(), style = bulletStyle();
+    const ownsInput = (): boolean => generation === bulletRead && context().view === view
+      && bulletImage.files?.[0] === file;
+    let bytes: Uint8Array;
+    try { bytes = new Uint8Array(await file.arrayBuffer()); } catch (error) {
+      if (ownsInput() && selected() === selection) throw error;
+      return;
+    }
+    if (!ownsInput()) return;
+    // 文件读取不拥有后续选区；宁可让用户重新选择，也不能把旧图片写到新的段落或单元格。
+    if (!context().writable || selected() !== selection) {
+      // 已确认仍归本任务所有，清空才允许原生选择器再次选择同一个文件。
+      bulletImage.value = '';
+      notice(message('编辑状态已变化，请重新选择图片项目符号')); return;
+    }
     const image = { bytes, mime: file.type as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' };
-    if (view.setParaProps({ bullet: { kind: 'blip', image, ...bulletStyle() } })) sync();
-    bulletImage.value = '';
+    if (view.setParaProps({ bullet: { kind: 'blip', image, ...style } })) {
+      sync(); notice(message('项目符号已更新'), 'success');
+    }
+    if (ownsInput()) bulletImage.value = '';
   }));
 
   const setFill = (): void => void act(() => {
@@ -361,7 +383,7 @@ export function createEditorInspector(
       type: 'SetFill', id,
       fill: fillType.value === 'none' ? { type: 'none' } : { type: 'solid', color: fillColor.value },
     });
-    sync(); notice('已更新形状填充', 'success');
+    sync(); notice(message('已更新形状填充'), 'success');
   });
   fillType.addEventListener('change', setFill);
   fillColor.addEventListener('change', setFill);
@@ -369,15 +391,17 @@ export function createEditorInspector(
   shapePreset.addEventListener('change', () => void act(() => {
     const { adjustments } = context();
     if (!adjustments?.setPreset(shapePreset.value)) return;
-    sync(); notice('已切换形状类型；原有文字和格式保持不变', 'success');
+    sync(); notice(message('已切换形状类型；原有文字和格式保持不变'), 'success');
   }));
   startShapeAdjustments.addEventListener('click', () => void act(() => {
     const { adjustments } = context();
     const id = selectedId();
-    if (!adjustments || !id || !adjustments.start(id)) throw new Error('当前形状没有可用的预设调节柄');
-    notice(adjustments.handles.length
+    if (!adjustments || !id || !adjustments.start(id)) {
+      notice(message('当前形状没有可用的预设调节柄'), 'error'); return;
+    }
+    notice(message(adjustments.handles.length
       ? '拖动形状上的橙色圆点来调整外观'
-      : '当前形状没有可调参数');
+      : '当前形状没有可调参数'));
   }));
 
   const setStroke = (): void => void act(() => {
@@ -390,7 +414,7 @@ export function createEditorInspector(
         ...(current ?? { dash: null }), color: strokeColor.value, width: Number(strokeWidth.value),
       },
     });
-    sync(); notice('已更新形状描边', 'success');
+    sync(); notice(message('已更新形状描边'), 'success');
   });
   strokeType.addEventListener('change', setStroke);
   strokeColor.addEventListener('change', setStroke);
@@ -410,7 +434,7 @@ export function createEditorInspector(
     if (Number(softEdge.value) > 0) effects.softEdge = Number(softEdge.value);
     else delete effects.softEdge;
     session.editor.exec({ type: 'SetEffects', id, effects });
-    sync(); notice('已更新形状效果', 'success');
+    sync(); notice(message('已更新形状效果'), 'success');
   });
   shadow.addEventListener('change', setEffects);
   glow.addEventListener('change', setEffects);
@@ -418,13 +442,16 @@ export function createEditorInspector(
 
   replaceImage.addEventListener('change', () => void act(async () => {
     const file = replaceImage.files?.[0];
-    if (!file || !context().view) return;
-    await context().view!.replaceImage(file);
-    replaceImage.value = '';
-    notice('图片已替换', 'success');
+    const view = context().view;
+    if (!file || !view) return;
+    await view.replaceImage(file);
+    // 读取期间可打开另一份文稿，旧任务不得覆盖新视图的提示或清除新文件选择。
+    if (context().view !== view) return;
+    if (replaceImage.files?.[0] === file) replaceImage.value = '';
+    notice(message('图片已替换'), 'success');
   }));
   $<HTMLButtonElement>(element, '#startImageCrop').addEventListener('click', () => {
-    if (context().view?.startImageCrop()) notice('拖动图片内的裁剪框，完成后点击“完成裁剪”');
+    if (context().view?.startImageCrop()) notice(message('拖动图片内的裁剪框，完成后点击“完成裁剪”'));
   });
   $<HTMLButtonElement>(element, '#finishImageCrop').addEventListener('click', () => context().view?.endImageCrop());
   $<HTMLButtonElement>(element, '#cropImageTen').addEventListener('click', () => void act(() => {
@@ -445,7 +472,7 @@ export function createEditorInspector(
       : linkType.value === 'slide' ? { kind: 'slide', slideId: linkSlide.value } : { kind: 'none' };
     if (session.editor.selection.kind === 'text') view.setRunProps({ link: target });
     else if (id) session.editor.exec({ type: 'SetLink', id, target });
-    sync(); notice('超链接已更新', 'success');
+    sync(); notice(message('超链接已更新'), 'success');
   }));
   $<HTMLButtonElement>(element, '#followLink').addEventListener('click', () => context().view?.followLink());
 
