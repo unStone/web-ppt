@@ -46,7 +46,7 @@ export type {
 export { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 export { presentationToPrintableHtml, slideToPng, slideToSvgFile } from './browser-export';
 export type { PrintableOptions } from './browser-export';
-export { setChartParser, setChartRenderer } from './chart/hook';
+export { setChartParser, setChartRenderer, setChartExParser, inheritPptxParsingContext } from './chart/hook';
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';

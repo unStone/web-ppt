@@ -1,4 +1,5 @@
 import { unzipSync } from 'fflate';
+import { captureChartExParser } from '../chart/hook';
 import { embeddedFontToSfnt } from '../font/eot';
 import { readImageMetadata } from '../image-metadata';
 import type { ImageMetadata } from '../image-metadata';
@@ -46,6 +47,7 @@ export class Pkg {
 
   constructor(source: Uint8Array | OpcPackage, keepPackage = false) {
     const borrowed = !(source instanceof Uint8Array);
+    captureChartExParser(this, borrowed ? source : undefined);
     this.files = borrowed
       ? source.parts as Record<string, Uint8Array>
       // Buffer 的 slice 共享原内存；只在解包边界换成普通视图，保留原包零拷贝身份。
@@ -68,6 +70,7 @@ export class Pkg {
         },
         get disposed(): boolean { return owner.isDisposed; },
       });
+      captureChartExParser(this.opcHandle, this);
     }
   }
 

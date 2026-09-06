@@ -1,4 +1,4 @@
-import type { Presentation, SlideElement } from '@web-ppt/core';
+import { inheritPptxParsingContext, type Presentation, type SlideElement } from '@web-ppt/core';
 import { registerSessionAssets, releaseSessionAssets } from './session-assets';
 import { releaseLayoutProjectionCache } from './layout-projection';
 import { releaseProjectionCache } from './projection';
@@ -300,6 +300,7 @@ export function allocateElementId(doc: EditDoc): ElementId {
 
 function assignPackage(doc: EditDoc, pkg: EditDoc['package']): void {
   const previous = doc.package;
+  if (previous && pkg) inheritPptxParsingContext(previous, pkg);
   if (previous !== pkg) {
     releaseLayoutProjectionCache(doc);
     releaseDesignProjectionPackage(doc);

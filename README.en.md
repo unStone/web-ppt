@@ -394,7 +394,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | 3D | Isometric approximation, not true projection; steep camera angles don't switch to a top-down view |
 | EMF+ | Not handled. Every metafile examined so far is **dual-mode** — the GDI records already carry the full drawing (16,125 GDI records vs 3 EMF+ comments in `sample-metafile.pptx`), so the GDI path suffices. Only pure EMF+ files would need it, and no sample has turned up |
 | Raster operation codes | SVG/CSS has no XOR/AND bitwise blending; `mix-blend-mode` is not equivalent |
-| chartex chart types | Native `cx:chartSpace` rendering is pending. MC image fallback is verified with a real funnel PPTX; other types still need corpus evidence. Compatibility objects are frame-only; saving after source-package disposal explicitly fails rather than flattening the chart into its preview |
+| chartex chart types | Opt-in `@web-ppt/core/chart-ex` implements native layouts except maps. Office fallback remains the default. Real funnel input, browser exports, frame editing and both save paths are covered; other original PPTX types and Office-native layout validation remain pending. See [scope and evidence](docs/chartex-native.md) |
 | Region OR / XOR / DIFF | Needs region boolean operations, which SVG clipping can't express; COPY and AND work |
 | MTX-compressed embedded fonts | PowerPoint's `fntdata` is an EOT container, usually with MTX compression on. Uncompressed containers are unwrapped by core itself (including the XOR obfuscation); compressed ones need an injected decoder: `setFontDecoder(eotToTtf)` from [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor). Without it those fonts are skipped in favour of a substitute, rather than handing the browser bytes it's guaranteed to reject |
 | Line breaking when fonts are missing | Line breaks are decided by **the actual font's metrics**. If the deck's font isn't installed locally, something else is substituted, advance widths differ, and breaks land differently than in PowerPoint. This isn't a parsing problem — installing the original font, using the file's own embedded fonts, or wiring up [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) for metric-compatible free substitutes (Calibri→Carlito and friends, where every advance width matches) all fix it |
@@ -411,10 +411,11 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
-| `npm run test:edit` | 1,132 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 550 process-isolated SVG fingerprint pairs across 85 fixtures |
+| `npm run test:edit` | 1,132 edit-model + 514 save + 9 PowerPoint-evidence assertions, plus 566 process-isolated SVG fingerprint pairs across 86 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 194 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
+| `npm run test:chartex` | 104 native-ChartEx assertions: hierarchy/statistics, session configuration, both text and save paths |
 | `npm run test:media` | 870 media-insertion assertions: WAV/MP4, external links, posters, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/media-insertion.md) |
 | `npm run test:editor` | 424 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |

@@ -1,4 +1,5 @@
 import { kids } from '../xml';
+import { supportsChartEx } from '../chart/hook';
 import type { SlideElement } from '../types';
 import { MC_NAMESPACE, selectAlternateContent } from './markup-compatibility';
 
@@ -26,9 +27,12 @@ export function parseCompatibleShapes(
   parse: (branch: Element) => SlideElement[],
   placeholder: (source: Element) => SlideElement | null,
   edit: boolean,
+  packageReader: object,
 ): SlideElement[] {
   if (alternate.namespaceURI !== MC_NAMESPACE) return [];
-  const selected = selectAlternateContent(alternate, SHAPE_NAMESPACES);
+  const selected = selectAlternateContent(alternate, {
+    has: (namespace) => SHAPE_NAMESPACES.has(namespace) || supportsChartEx(namespace, packageReader),
+  });
   const source = kids(alternate, 'Choice').find((node) => node.namespaceURI === MC_NAMESPACE);
   let elements = selected ? parse(selected) : Array.from(source?.children ?? []).flatMap((node) => {
     const missing = placeholder(node);

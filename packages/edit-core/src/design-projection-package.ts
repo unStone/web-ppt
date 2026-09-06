@@ -1,4 +1,4 @@
-import type { OpcPackage } from '@web-ppt/core';
+import { inheritPptxParsingContext, type OpcPackage } from '@web-ppt/core';
 import type { EditDoc, ElementRecord } from './types';
 import { parseXmlTree, serializeXmlTreeBytes } from './xml/tree';
 import { materializeElementTreeState } from './save/insertion';
@@ -42,11 +42,11 @@ export function masterSourceProjectionPackage(doc: EditDoc): OpcPackage | null {
     (parts ??= { ...source.parts })[id] = serializeXmlTreeBytes(tree);
   }
   if (!parts) return source;
-  const overlay: OpcPackage = {
+  const overlay = inheritPptxParsingContext(source, {
     format: 'pptx', bytes: source.bytes, parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
-  };
+  });
   masterSourceCaches.set(doc, { source, package: overlay });
   return overlay;
 }
@@ -73,11 +73,11 @@ export function designProjectionPackage(doc: EditDoc): OpcPackage | null {
     (parts ??= { ...source.parts })[id] = serializeXmlTreeBytes(tree);
   }
   if (!parts) return source;
-  const overlay: OpcPackage = {
+  const overlay = inheritPptxParsingContext(source, {
     format: 'pptx', bytes: source.bytes, parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
-  };
+  });
   caches.set(doc, { source, package: overlay });
   return overlay;
 }

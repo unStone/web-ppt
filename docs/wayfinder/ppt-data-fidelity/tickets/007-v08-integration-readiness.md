@@ -27,3 +27,17 @@ blocked_by:
 同一清单。固件连续重生成两次字节一致，默认入口不加载 SpreadsheetML/cx/媒体/i18n 数据，八包 API、版本、
 README、CHANGELOG 与路线图按实测同步。`npm run check && npm test && npm run build && npm run verify` 全绿且
 独立规格/标准审查归零后，才能关闭本票与地图；不创建 tag、不推送、不发布 npm。
+
+## 已推进
+
+- 全部现有媒体保存矩阵与 ChartEx 补丁/生成保存已纳入 30 件统一 Office 清单，LibreOffice 与 Windows 工作流同源。
+- 30 件工件已逐件通过 LibreOffice 打开和 PDF 导出；这不代替现代 Office 的原生图表或媒体播放验收。
+- 默认入口无 ChartEx 布局/工作簿实现，独立 OPC 子包不因解析上下文继承引入 core。
+- 八页原生/地图回退的屏幕、独立 SVG、PNG、打印与编辑保存专项已接入全量测试。
+
+尚未关闭：真实类型语料、现代 Office 原生布局、媒体实际播放和官网自动按需加载的跨能力旅程仍需验收。
+未细化的图片效果、3D、AT、EditContext 与 1.0 冻结继续保留在地图的后续范围中。
+
+Windows 诊断新增阻塞：16.0 Build 4266 在可见/隐藏窗口均无法打开 `chart-data-edited.pptx`；
+ChartEx 原始/生成探针则能打开但只显示图片。尚未证明是源固件、保存结果还是安装环境问题，不能作为通过记录。
+保存前后及公开来源对照已准备；继续传送诊断样本需要当前会话的远程文件传输授权。

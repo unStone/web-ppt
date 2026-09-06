@@ -46,6 +46,11 @@ tracker: local-markdown
 
 - [确认扩展图表回退与真实语料边界](tickets/002-chartex-fallback-corpus.md)已补真实漏斗的 Chrome/独立 SVG
   视觉证据、9 个源文件的缓存／工作簿核对与层级主来源调查；其他类型原始 PPTX、完整层级语义与原生布局仍缺证。
+- [层级](tickets/003-chartex-hierarchy-rendering.md)与[统计](tickets/004-chartex-statistical-rendering.md)原生实现已提供按需入口；
+  104 项专项、八页 Chrome 导出、配置继承及两条保存已通过。真实漏斗另有三项语料回归，其他类型原始 PPTX
+  和 Office 原生布局仍待验收，因此未关闭票据。详见[能力边界](../../chartex-native.md)。
+- [集成验收](tickets/007-v08-integration-readiness.md)的统一 Office 清单已扩至 30 件经典图表、ChartEx 与媒体产物，
+  Windows 工作流接入同一清单。已连接的 PowerPoint 16.0 Build 4266 可运行交互桌面探针，但现代图表全部显示图片。
 - [插入可交付的音视频](tickets/005-media-insertion.md)已实现 WAV / MP4（含分片）、显式外链、默认音频图标、海报替换与框架/官网按需入口；历史/恢复/协同与两条保存共用现有资源模型。官网原生播放、失效外链降级与冷启动媒体恢复已接通，PowerPoint 实测仍待完成。
 
 ## Not yet specified

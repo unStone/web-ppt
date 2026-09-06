@@ -19,6 +19,7 @@ for (const artifact of manifest.artifacts) {
   execFileSync(process.execPath, [
     join(root, 'tooling/test-edit-libreoffice.mjs'), source, String(artifact.slides),
   ], { cwd: root, stdio: 'inherit' });
+  if (!artifact.chartData) continue;
   const parts = unzipSync(new Uint8Array(readFileSync(source)));
   const decode = (part) => new TextDecoder().decode(parts[part]);
   const chartXml = decode('ppt/charts/chart1.xml');

@@ -1,4 +1,4 @@
-import type { OpcPackage } from '@web-ppt/core';
+import { inheritPptxParsingContext, type OpcPackage } from '@web-ppt/core';
 import { materializeThemePart } from './theme-xml';
 import { themeHasOverrides } from './theme';
 import type { EditDoc } from './types';
@@ -30,11 +30,11 @@ export function themeProjectionPackage(doc: EditDoc): OpcPackage | null {
     (parts ??= { ...source.parts })[id] = bytes;
   }
   if (!parts) return source;
-  const overlay: OpcPackage = {
+  const overlay = inheritPptxParsingContext(source, {
     format: 'pptx', bytes: source.bytes, parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
-  };
+  });
   caches.set(doc, { source, package: overlay });
   return overlay;
 }

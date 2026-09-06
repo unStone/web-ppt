@@ -1,4 +1,10 @@
 /** 0.8 跨能力门禁的 LibreOffice 与 PowerPoint 只消费这一份清单；后续票继续向这里追加。 */
+import { mediaArtifacts } from './media-artifacts.mjs';
+
+export const V08_EXTRA_SOURCES = Object.freeze([
+  ...['patch', 'generated'].map((mode) => ({ file: `chartex-native-${mode}.pptx`, slides: 8, source: `out/chartex-native/native-${mode}.pptx` })),
+  ...mediaArtifacts.map(({ name, pages }) => ({ file: `media-${name}.pptx`, slides: pages, source: `out/media-insertion/${name}.pptx` })),
+]);
 export const V08_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({
     file: 'chart-data-edited.pptx', slides: 10,
@@ -16,6 +22,7 @@ export const V08_OFFICE_ARTIFACTS = Object.freeze([
     }),
     required: Object.freeze(['重开重建系列', '第一季度', '5151']),
   }),
+  ...V08_EXTRA_SOURCES.map(({ file, slides }) => Object.freeze({ file, slides })),
 ]);
 
 export const V08_OFFICE_MANIFEST = 'office-artifacts.json';

@@ -12,6 +12,7 @@ import WebSocket from 'ws';
 import { runSiteEditorToolbarContract } from './lib/site-editor-toolbar-contract.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { runChartExBrowserContract } from './lib/chartex-browser-contract.mjs';
+import { runNativeChartExBrowserContract } from './lib/chartex-native-browser-contract.mjs';
 import { runSiteLanguagePreferencesContract } from './lib/site-editor-language-contract.mjs';
 import { runSiteI18nProductionContract } from './lib/site-i18n-production-contract.mjs';
 
@@ -202,6 +203,10 @@ if (productionLanguages) {
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
 routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
+const chartexNative = join(out, 'chartex-native.mjs');
+await bundleBrowser({ root, entry: join(root, 'packages/core/src/chart-ex.ts'), output: chartexNative });
+routes.set('/chartex-native.mjs', ['text/javascript', readFileSync(chartexNative)]);
+routes.set('/fixtures/sample-chartex-native.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-native.pptx'))]);
 routes.set('/fixtures/sample-chartex-fallback.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-fallback.pptx'))]);
 const chartexSources = [{ name: 'fixture', path: '/fixtures/sample-chartex-fallback.pptx' }];
 const realChartex = join(root, 'corpus/chartex/libreoffice-funnel-pp1.pptx');
@@ -419,6 +424,7 @@ async function runContract(webSocketDebuggerUrl) {
       return { bytes: 0 };
     }
     await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
+    await runNativeChartExBrowserContract({ evaluate, request, out });
     await evaluate(`(() => {
       const original = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function () {

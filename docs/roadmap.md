@@ -12,7 +12,7 @@
 
 ### 1.1 一句话
 
-**引擎能力、0.6 高频编辑面、0.7 模板/主题产品链及 0.8 经典图表数据编辑已完成。** ChartEx 真实漏斗回退已恢复并通过视觉验收，已补原包释放后的兼容对象生成保存；其他类型与原生绘图仍未完成。自动化交付
+**引擎能力、0.6 高频编辑面、0.7 模板/主题产品链及 0.8 经典图表数据编辑已完成。** ChartEx 真实漏斗回退已恢复并通过视觉验收，已补原包释放后的兼容对象生成保存；除地图外的按需原生布局已实现，真实类型语料及 Office 原生保真验收仍未完成。自动化交付
 缺口已收口；0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
 
 ### 1.2 门禁实测（2026-09-06，整轮通过）
@@ -20,18 +20,18 @@
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 5896 项，原性能门禁通过 | 2230 core + 1122 edit + 514 save + 194 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile |
+| 断言总量 | `npm test` | ✅ 6010 项，原性能门禁通过 | 2230 core + 1132 edit + 514 save + 194 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 550 对 | 85 份固件、275 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 566 对 | 86 份固件、283 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 389 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
-| PowerPoint 真机 | Windows 自托管工作流 | ❌ **无 runner** | 门禁设施已就绪，缺 Windows + 桌面 PowerPoint |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 414 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
+| PowerPoint 真机 | Windows 自托管工作流 | ⚠️ **未通过** | yzclaw-win / Office 16.0 Build 4266 可打开 ChartEx 探针但仅显示图片；经典图表保存工件在可见/隐藏窗口均被拒绝，原因待定位 |
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 550 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 566 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -73,7 +73,7 @@
 | 图片 | ✅ 裁剪/裁进形状/透明度/灰度 | ✅ Pictures 流 | — |
 | EMF/WMF/PICT | ✅ 解码为 SVG | ✅ | **EMF+ 未处理**；光栅操作码、Region 布尔无解 |
 | 表格 | ✅ tableStyles/条纹/合并/边框/垂直对齐 | ✅ 网格启发式 | — |
-| 图表 | ✅ 经典 16 种 + 次坐标轴 + 3D | ✅ 经内嵌 EMF | **chartex 7 种未实现** |
+| 图表 | ✅ 经典 16 种 + 次坐标轴 + 3D | ✅ 经内嵌 EMF | 除地图外的 ChartEx 按需布局已实现，真实语料与 Office 原生验收待补 |
 | SmartArt | ✅ 缓存 drawing / 6 种布局族自排 | ❌ | `.ppt` SmartArt 未实现 |
 | 媒体·墨迹·评论·节 | ✅ | ❌ | — |
 | 组合 | ✅ 嵌套 + 子坐标系 | ✅ 展平 | — |
@@ -151,7 +151,7 @@ flowchart TD
 | 主题编辑 | 有（换配色是模板定制第一需求） | 有（phClr / fillRef 求值链路已全通） | ✅ **已完成** |
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
-| chartex 解析 | 原生未完成；真实漏斗回退、缺原包保存与数据引用取证已补 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与原生布局 |
+| chartex 解析 | 按需原生布局、真实漏斗与两条保存已补，完整真实语料仍缺 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与 Office 原生验收 |
 | 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **0.8 P2 进行中**，见[媒体操作与 API](media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | ✅ **产品层双路径已完成**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
@@ -392,10 +392,11 @@ Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、�
 另外八个真实 XLSX 只有公式引用与文字回退，不能替代其余六类 PPTX 的验收；完整证据见
 [回退与真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)。
 现已补齐这 9 个文件的定义名称、单元格类型与内嵌工作簿引用取证；层级空槽及重复标签不能直接压平，
-[统一输入约束](wayfinder/ppt-data-fidelity/research/chartex-data-model.md)仍是原生布局的设计边界，不是已实现能力。
+[统一输入约束](wayfinder/ppt-data-fidelity/research/chartex-data-model.md)已用于原生实现；歧义来源继续回退。
 
-真要实现，六种都是纯几何，`chart/plots.ts` 已有同类代码：squarify（树状图）、极坐标堆叠（旭日）、
-累计基线（瀑布）、五数概括（箱线）、梯形（漏斗）、分箱 + 累计线（直方图/Pareto）。
+`@web-ppt/core/chart-ex` 已实现 squarify、分层圆弧、分箱/Pareto、箱线、累计瀑布和源顺序比例漏斗，
+输出统一 Schema；默认不加载实现，官网暂保留回退。104 项专项、八页 Chrome 四类导出及两条保存通过。
+Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布局 oracle。详见[按需 API 与验收边界](chartex-native.md)。
 
 **`regionMap` 明确不做**：需要几 MB 的世界行政区边界数据，塞进包里把成本落到每个用户头上，
 按需下载又要求文件可公网获取——与「文件不出本机」冲突。保持 fallback。

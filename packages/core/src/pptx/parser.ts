@@ -387,7 +387,7 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
       case 'AlternateContent': {
         if (env.edit) retainCompatibilitySource(env.pkg, node, env.partPath);
         return parseCompatibleShapes(node, (branch) => parseShapeTree(branch, env, skipPh),
-          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit);
+          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit, env.pkg);
       }
     }
     return el;
@@ -893,8 +893,12 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
     };
   }
 
-  if (uri.endsWith('/chart')) {
-    const chart = parseChartFrame(data, xf, env);
+  if (uri.endsWith('/chart') || uri === 'http://schemas.microsoft.com/office/drawing/2014/chartex') {
+    if (uri.endsWith('/chartex') && env.edit) {
+      retainCompatibilitySource(env.pkg, frame, env.partPath);
+      frameOnlyEditInfo.editInfo = { ...frameOnlyEditInfo.editInfo, requiresOriginal: true };
+    }
+    const chart = parseChartFrame(data, xf, env, uri.endsWith('/chartex'));
     if (chart) return { ...chart, id: frameId, ...frameOnlyEditInfo };
     return { kind: 'unsupported', ...base(xf), label: '图表', name, id: frameId, ...frameOnlyEditInfo };
   }
@@ -963,9 +967,9 @@ function olePreview(oleObj: Element, env: Env): string | null {
   return null;
 }
 
-function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {
+function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env, extended = false): GroupElement | null {
   if (!data) return null;
-  const render = getChartParser();
+  const render = getChartParser(extended, env.pkg);
   const rid = attr(kid(data, 'chart'), 'r:id');
   const target = rid ? env.rels[rid]?.target : null;
   if (!render || !target) return null;
@@ -973,7 +977,10 @@ function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env): GroupEle
   if (!root) return null;
   let children: SlideElement[];
   try {
-    children = render(root, xf.w, xf.h, { ctx: env.ctx, fonts: env.theme.fonts, rels: env.pkg.rels(target) });
+    children = render(root, xf.w, xf.h, {
+      ctx: env.ctx, fonts: env.theme.fonts, rels: env.pkg.rels(target),
+      ...(extended ? { readPart: (path: string) => env.pkg.files?.[path] } : {}),
+    });
   } catch {
     return null;
   }

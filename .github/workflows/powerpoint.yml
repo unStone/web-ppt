@@ -31,6 +31,9 @@ jobs:
       - name: 用 PowerPoint 未修复打开全部编辑产物
         run: npm run test:edit:powerpoint
 
+      - name: 用 PowerPoint 打开 0.8 图表与媒体统一清单
+        run: npm run test:v08:powerpoint
+
       - name: 上传 PowerPoint 证据
         if: always()
         uses: actions/upload-artifact@v4
@@ -40,5 +43,8 @@ jobs:
             out/v07-integration/office-artifacts.json
             out/v07-integration/powerpoint-report.json
             out/v07-integration/*.pptx
+            out/v08-integration/office-artifacts.json
+            out/v08-integration/powerpoint-report.json
+            out/v08-integration/*.pptx
           if-no-files-found: warn
           retention-days: 30

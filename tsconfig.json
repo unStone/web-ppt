@@ -11,6 +11,7 @@
       "@web-ppt/core/geometry": ["./packages/core/src/geometry/index.ts"],
       "@web-ppt/core/geometry/handles": ["./packages/core/src/geometry/handles/index.ts"],
       "@web-ppt/core/image-zip": ["./packages/core/src/image-zip.ts"],
+      "@web-ppt/core/chart-ex": ["./packages/core/src/chart-ex.ts"],
       "@web-ppt/core/chart-edit": ["./packages/core/src/chart-edit.ts"],
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/edit-core/xml": ["./packages/edit-core/src/xml/index.ts"],
@@ -50,6 +51,7 @@
     "tooling/type-contracts/v07-templates.ts",
     "tooling/type-contracts/v08-chart.ts",
     "tooling/type-contracts/media.ts",
+    "tooling/type-contracts/chartex.ts",
     "tooling/type-contracts/site-i18n.ts"
   ]
 }
