@@ -12,6 +12,7 @@ import { paint } from './fill';
 import { effectFilter, reflectionLayer } from './effect-svg';
 import { bevelOverlay, extrusionLayers, mixShapeColor } from './shape-3d';
 import { escapeXml as esc, round as r } from './serialize';
+import { duotoneFilter } from './picture-fx';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
 
@@ -369,9 +370,15 @@ function mediaPlayer(el: ImageElement, media: MediaInfo): string {
 }
 
 function renderImage(el: ImageElement, ctx: Ctx): string {
+  let filter = el.filter ?? '';
+  if (el.duotone) {
+    const id = ctx.nextId('dt');
+    ctx.defs.push(duotoneFilter(el.duotone, id));
+    filter = `${filter} url(#${id})`.trim();
+  }
   const attrs =
     (el.alpha !== undefined && el.alpha < 1 ? ` opacity="${r(el.alpha)}"` : '') +
-    (el.filter ? ` style="filter:${el.filter}"` : '');
+    (filter ? ` style="filter:${esc(filter)}"` : '');
 
   let img: string;
   if (!el.src) {

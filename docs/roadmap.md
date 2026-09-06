@@ -12,26 +12,28 @@
 
 ### 1.1 一句话
 
-**引擎能力、0.6 高频编辑面、0.7 模板/主题产品链及 0.8 经典图表数据编辑已完成。** ChartEx 真实漏斗回退已恢复并通过视觉验收，已补原包释放后的兼容对象生成保存；除地图外的按需原生布局已实现，真实类型语料及 Office 原生保真验收仍未完成。自动化交付
-缺口已收口；0.5.0 只剩 PowerPoint 真机验收与转正两个外部发布动作，后续能力开发不受阻塞。
+**路线图中已确定范围的功能已实现**：0.6 编辑、0.7 模板/主题、0.8 图表数据/现代图表/媒体，
+以及图片效果、立体编辑、画布读屏语义、EditContext 与官网自动按需加载。混合内容编辑与两条保存已接通。
+用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
+beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api-stability.md)。
 
-### 1.2 门禁实测（2026-09-06，整轮通过）
+### 1.2 门禁实测（2026-09-07，整轮通过）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 6010 项，原性能门禁通过 | 2230 core + 1132 edit + 514 save + 194 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 424 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx |
+| 断言总量 | `npm test` | ✅ 6135 项，原性能门禁通过 | 2230 core + 1132 edit + 555 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 566 对 | 86 份固件、283 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 588 对 | 88 份固件、294 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过 | 414 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
-| PowerPoint 真机 | Windows 自托管工作流 | ⚠️ **未通过** | yzclaw-win / Office 16.0 Build 4266 可打开 ChartEx 探针但仅显示图片；经典图表保存工件在可见/隐藏窗口均被拒绝，原因待定位 |
+| 跨产物一致性 | `npm run verify` | ✅ 通过 | 432 项一致性 + 28 项 0.6 审计 + 18 项 0.7 审计；原体积预算不变 |
+| PowerPoint 真机 | Windows 自托管工作流 | ⏸ 按用户要求跳过 | 已修复经典图表系列标题和子节点顺序；未将修复标为完整 Windows 验收通过 |
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 566 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 588 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -70,7 +72,7 @@
 | 3D | ✅ 挤出/斜角/轮廓/材质/视角 | ⚠️ 缺可信样本 | 等轴测近似，非真投影 |
 | 文本 | ✅ 完整 + 15 种艺术字变形 | ✅ 基础字符与段落 | 包络型艺术字只弯基线 |
 | 样式继承 | ✅ 母版→版式→占位符→段落→run | ✅ TxMasterStyle | — |
-| 图片 | ✅ 裁剪/裁进形状/透明度/灰度 | ✅ Pictures 流 | — |
+| 图片 | ✅ 裁剪/裁进形状/透明度/灰度/双色调 | ✅ Pictures 流 | — |
 | EMF/WMF/PICT | ✅ 解码为 SVG | ✅ | **EMF+ 未处理**；光栅操作码、Region 布尔无解 |
 | 表格 | ✅ tableStyles/条纹/合并/边框/垂直对齐 | ✅ 网格启发式 | — |
 | 图表 | ✅ 经典 16 种 + 次坐标轴 + 3D | ✅ 经内嵌 EMF | 除地图外的 ChartEx 按需布局已实现，真实语料与 Office 原生验收待补 |
@@ -85,14 +87,14 @@
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。**无直接 PDF、无视频。**
 
-### 2.2 写：编辑命令（61 个已实现）
+### 2.2 写：编辑命令与按需扩展
 
 | 域 | 已实现 | 未实现 |
 |---|---|---|
 | 变换 | `SetXfrm` `SetFlip` `AlignElements` `DistributeElements` `Group` `Ungroup` | — |
 | 结构 | `RemoveElement` `SetZ` `PasteElements` `SetName` `SetAltText` `SetLocked` `SetElementHidden` | — |
-| 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` `SetPreset` `SetAdj` | `SetScene3D` |
-| 图片 | `AddImage` `ReplaceImage` `SetCrop` | **`SetPictureFx`**（透明度/灰度/双色调） |
+| 形状 | `AddShape` `SetFill` `SetStroke` `SetEffects` `SetGeometry` `ConvertToCustomGeometry` `SetPreset` `SetAdj` + 按需 `SetScene3D` | — |
+| 图片 | `AddImage` `ReplaceImage` `SetCrop` + 按需 `SetPictureFx`（透明度/灰度/双色调） | — |
 | 文本 | `EditText` `SetRunProps`（含高亮/字距/大小写/上下标/精确下划线与单双删除线）`ClearFormat` `SetParaProps`（含项目符号/编号）`SetBodyProps` `FitTextShape` `ReplaceText` | — |
 | 表格 | `AddTable` `InsertRow` `InsertColumn` `RemoveRow` `RemoveColumn` `MergeCells` `SplitCell` `SetRowHeight` `SetColumnWidth` `SetCellProps` `SetTableStyle` + 单元格文字 | — |
 | 页面 | `AddSlide` `RemoveSlide` `MoveSlide` `DuplicateSlide` `AddSection` `RenameSection` `MoveSection` `RemoveSection` `SetSlideSize` `SetLayout` `SetBackground` `SetBackgroundImage` `SetBackgroundCrop` `SetHidden` `SetNotes` `SetTransition` `SetAnimations` | — |
@@ -113,7 +115,8 @@
 | 框架适配 | ✅ React 1.12KB + Vue 1.34KB gzip，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
-| 无障碍 | ✅ 选择窗格键盘导航 / 锁定 / 隐藏；⚠️ **画布本身无 AT 语义** |
+| 无障碍 | ✅ 选择窗格键盘导航 / 锁定 / 隐藏；✅ 按需画布对象目录、替代文字、选择状态及阅读顺序 |
+| 浏览器输入 | ✅ 按需 EditContext；IME 单事务、选区与候选位置；加载失败和不支持时保留 contenteditable |
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
 | 官网编辑页 | ✅ 独立 `editor.html`，本机打开/模板新建/编辑/保存/恢复 |
 | 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
@@ -152,9 +155,9 @@ flowchart TD
 | 版式 / 母版编辑 | 有（企业模板定制） | 有（统一设计画布与反向失效索引） | ✅ **已完成** |
 | 图表数据编辑 | 有（图表是 PPT 第二高频对象） | 有（同时改 cache 与 embedded xlsx，按需入口） | **0.8 P0 已完成** |
 | chartex 解析 | 按需原生布局、真实漏斗与两条保存已补，完整真实语料仍缺 | 有，除 `regionMap` 原生渲染 | **0.8 P1**，继续真实语料与 Office 原生验收 |
-| 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **0.8 P2 进行中**，见[媒体操作与 API](media-insertion.md) |
+| 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **功能完成，真机验收暂缓**，见[媒体操作与 API](media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | ✅ **产品层双路径已完成**，不进内核 |
-| EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | 渐进增强，不改主路径 |
+| EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | ✅ 按需渐进增强，真实 Chromium 输入与失败回退已验证 |
 | Safari LBSE | 无（engine 行盒已兜住） | 上游未默认开启 | **保留兜底，不要删** |
 | `.ppt` 二进制写回 | 无（明确转 `.pptx`） | 有但会静默降级 | **不做**（范围外，已决策） |
 | EMF+ / 光栅操作码 / Region 布尔 | 无（无样本 / SVG 表达不了） | 无 | **不做**（无解） |
@@ -180,9 +183,9 @@ flowchart LR
 | **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 | 无 |
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
 | **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) | 需真实语料 |
-| **1.0** | 稳定 API | API 冻结 · 语料回归 · 文档完整 | 依赖 beta 反馈周期 |
+| **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
-一致性闸门已完成。PowerPoint 真机验收全程外部阻塞，不要让它挡住 0.6 的开发，只挡 0.5.0 的 tag。
+一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
 
 ---
 
@@ -375,7 +378,7 @@ flowchart LR
 
 `@web-ppt/core/chart-edit`、`@web-ppt/edit-core/chart`、`@web-ppt/editor/chart` 及 React/Vue 转发均为按需入口，
 官网数据表同样动态加载；默认 core / edit-core / editor 和官网初始依赖闭包没有增长。确定性固件来自 Apache POI
-真实嵌入工作簿语料；194 项专项断言、真实 Chrome、LibreOffice 打开与缓存/工作簿一致性均通过，Windows
+真实嵌入工作簿语料；258 项专项断言、真实 Chrome、LibreOffice 打开与缓存/工作簿一致性均通过，Windows
 PowerPoint 继续消费同一工件清单提供提交绑定证据。图表类型切换仍不在本阶段范围内。
 
 ### 5.10 chartex（0.8）
@@ -437,3 +440,12 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 | 3 | [修复未知扩展对象阻断兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) | 回退、两条保存、分组/解组复制已完成 | 继续其他类型真实语料与原生布局 |
 
 第 2 项全程外部阻塞，**只挡 0.5.0 的 tag，不挡后续能力开发**。
+
+### 5.11 剩余编辑与交互面（已实现）
+
+| 能力 | 入口与证据 |
+|---|---|
+| 图片/立体效果 | [appearance 按需 API](appearance-editing.md)，两条保存、清除/恢复、零厚度、历史/恢复/外部补丁与跨文稿复制 |
+| AT / EditContext | [浏览器增强](browser-editing.md)，对象身份/阅读顺序与真实 Chromium 原生输入、按需块失败回退 |
+| 产品集成 | 经典数据、ChartEx、媒体、图片与立体效果混合保存；PNG/独立 SVG 颜色及官网重开 |
+| 1.0 准备 | [公开 API 契约与迁移](api-stability.md)，源码类型负例与产物 exports 构建守卫 |

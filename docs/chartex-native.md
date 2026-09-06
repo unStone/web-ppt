@@ -1,6 +1,6 @@
 # ChartEx 按需原生解析
 
-原生实现已提供；完整 Office 保真验收仍在进行。默认继续使用文件中的 Office 预览，宿主可显式启用：
+原生实现已提供；完整 Office 保真验收仍在进行。SDK 默认继续使用文件中的 Office 预览，宿主可显式启用：
 
 ```ts
 import { parse, setChartExParser } from '@web-ppt/core';
@@ -14,7 +14,8 @@ setChartExParser(null);
 
 `renderChartExXml(xml, width, height, env)` 可单独输出 `SlideElement[]`。`env.readPart` 只读取 OPC 包内字节，
 不访问外部工作簿或网络。两个入口均无 DOM 依赖，输出复用现有屏幕、独立 SVG、PNG 与打印路径。
-官网尚未默认启用此实验入口；真实来源与布局验收完成后再接入自动加载旅程。
+官网和查看器已使用 `@web-ppt/core/modern-charts` 检查内容类型并自动按需加载；普通文件不下载布局模块，
+加载失败保留来源预览。SDK 默认入口行为不变，完整真实语料与 Office 原生保真验收仍单独登记。
 
 | 类型 | 实现 | 明确的退化 |
 |---|---|---|

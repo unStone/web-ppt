@@ -1,3 +1,5 @@
+import { runSiteAppearanceBrowserContract } from './lib/site-appearance-browser-contract.mjs';
+import { runSiteEditContextFailureContract } from './lib/site-edit-context-browser-contract.mjs';
 /** 官网产品层的 .ppt 转换确认、零命令拒绝与下载命名必须在真实浏览器观察。 */
 import { execFileSync, spawn } from 'node:child_process';
 import {
@@ -27,6 +29,11 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/core/modern-charts', join(root, 'packages/core/src/modern-charts.ts')],
+  ['@web-ppt/core/chart-ex', join(root, 'packages/core/src/chart-ex.ts')],
+  ['@web-ppt/edit-core/appearance', join(root, 'packages/edit-core/src/appearance/index.ts')],
+  ['@web-ppt/editor/accessibility', join(root, 'packages/editor/src/canvas-accessibility.ts')],
+  ['@web-ppt/editor/edit-context', join(root, 'packages/editor/src/edit-context/index.ts')],
   ['@web-ppt/editor/media', join(root, 'packages/editor/src/media/index.ts')],
   ['@web-ppt/edit-core/media', join(root, 'packages/edit-core/src/media/index.ts')],
   ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
@@ -155,6 +162,8 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-editor-appearance.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-appearance.pptx'))]],
+  ['/fixtures/mixed-patched.pptx', ['application/octet-stream', readFileSync(join(root, 'out/edit-save/mixed-patched.pptx'))]],
   ['/fixtures/sample-editor-add-media.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'))]],
   ['/fixtures/sample-editor-media.wav', ['audio/wav', readFileSync(join(root, 'fixtures/sample-editor-media.wav'))]],
   ['/fixtures/sample-editor-media.mp4', ['video/mp4', readFileSync(join(root, 'fixtures/sample-editor-media.mp4'))]],
@@ -216,9 +225,17 @@ if (existsSync(realChartex)) {
     sha256: '8f971346a21010dfdb22799be79bbb883497cc260129cba41d5c9b06967fc3e3',
     imageHash: '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096' });
 }
+let rejectEditContext = false;
+const editContextUrls = Object.entries(outputs).filter(([, info]) =>
+  pathEndsWith(info.entryPoint, 'packages/editor/src/edit-context/index.ts'))
+  .map(([key]) => `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`);
+let rejectedEditContextLoads = 0;
 const server = createServer((request, response) => {
   const rawPath = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
   const pathname = productionBase && rawPath.startsWith(`${productionBase}/`) ? rawPath.slice(productionBase.length) : rawPath;
+  if (rejectEditContext && editContextUrls.includes(pathname)) {
+    rejectedEditContextLoads++; response.writeHead(503).end('Intentional optional chunk failure'); return;
+  }
   if (pathname === '/slow-media.wav') {
     setTimeout(() => {
       response.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' });
@@ -338,7 +355,8 @@ async function runContract(webSocketDebuggerUrl) {
     socket.send(JSON.stringify({ id, method, params }));
   });
   const evaluate = async (expression, awaitPromise = false) => {
-    const response = await request('Runtime.evaluate', { expression, awaitPromise, returnByValue: true });
+    const response = await request('Runtime.evaluate', { expression, awaitPromise, returnByValue: true })
+      .catch((error) => { throw new Error(`${error.message}；表达式：${expression.slice(0, 240)}`, { cause: error }); });
     if (response.result?.exceptionDetails) {
       throw new Error(response.result.exceptionDetails.exception?.description ?? '页面脚本执行失败');
     }
@@ -346,7 +364,10 @@ async function runContract(webSocketDebuggerUrl) {
   };
   const waitFor = async (expression, label, attempts = 100) => {
     for (let attempt = 0; attempt < attempts; attempt++) {
-      if (await evaluate(expression)) return;
+      try { if (await evaluate(expression)) return; } catch (error) {
+        // Page.navigate 返回时旧执行上下文可能仍在销毁；仅只读轮询可以跨过这个窗口。
+        if (!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/.test(String(error))) throw error;
+      }
       await delay(50);
     }
     const state = await evaluate(`(() => ({
@@ -420,6 +441,12 @@ async function runContract(webSocketDebuggerUrl) {
         return true;
       };
       await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls, chartChunks, saveChunks, onEvent, consumeConsoleFailure });
+      await request('Page.navigate', { url: await evaluate("new URL('editor.html?lang=zh-CN', location.href).href") });
+      const featureReady = "document.querySelector('#fileInput') && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading";
+      await waitFor(`(${featureReady}) || document.querySelector('#recoveryPrompt')?.hidden === false`, '生产外观页面就绪');
+      if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
+      await waitFor(featureReady, '生产外观文稿就绪');
+      await runSiteAppearanceBrowserContract({ evaluate, request, waitFor, click, out });
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }
@@ -435,7 +462,7 @@ async function runContract(webSocketDebuggerUrl) {
         return original.call(this);
       };
     })()`);
-    await runSiteEditorToolbarContract({ evaluate, waitFor, click, request, lazyMediaUrls });
+    await runSiteEditorToolbarContract({ evaluate, waitFor, click, request, lazyMediaUrls, out });
     await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
     const desktopLayout = await evaluate(`(() => {
       const panel = document.querySelector('.object-panel').getBoundingClientRect();
@@ -758,6 +785,8 @@ async function runContract(webSocketDebuggerUrl) {
     if (switched !== 'hexagon') throw new Error('官网形状类型控件无法选择完整预设目录');
     // 源码薄包服务器只有编辑页；三页完整矩阵由生产入口执行。
     await runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor }, ['editor']);
+    const checkedInputFailure = await runSiteEditContextFailureContract({ evaluate, click, request, waitFor }, () => { rejectEditContext = true; });
+    if (checkedInputFailure && !rejectedEditContextLoads) throw new Error('未实际触发 EditContext 模块下载失败');
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {

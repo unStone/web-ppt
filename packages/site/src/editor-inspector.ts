@@ -40,6 +40,20 @@ export function createEditorInspector(
   const textSection = $<HTMLElement>(element, '#textInspector');
   const shapeSection = $<HTMLElement>(element, '#shapeInspector');
   const imageSection = $<HTMLElement>(element, '#imageInspector');
+  for (const [section, title] of [[shapeSection, '立体效果'], [imageSection, '图片效果']] as const) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'button';
+    button.dataset.appearanceTools = ''; setText(button, title); section.append(button);
+    button.onclick = async () => {
+      const { session, writable } = context(); if (!session || !writable) return;
+      const selection = session.editor.selection;
+      const id = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
+      if (!id) return;
+      try {
+        const { showAppearanceTools } = await import('./editor-appearance-tools');
+        if (context().session === session) showAppearanceTools(session, id, () => context().session);
+      } catch (error) { notice(message('外观修改失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error'); }
+    };
+  }
   const linkSection = $<HTMLElement>(element, '#linkInspector');
   const empty = $<HTMLElement>(element, '#inspectorEmpty');
   const textBold = $<HTMLButtonElement>(element, '#textBold');

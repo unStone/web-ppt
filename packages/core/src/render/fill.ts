@@ -1,9 +1,9 @@
+import { round } from './serialize';
 import type { Fill } from '../types';
 import { imageFillPaint } from './image-fill';
 import type { ImageFillContext } from './image-fill';
 
-const round = (value: number): string =>
-  Number.isFinite(value) ? String(Math.round(value * 100) / 100) : '0';
+
 
 const PATTERN_DEFS: Record<string, string> = {
   pct5: 'M0 0h1v1H0z', pct10: 'M0 0h1v1H0z', pct20: 'M0 0h2v2H0z', pct25: 'M0 0h2v2H0z',

@@ -50,8 +50,19 @@
       "types": "./dist/chart/index.d.ts",
       "import": "./dist/chart.js"
     },
-    "./media": { "types": "./dist/media/index.d.ts", "import": "./dist/media.js" },
-    "./package.json": "./package.json"
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "import": "./dist/media.js"
+    },
+    "./package.json": "./package.json",
+    "./accessibility": {
+      "types": "./dist/canvas-accessibility.d.ts",
+      "import": "./dist/accessibility.js"
+    },
+    "./edit-context": {
+      "types": "./dist/edit-context/index.d.ts",
+      "import": "./dist/edit-context.js"
+    }
   },
   "files": [
     "dist",
@@ -60,7 +71,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && node ../../tooling/check-editor-main-size.mjs && vite build --config vite.vertex.config.ts && vite build --config vite.adjustments.config.ts && vite build --config vite.design.config.ts && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && tsc -p tsconfig.build.json",
+    "build": "vite build && node ../../tooling/check-editor-main-size.mjs && vite build --config vite.vertex.config.ts && vite build --config vite.adjustments.config.ts && vite build --config vite.design.config.ts && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.browser-features.config.ts && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

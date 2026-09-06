@@ -1,3 +1,4 @@
+import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { parse, presentationToPrintableHtml, slideToSvgFile, slideText } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 import type { Presentation } from '@web-ppt/core';
@@ -78,7 +79,7 @@ function updateChrome(): void {
 async function openData(data: ArrayBuffer, name: string): Promise<void> {
   try {
     const t0 = performance.now();
-    const parsed = await parse(data);
+    const parsed = (await prepareModernCharts(data), await parse(data));
     const ms = Math.round(performance.now() - t0);
     pres = parsed;
 

@@ -66,7 +66,7 @@ export function parseLineEnd(el: Element | null): LineEnd | undefined {
 }
 
 const MATERIAL_DEPTH: Record<string, number> = {
-  matte: 1, plastic: 1, metal: 1.15, warmMatte: 1, translucentPowder: 0.9,
+  metal: 1.15, translucentPowder: 0.9,
   powder: 0.95, dkEdge: 1.1, softEdge: 0.9, clear: 0.8, flat: 0.85, softmetal: 1.1,
 };
 
@@ -83,9 +83,7 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
   const out: Shape3D = {};
 
   const extrusionH = numAttr(sp3d, 'extrusionH');
-  if (extrusionH) out.extrusion = emu(extrusionH);
-  const extClr = childColor(kid(sp3d, 'extrusionClr'), ctx);
-  if (extClr) out.extrusionColor = extClr;
+  if (extrusionH !== null) out.extrusion = emu(extrusionH);
 
   const bevelT = kid(sp3d, 'bevelT');
   if (bevelT) out.bevelTop = emu(numAttr(bevelT, 'h') ?? 38100);
@@ -93,9 +91,10 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
   if (bevelB) out.bevelBottom = emu(numAttr(bevelB, 'h') ?? 38100);
 
   const contourW = numAttr(sp3d, 'contourW');
-  if (contourW) {
-    out.contourWidth = emu(contourW);
-    out.contourColor = childColor(kid(sp3d, 'contourClr'), ctx) ?? undefined;
+  if (contourW !== null) out.contourWidth = emu(contourW);
+  for (const [tag, key] of [['extrusionClr', 'extrusionColor'], ['contourClr', 'contourColor']] as const) {
+    const color = childColor(kid(sp3d, tag), ctx);
+    if (color) out[key] = color;
   }
 
   const material = attr(sp3d, 'prstMaterial');
@@ -109,7 +108,7 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
   }
 
   // 没写挤出高度但有斜角时给一个可见的默认厚度
-  if (!out.extrusion && (out.bevelTop || out.bevelBottom)) out.extrusion = 6;
+  if (extrusionH === null && (out.bevelTop || out.bevelBottom)) out.extrusion = 6;
   if (out.extrusion && material) out.extrusion *= MATERIAL_DEPTH[material] ?? 1;
 
   return Object.keys(out).length ? out : undefined;

@@ -1,3 +1,4 @@
+import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
 import { loadFontsFor, unloadFonts } from '@web-ppt/fonts';
@@ -77,6 +78,7 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   const t0 = performance.now();
   let pres: Presentation;
   try {
+    await prepareModernCharts(bytes);
     pres = await parse(bytes);
   } catch (e) {
     thumbs.innerHTML = '';

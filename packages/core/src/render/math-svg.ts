@@ -25,9 +25,7 @@ export interface Box {
 
 const MATH_FONT = "'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif";
 
-const r = (v: number): string => String(Math.round(v * 100) / 100);
-const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+import { round as r, escapeXml as esc } from './serialize';
 
 /**
  * 组合附加符号（U+03xx / U+20Dx）→ 间隔字符。

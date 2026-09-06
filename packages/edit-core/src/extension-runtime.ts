@@ -10,6 +10,11 @@ export interface EditExtensionSavePlan {
 }
 
 export interface EditExtensionRuntime {
+  readonly materialize?: (
+    document: import('./xml/types').XmlDocument, record: import('./types').ElementRecord, generated: boolean,
+    xml: import('./save/extension-elements').EditElementXml,
+  ) => void;
+  readonly supportsGenerated?: (element: SlideElement) => boolean;
   readonly validateResource?: (resource: ElementInsertionResource, bytes: Uint8Array) => boolean;
   readonly command: (
     doc: EditDoc, command: ExtensionCommand, origin: string,

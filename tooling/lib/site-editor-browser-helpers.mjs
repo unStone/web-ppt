@@ -1,4 +1,4 @@
-export async function openFixture({ evaluate, waitFor }, url, name) {
+export async function openFixture({ evaluate, waitFor, click }, url, name, { discardRecovery = false } = {}) {
   await evaluate(`(async () => {
     window.confirm = () => true;
     const bytes = await fetch(${JSON.stringify(url)}).then((response) => response.arrayBuffer());
@@ -10,8 +10,13 @@ export async function openFixture({ evaluate, waitFor }, url, name) {
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`, true);
-  await waitFor(`document.querySelector('#fileName')?.textContent === ${JSON.stringify(name)}
-    && !document.querySelector('#editorApp')?.dataset.loading`, `${name} 就绪`);
+  const ready = `document.querySelector('#fileName')?.textContent === ${JSON.stringify(name)}
+    && !document.querySelector('#editorApp')?.dataset.loading`;
+  if (discardRecovery) {
+    await waitFor(`(${ready}) || document.querySelector('#recoveryPrompt')?.hidden === false`, '文稿或恢复选择就绪');
+    if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
+  }
+  await waitFor(ready, `${name} 就绪`);
 }
 
 export async function selectPaneObject({ evaluate, waitFor }, name) {

@@ -1,3 +1,4 @@
+import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { setFontDecoder } from '@web-ppt/core';
 import {
   openEditor,
@@ -306,13 +307,23 @@ async function openDocument(
     const { eotToTtf } = await import('mtx-decompressor');
     if (generation !== openGeneration) return;
     setFontDecoder(eotToTtf);
-    const [next, { createPresetAdjustmentEditor }] = await Promise.all([
-      openEditor(source, recovery.openOptions(controller.signal)),
+    await prepareModernCharts(source instanceof Blob ? await source.arrayBuffer() : source);
+    if (generation !== openGeneration) return;
+    const [{ createPresetAdjustmentEditor }, accessibility, inputEnhancement] = await Promise.all([
       import('@web-ppt/editor/adjustments'),
+      import('@web-ppt/editor/accessibility').catch(() => undefined),
+      'EditContext' in window ? import('@web-ppt/editor/edit-context').catch(() => undefined) : undefined,
     ]);
+    if (generation !== openGeneration) return;
+    const next = await openEditor(source, recovery.openOptions(controller.signal));
     if (generation !== openGeneration) {
       next.dispose();
       return;
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.appearance !== undefined)) {
+      const { registerAppearanceEditing } = await import('@web-ppt/edit-core/appearance');
+      registerAppearanceEditing();
+      if (generation !== openGeneration) { next.dispose(); return; }
     }
     if (Object.values(next.editor.doc.elements).some((record) =>
       record.ovr.extensions?.['chart-data'] !== undefined)) {
@@ -333,6 +344,8 @@ async function openDocument(
     adjustments = createPresetAdjustmentEditor(next, view, { onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
     releaseLabels = [bindPaneLabels(next, pane), bindViewLabels(next, view)];
+    if (accessibility) releaseLabels.push(accessibility.createCanvasAccessibility(next, view).dispose);
+    if (inputEnhancement) releaseLabels.push(inputEnhancement.enableEditContext(next, view).dispose);
     // 语言入口属于宿主编辑工具；否则 document 捕获阶段会先关闭文字编辑，晚于此的防失焦无效。
     const releaseTools = [toolbar, document.querySelector<HTMLElement>('#siteLanguage')!]
       .map((element) => view!.registerTextUi(element));

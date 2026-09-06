@@ -1,3 +1,4 @@
+import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
 import { loadFontsFor } from '@web-ppt/fonts';
@@ -224,6 +225,7 @@ async function openSample(s: Sample): Promise<void> {
   const t0 = performance.now();
   let pres: Presentation;
   try {
+    await prepareModernCharts(bytes);
     pres = await parse(bytes);
   } catch (e) {
     if (generation !== loadGeneration) return;

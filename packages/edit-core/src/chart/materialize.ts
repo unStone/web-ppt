@@ -176,8 +176,12 @@ function writeData(
 
 function writeSeriesName(holder: XmlElement, name: string, binding: ChartFormulaBinding): void {
   const { ref, data } = containerOf(holder);
-  if (ref || data) writeData(holder, [name], false, binding);
-  else setText(ensure(holder, 'v'), name);
+  if (ref && binding.formula) writeData(holder, [name], false, binding);
+  else {
+    // CT_SerTx 只接受 strRef 或 v；类别使用的 strLit 会让 Office 删除整张图表。
+    if (ref || data) removeXmlChild(holder, (ref ?? data)!);
+    setText(ensure(holder, 'v'), name);
+  }
 }
 
 function numericCategoryContainer(holder: XmlElement): boolean {
@@ -259,8 +263,7 @@ function cloneSeries(
   const template = templates.get(plotKind);
   if (!template) throw new Error(`${plotKind} 绘图区没有可继承样式的系列`);
   const clone = cloneXmlNode(template.node);
-  const before = children(plot).find((item) => item.localName === 'dLbls'
-    || item.localName === 'axId' || item.localName === 'extLst') ?? null;
+  const before = children(plot).find((item) => !'barDir grouping varyColors scatterStyle radarStyle ofPieType wireframe ser'.split(' ').includes(item.localName)) ?? null;
   append(plot, clone, before);
   return { ...template, node: clone };
 }

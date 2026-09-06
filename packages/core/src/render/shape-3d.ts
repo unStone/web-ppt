@@ -1,3 +1,4 @@
+import { round } from './serialize';
 import type { Shape3D, ShapeElement } from '../types';
 
 interface Shape3DContext {
@@ -5,25 +6,24 @@ interface Shape3DContext {
   readonly nextId: (prefix: string) => string;
 }
 
-const round = (value: number): string =>
-  Number.isFinite(value) ? String(Math.round(value * 100) / 100) : '0';
+
+export function shapeColorChannels(source: string): [number, number, number] {
+  const functional = source.match(/rgba?\(([^)]+)\)/);
+  if (functional) {
+    const parts = functional[1].split(',').map(Number);
+    return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
+  }
+  const hex = source.replace('#', '');
+  return hex.length >= 6
+    ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+    : [128, 128, 128];
+}
 
 export function mixShapeColor(color: string, target: string, ratio: number): string {
-  const parse = (source: string): [number, number, number] => {
-    const functional = source.match(/rgba?\(([^)]+)\)/);
-    if (functional) {
-      const parts = functional[1].split(',').map((value) => Number(value.trim()));
-      return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
-    }
-    const hex = source.replace('#', '');
-    return hex.length >= 6
-      ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
-      : [128, 128, 128];
-  };
-  const from = parse(color);
-  const to = parse(target);
+  const from = shapeColorChannels(color);
+  const to = shapeColorChannels(target);
   const output = from.map((value, index) => Math.round(value * (1 - ratio) + to[index] * ratio));
-  return `rgb(${output[0]},${output[1]},${output[2]})`;
+  return `rgb(${output.join(',')})`;
 }
 
 export function extrusionLayers(el: ShapeElement, shape3d: Shape3D, baseColor: string): string {

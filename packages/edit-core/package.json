@@ -58,7 +58,11 @@
       "types": "./dist/media/index.d.ts",
       "import": "./dist/media.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./appearance": {
+      "types": "./dist/appearance/index.d.ts",
+      "import": "./dist/appearance.js"
+    }
   },
   "files": [
     "dist",
@@ -67,7 +71,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.appearance.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

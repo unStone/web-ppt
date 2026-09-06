@@ -2,6 +2,10 @@
 import { mediaArtifacts } from './media-artifacts.mjs';
 
 export const V08_EXTRA_SOURCES = Object.freeze([
+  ...['patched', 'generated'].flatMap((mode) => [
+    { file: `appearance-${mode}.pptx`, slides: 1, source: `out/edit-save/appearance-${mode}.pptx` },
+    { file: `mixed-${mode}.pptx`, slides: 10, source: `out/edit-save/mixed-${mode}.pptx` },
+  ]),
   ...['patch', 'generated'].map((mode) => ({ file: `chartex-native-${mode}.pptx`, slides: 8, source: `out/chartex-native/native-${mode}.pptx` })),
   ...mediaArtifacts.map(({ name, pages }) => ({ file: `media-${name}.pptx`, slides: pages, source: `out/media-insertion/${name}.pptx` })),
 ]);

@@ -51,6 +51,7 @@ import { themeHasOverrides } from '../theme';
 import { hasLayoutPropertyOverrides, patchLayoutProperties } from './layout-properties';
 import { hasMasterPropertyOverrides, patchMasterProperties } from './master-properties';
 import { registeredEditExtensions } from '../extension-runtime';
+import { hasElementExtensionOverrides } from './extension-elements';
 import type { EditExtensionSavePlan } from '../extension-runtime';
 
 function dynamicSlideNumberParts(doc: EditDoc): Map<string, number> {
@@ -81,6 +82,7 @@ function recordsByPart(doc: EditDoc): Map<string, ElementRecord[]> {
       && !hasTableCellAppearanceOverrides(record)
       && !hasTableStyleOverride(record)
       && !hasHyperlinkOverrides(record)
+      && !hasElementExtensionOverrides(record)
       && record.meta.sourceParent === undefined
       && !record.meta.insertion) continue;
     const origin = record.meta.origin;

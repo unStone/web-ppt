@@ -40,6 +40,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 8.10KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
 
+按需图片与立体编辑见[外观效果](docs/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/browser-editing.md)。[API 契约与迁移](docs/api-stability.md)说明公开入口和生命周期。
+
 ## 快速开始
 
 ```bash
@@ -437,13 +439,13 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 514 项 + PowerPoint 证据 9 项 + 86 份固件、566 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1132 项 + 保存 555 项 + PowerPoint 证据 9 项 + 88 份固件、588 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
-| `npm run test:v08` | 经典图表数据编辑 194 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
+| `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
 | `npm run test:chartex` | ChartEx 原生 104 项断言：层级与统计边界、配置继承、两种文本及保存路径 |
 | `npm run test:media` | 媒体插入 870 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存和严格 XML；[阶段 API](docs/media-insertion.md) |
-| `npm run test:editor` | 424 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
+| `npm run test:editor` | 444 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
 | `npm run test:v07:libreoffice` | 用 LibreOffice 无修复打开 0.7 单一清单中的 11 份跨能力产物 |
 | `npm run test:edit:m1` | M1 最小写回验收 + 71 份模型保存产物的 LibreOffice 真实打开测试 |

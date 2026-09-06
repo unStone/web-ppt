@@ -8,7 +8,7 @@ import type {
 import type { PlaceholderDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
-import { childColor } from './color';
+import { childColor, parseColor } from './color';
 import { parse3D, parseEffects, parseLineEnd } from './effects';
 import { parseSlideTiming, parseTransition } from './animation';
 import { custGeomPath, customGeometryModel, parseAdjustments, presetGeom } from './geometry';
@@ -238,7 +238,6 @@ function blipFilter(blipFill: Element | null): string | undefined {
   if (!blip) return undefined;
   const parts: string[] = [];
   if (kid(blip, 'grayscl')) parts.push('grayscale(1)');
-  if (kid(blip, 'duotone')) parts.push('grayscale(1) contrast(1.1)');
   const lum = kid(blip, 'lum');
   if (lum) {
     const bright = (numAttr(lum, 'bright') ?? 0) / 100000;
@@ -640,11 +639,14 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
   }
 
   const alphaMod = numAttr(kid(kid(blipFill, 'blip'), 'alphaModFix'), 'amt');
+  const tones = Array.from(kid(kid(blipFill, 'blip'), 'duotone')?.children ?? [])
+    .map((color) => parseColor(color, env.ctx));
 
   return {
     kind: 'image', ...base(xf), src: src ?? '', crop, clipPath,
     alpha: alphaMod !== null ? alphaMod / 100000 : undefined,
     filter: blipFilter(blipFill),
+    ...(tones.length === 2 ? { duotone: tones as [string, string] } : {}),
     stroke: parseLnElement(kid(spPr, 'ln'), env, null),
     effects: parseEffects(kid(spPr, 'effectLst'), env.ctx),
     link: hyperlink.link,

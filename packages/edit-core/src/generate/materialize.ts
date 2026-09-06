@@ -27,6 +27,7 @@ import {
 import type { HyperlinkSaveContext } from '../save/hyperlink';
 import { materializeElementImageFill, materializeElementStroke } from '../save/shape-format';
 import { patchSlideProperties } from '../save/slide-properties';
+import { extensionSupportsGenerated, materializeElementExtensions } from '../save/extension-elements';
 import { materializeRunProperties } from '../save/text-source-less';
 import {
   materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
@@ -367,8 +368,8 @@ function elementInsertion(
   if (record.src.editInfo?.requiresOriginal) {
     throw new Error(`兼容对象 ${record.id} 需要原包；请重新打开原文件并使用补丁保存`);
   }
-  if (record.src.scene3d) throw new Error(`生成保存暂不支持三维元素：${record.id}`);
-  if (record.src.kind === 'image' && record.src.filter) {
+  if (record.src.scene3d && !extensionSupportsGenerated(record.src)) throw new Error(`生成保存暂不支持三维元素：${record.id}`);
+  if (record.src.kind === 'image' && (record.src.filter || record.src.duotone) && !extensionSupportsGenerated(record.src)) {
     throw new Error(`生成保存暂不支持图片滤镜：${record.id}`);
   }
   if (record.src.kind === 'shape') return shapeInsertion(doc, record, spid, part);
@@ -490,6 +491,7 @@ function materializeSlide(
   patchSlideProperties(tree, work, slide);
   for (const record of Object.values(records)) {
     if (record.src.editInfo?.requiresOriginal) continue;
+    materializeElementExtensions(tree, record, true);
     if (record.src.kind === 'shape' && record.src.fill?.type === 'image') {
       materializeElementImageFill(tree, record, record.src.fill, `rIdFill${spids.get(record.id)!}`);
     }

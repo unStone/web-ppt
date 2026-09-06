@@ -1,0 +1,15 @@
+export const appearanceMessages = {
+  '图片效果': 'Picture effects', '立体效果': '3D effects', '不透明度（%）': 'Opacity (%)',
+  '灰度': 'Grayscale', '双色调': 'Duotone', '暗部颜色': 'Dark color', '亮部颜色': 'Light color',
+  '挤出深度': 'Extrusion depth', '顶部斜角': 'Top bevel', '底部斜角': 'Bottom bevel',
+  '轮廓宽度': 'Contour width', '轮廓颜色': 'Contour color', '挤出颜色': 'Extrusion color',
+  'X 轴视角': 'X rotation', 'Y 轴视角': 'Y rotation', '材质': 'Material',
+  '浏览器预览使用等轴测近似；保存保留立体参数。': 'The browser uses an isometric approximation; saved files retain 3D settings.',
+  '外观修改失败：{detail}': 'Could not update appearance: {detail}',
+  '恢复来源': 'Restore source',
+  '经典哑光': 'Classic matte', '经典塑料': 'Classic plastic', '经典金属': 'Classic metal',
+  '经典线框': 'Classic wireframe', '哑光': 'Matte', '塑料': 'Plastic', '金属': 'Metal', '暖哑光': 'Warm matte',
+  '半透明粉末': 'Translucent powder', '粉末': 'Powder', '深色边缘': 'Dark edge', '柔和边缘': 'Soft edge',
+  '透明': 'Clear', '平面': 'Flat', '柔和金属': 'Soft metal',
+  '清除效果': 'Clear effects',
+} as const;

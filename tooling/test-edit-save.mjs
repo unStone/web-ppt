@@ -24,6 +24,8 @@ import { runSlidePropertiesSaveContract } from './lib/slide-properties-save-cont
 import { runSlideNotesSaveContract } from './lib/slide-notes-save-contract.mjs';
 import { runSlideImageBackgroundSaveContract } from './lib/slide-image-background-save-contract.mjs';
 import { runShapeEffectsSaveContract } from './lib/shape-effects-save-contract.mjs';
+import { runMixedEditingContract } from './lib/mixed-editing-contract.mjs';
+import { runAppearanceSaveContract } from './lib/appearance-save-contract.mjs';
 import { runImageContentSaveContract } from './lib/image-content-save-contract.mjs';
 import { runHyperlinkSaveContract } from './lib/hyperlink-save-contract.mjs';
 import { runSelectionPaneSaveContract } from './lib/selection-pane-save-contract.mjs';
@@ -466,6 +468,8 @@ await runFindReplaceSaveContract({ edit, core, load, check, saveArtifact });
 await runTransitionSaveContract({ edit, core, load, check, saveArtifact });
 await runAnimationSaveContract({ edit, core, load, check, saveArtifact });
 
+await runAppearanceSaveContract({ core, edit, load, check, eq, root, out });
+await runMixedEditingContract({ root, out, check, eq });
 const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();
 check('真实 Office 门禁覆盖本轮全部保存产物',
   [...savedArtifactNames].sort().join('\n') === expectedArtifactNames.join('\n'));

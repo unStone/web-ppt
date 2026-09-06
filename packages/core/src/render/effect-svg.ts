@@ -1,11 +1,11 @@
+import { round } from './serialize';
 import type { Effects, ElementBase } from '../types';
 
 interface EffectContext {
   readonly defs: string[];
   readonly nextId: (prefix: string) => string;
 }
-const round = (value: number): string =>
-  Number.isFinite(value) ? String(Math.round(value * 100) / 100) : '0';
+
 
 export function effectFilter(effects: Effects | undefined, ctx: EffectContext): string {
   if (!effects) return '';

@@ -516,6 +516,8 @@ export interface ImageElement extends ElementBase {
   alpha?: number;
   /** CSS filter，用于 duotone / 灰度 / 亮度对比度 */
   filter?: string;
+  /** 双色调的暗部与亮部颜色，独立于 CSS 灰度/亮度滤镜。 */
+  duotone?: [string, string];
   stroke?: Stroke | null;
   /** 音视频对象：渲染封面帧 + 播放标识 */
   media?: MediaInfo;

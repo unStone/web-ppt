@@ -8,6 +8,7 @@ import { testChartDataRegressions } from './lib/test-chart-data-regressions.mjs'
 import { testChartDataBoundaries } from './lib/test-chart-data-boundaries.mjs';
 import { testChartDataCollaboration } from './lib/test-chart-data-collaboration.mjs';
 import { testChartDataRoundTripBoundaries } from './lib/test-chart-data-roundtrip-boundaries.mjs';
+import { testChartSeriesSchema } from './lib/test-chart-series-schema.mjs';
 import { unzipSync, zipSync } from 'fflate';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -448,6 +449,7 @@ await testChartDataRoundTripBoundaries({
   core, edit, chart, collab, bytes, cacheBytes, root, out, recoveryFrames, check, eq,
 });
 
+await testChartSeriesSchema({ core, edit, chart, bytes, cacheBytes, check });
 presentation.dispose();
 if (failures.length) {
   console.error(`\n图表数据失败 ${failures.length} 项：\n- ${failures.join('\n- ')}`);
