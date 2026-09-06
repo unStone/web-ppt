@@ -7,7 +7,6 @@ interface TextBinding {
   readonly source: string;
   read(): string | null;
   write(value: string): void;
-  connected(): boolean;
   previous: string | null;
 }
 
@@ -30,7 +29,7 @@ export function bindStaticText(document: Document): (lookup: Lookup) => void {
       if (!localized.test(source)) return;
       texts[index] = source;
       bindings.push({ source, read: () => node.nodeValue, write: (value) => { node.nodeValue = value; },
-        connected: () => node.isConnected, previous: node.nodeValue });
+        previous: node.nodeValue });
     });
     if (Object.keys(texts).length) element.setAttribute('data-site-text', JSON.stringify(texts));
     const sourceAttributes: Record<string, string> = JSON.parse(element.getAttribute('data-site-attrs') ?? '{}');
@@ -39,15 +38,16 @@ export function bindStaticText(document: Document): (lookup: Lookup) => void {
       if (source === null || !localized.test(source)) continue;
       sourceAttributes[name] = source;
       bindings.push({ source, read: () => element.getAttribute(name),
-        write: (value) => element.setAttribute(name, value), connected: () => element.isConnected,
+        write: (value) => element.setAttribute(name, value),
         previous: element.getAttribute(name) });
     }
     if (Object.keys(sourceAttributes).length) element.setAttribute('data-site-attrs', JSON.stringify(sourceAttributes));
   }
   return (lookup) => {
     for (const binding of bindings) {
-      // 状态控件已被产品代码接管时，不拿初始“载入中”覆盖它的新状态或用户输入。
-      if (!binding.connected() || binding.read() !== binding.previous) continue;
+      // 暂时移出 select 的静态选项仍属同一绑定，重新插入时也必须使用当前语言。
+      // 产品代码已接管的状态或输入则不再覆盖；这里只持有启动时认领的固定节点集合。
+      if (binding.read() !== binding.previous) continue;
       const value = binding.source.replace(/\S(?:[\s\S]*\S)?/, () => lookup(normalized(binding.source)));
       binding.write(value);
       binding.previous = value;

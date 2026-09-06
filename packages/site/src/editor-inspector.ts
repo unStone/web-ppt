@@ -9,10 +9,10 @@ import {
   type ParagraphPropertyInput,
   type SlideEditor,
 } from '@web-ppt/editor';
-import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
 import type { TextCapsStyle, TextStrikeStyle, TextUnderlineStyle } from '@web-ppt/core';
 import { queryElementPresetGeometry } from '@web-ppt/edit-core';
 import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
+import { colorInputValue } from './editor-color-input';
 
 interface InspectorContext {
   readonly session: EditorSession | null;
@@ -30,15 +30,6 @@ type Notice = (message: string, tone?: 'normal' | 'success' | 'error') => void;
 type BulletInput = NonNullable<ParagraphPropertyInput['bullet']>;
 type AutoNumberBullet = Extract<BulletInput, { readonly kind: 'autoNum' }>;
 const $ = <T extends Element>(root: ParentNode, selector: string): T => root.querySelector<T>(selector)!;
-
-function colorInputValue(value: string | undefined, fallback = '#000000'): string {
-  if (!value) return fallback;
-  const hex = /^#([0-9a-f]{6})$/i.exec(value)?.[1];
-  if (hex) return `#${hex.toLowerCase()}`;
-  const rgb = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(value);
-  if (!rgb) return fallback;
-  return `#${rgb.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, '0')).join('')}`;
-}
 
 export function createEditorInspector(
   element: HTMLElement,
@@ -91,12 +82,6 @@ export function createEditorInspector(
   const linkSlide = $<HTMLSelectElement>(element, '#linkSlide');
   const linkHrefField = $<HTMLElement>(element, '#linkHrefField');
   const linkSlideField = $<HTMLElement>(element, '#linkSlideField');
-  shapePreset.replaceChildren(...PRESET_DEFINITION_NAMES.map((preset) => {
-    const option = document.createElement('option');
-    option.value = preset;
-    option.textContent = preset;
-    return option;
-  }));
 
   const act = async (action: () => void | Promise<void>): Promise<void> => {
     try { await action(); } catch (error) {

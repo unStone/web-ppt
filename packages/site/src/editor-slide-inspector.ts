@@ -1,6 +1,4 @@
 import {
-  ANIMATION_EFFECTS,
-  SLIDE_TRANSITION_TYPES,
   animationEffectsForKind,
   querySlideBackground,
   querySlideHidden,
@@ -9,6 +7,9 @@ import {
   type EditorSession,
   type SlideEditor,
 } from '@web-ppt/editor';
+import { message, type SiteNotice, type SiteMessage } from './i18n/message';
+import { setMessage, setAttributeText } from './i18n/runtime';
+import { colorInputValue } from './editor-color-input';
 
 interface SlideInspectorContext {
   readonly session: EditorSession | null;
@@ -18,19 +19,12 @@ interface SlideInspectorContext {
 }
 
 export interface SlideInspector { sync(): void; }
-type Notice = (message: string, tone?: 'normal' | 'success' | 'error') => void;
 const $ = <T extends Element>(root: ParentNode, selector: string): T => root.querySelector<T>(selector)!;
-
-function colorValue(value: string | undefined): string {
-  const rgb = value && /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(value);
-  if (rgb) return `#${rgb.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, '0')).join('')}`;
-  return /^#[0-9a-f]{6}$/i.test(value ?? '') ? value!.toLowerCase() : '#ffffff';
-}
 
 export function createSlideInspector(
   root: HTMLElement,
   context: () => SlideInspectorContext,
-  notice: Notice,
+  notice: SiteNotice,
 ): SlideInspector {
   const background = $<HTMLInputElement>(root, '#slideBackgroundColor');
   const hidden = $<HTMLInputElement>(root, '#slideHidden');
@@ -47,26 +41,20 @@ export function createSlideInspector(
   const animationEffect = $<HTMLSelectElement>(root, '#animationEffect');
   const timeline = $<HTMLOListElement>(root, '#animationTimeline');
   const animationReadonly = $<HTMLElement>(root, '#animationReadonly');
-
-  transitionType.replaceChildren(...SLIDE_TRANSITION_TYPES.map((type) => {
-    const option = document.createElement('option'); option.value = type; option.textContent = type; return option;
-  }));
+  const directionOptions = new Map([...transitionDirection.options].map((option) => [option.value, option]));
+  const effectOptions = new Map([...animationEffect.options].map((option) => [option.value, option]));
 
   const act = async (action: () => void | Promise<void>): Promise<void> => {
     try { await action(); } catch (error) {
-      notice(error instanceof Error ? error.message : String(error), 'error');
+      notice(message('页面操作失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
     }
   };
 
   const syncDirections = (): void => {
     const directions = transitionDirections(transitionType.value as Parameters<typeof transitionDirections>[0]);
     const previous = transitionDirection.value;
-    transitionDirection.replaceChildren(...[
-      ['', '默认'], ...directions.map((value) => [value, value] as const),
-    ].map(([value, label]) => {
-      const option = document.createElement('option'); option.value = value; option.textContent = label; return option;
-    }));
-    if (directions.includes(previous)) transitionDirection.value = previous;
+    transitionDirection.replaceChildren(...['', ...directions].map((value) => directionOptions.get(value)!));
+    transitionDirection.value = directions.includes(previous) ? previous : '';
     transitionDirection.disabled = !directions.length || !context().writable;
     transitionDuration.disabled = transitionType.value === 'none' || !context().writable;
   };
@@ -75,38 +63,50 @@ export function createSlideInspector(
     const kind = animationKind.value as 'entrance' | 'exit' | 'emphasis';
     const effects = animationEffectsForKind(kind);
     const previous = animationEffect.value;
-    animationEffect.replaceChildren(...effects.map((effect) => {
-      const option = document.createElement('option'); option.value = effect; option.textContent = effect; return option;
-    }));
-    if (effects.includes(previous as typeof ANIMATION_EFFECTS[number])) animationEffect.value = previous;
+    animationEffect.replaceChildren(...effects.map((effect) => effectOptions.get(effect)!));
+    animationEffect.value = effects.some((effect) => effect === previous) ? previous : effects[0];
   };
 
-  const animationName = (step: EditAnimationStep, index: number): string => {
+  const animationName = (step: EditAnimationStep, index: number): SiteMessage => {
     const record = context().session?.editor.doc.elements[step.target];
-    const effect = step.kind === 'motion' ? 'motion' : step.effect;
-    return `${index + 1}. ${record?.ovr.name ?? record?.src.name ?? step.target} · ${step.kind}/${effect}`;
+    const name = record?.ovr.name ?? record?.src.name ?? step.target;
+    if (step.kind === 'motion') return message('{index}. {name} · 运动路径', { index: index + 1, name });
+    return message('{index}. {name} · {kind}/{effect}', { index: index + 1, name,
+      kind: message(({ entrance: '进入', exit: '退出', emphasis: '强调' } as const)[step.kind]),
+      effect: message(({ appear: '出现', fade: '淡化', fly: '飞行', wipe: '擦除', zoom: '缩放',
+        dissolve: '溶解', spin: '旋转', grow: '放大/缩小' } as const)[step.effect]),
+    });
   };
 
   const setTimeline = (steps: readonly EditAnimationStep[]): void => {
     if (context().view?.setAnimations(steps)) {
-      sync(); notice('动画时间线已更新', 'success');
+      notice(message('动画时间线已更新'), 'success');
     }
   };
 
   const renderTimeline = (steps: readonly EditAnimationStep[], editable: boolean): void => {
+    const move = (index: number, offset: number): void => {
+      const target = index + offset;
+      if (target < 0 || target >= steps.length) return;
+      const next = [...steps];
+      [next[index], next[target]] = [next[target], next[index]];
+      setTimeline(next);
+    };
     timeline.replaceChildren(...steps.map((step, index) => {
       const item = document.createElement('li');
       item.dataset.animationIndex = String(index);
-      const label = document.createElement('span'); label.textContent = animationName(step, index);
+      const name = animationName(step, index);
+      const label = document.createElement('span'); setMessage(label, name);
       const actions = document.createElement('span');
-      for (const [text, action] of [
-        ['↑', () => { if (index) setTimeline([...steps.slice(0, index - 1), step, steps[index - 1], ...steps.slice(index + 1)]); }],
-        ['↓', () => { if (index < steps.length - 1) setTimeline([...steps.slice(0, index), steps[index + 1], step, ...steps.slice(index + 2)]); }],
-        ['×', () => setTimeline(steps.filter((_, candidate) => candidate !== index))],
+      for (const [text, source, action] of [
+        ['↑', '上移动画：{name}', () => move(index, -1)],
+        ['↓', '下移动画：{name}', () => move(index, 1)],
+        ['×', '删除动画：{name}', () => setTimeline(steps.filter((_, candidate) => candidate !== index))],
       ] as const) {
         const button = document.createElement('button');
         button.type = 'button'; button.textContent = text; button.disabled = !editable;
-        button.addEventListener('click', action); actions.append(button);
+        setAttributeText(button, 'aria-label', source, { name });
+        button.addEventListener('click', () => void act(action)); actions.append(button);
       }
       item.append(label, actions); return item;
     }));
@@ -117,7 +117,7 @@ export function createSlideInspector(
     if (!session || !view) return;
     const slideId = view.slideId;
     const fill = querySlideBackground(session.editor.doc, [slideId]).value;
-    background.value = colorValue(fill?.type === 'solid' ? fill.color : undefined);
+    background.value = colorInputValue(fill?.type === 'solid' ? fill.color : undefined, '#ffffff');
     hidden.checked = querySlideHidden(session.editor.doc, [slideId]).value;
     layout.replaceChildren(...session.editor.doc.layoutOrder.map((id, index) => {
       const option = document.createElement('option'); option.value = id;
@@ -130,8 +130,6 @@ export function createSlideInspector(
     const transition = view.queryTransition().value;
     transitionType.value = transition?.type ?? 'none';
     transitionDuration.value = String(transition?.durationMs || 750);
-    syncDirections();
-    if (transition?.dir) transitionDirection.value = transition.dir;
     const slide = session.editor.doc.slides[slideId];
     const targets: string[] = [];
     const visit = (id: string): void => {
@@ -151,7 +149,7 @@ export function createSlideInspector(
     animationReadonly.hidden = !animationState.sourceReadonly;
     renderTimeline(animationState.value, animationEditable);
     for (const control of root.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-      '#slideInspector button,#slideInspector input,#slideInspector select,#notesInspector button,#notesInspector textarea,#transitionInspector button,#transitionInspector input,#transitionInspector select,#animationInspector button,#animationInspector select',
+      ':is(#slideInspector,#notesInspector,#transitionInspector,#animationInspector) :is(button,input,select,textarea)',
     )) control.disabled = !writable;
     for (const control of root.querySelectorAll<HTMLButtonElement | HTMLSelectElement>(
       '#animationInspector button,#animationInspector select',
@@ -159,6 +157,7 @@ export function createSlideInspector(
     $<HTMLButtonElement>(root, '#previewTimeline').disabled = false;
     remove.disabled = !writable || session.editor.doc.slideOrder.length <= 1;
     syncDirections();
+    if (transition?.dir) transitionDirection.value = transition.dir;
   };
 
   background.addEventListener('change', () => void act(() => {
@@ -183,7 +182,7 @@ export function createSlideInspector(
     if (next) context().showSlide(next);
   }));
   applyNotes.addEventListener('click', () => void act(() => {
-    if (context().view?.setNotes(notes.value)) notice('备注已保存', 'success');
+    if (context().view?.setNotes(notes.value)) notice(message('备注已保存'), 'success');
   }));
   transitionType.addEventListener('change', syncDirections);
   $<HTMLButtonElement>(root, '#applyTransition').addEventListener('click', () => void act(() => {
@@ -192,7 +191,7 @@ export function createSlideInspector(
       durationMs: Number(transitionDuration.value),
       ...(transitionDirection.value ? { dir: transitionDirection.value } : {}),
     };
-    if (context().view?.setTransition(value)) { sync(); notice('页面切换已更新', 'success'); }
+    if (context().view?.setTransition(value)) notice(message('页面切换已更新'), 'success');
   }));
   $<HTMLButtonElement>(root, '#previewTransition').addEventListener('click', () => void act(async () => {
     await context().view?.previewTransition();

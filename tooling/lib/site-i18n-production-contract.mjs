@@ -10,6 +10,8 @@ import { runSiteI18nGalleryContract } from './site-i18n-gallery-contract.mjs';
 import { runSiteI18nMediaContract } from './site-i18n-media-contract.mjs';
 import { runSiteI18nHomeContract } from './site-i18n-home-contract.mjs';
 import { runSiteI18nChartContract } from './site-i18n-chart-contract.mjs';
+import { runSiteI18nProductToolsContract } from './site-i18n-product-tools-contract.mjs';
+import { runSiteI18nSlideToolsContract } from './site-i18n-slide-tools-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const { evaluate, request, waitFor, click, dictionaryUrls } = context;
@@ -24,6 +26,8 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nRecoveryContract(context);
   await runSiteI18nMediaContract(context);
   await runSiteI18nChartContract(context);
+  await runSiteI18nProductToolsContract(context);
+  await runSiteI18nSlideToolsContract(context);
   await runSiteEditorLanguageContract(context);
   const directory = await evaluate("new URL('.', location.href).href");
   for (const page of ['index', 'samples', 'editor']) {

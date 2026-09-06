@@ -1,4 +1,4 @@
-import { openFixture, selectPaneObject, changeValue, saveAndReopen } from './site-editor-browser-helpers.mjs';
+import { openFixture, selectPaneObject, changeValue, captureSaveAndReopen } from './site-editor-browser-helpers.mjs';
 import { runSiteLanguageInputContract } from './site-language-input-contract.mjs';
 import { runSiteI18nChartLoadingContract } from './site-i18n-chart-loading-contract.mjs';
 import { runSiteI18nChartReadonlyContract } from './site-i18n-chart-readonly-contract.mjs';
@@ -132,15 +132,7 @@ async function runCategoryEdits(context) {
   await evaluate("[...document.querySelectorAll('#chartInspector button')].find((node) => node.textContent === '增加系列').click()");
   await waitFor("[...document.querySelectorAll('[data-chart-grid] thead input')].at(-1).value === '新系列'", '中文创建默认系列');
   await click('[data-site-locale="en"]');
-  await evaluate(`(() => {
-    globalThis.__chartDownloadClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function () {
-      if (this.download) globalThis.__capturedDownload = { name: this.download, href: this.href };
-      else globalThis.__chartDownloadClick.call(this);
-    };
-  })()`);
-  try { await saveAndReopen(context, 'chart-language-saved.pptx'); }
-  finally { await evaluate('HTMLAnchorElement.prototype.click = globalThis.__chartDownloadClick'); }
+  await captureSaveAndReopen(context, 'chart-language-saved.pptx');
   await selectPaneObject(context, '图表');
   await waitFor(`!document.querySelector('#chartInspector').hidden && document.querySelector(${JSON.stringify(series)})?.value === '<复制 & 系列>'`, '保存重开保留原始系列');
   if (!await evaluate(`document.querySelector(${JSON.stringify(category)}).value === '复制'

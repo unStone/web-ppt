@@ -33,6 +33,21 @@ export async function changeValue({ evaluate }, selector, value, event = 'change
   })()`);
 }
 
+export async function captureSaveAndReopen(context, name) {
+  await context.evaluate(`(() => {
+    const original = HTMLAnchorElement.prototype.click;
+    globalThis.__restoreSaveDownload = () => { HTMLAnchorElement.prototype.click = original; };
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.download) globalThis.__capturedDownload = { name: this.download, href: this.href };
+      else original.call(this);
+    };
+  })()`);
+  try { await saveAndReopen(context, name); }
+  finally {
+    await context.evaluate('globalThis.__restoreSaveDownload(); delete globalThis.__restoreSaveDownload');
+  }
+}
+
 export async function saveAndReopen({ evaluate, waitFor, click }, name) {
   await evaluate('globalThis.__capturedDownload = null');
   await click('#saveFile');

@@ -4,6 +4,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
+import { SLIDE_TRANSITION_TYPES, transitionDirections, ANIMATION_EFFECTS } from '@web-ppt/editor';
+import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 if (!process.argv.includes('--built')) {
@@ -20,6 +22,14 @@ for (const page of ['index', 'samples', 'editor']) {
     const file = `${page}${language === 'en' ? '.en' : ''}.html`;
     const html = readFileSync(join(root, 'packages/site/dist', file), 'utf8');
     const document = new JSDOM(html).window.document;
+    if (page === 'editor') {
+      const values = (id) => [...document.querySelector(id).options].map((node) => node.value);
+      assert.deepEqual(values('#shapePreset'), [...PRESET_DEFINITION_NAMES], `${file} 静态形状目录必须与公开 API 完整一致`);
+      assert.deepEqual(values('#transitionType'), [...SLIDE_TRANSITION_TYPES], `${file} 静态切换目录必须与公开 API 完整一致`);
+      assert.deepEqual(values('#transitionDirection').sort(), ['', ...new Set(SLIDE_TRANSITION_TYPES.flatMap(transitionDirections))].sort(),
+        `${file} 静态方向目录必须与公开 API 完整一致`);
+      assert.deepEqual(values('#animationEffect'), [...ANIMATION_EFFECTS], `${file} 静态动画效果目录必须与公开 API 完整一致`);
+    }
     assert.equal(document.documentElement.lang, language, `${file} 的无脚本语言`);
     const canonical = document.querySelector('link[rel="canonical"]').href;
     const site = 'https://unstone.github.io/web-ppt/';
