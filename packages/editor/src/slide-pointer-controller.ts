@@ -220,10 +220,10 @@ export class SlidePointerController {
     const o = this.options;
     if (!o.editable()) return;
     // 捕获期间的 pointerup 会把后续 click/dblclick 留在根节点；释放 capture 不会恢复命中路径。
-    // 只恢复原生落点的祖先链，不能穿透遮挡或把所有重叠对象合成一条路径。
+    // 祖先链须覆盖交互层的空占位符；仍只认原生落点，不能穿透遮挡或合并重叠对象的路径。
     const path = event.target === o.root && event.isTrusted
       ? pathWithinRoot((o.root.getRootNode() as Document | ShadowRoot)
-        .elementFromPoint?.(event.clientX, event.clientY), o.staticLayer) : event.composedPath();
+        .elementFromPoint?.(event.clientX, event.clientY), o.root) : event.composedPath();
     const candidates = o.hitCandidates(path);
     const selection = o.editor.selection;
     const enteredGroup = enteredGroupOnSlide(

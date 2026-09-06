@@ -9,4 +9,12 @@ export const accessibilityMessages = {
   '{action}：{name}': '{action}: {name}',
   '由上级隐藏': 'Hidden by parent', '显示对象': 'Show object', '隐藏对象': 'Hide object',
   '由上级锁定': 'Locked by parent', '解锁对象': 'Unlock object', '锁定对象': 'Lock object',
+  '查找文字': 'Find text',
+  '未找到“{query}”': 'No matches for “{query}”',
+  '查找结果 {index}/{count}：{excerpt}': 'Find result {index}/{count}: {excerpt}',
+  '编辑文字：{name}': 'Edit text: {name}',
+  '编辑单元格：{name}，第 {row} 行，第 {column} 列': 'Edit cell: {name}, row {row}, column {column}',
+  '选择要插入的图片': 'Choose an image to insert',
+  '添加标题': 'Add title', '添加副标题': 'Add subtitle', '添加正文': 'Add body text',
+  '添加内容': 'Add content', '添加图片': 'Add picture',
 } as const;

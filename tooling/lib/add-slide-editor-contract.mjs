@@ -31,7 +31,7 @@ export async function runAddSlideEditorContract({ check, lib, root, window }) {
       && editMount.querySelector('[data-edit-id]') && viewMount.querySelector('[data-edit-id]'));
   check('编辑模式只在 interaction 层显示三个空占位符提示，view 模式没有辅助节点',
     placeholders.length === 2
-      && editInteraction.querySelectorAll('[data-edit-placeholder-id]').length === 3
+      && editInteraction.querySelectorAll('[data-edit-placeholder-type]').length === 3
       && !viewInteraction.querySelector('[data-edit-placeholder-id]')
       && viewInteraction.style.display === 'none'
       && !editMount.querySelector('[data-ppt-layer="static"] [data-edit-placeholder-id]'));
@@ -81,7 +81,7 @@ export async function runAddSlideEditorContract({ check, lib, root, window }) {
   });
   session.editor.select({ kind: 'elements', ids: [title.id], enteredGroup: null });
   check('输入后辅助框消失且 edit/view 静态层同步显示真实文字',
-    !editInteraction.querySelector(`[data-edit-placeholder-id="${title.id}"]`)
+    !editInteraction.querySelector('[data-edit-placeholder-type="title"]')
       && editMount.querySelector('[data-ppt-layer="static"]').textContent.includes('直接输入标题')
       && viewMount.querySelector('[data-ppt-layer="static"]').textContent.includes('直接输入标题'));
 

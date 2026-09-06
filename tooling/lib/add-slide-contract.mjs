@@ -42,6 +42,11 @@ export async function runAddSlideContract({ edit, core, load, check, eq }) {
   const doc = edit.createDoc(presentation, { idPrefix: 'add-slide-' });
   const editor = new edit.Editor(doc);
   const firstSlide = doc.slideOrder[0];
+  check('原版式已绑定标题正文不重复提示，未绑定图片仍保留',
+    !edit.unboundLayoutPlaceholders(doc, firstSlide).some((element) =>
+      ['title', 'body'].includes(element.editInfo?.placeholder?.type))
+      && edit.unboundLayoutPlaceholders(doc, firstSlide).some((element) =>
+        element.editInfo?.placeholder?.type === 'pic'));
   const existingElement = doc.slides[firstSlide].children.find((id) =>
     doc.elements[id].meta.editable === 'full');
   const beforeIdentity = JSON.stringify(doc.identity);
@@ -54,6 +59,8 @@ export async function runAddSlideContract({ edit, core, load, check, eq }) {
   const result = editor.exec({ type: 'AddSlide', layoutId: titleLayout.id, at: { after: firstSlide } });
   const createdId = [...result.createdSlides][0];
   const created = doc.slides[createdId];
+  check('新增页已实例化的占位符不会又作为未绑定版式提示返回',
+    edit.unboundLayoutPlaceholders(doc, createdId).length === 0);
   check('单条命令产生一个页树 patch、公开新页身份并插在稳定锚点后',
     result.forward.length === 1 && result.inverse.length === 1
       && result.forward[0].path[0] === 'slides' && result.forward[0].op === 'insert'

@@ -67,5 +67,62 @@ export async function runTrustedDoubleClickContract(context) {
     } finally {
       await evaluate('globalThis.nativeDoubleClick.session.dispose(); globalThis.nativeDoubleClick.mount.remove(); delete globalThis.nativeDoubleClick');
     }
+    await placeholderDoubleClick(context, textMode);
+  }
+}
+
+async function placeholderDoubleClick(context, textMode) {
+  const { evaluate, request, dispatchKey } = context;
+  await evaluate(`(async () => {
+    const { openEditor, load } = globalThis.editorContract;
+    const session = await openEditor(await load('sample-editor-add-slide.pptx'));
+    const result = session.editor.exec({ type: 'AddSlide', layoutId: session.editor.doc.layoutOrder[0],
+      at: { after: session.editor.doc.slideOrder[0] } });
+    const slideId = [...result.createdSlides][0];
+    const mount = document.createElement('div'); mount.id = 'native-placeholder-double-click';
+    mount.style.cssText = 'position:fixed;left:0;top:0;width:640px;height:360px;z-index:9999;background:white';
+    document.body.append(mount);
+    const view = session.mount(mount, { mode: 'edit', slideId, textMode: ${JSON.stringify(textMode)}, zoom: .5 });
+    globalThis.nativePlaceholderDoubleClick = { session, view, mount, captures: 0 };
+    view.element.addEventListener('gotpointercapture', event => {
+      if (event.isTrusted) globalThis.nativePlaceholderDoubleClick.captures++;
+    });
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  })()`, true);
+  // 未启用 Page 域时，headless 的默认取消会与测试争用文件输入的生命周期。
+  await request('Page.enable');
+  await request('Page.setInterceptFileChooserDialog', { enabled: true });
+  try {
+    await doubleClickElement(context, '#native-placeholder-double-click [data-edit-placeholder-type="title"]');
+    if (!await evaluate(`(() => {
+      const { mount, session, captures } = globalThis.nativePlaceholderDoubleClick;
+      return !!mount.querySelector('[data-ppt-text-editor]') && session.editor.selection.kind === 'text'
+        && session.editor.history.undoCount === 1 && captures > 0;
+    })()`)) throw new Error(`${textMode} 捕获后的空标题占位符双击没有进入编辑`);
+    await request('Input.insertText', { text: '真实占位符输入' });
+    await dispatchKey('Escape', 'Escape', 27);
+    if (!await evaluate(`!globalThis.nativePlaceholderDoubleClick.mount.querySelector('[data-edit-placeholder-type="title"]')
+      && globalThis.nativePlaceholderDoubleClick.mount.textContent.includes('真实占位符输入')
+      && globalThis.nativePlaceholderDoubleClick.session.editor.history.undoCount === 2`)) throw new Error(`${textMode} 占位符输入未形成独立历史`);
+    await doubleClickElement(context, '#native-placeholder-double-click [data-edit-placeholder-type="pic"]');
+    if (!await evaluate(`!!globalThis.nativePlaceholderDoubleClick.mount.querySelector('[data-web-ppt-image-input]')`)) {
+      throw new Error(`${textMode} 捕获后的图片占位符双击未打开图片选择`);
+    }
+    await evaluate(`(() => {
+      const { mount, view } = globalThis.nativePlaceholderDoubleClick;
+      mount.querySelector('[data-web-ppt-image-input]').dispatchEvent(new Event('cancel'));
+      const cover = document.createElement('div');
+      cover.style.cssText = 'position:absolute;inset:0;z-index:100;pointer-events:auto';
+      view.element.append(cover);
+    })()`);
+    await doubleClickAt(context, { x: 320, y: 65 });
+    if (!await evaluate(`!globalThis.nativePlaceholderDoubleClick.mount.querySelector('[data-ppt-text-editor]')
+      && globalThis.nativePlaceholderDoubleClick.session.editor.history.undoCount === 2`)) {
+      throw new Error(`${textMode} 双击穿透遮挡进入底层占位符文字`);
+    }
+  } finally {
+    await request('Page.setInterceptFileChooserDialog', { enabled: false });
+    await evaluate(`globalThis.nativePlaceholderDoubleClick.session.dispose();
+      globalThis.nativePlaceholderDoubleClick.mount.remove(); delete globalThis.nativePlaceholderDoubleClick;`);
   }
 }

@@ -388,17 +388,18 @@ export function projectedSlideElementIds(doc: EditDoc, slideId: SlideId): Array<
 
 /** 尚无 slide 内容节点的目标占位符只供 edit interaction layer 提示，不进入业务渲染。 */
 export function unboundLayoutPlaceholders(doc: EditDoc, slideId: SlideId): SlideElement[] {
-  const layout = changedLayout(doc, slideId);
-  if (!layout) return [];
+  const placeholders = projectedLayoutElements(doc, slideId).filter((element) =>
+    !!element.editInfo?.placeholder);
+  if (!placeholders.length) return placeholders;
   const bound = new Set<SlideElement>();
   for (const id of projectionContentIds(doc, slideId)) {
-    const record = doc.elements[id];
-    if (!record.meta.ph) continue;
-    const target = targetPlaceholder(doc, slideId, record);
+    const ph = doc.elements[id].meta.ph;
+    if (!ph) continue;
+    // 原版式不必重新继承，但内容仍已绑定；不能借 targetPlaceholder 的重继承条件判定缺位。
+    const target = findPlaceholderByIdentity(placeholders, (element) => element.editInfo?.placeholder, ph);
     if (target) bound.add(target);
   }
-  return projectedLayoutElements(doc, slideId).filter((element) =>
-    !!element.editInfo?.placeholder && !bound.has(element));
+  return placeholders.filter((element) => !bound.has(element));
 }
 
 export function rebasedElementBase(

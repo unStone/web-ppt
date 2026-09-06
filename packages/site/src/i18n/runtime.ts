@@ -71,7 +71,9 @@ export function setAttributeMessage(target: Element, attribute: MessageAttribute
   dynamic.set(target, binding);
   target.setAttribute('data-site-dynamic', '');
   if (language === 'en' && !dictionary) return;
-  target.setAttribute(attribute, format(value.source, value.parameters));
+  const translated = format(value.source, value.parameters);
+  // DOM 属性的同值写入也会触发观察器；消息身份仍更新，但已正确的名称不重复写回。
+  if (target.getAttribute(attribute) !== translated) target.setAttribute(attribute, translated);
 }
 
 export function setAttributeText<S extends Message>(
