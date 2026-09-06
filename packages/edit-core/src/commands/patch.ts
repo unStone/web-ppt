@@ -40,7 +40,7 @@ import {
 } from './slide-layout';
 import { isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
 import type {
-  ElementTreePatch, ImageResourcePatch, Patch, XfrmField,
+  ElementTreePatch, ExtensionPatch, ImageResourcePatch, Patch, XfrmField,
 } from './types';
 import { assertPatchCount } from './patch-count';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
@@ -366,16 +366,25 @@ function applyPatchBatch(
     isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
       || isTableRowPatch(patch) || isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
       || isTableMergePatch(patch) || isTableCellPropsPatch(patch));
-  // 结构批次会把记录对象直接交给模型；统一克隆既隔离调用方，也供暂存模型安全预演。
-  const appliedPatches = structural ? structuredClone(patches) : patches;
+  // 本机元素删除已由命令生成独立快照，删除分支只读它；再次深拷贝会重复复制九级文字目录。
+  // 外部批次及会安装记录的操作仍隔离快照，不能让调用方或暂存写回污染真实模型。
+  const appliedPatches = structural && (stageStructuralModel
+    || patches.some((patch) => patch.op !== 'remove' || !isElementTreePatch(patch)))
+    ? structuredClone(patches) : patches;
   const validationStage = stageStructuralModel && structural
     ? structuralPatchStage(doc, appliedPatches) : null;
   const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
   const animationDoc = needsAnimationStage ? structuralPatchStage(doc, appliedPatches) : doc;
   if (needsAnimationStage) applyPatchValues(animationDoc, structuredClone(appliedPatches));
   const imageResourcePatches: { patch: ImageResourcePatch; index: number }[] = [];
+  const extensionEntries: { patch: ExtensionPatch; index: number }[] = [];
+  const resourceHashes = new Set<string>();
   patches.forEach((patch, index) => {
-    if (isImageResourcePatch(patch)) imageResourcePatches.push({ patch, index });
+    if (isImageResourcePatch(patch)) {
+      imageResourcePatches.push({ patch, index });
+      resourceHashes.add(patch.path[1]);
+    }
+    else if (isExtensionPatch(patch)) extensionEntries.push({ patch, index });
   });
   // 变换/文字等热路径只读资源表；只有真正修改资源时才支付写时复制成本。
   const stagedImageResources = imageResourcePatches.length
@@ -389,13 +398,11 @@ function applyPatchBatch(
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
-  const extensionEntries = patches.flatMap((patch, index) =>
-    isExtensionPatch(patch) ? [{ patch, index }] : []);
   // 结构批次依赖逐条暂存后的模型；普通扩展批次可共享一次昂贵的来源解析。
   const batchValidatedExtensions = structural
     ? new Set<number>() : validateExtensionPatchBatches(doc, extensionEntries);
+  const patchDoc = validationStage ?? doc;
   patches.forEach((patch, index) => {
-    const patchDoc = validationStage ?? doc;
     validatePatch(
       patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc,
       batchValidatedExtensions.has(index),
@@ -413,8 +420,6 @@ function applyPatchBatch(
       applyPatchValues(validationStage, [structuredClone(appliedPatches[index])]);
     }
   });
-  const consistencyDoc = validationStage ?? doc;
-  const resourceHashes = new Set(imageResourcePatches.map(({ patch }) => patch.path[1]));
   const replacements = new Map<string, ElementImageReplacement | undefined>();
   const backgrounds = new Map<string, EditDoc['slides'][string]['ovr']['background']>();
   const backgroundImages = new Map<string, SlideImageBackground | undefined>();
@@ -428,9 +433,9 @@ function applyPatchBatch(
     }
   }
   const finalBackgroundImage = (id: string): SlideImageBackground | undefined =>
-    backgroundImages.has(id) ? backgroundImages.get(id) : consistencyDoc.slides[id]?.backgroundImage;
+    backgroundImages.has(id) ? backgroundImages.get(id) : patchDoc.slides[id]?.backgroundImage;
   if (resourceHashes.size) {
-    for (const record of Object.values(consistencyDoc.elements)) {
+    for (const record of Object.values(patchDoc.elements)) {
       const replacement = replacements.has(record.id)
         ? replacements.get(record.id) : record.meta.imageReplacement;
       if (replacement && resourceHashes.has(replacement.resourceHash)) {
@@ -440,26 +445,26 @@ function applyPatchBatch(
         );
       }
     }
-    for (const record of Object.values(consistencyDoc.slides)) {
+    for (const record of Object.values(patchDoc.slides)) {
       const backgroundImage = finalBackgroundImage(record.id);
       if (backgroundImage
         && backgroundImage.resourceHashes.some((hash) => resourceHashes.has(hash))
         && record.origin) {
         assertSlideImageBackground(
           backgroundImage, record, stagedImageResources,
-          `幻灯片 ${record.id} 的最终图片背景资源`, consistencyDoc,
+          `幻灯片 ${record.id} 的最终图片背景资源`, patchDoc,
         );
       }
     }
   }
   const touchedBackgroundSlides = new Set([...backgrounds.keys(), ...backgroundImages.keys()]);
-  if (resourceHashes.size) for (const record of Object.values(consistencyDoc.slides)) {
+  if (resourceHashes.size) for (const record of Object.values(patchDoc.slides)) {
     if (finalBackgroundImage(record.id)?.resourceHashes.some((hash) => resourceHashes.has(hash))) {
       touchedBackgroundSlides.add(record.id);
     }
   }
   for (const slideId of touchedBackgroundSlides) {
-    const record = consistencyDoc.slides[slideId];
+    const record = patchDoc.slides[slideId];
     if (!record) throw new Error(`图片背景 Patch 指向不存在的幻灯片：${slideId}`);
     const background = backgrounds.has(slideId) ? backgrounds.get(slideId) : record.ovr.background;
     const backgroundImage = finalBackgroundImage(slideId);
@@ -469,7 +474,7 @@ function applyPatchBatch(
     }
     if (background?.type === 'image' && backgroundImage) {
       assertSlideImageBackgroundDimensions(
-        consistencyDoc, record, background, backgroundImage, stagedImageResources,
+        patchDoc, record, background, backgroundImage, stagedImageResources,
         `幻灯片 ${record.id} 的最终图片背景`,
       );
     }

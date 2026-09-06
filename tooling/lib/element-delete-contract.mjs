@@ -29,9 +29,12 @@ export async function runElementDeleteContract({ edit, core, load, check }) {
       && editor.history.undoCount === 1 && editor.history.redoCount === 0
       && editor.isDirty() && editor.effectiveElement(peer.id) === peerProjection);
   removed.inverse[0].value.records[target.id].src.name = '外部篡改不应进入历史';
+  const removedMeta = structuredClone(doc.removedElements[target.id].meta);
+  removed.forward.find((patch) => patch.op === 'remove').value.records[target.id].meta.origin.part = '外部篡改';
+  const tombstoneIsolated = isDeepStrictEqual(doc.removedElements[target.id].meta, removedMeta);
   const undo = editor.undo();
-  check('撤销删除在原位置恢复完整记录、选区与干净状态',
-    !!undo && JSON.stringify(doc.elements[target.id]) === JSON.stringify(originalRecord)
+  check('删除快照不污染 tombstone，撤销在原位置恢复完整记录、选区与干净状态',
+    tombstoneIsolated && !!undo && JSON.stringify(doc.elements[target.id]) === JSON.stringify(originalRecord)
       && doc.slides[slideId].children[originalIndex] === target.id
       && editor.selection.kind === 'elements' && editor.selection.ids.join(',') === target.id
       && editor.history.undoCount === 0 && editor.history.redoCount === 1 && !editor.isDirty());
