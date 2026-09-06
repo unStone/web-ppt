@@ -94,10 +94,20 @@ async function runPreset(context) {
   const { evaluate, click, waitFor, request } = context;
   await openFixture(context, '/fixtures/sample-editor-preset-shape.pptx', '<预设 & 原文>.pptx');
   await selectPaneObject(context, 'preset-source');
+  const presetValues = await evaluate("[...document.querySelector('#shapePreset').options].map(option => option.value)");
+  const expectPresetLabel = async (label) => {
+    if (!await evaluate(`document.querySelector('#shapePreset').selectedOptions[0]?.textContent === ${JSON.stringify(label)}
+      && JSON.stringify([...document.querySelector('#shapePreset').options].map(option => option.value)) === ${JSON.stringify(JSON.stringify(presetValues))}
+      && [...document.querySelector('#shapePreset').options].every(option => option.textContent !== option.value)`)) {
+      throw new Error(`预设名称应为 ${label}，切语言不能改写格式标识符`);
+    }
+  };
+  await expectPresetLabel('Rounded rectangle');
   await click('#startShapeAdjustments');
   await waitFor("document.querySelector('#statusText').textContent === 'Drag the orange handles on the shape to adjust its appearance'", '预设调节柄英文指导');
   await evaluate("globalThis.__presetLanguageHandle = document.querySelector('[data-ppt-preset-handle]')");
   await click('[data-site-locale="zh-CN"]');
+  await expectPresetLabel('圆角矩形');
   if (!await evaluate(`document.querySelector('#statusText').textContent === '拖动形状上的橙色圆点来调整外观'
     && document.querySelector('[data-ppt-preset-handle]') === globalThis.__presetLanguageHandle
     && document.querySelector('#undo').disabled`)) throw new Error('切语言取消调节柄或产生历史');
@@ -113,12 +123,16 @@ async function runPreset(context) {
   await click('#redo');
   await click('[data-site-locale="en"]');
   await changeValue(context, '#shapePreset', 'hexagon');
+  await expectPresetLabel('Hexagon');
   await waitFor("document.querySelector('#statusText').textContent === 'Shape type changed; existing text and formatting are preserved'", '切换预设英文结果');
   await click('[data-site-locale="zh-CN"]');
   await waitFor("document.querySelector('#statusText').textContent === '已切换形状类型；原有文字和格式保持不变'", '预设结果切中文');
+  await expectPresetLabel('六边形');
   if (!await evaluate("document.querySelector('#canvasMount').textContent.includes('保留文字与格式') && document.querySelector('#shapePreset').value === 'hexagon'")) throw new Error('预设切换改写了文稿文字或枚举');
   await click('#undo'); await waitFor("document.querySelector('#shapePreset').value === 'roundRect'", '双语预设撤销');
+  await expectPresetLabel('圆角矩形');
   await click('#redo'); await waitFor("document.querySelector('#shapePreset').value === 'hexagon'", '双语预设重做');
+  await expectPresetLabel('六边形');
   await selectPaneObject(context, 'preset-no-handle');
   await click('[data-site-locale="en"]');
   await click('#startShapeAdjustments');
@@ -130,5 +144,6 @@ async function runPreset(context) {
   await click('[data-site-locale="en"]');
   await captureSaveAndReopen(context, 'preset-language-saved.pptx');
   await selectPaneObject(context, 'preset-source');
+  await expectPresetLabel('Hexagon');
   if (!await evaluate("document.querySelector('#shapePreset').value === 'hexagon' && document.querySelector('#canvasMount').textContent.includes('保留文字与格式') && document.querySelector('#undo').disabled")) throw new Error('预设双语操作未保存重开');
 }

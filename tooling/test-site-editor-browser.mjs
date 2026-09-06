@@ -171,6 +171,7 @@ const routes = new Map([
   ['/fixtures/sample-editor-find-replace.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-find-replace.pptx'))]],
   ['/fixtures/sample-editor-transitions.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-transitions.pptx'))]],
   ['/fixtures/sample-editor-animations.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-animations.pptx'))]],
+  ['/fixtures/sample-editor-touch.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-touch.pptx'))]],
   ['/fixtures/sample-chart-data.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart-data.pptx'))]],
   ['/assets/replacement.png', ['image/png', readFileSync(join(root, 'packages/site/public/og.png'))]],
 ]);
@@ -358,14 +359,19 @@ async function runContract(webSocketDebuggerUrl) {
     throw new Error(`等待${label}超时：${JSON.stringify(state)}；控制台：${consoleFailures.join(' | ')}`);
   };
   const click = async (selector) => {
-    const point = await evaluate(`(() => {
+    const point = await evaluate(`(async () => {
       const node = document.querySelector(${JSON.stringify(selector)});
       if (!node) return null;
-      // 首页开启平滑滚动；坐标点击前必须定位完成，不能点向移动中的旧位置。
+      // instant 之后仍可能有下一帧的滚动/布局调整；过早取坐标会点到重排行之间。
       node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const rect = node.getBoundingClientRect();
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    })()`);
+      const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      if (!node.isConnected || !node.contains(document.elementFromPoint(point.x, point.y))) {
+        throw new Error('点击目标已移除或被遮挡：' + ${JSON.stringify(selector)});
+      }
+      return point;
+    })()`, true);
     if (!point) throw new Error(`找不到 ${selector}`);
     try {
       await request('Input.dispatchMouseEvent', {

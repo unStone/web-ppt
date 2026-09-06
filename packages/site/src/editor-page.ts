@@ -15,11 +15,12 @@ import { createProductTools } from './editor-product-tools';
 import { createSiteRecovery } from './editor-recovery';
 import { renderSlideNavigation } from './editor-slide-reorder';
 import { bindContentTools } from './editor-content-tools';
+import { createEditorFeedback } from './editor-feedback';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
 import { languageReady, setMessage, setText, t } from './i18n/runtime';
-import { message, type SiteNotice, type SiteMessage } from './i18n/message';
+import { message, type SiteMessage } from './i18n/message';
 
 const {
   app, toolbar, fileInput, fileName, canvasViewport, canvasMount, canvasState,
@@ -53,10 +54,7 @@ function explain(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-const notice: SiteNotice = (value, tone = 'normal') => {
-  setMessage(statusText, value);
-  statusText.dataset.tone = tone;
-};
+const { notice, reportError, previewAnimations } = createEditorFeedback(statusText);
 
 function setLoading(value: string | SiteMessage): void {
   canvasState.hidden = false;
@@ -249,7 +247,7 @@ function handleTouchNavigate(change: TouchNavigationChange): void {
 }
 
 function handleContextRequest(request: EditorContextRequest): void {
-  notice(request.targetId ? '已长按选择对象；可用格式面板继续操作' : '已长按画布');
+  notice(message(request.targetId ? '已长按选择对象；可用格式面板继续操作' : '已长按画布'));
 }
 
 function disposeCurrent(): void {
@@ -358,10 +356,6 @@ async function openDocument(
   }
 }
 
-function reportError(error: unknown): void {
-  notice(explain(error), 'error');
-}
-
 function showOpenFailure(error: SiteMessage): void {
   canvasState.hidden = false;
   canvasState.querySelector('.spinner')?.setAttribute('hidden', '');
@@ -435,11 +429,11 @@ buttons.exportImages.addEventListener('click', () => {
 buttons.edit.addEventListener('click', () => setMode('edit'));
 buttons.view.addEventListener('click', () => setMode('view'));
 buttons.undo.addEventListener('click', () => {
-  if (session?.editor.undo()) { setText(statusText, '已撤销上一步'); statusText.dataset.tone = 'normal'; }
+  if (session?.editor.undo()) notice(message('已撤销上一步'));
   syncControls();
 });
 buttons.redo.addEventListener('click', () => {
-  if (session?.editor.redo()) { setText(statusText, '已重做上一步'); statusText.dataset.tone = 'normal'; }
+  if (session?.editor.redo()) notice(message('已重做上一步'));
   syncControls();
 });
 buttons.prev.addEventListener('click', () => {
@@ -453,11 +447,7 @@ buttons.next.addEventListener('click', () => {
   if (id) showSlide(id);
 });
 bindContentTools(() => ({ session, view, showSlide }), notice);
-buttons.play.addEventListener('click', () => void run(async () => {
-  if (!view) return;
-  const played = await view.previewAnimations();
-  notice(played ? '正在播放当前页元素动画' : '当前页没有可播放的元素动画');
-}));
+buttons.play.addEventListener('click', () => void previewAnimations(view));
 buttons.inspector.addEventListener('click', () => {
   if (app.dataset.inspectorOpen === 'true') closeInspector(); else openInspector();
 });

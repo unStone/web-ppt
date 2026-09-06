@@ -68,10 +68,13 @@ async function runTimeline(context) {
   await changeValue(context, '#animationEffect', 'fade');
   await click('#addAnimation');
   await waitFor("document.querySelectorAll('#animationTimeline li').length === 2", '英文新增第二个动画');
-  await click('#animationTimeline li:first-child button:nth-child(2)');
-  await waitFor("document.querySelector('#animationTimeline li:first-child > span').textContent === '1. plain-b · Entrance/Fade'", '双语时间线下移');
-  await click('#animationTimeline li:last-child button:first-child');
-  await waitFor("document.querySelector('#animationTimeline li:first-child > span').textContent === '1. <复制 & 目标> · Emphasis/Spin'", '双语时间线上移');
+  // 重排会重建按钮并触发滚动调整；连续操作守住原生点击不能使用旧布局坐标的边界。
+  for (let index = 0; index < 5; index++) {
+    await click('#animationTimeline li:first-child button:nth-child(2)');
+    await waitFor("document.querySelector('#animationTimeline li:first-child > span').textContent === '1. plain-b · Entrance/Fade'", '双语时间线下移');
+    await click('#animationTimeline li:last-child button:first-child');
+    await waitFor("document.querySelector('#animationTimeline li:first-child > span').textContent === '1. <复制 & 目标> · Emphasis/Spin'", '双语时间线上移');
+  }
   await click('#animationTimeline li:first-child button:nth-child(3)');
   await waitFor("document.querySelectorAll('#animationTimeline li').length === 1", '双语删除动画');
   await click('#undo'); await waitFor("document.querySelectorAll('#animationTimeline li').length === 2", '删除动画撤销');

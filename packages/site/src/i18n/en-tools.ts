@@ -1,4 +1,10 @@
 export const toolMessages = {
+  '操作失败：{detail}': 'Action failed: {detail}',
+  '已长按选择对象；可用格式面板继续操作': 'Object selected by long press; continue in the formatting panel',
+  '已长按画布': 'Canvas long press detected',
+  '正在播放当前页元素动画': 'Playing animations on this slide',
+  '动画预览已结束': 'Animation preview ended',
+  '当前页没有可播放的元素动画': 'This slide has no playable animations',
   '插入失败：{detail}': 'Insertion failed: {detail}', '当前文稿没有可用版式': 'This presentation has no available layouts',
   '已新增幻灯片': 'Slide added', '打开第 {index} 页': 'Open slide {index}', '版式 {index}': 'Layout {index}',
   '已插入圆角矩形；拖动可移动，双击可输入文字': 'Rounded rectangle inserted; drag to move or double-click to type',

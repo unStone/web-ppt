@@ -25,6 +25,15 @@ for (const page of ['index', 'samples', 'editor']) {
     if (page === 'editor') {
       const values = (id) => [...document.querySelector(id).options].map((node) => node.value);
       assert.deepEqual(values('#shapePreset'), [...PRESET_DEFINITION_NAMES], `${file} 静态形状目录必须与公开 API 完整一致`);
+      const shapes = [...document.querySelector('#shapePreset').options];
+      assert.ok(shapes.every((option) => option.hasAttribute('value') && option.textContent.trim() !== option.value),
+        `${file} 形状使用可读名称，显式 value 保持格式标识符`);
+      const names = language === 'en'
+        ? { roundRect: 'Rounded rectangle', flowChartDecision: 'Flowchart: decision', star5: '5-point star' }
+        : { roundRect: '圆角矩形', flowChartDecision: '流程图：判定', star5: '五角星' };
+      for (const [value, name] of Object.entries(names)) {
+        assert.equal(shapes.find((option) => option.value === value)?.textContent, name, `${file} ${value} 的显示名称`);
+      }
       assert.deepEqual(values('#transitionType'), [...SLIDE_TRANSITION_TYPES], `${file} 静态切换目录必须与公开 API 完整一致`);
       assert.deepEqual(values('#transitionDirection').sort(), ['', ...new Set(SLIDE_TRANSITION_TYPES.flatMap(transitionDirections))].sort(),
         `${file} 静态方向目录必须与公开 API 完整一致`);

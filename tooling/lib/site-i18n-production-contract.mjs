@@ -16,12 +16,14 @@ import { runSiteI18nInspectorContract } from './site-i18n-inspector-contract.mjs
 import { runSiteI18nImageContract } from './site-i18n-image-contract.mjs';
 import { runSiteI18nTextContract } from './site-i18n-text-contract.mjs';
 import { runSiteI18nContentContract } from './site-i18n-content-contract.mjs';
+import { runSiteI18nFeedbackContract } from './site-i18n-feedback-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const only = process.env.SITE_I18N_ONLY;
   if (only) {
     const contract = { inspector: runSiteI18nInspectorContract, image: runSiteI18nImageContract,
-      text: runSiteI18nTextContract, content: runSiteI18nContentContract }[only];
+      text: runSiteI18nTextContract, content: runSiteI18nContentContract, feedback: runSiteI18nFeedbackContract,
+      slides: runSiteI18nSlideToolsContract }[only];
     if (!contract) throw new Error(`未知的官网专项：${only}`);
     await contract(context); return;
   }
@@ -43,6 +45,7 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nImageContract(context);
   await runSiteI18nTextContract(context);
   await runSiteI18nContentContract(context);
+  await runSiteI18nFeedbackContract(context);
   await runSiteEditorLanguageContract(context);
   const directory = await evaluate("new URL('.', location.href).href");
   for (const page of ['index', 'samples', 'editor']) {
