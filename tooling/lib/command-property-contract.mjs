@@ -159,6 +159,42 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   boundary.undo();
   check('撤销到保存点恢复干净状态', !boundary.isDirty());
 
+  if (check('公开延迟保存点确认入口', typeof boundary.captureSavepoint === 'function')) {
+    const baseline = structuredClone(boundaryDoc);
+    const deferred = new edit.Editor(structuredClone(baseline));
+    const frames = [];
+    deferred.subscribeRecovery(frame => frames.push(frame));
+    const commit = (x, time) => deferred.transaction(tx => tx.exec({
+      type: 'SetXfrm', id: target.id, x,
+    }), '连续定位', { time, mergeKey: 'deferred-save' });
+    commit(target.src.x + 30, 4000);
+    const confirm = deferred.captureSavepoint();
+    check('捕获保存点不会提前确认交付', deferred.isDirty() && frames.length === 1);
+    commit(target.src.x + 31, 4100);
+    eq('捕获的版本不会被后续同字段编辑合并抹去', deferred.history.undoCount, 2);
+    deferred.undo();
+    deferred.undo();
+    check('确认前撤销回旧保存点仍干净', !deferred.isDirty());
+    confirm();
+    check('确认实际交付版本后旧保存点变脏且日志记录该状态', deferred.isDirty() && frames.at(-1).dirty);
+    const recovered = new edit.Editor(structuredClone(baseline), {
+      recoveryFrames: JSON.parse(JSON.stringify(frames)),
+    });
+    check('冷恢复保留延迟交付后当前版本的未保存状态', recovered.isDirty()
+      && recovered.effectiveElement(target.id).x === edit.effectiveElement(baseline, target.id).x);
+    deferred.redo();
+    check('重做回实际交付版本恢复干净', !deferred.isDirty());
+    deferred.redo();
+    check('继续重做至交付后的新编辑仍脏', deferred.isDirty());
+    const frameCount = frames.length;
+    confirm();
+    check('同一交付确认重复调用不会增加恢复帧', frames.length === frameCount);
+    deferred.markSaved();
+    confirm();
+    check('已消费的旧确认不会覆盖后来的保存点', !deferred.isDirty());
+    deferred.dispose(); recovered.dispose();
+  }
+
   boundary.history.clear();
   const beforeExposed = edit.effectiveElement(boundaryDoc, target.id).x;
   boundary.exec({ type: 'SetXfrm', id: target.id, x: beforeExposed + 8 });

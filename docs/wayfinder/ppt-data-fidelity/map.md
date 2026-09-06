@@ -9,7 +9,7 @@ tracker: local-markdown
 ## Destination
 
 让 Web-PPT 0.8 能在浏览器内安全编辑经典图表数据、解析并原生渲染除地图外的现代扩展图表、插入可交付的
-音视频，并让官网完整支持中英文；每项能力都沿用统一 Schema、历史、恢复、协同和两种保存路径，默认查看及
+音视频，并让官网完整支持中英文和本机文件双路径保存；每项能力都沿用统一 Schema、历史、恢复、协同和两种保存路径，默认查看及
 未使用能力不承担新增代码、模型或网络成本。完成态是仓库达到可发版状态，不包含 tag、推送或 npm 发布。
 
 ## Notes
@@ -40,6 +40,7 @@ tracker: local-markdown
 - [经典图表数据编辑](tickets/001-chart-data-editing.md)已关闭：按需数据模型、缓存/工作簿原子保存及最终四项门禁通过。
 - [兼容回退与整壳编辑](tickets/008-alternate-content-fallback.md)已关闭：197 项专项、分组/解组复制与恢复、两条保存及 LibreOffice 验收通过，最终四项门禁全绿。
 - [让官网完整支持中英文](tickets/006-site-i18n.md)已关闭：三页静态与动态产品界面、键盘/触屏、错误恢复及原文隔离完整验收，四项门禁和根/子路径生产回归通过。
+- [本机文件双路径保存](tickets/009-local-file-save.md)已关闭：选择器/会话目标、显式下载与延迟保存点，故障/历史/冷恢复及四项门禁、根/子路径生产回归通过。
 
 ## In progress
 
@@ -49,7 +50,7 @@ tracker: local-markdown
 
 ## Not yet specified
 
-- 图片透明度、灰度与双色调写回（`SetPictureFx`）、形状 3D 写回（`SetScene3D`）、File System Access 双路径、
+- 图片透明度、灰度与双色调写回（`SetPictureFx`）、形状 3D 写回（`SetScene3D`）、
   画布 AT 语义与 EditContext 渐进增强仍是总路线图中的开放缺口；0.8 集成验收时按用户收益、默认成本和
   真实语料重新判断进入后续地图的顺序，不在本地图中静默宣称完成。
 - 1.0 的 API 冻结、迁移提示、语料回归和 beta 反馈周期只有在 0.8 公开面稳定后才能精确拆票。

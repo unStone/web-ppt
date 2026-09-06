@@ -21,6 +21,7 @@ import { runSiteI18nAccessibilityContract } from './site-i18n-accessibility-cont
 import { runSiteI18nViewLabelsContract } from './site-i18n-view-labels-contract.mjs';
 import { runSiteI18nPlaceholderContract } from './site-i18n-placeholder-contract.mjs';
 import { runSiteI18nBootstrapContract } from './site-i18n-bootstrap-contract.mjs';
+import { runSiteLocalSaveContract } from './site-local-save-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const only = process.env.SITE_I18N_ONLY;
@@ -30,7 +31,7 @@ export async function runSiteI18nProductionContract(context) {
       slides: runSiteI18nSlideToolsContract, accessibility: runSiteI18nAccessibilityContract,
       'view-labels': runSiteI18nViewLabelsContract, placeholders: runSiteI18nPlaceholderContract,
       bootstrap: runSiteI18nBootstrapContract, recovery: runSiteI18nRecoveryContract,
-      preferences: runSiteLanguagePreferencesContract }[only];
+      preferences: runSiteLanguagePreferencesContract, 'file-save': runSiteLocalSaveContract }[only];
     if (!contract) throw new Error(`未知的官网专项：${only}`);
     await contract(context); return;
   }
@@ -40,6 +41,7 @@ export async function runSiteI18nProductionContract(context) {
     throw new Error('中文默认页面不应下载英文目录');
   }
   await runSiteI18nFilesContract(context);
+  await runSiteLocalSaveContract(context);
   await runSiteI18nErrorsContract(context);
   await runSiteI18nConversionContract(context);
   await runSiteI18nTemplateContract(context);

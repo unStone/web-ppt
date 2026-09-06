@@ -22,7 +22,7 @@ import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actio
 import { whyFailed } from './fetch-bytes';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
-import { languageReady, setMessage, setText, t } from './i18n/runtime';
+import { languageReady, setAttributeMessage, setMessage, setText, t } from './i18n/runtime';
 import { message, type SiteMessage } from './i18n/message';
 
 const {
@@ -111,6 +111,11 @@ function syncControls(): void {
   buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
   buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
   buttons.save.disabled = !writable;
+  buttons.localSave.disabled = !writable;
+  buttons.localSave.hidden = !fileActions.localAvailable;
+  buttons.saveAs.disabled = !writable;
+  buttons.saveAs.hidden = !fileActions.localAvailable || !fileActions.localTarget(session);
+  setAttributeMessage(buttons.localSave, 'title', message('保存目标：{name}', { name: fileActions.localTarget(session) ?? message('请选择保存位置') }));
   buttons.exportImages.disabled = !ready;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
@@ -467,15 +472,24 @@ buttons.save.addEventListener('click', () => {
   const current = session;
   if (current && canMutateDocument()) void fileActions.saveCopy(current, outputName());
 });
+buttons.localSave.addEventListener('click', () => {
+  if (session && canMutateDocument()) void fileActions.saveLocal(session, outputName());
+});
+buttons.saveAs.addEventListener('click', () => {
+  if (session && canMutateDocument()) void fileActions.saveLocal(session, outputName(), true);
+});
 
 bindEditorFileOpen(fileInput, dropLayer, tryOpenLocalFile);
 
 window.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's'
-    && canMutateDocument() && !fileActions.busy) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
     event.preventDefault();
+    // 锁内也要拦住浏览器“保存网页”，但不能把重复按键或 IME 提交当成保存意图。
+    if (event.repeat || event.isComposing || !canMutateDocument() || fileActions.busy || app.dataset.loading) return;
     const current = session;
-    if (current) void fileActions.saveCopy(current, outputName());
+    if (current) void (fileActions.localAvailable
+      ? fileActions.saveLocal(current, outputName(), event.shiftKey)
+      : fileActions.saveCopy(current, outputName()));
   }
 });
 window.addEventListener('beforeunload', (event) => {
@@ -496,7 +510,9 @@ function closeInspector(): void {
 }
 
 const recovery = createSiteRecovery(notice);
-const fileActions = createEditorFileActions({ notice, onBusyChange: syncControls });
+const fileActions = createEditorFileActions({
+  notice, onBusyChange: syncControls, onSaved: (saved) => { void recovery.flush(saved); },
+});
 const productTools = createProductTools(() => ({
   session, view, writable: canMutateDocument() && mode === 'edit', openInspector,
 }), notice);

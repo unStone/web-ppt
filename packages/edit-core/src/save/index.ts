@@ -167,6 +167,13 @@ export async function saveEditDocWithExtensions(doc: EditDoc): Promise<OpcPatchR
   return saveEditDoc(doc, await extensionSavePlan(doc));
 }
 
+/** 字节生成不代表交付成功；宿主负责确认保存点和释放独立生成的结果包。 */
+export async function serializeEditDoc(doc: EditDoc): Promise<OpcPatchResult> {
+  return doc.meta.source === 'pptx' && doc.package && !doc.package.disposed
+    ? saveEditDocWithExtensions(doc)
+    : (await import('../generate/index')).generateEditDoc(doc);
+}
+
 /** 始终从首次触碰的基线重建 part，避免连续保存把旧覆盖烘进源树而破坏撤销。 */
 export function saveEditDoc(
   doc: EditDoc,

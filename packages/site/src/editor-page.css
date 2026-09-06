@@ -55,6 +55,7 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 .button.primary { border-color: var(--accent); background: var(--accent); color: white; }
 .button.primary:hover { background: #c8491a; }
 .button:disabled { cursor: not-allowed; opacity: .45; }
+.button[hidden] { display: none; }
 
 .toolbar { gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.03); z-index: 3; }
 .tool-group { display: flex; align-items: center; gap: 3px; }

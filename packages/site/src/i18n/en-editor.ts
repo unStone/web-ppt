@@ -1,4 +1,13 @@
 export const editorMessages = {
+  '保存到文件': 'Save to file', '保存目标：{name}': 'Save destination: {name}',
+  '另存为': 'Save as', '更换保存位置': 'Choose another save destination',
+  '请选择 .pptx 文件；未写入任何内容': 'Choose a .pptx file. Nothing was written.',
+  '请选择保存位置': 'Choose a destination', '请选择本机保存位置…': 'Choose a destination on this device…',
+  '已取消保存，文稿未改变': 'Save cancelled. The presentation is unchanged.',
+  '未获准写入文件；可重试或下载保存副本': 'File write permission was denied. Retry or download a copy.',
+  '正在写入 {name}…': 'Writing to {name}…', '已保存到 {name}': 'Saved to {name}',
+  '已写入 {name}；请再次保存最新编辑': 'Written to {name}; save again to include newer edits',
+  '文稿在生成期间已变化，请重新保存': 'The presentation changed while preparing the file. Save again.',
   '打开失败：{detail}': 'Could not open: {detail}', '新建失败：{detail}': 'Could not create: {detail}',
   '保存失败：{detail}': 'Could not save: {detail}', '导出失败：{detail}': 'Could not export: {detail}',
   '文件任务完成前不能切换文稿': 'Wait for the file task to finish before opening another presentation',

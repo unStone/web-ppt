@@ -134,7 +134,7 @@ if (element.kind === 'shape' && element.text) {
 
 命令与 patch 都是普通 JSON。事务会先校验再原子提交，只生成一个本地撤销单元，并在撤销/重做时恢复选区。
 同一 `mergeKey` 的连续编辑最多合并 500ms；远端 `origin` 会应用但不进入本地历史。`isDirty()` 比较当前
-状态与最近一次 `markSaved()` 保存点。React、Vue、Web Component 或原生适配层只需订阅 `subscribe()`
+状态与最近一次已确认的保存点（`markSaved()` 立即确认当前版本）。React、Vue、Web Component 或原生适配层只需订阅 `subscribe()`
 并调用两个投影方法，任何框架运行时都不会进入本包。
 协同客户端必须传入跨客户端唯一且稳定的 `origin`；追加行身份会包含它，两个 structuredClone 出来的
 文档并发追加时才不会占用同一条 patch 路径。
@@ -486,13 +486,23 @@ HTML 结果与预览共用渲染器，并带 `data-p` / `data-r`、项目符号�
 
 常规调用只需 `Editor.save()`：它把当前变换、层级、文字、字符格式与段落格式、表格结构与单元格格式、新形状/页面、页面复制/删除、演讲者备注、占位符清空和元素删除写回 OOXML，
 刷新 `doc.package` 供下一次保存
-继续直通，并且只在写入成功后推进脏状态保存点。需要保存诊断信息时，使用同一生命周期下的详细方法：
+继续直通，并在字节生成成功后推进保存点；这不代表文件已落盘。需要保存诊断信息时，使用同一生命周期下的详细方法：
 
 ```ts
 const result = await editor.saveDetailed();
 // result.mode: identity | passthrough | repacked
 // result.fallbackReason 用于解释为什么本次需要整包重压。
 ```
+
+交付可能失败时，使用 `@web-ppt/edit-core/save` 的 `serializeEditDoc(doc)`：自动选择补丁或生成保存，
+但不确认交付。序列化前调用 `editor.captureSavepoint()`，仅在交付成功后调用返回的一次性确认函数，失败则
+丢弃。宿主须检测序列化期间的文稿变化并拒绝交付、提示重试；后续写入期间的编辑仍为脏状态，撤销/重做回到
+捕获版本才恢复干净。捕获还会截断跨越该版本的历史合并。
+独立生成的 `result.package` 须用 `disposeOpcPackage` 释放；等于 `doc.package` 时不得释放。
+选择器权限、文件句柄、文件任务串行化及确认后的 UI 刷新均由宿主负责。
+
+恢复 v1 保持兼容：确认较早版本时用空 Patch 的 `transaction` 帧记录当前 dirty；`savepoint` 仍表示当前
+干净。恢复记录依旧绑定最初输入文件的 fingerprint，不绑定文件句柄，也不会自动匹配覆盖后不同字节的文件。
 
 只有扩展其它写回命令时才需要直接使用底层保留型 OOXML 树：
 

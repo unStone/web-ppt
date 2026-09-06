@@ -117,18 +117,27 @@ export class Editor {
   }
 
   async saveDetailed(): Promise<OpcPatchResult> {
-    const result = this.doc.meta.source === 'pptx' && this.doc.package && !this.doc.package.disposed
-      ? await (await import('./save/index')).saveEditDocWithExtensions(this.doc)
-      : (await import('./generate/index')).generateEditDoc(this.doc);
+    const result = await (await import('./save/index')).serializeEditDoc(this.doc);
     this.markSaved();
     return result;
   }
 
   markSaved(): void {
-    const changed = this.isDirty();
-    this.savedState = this.currentState;
+    this.captureSavepoint()();
+  }
+
+  captureSavepoint(): () => void {
+    // 确认捕获版本，而不是清除写入期间的新编辑；调用约定见包 README。
+    let state: number | undefined = this.currentState;
     this.historyStore.breakMerge();
-    if (changed) this.emitRecovery('savepoint', [], '保存点');
+    return () => {
+      if (state === undefined) return;
+      const changed = this.savedState !== state;
+      this.savedState = state;
+      state = undefined;
+      // v1 的 savepoint 表示当前干净；迟到的交付用兼容的元数据事务记录当前脏状态。
+      if (changed) this.emitRecovery(this.isDirty() ? 'transaction' : 'savepoint', [], '保存点');
+    };
   }
 
   select(selection: Selection): void {

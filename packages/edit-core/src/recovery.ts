@@ -17,6 +17,7 @@ import type { EditDoc, EditIdentity } from './types';
 import { releaseThemeProjectionPackage } from './theme-projection';
 import { releaseDesignProjectionPackage } from './design-projection-package';
 import { releaseDesignDependencies } from './design-dependencies';
+import { reportEditorSubscriberError } from './patch-events';
 
 export const EDITOR_RECOVERY_VERSION = 1 as const;
 
@@ -26,14 +27,6 @@ const SOURCES = new Set<RecoveryFrameSource>([
 const SELECTION_KINDS = new Set<Selection['kind']>(['none', 'elements', 'text', 'table']);
 // NUL 不可能出现在 URL 或合法 OOXML 文本中，避免用户内容被误认成内部资源占位符。
 const RECOVERY_ASSET_TOKEN = '\0web-ppt-recovery-asset:';
-
-function reportSubscriberError(error: unknown): void {
-  try {
-    const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
-    if (reporter) reporter(error);
-    else console.error('Editor 恢复订阅者执行失败', error);
-  } catch { /* 持久化观察者不能把已经提交的模型变化伪装成失败。 */ }
-}
 
 export function cloneRecoveryFrame(frame: RecoveryFrame): RecoveryFrame {
   return structuredClone(frame);
@@ -259,7 +252,7 @@ export class RecoveryJournal {
     // 默认编辑路径没有持久化观察者，不能为未启用的能力深拷贝结构 Patch。
     if (!this.subscribers.size) return;
     if (this.sequence >= Number.MAX_SAFE_INTEGER) {
-      reportSubscriberError(new Error('恢复日志序号已耗尽'));
+      reportEditorSubscriberError(new Error('恢复日志序号已耗尽'));
       return;
     }
     const assets = frameAssets(input.doc, input.patches);
@@ -282,7 +275,7 @@ export class RecoveryJournal {
       while (this.pending.length) {
         const batch = this.pending.splice(0, this.pending.length);
         for (const pending of batch) for (const subscriber of [...this.subscribers]) {
-          try { subscriber(cloneRecoveryFrame(pending)); } catch (error) { reportSubscriberError(error); }
+          try { subscriber(cloneRecoveryFrame(pending)); } catch (error) { reportEditorSubscriberError(error); }
         }
       }
     } finally {

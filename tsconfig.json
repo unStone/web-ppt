@@ -15,6 +15,7 @@
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/edit-core/xml": ["./packages/edit-core/src/xml/index.ts"],
       "@web-ppt/edit-core/opc": ["./packages/edit-core/src/opc/index.ts"],
+      "@web-ppt/edit-core/save": ["./packages/edit-core/src/save/index.ts"],
       "@web-ppt/edit-core/generate": ["./packages/edit-core/src/generate/index.ts"],
       "@web-ppt/edit-core/templates": ["./packages/edit-core/src/templates/index.ts"],
       "@web-ppt/edit-core/chart": ["./packages/edit-core/src/chart/index.ts"],

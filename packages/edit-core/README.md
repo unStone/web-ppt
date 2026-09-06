@@ -137,7 +137,7 @@ if (element.kind === 'shape' && element.text) {
 Commands and patches are plain JSON. A transaction validates and commits atomically, creates one local undo
 unit, and restores selection on undo/redo. Repeated edits with the same `mergeKey` merge for at most 500ms;
 remote `origin` values apply without entering local history. `isDirty()` compares the current state with the
-last `markSaved()` checkpoint. React, Vue, Web Components, or vanilla adapters only need `subscribe()` and
+last confirmed checkpoint (`markSaved()` for immediate acknowledgement). React, Vue, Web Components, or vanilla adapters only need `subscribe()` and
 the two projection methods; none of their runtimes enter this package.
 Collaborative clients must pass a stable, client-unique `origin`; appended-row identities include it so two
 structured-cloned documents can merge concurrent appends without sharing a path.
@@ -523,7 +523,7 @@ Its `transform` maps logical coordinates for vertical text; pass `{ includeCaret
 
 `Editor.save()` is the normal API: it writes current transforms, layer order, text, character and paragraph formatting,
 appended table rows, new shapes/pages, page duplication/removals, speaker notes, placeholder clears, and element removals, refreshes `doc.package` for the
-next save, and advances the dirty checkpoint only after a successful write. For save diagnostics, use the
+next save, and advances the dirty checkpoint after producing bytes, not after filesystem delivery. For save diagnostics, use the
 detailed method without changing lifecycle semantics:
 
 ```ts
@@ -531,6 +531,18 @@ const result = await editor.saveDetailed();
 // result.mode: identity | passthrough | repacked
 // result.fallbackReason explains why a package had to be rebuilt.
 ```
+
+For fallible delivery, use `serializeEditDoc(doc)` from `@web-ppt/edit-core/save`: it selects patch or generated
+save without acknowledging delivery. Call `editor.captureSavepoint()` before serialization and invoke its
+one-shot callback only after delivery succeeds. Discard the callback on failure. Changes during serialization
+must cause the host to reject delivery and retry; changes during a subsequent write remain dirty unless undo/redo
+returns to the captured version. Capture also prevents history merging across that version.
+Release an independently generated `result.package` with `disposeOpcPackage`; do not dispose it when it is `doc.package`.
+The host owns picker permissions, file handles, task serialization and UI refresh after acknowledgement.
+
+Recovery v1 remains compatible: an acknowledgement of an older version uses an empty `transaction` frame with
+the current dirty flag; `savepoint` still means the current version is clean. Recovery journals remain tied to
+the original source-file fingerprint, not to a file handle or a subsequently overwritten file's new bytes.
 
 Load the lower-level preserving OOXML tree only when building another writer:
 

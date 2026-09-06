@@ -4,13 +4,29 @@ import { message, type SiteNotice } from './i18n/message';
 interface EditorFileActionsOptions {
   readonly notice: SiteNotice;
   readonly onBusyChange: () => void;
+  readonly onSaved: (session: EditorSession) => void;
 }
 
 export interface EditorFileActions {
   readonly busy: boolean;
+  readonly localAvailable: boolean;
+  localTarget(session: EditorSession | null): string | undefined;
+  saveLocal(session: EditorSession, name: string, chooseAgain?: boolean): Promise<void>;
   saveCopy(session: EditorSession, name: string): Promise<void>;
   exportImages(session: EditorSession, name: string): Promise<void>;
 }
+
+type WritableHandle = FileSystemFileHandle & {
+  requestPermission?(options: { mode: 'readwrite' }): Promise<PermissionState>;
+};
+type PickerWindow = Window & {
+  showSaveFilePicker?: (options: {
+    suggestedName: string;
+    types: { accept: Record<string, string[]> }[];
+    excludeAcceptAllOption: boolean;
+  }) => Promise<WritableHandle>;
+};
+const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 /** 本地选择与拖放共用同一入口，避免两套替换/忙碌判断逐渐分叉。 */
 export function bindEditorFileOpen(
@@ -57,13 +73,15 @@ export function bindEditorFileOpen(
 
 function download(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob);
-  Object.assign(document.createElement('a'), { href: url, download: name }).click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  try { Object.assign(document.createElement('a'), { href: url, download: name }).click(); }
+  finally { window.setTimeout(() => URL.revokeObjectURL(url), 1000); }
 }
 
 /** 文件任务持有入口快照；异步期间不能改用后来打开的会话或文件名。 */
 export function createEditorFileActions(options: EditorFileActionsOptions): EditorFileActions {
   let busy = false;
+  const targets = new WeakMap<EditorSession, WritableHandle>();
+  const localAvailable = (): boolean => isSecureContext && typeof (window as PickerWindow).showSaveFilePicker === 'function';
   const run = async (failure: '保存失败：{detail}' | '导出失败：{detail}', action: () => Promise<void>): Promise<void> => {
     if (busy) return;
     busy = true;
@@ -80,15 +98,58 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
 
   return {
     get busy() { return busy; },
+    get localAvailable() { return localAvailable(); },
+    localTarget(session) { return session ? targets.get(session)?.name : undefined; },
+    saveLocal(session, name, chooseAgain = false) {
+      return run('保存失败：{detail}', async () => {
+        let handle = chooseAgain ? undefined : targets.get(session);
+        if (!handle) {
+          options.notice(message('请选择本机保存位置…'));
+          try {
+            // 权限选择必须先于动态加载和序列化，否则长任务会耗尽用户激活。
+            handle = await (window as PickerWindow).showSaveFilePicker!({
+              suggestedName: name, types: [{ accept: { [PPTX_MIME]: ['.pptx'] } }], excludeAcceptAllOption: true,
+            });
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+              options.notice(message('已取消保存，文稿未改变')); return;
+            }
+            throw error;
+          }
+        } else if (handle.requestPermission && await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
+          options.notice(message('未获准写入文件；可重试或下载保存副本'), 'error'); return;
+        }
+        if (!/\.pptx$/i.test(handle.name)) {
+          options.notice(message('请选择 .pptx 文件；未写入任何内容'), 'error'); return;
+        }
+        options.notice(message('正在写入 {name}…', { name: handle.name }));
+        const { prepareFileSave, writeLocalFile } = await import('./editor-file-save');
+        const prepared = await prepareFileSave(session);
+        try {
+          if (prepared.changed) {
+            options.notice(message('文稿在生成期间已变化，请重新保存'), 'error'); return;
+          }
+          await writeLocalFile(handle, prepared.bytes);
+          targets.set(session, handle);
+          options.notice(message(prepared.confirm() ? '已保存到 {name}' : '已写入 {name}；请再次保存最新编辑', { name: handle.name }), 'success');
+          options.onSaved(session);
+        } finally { prepared.release(); }
+      });
+    },
     saveCopy(session, name) {
       return run('保存失败：{detail}', async () => {
         options.notice(message('正在生成 PPTX 副本…'));
-        const bytes = await session.editor.save();
-        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-        download(new Blob([buffer], {
-          type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        }), name);
-        options.notice(message('已生成可继续编辑的 PPTX 副本'), 'success');
+        const { prepareFileSave } = await import('./editor-file-save');
+        const prepared = await prepareFileSave(session);
+        try {
+          if (prepared.changed) {
+            options.notice(message('文稿在生成期间已变化，请重新保存'), 'error'); return;
+          }
+          download(new Blob([new Uint8Array(prepared.bytes)], { type: PPTX_MIME }), name);
+          prepared.confirm();
+          options.notice(message('已生成可继续编辑的 PPTX 副本'), 'success');
+          options.onSaved(session);
+        } finally { prepared.release(); }
       });
     },
     exportImages(session, name) {

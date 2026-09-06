@@ -37,6 +37,8 @@ export const editorButtons = {
   zoomIn: $<HTMLButtonElement>('#zoomIn'),
   exportImages: $<HTMLButtonElement>('#exportImages'),
   save: $<HTMLButtonElement>('#saveFile'),
+  localSave: $<HTMLButtonElement>('#saveToFile'),
+  saveAs: $<HTMLButtonElement>('#saveAsFile'),
   prev: $<HTMLButtonElement>('#prevSlide'),
   next: $<HTMLButtonElement>('#nextSlide'),
 };
