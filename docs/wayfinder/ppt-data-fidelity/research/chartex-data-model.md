@@ -52,8 +52,9 @@
 来源：[CT_Series](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/86df19ea-8e94-49fc-9160-377c1b40b985)、
 [CT_SeriesLayoutProperties](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/1ff5c9ad-828a-4d0c-be72-07754eba3588)。
 
-层级空槽如何继承、缓存层级顺序、缓存与工作簿不一致时的取值策略，以及零/负值在各图的退化规则仍须结合
-真实 Office 产物与规范确认。不得把上表的设计约束视为已经完成了这些算法。当前地图规定 `regionMap` 永久
+普通稀疏父类别继承已有产品团队说明，但任意空槽的规则、缓存层级顺序、两路不一致时的取值策略，以及零/负值
+在各图的退化仍须结合真实 Office 产物确认，见[层级语义补充](chartex-hierarchy-semantics.md)。不得把上表的
+设计约束视为已经完成了这些算法。当前地图规定 `regionMap` 永久
 回退；这个产品范围不因探针读到了地图数据而改变。
 
 ## 可复验命令与限制
@@ -72,3 +73,28 @@ fnm exec --using=v24.3.0 node tooling/test-chartex-probe.mjs
 保守返回 `unresolved`；`resolved` 只表示引用矩形已定位，其中仍可能有 `invalid`、`error` 或 `uncalculated` 单元格。
 
 本轮只改 `tooling/`、命令和研究记录，不往 core/edit-core/editor 的默认依赖图加入解析器，不修改体积预算。
+
+## 缓存／字面值与工作簿的对齐报告
+
+探针新增 `inlineData`、`workbookData` 和 `sourceComparison`；原始公式、`idx/ptCount`、缓存文字、物理矩形与
+来源地址仍单独保留。这是 CLI 调查输出，不是发布包 API，也不决定原生图表的数据优先级。
+
+| 输出 | 可复验行为 | 解释边界 |
+|---|---|---|
+| `inlineData` | 区分 `literal/cache`；按 `idx` 展开稀疏槽，保留层名和数字格式 | 缺点、空字符串和数值零不互换；不推断父继承 |
+| `workbookData` | 按显式／默认 `dir` 产生物理维度，保留每个单元格地址和类型 | 不把首列自动解释为缓存首层，不求值公式或格式化日期 |
+| `sourceComparison` | 两边各一层时核对原始类型、值和点数，差异带位置及两侧值 | `equal` 只表示这层原值一致，不代表图形、格式或整个图表等价 |
+| 无法核对 | 无缓存、外部／未知引用、无效值或多层映射未知均返回 `not-comparable` | 不把“两边都无效”或“缺缓存”记为一致，不选择某一侧覆盖另一侧 |
+
+数值点是 `xsd:double` 简单内容，`idx` 为无符号整数；层的 `ptCount` 为必填无符号整数，缓存与字面层来自
+不同 schema 分支。来源：[CT_NumericValue](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/e3ae6c9c-786a-4b7d-920d-41e9a0f5a045)、
+[CT_NumericLevel](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/06393495-73ef-4826-af89-4e119dc35e42)、
+[CT_NumericDimension](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/37fbbd78-c3e6-4f33-9d0b-3fe428ad1c09)。
+
+探针对重复／越界／缺失索引、无效点数和多个公式拒绝展开；每维度累计最多 10,000 个槽。数字空串、非数值、
+非有限值保留原文并记为 `invalid`（这里表示不可用于有限几何，不等于完整 XSD 合法性结论）。只认数据路径的
+直接子元素，不把扩展内同名节点或点内复杂内容拼成另一份合法数据。
+
+`--corpus` 实测真实漏斗 6 个缓存维度各 4 点，均与内嵌工作簿一致；8 个原始 XLSX 均保持无缓存且可读取工作簿。
+人工契约另测稀疏／乱序索引、空文本、冲突、点数不一致、行列方向、多层不误报、无效数及累计上限。默认人工
+契约已接入 `npm run verify`，在构建后使用实际 dist；不依赖未入库语料或网络。原始语料契约仍显式用 `--corpus`。

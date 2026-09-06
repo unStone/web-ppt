@@ -8,6 +8,7 @@ import { parse, renderSlideToSvg } from '../packages/core/dist/core.js';
 import { parseXmlTree, xmlElementChildren } from '../packages/edit-core/dist/xml.js';
 import { chartWorkbook } from './lib/chartex-workbook-probe.mjs';
 import { relationships } from './lib/chartex-probe-opc.mjs';
+import { dimensionEvidence } from './lib/chartex-dimension-probe.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, 'fixtures/chartex-corpus.json'), 'utf8'));
@@ -45,20 +46,25 @@ function inspectChart(part, tree, parts) {
       layoutProperties: descendants(series, 'layoutPr', CX).flatMap((n) =>
         xmlElementChildren(n).map((child) => child.localName)),
     })),
-    dimensions: descendants(tree, 'chartData', CX).flatMap((data) =>
-      descendants(data, 'data', CX).flatMap((entry) => xmlElementChildren(entry)
+    dimensions: children(tree, 'chartData', CX).flatMap((data) =>
+      children(data, 'data', CX).flatMap((entry) => xmlElementChildren(entry)
         .filter((n) => n.namespaceUri === CX && (n.localName === 'strDim' || n.localName === 'numDim'))
-        .map((dim) => ({
-          dataId: attr(entry, 'id'), kind: dim.localName, type: attr(dim, 'type'),
-          formulas: descendants(dim, 'f', CX).map(text),
-          workbookReferences: children(dim, 'f', CX).map((formula) => ({
-            formula: text(formula), direction: attr(formula, 'dir') ?? 'col', ...workbook.resolve(text(formula)),
-          })),
-          levels: descendants(dim, 'lvl', CX).map((level) => ({
-            ptCount: attr(level, 'ptCount'),
-            points: descendants(level, 'pt', CX).map((pt) => ({ idx: attr(pt, 'idx'), value: text(pt) })),
-          })),
-        })))),
+        .map((dim) => {
+          const dimension = {
+            dataId: attr(entry, 'id'), kind: dim.localName, type: attr(dim, 'type'),
+            formulas: children(dim, 'f', CX).map(text),
+            workbookReferences: children(dim, 'f', CX).map((formula) => ({
+              formula: text(formula), direction: attr(formula, 'dir') ?? 'col', ...workbook.resolve(text(formula)),
+            })),
+            levels: children(dim, 'lvl', CX).map((level) => ({
+              ptCount: attr(level, 'ptCount'), name: attr(level, 'name'), formatCode: attr(level, 'formatCode'),
+              points: children(level, 'pt', CX).map((pt) => ({ idx: attr(pt, 'idx'), value: text(pt),
+                ...(xmlElementChildren(pt).length ? { invalidContent: true } : {}),
+              })),
+            })),
+          };
+          return { ...dimension, ...dimensionEvidence(dimension) };
+        }))),
   };
 }
 
