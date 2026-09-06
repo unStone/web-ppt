@@ -1,5 +1,11 @@
 /** 中文源文案即词条身份；缺少英文的静态文案由构建守卫拒绝。 */
 export const homeMessages = {
+  '{name} · {kb}KB · {pages} 页 · {network}解析 {parse}ms · 首屏 {paint}ms': '{name} · {kb}KB · Slides: {pages} · {network}Parse {parse}ms · First view {paint}ms',
+  '下载 {time} · ': 'Download {time} · ',
+  '下载中…': 'Downloading…', '下载中 · {size}': 'Downloading · {size}',
+  '下载完成后才开始解析，解析与渲染全在本地': 'Parsing starts after the download. Parsing and rendering stay on your device.',
+  '网络不通': 'Network unavailable', '解析失败：{reason}': 'Could not parse: {reason}',
+  '示例载入失败（{reason}）\n把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。': 'Could not load the sample ({reason})\nTry dropping in your own .pptx / .ppt file. Parsing works offline.',
   '→ pptx，': ' → pptx; ', '。': '.',
   'Web-PPT · 纯浏览器渲染 PPT': 'Web-PPT · Render PowerPoint in your browser',
   '编辑器': 'Editor', '能力': 'Features', '上手': 'Get started', '架构': 'Architecture',

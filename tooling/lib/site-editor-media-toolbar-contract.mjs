@@ -207,12 +207,23 @@ async function runVideoContract(context) {
     })`)));
   }
   await playVideo(context, '外链 MP4 保存重开后真实播放');
-  await evaluate('globalThis.__closedMediaDialogRef = new WeakRef(document.querySelector("#mediaDialog"))');
-  await click('#closeMediaDialog');
-  await waitFor("!document.querySelector('#mediaDialog')", '结束视频工具回归');
-  await request('HeapProfiler.collectGarbage');
-  if (await evaluate('!!globalThis.__closedMediaDialogRef.deref()')) {
-    throw new Error('关闭媒体工具后不能继续持有已移除的对话框与文件输入');
+  for (let iteration = 0; iteration < 20; iteration++) {
+    if (iteration) { await click('#mediaTools'); await waitFor("document.querySelector('#mediaDialog')?.open", '重复打开媒体工具'); }
+    await evaluate(`(() => {
+      const dialog = document.querySelector('#mediaDialog');
+      globalThis.__closedMediaDialogRef = new WeakRef(dialog);
+      globalThis.__mediaCloseEvent = false;
+      dialog.addEventListener('close', () => { globalThis.__mediaCloseEvent = true; }, { once: true });
+    })()`);
+    await click('#closeMediaDialog');
+    await waitFor("!document.querySelector('#mediaDialog')", '结束视频工具回归');
+    // DOM 移除不代表浏览器已完成关闭事件与渲染清理；生命周期稳定后才判断持续泄漏。
+    await waitFor('globalThis.__mediaCloseEvent', '原生对话框关闭事件');
+    await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
+    await request('HeapProfiler.collectGarbage');
+    if (await evaluate('!!globalThis.__closedMediaDialogRef.deref()')) {
+      throw new Error('关闭媒体工具后不能继续持有已移除的对话框与文件输入');
+    }
   }
 }
 

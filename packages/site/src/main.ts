@@ -1,10 +1,16 @@
-import { collectFonts, parse, renderSlideToSvg, setFontDecoder } from '@web-ppt/core';
+import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
 import { loadFontsFor, unloadFonts } from '@web-ppt/fonts';
 import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { featuredOf, fetchSamples, type Sample } from './samples-index';
 import { fetchBytes, whyFailed } from './fetch-bytes';
+import { refreshSiteLinks, setMessage, setText } from './i18n/runtime';
+import { createViewerStatus } from './viewer-status';
+import { message } from './i18n/message';
+import { drawArch, initializeHardCases } from './home-illustrations';
+import { bindFullscreenLanguage, ownsViewerKey } from './i18n/controls';
+import { bindCopyButton } from './copy-button';
 
 /**
  * 接上嵌入字体解码器。
@@ -40,26 +46,7 @@ let currentUrl: string | null = null;
 
 /* ── 载入并渲染 ───────────────────────────────── */
 
-function setStatus(html: string, cls = ''): void {
-  stage.innerHTML = `<div class="${cls}">${html}</div>`;
-}
-
-const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
-
-/**
- * 下载进度。远程样本有好几 MB，走的是别人的网络，跟引擎快慢没有半点关系 ——
- * 只转个圈会让人把等待算到渲染头上，而这恰恰是本项目最不该被误解的地方。
- * 所以下载单独显示进度，计时也单独列，别和解析 / 首屏混在一起。
- */
-function setProgress(got: number, total: number): void {
-  const pct = total ? Math.min(100, (got / total) * 100) : 0;
-  stage.innerHTML =
-    `<div class="loading">` +
-    `<div class="loading-label">下载中 · ${fmtMB(got)}${total ? ` / ${fmtMB(total)}` : ''}</div>` +
-    `<div class="loading-bar"><i style="width:${total ? pct.toFixed(1) : 0}%"></i></div>` +
-    `<div class="loading-note">下载完成后才开始解析，解析与渲染全在本地</div>` +
-    `</div>`;
-}
+const { status: setStatus, progress: setProgress } = createViewerStatus(stage);
 
 /**
  * 把当前文件挂到「下载」按钮上。
@@ -93,8 +80,8 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
     pres = await parse(bytes);
   } catch (e) {
     thumbs.innerHTML = '';
-    setStatus(`解析失败：${e instanceof Error ? e.message : String(e)}`, 'err');
-    meta.textContent = '';
+    setStatus(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
+    setMessage(meta, '');
     return;
   }
   const parseMs = performance.now() - t0;
@@ -126,13 +113,14 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   sync();
 
   const kb = Math.round(bytes.byteLength / 1024);
-  meta.textContent =
-    `${label} · ${kb}KB · ${pres.slides.length} 页 · ` +
-    // 秒级用 s、毫秒级用 ms：同源小文件本来就是几十毫秒，写成「0.0s」像是没测
-    (netMs === undefined
-      ? ''
-      : `下载 ${netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`} · `) +
-    `解析 ${parseMs.toFixed(0)}ms · 首屏 ${(performance.now() - renderT0 + parseMs).toFixed(0)}ms`;
+  setText(meta, '{name} · {kb}KB · {pages} 页 · {network}解析 {parse}ms · 首屏 {paint}ms', {
+    name: label, kb, pages: pres.slides.length,
+    // 秒级用 s、毫秒级用 ms，避免同源小文件显示成「0.0s」。
+    network: netMs === undefined ? '' : message('下载 {time} · ', {
+      time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`,
+    }),
+    parse: parseMs.toFixed(0), paint: (performance.now() - renderT0 + parseMs).toFixed(0),
+  });
 }
 
 /**
@@ -236,7 +224,7 @@ function buildThumbs(pres: Presentation): void {
 async function loadUrl(src: string, label: string): Promise<void> {
   thumbs.innerHTML = '';
   setProgress(0, 0);
-  meta.textContent = '下载中…';
+  setText(meta, '下载中…');
   try {
     const { bytes, ms } = await fetchBytes(src, setProgress);
     await show(bytes, label, ms);
@@ -244,10 +232,10 @@ async function loadUrl(src: string, label: string): Promise<void> {
     // 样本取不到是网络或样本库的事，跟引擎无关。指一条还走得通的路：
     // 本地文件的解析压根不需要网络。
     setStatus(
-      `示例载入失败（${whyFailed(e)}）<br>把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。`,
+      message('示例载入失败（{reason}）\n把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。', { reason: whyFailed(e) }),
       'err',
     );
-    meta.textContent = '';
+    setMessage(meta, '');
   }
 }
 
@@ -303,6 +291,7 @@ function showLinkToast(href: string): void {
 /* ── 全屏演示 ─────────────────────────────────── */
 
 const presenting = (): boolean => document.fullscreenElement === stageWrap;
+bindFullscreenLanguage(stageWrap);
 
 /**
  * 等浏览器真的把当前 DOM 画出一帧。
@@ -392,6 +381,7 @@ demo.addEventListener('drop', (e) => {
 // demo 在视口内时方向键翻页；全屏演示时不看位置——它已经占满屏幕了
 addEventListener('keydown', (e) => {
   if (!viewer) return;
+  if (ownsViewerKey(e)) return;
   if (!presenting()) {
     const r = demo.getBoundingClientRect();
     if (r.bottom < 80 || r.top > innerHeight - 80) return;
@@ -405,66 +395,14 @@ addEventListener('keydown', (e) => {
 });
 
 document.querySelectorAll<HTMLButtonElement>('.copy').forEach((btn) => {
-  btn.addEventListener('click', async () => {
-    await navigator.clipboard.writeText(btn.dataset.copy!);
-    btn.textContent = '已复制';
-    btn.classList.add('done');
-    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('done'); }, 1400);
-  });
+  bindCopyButton(btn, () => btn.dataset.copy!, '复制');
 });
 
 /* ── 架构图 ───────────────────────────────────── */
 
-function drawArch(): void {
-  const box = (x: number, y: number, w: number, h: number, title: string, sub: string, accent = false): string => `
-    <g>
-      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8"
-        fill="${accent ? 'var(--accent-soft)' : 'var(--bg)'}"
-        stroke="${accent ? 'var(--accent)' : 'var(--line)'}" stroke-width="1.2"/>
-      <text x="${x + w / 2}" y="${y + (sub ? 25 : h / 2 + 4)}" text-anchor="middle"
-        fill="${accent ? 'var(--accent)' : 'var(--fg)'}" font-size="13" font-weight="600">${title}</text>
-      ${sub ? `<text x="${x + w / 2}" y="${y + 43}" text-anchor="middle"
-        fill="var(--fg-faint)" font-size="10.5" font-family="var(--mono)">${sub}</text>` : ''}
-    </g>`;
-
-  const arrow = (x1: number, y1: number, x2: number, y2: number, label = ''): string => `
-    <g>
-      <path d="M${x1} ${y1} L${x2 - 7} ${y2}" stroke="var(--fg-faint)" stroke-width="1.2" fill="none"/>
-      <path d="M${x2 - 7} ${y2 - 3.5} L${x2} ${y2} L${x2 - 7} ${y2 + 3.5}Z" fill="var(--fg-faint)"/>
-      ${label ? `<text x="${(x1 + x2) / 2}" y="${y1 - 7}" text-anchor="middle"
-        fill="var(--fg-faint)" font-size="10" font-family="var(--mono)">${label}</text>` : ''}
-    </g>`;
-
-  $('#archDiagram').innerHTML = `
-<svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Web-PPT 架构图">
-  <text x="92" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">输入</text>
-  ${box(20, 28, 145, 56, '.pptx', 'Zip + OOXML')}
-  ${box(20, 100, 145, 56, '.ppt', 'CFB + OfficeArt')}
-  ${box(20, 172, 145, 56, 'EMF / WMF / PICT', 'GDI / QuickDraw')}
-
-  ${arrow(165, 56, 285, 90, 'fflate')}
-  ${arrow(165, 128, 285, 118, 'Escher')}
-  ${arrow(165, 200, 285, 146, 'GDI')}
-
-  <text x="368" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">中间表示</text>
-  ${box(285, 72, 166, 92, '统一 Schema', 'types.ts', true)}
-  <text x="368" y="180" text-anchor="middle" fill="var(--fg-faint)" font-size="10">与文件格式无关</text>
-
-  ${arrow(451, 100, 570, 62)}
-  ${arrow(451, 136, 570, 174)}
-
-  <text x="647" y="18" text-anchor="middle" fill="var(--fg-faint)" font-size="10.5" letter-spacing=".08em">渲染</text>
-  ${box(570, 34, 154, 56, 'HTML 文本', 'foreignObject')}
-  ${box(570, 146, 154, 56, 'SVG 文本', '自实现断行')}
-
-  ${arrow(724, 62, 790, 62)}
-  ${arrow(724, 174, 790, 174)}
-  ${box(790, 34, 92, 56, '预览', '可选中')}
-  ${box(790, 146, 92, 56, '导出', 'PNG/PDF')}
-</svg>`;
-}
-
 drawArch();
+initializeHardCases();
+
 
 /**
  * 地址里带的文件名与页码。
@@ -480,6 +418,7 @@ let pendingPage = Math.max(1, Math.trunc(Number(params.get('p'))) || 1);
 const cleanUrl = new URL(location.href);
 cleanUrl.searchParams.delete('sample'); cleanUrl.searchParams.delete('p');
 history.replaceState(history.state, '', cleanUrl);
+refreshSiteLinks();
 
 const builtinChip = requested
   ? [...document.querySelectorAll<HTMLElement>('.samples .chip[data-src]')]
@@ -558,53 +497,4 @@ function openRequestedSample(all: Sample[], bar: Element): void {
   }
   selectChip(chip);
   demo.scrollIntoView({ block: 'start', behavior: 'smooth' });
-}
-
-/* ── 疑难杂症 ─────────────────────────────────── */
-
-/**
- * 卡片骨架（标题 / 说明 / 天真做法）写死在 index.html 里，这里只把引擎渲染
- * 结果填进每张卡的 .good .pane。
- *
- * 这么分工有两个理由：首轮抓取不执行 JS，标题与说明必须在静态 HTML 里才算数；
- * JS 关掉时也还剩「天真做法」一侧可看，不至于是六个空框。
- *
- * 卡片顺序与 tooling/make-hardcases-fixture.mjs 的 CASES 一一对应，改一边要改两边。
- */
-async function renderHardCases(): Promise<void> {
-  const panes = document.querySelectorAll<HTMLElement>('#hardGrid .good .pane');
-  if (!panes.length) return;
-
-  try {
-    const res = await fetch('demo/hardcases.pptx');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const pres = await parse(await res.arrayBuffer());
-    panes.forEach((host, i) => {
-      const slide = pres.slides[i];
-      if (slide) host.innerHTML = renderSlideToSvg(pres, slide, { textMode: 'svg' });
-    });
-  } catch {
-    // 案例展示不该拖垮整页：取不到固件就只留天真侧，不弹错
-    panes.forEach((p) => { p.textContent = '样本载入失败'; });
-  }
-}
-
-/**
- * 六张卡在整页最底下，进来的人未必滚得到。固件不大，但解析加渲染六页 SVG 是
- * 实打实的主线程活儿，没人看的时候干这些纯属白烧电。滚到了再说。
- */
-const hardGrid = document.querySelector<HTMLElement>('#hardGrid');
-if (hardGrid && 'IntersectionObserver' in window) {
-  const hardIo = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        hardIo.disconnect();
-        void renderHardCases();
-      }
-    },
-    { rootMargin: '200px' },
-  );
-  hardIo.observe(hardGrid);
-} else {
-  void renderHardCases();
 }

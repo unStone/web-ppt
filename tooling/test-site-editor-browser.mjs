@@ -338,6 +338,8 @@ async function runContract(webSocketDebuggerUrl) {
       loading: document.querySelector('#editorApp')?.dataset.loading,
       file: document.querySelector('#fileName')?.textContent,
       language: document.documentElement.lang,
+      viewer: { pager: document.querySelector('#pager')?.textContent, meta: document.querySelector('#meta')?.textContent,
+        preview: document.querySelector('.preview-meta')?.textContent, stage: document.querySelector('.stage .err')?.textContent },
       url: location.href,
       dialogs: [...document.querySelectorAll('dialog[open],[role="dialog"]')]
         .filter((dialog) => !dialog.hidden).map((dialog) => dialog.id),
@@ -354,7 +356,8 @@ async function runContract(webSocketDebuggerUrl) {
     const point = await evaluate(`(() => {
       const node = document.querySelector(${JSON.stringify(selector)});
       if (!node) return null;
-      node.scrollIntoView({ block: 'center', inline: 'center' });
+      // 首页开启平滑滚动；坐标点击前必须定位完成，不能点向移动中的旧位置。
+      node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
       const rect = node.getBoundingClientRect();
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     })()`);

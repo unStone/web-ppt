@@ -268,6 +268,11 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 /* 全屏时不留边距，也不给幻灯片描阴影——投出去只该有幻灯片本身 */
 .stage-wrap:fullscreen .stage { inset: 0; }
 .stage-wrap:fullscreen .stage svg { box-shadow: none; }
+.fullscreen-language { display: none; }
+.stage-wrap:fullscreen .fullscreen-language {
+  display: block; position: absolute; z-index: 2; top: 12px; right: 12px;
+  background: var(--bg); padding: 5px 8px; border-radius: 8px;
+}
 .present-bar {
   position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
   display: none; align-items: center; gap: 8px; padding: 7px 10px;

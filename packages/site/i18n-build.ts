@@ -20,7 +20,7 @@ function localizedHtml(html: string, language: SiteLanguage): string {
   };
   bindStaticText(document)(translate);
   updateSiteMetadata(document, language, translate);
-  bindSiteLinks(document)(language, new URL(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')!.href));
+  bindSiteLinks(document).apply(language, new URL(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')!.href));
   const output = dom.serialize();
   dom.window.close();
   return output;

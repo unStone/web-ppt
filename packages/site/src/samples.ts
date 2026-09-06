@@ -5,7 +5,11 @@ import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { fetchBytes, whyFailed } from './fetch-bytes';
 import { fetchSamples, type Sample } from './samples-index';
-import { languageReady } from './i18n/runtime';
+import { languageReady, refreshSiteLinks, setAttributeText, setMessage, setSiteLink, setText } from './i18n/runtime';
+import { createViewerStatus } from './viewer-status';
+import { message } from './i18n/message';
+import { bindFullscreenLanguage, moveLanguageControl, ownsViewerKey } from './i18n/controls';
+import { bindCopyButton } from './copy-button';
 
 /**
  * 样本页：先挑，再看。
@@ -27,8 +31,6 @@ setFontDecoder(eotToTtf);
 const grid = document.querySelector<HTMLElement>('#sampleGrid')!;
 // 卡片是构建时预渲染进 HTML 的（见 vite.config.ts），那种情况下占位符压根不存在
 const status = document.querySelector<HTMLElement>('#sampleStatus');
-
-const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
 
 /* ── 卡片 ─────────────────────────────────────── */
 
@@ -54,15 +56,15 @@ function card(s: Sample): HTMLElement {
 
   const open = document.createElement('button');
   open.className = 'chip act';
-  open.textContent = '预览';
+  setText(open, '预览');
   open.addEventListener('click', () => void openSample(s));
   foot.append(open);
 
   const inDemo = document.createElement('a');
   inDemo.className = 'chip';
-  inDemo.href = `./?sample=${encodeURIComponent(s.file)}`;
-  inDemo.textContent = '在首页打开';
-  inDemo.title = '带缩略图栏与全屏演示的完整查看器';
+  setSiteLink(inDemo, `./?sample=${encodeURIComponent(s.file)}`);
+  setText(inDemo, '在首页打开');
+  setAttributeText(inDemo, 'title', '带缩略图栏与全屏演示的完整查看器');
   foot.append(inDemo);
 
   el.append(foot);
@@ -81,7 +83,7 @@ function card(s: Sample): HTMLElement {
     a.target = '_blank';
     // 出处指向不受控的第三方，收录样本不等于给对方背书
     a.rel = 'noopener noreferrer nofollow';
-    a.textContent = '出处';
+    setText(a, '出处');
     credit.append(a);
   }
   if (credit.textContent.trim()) el.append(credit);
@@ -93,6 +95,7 @@ function card(s: Sample): HTMLElement {
 
 let viewer: Viewer | null = null;
 let downloadUrl: string | null = null;
+let loadGeneration = 0;
 
 const overlay = document.createElement('div');
 overlay.className = 'preview';
@@ -125,20 +128,20 @@ const pWrap = q<HTMLElement>('.preview-wrap');
 const pPager = q<HTMLElement>('.preview-pager');
 const pDl = q<HTMLAnchorElement>('.preview-dl');
 const pShare = q<HTMLButtonElement>('.preview-share');
-
-function setStage(html: string, cls = ''): void {
-  pStage.innerHTML = `<div class="${cls}">${html}</div>`;
+const resetShare = bindCopyButton(pShare, () => location.href, '复制链接');
+const releaseFullscreenLanguage = bindFullscreenLanguage(pWrap);
+let restoreLanguage: (() => void) | undefined;
+setAttributeText(q('[role="dialog"]'), 'aria-label', '样本预览');
+setText(pDl, '下载');
+setText(q('.preview-full'), '全屏演示');
+setAttributeText(q('.preview-close'), 'title', '关闭（Esc）');
+setAttributeText(q('.preview-close'), 'aria-label', '关闭');
+for (const [selector, label] of [['.preview-prev', '上一页'], ['.preview-next', '下一页']] as const) {
+  setAttributeText(q(selector), 'title', label);
+  setAttributeText(q(selector), 'aria-label', label);
 }
 
-function setProgress(got: number, total: number): void {
-  const pct = total ? Math.min(100, (got / total) * 100) : 0;
-  pStage.innerHTML =
-    '<div class="loading">' +
-    `<div class="loading-label">下载中 · ${fmtMB(got)}${total ? ` / ${fmtMB(total)}` : ''}</div>` +
-    `<div class="loading-bar"><i style="width:${total ? pct.toFixed(1) : 0}%"></i></div>` +
-    '<div class="loading-note">下载完成后才开始解析，解析与渲染全在本地</div>' +
-    '</div>';
-}
+const { status: setStage, progress: setProgress } = createViewerStatus(pStage);
 
 /**
  * 补齐当前页缺的字体，到齐后重渲。
@@ -163,14 +166,21 @@ function syncPager(): void {
 }
 
 function closePreview(): void {
+  loadGeneration++;
+  resetShare();
   if (document.fullscreenElement === pWrap) void document.exitFullscreen();
   overlay.hidden = true;
+  releaseFullscreenLanguage();
+  restoreLanguage?.(); restoreLanguage = undefined;
   syncUrl();
   viewer?.destroy();
   viewer = null;
   if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+  pDl.hidden = true;
+  pDl.removeAttribute('href');
+  pDl.removeAttribute('download');
   pStage.innerHTML = '';
-  pMeta.textContent = '';
+  setMessage(pMeta, '');
 }
 
 /** 地址栏等于「正在预览哪一份」，复制出去就能分享 */
@@ -178,14 +188,19 @@ function syncUrl(file?: string): void {
   const url = new URL(location.href);
   if (file) url.searchParams.set('sample', file); else url.searchParams.delete('sample');
   history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  refreshSiteLinks();
 }
 
 async function openSample(s: Sample): Promise<void> {
+  const generation = ++loadGeneration;
+  resetShare();
   overlay.hidden = false;
+  restoreLanguage ??= moveLanguageControl(q('.preview-bar'));
   syncUrl(s.file);
   pTitle.textContent = s.title;
-  pMeta.textContent = '下载中…';
+  setText(pMeta, '下载中…');
   pPager.textContent = '— / —';
+  pDl.hidden = true;
   viewer?.destroy();
   viewer = null;
   setProgress(0, 0);
@@ -193,13 +208,17 @@ async function openSample(s: Sample): Promise<void> {
   let bytes: ArrayBuffer;
   let netMs: number;
   try {
-    ({ bytes, ms: netMs } = await fetchBytes(s.url, setProgress));
+    ({ bytes, ms: netMs } = await fetchBytes(s.url, (got, total) => {
+      if (generation === loadGeneration) setProgress(got, total);
+    }));
   } catch (e) {
-    setStage(`载入失败（${whyFailed(e)}）`, 'err');
-    pMeta.textContent = '';
+    if (generation !== loadGeneration) return;
+    setStage(message('载入失败（{reason}）', { reason: whyFailed(e) }), 'err');
+    setMessage(pMeta, '');
     return;
   }
-  if (overlay.hidden) return; // 下载途中被关掉了
+  // hidden 不能区分「关闭后又打开」；每个异步出口都只允许当前预览落到 DOM。
+  if (generation !== loadGeneration) return;
 
   setStage('', 'spin');
   const t0 = performance.now();
@@ -207,11 +226,13 @@ async function openSample(s: Sample): Promise<void> {
   try {
     pres = await parse(bytes);
   } catch (e) {
-    setStage(`解析失败：${e instanceof Error ? e.message : String(e)}`, 'err');
-    pMeta.textContent = '';
+    if (generation !== loadGeneration) return;
+    setStage(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
+    setMessage(pMeta, '');
     return;
   }
   const parseMs = performance.now() - t0;
+  if (generation !== loadGeneration) return;
 
   pStage.innerHTML = '';
   viewer = new Viewer(pStage, pres, { skipHidden: true });
@@ -224,32 +245,15 @@ async function openSample(s: Sample): Promise<void> {
   downloadUrl = URL.createObjectURL(new Blob([bytes]));
   pDl.href = downloadUrl;
   pDl.download = s.file;
+  pDl.hidden = false;
 
   void ensureFonts();
 
-  pMeta.textContent =
-    `${Math.round(bytes.byteLength / 1024)}KB · ${pres.slides.length} 页 · ` +
-    `下载 ${netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`} · ` +
-    `解析 ${parseMs.toFixed(0)}ms`;
+  setText(pMeta, '{kb}KB · {pages} 页 · 下载 {time} · 解析 {parse}ms', {
+    kb: Math.round(bytes.byteLength / 1024), pages: pres.slides.length,
+    time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`, parse: parseMs.toFixed(0),
+  });
 }
-
-/**
- * 复制当前预览的地址。
- *
- * 地址栏本来就等于「正在看哪一份」（openSample 打开时就写好了），所以直接
- * 复制 `location.href` 即可 —— 不必再拼一遍，拼错了反而和地址栏对不上。
- */
-pShare.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(location.href);
-    pShare.textContent = '已复制';
-    pShare.classList.add('done');
-  } catch {
-    // 剪贴板被拒（非安全上下文 / 用户拒绝）：别假装成功
-    pShare.textContent = '复制失败';
-  }
-  setTimeout(() => { pShare.textContent = '复制链接'; pShare.classList.remove('done'); }, 1400);
-});
 
 q<HTMLButtonElement>('.preview-close').addEventListener('click', closePreview);
 q<HTMLButtonElement>('.preview-prev').addEventListener('click', () => viewer?.prev());
@@ -275,8 +279,9 @@ document.addEventListener('fullscreenchange', () => {
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closePreview(); });
 
 addEventListener('keydown', (e) => {
-  if (overlay.hidden || !viewer) return;
+  if (overlay.hidden) return;
   if (e.key === 'Escape' && !document.fullscreenElement) { closePreview(); return; }
+  if (!viewer || ownsViewerKey(e)) return;
   if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { viewer.next(); e.preventDefault(); }
   if (e.key === 'ArrowLeft' || e.key === 'PageUp') { viewer.prev(); e.preventDefault(); }
 });
@@ -316,7 +321,7 @@ async function build(): Promise<void> {
 
   const all = await fetchSamples();
   if (!all.length && !shown.size) {
-    if (status) status.textContent = '样本清单暂时取不到，稍后再试；首页的内置样本不依赖它。';
+    if (status) setText(status, '样本清单暂时取不到，稍后再试；首页的内置样本不依赖它。');
     return;
   }
   status?.remove();

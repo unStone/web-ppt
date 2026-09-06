@@ -1,4 +1,8 @@
 export const sampleMessages = {
+  '样本预览': 'Sample preview', '复制链接': 'Copy link', '已复制': 'Copied', '复制失败': 'Copy failed',
+  '关闭（Esc）': 'Close (Esc)', '关闭': 'Close', '载入失败（{reason}）': 'Could not load ({reason})',
+  '{kb}KB · {pages} 页 · 下载 {time} · 解析 {parse}ms': '{kb}KB · Slides: {pages} · Download {time} · Parse {parse}ms',
+  '样本清单暂时取不到，稍后再试；首页的内置样本不依赖它。': 'The sample index is unavailable. Try again later; built-in home-page samples still work.',
   '样本库 · Web-PPT': 'Sample gallery · Web-PPT', '样本库': 'Sample gallery',
   '全是真实场景里存出来的': 'These are real-world ',
   '，不是为了好看现造的。 挑一份，回首页的查看器里直接渲染——解析与渲染都在你的设备上完成。': ' files, not fabricated mockups. Choose one to open in the home-page viewer. Parsing and rendering run on your device.',

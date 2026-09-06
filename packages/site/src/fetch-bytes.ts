@@ -5,6 +5,8 @@
  * 只转个圈会让人把等待算到渲染头上，而这恰恰是本项目最不该被误解的地方。
  * 所以下载单独报进度，调用方也单独把耗时列出来。
  */
+import { message, type SiteMessage } from './i18n/message';
+
 export interface Fetched {
   bytes: ArrayBuffer;
   /** 下载耗时（毫秒），不含解析 */
@@ -51,5 +53,5 @@ export async function fetchBytes(
 }
 
 /** 下载失败的说法：网络的锅就说网络，别把 HTTP 码甩给用户 */
-export const whyFailed = (e: unknown): string =>
-  e instanceof TypeError ? '网络不通' : e instanceof Error ? e.message : String(e);
+export const whyFailed = (e: unknown): string | SiteMessage =>
+  e instanceof TypeError ? message('网络不通') : e instanceof Error ? e.message : String(e);

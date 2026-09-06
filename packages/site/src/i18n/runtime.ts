@@ -31,6 +31,17 @@ export function t<S extends Message>(source: S, ...args: MessageArguments<S>): s
   return format(source, args[0]);
 }
 
+/** 运行时生成的站内产品导航必须显式登记；第三方出处和文稿链接不参与。 */
+export function setSiteLink(anchor: HTMLAnchorElement, href: string): void {
+  applyLinks.add(anchor, href);
+  refreshSiteLinks();
+}
+
+/** 预览深链由宿主改写地址后，同步语言锚点，修饰键打开新页也保留当前文稿。 */
+export function refreshSiteLinks(): void {
+  applyLinks.apply(language, new URL(location.href));
+}
+
 /** 保存消息身份和参数，不反向匹配已渲染文本，因此文件名和用户内容永远不是词条。 */
 export function setText<S extends Message>(target: Element, source: S, ...args: MessageArguments<S>): void {
   setMessage(target, message(source, ...args));
@@ -83,7 +94,7 @@ async function changeLanguage(next: SiteLanguage, explicit: boolean): Promise<vo
     history.replaceState(history.state, '', url);
   }
   applyStatic((source) => format(source));
-  applyLinks(language, new URL(location.href));
+  refreshSiteLinks();
   for (const element of document.querySelectorAll('[data-site-dynamic]')) {
     const binding = dynamic.get(element);
     if (binding?.text) element.textContent = format(binding.text.source, binding.text.parameters);
