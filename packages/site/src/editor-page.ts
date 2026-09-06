@@ -16,6 +16,7 @@ import { createSiteRecovery } from './editor-recovery';
 import { renderSlideNavigation } from './editor-slide-reorder';
 import { bindContentTools } from './editor-content-tools';
 import { createEditorFeedback } from './editor-feedback';
+import { bindPaneLabels } from './editor-pane-labels';
 import { bindEditorFileOpen, createEditorFileActions } from './editor-file-actions';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import type { ChartInspector } from './editor-chart-inspector';
@@ -31,6 +32,7 @@ const {
 let session: EditorSession | null = null;
 let view: SlideEditor | null = null;
 let pane: SelectionPane | null = null;
+let releasePaneLabels: (() => void) | undefined;
 let unsubscribeEditor: (() => void) | null = null;
 let unregisterToolbar: (() => void) | null = null;
 let unregisterInspector: (() => void) | null = null;
@@ -251,6 +253,8 @@ function handleContextRequest(request: EditorContextRequest): void {
 }
 
 function disposeCurrent(): void {
+  releasePaneLabels?.();
+  releasePaneLabels = undefined;
   adjustments?.destroy();
   adjustments = null;
   unsubscribeEditor?.();
@@ -319,6 +323,7 @@ async function openDocument(
     });
     adjustments = createPresetAdjustmentEditor(next, view, { onError: reportError });
     pane = next.mountSelectionPane(objectList, { mode, ariaLabel: '当前页对象', onError: reportError });
+    releasePaneLabels = bindPaneLabels(next, pane);
     // 语言入口属于宿主编辑工具；否则 document 捕获阶段会先关闭文字编辑，晚于此的防失焦无效。
     const releaseTools = [toolbar, document.querySelector<HTMLElement>('#siteLanguage')!]
       .map((element) => view!.registerTextUi(element));
