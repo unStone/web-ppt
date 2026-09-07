@@ -137,6 +137,10 @@ export function clearedMark(mark: TextMark): TextMark {
     caps: optional(inheritedSource.caps ?? 'none', 'none'),
     outline: inheritedSource.outline ?? null,
     gradient: inheritedSource.gradient ?? null,
+    gradientFill: inheritedSource.gradientFill ?? null,
+    shadow: inheritedSource.shadow ?? null,
+    shadowEffect: inheritedSource.shadowEffect ?? null,
+    generationIssues: inheritedSource.generationIssues,
     highlight: inheritedSource.highlight ?? null,
     underlineColor: inheritedSource.underlineColor ?? null,
   };

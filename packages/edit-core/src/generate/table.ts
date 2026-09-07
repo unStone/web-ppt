@@ -4,7 +4,9 @@ import { effectiveElement } from '../projection';
 import { directTableCellMarkup } from '../table-direct-markup';
 import { tableStyleDefinitionForElement } from '../table-style';
 import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
-import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
+import { DRAWINGML_NS, OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml/qname';
+import { generatedTextBody } from './text-body';
+import { hasNativeText } from './text-effects';
 
 const esc = (value: string): string => value
   .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -67,7 +69,7 @@ function tableCellMarkup(
       ...(base.textTemplate ? { textTemplate: structuredClone(base.textTemplate) } : {}),
     },
   } : cell;
-  const markup = directTableCellMarkup({
+  let markup = directTableCellMarkup({
     ...markupCell,
     ...(!markupCell.editInfo?.textTemplate && !markupCell.text?.paragraphs[0]?.runs[0]
       ? { editInfo: { textTemplate: EMPTY_TABLE_TEXT } } : {}),
@@ -78,6 +80,10 @@ function tableCellMarkup(
       omitTextColor: !(direct & TEXT_RUN_DIRECT_BITS.color),
     } : {}),
   });
+  if (cell.text && (cell.text.warp || cell.text.paragraphs.some(p => p.runs.some(hasNativeText)))) {
+    markup = markup.replace(/<a:txBody>[\s\S]*?<\/a:txBody>/,
+      generatedTextBody(cell.text, `table/${row}/${column}`, 1, 'a', !!base));
+  }
   return attrs.length ? markup.replace('<a:tc>', `<a:tc ${attrs.join(' ')}>` ) : markup;
 }
 
@@ -100,7 +106,7 @@ export function tableInsertion(record: ElementRecord, spid: number): ElementInse
     markup: `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${spid}" name="${name}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
 <p:xfrm/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl>
 ${properties}<a:tblGrid>${columns}</a:tblGrid>${rows}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`,
-    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
+    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS, 'xmlns:r': OFFICE_RELATIONSHIPS_NS },
     spids: { [String(spid)]: spid },
   };
 }

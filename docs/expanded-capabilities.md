@@ -14,10 +14,10 @@
 | 地图 | `@web-ppt/core/chart-ex` | 自动显示具有 geoCache 的 regionMap | 使用文件自带边界，支持压缩缓存、四种投影、孔洞及跨日期变更线；无缓存时保留兼容图，不请求地图服务 |
 | EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported |
 | 三维 | `@web-ppt/core/three-d` | 三维外观面板与自动渲染 | XYZ 相机矩阵、正交/透视、挤出、背面和曲线斜角；透视正面仍含原生 SVG 文字；材质/光照及网格为近似 |
-| 数学公式 | 核心渲染入口 | 自动渲染 | 已有 OMML 分式、根式、脚标、大算子与矩阵布局；复杂数学字体保真度仍依赖可用字体 |
+| 数学公式 | 核心渲染入口；`@web-ppt/edit-core/generate` 原生写入 | 自动渲染、复制与保存 | OMML 分式、根式、脚标、大算子与矩阵布局；支持范围内保留公式原子，复杂数学字体保真度仍依赖可用字体 |
 | PDF | `@web-ppt/core/pdf` | 导出文档 → PDF | 直接下载图片页面 PDF；默认 2×、隐藏页、动画批次、原生批注/回复、进度和取消 |
 | 视频 | `@web-ppt/viewer-core/video` | 导出文档 → WebM | WebCodecs VP9/VP8、动画/切换、帧率/码率/停留时间；无音轨，嵌入媒体需明确选择静态封面 |
-| 无来源复制 | `@web-ppt/edit-core/generate` | `.ppt` 中直接复制，再粘贴到另一文稿 | `copyPortableElements` 直接物化选中子树和资源；保留祖先变换，复用生成保存的能力校验 |
+| 无来源复制 | `@web-ppt/edit-core/generate` | 直接复制，再粘贴到另一文稿 | `copyPortableElements` 直接物化选中子树和资源；支持[公式、艺术字与高级文字效果](portable-rich-text.md)，保留祖先变换，复用生成保存的能力校验 |
 | 原生 PPT | `@web-ppt/edit-core/ppt` | 导出文档 → PPT | 生成真正的 CFB/Escher 二进制文件，能力矩阵见下文 |
 
 所有编辑扩展共用 `Editor` 的事务、撤销/重做、恢复及协同补丁。对象扩展更改的原生内容随 PPTX 补丁保存或生成保存一起写出；源资源释放后仍可保存。未知 OLE 宿主格式、布局能力外的 SmartArt 等对象不宣称具备完整内部编辑。

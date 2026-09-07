@@ -226,7 +226,7 @@ if (!siteStat) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'media', 'chartexNative', 'comments', 'expanded',
+    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -332,6 +332,9 @@ if (!counts) {
     ['README.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
     ['README.en.md', /([\d,]+) expanded-capability assertions/, ['expanded']],
     ['AGENTS.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
+    ['README.md', /高级文本流转 ([\d,]+) 项断言/, ['portableRichText']],
+    ['README.en.md', /([\d,]+) portable-rich-text assertions/, ['portableRichText']],
+    ['AGENTS.md', /高级文本流转 ([\d,]+) 项断言/, ['portableRichText']],
     ['README.md', /核心解析 \/ 渲染，([\d,]+) 项断言/, ['core']],
     ['README.md', /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
       ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],

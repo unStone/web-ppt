@@ -187,6 +187,9 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
       b: full.b, i: full.i, u: full.u, strike: full.strike,
       size: full.size, color: full.color, fonts: [...full.fonts],
       outline: full.outline ?? null, gradient: full.gradient ?? null,
+      gradientFill: full.gradientFill ?? null,
+      shadow: full.shadow ?? null, shadowEffect: full.shadowEffect ?? null,
+      generationIssues: full.generationIssues,
       highlight: full.highlight ?? null, underlineColor: full.underlineColor ?? null,
     });
     for (const field of ['underline', 'strikeType', 'baseline', 'spacing', 'caps'] as const) {
@@ -209,6 +212,12 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     if (value !== undefined) {
       (props as unknown as Record<string, unknown>)[field] = value === null ? inherited[field] : value;
     }
+  }
+  if (overrides?.color !== undefined) {
+    const full = (useMarkProps ? mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps
+      : sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps);
+    props.gradient = overrides.color === null ? full?.gradient ?? null : null;
+    props.gradientFill = overrides.color === null ? full?.gradientFill ?? null : null;
   }
   const underlineOverride = own(overrides ?? {}, 'underline')
     ? overrides?.underline

@@ -1,6 +1,7 @@
+import { textOverride } from './text-override';
+import type { GeneratedTextContext } from './text-override';
+import { generatedTextBody } from './text-body';
 import { registeredEditExtensions } from '../extension-runtime';
-import { PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
-import type { TextBody, TextRun } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
 import { elementOrder } from '../element-order';
 import { effectiveElement, toSlide } from '../projection';
@@ -10,13 +11,12 @@ import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
 import { effectivePresetGeometry } from '../preset-geometry';
 import { tableCellKey } from '../table-cell';
-import { flattenTextBody } from '../text-model';
 import type {
-  EditDoc, ElementImageReplacement, ElementInsertionResource, ElementInsertionSource,
-  ElementOverrides, ElementRecord, ParagraphBullet, SlideId, TextOverride,
+  EditDoc, ElementInsertionResource, ElementInsertionSource,
+  ElementOverrides, ElementRecord, SlideId,
 } from '../types';
-import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
-import { parseXmlTree, serializeXmlNode, serializeXmlTreeBytes } from '../xml/tree';
+import { DRAWINGML_NS, OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml/qname';
+import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import {
   mediaPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
 } from '../save/clipboard-parts';
@@ -29,7 +29,6 @@ import type { HyperlinkSaveContext } from '../save/hyperlink';
 import { materializeElementImageFill, materializeElementStroke } from '../save/shape-format';
 import { patchSlideProperties } from '../save/slide-properties';
 import { extensionSupportsGenerated, materializeElementExtensions } from '../save/extension-elements';
-import { materializeRunProperties } from '../save/text-source-less';
 import {
   materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
 } from '../save/table-style-part';
@@ -52,135 +51,6 @@ const esc = (value: string): string => value
 const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
 const NOTES_MASTER_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster';
 const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
-
-interface GeneratedTextContext {
-  readonly part: string;
-  readonly relationshipPrefix: string;
-  readonly resources: Map<string, ElementInsertionResource>;
-}
-
-function generatedParagraphBullet(
-  doc: EditDoc,
-  paragraph: TextBody['paragraphs'][number],
-  index: number,
-  context: GeneratedTextContext,
-): { readonly bullet?: ParagraphBullet; readonly image?: ElementImageReplacement } {
-  const info = paragraph.editInfo?.bullet;
-  const style = info && info.kind !== 'none' ? {
-    ...(info.color !== undefined ? { color: info.color } : {}),
-    ...(info.font !== undefined ? { font: info.font } : {}),
-    ...(info.size !== undefined ? { size: info.size } : {}),
-  } : {};
-  if (paragraph.bulletImage || info?.kind === 'image') {
-    const source = paragraph.bulletImage ?? (info?.kind === 'image' ? info.src : null);
-    if (!source) throw new Error('生成保存的图片项目符号缺少资源来源');
-    const closure = imageClosure(
-      doc, { src: source }, `${context.relationshipPrefix}P${index + 1}`, context.part,
-    );
-    if (!closure.resource) throw new Error('外链图片项目符号不能生成独立包');
-    context.resources.set(closure.resource.hash, closure.resource);
-    const src = insertionResourceToken(closure.resource.hash);
-    return {
-      bullet: { kind: 'blip', image: { src }, ...style },
-      image: { src, relationships: [closure.relationship], resourceHash: closure.resource.hash },
-    };
-  }
-  if (info?.kind === 'autoNum') return {
-    bullet: {
-      kind: 'autoNum', type: info.type as import('../types').ParagraphAutoNumberType,
-      startAt: info.startAt, ...style,
-    },
-  };
-  if (info?.kind === 'char') return { bullet: { kind: 'char', char: info.char, ...style } };
-  if (paragraph.bullet !== null) return {
-    bullet: { kind: 'char', char: paragraph.bullet, ...style },
-  };
-  return paragraph.editInfo?.directLayout &&
-    paragraph.editInfo.directLayout & PARAGRAPH_LAYOUT_DIRECT_BITS.bullet
-    ? { bullet: { kind: 'none' } } : {};
-}
-
-function textOverride(
-  doc: EditDoc,
-  slideId: SlideId,
-  body: TextBody | null | undefined,
-  context: GeneratedTextContext,
-  tableStyleAware = false,
-  preserveFields = false,
-): TextOverride | undefined {
-  if (!body) return undefined;
-  if (body.warp) throw new Error('生成保存暂不支持艺术字变形');
-  for (const paragraph of body.paragraphs) {
-    for (const run of paragraph.runs) {
-      if ((run.field && !preserveFields) || run.outline || run.gradient
-        || run.underlineColor || run.shadow || run.math) {
-        throw new Error('生成保存暂不支持当前文字的高级字符语义');
-      }
-    }
-  }
-  const flat = flattenTextBody(body);
-  const autoFit = body.autoFitShape ? 'shape' : body.autoFitNormal ? 'normal' : 'none';
-  return {
-    ...flat,
-    bodyOverrides: {
-      anchor: body.anchor,
-      insets: body.insets,
-      wrap: body.wrap,
-      vert: body.vert ?? 'horz',
-      anchorCtr: body.anchorCtr ?? false,
-      columns: body.columns ?? 1,
-      columnGap: body.columnGap ?? 0,
-      autoFit,
-    },
-    paragraphs: flat.paragraphs.map((paragraph, paragraphIndex) => {
-      const bullet = generatedParagraphBullet(doc, body.paragraphs[paragraphIndex], paragraphIndex, context);
-      return {
-        ...paragraph,
-        sourceParagraph: undefined,
-        paragraphOverrides: {
-        align: paragraph.props.align,
-        lineHeight: paragraph.props.lineHeight,
-        spaceBefore: paragraph.props.spaceBefore,
-        spaceAfter: paragraph.props.spaceAfter,
-        marginLeft: paragraph.props.marL,
-        indent: paragraph.props.indent,
-          ...(bullet.bullet ? { bullet: bullet.bullet } : {}),
-        },
-        ...(bullet.image ? { bulletImageOverride: bullet.image } : {}),
-        marks: paragraph.marks.map((mark, markIndex) => {
-        const sourceParagraph = body.paragraphs[paragraphIndex];
-        const sourceRun = sourceParagraph?.runs[markIndex];
-        const direct = (sourceParagraph?.editInfo?.directRun ?? 0) | (sourceRun?.editInfo?.direct ?? 0);
-        const underline = mark.props.underline ?? (mark.props.u ? 'sng' : 'none');
-        const strikeType = mark.props.strikeType
-          ?? (mark.props.strike ? 'sngStrike' : 'noStrike');
-        const preserveField = !!sourceRun?.field;
-        return {
-          ...mark,
-          source: preserveField ? { paragraph: paragraphIndex, run: markIndex } : undefined,
-          preserveSource: preserveField ? true : undefined,
-          // 生成包不再拥有原主题继承链；表样式控制的 b/color 只有真实直设才固定。
-          runOverrides: {
-            size: mark.props.size,
-            ...(!tableStyleAware || direct & TEXT_RUN_DIRECT_BITS.b ? { b: mark.props.b } : {}),
-            ...(tableStyleAware && direct & TEXT_RUN_DIRECT_BITS.color
-              ? { color: mark.props.color } : {}),
-            i: mark.props.i,
-            ...(underline !== 'none' ? { underline } : {}),
-            ...(strikeType !== 'noStrike' ? { strikeType } : {}),
-            ...(mark.props.highlight ? { highlight: mark.props.highlight } : {}),
-            ...(mark.props.spacing ? { spacing: mark.props.spacing } : {}),
-            ...(mark.props.caps && mark.props.caps !== 'none' ? { caps: mark.props.caps } : {}),
-            ...(mark.props.baseline ? { baseline: mark.props.baseline } : {}),
-            ...(mark.props.link
-              ? { link: generatedLink(doc, slideId, mark.props.link, '文字链接') } : {}),
-          },
-        };
-        }),
-      };
-    }),
-  };
-}
 
 function fullOverrides(
   doc: EditDoc,
@@ -211,7 +81,7 @@ function fullOverrides(
     part, relationshipPrefix: `rIdBullet${record.meta.origin?.spid ?? record.id}${suffix}`, resources,
   });
   if (source.kind === 'shape') {
-    const text = textOverride(doc, slideId, source.text, textContext(), false, true);
+    const text = textOverride(doc, slideId, source.text, textContext());
     return {
       ...common,
       ...(source.fill && source.fill.type !== 'image' ? { fill: source.fill } : {}),
@@ -264,44 +134,11 @@ function shapeInsertion(
   return {
     markup: `<p:sp><p:nvSpPr><p:cNvPr id="${spid}" name="${name}"/><p:cNvSpPr${textBox ? ' txBox="1"' : ''}/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm/>${geometry}</p:spPr>${text}</p:sp>`,
-    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
+    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS, 'xmlns:r': OFFICE_RELATIONSHIPS_NS },
     spids: { [String(spid)]: spid },
     ...(fillClosure ? { relationships: [fillClosure.relationship] } : {}),
     ...(fillClosure?.resource ? { resources: [fillClosure.resource] } : {}),
   };
-}
-
-function generatedFieldId(part: string, spid: number, paragraph: number, run: number): string {
-  const seed = `${part}:${spid}:${paragraph}:${run}`;
-  let left = 0x811c9dc5;
-  let right = 0x9e3779b9;
-  for (let index = 0; index < seed.length; index++) {
-    left = Math.imul(left ^ seed.charCodeAt(index), 0x01000193) >>> 0;
-    right = Math.imul(right ^ seed.charCodeAt(index), 0x85ebca6b) >>> 0;
-  }
-  const leftHex = left.toString(16).padStart(8, '0');
-  const rightHex = right.toString(16).padStart(8, '0');
-  return `{00000000-0000-0000-${leftHex.slice(0, 4)}-${leftHex.slice(4)}${rightHex}}`.toUpperCase();
-}
-
-function generatedRunProperties(run: TextRun): string {
-  const properties = parseXmlTree(`<a:rPr xmlns:a="${DRAWINGML_NS}"/>`).root;
-  const { text: _text, ...props } = run;
-  materializeRunProperties(properties, { from: 0, to: run.text.length, props });
-  return serializeXmlNode(properties);
-}
-
-function generatedTextBody(body: TextBody, part: string, spid: number): string {
-  const paragraphs = body.paragraphs.map((paragraph, paragraphIndex) => {
-    const runs = paragraph.runs.map((run, runIndex) => {
-      const text = esc(run.text);
-      if (!run.field) return `<a:r><a:t>${text}</a:t></a:r>`;
-      const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
-      return `<a:fld id="${id}" type="${esc(run.field)}">${generatedRunProperties(run)}<a:t>${text}</a:t></a:fld>`;
-    }).join('');
-    return `<a:p>${runs}<a:endParaRPr/></a:p>`;
-  }).join('');
-  return `<p:txBody><a:bodyPr/><a:lstStyle/>${paragraphs}</p:txBody>`;
 }
 
 function groupCoordinate(value: number, label: string): string {
@@ -429,8 +266,12 @@ function materializeSlide(
     } else {
       // 有效投影已经吸收图片/海报替换；新宿主必须使用新关系，不能再重放旧包的 rId。
       record.meta.imageReplacement = undefined;
-      record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
-      record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
+      try {
+        record.meta.insertion = elementInsertion(doc, record, spids.get(id)!, part);
+        record.ovr = fullOverrides(doc, slideId, record, part, generatedTextResources);
+      } catch (error) {
+        throw new Error(`元素 ${id}（${source.name ?? source.kind}）：${error instanceof Error ? error.message : String(error)}`);
+      }
     }
     records[id] = record;
   }

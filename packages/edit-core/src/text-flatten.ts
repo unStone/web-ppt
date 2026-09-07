@@ -23,6 +23,8 @@ function sourceInheritedRunProps(run: TextRun): NonNullable<TextRun['editInfo']>
     baseline: run.baseline, spacing: run.spacing, caps: run.caps,
     outline: run.outline, gradient: run.gradient, highlight: run.highlight,
     underlineColor: run.underlineColor,
+    gradientFill: run.gradientFill, shadow: run.shadow, shadowEffect: run.shadowEffect,
+    generationIssues: run.generationIssues,
   };
 }
 

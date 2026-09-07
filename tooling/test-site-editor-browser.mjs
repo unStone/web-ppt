@@ -202,6 +202,7 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-portable-rich-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-portable-rich-text.pptx'))]],
   ['/fixtures/sample-comment-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-comment-edit.pptx'))]],
   ['/fixtures/sample-editor-resize.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-resize.pptx'))]],
   ['/fixtures/sample-editor-comments.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-comments.pptx'))]],

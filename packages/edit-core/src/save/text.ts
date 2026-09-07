@@ -22,7 +22,7 @@ import { materializeParagraphLayout, materializeRunProperties } from './text-sou
 import { applyRunOverrides, clearedLevelRunFallback } from './run-overrides';
 import { applyParagraphOverrides } from './paragraph-overrides';
 
-const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'oMath', 'oMathPara', 'AlternateContent']);
+const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'm', 'oMath', 'oMathPara', 'AlternateContent']);
 
 export function hasTextOverrides(record: ElementRecord): boolean {
   return record.ovr.text !== undefined || Object.values(record.ovr.tableCells ?? {})
@@ -183,7 +183,7 @@ function appendMark(
   clearedFallback?: Partial<RunProperties>,
 ): void {
   if (mark.preserveSource && mark.atomText !== undefined && source
-    && ['oMath', 'oMathPara', 'AlternateContent'].includes(source.localName)) {
+    && ['m', 'oMath', 'oMathPara', 'AlternateContent'].includes(source.localName)) {
     insertXmlChildUnchecked(paragraph, cloneXmlNode(source));
     return;
   }

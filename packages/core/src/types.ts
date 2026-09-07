@@ -651,6 +651,7 @@ export interface TextWarp {
   preset: string;
   /** avLst：adj / adj1 / adj2 → 原始数值（角度为 1/60000 度，比例为 1/100000） */
   adj: Record<string, number>;
+  generationIssues?: readonly string[];
 }
 
 /** 编辑查询所需的项目符号来源语义；渲染仍只消费 Paragraph.bullet/bulletImage。 */
@@ -779,6 +780,8 @@ export interface TextRun {
   outline?: { color: string; width: number } | null;
   /** 渐变文字：CSS background-image 值 */
   gradient?: string | null;
+  /** 生成保存使用结构值；CSS 渐变只是兼容已有渲染器的投影。 */
+  gradientFill?: { angle: number; stops: GradientStop[]; scaled: boolean } | null;
   /** 超链接 */
   link?: string;
   /** 文字高亮底色 */
@@ -786,6 +789,9 @@ export interface TextRun {
   underlineColor?: string | null;
   /** 文字阴影（CSS text-shadow） */
   shadow?: string | null;
+  shadowEffect?: Effects['shadow'] | null;
+  /** 来源包含展示模型无法完整表达的语义；无原包生成必须明确拒绝。 */
+  generationIssues?: readonly string[];
   /**
    * 数学公式。非空时本 run 是一个不可断行的公式块，`text` 退化为线性文本，
    * 仅用于搜索与导出纯文本，渲染一律走公式树。

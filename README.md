@@ -441,7 +441,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 101 份固件、690 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 102 份固件、696 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -457,6 +457,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run test:expanded` | 扩展能力 1789 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/expanded-capabilities.md) |
+| `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](docs/portable-rich-text.md) |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |

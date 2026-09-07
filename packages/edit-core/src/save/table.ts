@@ -65,7 +65,9 @@ function removeParagraphContent(parent: XmlElement): void {
       && ['r', 'br', 'fld', 'endParaRPr'].includes(child.localName);
     const math = child.namespaceUri === OFFICE_MATH_NS
       && ['oMath', 'oMathPara'].includes(child.localName);
-    if (drawingText || math) removeXmlChild(parent, child);
+    const drawingMath = child.namespaceUri === 'http://schemas.microsoft.com/office/drawing/2010/main'
+      && child.localName === 'm';
+    if (drawingText || math || drawingMath) removeXmlChild(parent, child);
     else if (child.namespaceUri === MARKUP_COMPATIBILITY_NS
       && ['AlternateContent', 'Choice', 'Fallback'].includes(child.localName)) {
       removeParagraphContent(child);

@@ -20,6 +20,10 @@ export interface TextRunEditInfo {
     readonly caps?: import('./types').TextCapsStyle;
     readonly outline?: { color: string; width: number } | null;
     readonly gradient?: string | null;
+    readonly gradientFill?: import('./types').TextRun['gradientFill'];
+    readonly shadow?: string | null;
+    readonly shadowEffect?: import('./types').TextRun['shadowEffect'];
+    readonly generationIssues?: readonly string[];
     readonly highlight?: string | null;
     readonly underlineColor?: string | null;
   };

@@ -11,6 +11,7 @@ import { mergeParagraphProps, resolveParagraphLevel } from './paragraph-props';
 import { materializeParagraph } from './text-materialization';
 import { directTextBodyProperties, parseTextBodyLayout } from './text-body';
 import { finalizeRun } from './text-run';
+import { textGenerationProperties, mathGenerationIssues } from './text-generation';
 
 export { finalizeRun } from './text-run';
 
@@ -34,6 +35,10 @@ export interface RunProps {
   strike?: TextStrikeStyle;
   color?: string;
   gradient?: string | null;
+  gradientFill?: TextRun['gradientFill'];
+  shadow?: TextRun['shadow'];
+  shadowEffect?: TextRun['shadowEffect'];
+  generationIssues?: readonly string[];
   latin?: string;
   ea?: string;
   /** 复杂脚本字体（阿拉伯语 / 希伯来语 / 泰语 / 天城文等），缺失会导致回退到拉丁字体 */
@@ -268,6 +273,7 @@ export function parseRunPropsDetailed(
   const cs = resolveFont(attr(csNode, 'typeface'), fonts);
   if (cs) out.cs = cs;
   if (attr(csNode, 'typeface') !== null) bits |= TEXT_RUN_DIRECT_BITS.fontComplexScript;
+  Object.assign(out, textGenerationProperties(rPr, ctx));
   return { props: out, direct: textRunDirectFlags(bits) };
 }
 
@@ -292,12 +298,17 @@ function parseWarp(bodyPrs: (Element | null)[]): TextWarp | undefined {
     const preset = attr(el, 'prst');
     if (!preset || preset === 'textNoShape') return undefined;
     const adj: Record<string, number> = {};
+    const generationIssues: string[] = [];
     for (const gd of kids(kid(el, 'avLst'), 'gd')) {
       const name = attr(gd, 'name');
-      const v = Number((attr(gd, 'fmla') ?? '').replace(/^val\s+/, ''));
+      const formula = attr(gd, 'fmla') ?? '';
+      const v = Number(formula.replace(/^val\s+/, ''));
       if (name && Number.isFinite(v)) adj[name] = v;
+      if (!name || !/^val\s+-?\d+$/.test(formula) || !Number.isSafeInteger(v)) {
+        generationIssues.push(`艺术字调整值 ${name ?? '(无名)'}：${formula}`);
+      }
     }
-    return { preset, adj };
+    return { preset, adj, ...(generationIssues.length ? { generationIssues } : {}) };
   }
   return undefined;
 }
@@ -352,6 +363,8 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
         const rp = mergeRun(merged.rp, parsedRun.props);
         runs.push(finalizeRun('\n', rp, env, merged.rp, parsedRun.direct));
+      } else if (node.localName === 'm' && node.namespaceURI === 'http://schemas.microsoft.com/office/drawing/2010/main') {
+        if (depth > 0) collectRuns(node, depth - 1);
       } else if (node.localName === 'AlternateContent') {
         // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
         const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
@@ -361,9 +374,11 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
         // text 字段保留线性文本，搜索与纯文本导出仍然可用。
         const math = parseOmml(node);
         const text = math.length ? mathPlainText(math) : mathText(node);
-        if (math.length || text) {
+        const issues = mathGenerationIssues(node);
+        if (math.length || text || issues.length) {
           const run = finalizeRun(text, { ...merged.rp, i: true }, env, merged.rp);
           if (math.length) run.math = math;
+          if (issues.length) run.generationIssues = [...(run.generationIssues ?? []), ...issues];
           runs.push(run);
           hasContent = true;
         }

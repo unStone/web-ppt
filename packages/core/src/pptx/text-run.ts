@@ -54,6 +54,9 @@ function effectiveRunProps(rp: RunProps, env: TextEnv): {
     gradient: rp.gradient ?? null,
     highlight: rp.highlight ?? null,
     underlineColor: rp.uColor ?? null,
+    ...(rp.gradientFill !== undefined ? { gradientFill: rp.gradientFill } : {}),
+    ...(rp.shadowEffect !== undefined ? { shadow: rp.shadow, shadowEffect: rp.shadowEffect } : {}),
+    ...(rp.generationIssues?.length ? { generationIssues: rp.generationIssues } : {}),
   } };
 }
 

@@ -20,7 +20,7 @@ function addEffect(list: XmlElement, name: string): XmlElement {
   return node;
 }
 
-function appendShadow(list: XmlElement, shadow: NonNullable<Effects['shadow']>): void {
+export function appendShadow(list: XmlElement, shadow: NonNullable<Effects['shadow']>): void {
   const node = addEffect(list, shadow.inner ? 'innerShdw' : 'outerShdw');
   const distance = Math.hypot(shadow.dx, shadow.dy);
   let direction = Math.round(Math.atan2(shadow.dy, shadow.dx) * 180 / Math.PI * 60000);
