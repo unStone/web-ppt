@@ -1,4 +1,5 @@
 import { bindCommentsTools } from './comments-tools';
+import { prepareAdvancedRendering } from '@web-ppt/core/advanced-rendering';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { collectFonts, parse, setFontDecoder } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
@@ -84,7 +85,7 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   const t0 = performance.now();
   let pres: Presentation;
   try {
-    await prepareModernCharts(bytes);
+    await Promise.all([prepareModernCharts(bytes), prepareAdvancedRendering(bytes)]);
     pres = await parse(bytes);
   } catch (e) {
     thumbs.innerHTML = '';

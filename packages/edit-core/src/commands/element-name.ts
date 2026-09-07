@@ -25,11 +25,7 @@ export function validateElementNamePatch(doc: EditDoc, patch: ElementNamePatch, 
   if (patch.op === 'set') assertElementName(patch.value, `元素名称 Patch ${index}`);
 }
 
-export function applyElementNamePatch(doc: EditDoc, patch: ElementNamePatch): void {
-  const record = doc.elements[patch.path[1]];
-  if (patch.op === 'set') record.ovr.name = patch.value;
-  else delete record.ovr.name;
-}
+export { applyRecordOverridePatch as applyElementNamePatch } from './record-override';
 
 export function setNamePatches(
   doc: EditDoc,

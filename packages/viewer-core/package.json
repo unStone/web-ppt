@@ -40,6 +40,10 @@
     "./comments": {
       "types": "./dist/comments.d.ts",
       "import": "./dist/comments.js"
+    },
+    "./video": {
+      "types": "./dist/video.d.ts",
+      "import": "./dist/video.js"
     }
   },
   "files": [
@@ -49,7 +53,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.comments.config.ts && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.comments.config.ts && vite build --config vite.video.config.ts && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

@@ -141,7 +141,7 @@ export interface WebPptAdapter {
   moveSection(id: SectionId, after: SectionId | null): boolean;
   removeSection(id: SectionId): boolean;
   querySlideSize(): SlideSizeState;
-  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean;
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean;
   queryTransition(): SlideTransitionState | null;
   setTransition(value: SlideTransitionInput | null): boolean;
   previewTransition(value?: SlideTransitionInput): Promise<boolean>;

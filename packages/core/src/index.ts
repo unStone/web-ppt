@@ -50,6 +50,8 @@ export { setChartParser, setChartRenderer, setChartExParser, inheritPptxParsingC
 export type { ChartEnv, ChartParser, ChartRenderer } from './chart/hook';
 
 export { setMetafileDecoder, hasMetafileDecoder } from './metafile';
+export { setShape3DRenderer } from './render/shape-3d';
+export type { Shape3DRenderer, Shape3DContext } from './render/shape-3d';
 export { setFontDecoder, hasFontDecoder } from './font/eot';
 export type { FontDecoder } from './font/eot';
 export { collectFonts } from './font/collect';
@@ -245,3 +247,5 @@ export function slideText(slide: Slide): string {
   if (slide.notes) out.push(slide.notes);
   return out.filter(Boolean).join('\n');
 }
+
+export type { PngExportOptions } from './browser-export';

@@ -273,6 +273,9 @@ export interface TableCreationDefaults {
 
 /** 幻灯片批注 */
 export interface SlideComment {
+  /** 页内稳定身份；用于回复和编辑，不应当作可见序号。 */
+  id?: string;
+  parentId?: string;
   author: string;
   /** 作者缩写 */
   initials?: string;
@@ -387,7 +390,7 @@ export interface Stroke {
   compound?: string;
 }
 
-/** 立体效果（scene3d / sp3d）。做等轴测风格的近似，不做真实三维投影。 */
+/** 格式无关的三维场景；按需 three-d 模块投影为 SVG，默认渲染保留轻量近似。 */
 export interface Shape3D {
   /** 挤出深度 px */
   extrusion?: number;
@@ -402,9 +405,21 @@ export interface Shape3D {
   contourColor?: string;
   /** 材质预设名，用于选择高光强度 */
   material?: string;
-  /** 场景绕 X / Y 轴的旋转角度（度），用于决定挤出方向 */
+  /** 场景绕 X / Y / Z 轴的旋转角度（度）。 */
   rotX?: number;
   rotY?: number;
+  rotZ?: number;
+  /** DrawingML 相机预设；显式旋转优先于预设观察方向。 */
+  camera?: string;
+  /** 透视视野角（度）、相机缩放倍率。 */
+  fieldOfView?: number;
+  zoom?: number;
+  /** 正面距基准平面的高度 px。 */
+  z?: number;
+  bevelTopWidth?: number;
+  bevelBottomWidth?: number;
+  lightRig?: string;
+  lightDirection?: string;
 }
 
 export interface Effects {

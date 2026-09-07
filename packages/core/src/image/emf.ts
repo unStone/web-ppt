@@ -101,7 +101,7 @@ function parse(bytes: Uint8Array, opts: MetafileOptions): string | null {
 
 // ---------------- 单条记录 ----------------
 
-function record(g: Gfx, bytes: Uint8Array, type: number, base: number, size: number): void {
+export function record(g: Gfx, bytes: Uint8Array, type: number, base: number, size: number): void {
   const r = new Reader(bytes, base + 8, base + size);
 
   switch (type) {

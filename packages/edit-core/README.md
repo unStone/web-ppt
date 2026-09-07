@@ -586,7 +586,7 @@ headers, extra fields, and compressed streams are copied byte-for-byte. ZIP64, d
 and encrypted entries return an explicit reason and deterministically repack. Every entry is DOM-free.
 
 `doc.meta.readonly` is `true` when a `.pptx` was not parsed with the package and write-back metadata.
-Legacy `.ppt` documents remain editable through the future generated-save path; binary `.ppt` write-back is intentionally unsupported.
+Legacy `.ppt` can be saved as `.pptx` or exported through `@web-ppt/edit-core/ppt` as an editable native PPT within its supported format matrix. `generate.copyPortableElements` supports copying objects without OOXML sources.
 For collaborative ordering, pass the new element's stable ULID as the third argument to
 `fractionalIndexBetween(lower, upper, ulid)`; single-user callers can omit it.
 

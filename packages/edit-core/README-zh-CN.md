@@ -543,7 +543,7 @@ const pptxBytes = saved.bytes;
 存档注释、加密条目等会返回明确原因并确定性重压。全部入口都不依赖 DOM。
 
 若 `.pptx` 没有用编辑元数据与原包模式解析，`doc.meta.readonly` 会明确为 `true`，避免产生无法保存的修改。
-旧 `.ppt` 走后续的生成式 `.pptx` 保存路径，不支持写回二进制 `.ppt`。
+旧 `.ppt` 可另存为 `.pptx`，或用按需 `@web-ppt/edit-core/ppt` 生成可编辑的二进制 PPT；超出[支持矩阵](../../docs/expanded-capabilities.md)的内容明确拒绝。无来源对象复制使用 `generate.copyPortableElements`。
 协同排序时把新元素的稳定 ULID 作为第三个参数传给
 `fractionalIndexBetween(lower, upper, ulid)`；单机模式可省略。
 

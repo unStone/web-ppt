@@ -10,7 +10,7 @@ import { withHyperlink } from './hyperlink';
 import { warpSupported } from './text-warp-presets';
 import { paint } from './fill';
 import { effectFilter, reflectionLayer } from './effect-svg';
-import { bevelOverlay, extrusionLayers, mixShapeColor } from './shape-3d';
+import { bevelOverlay, extrusionLayers, mixShapeColor, shape3DRenderer } from './shape-3d';
 import { escapeXml as esc, round as r } from './serialize';
 import { duotoneFilter } from './picture-fx';
 
@@ -292,7 +292,8 @@ function renderEl(el: SlideElement, ctx: Ctx): string {
 }
 
 function renderShape(el: ShapeElement, ctx: Ctx): string {
-  let inner = '';
+  let inner = '', pathEl: string | undefined;
+  const d3 = el.scene3d;
   if (el.path) {
     const fillVal = el.openGeom ? 'none' : el.fill ? paint(el.fill, ctx, el.w, el.h) : 'none';
     const solidBase = el.fill?.type === 'solid' ? el.fill.color
@@ -300,19 +301,21 @@ function renderShape(el: ShapeElement, ctx: Ctx): string {
       : 'rgb(128,128,128)';
 
     // 立体：先画挤出侧面，再画正面，最后叠斜角高光
-    const d3 = el.scene3d;
-    if (d3) inner += extrusionLayers(el, d3, solidBase);
+    if (d3 && !shape3DRenderer) inner += extrusionLayers(el, d3, solidBase);
 
     const contour = d3?.contourWidth
       ? ` stroke="${d3.contourColor ?? mixShapeColor(solidBase, '#000', 0.45)}" stroke-width="${r(d3.contourWidth)}"`
       : strokeAttrs(el.stroke, ctx);
-    const pathEl = `<path d="${el.path}" fill="${fillVal}" fill-rule="nonzero"${contour}/>`;
+    pathEl = `<path d="${el.path}" fill="${fillVal}" fill-rule="nonzero"${contour}/>`;
     const flip = flipTransform(el);
     inner += flip ? `<g transform="${flip}">${pathEl}</g>` : pathEl;
 
-    if (d3) inner += bevelOverlay(el, d3, solidBase, ctx);
+    if (d3 && !shape3DRenderer) inner += bevelOverlay(el, d3, solidBase, ctx);
   }
-  if (el.text) inner += renderText(el.text, el.w, el.h, ctx);
+  // use 的实例树不能可靠承载 foreignObject；三维网格正面必须使用可复用的矢量文字。
+  if (el.text) inner += renderText(el.text, el.w, el.h,
+    d3 && shape3DRenderer ? { ...ctx, textMode: 'svg' } : ctx);
+  if (d3 && shape3DRenderer) inner = shape3DRenderer(el, inner, ctx, pathEl);
   return wrapEl(el, inner, ctx);
 }
 

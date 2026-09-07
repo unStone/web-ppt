@@ -106,7 +106,7 @@ export interface SlideEditor {
   removeSection(id: SectionId): boolean;
   querySlideSize(): SlideSizeState;
   /** v1 仅改变画布，即 PowerPoint“最大化”语义。 */
-  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean;
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean;
   insertImage(file: Blob, options?: ImageInsertOptions): Promise<ElementId>;
   chooseImage(options?: ImageInsertOptions): Promise<ElementId | null>;
   replaceImage(file: Blob, options?: ImageReplaceOptions): Promise<ElementId>;

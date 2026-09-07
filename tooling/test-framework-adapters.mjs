@@ -1,3 +1,4 @@
+import { sourceAliasArgs } from './lib/bundle-browser.mjs';
 /** React/Vue 包的 SSR 导入、服务端渲染、公开入口与排除 peer 后体积契约。 */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -32,7 +33,7 @@ const bundle = (entry, name, framework) => {
   const file = join(out, `${name}.mjs`);
   execFileSync('npx', [
     'esbuild', entry, '--bundle', '--format=esm', '--platform=node', '--log-level=error',
-    `--external:${framework}`, ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--external:${framework}`, ...sourceAliasArgs(root, aliases),
     `--outfile=${file}`,
   ], { cwd: root, stdio: 'inherit' });
   return file;

@@ -1,3 +1,4 @@
+import { sourceAliasArgs } from './lib/bundle-browser.mjs';
 /** 只从发布入口与 DOM 观察编辑器，避免框架适配层依赖内部装配细节。 */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -63,54 +64,35 @@ const bundle = join(out, 'editor.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
-  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${bundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const adjustmentsBundle = join(out, 'adjustments.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/adjustments/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
-  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${adjustmentsBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const designBundle = join(out, 'design.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/design/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
-  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${designBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const vertexBundle = join(out, 'vertex.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/vertex/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
-  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${vertexBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const coreBundle = join(out, 'core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'tooling/lib/media-browser-api.mjs'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core/media=${join(root, 'packages/edit-core/src/media/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${join(out, 'media.mjs')}`,
 ], { cwd: root, stdio: 'inherit' });
 execFileSync('npx', [
@@ -126,27 +108,21 @@ const generateBundle = join(out, 'generate.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/edit-core/src/generate/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${generateBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const templatesBundle = join(out, 'templates.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/editor/src/templates/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core/templates=${join(root, 'packages/edit-core/src/templates/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${templatesBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const viewerBundle = join(out, 'viewer-core.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
   '--platform=browser', '--log-level=error',
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${viewerBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
@@ -159,14 +135,7 @@ const frameworkBundle = join(out, 'framework-adapters.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'tooling/lib/framework-adapters-browser-contract.tsx'),
   '--bundle', '--format=esm', '--platform=browser', '--jsx=automatic', '--log-level=error',
-  `--alias:@web-ppt/react=${join(root, 'packages/react/src/index.ts')}`,
-  `--alias:@web-ppt/vue=${join(root, 'packages/vue/src/index.ts')}`,
-  `--alias:@web-ppt/editor=${join(root, 'packages/editor/src/index.ts')}`,
-  `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-  `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-  `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--alias:@web-ppt/edit-core=${join(root, 'packages/edit-core/src/index.ts')}`,
-  `--alias:@web-ppt/viewer-core=${join(root, 'packages/viewer-core/src/index.ts')}`,
+  ...sourceAliasArgs(root),
   `--outfile=${frameworkBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const load = (name) => new Uint8Array(readFileSync(join(root, 'fixtures', name)));

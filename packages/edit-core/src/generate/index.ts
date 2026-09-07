@@ -1,3 +1,4 @@
+import { assertSaveExtensions } from '../save/extension-availability';
 import { validateEditDoc } from '../model-invariants';
 import { createOpcPackage, disposeOpcPackage } from '../opc/patch';
 import type { OpcPatchResult } from '../opc/types';
@@ -27,6 +28,7 @@ export function createBlankPptx(options: CreateBlankPptxOptions = {}): Uint8Arra
 /** 没有可补丁原包时从统一编辑模型构造新 PPTX；本函数不改变 EditDoc。 */
 export function generateEditDoc(doc: EditDoc): OpcPatchResult {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能生成保存');
+  assertSaveExtensions(doc);
   validateEditDoc(generatedValidationDoc(doc));
   if (doc.meta.source === 'pptx' && doc.package && !doc.package.disposed) {
     throw new Error('存在可补丁原包时必须使用补丁保存');
@@ -35,3 +37,5 @@ export function generateEditDoc(doc: EditDoc): OpcPatchResult {
 }
 
 export type { OpcPatchResult } from '../opc/types';
+
+export { copyPortableElements } from './portable-clipboard';

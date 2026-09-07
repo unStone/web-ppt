@@ -47,18 +47,21 @@ export function materializeAppearance(tree: XmlDocument, record: ElementRecord, 
     if (!Object.keys(scene).length) return;
     const sceneNode = namespacedElement(properties, DRAWINGML_NS, 'scene3d');
     insertXmlInOrder(properties, sceneNode);
-    const camera = add(sceneNode, 'camera', { prst: 'orthographicFront' });
-    if (scene.rotX !== undefined || scene.rotY !== undefined) add(camera, 'rot', {
-      lat: String(Math.round((scene.rotY ?? 0) * 60000)), lon: '0', rev: String(Math.round((scene.rotX ?? 0) * 60000)),
+    const camera = add(sceneNode, 'camera', { prst: scene.camera ?? 'orthographicFront' });
+    if (scene.fieldOfView !== undefined) setXmlAttribute(camera, 'fov', String(Math.round(scene.fieldOfView * 60000)));
+    if (scene.zoom !== undefined) setXmlAttribute(camera, 'zoom', String(Math.round(scene.zoom * 100000)));
+    if (scene.rotX !== undefined || scene.rotY !== undefined || scene.rotZ !== undefined) add(camera, 'rot', {
+      lat: String(Math.round((scene.rotX ?? 0) * 60000)), lon: String(Math.round((scene.rotY ?? 0) * 60000)), rev: String(Math.round((scene.rotZ ?? 0) * 60000)),
     });
-    add(sceneNode, 'lightRig', { rig: 'threePt', dir: 't' });
+    add(sceneNode, 'lightRig', { rig: scene.lightRig ?? 'threePt', dir: scene.lightDirection ?? 't' });
     const shape = namespacedElement(properties, DRAWINGML_NS, 'sp3d');
     insertXmlInOrder(properties, shape);
     if (scene.extrusion !== undefined) setXmlAttribute(shape, 'extrusionH', emu(scene.extrusion));
+    if (scene.z !== undefined) setXmlAttribute(shape, 'z', emu(scene.z));
     if (scene.contourWidth !== undefined) setXmlAttribute(shape, 'contourW', emu(scene.contourWidth));
     if (scene.material) setXmlAttribute(shape, 'prstMaterial', scene.material);
-    if (scene.bevelTop !== undefined) add(shape, 'bevelT', { w: emu(scene.bevelTop), h: emu(scene.bevelTop), prst: 'circle' });
-    if (scene.bevelBottom !== undefined) add(shape, 'bevelB', { w: emu(scene.bevelBottom), h: emu(scene.bevelBottom), prst: 'circle' });
+    if (scene.bevelTop !== undefined || scene.bevelTopWidth !== undefined) add(shape, 'bevelT', { w: emu(scene.bevelTopWidth ?? scene.bevelTop ?? 0), h: emu(scene.bevelTop ?? 4), prst: 'circle' });
+    if (scene.bevelBottom !== undefined || scene.bevelBottomWidth !== undefined) add(shape, 'bevelB', { w: emu(scene.bevelBottomWidth ?? scene.bevelBottom ?? 0), h: emu(scene.bevelBottom ?? 4), prst: 'circle' });
     if (scene.extrusionColor) appendDrawingColor(add(shape, 'extrusionClr'), scene.extrusionColor);
     if (scene.contourColor) appendDrawingColor(add(shape, 'contourClr'), scene.contourColor);
   }

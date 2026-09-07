@@ -3,7 +3,7 @@ import type { ParseOptions, Presentation } from '@web-ppt/core';
 import {
   createDoc, disposeDoc, Editor, presentationSlideIdsByPart,
 } from '@web-ppt/edit-core';
-import type { CreateDocOptions, EditorOptions } from '@web-ppt/edit-core';
+import type { CreateDocOptions, EditorOptions, copyElements } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
 import { createSlideEditor } from './slide-editor';
 import type { SlideEditor, SlideEditorOptions } from './slide-editor-types';
@@ -48,10 +48,7 @@ async function waitForDecision<T>(promise: Promise<T>, signal: AbortSignal | und
   return new Promise<T>((resolve, reject) => {
     const abort = () => reject(abortReason(signal));
     signal.addEventListener('abort', abort, { once: true });
-    promise.then(
-      (value) => { signal.removeEventListener('abort', abort); resolve(value); },
-      (error) => { signal.removeEventListener('abort', abort); reject(error); },
-    );
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
   });
 }
 
@@ -91,6 +88,7 @@ class BrowserEditorSession implements EditorSession {
     editor: Editor,
     presentation: Awaited<ReturnType<typeof parse>>,
     recovery: RecoverySessionController | null,
+    copyFactory?: typeof copyElements,
   ) {
     this.editor = editor;
     this.recovery = recovery;
@@ -120,18 +118,17 @@ class BrowserEditorSession implements EditorSession {
     for (const slide of initialSlides) {
       if (!this.projectedSlideIds.has(slide.id)) this.allocateProjectedSlideId(slide.id);
     }
-    const currentSlides = Object.keys(editor.doc.slides).sort();
-    for (const slideId of currentSlides) {
+    for (const slideId of Object.keys(editor.doc.slides).sort()) {
       if (this.projectedSlideIds.has(slideId)) continue;
       const record = editor.doc.slides[slideId];
       const exact = record.creation?.presentationSlideId
         ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
       if (exact !== undefined) this.claimProjectedSlideId(slideId, exact);
     }
-    for (const slideId of currentSlides) {
+    for (const slideId of Object.keys(editor.doc.slides).sort()) {
       if (!this.projectedSlideIds.has(slideId)) this.allocateProjectedSlideId(slideId);
     }
-    registerSession(this, presentation);
+    registerSession(this, presentation, copyFactory);
   }
 
   get disposed(): boolean { return this.isDisposed; }
@@ -183,7 +180,6 @@ class BrowserEditorSession implements EditorSession {
   }
 
   toPresentation(): Presentation {
-    if (this.isDisposed) throw new Error('不能读取已经释放的编辑会话');
     const source = sessionState(this).presentation;
     const positions = new Map(this.editor.doc.slideOrder.map((id, index) => [id, index]));
     const sections = this.editor.doc.sections.order.map((id) => {
@@ -206,7 +202,7 @@ class BrowserEditorSession implements EditorSession {
   }
 
   mount(container: HTMLElement, options: SlideEditorOptions = {}): SlideEditor {
-    if (this.isDisposed) throw new Error('不能挂载已经释放的编辑会话');
+    sessionState(this);
     return createSlideEditor(container, this, options);
   }
 
@@ -214,7 +210,7 @@ class BrowserEditorSession implements EditorSession {
     container: HTMLElement,
     options: SelectionPaneOptions = {},
   ): SelectionPane {
-    if (this.isDisposed) throw new Error('不能挂载已经释放的编辑会话');
+    sessionState(this);
     return createSelectionPane(container, this, options);
   }
 
@@ -329,12 +325,11 @@ export async function openEditor(
     lazy: false,
     ...(options.password === undefined ? {} : { password: options.password }),
   });
-  const recoverySignal = options.recovery?.signal;
-  if (recoverySignal?.aborted) {
-    presentation.dispose?.();
-    throw abortReason(recoverySignal);
-  }
   try {
+    const copyFactory = !presentation.package ? (await waitForDecision(
+      import('@web-ppt/edit-core/generate'), options.recovery?.signal,
+    )).copyPortableElements : undefined;
+    throwIfAborted(options.recovery?.signal);
     const doc = createDoc(presentation, { idPrefix });
     const editor = new Editor(doc, {
       origin: options.origin,
@@ -346,7 +341,7 @@ export async function openEditor(
       ? new RecoverySessionController(
         editor, sourceIdentity, options.recovery, recoveryEpoch as string,
       ) : null;
-    return new BrowserEditorSession(editor, presentation, recovery);
+    return new BrowserEditorSession(editor, presentation, recovery, copyFactory);
   } catch (error) {
     presentation.dispose?.();
     throw error;

@@ -1,7 +1,7 @@
 import type { EditDoc, ElementId } from '../types';
 import { findXmlAttribute, parseXmlTree, xmlElementChildren } from '@web-ppt/edit-core/xml';
 import type { XmlElement } from '@web-ppt/edit-core/xml';
-import { chartRelationships } from './context';
+import { chartRelationships, chartSourceBytes } from './context';
 import {
   CHART_NS, DRAWING_NS, OFFICE_REL_NS, PRESENTATION_NS,
   STRICT_CHART_NS, STRICT_DRAWING_NS, STRICT_OFFICE_REL_NS, STRICT_PRESENTATION_NS,
@@ -58,7 +58,7 @@ export function chartPartForElement(doc: EditDoc, id: ElementId): string | null 
     return null;
   }
   const sourcePart = owningSlide(doc, id)?.creation?.duplicateSourcePart ?? origin.part;
-  const bytes = doc.saveState.baselines[sourcePart] ?? doc.package?.parts[sourcePart];
+  const bytes = chartSourceBytes(doc, sourcePart);
   if (!bytes) { entries.set(id, null); return null; }
   let result: string | null = null;
   const root = parseXmlTree(bytes).root;

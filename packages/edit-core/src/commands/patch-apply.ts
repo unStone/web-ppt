@@ -39,7 +39,7 @@ import {
 
 export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
   const orderParents = new Set<string>();
-  const extensionTargets = new Map<string, readonly [string, string]>();
+  const extensionTargets = new Map<string, readonly [string, string, 'elements' | 'slides']>();
   for (const patch of patches) {
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
@@ -72,7 +72,7 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
     else if (isExtensionPatch(patch)) {
       applyExtensionPatch(doc, patch);
-      extensionTargets.set(`${patch.path[1]}\0${patch.path[4]}`, [patch.path[1], patch.path[4]]);
+      extensionTargets.set(`${patch.path[0]}\0${patch.path[1]}\0${patch.path[4]}`, [patch.path[1], patch.path[4], patch.path[0]]);
     }
     else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
@@ -80,7 +80,7 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     if (doc.slides[parent] || doc.layouts[parent] || doc.masters[parent]
       || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
   }
-  for (const [id, namespace] of extensionTargets.values()) {
-    finalizeExtensionPatch(doc, id, namespace);
+  for (const [id, namespace, scope] of extensionTargets.values()) {
+    finalizeExtensionPatch(doc, id, namespace, scope);
   }
 }

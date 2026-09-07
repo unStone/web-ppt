@@ -35,11 +35,11 @@ function commandsFor(
   }
   if (to === 'back') {
     if (layer.slice(0, ordered.length).every((id, index) => id === ordered[index])) return [];
-    return [...ordered].reverse();
+    return ordered.reverse();
   }
   const positions = new Map(layer.map((id, index) => [id, index]));
   if (to === 'forward') {
-    return [...ordered].reverse().filter((id) => {
+    return ordered.reverse().filter((id) => {
       const index = positions.get(id)!;
       return index < layer.length - 1 && !selected.has(layer[index + 1]);
     });

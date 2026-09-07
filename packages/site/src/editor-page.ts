@@ -1,4 +1,5 @@
 import { bindCommentsTools } from './comments-tools';
+import { prepareAdvancedRendering } from '@web-ppt/core/advanced-rendering';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { setFontDecoder } from '@web-ppt/core';
 import {
@@ -54,6 +55,7 @@ let openController: AbortController | null = null;
 let pptConversionAccepted = false;
 let newDocument = false;
 let closeMediaTools: (() => void) | undefined;
+let closeSlideSizeTools: (() => void) | undefined;
 let languageInitialized = false;
 
 function explain(error: unknown): string {
@@ -119,9 +121,11 @@ function syncControls(): void {
   buttons.saveAs.hidden = !fileActions.localAvailable || !fileActions.localTarget(session);
   setAttributeMessage(buttons.localSave, 'title', message('保存目标：{name}', { name: fileActions.localTarget(session) ?? message('请选择保存位置') }));
   buttons.exportImages.disabled = !ready;
+  buttons.exportDocument.disabled = !ready;
   buttons.addShape.disabled = !writable || mode !== 'edit';
   buttons.addImage.disabled = !writable || mode !== 'edit';
   buttons.media.disabled = !writable || mode !== 'edit';
+  slideSizeButton.disabled = !writable || mode !== 'edit';
   buttons.addTable.disabled = !writable || mode !== 'edit';
   buttons.addSlide.disabled = !writable || mode !== 'edit' || !editor!.doc.layoutOrder.length;
   buttons.play.disabled = !ready;
@@ -266,6 +270,7 @@ function handleContextRequest(request: EditorContextRequest): void {
 }
 
 function disposeCurrent(): void {
+  closeSlideSizeTools?.(); closeSlideSizeTools = undefined;
   commentsTools.reset();
   releaseLabels.forEach((release) => release());
   releaseLabels = [];
@@ -311,7 +316,8 @@ async function openDocument(
     const { eotToTtf } = await import('mtx-decompressor');
     if (generation !== openGeneration) return;
     setFontDecoder(eotToTtf);
-    await prepareModernCharts(source instanceof Blob ? await source.arrayBuffer() : source);
+    const sourceBytes = source instanceof Blob ? await source.arrayBuffer() : source;
+    await Promise.all([prepareModernCharts(sourceBytes), prepareAdvancedRendering(sourceBytes)]);
     if (generation !== openGeneration) return;
     const [{ createPresetAdjustmentEditor }, accessibility, inputEnhancement] = await Promise.all([
       import('@web-ppt/editor/adjustments'),
@@ -324,6 +330,11 @@ async function openDocument(
       next.dispose();
       return;
     }
+    if (Object.values(next.editor.doc.slides).some((record) => record.ovr.extensions?.comments !== undefined)) {
+      const { registerCommentEditing } = await import('@web-ppt/edit-core/comments');
+      registerCommentEditing();
+      if (generation !== openGeneration) { next.dispose(); return; }
+    }
     if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.appearance !== undefined)) {
       const { registerAppearanceEditing } = await import('@web-ppt/edit-core/appearance');
       registerAppearanceEditing();
@@ -332,6 +343,24 @@ async function openDocument(
     if (Object.values(next.editor.doc.elements).some((record) =>
       record.ovr.extensions?.['chart-data'] !== undefined)) {
       await import('@web-ppt/editor/chart');
+      if (generation !== openGeneration) { next.dispose(); return; }
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.['chart-design'] !== undefined)) {
+      await import('@web-ppt/edit-core/chart-design');
+      if (generation !== openGeneration) { next.dispose(); return; }
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.['chart-ex-data'] !== undefined)) {
+      await import('@web-ppt/edit-core/chart-ex');
+      if (generation !== openGeneration) { next.dispose(); return; }
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.ink !== undefined)) {
+      await import('@web-ppt/edit-core/ink');
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.ole !== undefined)) {
+      await import('@web-ppt/edit-core/ole');
+    }
+    if (Object.values(next.editor.doc.elements).some((record) => record.ovr.extensions?.smartart !== undefined)) {
+      await import('@web-ppt/edit-core/smartart');
       if (generation !== openGeneration) { next.dispose(); return; }
     }
     disposeCurrent();
@@ -453,6 +482,10 @@ buttons.media.addEventListener('click', () => void run(async () => {
   () => { if (closeMediaTools === close) closeMediaTools = undefined; });
   closeMediaTools = close ?? closeMediaTools;
 }));
+buttons.exportDocument.addEventListener('click', () => {
+  const current = session;
+  if (current) void fileActions.exportDocument(current, outputName(), commentsTools.showComments);
+});
 buttons.exportImages.addEventListener('click', () => {
   const current = session;
   if (current) void fileActions.exportImages(current, outputName(), commentsTools.showComments);
@@ -527,9 +560,17 @@ function closeInspector(): void {
 }
 
 const commentsButton = document.querySelector<HTMLButtonElement>('#commentsTools')!;
+const slideSizeButton = document.querySelector<HTMLButtonElement>('#slideSizeTools')!;
+slideSizeButton.onclick = () => { void run(async () => {
+  const current = session;
+  if (!current || !canMutateDocument() || mode !== 'edit') return;
+  const { showSlideSizeTools } = await import('./editor-resize-tools');
+  if (session !== current) return;
+  closeSlideSizeTools?.(); closeSlideSizeTools = showSlideSizeTools(current, () => session);
+}); };
 const commentsTools = bindCommentsTools(commentsButton, () => {
   const current = session, slideId = view?.slideId;
-  return current && slideId ? { owner: current, slide: current.editor.toSlide(slideId), presentation: () => current.toPresentation(), name: activeName } : null;
+  return current && slideId ? { owner: current, editing: { editor: current.editor, slideId, writable: canMutateDocument() && mode === 'edit' }, slide: current.editor.toSlide(slideId), presentation: () => current.toPresentation(), name: activeName } : null;
 });
 const recovery = createSiteRecovery(notice);
 const fileActions = createEditorFileActions({

@@ -26,7 +26,7 @@ import { projectTableStyle } from './table-style';
 import { scaledDimensions, scaledTableEditInfo } from './table-scale';
 import { canvasTargetOfElement } from './design-target';
 import { slidesForLayout, slidesForMaster } from './design-dependencies';
-import { editExtensionGeneration, projectEditExtensions } from './extension-runtime';
+import { editExtensionGeneration, projectEditExtensions, projectSlideExtensions } from './extension-runtime';
 
 interface ProjectionCache {
   generation: number;
@@ -265,7 +265,7 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
     layoutName: resolved.layoutName ?? (record.layoutId ? doc.layouts[record.layoutId]?.name : undefined),
     transition: structuredClone(resolved.transition),
   } : {};
-  const { animations: animationOverride, ...slideOverrides } = record.ovr;
+  const { animations: animationOverride, extensions: _extensions, ...slideOverrides } = record.ovr;
   let slide: Slide = {
     ...record.src,
     ...layoutSource,
@@ -301,6 +301,7 @@ export function toSlide(doc: EditDoc, id: SlideId): Slide {
       },
     };
   }
+  slide = projectSlideExtensions(doc, id, slide);
   cache.slides.set(id, slide);
   return slide;
 }

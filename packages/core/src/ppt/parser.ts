@@ -1204,7 +1204,9 @@ function notesText(dv: DataView, rec: Rec): string {
           if (text) lines.push(text);
         }
         type = -1;
-      } else if (r.isContainer && depth < 8) walk(r.start, r.start + r.len, depth + 1);
+      } else if ((r.isContainer || r.type === ESCHER.ClientTextbox) && depth < 8) {
+        walk(r.start, r.start + r.len, depth + 1);
+      }
     }
   };
   walk(rec.start, rec.start + rec.len, 0);

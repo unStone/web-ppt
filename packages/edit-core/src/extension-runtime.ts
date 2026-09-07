@@ -1,8 +1,8 @@
-import type { SlideElement } from '@web-ppt/core';
+import type { Slide, SlideElement } from '@web-ppt/core';
 import type { CommandPatches, ExtensionCommand, ExtensionPatch } from './commands/types';
 import type { EditDoc, ElementId, ElementInsertionResource, SlideId } from './types';
 import type { OpcPartChanges } from './opc/types';
-import { invalidateElement } from './projection';
+import { invalidateElement, invalidateSlide } from './projection';
 
 export interface EditExtensionSavePlan {
   readonly changes: OpcPartChanges;
@@ -10,6 +10,10 @@ export interface EditExtensionSavePlan {
 }
 
 export interface EditExtensionRuntime {
+  readonly generateParts?: (doc: EditDoc, parts: Record<string, Uint8Array>) => void;
+  readonly scope?: 'element' | 'slide';
+  readonly materializePackage?: (doc: EditDoc, baselines: Record<string, Uint8Array>, created: Set<string>, changes: Record<string, Uint8Array | null>) => void;
+  readonly projectSlide?: (doc: EditDoc, id: SlideId, slide: Slide) => Slide;
   readonly materialize?: (
     document: import('./xml/types').XmlDocument, record: import('./types').ElementRecord, generated: boolean,
     xml: import('./save/extension-elements').EditElementXml,
@@ -97,19 +101,19 @@ export function observeEditExtensionRegistration(
   const listener: ExtensionRegistrationListener = (namespace) => {
     const elements = new Set<ElementId>();
     const slides = new Set<SlideId>();
-    for (const record of Object.values(doc.elements)) {
+    for (const record of [...Object.values(doc.elements), ...Object.values(doc.slides)]) {
       if (record.ovr.extensions?.[namespace] === undefined) continue;
       // 延迟注册与普通编辑必须沿同一父链传播；只有元素集时，挂载视图会跳过整页更新。
-      const dirty = invalidateElement(doc, record.id);
+      const dirty = doc.slides[record.id] ? invalidateSlide(doc, record.id) : invalidateElement(doc, record.id);
       for (const id of dirty.dirtyElements) elements.add(id);
       for (const id of dirty.dirtySlides) slides.add(id);
     }
-    if (elements.size) refresh(elements, slides);
+    if (elements.size || slides.size) refresh(elements, slides);
   };
   const listeners = listenerStore().documents.get(doc) ?? new Set<ExtensionRegistrationListener>();
   listeners.add(listener);
   listenerStore().documents.set(doc, listeners);
-  for (const record of Object.values(doc.elements)) {
+  for (const record of [...Object.values(doc.elements), ...Object.values(doc.slides)]) {
     for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
       queueRegistrationListener(namespace, listener);
     }
@@ -125,11 +129,12 @@ export function extensionCommandPatches(
 ): CommandPatches {
   const found = runtime(command.namespace);
   if (!found) throw new Error(`编辑扩展尚未加载：${command.namespace}`);
+  if ((found.scope ?? 'element') !== (command.scope === undefined ? 'element' : command.scope)) throw new Error('编辑扩展 scope 与注册不符');
   return found.command(doc, command, origin);
 }
 
 export function isExtensionPatch(patch: { path: readonly unknown[] }): patch is ExtensionPatch {
-  return patch.path.length >= 5 && patch.path[0] === 'elements'
+  return patch.path.length >= 5 && (patch.path[0] === 'elements' || patch.path[0] === 'slides')
     && typeof patch.path[1] === 'string' && patch.path[2] === 'ovr'
     && patch.path[3] === 'extensions' && typeof patch.path[4] === 'string';
 }
@@ -137,10 +142,12 @@ export function isExtensionPatch(patch: { path: readonly unknown[] }): patch is 
 export function validateExtensionPatch(
   doc: EditDoc, patch: ExtensionPatch, index: number, runtimeAlreadyValidated = false,
 ): void {
-  const record = doc.elements[patch.path[1]];
+  const record = doc[patch.path[0]][patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
   if (patch.op !== 'set' && patch.op !== 'del') throw new Error(`Patch ${index} 的扩展操作无效`);
   assertNamespace(patch.path[4]);
+  const found = runtime(patch.path[4]);
+  if (found && (found.scope === 'slide' ? 'slides' : 'elements') !== patch.path[0]) throw new Error('扩展补丁 scope 与注册不符');
   const extensionPath = patch.path.slice(5);
   if (extensionPath.length > 16 || extensionPath.some((key) => typeof key !== 'string' || !key
     || key.length > 1_024
@@ -178,7 +185,7 @@ export function validateExtensionPatchBatches(
 }
 
 export function applyExtensionPatch(doc: EditDoc, patch: ExtensionPatch): void {
-  const record = doc.elements[patch.path[1]];
+  const record = doc[patch.path[0]][patch.path[1]];
   const namespace = patch.path[4];
   if (patch.op === 'del' && !record.ovr.extensions) return;
   record.ovr.extensions ??= Object.create(null) as Record<string, unknown>;
@@ -226,12 +233,12 @@ export function applyExtensionPatch(doc: EditDoc, patch: ExtensionPatch): void {
   }
 }
 
-export function finalizeExtensionPatch(doc: EditDoc, id: ElementId, namespace: string): void {
-  const record = doc.elements[id];
+export function finalizeExtensionPatch(doc: EditDoc, id: ElementId, namespace: string, scope: 'elements' | 'slides'): void {
+  const record = doc[scope][id];
   if (!record?.ovr.extensions) return;
   const next = record.ovr.extensions[namespace];
   if (next !== undefined && (!Reflect.ownKeys(next as object).length
-    || runtime(namespace)?.prune?.(doc, id, next))) {
+    || scope === 'elements' && runtime(namespace)?.prune?.(doc, id, next))) {
     delete record.ovr.extensions[namespace];
   }
   if (record.ovr.extensions && !Reflect.ownKeys(record.ovr.extensions).length) {
@@ -246,7 +253,7 @@ export function projectEditExtensions(
   doc: EditDoc, id: ElementId, element: SlideElement,
 ): SlideElement {
   let projected = element;
-  for (const namespace of Object.keys(doc.elements[id]?.ovr.extensions ?? {})) {
+  for (const namespace of Object.keys(doc.elements[id]?.ovr.extensions ?? {}).sort()) {
     projected = runtime(namespace)?.project?.(doc, id, projected) ?? projected;
   }
   return projected;
@@ -255,4 +262,11 @@ export function projectEditExtensions(
 /** 保存实现位于动态入口；这里只暴露同一全局注册表的只读视图。 */
 export function registeredEditExtensions(): ReadonlyMap<string, EditExtensionRuntime> {
   return runtimes();
+}
+
+export function projectSlideExtensions(doc: EditDoc, id: SlideId, slide: Slide): Slide {
+  for (const namespace of Object.keys(doc.slides[id].ovr.extensions ?? {})) {
+    slide = runtime(namespace)?.projectSlide?.(doc, id, slide) ?? slide;
+  }
+  return slide;
 }

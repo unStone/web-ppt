@@ -1,3 +1,4 @@
+import { sourceAliasArgs } from './lib/bundle-browser.mjs';
 /** @web-ppt/collab 的双副本收敛、离线回放、保存与 BroadcastChannel 契约。 */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -22,7 +23,7 @@ const bundle = (entry, name, aliases = [], externals = []) => {
   const file = join(out, `${name}.mjs`);
   execFileSync('npx', [
     'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    ...sourceAliasArgs(root, aliases),
     ...externals.map((name) => `--external:${name}`), `--outfile=${file}`,
   ], { cwd: root, stdio: 'inherit' });
   return file;

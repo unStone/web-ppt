@@ -31,6 +31,10 @@ export function retainCompatibilitySource(pkg: PptxPackageReader, host: Element,
   keep('[Content_Types].xml');
   const relations = pkg.rels(part);
   const scan = (node: Element): void => {
+    // drawing 的 rId 藏在另一个 dataModel part 的非 r: 属性里，frame 自身并不引用它。
+    if (node.localName === 'relIds' && node.namespaceURI?.endsWith('/diagram')) {
+      for (const relation of Object.values(relations)) if (relation.type.endsWith('/diagramDrawing')) visit(relation.target);
+    }
     for (const attribute of Array.from(node.attributes)) {
       if (attribute.namespaceURI === OFFICE_REL_NS) {
         const relation = relations[attribute.value];

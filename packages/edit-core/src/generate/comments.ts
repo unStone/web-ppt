@@ -1,5 +1,7 @@
+import { writeComment } from '../comments/xml';
+import type { CommentIdentity } from '../comments/xml';
 import type { Slide } from '@web-ppt/core';
-import { createXmlElement, createXmlText, insertXmlChildUnchecked } from '../xml/nodes';
+import { createXmlElement, insertXmlChildUnchecked } from '../xml/nodes';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
 import { OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
@@ -37,7 +39,8 @@ export function materializeGeneratedComments(parts: Record<string, Uint8Array>, 
   for (const [index, slide] of slides.entries()) {
     if (!slide.comments?.length) continue;
     const comments = tree('cmLst');
-    for (const comment of slide.comments) {
+    const identities = new Map<string, CommentIdentity>();
+    for (const [commentIndex, comment] of slide.comments.entries()) {
       const key = JSON.stringify([comment.author, comment.initials]);
       let person = people.get(key);
       if (!person) {
@@ -49,11 +52,12 @@ export function materializeGeneratedComments(parts: Record<string, Uint8Array>, 
       const idx = ++serial;
       if (idx > 0xffff_ffff) throw new Error('批注索引超出 OOXML 可表示范围');
       person.last = idx;
-      const node = add(comments.root, 'p:cm', { authorId: person.id, idx: String(idx),
-        ...(comment.date ? { dt: comment.date } : {}) });
-      const emu = (value: number) => String(Math.round((Number.isFinite(value) ? value : 0) * 9525));
-      add(node, 'p:pos', { x: emu(comment.x), y: emu(comment.y) });
-      insertXmlChildUnchecked(add(node, 'p:text'), createXmlText(comment.text));
+      identities.set(comment.id ?? `source:${commentIndex}`, { author: person.id, idx });
+    }
+    for (const [commentIndex, comment] of slide.comments.entries()) {
+      const node = add(comments.root, 'p:cm');
+      writeComment(node, comment, identities.get(comment.id ?? `source:${commentIndex}`)!,
+        comment.parentId ? identities.get(comment.parentId) : undefined);
     }
     const part = `ppt/comments/comment${index + 1}.xml`;
     if (parts[part]) throw new Error(`生成批注 part 冲突：${part}`);

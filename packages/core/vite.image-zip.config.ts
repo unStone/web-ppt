@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
+    rollupOptions: { external: ['@web-ppt/core'] },
     copyPublicDir: false,
     emptyOutDir: false,
     lib: {

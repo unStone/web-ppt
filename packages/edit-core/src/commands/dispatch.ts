@@ -93,7 +93,7 @@ function register<C extends Command>(
 }
 
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
-  Extension: register<ExtensionCommand>(['namespace', 'id', 'payload'], extensionCommandPatches),
+  Extension: register<ExtensionCommand>(['namespace', 'scope', 'id', 'payload'], extensionCommandPatches),
   SetTheme: register<SetThemeCommand>(['id', 'clrScheme', 'fontScheme'], setThemePatches, { target: 'none' }),
   SetMasterTextStyle: register<SetMasterTextStyleCommand>(
     ['target', 'category', 'level', 'paragraph', 'run'], setMasterTextStylePatches, { target: 'none' },
@@ -139,7 +139,7 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   RenameSection: register<RenameSectionCommand>(['id', 'name'], renameSectionPatches, { target: 'none' }),
   MoveSection: register<MoveSectionCommand>(['id', 'at'], moveSectionPatches, { target: 'none' }),
   RemoveSection: register<RemoveSectionCommand>(['id'], removeSectionPatches, { target: 'none' }),
-  SetSlideSize: register<SetSlideSizeCommand>(['w', 'h'], setSlideSizePatches, { target: 'none' }),
+  SetSlideSize: register<SetSlideSizeCommand>(['w', 'h', 'fit'], setSlideSizePatches, { target: 'none' }),
   SetBackground: register<SetBackgroundCommand>(['id', 'target', 'fill'], setBackgroundPatches, { target: 'none' }),
   SetBackgroundImage: register<SetBackgroundImageCommand>(
     ['id', 'bytes', 'mime', 'crop', 'alpha', 'tile'], setBackgroundImagePatches, { target: 'none' },
@@ -192,6 +192,7 @@ export function assertPureCommand(input: Command): void {
 
 /** 批处理冲突检测与命令注册共享目标语义；非法动态输入留给纯数据校验给出具体错误。 */
 export function commandTargetIds(command: Command): readonly ElementId[] {
+  if (command.type === 'Extension' && command.scope === 'slide') return [];
   const registration = COMMANDS[(command as Partial<Command>).type as Command['type']];
   const target = registration ? registration.target : 'id';
   if (target === 'none') return [];

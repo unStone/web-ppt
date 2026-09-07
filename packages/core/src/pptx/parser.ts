@@ -1,3 +1,4 @@
+import { inkStrokes } from '../ink/render';
 import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadata';
 import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
@@ -663,162 +664,6 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
 
 // ---------------- 墨迹批注（p14:contentPart + InkML） ----------------
 
-interface InkBrush {
-  color: string;
-  width: number;
-}
-
-/**
- * InkML 的 trace 数据解码。每个点由若干通道值组成，值可带前缀：
- * `!` 显式、`'` 一阶差分、`"` 二阶差分，无前缀则沿用该通道上一次的编码方式。
- */
-function decodeTrace(text: string, xi: number, yi: number): Array<[number, number]> {
-  const pts: Array<[number, number]> = [];
-  const val: number[] = [];
-  const delta: number[] = [];
-  const mode: string[] = [];
-  let first = true;
-  for (const chunk of text.split(',')) {
-    const tokens = chunk.trim().split(/[\s]+/).filter((t) => t !== '');
-    if (!tokens.length) continue;
-    tokens.forEach((tok, j) => {
-      // 前缀只有 ! ' "；负号必须留给数值本身，否则差分方向会全部翻正
-      const m = tok.match(/^(!|'|")?\s*(-?[\d.]+(?:[eE][-+]?\d+)?)$/);
-      if (!m) return;
-      const n = Number(m[2]);
-      if (!Number.isFinite(n)) return;
-      const op = m[1] ?? '';
-      if (first || op === '!') {
-        val[j] = n;
-        delta[j] = 0;
-        mode[j] = '!';
-        return;
-      }
-      if (op) mode[j] = op;
-      switch (mode[j] ?? '!') {
-        case "'":
-          delta[j] = n;
-          val[j] = (val[j] ?? 0) + n;
-          break;
-        case '"':
-          delta[j] = (delta[j] ?? 0) + n;
-          val[j] = (val[j] ?? 0) + delta[j];
-          break;
-        default:
-          val[j] = n;
-      }
-    });
-    const x = val[xi];
-    const y = val[yi];
-    if (Number.isFinite(x) && Number.isFinite(y)) pts.push([x, y]);
-    first = false;
-  }
-  return pts;
-}
-
-/** 找 traceFormat 里 X / Y 通道的下标 */
-function inkChannels(root: Element): [number, number] {
-  const all = root.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].localName !== 'traceFormat') continue;
-    const names = kids(all[i], 'channel').map((c) => (attr(c, 'name') ?? '').toUpperCase());
-    const xi = names.indexOf('X');
-    const yi = names.indexOf('Y');
-    if (xi >= 0 && yi >= 0) return [xi, yi];
-  }
-  return [0, 1];
-}
-
-function inkBrushes(root: Element): Map<string, InkBrush> {
-  const out = new Map<string, InkBrush>();
-  const all = root.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    const el = all[i];
-    if (el.localName !== 'brush') continue;
-    const id = attr(el, 'xml:id') ?? attr(el, 'id');
-    if (!id) continue;
-    const brush: InkBrush = { color: 'rgb(0,0,0)', width: 0 };
-    for (const p of kids(el, 'brushProperty')) {
-      const name = (attr(p, 'name') ?? '').toLowerCase();
-      const value = attr(p, 'value') ?? '';
-      if (name === 'color') brush.color = /^#?[0-9a-f]{6}$/i.test(value) ? `#${value.replace(/^#/, '')}` : value;
-      else if (name === 'width' || name === 'height') {
-        const n = Number(value);
-        if (Number.isFinite(n) && n > brush.width) brush.width = n;
-      }
-    }
-    out.set(id, brush);
-  }
-  return out;
-}
-
-/**
- * InkML → 局部坐标（0,0-w,h）的开放路径形状。
- * 墨迹自带坐标系（多为 HIMETRIC），统一按整体包围盒等比映射进 contentPart 的框内。
- */
-function inkStrokes(root: Element, w: number, h: number): ShapeElement[] {
-  const [xi, yi] = inkChannels(root);
-  const brushes = inkBrushes(root);
-  const traces: Array<{ pts: Array<[number, number]>; brush: InkBrush | undefined }> = [];
-  const all = root.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].localName !== 'trace') continue;
-    const pts = decodeTrace(all[i].textContent ?? '', xi, yi);
-    if (pts.length < 2) continue;
-    const ref = (attr(all[i], 'brushRef') ?? '').replace(/^#/, '');
-    traces.push({ pts, brush: brushes.get(ref) ?? brushes.values().next().value });
-  }
-  if (!traces.length) return [];
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const t of traces) {
-    for (const [x, y] of t.pts) {
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
-    }
-  }
-  const spanX = maxX - minX;
-  const spanY = maxY - minY;
-  const scale = Math.min(spanX > 0 ? w / spanX : Infinity, spanY > 0 ? h / spanY : Infinity);
-  const k = Number.isFinite(scale) && scale > 0 ? scale : 1;
-  const offX = (w - spanX * k) / 2;
-  const offY = (h - spanY * k) / 2;
-
-  const out: ShapeElement[] = [];
-  for (const t of traces) {
-    const pts = t.pts.map(([x, y]): [number, number] => [offX + (x - minX) * k, offY + (y - minY) * k]);
-    let bx = Infinity;
-    let by = Infinity;
-    let bx2 = -Infinity;
-    let by2 = -Infinity;
-    for (const [x, y] of pts) {
-      if (x < bx) bx = x;
-      if (y < by) by = y;
-      if (x > bx2) bx2 = x;
-      if (y > by2) by2 = y;
-    }
-    const n = (v: number): string => String(Math.round(v * 100) / 100);
-    const d = 'M ' + pts.map(([x, y]) => `${n(x - bx)} ${n(y - by)}`).join(' L ');
-    const width = Math.max(0.75, Math.min((t.brush?.width ?? 0) * k || 2, 24));
-    out.push({
-      kind: 'shape',
-      x: bx, y: by, w: Math.max(bx2 - bx, 0), h: Math.max(by2 - by, 0),
-      rot: 0, flipH: false, flipV: false,
-      path: d,
-      fill: { type: 'none' },
-      stroke: { color: t.brush?.color ?? 'rgb(0,0,0)', width, dash: null, cap: 'round', join: 'round' },
-      text: null,
-      openGeom: true,
-    });
-  }
-  return out;
-}
-
 /** <p14:contentPart>：墨迹批注，r:id 指向 InkML part */
 function parseContentPart(node: Element, env: Env): GroupElement | null {
   const xf = parseXfrm(kid(node, 'xfrm'));
@@ -831,13 +676,18 @@ function parseContentPart(node: Element, env: Env): GroupElement | null {
   const children = inkStrokes(root, xf.w, xf.h);
   if (!children.length) throw new Error('InkML 没有可用笔迹');
   const cNvPr = walk(node, 'nvContentPartPr', 'cNvPr');
+  const edit = editInfoOf(env, cNvPr, null, undefined, 'frame');
+  if (env.edit) {
+    retainCompatibilitySource(env.pkg, node, env.partPath);
+    edit.editInfo = { ...edit.editInfo, requiresOriginal: true };
+  }
   return {
     kind: 'group', ...base(xf),
     childX: 0, childY: 0, scaleX: 1, scaleY: 1,
     children,
     name: attr(cNvPr, 'name') ?? '墨迹',
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(env, cNvPr, null, undefined, 'frame'),
+    ...edit,
   };
 }
 
@@ -895,11 +745,11 @@ function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElemen
     };
   }
 
+  if (env.edit) {
+    retainCompatibilitySource(env.pkg, frame, env.partPath);
+    frameOnlyEditInfo.editInfo = { ...frameOnlyEditInfo.editInfo, requiresOriginal: true };
+  }
   if (uri.endsWith('/chart') || uri === 'http://schemas.microsoft.com/office/drawing/2014/chartex') {
-    if (uri.endsWith('/chartex') && env.edit) {
-      retainCompatibilitySource(env.pkg, frame, env.partPath);
-      frameOnlyEditInfo.editInfo = { ...frameOnlyEditInfo.editInfo, requiresOriginal: true };
-    }
     const chart = parseChartFrame(data, xf, env, uri.endsWith('/chartex'));
     if (chart) return { ...chart, id: frameId, ...frameOnlyEditInfo };
     return { kind: 'unsupported', ...base(xf), label: '图表', name, id: frameId, ...frameOnlyEditInfo };
@@ -1109,7 +959,7 @@ function extractNotesText(root: Element | null): string {
         const node = descendants[index];
         if (node.localName === 't') text.push(node.textContent ?? '');
         else if (node.localName === 'br') text.push('\n');
-        else if (node.localName === 'tab') text.push('\t');
+        else if (node.localName === 'tab' && attr(node, 'pos') === null) text.push('\t');
       }
       return text.join('');
     }).join('\n');
@@ -1158,9 +1008,13 @@ function parseSlideComments(pkg: Pkg, slideRels: Rels, authors: Map<string, Auth
       const author = authors.get(authorId);
       const pos = kid(cm, 'pos');
       const textEl = kid(cm, 'text');
-      const text = (textEl?.textContent ?? extractText(kid(cm, 'txBody'))).trim();
+      const text = textEl?.textContent ?? extractText(kid(cm, 'txBody')).trim();
       const idx = numAttr(cm, 'idx');
+      const parent = Array.from(cm.getElementsByTagName('*')).find((node) => node.localName === 'parentCm'
+        && node.namespaceURI === 'http://schemas.microsoft.com/office/powerpoint/2012/main');
       out.push({
+        id: attr(cm, 'id') ?? `${authorId}:${idx ?? out.length}`,
+        ...(parent ? { parentId: `${attr(parent, 'authorId') ?? ''}:${numAttr(parent, 'idx')}` } : {}),
         author: author?.name ?? (authorId ? `作者 ${authorId}` : '未知作者'),
         initials: author?.initials,
         date: attr(cm, 'dt') ?? attr(cm, 'created') ?? undefined,

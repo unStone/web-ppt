@@ -1,5 +1,5 @@
 import type { EditDoc } from '../types';
-import type { CommandPatches, ElementTransformPatch, Patch, XfrmField, XfrmValueByField } from './types';
+import type { CommandPatches, Patch, XfrmField, XfrmValueByField } from './types';
 import { assertXfrmValue, isFrameXfrmField } from './xfrm';
 import { assertElementUnlocked } from './element-interaction';
 
@@ -45,11 +45,4 @@ export function elementTransformPatches(
   return { forward, inverse };
 }
 
-export function applyElementTransformPatch(doc: EditDoc, patch: ElementTransformPatch): void {
-  const [, id, , field] = patch.path;
-  const record = doc.elements[id];
-  if (!record) throw new Error(`Patch 指向不存在的元素：${id}`);
-  const overrides = record.ovr as unknown as Record<XfrmField, number | boolean | undefined>;
-  if (patch.op === 'set') overrides[field] = patch.value;
-  else delete overrides[field];
-}
+export { applyRecordOverridePatch as applyElementTransformPatch } from './record-override';

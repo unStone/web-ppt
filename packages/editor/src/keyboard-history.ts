@@ -8,7 +8,7 @@ export class HistoryKeyboardController {
 
   keyDown(event: KeyboardEvent): boolean {
     if (event.defaultPrevented) return false;
-    const primary = event.ctrlKey !== event.metaKey && (event.ctrlKey || event.metaKey);
+    const primary = event.ctrlKey !== event.metaKey;
     const key = event.key.toLowerCase();
     const action = key === 'z' ? event.shiftKey ? 'redo' : 'undo'
       : key === 'y' && !event.shiftKey ? 'redo' : null;

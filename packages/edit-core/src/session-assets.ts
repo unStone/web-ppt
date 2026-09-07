@@ -67,6 +67,12 @@ export function sessionAsset(doc: EditDoc, url: string): DocAsset | undefined {
   return docAssets.get(doc)?.get(url) ?? doc.package?.assets?.[url];
 }
 
+/** 可选编辑包必须从创建文档的主包取资源，独立构建的模块不共享私有 WeakMap。 */
+export function sourcePartBytes(doc: EditDoc, part: string): Uint8Array | undefined {
+  return doc.saveState.baselines[part] ?? doc.package?.parts[part]
+    ?? sessionAsset(doc, `web-ppt-source:${part}`)?.bytes;
+}
+
 export function releaseSessionAssets(doc: EditDoc): void {
   docAssets.delete(doc);
 }

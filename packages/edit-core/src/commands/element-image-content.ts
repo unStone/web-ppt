@@ -226,11 +226,7 @@ export function validateImageResourcePatch(doc: EditDoc, patch: ImageResourcePat
   }
 }
 
-export function applyElementCropPatch(doc: EditDoc, patch: ElementCropPatch): void {
-  const record = doc.elements[patch.path[1]];
-  if (patch.op === 'set') record.ovr.crop = structuredClone(patch.value);
-  else delete record.ovr.crop;
-}
+export { applyRecordOverridePatch as applyElementCropPatch } from './record-override';
 
 export function applyElementImageReplacementPatch(
   doc: EditDoc,

@@ -121,7 +121,9 @@ export function collectPatchInvalidation(
     for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
   }
-  const dirty = isSlideNotesPatch(patch)
+  const dirty = patch.path[0] === 'slides' && patch.path[3] === 'extensions'
+    ? invalidateSlide(doc, patch.path[1])
+    : isSlideNotesPatch(patch)
     ? invalidateSlideData(doc, patch.path[1])
     : isSlideLayoutPatch(patch)
     ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
@@ -148,7 +150,7 @@ export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
     return !!doc.slides[patch.path[1]]
       && (patch.value.after === null || !!doc.slides[patch.value.after]);
   }
-  if (isSlideNotesPatch(patch) || isSlideLayoutPatch(patch) || isSlidePropertyPatch(patch)) {
+  if (patch.path[0] === 'slides') {
     return !!doc.slides[patch.path[1]];
   }
   if (isElementTreePatch(patch)) {

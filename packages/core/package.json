@@ -81,6 +81,30 @@
     "./modern-charts": {
       "types": "./dist/modern-charts.d.ts",
       "import": "./dist/modern-charts.js"
+    },
+    "./diagram-edit": {
+      "types": "./dist/diagram-edit.d.ts",
+      "import": "./dist/diagram-edit.js"
+    },
+    "./ink-edit": {
+      "types": "./dist/ink-edit.d.ts",
+      "import": "./dist/ink-edit.js"
+    },
+    "./emf-plus": {
+      "types": "./dist/emf-plus.d.ts",
+      "import": "./dist/emf-plus.js"
+    },
+    "./advanced-rendering": {
+      "types": "./dist/advanced-rendering.d.ts",
+      "import": "./dist/advanced-rendering.js"
+    },
+    "./three-d": {
+      "types": "./dist/three-d.d.ts",
+      "import": "./dist/three-d.js"
+    },
+    "./pdf": {
+      "types": "./dist/pdf.d.ts",
+      "import": "./dist/pdf.js"
     }
   },
   "files": [
@@ -90,7 +114,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.handles.config.ts && vite build --config vite.image-zip.config.ts && vite build --config vite.chart-edit.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.modern-charts.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && node ../../tooling/check-image-zip-boundary.mjs && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.handles.config.ts && vite build --config vite.image-zip.config.ts && vite build --config vite.chart-edit.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.modern-charts.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && node ../../tooling/check-image-zip-boundary.mjs && tsc -p tsconfig.build.json && vite build --config vite.diagram-edit.config.ts && vite build --config vite.ink-edit.config.ts && vite build --config vite.emf-plus.config.ts && vite build --config vite.advanced-rendering.config.ts && vite build --config vite.three-d.config.ts && vite build --config vite.pdf.config.ts",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

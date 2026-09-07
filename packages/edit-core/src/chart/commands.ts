@@ -18,7 +18,7 @@ import {
   assertChartNumber, assertChartOrder, assertChartPointRecord, assertChartSeriesRecord,
   CHART_PLOT_KINDS, MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
 } from './validation';
-import { chartRenderContext } from './context';
+import { chartRenderContext, chartSourceBytes } from './context';
 import { chartPartForElement } from './locator';
 import { orderedChartRecords } from './ordering';
 
@@ -342,15 +342,24 @@ registerEditExtension(NS, {
   prune: (doc, id) => chartStateMatchesSource(doc, id),
   project: (doc, id, element) => {
     if (element.kind !== 'group') return element;
-    const part = chartPartForElement(doc, id);
-    const source = part && (doc.saveState.baselines[part] ?? doc.package?.parts[part]);
-    if (!part || !source) return element;
-    const xml = materializeChartProjectionXml(source, id, currentChartDatasetState(doc, id));
-    const children = renderChartXml(xml, element.w, element.h, chartRenderContext(doc, id, part));
+    const projection = chartProjection(doc, id);
+    const children = renderChartXml(projection.xml, element.w, element.h, projection.context);
     return { ...element, children };
   },
   beforeSave: saveChartDatasets,
+  generateParts(doc, parts) {
+    const plan = saveChartDatasets(doc); if (!plan) return;
+    for (const [part, bytes] of Object.entries(plan.changes)) if (bytes) parts[part] = bytes;
+  },
 });
+
+export function chartProjection(doc: EditDoc, id: ElementId) {
+  const part = chartPartForElement(doc, id);
+  const source = part && (chartSourceBytes(doc, part));
+  if (!part || !source) throw new Error('图表缺少来源');
+  return { xml: materializeChartProjectionXml(source, id, currentChartDatasetState(doc, id)),
+    context: chartRenderContext(doc, id, part), part };
+}
 
 function lastOrder(values: readonly { order: FractionalIndex }[]): FractionalIndex | null {
   return values.reduce<FractionalIndex | null>((last, item) =>

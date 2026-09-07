@@ -6,13 +6,9 @@ import type { PictureFx } from './types';
 export const SCENE_MATERIALS = ['legacyMatte', 'legacyPlastic', 'legacyMetal', 'legacyWireframe',
   'matte', 'plastic', 'metal', 'warmMatte', 'translucentPowder', 'powder', 'dkEdge', 'softEdge',
   'clear', 'flat', 'softmetal'] as const;
-// core 的等轴测近似把材质映射到可见深度，写回必须反解，避免每次重开继续变厚。
-const depth: Record<string, number> = {
-  metal: 1.15, translucentPowder: .9, powder: .95, dkEdge: 1.1, softEdge: .9, clear: .8, flat: .85, softmetal: 1.1,
-};
-const lengths = ['extrusion', 'bevelTop', 'bevelBottom', 'contourWidth'] as const;
+const lengths = ['extrusion', 'bevelTop', 'bevelBottom', 'bevelTopWidth', 'bevelBottomWidth', 'contourWidth'] as const;
 const colors = ['extrusionColor', 'contourColor'] as const;
-const angles = ['rotX', 'rotY'] as const;
+const angles = ['rotX', 'rotY', 'rotZ'] as const;
 const finite = (value: unknown, min: number, max: number): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 
@@ -41,7 +37,7 @@ export function normalizePicture(value: unknown): PictureFx {
 }
 
 export function normalizeScene(value: unknown): Shape3D {
-  assertDataObject(value, [...lengths, ...colors, ...angles, 'material'], '立体效果');
+  assertDataObject(value, [...lengths, ...colors, ...angles, 'material', 'camera', 'fieldOfView', 'zoom', 'z', 'lightRig', 'lightDirection'], '立体效果');
   const input = value as Shape3D;
   const out: Shape3D = {};
   for (const key of lengths) if (key in input) {
@@ -60,21 +56,30 @@ export function normalizeScene(value: unknown): Shape3D {
     if (!SCENE_MATERIALS.includes(input.material as typeof SCENE_MATERIALS[number])) throw new Error('未知立体材质');
     out.material = input.material;
   }
+  for (const key of ['camera', 'lightRig', 'lightDirection'] as const) if (key in input) {
+    if (typeof input[key] !== 'string' || !/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(input[key]!)) throw new Error('三维场景预设名称无效');
+    out[key] = input[key];
+  }
+  for (const [key, min, max, precision] of [['fieldOfView', 0, 180, 60000], ['zoom', 0.00001, 1000, 100000], ['z', -2147483647 / 9525, 2147483647 / 9525, 9525]] as const) if (key in input) {
+    if (!finite(input[key], min, max)) throw new Error('三维相机参数超出范围');
+    out[key] = Math.round(input[key]! * precision) / precision;
+  }
   return out;
 }
 
 export function sceneProjection(scene: Shape3D): Shape3D | undefined {
   if (!Object.keys(scene).length) return undefined;
-  const extrusion = scene.extrusion ?? (scene.bevelTop || scene.bevelBottom ? 6 : undefined);
-  return { ...scene,
-    ...(extrusion !== undefined ? { extrusion: extrusion * (depth[scene.material ?? ''] ?? 1) } : {}),
-    ...('rotX' in scene || 'rotY' in scene ? { rotX: scene.rotX ?? 0, rotY: scene.rotY ?? 0 } : {}),
+  return { camera: 'orthographicFront', lightRig: 'threePt', lightDirection: 't', ...scene,
+    ...(scene.bevelTop !== undefined ? { bevelTopWidth: scene.bevelTopWidth ?? scene.bevelTop } : {}),
+    ...(scene.bevelBottom !== undefined ? { bevelBottomWidth: scene.bevelBottomWidth ?? scene.bevelBottom } : {}),
+    ...(scene.bevelTopWidth !== undefined && scene.bevelTop === undefined ? { bevelTop: 4 } : {}),
+    ...(scene.bevelBottomWidth !== undefined && scene.bevelBottom === undefined ? { bevelBottom: 4 } : {}),
+    ...(angles.some(key => key in scene) ? { rotX: scene.rotX ?? 0, rotY: scene.rotY ?? 0, rotZ: scene.rotZ ?? 0 } : {}),
   };
 }
 
 export function sourceScene(scene: Shape3D | undefined): Shape3D {
-  return { ...scene, ...(scene?.extrusion !== undefined
-    ? { extrusion: scene.extrusion / (depth[scene.material ?? ''] ?? 1) } : {}) };
+  return { ...scene };
 }
 
 export function pictureProjection(element: ImageElement, effects: PictureFx): ImageElement {

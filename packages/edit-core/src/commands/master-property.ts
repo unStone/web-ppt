@@ -22,9 +22,4 @@ export function validateMasterBackgroundPatch(
   if (patch.op === 'set') assertVectorFill(patch.value, `Patch ${index} 的母版背景`);
 }
 
-export function applyMasterBackgroundPatch(doc: EditDoc, patch: MasterBackgroundPatch): void {
-  const record = doc.masters[patch.path[1]];
-  if (!record) throw new Error(`Patch 指向不存在的母版：${patch.path[1]}`);
-  if (patch.op === 'set') record.ovr.background = structuredClone(patch.value);
-  else delete record.ovr.background;
-}
+export { applyRecordOverridePatch as applyMasterBackgroundPatch } from './record-override';

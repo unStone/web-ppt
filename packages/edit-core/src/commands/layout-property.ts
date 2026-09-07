@@ -39,12 +39,4 @@ export function validateLayoutPropertyPatch(
   else assertStoredSlideTransition(patch.value, `Patch ${index} 的版式切换`);
 }
 
-export function applyLayoutPropertyPatch(doc: EditDoc, patch: LayoutPropertyPatch): void {
-  const record = doc.layouts[patch.path[1]];
-  if (!record) throw new Error(`Patch 指向不存在的版式：${patch.path[1]}`);
-  if (isLayoutBackgroundPatch(patch)) {
-    if (patch.op === 'set') record.ovr.background = structuredClone(patch.value);
-    else delete record.ovr.background;
-  } else if (patch.op === 'set') record.ovr.transition = structuredClone(patch.value);
-  else delete record.ovr.transition;
-}
+export { applyRecordOverridePatch as applyLayoutPropertyPatch } from './record-override';

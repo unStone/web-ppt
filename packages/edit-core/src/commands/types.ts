@@ -317,6 +317,7 @@ export interface SetBodyPropsCommand {
 export interface ExtensionCommand {
   readonly type: 'Extension';
   readonly namespace: string;
+  readonly scope?: 'element' | 'slide';
   readonly id: ElementId;
   readonly payload: unknown;
 }
@@ -639,12 +640,12 @@ export type TableCellPropsPatch = {
 
 export type ExtensionPatch = {
   readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'extensions', string, ...string[]];
+  readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
   readonly value: unknown;
   readonly origin: string;
 } | {
   readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'extensions', string, ...string[]];
+  readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
   readonly origin: string;
 };
 

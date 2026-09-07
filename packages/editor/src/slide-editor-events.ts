@@ -18,18 +18,15 @@ export function bindSlideEditorEditEvents(
   element: HTMLElement,
   handlers: SlideEditorEventHandlers,
 ): () => void {
-  const entries = Object.entries(handlers) as [keyof SlideEditorEventHandlers, EventListener][];
+  const entries = Object.entries(handlers) as [string, EventListener][];
+  entries.push(['lostpointercapture', handlers.pointercancel as EventListener]);
   for (const [type, handler] of entries) {
-    if (type !== 'click') element.addEventListener(type, handler);
+    element.addEventListener(type, handler, type === 'click');
   }
-  element.addEventListener('click', handlers.click, true);
-  element.addEventListener('lostpointercapture', handlers.pointercancel);
   return () => {
     for (const [type, handler] of entries) {
-      if (type !== 'click') element.removeEventListener(type, handler);
+      element.removeEventListener(type, handler, type === 'click');
     }
-    element.removeEventListener('click', handlers.click, true);
-    element.removeEventListener('lostpointercapture', handlers.pointercancel);
   };
 }
 

@@ -17,9 +17,4 @@ export function validateElementLinkPatch(doc: EditDoc, patch: ElementLinkPatch, 
   if (patch.op === 'set') assertLinkOverride(patch.value, `Patch ${index} 的 link`);
 }
 
-export function applyElementLinkPatch(doc: EditDoc, patch: ElementLinkPatch): void {
-  const record = doc.elements[patch.path[1]];
-  if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
-  if (patch.op === 'set') record.ovr.link = structuredClone(patch.value);
-  else delete record.ovr.link;
-}
+export { applyRecordOverridePatch as applyElementLinkPatch } from './record-override';

@@ -1,3 +1,4 @@
+import { applyRecordOverridePatch } from './record-override';
 import { readImageMetadata, type Fill } from '@web-ppt/core';
 import { base64ToBytes } from '../clipboard-binary';
 import { assertDataObject } from '../data-validation';
@@ -314,18 +315,10 @@ export function validateSlidePropertyPatch(
 export function applySlidePropertyPatch(doc: EditDoc, patch: SlidePropertyPatch): void {
   const record = doc.slides[patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的页面：${patch.path[1]}`);
-  if (isSlideBackgroundPatch(patch)) {
-    if (patch.op === 'set') record.ovr.background = structuredClone(patch.value);
-    else delete record.ovr.background;
-  } else if (isSlideBackgroundImagePatch(patch)) {
+  if (isSlideBackgroundImagePatch(patch)) {
     if (patch.op === 'set') record.backgroundImage = structuredClone(patch.value);
     else delete record.backgroundImage;
-  } else if (isSlideTransitionPatch(patch)) {
-    if (patch.op === 'set') record.ovr.transition = structuredClone(patch.value);
-    else delete record.ovr.transition;
-  } else if (isSlideAnimationsPatch(patch)) {
-    if (patch.op === 'set') record.ovr.animations = structuredClone(patch.value);
-    else delete record.ovr.animations;
-  } else if (patch.op === 'set') record.ovr.hidden = patch.value;
-  else delete record.ovr.hidden;
+    return;
+  }
+  applyRecordOverridePatch(doc, patch);
 }

@@ -4,6 +4,6 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     lib: { entry: 'src/index.ts', fileName: 'editor', formats: ['es'] },
-    rollupOptions: { external: ['@web-ppt/core', '@web-ppt/edit-core', '@web-ppt/viewer-core'] },
+    rollupOptions: { external: ['@web-ppt/edit-core/generate', '@web-ppt/core', '@web-ppt/edit-core', '@web-ppt/viewer-core'] },
   },
 });

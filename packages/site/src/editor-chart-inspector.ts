@@ -4,6 +4,11 @@ import type {
 } from '@web-ppt/editor/chart';
 import { message, type SiteMessage, type SiteNotice } from './i18n/message';
 import { setMessage, setText, setAttributeMessage, t } from './i18n/runtime';
+import { chartDesignControls } from './editor-chart-design';
+import { chartExDataControls } from './editor-chartex-data';
+import { smartArtControls } from './editor-smartart-data';
+import { oleControls } from './editor-ole-data';
+import { inkControls } from './editor-ink-data';
 
 interface ChartInspectorContext {
   readonly session: EditorSession | null;
@@ -66,6 +71,7 @@ export function createChartInspector(
 ): ChartInspector {
   const mount = section.querySelector<HTMLElement>('[data-chart-table]')!;
   const status = section.querySelector<HTMLElement>('[data-chart-status]')!;
+  const heading = section.querySelector<HTMLElement>('h2')!;
   let generation = 0;
   let disposed = false;
 
@@ -75,7 +81,7 @@ export function createChartInspector(
     if (!session || selection?.kind !== 'elements' || selection.ids.length !== 1) return null;
     const id = selection.ids[0];
     const record = session.editor.doc.elements[id];
-    return record?.src.kind === 'group' && record.meta.editable === 'frame' ? id : null;
+    return record?.meta.editable === 'frame' ? id : null;
   };
 
   const selectedChart = (module: ChartModule): string | null => {
@@ -191,10 +197,11 @@ export function createChartInspector(
     return group;
   };
 
-  const render = (module: ChartModule, chartId: string): void => {
+  const render = (module: ChartModule, design: typeof import('@web-ppt/edit-core/chart-design'), chartId: string): void => {
     const { session, writable } = context();
     if (!session) return;
     const data = module.queryChartData(session.editor.doc, chartId);
+    setText(heading, '图表数据');
     const editor = module.createChartDataEditor(session.editor);
     setMessage(status, data.binding.mode === 'workbook'
       ? message('保存时同步图表与内嵌工作簿')
@@ -202,7 +209,9 @@ export function createChartInspector(
         : data.binding.reason ? message('此图表数据只读：{detail}', { detail: data.binding.reason })
           : message('此图表数据只读'));
     const canEdit = writable && data.binding.mode !== 'readonly';
-    const content: HTMLElement[] = [];
+    const owner = generation;
+    const content: HTMLElement[] = [chartDesignControls(design, session, data, canEdit,
+      () => !disposed && owner === generation && context().session === session, notice)];
     if (data.kind !== 'xy') content.push(renderCategory(data, editor, canEdit));
     for (const series of data.series.filter((item) => item.plotKind === 'scatter'
       || item.plotKind === 'bubble')) content.push(renderXYSeries(data, series, editor, canEdit));
@@ -225,11 +234,54 @@ export function createChartInspector(
     section.hidden = true;
     if (!candidateId) { mount.replaceChildren(); setMessage(status, ''); return; }
     setText(status, '正在读取图表数据…');
-    void import('@web-ppt/editor/chart').then((module) => {
+    void Promise.all([import('@web-ppt/editor/chart'), import('@web-ppt/edit-core/chart-design')]).then(async ([module, design]) => {
       if (disposed || current !== generation) return;
       const chartId = selectedChart(module);
       section.hidden = !chartId;
-      if (chartId) render(module, chartId); else mount.replaceChildren();
+      if (chartId) { render(module, design, chartId); return; }
+      const modern = await import('@web-ppt/edit-core/chart-ex');
+      if (disposed || current !== generation) return;
+      const { session, writable } = context();
+      const candidate = session && modern.listEditableChartEx(session.editor.doc).find((item) => item.id === candidateId);
+      section.hidden = !candidate;
+      if (!session) { mount.replaceChildren(); return; }
+      if (!candidate) {
+        const smartart = await import('@web-ppt/edit-core/smartart');
+        if (disposed || current !== generation) return;
+        const object = smartart.listEditableSmartArt(session.editor.doc).find((item) => item.id === candidateId);
+        section.hidden = !object;
+        if (!object) {
+          const ole = await import('@web-ppt/edit-core/ole');
+          if (disposed || current !== generation) return;
+          const embedded = ole.listEditableOle(session.editor.doc).find((item) => item.id === candidateId);
+          section.hidden = !embedded;
+          if (!embedded) {
+            const ink = await import('@web-ppt/edit-core/ink');
+            if (disposed || current !== generation) return;
+            const drawing = ink.listEditableInk(session.editor.doc).find((item) => item.id === candidateId);
+            section.hidden = !drawing;
+            if (!drawing) { mount.replaceChildren(); return; }
+            setText(heading, '墨迹笔画'); setText(status, '拖动预览可增加笔画；原始采样通道随文件保存');
+            const selected = mount.querySelector<HTMLSelectElement>('[data-ink-editor] [name="stroke"]')?.value;
+            mount.replaceChildren(inkControls(ink, session, drawing.id, writable,
+              () => !disposed && current === generation && context().session === session, notice, selected));
+            return;
+          }
+          setText(heading, 'OLE 嵌入内容'); setText(status, '保存原生文件并更新预览；公式将在办公软件打开时重新计算');
+          mount.replaceChildren(oleControls(ole, session, embedded.id, writable,
+            () => !disposed && current === generation && context().session === session, notice));
+          return;
+        }
+        setText(heading, 'SmartArt 节点'); setText(status, '修改节点后按当前布局族重新排版，保留原生 SmartArt 数据');
+        const selected = mount.querySelector<HTMLSelectElement>('[data-smartart-editor] [name="node"]')?.value;
+        mount.replaceChildren(smartArtControls(smartart, session, object.id, writable,
+          () => !disposed && current === generation && context().session === session, notice, selected));
+        return;
+      }
+      setText(heading, '图表数据');
+      setText(status, '修改同步到原生图表数据；已有工作簿会同时更新');
+      mount.replaceChildren(chartExDataControls(modern, session, candidate.id, writable,
+        () => !disposed && current === generation && context().session === session, notice));
     }).catch((error: unknown) => {
       if (disposed || current !== generation) return;
       const failure = message('无法读取图表数据：{detail}', {

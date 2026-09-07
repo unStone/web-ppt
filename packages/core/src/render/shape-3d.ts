@@ -1,11 +1,13 @@
 import { round } from './serialize';
 import type { Shape3D, ShapeElement } from '../types';
 
-interface Shape3DContext {
+export interface Shape3DContext {
   readonly defs: string[];
   readonly nextId: (prefix: string) => string;
 }
-
+export type Shape3DRenderer = (el: ShapeElement, front: string, ctx: Shape3DContext, surface?: string) => string;
+export let shape3DRenderer: Shape3DRenderer | undefined;
+export function setShape3DRenderer(renderer: Shape3DRenderer | undefined): void { shape3DRenderer = renderer; }
 
 export function shapeColorChannels(source: string): [number, number, number] {
   const functional = source.match(/rgba?\(([^)]+)\)/);

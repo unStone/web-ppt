@@ -1,6 +1,7 @@
 import { Zip, ZipPassThrough } from 'fflate';
 import { staticHidden } from './anim-steps';
-import { slideToPngWithOptions, validateRasterSize } from './browser-export';
+import { slideToPng } from '@web-ppt/core';
+import { validateRasterSize } from './raster-size';
 import type { Presentation, Slide } from './types';
 
 const DEFAULT_CONCURRENCY = 2;
@@ -71,8 +72,7 @@ function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
 
 async function renderPage(pres: Presentation, job: PageJob, scale: number, showComments?: boolean): Promise<Uint8Array> {
   try {
-    const blob = await slideToPngWithOptions(pres, job.slide, {
-      scale,
+    const blob = await slideToPng(pres, job.slide, scale, {
       showComments,
       hiddenElements: [...staticHidden(job.slide)],
       strictResources: true,

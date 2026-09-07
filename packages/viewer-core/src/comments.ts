@@ -22,6 +22,8 @@ export function createCommentsPanel(container: HTMLElement, emptyLabel = 'No com
       empty.hidden = !!comments.length; list.hidden = !comments.length;
       comments.forEach((comment, index) => {
         const item = document.createElement('li'), author = document.createElement('strong'), text = document.createElement('p');
+        item.dataset.commentId = comment.id ?? `source:${index}`;
+        if (comment.parentId) { item.dataset.parentCommentId = comment.parentId; item.style.marginInlineStart = '20px'; }
         item.value = comment.idx ?? index + 1;
         item.style.marginBlock = '16px';
         author.textContent = comment.author;

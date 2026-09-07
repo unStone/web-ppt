@@ -1,4 +1,5 @@
 import { bindCommentsTools } from './comments-tools';
+import { prepareAdvancedRendering } from '@web-ppt/core/advanced-rendering';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
 import { parse, presentationToPrintableHtml, slideToPng, slideToSvgFile, slideText } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
@@ -82,7 +83,7 @@ function updateChrome(): void {
 async function openData(data: ArrayBuffer, name: string): Promise<void> {
   try {
     const t0 = performance.now();
-    const parsed = (await prepareModernCharts(data), await parse(data));
+    const parsed = (await Promise.all([prepareModernCharts(data), prepareAdvancedRendering(data)]), await parse(data));
     const ms = Math.round(performance.now() - t0);
     pres = parsed;
 

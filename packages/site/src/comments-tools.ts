@@ -3,7 +3,8 @@ import type { CommentsPanel } from '@web-ppt/viewer-core/comments';
 import { setText } from './i18n/runtime';
 import { download } from './download';
 
-interface CommentContext {
+export interface CommentContext {
+  editing?: { editor: import('@web-ppt/edit-core').Editor; slideId: string; writable: boolean };
   owner: object;
   slide: Slide;
   presentation(): Presentation;
@@ -12,10 +13,11 @@ interface CommentContext {
 
 export function bindCommentsTools(button: HTMLButtonElement, current: () => CommentContext | null) {
   let panel: CommentsPanel | undefined, host: HTMLElement | undefined;
+  let editing: { sync(): void; dispose(): void } | undefined;
   let owner: object | undefined, rendered: Slide['comments'];
   let include = false, generation = 0;
   const reset = () => {
-    generation++; panel?.dispose(); host?.remove(); panel = undefined; host = undefined;
+    generation++; editing?.dispose(); editing = undefined; panel?.dispose(); host?.remove(); panel = undefined; host = undefined;
     owner = undefined; rendered = undefined; include = false;
     button.setAttribute('aria-expanded', 'false');
   };
@@ -26,6 +28,7 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
     if (panel && context && rendered !== context.slide.comments) {
       panel.setSlide(context.slide); rendered = context.slide.comments;
     }
+    editing?.sync();
   };
   const open = async () => {
     if (host) { reset(); return; }
@@ -52,6 +55,11 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
       panel = createCommentsPanel(host.querySelector('[data-content]')!);
       setText(host.querySelector('[data-comments-empty]')!, '本页没有批注');
       panel.setSlide(current()!.slide); rendered = current()!.slide.comments;
+      if (context.editing) {
+        const { bindCommentEditing } = await import('./editor-comment-tools');
+        if (attempt !== generation || current()?.owner !== context.owner || !host) return;
+        editing = bindCommentEditing(host, current);
+      }
       const status = host.querySelector<HTMLElement>('[role=status]')!;
       let busy = false;
       for (const [format, label] of [['png', '导出 PNG'], ['svg', '导出 SVG'], ['zip', '导出图片 ZIP'], ['print', '打印及批注正文']] as const) {

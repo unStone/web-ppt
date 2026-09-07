@@ -1,3 +1,4 @@
+import { registeredEditExtensions } from '../extension-runtime';
 import { PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
 import type { TextBody, TextRun } from '@web-ppt/core';
 import { relativeTarget } from '../clipboard-source';
@@ -503,7 +504,7 @@ function materializeSlide(
   return { bytes: serializeXmlTreeBytes(tree), work, links };
 }
 
-export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Array> {
+export function materializeGeneratedParts(doc: EditDoc, observe?: (slideId: SlideId, work: EditDoc) => void): Record<string, Uint8Array> {
   const projections = doc.slideOrder.map((slideId) => toSlide(doc, slideId));
   const notesSlides = doc.slideOrder.map((slideId, index) =>
     !!doc.slides[slideId].notes || projections[index].notes !== undefined);
@@ -531,6 +532,7 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
     const relsPart = relationshipPartFor(slidePart);
     const materialized = materializeSlide(doc, slideId, index, parts[relsPart], compatibility);
     parts[slidePart] = materialized.bytes;
+    observe?.(slideId, materialized.work);
     const media = mediaPackageParts(materialized.work);
     for (const [part, relationships] of media.relationships) {
       const targetRelsPart = relationshipPartFor(part);
@@ -569,6 +571,7 @@ export function materializeGeneratedParts(doc: EditDoc): Record<string, Uint8Arr
     parts['ppt/presentation.xml'], doc,
   );
   compatibility.mergeInto(parts);
+  for (const extension of registeredEditExtensions().values()) extension.generateParts?.(doc, parts);
   materializeGeneratedComments(parts, projections);
   return parts;
 }

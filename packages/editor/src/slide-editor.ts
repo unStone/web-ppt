@@ -167,6 +167,7 @@ class DomSlideEditor implements SlideEditor {
     this.keyboard = new EditorKeyboardController(keyboardOptions, documentKeyboard);
     this.clipboard = new ElementClipboardController({
       editor: session.editor,
+      copyElements: ids => sessionState(session).copy(session.editor.doc, ids),
       slideId: () => this.currentSlide,
       editable: () => this.currentMode === 'edit',
       gestureActive: () => this.hasActiveGesture(),
@@ -343,7 +344,7 @@ class DomSlideEditor implements SlideEditor {
   }
   removeSection(id: SectionId): boolean { return this.commands.removeSection(id); }
   querySlideSize(): SlideSizeState { return this.commands.querySlideSize(); }
-  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     return this.commands.setSlideSize(value);
   }
 

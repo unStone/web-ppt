@@ -27,14 +27,7 @@ export function validateElementPresetGeometryPatch(
   if (patch.op === 'set') assertPresetGeometry(patch.value, `Patch ${index} 的 presetGeometry`);
 }
 
-export function applyElementPresetGeometryPatch(
-  doc: EditDoc,
-  patch: ElementPresetGeometryPatch,
-): void {
-  const record = doc.elements[patch.path[1]];
-  if (patch.op === 'set') record.ovr.presetGeometry = structuredClone(patch.value);
-  else delete record.ovr.presetGeometry;
-}
+export { applyRecordOverridePatch as applyElementPresetGeometryPatch } from './record-override';
 
 export function validateElementGeometryPatch(
   doc: EditDoc,
@@ -53,8 +46,4 @@ export function validateElementGeometryPatch(
   );
 }
 
-export function applyElementGeometryPatch(doc: EditDoc, patch: ElementGeometryPatch): void {
-  const record = doc.elements[patch.path[1]];
-  if (patch.op === 'set') record.ovr.geometry = structuredClone(patch.value);
-  else delete record.ovr.geometry;
-}
+export { applyRecordOverridePatch as applyElementGeometryPatch } from './record-override';

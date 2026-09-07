@@ -1,3 +1,4 @@
+import { chartSourceBytes } from './context';
 import { initialFractionalIndex } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId } from '../types';
 import { parseXmlTree } from '@web-ppt/edit-core/xml';
@@ -143,7 +144,7 @@ function workbookBinding(
   if (missingCache) {
     return { chartPart, workbookPart, mode: 'readonly', reason: '图表公式缺少缓存，不能把未知工作簿值当成空值覆盖' };
   }
-  const workbook = doc.saveState.baselines[workbookPart] ?? doc.package?.parts[workbookPart];
+  const workbook = chartSourceBytes(doc, workbookPart);
   const sync = workbookCanSync(workbook, { categories, series });
   return sync.ok
     ? { chartPart, workbookPart, mode: 'workbook' }
@@ -154,7 +155,7 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
   const record = doc.elements[chartId];
   const part = record && chartPartForElement(doc, chartId);
   // 保存会替换当前 OPC 包，但编辑覆盖的基线必须像普通 record.src 一样保持不变，撤销才能回到打开时状态。
-  const bytes = part && (doc.saveState.baselines[part] ?? doc.package?.parts[part]);
+  const bytes = part && (chartSourceBytes(doc, part));
   if (!record || !part || !bytes) throw new Error(`元素 ${chartId} 不是可读取的经典图表`);
   const root = parseXmlTree(bytes).root;
   const identities = readChartIdentityManifest(root);
@@ -392,8 +393,7 @@ function materializedState(
   ) || deferred;
   reconcileCategoryMatrix(merged);
   if (merged.binding.mode === 'workbook' && merged.binding.workbookPart) {
-    const workbook = doc.saveState.baselines[merged.binding.workbookPart]
-      ?? doc.package?.parts[merged.binding.workbookPart];
+    const workbook = chartSourceBytes(doc, merged.binding.workbookPart);
     const sync = workbookCanSync(workbook, merged);
     if (!sync.ok) merged.binding = { ...merged.binding, mode: 'readonly', reason: sync.reason };
   }

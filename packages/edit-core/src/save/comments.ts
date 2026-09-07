@@ -2,7 +2,7 @@ import { relativeTarget, resolveRelationshipTarget } from '../clipboard-source';
 import type { EditDoc, SlideRecord } from '../types';
 import { setXmlAttribute } from '../xml/mutate';
 import { createXmlElement, insertXmlChildUnchecked, removeXmlChild } from '../xml/nodes';
-import { findXmlAttribute, xmlElementChildren } from '../xml/query';
+import { findXmlAttribute, findXmlDescendant, xmlElementChildren } from '../xml/query';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import type { XmlElement } from '../xml/types';
 import { relationshipPartFor } from './clipboard-parts';
@@ -24,7 +24,7 @@ export function materializeDuplicateComments(
     return relations(bytes).filter((r) => attr(r, 'Type')?.endsWith('/comments') && attr(r, 'TargetMode') !== 'External')
       .map((relation) => ({ slide: target, id: attr(relation, 'Id')!, source: resolveRelationshipTarget(owner!, attr(relation, 'Target')!) }));
   });
-  const previous = [...created].filter((part) => /^ppt\/comments\/(?:_rels\/)?web-ppt-/.test(part));
+  const previous = [...created].filter((part) => /^ppt\/comments\/(?:_rels\/)?web-ppt-(?!edit-)/.test(part));
   if (!jobs.length && !previous.length) return;
   const presentation = 'ppt/presentation.xml';
   const authorRel = relations(source(relationshipPartFor(presentation))!).find((r) => attr(r, 'Type')?.endsWith('/commentAuthors'));
@@ -64,6 +64,7 @@ export function materializeDuplicateComments(
     if (!bytes) throw new Error(`复制批注缺少来源部件：${job.source}`);
     const tree = parseXmlTree(bytes);
     let previousIndex = 0;
+    const remapped = new Map<string, number>();
     for (const node of children(tree.root, 'cm').sort((a, b) => Number(attr(a, 'idx')) - Number(attr(b, 'idx')))) {
       const author = attr(node, 'authorId')!;
       if (!counters.has(author)) throw new Error(`复制批注缺少作者：${author}`);
@@ -72,7 +73,13 @@ export function materializeDuplicateComments(
       if (idx > 0xffff_ffff) throw new Error('批注索引超出 OOXML 可表示范围');
       used.get(author)!.add(idx);
       counters.set(author, Math.max(counters.get(author)!, idx)); previousIndex = idx;
+      remapped.set(`${author}:${attr(node, 'idx')}`, idx);
       setXmlAttribute(node, 'idx', String(idx));
+    }
+    for (const node of children(tree.root, 'cm')) {
+      const parent = findXmlDescendant(node, { localName: 'parentCm', namespaceUri: 'http://schemas.microsoft.com/office/powerpoint/2012/main' });
+      const idx = parent && remapped.get(`${attr(parent, 'authorId')}:${attr(parent, 'idx')}`);
+      if (parent && idx !== undefined) setXmlAttribute(parent, 'idx', String(idx));
     }
     const stem = `ppt/comments/web-ppt-${job.slide.slice(job.slide.lastIndexOf('/') + 1).replace(/\.xml$/, '')}`;
     let part = `${stem}.xml`, suffix = 1;

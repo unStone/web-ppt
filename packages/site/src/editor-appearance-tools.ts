@@ -1,5 +1,6 @@
 import { createAppearanceEditor, queryPictureFx, queryScene3D, SCENE_MATERIALS } from '@web-ppt/edit-core/appearance';
 import type { EditorSession } from '@web-ppt/editor';
+import { enableThreeD, cameraAngles } from '@web-ppt/core/three-d';
 import { colorInputValue } from './editor-color-input';
 import { setText } from './i18n/runtime';
 import { moveLanguageControl } from './i18n/controls';
@@ -13,6 +14,7 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
   if (!record || record.meta.editable !== 'full' || record.meta.locked) return;
   const picture = record.src.kind === 'image';
   if (!picture && record.src.kind !== 'shape') return;
+  if (!picture) enableThreeD();
   const api = createAppearanceEditor(session.editor);
   const dialog = document.createElement('dialog');
   dialog.id = 'appearanceDialog';
@@ -47,13 +49,26 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
     enabled.onchange = sync; sync();
   } else {
     const value = queryScene3D(session.editor.doc, id);
+    const angles = cameraAngles(value);
     for (const [key, label] of [['extrusion', '挤出深度'], ['bevelTop', '顶部斜角'], ['bevelBottom', '底部斜角'], ['contourWidth', '轮廓宽度']] as const) {
       input(key, label, 'number', value[key] ?? 0, 0, 10000);
     }
     input('extrusionColor', '挤出颜色', 'color', colorInputValue(value.extrusionColor ?? '#334155'));
     input('contourColor', '轮廓颜色', 'color', colorInputValue(value.contourColor ?? '#334155'));
-    input('rotX', 'X 轴视角', 'number', value.rotX ?? 20, -360, 360);
-    input('rotY', 'Y 轴视角', 'number', value.rotY ?? 35, -360, 360);
+    input('rotX', 'X 轴视角', 'number', angles[0], -360, 360);
+    input('rotY', 'Y 轴视角', 'number', angles[1], -360, 360);
+    input('rotZ', 'Z 轴视角', 'number', angles[2], -360, 360);
+    input('fieldOfView', '透视视野角', 'number', value.fieldOfView ?? 45, 1, 179);
+    input('zoom', '相机缩放（%）', 'number', (value.zoom ?? 1) * 100, 1, 10000);
+    const cameraRow = document.createElement('label'), cameraLabel = document.createElement('span'), camera = document.createElement('select');
+    setText(cameraLabel, '投影方式'); camera.name = 'camera';
+    for (const [key, label] of [['orthographicFront', '正交投影'], ['perspectiveFront', '透视投影']] as const) {
+      const option = new Option('', key); setText(option, label); camera.add(option);
+    }
+    if (value.camera && !['orthographicFront', 'perspectiveFront'].includes(value.camera)) {
+      const option = new Option('', value.camera); setText(option, '来源相机预设'); camera.add(option);
+    }
+    camera.value = value.camera ?? 'orthographicFront'; cameraRow.append(cameraLabel, camera); fields.append(cameraRow); inputs.set('camera', camera);
     const row = document.createElement('label'), label = document.createElement('span');
     setText(label, '材质');
     const select = document.createElement('select'); select.name = 'material';
@@ -64,7 +79,7 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
     });
     select.value = value.material ?? 'matte';
     row.append(label, select); fields.append(row); inputs.set('material', select);
-    const hint = document.createElement('p'); setText(hint, '浏览器预览使用等轴测近似；保存保留立体参数。'); fields.append(hint);
+    const hint = document.createElement('p'); setText(hint, '三维网格投影保留矢量文字；材质和斜角为浏览器近似。'); fields.append(hint);
   }
   const button = (label: Label, action?: () => void) => {
     const node = document.createElement('button'); node.className = 'button';
@@ -81,9 +96,11 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
         ...(checked('duotone') ? { duotone: [inputs.get('dark')!.value, inputs.get('light')!.value] as const } : {}),
       } });
       else api.exec({ type: 'SetScene3D', id, scene: mode === 'source' ? null : mode === 'clear' ? {} : {
+        ...queryScene3D(session.editor.doc, id),
         extrusion: number('extrusion'), bevelTop: number('bevelTop'), bevelBottom: number('bevelBottom'),
         contourWidth: number('contourWidth'), extrusionColor: inputs.get('extrusionColor')!.value,
         contourColor: inputs.get('contourColor')!.value, rotX: number('rotX'), rotY: number('rotY'), material: inputs.get('material')!.value,
+        rotZ: number('rotZ'), camera: inputs.get('camera')!.value, fieldOfView: number('fieldOfView'), zoom: number('zoom') / 100,
       } });
       dialog.close();
     } catch (error) { setText(dialog.querySelector('[role=alert]')!, '外观修改失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }); }

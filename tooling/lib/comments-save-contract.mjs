@@ -4,7 +4,10 @@ import { unzipSync, strFromU8, strToU8 } from 'fflate';
 import { makeZip } from './ooxml.mjs';
 import { JSDOM } from 'jsdom';
 
-const semantic = (slide) => (slide.comments ?? []).map(({ idx, ...comment }) => comment);
+// 复制/生成会重分配作者索引；比较父批注的位置，不能把格式身份当成正文语义。
+const semantic = (slide) => (slide.comments ?? []).map(({ idx, id, parentId, ...comment }) => ({
+  ...comment, ...(parentId ? { parent: slide.comments.findIndex((c) => c.id === parentId) } : {}),
+}));
 export async function runCommentsSaveContract({ core, edit, load, out, check }) {
   for (const generated of [false, true]) {
     const p = await core.parse(load('sample-editor-comments.pptx'), { edit: true, keepPackage: true, lazy: false });

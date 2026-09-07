@@ -245,42 +245,34 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   distributeElements(
     axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
   ): boolean {
-    this.assertReady();
     return this.common().distribute(this.currentSnapshot.mode === 'edit', axis, ids);
   }
 
   queryAltText(id?: ElementId): ElementAltTextState | null {
-    this.assertReady();
     return this.common().queryAltText(id);
   }
 
   setAltText(value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean {
-    this.assertReady();
     return this.common().setAltText(this.currentSnapshot.mode === 'edit', value, id);
   }
 
-  listSections(): SectionRecord[] { this.assertReady(); return this.common().listSections(); }
+  listSections(): SectionRecord[] { return this.common().listSections(); }
 
   addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
-    this.assertReady();
     return this.common().addSection(this.currentSnapshot.mode === 'edit', value);
   }
 
   renameSection(id: SectionId, name: string): boolean {
-    this.assertReady();
     return this.common().renameSection(this.currentSnapshot.mode === 'edit', id, name);
   }
   moveSection(id: SectionId, after: SectionId | null): boolean {
-    this.assertReady();
     return this.common().moveSection(this.currentSnapshot.mode === 'edit', id, after);
   }
   removeSection(id: SectionId): boolean {
-    this.assertReady();
     return this.common().removeSection(this.currentSnapshot.mode === 'edit', id);
   }
-  querySlideSize(): SlideSizeState { this.assertReady(); return this.common().querySlideSize(); }
-  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
-    this.assertReady();
+  querySlideSize(): SlideSizeState { return this.common().querySlideSize(); }
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     return this.common().setSlideSize(this.currentSnapshot.mode === 'edit', value);
   }
 
@@ -632,6 +624,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   }
 
   private common(): CommonObjectSlideCommands {
+    this.assertReady();
     return commonObjectSlideCommands(this.session!.editor);
   }
 }

@@ -52,11 +52,14 @@ export function customPath(
     if (seg === 0x4000) out.push(`M ${px(pts[pi++] ?? [0, 0])}`);
     else if (seg === 0x6001) out.push('Z');
     else if (seg === 0x8000) break;
-    else if (msoType === 0b010 || seg === 0xb300) {
-      const a = pts[pi++], b = pts[pi++], c = pts[pi++];
-      if (a && b && c) out.push(`C ${px(a)} ${px(b)} ${px(c)}`);
-    } else if (seg < 0x4000) {
-      const n = seg & 0xfff;
+    else if (msoType === 0b001 || seg === 0xb300) {
+      const count = seg === 0xb300 ? 1 : seg & 0x1fff;
+      for (let i = 0; i < count; i++) {
+        const a = pts[pi++], b = pts[pi++], c = pts[pi++];
+        if (a && b && c) out.push(`C ${px(a)} ${px(b)} ${px(c)}`);
+      }
+    } else if (msoType === 0) {
+      const n = seg & 0x1fff;
       for (let i = 0; i < Math.max(1, n) && pts[pi]; i++) out.push(`L ${px(pts[pi++])}`);
     }
   }

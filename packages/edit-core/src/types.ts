@@ -95,6 +95,7 @@ export interface SlideImageBackground extends ElementImageReplacement {
 
 export type SlideSource = Omit<Slide, 'elements' | 'editInfo'>;
 export type SlideOverrides = Omit<Partial<SlideSource>, 'animations'> & {
+  extensions?: Record<string, unknown>;
   /** 稳定元素身份只存在编辑模型；投影时才恢复易失的数值 spid。 */
   animations?: readonly EditAnimationStep[];
 };

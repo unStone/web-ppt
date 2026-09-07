@@ -138,7 +138,7 @@ export class SlideEditorCommands {
     return this.common.removeSection(!o.destroyed() && o.mode() === 'edit', id);
   }
   querySlideSize(): SlideSizeState { return this.common.querySlideSize(); }
-  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+  setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     const o = this.options;
     return this.common.setSlideSize(!o.destroyed() && o.mode() === 'edit', value);
   }

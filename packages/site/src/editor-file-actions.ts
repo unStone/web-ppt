@@ -14,6 +14,7 @@ export interface EditorFileActions {
   localTarget(session: EditorSession | null): string | undefined;
   saveLocal(session: EditorSession, name: string, chooseAgain?: boolean): Promise<void>;
   saveCopy(session: EditorSession, name: string): Promise<void>;
+  exportDocument(session: EditorSession, name: string, showComments?: boolean): Promise<void>;
   exportImages(session: EditorSession, name: string, showComments?: boolean): Promise<void>;
 }
 
@@ -146,6 +147,16 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
           options.notice(message('已生成可继续编辑的 PPTX 副本'), 'success');
           options.onSaved(session);
         } finally { prepared.release(); }
+      });
+    },
+    exportDocument(session, name, showComments = false) {
+      return run('导出失败：{detail}', async () => {
+        const presentation = session.toPresentation();
+        const { showDocumentExport } = await import('./editor-export-tools');
+        await showDocumentExport(presentation, name, showComments, async () => {
+          const { savePpt } = await import('@web-ppt/edit-core/ppt');
+          return savePpt(session.editor.doc);
+        });
       });
     },
     exportImages(session, name, showComments = false) {

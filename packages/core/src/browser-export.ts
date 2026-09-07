@@ -1,29 +1,13 @@
+import { validateRasterSize } from './raster-size';
 import { escapeXml } from './render/serialize';
 import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 import { renderSlideToSvg } from './render/svg';
 import type { Presentation, Slide } from './types';
 
-const MAX_CANVAS_EDGE = 32_767;
-
 function browserApi(): void {
   if (typeof document === 'undefined' || typeof Image === 'undefined' || typeof Blob === 'undefined') {
     throw new Error('图片导出只能在提供 DOM、Image 与 canvas 的浏览器环境中调用');
   }
-}
-
-export function validateRasterSize(
-  pres: Presentation,
-  scale: number,
-): { width: number; height: number } {
-  if (!Number.isFinite(scale) || scale <= 0) {
-    throw new RangeError('scale 必须是大于 0 的有限数');
-  }
-  const width = Math.round(pres.width * scale);
-  const height = Math.round(pres.height * scale);
-  if (width < 1 || height < 1 || width > MAX_CANVAS_EDGE || height > MAX_CANVAS_EDGE) {
-    throw new RangeError(`scale 产生了浏览器 canvas 不支持的尺寸：${width}×${height}`);
-  }
-  return { width, height };
 }
 
 function xmlUrl(value: string): string {
@@ -102,8 +86,7 @@ export interface CommentExportOptions {
   showComments?: boolean;
 }
 
-interface RasterOptions extends CommentExportOptions {
-  scale: number;
+export interface PngExportOptions extends CommentExportOptions {
   hiddenElements?: readonly number[];
   strictResources?: boolean;
 }
@@ -111,7 +94,7 @@ interface RasterOptions extends CommentExportOptions {
 async function rasterize(
   pres: Presentation,
   slide: Slide,
-  options: RasterOptions,
+  options: PngExportOptions & { scale: number },
   textMode: 'html' | 'svg',
 ): Promise<Blob> {
   browserApi();
@@ -145,7 +128,7 @@ async function rasterize(
 export async function slideToPngWithOptions(
   pres: Presentation,
   slide: Slide,
-  options: RasterOptions,
+  options: PngExportOptions & { scale: number },
 ): Promise<Blob> {
   try {
     return await rasterize(pres, slide, options, 'html');
@@ -156,8 +139,8 @@ export async function slideToPngWithOptions(
 }
 
 /** 单页导出为 PNG Blob；优先复用浏览器 HTML 排版，污染画布时退回原生 SVG 文本。 */
-export function slideToPng(pres: Presentation, slide: Slide, scale = 2, options: CommentExportOptions = {}): Promise<Blob> {
-  return slideToPngWithOptions(pres, slide, { scale, showComments: options.showComments });
+export function slideToPng(pres: Presentation, slide: Slide, scale = 2, options: PngExportOptions = {}): Promise<Blob> {
+  return slideToPngWithOptions(pres, slide, { ...options, scale });
 }
 
 /** 单页导出为不含 foreignObject、可交付给设计工具的自包含 SVG。 */

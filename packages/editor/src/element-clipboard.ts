@@ -1,5 +1,5 @@
 import {
-  copyElements, outermostSelectedElementIds, slideOfElement,
+  outermostSelectedElementIds, slideOfElement,
 } from '@web-ppt/edit-core';
 import type { Editor, ElementClipboardPayload, ElementId, SlideId } from '@web-ppt/edit-core';
 import { shouldYieldClipboardEvent, shouldYieldKeyboardEvent } from './keyboard-owner';
@@ -8,6 +8,7 @@ export const ELEMENT_CLIPBOARD_MIME = 'application/x-web-ppt-elements+json';
 
 interface ElementClipboardOptions {
   editor: Editor;
+  copyElements(ids: readonly ElementId[]): ElementClipboardPayload;
   slideId(): SlideId;
   editable(): boolean;
   gestureActive(): boolean;
@@ -49,25 +50,20 @@ export class ElementClipboardController {
   }
 
   duplicate(event: KeyboardEvent): boolean {
-    const modifier = event.ctrlKey !== event.metaKey && (event.ctrlKey || event.metaKey);
-    if (!modifier || event.altKey || event.shiftKey || event.repeat || event.key.toLowerCase() !== 'd'
+    if (event.ctrlKey === event.metaKey || event.altKey || event.shiftKey || event.repeat || event.key.toLowerCase() !== 'd'
       || !this.options.editable() || this.options.gestureActive() || shouldYieldKeyboardEvent(event)) {
       return false;
     }
     const selection = this.selectedRoots();
     if (!selection.length) return false;
     try {
-      this.pastePayload(copyElements(this.options.editor.doc, selection));
+      this.pastePayload(this.options.copyElements(selection));
       event.preventDefault();
       return true;
     } catch (error) {
       reportClipboardError(error);
       return false;
     }
-  }
-
-  private shouldYield(event: ClipboardEvent): boolean {
-    return this.shouldYieldBase(event) || !this.selectedRoots().length;
   }
 
   private shouldYieldBase(event: ClipboardEvent): boolean {
@@ -86,10 +82,11 @@ export class ElementClipboardController {
   }
 
   private write(event: ClipboardEvent, cut: boolean): void {
-    if (this.shouldYield(event) || !event.clipboardData) return;
+    if (this.shouldYieldBase(event) || !event.clipboardData) return;
     const roots = this.selectedRoots();
+    if (!roots.length) return;
     try {
-      const json = JSON.stringify(copyElements(this.options.editor.doc, roots));
+      const json = JSON.stringify(this.options.copyElements(roots));
       event.clipboardData.setData(ELEMENT_CLIPBOARD_MIME, json);
       event.clipboardData.setData('text/plain', json);
       event.preventDefault();

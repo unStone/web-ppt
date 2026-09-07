@@ -5,11 +5,13 @@ import { attr, boolAttr, kid, kids, numAttr } from '../xml';
 import { child, children, CX, integer, number, readDimension } from './data';
 import type { Dimension } from './data';
 import { workbookResolver } from './workbook';
-export type Kind = 'treemap' | 'sunburst' | 'histogram' | 'pareto' | 'boxWhisker' | 'waterfall' | 'funnel';
+export type Kind = 'treemap' | 'sunburst' | 'histogram' | 'pareto' | 'boxWhisker' | 'waterfall' | 'funnel' | 'regionMap';
 export interface Series {
   index: number;
   name: string;
   values: (number | null)[];
+  entities?: (string | null)[];
+  colorCategories?: (string | null)[];
   categories: (string | null)[][];
   fill: Fill;
   points: Map<number, Fill>;
@@ -61,7 +63,7 @@ export function readModel(root: Element, env: ChartEnv): ChartExModel {
     throw new Error('ChartEx Pareto 归属不明');
   }
   const kind = layout[0] === 'clusteredColumn' ? pareto.length ? 'pareto' : 'histogram' : layout[0];
-  if (!['treemap', 'sunburst', 'histogram', 'pareto', 'boxWhisker', 'waterfall', 'funnel'].includes(kind ?? '')) {
+  if (!['treemap', 'sunburst', 'histogram', 'pareto', 'boxWhisker', 'waterfall', 'funnel', 'regionMap'].includes(kind ?? '')) {
     throw new Error('ChartEx 布局不支持');
   }
   if (primary.length !== 1 && kind !== 'boxWhisker')
@@ -85,11 +87,14 @@ export function readModel(root: Element, env: ChartEnv): ChartExModel {
         throw new Error('ChartEx 维度歧义');
       return matches[0];
     };
-    const values = dimension(kind === 'treemap' || kind === 'sunburst' ? 'size' : 'val')!;
+    const values = kind === 'regionMap' ? dimension('colorVal', false) ?? dimension('val', false) ?? dimension('colorStr')! : dimension(kind === 'treemap' || kind === 'sunburst' ? 'size' : 'val')!;
+    const entities = kind === 'regionMap' ? dimension('entityId', false) : undefined;
     const cat = dimension('cat', false);
-    if (!values.numeric || values.levels.length !== 1 || cat?.numeric)
+    if (!values.numeric && !(kind === 'regionMap' && values.type === 'colorStr') || values.levels.length !== 1 || cat?.numeric)
       throw new Error('ChartEx 数据类型不匹配');
-    const nums = values.levels[0] as (number | null)[];
+    const colorCategories = !values.numeric ? values.levels[0] as (string | null)[] : undefined;
+    const palette = [...new Set(colorCategories?.filter((v) => v !== null))];
+    const nums = colorCategories ? colorCategories.map((v) => v === null ? null : palette.indexOf(v)) : values.levels[0] as (number | null)[];
     if (cat?.levels.some((level) => level.length !== nums.length))
       throw new Error('ChartEx 类别与数值错位');
     const props = child(node, 'layoutPr'), bins = child(props, 'binning'), stats = child(props, 'statistics');
@@ -120,6 +125,7 @@ export function readModel(root: Element, env: ChartEnv): ChartExModel {
     if ([...totals].some((i) => i >= nums.length))
       throw new Error('ChartEx 小计索引越界');
     return { index, name: text(child(node, 'tx')), values: nums,
+      ...(entities ? { entities: entities.levels[0] as (string | null)[] } : {}), ...(colorCategories ? { colorCategories } : {}),
       categories: cat?.levels as (string | null)[][] ?? [], fill, points, totals,
       parentLabels: parentLabels as Series['parentLabels'], quartile: quartile as Series['quartile'],
       outliers: boolAttr(visibility, 'outliers', true), innerPoints: boolAttr(visibility, 'nonoutliers'),

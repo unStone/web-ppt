@@ -40,9 +40,11 @@ export interface RemoveSectionCommand {
 
 export interface SetSlideSizeCommand {
   readonly type: 'SetSlideSize';
-  /** null 恢复对应来源尺寸；数值只改变画布，不重排元素。 */
+  /** null 恢复对应来源尺寸。 */
   readonly w: number | null;
   readonly h: number | null;
+  /** 默认仅改画布；ensureFit 需先注册 @web-ppt/edit-core/resize 按需模块。 */
+  readonly fit?: 'none' | 'ensureFit';
 }
 
 export type ElementAltTextPatch = {

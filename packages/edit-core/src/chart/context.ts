@@ -1,7 +1,10 @@
+import { sourcePartBytes } from '@web-ppt/edit-core';
 import type { ChartEnv } from '@web-ppt/core';
 import type { EditDoc, ElementId } from '../types';
 import { findXmlAttribute, parseXmlTree, xmlElementChildren } from '@web-ppt/edit-core/xml';
 import { isPresentationNamespace, PACKAGE_REL_NS } from './xml-namespaces';
+
+export const chartSourceBytes = sourcePartBytes;
 
 export type ChartRelationships = Record<string, { type: string; target: string }>;
 
@@ -27,7 +30,7 @@ function resolvePart(base: string, target: string): string {
 }
 
 export function chartRelationships(doc: EditDoc, part: string): ChartRelationships {
-  const bytes = doc.package?.parts[relationshipPart(part)];
+  const bytes = chartSourceBytes(doc, relationshipPart(part));
   if (!bytes) return {};
   const result: ChartRelationships = Object.create(null);
   for (const node of xmlElementChildren(parseXmlTree(bytes).root, {
@@ -73,7 +76,7 @@ export function chartRenderContext(doc: EditDoc, id: ElementId, part: string): C
     Object.assign(fonts[family], theme?.ovr.fonts?.[family]);
   }
   const clrMap = { ...DEFAULT_COLOR_MAP };
-  const masterBytes = master && doc.package?.parts[master.id];
+  const masterBytes = master && chartSourceBytes(doc, master.id);
   const masterRoot = masterBytes ? parseXmlTree(masterBytes).root : null;
   const map = masterRoot && isPresentationNamespace(masterRoot.namespaceUri)
     ? xmlElementChildren(masterRoot).find((item) =>

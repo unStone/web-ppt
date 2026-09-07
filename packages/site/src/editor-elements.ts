@@ -35,6 +35,7 @@ export const editorButtons = {
   zoomOut: $<HTMLButtonElement>('#zoomOut'),
   fit: $<HTMLButtonElement>('#fitZoom'),
   zoomIn: $<HTMLButtonElement>('#zoomIn'),
+  exportDocument: $<HTMLButtonElement>('#exportDocument'),
   exportImages: $<HTMLButtonElement>('#exportImages'),
   save: $<HTMLButtonElement>('#saveFile'),
   localSave: $<HTMLButtonElement>('#saveToFile'),

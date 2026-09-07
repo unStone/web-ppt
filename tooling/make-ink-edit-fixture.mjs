@@ -1,0 +1,16 @@
+import { readFileSync,writeFileSync } from 'node:fs';
+import { unzipSync } from 'fflate';
+import { makeZip } from './lib/ooxml.mjs';
+const parts=unzipSync(readFileSync(new URL('../fixtures/sample-ole.pptx',import.meta.url)));
+const media=unzipSync(readFileSync(new URL('../fixtures/sample-media.pptx',import.meta.url)));
+const enc=new TextEncoder(),dec=new TextDecoder();
+let slide=dec.decode(media['ppt/slides/slide2.xml']);
+let index=0;slide=slide.replace(/<mc:AlternateContent[\s\S]*?<\/mc:AlternateContent>/g,xml=>++index===1?xml:'');
+parts['ppt/slides/slide1.xml']=enc.encode(slide);
+parts['ppt/slides/_rels/slide1.xml.rels']=enc.encode(dec.decode(media['ppt/slides/_rels/slide2.xml.rels']).replace(/<Relationship[^>]*Id="rIdMissing"[^>]*\/>/g,''));
+for(const [part,bytes]of Object.entries(media))if(part==='ppt/media/ink-fallback.png')parts[part]=bytes;
+parts['ppt/ink/ink1.xml']=enc.encode(`<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML"><inkml:definitions><inkml:context xml:id="ctx"><inkml:inkSource xml:id="device"><inkml:traceFormat><inkml:channel name="X" type="decimal"/><inkml:channel name="Y" type="decimal"/><inkml:channel name="F" type="decimal"/></inkml:traceFormat></inkml:inkSource><inkml:timestamp xml:id="time" time="0"/></inkml:context><inkml:brush xml:id="brush"><inkml:brushProperty name="width" value="4"/><inkml:brushProperty name="height" value="4"/><inkml:brushProperty name="color" value="#2244aa"/></inkml:brush></inkml:definitions><inkml:traceGroup contextRef="#ctx" brushRef="#brush"><inkml:annotation type="text">保留识别信息</inkml:annotation><inkml:trace xml:id="stroke1">100 100 0.2,'20'10'0.1,"0"0"0</inkml:trace><inkml:trace xml:id="stroke2">300 300 0.6, 320 300 0.7,340 280 0.8</inkml:trace></inkml:traceGroup><inkml:annotationXML><keep xmlns="urn:test">未知墨迹扩展</keep></inkml:annotationXML></inkml:ink>`);
+parts['[Content_Types].xml']=enc.encode(dec.decode(parts['[Content_Types].xml']).replace('</Types>','<Override PartName="/ppt/ink/ink1.xml" ContentType="application/inkml+xml"/></Types>'));
+parts['ppt/presentation.xml']=enc.encode(dec.decode(parts['ppt/presentation.xml']).replace(/<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,m=>'<p:sldIdLst>'+m.match(/<p:sldId\s[^>]*\/>/)[0]+'</p:sldIdLst>'));
+writeFileSync(new URL('../fixtures/sample-ink-edit.pptx',import.meta.url),makeZip(Object.entries(parts)));
+console.log('InkML 编辑固件：紧凑差分、压力通道、继承上下文、多笔画及未知扩展');

@@ -1,3 +1,4 @@
+import { chartSourceBytes } from './context';
 import type { EditDoc } from '../types';
 import type { EditExtensionSavePlan } from '../extension-runtime';
 import { materializeChartTree } from './materialize';
@@ -10,7 +11,7 @@ import { chartPartForElement } from './locator';
 const NS = 'chart-data';
 
 function baseline(doc: EditDoc, part: string): Uint8Array | null {
-  return doc.saveState.baselines[part] ?? doc.package?.parts[part] ?? null;
+  return chartSourceBytes(doc, part) ?? null;
 }
 
 function storedState(doc: EditDoc, id: string): ChartDatasetState | null {
@@ -19,7 +20,7 @@ function storedState(doc: EditDoc, id: string): ChartDatasetState | null {
 
 /** 图表和工作簿先形成一个 OPC 原子提交，普通保存随后只处理其余 part。 */
 export function saveChartDatasets(doc: EditDoc): EditExtensionSavePlan | void {
-  if (!doc.package || doc.package.disposed || doc.meta.source !== 'pptx') return;
+  if (doc.meta.source !== 'pptx') return;
   const changes: Record<string, Uint8Array> = Object.create(null);
   const baselines: Record<string, Uint8Array> = Object.create(null);
   for (const record of Object.values(doc.elements)) {

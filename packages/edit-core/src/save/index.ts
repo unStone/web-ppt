@@ -1,3 +1,4 @@
+import { assertSaveExtensions } from './extension-availability';
 import { materializeDuplicateComments } from './comments';
 import { commitSavedPackage } from '../document';
 import { hasDynamicSlideNumber } from '../dynamic-slide-fields';
@@ -135,13 +136,7 @@ function masterPropertiesByPart(doc: EditDoc) {
 
 async function extensionSavePlan(doc: EditDoc): Promise<EditExtensionSavePlan> {
   const extensions = registeredEditExtensions();
-  const unloaded = new Set<string>();
-  for (const record of Object.values(doc.elements)) {
-    for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
-      if (!extensions.has(namespace)) unloaded.add(namespace);
-    }
-  }
-  if (unloaded.size) throw new Error(`保存前必须加载编辑扩展：${[...unloaded].join('、')}`);
+  assertSaveExtensions(doc);
   const changes: Record<string, Uint8Array | null> = Object.create(null);
   const baselines: Record<string, Uint8Array> = Object.create(null);
   for (const extension of extensions.values()) {
@@ -511,6 +506,7 @@ export function saveEditDoc(
   }
 
   materializeDuplicateComments(doc, activeCreatedSlides, nextBaselines, nextCreatedParts, changes);
+  for (const runtime of registeredEditExtensions().values()) runtime.materializePackage?.(doc, nextBaselines, nextCreatedParts, changes);
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);
   commitSavedPackage(doc, result.package, nextBaselines, [...nextCreatedParts].sort());
   return result;

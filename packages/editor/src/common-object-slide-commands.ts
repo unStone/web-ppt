@@ -56,7 +56,7 @@ export class CommonObjectSlideCommands {
 
   querySlideSize(): SlideSizeState { return querySlideSize(this.editor.doc); }
 
-  setSlideSize(enabled: boolean, value: Pick<SetSlideSizeCommand, 'w' | 'h'>): boolean {
+  setSlideSize(enabled: boolean, value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     return this.exec(enabled, { type: 'SetSlideSize', ...value });
   }
 

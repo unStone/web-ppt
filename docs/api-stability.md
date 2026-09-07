@@ -9,7 +9,7 @@ Windows 验收与发布仍是后续交付条件，不通过修改版本号代替
 | core | `.pptx` / `.ppt` 按魔数识别，统一 Schema；Worker 无 DOM；唯一运行时依赖 fflate |
 | 渲染 | 屏幕/PNG 的 HTML 文本与独立 SVG/打印的原生文本维持两条路径 |
 | 编辑 | `Editor`、事务、选择、历史、恢复、投影与两种保存是主入口；按需命令通过扩展入口进入 |
-| 按需能力 | chart、media、appearance、templates、accessibility、edit-context 不扩大默认编辑器依赖图 |
+| 按需能力 | 图表/对象内部编辑、页面适配、批注、PDF/WebM/PPT 等通过独立子路径提供，见[扩展入口](expanded-capabilities.md) |
 | 协同 | 对外传递恢复/协同协议数据，保留协议版本及稳定身份；不自行改内部对象树 |
 | 资源生命周期 | 编辑器借用来源包；会话结束后释放，保存不隐式结束会话 |
 | 发布门禁 | 类型契约、确定性固件、语料指纹、浏览器旅程、保存 XML、八包构建与跨产物核对 |
@@ -22,9 +22,9 @@ Windows 验收与发布仍是后续交付条件，不通过修改版本号代替
 | 宿主需要现代图表 | 打开前调用 `prepareModernCharts`，或显式 `setChartExParser(parseChartEx)` |
 | 宿主需要图片/立体效果 | 使用 appearance 入口；恢复/协同接收端提前注册同一扩展 |
 | 自定义图片滤镜 | `duotone` 现在是独立颜色字段，不能从旧 `grayscale/contrast` 近似反推；未受支持的滤镜生成保存仍拒绝 |
-| 读取立体深度再编辑 | 使用 `queryScene3D` 获取写回值；Schema 中的可见深度含既有材质近似 |
+| 读取立体深度再编辑 | 使用 `queryScene3D` 获取写回值；Schema 深度现在等于文件实际挤出高度；lat/lon/rev 对应 XYZ，相机投影通过 three-d 入口启用 |
 | 浏览器输入与读屏 | 挂载后启用相应入口，释放时先调用增强对象的 `dispose()` |
-| 二进制 `.ppt` | 仍另存为 `.pptx`；无 OOXML 来源的对象复制需先保存并重开 |
+| 二进制 `.ppt` | 可另存 `.pptx`，或通过 `edit-core/ppt` 生成原生 PPT；无 OOXML 来源复制使用 `copyPortableElements`，编辑会话自动接入 |
 
 公开类型使用示例和负例位于 `tooling/type-contracts/`，源码类型检查与产物 exports 构建共同约束公开接口。
 不兼容变更必须有迁移说明和明确版本决策；不承诺私有源码路径、内部 XML 操作器或生成产物文件名的稳定性。

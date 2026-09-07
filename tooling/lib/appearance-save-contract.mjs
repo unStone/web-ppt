@@ -50,7 +50,7 @@ export async function runAppearanceSaveContract({ load, check, eq, root, out }) 
     editor.undo();
     check('立体撤销恢复来源', !editor.effectiveElement(shape).scene3d);
     editor.redo();
-    eq('立体重做恢复材质投影', editor.effectiveElement(shape).scene3d.extrusion, 23);
+    eq('立体重做恢复实际几何深度，材质不改尺寸', editor.effectiveElement(shape).scene3d.extrusion, 20);
     const remote = await open();
     for (const frame of frames) if (frame.patches.length) remote.editor.applyExternalPatches(frame.patches);
     check('外观协同补丁重建相同投影', JSON.stringify(appearance.queryPictureFx(remote.doc, image)) === JSON.stringify(pictureBefore)

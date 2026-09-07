@@ -16,9 +16,4 @@ export function validateElementEffectsPatch(doc: EditDoc, patch: ElementEffectsP
   if (patch.op === 'set') assertEffects(patch.value, `Patch ${index} 的 effects`);
 }
 
-export function applyElementEffectsPatch(doc: EditDoc, patch: ElementEffectsPatch): void {
-  const record = doc.elements[patch.path[1]];
-  if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
-  if (patch.op === 'set') record.ovr.effects = structuredClone(patch.value);
-  else delete record.ovr.effects;
-}
+export { applyRecordOverridePatch as applyElementEffectsPatch } from './record-override';

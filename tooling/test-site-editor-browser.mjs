@@ -1,4 +1,14 @@
+import { runSitePptSaveBrowserContract } from './lib/site-ppt-save-browser-contract.mjs';
+import { runSitePortableClipboardBrowserContract } from './lib/site-portable-clipboard-browser-contract.mjs';
+import { runSiteVideoBrowserContract } from './lib/site-video-browser-contract.mjs';
+import { runSitePdfBrowserContract } from './lib/site-pdf-browser-contract.mjs';
+import { runSiteThreeDBrowserContract } from './lib/site-three-d-browser-contract.mjs';
+import { runSiteMetafileBrowserContract } from './lib/site-metafile-browser-contract.mjs';
 import { runStandaloneCommentsBrowserContract } from './lib/standalone-comments-browser-contract.mjs';
+import { runSiteCommentEditBrowserContract } from './lib/site-comment-edit-browser-contract.mjs';
+import { runSiteResizeBrowserContract } from './lib/site-resize-browser-contract.mjs';
+import { runSiteChartDesignBrowserContract } from './lib/site-chart-design-browser-contract.mjs';
+import { runSiteObjectEditBrowserContract } from './lib/site-object-edit-browser-contract.mjs';
 import { runSiteCommentsBrowserContract } from './lib/site-comments-browser-contract.mjs';
 import { runSiteAppearanceBrowserContract } from './lib/site-appearance-browser-contract.mjs';
 import { runSiteEditContextFailureContract } from './lib/site-edit-context-browser-contract.mjs';
@@ -21,6 +31,16 @@ import { runSiteLanguagePreferencesContract } from './lib/site-editor-language-c
 import { runSiteI18nProductionContract } from './lib/site-i18n-production-contract.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const commentEditOnly = process.argv.includes('--comments-edit-only');
+const resizeOnly = process.argv.includes('--resize-only');
+const chartDesignOnly = process.argv.includes('--chart-design-only');
+const pptSaveOnly = process.argv.includes('--ppt-save-only');
+const portableCopyOnly = process.argv.includes('--portable-copy-only');
+const videoOnly = process.argv.includes('--video-only');
+const pdfOnly = process.argv.includes('--pdf-only');
+const threeDOnly = process.argv.includes('--three-d-only');
+const metafileOnly = process.argv.includes('--metafiles-only');
+const objectEditOnly = process.argv.includes('--object-edit-only');
 const productionLanguages = process.argv.includes('--i18n-dist');
 const productionDirectory = join(root, 'packages/site/dist');
 const out = join(root, 'out/site-editor-browser');
@@ -31,9 +51,24 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/edit-core/ppt', join(root, 'packages/edit-core/src/ppt/index.ts')],
+  ['@web-ppt/viewer-core/video', join(root, 'packages/viewer-core/src/video.ts')],
   ['@web-ppt/viewer-core/comments', join(root, 'packages/viewer-core/src/comments.ts')],
+  ['@web-ppt/core/three-d', join(root, 'packages/core/src/three-d.ts')],
+  ['@web-ppt/core/emf-plus', join(root, 'packages/core/src/emf-plus.ts')],
+  ['@web-ppt/core/advanced-rendering', join(root, 'packages/core/src/advanced-rendering.ts')],
   ['@web-ppt/core/modern-charts', join(root, 'packages/core/src/modern-charts.ts')],
+  ['@web-ppt/core/ink-edit', join(root, 'packages/core/src/ink-edit.ts')],
   ['@web-ppt/core/chart-ex', join(root, 'packages/core/src/chart-ex.ts')],
+  ['@web-ppt/core/diagram-edit', join(root, 'packages/core/src/diagram-edit.ts')],
+  ['@web-ppt/edit-core/comments', join(root, 'packages/edit-core/src/comments/index.ts')],
+  ['@web-ppt/edit-core/chart-design', join(root, 'packages/edit-core/src/chart-design/index.ts')],
+  ['@web-ppt/edit-core/chart-ex', join(root, 'packages/edit-core/src/chart-ex/index.ts')],
+  ['@web-ppt/edit-core/ink', join(root, 'packages/edit-core/src/ink/index.ts')],
+  ['@web-ppt/edit-core/ole', join(root, 'packages/edit-core/src/ole/index.ts')],
+  ['@web-ppt/edit-core/cfb', join(root, 'packages/edit-core/src/cfb/index.ts')],
+  ['@web-ppt/edit-core/smartart', join(root, 'packages/edit-core/src/smartart/index.ts')],
+  ['@web-ppt/edit-core/resize', join(root, 'packages/edit-core/src/resize/index.ts')],
   ['@web-ppt/edit-core/appearance', join(root, 'packages/edit-core/src/appearance/index.ts')],
   ['@web-ppt/editor/accessibility', join(root, 'packages/editor/src/canvas-accessibility.ts')],
   ['@web-ppt/editor/edit-context', join(root, 'packages/editor/src/edit-context/index.ts')],
@@ -42,6 +77,7 @@ const aliases = [
   ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
   ['@web-ppt/core/chart-edit', join(root, 'packages/core/src/chart-edit.ts')],
+  ['@web-ppt/core/pdf', join(root, 'packages/core/src/pdf.ts')],
   ['@web-ppt/core/image-zip', join(root, 'packages/core/src/image-zip.ts')],
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
@@ -113,7 +149,8 @@ const lazyMediaUrls = mediaOutputs.map((key) => `/${relative(bundleDir, resolve(
 const dynamicTargets = new Set([...closure([entry], true)].filter((key) => !initial.has(key)));
 const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure([key], false)));
 const templateTargets = [...dynamicTargets].filter((key) => hasBuiltinTemplates(closure([key], false)));
-const chartTargets = [...dynamicTargets].filter((key) => hasChartData(closure([key], false)));
+// 多个按需入口可以引用同一实现；直接检查承载源码的输出，避免把共享引用误判为重复打包。
+const chartTargets = [...dynamicTargets].filter((key) => hasChartData([key]));
 const decoderTargets = [...dynamicTargets].filter((key) => hasFontDecoder(closure([key], false)));
 const adjustmentTargets = [...dynamicTargets].filter((key) => hasAdjustments(closure([key], false)));
 if (hasImageZip(initial) || imageZipTargets.length !== 1) {
@@ -165,6 +202,8 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-comment-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-comment-edit.pptx'))]],
+  ['/fixtures/sample-editor-resize.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-resize.pptx'))]],
   ['/fixtures/sample-editor-comments.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-comments.pptx'))]],
   ['/fixtures/sample-editor-audio-icon.png', ['image/png', readFileSync(join(root, 'fixtures/sample-editor-audio-icon.png'))]],
   ['/fixtures/sample-editor-appearance.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-appearance.pptx'))]],
@@ -228,6 +267,15 @@ const chartexNative = join(out, 'chartex-native.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/chart-ex.ts'), output: chartexNative });
 routes.set('/chartex-native.mjs', ['text/javascript', readFileSync(chartexNative)]);
 routes.set('/fixtures/sample-chartex-native.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-native.pptx'))]);
+routes.set('/fixtures/sample-chartex-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-edit.pptx'))]);
+routes.set('/fixtures/sample-video-export.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-video-export.pptx'))]);
+routes.set('/fixtures/sample-ppt-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ppt-edit.pptx'))]);
+routes.set('/fixtures/sample-three-d.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-three-d.pptx'))]);
+routes.set('/fixtures/sample-emf-plus.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-emf-plus.pptx'))]);
+routes.set('/fixtures/sample-region-map.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-region-map.pptx'))]);
+routes.set('/fixtures/sample-ink-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ink-edit.pptx'))]);
+routes.set('/fixtures/sample-ole-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ole-edit.pptx'))]);
+routes.set('/fixtures/sample-smartart-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-smartart-edit.pptx'))]);
 routes.set('/fixtures/sample-chartex-fallback.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-fallback.pptx'))]);
 const chartexSources = [{ name: 'fixture', path: '/fixtures/sample-chartex-fallback.pptx' }];
 const realChartex = join(root, 'corpus/chartex/libreoffice-funnel-pp1.pptx');
@@ -387,6 +435,9 @@ async function runContract(webSocketDebuggerUrl) {
       status: document.querySelector('#statusText')?.textContent,
       loading: document.querySelector('#editorApp')?.dataset.loading,
       file: document.querySelector('#fileName')?.textContent,
+      page: document.querySelector('#pageIndicator')?.textContent,
+      slides: [...document.querySelectorAll('#slideList [data-slide-id]')].map((n) => ({id:n.dataset.slideId, selected:n.getAttribute('aria-current')})),
+      names: [...document.querySelectorAll('[data-pane-name]')].map(n=>n.textContent),
       chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
       language: document.documentElement.lang,
       viewer: { pager: document.querySelector('#pager')?.textContent, meta: document.querySelector('#meta')?.textContent,
@@ -441,6 +492,50 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    if (pptSaveOnly) {
+      await runSitePptSaveBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (portableCopyOnly) {
+      await runSitePortableClipboardBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (videoOnly) {
+      await runSiteVideoBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (pdfOnly) {
+      await runSitePdfBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (threeDOnly) {
+      await runSiteThreeDBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (metafileOnly) {
+      await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
+      return;
+    }
+    if (objectEditOnly) {
+      await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (chartDesignOnly) {
+      await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (commentEditOnly) {
+      await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (resizeOnly) {
+      await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
     if (productionLanguages) {
       const onEvent = (listener) => {
         const receive = (data) => listener(JSON.parse(data.toString()));
@@ -460,13 +555,33 @@ async function runContract(webSocketDebuggerUrl) {
       if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
       await waitFor(featureReady, '生产外观文稿就绪');
       await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
       await runSiteAppearanceBrowserContract({ evaluate, request, waitFor, click, out });
+      await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteThreeDBrowserContract({ evaluate, request, waitFor, click });
+      await runSitePptSaveBrowserContract({ evaluate, request, waitFor, click });
+      await runSitePdfBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteVideoBrowserContract({ evaluate, request, waitFor, click });
+      await runSitePortableClipboardBrowserContract({ evaluate, request, waitFor, click });
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }
     await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
     await runNativeChartExBrowserContract({ evaluate, request, out });
     await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteThreeDBrowserContract({ evaluate, request, waitFor, click });
+    await runSitePptSaveBrowserContract({ evaluate, request, waitFor, click });
+    await runSitePdfBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteVideoBrowserContract({ evaluate, request, waitFor, click });
+    await runSitePortableClipboardBrowserContract({ evaluate, request, waitFor, click });
     await evaluate(`(() => {
       const original = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function () {
@@ -595,6 +710,9 @@ async function runContract(webSocketDebuggerUrl) {
       exportDisabled: document.querySelector('#exportImages')?.disabled,
       saveDisabled: document.querySelector('#saveFile')?.disabled,
       file: document.querySelector('#fileName')?.textContent,
+      page: document.querySelector('#pageIndicator')?.textContent,
+      slides: [...document.querySelectorAll('#slideList [data-slide-id]')].map((n) => ({id:n.dataset.slideId, selected:n.getAttribute('aria-current')})),
+      names: [...document.querySelectorAll('[data-pane-name]')].map(n=>n.textContent),
       chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
     }))()`);
     if (!exportBusy.newDisabled || !exportBusy.inputDisabled || !exportBusy.exportDisabled
@@ -821,7 +939,7 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(productionLanguages ? process.env.SITE_I18N_ONLY
+  console.log(pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
     ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
     : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);

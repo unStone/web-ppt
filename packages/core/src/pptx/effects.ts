@@ -65,15 +65,7 @@ export function parseLineEnd(el: Element | null): LineEnd | undefined {
   };
 }
 
-const MATERIAL_DEPTH: Record<string, number> = {
-  metal: 1.15, translucentPowder: 0.9,
-  powder: 0.95, dkEdge: 1.1, softEdge: 0.9, clear: 0.8, flat: 0.85, softmetal: 1.1,
-};
-
-/**
- * scene3d / sp3d → 立体参数。
- * 渲染层按等轴测风格近似：挤出方向由场景旋转角决定，不做真实三维投影。
- */
+/** scene3d / sp3d 保留实际相机、尺寸和光照；材质不会改变几何深度。 */
 export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefined {
   if (!spPr) return undefined;
   const sp3d = kid(spPr, 'sp3d');
@@ -101,15 +93,26 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
   if (material) out.material = material;
 
   // camera 的 rot 决定观察角，进而决定挤出偏移方向
-  const rot = kid(kid(scene3d, 'camera'), 'rot');
+  const camera = kid(scene3d, 'camera');
+  const preset = attr(camera, 'prst');
+  if (preset) out.camera = preset;
+  const fov = numAttr(camera, 'fov'), zoom = numAttr(camera, 'zoom');
+  if (fov !== null) out.fieldOfView = fov / 60000;
+  if (zoom !== null) out.zoom = zoom / 100000;
+  const z = numAttr(sp3d, 'z');
+  if (z !== null) out.z = emu(z);
+  const rig = kid(scene3d, 'lightRig'), light = attr(rig, 'rig'), direction = attr(rig, 'dir');
+  if (light) out.lightRig = light;
+  if (direction) out.lightDirection = direction;
+  if (bevelT) out.bevelTopWidth = emu(numAttr(bevelT, 'w') ?? 76200);
+  if (bevelB) out.bevelBottomWidth = emu(numAttr(bevelB, 'w') ?? 76200);
+  const rot = kid(camera, 'rot');
   if (rot) {
-    out.rotX = (numAttr(rot, 'rev') ?? 0) / 60000;
-    out.rotY = (numAttr(rot, 'lat') ?? 0) / 60000;
+    out.rotX = (numAttr(rot, 'lat') ?? 0) / 60000;
+    out.rotY = (numAttr(rot, 'lon') ?? 0) / 60000;
+    out.rotZ = (numAttr(rot, 'rev') ?? 0) / 60000;
   }
 
-  // 没写挤出高度但有斜角时给一个可见的默认厚度
-  if (extrusionH === null && (out.bevelTop || out.bevelBottom)) out.extrusion = 6;
-  if (out.extrusion && material) out.extrusion *= MATERIAL_DEPTH[material] ?? 1;
 
   return Object.keys(out).length ? out : undefined;
 }
