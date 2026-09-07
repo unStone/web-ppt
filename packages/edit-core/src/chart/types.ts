@@ -9,6 +9,7 @@ export type ChartPlotKind =
 export interface ChartFormulaBinding {
   readonly formula: string | null;
   readonly cache: 'number' | 'string' | 'literal' | 'missing';
+  readonly hierarchy?: { readonly levels: number; readonly orientation: 'rows' | 'columns' };
 }
 
 export interface ChartDataBinding {
@@ -22,6 +23,8 @@ export interface ChartCategory {
   readonly id: ChartPointId;
   readonly order: FractionalIndex;
   readonly label: string;
+  /** 从根到叶的原生槽位；父级 null 延续组，叶级 null 是缺失标签，空字符串是显式空值。 */
+  readonly levels?: readonly (string | null)[];
   readonly removed?: true;
 }
 
@@ -71,7 +74,12 @@ export interface EditableChart {
 export interface ChartDatasetState {
   kind: ChartDataset['kind'];
   binding: ChartDataBinding;
-  categories: Record<ChartPointId, ChartCategory>;
+  categories: Record<ChartPointId, ChartCategory & {
+    /** 新增类别创建时的前驱；墓碑保留分组，但不能让后来新增的类别复活已删除的组。 */
+    levelParent?: ChartPointId | null;
+    /** 清空组首时接受的前驱；后续删除前驱也不能改变已经选择的分组。 */
+    levelClears?: Readonly<Record<string, ChartPointId | null>>;
+  }>;
   series: Record<ChartSeriesId, Omit<ChartSeries, 'points'> & {
     points: Record<ChartPointId, ChartPoint>;
     /** 仅表示 wppt 持久模板；其公式必须先按未受信来源通过工作簿占用检查。 */

@@ -1,4 +1,7 @@
 export const chartMessages = {
+  '第 {level} 级': 'Level {level}', '第 {level} 级类别': 'Category level {level}', '第 {level} 级空槽': 'Empty slot at level {level}',
+  '延续前组': 'Continue previous group', '无标签': 'No label', '空槽': 'Empty slot',
+  '父级空槽延续前组；叶级空槽表示无标签。取消空槽并留空可填写空字符串。': 'Empty parent slots continue the previous group; empty leaf slots have no label. Uncheck an empty slot and leave its text blank for an empty string.',
   '增加类别': 'Add category', '增加系列': 'Add series', '增加{kind}系列': 'Add {kind} series',
   '删除系列': 'Remove series', '增加数据点': 'Add point',
   '柱形': 'bar', '折线': 'line', '饼图': 'pie', '环形': 'doughnut', '面积': 'area',

@@ -114,6 +114,8 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 .canvas-mount [data-web-ppt-editor] { background: white; }
 .canvas-mount [data-web-ppt-editor]:focus-visible { outline: 3px solid rgba(37,99,235,.45); outline-offset: 3px; }
 .chart-table-wrap { overflow-x: auto; margin-top: 8px; }
+.chart-level-empty { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.chart-level-empty input[type="checkbox"] { width: auto; min-width: 0; }
 .chart-inspector table { border-collapse: collapse; min-width: 100%; margin: 8px 0; }
 .chart-inspector th, .chart-inspector td { border: 1px solid var(--line); padding: 3px; min-width: 74px; }
 .chart-inspector input { width: 100%; min-width: 64px; box-sizing: border-box; }

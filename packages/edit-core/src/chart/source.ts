@@ -1,3 +1,4 @@
+import { reconcileCategoryMatrix } from './category-matrix';
 import { chartSourceBytes } from './context';
 import { initialFractionalIndex } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId } from '../types';
@@ -14,6 +15,7 @@ import {
   validateMaterializedRecords,
 } from './validation';
 import { workbookCanSync } from './workbook';
+import { readCategoryLevels } from './category-levels';
 import { readChartIdentityManifest } from './identity';
 import { chartRelationships } from './context';
 import { chartPartForElement } from './locator';
@@ -101,7 +103,7 @@ function workbookBinding(
   root: XmlElement,
   categories: ChartDatasetState['categories'],
   series: ChartDatasetState['series'],
-  unsupportedMultiLevel: boolean,
+  unsupportedMultiLevel: string | undefined,
   inconsistentCategories: boolean,
   unsupportedScale: boolean,
 ): ChartDataBinding {
@@ -109,7 +111,7 @@ function workbookBinding(
     return { chartPart, workbookPart: null, mode: 'readonly', reason: '图表来源数据超过安全上限' };
   }
   if (unsupportedMultiLevel) {
-    return { chartPart, workbookPart: null, mode: 'readonly', reason: '多级类别缓存暂不支持无损写回' };
+    return { chartPart, workbookPart: null, mode: 'readonly', reason: unsupportedMultiLevel };
   }
   if (inconsistentCategories) {
     return { chartPart, workbookPart: null, mode: 'readonly', reason: '不同系列的类别来源不一致，无法统一编辑' };
@@ -145,7 +147,7 @@ function workbookBinding(
     return { chartPart, workbookPart, mode: 'readonly', reason: '图表公式缺少缓存，不能把未知工作簿值当成空值覆盖' };
   }
   const workbook = chartSourceBytes(doc, workbookPart);
-  const sync = workbookCanSync(workbook, { categories, series });
+  const sync = workbookCanSync(workbook, { categories, series }, true);
   return sync.ok
     ? { chartPart, workbookPart, mode: 'workbook' }
     : { chartPart, workbookPart, mode: 'readonly', reason: sync.reason };
@@ -164,10 +166,11 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
   const categories: ChartDatasetState['categories'] = Object.create(null);
   const series: ChartDatasetState['series'] = Object.create(null);
   let categorySource: Map<number, string | number | null> | null = null;
+  let categoryLevels: Array<Array<string | null>> | undefined;
   let categoryCount = 0;
   let hasCategory = false;
   let hasXY = false;
-  let unsupportedMultiLevel = false;
+  let unsupportedMultiLevel: string | undefined;
   let inconsistentCategories = false;
   let categorySignature: string | undefined;
   let unsupportedScale = false;
@@ -228,17 +231,25 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
       const sizeHolder = plotKind === 'bubble' ? child(source, 'bubbleSize') : null;
       const sizes = cache(sizeHolder, true);
       const catHolder = xy ? null : child(source, 'cat');
-      unsupportedMultiLevel ||= !!child(catHolder, 'multiLvlStrRef')
-        || !!child(child(source, 'tx'), 'multiLvlStrRef');
-      const seriesCategories = catHolder ? cache(catHolder, false) : new Map<number, string>();
+      let multi: ReturnType<typeof readCategoryLevels>;
+      try { multi = readCategoryLevels(catHolder, formula(yHolder)); } catch (error) {
+        unsupportedMultiLevel = error instanceof Error ? error.message : '多级类别来源无效';
+      }
+      if (child(child(source, 'tx'), 'multiLvlStrRef')) unsupportedMultiLevel = '系列名称使用不支持的多级引用';
+      if (multi && (dataPointCount(yHolder) > multi.count || [...y.keys()].some(index => index >= multi.count))) {
+        unsupportedMultiLevel = '多级类别与系列数据点数不一致';
+      }
+      const seriesCategories = multi ? new Map(multi.slots.map((path, index) => [index, path[path.length - 1]]))
+        : catHolder ? cache(catHolder, false) : new Map<number, string>();
+      if (!categoryLevels && multi) categoryLevels = multi.slots;
       if (!categorySource && catHolder) categorySource = seriesCategories;
       const holderCounts = [
-        dataPointCount(catHolder), dataPointCount(yHolder), dataPointCount(xHolder),
+        multi?.count ?? dataPointCount(catHolder), dataPointCount(yHolder), dataPointCount(xHolder),
         dataPointCount(sizeHolder),
       ];
       if (!xy) {
         const signature = JSON.stringify([
-          formula(catHolder), cacheKind(catHolder), holderCounts[0], [...seriesCategories],
+          formula(catHolder), cacheKind(catHolder), holderCounts[0], [...seriesCategories], multi,
         ]);
         if (categorySignature === undefined) categorySignature = signature;
         else inconsistentCategories ||= categorySignature !== signature;
@@ -281,7 +292,7 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
         bindings: {
           name: binding(child(source, 'tx')),
           ...(xy ? { x: binding(xHolder), y: binding(yHolder) }
-            : { categories: binding(catHolder), values: binding(yHolder) }),
+            : { categories: { ...binding(catHolder), ...(multi ? { hierarchy: multi.hierarchy } : {}) }, values: binding(yHolder) }),
           ...(plotKind === 'bubble' ? { size: binding(sizeHolder) } : {}),
         },
         ...(descriptor.removed ? { removed: true as const, sourceTemplate: true as const } : {}),
@@ -290,7 +301,8 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
   for (let index = 0; index < categoryCount; index++) {
     const value = categorySource?.get(index) ?? null;
     const id = identities?.categories[index] ?? `${chartId}:p${index}` as ChartPointId;
-    categories[id] = { id, order: initialFractionalIndex(index), label: String(value ?? '') };
+    categories[id] = { id, order: initialFractionalIndex(index), label: String(value ?? ''),
+      ...(categoryLevels ? { levels: categoryLevels[index] } : {}) };
   }
   return {
     kind: hasCategory && hasXY ? 'mixed' : hasXY ? 'xy' : 'category',
@@ -307,6 +319,10 @@ function overlayState(target: Record<string, unknown>, sparse: Record<string, un
   for (const [key, value] of Object.entries(sparse)) {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       const current = target[key];
+      if (key === 'levels') {
+        target[key] = Object.assign(Array.isArray(current) ? [...current] : [], value);
+        continue;
+      }
       if (!current || typeof current !== 'object' || Array.isArray(current)) {
         target[key] = Object.create(null) as Record<string, unknown>;
       }
@@ -337,35 +353,6 @@ function sanitizeDatasetRoot(merged: ChartDatasetState, source: ChartDatasetStat
   return deferred;
 }
 
-function reconcileCategoryMatrix(state: ChartDatasetState): void {
-  const categories = Object.values(state.categories);
-  const active = categories.filter((item) => !item.removed);
-  const activeSeries = Object.values(state.series).filter((series) => !series.removed);
-  const categorySeries = activeSeries.filter((series) =>
-    series.plotKind !== 'scatter' && series.plotKind !== 'bubble');
-  const xyCells = activeSeries.filter((series) =>
-    series.plotKind === 'scatter' || series.plotKind === 'bubble')
-    .reduce((sum, series) => sum + Object.values(series.points).filter((point) => !point.removed).length, 0);
-  if (active.length * categorySeries.length + xyCells > MAX_CHART_CELLS) {
-    state.binding = { ...state.binding, mode: 'readonly', reason: '图表数据矩阵超过安全上限' };
-    return;
-  }
-  for (const series of Object.values(state.series)) {
-    if (series.removed) continue;
-    if (series.plotKind === 'scatter' || series.plotKind === 'bubble') continue;
-    for (const point of Object.values(series.points)) {
-      const category = state.categories[point.id];
-      if (!category || category.removed) (point as { removed?: true }).removed = true;
-      else delete (point as { removed?: true }).removed;
-    }
-    for (const category of active) {
-      if (series.points[category.id]) continue;
-      series.points[category.id] = {
-        id: category.id, order: category.order, value: null,
-      };
-    }
-  }
-}
 
 function materializedState(
   doc: EditDoc, id: ElementId,
@@ -452,7 +439,7 @@ export function chartStateHasEffectiveChanges(doc: EditDoc, id: ElementId): bool
 export function readChartDataset(doc: EditDoc, id: ElementId): ChartDataset {
   const state = stateOf(doc, id);
   const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed))
-    .map((item) => ({ ...item }));
+    .map(({ levelParent: _parent, levelClears: _clears, ...item }) => item);
   const series = orderedChartRecords(Object.values(state.series).filter((item) => !item.removed))
     .map((item): ChartSeries => ({
       ...item, bindings: structuredClone(item.bindings),

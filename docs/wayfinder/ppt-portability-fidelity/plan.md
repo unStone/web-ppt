@@ -1,6 +1,6 @@
 # 下一阶段执行计划
 
-2026-09-07，基线 `45a04a7`。本页整理下一阶段范围，高级文本生成与复制已完成，其余按依赖推进。
+2026-09-08 更新，基线 `45a04a7`。本页整理下一阶段范围，高级文本生成与复制、多级类别编辑已完成，其余按依赖推进。
 状态以[任务地图](map.md)及子票为准，当前支持范围仍以[能力矩阵](../../expanded-capabilities.md)为准。
 
 ## 目标与顺序
@@ -11,8 +11,8 @@ P0/P1/P2/P3 表示执行优先级，不代表发布版本或工期；无依赖�
 | 优先级 | 工作 | 用户可见结果 | 启动条件 |
 |---|---|---|---|
 | P0 | [高级文本生成保存与复制](tickets/001-portable-rich-text.md) | 公式、艺术字及高级文字效果在支持范围内可直接跨文稿复制、保存重开 | 已完成，证据见票据 |
-| P0 | [经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md) | 分组类别可编辑，空槽与重复标签不会被压平 | 当前可开始 |
-| P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 多级类别模型完成 |
+| P0 | [经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md) | 分组类别可编辑，空槽与重复标签不会被压平 | 已完成，证据见票据 |
+| P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 当前可开始 |
 | P1 | [字体与字形能力原型](tickets/004-font-glyph-provider.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 原型验证字体字节、字形位置及映射可取得 |
 | P2 | [视频音轨](tickets/006-video-audio-track.md) → [内嵌视频合成](tickets/007-video-media-composition.md) | 导出保留音频，再支持视频内容按固定时间轴播放 | 音视频格式及浏览器编码能力可验证 |
 | P3 | [SmartArt / OLE 首批范围](tickets/008-native-object-scope.md) | 选定布局/格式获得更完整的内部编辑 | 先取得样本并确定写回与预览方案 |
@@ -57,7 +57,8 @@ flowchart LR
 
 ## 执行状态
 
-[高级文本生成保存与复制](tickets/001-portable-rich-text.md)已完成。下一项为
-[经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md)，先建立多级类别只读分支的复现和绑定模型。
+[高级文本生成保存与复制](tickets/001-portable-rich-text.md)与
+[经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md)已完成。下一项为
+[共享工作簿同步](tickets/003-shared-chart-workbook.md)，先建立工作簿、区域、图表部件和框架之间的依赖关系。
 
 后续按子票依赖推进；本阶段不包含版本发布。

@@ -1,3 +1,4 @@
+import { runSiteChartHierarchyBrowserContract } from './lib/site-chart-hierarchy-browser-contract.mjs';
 import { runSitePptSaveBrowserContract } from './lib/site-ppt-save-browser-contract.mjs';
 import { runSitePortableClipboardBrowserContract } from './lib/site-portable-clipboard-browser-contract.mjs';
 import { runSiteVideoBrowserContract } from './lib/site-video-browser-contract.mjs';
@@ -33,6 +34,7 @@ import { runSiteI18nProductionContract } from './lib/site-i18n-production-contra
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const commentEditOnly = process.argv.includes('--comments-edit-only');
 const resizeOnly = process.argv.includes('--resize-only');
+const chartHierarchyOnly = process.argv.includes('--chart-hierarchy-only');
 const chartDesignOnly = process.argv.includes('--chart-design-only');
 const pptSaveOnly = process.argv.includes('--ppt-save-only');
 const portableCopyOnly = process.argv.includes('--portable-copy-only');
@@ -202,6 +204,7 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ['/fixtures/sample-chart-hierarchy.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-hierarchy.pptx'))]],
   ['/fixtures/sample-portable-rich-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-portable-rich-text.pptx'))]],
   ['/fixtures/sample-comment-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-comment-edit.pptx'))]],
   ['/fixtures/sample-editor-resize.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-resize.pptx'))]],
@@ -522,6 +525,11 @@ async function runContract(webSocketDebuggerUrl) {
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
       return { bytes: 0 };
     }
+    if (chartHierarchyOnly) {
+      await runSiteChartHierarchyBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
     if (chartDesignOnly) {
       await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
@@ -559,6 +567,7 @@ async function runContract(webSocketDebuggerUrl) {
       await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
       await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
       await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteChartHierarchyBrowserContract({ evaluate, request, waitFor, click });
       await runSiteAppearanceBrowserContract({ evaluate, request, waitFor, click, out });
       await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
       await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
@@ -576,6 +585,7 @@ async function runContract(webSocketDebuggerUrl) {
     await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
     await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
     await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteChartHierarchyBrowserContract({ evaluate, request, waitFor, click });
     await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
     await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
     await runSiteThreeDBrowserContract({ evaluate, request, waitFor, click });
@@ -940,7 +950,7 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
+  console.log(chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
     ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
     : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);

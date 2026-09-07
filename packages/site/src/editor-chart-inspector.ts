@@ -9,6 +9,7 @@ import { chartExDataControls } from './editor-chartex-data';
 import { smartArtControls } from './editor-smartart-data';
 import { oleControls } from './editor-ole-data';
 import { inkControls } from './editor-ink-data';
+import { categoryLevelCell } from './editor-chart-category-levels';
 
 interface ChartInspectorContext {
   readonly session: EditorSession | null;
@@ -107,7 +108,12 @@ export function createChartInspector(
     const table = document.createElement('table');
     table.dataset.chartGrid = 'category';
     const head = table.createTHead().insertRow();
-    head.append(document.createElement('th'));
+    const depth = data.series.find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+    for (let level = 0; level < (depth ?? 1); level++) {
+      const cell = document.createElement('th');
+      if (depth) setMessage(cell, message('第 {level} 级', { level: level + 1 }));
+      head.append(cell);
+    }
     for (const series of data.series.filter((item) => item.plotKind !== 'scatter' && item.plotKind !== 'bubble')) {
       const cell = document.createElement('th');
       cell.append(input(series.name, message('系列名称：{name}', { name: series.name }), (value) => act(() => editor.setSeriesName(
@@ -121,10 +127,19 @@ export function createChartInspector(
     const body = table.createTBody();
     data.categories.forEach((category, rowIndex) => {
       const row = body.insertRow();
-      const label = row.insertCell();
-      label.append(input(category.label, message('类别名称：{name}', { name: category.label }), (value) => act(() => editor.setCategoryLabel(
-        data.chartId, category.id, value,
-      )), !writable));
+      row.dataset.chartCategory = String(rowIndex);
+      let label: HTMLTableCellElement;
+      if (depth) {
+        for (let level = 0; level < depth; level++) categoryLevelCell(row, level, depth,
+          category.levels?.[level] ?? null, writable,
+          value => act(() => editor.setCategoryLevel(data.chartId, category.id, level, value)));
+        label = row.cells[depth - 1];
+      } else {
+        label = row.insertCell();
+        label.append(input(category.label, message('类别名称：{name}', { name: category.label }), (value) => act(() => editor.setCategoryLabel(
+          data.chartId, category.id, value,
+        )), !writable));
+      }
       label.append(button('×', () => act(() => editor.removeCategory(data.chartId, category.id)), !writable,
         message('删除类别：{name}', { name: category.label })));
       for (const item of series) {
@@ -138,6 +153,11 @@ export function createChartInspector(
         )), !writable, 'number'));
       }
     });
+    if (depth) {
+      const hint = document.createElement('small');
+      setMessage(hint, message('父级空槽延续前组；叶级空槽表示无标签。取消空槽并留空可填写空字符串。'));
+      wrapper.append(hint);
+    }
     wrapper.append(table);
     const actions = document.createElement('div');
     actions.className = 'inspector-actions';

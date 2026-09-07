@@ -14,6 +14,7 @@ import {
 } from './xml-data';
 import { addressParts, rangeCells, worksheetRangeBounds } from './workbook-range';
 import { canonicalNumericCategories } from './category-value';
+import { categoryWorkbookWrites } from './category-workbook';
 
 type CellValue = { readonly kind: 'string' | 'number'; readonly value: string | number | null };
 
@@ -47,7 +48,7 @@ function writeRange(
 }
 
 function workbookWrites(
-  source: ChartDatasetState, planned: ChartDatasetState,
+  source: ChartDatasetState, planned: ChartDatasetState, parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
 ): Map<string, Map<string, CellValue>> {
   const writes = new Map<string, Map<string, CellValue>>();
   for (const series of orderedChartRecords(Object.values(source.series))) {
@@ -62,7 +63,12 @@ function workbookWrites(
     && series.bindings.categories?.formula)?.bindings.categories;
   const categoryNumbers = canonicalNumericCategories(categories.map((item) => item.label));
   const numericCategories = categoryBinding?.cache === 'number' && categoryNumbers !== null;
-  writeRange(writes, categoryBinding?.formula ?? null,
+  const hierarchy = categoryWorkbookWrites(source, planned, parts, map);
+  if (hierarchy) {
+    const cells = writes.get(hierarchy.sheet) ?? new Map();
+    for (const [address, value] of hierarchy.cells) cells.set(address, value);
+    writes.set(hierarchy.sheet, cells);
+  } else writeRange(writes, categoryBinding?.formula ?? null,
     numericCategories ? categoryNumbers : categories.map((item) => item.label),
     numericCategories ? 'number' : 'string');
   for (const series of orderedChartRecords(Object.values(planned.series).filter((item) => !item.removed))) {
@@ -198,7 +204,7 @@ export function writeChartWorkbook(
 ): Uint8Array {
   const shared = new SharedStrings(map.sharedStrings ? parts[map.sharedStrings] : undefined);
   const changes: Record<string, Uint8Array> = Object.create(null);
-  for (const [sheetName, cells] of workbookWrites(source, planned)) {
+  for (const [sheetName, cells] of workbookWrites(source, planned, parts, map)) {
     const part = map.sheets.get(sheetName);
     if (!part || !parts[part]) throw new Error(`工作簿缺少公式工作表：${sheetName}`);
     const tree = parseXmlTree(parts[part]);

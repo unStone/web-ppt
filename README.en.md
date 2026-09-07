@@ -415,7 +415,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
-| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 696 process-isolated SVG fingerprint pairs across 102 fixtures |
+| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 702 process-isolated SVG fingerprint pairs across 103 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
@@ -432,6 +432,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run test:expanded` | 1789 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
 | `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/portable-rich-text.md) |
+| `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/chart-hierarchical-categories.md) |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |

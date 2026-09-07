@@ -14,6 +14,8 @@ import {
 } from './xml-namespaces';
 import { addressParts, rangeCells, worksheetRangeCells } from './workbook-range';
 import { worksheetXml, xmlAttribute as attr } from './xml-data';
+import { resizedCategoryFormula } from './category-levels';
+import { assertCategoryWorkbookSource } from './category-workbook';
 
 const MAX_WORKBOOK_BYTES = 16 * 1024 * 1024;
 const MAX_WORKBOOK_PARTS = 512;
@@ -116,7 +118,7 @@ function bindingFormula(binding: ChartFormulaBinding | undefined): string | null
 
 function stateFormulaBindings(
   state: Pick<ChartDatasetState, 'series'>, includeTemplates = true,
-): Array<{ field: keyof ChartSeries['bindings']; formula: string }> {
+): Array<{ field: keyof ChartSeries['bindings']; formula: string; hierarchy?: ChartFormulaBinding['hierarchy'] }> {
   return orderedChartRecords(Object.values(state.series))
     .filter((series) => includeTemplates || !series.sourceTemplate)
     .flatMap((series) =>
@@ -124,7 +126,7 @@ function stateFormulaBindings(
       keyof ChartSeries['bindings'], ChartFormulaBinding | undefined,
     ]>).flatMap(([field, binding]) => {
       const formula = bindingFormula(binding);
-      return formula ? [{ field, formula }] : [];
+      return formula ? [{ field, formula, hierarchy: binding?.hierarchy }] : [];
     }));
 }
 
@@ -159,7 +161,7 @@ function assertFormulaOwnership(state: Pick<ChartDatasetState, 'series'>): void 
 }
 
 export function workbookCanSync(
-  workbook: Uint8Array | undefined, state: DatasetValues,
+  workbook: Uint8Array | undefined, state: DatasetValues, verifyCache = false,
 ): { ok: true } | { ok: false; reason: string } {
   if (!workbook) return { ok: false, reason: '图表关系指向的内嵌工作簿不存在' };
   let map: WorkbookMap;
@@ -177,14 +179,19 @@ export function workbookCanSync(
     }
     const columns = range.endColumn - range.startColumn + 1;
     const rows = range.endRow - range.startRow + 1;
-    if (item.field === 'name' ? columns * rows !== 1 : columns > 1 && rows > 1) {
+    const hierarchy = item.field === 'categories' ? item.hierarchy : undefined;
+    if (hierarchy ? (hierarchy.orientation === 'rows' ? columns : rows) !== hierarchy.levels
+      : item.field === 'name' ? columns * rows !== 1 : columns > 1 && rows > 1) {
       return { ok: false, reason: `图表公式不是可安全改写的一维范围：${item.formula}` };
     }
   }
   try { assertFormulaOwnership(state); } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : '图表公式存在重叠写入' };
   }
-  try { plannedState(state, parts, map); } catch (error) {
+  try {
+    if (verifyCache) assertCategoryWorkbookSource(state, parts, map);
+    plannedState(state, parts, map);
+  } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : '工作簿写入区域无法安全规划' };
   }
   return { ok: true };
@@ -201,7 +208,7 @@ function nextRow(state: Pick<ChartDatasetState, 'series'>, sheet: string): numbe
 }
 
 function bindingWithFormula(source: ChartFormulaBinding | undefined, formula: string): ChartFormulaBinding {
-  return { formula, cache: source?.cache ?? 'number' };
+  return { ...source, formula, cache: source?.cache ?? 'number' };
 }
 
 interface WorkbookOccupancy {
@@ -374,7 +381,7 @@ function plannedState<T extends DatasetValues>(
     ?? (categoryRange.startRow > 1 ? categoryRange.startRow - 1 : categoryRange.endRow + 1);
   const nameColumn = existingNameRange?.startColumn
     ?? (categoryRange.startColumn > 1 ? categoryRange.startColumn - 1 : categoryRange.endColumn + 1);
-  const horizontalCategories = categoryRange.startRow === categoryRange.endRow
+  const horizontalCategories = categoryBinding?.hierarchy?.orientation === 'columns' || categoryRange.startRow === categoryRange.endRow
     && categoryRange.startColumn < categoryRange.endColumn;
   const horizontalData = existingRange.startRow === existingRange.endRow
     && existingRange.startColumn < existingRange.endColumn;
@@ -387,7 +394,8 @@ function plannedState<T extends DatasetValues>(
       chartFormula({ ...nameRange, endColumn: nameRange.startColumn, endRow: nameRange.startRow }));
     if (!xy) {
       bindings.categories = bindingWithFormula(bindings.categories,
-        resizedChartFormula(categoryBinding?.formula ?? chartFormula(categoryRange), count)!);
+        resizedCategoryFormula(categoryBinding ?? { formula: chartFormula(categoryRange), cache: 'string' }, count)!);
+      if (categoryBinding?.hierarchy) bindings.categories = { ...bindings.categories, hierarchy: categoryBinding.hierarchy };
       const valuesRange = parseChartFormula(bindings.values?.formula ?? null);
       if (valuesRange) bindings.values = bindingWithFormula(bindings.values,
         resizedChartFormula(bindings.values?.formula ?? null, Math.max(1, points.length))!);

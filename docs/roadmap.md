@@ -1,8 +1,8 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-09-07，实现提交 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-09-08，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
 
-> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；首项[高级文本生成保存与复制](portable-rich-text.md)已完成，下一项为经典图表多级类别编辑。
+> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)及[经典图表多级类别编辑](chart-hierarchical-categories.md)已完成，下一项为共享工作簿同步。
 
 盘点 `0.5.0-beta.3` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
 路径与技术方案。范围与词汇沿用 [编辑能力技术方案](editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -23,14 +23,14 @@
 用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
 beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api-stability.md)。
 
-### 1.2 门禁实测（2026-09-07，整轮通过）
+### 1.2 门禁实测（2026-09-08，整轮通过）
 
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 8772 项，原性能门禁通过 | 2230 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments + 1789 扩展能力 + 797 高级文本流转 |
+| 断言总量 | `npm test` | ✅ 8950 项，原性能门禁通过 | 2230 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments + 1789 扩展能力 + 797 高级文本流转 + 178 多级类别 |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 696 对 | 102 份固件、348 页，独立进程原始 SVG 两条文本路径 |
+| 编辑等价指纹 | 同上 | ✅ 702 对 | 103 份固件、351 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
 | 跨产物一致性 | `npm run verify` | ✅ 通过（roadmap 更新后复核） | 一致性与按需发布入口契约 + 28 项 0.6 审计 + 18 项 0.7 审计 + 15 项 0.8 审计；原体积预算不变 |
 | PowerPoint 真机 | Windows 自托管工作流 | ⏸ 按用户要求跳过 | 已修复经典图表系列标题和子节点顺序；未将修复标为完整 Windows 验收通过 |
@@ -39,7 +39,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 696 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 702 对指纹逐字节等价 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -109,7 +109,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
 | 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
-| 经典图表 | 按需数据与类型/样式编辑，cache/内嵌工作簿同步 | 不兼容类型转换明确拒绝 |
+| 经典图表 | 按需数据、多级类别与类型/样式编辑，cache/内嵌工作簿同步 | 共享工作簿仍只读；画布仅绘制叶级类别；不兼容类型转换明确拒绝 |
 | 现代图表 | ChartEx 分层数据、增删行、工作簿同步 | 完整 Office 真机验收 |
 | 批注 | 新增、修改、删除、回复与字段级历史/协同 | — |
 | 媒体 | 按需 `AddMedia`：PCM WAV / MP4（含分片）/ 显式外链、默认音频图标、`ReplaceMediaPoster`；框架/官网入口、历史与保存、选中媒体播放与失败提示 | Windows PowerPoint 实测；无原包复制需先保存重开 |
@@ -206,7 +206,7 @@ flowchart LR
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
 | **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) ✅ | 功能完成；真实语料单独验收 |
 | **扩展（版本待定）** | 深度编辑、高级渲染与直接导出 | [七类扩展交付](wayfinder/ppt-expanded-capabilities/map.md) ✅，实现提交 `8803e07` | 自动验收通过；Windows 真机按用户要求跳过 |
-| **下一阶段（待开发）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 字体先原型，长尾格式先定样本及支持范围；其余按优先级推进 |
+| **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本与多级类别已完成；字体先原型，长尾格式先定样本及支持范围 |
 | **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
 一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
@@ -482,7 +482,7 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 
 | 优先级 | 内容 | 当前状态 |
 |---|---|---|
-| P0 | 高级文本生成保存/跨文稿复制；经典图表多级类别及共享工作簿同步 | 高级文本已完成；下一项为多级类别，随后共享工作簿同步 |
+| P0 | 高级文本生成保存/跨文稿复制；经典图表多级类别及共享工作簿同步 | 高级文本与多级类别已完成；下一项为共享工作簿同步 |
 | P1 | 按需字体与字形能力 → 矢量、可搜索 PDF | 字体先做原型，验证通过后建立正式实现票 |
 | P2 | 视频音轨/混音 → 内嵌视频逐帧合成 | 以固定时间轴及明确编解码支持矩阵交付 |
 | P3 | SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 先调查真实样本与原生语义，再逐项建立实现票 |

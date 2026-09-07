@@ -3,12 +3,8 @@ import type { FractionalIndex } from '../types';
 import type {
   ChartCategory, ChartPlotKind, ChartPoint, ChartSeries, ChartSeriesId,
 } from './types';
-
-export const MAX_CHART_NAME = 32_767;
-export const MAX_CHART_IDENTITY = 512;
-export const MAX_CHART_POINTS = 20_000;
-export const MAX_CHART_SERIES = 1_024;
-export const MAX_CHART_CELLS = 100_000;
+import { MAX_CATEGORY_LEVELS, MAX_CHART_NAME, MAX_CHART_IDENTITY, MAX_CHART_POINTS, MAX_CHART_SERIES, MAX_CHART_CELLS } from './limits';
+export { MAX_CHART_NAME, MAX_CHART_IDENTITY, MAX_CHART_POINTS, MAX_CHART_SERIES, MAX_CHART_CELLS } from './limits';
 export const CHART_PLOT_KINDS = new Set<ChartPlotKind>([
   'bar', 'line', 'pie', 'doughnut', 'area', 'scatter', 'radar',
   'bubble', 'stock', 'ofPie', 'surface', 'other',
@@ -92,11 +88,33 @@ export function assertChartPointRecord(
 export function assertChartCategoryRecord(
   value: unknown, expectedId: string, label: string,
 ): asserts value is ChartCategory {
-  assertChartRecord(value, ['id', 'order', 'label', 'removed'], label);
+  assertChartRecord(value, ['id', 'order', 'label', 'levels', 'levelParent', 'levelClears', 'removed'], label);
   assertChartIdentity(value.id, expectedId, label);
   assertChartOrder(value.order, label);
   assertChartName(value.label, label);
+  if (value.levels !== undefined) assertCategoryLevels(value.levels);
+  if (value.levelClears !== undefined) assertCategoryClears(value.levelClears);
+  if (value.levelParent !== undefined && value.levelParent !== null) {
+    if (typeof value.levelParent !== 'string') throw new Error('类别前驱身份无效');
+    assertChartIdentity(value.levelParent, value.levelParent, '类别前驱');
+  }
   if (value.removed !== undefined && value.removed !== true) throw new Error(`${label}删除标记无效`);
+}
+
+export function assertCategoryLevels(value: unknown, depth?: number): asserts value is readonly (string | null)[] {
+  if (!Array.isArray(value) || !value.length || value.length > MAX_CATEGORY_LEVELS
+    || depth !== undefined && value.length !== depth) throw new Error('类别层级数量无效');
+  for (const item of value) if (item !== null) assertChartName(item, '类别层级');
+}
+
+function assertCategoryClears(value: unknown, depth = MAX_CATEGORY_LEVELS): void {
+  assertChartDictionary(value, '类别层级清空标记');
+  for (const [level, parent] of Object.entries(value)) {
+    if (!/^(0|[1-9]\d*)$/.test(level) || Number(level) >= depth) throw new Error('类别层级清空标记无效');
+    if (parent === null) continue;
+    if (typeof parent !== 'string') throw new Error('类别层级清空前驱无效');
+    assertChartIdentity(parent, parent, '类别层级清空前驱');
+  }
 }
 
 export function assertChartSeriesRecord(
@@ -177,7 +195,12 @@ function sanitizeSourceCategory(
   category: ChartCategory, source: ChartCategory, id: string,
 ): boolean {
   const target = category as unknown as MutableRecord;
-  let deferred = removeUnknown(target, ['id', 'order', 'label', 'removed']);
+  let deferred = removeUnknown(target, ['id', 'order', 'label', 'levels', 'levelClears', 'removed']);
+  if (target.levelClears !== undefined) deferred = quarantineInvalid(target, source, 'levelClears', value =>
+    assertCategoryClears(value, source.levels?.length ?? 0)) || deferred;
+  if (source.levels) deferred = quarantineInvalid(target, source, 'levels', value =>
+    assertCategoryLevels(value, source.levels!.length)) || deferred;
+  else if (target.levels !== undefined) { delete target.levels; deferred = true; }
   deferred = quarantineInvalid(target, source, 'id', (value) =>
     assertChartIdentity(value, id, `图表类别 ${id}`)) || deferred;
   deferred = quarantineInvalid(target, source, 'order', (value) =>
@@ -332,7 +355,9 @@ export function validateMaterializedRecords(
   sourceSeries: Readonly<Record<string, StoredSeries>>,
 ): boolean {
   const sourcePlotKinds = new Set(Object.values(sourceSeries).map((item) => item.plotKind));
-  let deferred = trimAddedRecords(categories, sourceCategories, MAX_CHART_POINTS);
+  const depth = Object.values(sourceSeries).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+  const categoryLimit = Math.min(MAX_CHART_POINTS, depth ? Math.floor(MAX_CHART_CELLS / depth) : MAX_CHART_POINTS);
+  let deferred = trimAddedRecords(categories, sourceCategories, categoryLimit);
   deferred = trimAddedRecords(series, sourceSeries, MAX_CHART_SERIES) || deferred;
   for (const [id, category] of Object.entries(categories)) {
     const source = sourceCategories[id];
@@ -345,7 +370,13 @@ export function validateMaterializedRecords(
       }
       continue;
     }
-    try { assertChartCategoryRecord(category, id, `图表类别 ${id}`); } catch {
+    try {
+      assertChartCategoryRecord(category, id, `图表类别 ${id}`);
+      if (category.levels !== undefined) {
+        if (!depth) throw new Error('平面类别不支持层级路径');
+        assertCategoryLevels(category.levels, depth);
+      } else if ('levelParent' in category) throw new Error('新增层级类别的路径尚未到齐');
+    } catch {
       delete categories[id];
       deferred = true;
     }

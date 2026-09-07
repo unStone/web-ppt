@@ -220,7 +220,7 @@ function categories(groups: PlotGroup[]): string[] {
   }
   const len = Math.max(n, best.length);
   const out: string[] = [];
-  for (let i = 0; i < len; i++) out.push(best[i] || String(i + 1));
+  for (let i = 0; i < len; i++) out.push(best[i] ?? String(i + 1));
   return out;
 }
 

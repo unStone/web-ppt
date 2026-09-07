@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
+const imports = (source) => new Set([...source.matchAll(/\bfrom\s*(['"])([^'"]+)\1/g)].map((match) => match[2]));
 const size = (source) => ({
   raw: Buffer.byteLength(source), gzip: gzipSync(Buffer.from(source)).length,
 });
@@ -37,12 +38,14 @@ const implementation = read('packages/edit-core/dist/chart.js');
 if (!forbidden.every((sentinel) => implementation.includes(sentinel))) {
   throw new Error('edit-core/chart 缺少图表数据或 SpreadsheetML 实现');
 }
+const sharedImports = imports(implementation);
 if (!['@web-ppt/edit-core', '@web-ppt/edit-core/xml', '@web-ppt/edit-core/opc']
-  .every((entry) => implementation.includes(`from "${entry}"`))) {
+  .every((entry) => sharedImports.has(entry))) {
   throw new Error('edit-core/chart 没有复用身份、分数序或 XML / OPC 入口');
 }
 const budget = { raw: 85_000, gzip: 25_000 };
 const actual = size(implementation);
+if (!implementation.includes('@__PURE__')) throw new Error('图表库压缩不能丢弃 tree-shaking 注解');
 if (actual.raw > budget.raw || actual.gzip > budget.gzip) {
   throw new Error(`edit-core/chart 体积超出预算：${JSON.stringify({ budget, actual })}`);
 }
@@ -52,7 +55,7 @@ for (const [file, external] of [
   ['packages/vue/dist/chart.js', '@web-ppt/editor/chart'],
 ]) {
   const source = read(file);
-  if (!source.includes(`from "${external}"`) || Buffer.byteLength(source) > 512) {
+  if (!imports(source).has(external) || Buffer.byteLength(source) > 512) {
     throw new Error(`${file} 不是 ${external} 的薄转发入口`);
   }
 }

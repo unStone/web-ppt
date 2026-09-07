@@ -15,23 +15,25 @@ import type {
 } from './types';
 import {
   assertChartCategoryRecord, assertChartDictionary, assertChartIdentity, assertChartName,
-  assertChartNumber, assertChartOrder, assertChartPointRecord, assertChartSeriesRecord,
+  assertChartNumber, assertChartOrder, assertChartPointRecord, assertChartSeriesRecord, assertCategoryLevels,
   CHART_PLOT_KINDS, MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
 } from './validation';
 import { chartRenderContext, chartSourceBytes } from './context';
 import { chartPartForElement } from './locator';
 import { orderedChartRecords } from './ordering';
+import { categoryCommandPatches, assertCategoryCapacity } from './category-commands';
+import type { CategoryPayload } from './category-commands';
 
 const NS = 'chart-data';
 
 type Payload =
   | { op: 'set-series-name'; seriesId: ChartSeriesId; name: string }
-  | { op: 'set-category-label'; pointId: ChartPointId; label: string }
+  | CategoryPayload
   | { op: 'set-point'; seriesId: ChartSeriesId; pointId: ChartPointId;
     value?: number | null; x?: number | null; size?: number | null }
   | { op: 'add-series'; series: ChartDatasetState['series'][ChartSeriesId] }
   | { op: 'remove-series'; seriesId: ChartSeriesId }
-  | { op: 'add-category'; category: ChartCategory; points: Record<ChartSeriesId, ChartPoint> }
+  | { op: 'add-category'; category: ChartDatasetState['categories'][ChartPointId]; points: Record<ChartSeriesId, ChartPoint> }
   | { op: 'remove-category'; pointId: ChartPointId }
   | { op: 'add-point'; seriesId: ChartSeriesId; point: ChartPoint }
   | { op: 'remove-point'; seriesId: ChartSeriesId; pointId: ChartPointId };
@@ -90,7 +92,7 @@ function recordLeaves(
 ): ExtensionPatch[] {
   const result: ExtensionPatch[] = [];
   for (const [key, child] of Object.entries(value)) {
-    if (child && typeof child === 'object' && !Array.isArray(child)) {
+    if (child && typeof child === 'object') {
       result.push(...recordLeaves(id, [...path, key], child as Record<string, unknown>, origin));
     } else result.push(patch(id, [...path, key], child, origin));
   }
@@ -140,13 +142,8 @@ function commandPatches(doc: EditDoc, command: ExtensionCommand, origin: string)
     if (!series || series.removed) throw new Error(`图表系列不存在：${payload.seriesId}`);
     return pair(command.id, ['series', payload.seriesId, 'name'], payload.name, series.name, origin);
   }
-  if (payload.op === 'set-category-label') {
-    if (state.kind === 'xy') throw new Error('纯 XY 图没有可编辑类别');
-    assertChartName(payload.label, '类别名称');
-    const category = state.categories[payload.pointId];
-    if (!category || category.removed) throw new Error(`图表类别不存在：${payload.pointId}`);
-    return pair(command.id, ['categories', payload.pointId, 'label'],
-      payload.label, category.label, origin);
+  if (payload.op === 'set-category-label' || payload.op === 'set-category-path') {
+    return categoryCommandPatches(doc, command.id, state, payload, origin);
   }
   if (payload.op === 'set-point') {
     const series = state.series[payload.seriesId];
@@ -192,7 +189,14 @@ function commandPatches(doc: EditDoc, command: ExtensionCommand, origin: string)
     return pair(command.id, ['series', payload.seriesId, 'removed'], true, series.removed, origin);
   }
   if (payload.op === 'add-category') {
+    assertCategoryCapacity(state);
     assertAddedCategory(payload.category);
+    const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+    if (payload.category.levels) {
+      if (!depth) throw new Error('此图表没有多级类别');
+      assertCategoryLevels(payload.category.levels, depth);
+      if ((payload.category.levels[depth - 1] ?? '') !== payload.category.label) throw new Error('类别名称与叶级标签不一致');
+    }
     assertChartDictionary(payload.points, '新增类别数据点');
     if (state.kind === 'xy') throw new Error('纯 XY 图不能新增类别');
     if (Object.keys(state.categories).length >= MAX_CHART_POINTS) throw new Error('图表类别数量已达上限');
@@ -272,7 +276,14 @@ function validatePatchAgainstState(
   if (patchValue.path[4] !== NS) throw new Error(`Patch ${index} 的图表命名空间无效`);
   const path = patchValue.path.slice(5);
   const category = path[0] === 'categories' && path.length === 3
-    && ['id', 'order', 'label', 'removed'].includes(path[2]);
+    && ['id', 'order', 'label', 'levelParent', 'removed'].includes(path[2]);
+  const level = path[0] === 'categories' && path.length === 4 && ['levels', 'levelClears'].includes(path[2]);
+  if (level) {
+    const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+    if (!depth || !/^(0|[1-9]\d*)$/.test(path[3]) || Number(path[3]) >= depth) throw new Error('图表类别层级索引无效');
+    if (patchValue.op === 'set' && path[2] === 'levelClears' && patchValue.value !== null) recordIdentity(patchValue.value, '类别层级清空前驱');
+    if (patchValue.op === 'set' && path[2] === 'levels' && patchValue.value !== null) assertChartName(patchValue.value, '类别层级');
+  }
   const series = path[0] === 'series' && path.length === 3
     && ['id', 'order', 'sourceIndex', 'plotKind', 'name', 'pointsReady', 'removed'].includes(path[2]);
   const point = path[0] === 'series' && path.length === 5 && path[2] === 'points'
@@ -280,7 +291,7 @@ function validatePatchAgainstState(
   const binding = path[0] === 'series' && path.length === 5 && path[2] === 'bindings'
     && ['name', 'categories', 'values', 'x', 'y', 'size'].includes(path[3])
     && ['formula', 'cache'].includes(path[4]);
-  if (!(patchValue.op === 'del' && path.length === 0) && !category && !series && !point && !binding) {
+  if (!(patchValue.op === 'del' && path.length === 0) && !category && !level && !series && !point && !binding) {
     throw new Error(`Patch ${index} 的图表路径不受支持`);
   }
   if (category && state.kind === 'xy') throw new Error(`Patch ${index} 的纯 XY 图不能包含类别`);
@@ -290,6 +301,7 @@ function validatePatchAgainstState(
       patchValue.value, point ? path[3] : path[1], `Patch ${index} 的身份`,
     );
     if (leaf === 'order') assertChartOrder(patchValue.value, `Patch ${index} 的顺序`);
+    if (leaf === 'levelParent' && patchValue.value !== null) recordIdentity(patchValue.value, '类别前驱');
     if (leaf === 'name' || leaf === 'label') assertChartName(patchValue.value, `Patch ${index} 的名称`);
     if (leaf === 'removed' && patchValue.value !== true) throw new Error(`Patch ${index} 的删除标记无效`);
     if (leaf === 'sourceIndex' && (!Number.isInteger(patchValue.value)
@@ -378,12 +390,14 @@ function exec(editor: Editable, id: ElementId, payload: Payload): void {
 export interface ChartDataEditor {
   setSeriesName(chartId: ElementId, seriesId: ChartSeriesId, name: string): void;
   setCategoryLabel(chartId: ElementId, pointId: ChartPointId, label: string): void;
+  setCategoryPath(chartId: ElementId, pointId: ChartPointId, levels: readonly (string | null)[]): void;
+  setCategoryLevel(chartId: ElementId, pointId: ChartPointId, level: number, value: string | null): void;
   setValue(chartId: ElementId, seriesId: ChartSeriesId, pointId: ChartPointId, value: number | null): void;
   setPoint(chartId: ElementId, seriesId: ChartSeriesId, pointId: ChartPointId,
     value: { value?: number | null; x?: number | null; size?: number | null }): void;
   addSeries(chartId: ElementId, name: string, plotKind?: ChartPlotKind): ChartSeriesId;
   removeSeries(chartId: ElementId, seriesId: ChartSeriesId): void;
-  addCategory(chartId: ElementId, label: string): ChartPointId;
+  addCategory(chartId: ElementId, labelOrPath: string | readonly (string | null)[]): ChartPointId;
   removeCategory(chartId: ElementId, pointId: ChartPointId): void;
   addPoint(chartId: ElementId, seriesId: ChartSeriesId,
     value: { value: number | null; x?: number | null; size?: number | null }): ChartPointId;
@@ -396,6 +410,16 @@ export function chartDataEditor(editor: Editable): ChartDataEditor {
       { op: 'set-series-name', seriesId, name }),
     setCategoryLabel: (chartId, pointId, label) => exec(editor, chartId,
       { op: 'set-category-label', pointId, label }),
+    setCategoryPath: (chartId, pointId, levels) => exec(editor, chartId,
+      { op: 'set-category-path', pointId, levels }),
+    setCategoryLevel: (chartId, pointId, level, value) => {
+      const category = assertChart(editor.doc, chartId).categories[pointId];
+      if (!category?.levels || !Number.isInteger(level) || level < 0 || level >= category.levels.length) {
+        throw new Error('图表类别层级索引无效');
+      }
+      const levels = [...category.levels]; levels[level] = value;
+      exec(editor, chartId, { op: 'set-category-path', pointId, levels });
+    },
     setValue: (chartId, seriesId, pointId, value) => exec(editor, chartId,
       { op: 'set-point', seriesId, pointId, value }),
     setPoint: (chartId, seriesId, pointId, value) => exec(editor, chartId,
@@ -434,9 +458,18 @@ export function chartDataEditor(editor: Editable): ChartDataEditor {
       return id;
     },
     removeSeries: (chartId, seriesId) => exec(editor, chartId, { op: 'remove-series', seriesId }),
-    addCategory: (chartId, label) => {
-      assertChartName(label, '类别名称');
+    addCategory: (chartId, labelOrPath) => {
       const state = assertChart(editor.doc, chartId);
+      assertCategoryCapacity(state);
+      const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+      if (typeof labelOrPath !== 'string') {
+        if (!depth) throw new Error('此图表没有多级类别');
+        assertCategoryLevels(labelOrPath, depth);
+      }
+      const label = typeof labelOrPath === 'string' ? labelOrPath : labelOrPath[labelOrPath.length - 1] ?? '';
+      assertChartName(label, '类别名称');
+      const levels = depth ? typeof labelOrPath === 'string'
+        ? [...Array<string | null>(depth - 1).fill(null), label] : [...labelOrPath] : undefined;
       if (state.kind === 'xy') throw new Error('纯 XY 图不能新增类别');
       if (Object.keys(state.categories).length >= MAX_CHART_POINTS) throw new Error('图表类别数量已达上限');
       const addedCells = Object.values(state.series).filter((item) => !item.removed
@@ -452,7 +485,8 @@ export function chartDataEditor(editor: Editable): ChartDataEditor {
         && item.plotKind !== 'scatter' && item.plotKind !== 'bubble'))) {
         points[series.id] = { id, order, value: null };
       }
-      exec(editor, chartId, { op: 'add-category', category: { id, order, label }, points });
+      exec(editor, chartId, { op: 'add-category', category: { id, order, label,
+        ...(levels ? { levels, levelParent: visible[visible.length - 1]?.id ?? null } : {}) }, points });
       return id;
     },
     removeCategory: (chartId, pointId) => exec(editor, chartId, { op: 'remove-category', pointId }),

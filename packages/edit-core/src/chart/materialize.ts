@@ -4,7 +4,7 @@ import {
 } from '@web-ppt/edit-core/xml';
 import type { XmlDocument, XmlElement, XmlNode } from '@web-ppt/edit-core/xml';
 import type {
-  ChartDatasetState, ChartFormulaBinding, ChartPlotKind, ChartPointId, ChartSeriesId,
+  ChartCategory, ChartDatasetState, ChartFormulaBinding, ChartPlotKind, ChartPointId, ChartSeriesId,
 } from './types';
 import { resizedChartFormula } from './formula';
 import { readChartIdentityManifest, writeChartIdentityManifest } from './identity';
@@ -12,6 +12,7 @@ import type { ChartIdentityTemplate } from './identity';
 import { orderedChartRecords } from './ordering';
 import { MAX_CHART_POINTS } from './validation';
 import { canonicalNumericCategories } from './category-value';
+import { writeCategoryLevels } from './category-levels';
 import {
   CHART_NS, DRAWING_NS, STRICT_CHART_NS, STRICT_DRAWING_NS,
 } from './xml-namespaces';
@@ -291,7 +292,7 @@ function remapPointIndexes(
 function writeSeries(
   node: XmlElement,
   series: ChartDatasetState['series'][ChartSeriesId],
-  categories: readonly string[],
+  categories: readonly ChartCategory[],
   order: number,
   sourceIndex: number,
 ): void {
@@ -313,9 +314,11 @@ function writeSeries(
   } else {
     const categoryHolder = ensureSeriesChild(node, 'cat', series.plotKind);
     // 日期轴也以数值序列保存；只有标签真正变成非数值时才切换为字符串缓存。
-    const numericCategories = canonicalNumericCategories(categories) !== null
+    const labels = categories.map(category => category.label);
+    const numericCategories = canonicalNumericCategories(labels) !== null
       && (series.bindings.categories?.cache === 'number' || numericCategoryContainer(categoryHolder));
-    writeData(categoryHolder, categories, numericCategories, series.bindings.categories!);
+    if (series.bindings.categories?.hierarchy) writeCategoryLevels(categoryHolder, categories, series.bindings.categories);
+    else writeData(categoryHolder, labels, numericCategories, series.bindings.categories!);
     writeData(ensureSeriesChild(node, 'val', series.plotKind),
       points.map((point) => point.value), true, series.bindings.values!);
   }
@@ -349,8 +352,7 @@ export function materializeChartTree(
       if (parent) removeXmlChild(parent, source.node);
     }
   }
-  const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed))
-    .map((item) => item.label);
+  const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed));
   const visible = orderedChartRecords(Object.values(state.series).filter((series) => !series.removed));
   const reserved = new Set(visible.filter((series) => sourceById.has(series.id))
     .map((series) => series.sourceIndex));

@@ -226,7 +226,7 @@ if (!siteStat) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText',
+    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -329,6 +329,9 @@ if (!counts) {
   console.log('  \x1b[33m跳过：out/verify/counts.json 不存在，先 npm test\x1b[0m');
 } else {
   const COUNT_CLAIMS = [
+    ['README.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
+    ['README.en.md', /([\d,]+) chart-hierarchy assertions/, ['chartHierarchy']],
+    ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['README.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
     ['README.en.md', /([\d,]+) expanded-capability assertions/, ['expanded']],
     ['AGENTS.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
