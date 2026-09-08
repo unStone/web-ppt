@@ -147,4 +147,7 @@ export const languageReady = changeLanguage(resolveLanguage(new URL(location.hre
     // 中文源词条随页面交付；首次词库失败必须先恢复可用语言，不能把请求结束当成已就绪。
     await changeLanguage('zh-CN', false);
     reportFailure(error);
+  }).then(() => {
+    // 静态 HTML 已有当前语言语义，不能拿 aria-current 猜测增强脚本是否已经接管点击。
+    document.documentElement.dataset.siteLanguageReady = 'true';
   });

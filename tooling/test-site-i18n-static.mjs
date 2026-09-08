@@ -67,6 +67,12 @@ for (const page of ['index', 'samples', 'editor']) {
       if (language === 'en') assert.doesNotMatch(item.description ?? '', /\p{Script=Han}/u, `${file} JSON-LD 描述`);
     }
     assert.ok(document.querySelector('#siteLanguage'), `${file} 无脚本语言入口`);
+    assert.equal(document.querySelector(`[data-site-locale="${language}"]`)?.getAttribute('aria-current'), 'true',
+      `${file} 无脚本页面必须标明当前语言`);
+    assert.equal(document.querySelector(`[data-site-locale="${language === 'en' ? 'zh-CN' : 'en'}"]`)?.getAttribute('aria-current'), 'false',
+      `${file} 无脚本页面必须标明非当前语言`);
+    assert.ok(!document.documentElement.hasAttribute('data-site-language-ready'),
+      `${file} 不能把静态语言状态伪装成增强脚本已就绪`);
     if (language !== 'en') continue;
     assert.match(document.title, /Web-PPT/);
     for (const anchor of document.querySelectorAll('a[href]')) {
