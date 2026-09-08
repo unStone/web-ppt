@@ -39,7 +39,8 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
     await request('Page.navigate', { url });
     // Page.navigate 会先切 URL，再创建新 documentElement；该空窗在慢 CI 上可稳定被轮询撞到。
     await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement?.lang === ${JSON.stringify(language)}
-      && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`, `${path} 语言解析`);
+      && document.documentElement.dataset.siteLanguageReady === 'true'
+      && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`, `${path} 语言解析`, 600);
     if (!path.startsWith('editor')) return;
     const ready = `document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading`;
@@ -56,9 +57,9 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
       await click('[data-site-locale="en"]');
       await waitFor("document.documentElement.lang === 'en'", '用户选择英文');
       await navigate(`${page}.html`, 'en');
-      await navigate(`${page}.html?lang=zh-CN&sample=kept&p=2#kept`, 'zh-CN');
-      if (!await evaluate("location.search.includes('sample=kept') && location.search.includes('p=2') && location.hash === '#kept'")) {
-        throw new Error('语言初始化不能清除文件、页码和位置深链接');
+      await navigate(`${page}.html?lang=zh-CN&context=kept#kept`, 'zh-CN');
+      if (!await evaluate("location.search.includes('context=kept') && location.hash === '#kept'")) {
+        throw new Error('语言初始化不能清除不属于页面业务的查询参数和位置深链接');
       }
       await click('[data-site-locale="zh-CN"]');
       await navigate(`${page}.en.html`, 'en');
