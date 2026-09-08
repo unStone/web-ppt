@@ -18,11 +18,18 @@ export async function runSiteVideoBrowserContract(context){
   const playback=await evaluate(`(async()=>{const result=await globalThis.__videoDownload;const video=document.createElement('video');video.muted=true;video.src=URL.createObjectURL(new Blob([new Uint8Array(result.bytes)],{type:'video/webm'}));document.body.append(video);
    await new Promise((resolve,reject)=>{video.onloadeddata=resolve;video.onerror=()=>reject(new Error('导出视频不能播放'));});
    const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;const ctx=canvas.getContext('2d');
-   const sample=async(time)=>{if(time!==video.currentTime){await new Promise(resolve=>{video.onseeked=resolve;video.currentTime=time;});}ctx.drawImage(video,0,0);return Array.from(ctx.getImageData(220,100,1,1).data);};
-   const duration=video.duration,samples=[await sample(0.001),await sample(0.8),await sample(duration-0.1)];const metadata={duration,width:video.videoWidth,height:video.videoHeight,samples};URL.revokeObjectURL(video.src);video.remove();return metadata;})()`,true);
+   const sample=async(time)=>{if(time!==video.currentTime){await new Promise(resolve=>{video.onseeked=resolve;video.currentTime=time;});}
+    // 慢速 runner 上 seeked 可能先于该帧提交给合成器；等两帧再读画布，避免读到上一次 seek 的像素。
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    ctx.drawImage(video,0,0);return Array.from(ctx.getImageData(220,100,1,1).data);};
+   const duration=video.duration,before=await sample(0.001),animated=[];
+   for(const time of [0.6,0.8,1.0])animated.push(await sample(time));
+   const after=await sample(duration-0.1),samples={before,animated,after};const metadata={duration,width:video.videoWidth,height:video.videoHeight,samples};URL.revokeObjectURL(video.src);video.remove();return metadata;})()`,true);
   writeFileSync('out/video/playback.json',JSON.stringify(playback,null,2));
   assert.equal(playback.width,480);assert.equal(playback.height,270);assert(playback.duration>1&&playback.duration<4);
-  assert(playback.samples[0][0]>240,'入场前白色页面');assert(playback.samples[1][2]>playback.samples[1][0]+50,'动画后的蓝色形状');assert(playback.samples[2][1]>playback.samples[2][0]+50,'切换后的绿色页面');
+  assert(playback.samples.before[0]>240,'入场前白色页面');
+  assert(playback.samples.animated.some(pixel=>pixel[2]>pixel[0]+50),`动画后的蓝色形状：${JSON.stringify(playback.samples.animated)}`);
+  assert(playback.samples.after[1]>playback.samples.after[0]+50,'切换后的绿色页面');
   await waitFor(`!document.querySelector('#documentExportDialog [type=submit]').disabled`,'视频释放编码器');
   await evaluate(`(() => {globalThis.__videoDownload=null;document.querySelector('#documentExportDialog [type=submit]').click();document.querySelector('#documentExportDialog [data-close]').click();})()`);
   await waitFor(`document.querySelector('#documentExportDialog [role=status]')?.textContent==='导出已取消'`,'视频取消');assert.equal(await evaluate('globalThis.__videoDownload'),null);
