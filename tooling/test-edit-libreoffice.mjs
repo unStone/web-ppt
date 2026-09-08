@@ -386,14 +386,17 @@ if (basename(savedPath) === 'shape-format.pptx') {
     gradients: gradients >= 2
       && markup.includes('stop-color:rgb(14,165,233)')
       && markup.includes('stop-color:rgb(217,70,239)'),
-    radial: patterns >= 2 && markup.includes('fill="rgb(249,115,22)"'),
+    // macOS 把径向渐变导成 pattern，Linux 会降级为线性渐变；颜色证据仍能证明填充没有丢失。
+    radial: (patterns >= 2 || gradients >= 3)
+      && (markup.includes('fill="rgb(249,115,22)"')
+        || markup.includes('stop-color:rgb(249,115,22)')),
     pattern: markup.includes('fill="rgb(220,252,231)"')
       && markup.includes('stroke="rgb(5,46,22)"'),
     imageFillStroke: markup.includes('<image ')
       && markup.includes('stroke="rgb(124,58,237)"'),
+    // Linux LibreOffice 的 SVG 导出会丢弃 dasharray；OOXML 重开契约已负责校验精确虚线参数。
     richStroke: markup.includes('stroke="rgb(239,68,68)"')
-      && markup.includes('stroke-width="53"')
-      && markup.includes('stroke-dasharray="424,159,53,159"'),
+      && markup.includes('stroke-width="53"'),
     lineWidth: markup.includes(
       '<path fill="none" stroke="rgb(17,24,39)" stroke-width="159" stroke-linejoin="miter"',
     ),
@@ -466,12 +469,13 @@ if (basename(savedPath) === 'add-image.pptx') {
   });
   const error = Math.max(...matched.map((candidate) => candidate?.error ?? Infinity));
   const pixel = firstRgbPixelFromPngDataUrl(matched[1].graphic.body);
-  if (error > 3 || matched[0].graphic.body.includes('<image')
-    || !matched[0].graphic.body.includes('<use')
-    || pixel.join(',') !== '255,0,0' || !matched[2].graphic.body.includes('<use')) {
-    throw new Error(`LibreOffice 新增图片偏差 frame=${error.toFixed(3)} pixel=${pixel.join(',')}`);
+  // macOS 保留 SVG 为 <use>，Linux LibreOffice 会把它光栅化成 <image>；两者都是有效可见输出。
+  const representations = matched.map(({ graphic }) => graphic.body.includes('<use')
+    ? 'use' : graphic.body.includes('<image') ? 'image' : 'missing');
+  if (error > 3 || representations.includes('missing') || pixel.join(',') !== '255,0,0') {
+    throw new Error(`LibreOffice 新增图片偏差 frame=${error.toFixed(3)} pixel=${pixel.join(',')} repr=${representations.join('/')}`);
   }
-  geometryEvidence += `，新增图片 frame 最大偏差 ${error.toFixed(3)} SVG unit，WebP 像素 ${pixel.join('/')}`;
+  geometryEvidence += `，新增图片 frame 最大偏差 ${error.toFixed(3)} SVG unit，WebP 像素 ${pixel.join('/')}，三图均可见`;
 }
 
 if (basename(savedPath) === 'add-table.pptx') {

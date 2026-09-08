@@ -29,6 +29,7 @@ import { runChartExBrowserContract } from './lib/chartex-browser-contract.mjs';
 import { runNativeChartExBrowserContract } from './lib/chartex-native-browser-contract.mjs';
 import { runSiteLanguagePreferencesContract } from './lib/site-editor-language-contract.mjs';
 import { runSiteI18nProductionContract } from './lib/site-i18n-production-contract.mjs';
+import { waitForDevToolsPort } from './lib/chrome-devtools-launch.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const commentEditOnly = process.argv.includes('--comments-edit-only');
@@ -349,20 +350,18 @@ async function waitForBrowserExit(milliseconds) {
 }
 
 async function launch(url) {
-  return new Promise((resolveLaunch, rejectLaunch) => {
-    child = spawn(browser, [
-      '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-      '--window-size=1280,720', `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
-    ], { stdio: ['ignore', 'ignore', 'pipe'] });
-    const timeout = setTimeout(() => rejectLaunch(new Error('Chrome DevTools 启动超时')), 10000);
-    child.stderr.on('data', (chunk) => {
-      diagnostics += chunk.toString('utf8');
-      const match = diagnostics.match(/DevTools listening on ws:\/\/[^:]+:(\d+)\//);
-      if (!match) return;
-      clearTimeout(timeout);
-      resolveLaunch(Number(match[1]));
-    });
-    child.once('error', rejectLaunch);
+  child = spawn(browser, [
+    '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    '--window-size=1280,720', `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let spawnError;
+  child.once('error', (error) => { spawnError = error; });
+  child.stderr.on('data', (chunk) => { diagnostics += chunk.toString('utf8'); });
+  // Chrome 明确定义 DevToolsActivePort 为动态端口握手；stderr 只是日志，CI 负载高时可能迟到或改格式。
+  return waitForDevToolsPort({
+    profile,
+    isRunning: () => !spawnError && browserRunning(),
+    diagnostics: () => spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics,
   });
 }
 

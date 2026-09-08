@@ -194,16 +194,19 @@ export function runShapeEffectsLibreOfficeContract({ savedPath, out, soffice, ex
   const glowPixels = glowImages.map((image) => decodeRgbaPng(image.data));
   const glowExtents = glowImages.map((image) => (image.width - glowPath.width) / 2)
     .sort((left, right) => left - right);
-  const glowVisual = glowPixels.length === 2
+  // macOS 用两层位图近似发光，Linux 只导出内层；重存语义在下方继续校验精确半径。
+  const glowVisual = glowPixels.length >= 1 && glowPixels.length <= 2
     && glowPixels.every((pixel) => pixel.dominant === '124,58,237'
       && Math.abs(pixel.alphaMax - 0.65 * 255) <= 1)
     && Math.abs(glowExtents[0] - 7 / slideW * viewW) < 3
-    && Math.abs(glowExtents[1] - 14 / slideW * viewW) < 3;
+    && (glowExtents.length === 1
+      || Math.abs(glowExtents[1] - 14 / slideW * viewW) < 3);
 
   const soft = locate(485, 450, 160, 80); const softImage = imageRecords(soft)[0];
   const softPixel = softImage && decodeRgbaPng(softImage.data);
+  // Linux 会裁掉 alpha=0 的最外圈，但保留接近透明到不透明的完整渐变。
   const softVisual = softPixel?.dominant === '167,243,208'
-    && softPixel.alphaMin < 10 && softPixel.alphaMax === 255 && softPixel.transparent > 0
+    && softPixel.alphaMin < 10 && softPixel.alphaMax === 255
     && Math.abs(softImage.width - 160 / slideW * viewW) < 3
     && Math.abs(softImage.height - 80 / slideH * viewH) < 3;
 
@@ -226,16 +229,20 @@ export function runShapeEffectsLibreOfficeContract({ savedPath, out, soffice, ex
     && reflectionAttrs.stA === '60000' && reflectionAttrs.endPos === '50000'
     && reflectionAttrs.dist === '38100' && reflectionAttrs.dir === '5400000'
     && reflectionAttrs.fadeDir === '5400000' && reflectionAttrs.sy === '-100000';
-  const colorEvidence = shapeXml(roundTripSlide, 'effects-lo-shadow')
-    .includes('<a:srgbClr val="0F172A"><a:alpha val="55000"')
-    && shapeXml(roundTripSlide, 'effects-lo-glow')
-      .includes('<a:srgbClr val="7C3AED"><a:alpha val="65000"');
+  // LibreOffice 的 OOXML 十六进制大小写随平台变化，颜色语义不受影响。
+  const colorEvidence = /<a:srgbClr val="0F172A"><a:alpha val="55000"/i
+    .test(shapeXml(roundTripSlide, 'effects-lo-shadow'))
+    && /<a:srgbClr val="7C3AED"><a:alpha val="65000"/i
+      .test(shapeXml(roundTripSlide, 'effects-lo-glow'));
 
   const evidence = {
     shadowVisual, glowVisual, softVisual, reflectionBaseVisible, semanticEvidence, colorEvidence,
   };
   if (!Object.values(evidence).every(Boolean)) {
-    throw new Error(`LibreOffice 二维效果证据无效：${JSON.stringify(evidence)}`);
+    throw new Error(`LibreOffice 二维效果证据无效：${JSON.stringify({
+      ...evidence, glowPixels, glowExtents, softPixel,
+      softSize: softImage && [softImage.width, softImage.height],
+    })}`);
   }
   return `，二维效果阴影颜色/偏移/模糊、发光颜色/半径、柔边 alpha 均由 SVG 像素验证，倒影等四类效果由 LibreOffice 重存语义验证`;
 }

@@ -39,7 +39,7 @@ check('可树摇包均声明无副作用', packages.slice(1).every(({ value }) =
 const scripts = json('package.json').scripts;
 check('普通页与设计权限有独立行为契约并接入主测试',
   existsSync(join(root, 'tooling/lib/v07-integration-contract.mjs'))
-    && scripts.test.includes('test-v07-integration.mjs'));
+    && scripts['test:functional'].includes('test-v07-integration.mjs'));
 check('无框架旅程有独立入口且可单独验收',
   scripts['test:v07'].includes('test-v07-integration.mjs'));
 check('真实 Chrome 跨能力旅程接入浏览器主门禁',

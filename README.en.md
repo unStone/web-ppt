@@ -414,7 +414,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,230 assertions + 186 render snapshots |
+| `npm run test:core` | Core parsing / rendering — 2,234 assertions + 186 render snapshots |
 | `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 690 process-isolated SVG fingerprint pairs across 101 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |

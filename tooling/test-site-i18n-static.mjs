@@ -8,6 +8,11 @@ import { SLIDE_TRANSITION_TYPES, transitionDirections, ANIMATION_EFFECTS } from 
 import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const mixedArtifact = join(root, 'out/edit-save/mixed-patched.pptx');
+if (!process.argv.includes('--static-only') && !existsSync(mixedArtifact)) {
+  // 生产站点回归会打开保存链路生成的跨能力文稿；让消费者显式生成输入，避免依赖 CI 步骤的偶然顺序。
+  execFileSync(process.execPath, ['tooling/test-edit-save.mjs'], { cwd: root, stdio: 'inherit' });
+}
 if (!process.argv.includes('--built')) {
   execFileSync('npm', ['run', 'build', '-w', '@web-ppt/site'], { cwd: root, stdio: 'inherit' });
 }

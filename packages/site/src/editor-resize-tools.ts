@@ -40,7 +40,16 @@ export function showSlideSizeTools(session: EditorSession, current: () => Editor
   };
   document.body.append(dialog);
   const restoreLanguage = moveLanguageControl(dialog.querySelector('header')!);
-  dialog.addEventListener('close', () => { restoreLanguage(); dialog.remove(); }, { once: true });
+  let disposed = false;
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    restoreLanguage();
+    if (dialog.open) dialog.close();
+    dialog.remove();
+  };
+  dialog.addEventListener('close', dispose, { once: true });
   dialog.showModal();
-  return () => dialog.close();
+  // close 事件由浏览器排入任务队列；换文稿时必须同步释放节点与挪入弹窗的语言控件。
+  return dispose;
 }

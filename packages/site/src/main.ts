@@ -14,6 +14,7 @@ import { message } from './i18n/message';
 import { drawArch, initializeHardCases } from './home-illustrations';
 import { bindFullscreenLanguage, ownsViewerKey } from './i18n/controls';
 import { bindCopyButton } from './copy-button';
+import { openWithPresentationPassword } from './password-dialog';
 
 /**
  * 接上嵌入字体解码器。
@@ -86,7 +87,14 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   let pres: Presentation;
   try {
     await Promise.all([prepareModernCharts(bytes), prepareAdvancedRendering(bytes)]);
-    pres = await parse(bytes);
+    const opened = await openWithPresentationPassword(label, (password) =>
+      parse(bytes, password === undefined ? undefined : { password }));
+    if (!opened) {
+      setStatus(message('已取消打开“{name}”', { name: label }));
+      setMessage(meta, '');
+      return;
+    }
+    pres = opened;
   } catch (e) {
     thumbs.innerHTML = '';
     setStatus(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');

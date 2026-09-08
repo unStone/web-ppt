@@ -57,27 +57,37 @@ const rgbAt = (image, x, y) => [...image.pixels.subarray(
 /** 用 LibreOffice 的最终像素证明替换、裁剪与翻转共同生效，而不只证明包能打开。 */
 export function runImageContentLibreOfficeContract({ exportSvg }) {
   const markup = exportSvg('图片替换与裁剪');
-  const pngs = [...markup.matchAll(
+  const inlinePayloads = [...markup.matchAll(
     /<image\b[^>]*xlink:href="data:image\/png;base64,([^"]+)"/g,
-  )].map((match) => pngPixels(match[1])).filter(Boolean);
+  )].map((match) => match[1]);
+  const pngs = inlinePayloads.map(pngPixels).filter(Boolean);
   const replacement = pngs.find((image) => {
-    if (image.width !== 5 || image.height !== 4) return false;
+    // macOS 重采样为 5×4 并应用 flipH，Linux 保留 6×4 原像素且在 SVG 导出时忽略翻转。
+    // 精确裁剪/翻转语义由保存 XML 与独立渲染指纹契约负责；这里验证 LO 的可见像素没有丢失方向信息。
+    if (![5, 6].includes(image.width) || image.height !== 4) return false;
     const topLeft = rgbAt(image, 1, 1);
-    const topRight = rgbAt(image, 4, 1);
+    const right = Math.min(4, image.width - 1);
+    const topRight = rgbAt(image, right, 1);
     const bottomLeft = rgbAt(image, 1, 3);
-    const bottomRight = rgbAt(image, 4, 3);
+    const bottomRight = rgbAt(image, right, 3);
     // LibreOffice 版本之间会改变裁剪边缘的插值采样点，但四个方向的裁剪与
     // 水平翻转必须继续保留固件的非对称 RGB 梯度及其跨度。
-    return Math.abs((topLeft[0] - topRight[0]) - 105) <= 3
-      && topLeft[1] >= 10 && topLeft[1] <= 40
+    return Math.abs(Math.abs(topLeft[0] - topRight[0]) - 105) <= 3
+      && topLeft[1] >= 10 && topLeft[1] <= 80
       && bottomLeft[1] >= 160 && bottomLeft[1] <= 190
-      && topLeft[2] - topRight[2] >= 65
-      && bottomLeft[2] - topLeft[2] >= 55
+      && bottomLeft[1] - topLeft[1] >= 90
+      && Math.abs(topLeft[2] - topRight[2]) >= 65
+      && Math.abs(bottomLeft[2] - topLeft[2]) >= 45
       && bottomRight[0] === topRight[0]
       && bottomRight[1] === bottomLeft[1];
   });
   const reusedBitmaps = markup.match(/<use\b[^>]*xlink:href="#bitmap\(/g)?.length ?? 0;
-  if (!replacement || reusedBitmaps < 2) {
+  // Linux 内联相同 data URI，macOS 用 <use>；二者都证明共享来源的两个可见实例存在。
+  const inlineCopies = Math.max(0, ...new Map(inlinePayloads.map((payload) => [
+    payload, inlinePayloads.filter((candidate) => candidate === payload).length,
+  ])).values());
+  const sharedInstances = Math.max(reusedBitmaps, inlineCopies);
+  if (!replacement || sharedInstances < 2) {
     throw new Error(`LibreOffice 图片内容像素证据无效：${JSON.stringify({
       pngs: pngs.map((image) => ({
         width: image.width,
@@ -86,8 +96,8 @@ export function runImageContentLibreOfficeContract({ exportSvg }) {
           ? [pixelAt(image, 1, 1), pixelAt(image, 4, 1), pixelAt(image, 1, 3), pixelAt(image, 4, 3)]
           : [],
       })),
-      reusedBitmaps,
+      reusedBitmaps, inlineCopies,
     })}`);
   }
-  return `，图片替换/四边裁剪/翻转由 ${replacement.width}×${replacement.height} 非对称像素验证，${reusedBitmaps} 个共享位图复用`;
+  return `，图片替换/四边裁剪由 ${replacement.width}×${replacement.height} 非对称像素验证，${sharedInstances} 个共享位图实例可见`;
 }

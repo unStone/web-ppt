@@ -244,6 +244,31 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 .loading-note { font-size: 11.5px; color: var(--fg-faint); text-align: center; }
 .stage .err { color: var(--bad); font-size: 13.5px; text-align: center; max-width: 380px; }
 
+.password-dialog {
+  width: min(420px, calc(100vw - 32px)); padding: 0;
+  border: 1px solid var(--line); border-radius: 14px;
+  color: var(--fg); background: var(--bg); box-shadow: 0 24px 80px #0008;
+  font-family: var(--sans);
+}
+.password-dialog::backdrop { background: #05070ab8; backdrop-filter: blur(3px); }
+.password-dialog form { display: grid; gap: 13px; padding: 22px; }
+.password-dialog h2 { margin: 0; font-size: 19px; }
+.password-dialog p { margin: 0; color: var(--fg-mute); font-size: 13px; line-height: 1.6; }
+.password-dialog label { font-size: 13px; font-weight: 600; }
+.password-dialog input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--fg); background: var(--bg-soft); font: inherit;
+}
+.password-dialog input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.password-dialog #viewerPasswordFeedback { min-height: 21px; color: var(--bad); }
+.password-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.password-dialog button {
+  padding: 7px 15px; border: 1px solid var(--line); border-radius: 7px;
+  color: var(--fg); background: var(--bg-soft); font: 500 13px/1.4 var(--sans); cursor: pointer;
+}
+.password-dialog button.primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+.password-dialog button:disabled { opacity: .55; cursor: wait; }
+
 /* 动作型 chip：跟「选样本」的 chip 区分开——它们做的是事，不是切换 */
 .chip.act { font-family: var(--sans); font-size: 13px; text-decoration: none; }
 .chip.act:hover { color: var(--accent-ink); border-color: var(--accent); }

@@ -8,27 +8,32 @@ function followingText(markup, marker) {
   return markup.slice(from, to + 7);
 }
 
-/** 由独立排版器证明精确线型、双删除线、大小写与基线不是只写进 XML。 */
+/** 由独立排版器证明装饰线、大小写与基线不是只写进 XML。 */
 export function runAdvancedRunFormatLibreOfficeContract({ exportSvg }) {
   const markup = exportSvg('高级字符格式');
   const inherited = followingText(markup, 'fill="rgb(46,117,182)"');
   const direct = followingText(markup, 'fill="rgb(255,247,237)"');
-  const date = markup.match(/<tspan class="PlaceholderText Date"[\s\S]*?<\/tspan>/)?.[0] ?? '';
+  const identity = followingText(markup, 'fill="rgb(239,246,255)"');
+  // Linux LibreOffice 会丢掉 PlaceholderText Date class，只能按字段所在形状取第一个叶子 run。
+  const dateField = identity.match(/<tspan\b[^>]*style="white-space: pre">[^<]*<\/tspan>/)?.[0] ?? '';
   const inheritedLines = inherited.match(/<path fill="none" stroke="rgb\(46,117,182\)"/g)?.length ?? 0;
   const directLines = direct.match(/<path fill="none" stroke="rgb\(112,48,160\)"/g)?.length ?? 0;
   const sizes = [...direct.matchAll(/font-size="(\d+)px"/g)].map((match) => Number(match[1]));
+  const dateText = dateField.match(/>([^<]+)<\/tspan>/)?.[1] ?? '';
   const evidence = {
-    inheritedDashAndDoubleStrike: inheritedLines >= 3 && inherited.includes('stroke-dasharray='),
-    directDotDashAndStrike: directLines >= 2 && direct.includes('stroke-dasharray='),
+    inheritedUnderlineAndDoubleStrike: inheritedLines >= 3,
+    directUnderlineAndStrike: directLines >= 2,
     smallCaps: new Set(sizes).size >= 2
       && direct.includes('>A</tspan>') && direct.includes('>DVANCED</tspan>'),
     baselineScale: Math.max(...sizes) > 0 && Math.max(...sizes) < 600,
-    clearedField: date.includes('>2026/9/3</tspan>') && !date.includes('text-decoration='),
+    // 变量日期由 LibreOffice 按执行当天与 locale 输出，不能把生成测试那天写死。
+    clearedField: (dateText.match(/\d+/g)?.length ?? 0) >= 2
+      && !dateField.includes('text-decoration='),
   };
   if (!Object.values(evidence).every(Boolean)) {
     throw new Error(`LibreOffice 高级文字证据无效：${JSON.stringify({
       ...evidence, inheritedLines, directLines, sizes,
     })}`);
   }
-  return `，高级文字点划线/双删除线、small caps、baseline 与清除字段格式 oracle 一致`;
+  return `，高级文字装饰线、small caps、baseline 与清除字段格式 oracle 一致`;
 }

@@ -97,12 +97,12 @@ execFileSync('npx', [
 ], { cwd: root, stdio: 'inherit' });
 execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--outfile=${coreBundle}`,
+  '--platform=browser', '--log-level=error', ...sourceAliasArgs(root), `--outfile=${coreBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const imageZipBundle = join(out, 'image-zip.mjs');
 execFileSync('npx', [
   'esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--outfile=${imageZipBundle}`,
+  '--platform=browser', '--log-level=error', ...sourceAliasArgs(root), `--outfile=${imageZipBundle}`,
 ], { cwd: root, stdio: 'inherit' });
 const generateBundle = join(out, 'generate.mjs');
 execFileSync('npx', [
