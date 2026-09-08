@@ -88,7 +88,13 @@ async function lateSample(context) {
       })]);
       await click('[data-site-locale="zh-CN"]');
       if (scenario !== 'language') {
-        await openFixture(context, '/fixtures/sample-editor-shape-format.pptx', '<优先本机 & 原文>.pptx');
+        // 两个场景使用相同来源字节，恢复身份也相同；这里验证的是迟到响应，必须显式丢弃前一场景的恢复记录。
+        await openFixture(
+          context,
+          '/fixtures/sample-editor-shape-format.pptx',
+          `<优先本机 ${scenario} & 原文>.pptx`,
+          { discardRecovery: true },
+        );
         await click('#addShape');
         await evaluate(`globalThis.__bootstrapCurrent = {
           canvas: document.querySelector('#canvasMount').firstElementChild,

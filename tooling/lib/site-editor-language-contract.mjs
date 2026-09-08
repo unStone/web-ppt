@@ -37,7 +37,8 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
   const navigate = async (path, language) => {
     const url = new URL(path, directory).href;
     await request('Page.navigate', { url });
-    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement.lang === ${JSON.stringify(language)}
+    // Page.navigate 会先切 URL，再创建新 documentElement；该空窗在慢 CI 上可稳定被轮询撞到。
+    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement?.lang === ${JSON.stringify(language)}
       && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`, `${path} 语言解析`);
     if (!path.startsWith('editor')) return;
     const ready = `document.querySelector('#fileName')?.textContent === 'showcase.pptx'
@@ -63,7 +64,7 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
       await navigate(`${page}.en.html`, 'en');
       await navigate(`${page}.html?lang=unknown`, 'en');
       await request('Page.reload');
-      await waitFor("document.documentElement.lang === 'en' && document.querySelector('[data-site-locale=\"en\"]')?.getAttribute('aria-current') === 'true'", '未知语言刷新仍回退英文');
+      await waitFor("document.documentElement?.lang === 'en' && document.querySelector('[data-site-locale=\"en\"]')?.getAttribute('aria-current') === 'true'", '未知语言刷新仍回退英文');
       await request('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
       await request('Network.setUserAgentOverride', { userAgent, acceptLanguage: 'fr-FR' });
       await navigate(`${page}.html`, 'en');
