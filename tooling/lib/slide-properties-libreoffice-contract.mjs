@@ -34,11 +34,13 @@ export function runSlidePropertiesLibreOfficeContract({
     pages: slides.length === 8,
     order: JSON.stringify(labels) === JSON.stringify(['1', '2', '3', '3', '4', '5', '6', '']),
     hidden: JSON.stringify(hidden) === JSON.stringify([4, 7]),
-    gradient: gradient.includes('<a:gradFill')
-      && ['DBEAFE', '3B82F6', '1E3A8A'].every((color) => gradient.includes(`val="${color}"`))
-      && gradient.includes('<a:alpha val="55000"/>'),
-    theme: theme.includes('<a:solidFill><a:srgbClr val="70AD47"/></a:solidFill>'),
-    added: added.includes('<a:solidFill><a:srgbClr val="FDE68A"/></a:solidFill>'),
+    // LibreOffice 在 macOS 输出大写十六进制，Linux 输出小写；OOXML 颜色值不区分大小写。
+    gradient: /<a:gradFill\b/i.test(gradient)
+      && ['DBEAFE', '3B82F6', '1E3A8A'].every((color) =>
+        new RegExp(`val="${color}"`, 'i').test(gradient))
+      && /<a:alpha val="55000"\/>/i.test(gradient),
+    theme: /<a:solidFill><a:srgbClr val="70AD47"\/><\/a:solidFill>/i.test(theme),
+    added: /<a:solidFill><a:srgbClr val="FDE68A"\/><\/a:solidFill>/i.test(added),
   };
   if (!Object.values(evidence).every(Boolean)) {
     throw new Error(`LibreOffice 页面属性证据无效：${JSON.stringify({ ...evidence, labels, hidden })}`);
