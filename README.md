@@ -440,7 +440,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2230 项断言 + 186 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，2234 项断言 + 186 个渲染快照 |
 | `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 101 份固件、690 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |

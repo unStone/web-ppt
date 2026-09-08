@@ -8,6 +8,7 @@ import { AutoNum, collectAutoNums, formatAutoNum } from './autonum';
 import { Cfb } from './cfb';
 import { getPptDecryptor } from '../crypto/hook';
 import { isPptEncrypted } from '../crypto/ppt';
+import { PasswordRequiredError } from '../crypto/ooxml';
 import {
   ESCHER, EscherProps, MSO_SHAPE, P, Scheme, SP_FLAG, escherColor, extractBlips,
   isTableGroup, MSO_PICTURE_FRAME, parseOpt, readAnchor, readChildAnchor, readSp, readSpgr,
@@ -1241,7 +1242,7 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
   if (isPptEncrypted(currentUser) && currentUser) {
     const decrypt = getPptDecryptor();
     if (!decrypt) throw new Error('该 .ppt 已加密，但未注入解密器（setPptDecryptor）');
-    if (password === undefined) throw new Error('该 .ppt 已加密，请通过 parse(input, { password }) 提供打开密码');
+    if (password === undefined) throw new PasswordRequiredError();
     const plain = decrypt(doc, currentUser, password);
     if (!plain) throw new Error('该 .ppt 已加密，但加密结构无法识别');
     doc = plain;

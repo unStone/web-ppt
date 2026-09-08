@@ -26,7 +26,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 | 门禁 | 命令 | 状态 | 证据 |
 |---|---|---|---|
 | 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 7975 项，原性能门禁通过 | 2230 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments + 1789 扩展能力 |
+| 断言总量 | `npm test` | ✅ 7979 项，原性能门禁通过 | 2234 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments + 1789 扩展能力 |
 | 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
 | 编辑等价指纹 | 同上 | ✅ 690 对 | 101 份固件、345 页，独立进程原始 SVG 两条文本路径 |
 | 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
