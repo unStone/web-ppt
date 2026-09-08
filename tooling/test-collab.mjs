@@ -19,11 +19,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/collab');
 mkdirSync(out, { recursive: true });
 
-const bundle = (entry, name, aliases = [], externals = []) => {
+const bundle = (entry, name, aliases = [], externals = [], { sourceWorkspace = true } = {}) => {
   const file = join(out, `${name}.mjs`);
   execFileSync('npx', [
     'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-    ...sourceAliasArgs(root, aliases),
+    // 包体门禁测的是发布边界，不能把已声明 external 的 peer 又通过源码 alias 内联回来。
+    ...(sourceWorkspace ? sourceAliasArgs(root, aliases) : []),
     ...externals.map((name) => `--external:${name}`), `--outfile=${file}`,
   ], { cwd: root, stdio: 'inherit' });
   return file;
@@ -36,7 +37,9 @@ const runtimeFile = bundle(join(root, 'tooling/lib/collab-test-runtime.ts'), 'ru
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
 ]);
 const collabEntry = join(root, 'packages/collab/src/index.ts');
-const thinFile = bundle(collabEntry, 'collab-thin', [], ['@web-ppt/edit-core']);
+const thinFile = bundle(collabEntry, 'collab-thin', [], ['@web-ppt/edit-core'], {
+  sourceWorkspace: false,
+});
 const { core, edit, generate, collab, templates } = await import(
   `${pathToFileURL(runtimeFile)}?t=${Date.now()}`
 );
