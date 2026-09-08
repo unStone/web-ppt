@@ -33,7 +33,7 @@
     "test:edit:powerpoint": "npm run test:v07 && powershell -NoProfile -ExecutionPolicy Bypass -File tooling/test-edit-powerpoint.ps1 -Manifest out/v07-integration/office-artifacts.json -Report out/v07-integration/powerpoint-report.json && node tooling/validate-edit-powerpoint-report.mjs --manifest out/v07-integration/office-artifacts.json --report out/v07-integration/powerpoint-report.json",
     "test:edit:equivalence": "node tooling/test-edit-equivalence.mjs",
     "test:editor": "npm run test:editor:functional && npm run test:editor:performance",
-    "test:editor:functional": "node tooling/check-site-i18n.mjs --source-only && node tooling/test-site-password-dialog.mjs && node tooling/test-editor.mjs && node tooling/test-editor-browser-retry.mjs && node tooling/test-site-editor-browser.mjs",
+    "test:editor:functional": "node tooling/check-site-i18n.mjs --source-only && node tooling/test-site-password-dialog.mjs && node tooling/test-chrome-devtools-launch.mjs && node tooling/test-editor.mjs && node tooling/test-editor-browser-retry.mjs && node tooling/test-site-editor-browser.mjs",
     "test:site:i18n": "node tooling/test-site-i18n-static.mjs",
     "test:editor:performance": "node tooling/test-editor-browser.mjs",
     "test:editor-load": "node tooling/reproduce-editor-browser-load.mjs",
