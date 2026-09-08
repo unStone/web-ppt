@@ -36,7 +36,7 @@ check('统一 Office 清单与生成器完全一致且无重复', JSON.stringify
   && new Set(manifest.artifacts.map((a) => a.file)).size === V08_OFFICE_ARTIFACTS.length);
 check('统一清单每件产物均存在', manifest.artifacts.every((a) => existsSync(resolve(root, 'out/v08-integration', a.file))));
 const scripts = json('package.json').scripts;
-check('源码批注和全类型混合进入主门禁', scripts.test.includes('test:comments') && read('tooling/test-edit-save.mjs').includes('runMixedEditingContract'));
+check('源码批注和全类型混合进入主门禁', scripts['test:functional'].includes('test:comments') && read('tooling/test-edit-save.mjs').includes('runMixedEditingContract'));
 check('语料专项不覆盖默认断言计数', read('tooling/test-chartex-native.mjs').includes("if (!process.argv.includes('--corpus')) recordCount('chartexNative', passed)"));
 check('批注与新能力公开类型契约进入 check', ['comments.ts', 'chartex.ts', 'appearance-browser.ts', 'v08-chart.ts', 'media.ts']
   .every((file) => ts.parseConfigFileTextToJson('tsconfig.json', read('tsconfig.json')).config.include.includes(`tooling/type-contracts/${file}`)));

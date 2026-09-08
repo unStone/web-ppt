@@ -29,28 +29,19 @@ jobs:
         # 甚至让快照随机漂移。
         run: git diff --exit-code --stat fixtures/
 
-      - name: 核心解析 / 渲染测试
-        run: npm run test:core
+      - name: 安装 LibreOffice 与中文字体
+        # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
 
-      - name: 编辑模型 / 投影测试
-        run: npm run test:edit
-
-      - name: 浏览器 DOM 编辑层功能测试
-        run: npm run test:editor:functional
-
-      - name: 0.7 模板到保存跨能力旅程
-        run: npm run test:v07
+      - name: 全量功能测试
+        # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
+        run: npm run test:functional
 
       # runner 的固定计算基线会随宿主并行负载从 5ms 漂到 40ms；beta.2 先保留
       # 采样与红灯证据，但不让已被环境自检判定受扰的 p95 阻断功能发布。
       - name: 浏览器 DOM 编辑层性能采样
         continue-on-error: true
         run: npm run test:editor:performance
-
-      - name: 安装 LibreOffice 与中文字体
-        # 外部 oracle 大量使用中文；缺字体时 LibreOffice 会按缺字占位宽度断行，
-        # 两栏与 spAutoFit 的几何证据就不再是在验证真实文本布局。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
 
       - name: 保存产物外部打开测试
         # manifest 是唯一产物清单；新增保存工件无需再维护第二份手写子集。
@@ -63,16 +54,6 @@ jobs:
       - name: 编辑性能预算
         continue-on-error: true
         run: npm run bench:edit
-
-      - name: 图元文件解码测试
-        run: npm run test:metafile
-
-      # 这两条此前只在 release.yml 里跑，PR 阶段发现不了适配包与协同包的回归
-      - name: React / Vue 适配与体积门禁
-        run: npm run test:adapters
-
-      - name: 协同适配与收敛门禁
-        run: npm run test:collab
 
       - name: 构建
         run: npm run build
