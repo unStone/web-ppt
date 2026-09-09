@@ -62,59 +62,68 @@ export async function runSiteEditorLifecycleBrowserContract(context) {
   await waitFor("document.querySelector('#fileName').textContent === 'lifecycle-latest.pptx' && !document.querySelector('#editorApp').dataset.loading", '连续打开以最后一次意图为准');
   assert.equal(await slideCount(), original);
 
-  await evaluate(`(async () => {
-    const bytes = await fetch('${source}').then(response => response.arrayBuffer());
-    const append = Element.prototype.append, remove = Element.prototype.remove;
-    const Observer = window.MutationObserver, observers = [];
-    globalThis.__lifecycleRelease = null;
-    globalThis.__restoreLifecycle = () => {
-      Element.prototype.append = append; Element.prototype.remove = remove;
-      window.MutationObserver = Observer;
-    };
-    window.MutationObserver = class extends Observer {
-      observe(target, options) {
-        const canvas = document.querySelector('#canvasMount').firstElementChild;
-        if (canvas?.contains(target)) observers.push({ observer: this, canvas });
-        return super.observe(target, options);
-      }
-      disconnect() { this.released = true; return super.disconnect(); }
-    };
-    const open = name => {
-      const transfer = new DataTransfer(); transfer.items.add(new File([bytes], name));
-      const input = document.querySelector('#fileInput'); input.files = transfer.files;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    Element.prototype.append = function (...nodes) {
-      const result = append.apply(this, nodes);
-      if (this.id === 'objectList') {
-        Element.prototype.append = append;
+  for (const phase of ['view', 'tools']) {
+    await evaluate(`(async () => {
+      const bytes = await fetch('${source}').then(response => response.arrayBuffer());
+      const phase = '${phase}', append = Element.prototype.append, remove = Element.prototype.remove;
+      const Observer = window.MutationObserver, observers = [];
+      let superseded = false;
+      globalThis.__lifecycleRelease = null;
+      globalThis.__restoreLifecycle = () => {
+        Element.prototype.append = append; Element.prototype.remove = remove;
+        window.MutationObserver = Observer;
+      };
+      const open = name => {
+        const transfer = new DataTransfer(); transfer.items.add(new File([bytes], name));
+        const input = document.querySelector('#fileInput'); input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      const supersede = () => {
+        if (superseded) return;
+        superseded = true;
         globalThis.__obsoleteCanvas = document.querySelector('#canvasMount').firstElementChild;
-        open('lifecycle-during-mount-latest.pptx');
-      }
-      return result;
-    };
-    Element.prototype.remove = function () {
-      if (this === globalThis.__obsoleteCanvas) {
-        const owned = observers.filter(record => record.canvas === this);
-        globalThis.__lifecycleRelease = { count: owned.length,
-          released: owned.every(record => record.observer.released === true) };
-      }
-      return remove.call(this);
-    };
-    open('lifecycle-during-mount-obsolete.pptx');
-  })()`, true);
-  try {
-    await waitFor("document.querySelector('#fileName').textContent === 'lifecycle-during-mount-latest.pptx' && !document.querySelector('#editorApp').dataset.loading", '已开始挂载的旧文稿被新打开取代');
-    assert.equal(await evaluate('globalThis.__obsoleteCanvas.isConnected'), false);
-    const released = await evaluate('globalThis.__lifecycleRelease');
-    assert.ok(released?.count > 0, '确实观察到旧画布文稿工具创建的观察器');
-    assert.equal(released.released, true, '旧画布移除前已释放工具观察器');
-    await click('#addSlide');
-    assert.equal(await slideCount(), original + 1);
-    await click('#undo');
-    assert.equal(await slideCount(), original);
-  } finally {
-    await evaluate('globalThis.__restoreLifecycle(); delete globalThis.__restoreLifecycle; delete globalThis.__obsoleteCanvas; delete globalThis.__lifecycleRelease');
+        open('lifecycle-during-' + phase + '-latest.pptx');
+      };
+      window.MutationObserver = class extends Observer {
+        observe(target, options) {
+          const canvas = document.querySelector('#canvasMount').firstElementChild;
+          if (canvas?.contains(target)) observers.push({ observer: this, canvas });
+          const result = super.observe(target, options);
+          if (phase === 'tools' && canvas?.contains(target)) supersede();
+          return result;
+        }
+        disconnect() { this.released = true; return super.disconnect(); }
+      };
+      Element.prototype.append = function (...nodes) {
+        const result = append.apply(this, nodes);
+        if (phase === 'view' && this.id === 'objectList') supersede();
+        return result;
+      };
+      Element.prototype.remove = function () {
+        if (this === globalThis.__obsoleteCanvas) {
+          const owned = observers.filter(record => record.canvas === this);
+          globalThis.__lifecycleRelease = { count: owned.length,
+            released: owned.every(record => record.observer.released === true) };
+        }
+        return remove.call(this);
+      };
+      open('lifecycle-during-' + phase + '-obsolete.pptx');
+    })()`, true);
+    try {
+      await waitFor(`document.querySelector('#fileName').textContent === 'lifecycle-during-${phase}-latest.pptx' && !document.querySelector('#editorApp').dataset.loading`, '已开始挂载的旧文稿被新打开取代');
+      assert.equal(await evaluate('globalThis.__obsoleteCanvas.isConnected'), false);
+      const released = await evaluate('globalThis.__lifecycleRelease');
+      assert.ok(released, '已观察到旧画布移除');
+      if (phase === 'view') assert.equal(released.count, 0, '视图挂载时已取消，不再创建文稿工具');
+      else assert.ok(released.count > 0, '工具创建后取消，确实观察到待释放的观察器');
+      assert.equal(released.released, true, '旧画布移除前已释放工具观察器');
+      await click('#addSlide');
+      assert.equal(await slideCount(), original + 1);
+      await click('#undo');
+      assert.equal(await slideCount(), original);
+    } finally {
+      await evaluate('globalThis.__restoreLifecycle(); delete globalThis.__restoreLifecycle; delete globalThis.__obsoleteCanvas; delete globalThis.__lifecycleRelease');
+    }
   }
   await click('#newFile');
   await waitFor("!!document.querySelector('#templateDialog[open]')", '新建模板选择已打开');
