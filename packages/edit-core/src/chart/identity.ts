@@ -10,6 +10,10 @@ import {
 } from './validation';
 import { orderedChartRecords } from './ordering';
 import { chartXml, xmlAttribute as attr } from './xml-data';
+import { readIdentityScopes, scopedIdentity } from './identity-scopes';
+import type { ChartIdentityScopes } from './identity-scopes';
+import { categoryHierarchyBinding } from './category-binding';
+import type { CategoryOrientation } from './category-binding';
 
 export const CHART_IDENTITY_URI = 'urn:web-ppt:chart-data-identities:v1';
 // 合法领域状态的最坏情况也必须能重开；JSON 中引号和反斜杠最多让身份文本翻倍。
@@ -17,6 +21,8 @@ const MAX_MANIFEST_TEXT = (MAX_CHART_CELLS + MAX_CHART_POINTS + MAX_CHART_SERIES
   * (MAX_CHART_IDENTITY * 2 + 32);
 
 export interface ChartIdentityManifest {
+  readonly categoryOrientation?: CategoryOrientation;
+  readonly scopes?: ChartIdentityScopes;
   readonly categories: readonly ChartPointId[];
   readonly series: readonly { readonly id: ChartSeriesId; readonly points: readonly ChartPointId[] }[];
   readonly templates: readonly ChartIdentityTemplate[];
@@ -65,7 +71,7 @@ function validIds(values: unknown, label: string): ChartPointId[] | null {
   return result;
 }
 
-export function readChartIdentityManifest(root: XmlElement): ChartIdentityManifest | null {
+export function readChartIdentityManifest(root: XmlElement, frameKey?: string, fallbackPrefix?: string): ChartIdentityManifest | null {
   const ext = children(child(root, 'extLst'), 'ext')
     .find((item) => attr(item, 'uri') === CHART_IDENTITY_URI);
   const ids = ext && xmlElementChildren(ext, {
@@ -77,15 +83,23 @@ export function readChartIdentityManifest(root: XmlElement): ChartIdentityManife
   let parsed: unknown;
   try { parsed = JSON.parse(sourceText); } catch { return null; }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-  const source = parsed as { categories?: unknown; series?: unknown; templates?: unknown };
-  const categories = validIds(source.categories, '持久化类别身份');
+  const source = parsed as { categories?: unknown; series?: unknown; templates?: unknown; scopes?: unknown; categoryOrientation?: unknown };
+  const categoryOrientation = source.categoryOrientation === 'rows' || source.categoryOrientation === 'columns'
+    ? source.categoryOrientation : undefined;
+  let scope: ChartIdentityScopes | undefined;
+  try { scope = readIdentityScopes(source.scopes); } catch { return null; }
+  const prefix = scope?.frames.find(([key]) => key === frameKey)?.[1] ?? fallbackPrefix ?? scope?.prefix ?? '';
+  const remap = (value: unknown) => scopedIdentity(value, scope, prefix);
+  const remapIds = (values: unknown) => Array.isArray(values) ? values.map(remap) : values;
+  const categories = validIds(remapIds(source.categories), '持久化类别身份');
   if (!categories || !Array.isArray(source.series) || source.series.length > MAX_CHART_SERIES) return null;
   const series: ChartIdentityManifest['series'][number][] = [];
   const seen = new Set<string>();
   let cells = 0;
   for (const item of source.series) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
-    const value = item as { id?: unknown; points?: unknown };
+    const raw = item as { id?: unknown; points?: unknown };
+    const value = { id: remap(raw.id), points: remapIds(raw.points) };
     try { assertChartIdentity(value.id, value.id as string, '持久化系列身份'); } catch { return null; }
     if (seen.has(value.id as string)) return null;
     const points = validIds(value.points, '持久化数据点身份');
@@ -99,7 +113,7 @@ export function readChartIdentityManifest(root: XmlElement): ChartIdentityManife
   for (const wrapper of xmlElementChildren(ext!, {
     localName: 'template', namespaceUri: CHART_IDENTITY_URI,
   })) {
-    const id = attr(wrapper, 'id');
+    const id = remap(attr(wrapper, 'id')) as string | null;
     if (!id || templateNodes.has(id)) return null;
     const node = xmlElementChildren(wrapper, {
       localName: 'ser', namespaceUri: root.namespaceUri,
@@ -111,7 +125,8 @@ export function readChartIdentityManifest(root: XmlElement): ChartIdentityManife
   const templateKinds = new Set<ChartPlotKind>();
   for (const item of templateValues) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
-    const value = item as { id?: unknown; plotKind?: unknown; sourceIndex?: unknown; points?: unknown };
+    const raw = item as { id?: unknown; plotKind?: unknown; sourceIndex?: unknown; points?: unknown };
+    const value = { ...raw, id: remap(raw.id), points: remapIds(raw.points) };
     try { assertChartIdentity(value.id, value.id as string, '持久化模板系列身份'); } catch { return null; }
     if (!CHART_PLOT_KINDS.has(value.plotKind as ChartPlotKind)
       || !Number.isInteger(value.sourceIndex) || Number(value.sourceIndex) < 0
@@ -129,12 +144,13 @@ export function readChartIdentityManifest(root: XmlElement): ChartIdentityManife
     });
   }
   if (templateNodes.size !== templates.length) return null;
-  return { categories, series, templates };
+  return { categories, series, templates, categoryOrientation, ...(scope ? { scopes: { ...scope, prefix } } : {}) };
 }
 
 export function writeChartIdentityManifest(
   root: XmlElement, state: ChartDatasetState, physicalSeriesOrder?: readonly ChartSeriesId[],
   templates: readonly ChartIdentityTemplate[] = [],
+  scopes?: ChartIdentityScopes,
 ): void {
   let extList = child(root, 'extLst');
   if (!extList) {
@@ -158,6 +174,8 @@ export function writeChartIdentityManifest(
     })
     : orderedChartRecords(Object.values(state.series).filter((item) => !item.removed));
   const manifest = {
+    categoryOrientation: categoryHierarchyBinding(state.series)?.hierarchy?.orientation,
+    ...(scopes ? { scopes } : {}),
     categories: orderedCategories.map((item) => item.id),
     series: orderedSeries.map((item) => ({
       id: item.id,

@@ -4,6 +4,8 @@ import { isSlideNotesPatch } from './slide-notes';
 import { isSlideOrderPatch } from './slide-order';
 import { sectionOfSlide } from '../sections';
 import { afterSlideDesignChange, beforeSlideDesignChange } from '../design-dependencies';
+import { retainElementOrigins, restoreElementOrigins } from '../retained-element-origins';
+import { readExtensionCopies } from '../extension-copy';
 
 export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
   return patch.path.length === 2 && patch.path[0] === 'slides';
@@ -35,6 +37,7 @@ function assertSnapshot(snapshot: SlideTreeSnapshot, id: SlideId, label: string)
   };
   for (const child of snapshot.slide.children) visit(child, id);
   if (reached.size !== Object.keys(snapshot.records).length) throw new Error(`${label} 的页面树包含孤儿元素`);
+  readExtensionCopies(snapshot);
 }
 
 export function validateSlideTreePatch(doc: EditDoc, patch: SlideTreePatch, index: number): void {
@@ -69,6 +72,7 @@ const cloneRecord = (record: ElementRecord): ElementRecord => structuredClone(re
 export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   const { slide, after, records } = patch.value;
   if (patch.op === 'remove') {
+    retainElementOrigins(doc, Object.keys(records).map(id => doc.elements[id]));
     beforeSlideDesignChange(doc, slide.id);
     const index = doc.slideOrder.indexOf(slide.id);
     if (index < 0) throw new Error(`删除页面不在 slideOrder 中：${slide.id}`);
@@ -81,6 +85,7 @@ export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
     }
     return;
   }
+  restoreElementOrigins(doc, Object.values(records));
   doc.slides[slide.id] = structuredClone(slide);
   for (const [id, record] of Object.entries(records)) doc.elements[id] = cloneRecord(record);
   const index = after === null ? 0 : doc.slideOrder.indexOf(after) + 1;

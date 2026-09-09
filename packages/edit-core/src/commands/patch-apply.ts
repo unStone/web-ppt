@@ -33,6 +33,7 @@ import { applyTableGridPatch, isTableCellPropsPatch, isTableColumnPatch,
 import { applyTableRowPatch, isTableRowPatch } from './table-row';
 import { applyThemePatch, isThemePatch } from './theme';
 import type { ElementTransformPatch, Patch } from './types';
+import { applyDocumentExtensionPatch, isDocumentExtensionPatch } from '../document-extensions';
 import {
   applyExtensionPatch, finalizeExtensionPatch, isExtensionPatch,
 } from '../extension-runtime';
@@ -41,6 +42,11 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
   const orderParents = new Set<string>();
   const extensionTargets = new Map<string, readonly [string, string, 'elements' | 'slides']>();
   for (const patch of patches) {
+    // 记录集合换代使按需依赖索引立即失效；字段编辑仍复用集合，避免每个图表重新扫描全稿。
+    if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
+      doc.elements = { ...doc.elements };
+    }
+    if (isDocumentExtensionPatch(patch)) { applyDocumentExtensionPatch(doc, patch); continue; }
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
     else if (isLayoutPropertyPatch(patch)) applyLayoutPropertyPatch(doc, patch);
@@ -83,4 +89,6 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
   for (const [id, namespace, scope] of extensionTargets.values()) {
     finalizeExtensionPatch(doc, id, namespace, scope);
   }
+  clearRelocatedExtensions(doc);
 }
+import { clearRelocatedExtensions } from '../extension-addresses';

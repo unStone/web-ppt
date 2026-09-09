@@ -1,8 +1,9 @@
 import {
-  assertIdentityAllocation, MAX_COLLABORATION_VERSION, MAX_PATCHES_PER_TRANSACTION,
+  assertEditIdentityWatermark, MAX_COLLABORATION_VERSION, MAX_PATCHES_PER_TRANSACTION, isExtensionMigrationPatch,
 } from '@web-ppt/edit-core';
-import type { EditIdentity, Patch } from '@web-ppt/edit-core';
+import type { Patch } from '@web-ppt/edit-core';
 import type { CollabMessage, CollabStamp } from './types';
+export { isExtensionMigrationPatch };
 
 export function compareStamp(left: CollabStamp, right: CollabStamp): number {
   if (left.clock !== right.clock) return left.clock < right.clock ? -1 : 1;
@@ -16,30 +17,6 @@ const positiveInteger = (value: unknown): value is number =>
 
 const protocolId = (value: unknown): value is string => typeof value === 'string'
   && value.length >= 1 && value.length <= 128 && !/[\0-\x1f\x7f]/.test(value);
-
-function assertIdentity(value: unknown): asserts value is EditIdentity {
-  const identity = value as Partial<EditIdentity> | null;
-  const optional = (counter: unknown, minimum = 1, maximum = Number.MAX_SAFE_INTEGER) =>
-    counter === undefined || positiveInteger(counter) && counter >= minimum && counter <= maximum;
-  if (!identity || typeof identity !== 'object' || typeof identity.prefix !== 'string' || !identity.prefix
-    || !positiveInteger(identity.nextSlide) || !positiveInteger(identity.nextElement)
-    || !identity.nextSpid || typeof identity.nextSpid !== 'object' || Array.isArray(identity.nextSpid)
-    || Object.entries(identity.nextSpid).some(([part, counter]) => !part || !positiveInteger(counter))
-    || !optional(identity.nextSlidePart) || !optional(identity.nextNotesPart)
-    || !optional(identity.nextPresentationSlideId, 256, 0x8000_0000)
-    || !optional(identity.nextPresentationRelationship)) {
-    throw new Error('协同消息的身份水位无效');
-  }
-  const allocation = identity.allocation;
-  if (allocation !== undefined) {
-    if (!protocolId(allocation?.replicaId)) throw new Error('协同消息的身份分配命名空间无效');
-    try {
-      assertIdentityAllocation(allocation, '协同消息的身份分配命名空间', identity.prefix);
-    } catch {
-      throw new Error('协同消息的身份分配命名空间无效');
-    }
-  }
-}
 
 export function assertCollabMessage(value: unknown): asserts value is CollabMessage {
   const message = value as Partial<CollabMessage> | null;
@@ -57,7 +34,8 @@ export function assertCollabMessage(value: unknown): asserts value is CollabMess
     || !Number.isFinite(message.time)) {
     throw new Error('协同消息结构无效');
   }
-  assertIdentity(message.identity);
+  try { assertEditIdentityWatermark(message.identity); }
+  catch { throw new Error('协同消息的身份水位或身份分配命名空间无效'); }
   const allocation = message.identity.allocation;
   if (!allocation || allocation.replicaId !== message.replicaId
     || allocation.clock !== stamp.clock || allocation.sequence !== message.sequence) {

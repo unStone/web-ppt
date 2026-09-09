@@ -14,10 +14,15 @@ import { isMasterTextStylePatch } from './commands/master-text-style';
 import type { Patch } from './commands/types';
 import type { EditDoc, ElementId, SlideId, TextOverride } from './types';
 import { canvasTargetOfElement } from './design-target';
+import { isDocumentExtensionPatch } from './document-extensions';
+import { isExtensionAddressPatch } from './extension-addresses';
+import { isExtensionMigrationPatch } from './extension-migration-receipt';
 
-export function patchElements(patches: readonly Patch[]): Set<ElementId> {
-  return new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
+export function patchElements(patches: readonly Patch[], dirtyElements: ReadonlySet<ElementId> = new Set()): Set<ElementId> {
+  const result = new Set(patches.flatMap((patch) => isElementHierarchyPatch(patch)
     ? patch.value.affected : patch.path[0] === 'elements' ? [patch.path[1]] : []));
+  if (patches.some(isDocumentExtensionPatch)) for (const id of dirtyElements) result.add(id);
+  return result;
 }
 
 export function affectsSlideSequence(patches: readonly Patch[]): boolean {
@@ -53,7 +58,7 @@ export function renderPatchElements(
     : patch.path[0] === 'elements' && !isElementOrderPatch(patch) && !isElementInteractionPatch(patch)
       ? [patch.path[1]] : []));
   // 页树与页序会改变字段投影，却没有元素属性 patch；必须把派生脏元素交给 DOM 增量层。
-  if (affectsSlideSequence(patches)) for (const id of dirtyElements) result.add(id);
+  if (affectsSlideSequence(patches) || patches.some(isDocumentExtensionPatch)) for (const id of dirtyElements) result.add(id);
   return result;
 }
 
@@ -68,7 +73,7 @@ export function panePatchElements(patches: readonly Patch[]): Set<ElementId> {
 }
 
 export const hasDocumentPatch = (patches: readonly Patch[]): boolean =>
-  patches.some((patch) => !isElementInteractionPatch(patch));
+  patches.some((patch) => !isElementInteractionPatch(patch) && !isExtensionAddressPatch(patch) && !isExtensionMigrationPatch(patch));
 
 export function bodyPropsPatchElements(
   forward: readonly Patch[],

@@ -11,15 +11,16 @@ import type { Axis, ChartModel, ManualLayout, PlotGroup, Series } from './model'
 import { defaultAxis, isStacked, isXY, parseModel } from './model';
 import type { AxisView, Cartesian, Grid, Side } from './frame';
 import {
-  axisInsets, depthOf, floor3D, lineH, makeCartesian, makeCatView, makeValueView, makeXY, needWrap,
-  renderAxes, renderSideAxis, reserveDepth, shrink, tickTarget, valueExtent, xExtent,
+  axisInsets, depthOf, floor3D, lineH, makeCartesian, makeCatView, makeValueView, needWrap,
+  renderAxes, renderSideAxis, reserveDepth, shrink, tickTarget, valueExtent,
 } from './frame';
 import {
-  BarSlot, PlotEnv, markerEl, markerSymbol, pointFill, renderAreas, renderBars, renderBubbles,
-  renderLines, renderOfPie, renderPie, renderPie3D, renderRadar, renderRadarGrid, renderScatter,
+  BarSlot, PlotEnv, markerEl, markerSymbol, pointFill, renderAreas, renderBars,
+  renderLines, renderOfPie, renderPie, renderPie3D, renderRadar, renderRadarGrid,
   renderStock, renderSurface,
 } from './plots';
 import type { RadarFrame, SurfaceFrame } from './plots';
+import { bindXYAxes, paintXY, xyInsets } from './xy';
 import { Depth3D, Rect, formatNumber, lineEl, measure, mix, niceScale, px, rectEl, solid, strokeFrom, textEl } from './util';
 
 export interface ChartEnv {
@@ -291,13 +292,13 @@ function build(root: Element, W: number, H: number, env: ChartEnv): SlideElement
   }
 
   // 图例
-  const active = cartGroups.length ? cartGroups
+  const active = cartGroups.length ? groups.filter(g => cartGroups.includes(g) || xyGroups.includes(g))
     : xyGroups.length ? xyGroups
     : radarGroups.length ? radarGroups
     : surfaceGroups.length ? surfaceGroups
     : ofPieGroups.length ? ofPieGroups
     : pieGroups;
-  const cats = categories(active);
+  const cats = categories(cartGroups.length ? cartGroups : active);
   // 曲面图的图例是色带，由绘图本体自带，这里不再列系列
   const items = surfaceGroups.length && surfaceGroups.length === groups.length
     ? []
@@ -309,7 +310,7 @@ function build(root: Element, W: number, H: number, env: ChartEnv): SlideElement
   const pe: PlotEnv = { ctx: env.ctx, fonts, size: m.textSize, color: m.textColor, cats };
   const body: SlideElement[] = [];
 
-  if (cartGroups.length) body.push(...cartesian(m, cartGroups, cats, region, W, H, fonts, pe));
+  if (cartGroups.length) body.push(...cartesian(m, cartGroups, cats, region, W, H, fonts, pe, xyGroups));
   else if (xyGroups.length) body.push(...scatter(m, xyGroups, region, W, H, fonts, pe));
   else if (radarGroups.length) body.push(...radar(m, radarGroups, region, W, H, pe));
   else if (surfaceGroups.length) body.push(...surface(m, surfaceGroups, region, W, H, pe));
@@ -405,6 +406,7 @@ function cartesian(
   H: number,
   fonts: string[],
   pe: PlotEnv,
+  xyGroups: PlotGroup[],
 ): SlideElement[] {
   const horizontal = groups.some((g) => g.kind === 'bar' && g.barDir === 'bar');
   const { primary, secondary } = bindAxes(m, groups, horizontal);
@@ -415,9 +417,10 @@ function cartesian(
 
   const valLen = horizontal ? region.w : region.h;
   const target = tickTarget(valLen, m.textSize);
+  const xyLayout = bindXYAxes(m, xyGroups, region, groups);
   const viewOf = (b: Bind, side: Side): AxisView => {
     const fmt = b.groups.some((g) => g.grouping === 'percentStacked') ? '0%' : firstFmt(b.groups);
-    return makeValueView(b.val, side, valueExtent(b.groups), target, fmt, m);
+    return makeValueView(b.val, side, xyLayout.extent(b.val, valueExtent(b.groups)), target, fmt, m);
   };
   const valView = viewOf(primary, valSide);
   const secView = secondary ? viewOf(secondary, secSide) : null;
@@ -429,12 +432,13 @@ function cartesian(
 
   const hAxis = horizontal ? valView : catView;
   const vAxis = horizontal ? catView : valView;
-  let rect = shrink(region, axisInsets(m, hAxis, vAxis, false, secView));
+  const xyAxes = xyLayout.axes(secView ? [valView, secView] : [valView]);
+  let rect = shrink(region, xyInsets(m, xyAxes, axisInsets(m, hAxis, vAxis, false, secView)));
   let hWrap = false;
   if (!horizontal && cats.length) {
     const bandEst = between ? rect.w / Math.max(cats.length, 1) : rect.w / Math.max(cats.length - 1, 1);
     hWrap = needWrap(catView, bandEst);
-    if (hWrap) rect = shrink(region, axisInsets(m, hAxis, vAxis, true, secView));
+    if (hWrap) rect = shrink(region, xyInsets(m, xyAxes, axisInsets(m, hAxis, vAxis, true, secView)));
   }
   if (m.plotLayout && m.plotLayout.target === 'inner') rect = applyLayout(rect, m.plotLayout, W, H);
 
@@ -532,8 +536,11 @@ function cartesian(
     for (const g of b.groups) if (g.kind === 'line') out.push(...renderLines(g, cc, pe));
     for (const g of b.groups) if (g.kind === 'stock') out.push(...renderStock(g, cc, pe));
   };
+  const xy = paintXY(m, xyAxes, rect, fonts, pe, new Set([primary.cat, primary.val, ...(secondary ? [secondary.val] : [])]));
+  out.push(...xy.axes);
   paint(primary, c);
   if (secondary && c2) paint(secondary, c2);
+  out.push(...xy.plots);
   return out;
 }
 
@@ -548,43 +555,11 @@ function scatter(
   fonts: string[],
   pe: PlotEnv,
 ): SlideElement[] {
-  const axes = m.axes.filter((a) => a.kind !== 'ser');
-  const xAxis = axes.find((a) => a.pos === 'b' || a.pos === 't') ?? axes[0] ?? defaultAxis('val');
-  const yAxis = axes.find((a) => a !== xAxis) ?? defaultAxis('val');
-  const xSide: Side = xAxis.pos === 't' ? 't' : 'b';
-  const ySide: Side = yAxis.pos === 'r' ? 'r' : 'l';
-
-  const xView = makeValueView(xAxis, xSide, xExtent(groups), tickTarget(region.w, m.textSize), null, m);
-  const yView = makeValueView(yAxis, ySide, valueExtent(groups), tickTarget(region.h, m.textSize), firstFmt(groups), m);
-
-  let rect = shrink(region, axisInsets(m, xView, yView, false));
+  const axes = bindXYAxes(m, groups, region).axes();
+  let rect = shrink(region, xyInsets(m, axes, { l: 0, r: 0, t: 0, b: 0 }));
   if (m.plotLayout && m.plotLayout.target === 'inner') rect = applyLayout(rect, m.plotLayout, W, H);
-  const xy = makeXY(rect, xView, yView);
-
-  const grid: Grid = {
-    rect,
-    hAxis: xView,
-    vAxis: yView,
-    hPos: (i) => xy.x(xView.ticks[i] ?? 0),
-    vPos: (i) => xy.y(yView.ticks[i] ?? 0),
-    hEdge: null,
-    hEdgeCount: 0,
-    vEdge: null,
-    vEdgeCount: 0,
-    hLineAt: xy.y(xy.clampY(0)),
-    vLineAt: xy.x(xy.clampX(0)),
-    hWrap: false,
-    hBand: 0,
-    depth: null,
-  };
-
-  const out: SlideElement[] = [];
-  out.push(...plotBg(m, rect));
-  out.push(...renderAxes(m, grid, fonts));
-  for (const g of groups) {
-    out.push(...(g.kind === 'bubble' ? renderBubbles(g, xy, pe) : renderScatter(g, xy, pe)));
-  }
-  return out;
+  const xy = paintXY(m, axes, rect, fonts, pe);
+  return [...plotBg(m, rect), ...xy.axes, ...xy.plots];
 }
 
 // ---------- 曲面 / 复合饼 ----------

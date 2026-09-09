@@ -1,16 +1,29 @@
 import type { Slide, SlideElement } from '@web-ppt/core';
-import type { CommandPatches, ExtensionCommand, ExtensionPatch } from './commands/types';
+import type { CommandPatches, DocumentExtensionPatch, ExtensionCommand, ExtensionPatch, Patch } from './commands/types';
 import type { EditDoc, ElementId, ElementInsertionResource, SlideId } from './types';
 import type { OpcPartChanges } from './opc/types';
 import { invalidateElement, invalidateSlide } from './projection';
+import { isLegacyExtensionReplay } from './extension-recovery-context';
+import type { ExtensionCopyResolver } from './extension-copy';
 
 export interface EditExtensionSavePlan {
   readonly changes: OpcPartChanges;
   readonly baselines: Readonly<Record<string, Uint8Array>>;
 }
 
+/** undefined 允许无版本的等值回退；空数组明确否决整组迁移。 */
+export type ExtensionMigrationResolver = (doc: EditDoc, routes: readonly DocumentExtensionPatch[]) =>
+  readonly DocumentExtensionPatch[] | undefined;
+
 export interface EditExtensionRuntime {
+  readonly migrate?: (doc: EditDoc, pending?: readonly Patch[], resolve?: ExtensionMigrationResolver) => readonly Patch[];
+  readonly validateDocumentPatch?: (doc: EditDoc, patch: DocumentExtensionPatch, index: number) => void;
+  readonly documentElements?: (doc: EditDoc, patch?: DocumentExtensionPatch) => readonly ElementId[];
+  readonly projectDocument?: (doc: EditDoc, id: ElementId, element: SlideElement) => SlideElement;
+  /** 来源状态可能由别处的覆盖决定；此投影在局部覆盖前执行，不要求本元素已有扩展字段。 */
+  readonly projectSource?: (doc: EditDoc, id: ElementId, element: SlideElement) => SlideElement;
   readonly generateParts?: (doc: EditDoc, parts: Record<string, Uint8Array>) => void;
+  readonly copyParts?: (doc: EditDoc, parts: Record<string, Uint8Array>) => void;
   readonly scope?: 'element' | 'slide';
   readonly materializePackage?: (doc: EditDoc, baselines: Record<string, Uint8Array>, created: Set<string>, changes: Record<string, Uint8Array | null>) => void;
   readonly projectSlide?: (doc: EditDoc, id: SlideId, slide: Slide) => Slide;
@@ -44,21 +57,52 @@ type ExtensionRegistrationListener = (namespace: string) => void;
 interface ExtensionListenerStore {
   readonly documents: WeakMap<EditDoc, Set<ExtensionRegistrationListener>>;
   readonly pending: Map<string, Set<ExtensionRegistrationListener>>;
+  readonly active: Set<ExtensionRegistrationListener>;
+  readonly resolvers: WeakMap<EditDoc, { resolver: ExtensionMigrationResolver; copy?: ExtensionCopyResolver }[]>;
 }
 
 function listenerStore(): ExtensionListenerStore {
   const root = globalThis as typeof globalThis & { [LISTENER_KEY]?: ExtensionListenerStore };
-  return root[LISTENER_KEY] ??= { documents: new WeakMap(), pending: new Map() };
+  return root[LISTENER_KEY] ??= { documents: new WeakMap(), pending: new Map(), active: new Set(), resolvers: new WeakMap() };
 }
 
-function assertNamespace(namespace: string): void {
+/** 版本策略属于可选会话；模型和恢复日志中只保留其产生的纯数据结果。 */
+export function setExtensionMigrationResolver(doc: EditDoc, resolver: ExtensionMigrationResolver,
+  copy?: ExtensionCopyResolver): () => void {
+  const resolvers = listenerStore().resolvers, entries = resolvers.get(doc) ?? [], entry = { resolver, copy };
+  entries.push(entry); resolvers.set(doc, entries);
+  return () => {
+    const index = entries.indexOf(entry);
+    if (index < 0) return;
+    entries.splice(index, 1);
+    if (!entries.length) resolvers.delete(doc);
+  };
+}
+
+function migrationResolver(doc: EditDoc): ExtensionMigrationResolver | undefined {
+  const entries = listenerStore().resolvers.get(doc);
+  return entries?.[entries.length - 1]?.resolver;
+}
+
+export function extensionCopyResolver(doc: EditDoc): ExtensionCopyResolver | undefined {
+  const entries = listenerStore().resolvers.get(doc);
+  return entries?.[entries.length - 1]?.copy;
+}
+
+export function refreshExtensionMigrations(doc: EditDoc): void {
+  for (const listener of listenerStore().documents.get(doc) ?? []) {
+    for (const [namespace, extension] of runtimes()) if (extension.migrate) listener(namespace);
+  }
+}
+
+export function assertNamespace(namespace: string): void {
   if (!namespace || !NAMESPACE.test(namespace)) {
     throw new Error(`编辑扩展命名空间无效：${namespace}`);
   }
 }
 
 /** 扩展补丁只能持久化标量叶；对象和数组无须遍历，本身就是无效输入。 */
-function assertExtensionLeaf(value: unknown): void {
+export function assertExtensionLeaf(value: unknown): void {
   if (value === null || typeof value === 'boolean') return;
   if (typeof value === 'number' && Number.isFinite(value)) return;
   if (typeof value === 'string' && value.length <= MAX_VALUE_TEXT) return;
@@ -75,7 +119,8 @@ export function registerEditExtension(namespace: string, runtime: EditExtensionR
   runtimes().set(namespace, runtime);
   const root = globalThis as typeof globalThis & { [GENERATION_KEY]?: number };
   root[GENERATION_KEY] = (root[GENERATION_KEY] ?? 0) + 1;
-  const listeners = listenerStore().pending.get(namespace);
+  const listeners = new Set(listenerStore().pending.get(namespace));
+  if (runtime.migrate) for (const listener of listenerStore().active) listeners.add(listener);
   listenerStore().pending.delete(namespace);
   for (const listener of listeners ?? []) {
     try { listener(namespace); } catch (error) { globalThis.reportError?.(error); }
@@ -88,6 +133,13 @@ export function editExtensionGeneration(): number {
 
 const runtime = (namespace: string): EditExtensionRuntime | undefined => runtimes().get(namespace);
 
+/** 迟到的旧地址可能在扩展加载之后首次出现；只为这类字段请求迁移计划。 */
+export function extensionMigrationPatches(doc: EditDoc, patches: readonly Patch[],
+  resolve = migrationResolver(doc)): readonly Patch[] {
+  if (!patches.some(isExtensionPatch)) return [];
+  return [...runtimes().values()].flatMap(extension => [...extension.migrate?.(doc, patches, resolve) ?? []]);
+}
+
 function queueRegistrationListener(namespace: string, listener: ExtensionRegistrationListener): void {
   if (runtime(namespace)) return;
   const listeners = listenerStore().pending.get(namespace) ?? new Set<ExtensionRegistrationListener>();
@@ -97,10 +149,20 @@ function queueRegistrationListener(namespace: string, listener: ExtensionRegistr
 
 export function observeEditExtensionRegistration(
   doc: EditDoc, refresh: (elements: Set<ElementId>, slides: Set<SlideId>) => void,
+  migrate?: (patches: readonly Patch[]) => void,
 ): () => void {
   const listener: ExtensionRegistrationListener = (namespace) => {
+    const patches = runtime(namespace)?.migrate?.(doc, undefined, migrationResolver(doc));
+    if (patches?.length) migrate?.(patches);
     const elements = new Set<ElementId>();
     const slides = new Set<SlideId>();
+    if (doc.extensions?.[namespace] !== undefined || runtime(namespace)?.projectSource) {
+      for (const id of runtime(namespace)?.documentElements?.(doc) ?? Object.keys(doc.elements)) {
+        const dirty = invalidateElement(doc, id);
+        for (const element of dirty.dirtyElements) elements.add(element);
+        for (const slide of dirty.dirtySlides) slides.add(slide);
+      }
+    }
     for (const record of [...Object.values(doc.elements), ...Object.values(doc.slides)]) {
       if (record.ovr.extensions?.[namespace] === undefined) continue;
       // 延迟注册与普通编辑必须沿同一父链传播；只有元素集时，挂载视图会跳过整页更新。
@@ -112,16 +174,26 @@ export function observeEditExtensionRegistration(
   };
   const listeners = listenerStore().documents.get(doc) ?? new Set<ExtensionRegistrationListener>();
   listeners.add(listener);
+  listenerStore().active.add(listener);
   listenerStore().documents.set(doc, listeners);
+  for (const namespace of Object.keys(doc.extensions ?? {})) queueRegistrationListener(namespace, listener);
   for (const record of [...Object.values(doc.elements), ...Object.values(doc.slides)]) {
     for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
       queueRegistrationListener(namespace, listener);
     }
   }
-  return () => {
+  const unsubscribe = () => {
     listeners.delete(listener);
-    for (const pending of listenerStore().pending.values()) pending.delete(listener);
+    listenerStore().active.delete(listener);
+    for (const [namespace, pending] of listenerStore().pending) {
+      pending.delete(listener);
+      if (!pending.size) listenerStore().pending.delete(namespace);
+    }
   };
+  try {
+    for (const [namespace, extension] of runtimes()) if (extension.migrate) listener(namespace);
+  } catch (error) { unsubscribe(); throw error; }
+  return unsubscribe;
 }
 
 export function extensionCommandPatches(
@@ -238,7 +310,7 @@ export function finalizeExtensionPatch(doc: EditDoc, id: ElementId, namespace: s
   if (!record?.ovr.extensions) return;
   const next = record.ovr.extensions[namespace];
   if (next !== undefined && (!Reflect.ownKeys(next as object).length
-    || scope === 'elements' && runtime(namespace)?.prune?.(doc, id, next))) {
+    || scope === 'elements' && !isLegacyExtensionReplay(doc, id, namespace) && runtime(namespace)?.prune?.(doc, id, next))) {
     delete record.ovr.extensions[namespace];
   }
   if (record.ovr.extensions && !Reflect.ownKeys(record.ovr.extensions).length) {
@@ -253,10 +325,21 @@ export function projectEditExtensions(
   doc: EditDoc, id: ElementId, element: SlideElement,
 ): SlideElement {
   let projected = element;
+  for (const extension of runtimes().values()) {
+    projected = extension.projectSource?.(doc, id, projected) ?? projected;
+  }
   for (const namespace of Object.keys(doc.elements[id]?.ovr.extensions ?? {}).sort()) {
     projected = runtime(namespace)?.project?.(doc, id, projected) ?? projected;
   }
+  for (const namespace of Object.keys(doc.extensions ?? {}).sort()) {
+    projected = runtime(namespace)?.projectDocument?.(doc, id, projected) ?? projected;
+  }
   return projected;
+}
+
+export function observeDocumentExtension(doc: EditDoc, namespace: string): void {
+  if (runtime(namespace)) return;
+  for (const listener of listenerStore().documents.get(doc) ?? []) queueRegistrationListener(namespace, listener);
 }
 
 /** 保存实现位于动态入口；这里只暴露同一全局注册表的只读视图。 */

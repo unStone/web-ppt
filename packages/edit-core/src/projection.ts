@@ -216,6 +216,8 @@ export function effectiveElement(doc: EditDoc, id: ElementId): SlideElement {
     const scaleY = source.h > 0 ? source.scaleY * out.h / source.h : source.scaleY;
     out = {
       ...out, scaleX, scaleY,
+      // 剪贴板不携带解析期编辑信息；渲染器仍须从当前模型知道框架后代只参与绘制。
+      ...(record.meta.editable === 'frame' ? { editInfo: { ...out.editInfo, editable: 'frame' } } : {}),
       children: (record.children ?? []).map((childId) => effectiveElement(doc, childId)),
     } as GroupElement;
   } else if (out.kind === 'shape' && presetGeometryOverride) {

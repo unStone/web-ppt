@@ -1,6 +1,7 @@
 /** @web-ppt/edit-core —— 无 DOM 的编辑文档模型与高保真渲染投影。 */
 export { Editor } from './editor';
 export { sourcePartBytes, sessionAsset as sourceAsset } from './session-assets';
+export { sourceElementXml } from './element-source';
 export { EDITOR_RECOVERY_VERSION, restoreRecoveryFrames } from './recovery';
 export { detectImageMime } from './commands/image-format';
 export { MAX_REPLACE_IMAGE_BYTES } from './commands/image-resource';
@@ -93,6 +94,7 @@ export type {
 export type {
   RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
 } from './recovery-types';
+export type { DocumentExtensionPatch } from './commands/types';
 export type {
   AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignEdge, AlignElementsCommand, ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource, ClipboardTextLink, ClipboardXmlRoot, Command, DesignCommand, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, EditorChange, ExtensionCommand, ExtensionPatch, GroupCommand, MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, UngroupCommand,
   EditorOptions, EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions, EditorSubscriber, ExternalPatchOptions, ElementAltTextPatch, ElementClipboardPayload, ElementClipboardRecordMeta, ElementCropPatch, ElementEffectsPatch, ElementFillPatch, ElementImageReplacementPatch, ElementInteractionField, ElementInteractionPatch, ElementLinkPatch, ElementNamePatch, ElementOrderPatch, ElementStrokePatch, ElementTextPatch, ElementTransformPatch,
@@ -123,3 +125,16 @@ export {
   TEXT_ATOM, textBodyEditText, textPositionAtIndex, textPositionToIndex, textRunEditLength,
 } from './text-position';
 export type { AffineMatrix, ElementFrameTransform, SlideViewport, SpacePoint } from './space';
+export { EXTENSION_ADDRESSES, canonicalExtensionPath, canonicalExtensionPatch,
+  extensionAddressPatches, isExtensionAddressPatch } from './extension-addresses';
+export { assertEditIdentityWatermark } from './identity-watermark';
+export { extensionMigrationPatches, setExtensionMigrationResolver, refreshExtensionMigrations } from './extension-runtime';
+export type { ExtensionMigrationResolver } from './extension-runtime';
+export { isLegacyExtensionReplay } from './extension-recovery-context';
+export { isExtensionMigrationPatch, canonicalExtensionMigrationInputs, readExtensionMigration,
+  extensionMigrationReceipts, EXTENSION_MIGRATIONS } from './extension-migration-receipt';
+export type { ExtensionMigrationInput, ExtensionMigrationReceipt } from './extension-migration-receipt';
+export { readExtensionCopies } from './extension-copy';
+export { rebaseExtensionCopySnapshot } from './extension-copy-history';
+export type { ExtensionCopyInput, ExtensionCopyResolver } from './extension-copy';
+export { readExtensionAddress } from './extension-addresses';

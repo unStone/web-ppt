@@ -24,6 +24,9 @@ import { isMasterBackgroundPatch } from './master-property';
 import { isMasterTextStylePatch } from './master-text-style';
 import { releaseDesignProjectionPackage } from '../design-projection-package';
 import { canvasTargetOfElement } from '../design-target';
+import { isDocumentExtensionPatch } from '../document-extensions';
+import { registeredEditExtensions } from '../extension-runtime';
+import { isExtensionAddressPatch, readExtensionAddress } from '../extension-addresses';
 
 function masterElementPatch(doc: EditDoc, patch: Patch): boolean {
   return (isElementTreePatch(patch) || isElementHierarchyPatch(patch))
@@ -47,7 +50,25 @@ export function collectPatchInvalidation(
   patch: Patch,
   dirtyElements: Set<string>,
   dirtySlides: Set<string>,
+  addressTargets: Set<string>,
 ): void {
+  if (isExtensionAddressPatch(patch)) {
+    const { target } = readExtensionAddress(patch.op === 'set' ? patch.value : undefined);
+    const key = JSON.stringify(target);
+    if (addressTargets.has(key)) return;
+    addressTargets.add(key);
+    // 多个框架搬到同一资源时只失效一次；使用目标扩展定位消费者，未加载时仍保守失效全稿。
+    patch = { op: 'set', origin: patch.origin, path: target, value: null };
+  }
+  if (isDocumentExtensionPatch(patch)) {
+    const runtime = registeredEditExtensions().get(patch.path[2]);
+    for (const id of runtime?.documentElements?.(doc, patch) ?? Object.keys(doc.elements)) {
+      const dirty = invalidateElement(doc, id);
+      for (const element of dirty.dirtyElements) dirtyElements.add(element);
+      for (const slide of dirty.dirtySlides) dirtySlides.add(slide);
+    }
+    return;
+  }
   if (masterElementPatch(doc, patch)) {
     releaseLayoutProjectionCache(doc);
     releaseDesignProjectionPackage(doc);
@@ -141,6 +162,7 @@ export function collectPatchInvalidation(
 }
 
 export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
+  if (isDocumentExtensionPatch(patch)) return true;
   if (isThemePatch(patch)) return !!doc.themes[patch.path[1]];
   if (isLayoutPropertyPatch(patch)) return !!doc.layouts[patch.path[1]];
   if (isMasterBackgroundPatch(patch) || isMasterTextStylePatch(patch)) return !!doc.masters[patch.path[1]];

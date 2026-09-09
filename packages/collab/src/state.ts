@@ -1,13 +1,13 @@
 import type { EditDoc, Patch } from '@web-ppt/edit-core';
 import { hierarchyRecords } from './hierarchy-conflict';
-import { compareStamp, pathKey } from './message';
+import { compareStamp, pathKey, isExtensionMigrationPatch } from './message';
 import type { SeenMap } from './seen';
-import type { CollabMessage, CollabStamp } from './types';
+import type { CollabMessage, CollabStamp, CollabRegisterCheckpoint } from './types';
 
 const XFRM_FIELDS = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'] as const;
 export const hierarchyKey = (id: string): string => `hierarchy:${JSON.stringify(id)}`;
 
-export type Register = { readonly stamp: CollabStamp; readonly kind: 'field' | 'hierarchy' };
+export type Register = CollabRegisterCheckpoint;
 export type Lifecycle = { readonly stamp: CollabStamp; readonly state: 'present' | 'removed' };
 export type SlideMove = {
   readonly stamp: CollabStamp;
@@ -37,6 +37,7 @@ export interface CollaborationSession {
   clock: number;
   sequence: number;
   active: boolean;
+  onRecord?: (patches: readonly Patch[], stamp: CollabStamp) => void;
 }
 
 export const elementLifecycle = (patch: Patch): { id: string; state: Lifecycle['state'] } | null =>
@@ -158,7 +159,7 @@ export function recordPatches(
     if (move) moves.set(move.id, { after: move.after, ordinal });
     const section = sectionMove(patch);
     if (section) sectionMoves.set(section.id, { after: section.after, ordinal });
-    if (!element && !slide && !move) registers.set(pathKey(patch), 'field');
+    if (!element && !slide && !move && !isExtensionMigrationPatch(patch)) registers.set(pathKey(patch), 'field');
   }
   for (const [key, kind] of registers) {
     const current = session.registers.get(key);
@@ -183,6 +184,7 @@ export function recordPatches(
   for (const [id, move] of sectionMoves) {
     if (newer(stamp, session.sectionMoves.get(id))) session.sectionMoves.set(id, { stamp, ...move });
   }
+  session.onRecord?.(patches, stamp);
 }
 
 export function targetExists(doc: EditDoc, patch: Patch): boolean {

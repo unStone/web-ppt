@@ -180,6 +180,7 @@ export function duplicateSlidePatches(
       },
     },
     records: cloned.records,
+    copySources: Object.fromEntries([...cloned.remap].map(([source, target]) => [target, source])),
     ...(sectionOfSlide(doc, source.id) ? { sectionId: sectionOfSlide(doc, source.id)! } : {}),
   };
   const path = ['slides', id] as const;

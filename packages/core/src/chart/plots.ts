@@ -165,11 +165,12 @@ function labelString(
   pct: number | null,
   env: PlotEnv,
   sizeVal: number | null = null,
+  category: string = env.cats[i] ?? '',
 ): string {
   const l = s.dLbls;
   const parts: string[] = [];
   if (l.showSer) parts.push(s.name);
-  if (l.showCat) parts.push(env.cats[i] ?? '');
+  if (l.showCat) parts.push(category);
   if (l.showVal) parts.push(formatNumber(v, l.fmt ?? s.fmt));
   // 气泡大小有自己的格式，套 y 值的百分比格式会得到荒唐的数字
   if (l.showSize && sizeVal !== null) parts.push(formatNumber(sizeVal, s.sizeFmt ?? l.fmt ?? s.fmt));
@@ -512,7 +513,8 @@ export function renderScatter(g: PlotGroup, p: XYPlot, env: PlotEnv): SlideEleme
       if (mk) overlay.push(mk);
       if (labelVisible(s.dLbls)) {
         const size = s.dLbls.size ?? env.size * 0.92;
-        const el2 = labelEl(q[0], q[1] - lineH(size) * 0.85, labelString(s, i, num(s.vals[i]) ?? 0, null, env), s.dLbls, env);
+      const el2 = labelEl(q[0], q[1] - lineH(size) * 0.85,
+        labelString(s, i, num(s.vals[i]) ?? 0, null, env, null, s.cats[i] ?? String(i + 1)), s.dLbls, env);
         if (el2) overlay.push(el2);
       }
     }
@@ -568,7 +570,7 @@ export function renderBubbles(g: PlotGroup, p: XYPlot, env: PlotEnv): SlideEleme
         fill: g.varyColors ? solid(auto) : fill,
         color: auto,
         stroke: pointStroke(s, i, darken(auto, 0.35), Math.max(1, px(0.75))),
-        label: labelVisible(s.dLbls) ? labelString(s, i, yv, null, env, s.sizes ? num(s.sizes[i]) : null) : '',
+        label: labelVisible(s.dLbls) ? labelString(s, i, yv, null, env, s.sizes ? num(s.sizes[i]) : null, s.cats[i] ?? String(i + 1)) : '',
         lblSpec: s,
       });
     }

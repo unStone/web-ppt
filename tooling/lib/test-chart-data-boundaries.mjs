@@ -263,9 +263,12 @@ async function testCachesAndPointIdentity({ core, edit, chart, bytes, cacheBytes
   const cacheXml = decoder.decode(unzipSync(await cacheEditor.save())['ppt/charts/chart1.xml']);
   const addedSeriesXml = [...cacheXml.matchAll(/<c:ser(?:\s[^>]*)?>[\s\S]*?<\/c:ser>/g)]
     .find((match) => match[0].includes('缓存新增系列'))?.[0] ?? '';
-  check('缓存模式新系列使用合法 literal 容器', addedSeriesXml.includes('<c:strLit>')
-    && addedSeriesXml.includes('<c:numLit>') && !addedSeriesXml.includes('<c:strRef>')
-    && !addedSeriesXml.includes('<c:numRef>'));
+  const cacheReopened = await fresh(core, edit, await cacheEditor.save(), 'chart-cache-reopened-');
+  const cacheData = chart.queryChartData(cacheReopened.doc, chart.listEditableCharts(cacheReopened.doc)[0].id);
+  check('缓存新系列沿用类别引用且数值保持 literal，重开后仍可编辑',
+    addedSeriesXml.includes('<c:numLit>') && !addedSeriesXml.includes('<c:numRef>')
+    && cacheData.binding.mode === 'cache' && cacheData.series.at(-1).name === '缓存新增系列');
+  cacheReopened.presentation.dispose();
   cacheOpen.presentation.dispose();
 }
 

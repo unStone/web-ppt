@@ -13,18 +13,21 @@ interface ElementClipboardOptions {
   editable(): boolean;
   gestureActive(): boolean;
   insertImage(file: File): Promise<ElementId>;
-}
-
-function reportClipboardError(error: unknown): void {
-  const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
-  if (reporter) reporter(error);
-  else console.error('元素剪贴板操作失败', error);
+  onError?: (error: unknown) => void;
 }
 
 export class ElementClipboardController {
   private readonly options: ElementClipboardOptions;
 
   constructor(options: ElementClipboardOptions) { this.options = options; }
+
+  private report(error: unknown): void {
+    const reporter = this.options.onError ?? globalThis.reportError;
+    try {
+      if (reporter) reporter(error);
+      else console.error('元素剪贴板操作失败', error);
+    } catch { /* 宿主反馈失败不能逃出同步剪贴板事件。 */ }
+  }
 
   copy(event: ClipboardEvent): void { this.write(event, false); }
   cut(event: ClipboardEvent): void { this.write(event, true); }
@@ -37,7 +40,7 @@ export class ElementClipboardController {
         file.type.startsWith('image/'));
       if (!image) return;
       event.preventDefault();
-      void this.options.insertImage(image).catch(reportClipboardError);
+      void this.options.insertImage(image).catch(error => this.report(error));
       return;
     }
     event.preventDefault();
@@ -45,7 +48,7 @@ export class ElementClipboardController {
       const payload = JSON.parse(json) as ElementClipboardPayload;
       this.pastePayload(payload);
     } catch (error) {
-      reportClipboardError(error);
+      this.report(error);
     }
   }
 
@@ -61,7 +64,7 @@ export class ElementClipboardController {
       event.preventDefault();
       return true;
     } catch (error) {
-      reportClipboardError(error);
+      this.report(error);
       return false;
     }
   }
@@ -96,7 +99,7 @@ export class ElementClipboardController {
         transaction.select({ kind: 'none' });
       }, '剪切元素');
     } catch (error) {
-      reportClipboardError(error);
+      this.report(error);
     }
   }
 

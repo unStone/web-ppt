@@ -45,6 +45,18 @@ const restored = bindCollaboration(restoredEditor, {
 
 Recovery frames restore the model and identity cursors; the checkpoint restores LWW registers, move intents, compressed replay watermarks and deferred patches. Replay state stores one contiguous high watermark per replica plus bounded out-of-order gaps, so a long session does not grow one checkpoint entry per message. A restored collaborative document without the matching checkpoint fails fast because those conflict decisions cannot be inferred safely from the model alone.
 
+## Optional original-operation evidence
+
+Use `bindCollaboration` from `@web-ppt/collab/migration` to retain the original scalar `set` or `del` operation for extension fields alongside their existing register stamps. The provider and binding options remain the same. Bind through this entry before editing, and use it again when restoring the checkpoint.
+
+The optional `checkpoint.extensionOperations` entries use the same keys as `checkpoint.registers`; they do not introduce another clock. A deleted source element or slide does not erase the evidence or imply a field deletion. Old checkpoints without this list keep their evidence unknown. Rebinding an existing editor preserves its current session, so enabling this entry later only records future operations.
+
+When `chart-shared` loads, this entry can resolve conflicting legacy chart fields using their original operations and stamps. Incoming legacy operations participate in the same decision, including a newer deletion that replaces previously unknown evidence. Missing evidence and contradictory operations with the same stamp leave the legacy data unchanged and read-only.
+
+Slide copies freeze known original extension operations in their structural snapshots. A copy inherits the versions known at the moment of copying, including deletion evidence; its creation clock and later source changes cannot replace those versions. Remote changes to the copied fields also rebase its undo/redo snapshot before committing. Restoring an older snapshot from another replica preserves the receiving replica's known winning fields. A receiving editor that already loaded `chart-shared` resolves a late copy against its current fields in the same atomic batch. This does not reconstruct missing evidence in older bare models or resolve ambiguous identities.
+
+Migration receipts are core execution records, not ordinary LWW fields. The optional entry re-evaluates incoming receipts against local evidence when consuming each message, including deferred messages. Winners retain their original stamps; the transport stamp does not replace them. Invalid batches roll back model, register and recovery changes together. The default entry rejects incoming receipts and does not load the migration implementation. Use the optional entry on every peer that exchanges versioned migration receipts.
+
 ## Why field-level LWW
 
 | Choice | Runtime cost | Mapping to EditDoc | Offline replay | Result |

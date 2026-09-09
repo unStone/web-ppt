@@ -1,12 +1,12 @@
 import type {
   EditDoc, ElementHierarchyPatch, ElementTreePatch, Patch, SectionStatePatch, SlideTreePatch,
 } from '@web-ppt/edit-core';
-import { stageExternalPatches } from '@web-ppt/edit-core';
+import { canonicalExtensionPatch, extensionMigrationPatches, isExtensionAddressPatch, stageExternalPatches } from '@web-ppt/edit-core';
 import {
   hierarchyWithoutNewerMembers, hierarchyWithoutRemovedMembers,
   rebaseElementHierarchy, rebaseElementRemoval,
 } from './hierarchy-conflict';
-import { pathKey } from './message';
+import { pathKey, isExtensionMigrationPatch } from './message';
 import { rebaseSlideInsertion, rebaseSlideRemoval } from './slide-conflict';
 import { rebaseSectionStatePatch } from './section-conflict';
 import {
@@ -15,6 +15,8 @@ import {
 import type { CollaborationSession, Lifecycle } from './state';
 import type { CollabMessage } from './types';
 import { rebaseTablePatches } from './table-conflict';
+import { canonicalRegisters } from './extension-addresses';
+export { stageExternalPatches };
 
 export interface PatchAvailability {
   readonly elements: Set<string>;
@@ -93,12 +95,27 @@ export function evaluateRemoteMessage(
   session: CollaborationSession,
   raw: CollabMessage,
   seed?: PatchAvailability,
+  planned?: readonly Patch[],
 ): EvaluatedMessage {
-  const accepted: Patch[] = [];
+  const addresses = raw.patches.filter(isExtensionAddressPatch);
+  if (addresses.length) {
+    if (raw.patches.slice(0, addresses.length).some(patch => !isExtensionAddressPatch(patch))) {
+      throw new Error('协同地址声明必须先于字段和结构补丁');
+    }
+    doc = stageExternalPatches(doc, addresses);
+  }
+  const migrations = planned ?? extensionMigrationPatches(doc, raw.patches);
+  if (migrations.length) doc = stageExternalPatches(doc, migrations);
+  session = { ...session, registers: canonicalRegisters(doc, session.registers) };
+  const accepted: Patch[] = [...migrations];
   const recorded: Patch[] = [];
   const available = patchAvailability([], seed);
   let missingDependency = false;
-  for (const patch of raw.patches) {
+  for (const input of raw.patches) {
+    const patch = canonicalExtensionPatch(doc, input);
+    // 必须检查规范地址，不能沿旧地址绕过接收端的原版本裁决。
+    if (isExtensionMigrationPatch(patch)) throw new Error('迁移凭据须本地裁决');
+    if (isExtensionAddressPatch(patch)) { accepted.push(patch); recorded.push(patch); continue; }
     const element = elementLifecycle(patch);
     const slide = slideLifecycle(patch);
     const move = slideMove(patch);

@@ -345,7 +345,11 @@ function materializeSlide(
   return { bytes: serializeXmlTreeBytes(tree), work, links };
 }
 
-export function materializeGeneratedParts(doc: EditDoc, observe?: (slideId: SlideId, work: EditDoc) => void): Record<string, Uint8Array> {
+export function materializeGeneratedParts(
+  doc: EditDoc,
+  observe?: (slideId: SlideId, work: EditDoc) => void,
+  resourceSource = doc,
+): Record<string, Uint8Array> {
   const projections = doc.slideOrder.map((slideId) => toSlide(doc, slideId));
   const notesSlides = doc.slideOrder.map((slideId, index) =>
     !!doc.slides[slideId].notes || projections[index].notes !== undefined);
@@ -412,7 +416,8 @@ export function materializeGeneratedParts(doc: EditDoc, observe?: (slideId: Slid
     parts['ppt/presentation.xml'], doc,
   );
   compatibility.mergeInto(parts);
-  for (const extension of registeredEditExtensions().values()) extension.generateParts?.(doc, parts);
+  // 选区只裁剪页面宿主；共享资源仍由完整文稿的依赖关系物化，不能因少选框架改变数据身份。
+  for (const extension of registeredEditExtensions().values()) extension.generateParts?.(resourceSource, parts);
   materializeGeneratedComments(parts, projections);
   return parts;
 }

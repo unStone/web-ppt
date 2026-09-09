@@ -4,11 +4,15 @@ import { isElementHierarchyPatch } from './element-hierarchy';
 import { isElementOrderPatch } from './element-order';
 import { isElementTreePatch } from './element-tree';
 import type { Patch } from './types';
+import { extensionAddressPatches, isExtensionAddressPatch } from '../extension-addresses';
+import { isExtensionMigrationPatch, readExtensionMigration } from '../extension-migration-receipt';
+import { inheritLegacyExtensionReplay } from '../extension-recovery-context';
 
 /** 结构补丁只复制可能被写入的记录；大文稿验证不应深克隆整份模型。 */
 export function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): EditDoc {
   const stage: EditDoc = {
     ...doc,
+    extensions: structuredClone(doc.extensions),
     identity: structuredClone(doc.identity),
     slides: { ...doc.slides },
     layouts: { ...doc.layouts },
@@ -62,6 +66,10 @@ export function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): E
     }
   };
   for (const patch of patches) {
+    if (isExtensionMigrationPatch(patch)) {
+      for (const route of readExtensionMigration(patch.op === 'set' ? patch.value : undefined).routes) cloneElement(route.source[0]);
+    }
+    if (isExtensionAddressPatch(patch)) cloneElement(patch.path[3]);
     if (patch.path[0] === 'slides' && patch.path.length > 2) cloneSlide(patch.path[1]);
     if (patch.path[0] === 'layouts' && patch.path.length > 2) cloneLayout(patch.path[1]);
     if (patch.path[0] === 'masters' && patch.path.length > 2) cloneMaster(patch.path[1]);
@@ -78,5 +86,7 @@ export function structuralPatchStage(doc: EditDoc, patches: readonly Patch[]): E
       if (parent) cloneParent(parent);
     }
   }
+  for (const patch of extensionAddressPatches(doc, 'stage')) cloneElement(patch.path[3]);
+  inheritLegacyExtensionReplay(doc, stage);
   return stage;
 }

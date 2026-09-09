@@ -19,12 +19,15 @@ export interface HistoryPatchLink {
 }
 
 export interface HistoryStoreHooks {
+  readonly canonicalPath?: (path: Patch['path']) => Patch['path'];
   /** 资源闭包等宿主约束也适用于合并历史；不满足时仍保留两个独立撤销单元。 */
   readonly canMerge?: (entry: HistoryEntry) => boolean;
   /** 不复制进 Patch、但仅因历史可达而常驻的外部资源字节。 */
   readonly externalByteSize?: (entries: readonly HistoryEntry[]) => number;
   /** 历史驱逐/清空后通知资源所有者做可达性回收。 */
   readonly changed?: (entries: readonly HistoryEntry[]) => void;
+  /** 结构历史内的字段仍受后来写入约束；只重基快照，不撤销结构意图。 */
+  readonly rebase?: (entry: HistoryEntry, patches: readonly Patch[]) => HistoryEntry;
 }
 
 const clonePatch = <P extends Patch>(patch: P): P => ({
@@ -164,22 +167,35 @@ export class HistoryStore implements History {
 
   breakMerge(): void { this.mergeBarrier = true; }
 
+  /** 快照派生与证据验证可失败，须先完成，再允许宿主提交模型。 */
+  prepareRebase(patches: readonly Patch[]): ReadonlyMap<HistoryEntry, HistoryEntry> {
+    const prepared = new Map<HistoryEntry, HistoryEntry>();
+    if (this.hooks.rebase) for (const entry of [...this.undoList, ...this.redoList]) {
+      prepared.set(entry, this.hooks.rebase(entry, patches));
+    }
+    return prepared;
+  }
+
   /** 后到的非记录写入胜出；旧历史只保留未冲突路径，避免撤销覆盖远端或系统改动。 */
-  rebaseUnrecorded(patches: readonly Patch[], currentState: number, allocateState: () => number): void {
-    const patchPaths = patches.flatMap(affectedPatchPaths);
+  rebaseUnrecorded(patches: readonly Patch[], currentState: number, allocateState: () => number,
+    prepared: ReadonlyMap<HistoryEntry, HistoryEntry> = new Map()): void {
+    const canonical = (path: Patch['path']) => this.hooks.canonicalPath?.(path) ?? path;
+    const key = (path: string) => JSON.stringify(canonical(JSON.parse(path)));
+    const patchPaths = patches.flatMap(affectedPatchPaths).map(canonical);
     const paths = new Set(patchPaths.map((path) => JSON.stringify(path)));
     if (!paths.size) return;
     const strip = (list: StoredHistoryEntry[]): void => {
       for (let index = list.length - 1; index >= 0; index--) {
         const entry = list[index];
+        const rebased = prepared.get(entry) ?? entry;
         const linked = new Set(entry.links
-          .filter((link) => paths.has(link.trigger))
-          .flatMap((link) => link.related));
-        const conflicts = (patch: Patch): boolean => patchPaths.some((path) => pathsConflict(path, patch.path))
-          || linked.has(pathKey(patch));
-        const forward = entry.forward.filter((patch) => !conflicts(patch));
-        if (forward.length === entry.forward.length) continue;
-        const inverse = entry.inverse.filter((patch) => !conflicts(patch));
+          .filter((link) => paths.has(key(link.trigger)))
+          .flatMap((link) => link.related.map(key)));
+        const conflicts = (patch: Patch): boolean => patchPaths.some((path) => pathsConflict(path, canonical(patch.path)))
+          || linked.has(JSON.stringify(canonical(patch.path)));
+        const forward = rebased.forward.filter((patch) => !conflicts(patch));
+        if (forward.length === entry.forward.length && rebased === entry) continue;
+        const inverse = rebased.inverse.filter((patch) => !conflicts(patch));
         this.bytes -= entry.storedBytes;
         if (!forward.length) list.splice(index, 1);
         else {

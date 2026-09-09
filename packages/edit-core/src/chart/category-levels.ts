@@ -4,10 +4,11 @@ import type { ChartCategory, ChartDatasetState, ChartFormulaBinding, ChartPointI
 import { chartFormula, parseChartFormula, resizedChartFormula } from './formula';
 import { chartXml, xmlAttribute as attr, xmlContent as content, makeDataElement as make, appendXml as append, setDataText as setText } from './xml-data';
 import { MAX_CATEGORY_LEVELS, MAX_CHART_POINTS, MAX_CHART_CELLS } from './limits';
+import type { CategoryOrientation } from './category-binding';
 
 const { child, children } = chartXml;
 
-export function readCategoryLevels(holder: XmlElement | null, valueFormula: string | null): {
+export function readCategoryLevels(holder: XmlElement | null, valueFormula: string | null, storedOrientation?: CategoryOrientation): {
   readonly slots: Array<Array<string | null>>; readonly count: number;
   readonly hierarchy: NonNullable<ChartFormulaBinding['hierarchy']>;
 } | undefined {
@@ -35,8 +36,9 @@ export function readCategoryLevels(holder: XmlElement | null, valueFormula: stri
   const rows = range.endRow - range.startRow + 1, columns = range.endColumn - range.startColumn + 1;
   const vertical = columns === levels.length && rows === Math.max(1, count);
   const horizontal = rows === levels.length && columns === Math.max(1, count);
-  const hint = values && values.startColumn === values.endColumn ? 'rows'
-    : values && values.startRow === values.endRow ? 'columns' : undefined;
+  // literal 数值和单格模板都没有方向；方形矩阵只使用保存时已知的方向，不能猜测行列。
+  const hint = values && values.startColumn === values.endColumn && values.startRow < values.endRow ? 'rows'
+    : values && values.startRow === values.endRow && values.startColumn < values.endColumn ? 'columns' : storedOrientation;
   const orientation = vertical && horizontal ? hint : vertical ? 'rows' : horizontal ? 'columns' : undefined;
   if (!orientation) throw new Error('多级类别公式的层级方向不明确');
   return { count, hierarchy: { levels: levels.length, orientation },

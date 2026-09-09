@@ -1,4 +1,5 @@
 import { effectiveElement, slideOfElement } from './projection';
+import { assertRetainedElementOrigins } from './retained-element-origins';
 import { canvasTargetOfElement } from './design-target';
 import { slideDesignChanged } from './layout-projection';
 import { elementOrder } from './element-order';
@@ -41,6 +42,9 @@ import { THEME_COLOR_SLOTS } from '@web-ppt/core';
 import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme';
 import { assertParagraphPropertyOverrides } from './paragraph-property-schema';
 import { assertRunPropertyOverrides } from './run-property-schema';
+import { assertDocumentExtensions } from './document-extensions';
+import { validateExtensionAddresses } from './extension-addresses';
+import { validateExtensionMigrationReceipts } from './extension-migration-receipt';
 
 
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
@@ -172,6 +176,10 @@ function assertChildren(
 
 /** 在编辑会话入口验证全局结构；命令提交只需验证自己可能改变的局部不变量。 */
 export function validateEditDoc(doc: EditDoc): void {
+  assertRetainedElementOrigins(doc);
+  assertDocumentExtensions(doc.extensions);
+  validateExtensionAddresses(doc);
+  validateExtensionMigrationReceipts(doc);
   assertSlideSize(doc.meta.width, '页面宽度');
   assertSlideSize(doc.meta.height, '页面高度');
   assertSlideSize(doc.meta.sourceWidth, '来源页面宽度');
@@ -517,7 +525,7 @@ export function validateEditDoc(doc: EditDoc): void {
     if (record.id !== id || doc.elements[id]) throw new Error(`已删除元素状态冲突：${id}`);
     if (record.meta.editable === 'none') throw new Error(`不可编辑元素不能进入删除集：${id}`);
     if (record.meta.origin && doc.package && !doc.package.parts[record.meta.origin.part]
-      && !doc.saveState.baselines[record.meta.origin.part]) {
+      && !doc.saveState.baselines[record.meta.origin.part] && !createdParts.has(record.meta.origin.part)) {
       throw new Error(`已删除元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
     }
     if (record.sourceSpids && (!Array.isArray(record.sourceSpids)

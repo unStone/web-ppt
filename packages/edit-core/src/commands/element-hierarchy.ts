@@ -1,6 +1,7 @@
 import { canvasTargetOfElement } from '../design-target';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { advanceElementSpid } from '../element-spids';
+import { retainElementOrigins, restoreElementOrigins } from '../retained-element-origins';
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { ElementHierarchyPatch, ElementHierarchyState, Patch } from './types';
 
@@ -56,6 +57,8 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
   const slide = canvas.kind === 'slide' ? doc.slides[canvas.id] : undefined;
   const before = new Map(Object.keys(patch.value.records).flatMap((id) =>
     doc.elements[id] ? [[id, doc.elements[id]] as const] : []));
+  retainElementOrigins(doc, [...before.values()].filter(record => patch.value.records[record.id] === null));
+  restoreElementOrigins(doc, Object.values(patch.value.records).filter((record): record is ElementRecord => record !== null));
   // 统一 Patch seam 已整批隔离；这里直接接管，避免再次复制驻留目录。
   for (const [id, record] of Object.entries(patch.value.records)) {
     if (record === null) delete doc.elements[id];

@@ -18,7 +18,7 @@ export function changeFromPatches(
   return {
     source,
     selection,
-    touchedElements: patchElements(patches),
+    touchedElements: patchElements(patches, dirty.dirtyElements),
     renderElements: renderPatchElements(patches, dirty.dirtyElements),
     renderSlides: renderPatchSlides(doc, patches, dirty.dirtySlides),
     bodyPropsElements: bodyPropsPatchElements(patches, inverse),

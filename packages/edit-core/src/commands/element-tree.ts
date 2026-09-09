@@ -11,6 +11,7 @@ import { querySlideAnimations } from '../slide-animation';
 import { setAnimationsPatches } from './set-animations';
 import { cloneElementRecord } from './record-clone';
 import { advanceElementSpid } from '../element-spids';
+import { retainElementOrigins, restoreElementOrigins } from '../retained-element-origins';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
   return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
@@ -148,6 +149,7 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     .filter((record) => hasDynamicSlideLink(record.src)).map((record) => record.id);
   const siblings = elementParentChildren(doc, snapshot.parent);
   if (patch.op === 'remove') {
+    retainElementOrigins(doc, Object.keys(snapshot.records).map(id => doc.elements[id]));
     const index = siblings[siblings.length - 1] === snapshot.root
       ? siblings.length - 1 : siblings.indexOf(snapshot.root);
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
@@ -177,6 +179,7 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
     return;
   }
   // Patch 批次已在统一 seam 隔离；这里直接接管记录才能保留跨根的共享目录。
+  restoreElementOrigins(doc, Object.values(snapshot.records));
   for (const [id, record] of Object.entries(snapshot.records)) {
     doc.elements[id] = record;
     advanceElementSpid(doc, record);

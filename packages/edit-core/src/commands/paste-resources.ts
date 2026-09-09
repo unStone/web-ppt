@@ -12,6 +12,7 @@ import type { ElementClipboardPayload } from './types';
 import type { ClipboardClosure } from '../clipboard-source';
 import type { OpcPackage } from '@web-ppt/core';
 import { allocateIdentityRange, logicalIdentityPrefix } from '../identity-allocation';
+import { clipboardPackage } from '../clipboard-package';
 
 export interface PreparedInsertionClosure {
   readonly relationships: readonly ElementInsertionRelationship[];
@@ -322,7 +323,7 @@ export function prepareInsertionClosures(
   payload: Pick<ElementClipboardPayload, 'ooxml' | 'resources'>,
   roots: readonly string[],
   destinationPart: string,
-  options: { readonly preverifiedResourceHashes?: ReadonlySet<string> } = {},
+  options: { readonly preverifiedResourceHashes?: ReadonlySet<string>; readonly sourceOnly?: boolean } = {},
 ): Map<string, PreparedInsertionClosure> {
   if (!doc.package) throw new Error('粘贴关系资源需要可写 OPC 包');
   const resourceByHash = new Map<string, ElementInsertionResource>();
@@ -348,6 +349,7 @@ export function prepareInsertionClosures(
   const allocateRelationshipId = relationshipIdAllocator(doc, destinationPart);
 
   const result = new Map<string, PreparedInsertionClosure>();
+  let effective: OpcPackage | undefined;
   for (const root of roots) {
     const sourceRelationships = payload.ooxml.roots[root].relationships ?? [];
     const seenSourceIds = new Set<string>();
@@ -380,7 +382,7 @@ export function prepareInsertionClosures(
           || !/^[0-9a-f]{64}$/.test(packageTarget.closureHash)) {
           throw new Error(`剪贴板同包关系无效：${relationship.sourceId}`);
         }
-        const targetPart = resolvePackageTarget(doc.package, packageTarget);
+        const targetPart = resolvePackageTarget(options.sourceOnly ? doc.package : effective ??= clipboardPackage(doc), packageTarget);
         if (!targetPart) throw new Error(`复杂对象只能粘贴到拥有相同 OPC 闭包的文档：${relationship.sourceId}`);
         relationships.push({
           sourceId: relationship.sourceId, targetId, type: relationship.type,

@@ -21,6 +21,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/collab.js"
     },
+    "./migration": {
+      "types": "./dist/migration/index.d.ts",
+      "import": "./dist/migration.js"
+    },
     "./package.json": "./package.json"
   },
   "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],

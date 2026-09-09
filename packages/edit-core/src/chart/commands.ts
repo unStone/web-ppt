@@ -1,10 +1,10 @@
-import { allocateElementId, compareFractionalIndex, fractionalIndexBetween } from '@web-ppt/edit-core';
+import { allocateElementId, compareFractionalIndex, fractionalIndexBetween, isLegacyExtensionReplay } from '@web-ppt/edit-core';
 import type { ExtensionCommand, ExtensionPatch } from '../commands/types';
 import type { Editor } from '../editor';
 import { registerEditExtension } from '../extension-runtime';
+import { validatePatchAgainstState } from './patch-validation';
 import type { EditDoc, ElementId, FractionalIndex } from '../types';
-import { materializeChartProjectionXml } from './materialize';
-import { renderChartXml } from '@web-ppt/core/chart-edit';
+import { projectChartElement } from './projection';
 import { saveChartDatasets } from './save';
 import {
   chartStateMatchesSource, currentChartDatasetState, hydrateChartDataset,
@@ -15,14 +15,15 @@ import type {
 } from './types';
 import {
   assertChartCategoryRecord, assertChartDictionary, assertChartIdentity, assertChartName,
-  assertChartNumber, assertChartOrder, assertChartPointRecord, assertChartSeriesRecord, assertCategoryLevels,
+  assertChartNumber, assertChartPointRecord, assertChartSeriesRecord, assertCategoryLevels,
   CHART_PLOT_KINDS, MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
 } from './validation';
-import { chartRenderContext, chartSourceBytes } from './context';
 import { chartPartForElement } from './locator';
 import { orderedChartRecords } from './ordering';
 import { categoryCommandPatches, assertCategoryCapacity } from './category-commands';
 import type { CategoryPayload } from './category-commands';
+import { sharedChartRuntime, sharedDatasetState } from './shared-runtime';
+import { categoryHierarchyBinding } from './category-binding';
 
 const NS = 'chart-data';
 
@@ -61,7 +62,11 @@ function assertChart(doc: EditDoc, id: ElementId): ChartDatasetState {
 function assertChartPatchTarget(doc: EditDoc, id: ElementId): ChartDatasetState {
   assertChartRecordTarget(doc, id);
   const source = hydrateChartDataset(doc, id);
-  if (source.binding.mode === 'readonly') throw new Error(source.binding.reason ?? '图表数据只读');
+  const legacy = isLegacyExtensionReplay(doc, id, NS);
+  // hydrate 已返回独立状态；会投影共享数据的路径在下方拒绝，普通字段校验无需再复制一份。
+  const binding = (legacy ? source : sharedDatasetState(doc, id, source)).binding;
+  if (binding.mode === 'readonly') throw new Error(binding.reason ?? '图表数据只读');
+  if (!legacy && sharedChartRuntime()?.owns(doc, id)) throw new Error('共享图表需使用文档级补丁');
   return source;
 }
 
@@ -191,7 +196,7 @@ function commandPatches(doc: EditDoc, command: ExtensionCommand, origin: string)
   if (payload.op === 'add-category') {
     assertCategoryCapacity(state);
     assertAddedCategory(payload.category);
-    const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+    const depth = categoryHierarchyBinding(state.series)?.hierarchy?.levels;
     if (payload.category.levels) {
       if (!depth) throw new Error('此图表没有多级类别');
       assertCategoryLevels(payload.category.levels, depth);
@@ -270,62 +275,6 @@ function commandPatches(doc: EditDoc, command: ExtensionCommand, origin: string)
     true, point.removed, origin);
 }
 
-function validatePatchAgainstState(
-  state: ChartDatasetState, patchValue: ExtensionPatch, index: number,
-): void {
-  if (patchValue.path[4] !== NS) throw new Error(`Patch ${index} 的图表命名空间无效`);
-  const path = patchValue.path.slice(5);
-  const category = path[0] === 'categories' && path.length === 3
-    && ['id', 'order', 'label', 'levelParent', 'removed'].includes(path[2]);
-  const level = path[0] === 'categories' && path.length === 4 && ['levels', 'levelClears'].includes(path[2]);
-  if (level) {
-    const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
-    if (!depth || !/^(0|[1-9]\d*)$/.test(path[3]) || Number(path[3]) >= depth) throw new Error('图表类别层级索引无效');
-    if (patchValue.op === 'set' && path[2] === 'levelClears' && patchValue.value !== null) recordIdentity(patchValue.value, '类别层级清空前驱');
-    if (patchValue.op === 'set' && path[2] === 'levels' && patchValue.value !== null) assertChartName(patchValue.value, '类别层级');
-  }
-  const series = path[0] === 'series' && path.length === 3
-    && ['id', 'order', 'sourceIndex', 'plotKind', 'name', 'pointsReady', 'removed'].includes(path[2]);
-  const point = path[0] === 'series' && path.length === 5 && path[2] === 'points'
-    && ['id', 'order', 'value', 'x', 'size', 'removed'].includes(path[4]);
-  const binding = path[0] === 'series' && path.length === 5 && path[2] === 'bindings'
-    && ['name', 'categories', 'values', 'x', 'y', 'size'].includes(path[3])
-    && ['formula', 'cache'].includes(path[4]);
-  if (!(patchValue.op === 'del' && path.length === 0) && !category && !level && !series && !point && !binding) {
-    throw new Error(`Patch ${index} 的图表路径不受支持`);
-  }
-  if (category && state.kind === 'xy') throw new Error(`Patch ${index} 的纯 XY 图不能包含类别`);
-  if (patchValue.op === 'set') {
-    const leaf = path[path.length - 1];
-    if (leaf === 'id') assertChartIdentity(
-      patchValue.value, point ? path[3] : path[1], `Patch ${index} 的身份`,
-    );
-    if (leaf === 'order') assertChartOrder(patchValue.value, `Patch ${index} 的顺序`);
-    if (leaf === 'levelParent' && patchValue.value !== null) recordIdentity(patchValue.value, '类别前驱');
-    if (leaf === 'name' || leaf === 'label') assertChartName(patchValue.value, `Patch ${index} 的名称`);
-    if (leaf === 'removed' && patchValue.value !== true) throw new Error(`Patch ${index} 的删除标记无效`);
-    if (leaf === 'sourceIndex' && (!Number.isInteger(patchValue.value)
-      || Number(patchValue.value) < 0 || Number(patchValue.value) > 0x7fff_ffff)) {
-      throw new Error(`Patch ${index} 的系列索引无效`);
-    }
-    if (leaf === 'plotKind' && !CHART_PLOT_KINDS.has(patchValue.value as ChartPlotKind)) {
-      throw new Error(`Patch ${index} 的图种无效`);
-    }
-    if (leaf === 'plotKind' && !Object.values(state.series)
-      .some((item) => item.plotKind === patchValue.value)) {
-      throw new Error(`Patch ${index} 的图种没有可继承的来源绘图区`);
-    }
-    if (leaf === 'pointsReady' && patchValue.value !== true) {
-      throw new Error(`Patch ${index} 的空数据点标记无效`);
-    }
-    if (leaf === 'formula' && patchValue.value !== null) throw new Error(`Patch ${index} 不能注入来源公式`);
-    if (leaf === 'cache' && patchValue.value !== 'literal') throw new Error(`Patch ${index} 的缓存类型无效`);
-    if (leaf === 'value' || leaf === 'x' || leaf === 'size') {
-      assertChartNumber(patchValue.value, `Patch ${index} 的 ${leaf}`);
-      // 图种叶与点叶可乱序到达；最终物化统一隔离不适用字段，校验不能依赖瞬时到达顺序。
-    }
-  }
-}
 
 function validatePatch(doc: EditDoc, patchValue: ExtensionPatch, index: number): void {
   validatePatchAgainstState(assertChartPatchTarget(doc, patchValue.path[1]), patchValue, index);
@@ -347,31 +296,24 @@ function validatePatches(
   }
 }
 
+function generateParts(doc: EditDoc, parts: Record<string, Uint8Array>): void {
+  const plan = saveChartDatasets(doc); if (!plan) return;
+  for (const [part, bytes] of Object.entries(plan.changes)) if (bytes) parts[part] = bytes;
+}
+
 registerEditExtension(NS, {
-  command: commandPatches,
+  command: (doc, command, origin) => {
+    const local = commandPatches(doc, command, origin);
+    return sharedChartRuntime()?.command(doc, command.id, local, origin) ?? local;
+  },
   validatePatch,
   validatePatches,
   prune: (doc, id) => chartStateMatchesSource(doc, id),
-  project: (doc, id, element) => {
-    if (element.kind !== 'group') return element;
-    const projection = chartProjection(doc, id);
-    const children = renderChartXml(projection.xml, element.w, element.h, projection.context);
-    return { ...element, children };
-  },
+  project: projectChartElement,
   beforeSave: saveChartDatasets,
-  generateParts(doc, parts) {
-    const plan = saveChartDatasets(doc); if (!plan) return;
-    for (const [part, bytes] of Object.entries(plan.changes)) if (bytes) parts[part] = bytes;
-  },
+  generateParts,
+  copyParts: generateParts,
 });
-
-export function chartProjection(doc: EditDoc, id: ElementId) {
-  const part = chartPartForElement(doc, id);
-  const source = part && (chartSourceBytes(doc, part));
-  if (!part || !source) throw new Error('图表缺少来源');
-  return { xml: materializeChartProjectionXml(source, id, currentChartDatasetState(doc, id)),
-    context: chartRenderContext(doc, id, part), part };
-}
 
 function lastOrder(values: readonly { order: FractionalIndex }[]): FractionalIndex | null {
   return values.reduce<FractionalIndex | null>((last, item) =>
@@ -461,7 +403,7 @@ export function chartDataEditor(editor: Editable): ChartDataEditor {
     addCategory: (chartId, labelOrPath) => {
       const state = assertChart(editor.doc, chartId);
       assertCategoryCapacity(state);
-      const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+      const depth = categoryHierarchyBinding(state.series)?.hierarchy?.levels;
       if (typeof labelOrPath !== 'string') {
         if (!depth) throw new Error('此图表没有多级类别');
         assertCategoryLevels(labelOrPath, depth);

@@ -4,7 +4,8 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     emptyOutDir: false,
-    lib: { entry: 'src/chart/index.ts', fileName: 'chart', formats: ['es'] },
-    rollupOptions: { external: ['@web-ppt/edit-core/chart'] },
+    lib: { entry: { chart: 'src/chart/index.ts', 'chart-shared': 'src/chart-shared/index.ts' },
+      fileName: (_format, name) => `${name}.js`, formats: ['es'] },
+    rollupOptions: { external: ['@web-ppt/edit-core/chart', '@web-ppt/edit-core/chart-shared'] },
   },
 });

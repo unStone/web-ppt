@@ -26,7 +26,7 @@ type MutableBindings = {
 };
 
 const { child, children } = worksheetXml;
-function unzipWorkbook(bytes: Uint8Array): Record<string, Uint8Array> {
+export function unzipWorkbook(bytes: Uint8Array): Record<string, Uint8Array> {
   if (bytes.length > MAX_WORKBOOK_BYTES) throw new Error('内嵌工作簿压缩包超过安全上限');
   let count = 0;
   let total = 0;
@@ -56,7 +56,7 @@ export interface WorkbookMap {
 
 type DatasetValues = Pick<ChartDatasetState, 'categories' | 'series'>;
 
-function workbookMap(parts: Readonly<Record<string, Uint8Array>>): WorkbookMap {
+export function workbookMap(parts: Readonly<Record<string, Uint8Array>>): WorkbookMap {
   const workbookPart = 'xl/workbook.xml';
   const workbook = parts[workbookPart];
   const relsBytes = parts['xl/_rels/workbook.xml.rels'];
@@ -162,6 +162,7 @@ function assertFormulaOwnership(state: Pick<ChartDatasetState, 'series'>): void 
 
 export function workbookCanSync(
   workbook: Uint8Array | undefined, state: DatasetValues, verifyCache = false,
+  companions: readonly DatasetValues[] | false = [],
 ): { ok: true } | { ok: false; reason: string } {
   if (!workbook) return { ok: false, reason: '图表关系指向的内嵌工作簿不存在' };
   let map: WorkbookMap;
@@ -185,12 +186,11 @@ export function workbookCanSync(
       return { ok: false, reason: `图表公式不是可安全改写的一维范围：${item.formula}` };
     }
   }
-  try { assertFormulaOwnership(state); } catch (error) {
-    return { ok: false, reason: error instanceof Error ? error.message : '图表公式存在重叠写入' };
-  }
   try {
+    // 共享入口按文档单元格校验所有消费者；局部写回仍要求独占数值区域。
+    if (companions && !companions.length) assertFormulaOwnership(state);
     if (verifyCache) assertCategoryWorkbookSource(state, parts, map);
-    plannedState(state, parts, map);
+    if (companions !== false) plannedState(state, parts, map, companions);
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : '工作簿写入区域无法安全规划' };
   }
@@ -222,7 +222,7 @@ interface WorkbookBlocks {
   readonly byColumn: Map<string, Map<number, Set<number>>>;
 }
 
-function occupiedCells(
+export function occupiedCells(
   parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
 ): WorkbookOccupancy {
   const occupiedBySheet = new Map<string, Set<string>>();
@@ -355,6 +355,7 @@ function nextFreeRow(
 /** 新系列只分配到真实空白列；既有范围扩展也不能吞掉未知单元格。 */
 function plannedState<T extends DatasetValues>(
   source: T, parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
+  companions: readonly DatasetValues[] = [],
 ): T {
   const state = structuredClone(source);
   const formulaBindings = stateFormulaBindings(state);
@@ -371,6 +372,11 @@ function plannedState<T extends DatasetValues>(
   const count = Math.max(1, categories.length);
   const occupancy = occupiedCells(parts, map);
   const controlled = controlledCells(source);
+  for (const companion of companions) for (const [sheet, cells] of controlledCells(companion)) {
+    const owned = controlled.get(sheet) ?? new Set<string>();
+    for (const cell of cells) owned.add(cell);
+    controlled.set(sheet, owned);
+  }
   const blocks = blockedAxes(occupancy, controlled);
   const dataRows = Array.from({ length: count }, (_, index) => categoryRange.startRow + index);
   const dataColumns = Array.from({ length: count }, (_, index) => categoryRange.startColumn + index);
@@ -484,7 +490,7 @@ function plannedState<T extends DatasetValues>(
       }
     }
   }
-  assertFormulaOwnership(state);
+  if (!companions.length) assertFormulaOwnership(state);
   return state;
 }
 

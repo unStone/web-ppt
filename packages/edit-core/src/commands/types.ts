@@ -579,6 +579,10 @@ export interface SlideTreeSnapshot {
   /** 删除视图优先切到原后继；插入 patch 不依赖它定位。 */
   readonly before: SlideId | null;
   readonly records: Readonly<Record<ElementId, ElementRecord>>;
+  /** 直接复制来源用于冻结字段出处；不能从原生 part 推断中间副本。 */
+  readonly copySources?: Readonly<Record<ElementId, ElementId>>;
+  /** 复制发生时已证明的原操作；恢复与重做只运输这份不可变证据。 */
+  readonly extensionCopies?: string;
   /** 页面结构 Patch 同步维护稳定节成员；省略表示该页不属于任何节。 */
   readonly sectionId?: import('../types').SectionId;
 }
@@ -649,11 +653,23 @@ export type ExtensionPatch = {
   readonly origin: string;
 };
 
+export type DocumentExtensionPatch = {
+  readonly op: 'set';
+  readonly path: readonly ['document', 'extensions', string, ...string[]];
+  readonly value: unknown;
+  readonly origin: string;
+} | {
+  readonly op: 'del';
+  readonly path: readonly ['document', 'extensions', string, ...string[]];
+  readonly origin: string;
+};
+
 /** 单个事务必须能作为一条协同消息原子传输。 */
 export const MAX_PATCHES_PER_TRANSACTION = 10_000;
 
 export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
   | ExtensionPatch
+  | DocumentExtensionPatch
   | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
   | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
   | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch

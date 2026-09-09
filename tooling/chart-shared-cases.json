@@ -1,0 +1,345 @@
+[
+  {
+    "stem": "growth",
+    "fixture": "sample-chart-shared.pptx",
+    "office": true
+  },
+  {
+    "stem": "growth-views",
+    "fixture": "sample-chart-shared-views.pptx"
+  },
+  {
+    "stem": "growth-disjoint",
+    "fixture": "sample-chart-shared-disjoint.pptx"
+  },
+  {
+    "stem": "growth-sheets",
+    "fixture": "sample-chart-shared-sheets.pptx"
+  },
+  {
+    "stem": "growth-occupied",
+    "fixture": "sample-chart-shared-occupied.pptx"
+  },
+  {
+    "stem": "growth-horizontal",
+    "fixture": "sample-chart-shared-horizontal.pptx",
+    "office": true
+  },
+  {
+    "stem": "growth-flat",
+    "fixture": "sample-chart-shared-flat.pptx"
+  },
+  {
+    "stem": "growth-metadata",
+    "fixture": "sample-chart-shared-metadata.pptx"
+  },
+  {
+    "stem": "growth-merged",
+    "fixture": "sample-chart-shared-merged.pptx"
+  },
+  {
+    "stem": "growth-array-formula",
+    "fixture": "sample-chart-shared-array-formula.pptx"
+  },
+  {
+    "stem": "growth-xy",
+    "fixture": "sample-chart-shared-xy.pptx",
+    "office": true
+  },
+  {
+    "stem": "growth-xy-horizontal",
+    "fixture": "sample-chart-shared-xy-horizontal.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-growth",
+    "fixture": "sample-chart-shared.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-growth-views",
+    "fixture": "sample-chart-shared-views.pptx"
+  },
+  {
+    "stem": "category-growth-disjoint",
+    "fixture": "sample-chart-shared-disjoint.pptx"
+  },
+  {
+    "stem": "category-growth-sheets",
+    "fixture": "sample-chart-shared-sheets.pptx"
+  },
+  {
+    "stem": "category-growth-flat",
+    "fixture": "sample-chart-shared-flat.pptx"
+  },
+  {
+    "stem": "category-growth-horizontal",
+    "fixture": "sample-chart-shared-horizontal.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-growth-three-level",
+    "fixture": "sample-chart-shared-three-level.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-growth-flat-parent",
+    "fixture": "sample-chart-shared-flat-parent.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-parent",
+    "fixture": "sample-chart-shared-views.pptx",
+    "office": true
+  },
+  {
+    "stem": "category-inherited",
+    "fixture": "sample-chart-shared-flat-parent.pptx",
+    "office": true
+  },
+  {
+    "stem": "cache-square",
+    "fixture": "sample-chart-shared-cache.pptx",
+    "cache": true,
+    "orientation": "rows",
+    "depth": 2,
+    "office": true
+  },
+  {
+    "stem": "cache-square-empty",
+    "fixture": "sample-chart-shared-cache.pptx",
+    "cache": true,
+    "orientation": "rows",
+    "depth": 2,
+    "office": true
+  },
+  {
+    "stem": "cache-square-horizontal",
+    "fixture": "sample-chart-shared-cache-horizontal.pptx",
+    "cache": true,
+    "orientation": "columns",
+    "depth": 2,
+    "office": true
+  },
+  {
+    "stem": "cache-square-horizontal-empty",
+    "fixture": "sample-chart-shared-cache-horizontal.pptx",
+    "cache": true,
+    "orientation": "columns",
+    "depth": 2,
+    "office": true
+  },
+  {
+    "stem": "cache-square-three-level",
+    "fixture": "sample-chart-shared-cache-three-level.pptx",
+    "cache": true,
+    "orientation": "rows",
+    "depth": 3,
+    "office": true
+  },
+  {
+    "stem": "cache-square-three-level-empty",
+    "fixture": "sample-chart-shared-cache-three-level.pptx",
+    "cache": true,
+    "orientation": "rows",
+    "depth": 3,
+    "office": true
+  },
+  {
+    "stem": "source-xy",
+    "fixture": "sample-chart-shared-xy.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-views",
+    "fixture": "sample-chart-shared-xy-views.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-shared-x",
+    "fixture": "sample-chart-shared-xy-shared-x.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-sheets",
+    "fixture": "sample-chart-shared-xy-sheets.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-empty",
+    "fixture": "sample-chart-shared-xy-empty.pptx",
+    "office": true,
+    "officeDropsEmptySeries": true
+  },
+  {
+    "stem": "source-xy-horizontal",
+    "fixture": "sample-chart-shared-xy-horizontal.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-horizontal-views",
+    "fixture": "sample-chart-shared-xy-horizontal-views.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-horizontal-shared-x",
+    "fixture": "sample-chart-shared-xy-horizontal-shared-x.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-horizontal-sheets",
+    "fixture": "sample-chart-shared-xy-horizontal-sheets.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-horizontal-empty",
+    "fixture": "sample-chart-shared-xy-horizontal-empty.pptx",
+    "office": true,
+    "officeDropsEmptySeries": true
+  },
+  {
+    "stem": "source-xy-rebuilt",
+    "fixture": "sample-chart-shared-xy.pptx",
+    "office": true
+  },
+  {
+    "stem": "source-xy-rebuilt-horizontal",
+    "fixture": "sample-chart-shared-xy-horizontal.pptx",
+    "office": true
+  },
+  {
+    "stem": "transition-hierarchy",
+    "fixture": "sample-chart-hierarchy.pptx",
+    "transition": {
+      "part": "ppt/charts/chart1.xml",
+      "workbook": "ppt/embeddings/hierarchy1.xlsx"
+    },
+    "office": true
+  },
+  {
+    "stem": "transition-horizontal",
+    "fixture": "sample-chart-hierarchy.pptx",
+    "transition": {
+      "part": "ppt/charts/chart3.xml",
+      "workbook": "ppt/embeddings/hierarchy3.xlsx"
+    },
+    "office": true
+  },
+  {
+    "stem": "transition-cache",
+    "fixture": "sample-chart-data.pptx",
+    "transition": {
+      "part": "ppt/charts/chart2.xml",
+      "workbook": null
+    },
+    "office": false
+  },
+  {
+    "stem": "transition-cache-xy",
+    "fixture": "sample-chart-data.pptx",
+    "transition": {
+      "part": "ppt/charts/chart11.xml",
+      "workbook": null
+    },
+    "office": false
+  },
+  {
+    "stem": "transition-xy",
+    "fixture": "sample-chart-shared-transition-xy.pptx",
+    "transition": {
+      "part": "ppt/charts/chart1.xml",
+      "workbook": "ppt/embeddings/hierarchy1.xlsx"
+    },
+    "office": true,
+    "officeDropsEmptySeries": true
+  },
+  {
+    "stem": "transition-xy-horizontal",
+    "fixture": "sample-chart-shared-transition-xy-horizontal.pptx",
+    "transition": {
+      "part": "ppt/charts/chart1.xml",
+      "workbook": "ppt/embeddings/hierarchy1.xlsx"
+    },
+    "office": true,
+    "officeDropsEmptySeries": true
+  },
+  {
+    "stem": "clipboard",
+    "fixture": "sample-chart-shared.pptx",
+    "clipboard": true,
+    "office": true
+  },
+  {
+    "stem": "clipboard-cache",
+    "fixture": "sample-chart-shared-cache.pptx",
+    "clipboard": true,
+    "office": true
+  },
+  {
+    "stem": "clipboard-xy",
+    "fixture": "sample-chart-shared-xy.pptx",
+    "clipboard": true,
+    "office": true,
+    "officeDropsEmptySeries": true
+  },
+  {
+    "stem": "mixed",
+    "fixture": "sample-chart-shared-mixed.pptx",
+    "mixed": true,
+    "office": true
+  },
+  {
+    "stem": "mixed-horizontal",
+    "fixture": "sample-chart-shared-mixed-horizontal.pptx",
+    "mixed": true,
+    "office": true
+  },
+  {
+    "stem": "mixed-crossed",
+    "fixture": "sample-chart-shared-mixed-crossed.pptx",
+    "mixed": true,
+    "office": true
+  },
+  {
+    "stem": "mixed-records",
+    "fixture": "sample-chart-shared-mixed-records.pptx",
+    "mixed": true,
+    "joint": "aligned",
+    "office": true
+  },
+  {
+    "stem": "mixed-records-horizontal",
+    "fixture": "sample-chart-shared-mixed-records-horizontal.pptx",
+    "mixed": true,
+    "joint": "aligned",
+    "office": true
+  },
+  {
+    "stem": "mixed-records-partial",
+    "fixture": "sample-chart-shared-mixed-overlap.pptx",
+    "mixed": true,
+    "joint": "partial",
+    "office": true
+  },
+  {
+    "stem": "mixed-records-rebuilt",
+    "fixture": "sample-chart-shared-mixed-records.pptx",
+    "mixed": true,
+    "joint": "rebuilt",
+    "office": true
+  },
+  {
+    "stem": "mixed-records-horizontal-rebuilt",
+    "fixture": "sample-chart-shared-mixed-records-horizontal.pptx",
+    "mixed": true,
+    "joint": "rebuilt",
+    "office": true
+  },
+  {
+    "stem": "mixed-records-flat-horizontal-rebuilt",
+    "fixture": "sample-chart-shared-mixed-records-flat-horizontal.pptx",
+    "mixed": true,
+    "joint": "rebuilt",
+    "office": true
+  }
+]

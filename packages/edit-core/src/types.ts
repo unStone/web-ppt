@@ -775,6 +775,8 @@ export interface EditSaveState {
 }
 
 export interface EditDoc {
+  /** 文档级共享语义的稀疏覆盖；独立于页面和元素的生命周期。 */
+  extensions?: Record<string, unknown>;
   meta: EditDocMeta;
   identity: EditIdentity;
   slides: Record<SlideId, SlideRecord>;
@@ -788,6 +790,12 @@ export interface EditDoc {
   themeOrder: string[];
   elements: Record<ElementId, ElementRecord>;
   removedElements: Record<ElementId, RemovedElementRecord>;
+  /** 被移出模型的原生框架身份；副本和延迟扩展仍需定位它，不参与 XML 删除计划。 */
+  retainedElementOrigins?: Record<ElementId, {
+    readonly part: string;
+    readonly spid: number;
+    readonly sourcePart?: string;
+  }>;
   /** 会话图片按内容寻址；未被当前元素引用的条目仍可供历史逆向 Patch 恢复。 */
   imageResources: Record<string, ElementInsertionResource>;
   readonly package: OpcPackage | null;

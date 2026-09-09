@@ -56,24 +56,27 @@ function command(doc: EditDoc, command: ExtensionCommand, origin: string) {
     inverse: [before === undefined ? { op: 'del' as const, path, origin } : { op: 'set' as const, path, value: before, origin }] };
 }
 
+function generateParts(doc: EditDoc, parts: Record<string, Uint8Array>): void {
+  const written = new Map<string, string>(), inputs = new Map<string, Uint8Array>();
+  for (const record of Object.values(doc.elements)) {
+    const value = state(doc, record.id); if (!value) continue;
+    const { part } = chartProjection(doc, record.id);
+    if (!parts[part]) throw new Error('生成图表缺少部件');
+    const input = inputs.get(part) ?? parts[part]; inputs.set(part, input);
+    const xml = applyChartDesign(input, normalize(JSON.parse(value)));
+    if (written.has(part) && written.get(part) !== xml) throw new Error('共享图表不能设置不同样式');
+    written.set(part, xml); parts[part] = new TextEncoder().encode(xml);
+  }
+}
+
 registerEditExtension(namespace, { command, validatePatch,
   project(doc, id, element) {
     const value = state(doc, id); if (!value || element.kind !== 'group') return element;
     const projection = chartProjection(doc, id);
     return { ...element, children: renderChartXml(applyChartDesign(projection.xml, normalize(JSON.parse(value))), element.w, element.h, projection.context) };
   },
-  generateParts(doc, parts) {
-    const written = new Map<string, string>(), inputs = new Map<string, Uint8Array>();
-    for (const record of Object.values(doc.elements)) {
-      const value = state(doc, record.id); if (!value) continue;
-      const { part } = chartProjection(doc, record.id);
-      if (!parts[part]) throw new Error('生成图表缺少部件');
-      const input = inputs.get(part) ?? parts[part]; inputs.set(part, input);
-      const xml = applyChartDesign(input, normalize(JSON.parse(value)));
-      if (written.has(part) && written.get(part) !== xml) throw new Error('共享图表不能设置不同样式');
-      written.set(part, xml); parts[part] = new TextEncoder().encode(xml);
-    }
-  },
+  generateParts,
+  copyParts: generateParts,
   materializePackage(doc, baselines, _created, changes) {
     const written = new Map<string, string>(), inputs = new Map<string, Uint8Array>();
     for (const record of Object.values(doc.elements)) {

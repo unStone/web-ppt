@@ -216,6 +216,7 @@ function appendClipboardRelationship(
   source: ResolvedClipboardRelationship,
   relationships: ClipboardRelationship[],
   resources: Map<string, ClipboardResource>,
+  effectivePackage?: () => OpcPackage,
 ): void {
   if (source.targetMode === 'External') {
     relationships.push({
@@ -227,7 +228,7 @@ function appendClipboardRelationship(
   if (!isMediaRelationship(source.type)) {
     relationships.push({
       sourceId: source.sourceId, type: source.type,
-      packageTarget: packageTargetIdentity(pkg, source.targetPart),
+      packageTarget: packageTargetIdentity(effectivePackage?.() ?? pkg, source.targetPart),
     });
     return;
   }
@@ -242,6 +243,7 @@ export function clipboardClosure(
   sourcePart: string,
   host: XmlElement,
   insertions: readonly Pick<ElementInsertionSource, 'relationships' | 'resources'>[] = [],
+  effectivePackage?: () => OpcPackage,
 ): ClipboardClosure {
   const ids = relationshipIds(host);
   if (!ids.length) return { relationships: [], resources: [] };
@@ -280,7 +282,7 @@ export function clipboardClosure(
       }
       const targetPart = resolveRelationshipTarget(sourcePart, source.target);
       if (!isMediaRelationship(source.type)) {
-        appendClipboardRelationship(pkg, { sourceId, type: source.type, targetPart }, relationships, resources);
+        appendClipboardRelationship(pkg, { sourceId, type: source.type, targetPart }, relationships, resources, effectivePackage);
         continue;
       }
       const resource = inserted.resources.get(targetPart);
@@ -303,7 +305,7 @@ export function clipboardClosure(
     }
     const targetPart = resolveRelationshipTarget(sourcePart, target);
     if (!isMediaRelationship(type)) {
-      appendClipboardRelationship(pkg, { sourceId, type, targetPart }, relationships, resources);
+      appendClipboardRelationship(pkg, { sourceId, type, targetPart }, relationships, resources, effectivePackage);
       continue;
     }
     const bytes = pkg.parts[targetPart];

@@ -17,6 +17,8 @@ export interface ChartDataBinding {
   readonly workbookPart: string | null;
   readonly mode: 'workbook' | 'cache' | 'readonly';
   readonly reason?: string;
+  /** 旧编辑或共享覆盖无法解释时，不返回可被误认为当前数据的来源缓存。 */
+  readonly unresolved?: true;
 }
 
 export interface ChartCategory {

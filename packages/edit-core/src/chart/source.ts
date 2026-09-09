@@ -1,4 +1,6 @@
+import { mergeChartDatasetState } from './dataset-merge';
 import { reconcileCategoryMatrix } from './category-matrix';
+import { sharedDatasetState, sharedChartRuntime, chartDatasetOverrides, SHARED_CHART_REASON } from './shared-runtime';
 import { chartSourceBytes } from './context';
 import { initialFractionalIndex } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId } from '../types';
@@ -11,14 +13,13 @@ import type {
   ChartPoint, ChartPointId, ChartSeries, ChartSeriesId,
 } from './types';
 import {
-  assertChartDictionary, MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
-  validateMaterializedRecords,
+  MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
 } from './validation';
 import { workbookCanSync } from './workbook';
 import { readCategoryLevels } from './category-levels';
 import { readChartIdentityManifest } from './identity';
 import { chartRelationships } from './context';
-import { chartPartForElement } from './locator';
+import { chartPartForElement, chartFrameKey } from './locator';
 import { orderedChartRecords } from './ordering';
 import {
   OFFICE_REL_NS, STRICT_CHART_NS, STRICT_OFFICE_REL_NS,
@@ -106,6 +107,7 @@ function workbookBinding(
   unsupportedMultiLevel: string | undefined,
   inconsistentCategories: boolean,
   unsupportedScale: boolean,
+  deferWorkbookPlanning: boolean,
 ): ChartDataBinding {
   if (unsupportedScale) {
     return { chartPart, workbookPart: null, mode: 'readonly', reason: '图表来源数据超过安全上限' };
@@ -126,19 +128,11 @@ function workbookBinding(
     : null;
   const relationships = chartRelationships(doc, chartPart);
   const workbookPart = relationshipId ? relationships[relationshipId]?.target ?? null : null;
-  const records = Object.values(doc.elements).filter((record) => record.id !== chartId);
-  if (records.some((record) => chartPartForElement(doc, record.id) === chartPart)) {
-    return { chartPart, workbookPart, mode: 'readonly', reason: '同一图表部件被多个框架共享，无法安全区分编辑来源' };
+  if (relationshipId && relationships[relationshipId]?.external) {
+    return { chartPart, workbookPart: null, mode: 'readonly', reason: '图表绑定外部工作簿，不能写回内嵌包' };
   }
   if (!workbookPart) {
     return { chartPart, workbookPart: null, mode: 'cache', reason: '图表没有可写的内嵌工作簿' };
-  }
-  if (records.some((record) => {
-    const part = chartPartForElement(doc, record.id);
-    return part && Object.values(chartRelationships(doc, part))
-      .some((relationship) => relationship.target === workbookPart);
-  })) {
-    return { chartPart, workbookPart, mode: 'readonly', reason: '同一内嵌工作簿被多个图表共享，无法原子合并写回' };
   }
   const missingCache = Object.values(series).some((item) =>
     Object.values(item.bindings).some((itemBinding) =>
@@ -147,20 +141,25 @@ function workbookBinding(
     return { chartPart, workbookPart, mode: 'readonly', reason: '图表公式缺少缓存，不能把未知工作簿值当成空值覆盖' };
   }
   const workbook = chartSourceBytes(doc, workbookPart);
-  const sync = workbookCanSync(workbook, { categories, series }, true);
+  const sync = workbookCanSync(workbook, { categories, series }, true, deferWorkbookPlanning ? false : []);
   return sync.ok
     ? { chartPart, workbookPart, mode: 'workbook' }
     : { chartPart, workbookPart, mode: 'readonly', reason: sync.reason };
 }
 
-function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
+function sourceState(doc: EditDoc, id: ElementId, deferred = false, part?: string): ChartDatasetState {
+  const read = () => readSourceState(doc, id, deferred, part);
+  return sharedChartRuntime()?.source?.(doc, id, deferred, part, read) ?? read();
+}
+
+function readSourceState(doc: EditDoc, chartId: ElementId, deferWorkbookPlanning = false, nativePart?: string): ChartDatasetState {
   const record = doc.elements[chartId];
-  const part = record && chartPartForElement(doc, chartId);
+  const part = nativePart ?? (record && chartPartForElement(doc, chartId));
   // 保存会替换当前 OPC 包，但编辑覆盖的基线必须像普通 record.src 一样保持不变，撤销才能回到打开时状态。
   const bytes = part && (chartSourceBytes(doc, part));
-  if (!record || !part || !bytes) throw new Error(`元素 ${chartId} 不是可读取的经典图表`);
+  if (!record && !nativePart || !part || !bytes) throw new Error(`元素 ${chartId} 不是可读取的经典图表`);
   const root = parseXmlTree(bytes).root;
-  const identities = readChartIdentityManifest(root);
+  const identities = readChartIdentityManifest(root, nativePart ? undefined : chartFrameKey(doc, chartId), chartId);
   const plotArea = child(child(root, 'chart'), 'plotArea');
   if (!plotArea) throw new Error(`图表 ${chartId} 缺少 plotArea`);
   const categories: ChartDatasetState['categories'] = Object.create(null);
@@ -232,7 +231,7 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
       const sizes = cache(sizeHolder, true);
       const catHolder = xy ? null : child(source, 'cat');
       let multi: ReturnType<typeof readCategoryLevels>;
-      try { multi = readCategoryLevels(catHolder, formula(yHolder)); } catch (error) {
+      try { multi = readCategoryLevels(catHolder, formula(yHolder), identities?.categoryOrientation); } catch (error) {
         unsupportedMultiLevel = error instanceof Error ? error.message : '多级类别来源无效';
       }
       if (child(child(source, 'tx'), 'multiLvlStrRef')) unsupportedMultiLevel = '系列名称使用不支持的多级引用';
@@ -259,11 +258,7 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
         break;
       }
       categoryCount = Math.max(categoryCount, holderCounts[0], identities?.categories.length ?? 0);
-      const pointIndexes = new Set([
-        ...y.keys(), ...x.keys(), ...sizes.keys(), ...seriesCategories.keys(),
-      ]);
       const pointCount = Math.min(MAX_CHART_POINTS, Math.max(
-        Math.max(0, ...pointIndexes, -1) + 1,
         holderCounts[1], holderCounts[2], holderCounts[3],
         xy ? descriptor.identity?.points.length ?? 0 : categoryCount,
       ));
@@ -304,90 +299,34 @@ function sourceState(doc: EditDoc, chartId: ElementId): ChartDatasetState {
     categories[id] = { id, order: initialFractionalIndex(index), label: String(value ?? ''),
       ...(categoryLevels ? { levels: categoryLevels[index] } : {}) };
   }
+  const dataBinding = workbookBinding(doc, chartId, part, root, categories, series,
+    unsupportedMultiLevel, inconsistentCategories, unsupportedScale, deferWorkbookPlanning);
   return {
     kind: hasCategory && hasXY ? 'mixed' : hasXY ? 'xy' : 'category',
     categories,
     series,
-    binding: workbookBinding(
-      doc, chartId, part, root, categories, series,
-      unsupportedMultiLevel, inconsistentCategories, unsupportedScale,
-    ),
+    binding: identities?.scopes && !sharedChartRuntime() && dataBinding.mode !== 'readonly'
+      ? { ...dataBinding, mode: 'readonly', reason: SHARED_CHART_REASON } : dataBinding,
   };
 }
 
-function overlayState(target: Record<string, unknown>, sparse: Record<string, unknown>): void {
-  for (const [key, value] of Object.entries(sparse)) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      const current = target[key];
-      if (key === 'levels') {
-        target[key] = Object.assign(Array.isArray(current) ? [...current] : [], value);
-        continue;
-      }
-      if (!current || typeof current !== 'object' || Array.isArray(current)) {
-        target[key] = Object.create(null) as Record<string, unknown>;
-      }
-      overlayState(target[key] as Record<string, unknown>, value as Record<string, unknown>);
-    } else target[key] = value;
-  }
-}
-
-function sanitizeDatasetRoot(merged: ChartDatasetState, source: ChartDatasetState): boolean {
-  const target = merged as unknown as Record<string, unknown>;
-  let deferred = false;
-  for (const key of Object.keys(target)) {
-    if (['kind', 'binding', 'categories', 'series'].includes(key)) continue;
-    delete target[key];
-    deferred = true;
-  }
-  for (const key of ['kind', 'binding'] as const) {
-    if (JSON.stringify(merged[key]) === JSON.stringify(source[key])) continue;
-    target[key] = structuredClone(source[key]);
-    deferred = true;
-  }
-  for (const key of ['categories', 'series'] as const) {
-    try { assertChartDictionary(merged[key], `图表 ${key}`); } catch {
-      target[key] = structuredClone(source[key]);
-      deferred = true;
-    }
-  }
-  return deferred;
-}
 
 
 function materializedState(
   doc: EditDoc, id: ElementId,
 ): { readonly state: ChartDatasetState; readonly deferred: boolean } {
-  const source = sourceState(doc, id);
-  const sparse = doc.elements[id]?.ovr.extensions?.['chart-data'];
-  if (sparse === undefined) {
-    reconcileCategoryMatrix(source);
-    return { state: source, deferred: false };
-  }
-  if (!sparse || typeof sparse !== 'object' || Array.isArray(sparse)) {
-    throw new Error(`图表 ${id} 的稀疏覆盖无效`);
-  }
-  const merged = structuredClone(source) as ChartDatasetState;
-  overlayState(merged as unknown as Record<string, unknown>, sparse as Record<string, unknown>);
-  for (const item of Object.values(merged.series) as Array<ChartDatasetState['series'][ChartSeriesId]
-    & { pointsReady?: true }>) {
-    if (item.pointsReady !== true) continue;
-    item.points ??= Object.create(null) as Record<ChartPointId, ChartPoint>;
-    delete item.pointsReady;
-  }
-  let deferred = sanitizeDatasetRoot(merged, source);
-  deferred = validateMaterializedRecords(
-    merged.categories, merged.series, source.categories, source.series,
-  ) || deferred;
-  reconcileCategoryMatrix(merged);
-  if (merged.binding.mode === 'workbook' && merged.binding.workbookPart) {
+  const source = sourceState(doc, id, !!sharedChartRuntime()?.owns(doc, id));
+  const sparse = chartDatasetOverrides(doc, id);
+  const { state: merged, deferred } = mergeChartDatasetState(source, sparse);
+  if (sparse !== undefined && merged.binding.mode === 'workbook' && merged.binding.workbookPart) {
     const workbook = chartSourceBytes(doc, merged.binding.workbookPart);
     const sync = workbookCanSync(workbook, merged);
     if (!sync.ok) merged.binding = { ...merged.binding, mode: 'readonly', reason: sync.reason };
   }
-  return { state: merged, deferred };
+  return { state: sharedDatasetState(doc, id, merged), deferred };
 }
 
-const stateOf = (doc: EditDoc, id: ElementId): ChartDatasetState => materializedState(doc, id).state;
+export const currentChartDatasetState = (doc: EditDoc, id: ElementId): ChartDatasetState => materializedState(doc, id).state;
 
 function activeState(state: ChartDatasetState): ChartDatasetState {
   const result = structuredClone(state);
@@ -419,8 +358,11 @@ function comparableState(state: ChartDatasetState): unknown {
   };
 }
 
+export const chartDatasetStatesEqual = (left: ChartDatasetState, right: ChartDatasetState): boolean =>
+  JSON.stringify(comparableState(left)) === JSON.stringify(comparableState(right));
+
 function comparableSource(doc: EditDoc, id: ElementId): unknown {
-  const source = sourceState(doc, id);
+  const source = sourceState(doc, id, !!sharedChartRuntime()?.owns(doc, id));
   reconcileCategoryMatrix(source);
   return comparableState(source);
 }
@@ -437,26 +379,27 @@ export function chartStateHasEffectiveChanges(doc: EditDoc, id: ElementId): bool
 }
 
 export function readChartDataset(doc: EditDoc, id: ElementId): ChartDataset {
-  const state = stateOf(doc, id);
+  const state = currentChartDatasetState(doc, id);
   const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed))
     .map(({ levelParent: _parent, levelClears: _clears, ...item }) => item);
-  const series = orderedChartRecords(Object.values(state.series).filter((item) => !item.removed))
+  const allSeries = orderedChartRecords(Object.values(state.series));
+  const series = allSeries.filter((item) => !item.removed)
     .map((item): ChartSeries => ({
       ...item, bindings: structuredClone(item.bindings),
       points: orderedChartRecords(Object.values(item.points).filter((point) => !point.removed))
         .map((point) => ({ ...point })),
     }));
-  const plotKinds = [...new Set(orderedChartRecords(Object.values(state.series))
-    .map((item) => item.plotKind))];
+  const plotKinds = [...new Set(allSeries.map((item) => item.plotKind))];
   return { chartId: id, kind: state.kind, plotKinds, categories, series, binding: { ...state.binding } };
 }
 
-export function hydrateChartDataset(doc: EditDoc, id: ElementId): ChartDatasetState {
-  return structuredClone(sourceState(doc, id));
+export function hydrateChartDataset(doc: EditDoc, id: ElementId, deferWorkbookPlanning = false): ChartDatasetState {
+  return sourceState(doc, id, deferWorkbookPlanning);
 }
 
-export function currentChartDatasetState(doc: EditDoc, id: ElementId): ChartDatasetState {
-  return stateOf(doc, id);
+export const NATIVE_CHART_ID = 'shared-native';
+export function hydrateChartPart(doc: EditDoc, part: string): ChartDatasetState {
+  return sourceState(doc, NATIVE_CHART_ID, true, part);
 }
 
 export function chartRecordIds(doc: EditDoc): ElementId[] {

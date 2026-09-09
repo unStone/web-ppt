@@ -49,8 +49,7 @@ function copiedMeta(
   };
 }
 
-function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>): SlideElement {
-  const effective = effectiveElement(doc, id);
+function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>, effective = effectiveElement(doc, id)): SlideElement {
   const source = effective.kind === 'group' ? { ...effective, children: [] } : effective;
   const portable = tokenizeElementAssets(
     doc, source, assets, [
@@ -122,12 +121,23 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
   const copyBatchId = createCopyBatchId();
   const assetHashes = new Set<string>();
   let next = 1;
+  const visitProjection = (owner: ElementId, element: SlideElement, parent: string): string => {
+    const id = `e${next++}`;
+    const children = element.kind === 'group' ? element.children.map(child => visitProjection(owner, child, id)) : [];
+    records[id] = { id, parent, children, src: copiedSource(doc, owner, assetHashes, element),
+      meta: { copyBatchId, editable: 'none', anchored: false } };
+    return id;
+  };
   const visit = (id: ElementId, clipboardParent: string | null): string => {
     const record = doc.elements[id];
     if (!record) throw new Error(`复制树引用不存在的元素：${id}`);
     const clipboardId = `e${next++}`;
-    const children = (record.children ?? []).map((child) => visit(child, clipboardId));
-    const source = copiedSource(doc, id, assetHashes);
+    const effective = effectiveElement(doc, id);
+    // 原生框架的孩子是派生视图，数据编辑后数量和几何都可能改变；旧记录树不是当前画面。
+    const children = record.meta.editable === 'frame' && effective.kind === 'group'
+      ? effective.children.map(child => visitProjection(id, child, clipboardId))
+      : (record.children ?? []).map((child) => visit(child, clipboardId));
+    const source = copiedSource(doc, id, assetHashes, effective);
     records[clipboardId] = {
       id: clipboardId,
       parent: clipboardParent,

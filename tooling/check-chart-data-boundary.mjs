@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { moduleClosure } from './lib/module-closure.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
@@ -34,7 +35,8 @@ if (coreChartSize.raw > coreChartBudget.raw || coreChartSize.gzip > coreChartBud
   throw new Error(`core/chart-edit 体积超出预算：${JSON.stringify({ coreChartBudget, coreChartSize })}`);
 }
 
-const implementation = read('packages/edit-core/dist/chart.js');
+const closure = moduleClosure(join(root, 'packages/edit-core/dist/chart.js'));
+const implementation = closure.source;
 if (!forbidden.every((sentinel) => implementation.includes(sentinel))) {
   throw new Error('edit-core/chart 缺少图表数据或 SpreadsheetML 实现');
 }
@@ -44,7 +46,10 @@ if (!['@web-ppt/edit-core', '@web-ppt/edit-core/xml', '@web-ppt/edit-core/opc']
   throw new Error('edit-core/chart 没有复用身份、分数序或 XML / OPC 入口');
 }
 const budget = { raw: 85_000, gzip: 25_000 };
-const actual = size(implementation);
+const actual = { raw: closure.raw, gzip: closure.gzip };
+if (['共享删行区域超过安全上限', '共享单元格覆盖无效', '共享缓存来源身份无效'].some(marker => implementation.includes(marker))) {
+  throw new Error('chart 默认入口静态引入了共享工作簿实现');
+}
 if (!implementation.includes('@__PURE__')) throw new Error('图表库压缩不能丢弃 tree-shaking 注解');
 if (actual.raw > budget.raw || actual.gzip > budget.gzip) {
   throw new Error(`edit-core/chart 体积超出预算：${JSON.stringify({ budget, actual })}`);
@@ -53,6 +58,9 @@ for (const [file, external] of [
   ['packages/editor/dist/chart.js', '@web-ppt/edit-core/chart'],
   ['packages/react/dist/chart.js', '@web-ppt/editor/chart'],
   ['packages/vue/dist/chart.js', '@web-ppt/editor/chart'],
+  ['packages/editor/dist/chart-shared.js', '@web-ppt/edit-core/chart-shared'],
+  ['packages/react/dist/chart-shared.js', '@web-ppt/editor/chart-shared'],
+  ['packages/vue/dist/chart-shared.js', '@web-ppt/editor/chart-shared'],
 ]) {
   const source = read(file);
   if (!imports(source).has(external) || Buffer.byteLength(source) > 512) {

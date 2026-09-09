@@ -17,6 +17,9 @@ export interface CollabRegisterCheckpoint {
   readonly kind: 'field' | 'hierarchy';
 }
 
+export type CollabExtensionOperation = { readonly op: 'set'; readonly value: string | number | boolean | null }
+  | { readonly op: 'del' };
+
 export interface CollabSlideMoveCheckpoint {
   readonly stamp: CollabStamp;
   readonly after: string | null;
@@ -56,6 +59,8 @@ export interface CollaborationCheckpoint {
   readonly sectionMoves?: readonly (readonly [string, CollabSlideMoveCheckpoint])[];
   readonly seen: readonly CollabSeenCheckpoint[];
   readonly deferred: readonly CollabDeferredCheckpoint[];
+  /** 可选 migration 入口保留原操作；缺省表示证据未知，不能把缺失值猜成 del。 */
+  readonly extensionOperations?: readonly (readonly [string, CollabExtensionOperation])[];
 }
 
 /** 一条消息对应一个已经原子落模的 Editor 补丁批次。 */

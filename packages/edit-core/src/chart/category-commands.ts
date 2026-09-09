@@ -4,6 +4,8 @@ import type { EditDoc } from '../types';
 import { MAX_CHART_CELLS } from './limits';
 import { orderedChartRecords } from './ordering';
 import { assertCategoryLevels, assertChartName } from './validation';
+import { chartDatasetOverrides } from './shared-runtime';
+import { categoryHierarchyBinding } from './category-binding';
 
 export type CategoryPayload =
   | { op: 'set-category-label'; pointId: ChartPointId; label: string }
@@ -32,14 +34,14 @@ export function previousCategoryId(state: ChartDatasetState, id: ChartPointId): 
 }
 
 export function assertCategoryCapacity(state: ChartDatasetState): void {
-  const depth = Object.values(state.series).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+  const depth = categoryHierarchyBinding(state.series)?.hierarchy?.levels;
   if (depth && (Object.keys(state.categories).length + 1) * depth > MAX_CHART_CELLS) {
     throw new Error('图表类别层级单元数量已达上限');
   }
 }
 
 export function categoryLevelOverride(doc: EditDoc, id: string, categoryId: string, level: number): string | null | undefined {
-  const state = doc.elements[id]?.ovr.extensions?.['chart-data'] as {
+  const state = chartDatasetOverrides(doc, id) as {
     categories?: Record<string, { levels?: Record<string, unknown> }>;
   } | undefined;
   const value = state?.categories?.[categoryId]?.levels?.[level];
@@ -47,7 +49,7 @@ export function categoryLevelOverride(doc: EditDoc, id: string, categoryId: stri
 }
 
 function categoryLevelCleared(doc: EditDoc, id: string, categoryId: string, level: number): string | null | undefined {
-  const state = doc.elements[id]?.ovr.extensions?.['chart-data'] as {
+  const state = chartDatasetOverrides(doc, id) as {
     categories?: Record<string, { levelClears?: Record<string, unknown> }>;
   } | undefined;
   const value = state?.categories?.[categoryId]?.levelClears?.[level];

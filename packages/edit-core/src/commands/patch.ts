@@ -73,6 +73,9 @@ import { retainInsertionSources } from '../source-retention';
 import {
   isExtensionPatch, validateExtensionPatch, validateExtensionPatchBatches,
 } from '../extension-runtime';
+import { isDocumentExtensionPatch, validateDocumentExtensionPatch } from '../document-extensions';
+import { canonicalExtensionPatch, isExtensionAddressPatch } from '../extension-addresses';
+import { isExtensionMigrationPatch } from '../extension-migration-receipt';
 
 function validatePatch(
   doc: EditDoc,
@@ -109,6 +112,10 @@ function validatePatch(
   }
   if (isExtensionPatch(input)) {
     validateExtensionPatch(doc, input, index, runtimeExtensionValidated);
+    return;
+  }
+  if (isDocumentExtensionPatch(input)) {
+    validateDocumentExtensionPatch(doc, input, index);
     return;
   }
   if (validateCommonObjectSlidePatch(doc, input, index)) return;
@@ -360,18 +367,19 @@ function applyPatchBatch(
   patches: readonly Patch[],
   stageStructuralModel: boolean,
 ): ProjectionInvalidation {
+  patches = patches.map(patch => canonicalExtensionPatch(doc, patch));
   assertPatchCount(patches.length);
   validatePatchRelations(doc, patches, stageStructuralModel);
   const structural = patches.some((patch) =>
     isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
       || isTableRowPatch(patch) || isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
-      || isTableMergePatch(patch) || isTableCellPropsPatch(patch));
+      || isTableMergePatch(patch) || isTableCellPropsPatch(patch) || isExtensionAddressPatch(patch) || isExtensionMigrationPatch(patch));
   // 本机元素删除已由命令生成独立快照，删除分支只读它；再次深拷贝会重复复制九级文字目录。
   // 外部批次及会安装记录的操作仍隔离快照，不能让调用方或暂存写回污染真实模型。
   const appliedPatches = structural && (stageStructuralModel
     || patches.some((patch) => patch.op !== 'remove' || !isElementTreePatch(patch)))
-    ? structuredClone(patches) : patches;
-  const validationStage = stageStructuralModel && structural
+    ? structuredClone([...patches]) : [...patches];
+  const validationStage = structural && (stageStructuralModel || patches.some(patch => isExtensionAddressPatch(patch) || isExtensionMigrationPatch(patch)))
     ? structuralPatchStage(doc, appliedPatches) : null;
   const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
   const animationDoc = needsAnimationStage ? structuralPatchStage(doc, appliedPatches) : doc;
@@ -398,11 +406,14 @@ function applyPatchBatch(
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
+  const stagedAddresses = new Set<string>(), liveAddresses = new Set<string>();
   // 结构批次依赖逐条暂存后的模型；普通扩展批次可共享一次昂贵的来源解析。
   const batchValidatedExtensions = structural
     ? new Set<number>() : validateExtensionPatchBatches(doc, extensionEntries);
   const patchDoc = validationStage ?? doc;
-  patches.forEach((patch, index) => {
+  patches.forEach((input, index) => {
+    const patch = canonicalExtensionPatch(patchDoc, input);
+    appliedPatches[index] = canonicalExtensionPatch(patchDoc, appliedPatches[index]);
     validatePatch(
       patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc,
       batchValidatedExtensions.has(index),
@@ -415,7 +426,7 @@ function applyPatchBatch(
       stagedTableRows.set(patch.path[1], current);
     }
     if (validationStage) {
-      collectPatchInvalidation(validationStage, patch, dirtyElements, dirtySlides);
+      collectPatchInvalidation(validationStage, patch, dirtyElements, dirtySlides, stagedAddresses);
       // 后续结构 Patch 必须看见前序创建的页/组；逐条克隆避免暂存写回污染批次快照。
       applyPatchValues(validationStage, [structuredClone(appliedPatches[index])]);
     }
@@ -483,14 +494,14 @@ function applyPatchBatch(
   if (!validationStage) validateElementOrderPatchSet(doc, patches);
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
   if (!validationStage) for (const patch of patches) {
-    collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides);
+    collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides, liveAddresses);
   }
   if (validationStage) {
     validateEditDoc(validationStage);
     let released = false;
     for (const patch of patches) {
       if (canInvalidateAgainst(doc, patch)) {
-        collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides);
+        collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides, liveAddresses);
       } else if (!released) {
         // 新页/新组上的后续页序与字段可能影响旧页派生值；无法沿基线遍历时清空真实缓存。
         releaseProjectionCache(doc);

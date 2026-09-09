@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { resizedChartFormula } from './formula';
 import { readChartIdentityManifest, writeChartIdentityManifest } from './identity';
+import type { ChartIdentityScopes } from './identity-scopes';
 import type { ChartIdentityTemplate } from './identity';
 import { orderedChartRecords } from './ordering';
 import { MAX_CHART_POINTS } from './validation';
@@ -218,10 +219,10 @@ function dataPointCount(holder: XmlElement | null): number {
 }
 
 function sourceSeriesIds(
-  root: XmlElement, plotArea: XmlElement, chartId: string,
+  root: XmlElement, plotArea: XmlElement, chartId: string, frameKey?: string,
 ): Map<ChartSeriesId, SourceSeriesNode> {
   const result = new Map<ChartSeriesId, SourceSeriesNode>();
-  const identities = readChartIdentityManifest(root);
+  const identities = readChartIdentityManifest(root, frameKey, chartId);
   const seen = new Map<string, number>();
   let fallback = 0;
   for (const plot of children(plotArea)) {
@@ -326,13 +327,15 @@ function writeSeries(
 
 export function materializeChartTree(
   source: string | Uint8Array, chartId: string, state: ChartDatasetState,
+  frameKey?: string, scopes?: ChartIdentityScopes,
 ): XmlDocument {
   const tree = parseXmlTree(source);
   const plotArea = child(child(tree.root, 'chart'), 'plotArea');
   if (!plotArea) throw new Error(`图表 ${chartId} 缺少 plotArea`);
-  const sourceById = sourceSeriesIds(tree.root, plotArea, chartId);
+  const sourceById = sourceSeriesIds(tree.root, plotArea, chartId, frameKey);
+  const identities = readChartIdentityManifest(tree.root, frameKey, chartId);
   const templates = new Map<ChartPlotKind, SourceSeriesNode>();
-  for (const template of readChartIdentityManifest(tree.root)?.templates ?? []) {
+  for (const template of identities?.templates ?? []) {
     templates.set(template.plotKind, {
       node: template.node, pointIds: template.points, id: template.id,
       plotKind: template.plotKind, sourceIndex: template.sourceIndex,
@@ -389,7 +392,7 @@ export function materializeChartTree(
       id: series.id, plotKind, sourceIndex: series.sourceIndex, points: [], node,
     });
   }
-  writeChartIdentityManifest(tree.root, state, physicalSeriesOrder, retainedTemplates);
+  writeChartIdentityManifest(tree.root, state, physicalSeriesOrder, retainedTemplates, scopes ?? identities?.scopes);
   return tree;
 }
 
@@ -410,8 +413,9 @@ function sanitizeProjectionTree(parent: XmlElement, allowed: ReadonlySet<string>
 /** 编辑投影只消费当前图表方言；未知扩展仍原样保存，但不能以同名节点劫持屏幕数据。 */
 export function materializeChartProjectionXml(
   source: string | Uint8Array, chartId: string, state: ChartDatasetState,
+  frameKey?: string,
 ): string {
-  const tree = materializeChartTree(source, chartId, state);
+  const tree = materializeChartTree(source, chartId, state, frameKey);
   const allowed = tree.root.namespaceUri === STRICT_CHART_NS
     ? new Set([STRICT_CHART_NS, STRICT_DRAWING_NS])
     : new Set([CHART_NS, DRAWING_NS]);

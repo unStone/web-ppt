@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
 import { performance } from 'node:perf_hooks';
+import { moduleClosure } from './lib/module-closure.mjs';
 
 const out='out/chart-hierarchy',core=await import('@web-ppt/core'),edit=await import('@web-ppt/edit-core');
 const start=performance.now(),chart=await import('@web-ppt/edit-core/chart'),importMs=performance.now()-start;
@@ -14,9 +14,9 @@ for(let index=0;index<25;index++){
   const bytes=await editor.save();durations.push(performance.now()-before);outputBytes=bytes.length;samples.push(process.memoryUsage());
 }
 durations.sort((a,b)=>a-b);
-const module=readFileSync('packages/edit-core/dist/chart.js');
+const module=moduleClosure('packages/edit-core/dist/chart.js');
 const result={node:process.version,fixture:'sample-chart-hierarchy.pptx',pages:3,
-  moduleRawBytes:module.length,moduleGzipBytes:gzipSync(module).length,
+  moduleRawBytes:module.raw,moduleGzipBytes:module.gzip,
   importMs,firstQueryMs,editAndSaveMedianMs:durations[12],editAndSaveP95Ms:durations[23],outputBytes,
   heapGrowthSampledBytes:Math.max(...samples.map(s=>s.heapUsed))-baseline.heapUsed,
   rssGrowthSampledBytes:Math.max(...samples.map(s=>s.rss))-baseline.rss,

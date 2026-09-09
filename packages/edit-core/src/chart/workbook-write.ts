@@ -84,6 +84,7 @@ function workbookWrites(
 
 class SharedStrings {
   readonly tree: XmlDocument | null;
+  changed = false;
   private readonly values = new Map<string, number>();
 
   constructor(bytes: Uint8Array | undefined) {
@@ -137,6 +138,7 @@ function clearCell(cell: XmlElement): void {
 
 function setCell(cell: XmlElement, value: CellValue, shared: SharedStrings): void {
   const sharedCell = attr(cell, 't') === 's';
+  shared.changed ||= sharedCell;
   clearCell(cell);
   if (value.value === null) return;
   if (value.kind === 'number') {
@@ -202,9 +204,16 @@ export function writeChartWorkbook(
   source: ChartDatasetState,
   planned: ChartDatasetState,
 ): Uint8Array {
+  return writeWorkbookCells(sourceBytes, parts, map, workbookWrites(source, planned, parts, map));
+}
+
+export function writeWorkbookCells(
+  sourceBytes: Uint8Array, parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
+  writes: ReadonlyMap<string, ReadonlyMap<string, CellValue>>,
+): Uint8Array {
   const shared = new SharedStrings(map.sharedStrings ? parts[map.sharedStrings] : undefined);
   const changes: Record<string, Uint8Array> = Object.create(null);
-  for (const [sheetName, cells] of workbookWrites(source, planned, parts, map)) {
+  for (const [sheetName, cells] of writes) {
     const part = map.sheets.get(sheetName);
     if (!part || !parts[part]) throw new Error(`工作簿缺少公式工作表：${sheetName}`);
     const tree = parseXmlTree(parts[part]);
@@ -212,7 +221,7 @@ export function writeChartWorkbook(
     expandWorksheetDimension(tree);
     changes[part] = serializeXmlTreeBytes(tree);
   }
-  if (map.sharedStrings && shared.tree) {
+  if (map.sharedStrings && shared.tree && shared.changed) {
     // t=s 引用既可能新增也可能被清空；不扫描所有工作表时，删除可选计数才不会留下伪精确值。
     removeXmlAttribute(shared.tree.root, 'count');
     removeXmlAttribute(shared.tree.root, 'uniqueCount');

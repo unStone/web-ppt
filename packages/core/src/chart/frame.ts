@@ -82,6 +82,8 @@ export interface Grid {
   hBand: number;
   /** 非 null 时网格线画到背面平面，并用连接段勾出「地面 + 背墙」 */
   depth: Depth3D | null;
+  /** 次轴沿用主轴的侧墙，只绘制自己的背面网格。 */
+  gridWalls?: boolean;
 }
 
 export interface Insets {
@@ -342,42 +344,28 @@ export function makeCartesian(
   const cat = (i: number): number => along(catView.between ? (i + 0.5) * band : i * band);
   const edge = (i: number): number => along(i * band);
 
-  const s = valView.scale ?? { min: 0, max: 1, step: 1 };
-  const span = s.max - s.min || 1;
-  const valRev = valView.axis.reversed;
-  const val = (v: number): number => {
-    let t = (v - s.min) / span;
-    if (!Number.isFinite(t)) t = 0;
-    if (valRev) t = 1 - t;
-    return horizontal ? rect.x + t * rect.w : rect.y + rect.h - t * rect.h;
-  };
-  const clampVal = (v: number): number => (Number.isFinite(v) ? clamp(v, s.min, s.max) : s.min);
+  const { at: val, clampValue: clampVal } = valueMapping(rect, horizontal, valView);
   const pt = (c: number, v: number): Pt => (horizontal ? [v, c] : [c, v]);
   return { rect, horizontal, catView, valView, band, cat, edge, val, clampVal, zero: val(clampVal(0)), pt };
 }
 
-export function makeXY(rect: Rect, xView: AxisView, yView: AxisView): XYPlot {
-  const sx = xView.scale ?? { min: 0, max: 1, step: 1 };
-  const sy = yView.scale ?? { min: 0, max: 1, step: 1 };
-  const spanX = sx.max - sx.min || 1;
-  const spanY = sy.max - sy.min || 1;
+function valueMapping(rect: Rect, horizontal: boolean, view: AxisView) {
+  const scale = view.scale ?? { min: 0, max: 1, step: 1 };
+  const span = scale.max - scale.min || 1;
   return {
-    rect,
-    x: (v) => {
-      let t = (v - sx.min) / spanX;
+    at: (value: number): number => {
+      let t = (value - scale.min) / span;
       if (!Number.isFinite(t)) t = 0;
-      if (xView.axis.reversed) t = 1 - t;
-      return rect.x + t * rect.w;
+      if (view.axis.reversed) t = 1 - t;
+      return horizontal ? rect.x + t * rect.w : rect.y + rect.h - t * rect.h;
     },
-    y: (v) => {
-      let t = (v - sy.min) / spanY;
-      if (!Number.isFinite(t)) t = 0;
-      if (yView.axis.reversed) t = 1 - t;
-      return rect.y + rect.h - t * rect.h;
-    },
-    clampX: (v) => (Number.isFinite(v) ? clamp(v, sx.min, sx.max) : sx.min),
-    clampY: (v) => (Number.isFinite(v) ? clamp(v, sy.min, sy.max) : sy.min),
+    clampValue: (value: number): number => Number.isFinite(value) ? clamp(value, scale.min, scale.max) : scale.min,
   };
+}
+
+export function makeXY(rect: Rect, xView: AxisView, yView: AxisView): XYPlot {
+  const x = valueMapping(rect, true, xView), y = valueMapping(rect, false, yView);
+  return { rect, x: x.at, y: y.at, clampX: x.clampValue, clampY: y.clampValue };
 }
 
 // ---------- 留白 ----------
@@ -394,38 +382,20 @@ export function axisInsets(
   const titleH = lineH(m.textSize * 1.05) + gap * 0.6;
   const ins: Insets = { l: m.textSize * 0.4, r: m.textSize * 0.8, t: m.textSize * 0.8, b: m.textSize * 0.3 };
 
-  if (showTicks(vAxis)) {
-    const w = maxLabelW(vAxis) + gap;
-    if (vAxis.side === 'r') ins.r += w;
-    else ins.l += w;
+  const add = (view: AxisView, side: Side, horizontal: boolean, wrap = false): void => {
+    if (showTicks(view)) ins[side] += (horizontal ? wrap ? wrapH(view.size) : lineH(view.size) : maxLabelW(view)) + gap;
+    if (view.axis.title) ins[side] += titleH;
+  };
+  add(vAxis, vAxis.side === 'r' ? 'r' : 'l', false);
+  if (extra) add(extra, extra.side, extra.side === 't' || extra.side === 'b');
+  add(hAxis, hAxis.side === 't' ? 't' : 'b', true, hWrap);
+  // 数值型横轴的首尾标签会超出绘图区，两侧各留半个标签宽。
+  if (showTicks(hAxis) && hAxis.scale) {
+    const half = maxLabelW(hAxis) / 2;
+    ins.l += half;
+    ins.r += half;
   }
-  if (vAxis.axis.title) {
-    if (vAxis.side === 'r') ins.r += titleH;
-    else ins.l += titleH;
-  }
-  if (extra) {
-    const along: 'l' | 'r' | 't' | 'b' = extra.side;
-    if (showTicks(extra)) {
-      const room = along === 't' || along === 'b' ? lineH(extra.size) + gap : maxLabelW(extra) + gap;
-      ins[along] += room;
-    }
-    if (extra.axis.title) ins[along] += titleH;
-  }
-  if (showTicks(hAxis)) {
-    const h = (hWrap ? wrapH(hAxis.size) : lineH(hAxis.size)) + gap;
-    if (hAxis.side === 't') ins.t += h;
-    else ins.b += h;
-    // 数值型横轴的首尾标签会超出绘图区，两侧各留半个标签宽
-    if (hAxis.scale) {
-      const half = maxLabelW(hAxis) / 2;
-      ins.l += half;
-      ins.r += half;
-    }
-  }
-  if (hAxis.axis.title) {
-    if (hAxis.side === 't') ins.t += titleH;
-    else ins.b += titleH;
-  }
+
   return ins;
 }
 
@@ -477,125 +447,70 @@ export function renderAxes(m: ChartModel, g: Grid, fonts: string[]): SlideElemen
 
   // 网格线：纵轴的网格线是水平的，横轴的是竖直的；3D 时移到背面平面并补一段侧墙/地面连接线
   const d = g.depth;
-  const vGrid = vAxis.axis.majorGrid ? strokeFrom(vAxis.axis.majorGrid, gridColor, 1) : null;
-  if (vGrid) {
-    const at = g.vEdge ?? g.vPos;
-    const n = g.vEdge ? g.vEdgeCount : vAxis.ticks.length;
-    const anchorX = d && d.dx < 0 ? rect.x + rect.w : rect.x;
+  for (const horizontal of [false, true]) {
+    const view = horizontal ? hAxis : vAxis;
+    const stroke = view.axis.majorGrid ? strokeFrom(view.axis.majorGrid, gridColor, 1) : null;
+    if (!stroke) continue;
+    const edge = horizontal ? g.hEdge : g.vEdge;
+    const at = edge ?? (horizontal ? g.hPos : g.vPos);
+    const n = edge ? horizontal ? g.hEdgeCount : g.vEdgeCount : view.ticks.length;
     for (let i = 0; i < n; i++) {
-      const y = at(i);
-      out.push(...gridLine(rect.x, y, rect.x + rect.w, y, d, vGrid));
-      if (d) {
-        const el = lineEl(anchorX, y, anchorX + d.dx, y + d.dy, vGrid);
-        if (el) out.push(el);
-      }
-    }
-  }
-  const hGrid = hAxis.axis.majorGrid ? strokeFrom(hAxis.axis.majorGrid, gridColor, 1) : null;
-  if (hGrid) {
-    const at = g.hEdge ?? g.hPos;
-    const n = g.hEdge ? g.hEdgeCount : hAxis.ticks.length;
-    const anchorY = d && d.dy > 0 ? rect.y : rect.y + rect.h;
-    for (let i = 0; i < n; i++) {
-      const x = at(i);
-      out.push(...gridLine(x, rect.y, x, rect.y + rect.h, d, hGrid));
-      if (d) {
-        const el = lineEl(x, anchorY, x + d.dx, anchorY + d.dy, hGrid);
+      const p = at(i);
+      const x = horizontal ? p : rect.x, y = horizontal ? rect.y : p;
+      out.push(...gridLine(x, y, horizontal ? p : rect.x + rect.w,
+        horizontal ? rect.y + rect.h : p, d, stroke));
+      if (d && g.gridWalls !== false) {
+        const ax = horizontal ? p : d.dx < 0 ? rect.x + rect.w : rect.x;
+        const ay = horizontal ? d.dy > 0 ? rect.y : rect.y + rect.h : p;
+        const el = lineEl(ax, ay, ax + d.dx, ay + d.dy, stroke);
         if (el) out.push(el);
       }
     }
   }
 
-  // 轴线
-  if (!hAxis.axis.del) {
-    const s = strokeFrom(hAxis.axis.line, axisColor, 1);
-    const el = s ? lineEl(rect.x, g.hLineAt, rect.x + rect.w, g.hLineAt, s) : null;
-    if (el) out.push(el);
-  }
-  if (!vAxis.axis.del) {
-    const s = strokeFrom(vAxis.axis.line, axisColor, 1);
-    const el = s ? lineEl(g.vLineAt, rect.y, g.vLineAt, rect.y + rect.h, s) : null;
-    if (el) out.push(el);
-  }
-
-  // 横轴刻度标签
-  let hLblSpace = 0;
-  if (showTicks(hAxis)) {
-    const size = hAxis.size;
-    const boxH = g.hWrap ? wrapH(size) : lineH(size);
-    hLblSpace = boxH + gap;
-    const top = hAxis.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap;
-    for (let i = 0; i < hAxis.labels.length; i++) {
-      const label = hAxis.labels[i];
-      if (!label) continue;
-      const boxW = g.hWrap ? Math.max(g.hBand * 0.98, size * 2) : labelBoxW(label, size);
-      const el = textEl(g.hPos(i) - boxW / 2, top, boxW, boxH, label, {
-        size,
-        color: hAxis.color,
-        align: 'center',
-        anchor: hAxis.side === 't' ? 'bottom' : 'top',
-        fonts,
-      });
-      if (g.hWrap && el.text) el.text.wrap = true;
-      out.push(el);
+  const lines: SlideElement[] = [], labels: SlideElement[] = [], titles: SlideElement[] = [];
+  // 两条轴共用文字与线条布局；分层收集，仍保持网格、轴线、刻度、标题的绘制顺序。
+  for (const horizontal of [true, false]) {
+    const view = horizontal ? hAxis : vAxis, pos = horizontal ? g.hPos : g.vPos;
+    const at = horizontal ? g.hLineAt : g.vLineAt;
+    if (!view.axis.del) {
+      const stroke = strokeFrom(view.axis.line, axisColor, 1);
+      const line = horizontal ? lineEl(rect.x, at, rect.x + rect.w, at, stroke)
+        : lineEl(at, rect.y, at, rect.y + rect.h, stroke);
+      if (line) lines.push(line);
+    }
+    const size = view.size, wrap = horizontal && g.hWrap;
+    const boxH = wrap ? wrapH(size) : lineH(size);
+    let space = 0;
+    if (showTicks(view)) {
+      space = (horizontal ? boxH : maxLabelW(view)) + gap;
+      for (let i = 0; i < view.labels.length; i++) {
+        const label = view.labels[i];
+        if (!label) continue;
+        const boxW = wrap ? Math.max(g.hBand * 0.98, size * 2) : labelBoxW(label, size);
+        const x = horizontal ? pos(i) - boxW / 2 : view.side === 'r' ? rect.x + rect.w + gap : rect.x - gap - boxW;
+        const y = horizontal ? view.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap : pos(i) - boxH / 2;
+        const el = textEl(x, y, boxW, boxH, label, { size, color: view.color,
+          align: horizontal ? 'center' : view.side === 'r' ? 'left' : 'right',
+          anchor: horizontal ? view.side === 't' ? 'bottom' : 'top' : 'middle', fonts });
+        if (wrap && el.text) el.text.wrap = true;
+        labels.push(el);
+      }
+    }
+    if (view.axis.title) {
+      const size = m.textSize * 1.05, h = lineH(size);
+      if (horizontal) {
+        const y = view.side === 't' ? rect.y - space - gap - h : rect.y + rect.h + space + gap * 0.4;
+        titles.push(textEl(rect.x, y, rect.w, h, view.axis.title,
+          { size, color: m.textColor, align: 'center', anchor: 'middle', fonts }));
+      } else {
+        const cx = view.side === 'r' ? rect.x + rect.w + space + gap * 0.4 + h / 2 : rect.x - space - gap * 0.4 - h / 2;
+        titles.push(textEl(cx - rect.h / 2, rect.y + rect.h / 2 - h / 2, rect.h, h, view.axis.title,
+          { size, color: m.textColor, align: 'center', anchor: 'middle', fonts, rot: view.side === 'r' ? 90 : -90 }));
+      }
     }
   }
-
-  // 纵轴刻度标签
-  let vLblSpace = 0;
-  if (showTicks(vAxis)) {
-    const size = vAxis.size;
-    const boxH = lineH(size);
-    vLblSpace = maxLabelW(vAxis) + gap;
-    for (let i = 0; i < vAxis.labels.length; i++) {
-      const label = vAxis.labels[i];
-      if (!label) continue;
-      const boxW = labelBoxW(label, size);
-      const x = vAxis.side === 'r' ? rect.x + rect.w + gap : rect.x - gap - boxW;
-      out.push(
-        textEl(x, g.vPos(i) - boxH / 2, boxW, boxH, label, {
-          size,
-          color: vAxis.color,
-          align: vAxis.side === 'r' ? 'left' : 'right',
-          anchor: 'middle',
-          fonts,
-        }),
-      );
-    }
-  }
-
-  // 轴标题
-  const tSize = m.textSize * 1.05;
-  const tBox = lineH(tSize);
-  if (hAxis.axis.title) {
-    const y = hAxis.side === 't' ? rect.y - hLblSpace - gap - tBox : rect.y + rect.h + hLblSpace + gap * 0.4;
-    out.push(
-      textEl(rect.x, y, rect.w, tBox, hAxis.axis.title, {
-        size: tSize,
-        color: m.textColor,
-        align: 'center',
-        anchor: 'middle',
-        fonts,
-      }),
-    );
-  }
-  if (vAxis.axis.title) {
-    const cx =
-      vAxis.side === 'r'
-        ? rect.x + rect.w + vLblSpace + gap * 0.4 + tBox / 2
-        : rect.x - vLblSpace - gap * 0.4 - tBox / 2;
-    const cy = rect.y + rect.h / 2;
-    out.push(
-      textEl(cx - rect.h / 2, cy - tBox / 2, rect.h, tBox, vAxis.axis.title, {
-        size: tSize,
-        color: m.textColor,
-        align: 'center',
-        anchor: 'middle',
-        fonts,
-        rot: vAxis.side === 'r' ? 90 : -90,
-      }),
-    );
-  }
+  out.push(...lines, ...labels, ...titles);
   return out;
 }
 
@@ -614,100 +529,12 @@ export interface SideAxisSpec {
 
 /** 画一条独立坐标轴：网格线 + 轴线 + 刻度标签 + 轴标题 */
 export function renderSideAxis(m: ChartModel, sp: SideAxisSpec, fonts: string[]): SlideElement[] {
-  const out: SlideElement[] = [];
-  const { rect, view } = sp;
-  const vertical = view.side === 'l' || view.side === 'r';
-  const gridColor = mix(m.textColor, '#ffffff', 0.78);
-  const axisColor = mix(m.textColor, '#ffffff', 0.45);
-  const gap = m.textSize * 0.45;
-
-  if (sp.grid && view.axis.majorGrid) {
-    const stroke = strokeFrom(view.axis.majorGrid, gridColor, 1);
-    for (let i = 0; i < view.ticks.length; i++) {
-      const p = sp.pos(i);
-      out.push(
-        ...(vertical
-          ? gridLine(rect.x, p, rect.x + rect.w, p, sp.depth, stroke)
-          : gridLine(p, rect.y, p, rect.y + rect.h, sp.depth, stroke)),
-      );
-    }
-  }
-
-  if (!view.axis.del) {
-    const s = strokeFrom(view.axis.line, axisColor, 1);
-    const el = vertical
-      ? lineEl(sp.at, rect.y, sp.at, rect.y + rect.h, s)
-      : lineEl(rect.x, sp.at, rect.x + rect.w, sp.at, s);
-    if (el) out.push(el);
-  }
-
-  const size = view.size;
-  const boxH = lineH(size);
-  let space = 0;
-  if (showTicks(view)) {
-    space = vertical ? maxLabelW(view) + gap : boxH + gap;
-    for (let i = 0; i < view.labels.length; i++) {
-      const label = view.labels[i];
-      if (!label) continue;
-      const boxW = labelBoxW(label, size);
-      if (vertical) {
-        const x = view.side === 'r' ? rect.x + rect.w + gap : rect.x - gap - boxW;
-        out.push(
-          textEl(x, sp.pos(i) - boxH / 2, boxW, boxH, label, {
-            size,
-            color: view.color,
-            align: view.side === 'r' ? 'left' : 'right',
-            anchor: 'middle',
-            fonts,
-          }),
-        );
-      } else {
-        const y = view.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap;
-        out.push(
-          textEl(sp.pos(i) - boxW / 2, y, boxW, boxH, label, {
-            size,
-            color: view.color,
-            align: 'center',
-            anchor: view.side === 't' ? 'bottom' : 'top',
-            fonts,
-          }),
-        );
-      }
-    }
-  }
-
-  if (view.axis.title) {
-    const tSize = m.textSize * 1.05;
-    const tBox = lineH(tSize);
-    if (vertical) {
-      const cx =
-        view.side === 'r'
-          ? rect.x + rect.w + space + gap * 0.4 + tBox / 2
-          : rect.x - space - gap * 0.4 - tBox / 2;
-      out.push(
-        textEl(cx - rect.h / 2, rect.y + rect.h / 2 - tBox / 2, rect.h, tBox, view.axis.title, {
-          size: tSize,
-          color: m.textColor,
-          align: 'center',
-          anchor: 'middle',
-          fonts,
-          rot: view.side === 'r' ? 90 : -90,
-        }),
-      );
-    } else {
-      const y = view.side === 't' ? rect.y - space - gap - tBox : rect.y + rect.h + space + gap * 0.4;
-      out.push(
-        textEl(rect.x, y, rect.w, tBox, view.axis.title, {
-          size: tSize,
-          color: m.textColor,
-          align: 'center',
-          anchor: 'middle',
-          fonts,
-        }),
-      );
-    }
-  }
-  return out;
+  const vertical = sp.view.side === 'l' || sp.view.side === 'r';
+  const view = sp.grid ? sp.view : { ...sp.view, axis: { ...sp.view.axis, majorGrid: null } };
+  const hidden = { ...view, axis: { ...view.axis, del: true, majorGrid: null, title: null } };
+  return renderAxes(m, { rect: sp.rect, hAxis: vertical ? hidden : view, vAxis: vertical ? view : hidden,
+    hPos: sp.pos, vPos: sp.pos, hEdge: null, hEdgeCount: 0, vEdge: null, vEdgeCount: 0,
+    hLineAt: sp.at, vLineAt: sp.at, hWrap: false, hBand: 0, depth: sp.depth, gridWalls: false }, fonts);
 }
 
 /** 类目标签总宽超过带宽时启用换行 */

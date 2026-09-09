@@ -6,7 +6,8 @@ import { isPresentationNamespace, PACKAGE_REL_NS } from './xml-namespaces';
 
 export const chartSourceBytes = sourcePartBytes;
 
-export type ChartRelationships = Record<string, { type: string; target: string }>;
+export type ChartRelationships = Record<string, { type: string; target: string; external?: true }>;
+const relationshipCache = new WeakMap<Uint8Array, Map<string, ChartRelationships>>();
 
 const DEFAULT_COLOR_MAP: Record<string, string> = {
   bg1: 'lt1', tx1: 'dk1', bg2: 'lt2', tx2: 'dk2',
@@ -14,7 +15,7 @@ const DEFAULT_COLOR_MAP: Record<string, string> = {
   accent5: 'accent5', accent6: 'accent6', hlink: 'hlink', folHlink: 'folHlink',
 };
 
-function relationshipPart(part: string): string {
+export function chartRelationshipPart(part: string): string {
   const slash = part.lastIndexOf('/');
   return `${part.slice(0, slash + 1)}_rels/${part.slice(slash + 1)}.rels`;
 }
@@ -30,8 +31,12 @@ function resolvePart(base: string, target: string): string {
 }
 
 export function chartRelationships(doc: EditDoc, part: string): ChartRelationships {
-  const bytes = chartSourceBytes(doc, relationshipPart(part));
+  const bytes = chartSourceBytes(doc, chartRelationshipPart(part));
   if (!bytes) return {};
+  let entries = relationshipCache.get(bytes);
+  if (!entries) { entries = new Map(); relationshipCache.set(bytes, entries); }
+  const cached = entries.get(part);
+  if (cached) return cached;
   const result: ChartRelationships = Object.create(null);
   for (const node of xmlElementChildren(parseXmlTree(bytes).root, {
     localName: 'Relationship', namespaceUri: PACKAGE_REL_NS,
@@ -42,8 +47,9 @@ export function chartRelationships(doc: EditDoc, part: string): ChartRelationshi
     const external = findXmlAttribute(node, {
       localName: 'TargetMode', namespaceUri: null,
     })?.value === 'External';
-    if (id && type && target) result[id] = { type, target: external ? target : resolvePart(part, target) };
+    if (id && type && target) result[id] = { type, target: external ? target : resolvePart(part, target), ...(external ? { external: true as const } : {}) };
   }
+  entries.set(part, result);
   return result;
 }
 
@@ -86,6 +92,6 @@ export function chartRenderContext(doc: EditDoc, id: ElementId, part: string): C
   return {
     ctx: { theme: Object.fromEntries(Object.entries(colors).map(([key, value]) => [key, hex(value)])), clrMap },
     fonts,
-    rels: chartRelationships(doc, part),
+    rels: structuredClone(chartRelationships(doc, part)),
   };
 }

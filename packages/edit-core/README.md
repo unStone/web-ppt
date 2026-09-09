@@ -37,6 +37,19 @@ dataEditor.setValue(chart.id, dataset.series[0].id, dataset.categories[0].id, 40
 `binding.mode` is explicit: `workbook` updates the chart cache, formulas, and embedded XLSX together; `cache`
 updates only literal/cache data; `readonly` rejects edits when a workbook formula cannot be interpreted safely.
 
+Use `@web-ppt/edit-core/chart-shared` with the same API when chart parts or embedded workbooks are shared.
+Mixed charts can add and remove categories and XY points in independent data regions, including regions with different
+orientations. Overlapping category/XY ranges with a common record axis share additions, removals, stable identities,
+and scalar edits. Partial views and rebuilding after an empty save retain that connection. Dimensions across sheets,
+directions, or record starts remain unsupported for structural edits.
+Call `registerSharedChartEditing()` before mounting a restored document to migrate supported legacy local overrides.
+Cache-only charts and independently owned workbook charts retain edits across copied pages when their source identity is
+provable, including after the original page is deleted. Conflicting fields require original versioned operations through
+`@web-ppt/collab/migration`; missing evidence or ambiguous identities preserve the overrides and reject shared saving.
+When `binding.unresolved === true`, `reason` explains why current data is unavailable. Categories and series are empty,
+the editor shows a failure placeholder, and `chartProjection()` rejects the request. This is not an empty dataset or a
+successful restoration. Read-only charts with readable source data keep their normal preview.
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {
@@ -436,8 +449,10 @@ editor.exec({
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })`; the command allocates fresh session
 and OOXML identities, preserves nested groups in slide coordinates, and enters history as one atomic unit.
 Images are embedded as base64 plus SHA-256 and deduplicated against the destination package. Hyperlinks receive
-new relationships. Complex objects such as SmartArt can reuse a verified same-package OPC closure; a different
-package is rejected before any model identity is allocated instead of receiving a degraded preview.
+new relationships. Complex objects such as SmartArt require an identical, verified OPC resource closure in the destination.
+Classic charts compare the effective data and design at copy and paste time, including unsaved edits; obsolete resources are
+rejected atomically. With `chart-shared` loaded, pasted frames immediately participate in shared queries, rendering, and editing.
+Use `generate.copyPortableElements` after releasing the source package.
 
 `queryTableGrid(doc, tableElementId)` exposes stable row/column identities, logical cell addresses, and merge
 regions. Structural commands target those identities, so prepending rows or columns cannot retarget recovery or

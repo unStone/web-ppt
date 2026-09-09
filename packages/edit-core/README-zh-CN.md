@@ -35,6 +35,16 @@ dataEditor.setValue(chart.id, dataset.series[0].id, dataset.categories[0].id, 40
 `binding.mode` 明确说明保存能力：`workbook` 同步更新图表缓存、公式与内嵌 XLSX；`cache` 只改
 literal/cache；工作簿公式无法安全解释时为 `readonly` 并拒绝编辑，不伪造 Excel 已同步。
 
+图表部件或内嵌工作簿共享时，使用同一 API 的 `@web-ppt/edit-core/chart-shared` 入口。
+混合图可在独立数据区域中增删类别和 XY 点，包括方向不同的区域。类别与 XY 交叠且共用记录轴时，
+两个入口共享新增、删除、稳定身份及标量修改；部分范围及删空保存后的重建仍保持联动。
+单个 XY 系列的维度跨表、异向或记录起点不一致时，结构编辑仍明确拒绝。
+恢复文稿挂载前调用 `registerSharedChartEditing()`，迁移支持范围内的旧局部覆盖。
+纯缓存或独占工作簿图表在来源身份可证明时保留复制页中的编辑，包括原页已删除的情况。
+矛盾字段需通过 `@web-ppt/collab/migration` 提供带原版本的操作；证据缺失或身份歧义时保留原覆盖并拒绝共享保存。
+`binding.unresolved === true` 表示当前数据不可确定，`reason` 给出原因；查询返回空类别/系列，编辑器显示
+失败占位，`chartProjection()` 拒绝输出。这不代表空数据集或恢复成功。来源可读取的普通只读图表仍保留预览。
+
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
 import {
@@ -411,8 +421,9 @@ editor.exec({
 `copyElements(doc, ids)` 返回版本化、纯 JSON 的 `ElementClipboardPayload`。通过
 `Editor.exec({ type: 'PasteElements', payload, at: { parentId, x, y } })` 粘贴时，会分配新的会话身份与
 OOXML spid，以幻灯片视觉坐标保持嵌套组布局，并作为一个原子历史单元提交。图片以 base64 + SHA-256
-携带并在目标包去重，超链接重建关系；SmartArt 等复杂对象只复用经过闭包哈希验证的同包 OPC part，
-跨文档无法无损迁移时会在分配身份前明确拒绝，不会静默变成截图。
+携带并在目标包去重，超链接重建关系；SmartArt 等复杂对象要求目标已有经过闭包哈希验证的相同 OPC 资源。
+经典图表按复制及粘贴时的有效数据和样式验证闭包，包含尚未保存的编辑；目标只有修改前的资源时原子拒绝。
+加载 `chart-shared` 后，粘贴框架立即参与共享查询、渲染和编辑。源包已释放时使用 `generate.copyPortableElements`。
 
 `queryTableGrid(doc, tableElementId)` 公开稳定的行列身份、逻辑格地址与合并区域。结构命令始终以这些身份
 寻址，因此在前方插删、恢复日志和协同时不会因数组下标漂移。`InsertRow` / `InsertColumn` 的 `at` 可指定

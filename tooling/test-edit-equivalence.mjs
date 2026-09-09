@@ -74,5 +74,5 @@ if (failures.length) {
 } else {
   recordCount('fixtures', fixtures.length);
   recordCount('equivalence', svgCount);
-  console.log(`\x1b[32m✓ ${fixtures.length} 份固件 / ${pages} 页 / ${svgCount} 对原始 SVG 指纹完全一致\x1b[0m`);
+  console.log(`\x1b[32m✓ ${fixtures.length} 份固件 / ${pages} 页 / ${svgCount} 对 SVG 指纹完全一致（资源按实际字节寻址）\x1b[0m`);
 }

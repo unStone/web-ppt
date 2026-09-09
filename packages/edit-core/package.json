@@ -54,6 +54,10 @@
       "types": "./dist/chart/index.d.ts",
       "import": "./dist/chart.js"
     },
+    "./chart-shared": {
+      "types": "./dist/chart-shared/index.d.ts",
+      "import": "./dist/chart-shared.js"
+    },
     "./media": {
       "types": "./dist/media/index.d.ts",
       "import": "./dist/media.js"

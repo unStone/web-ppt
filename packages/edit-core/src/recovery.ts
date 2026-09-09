@@ -18,6 +18,9 @@ import { releaseThemeProjectionPackage } from './theme-projection';
 import { releaseDesignProjectionPackage } from './design-projection-package';
 import { releaseDesignDependencies } from './design-dependencies';
 import { reportEditorSubscriberError } from './patch-events';
+import { ExtensionAddressJournal } from './extension-address-journal';
+import { recoveryMigrationSources } from './recovery-migrations';
+import { setLegacyExtensionReplay } from './extension-recovery-context';
 
 export const EDITOR_RECOVERY_VERSION = 1 as const;
 
@@ -147,6 +150,7 @@ function assertFrame(frame: RecoveryFrame, previousSequence: number, prefix: str
 /** 原包与保存基线只读共享；可变模型写时复制，坏日志因此无法污染目标文档。 */
 function stageDoc(doc: EditDoc): EditDoc {
   return {
+    extensions: structuredClone(doc.extensions),
     meta: structuredClone(doc.meta),
     identity: structuredClone(doc.identity),
     slides: structuredClone(doc.slides),
@@ -160,6 +164,7 @@ function stageDoc(doc: EditDoc): EditDoc {
     themeOrder: [...doc.themeOrder],
     elements: structuredClone(doc.elements),
     removedElements: structuredClone(doc.removedElements),
+    retainedElementOrigins: structuredClone(doc.retainedElementOrigins),
     imageResources: structuredClone(doc.imageResources),
     package: doc.package,
     saveState: doc.saveState,
@@ -174,6 +179,8 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
   releaseThemeProjectionPackage(doc);
   releaseDesignDependencies(doc);
   doc.meta = staged.meta;
+  if (staged.extensions === undefined) delete doc.extensions;
+  else doc.extensions = staged.extensions;
   doc.identity = staged.identity;
   doc.slides = staged.slides;
   doc.slideOrder = staged.slideOrder;
@@ -186,6 +193,8 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
   doc.themeOrder = staged.themeOrder;
   doc.elements = staged.elements;
   doc.removedElements = staged.removedElements;
+  if (staged.retainedElementOrigins === undefined) delete doc.retainedElementOrigins;
+  else doc.retainedElementOrigins = staged.retainedElementOrigins;
   doc.imageResources = staged.imageResources;
 }
 
@@ -196,6 +205,7 @@ export function restoreRecoveryFrames(
 ): RecoveryRestoreResult {
   if (!Array.isArray(frames)) throw new Error('恢复日志必须是数组');
   const staged = stageDoc(doc);
+  setLegacyExtensionReplay(staged, recoveryMigrationSources(frames));
   const prefix = staged.identity.prefix;
   const floor = createRecoveryIdentityFloor(staged);
   let sequence = 0;
@@ -225,6 +235,7 @@ export function restoreRecoveryFrames(
 interface EmitRecoveryFrame {
   readonly source: RecoveryFrameSource;
   readonly patches: readonly Patch[];
+  readonly preparedPatches?: readonly Patch[];
   readonly doc: EditDoc;
   readonly identity: EditIdentity;
   readonly selection: Selection;
@@ -239,6 +250,7 @@ export class RecoveryJournal {
   private readonly pending: RecoveryFrame[] = [];
   private dispatching = false;
   private sequence: number;
+  private readonly addresses = new ExtensionAddressJournal();
 
   constructor(sequence = 0) { this.sequence = sequence; }
 
@@ -248,6 +260,10 @@ export class RecoveryJournal {
     return () => { this.subscribers.delete(subscriber); };
   }
 
+  prepare(doc: EditDoc, patches: readonly Patch[]): readonly Patch[] {
+    return this.subscribers.size ? this.addresses.prepare(doc, patches, 'recovery') : patches;
+  }
+
   emit(input: EmitRecoveryFrame): void {
     // 默认编辑路径没有持久化观察者，不能为未启用的能力深拷贝结构 Patch。
     if (!this.subscribers.size) return;
@@ -255,12 +271,16 @@ export class RecoveryJournal {
       reportEditorSubscriberError(new Error('恢复日志序号已耗尽'));
       return;
     }
-    const assets = frameAssets(input.doc, input.patches);
+    // 构造会话时可能已加载迁移插件；首个持久化事件也要带声明，不能依赖尚未存在的观察者。
+    const patches = input.preparedPatches ?? this.addresses.prepare(input.doc, input.patches, 'recovery');
+    const source = patches.length && (input.source === 'selection' || input.source === 'savepoint')
+      ? 'transaction' : input.source;
+    const assets = frameAssets(input.doc, patches);
     const frame: RecoveryFrame = {
       version: EDITOR_RECOVERY_VERSION,
       sequence: ++this.sequence,
-      source: input.source,
-      patches: persistentPatches(input.patches, assets),
+      source,
+      patches: persistentPatches(patches, assets),
       ...(assets.length ? { assets } : {}),
       identity: structuredClone(input.identity),
       selection: cloneSelection(input.selection),
@@ -268,6 +288,7 @@ export class RecoveryJournal {
       label: input.label,
       time: input.time,
     };
+    this.addresses.record(patches);
     this.pending.push(frame);
     if (this.dispatching) return;
     this.dispatching = true;

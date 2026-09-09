@@ -1,11 +1,11 @@
-import { configureCollaborationIdentity, stageExternalPatches } from '@web-ppt/edit-core';
+import { configureCollaborationIdentity } from '@web-ppt/edit-core';
 import type {
-  EditIdentity, Editor, EditorPatchEvent, Patch,
+  EditDoc, EditIdentity, Editor, EditorPatchEvent, Patch,
 } from '@web-ppt/edit-core';
 import { assertCollaborationCheckpoint } from './checkpoint';
 import { assertCollabMessage, compareStamp, messageKey } from './message';
 import { foldInsertedElementOverrides } from './atomic-patches';
-import { evaluateRemoteMessage, patchAvailability } from './evaluate';
+import { evaluateRemoteMessage, patchAvailability, stageExternalPatches } from './evaluate';
 import type { PatchAvailability } from './evaluate';
 import { desiredSlideOrder, materializeSlideOrder } from './slide-order';
 import { materializeSectionOrder } from './section-order';
@@ -15,9 +15,17 @@ import type { CollaborationSession, DeferredPatch } from './state';
 import type {
   CollabMessage, CollaborationBinding, CollaborationCheckpoint, CollaborationOptions,
 } from './types';
+import { canonicalRegisters } from './extension-addresses';
 
 const sessions = new WeakMap<Editor, CollaborationSession>();
 const MAX_DEFERRED_PATCHES = 10_000;
+
+/** 按需适配器共享当前会话；不创建第二套时钟或重复绑定 provider。 */
+export function collaborationSession(editor: Editor): CollaborationSession {
+  const session = sessions.get(editor);
+  if (!session) throw new Error('编辑器尚未绑定协同会话');
+  return session;
+}
 
 function assertId(value: string, label: string): void {
   if (!value || value.length > 128 || /[\0-\x1f\x7f]/.test(value)) {
@@ -31,27 +39,27 @@ function createSession(
   checkpoint?: CollaborationCheckpoint,
 ): CollaborationSession {
   const allocation = editor.doc.identity.allocation!;
+  checkpoint = structuredClone(checkpoint);
   return {
     documentId: options.documentId,
     replicaId: options.replicaId,
     replicaSlot: options.replicaSlot,
-    registers: new Map(checkpoint?.registers.map(([key, register]) => [key, structuredClone(register)])),
-    elementLifecycles: new Map(structuredClone(checkpoint?.elementLifecycles ?? [])),
-    slideLifecycles: new Map(structuredClone(checkpoint?.slideLifecycles ?? [])),
-    slideMoves: new Map(structuredClone(checkpoint?.slideMoves ?? [])),
-    sectionMoves: new Map(structuredClone(checkpoint?.sectionMoves ?? [])),
+    registers: new Map(checkpoint?.registers),
+    elementLifecycles: new Map(checkpoint?.elementLifecycles),
+    slideLifecycles: new Map(checkpoint?.slideLifecycles),
+    slideMoves: new Map(checkpoint?.slideMoves),
+    sectionMoves: new Map(checkpoint?.sectionMoves),
     seen: restoreSeen(checkpoint?.seen),
-    baseSlideOrder: checkpoint ? [...checkpoint.baseSlideOrder] : [...editor.doc.slideOrder],
-    baseSectionOrder: checkpoint?.baseSectionOrder
-      ? [...checkpoint.baseSectionOrder] : [...editor.doc.sections.order],
-    deferred: checkpoint?.deferred.map((entry) => structuredClone(entry)) ?? [],
+    baseSlideOrder: [...(checkpoint?.baseSlideOrder ?? editor.doc.slideOrder)],
+    baseSectionOrder: [...(checkpoint?.baseSectionOrder ?? editor.doc.sections.order)],
+    deferred: [...checkpoint?.deferred ?? []],
     clock: allocation.clock,
     sequence: allocation.sequence,
     active: false,
   };
 }
 
-function createCheckpoint(session: CollaborationSession): CollaborationCheckpoint {
+function createCheckpoint(session: CollaborationSession, doc: EditDoc): CollaborationCheckpoint {
   return structuredClone({
     version: 1,
     documentId: session.documentId,
@@ -61,7 +69,7 @@ function createCheckpoint(session: CollaborationSession): CollaborationCheckpoin
     sequence: session.sequence,
     baseSlideOrder: session.baseSlideOrder,
     baseSectionOrder: session.baseSectionOrder,
-    registers: [...session.registers].map(([key, register]) => [key, register] as const),
+    registers: [...canonicalRegisters(doc, session.registers)],
     elementLifecycles: [...session.elementLifecycles],
     slideLifecycles: [...session.slideLifecycles],
     slideMoves: [...session.slideMoves],
@@ -79,10 +87,15 @@ function assertSession(session: CollaborationSession, options: CollaborationOpti
   }
 }
 
-export function bindCollaboration(editor: Editor, options: CollaborationOptions): CollaborationBinding {
+export const bindWithEvaluator = bindCollaboration as (editor: Editor, options: CollaborationOptions,
+  evaluate: typeof evaluateRemoteMessage) => CollaborationBinding;
+
+export function bindCollaboration(editor: Editor, options: CollaborationOptions): CollaborationBinding;
+export function bindCollaboration(editor: Editor, options: CollaborationOptions,
+  evaluate = evaluateRemoteMessage): CollaborationBinding {
   if (!editor || typeof editor.subscribePatches !== 'function'
     || typeof editor.applyExternalPatches !== 'function') {
-    throw new Error('协同绑定需要支持外部补丁 seam 的 Editor');
+    throw new Error('协同绑定需要支持外部补丁的 Editor');
   }
   assertId(options.documentId, 'documentId');
   assertId(options.replicaId, 'replicaId');
@@ -137,20 +150,8 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     clock: activeSession.clock,
   });
   const restoreSession = (snapshot: ReturnType<typeof snapshotSession>): void => {
-    activeSession.registers.clear();
-    snapshot.registers.forEach((value, key) => activeSession.registers.set(key, value));
-    activeSession.elementLifecycles.clear();
-    snapshot.elementLifecycles.forEach((value, key) => activeSession.elementLifecycles.set(key, value));
-    activeSession.slideLifecycles.clear();
-    snapshot.slideLifecycles.forEach((value, key) => activeSession.slideLifecycles.set(key, value));
-    activeSession.slideMoves.clear();
-    snapshot.slideMoves.forEach((value, key) => activeSession.slideMoves.set(key, value));
-    activeSession.sectionMoves.clear();
-    snapshot.sectionMoves.forEach((value, key) => activeSession.sectionMoves.set(key, value));
-    activeSession.seen.clear();
-    snapshot.seen.forEach((value, key) => activeSession.seen.set(key, value));
-    activeSession.deferred = [...snapshot.deferred];
-    activeSession.clock = snapshot.clock;
+    // 快照仅属于当前同步接收批次；一次交换所有字段，新增寄存器类型也不会漏回滚。
+    Object.assign(activeSession, snapshot);
   };
 
   const materializeAcceptedPatches = (patches: readonly Patch[]): Patch[] => {
@@ -165,9 +166,9 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     const desired = desiredSlideOrder(
       activeSession.baseSlideOrder, members, activeSession.slideMoves,
     );
-    const withSlideOrder = materializeSlideOrder(editor.doc.slideOrder, desired, folded);
     return materializeSectionOrder(
-      activeSession.baseSectionOrder, activeSession.sectionMoves, withSlideOrder,
+      activeSession.baseSectionOrder, activeSession.sectionMoves,
+      materializeSlideOrder(editor.doc.slideOrder, desired, folded),
     );
   };
 
@@ -204,30 +205,29 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
           blockedReplicas.add(message.replicaId);
           continue;
         }
-        const evaluated = evaluateRemoteMessage(preview, activeSession, message, available);
-        if (evaluated.missingDependency) {
-          // 同一副本的后续消息必然观察过此前消息；前序依赖未落模时不能越过它消费后续字段/删除。
-          blockedReplicas.add(message.replicaId);
-          continue;
-        }
         const sessionBeforeGroup = snapshotSession();
         const completed = new Set(group);
-        recordPatches(activeSession, evaluated.recorded, message.stamp);
         try {
-          preview = stageExternalPatches(editor.doc, materializeAcceptedPatches([
+          const evaluated = evaluate(preview, activeSession, message, available);
+          if (evaluated.missingDependency) {
+            // 同一副本的后续消息必然观察过此前消息；前序依赖未落模时不能越过它消费后续字段/删除。
+            blockedReplicas.add(message.replicaId);
+            continue;
+          }
+          recordPatches(activeSession, evaluated.recorded, message.stamp);
+          const nextPreview = stageExternalPatches(editor.doc, materializeAcceptedPatches([
             ...baseAccepted, ...accepted, ...evaluated.accepted,
           ]));
+          const nextAvailable = patchAvailability(evaluated.accepted, available);
+          accepted.push(...evaluated.accepted);
+          preview = nextPreview;
+          available = nextAvailable;
         } catch (error) {
           restoreSession(sessionBeforeGroup);
-          // seen 保留，只有坏消息自己的延迟体被隔离；同轮其他合法消息仍可继续落模。
-          activeSession.deferred = activeSession.deferred.filter((entry) => !completed.has(entry));
           errors.push(error);
-          progressed = true;
-          continue;
         }
+        // 无论成功或隔离坏组，都保留 seen 并移除该组延迟体；合法前序与其他组继续提交。
         activeSession.deferred = activeSession.deferred.filter((entry) => !completed.has(entry));
-        accepted.push(...evaluated.accepted);
-        available = patchAvailability(evaluated.accepted, available);
         progressed = true;
       }
     }
@@ -242,7 +242,7 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
         throw new Error('协同消息的文档身份前缀与本地基线不一致');
       }
       if (hasSeen(activeSession.seen, raw)) return;
-      const evaluated = evaluateRemoteMessage(editor.doc, activeSession, raw);
+      const evaluated = evaluate(editor.doc, activeSession, raw);
       const causallyBlocked = hasSequenceGap(activeSession.seen, raw)
         || activeSession.deferred.some((entry) =>
           entry.message.replicaId === raw.replicaId && entry.message.sequence < raw.sequence);
@@ -372,7 +372,7 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions)
     documentId: options.documentId,
     replicaId: options.replicaId,
     editor,
-    checkpoint: () => createCheckpoint(activeSession),
+    checkpoint: () => createCheckpoint(activeSession, editor.doc),
     dispose() {
       if (disposed) return;
       disposed = true;

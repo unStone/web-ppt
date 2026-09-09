@@ -1,6 +1,8 @@
 import type {
-  EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions,
+  EditorPatchEvent, EditorPatchSubscriber, EditorPatchSubscribeOptions, Patch,
 } from './commands/types';
+import type { EditDoc } from './types';
+import { ExtensionAddressJournal } from './extension-address-journal';
 
 export function reportEditorSubscriberError(error: unknown): void {
   try {
@@ -15,6 +17,7 @@ export class EditorPatchJournal {
   private readonly subscribers = new Set<EditorPatchSubscriber>();
   private readonly beforeRecoverySubscribers = new Set<EditorPatchSubscriber>();
   private readonly pending: EditorPatchEvent[] = [];
+  private readonly addresses = new ExtensionAddressJournal();
   private dispatching = false;
 
   get observed(): boolean {
@@ -27,11 +30,18 @@ export class EditorPatchJournal {
       && options.phase !== 'after-observers') throw new Error('Patch 订阅阶段无效');
     const target = options.phase === 'before-recovery'
       ? this.beforeRecoverySubscribers : this.subscribers;
+    if (!target.has(subscriber)) this.addresses.reset();
     target.add(subscriber);
     return () => { target.delete(subscriber); };
   }
 
+  transport(doc: EditDoc, patches: readonly Patch[], origin: string): readonly Patch[] {
+    if (!patches.length) return patches;
+    return this.addresses.prepare(doc, patches, origin);
+  }
+
   queue(event: EditorPatchEvent): void {
+    if (event.source !== 'external') this.addresses.record(event.patches);
     for (const subscriber of [...this.beforeRecoverySubscribers]) {
       try { subscriber(structuredClone(event)); } catch (error) { reportEditorSubscriberError(error); }
     }

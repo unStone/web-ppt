@@ -29,6 +29,8 @@ const remapSlideTreeIds = (patch, suffix) => {
     if (mapped.children) mapped.children = mapped.children.map(remap);
     return [mapped.id, mapped];
   }));
+  if (remote.value.copySources) remote.value.copySources = Object.fromEntries(
+    Object.entries(remote.value.copySources).map(([id, source]) => [remap(id), source]));
   return remote;
 };
 

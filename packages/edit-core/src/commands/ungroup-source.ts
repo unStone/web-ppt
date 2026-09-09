@@ -8,7 +8,7 @@ export function ungroupInsertionSources(doc: EditDoc, group: ElementRecord): Map
   if (!group.meta.insertion || group.meta.insertion.containsDescendants === false) return result;
   const part = group.meta.origin!.part;
   const payload = elementTreeSources(doc, group.children!, true);
-  const closures = prepareInsertionClosures(doc, payload, group.children!, part);
+  const closures = prepareInsertionClosures(doc, payload, group.children!, part, { sourceOnly: true });
   const modeled = new Set(Object.values(doc.elements).flatMap((record) =>
     record.meta.origin?.part === part ? [String(record.meta.origin.spid)] : []));
   for (const id of group.children!) {

@@ -8,6 +8,7 @@ import { shapeIds } from './xml/shape-ids';
 import { XMLNS_NS } from './xml/qname';
 import { serializeXmlNode } from './xml/tree';
 import type { XmlDocument, XmlElement } from './xml/types';
+import { clipboardPackage } from './clipboard-package';
 
 function namespaces(document: XmlDocument): Record<string, string> {
   return Object.fromEntries(document.root.attributes
@@ -48,9 +49,11 @@ export function elementTreeSources(doc: EditDoc, roots: readonly ElementId[], so
   const insertions = activeClosures(doc, sourcePart);
   const xmlRoots: Record<string, ClipboardXmlRoot> = Object.create(null);
   const resources = new Map<string, ClipboardResource>();
+  let effective: ReturnType<typeof clipboardPackage> | undefined;
+  const readEffective = sourceOnly ? undefined : () => effective ??= clipboardPackage(doc);
   for (const id of roots) {
     const resolved = hosts.get(id)!;
-    const closure = clipboardClosure(pkg, sourcePart, resolved.host, insertions);
+    const closure = clipboardClosure(pkg, sourcePart, resolved.host, insertions, readEffective);
     for (const resource of closure.resources) resources.set(resource.hash, resource);
     xmlRoots[id] = {
       markup: serializeXmlNode(resolved.host), namespaces: { ...resolved.namespaces }, hostSpids: shapeIds(resolved.host),

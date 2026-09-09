@@ -254,7 +254,9 @@ function embeddedRecordIds(
     for (const child of record.children ?? []) visit(child);
   };
   for (const record of Object.values(records)) {
-    if (record.meta.created && record.meta.insertion && record.meta.origin?.part === owner) {
+    // 图表等原生 frame 的绘制子节点没有各自的 OPC 宿主，随根框架一起复制和恢复。
+    if ((record.meta.created && record.meta.insertion || record.meta.editable === 'frame')
+      && record.meta.origin?.part === owner) {
       for (const child of record.children ?? []) visit(child);
     }
   }
@@ -435,6 +437,9 @@ function ensureSpidSourceFloors(doc: EditDoc, floor: RecoveryIdentityFloor, next
   for (const part of Object.keys(next.nextSpid)) {
     if (floor.checkedSpidSources.has(part)) continue;
     const sourcePart = doc.saveState.baselines[part] ?? doc.package?.parts[part];
+    // 缺序协同消息先持久化分配水位，页面树会在依赖补齐后才落模；预留号段不等于创建 part。
+    // 未出现的宿主稍后仍须按实际结构验证，不能在这里提前标记来源已经验过。
+    if (!sourcePart && !floor.createdParts.has(part) && ![...floor.owningParts.values()].includes(part)) continue;
     if (floor.createdParts.has(part) && !sourcePart) {
       // 新页 XML 尚未写入原包，只有根组占用 id=1；空白版式没有 record 可替它建立水位。
       floor.nextSpid.set(part, Math.max(floor.nextSpid.get(part) ?? 2, 2));

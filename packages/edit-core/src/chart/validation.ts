@@ -1,4 +1,5 @@
 import { assertFractionalIndex } from '@web-ppt/edit-core';
+import { categoryHierarchyBinding } from './category-binding';
 import type { FractionalIndex } from '../types';
 import type {
   ChartCategory, ChartPlotKind, ChartPoint, ChartSeries, ChartSeriesId,
@@ -355,7 +356,7 @@ export function validateMaterializedRecords(
   sourceSeries: Readonly<Record<string, StoredSeries>>,
 ): boolean {
   const sourcePlotKinds = new Set(Object.values(sourceSeries).map((item) => item.plotKind));
-  const depth = Object.values(sourceSeries).find(series => series.bindings.categories?.hierarchy)?.bindings.categories?.hierarchy?.levels;
+  const depth = categoryHierarchyBinding(sourceSeries)?.hierarchy?.levels;
   const categoryLimit = Math.min(MAX_CHART_POINTS, depth ? Math.floor(MAX_CHART_CELLS / depth) : MAX_CHART_POINTS);
   let deferred = trimAddedRecords(categories, sourceCategories, categoryLimit);
   deferred = trimAddedRecords(series, sourceSeries, MAX_CHART_SERIES) || deferred;

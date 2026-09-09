@@ -1,0 +1,16 @@
+[
+  { "name": "hierarchy", "fixture": "sample-chart-hierarchy", "chartIndex": 0, "mode": "workbook", "plotKind": "bar", "depth": 2, "orientation": "rows" },
+  { "name": "horizontal", "fixture": "sample-chart-hierarchy", "chartIndex": 2, "mode": "workbook", "plotKind": "bar", "depth": 2, "orientation": "columns" },
+  { "name": "three-level", "fixture": "sample-chart-hierarchy", "chartIndex": 1, "mode": "workbook", "plotKind": "bar", "depth": 3, "orientation": "rows" },
+  { "name": "cache", "fixture": "sample-chart-data", "chartIndex": 1, "mode": "cache", "plotKind": "bar" },
+  { "name": "flat-workbook", "fixture": "sample-chart-data", "chartIndex": 0, "mode": "workbook", "plotKind": "bar" },
+  { "name": "cache-xy", "fixture": "sample-chart-data", "chartIndex": 10, "mode": "cache", "plotKind": "bubble" },
+  { "name": "xy", "fixture": "sample-chart-shared-transition-xy", "chartIndex": 0, "mode": "workbook", "plotKind": "bubble" },
+  { "name": "xy-horizontal", "fixture": "sample-chart-shared-transition-xy-horizontal", "chartIndex": 0, "mode": "workbook", "plotKind": "bubble" },
+  { "name": "cache-scatter", "fixture": "sample-chart-data", "chartIndex": 6, "mode": "cache", "plotKind": "scatter" },
+  { "name": "scatter", "fixture": "sample-chart-shared-transition-scatter", "chartIndex": 0, "mode": "workbook", "plotKind": "scatter" },
+  { "name": "scatter-horizontal", "fixture": "sample-chart-shared-transition-scatter-horizontal", "chartIndex": 0, "mode": "workbook", "plotKind": "scatter" },
+  { "name": "cache-hierarchy", "fixture": "sample-chart-shared-transition-cache", "chartIndex": 0, "mode": "cache", "plotKind": "bar", "depth": 2, "orientation": "rows" },
+  { "name": "cache-horizontal", "fixture": "sample-chart-shared-transition-cache", "chartIndex": 2, "mode": "cache", "plotKind": "bar", "depth": 2, "orientation": "columns" },
+  { "name": "cache-three-level", "fixture": "sample-chart-shared-transition-cache", "chartIndex": 1, "mode": "cache", "plotKind": "bar", "depth": 3, "orientation": "rows" }
+]
