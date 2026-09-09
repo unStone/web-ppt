@@ -401,6 +401,10 @@ Web Component 与原生工具栏都不需要理解 OPC 关系或媒体哈希。
 双击空图片占位符走同一入口，占位符与新图片在一个撤销单元内原子替换；画布上的系统图片粘贴也复用
 同一 `AddImage` 命令，文本/表格选区仍保留原生粘贴所有权。
 
+插入、替换和背景图片方法支持 `options.signal`。取消会关闭待选文件入口（返回 `null`），并阻止尚未完成
+的读取或解码提交修改；直接传文件的方法在取消时拒绝 Promise，但不派发 `webpptimageerror`。
+已提交的命令仍通过撤销恢复。
+
 表格选择器同步调用 `view.insertTable(rows, cols, options?)`。显式 `rect` 会原样使用；没有矩形时，视图会
 优先替换当前选中的空内容占位符，否则按行列数生成居中的可用尺寸。结果是真实 DrawingML 表格，单元格
 直接进入既有文字编辑面，末格 `Tab` 复用既有追加行路径；方法返回新元素稳定 id，view 模式明确拒绝创建。
@@ -497,7 +501,7 @@ const view = session.mount(container, {
 且可重复调用。React、Vue、Svelte、Web Component 或原生 DOM 适配器都复用同一个
 `openEditor` / `mount` seam，本包不依赖任何 UI 框架运行时。
 
-发布入口实测为 68.10KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
+发布入口实测为 68.11KB gzip；`@web-ppt/core`、`@web-ppt/edit-core` 与 `@web-ppt/viewer-core`
 均为 peer 依赖。
 
 MIT

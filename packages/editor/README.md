@@ -441,6 +441,10 @@ keeps the insertion inside the standard 8MB undo budget and can be changed expli
 view exposes `aria-busy="true"`; failures reject the promise and dispatch `webpptimageerror`. Double-clicking an
 empty picture placeholder uses the same path and replaces that placeholder plus the image in one undo unit.
 
+Image insertion, replacement, and background methods accept `options.signal`. Aborting closes a pending file
+chooser (resolving `null`) and prevents unfinished reads or decodes from committing. Direct image operations
+reject on cancellation without dispatching `webpptimageerror`; already committed commands remain undoable.
+
 Table pickers call synchronous `view.insertTable(rows, cols, options?)`. An explicit `rect` is used as-is; without
 one, the view replaces the selected empty content placeholder or computes a centered size from the grid. The result
 is a native DrawingML table whose cells open in the existing text editor and whose final-cell `Tab` uses the existing
@@ -554,7 +558,7 @@ releases shared resources; disposing the session destroys every remaining view a
 Svelte, Web Components, and plain DOM adapters all use the same `openEditor` / `mount` seam—none of their
 runtimes are dependencies of this package.
 
-The published entry measures 68.10 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
+The published entry measures 68.11 KB gzip. `@web-ppt/core`, `@web-ppt/edit-core`, and
 `@web-ppt/viewer-core` are peer dependencies.
 
 MIT

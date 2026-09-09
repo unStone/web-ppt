@@ -1,6 +1,6 @@
 # 下一阶段执行计划
 
-2026-09-08 更新，基线 `45a04a7`。本页整理下一阶段范围，高级文本生成与复制、多级类别编辑已完成，其余按依赖推进。
+2026-09-09 更新，基线 `45a04a7`。高级文本生成与复制、多级类别及共享图表编辑已完成；正式字体 Provider 与 Cordis 字体工具已验收，矢量 PDF 正在实现。
 状态以[任务地图](map.md)及子票为准，当前支持范围仍以[能力矩阵](../../expanded-capabilities.md)为准。
 
 ## 目标与顺序
@@ -12,8 +12,8 @@ P0/P1/P2/P3 表示执行优先级，不代表发布版本或工期；无依赖�
 |---|---|---|---|
 | P0 | [高级文本生成保存与复制](tickets/001-portable-rich-text.md) | 公式、艺术字及高级文字效果在支持范围内可直接跨文稿复制、保存重开 | 已完成，证据见票据 |
 | P0 | [经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md) | 分组类别可编辑，空槽与重复标签不会被压平 | 已完成，证据见票据 |
-| P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 当前可开始 |
-| P1 | [字体与字形能力原型](tickets/004-font-glyph-provider.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 原型验证字体字节、字形位置及映射可取得 |
+| P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 已完成，见[支持范围与证据](shared-chart-progress.md) |
+| P1 | [字体原型](tickets/004-font-glyph-provider.md) → [正式字体实现](tickets/011-font-glyph-implementation.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 原型及 011 已完成；PDF 进行中 |
 | P2 | [视频音轨](tickets/006-video-audio-track.md) → [内嵌视频合成](tickets/007-video-media-composition.md) | 导出保留音频，再支持视频内容按固定时间轴播放 | 音视频格式及浏览器编码能力可验证 |
 | P3 | [SmartArt / OLE 首批范围](tickets/008-native-object-scope.md) | 选定布局/格式获得更完整的内部编辑 | 先取得样本并确定写回与预览方案 |
 | P3 | [高级渲染首批范围](tickets/009-render-fidelity-scope.md) | 修复明确的 EMF+、艺术字与三维视觉问题 | 有可复现输入与外部渲染对照 |
@@ -26,7 +26,7 @@ flowchart LR
     R["高级文本保存与复制"] --> A["第一批内容流转交付"]
     C["多级类别"] --> W["共享工作簿同步"]
     W --> A
-    F["字体与字形原型"] --> P["矢量 PDF"]
+    F["字体与字形原型"] --> FI["正式字体实现 011"] --> P["矢量 PDF"]
     U["视频音轨"] --> V["内嵌视频合成"]
     S["真实样本与格式调查"] --> O["SmartArt / OLE 实现票"]
     S --> E["高级渲染实现票"]
@@ -58,7 +58,8 @@ flowchart LR
 ## 执行状态
 
 [高级文本生成保存与复制](tickets/001-portable-rich-text.md)与
-[经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md)已完成。下一项为
-[共享工作簿同步](tickets/003-shared-chart-workbook.md)，先建立工作簿、区域、图表部件和框架之间的依赖关系。
+[经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md)已完成。
+[共享工作簿同步](tickets/003-shared-chart-workbook.md)已完成，范围、成本与外观边界见[验收记录](shared-chart-progress.md)。
+[字体与字形能力原型](tickets/004-font-glyph-provider.md)已完成，路线及限制见[原型结论](font-glyph-prototype.md)。[011 正式字体实现](tickets/011-font-glyph-implementation.md)也已完成；[005 矢量 PDF](tickets/005-vector-pdf.md)进行中，证据与剩余工作见[实现进度](vector-pdf-implementation.md)。
 
 后续按子票依赖推进；本阶段不包含版本发布。

@@ -1,10 +1,11 @@
 # 扩展编辑、渲染与导出
 
-2026-09-07 的七类扩展通过独立入口提供，官网编辑器按实际内容和用户操作加载。核心仍只依赖 fflate，解析可在 Worker 中运行。
+可选能力通过独立入口提供，官网编辑器按实际内容和用户操作加载。核心仍只依赖 fflate，解析可在 Worker 中运行。
 
 | 能力 | 公开入口 | 官网操作 | 支持范围与边界 |
 |---|---|---|---|
 | 经典图表多级类别 | `@web-ppt/edit-core/chart` | 数据面板逐级编辑、空槽开关、类别与系列增删 | 两级/三级、横向矩阵、稳定身份及工作簿同步；[支持矩阵与只读边界](chart-hierarchical-categories.md) |
+| 共享工作簿与图表 | `@web-ppt/edit-core/chart-shared` | 数据面板编辑，关联页面同步；复制、撤销与恢复 | 共享缓存、重叠/独立区域、多表及类别/XY 共同记录已验收；[支持范围与证据](wayfinder/ppt-portability-fidelity/shared-chart-progress.md)。旧身份无法证明时显示未恢复并拒绝保存；混合图自动轴域、标签布局与气泡半径仍有[外观差异](wayfinder/ppt-portability-fidelity/mixed-chart-rendering.md) |
 | 经典图表类型与样式 | `@web-ppt/edit-core/chart-design` | 图表数据面板中的类型、排列、图例、标题、标签、配色 | 八类图表的兼容转换；遵循工作簿只读规则，类别型与 XY 数据不互转，组合图保留原生结构 |
 | 现代图表数据 | `@web-ppt/edit-core/chart-ex` | 现代图表数据面板 | 七类 ChartEx 的分层数据与增删行；保持空值、零、小计身份及工作簿其他内容 |
 | 批注编辑 | `@web-ppt/edit-core/comments` | 批注面板：新增、修改、删除、回复 | 字段级历史、恢复和协同；删除父批注时将回复提升为独立批注 |
@@ -16,6 +17,7 @@
 | EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported |
 | 三维 | `@web-ppt/core/three-d` | 三维外观面板与自动渲染 | XYZ 相机矩阵、正交/透视、挤出、背面和曲线斜角；透视正面仍含原生 SVG 文字；材质/光照及网格为近似 |
 | 数学公式 | 核心渲染入口；`@web-ppt/edit-core/generate` 原生写入 | 自动渲染、复制与保存 | OMML 分式、根式、脚标、大算子与矩阵布局；支持范围内保留公式原子，复杂数学字体保真度仍依赖可用字体 |
+| 字体与字形 | `@web-ppt/fonts/glyphs` 及可选 HarfBuzz / Worker / browser 子入口 | 字体与缺字 → 检查 / 本机替换 | 静态 TTF/glyf、合规 EOT、Latin/Han 横排 LTR；保留 UTF-16 簇、定位与许可限制。Cordis 随文稿释放资源；本机字体用于预览及图片 / SVG 导出，不写 PPTX。复杂脚本、变量字体、CFF、WOFF 解压及非 400/700 浏览器样式绑定暂不支持；见[完整范围](font-glyphs.md) |
 | PDF | `@web-ppt/core/pdf` | 导出文档 → PDF | 直接下载图片页面 PDF；默认 2×、隐藏页、动画批次、原生批注/回复、进度和取消 |
 | 视频 | `@web-ppt/viewer-core/video` | 导出文档 → WebM | WebCodecs VP9/VP8、动画/切换、帧率/码率/停留时间；无音轨，嵌入媒体需明确选择静态封面 |
 | 无来源复制 | `@web-ppt/edit-core/generate` | 直接复制，再粘贴到另一文稿 | `copyPortableElements` 直接物化选中子树和资源；支持[公式、艺术字与高级文字效果](portable-rich-text.md)，保留祖先变换，复用生成保存的能力校验 |
