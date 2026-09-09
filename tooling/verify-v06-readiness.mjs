@@ -20,7 +20,9 @@ const packages = packageDirs.map((dir) => ({
 }));
 check('八个发布包版本一致', new Set(packages.map(({ json }) => json.version)).size === 1);
 for (const { dir, json } of packages) {
-  check(`${json.name} README 存在`, existsSync(join(root, `packages/${dir}/README.md`)));
+  // core 的包 README 由 prepack 从根英文文档生成并被 gitignore；CI 干净检出时只能校验其唯一源文件。
+  const readmeSource = dir === 'core' ? 'README.en.md' : `packages/${dir}/README.md`;
+  check(`${json.name} README 源存在`, existsSync(join(root, readmeSource)));
   check(`${json.name} 许可证与公开入口完整`, json.license === 'MIT'
     && !!json.exports?.['.'] && !!json.exports?.['./package.json']);
 }

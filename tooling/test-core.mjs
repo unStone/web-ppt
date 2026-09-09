@@ -60,7 +60,10 @@ const lib = await import(`file://${bundle}?t=${Date.now()}`);
 const imageZip = await (async () => {
   const output = join(outDir, 'image-zip-bundle.mjs');
   execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
+    '--platform=browser', '--log-level=error',
+    // 测的是源码入口，不能偷偷依赖上一次构建遗留的 dist；CI 的干净 checkout 没有它。
+    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+    `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
   return import(`file://${output}?t=${Date.now()}`);
 })();
 

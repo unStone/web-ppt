@@ -94,7 +94,7 @@ async function lateSample(context) {
       await click('[data-site-locale="zh-CN"]');
       if (scenario !== 'language') {
         if (scenario === 'local-open') {
-          await openFixture(context, '/fixtures/sample-editor-shape-format.pptx', '<优先本机 & 原文>.pptx');
+          await openFixture(context, '/fixtures/sample-editor-shape-format.pptx', '<优先本机 & 原文>.pptx', { discardRecovery: true });
         } else {
           await click('#newFile');
           await waitFor("document.querySelector('#templateDialog')?.open", '示例下载中打开新建入口');

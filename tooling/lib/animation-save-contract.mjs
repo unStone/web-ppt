@@ -253,38 +253,43 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   edit.disposeDoc(deletedReopenDoc);
   edit.disposeDoc(deleteDoc);
 
-  const stressParts = unzipSync(input);
   const stressPart = 'ppt/slides/slide2.xml';
-  const stressSource = decoder.decode(stressParts[stressPart]);
-  const stressTarget = Number(stressSource.match(/<p:sp><p:nvSpPr><p:cNvPr id="(\d+)"/)?.[1]);
-  const stressEffects = Array.from({ length: 4000 }, (_, index) => {
-    const id = 1000 + index * 3;
-    return `<p:par><p:cTn id="${id}" presetID="10" presetClass="entr" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 1}" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`;
-  }).join('');
-  const sharedBehaviors = Array.from({ length: 4000 }, (_, index) => {
-    const id = 20_000 + index;
-    return `<p:cBhvr><p:cTn id="${id}" dur="500"/><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cBhvr>`;
-  }).join('');
-  const sharedConditions = Array.from({ length: 4000 }, () =>
-    `<p:cond delay="0"><p:tgtEl><p:spTgt spid="${stressTarget}"/></p:tgtEl></p:cond>`).join('');
-  const stressTiming = `<p:timing><p:tnLst>${stressEffects}<p14:anim xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sharedBehaviors}</p14:anim><p:par><p:cTn id="30000"><p:stCondLst>${sharedConditions}</p:stCondLst></p:cTn></p:par></p:tnLst></p:timing>`;
-  stressParts[stressPart] = new TextEncoder().encode(
-    stressSource.replace('</p:sld>', `${stressTiming}</p:sld>`),
-  );
-  const stressPresentation = await core.parse(zipSync(stressParts), {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
-  });
-  const stressDoc = edit.createDoc(stressPresentation, { idPrefix: 'animation-delete-stress-' });
-  const stressEditor = new edit.Editor(stressDoc);
-  stressEditor.exec({ type: 'RemoveElement', id: stressDoc.slides[stressDoc.slideOrder[1]].children[0] });
-  const stressStart = performance.now();
-  const stressSaved = await stressEditor.saveDetailed();
-  const stressElapsed = performance.now() - stressStart;
-  const stressXml = decoder.decode(stressSaved.package.parts[stressPart]);
+  const measureStress = async (count) => {
+    const parts = unzipSync(input);
+    const source = decoder.decode(parts[stressPart]);
+    const target = Number(source.match(/<p:sp><p:nvSpPr><p:cNvPr id="(\d+)"/)?.[1]);
+    const effects = Array.from({ length: count }, (_, index) => {
+      const id = 1000 + index * 3;
+      return `<p:par><p:cTn id="${id}" presetID="10" presetClass="entr" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 1}" dur="500" fill="hold"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`;
+    }).join('');
+    const sharedBehaviors = Array.from({ length: count }, (_, index) => {
+      const id = 20_000 + index;
+      return `<p:cBhvr><p:cTn id="${id}" dur="500"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr>`;
+    }).join('');
+    const sharedConditions = Array.from({ length: count }, () =>
+      `<p:cond delay="0"><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cond>`).join('');
+    const timing = `<p:timing><p:tnLst>${effects}<p14:anim xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sharedBehaviors}</p14:anim><p:par><p:cTn id="30000"><p:stCondLst>${sharedConditions}</p:stCondLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    parts[stressPart] = new TextEncoder().encode(source.replace('</p:sld>', `${timing}</p:sld>`));
+    const presentation = await core.parse(zipSync(parts), {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const doc = edit.createDoc(presentation, { idPrefix: `animation-delete-stress-${count}-` });
+    const editor = new edit.Editor(doc);
+    editor.exec({ type: 'RemoveElement', id: doc.slides[doc.slideOrder[1]].children[0] });
+    const started = performance.now();
+    const saved = await editor.saveDetailed();
+    const elapsed = performance.now() - started;
+    const xml = decoder.decode(saved.package.parts[stressPart]);
+    edit.disposeDoc(doc);
+    return { elapsed, hasTarget: xml.includes(`<p:spTgt spid="${target}"`) };
+  };
+  const smallStress = await measureStress(1000);
+  const largeStress = await measureStress(4000);
+  // 绝对毫秒受 CI 宿主速度影响；4 倍输入的增长率才能证明没有退化回 O(n²)。
+  const stressRatio = largeStress.elapsed / Math.max(smallStress.elapsed, 1);
   check('大量点击及同父行为/条件目标删除保持线性预算且不留引用',
-    stressElapsed < 500 && !stressXml.includes(`<p:spTgt spid="${stressTarget}"`),
-    `${stressElapsed.toFixed(1)}ms`);
-  edit.disposeDoc(stressDoc);
+    stressRatio < 8 && !smallStress.hasTarget && !largeStress.hasTarget,
+    `1000=${smallStress.elapsed.toFixed(1)}ms，4000=${largeStress.elapsed.toFixed(1)}ms，${stressRatio.toFixed(2)}×`);
 
   const operationsPresentation = await core.parse(input, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',

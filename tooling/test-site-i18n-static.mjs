@@ -8,6 +8,11 @@ import { SLIDE_TRANSITION_TYPES, transitionDirections, ANIMATION_EFFECTS } from 
 import { PRESET_DEFINITION_NAMES } from '@web-ppt/core/geometry/handles';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const mixedArtifact = join(root, 'out/edit-save/mixed-patched.pptx');
+if (!process.argv.includes('--static-only') && !existsSync(mixedArtifact)) {
+  // 生产站点回归会打开保存链路生成的跨能力文稿；让消费者显式生成输入，避免依赖 CI 步骤的偶然顺序。
+  execFileSync(process.execPath, ['tooling/test-edit-save.mjs'], { cwd: root, stdio: 'inherit' });
+}
 if (!process.argv.includes('--built')) {
   execFileSync('npm', ['run', 'build', '-w', '@web-ppt/site'], { cwd: root, stdio: 'inherit' });
 }
@@ -62,6 +67,12 @@ for (const page of ['index', 'samples', 'editor']) {
       if (language === 'en') assert.doesNotMatch(item.description ?? '', /\p{Script=Han}/u, `${file} JSON-LD 描述`);
     }
     assert.ok(document.querySelector('#siteLanguage'), `${file} 无脚本语言入口`);
+    assert.equal(document.querySelector(`[data-site-locale="${language}"]`)?.getAttribute('aria-current'), 'true',
+      `${file} 无脚本页面必须标明当前语言`);
+    assert.equal(document.querySelector(`[data-site-locale="${language === 'en' ? 'zh-CN' : 'en'}"]`)?.getAttribute('aria-current'), 'false',
+      `${file} 无脚本页面必须标明非当前语言`);
+    assert.ok(!document.documentElement.hasAttribute('data-site-language-ready'),
+      `${file} 不能把静态语言状态伪装成增强脚本已就绪`);
     if (language !== 'en') continue;
     assert.match(document.title, /Web-PPT/);
     for (const anchor of document.querySelectorAll('a[href]')) {

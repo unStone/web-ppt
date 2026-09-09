@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installDomEnv } from './lib/dom-env.mjs';
+import { sourceAliasArgs } from './lib/bundle-browser.mjs';
 import { runCommandHistoryContract } from './lib/command-history-contract.mjs';
 import { runRecoveryJournalContract } from './lib/recovery-journal-contract.mjs';
 import { runElementDeleteContract } from './lib/element-delete-contract.mjs';
@@ -67,7 +68,7 @@ installDomEnv();
 const bundle = (entry, name, aliases = []) => {
   const file = join(out, `${name}.mjs`);
   execFileSync('npx', ['esbuild', entry, '--bundle', '--format=esm', '--platform=browser',
-    '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${file}`],
+    '--log-level=error', ...sourceAliasArgs(root, aliases), `--outfile=${file}`],
   { cwd: root, stdio: 'inherit' });
   return import(`file://${file}?t=${Date.now()}`);
 };
