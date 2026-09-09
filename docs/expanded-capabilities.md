@@ -17,8 +17,9 @@
 | EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported |
 | 三维 | `@web-ppt/core/three-d` | 三维外观面板与自动渲染 | XYZ 相机矩阵、正交/透视、挤出、背面和曲线斜角；透视正面仍含原生 SVG 文字；材质/光照及网格为近似 |
 | 数学公式 | 核心渲染入口；`@web-ppt/edit-core/generate` 原生写入 | 自动渲染、复制与保存 | OMML 分式、根式、脚标、大算子与矩阵布局；支持范围内保留公式原子，复杂数学字体保真度仍依赖可用字体 |
-| 字体与字形 | `@web-ppt/fonts/glyphs` 及可选 HarfBuzz / Worker / browser 子入口 | 字体与缺字 → 检查 / 本机替换 | 静态 TTF/glyf、合规 EOT、Latin/Han 横排 LTR；保留 UTF-16 簇、定位与许可限制。Cordis 随文稿释放资源；本机字体用于预览及图片 / SVG 导出，不写 PPTX。复杂脚本、变量字体、CFF、WOFF 解压及非 400/700 浏览器样式绑定暂不支持；见[完整范围](font-glyphs.md) |
+| 字体与字形 | `@web-ppt/fonts/glyphs` 及可选 HarfBuzz / Worker / browser 子入口 | 字体与缺字 → 检查 / 本机替换 | 静态 TTF/glyf、合规 EOT、Latin/Han 横排 LTR；保留 UTF-16 簇、定位与许可限制。Cordis 随文稿释放资源；本机字体用于预览及图片 / SVG / 实验性矢量 PDF 导出，不写 PPTX。复杂脚本、变量字体、CFF、WOFF 解压及非 400/700 浏览器样式绑定暂不支持；见[完整范围](font-glyphs.md) |
 | PDF | `@web-ppt/core/pdf` | 导出文档 → PDF | 直接下载图片页面 PDF；默认 2×、隐藏页、动画批次、原生批注/回复、进度和取消 |
+| 矢量 PDF（实验性） | `@web-ppt/core/pdf/vector` 与独立 `/browser` 适配 | 导出文档 → PDF（可搜索文字） | 需要实际且允许嵌入的字体字节；首版 Latin/Han 横排 LTR、基础图形、渐变 / 图案 / 图片和对象级特殊效果回退；缺失资源明确失败。005 整项仍在验收，见[实现范围与已知差异](wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md) |
 | 视频 | `@web-ppt/viewer-core/video` | 导出文档 → WebM | WebCodecs VP9/VP8、动画/切换、帧率/码率/停留时间；无音轨，嵌入媒体需明确选择静态封面 |
 | 无来源复制 | `@web-ppt/edit-core/generate` | 直接复制，再粘贴到另一文稿 | `copyPortableElements` 直接物化选中子树和资源；支持[公式、艺术字与高级文字效果](portable-rich-text.md)，保留祖先变换，复用生成保存的能力校验 |
 | 原生 PPT | `@web-ppt/edit-core/ppt` | 导出文档 → PPT | 生成真正的 CFB/Escher 二进制文件，能力矩阵见下文 |
@@ -60,7 +61,7 @@ try {
 }
 ```
 
-PDF 与 WebM 在浏览器中执行；PDF 页面中的文字不可选中，需要矢量文字时使用独立 SVG 或既有打印 HTML。`savePpt` 可在无 DOM 环境执行。导出不会修改编辑历史或伪造保存点。
+图片 PDF 与 WebM 在浏览器中执行；图片 PDF 的文字不可选中。实验性矢量 PDF 的普通文字可搜索，效果回退区域为图片；浏览器图片规范化与局部回退由独立适配入口提供。`savePpt` 可在无 DOM 环境执行。导出不会修改编辑历史或伪造保存点。
 
 ## 原生 PPT 保存矩阵
 

@@ -38,6 +38,15 @@ jobs:
 
       - run: npm ci
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: tooling/font-glyph-requirements.txt
+
+      - name: 安装字体与 PDF 独立读取依赖
+        run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
+
       - name: 安装图元真实样本依赖
         # test:metafile 会用 LibreOffice 把 showcase 转成真实 EMF/WMF；缺依赖时会
         # 合法跳过 22 项，但 verify 仍会按发布文档声明的完整 130 项拒绝发布。

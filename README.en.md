@@ -48,6 +48,8 @@ See [appearance editing](docs/appearance-editing.md) for optional picture/3D too
 
 Expanded editing, advanced rendering, PDF/WebM export and native PPT saving are available through optional entries. See the [capability matrix and format limits](https://github.com/unStone/web-ppt/blob/master/docs/expanded-capabilities.md).
 
+Experimental vector PDF is available through `@web-ppt/core/pdf/vector` and the editor’s searchable PDF option. It requires usable font bytes; unsupported effects use object-level image fallback. See the [support scope and remaining validation](https://github.com/unStone/web-ppt/blob/master/docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md).
+
 ## Quick start
 
 ```bash

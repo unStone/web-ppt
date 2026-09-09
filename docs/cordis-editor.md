@@ -127,3 +127,6 @@ flowchart TD
 | 页面启动与首次激活合计 | 2,288,921 | 536,209 | 2,397,467 / 543,288 |
 
 测量来自官网浏览器门禁的 `out/site-editor-browser/cordis-size.json`。页面状态及上游依赖移入应用，首屏减少不等于首次打开总成本消失。合计预算由原首屏预算加迁移前应用实测 142,565 / 33,439 B 得出，保留原有余量；不能只检查变小后的入口。
+
+
+矢量 PDF 通过现有文件服务取得文稿字体服务的 `withFonts` 消费作用域；以当前替换字体为准，导出结束前不释放字体字节。文稿卸载用同步 effect 收编原始 disposer：Cordis 的 disposer 也是 thenable，async generator 会先解包它，导致父作用域并行清理，破坏字体先于会话释放的顺序。取消、换稿及退出的真实导出证据见[PDF 产品接入](wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md#beta5-产品接入)。

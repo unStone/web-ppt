@@ -1,10 +1,10 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-09-08，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-09-09，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
 
-> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)及[经典图表多级类别编辑](chart-hierarchical-categories.md)已完成，下一项为共享工作簿同步。
+> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)、[经典图表多级类别编辑](chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 进入实验性 beta 交付，整项验收仍在进行。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
 
-盘点 `0.5.0-beta.4` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
+盘点 `0.5.0-beta.5` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
 路径与技术方案。范围与词汇沿用 [编辑能力技术方案](editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
 
 判断做不做只用两条：**对使用者有没有成本**（运行时、体积、复杂度落不落到用户头上）、**有没有解法**。
@@ -23,17 +23,10 @@
 用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
 beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api-stability.md)。
 
-### 1.2 门禁实测（2026-09-08，整轮通过）
+### 1.2 验证状态
 
-| 门禁 | 命令 | 状态 | 证据 |
-|---|---|---|---|
-| 类型检查 | `npm run check` | ✅ 通过 | 本次实跑，退出码 0 |
-| 断言总量 | `npm test` | ✅ 8950 项，原性能门禁通过 | 2230 core + 1132 edit + 575 save + 258 chart data + 197 MC fallback + 870 media + 29 templates + 31 v07 + 9 PowerPoint + 444 editor + 12 adapters + 134 collab + 130 metafile + 104 native ChartEx + 31 comments + 1789 扩展能力 + 797 高级文本流转 + 178 多级类别 |
-| 渲染快照 | 同上 | ✅ 186 个 | `test/snapshots/` |
-| 编辑等价指纹 | 同上 | ✅ 702 对 | 103 份固件、351 页，独立进程原始 SVG 两条文本路径 |
-| 构建 | `npm run build` | ✅ 8 包通过，原体积预算不变 | core / edit-core / viewer-core / editor / react / vue / fonts / collab |
-| 跨产物一致性 | `npm run verify` | ✅ 通过（roadmap 更新后复核） | 一致性与按需发布入口契约 + 28 项 0.6 审计 + 18 项 0.7 审计 + 15 项 0.8 审计；原体积预算不变 |
-| PowerPoint 真机 | Windows 自托管工作流 | ⏸ 按用户要求跳过 | 已修复经典图表系列标题和子节点顺序；未将修复标为完整 Windows 验收通过 |
+当前完整门禁与本轮已知限制见[beta.5 交付说明](releases/0.5.0-beta.5.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
+Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。
 
 ### 1.3 里程碑
 
@@ -189,7 +182,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    B["0.5.0-beta.4<br/>当前包版本"] --> V6["0.6 编辑完整度<br/>功能完成"]
+    B["0.5.0-beta.5<br/>当前包版本"] --> V6["0.6 编辑完整度<br/>功能完成"]
     V6 --> V7["0.7 模板与主题<br/>功能完成"]
     V7 --> V8["0.8 数据与保真<br/>功能完成"]
     V8 --> X["七类扩展<br/>实现与自动门禁完成"]

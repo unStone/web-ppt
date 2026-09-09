@@ -62,4 +62,4 @@ flowchart LR
 [共享工作簿同步](tickets/003-shared-chart-workbook.md)已完成，范围、成本与外观边界见[验收记录](shared-chart-progress.md)。
 [字体与字形能力原型](tickets/004-font-glyph-provider.md)已完成，路线及限制见[原型结论](font-glyph-prototype.md)。[011 正式字体实现](tickets/011-font-glyph-implementation.md)也已完成；[005 矢量 PDF](tickets/005-vector-pdf.md)进行中，证据与剩余工作见[实现进度](vector-pdf-implementation.md)。
 
-后续按子票依赖推进；本阶段不包含版本发布。
+后续按子票依赖推进；本轮按用户追加要求打包 beta.5，保留所有未完成子票，见[交付说明](../../releases/0.5.0-beta.5.md)。

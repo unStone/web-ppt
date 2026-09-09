@@ -46,6 +46,8 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
 
+实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md)。
+
 ## 快速开始
 
 ```bash
