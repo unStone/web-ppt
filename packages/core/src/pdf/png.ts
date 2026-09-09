@@ -1,7 +1,7 @@
 import { Unzlib, zlibSync } from 'fflate';
 
 /** 浏览器 canvas 的 8-bit PNG；只解码像素，不依赖 DOM 或第三方 PDF 运行时。 */
-export function pdfImage(png: Uint8Array): { width: number; height: number; compressed: Uint8Array } {
+export function pdfImage(png: Uint8Array, preserveAlpha = false): { width: number; height: number; compressed: Uint8Array; softMask?: Uint8Array } {
   if (png.length < 33 || [137, 80, 78, 71, 13, 10, 26, 10].some((v, i) => png[i] !== v)) throw new Error('PDF 页面不是 PNG');
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength), idat: Uint8Array[] = [];
   let width = 0, height = 0, channels = 0, end = false, dataEnded = false;
@@ -38,6 +38,8 @@ export function pdfImage(png: Uint8Array): { width: number; height: number; comp
   decoder.push(new Uint8Array(), true);
   if (written !== expected) throw new Error('PDF 页面 PNG 像素长度不符');
   const rgb = new Uint8Array(width * height * 3);
+  // 局部图片必须把透明度交给 PDF 合成；旧整页入口仍默认合成到白底。
+  const mask = preserveAlpha && (channels === 2 || channels === 4) ? new Uint8Array(width * height) : undefined;
   const paeth = (a: number, b: number, c: number) => {
     const p = a + b - c, aa = Math.abs(p - a), bb = Math.abs(p - b), cc = Math.abs(p - c);
     return aa <= bb && aa <= cc ? a : bb <= cc ? b : c;
@@ -52,8 +54,11 @@ export function pdfImage(png: Uint8Array): { width: number; height: number; comp
     for (let x = 0; x < width; x++) {
       const source = offset + 1 + x * channels, target = (y * width + x) * 3;
       const alpha = channels === 2 || channels === 4 ? raw[source + channels - 1] / 255 : 1;
-      for (let c = 0; c < 3; c++) rgb[target + c] = Math.round(raw[source + (channels <= 2 ? 0 : c)] * alpha + 255 * (1 - alpha));
+      if (mask) mask[y * width + x] = raw[source + channels - 1];
+      for (let c = 0; c < 3; c++) rgb[target + c] = preserveAlpha ? raw[source + (channels <= 2 ? 0 : c)]
+        : Math.round(raw[source + (channels <= 2 ? 0 : c)] * alpha + 255 * (1 - alpha));
     }
   }
-  return { width, height, compressed: zlibSync(rgb, { level: 6 }) };
+  return { width, height, compressed: zlibSync(rgb, { level: 6 }),
+    ...(mask ? {softMask:zlibSync(mask,{level:6})} : {}) };
 }

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
+import { compactLibrary } from '../../tooling/lib/compact-library';
 
 export default defineConfig({
+  plugins: [compactLibrary()],
   server: { port: 5173 },
   build: {
     // public/ 里是测试用的 pptx 样本，只服务于 dev server，不该进发布产物

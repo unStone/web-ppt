@@ -105,6 +105,14 @@
     "./pdf": {
       "types": "./dist/pdf.d.ts",
       "import": "./dist/pdf.js"
+    },
+    "./pdf/vector": {
+      "types": "./dist/pdf/vector.d.ts",
+      "import": "./dist/pdf-vector.js"
+    },
+    "./pdf/vector/browser": {
+      "types": "./dist/pdf/vector-browser.d.ts",
+      "import": "./dist/pdf-vector-browser.js"
     }
   },
   "files": [
