@@ -4,7 +4,7 @@
 
 ## 未发布
 
-## 0.5.0-beta.5 - 2026-09-09
+## 0.5.0-beta.5 - 2026-09-10
 
 ### 新增
 
@@ -30,9 +30,10 @@
 
 ### 验证与范围
 
+- `@web-ppt/collab` 发布入口为 12.20KB gzip；包含相对静态分块。排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
 - 字体及 PDF 独立读取依赖固定版本并接入 CI / 发布环境；矢量 PDF 源码与产物契约纳入常规功能和一致性门禁。
 - 保留 beta.4 的密码弹窗与 CI 稳定性修复。视频仍无音轨、内嵌视频合成和长尾格式扩展待后续；Windows PowerPoint 真机继续暂缓。
-- 模块成果与下一步见[本轮交付说明](docs/releases/0.5.0-beta.5.md)。
+- 模块成果与下一步见[本轮交付说明](https://github.com/unStone/web-ppt/blob/master/docs/releases/0.5.0-beta.5.md)。
 
 ## 0.5.0-beta.4 - 2026-09-09
 
