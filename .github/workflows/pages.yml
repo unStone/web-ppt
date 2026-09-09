@@ -26,6 +26,15 @@ jobs:
           cache: npm
       - run: npm ci
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: tooling/font-glyph-requirements.txt
+
+      - name: 安装字体与 PDF 独立读取依赖
+        run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
+
       # 站点直接消费 web-ppt / @web-ppt/viewer-core 的 dist，必须先构建
       - name: 构建依赖包
         run: npm run build

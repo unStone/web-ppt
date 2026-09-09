@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -26,5 +26,16 @@ for (const workflow of ['ci.yml', 'release.yml']) {
     /continue-on-error: true\n\s+run: npm run test:editor:performance/,
     `${workflow} 必须单独保留可观测的 beta 性能采样`,
   );
+}
+// 官网是独立流水线；凡运行 PDF 独立读取的入口，都必须先安装同一份固定依赖。
+const workflows = resolve(root, '.github/workflows');
+for (const workflow of readdirSync(workflows).filter(name => /\.ya?ml$/.test(name))) {
+  const source = readFileSync(resolve(workflows, workflow), 'utf8');
+  const test = source.search(/run:.*(?:npm run (?:test:functional|test:site:i18n|verify)|node tooling\/test-site-i18n-static\.mjs)/);
+  if (test < 0) continue;
+  const setup = source.indexOf('uses: actions/setup-python@');
+  const install = source.indexOf('run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt');
+  assert.ok(setup >= 0 && install > setup && install < test,
+    `${workflow} 的 PDF 验证必须先准备 Python 和固定字体 / PDF 依赖`);
 }
 console.log('测试门禁唯一入口：本地、PR CI 与发布流水线编排一致');
