@@ -12,6 +12,7 @@ import { renderPlaceholderOverlay } from './placeholder-overlay';
 
 interface SlideDomRendererOptions {
   presentation: Presentation;
+  browserFontsReady: () => boolean;
   editor: Editor;
   staticLayer: HTMLElement;
   interactionLayer: SVGSVGElement;
@@ -29,7 +30,8 @@ export class SlideDomRenderer {
     const { presentation, editor, staticLayer, idPrefix, textMode } = this.options;
     const slideId = this.options.slideId();
     staticLayer.innerHTML = renderSlideToSvg(
-      presentation, editor.toSlide(slideId), {
+      // DOM 预览复用宿主已安装的 FontFace；独立导出仍从 presentation 取得字体声明。
+      this.options.browserFontsReady() ? { ...presentation, embeddedFonts: undefined } : presentation, editor.toSlide(slideId), {
         textMode, idPrefix: `${idPrefix}${slideId}-`, includeEditMarkers: true,
       },
     );

@@ -2,6 +2,7 @@ import type { Paragraph, TextBody, TextRun } from '../types';
 import { isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
 import { layoutText } from './text-layout';
 import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
+import type { TextMeasure } from './text-measure';
 import { warpSupported } from './text-warp-presets';
 import { withHyperlink } from './hyperlink';
 import { bulletTextRun, decorateText } from './text-decoration';
@@ -49,17 +50,18 @@ export function renderTextSvg(
   marginsOverride?: [number, number, number, number],
   vAlignOverride?: 'top' | 'middle' | 'bottom',
   includeEditMarkers = false,
+  measureText?: TextMeasure,
 ): string {
   // 竖排：按横排排完再整体旋转 90°（交换宽高）
   if (t.vert === 'vert' || t.vert === 'wordArtVert') {
     const inner = renderTextSvg(
-      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers,
+      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText,
     );
     return `<g transform="translate(${r(w)} 0) rotate(90)">${inner}</g>`;
   }
   if (t.vert === 'vert270') {
     const inner = renderTextSvg(
-      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers,
+      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText,
     );
     return `<g transform="translate(0 ${r(h)}) rotate(-90)">${inner}</g>`;
   }
@@ -67,7 +69,7 @@ export function renderTextSvg(
   const [pt, pr, pb, pl] = marginsOverride ?? t.insets;
   const scale = t.fontScale;
   // 艺术字变形：整段排到路径上，成功则直接返回；不支持的预设退化为下面的普通排版
-  const warped = renderWarp(t, w, h, addDef, [pt, pr, pb, pl], vAlignOverride ?? t.anchor);
+  const warped = renderWarp(t, w, h, addDef, [pt, pr, pb, pl], vAlignOverride ?? t.anchor, measureText);
   if (warped) return warped;
 
   const positioned = layoutText(t, w, h, {
@@ -77,6 +79,7 @@ export function renderTextSvg(
     // 调用者已经解析过裸 normAutofit；显式传入防止重复缩放。
     scale,
     includeCarets: false,
+    measureText,
   });
   const out: string[] = [];
 
@@ -246,7 +249,7 @@ function spanSvg(
   const marker = includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0
     ? ` data-r="${seg.paragraphIndex}.${seg.runIndex}" data-from="${seg.from}" data-to="${seg.to}"`
     : '';
-  const span = `<tspan${marker} ${attrs.join(' ')}>${decorateText(esc(seg.text), run, 'tspan')}</tspan>`;
+  const span = `<tspan${marker} ${attrs.join(' ')}>${decorateText(esc(seg.text), run, 'tspan',grad ?? run.color)}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
   const restored = run.baseline
     ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;
@@ -371,6 +374,7 @@ function renderWarp(
   addDef: (markup: string) => string,
   margins: [number, number, number, number],
   anchor: 'top' | 'middle' | 'bottom',
+  measureText?: TextMeasure,
 ): string | null {
   const warp = t.warp;
   if (!warp || !warpSupported(warp.preset)) return null;
@@ -394,7 +398,7 @@ function renderWarp(
     const segs: Seg[] = runs.map((run) => ({
       text: applyCaps(run.text, run).replace(/\n/g, ' '),
       run,
-      width: measureTextWidth(run.text, run, scale),
+      width: measureTextWidth(run.text, run, scale, measureText),
     }));
     // 文字比路径长时整体缩字，避免绕出路径末端被截断
     const total = segs.reduce((sum, s) => sum + s.width, 0);

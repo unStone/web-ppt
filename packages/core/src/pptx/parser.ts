@@ -1029,7 +1029,7 @@ function parseSlideComments(pkg: Pkg, slideRels: Rels, authors: Map<string, Auth
   return out;
 }
 
-function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels): EmbeddedFont[] {
+function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels, sources?: EmbeddedFont[], decode = true): EmbeddedFont[] {
   const out: EmbeddedFont[] = [];
   for (const ef of kids(kid(presRoot, 'embeddedFontLst'), 'embeddedFont')) {
     const family = attr(kid(ef, 'font'), 'typeface');
@@ -1037,14 +1037,17 @@ function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels): Embedd
     for (const [tag, bold, italic] of [['regular', false, false], ['bold', true, false], ['italic', false, true], ['boldItalic', true, true]] as const) {
       const rid = attr(kid(ef, tag), 'r:id');
       const target = rid ? presRels[rid]?.target : null;
-      const url = target ? pkg.fontUrl(target) : null;
+      const url = decode && target ? pkg.fontUrl(target) : null;
       if (url) out.push({ family, src: url, bold, italic });
+      const source = sources && target ? pkg.fontSourceUrl(target) : null;
+      if (source) sources!.push({family,src:source,bold,italic});
     }
   }
   return out;
 }
 
 export interface PptxParseOptions {
+  embeddedFonts?: 'decode' | 'source';
   /**
    * 惰性解析幻灯片（默认开启）。
    * `slides` 仍是普通数组，`length` 与遍历行为不变，只是每一项在首次读取时才真正解析。
@@ -1175,11 +1178,14 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
     : undefined;
 
   const opcPackage = pkg.opcPackage;
+  const embeddedFontSources: EmbeddedFont[] | undefined = opts.edit || opts.embeddedFonts === 'source' ? [] : undefined;
+  const embeddedFonts = parseEmbeddedFonts(pkg,presRoot,presRels,embeddedFontSources,opts.embeddedFonts !== 'source');
   return {
     width, height, slides, source: 'pptx',
     dispose: () => { releaseCompatibilitySource(pkg); pkg.dispose(); },
     ...(opcPackage ? { package: opcPackage } : {}),
-    embeddedFonts: parseEmbeddedFonts(pkg, presRoot, presRels),
+    embeddedFonts,
+    ...(embeddedFontSources?.length ? {embeddedFontSources} : {}),
     sections: sections.length ? sections : undefined,
     ...(layouts && masters ? { editInfo: {
       layouts,

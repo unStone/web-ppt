@@ -1,0 +1,4 @@
+fonttools[woff]==4.61.1
+brotli==1.2.0
+zopfli==0.4.3
+pymupdf==1.26.7

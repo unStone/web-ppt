@@ -4,6 +4,7 @@ import type {
   UnsupportedElement,
 } from '../types';
 import { renderTextBodyToHtml } from './text-html';
+import type { TextMeasure } from './text-measure';
 import { resolveTextScale } from './text-layout';
 import { renderTextSvg } from './text-svg';
 import { withHyperlink } from './hyperlink';
@@ -11,7 +12,7 @@ import { warpSupported } from './text-warp-presets';
 import { paint } from './fill';
 import { effectFilter, reflectionLayer } from './effect-svg';
 import { bevelOverlay, extrusionLayers, mixShapeColor, shape3DRenderer } from './shape-3d';
-import { escapeXml as esc, round as r } from './serialize';
+import { escapeXml as esc, escapeCssString, round as r } from './serialize';
 import { duotoneFilter } from './picture-fx';
 
 /** Schema → SVG 字符串。defs id 全局唯一，支持同页多实例（主视图 + 缩略图）。 */
@@ -35,6 +36,7 @@ interface Ctx {
   defs: string[];
   nextId: (prefix: string) => string;
   textMode: 'html' | 'svg';
+  measureText?: TextMeasure;
   media: 'badge' | 'player';
   hidden: ReadonlySet<number> | null;
   /** null 表示 frame 内部投影：既无编辑身份，也不暴露来源形状 ID。 */
@@ -56,6 +58,8 @@ export interface RenderElementOptions {
    *   （foreignObject 只有浏览器认，其他 SVG 渲染器会整块丢失文本）
   */
   textMode?: 'html' | 'svg';
+  /** 与已安装/嵌入字体同源的测量；HTML 仍由浏览器排版，此回调用于缩放及标点挤压。 */
+  measureText?: TextMeasure;
   /**
    * 直接渲染成隐藏的元素 id（`Slide.animations` 里的 target）。
    * 用于把「动画播到第 N 步」的状态固化进静态产物——播放时不要用它，
@@ -99,6 +103,7 @@ function createCtx(opts: RenderElementOptions): Ctx {
       ? nextGlobalId
       : (prefix) => `${localPrefix}${prefix}${++localUid}`,
     textMode,
+    measureText: opts.measureText,
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
     media: opts.media === 'player' && textMode === 'html' ? 'player' : 'badge',
     hidden: opts.hiddenElements && opts.hiddenElements.length ? new Set(opts.hiddenElements) : null,
@@ -156,7 +161,7 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
     + (opts.showComments ? renderComments(slide.comments, pres.width, pres.height) : '');
 
   const fontFaces = (pres.embeddedFonts ?? [])
-    .map((f) => `@font-face{font-family:'${f.family}';src:url(${f.src});font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};}`)
+    .map((f) => `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};}`)
     .join('');
   const styleTag = fontFaces ? `<style>${fontFaces}</style>` : '';
   const notes = opts.includeNotes && slide.notes
@@ -552,7 +557,7 @@ function renderText(
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
     // HTML 公共入口内部也做这一步；这里仅为独立 SVG 路径保留同一语义。
     if (t.autoFitCompute && !t.autoFitShape) {
-      const scale = resolveTextScale(t, w, h, undefined, {
+      const scale = resolveTextScale(t, w, h, ctx.measureText, {
         insets: marginsOverride,
         vert: vertOverride,
       });
@@ -565,7 +570,7 @@ function renderText(
     };
     return renderTextSvg(
       vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
-      w, h, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers,
+      w, h, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers, ctx.measureText,
     );
   }
   const html = renderTextBodyToHtml(t, w, h, {
@@ -573,6 +578,7 @@ function renderText(
     anchor: vAlignOverride,
     vert: vertOverride,
     includeEditMarkers: !!ctx.includeEditMarkers,
+    measureText: ctx.measureText,
   });
   return `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">${html}</foreignObject>`;
 }

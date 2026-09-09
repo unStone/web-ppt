@@ -2,6 +2,7 @@ import type { TextRun } from '../types';
 import { isFullWidth } from './cjk-punct';
 import { layoutMath } from './math-svg';
 import type { MathLayout } from './math-svg';
+import { escapeCssString } from './serialize';
 
 const MATH_FAMILY = "'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif";
 const FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
@@ -32,7 +33,7 @@ function stack(fonts: readonly string[], fallback: readonly string[]): string {
     const key = font.toLowerCase();
     if (font && !seen.has(key)) {
       seen.add(key);
-      out.push(`'${font}'`);
+      out.push(`'${escapeCssString(font)}'`);
     }
   }
   for (const font of fallback) {

@@ -188,10 +188,10 @@ function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: n
  * 供 HTML 路径使用：那条路的断行归浏览器管，我们只能**先判断**再决定要不要
  * 输出挤压标记。判断复用这里的分词与断行，两条路径的结论因此一致。
  */
-export function paraNeedsSqueeze(p: Paragraph, maxWidth: number, scale: number, wrapOn: boolean): boolean {
+export function paraNeedsSqueeze(p: Paragraph, maxWidth: number, scale: number, wrapOn: boolean, measurer?: TextMeasure): boolean {
   if (maxWidth <= 0 || !p.runs.some((run) => squeezeTotal(run.text) > 0)) return false;
   const runs = p.runs.map((run, runIndex) => ({ run, runIndex, bullet: false }));
-  return wrap(tokenize(runs, scale), maxWidth, wrapOn, p.indent).some((l) => l.squeezed);
+  return wrap(tokenize(runs, scale, measurer), maxWidth, wrapOn, p.indent).some((l) => l.squeezed);
 }
 
 // ---------------- 渲染 ----------------

@@ -32,6 +32,7 @@ export class TextEditorController {
   private activeCell: TableCellAddress | null = null;
   private root: HTMLDivElement | null = null;
   private composing = false;
+  private fontsPending = false;
   private composition: CompositionSnapshot | null = null;
   private pendingFormat: PendingTextFormat = { props: {}, clearSource: false };
   private staticStale = false;
@@ -238,6 +239,7 @@ export class TextEditorController {
     this.activeCell = null;
     this.composing = false;
     this.composition = null;
+    this.fontsPending = false;
     this.resetPendingFormat();
     this.staticStale = false;
     this.autofit.reset();
@@ -292,6 +294,14 @@ export class TextEditorController {
   }
 
   refreshStatic(): void { if (this.activeId) this.hideStaticText(); }
+
+  refreshFonts(): void {
+    // 字体异步到达时，IME 持有的 DOM 必须保留到 compositionend。
+    if (this.composing) { this.fontsPending = true; return; }
+    this.fontsPending = false;
+    this.autofit.reset();
+    if (this.activeId) this.render(this.options.editor.selection);
+  }
 
   destroy(): void {
     this.close(false);
@@ -355,7 +365,10 @@ export class TextEditorController {
           to: textPositionToIndex(model, positions.to),
         } : null;
     });
-    root.addEventListener('compositionend', () => this.endComposition());
+    root.addEventListener('compositionend', () => {
+      this.endComposition();
+      if (this.fontsPending) this.refreshFonts();
+    });
     root.addEventListener('pointerup', () => this.syncSelection());
     root.addEventListener('keyup', () => this.syncSelection());
   }

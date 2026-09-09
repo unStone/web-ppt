@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
 <defs>
-<style>@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:400;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url(blob:<runtime>);font-weight:700;font-style:italic;}</style>
+<style>@font-face{font-family:'WebPPT Embedded';src:url('blob:<runtime>');font-weight:400;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url('blob:<runtime>');font-weight:700;font-style:normal;}@font-face{font-family:'WebPPT Embedded';src:url('blob:<runtime>');font-weight:700;font-style:italic;}</style>
 </defs>
 <rect width="1280" height="720" fill="rgb(255,255,255)"/>
 <g data-el="101" style="transform-box:fill-box;transform-origin:center">

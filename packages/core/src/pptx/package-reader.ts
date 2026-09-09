@@ -158,6 +158,12 @@ export class Pkg {
     return font ? this.assetStore.store(`font|${path}`, font.data, font.mime, path) : null;
   }
 
+  fontSourceUrl(path: string): string | null {
+    const raw = this.files[path];
+    // 原始容器与已解码字体不能共用 sourcePart 缓存，否则版式重解析会把 EOT 当作 TTF。
+    return raw ? this.assetStore.store(`font-source|${path}`,raw,'application/octet-stream') : null;
+  }
+
   /** 释放全部 blob URL，并清空缓存以便 zip 数据被回收。 */
   dispose(): void {
     this.assetStore.dispose();

@@ -1,5 +1,5 @@
 import { parse } from '@web-ppt/core';
-import type { ParseOptions, Presentation } from '@web-ppt/core';
+import type { EmbeddedFont, ParseOptions, Presentation } from '@web-ppt/core';
 import {
   createDoc, disposeDoc, Editor, presentationSlideIdsByPart,
 } from '@web-ppt/edit-core';
@@ -53,6 +53,8 @@ async function waitForDecision<T>(promise: Promise<T>, signal: AbortSignal | und
 }
 
 export interface OpenEditorOptions extends CreateDocOptions, EditorOptions {
+  /** 由宿主字体服务解码和安装时选 source；默认沿用 SDK 的直接预览行为。 */
+  embeddedFonts?: ParseOptions['embeddedFonts'];
   password?: ParseOptions['password'];
   recovery?: RecoveryOptions;
 }
@@ -64,17 +66,25 @@ export interface EditorSession {
   readonly formatPainter: FormatPainter;
   readonly textSearch: TextSearch;
   readonly disposed: boolean;
+  /** 原始字体容器由会话持有；使用前须检查许可与容器，关闭后 URL 失效。 */
+  readonly embeddedFontSources?: readonly Readonly<EmbeddedFont>[];
   /**
    * 取得当前编辑投影，供图片导出等只读能力直接消费。
    * 资源 URL 仍由会话拥有，因此返回值只在会话释放前有效。
    */
   toPresentation(): Presentation;
+  /**
+   * 仅更新预览/图片及 SVG 导出的字体资源，不写入 PPTX 或历史；URL 仍由调用者拥有。
+   * 宿主已安装并加载 FontFace 时设置 browserFontsReady，DOM 预览可复用它们。
+   */
+  setFontResources(fonts: readonly EmbeddedFont[], options?: {browserFontsReady?: boolean}): void;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
   mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
   dispose(): void;
 }
 
 class BrowserEditorSession implements EditorSession {
+  readonly embeddedFontSources?: readonly Readonly<EmbeddedFont>[];
   readonly editor: Editor;
   readonly recovery: RecoverySessionController | null;
   readonly formatPainter: SessionFormatPainter;
@@ -92,6 +102,7 @@ class BrowserEditorSession implements EditorSession {
   ) {
     this.editor = editor;
     this.recovery = recovery;
+    this.embeddedFontSources = presentation.embeddedFontSources;
     this.formatPainter = new SessionFormatPainter(editor);
     this.textSearch = new SessionTextSearch(editor);
     this.sourceSlideIdsByPart = presentationSlideIdsByPart(editor.doc);
@@ -204,6 +215,13 @@ class BrowserEditorSession implements EditorSession {
   mount(container: HTMLElement, options: SlideEditorOptions = {}): SlideEditor {
     sessionState(this);
     return createSlideEditor(container, this, options);
+  }
+
+  setFontResources(fonts: readonly EmbeddedFont[], options: {browserFontsReady?: boolean} = {}): void {
+    const state = sessionState(this);
+    state.presentation.embeddedFonts = fonts.map(font => ({ ...font }));
+    state.browserFontsReady = options.browserFontsReady === true;
+    for (const refresh of state.fontRefresh) refresh();
   }
 
   mountSelectionPane(
@@ -320,6 +338,7 @@ export async function openEditor(
     }
   }
   const presentation = await parse(parseInput, {
+    embeddedFonts: options.embeddedFonts,
     edit: true,
     keepPackage: true,
     lazy: false,

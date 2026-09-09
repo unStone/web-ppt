@@ -34,6 +34,22 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/fonts.js"
     },
+    "./glyphs": {
+      "types": "./dist/glyphs/index.d.ts",
+      "import": "./dist/glyphs.js"
+    },
+    "./glyphs/harfbuzz": {
+      "types": "./dist/glyphs/harfbuzz.d.ts",
+      "import": "./dist/glyphs-harfbuzz.js"
+    },
+    "./glyphs/worker": {
+      "types": "./dist/glyphs/worker.d.ts",
+      "import": "./dist/glyphs-worker.js"
+    },
+    "./glyphs/browser": {
+      "types": "./dist/glyphs/browser.d.ts",
+      "import": "./dist/glyphs-browser.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

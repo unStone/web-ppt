@@ -17,7 +17,7 @@ export class VideoScene {
   async page(slide: Slide, hidden: readonly number[]): Promise<SVGGElement> {
     const source = await slideToSvgFile(this.pres,slide,hidden,{ showComments:this.showComments });
     // 独立图片上下文不会读取外链；留下外链意味着静默缺图，应拒绝这个导出。
-    if (/<image\b[^>]*\bhref="(?:blob:|https?:)/.test(source) || /@font-face\{[^}]*src:url\((?:blob:|https?:)/.test(source)) throw new Error('视频资源内联失败');
+    if (/<image\b[^>]*\bhref="(?:blob:|https?:)/.test(source) || /@font-face\{[^}]*src:url\(['"]?(?:blob:|https?:)/.test(source)) throw new Error('视频资源内联失败');
     const parsed = new DOMParser().parseFromString(source,'image/svg+xml');
     if (parsed.querySelector('parsererror')) throw new Error('视频页面 SVG 无效');
     const group = document.createElementNS(NS,'g'); group.style.transformBox = 'fill-box'; group.style.transformOrigin = 'center';

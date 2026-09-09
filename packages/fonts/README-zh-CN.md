@@ -1,10 +1,12 @@
 # @web-ppt/fonts
 
+需要显式字体字节、定位字形、轮廓和 UTF-16 原文簇时，可选用 `@web-ppt/fonts/glyphs`，以及 `/glyphs/harfbuzz`、`/glyphs/worker`、`/glyphs/browser` 适配。字体包不携带字体字节、HarfBuzz 或 Cordis；默认入口保持原有网页字体加载能力。见[API 与验收复现](../../docs/font-glyphs.md)。
+
 [English](README.md) · **简体中文**
 
 PPT 里指定的字体，本机往往没有。这个包负责换一份**免费的、能自动按需下载的**替代字体，让文本仍然按接近原样的方式排版。
 
-包里**一个字节的字体都没有**（gzip 2.8KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
+包里**一个字节的字体都没有**（默认入口 gzip 2.8KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
 
 ```bash
 npm i @web-ppt/fonts

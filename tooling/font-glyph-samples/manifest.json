@@ -1,0 +1,82 @@
+[
+  {
+    "name": "bitmap.ttf",
+    "bytes": 21656,
+    "sha256": "81b5d91a79a9c8119a0dd9454d28aeb7403a2daca85e3e2067fb9e840b4f57df"
+  },
+  {
+    "name": "cff-OFL.txt",
+    "bytes": 4301,
+    "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+  },
+  {
+    "name": "cff.otf",
+    "bytes": 11464,
+    "sha256": "ceb9bb92e0f19a9a10d419a11a23a799a559715061f9426fce5afaeda9a5c3af"
+  },
+  {
+    "name": "chinese-OFL.txt",
+    "bytes": 4388,
+    "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+  },
+  {
+    "name": "chinese.ttf",
+    "bytes": 12216,
+    "sha256": "4aca7665622547f2af8afccb4869348cfdb71f47c35204110a3e15a4ef951edf"
+  },
+  {
+    "name": "collection.ttc",
+    "bytes": 37780,
+    "sha256": "23cbd4a56f9d56303f084fb37a659c87a717caee02acb8ea5aef0ee196de4dd5"
+  },
+  {
+    "name": "editable.ttf",
+    "bytes": 21656,
+    "sha256": "2a1a66ec0b3401c5f9bdebb99d3df5770ac024a01a9b43a72f852f0c92872289"
+  },
+  {
+    "name": "latin-OFL.txt",
+    "bytes": 4377,
+    "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb"
+  },
+  {
+    "name": "latin-bold.ttf",
+    "bytes": 22284,
+    "sha256": "a3ba97b115cfbb7eed00847aa5b39d73611876e44e7afcdb982158a2a01f6e74"
+  },
+  {
+    "name": "latin.ttf",
+    "bytes": 21656,
+    "sha256": "50dbc5b2e5f0022918db4f037624fe45b985d6748afc2b59566ecd3d3725b4c8"
+  },
+  {
+    "name": "latin.woff",
+    "bytes": 12292,
+    "sha256": "8dda6f5247047911cf5369724772edb238c2190c16c62590e91b9bcdfa408116"
+  },
+  {
+    "name": "latin.woff2",
+    "bytes": 9960,
+    "sha256": "78439dfe5cc1ba6ce0f619ba0281080b113bbb941465e7695d08414e926a5f56"
+  },
+  {
+    "name": "no-subset.ttf",
+    "bytes": 21656,
+    "sha256": "cc9e92e8d7254273a861b600c058641e17e4636d85567753ff17a3334361d8cb"
+  },
+  {
+    "name": "preview.ttf",
+    "bytes": 21656,
+    "sha256": "b88cc572ddf87a7aad6c24fb31eb8987dca445fea621f260c9e2c0849378c713"
+  },
+  {
+    "name": "restricted.ttf",
+    "bytes": 21656,
+    "sha256": "7fd50c8fe2ac63063a749439bfee17e1fdb86a2f2c3b7a245fdf59a386ef2b7d"
+  },
+  {
+    "name": "variable.ttf",
+    "bytes": 20224,
+    "sha256": "f0288d6114d01df1f35466bb7107baa58d6ec866ae07f28ca05643140ef8d075"
+  }
+]

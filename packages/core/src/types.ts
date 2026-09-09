@@ -34,6 +34,8 @@ export interface Presentation {
   source: 'pptx' | 'ppt';
   /** 嵌入字体：字体名 → @font-face src（blob URL） */
   embeddedFonts?: EmbeddedFont[];
+  /** 编辑模式保留的原始字体容器；按需字体服务须先检查外层权限再解码。 */
+  embeddedFontSources?: EmbeddedFont[];
   /**
    * 释放本次解析创建的所有 blob URL。
    * 不再需要这份演示文稿时调用；大文件（数十 MB 图片）不释放会一直占着内存。

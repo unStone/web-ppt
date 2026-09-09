@@ -10,6 +10,8 @@ interface SessionState {
   views: Set<SlideEditor>;
   panes: Set<SelectionPane>;
   textOwner: TextEditingOwner | null;
+  fontRefresh: Set<() => void>;
+  browserFontsReady?: boolean;
 }
 
 interface TextEditingOwner { releaseTextEditing(): void }
@@ -17,7 +19,7 @@ interface TextEditingOwner { releaseTextEditing(): void }
 const states = new WeakMap<EditorSession, SessionState>();
 
 export function registerSession(session: EditorSession, presentation: Presentation, copy: typeof copyElements = copyElements): void {
-  states.set(session, { presentation, copy, views: new Set(), panes: new Set(), textOwner: null });
+  states.set(session, { presentation, copy, views: new Set(), panes: new Set(), textOwner: null, fontRefresh: new Set() });
 }
 
 export function sessionState(session: EditorSession): SessionState {

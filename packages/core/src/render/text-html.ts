@@ -10,9 +10,10 @@ import { isOpening, squeezeEm } from './cjk-punct';
 import { layoutText, paraNeedsSqueeze, resolveTextScale } from './text-layout';
 import type { TextLayoutLine } from './text-layout-types';
 import { mathOf } from './text-measure';
+import type { TextMeasure } from './text-measure';
 import { withHyperlink } from './hyperlink';
 import { bulletTextRun, decorateText } from './text-decoration';
-import { escapeXml as esc, round as r } from './serialize';
+import { escapeXml as esc, escapeCssString as cssString, round as r } from './serialize';
 
 const ANCHOR_CSS: Record<TextBody['anchor'], string> = {
   top: 'flex-start',
@@ -44,21 +45,7 @@ export interface RenderTextBodyHtmlOptions {
   layout?: 'browser' | 'engine';
   /** 已解决的有效字号比例；编辑输入突发期用它避免重复求解 normAutofit。 */
   scale?: number;
-}
-
-/** 字体名放在 CSS 单引号字符串里，必须同时挡住 CSS 与外层 HTML 属性边界。 */
-function cssString(value: string): string {
-  let out = '';
-  for (const ch of value) {
-    const cp = ch.codePointAt(0)!;
-    if (ch === "'" || ch === '"' || ch === '\\' || ch === '<' || ch === '>' || ch === '&'
-      || cp < 0x20 || cp === 0x7f) {
-      out += `\\${cp.toString(16)} `;
-    } else {
-      out += ch;
-    }
-  }
-  return out;
+  measureText?: TextMeasure;
 }
 
 /** 字体栈去重，避免主题字体与中文回退重复。 */
@@ -145,12 +132,12 @@ function fittedText(
   t: TextBody,
   w: number,
   h: number,
-  opts: Pick<RenderTextBodyHtmlOptions, 'insets' | 'vert' | 'scale'>,
+  opts: Pick<RenderTextBodyHtmlOptions, 'insets' | 'vert' | 'scale' | 'measureText'>,
 ): TextBody {
   const fixedScale = opts.scale;
   const scale = Number.isFinite(fixedScale) && fixedScale! > 0
     ? fixedScale!
-    : resolveTextScale(t, w, h, undefined, { insets: opts.insets, vert: opts.vert });
+    : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
   return scale === t.fontScale ? t : { ...t, fontScale: scale };
 }
 
@@ -300,6 +287,7 @@ function renderEngineTextBodyToHtml(
     anchor: opts.anchor,
     vert: opts.vert,
     scale: opts.scale,
+    measureText: opts.measureText,
   });
   const linesByParagraph = source.paragraphs.map((_, paragraphIndex) =>
     layout.lines.filter((line) => line.paragraphIndex === paragraphIndex));
@@ -335,7 +323,7 @@ export function renderTextBodyToHtml(
     const first = p.runs[0];
     const baseSize = (first?.size ?? 18) * scale;
     const squeeze = t.wrap
-      && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true);
+      && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true, opts.measureText);
     const runs = p.runs.map((run, ri) =>
       renderRun(run, scale, squeeze, markers ? ` data-r="${pi}.${ri}"` : '')).join('');
 

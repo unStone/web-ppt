@@ -14,6 +14,13 @@ function xmlUrl(value: string): string {
   return value.split('&amp;').join('&').split('&quot;').join('"').split('&apos;').join("'");
 }
 
+function cssUrl(value: string): string {
+  return value.replace(/\\([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n])/gi,(_,hex: string | undefined,char: string) => {
+    const code = hex === undefined ? 0 : Number.parseInt(hex,16);
+    return hex === undefined ? char : String.fromCodePoint(code > 0 && code <= 0x10ffff ? code : 0xfffd);
+  });
+}
+
 async function blobDataUri(blob: Blob): Promise<string> {
   if (typeof FileReader === 'undefined') throw new Error('当前浏览器缺少 FileReader，无法内联导出资源');
   return new Promise<string>((resolve, reject) => {
@@ -26,23 +33,24 @@ async function blobDataUri(blob: Blob): Promise<string> {
 
 /** 把 SVG 中的会话与外链资源替换成 data URI，使其可被 <img> 独立加载。 */
 async function inlineImages(svg: string, strict = false): Promise<string> {
-  const encoded = new Set<string>();
+  const encoded = new Map<string,string>();
   for (const match of svg.matchAll(/<image\b[^>]*\bhref="((?:blob:|https?:\/\/)[^"]+)"/g)) {
-    encoded.add(match[1]);
+    encoded.set(match[1],xmlUrl(match[1]));
   }
-  for (const match of svg.matchAll(/@font-face\{[^}]*\bsrc:url\(((?:blob:|https?:\/\/)[^)]+)\)/g)) {
-    encoded.add(match[1]);
+  for (const match of svg.matchAll(/@font-face\{[^}]*\bsrc:url\((?:'((?:blob:|https?:\/\/)[^']+)'|"((?:blob:|https?:\/\/)[^"]+)"|((?:blob:|https?:\/\/)[^)\s]+))\)/g)) {
+    const value = match[1] ?? match[2] ?? match[3];
+    encoded.set(value,cssUrl(value));
   }
   if (!encoded.size) return svg;
-  const loads = [...encoded].map(async (value) => {
+  const loads = [...encoded].map(async ([value,url]) => {
     try {
-      const resource = await fetch(xmlUrl(value));
+      const resource = await fetch(url);
       if (!resource.ok) throw new Error(`HTTP ${resource.status}`);
       return [value, await blobDataUri(await resource.blob())] as const;
     } catch (error) {
       if (strict) {
         const detail = error instanceof Error ? error.message : String(error);
-        throw new Error(`无法内联导出资源 ${xmlUrl(value)}：${detail}`);
+        throw new Error(`无法内联导出资源 ${url}：${detail}`);
       }
       // 维持单页导出的旧行为：资源内联失败时仍让 SVG 加载器尝试原地址。
       return [value, value] as const;

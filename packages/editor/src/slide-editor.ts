@@ -80,6 +80,7 @@ class DomSlideEditor implements SlideEditor {
   private readonly unsubscribe: () => void;
   private readonly unbindLinkEvent: () => void;
   private unbindEditEvents: (() => void) | null = null;
+  private readonly refreshFonts = () => { this.render(); this.textEditor.refreshFonts(); };
   constructor(container: HTMLElement, session: EditorSession, options: SlideEditorOptions = {}) {
     if (session.disposed) throw new Error('不能挂载已经释放的编辑会话');
     const state = sessionState(session);
@@ -130,6 +131,7 @@ class DomSlideEditor implements SlideEditor {
 
     this.domRenderer = new SlideDomRenderer({
       presentation: state.presentation, editor: session.editor,
+      browserFontsReady: () => state.browserFontsReady === true,
       staticLayer: this.staticLayer, interactionLayer: this.interactionLayer,
       slideId: () => this.currentSlide, zoom: () => this.currentZoom,
       idPrefix: this.idPrefix, textMode: this.textMode,
@@ -172,6 +174,7 @@ class DomSlideEditor implements SlideEditor {
       editable: () => this.currentMode === 'edit',
       gestureActive: () => this.hasActiveGesture(),
       insertImage: (file) => this.imageInsertion.insert(file),
+      onError: options.onError,
     });
 
     this.marqueeGesture = new MarqueeGestureController({
@@ -286,6 +289,7 @@ class DomSlideEditor implements SlideEditor {
     try {
       container.append(this.element);
       state.views.add(this);
+      state.fontRefresh.add(this.refreshFonts);
     } catch (error) {
       this.unsubscribe();
       this.textSearch.destroy();
@@ -485,6 +489,7 @@ class DomSlideEditor implements SlideEditor {
     this.unbindEditEvents = null;
     this.unbindLinkEvent();
     sessionState(this.session).views.delete(this);
+    sessionState(this.session).fontRefresh.delete(this.refreshFonts);
     this.element.remove();
   }
 

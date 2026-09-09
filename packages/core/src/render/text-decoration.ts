@@ -1,4 +1,5 @@
 import type { TextRun, TextUnderlineStyle } from '../types';
+import {escapeXml} from './serialize';
 
 function underlineStyle(style: TextUnderlineStyle): string {
   if (style === 'dbl') return 'double';
@@ -34,11 +35,16 @@ export function textDecorationStyles(run: TextRun): {
   };
 }
 
-export function decorateText(content: string, run: TextRun, tag: 'span' | 'tspan'): string {
+export function decorateText(content: string, run: TextRun, tag: 'span' | 'tspan', fill = run.color): string {
   const styles = textDecorationStyles(run);
   let out = content;
   if (styles.strike) out = `<${tag} style="${styles.strike}">${out}</${tag}>`;
-  if (styles.underline) out = `<${tag} style="${styles.underline}">${out}</${tag}>`;
+  if (styles.underline) {
+    // SVG 装饰线继承声明节点的 fill；部分浏览器忽略 text-decoration-color，内层须恢复文字本身的填充。
+    out = tag === 'tspan' && run.underlineColor
+      ? `<tspan style="${styles.underline}" fill="${escapeXml(run.underlineColor)}"><tspan fill="${escapeXml(fill)}">${out}</tspan></tspan>`
+      : `<${tag} style="${styles.underline}">${out}</${tag}>`;
+  }
   return out;
 }
 
