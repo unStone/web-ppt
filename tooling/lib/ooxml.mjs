@@ -25,18 +25,19 @@ function chunk(type, data) {
   return out;
 }
 
-export function makePng(w, h, pixelFn, dpi) {
-  const raw = new Uint8Array(h * (1 + w * 3));
+export function makePng(w, h, pixelFn, dpi, alpha = false) {
+  const channels = alpha ? 4 : 3;
+  const raw = new Uint8Array(h * (1 + w * channels));
   for (let y = 0; y < h; y++) {
-    const row = y * (1 + w * 3);
+    const row = y * (1 + w * channels);
     raw[row] = 0;
-    for (let x = 0; x < w; x++) raw.set(pixelFn(x, y), row + 1 + x * 3);
+    for (let x = 0; x < w; x++) raw.set(pixelFn(x, y), row + 1 + x * channels);
   }
   const ihdr = new Uint8Array(13);
   const dv = new DataView(ihdr.buffer);
   dv.setUint32(0, w);
   dv.setUint32(4, h);
-  ihdr.set([8, 2, 0, 0, 0], 8);
+  ihdr.set([8, alpha ? 6 : 2, 0, 0, 0], 8);
   const physical = dpi === undefined ? [] : [chunk('pHYs', (() => {
     const data = new Uint8Array(9);
     const view = new DataView(data.buffer);

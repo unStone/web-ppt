@@ -1204,6 +1204,7 @@ group('加密文档');
 
     err = null;
     try { await lib.parse(bytes); } catch (e) { err = e; }
+    eq(`${file} 缺密码抛 PasswordRequiredError`, err && err.name, 'PasswordRequiredError');
     // 回归：判据在 Current User 流的 headerToken 上。不看这一处就只会得到
     // 「.ppt 中未找到幻灯片」——POI 语料里 5 个加密文件全被这样误诊过
     check(`${file} 缺密码时诊断为「已加密」而非「找不到幻灯片」`,
@@ -1234,6 +1235,7 @@ group('加密文档');
 
     err = null;
     try { await lib.parse(bytes); } catch (e) { err = e; }
+    eq(`${file} 缺密码抛 PasswordRequiredError`, err && err.name, 'PasswordRequiredError');
     check(`${file} 不给密码时提示明确`, err && /密码/.test(err.message), err && err.message);
   }
 

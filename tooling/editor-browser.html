@@ -434,7 +434,7 @@
       const fontSession = await openEditor(await load('sample-embedfont.pptx'), { idPrefix: 'browser-font-' });
       fontSession.mount(fontMount, { mode: 'view' });
       const fontFaces = (fontMount.innerHTML.match(/@font-face/g) ?? []).length;
-      if (fontFaces < 3 || !fontMount.innerHTML.includes('src:url(blob:')) {
+      if (fontFaces < 3 || !/src:url\(['"]?blob:/.test(fontMount.innerHTML)) {
         throw new Error(`嵌入字体没有进入源 Presentation 的 SVG：${fontFaces}`);
       }
 

@@ -16,8 +16,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gzipSync } from 'node:zlib';
 import { readCounts } from './lib/measured.mjs';
+import { moduleClosure } from './lib/module-closure.mjs';
 import { SITE_PAGES, duplicateIds } from './lib/unique-ids.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -226,7 +226,8 @@ if (!siteStat) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy',
+    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
+    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -249,10 +250,11 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
     ['README.en.md', new Set()],
     ['packages/site/index.html', new Set()],
   ]);
+  // 多入口构建可能只剩一个转发文件；默认加载成本必须包含它的全部相对静态分块。
   const entryGzipKb = (name) => {
     const dir = name.replace('@web-ppt/', '');
     const entry = join(root, 'packages', dir, json(`packages/${dir}/package.json`).main.replace('./', ''));
-    return existsSync(entry) ? gzipSync(readFileSync(entry)).length / 1024 : null;
+    return existsSync(entry) ? moduleClosure(entry).gzip / 1024 : null;
   };
   const compareEntrySize = (where, name, claimed, precision = 2) => {
     sizeClaims++;
@@ -268,7 +270,7 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
     }
     const drift = Math.abs(actual - Number(claimed)) / actual;
     check(`${where} 称 ${name} 为 ${claimed}KB`, drift <= TOLERANCE,
-      `实测 ${actual.toFixed(2)}KB gzip（偏差 ${(drift * 100).toFixed(1)}%）`);
+      `实测 ${actual.toFixed(2)}KB gzip，含相对静态分块、不含 peer（偏差 ${(drift * 100).toFixed(1)}%）`);
     if (drift > NUDGE && drift <= TOLERANCE) {
       console.log(`  \x1b[33m~ ${where} 的 ${name} 已漂 ${(drift * 100).toFixed(1)}%（实测 ${actual.toFixed(precision)}KB）\x1b[0m`);
     }
@@ -329,6 +331,9 @@ if (!counts) {
   console.log('  \x1b[33m跳过：out/verify/counts.json 不存在，先 npm test\x1b[0m');
 } else {
   const COUNT_CLAIMS = [
+    ['README.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    ['README.en.md', /Font Provider ([\d,]+) \+ Worker ([\d,]+) \+ document ([\d,]+) \+ measurement ([\d,]+) assertions/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
     ['README.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['README.en.md', /([\d,]+) chart-hierarchy assertions/, ['chartHierarchy']],
     ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],

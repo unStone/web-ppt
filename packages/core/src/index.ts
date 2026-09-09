@@ -5,7 +5,7 @@ import { setChartParser } from './chart/hook';
 import { setMetafileDecoder } from './metafile';
 import { Cfb } from './ppt/cfb';
 import { getDecryptor, setDecryptor, setPptDecryptor } from './crypto/hook';
-import { decryptOoxml } from './crypto/ooxml';
+import { decryptOoxml, PasswordRequiredError } from './crypto/ooxml';
 import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
@@ -58,7 +58,7 @@ export { collectFonts } from './font/collect';
 export type { FontUsage } from './font/collect';
 export { setDecryptor, setPptDecryptor, hasDecryptor } from './crypto/hook';
 export type { Decryptor, PptDecryptor } from './crypto/hook';
-export { WrongPasswordError, encryptionScheme } from './crypto/ooxml';
+export { PasswordRequiredError, WrongPasswordError, encryptionScheme } from './crypto/ooxml';
 export { sha256 } from './crypto/primitives';
 export { metafileToSvg, detectMetafile } from './image';
 export { readImageMetadata };
@@ -71,6 +71,8 @@ setDecryptor(decryptOoxml);
 setPptDecryptor(decryptPptStream);
 
 export interface ParseOptions {
+  /** 字体由宿主 Provider 接管时只保留原始容器，避免提前同步解压与重复持有。默认 decode。 */
+  embeddedFonts?: 'decode' | 'source';
   /**
    * 惰性解析幻灯片（默认开启，仅对 .pptx 生效）。
    * 每页在首次访问时才解析，200 页文件首屏约快 11 倍。
@@ -119,7 +121,7 @@ export async function parse(
       if (!enc.info) throw new Error('该文件已加密，但 EncryptionInfo 流缺失，文件可能已损坏');
       const decrypt = getDecryptor();
       if (!decrypt) throw new Error('该文件已加密，但未注入解密器（setDecryptor）');
-      if (opts.password === undefined) throw new Error('该文件已加密，请通过 parse(input, { password }) 提供打开密码');
+      if (opts.password === undefined) throw new PasswordRequiredError();
       return parsePptx(decrypt(enc.info, enc.pkg, opts.password), opts);
     }
     return parsePpt(bytes, opts.password, opts.edit === true);
@@ -167,6 +169,7 @@ function rehydrateAssets(pres: Presentation, urls: (string | null)[]): void {
     walk(s.elements);
   }
   for (const f of pres.embeddedFonts ?? []) f.src = map(f.src) ?? '';
+  for (const f of pres.embeddedFontSources ?? []) f.src = map(f.src) ?? '';
 }
 
 let workerSeq = 0;

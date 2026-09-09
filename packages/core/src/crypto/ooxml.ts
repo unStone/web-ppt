@@ -28,6 +28,14 @@ export class WrongPasswordError extends Error {
   }
 }
 
+/** 调用方应向用户索取打开密码后，用同一份输入重新调用 parse。 */
+export class PasswordRequiredError extends Error {
+  constructor() {
+    super('该文件已加密，需要提供打开密码');
+    this.name = 'PasswordRequiredError';
+  }
+}
+
 function concat(...parts: Uint8Array[]): Uint8Array {
   const total = parts.reduce((n, p) => n + p.length, 0);
   const out = new Uint8Array(total);

@@ -42,7 +42,10 @@ check('adapter 与 React/Vue 共享 EditorSession',
     && contains('packages/vue/src/web-ppt-editor.ts', ['EditorSession']));
 check('官网工具栏覆盖 0.6 可视入口与按需图片导出',
   contains('packages/site/editor.html', ['addTable', 'exportImages', 'editorInspector'])
-    && contains('packages/site/src/editor-page.ts', ['createEditorFileActions', 'onTouchNavigate'])
+    && contains('packages/site/src/editor-page.ts', ["import('./editor-application')", 'createSiteEditorApplication'])
+    && contains('packages/site/src/editor-application.ts', ['context.plugin(editorPagePlugin', 'page.fileHost', 'page.connect(application)', 'context.plugin(editorFilesPlugin', 'context.editorFiles'])
+    && contains('packages/site/src/editor-page-plugin.ts', ['fileHost: { buttons', 'application?.files', 'onTouchNavigate: viewport.onTouchNavigate'])
+    && contains('packages/site/src/editor-files-plugin.ts', ['createEditorFileActions', "ctx.provide('editorFiles'", 'exportImages'])
     && contains('packages/site/src/editor-file-actions.ts', [
       "import('@web-ppt/core/image-zip')", 'session.toPresentation()', 'busy',
     ])

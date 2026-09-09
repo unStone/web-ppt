@@ -49,7 +49,9 @@ check('三套模板混合补丁接入协同主门禁',
   existsSync(join(root, 'tooling/lib/v07-collab-contract.mjs'))
     && contains('tooling/test-collab.mjs', ['runV07CollabContract']));
 check('网站选择器按需加载且有真实浏览器下载契约',
-  contains('packages/site/src/editor-page.ts', ["import('./editor-template-picker')"])
+  contains('packages/site/src/editor-page.ts', ['createSiteEditorApplication', 'application.opening?.create()', 'application.opening?.open(file', 'application.opening?.loadExample'])
+    && contains('packages/site/src/editor-application.ts', ['context.plugin(editorOpenPlugin', 'host: openHost', "context.get('editorOpening')"])
+    && contains('packages/site/src/editor-open-plugin.ts', ["import('./editor-template-picker')", 'chooseNewDocument(signal)'])
     && contains('packages/site/src/editor-template-picker.ts', [
       "from '@web-ppt/edit-core/templates'", 'listBuiltinTemplates()', 'createPptxFromTemplate',
     ])
