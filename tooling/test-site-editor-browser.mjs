@@ -1,8 +1,16 @@
 import { runSiteChartHierarchyBrowserContract } from './lib/site-chart-hierarchy-browser-contract.mjs';
+import { runSiteFontBrowserContract } from './lib/site-font-browser-contract.mjs';
+import { runSiteEditorLifecycleBrowserContract } from './lib/site-editor-lifecycle-browser-contract.mjs';
+import { runSiteRecoveryBrowserContract } from './lib/site-recovery-browser-contract.mjs';
+import { runSiteToolsBrowserContract } from './lib/site-tools-browser-contract.mjs';
+import { runSiteFilesBrowserContract } from './lib/site-files-browser-contract.mjs';
+import { runSiteChartSharedBrowserContract } from './lib/site-chart-shared-browser-contract.mjs';
+import { runSiteChartLegacyBrowserContract } from './lib/site-chart-legacy-browser-contract.mjs';
 import { runSitePptSaveBrowserContract } from './lib/site-ppt-save-browser-contract.mjs';
 import { runSitePortableClipboardBrowserContract } from './lib/site-portable-clipboard-browser-contract.mjs';
 import { runSiteVideoBrowserContract } from './lib/site-video-browser-contract.mjs';
 import { runSitePdfBrowserContract } from './lib/site-pdf-browser-contract.mjs';
+import {siteFontWorkerFixture} from './lib/site-font-worker-fixture.mjs';
 import { runSiteThreeDBrowserContract } from './lib/site-three-d-browser-contract.mjs';
 import { runSiteMetafileBrowserContract } from './lib/site-metafile-browser-contract.mjs';
 import { runStandaloneCommentsBrowserContract } from './lib/standalone-comments-browser-contract.mjs';
@@ -35,6 +43,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const commentEditOnly = process.argv.includes('--comments-edit-only');
 const resizeOnly = process.argv.includes('--resize-only');
 const chartHierarchyOnly = process.argv.includes('--chart-hierarchy-only');
+const chartSharedOnly = process.argv.includes('--chart-shared-only');
+const chartLegacyOnly = process.argv.includes('--chart-legacy-only');
+const lifecycleOnly = process.argv.includes('--lifecycle-only');
+const recoveryOnly = process.argv.includes('--recovery-only');
 const chartDesignOnly = process.argv.includes('--chart-design-only');
 const pptSaveOnly = process.argv.includes('--ppt-save-only');
 const portableCopyOnly = process.argv.includes('--portable-copy-only');
@@ -53,6 +65,10 @@ mkdirSync(bundleDir, { recursive: true });
 const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
+  ['@web-ppt/fonts/glyphs/browser', join(root, 'packages/fonts/src/glyphs/browser.ts')],
+  ['@web-ppt/fonts/glyphs/worker', join(root, 'packages/fonts/src/glyphs/worker.ts')],
+  ['@web-ppt/fonts/glyphs/harfbuzz', join(root, 'packages/fonts/src/glyphs/harfbuzz.ts')],
+  ['@web-ppt/fonts/glyphs', join(root, 'packages/fonts/src/glyphs/index.ts')],
   ['@web-ppt/edit-core/ppt', join(root, 'packages/edit-core/src/ppt/index.ts')],
   ['@web-ppt/viewer-core/video', join(root, 'packages/viewer-core/src/video.ts')],
   ['@web-ppt/viewer-core/comments', join(root, 'packages/viewer-core/src/comments.ts')],
@@ -77,15 +93,19 @@ const aliases = [
   ['@web-ppt/editor/media', join(root, 'packages/editor/src/media/index.ts')],
   ['@web-ppt/edit-core/media', join(root, 'packages/edit-core/src/media/index.ts')],
   ['@web-ppt/editor/chart', join(root, 'packages/editor/src/chart/index.ts')],
+  ['@web-ppt/editor/chart-shared', join(root, 'packages/editor/src/chart-shared/index.ts')],
   ['@web-ppt/editor/adjustments', join(root, 'packages/editor/src/adjustments/index.ts')],
   ['@web-ppt/core/chart-edit', join(root, 'packages/core/src/chart-edit.ts')],
   ['@web-ppt/core/pdf', join(root, 'packages/core/src/pdf.ts')],
+  ['@web-ppt/core/pdf/vector', join(root, 'packages/core/src/pdf/vector.ts')],
+  ['@web-ppt/core/pdf/vector/browser', join(root, 'packages/core/src/pdf/vector-browser.ts')],
   ['@web-ppt/core/image-zip', join(root, 'packages/core/src/image-zip.ts')],
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core/templates', join(root, 'packages/edit-core/src/templates/index.ts')],
   ['@web-ppt/edit-core/chart', join(root, 'packages/edit-core/src/chart/index.ts')],
+  ['@web-ppt/edit-core/chart-shared', join(root, 'packages/edit-core/src/chart-shared/index.ts')],
   ['@web-ppt/edit-core/generate', join(root, 'packages/edit-core/src/generate/index.ts')],
   ['@web-ppt/edit-core/save', join(root, 'packages/edit-core/src/save/index.ts')],
   ['@web-ppt/edit-core/xml', join(root, 'packages/edit-core/src/xml/index.ts')],
@@ -141,6 +161,11 @@ const hasFontDecoder = (keys) => [...keys].some((key) => Object.keys(outputs[key
 const hasAdjustments = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
   .some((input) => pathEndsWith(input, 'packages/editor/src/adjustments/preset-adjustment-editor.ts')));
 const initial = closure([entry], false);
+const cordisOutputs = Object.keys(outputs).filter(key => Object.keys(outputs[key].inputs).some(input =>
+  pathEndsWith(input, 'node_modules/cordis/lib/index.js')));
+if (cordisOutputs.length !== 1 || initial.has(cordisOutputs[0])) {
+  throw new Error('Cordis 文稿插件必须在首次打开时加载，且只有一份运行时');
+}
 const mediaOutputs = Object.keys(outputs).filter((key) => Object.keys(outputs[key].inputs).some((input) =>
   pathEndsWith(input, 'packages/edit-core/src/media/resource.ts')
   || pathEndsWith(input, 'packages/site/src/editor-media-tools.ts')));
@@ -153,7 +178,6 @@ const imageZipTargets = [...dynamicTargets].filter((key) => hasImageZip(closure(
 const templateTargets = [...dynamicTargets].filter((key) => hasBuiltinTemplates(closure([key], false)));
 // 多个按需入口可以引用同一实现；直接检查承载源码的输出，避免把共享引用误判为重复打包。
 const chartTargets = [...dynamicTargets].filter((key) => hasChartData([key]));
-const decoderTargets = [...dynamicTargets].filter((key) => hasFontDecoder(closure([key], false)));
 const adjustmentTargets = [...dynamicTargets].filter((key) => hasAdjustments(closure([key], false)));
 if (hasImageZip(initial) || imageZipTargets.length !== 1) {
   throw new Error('官网编辑入口必须通过唯一动态分块加载 image-zip，初始依赖图不得包含它');
@@ -164,9 +188,11 @@ if (hasTemplatePicker(initial) || hasBuiltinTemplates(initial) || templateTarget
 if (hasChartData(initial) || chartTargets.length !== 1) {
   throw new Error('官网图表数据编辑器与工作簿补丁器必须只存在于一个按需分块');
 }
-if (hasFontDecoder(initial) || decoderTargets.length !== 1
-  || hasAdjustments(initial) || adjustmentTargets.length !== 1) {
-  throw new Error('官网字体解码器与调节柄实现必须各自通过唯一按需分块加载');
+if (hasFontDecoder(closure([entry], true))) {
+  throw new Error('官网编辑器主线程不能加载字体解码器；解压由独占字体 Worker 接管');
+}
+if (hasAdjustments(initial) || adjustmentTargets.length !== 1) {
+  throw new Error('官网调节柄实现必须通过唯一按需分块加载');
 }
 // 0.7 模板票开始前的同配置实测值；图表、模板、图片 ZIP 与调节柄都不能进入首包。
 const initialGzip = gzipSync(readFileSync(resolve(root, entry))).length;
@@ -181,6 +207,21 @@ const initialBudget = { raw: 2_254_902, gzip: 509_849 };
 if (initialSize.raw > initialBudget.raw || initialSize.gzip > initialBudget.gzip) {
   throw new Error(`官网编辑首屏依赖闭包体积回归：${JSON.stringify({ initialBudget, initialSize })}`);
 }
+const applicationEntry = Object.entries(outputs).find(([, info]) =>
+  pathEndsWith(info.entryPoint, 'packages/site/src/editor-application.ts'))?.[0];
+if (!applicationEntry) throw new Error('找不到 Cordis 产品应用的按需入口');
+const applicationAdditional = [...closure([applicationEntry], false)].filter(key => !initial.has(key))
+  .reduce((sum, key) => {
+    const bytes = readFileSync(resolve(root, key));
+    return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
+  }, { raw: 0, gzip: 0 });
+// 页面归入按需应用后，首屏不再覆盖编辑实现；首次打开仍沿用迁移前预算加当时应用实测值。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 33_439 };
+const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
+if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
+  throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
+}
+writeFileSync(join(out, 'cordis-size.json'), JSON.stringify({ initialSize, initialBudget, applicationAdditional, activatedSize, activatedBudget }, null, 2) + '\n');
 const delayedChunks = new Set(imageZipTargets.map((key) =>
   `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
 
@@ -204,7 +245,18 @@ const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 
   .replace('./src/editor-page.css', './editor-page.css')
   .replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
+  ...await siteFontWorkerFixture(root,out,aliases),
+  ...['cache', 'scatter-horizontal'].map(name => [`/fixtures/sample-chart-shared-transition-${name}.pptx`,
+    ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-transition-${name}.pptx`))]]),
   ['/fixtures/sample-chart-hierarchy.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-hierarchy.pptx'))]],
+  ['/fixtures/sample-chart-shared.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared.pptx'))]],
+  ['/fixtures/sample-chart-shared-cache.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache.pptx'))]],
+  ['/fixtures/sample-chart-shared-cache-horizontal.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache-horizontal.pptx'))]],
+  ['/fixtures/sample-chart-shared-xy.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-xy.pptx'))]],
+  ...['mixed', 'mixed-horizontal', 'mixed-crossed', 'mixed-overlap', 'mixed-records',
+    'mixed-records-horizontal', 'mixed-records-flat-horizontal', 'mixed-overlap-crossed'].map(name => [
+    `/fixtures/sample-chart-shared-${name}.pptx`, ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-${name}.pptx`))],
+  ]),
   ['/fixtures/sample-portable-rich-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-portable-rich-text.pptx'))]],
   ['/fixtures/sample-comment-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-comment-edit.pptx'))]],
   ['/fixtures/sample-editor-resize.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-resize.pptx'))]],
@@ -216,6 +268,10 @@ const routes = new Map([
   ['/fixtures/sample-editor-media.wav', ['audio/wav', readFileSync(join(root, 'fixtures/sample-editor-media.wav'))]],
   ['/fixtures/sample-editor-media.mp4', ['video/mp4', readFileSync(join(root, 'fixtures/sample-editor-media.mp4'))]],
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
+  ['/fixtures/sample-font-glyphs.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-font-glyphs.pptx'))]],
+  ['/fixtures/font-latin.ttf', ['font/ttf', readFileSync(join(root, 'tooling/font-glyph-samples/latin.ttf'))]],
+  ['/fixtures/font-chinese.ttf', ['font/ttf', readFileSync(join(root, 'tooling/font-glyph-samples/chinese.ttf'))]],
+  ['/fixtures/sample-vector-pdf-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-text.pptx'))]],
   ['/editor.en.html', ['text/html; charset=utf-8', productionLanguages
     ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml]],
   ['/src/i18n-language.css', ['text/css', readFileSync(join(root, 'packages/site/src/i18n-language.css'))]],
@@ -247,9 +303,11 @@ if (productionLanguages) {
   }
   for (const name of readdirSync(join(productionDirectory, 'assets'))) {
     const bytes = readFileSync(join(productionDirectory, 'assets', name));
-    routes.set(`/assets/${name}`, [name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8', bytes]);
+    routes.set(`/assets/${name}`, [name.endsWith('.wasm') ? 'application/wasm'
+      : name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8', bytes]);
     if (name.endsWith('.js') && bytes.includes('Fidelity needs a reference')) dictionaryUrls.push(`${productionBase}/assets/${name}`);
-    if (name.endsWith('.js') && bytes.includes('保存前必须加载编辑扩展')) saveChunks.push(`${productionBase}/assets/${name}`);
+    // 可用性校验也服务于复制入口；只定位保存聚合器，才能实际暂停首次序列化加载。
+    if (name.endsWith('.js') && bytes.includes('多个编辑扩展的保存基线冲突')) saveChunks.push(`${productionBase}/assets/${name}`);
     if (name.endsWith('.js') && bytes.includes('chart-xy-series')) chartChunks.tools.push(`${productionBase}/assets/${name}`);
     if (name.endsWith('.js') && bytes.includes('图表数据点命令没有修改字段')) chartChunks.data.push(`${productionBase}/assets/${name}`);
   }
@@ -261,6 +319,30 @@ const standaloneBundle = join(out, 'standalone.mjs');
 execFileSync('npx', ['esbuild', join(root, 'packages/viewer/src/main.ts'), '--bundle', '--format=esm', '--platform=browser',
   '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${standaloneBundle}`], { cwd: root, stdio: 'inherit' });
 routes.set('/standalone.mjs', ['text/javascript', readFileSync(standaloneBundle)]);
+const recoveryShutdownBundle = join(out, 'recovery-shutdown.mjs');
+execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-recovery-shutdown-browser.mjs'),
+  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
+  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${recoveryShutdownBundle}`],
+{ cwd: root, stdio: 'inherit' });
+routes.set('/recovery-shutdown.mjs', ['text/javascript', readFileSync(recoveryShutdownBundle)]);
+const legacyChartSeed = join(out, 'legacy-chart-seed.mjs');
+execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-chart-legacy-seed-browser.mjs'),
+  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
+  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${legacyChartSeed}`], { cwd: root, stdio: 'inherit' });
+routes.set('/legacy-chart-seed.mjs', ['text/javascript', readFileSync(legacyChartSeed)]);
+const filesShutdownBundle = join(out, 'files-shutdown.mjs');
+execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-files-shutdown-browser.mjs'),
+  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
+  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${filesShutdownBundle}`],
+{ cwd: root, stdio: 'inherit' });
+routes.set('/files-shutdown.mjs', ['text/javascript', readFileSync(filesShutdownBundle)]);
+routes.set('/tools-shell.html', ['text/html', editorShell.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '').replace('./src/editor-page.css', './editor-page.css')]);
+const toolsShutdownBundle = join(out, 'tools-shutdown.mjs');
+execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-tools-shutdown-browser.mjs'),
+  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
+  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${toolsShutdownBundle}`,
+], { cwd: root, stdio: 'inherit' });
+routes.set('/tools-shutdown.mjs', ['text/javascript', readFileSync(toolsShutdownBundle)]);
 routes.set('/standalone.css', ['text/css', readFileSync(join(root, 'packages/viewer/src/style.css'))]);
 routes.set('/standalone.html', ['text/html', readFileSync(join(root, 'packages/viewer/index.html'), 'utf8')
   .replace('/src/main.ts', '/standalone.mjs').replace('/src/style.css', '/standalone.css')]);
@@ -444,6 +526,7 @@ async function runContract(webSocketDebuggerUrl) {
       names: [...document.querySelectorAll('[data-pane-name]')].map(n=>n.textContent),
       chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
       language: document.documentElement.lang,
+      chartSeries: [...document.querySelectorAll('[data-chart-grid] thead input')].map(input => input.value),
       viewer: { pager: document.querySelector('#pager')?.textContent, meta: document.querySelector('#meta')?.textContent,
         preview: document.querySelector('.preview-meta')?.textContent, stage: document.querySelector('.stage .err')?.textContent },
       url: location.href,
@@ -460,17 +543,21 @@ async function runContract(webSocketDebuggerUrl) {
   };
   const click = async (selector) => {
     const point = await evaluate(`(async () => {
-      const node = document.querySelector(${JSON.stringify(selector)});
-      if (!node) return null;
-      // instant 之后仍可能有下一帧的滚动/布局调整；过早取坐标会点到重排行之间。
-      node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const rect = node.getBoundingClientRect();
-      const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      if (!node.isConnected || !node.contains(document.elementFromPoint(point.x, point.y))) {
-        throw new Error('点击目标已移除或被遮挡：' + ${JSON.stringify(selector)});
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const node = document.querySelector(${JSON.stringify(selector)});
+        if (!node) return null;
+        // 滚动后的异步面板重绘会替换节点；只重新定位，真实点击仍仅派发一次。
+        node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (!node.isConnected) continue;
+        const rect = node.getBoundingClientRect();
+        const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        if (!node.contains(document.elementFromPoint(point.x, point.y))) {
+          throw new Error('点击目标被遮挡：' + ${JSON.stringify(selector)});
+        }
+        return point;
       }
-      return point;
+      throw new Error('点击目标持续重绘：' + ${JSON.stringify(selector)});
     })()`, true);
     if (!point) throw new Error(`找不到 ${selector}`);
     try {
@@ -496,6 +583,23 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    if (chartLegacyOnly) {
+      await runSiteChartLegacyBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (recoveryOnly) {
+      await runSiteRecoveryBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (lifecycleOnly) {
+      await runSiteEditorLifecycleBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteFilesBrowserContract({ evaluate });
+    await runSiteToolsBrowserContract({ evaluate });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
     if (pptSaveOnly) {
       await runSitePptSaveBrowserContract({ evaluate, request, waitFor, click });
       return;
@@ -522,6 +626,11 @@ async function runContract(webSocketDebuggerUrl) {
     }
     if (objectEditOnly) {
       await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
+    if (chartSharedOnly) {
+      await runSiteChartSharedBrowserContract({ evaluate, request, waitFor, click });
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
       return { bytes: 0 };
     }
@@ -563,11 +672,13 @@ async function runContract(webSocketDebuggerUrl) {
       await waitFor(`(${featureReady}) || document.querySelector('#recoveryPrompt')?.hidden === false`, '生产外观页面就绪');
       if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
       await waitFor(featureReady, '生产外观文稿就绪');
+      await runSiteFontBrowserContract({ evaluate, request, waitFor, click });
       await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
       await runSiteResizeBrowserContract({ evaluate, request, waitFor, click });
       await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
       await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
       await runSiteChartHierarchyBrowserContract({ evaluate, request, waitFor, click });
+      await runSiteChartSharedBrowserContract({ evaluate, request, waitFor, click });
       await runSiteAppearanceBrowserContract({ evaluate, request, waitFor, click, out });
       await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
       await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
@@ -579,6 +690,10 @@ async function runContract(webSocketDebuggerUrl) {
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }
+    await runSiteEditorLifecycleBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteFilesBrowserContract({ evaluate });
+    await runSiteToolsBrowserContract({ evaluate });
+    await runSiteRecoveryBrowserContract({ evaluate, request, waitFor, click });
     await runChartExBrowserContract({ evaluate, request, out, sources: chartexSources });
     await runNativeChartExBrowserContract({ evaluate, request, out });
     await runSiteCommentsBrowserContract({ evaluate, request, waitFor, click });
@@ -586,6 +701,7 @@ async function runContract(webSocketDebuggerUrl) {
     await runSiteCommentEditBrowserContract({ evaluate, request, waitFor, click });
     await runSiteChartDesignBrowserContract({ evaluate, request, waitFor, click });
     await runSiteChartHierarchyBrowserContract({ evaluate, request, waitFor, click });
+    await runSiteChartSharedBrowserContract({ evaluate, request, waitFor, click });
     await runSiteObjectEditBrowserContract({ evaluate, request, waitFor, click });
     await runSiteMetafileBrowserContract({ evaluate, request, waitFor, click });
     await runSiteThreeDBrowserContract({ evaluate, request, waitFor, click });
@@ -950,7 +1066,7 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
+  console.log(chartLegacyOnly ? '旧图表迁移浏览器专项通过（非完整门禁）' : recoveryOnly ? '官网恢复服务专项通过（非完整门禁）' : lifecycleOnly ? '编辑器产品生命周期专项通过（非完整门禁）' : chartSharedOnly ? '共享图表浏览器专项通过（非完整门禁）' : chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
     ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
     : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);

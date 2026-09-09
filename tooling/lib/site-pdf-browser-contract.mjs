@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { openFixture,changeValue } from './site-editor-browser-helpers.mjs';
+import {runSiteVectorPdfBrowserContract} from './site-vector-pdf-browser-contract.mjs';
 export async function runSitePdfBrowserContract(context) {
  const {evaluate,waitFor,click}=context;mkdirSync('out/pdf',{recursive:true});
  await evaluate(`(() => { const original=HTMLAnchorElement.prototype.click;
@@ -24,6 +25,7 @@ export async function runSitePdfBrowserContract(context) {
   await evaluate(`(() => { globalThis.__pdfDownload=null; document.querySelector('#documentExportDialog [type=submit]').click();document.querySelector('#documentExportDialog [data-close]').click(); })()`);
   await waitFor(`document.querySelector('#documentExportDialog [role=status]')?.textContent==='导出已取消'`,'取消后无半成品');
   assert.equal(await evaluate('globalThis.__pdfDownload'),null);await click('#documentExportDialog [data-close]');
+  await runSiteVectorPdfBrowserContract(context);
  }finally{await evaluate('globalThis.__restorePdfDownload()');}
  console.log('  PDF 浏览器导出、三维投影、原生批注与取消通过');
 }

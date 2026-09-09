@@ -8,7 +8,7 @@ import type { Message } from './i18n/messages';
 
 type Label = Exclude<Message, `${string}{${string}`>;
 
-export function showAppearanceTools(session: EditorSession, id: string, current: () => EditorSession | null): void {
+export function showAppearanceTools(session: EditorSession, id: string, current: () => EditorSession | null): (() => void) | undefined {
   if (document.querySelector('#appearanceDialog')) return;
   const record = session.editor.doc.elements[id];
   if (!record || record.meta.editable !== 'full' || record.meta.locked) return;
@@ -89,7 +89,7 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
   const number = (name: string) => Number(inputs.get(name)!.value);
   const checked = (name: string) => (inputs.get(name) as HTMLInputElement).checked;
   const apply = (mode: 'set' | 'clear' | 'source') => {
-    if (current() !== session || !session.editor.doc.elements[id]) { dialog.close(); return; }
+    if (!dialog.isConnected || current() !== session || !session.editor.doc.elements[id]) { dialog.close(); return; }
     try {
       if (picture) api.exec({ type: 'SetPictureFx', id, effects: mode === 'source' ? null : mode === 'clear' ? {} : {
         alpha: number('alpha') / 100, grayscale: checked('grayscale'),
@@ -110,6 +110,8 @@ export function showAppearanceTools(session: EditorSession, id: string, current:
   form.onsubmit = (event) => { event.preventDefault(); apply('set'); };
   document.body.append(dialog);
   const restoreLanguage = moveLanguageControl(dialog.querySelector('header')!);
-  dialog.addEventListener('close', () => { restoreLanguage(); dialog.remove(); }, { once: true });
+  const close = () => { restoreLanguage(); dialog.close(); dialog.remove(); };
+  dialog.addEventListener('close', close, { once: true });
   dialog.showModal();
+  return close;
 }

@@ -15,12 +15,10 @@ export interface SiteRecovery {
   cancelPending(): void;
   flush(session: EditorSession | null): Promise<void>;
   sync(session: EditorSession | null): void;
+  dispose(): Promise<void>;
 }
 
 const PREFERENCE = 'web-ppt:site:recovery-enabled';
-const store = createIndexedDbRecoveryStore({
-  databaseName: 'web-ppt-site-editor', namespace: 'site-editor', maxJournals: 8,
-});
 
 function needsMedia(journal: RecoveryStoreJournal | null): boolean {
   return journal?.frames.some((frame) => frame.patches.some((patch) => {
@@ -35,6 +33,12 @@ function needsMedia(journal: RecoveryStoreJournal | null): boolean {
 }
 
 export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
+  const store = createIndexedDbRecoveryStore({
+    databaseName: 'web-ppt-site-editor', namespace: 'site-editor', maxJournals: 8,
+  });
+  const events = new AbortController();
+  let disposed = false;
+  let closing: Promise<void> | undefined;
   const toggle = document.querySelector<HTMLInputElement>('#recoveryToggle')!;
   const prompt = document.querySelector<HTMLElement>('#recoveryPrompt')!;
   const summary = document.querySelector<HTMLElement>('#recoverySummary')!;
@@ -55,17 +59,18 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
     decide = null;
     resolve?.(decision);
   };
-  restore.addEventListener('click', () => choose('restore'));
-  discard.addEventListener('click', () => choose('discard'));
+  restore.addEventListener('click', () => choose('restore'), { signal: events.signal });
+  discard.addEventListener('click', () => choose('discard'), { signal: events.signal });
   toggle.addEventListener('change', () => {
     enabled = toggle.checked;
     localStorage.setItem(PREFERENCE, String(enabled));
     notice(message(enabled
       ? '本机恢复将在下次打开文稿时启用'
       : '本机恢复将在下次打开文稿时停用；已有记录不会被远程上传'));
-  });
+  }, { signal: events.signal });
 
   const decision = (candidate: RecoveryCandidate): Promise<RecoveryDecision> => {
+    if (disposed) return Promise.resolve('cancel');
     // 新打开已取代旧打开时，必须释放旧 Promise；否则过期解析会永远占着一条任务链。
     if (decide) choose('cancel');
     prompt.hidden = false;
@@ -78,6 +83,7 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
 
   return {
     openOptions: (signal) => {
+      if (disposed) throw new Error('恢复服务已释放');
       if (!enabled) return {};
       let mediaRequired = false;
       return { recovery: {
@@ -101,16 +107,17 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
           }
           return signal.aborted ? 'cancel' : choice;
         },
-        onError: (error) => notice(message('本机恢复记录失败：{detail}', {
+        onError: (error) => { if (!disposed) notice(message('本机恢复记录失败：{detail}', {
           detail: error instanceof Error ? error.message : String(error),
-        }), 'error'),
+        }), 'error'); },
       } };
     },
     cancelPending() {
       if (decide) choose('cancel');
     },
     async flush(session) {
-      if (!enabled || !session?.recovery) return;
+      // 偏好只影响下次打开；已有会话必须完成排队写入，才能关闭它使用的存储。
+      if (disposed || !session?.recovery) return;
       const generation = ++flushGeneration;
       setText(state, '正在写入本机恢复记录…');
       try {
@@ -126,6 +133,7 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
       }
     },
     sync(session) {
+      if (disposed) return;
       if (session !== syncedSession) {
         syncedSession = session;
         flushGeneration++;
@@ -133,6 +141,15 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
       toggle.checked = enabled;
       toggle.disabled = !session;
       if (!session) setText(state, '打开文稿后会在本机保存恢复记录');
+    },
+    dispose() {
+      if (closing) return closing;
+      disposed = true;
+      events.abort();
+      flushGeneration++;
+      syncedSession = null;
+      choose('cancel');
+      return closing = store.close();
     },
   };
 }

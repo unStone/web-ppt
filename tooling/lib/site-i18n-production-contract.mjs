@@ -22,6 +22,7 @@ import { runSiteI18nViewLabelsContract } from './site-i18n-view-labels-contract.
 import { runSiteI18nPlaceholderContract } from './site-i18n-placeholder-contract.mjs';
 import { runSiteI18nBootstrapContract } from './site-i18n-bootstrap-contract.mjs';
 import { runSiteLocalSaveContract } from './site-local-save-contract.mjs';
+import { runSiteFontBrowserContract } from './site-font-browser-contract.mjs';
 
 export async function runSiteI18nProductionContract(context) {
   const only = process.env.SITE_I18N_ONLY;
@@ -31,7 +32,7 @@ export async function runSiteI18nProductionContract(context) {
       slides: runSiteI18nSlideToolsContract, accessibility: runSiteI18nAccessibilityContract,
       'view-labels': runSiteI18nViewLabelsContract, placeholders: runSiteI18nPlaceholderContract,
       bootstrap: runSiteI18nBootstrapContract, recovery: runSiteI18nRecoveryContract,
-      preferences: runSiteLanguagePreferencesContract, 'file-save': runSiteLocalSaveContract }[only];
+      preferences: runSiteLanguagePreferencesContract, 'file-save': runSiteLocalSaveContract, fonts: runSiteFontBrowserContract }[only];
     if (!contract) throw new Error(`未知的官网专项：${only}`);
     await contract(context); return;
   }

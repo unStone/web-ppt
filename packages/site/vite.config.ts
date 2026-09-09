@@ -49,6 +49,9 @@ function cardHtml(s: Sample): string {
 export default defineConfig({
   base,
   server: { port: 5174 },
+  worker: { format: 'es' },
+  // HarfBuzz 的初始化含 TLA，保留在按需 module Worker 中；其他语法仍沿用 Vite 的浏览器目标。
+  esbuild: { supported: { 'top-level-await': true } },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

@@ -133,7 +133,11 @@ flowchart TB
 | `packages/editor` | `@web-ppt/editor` | `core` + `edit-core` + `viewer-core` | ✅ | 只做 DOM 绑定与手势，不做业务决策 |
 | `packages/react` | `@web-ppt/react` | `editor` + React optional peer | ✅ | 只映射容器、生命周期、受控属性与事件 |
 | `packages/vue` | `@web-ppt/vue` | `editor` + Vue optional peer | ✅ | 只映射容器、生命周期、受控属性与事件 |
-| `apps/editor` | private | 上面全部 | ❌ | 产品工具栏、设计系统和业务状态只出现在这层 |
+| `packages/site` | private | 上面全部 | ❌ | 产品工具栏、设计系统和业务状态；应用框架 Cordis 只出现在这层 |
+
+产品外壳位于 `packages/site`，文稿、打开、恢复、文件、业务工具与页面服务已注册到同一 Cordis Context，见[接入范围与验收](cordis-editor.md)。
+上述 Cordis 分层约定来自早期方案，在 `20cc7f8` 更新 React / Vue 适配文档时被省略，不能据此视作已经取消或完成。
+基础发布包保持无框架。页面插件持有视口、模式、导航、历史按钮和展示状态；入口仅负责启动及失败重试。退出先停止页面和 SDK 编辑输入，再等待文件交付与恢复落盘，最后释放文稿及应用资源。
 
 **对 core 的 API 与分层改动一律是加法**，四条不可破坏的约束原样成立。唯一例外是保存回环暴露出已有 Schema 字段对 OOXML choice 的错误求值：可以修正解析器，但必须同时证明普通预览更接近 Office、既有快照无回归、保存重开等价，且不能把编辑状态带进普通模型。
 

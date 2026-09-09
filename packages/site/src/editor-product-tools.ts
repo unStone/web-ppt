@@ -20,7 +20,12 @@ const $ = <T extends Element>(selector: string): T => document.querySelector<T>(
 export function createProductTools(
   context: () => ProductToolsContext,
   notice: SiteNotice,
+  lifetime?: AbortSignal,
 ): ProductTools {
+  const controller = new AbortController();
+  const { signal } = controller;
+  lifetime?.addEventListener('abort', () => controller.abort(), { once: true, signal });
+  if (lifetime?.aborted) controller.abort();
   const find = $<HTMLButtonElement>('#findText');
   const replace = $<HTMLButtonElement>('#replaceText');
   const painter = $<HTMLButtonElement>('#formatPainter');
@@ -35,10 +40,16 @@ export function createProductTools(
   const next = $<HTMLButtonElement>('#searchNext');
   const previous = $<HTMLButtonElement>('#searchPrevious');
   const invalid = new Set<HTMLInputElement>();
+  let focusFrame = 0;
   let unsubscribePainter: (() => void) | null = null;
   let unsubscribeSearch: (() => void) | null = null;
 
+  signal.addEventListener('abort', () => {
+    cancelAnimationFrame(focusFrame); unsubscribePainter?.(); unsubscribeSearch?.(); panel.hidden = true;
+  }, { once: true });
+
   const sync = (): void => {
+    if (signal.aborted) return;
     const { session, writable } = context();
     const ready = !!session;
     find.disabled = !ready;
@@ -64,6 +75,8 @@ export function createProductTools(
   };
 
   const bindSession = (): void => {
+    if (signal.aborted) return;
+    cancelAnimationFrame(focusFrame);
     unsubscribePainter?.(); unsubscribeSearch?.();
     invalid.clear();
     query.removeAttribute('aria-invalid'); replacement.removeAttribute('aria-invalid');
@@ -77,11 +90,12 @@ export function createProductTools(
     const { view } = context(); if (!view) return;
     view.openTextSearch({ mode });
     context().openInspector();
-    requestAnimationFrame(() => query.focus());
+    cancelAnimationFrame(focusFrame);
+    focusFrame = requestAnimationFrame(() => { if (!signal.aborted) query.focus(); });
   };
-  find.addEventListener('click', () => openSearch('find'));
-  replace.addEventListener('click', () => openSearch('replace'));
-  $<HTMLButtonElement>('#closeSearch').addEventListener('click', () => context().view?.closeTextSearch());
+  find.addEventListener('click', () => openSearch('find'), { signal });
+  replace.addEventListener('click', () => openSearch('replace'), { signal });
+  $<HTMLButtonElement>('#closeSearch').addEventListener('click', () => context().view?.closeTextSearch(), { signal });
   const bindInput = (input: HTMLInputElement, update: (value: string) => void): void => {
     input.addEventListener('input', () => {
       const recovered = invalid.delete(input);
@@ -97,19 +111,19 @@ export function createProductTools(
       }
       input.setAttribute('aria-invalid', String(invalid.has(input)));
       sync();
-    });
+    }, { signal });
   };
   bindInput(query, (value) => context().session?.textSearch.setQuery(value));
   bindInput(replacement, (value) => context().session?.textSearch.setReplacement(value));
-  next.addEventListener('click', () => context().view?.nextTextSearch());
-  previous.addEventListener('click', () => context().view?.previousTextSearch());
+  next.addEventListener('click', () => context().view?.nextTextSearch(), { signal });
+  previous.addEventListener('click', () => context().view?.previousTextSearch(), { signal });
   replaceCurrent.addEventListener('click', () => {
     if (context().view?.replaceCurrentText()) notice(message('已替换当前匹配'), 'success');
-  });
+  }, { signal });
   replaceAll.addEventListener('click', () => {
     const changed = context().view?.replaceAllText() ?? 0;
     notice(changed ? message('已替换 {count} 处', { count: changed }) : message('没有可替换的匹配'), changed ? 'success' : 'normal');
-  });
+  }, { signal });
 
   const startPainter = (continuous: boolean): void => {
     const view = context().view;
@@ -122,14 +136,14 @@ export function createProductTools(
   painter.addEventListener('click', () => {
     const active = context().session?.formatPainter.snapshot.active;
     if (active) context().view?.cancelFormatPainter(); else startPainter(false);
-  });
+  }, { signal });
   painterContinuous.addEventListener('click', () => {
     const mode = context().session?.formatPainter.snapshot.mode;
     if (mode === 'continuous') context().view?.cancelFormatPainter(); else startPainter(true);
-  });
+  }, { signal });
 
   return {
     bindSession, sync,
-    destroy() { unsubscribePainter?.(); unsubscribeSearch?.(); },
+    destroy() { controller.abort(); },
   };
 }

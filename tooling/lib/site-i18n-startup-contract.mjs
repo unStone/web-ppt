@@ -28,6 +28,9 @@ export async function runSiteI18nStartupContract({ evaluate, request, click, wai
   await click('#newFile');
   await waitFor("document.querySelector('#templateDialogTitle')?.textContent === 'New presentation'", '慢词库就绪后模板可用');
   await click('[data-template-id="blank"]');
+  // 前面的新建取消场景已编辑过同一空白模板；冷页面仍会按真实来源身份找到恢复记录。
+  await waitFor("document.querySelector('#recoveryPrompt')?.hidden === false || (document.querySelector('#fileName').textContent === 'Untitled presentation.pptx' && !document.querySelector('#editorApp').dataset.loading)", '英文冷启动新建恢复选择或就绪');
+  if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
   await waitFor("document.querySelector('#fileName').textContent === 'Untitled presentation.pptx' && !document.querySelector('#editorApp').dataset.loading", '英文冷启动新建成功');
 }
 

@@ -14,8 +14,10 @@
     "@web-ppt/core": "*",
     "@web-ppt/edit-core": "*",
     "@web-ppt/editor": "*",
+    "@web-ppt/fonts": "*",
     "@web-ppt/viewer-core": "*",
-    "mtx-decompressor": "^1.6.0",
-    "@web-ppt/fonts": "*"
+    "cordis": "4.0.0-rc.9",
+    "harfbuzzjs": "1.6.1",
+    "mtx-decompressor": "^1.6.0"
   }
 }

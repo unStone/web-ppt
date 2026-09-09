@@ -77,7 +77,7 @@ function pickerElements(): {
   grid.className = 'template-grid';
   head.append(heading, close);
   dialog.append(head, grid);
-  document.head.append(style);
+  if (!document.querySelector('style[data-template-picker]')) document.head.append(style);
   document.body.append(dialog);
   return { dialog, grid, close };
 }
@@ -112,8 +112,9 @@ function card(
 }
 
 /** 目录与配方只在用户打开选择器后加载；取消不会改变当前文稿。 */
-export async function chooseNewDocument(): Promise<NewDocumentResult | null> {
+export async function chooseNewDocument(signal?: AbortSignal): Promise<NewDocumentResult | null> {
   await languageReady;
+  if (signal?.aborted) return null;
   const { dialog, grid, close } = pickerElements();
   const choices = [
     {
@@ -136,15 +137,27 @@ export async function chooseNewDocument(): Promise<NewDocumentResult | null> {
         (choice.kind === 'blank' ? 'blank' : choice.id) === button.dataset.templateId)?.choice ?? null;
       dialog.close();
     };
-    grid.addEventListener('click', select);
     const restoreLanguageControl = moveLanguageControl(dialog.querySelector('.template-dialog-head')!);
-    dialog.addEventListener('close', () => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
       restoreLanguageControl();
       grid.removeEventListener('click', select);
+      dialog.removeEventListener('close', finish);
+      signal?.removeEventListener('abort', abort);
+      close.onclick = null;
+      // 关闭事件异步派发；重用旧节点会让其迟到事件取消下一次选择。
+      dialog.remove();
       resolve(selected);
-    }, { once: true });
+    };
+    const abort = () => { selected = null; dialog.close(); finish(); };
+    grid.addEventListener('click', select);
+    dialog.addEventListener('close', finish);
+    signal?.addEventListener('abort', abort, { once: true });
     close.onclick = () => dialog.close();
-    dialog.showModal();
+    try { dialog.showModal(); }
+    catch (error) { finish(); throw error; }
     grid.querySelector<HTMLButtonElement>('button')?.focus();
   });
   if (!selected) return null;

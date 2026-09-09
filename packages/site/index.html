@@ -101,9 +101,9 @@
 
   <ul class="stats">
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
-    <li><b>92<i>KB</i></b><span>gzip 核心包</span></li>
+    <li><b>156<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>8950</b><span>断言 + 186 快照</span></li>
+    <li><b>11555</b><span>断言 + 186 快照</span></li>
   </ul>
 </section>
 
@@ -372,10 +372,10 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
     <table class="matrix pkgs">
       <thead><tr><th>包</th><th>作用</th><th>依赖</th><th>体积</th></tr></thead>
       <tbody>
-        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>91.76KB gzip</td></tr>
-        <tr><td><code>@web-ppt/edit-core</code></td><td>编辑模型、历史与增量保存</td><td><code>@web-ppt/core</code></td><td>73.84KB gzip</td></tr>
-        <tr><td><code>@web-ppt/editor</code></td><td>无框架编辑会话与三层 DOM</td><td><code>core</code> + <code>edit-core</code> + <code>viewer-core</code></td><td>68.10KB gzip</td></tr>
-        <tr><td><code>@web-ppt/collab</code></td><td>可选字段级 LWW 协同适配</td><td><code>@web-ppt/edit-core</code></td><td>11.73KB gzip</td></tr>
+        <tr><td><code>@web-ppt/core</code></td><td>解析 / 渲染 / 导出，无框架</td><td>fflate</td><td>131.63KB gzip</td></tr>
+        <tr><td><code>@web-ppt/edit-core</code></td><td>编辑模型、历史与增量保存</td><td><code>@web-ppt/core</code></td><td>185.70KB gzip</td></tr>
+        <tr><td><code>@web-ppt/editor</code></td><td>无框架编辑会话与三层 DOM</td><td><code>core</code> + <code>edit-core</code> + <code>viewer-core</code></td><td>59.27KB gzip</td></tr>
+        <tr><td><code>@web-ppt/collab</code></td><td>可选字段级 LWW 协同适配</td><td><code>@web-ppt/edit-core</code></td><td>12.20KB gzip</td></tr>
         <tr><td><code>@web-ppt/react</code></td><td>React 组件与 hook 薄适配</td><td><code>@web-ppt/editor</code> + React</td><td>1.12KB gzip</td></tr>
         <tr><td><code>@web-ppt/vue</code></td><td>Vue 组件与 composable 薄适配</td><td><code>@web-ppt/editor</code> + Vue</td><td>1.34KB gzip</td></tr>
         <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>8.10KB gzip</td></tr>
@@ -383,6 +383,7 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
       </tbody>
     </table>
   </div>
+  <p class="note">体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。</p>
   <p class="note">框架适配与协同都是独立按需包；基础解析、查看和单机编辑不会替未使用的能力付运行时成本。</p>
 </section>
 

@@ -11,7 +11,11 @@ export interface CommentContext {
   name: string;
 }
 
-export function bindCommentsTools(button: HTMLButtonElement, current: () => CommentContext | null) {
+export function bindCommentsTools(button: HTMLButtonElement, current: () => CommentContext | null, lifetime?: AbortSignal) {
+  const controller = new AbortController();
+  const { signal } = controller;
+  lifetime?.addEventListener('abort', () => controller.abort(), { once: true, signal });
+  if (lifetime?.aborted) controller.abort();
   let panel: CommentsPanel | undefined, host: HTMLElement | undefined;
   let editing: { sync(): void; dispose(): void } | undefined;
   let owner: object | undefined, rendered: Slide['comments'];
@@ -21,7 +25,9 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
     owner = undefined; rendered = undefined; include = false;
     button.setAttribute('aria-expanded', 'false');
   };
+  signal.addEventListener('abort', reset, { once: true });
   const sync = () => {
+    if (signal.aborted) return;
     const context = current();
     button.disabled = !context;
     if (owner && owner !== context?.owner) reset();
@@ -89,11 +95,12 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
       }
       button.setAttribute('aria-expanded', 'true');
     } catch (error) {
+      if (attempt !== generation) return;
       // 临时加载失败可重试；不阻断文稿打开，也不留下不可关闭的面板。
       reset(); button.title = error instanceof Error ? error.message : String(error);
     } finally { sync(); }
   };
-  button.addEventListener('click', () => { void open(); });
+  button.addEventListener('click', () => { void open(); }, { signal });
   button.setAttribute('aria-expanded', 'false');
-  return { sync, reset, get showComments() { return include; } };
+  return { sync, reset, destroy() { controller.abort(); }, get showComments() { return include; } };
 }

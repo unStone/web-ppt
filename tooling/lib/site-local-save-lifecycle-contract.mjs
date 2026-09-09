@@ -29,21 +29,40 @@ export async function runLocalSaveLifecycleContract(context) {
   await request('Emulation.setDeviceMetricsOverride', { width: 320, height: 844, deviceScaleFactor: 1, mobile: true });
   await request('Emulation.setTouchEmulationEnabled', { enabled: true });
   try {
-    const point = await evaluate(`(() => {
-      const button = document.querySelector('#saveToFile'); button.scrollIntoView({ block: 'center', inline: 'center' });
+    await evaluate(`(() => {
+      globalThis.__saveTouchTrace=[];
+      const events=['touchstart','touchend','pointerdown','pointerup','click'];
+      const record=event=>globalThis.__saveTouchTrace.push({type:event.type,target:event.target.id,
+        x:event.clientX,y:event.clientY,trusted:event.isTrusted,prevented:event.defaultPrevented});
+      for(const name of events)document.addEventListener(name,record,true);
+      globalThis.__stopSaveTouchTrace=()=>events.forEach(name=>document.removeEventListener(name,record,true));
+    })()`);
+    const point = await evaluate(`(async () => {
+      const button = document.querySelector('#saveToFile'); button.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+      globalThis.__saveTouchTrace.push({phase:'before-frame',rect:button.getBoundingClientRect().toJSON()});
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const rect = button.getBoundingClientRect();
+      globalThis.__saveTouchTrace.push({phase:'after-frame',rect:rect.toJSON()});
       const x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
       if (rect.left < 0 || rect.right > 321 || y < 0 || y > 844 || !button.contains(document.elementFromPoint(x, y))) {
         throw new Error('320px 保存按钮不可见或被遮挡');
       }
-      return { x, y };
-    })()`);
+      // CDP 触点相对可视视口；DOM client 坐标相对布局视口，移动端滚动后两者原点不同。
+      globalThis.__saveTouchTrace.push({phase:'viewport',offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop});
+      return { x:x-visualViewport.offsetLeft, y:y-visualViewport.offsetTop };
+    })()`,true);
     await request('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
     await request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await waitFor(`globalThis.__pickerCalls.length === ${before + 2}
       && document.querySelector('#statusText').textContent === 'Saved to local-save.pptx'
       && !document.querySelector('#fileName').textContent.startsWith('● ')`, '窄屏真实触点保存新建文稿');
+    console.log('  窄屏触点验收：',JSON.stringify(await evaluate('globalThis.__saveTouchTrace')));
+  } catch(error) {
+    throw new Error(`${error.message}；触点记录：${JSON.stringify(await evaluate(`({events:globalThis.__saveTouchTrace,
+      width:innerWidth,height:innerHeight,viewport:{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale},
+      button:document.querySelector('#saveToFile').getBoundingClientRect().toJSON()})`))}`,{cause:error});
   } finally {
+    await evaluate('globalThis.__stopSaveTouchTrace?.(); delete globalThis.__stopSaveTouchTrace; delete globalThis.__saveTouchTrace');
     await request('Emulation.setTouchEmulationEnabled', { enabled: false });
     await request('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
   }

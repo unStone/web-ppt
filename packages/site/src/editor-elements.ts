@@ -28,6 +28,7 @@ export const editorButtons = {
   addShape: $<HTMLButtonElement>('#addShape'),
   addImage: $<HTMLButtonElement>('#addImage'),
   media: $<HTMLButtonElement>('#mediaTools'),
+  fonts: $<HTMLButtonElement>('#fontTools'),
   addTable: $<HTMLButtonElement>('#addTable'),
   addSlide: $<HTMLButtonElement>('#addSlide'),
   play: $<HTMLButtonElement>('#playAnimations'),

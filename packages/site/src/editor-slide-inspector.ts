@@ -18,14 +18,19 @@ interface SlideInspectorContext {
   showSlide(id: string): void;
 }
 
-export interface SlideInspector { sync(): void; }
+export interface SlideInspector { sync(): void; destroy(): void; }
 const $ = <T extends Element>(root: ParentNode, selector: string): T => root.querySelector<T>(selector)!;
 
 export function createSlideInspector(
   root: HTMLElement,
   context: () => SlideInspectorContext,
   notice: SiteNotice,
+  lifetime?: AbortSignal,
 ): SlideInspector {
+  const controller = new AbortController();
+  const { signal } = controller;
+  lifetime?.addEventListener('abort', () => controller.abort(), { once: true, signal });
+  if (lifetime?.aborted) controller.abort();
   const background = $<HTMLInputElement>(root, '#slideBackgroundColor');
   const hidden = $<HTMLInputElement>(root, '#slideHidden');
   const layout = $<HTMLSelectElement>(root, '#slideLayout');
@@ -44,8 +49,16 @@ export function createSlideInspector(
   const directionOptions = new Map([...transitionDirection.options].map((option) => [option.value, option]));
   const effectOptions = new Map([...animationEffect.options].map((option) => [option.value, option]));
 
+  signal.addEventListener('abort', () => {
+    timeline.replaceChildren();
+    transitionDirection.replaceChildren(...directionOptions.values());
+    animationEffect.replaceChildren(...effectOptions.values());
+  }, { once: true });
+
   const act = async (action: () => void | Promise<void>): Promise<void> => {
+    if (signal.aborted) return;
     try { await action(); } catch (error) {
+      if (signal.aborted) return;
       notice(message('页面操作失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
     }
   };
@@ -113,6 +126,7 @@ export function createSlideInspector(
   };
 
   const sync = (): void => {
+    if (signal.aborted) return;
     const { session, view, writable } = context();
     if (!session || !view) return;
     const slideId = view.slideId;
@@ -165,28 +179,28 @@ export function createSlideInspector(
   background.addEventListener('change', () => void act(() => {
     const { session, view } = context();
     if (session && view) session.editor.exec({ type: 'SetBackground', id: view.slideId, fill: { type: 'solid', color: background.value } });
-  }));
+  }), { signal });
   hidden.addEventListener('change', () => void act(() => {
     const { session, view } = context();
     if (session && view) session.editor.exec({ type: 'SetHidden', id: view.slideId, v: hidden.checked });
-  }));
-  layout.addEventListener('change', () => void act(() => { context().view?.setLayout(layout.value); }));
+  }), { signal });
+  layout.addEventListener('change', () => void act(() => { context().view?.setLayout(layout.value); }), { signal });
   duplicate.addEventListener('click', () => void act(() => {
     const { session, view } = context(); if (!session || !view) return;
     const result = session.editor.exec({ type: 'DuplicateSlide', id: view.slideId });
     const id = [...result.createdSlides][0]; if (id) context().showSlide(id);
-  }));
+  }), { signal });
   remove.addEventListener('click', () => void act(() => {
     const { session, view } = context(); if (!session || !view) return;
     const order = session.editor.doc.slideOrder; const index = order.indexOf(view.slideId);
     const next = order[index + 1] ?? order[index - 1];
     session.editor.exec({ type: 'RemoveSlide', id: view.slideId });
     if (next) context().showSlide(next);
-  }));
+  }), { signal });
   applyNotes.addEventListener('click', () => void act(() => {
     if (context().view?.setNotes(notes.value)) notice(message('备注已保存'), 'success');
-  }));
-  transitionType.addEventListener('change', syncDirections);
+  }), { signal });
+  transitionType.addEventListener('change', syncDirections, { signal });
   $<HTMLButtonElement>(root, '#applyTransition').addEventListener('click', () => void act(() => {
     const value = transitionType.value === 'none' ? { type: 'none' as const } : {
       type: transitionType.value as Exclude<Parameters<SlideEditor['setTransition']>[0], null>['type'],
@@ -194,11 +208,11 @@ export function createSlideInspector(
       ...(transitionDirection.value ? { dir: transitionDirection.value } : {}),
     };
     if (context().view?.setTransition(value)) notice(message('页面切换已更新'), 'success');
-  }));
+  }), { signal });
   $<HTMLButtonElement>(root, '#previewTransition').addEventListener('click', () => void act(async () => {
     await context().view?.previewTransition();
-  }));
-  animationKind.addEventListener('change', syncEffects);
+  }), { signal });
+  animationKind.addEventListener('change', syncEffects, { signal });
   $<HTMLButtonElement>(root, '#addAnimation').addEventListener('click', () => void act(() => {
     const view = context().view; if (!view || !animationTarget.value) return;
     const kind = animationKind.value as 'entrance' | 'exit' | 'emphasis';
@@ -207,11 +221,11 @@ export function createSlideInspector(
       trigger: 'click', delayMs: 0, durationMs: 600,
     } as EditAnimationStep;
     setTimeline([...view.queryAnimations().value, step]);
-  }));
+  }), { signal });
   $<HTMLButtonElement>(root, '#previewTimeline').addEventListener('click', () => void act(async () => {
     await context().view?.previewAnimations();
-  }));
+  }), { signal });
 
   syncEffects();
-  return { sync };
+  return { sync, destroy() { controller.abort(); } };
 }

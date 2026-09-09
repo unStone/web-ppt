@@ -11,6 +11,8 @@ export const chartMessages = {
   '此图表没有内嵌工作簿；仅更新图表缓存': 'This chart has no embedded workbook; only its cached data is updated',
   '此图表数据只读': 'This chart data is read-only', '此图表数据只读：{detail}': 'This chart data is read-only: {detail}',
   '正在读取图表数据…': 'Loading chart data…',
+  '图表编辑未恢复，旧数据已保留。{detail}': 'Chart edits could not be restored. Previous data has been retained. {detail}',
+  '图表编辑未恢复': 'Chart edits not restored',
   '系列名称：{name}': 'Series name: {name}', '删除系列：{name}': 'Remove series: {name}',
   '类别名称：{name}': 'Category name: {name}', '删除类别：{name}': 'Remove category: {name}',
   '数值 — {category} / {series}': 'Value — {category} / {series}',

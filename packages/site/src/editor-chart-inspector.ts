@@ -222,6 +222,11 @@ export function createChartInspector(
     if (!session) return;
     const data = module.queryChartData(session.editor.doc, chartId);
     setText(heading, '图表数据');
+    if (data.binding.unresolved) {
+      setMessage(status, message('图表编辑未恢复，旧数据已保留。{detail}', { detail: data.binding.reason ?? '' }));
+      mount.replaceChildren();
+      return;
+    }
     const editor = module.createChartDataEditor(session.editor);
     setMessage(status, data.binding.mode === 'workbook'
       ? message('保存时同步图表与内嵌工作簿')
@@ -249,12 +254,13 @@ export function createChartInspector(
   };
 
   const sync = (): void => {
+    if (disposed) return;
     const current = ++generation;
     const candidateId = selectedFrame();
     section.hidden = true;
     if (!candidateId) { mount.replaceChildren(); setMessage(status, ''); return; }
     setText(status, '正在读取图表数据…');
-    void Promise.all([import('@web-ppt/editor/chart'), import('@web-ppt/edit-core/chart-design')]).then(async ([module, design]) => {
+    void Promise.all([import('@web-ppt/editor/chart-shared'), import('@web-ppt/edit-core/chart-design')]).then(async ([module, design]) => {
       if (disposed || current !== generation) return;
       const chartId = selectedChart(module);
       section.hidden = !chartId;
@@ -311,5 +317,5 @@ export function createChartInspector(
     });
   };
 
-  return { sync, destroy: () => { disposed = true; generation++; } };
+  return { sync, destroy: () => { disposed = true; generation++; mount.replaceChildren(); section.hidden = true; } };
 }

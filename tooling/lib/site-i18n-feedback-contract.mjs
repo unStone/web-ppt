@@ -100,8 +100,10 @@ async function runTouch(context) {
 async function runError({ evaluate, click, waitFor }) {
   await evaluate(`(() => {
     const dataTransfer = new DataTransfer();
+    const source = document.querySelector('[data-slide-id]');
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer }));
     dataTransfer.setData('text/x-web-ppt-slide', '<不存在 & 原文>');
-    document.querySelector('[data-slide-id]').dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer }));
+    source.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer }));
   })()`);
   await waitFor("document.querySelector('#statusText').textContent.startsWith('Action failed: ')", '真实非法页拖放的错误摘要');
   const detail = await evaluate("document.querySelector('#statusText').textContent.slice('Action failed: '.length)");

@@ -2,6 +2,7 @@ import type { EditorSession, SlideEditor } from '@web-ppt/editor';
 import { querySelectionPane } from '@web-ppt/edit-core';
 import { message, type SiteMessage } from './i18n/message';
 import { setAttributeMessage, setAttributeText, setMessage } from './i18n/runtime';
+import { bindChartRecoveryLabels } from './editor-chart-recovery-labels';
 
 const placeholderMessages: Readonly<Record<string, SiteMessage>> = {
   title: message('添加标题'), ctrTitle: message('添加标题'), subTitle: message('添加副标题'),
@@ -9,6 +10,7 @@ const placeholderMessages: Readonly<Record<string, SiteMessage>> = {
 };
 
 export function bindViewLabels(session: EditorSession, view: SlideEditor): () => void {
+  const releaseChartLabels = bindChartRecoveryLabels(session, view);
   const textLayer = view.element.querySelector('[data-ppt-layer="text"]')!;
   const interaction = view.element.querySelector('[data-ppt-layer="interaction"]')!;
   function syncSearch(): void {
@@ -65,6 +67,7 @@ export function bindViewLabels(session: EditorSession, view: SlideEditor): () =>
   syncText();
   syncPlaceholders();
   return () => {
+    releaseChartLabels();
     observer.disconnect(); textObserver.disconnect(); placeholderObserver.disconnect(); unsubscribe();
     view.element.removeEventListener('click', labelImageChooser, true);
   };

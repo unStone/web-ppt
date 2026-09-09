@@ -67,16 +67,18 @@ async function runAbandonedImageRead(context) {
       await upload(context, '/assets/replacement.png', '迟到图片.png');
       await read.wait();
       await evaluate("globalThis.__oldImageRoot = document.querySelector('[data-image-insert-state=\"reading\"]')");
+      await evaluate("globalThis.__oldImageErrors = 0; globalThis.__oldImageRoot.addEventListener('webpptimageerror', () => globalThis.__oldImageErrors++)");
       await openFixture(context, '/fixtures/sample-editor-shape-format.pptx', 'after-image-read.pptx');
       await click('[data-site-locale="zh-CN"]');
       const status = await evaluate("document.querySelector('#statusText').textContent");
       await read.finish();
-      await waitFor("globalThis.__oldImageRoot.dataset.imageInsertState === 'error' && !globalThis.__oldImageRoot.hasAttribute('aria-busy')", '旧视图读取拒绝并释放忙碌状态');
+      await waitFor("globalThis.__oldImageRoot.dataset.imageInsertState === 'idle' && !globalThis.__oldImageRoot.hasAttribute('aria-busy')", '旧图片请求取消并释放忙碌状态');
       if (!await evaluate(`document.querySelector('#statusText').textContent === ${JSON.stringify(status)}
+        && !globalThis.__oldImageErrors
         && document.querySelector('#fileName').textContent === 'after-image-read.pptx' && document.querySelector('#undo').disabled`)) {
         throw new Error('旧文稿的迟到图片错误覆盖了新文稿状态');
       }
-    } finally { await evaluate('delete globalThis.__oldImageRoot'); }
+    } finally { await evaluate('delete globalThis.__oldImageRoot; delete globalThis.__oldImageErrors'); }
   });
   await click('[data-site-locale="en"]');
 }

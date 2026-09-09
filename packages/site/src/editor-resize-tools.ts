@@ -27,7 +27,7 @@ export function showSlideSizeTools(session: EditorSession, current: () => Editor
   dialog.querySelector<HTMLButtonElement>('[data-cancel]')!.onclick = () => dialog.close();
   dialog.querySelector('form')!.onsubmit = (event) => {
     event.preventDefault();
-    if (current() !== session) { dialog.close(); return; }
+    if (!dialog.isConnected || current() !== session) { dialog.close(); return; }
     try {
       createSlideSizeEditor(session.editor).setSize({ w: width.valueAsNumber, h: height.valueAsNumber,
         fit: fit.checked ? 'ensureFit' : 'none' });
@@ -40,7 +40,8 @@ export function showSlideSizeTools(session: EditorSession, current: () => Editor
   };
   document.body.append(dialog);
   const restoreLanguage = moveLanguageControl(dialog.querySelector('header')!);
-  dialog.addEventListener('close', () => { restoreLanguage(); dialog.remove(); }, { once: true });
+  const close = () => { restoreLanguage(); dialog.close(); dialog.remove(); };
+  dialog.addEventListener('close', close, { once: true });
   dialog.showModal();
-  return () => dialog.close();
+  return close;
 }

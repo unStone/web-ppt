@@ -1,0 +1,16 @@
+export const pdfMessages = {
+  'PDF（图片页面）':'PDF (image pages)',
+  'PDF（可搜索文字）':'PDF (searchable text)',
+  '普通文字可选择和搜索，普通图形保留矢量；特殊效果会转为局部图片并列出说明。需要可用的字体文件，可在“字体与缺字”中加载。':'Ordinary text is selectable and searchable, and ordinary shapes remain vector graphics. Special effects become local images and are listed after export. Font files are required; load them in “Fonts and missing glyphs”.',
+  '导出对象 {id}':'Export object {id}',
+  '幻灯片背景':'Slide background',
+  '第 {page} 页 · {object}：{reason}':'Slide {page} · {object}: {reason}',
+  '矢量 PDF 导出未完成，请重试或改用图片 PDF':'Vector PDF export did not finish. Try again or use an image PDF',
+  '字体 {families}：{reason}。请关闭导出窗口，在“字体与缺字”中检查或加载字体':'Font {families}: {reason}. Close the export dialog and check or load fonts in “Fonts and missing glyphs”',
+  '图片超过导出处理上限，请缩小图片后重试':'An image exceeds the export limits. Reduce its size and try again',
+  '图片无法读取或转换，请检查图片后重试':'An image could not be read or converted. Check the image and try again',
+  '该内容暂时无法矢量导出，可改用图片 PDF':'This content cannot be exported as vectors yet. Use an image PDF',
+  '已用图片保留该对象的特殊效果':'An image preserves this object’s special effects',
+  '另有 {count} 个对象使用图片保留效果':'Images preserve effects for {count} more objects',
+  '检查文稿字体并加载本机字体文件。字体用于本次预览和图片、SVG、PDF 导出，关闭文稿后释放；新增字体不会写入 PPTX。':'Check presentation fonts and load local font files. Fonts apply to this preview and image, SVG and PDF exports, and are released when the presentation closes. Added fonts are not written to the PPTX.',
+} as const;
