@@ -10,7 +10,11 @@ export const pdfMessages = {
   '图片超过导出处理上限，请缩小图片后重试':'An image exceeds the export limits. Reduce its size and try again',
   '图片无法读取或转换，请检查图片后重试':'An image could not be read or converted. Check the image and try again',
   '该内容暂时无法矢量导出，可改用图片 PDF':'This content cannot be exported as vectors yet. Use an image PDF',
-  '已用图片保留该对象的特殊效果':'An image preserves this object’s special effects',
+  '滤镜效果无法直接写入 PDF，已用局部图片保留外观':'Filter effects cannot be written directly to PDF, so a local image preserves their appearance',
+  '特殊文字效果无法直接写入 PDF，已用局部图片保留外观':'Special text effects cannot be written directly to PDF, so a local image preserves their appearance',
+  '剪裁或遮罩无法直接写入 PDF，已用局部图片保留外观':'Clipping or masks cannot be written directly to PDF, so a local image preserves their appearance',
+  '复杂填充或描边无法直接写入 PDF，已用局部图片保留外观':'Complex fills or strokes cannot be written directly to PDF, so a local image preserves their appearance',
+  '暂未支持的绘图特性（{code}）已用局部图片保留外观':'A local image preserves the unsupported drawing feature ({code})',
   '另有 {count} 个对象使用图片保留效果':'Images preserve effects for {count} more objects',
   '检查文稿字体并加载本机字体文件。字体用于本次预览和图片、SVG、PDF 导出，关闭文稿后释放；新增字体不会写入 PPTX。':'Check presentation fonts and load local font files. Fonts apply to this preview and image, SVG and PDF exports, and are released when the presentation closes. Added fonts are not written to the PPTX.',
 } as const;

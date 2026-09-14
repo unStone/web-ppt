@@ -49,8 +49,27 @@ export function vectorPdfFailure(presentation:Presentation,error:unknown):SiteMe
   return location(presentation,issue,reason);
 }
 
+function vectorPdfFallbackReason(reason:string):SiteMessage {
+  if (reason === 'svg-filter' || reason === 'svg-css-filter') {
+    return message('滤镜效果无法直接写入 PDF，已用局部图片保留外观');
+  }
+  if (reason === 'svg-direction' || reason.startsWith('svg-text-')
+    || reason === 'svg-node-textPath' || reason === 'svg-attribute-font-variant') {
+    return message('特殊文字效果无法直接写入 PDF，已用局部图片保留外观');
+  }
+  if (reason === 'svg-mask' || reason.startsWith('svg-clip-') || reason.startsWith('svg-viewport-')) {
+    return message('剪裁或遮罩无法直接写入 PDF，已用局部图片保留外观');
+  }
+  if (reason.startsWith('svg-paint-') || reason.startsWith('svg-pattern-')
+    || reason === 'svg-text-paint' || /^svg-value-(fill|stroke)$/.test(reason)) {
+    return message('复杂填充或描边无法直接写入 PDF，已用局部图片保留外观');
+  }
+  // 未分类原因保留稳定代码，支持人员才能从用户截图直接定位到导出覆盖检查。
+  return message('暂未支持的绘图特性（{code}）已用局部图片保留外观',{code:reason});
+}
+
 export function vectorPdfNotices(presentation:Presentation,issues:VectorPdfIssue[]):SiteMessage[] {
-  const notices = issues.slice(0,100).map(issue => location(presentation,issue,message('已用图片保留该对象的特殊效果')));
+  const notices = issues.slice(0,100).map(issue => location(presentation,issue,vectorPdfFallbackReason(issue.reason)));
   if (issues.length > 100) notices.push(message('另有 {count} 个对象使用图片保留效果',{count:issues.length - 100}));
   return notices;
 }

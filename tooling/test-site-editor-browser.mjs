@@ -273,6 +273,8 @@ const routes = new Map([
   ['/fixtures/font-latin.ttf', ['font/ttf', readFileSync(join(root, 'tooling/font-glyph-samples/latin.ttf'))]],
   ['/fixtures/font-chinese.ttf', ['font/ttf', readFileSync(join(root, 'tooling/font-glyph-samples/chinese.ttf'))]],
   ['/fixtures/sample-vector-pdf-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-text.pptx'))]],
+  ['/fixtures/sample-vector-pdf-jobs.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-jobs.pptx'))]],
+  ['/fixtures/sample-vector-pdf-effects.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-effects.pptx'))]],
   ['/editor.en.html', ['text/html; charset=utf-8', productionLanguages
     ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml]],
   ['/src/i18n-language.css', ['text/css', readFileSync(join(root, 'packages/site/src/i18n-language.css'))]],

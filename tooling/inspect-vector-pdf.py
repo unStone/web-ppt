@@ -91,6 +91,20 @@ if len(sys.argv)>2 and sys.argv[2]=='jobs':
     assert list(pdf[2].annots())==[]
     print('MuPDF：动画批次、隐藏页、批注和回复关系通过')
     sys.exit(0)
+if len(sys.argv)>2 and sys.argv[2]=='site-jobs-expanded':
+    assert [p.get_text().strip() for p in pdf]==['A\nB','B','C']
+    for page in [pdf[0],pdf[1]]:
+        annotations=list(page.annots())
+        assert len(annotations)==1 and annotations[0].info['content']=='批注'
+        assert annotations[0].info['title']=='作者'
+    assert list(pdf[2].annots())==[]
+    print('MuPDF：产品勾选跳过隐藏页、展开动画批次与包含批注通过')
+    sys.exit(0)
+if len(sys.argv)>2 and sys.argv[2]=='site-jobs-all-slides':
+    assert [p.get_text().strip() for p in pdf]==['B','A','C']
+    assert all(list(p.annots())==[] for p in pdf)
+    print('MuPDF：产品取消跳过隐藏页且不展开动画、不含批注通过')
+    sys.exit(0)
 assert len(pdf)==1
 page=pdf[0]
 assert page.rect.width==480 and page.rect.height==270

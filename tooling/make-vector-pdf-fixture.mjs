@@ -1,5 +1,5 @@
 import {writeFileSync} from 'node:fs';
-import {deck,slideXml,sp,makePng,nextShapeId,px} from './lib/ooxml.mjs';
+import {deck,slideXml,sp,makePng,nextShapeId,px,NS,XML} from './lib/ooxml.mjs';
 import {vectorPdfNormalizationSamples} from './lib/vector-pdf-normalization-samples.mjs';
 
 const content=sp({x:40,y:40,w:320,h:100,fill:'<a:solidFill><a:srgbClr val="E53935"/></a:solidFill>',
@@ -25,11 +25,20 @@ const timing=`<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" nodeType=
 <p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:set><p:cBhvr><p:cTn id="4" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${exitId}"/></p:tgtEl>
 <p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="hidden"/></p:to></p:set>
 </p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+const commentRelationship=`<Relationship Id="rIdComments" Type="${NS.r}/comments" Target="../comments/comment1.xml"/>`;
 writeFileSync(new URL('../fixtures/sample-vector-pdf-jobs.pptx',import.meta.url),deck({
   name:'VectorPdfJobs',width:640,height:360,slides:[slideXml(exiting+keeper).replace('</p:sld>',timing+'</p:sld>'),
     slideXml(label('A',40),'','show="0"'),slideXml(label('C',40))],
+  presRels:`<Relationship Id="rIdComments" Type="${NS.r}/commentAuthors" Target="commentAuthors.xml"/>`,
+  slideRelationships:[commentRelationship],
+  extraTypes:'<Override PartName="/ppt/commentAuthors.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml"/>'+
+    '<Override PartName="/ppt/comments/comment1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.comments+xml"/>',
+  extraEntries:[
+    ['ppt/commentAuthors.xml',`${XML}<p:cmAuthorLst xmlns:p="${NS.p}"><p:cmAuthor id="0" name="作者" initials="A" lastIdx="1" clrIdx="0"/></p:cmAuthorLst>`],
+    ['ppt/comments/comment1.xml',`${XML}<p:cmLst xmlns:p="${NS.p}"><p:cm authorId="0" idx="1"><p:pos x="381000" y="381000"/><p:text>批注</p:text></p:cm></p:cmLst>`],
+  ],
 }));
-console.log('fixtures/sample-vector-pdf-jobs.pptx：原始页码、隐藏页和动画批次');
+console.log('fixtures/sample-vector-pdf-jobs.pptx：原始页码、隐藏页、动画批次和批注');
 
 const ellipse=sp({x:40,y:40,w:120,h:80,prst:'ellipse',rot:30*60000,fill:'<a:noFill/>',
   ln:'<a:ln w="38100" cap="rnd"><a:solidFill><a:srgbClr val="1565C0"/></a:solidFill><a:prstDash val="dash"/><a:round/></a:ln>'});
