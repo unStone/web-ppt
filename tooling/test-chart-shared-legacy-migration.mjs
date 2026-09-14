@@ -124,8 +124,9 @@ export * as migration from '@web-ppt/collab/migration';\n`);
   }
   // 注册表属于进程；每个契约都必须确实先用普通入口编辑，再加载共享实现。
   const results = Object.keys(cases).map(name => {
+    // legacy-shapes 自己还会串行启动 28 个独立进程验证冷恢复，不能套用单场景的 60 秒上限。
     const child = spawnSync(process.execPath, [resolve(import.meta.filename), `--case=${name}`, ...variant],
-      { cwd: root, encoding: 'utf8', timeout: 60_000 });
+      { cwd: root, encoding: 'utf8', timeout: name === 'legacy-shapes' ? 180_000 : 60_000 });
     const output = `${child.stdout ?? ''}${child.stderr ?? ''}`;
     writeFileSync(join(out, `${name}.log`), output);
     console.log(`${name}: ${child.status === 0 ? 'PASS' : 'FAIL'} (${join(out, `${name}.log`)})`);
