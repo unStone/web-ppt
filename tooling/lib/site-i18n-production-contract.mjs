@@ -63,7 +63,7 @@ export async function runSiteI18nProductionContract(context) {
   for (const page of ['index', 'samples', 'editor']) {
     const url = `${directory}${page}.en.html`;
     await request('Page.navigate', { url });
-    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement.lang === 'en'
+    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement?.lang === 'en'
       && document.querySelector('[data-site-locale="en"]')?.getAttribute('aria-current') === 'true'`, `${page} 英文生产页面`);
     if (page === 'editor') {
       const ready = "document.querySelector('#canvasMount').firstElementChild && !document.querySelector('#editorApp').dataset.loading";
