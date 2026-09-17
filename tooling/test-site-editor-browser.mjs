@@ -557,7 +557,7 @@ async function runContract(webSocketDebuggerUrl) {
         node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (!node.isConnected) continue;
-        if (node.matches(':disabled') || node.closest('[hidden]')) continue;
+        if (node.closest('[hidden]')) continue;
         const rect = node.getBoundingClientRect();
         const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         if (!node.contains(document.elementFromPoint(point.x, point.y))) {

@@ -4,12 +4,22 @@ export async function runSiteLanguageInputContract({ request, evaluate, waitFor 
   await request('Emulation.setTouchEmulationEnabled', { enabled: true });
   const layout = await evaluate(`(() => {
     const controls = [...document.querySelectorAll('#siteLanguage a,.app-header #newFile,.app-header .file-button')];
-    return controls.map((node) => {
+    const rects = controls.map((node) => {
       const rect = node.getBoundingClientRect();
       return { text: node.textContent, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
     });
+    const box = selector => document.querySelector(selector)?.getBoundingClientRect().toJSON();
+    const overflow = [...document.querySelectorAll('body *')].map(node => {
+      const rect = node.getBoundingClientRect();
+      return { node: node.id ? '#' + node.id : node.className ? '.' + String(node.className).trim().replaceAll(' ', '.') : node.tagName,
+        left: rect.left, right: rect.right, width: rect.width };
+    }).filter(item => item.width && (item.left < 0 || item.right > 321)).sort((a, b) => b.right - a.right).slice(0, 12);
+    return { controls: rects, width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+      visualWidth: visualViewport.width, scale: visualViewport.scale,
+      boxes: { app: box('#editorApp'), header: box('.app-header'), recovery: box('#recoveryPrompt > div'),
+        recoveryActions: box('#recoveryPrompt > div > span'), language: box('#siteLanguage') }, overflow };
   })()`);
-  if (layout.some((rect) => rect.left < 0 || rect.right > 321 || rect.top < 0 || rect.bottom > 844)) {
+  if (layout.controls.some((rect) => rect.left < 0 || rect.right > 321 || rect.top < 0 || rect.bottom > 844)) {
     throw new Error(`${page} 的窄屏语言/文件入口不可达：${JSON.stringify(layout)}`);
   }
   const point = await evaluate(`(() => {

@@ -1,4 +1,5 @@
 export async function runLocalSaveDestinationContract({ evaluate, click, waitFor, request }) {
+  await openSaveMenu({ evaluate, click, waitFor });
   await click('#saveToFile');
   await waitFor("!document.querySelector('#saveAsFile').hidden && !document.querySelector('#saveAsFile').disabled", '先建立当前文稿的保存目标');
   await click('#addShape');
@@ -21,6 +22,7 @@ export async function runLocalSaveDestinationContract({ evaluate, click, waitFor
     };
   })()`, true);
   try {
+    await openSaveMenu({ evaluate, click, waitFor });
     await click('#saveAsFile');
     await waitFor("document.querySelector('#statusText').textContent === 'Could not save: new target denied' && !document.querySelector('#saveAsFile').disabled", '合法新目标写入失败');
     if (!await evaluate(`(async () => document.querySelector('#saveToFile').title === 'Save destination: local-save.pptx'
@@ -29,6 +31,7 @@ export async function runLocalSaveDestinationContract({ evaluate, click, waitFor
       throw new Error('新目标交付失败不能替换旧目标或清除未保存状态');
     }
     await evaluate('FileSystemFileHandle.prototype.createWritable = globalThis.__destinationWritable');
+    await openSaveMenu({ evaluate, click, waitFor });
     await evaluate("document.querySelector('#saveToFile').focus()");
     for (const type of ['rawKeyDown', 'keyUp']) await request('Input.dispatchKeyEvent', {
       type, key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9,
@@ -36,7 +39,7 @@ export async function runLocalSaveDestinationContract({ evaluate, click, waitFor
     await waitFor("document.activeElement === document.querySelector('#saveAsFile')", '原生 Tab 可达另存为');
     const tree = await request('Accessibility.getFullAXTree');
     for (const name of ['Save to file', 'Save as', 'Save a copy']) {
-      if (!tree.result.nodes.some(node => !node.ignored && node.role?.value === 'button' && node.name?.value === name)) {
+      if (!tree.result.nodes.some(node => !node.ignored && node.role?.value === 'menuitem' && node.name?.value === name)) {
         throw new Error(`保存入口的真实可访问树缺少 ${name}`);
       }
     }
@@ -67,4 +70,10 @@ export async function runLocalSaveDestinationContract({ evaluate, click, waitFor
       delete globalThis.__destinationPicker; delete globalThis.__destinationWritable;
       delete globalThis.__previousFile; delete globalThis.__otherSaveHandle;`);
   }
+}
+
+async function openSaveMenu({ evaluate, click, waitFor }) {
+  if (await evaluate("document.querySelector('#fileMenu').hidden")) await click('#fileMenuToggle');
+  await waitFor(`document.querySelector('#fileMenuToggle').getAttribute('aria-expanded') === 'true'
+    && !document.querySelector('#fileMenu').hidden`, '展开保存菜单');
 }

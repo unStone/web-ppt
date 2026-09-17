@@ -29,6 +29,10 @@ export async function runLocalSaveLifecycleContract(context) {
   await request('Emulation.setDeviceMetricsOverride', { width: 320, height: 844, deviceScaleFactor: 1, mobile: true });
   await request('Emulation.setTouchEmulationEnabled', { enabled: true });
   try {
+    await click('#fileMenuToggle');
+    await waitFor(`document.querySelector('#fileMenuToggle').getAttribute('aria-expanded') === 'true'
+      && !document.querySelector('#fileMenu').hidden
+      && !document.querySelector('#saveToFile').hidden`, '窄屏保存菜单');
     await evaluate(`(() => {
       globalThis.__saveTouchTrace=[];
       const events=['touchstart','touchend','pointerdown','pointerup','click'];
