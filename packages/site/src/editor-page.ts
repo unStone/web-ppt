@@ -2,9 +2,13 @@ import type { EditorApplication } from './editor-application';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import { languageReady, setMessage, setText } from './i18n/runtime';
 import { message } from './i18n/message';
+import { bindEditorChrome } from './editor-chrome';
 
 const { app, fileInput, canvasState, statusText, documentKind } = editorElements;
 const bootstrap = new AbortController();
+const chrome = new AbortController();
+bindEditorChrome(chrome.signal);
+window.addEventListener('pagehide', () => chrome.abort(), { once: true });
 let loading: Promise<EditorApplication> | undefined;
 let languageInitialized = false;
 

@@ -56,7 +56,7 @@ export async function runSiteEditorMediaToolbarContract(context) {
   const saveTarget = await evaluate(`(() => {
     const button = document.querySelector('#saveFile'), rect = button.getBoundingClientRect();
     return { disabled: button.disabled, left: rect.left, right: rect.right,
-      hit: document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)?.id };
+      hit: document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)?.closest('button')?.id };
   })()`);
   if (saveTarget.disabled || saveTarget.hit !== 'saveFile') throw new Error(`媒体工具不能挤走保存入口：${JSON.stringify(saveTarget)}`);
   await saveAndReopen(context, 'media-tools-reopened.pptx');

@@ -21,6 +21,7 @@ export const editorElements = {
 
 export const editorButtons = {
   newFile: $<HTMLButtonElement>('#newFile'),
+  fileMenu: $<HTMLButtonElement>('#fileMenuToggle'),
   edit: $<HTMLButtonElement>('#editMode'),
   view: $<HTMLButtonElement>('#viewMode'),
   undo: $<HTMLButtonElement>('#undo'),
@@ -31,6 +32,7 @@ export const editorButtons = {
   fonts: $<HTMLButtonElement>('#fontTools'),
   addTable: $<HTMLButtonElement>('#addTable'),
   addSlide: $<HTMLButtonElement>('#addSlide'),
+  addSlideShortcut: $<HTMLButtonElement>('#addSlideShortcut'),
   play: $<HTMLButtonElement>('#playAnimations'),
   inspector: $<HTMLButtonElement>('#inspectorToggle'),
   zoomOut: $<HTMLButtonElement>('#zoomOut'),
@@ -39,6 +41,7 @@ export const editorButtons = {
   exportDocument: $<HTMLButtonElement>('#exportDocument'),
   exportImages: $<HTMLButtonElement>('#exportImages'),
   save: $<HTMLButtonElement>('#saveFile'),
+  saveCopy: $<HTMLButtonElement>('#saveCopyFromMenu'),
   localSave: $<HTMLButtonElement>('#saveToFile'),
   saveAs: $<HTMLButtonElement>('#saveAsFile'),
   prev: $<HTMLButtonElement>('#prevSlide'),

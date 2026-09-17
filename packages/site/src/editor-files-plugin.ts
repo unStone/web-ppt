@@ -4,7 +4,7 @@ import { createEditorFileActions, type EditorFileActions } from './editor-file-a
 import type { SiteNotice } from './i18n/message';
 
 export interface EditorFileHost {
-  readonly buttons: Record<'save' | 'localSave' | 'saveAs' | 'exportDocument' | 'exportImages', HTMLButtonElement>;
+  readonly buttons: Record<'save' | 'saveCopy' | 'localSave' | 'saveAs' | 'exportDocument' | 'exportImages', HTMLButtonElement>;
   snapshot(): { session: EditorSession | null; name: string; writable: boolean; loading: boolean; showComments: boolean };
   sync(): void;
 }
@@ -34,6 +34,7 @@ export const editorFilesPlugin = {
           : files.saveCopy(current.session, current.name));
       };
       host.buttons.save.addEventListener('click', () => save(false), { signal });
+      host.buttons.saveCopy.addEventListener('click', () => save(false), { signal });
       host.buttons.localSave.addEventListener('click', () => save(true), { signal });
       host.buttons.saveAs.addEventListener('click', () => save(true, true), { signal });
       for (const method of ['exportDocument', 'exportImages'] as const) {

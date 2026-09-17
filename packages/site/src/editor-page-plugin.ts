@@ -71,20 +71,25 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
     buttons.redo.disabled = !writable || mode !== 'edit' || !editor!.history.redoCount;
     buttons.save.disabled = !writable;
+    buttons.saveCopy.disabled = !writable;
+    buttons.fileMenu.disabled = !loaded;
     buttons.localSave.disabled = !writable;
     buttons.localSave.hidden = !files?.localAvailable;
     buttons.saveAs.disabled = !writable;
     buttons.saveAs.hidden = !files?.localAvailable || !files?.localTarget(current?.session ?? null);
+    setText(buttons.save.querySelector('span')!, '保存副本');
     setAttributeMessage(buttons.localSave, 'title', message('保存目标：{name}', { name: files?.localTarget(current?.session ?? null) ?? message('请选择保存位置') }));
     buttons.exportImages.disabled = !loaded;
     buttons.fonts.disabled = !loaded;
     setAttributeMessage(buttons.fonts,'title',message(current?.fonts?.state().initialIssues
       ? '部分字体无法用于编辑，请打开字体工具检查' : '字体与缺字'));
+    buttons.fonts.toggleAttribute('data-has-issue', !!current?.fonts?.state().initialIssues);
     buttons.exportDocument.disabled = !loaded;
     for (const button of [buttons.addShape, buttons.addImage, buttons.media, slideSizeButton, buttons.addTable]) {
       button.disabled = !writable || mode !== 'edit';
     }
     buttons.addSlide.disabled = !writable || mode !== 'edit' || !editor!.doc.layoutOrder.length;
+    buttons.addSlideShortcut.disabled = buttons.addSlide.disabled;
     for (const button of [buttons.play, buttons.inspector, buttons.view, buttons.zoomOut, buttons.fit, buttons.zoomIn]) {
       button.disabled = !loaded;
     }
@@ -183,7 +188,24 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
       textTools: [toolbar, document.querySelector<HTMLElement>('#siteLanguage')!, inspectorElement],
       onChange(change) {
         if (signal.aborted) return;
+        if (change.source === 'selection') {
+          // 窄屏会把属性面板收成抽屉；选择对象或画布时应立即显示对应属性。
+          viewport.openInspector();
+        }
         if (change.createdSlides.size || change.removedSlides.size || change.movedSlides.size) viewport.renderNavigation();
+        else if (change.source !== 'selection' && current) {
+          const affected = new Set(change.renderSlides);
+          for (const id of change.touchedElements) {
+            let record = current.session.editor.doc.elements[id];
+            while (record) {
+              if (current.session.editor.doc.slides[record.parent]) { affected.add(record.parent); break; }
+              record = current.session.editor.doc.elements[record.parent];
+            }
+          }
+          // 删除后的元素已不在文档树中；当前编辑页仍必须失效，不能留下成功但过期的预览。
+          if (!affected.size && change.touchedElements.size) affected.add(current.view.slideId);
+          viewport.refreshNavigation(affected);
+        }
         syncControls(); void application?.recovery.flush(current?.session ?? null);
       },
     },

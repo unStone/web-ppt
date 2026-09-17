@@ -2,7 +2,7 @@ import type { EditorMode, TouchNavigationChange, EditorContextRequest } from '@w
 import type { EditorDocument } from './editor-document-plugins';
 import type { createEditorFeedback } from './editor-feedback';
 import { editorButtons as buttons, editorElements } from './editor-elements';
-import { renderSlideNavigation } from './editor-slide-reorder';
+import { refreshSlideThumbnails, renderSlideNavigation } from './editor-slide-reorder';
 import { message } from './i18n/message';
 import { t } from './i18n/runtime';
 
@@ -20,7 +20,7 @@ interface ViewportContext {
 /** 视口偏好属于当前应用；监听、观察器和下一帧任务必须一起释放。 */
 export function createEditorViewport(context: () => ViewportContext,
   feedback: ReturnType<typeof createEditorFeedback>, signal: AbortSignal) {
-  const { app, canvasViewport, slideList, zoomLabel } = editorElements;
+  const { app, canvasViewport, slideList, zoomLabel, inspectorElement } = editorElements;
   const { notice, reportError, previewAnimations } = feedback;
   let mode: EditorMode = 'edit', zoom = 1, fitWanted = true, frame = 0;
   const live = () => !signal.aborted && context().ready;
@@ -32,7 +32,7 @@ export function createEditorViewport(context: () => ViewportContext,
   };
   const syncSelection = () => {
     const selected = context().document?.view.slideId;
-    for (const item of slideList.querySelectorAll<HTMLButtonElement>('[data-slide-id]')) {
+    for (const item of slideList.querySelectorAll<HTMLElement>('[data-slide-id]')) {
       item.setAttribute('aria-current', String(item.dataset.slideId === selected));
     }
   };
@@ -55,6 +55,7 @@ export function createEditorViewport(context: () => ViewportContext,
       showSlide, onError: reportError }), signal);
     syncSelection();
   };
+  const refreshNavigation = (ids: Iterable<string>) => refreshSlideThumbnails(slideList, ids);
   const setMode = (next: EditorMode) => {
     const state = context(), current = state.document;
     if (!live() || !current || next === 'edit' && !state.writable) return;
@@ -107,6 +108,7 @@ export function createEditorViewport(context: () => ViewportContext,
   const openInspector = () => {
     if (!live()) return;
     app.dataset.inspectorOpen = 'true'; buttons.inspector.setAttribute('aria-expanded', 'true');
+    inspectorElement.scrollTop = 0;
   };
   const closeInspector = () => {
     app.dataset.inspectorOpen = 'false'; buttons.inspector.setAttribute('aria-expanded', 'false');
@@ -133,7 +135,7 @@ export function createEditorViewport(context: () => ViewportContext,
   on(buttons.zoomIn, () => { fitWanted = false; applyZoom(zoom + .1); });
   on(buttons.fit, () => { fitWanted = true; fit(); });
   return {
-    get mode() { return mode; }, index, syncSelection, renderNavigation, showSlide, openInspector,
+    get mode() { return mode; }, index, syncSelection, renderNavigation, refreshNavigation, showSlide, openInspector,
     onSlideChange, onTouchNavigate, onContextRequest,
     reset(next: EditorMode = 'edit') { cancelFrame(); mode = next; zoom = 1; fitWanted = true; },
     fitOnNextFrame() { cancelFrame(); if (!signal.aborted) frame = requestAnimationFrame(() => { frame = 0; fit(); }); },

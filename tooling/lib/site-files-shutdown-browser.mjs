@@ -20,7 +20,7 @@ export async function runFilesShutdownContract(sourceUrl) {
   const originalPicker = window.showSaveFilePicker;
   const host = { canvas: document.querySelector('#canvas'), objects: document.querySelector('#objects'),
     textTools: [], onChange() {} };
-  const buttons = Object.fromEntries(['save', 'localSave', 'saveAs', 'exportDocument', 'exportImages'].map(name => {
+  const buttons = Object.fromEntries(['save', 'saveCopy', 'localSave', 'saveAs', 'exportDocument', 'exportImages'].map(name => {
     const button = document.createElement('button'); document.body.append(button); return [name, button];
   }));
   const signal = new AbortController().signal;

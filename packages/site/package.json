@@ -18,6 +18,7 @@
     "@web-ppt/viewer-core": "*",
     "cordis": "4.0.0-rc.9",
     "harfbuzzjs": "1.6.1",
+    "lucide": "^1.46.0",
     "mtx-decompressor": "^1.6.0"
   }
 }

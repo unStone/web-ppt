@@ -3,8 +3,32 @@ import {
 } from './site-editor-browser-helpers.mjs';
 
 export async function runSiteEditorShapeToolbarContract(context) {
-  const { evaluate, waitFor, click } = context;
+  const { evaluate, waitFor, click, request } = context;
   await openFixture(context, '/fixtures/sample-editor-shape-format.pptx', 'shape-format.pptx');
+  if (await evaluate("document.querySelector('#editorApp')?.dataset.inspectorOpen === 'true'")) {
+    await click('#inspectorToggle');
+  }
+  await request('Emulation.setDeviceMetricsOverride', {
+    width: 700, height: 900, deviceScaleFactor: 1, mobile: false,
+  });
+  await waitFor(`getComputedStyle(document.querySelector('#objectPanel')).display === 'none'
+    && document.querySelector('#slideCount')?.hidden
+    && [...document.querySelectorAll('[data-task-tab]')].reduce((width, tab) => width + tab.getBoundingClientRect().width, 0)
+      < document.querySelector('.task-tabs').getBoundingClientRect().width * 0.7
+    && getComputedStyle(document.querySelector('#taskStart')).justifyContent === 'flex-start'`, '窄屏编辑外壳收敛');
+  await click('[data-edit-id]');
+  await waitFor(`document.querySelector('#editorApp')?.dataset.inspectorOpen === 'true'
+    && getComputedStyle(document.querySelector('#objectPanel')).display !== 'none'
+    && !document.querySelector('#shapeInspector')?.hidden
+    && document.querySelector('#editorInspector')?.scrollTop === 0
+    && [...document.querySelectorAll('#objectList [data-pane-action="visibility"]')].every((button) =>
+      ['eye', 'eye-off'].includes(button.firstElementChild?.getAttribute('data-pane-icon')))
+    && [...document.querySelectorAll('#objectList [data-pane-action="lock"]')].every((button) =>
+      ['lock', 'unlock'].includes(button.firstElementChild?.getAttribute('data-pane-icon')))
+    && !/[●○🔒🔓]/u.test(document.querySelector('#objectList')?.textContent ?? '')`, '窄屏选中图形显示统一图标属性面板');
+  await request('Emulation.setDeviceMetricsOverride', {
+    width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+  });
   await selectPaneObject(context, 'format-alpha-solid');
   await waitFor(`document.querySelector('#shapeInspector') && !document.querySelector('#shapeInspector').hidden`, '形状上下文面板');
 

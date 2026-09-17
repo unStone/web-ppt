@@ -95,6 +95,7 @@ export async function checkPageApplication(source) {
         '页面服务持有查看模式与编辑权限');
       document.querySelector('#editMode').click();
       document.querySelector('#addShape').click();
+      document.querySelector('#shapePicker [data-shape-preset="roundRect"]').click();
       require(session.editor.history.undoCount === 1, '新增形状只有一条历史');
       document.querySelector('#undo').click(); require(undos === 1 && !session.editor.history.undoCount, '历史按钮必须只撤销一次');
       document.querySelector('#redo').click(); require(session.editor.history.undoCount === 1, '重做仍可执行');

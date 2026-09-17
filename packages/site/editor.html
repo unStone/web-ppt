@@ -6,7 +6,7 @@
 <title>在线 PPT 编辑器 · Web-PPT</title>
 <meta name="description" content="完全运行在浏览器里的 PPT 编辑器：打开、编辑、预览并保存 .pptx，旧版 .ppt 可转换后编辑，文件不会上传。" />
 <link rel="canonical" href="https://unstone.github.io/web-ppt/editor.html" />
-<meta name="theme-color" content="#f7f7f5" />
+<meta name="theme-color" content="#111827" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23d95622'/><path d='M10 8h7.5a5.5 5.5 0 010 11H14v5h-4V8zm4 3.4v4.2h3.2a2.1 2.1 0 000-4.2H14z' fill='%23fff'/></svg>" />
 <link rel="stylesheet" href="./src/editor-page.css" />
 <link rel="stylesheet" href="./src/i18n-language.css" />
@@ -14,69 +14,118 @@
 <body>
 <div class="editor-app" id="editorApp">
   <header class="app-header">
-    <a class="app-brand" href="./" aria-label="返回 Web-PPT 官网">
-      <span class="app-mark">P</span>
-      <span>Web-PPT</span>
-    </a>
-    <span class="beta-badge">编辑器 beta</span>
-    <span class="file-name" id="fileName">内置示例</span>
-    <span class="privacy-note"><i></i>文件仅在本机处理</span>
-    <span class="site-language" id="siteLanguage" data-site-language role="group" aria-label="Language / 语言"><a href="./editor.html?lang=zh-CN" data-site-locale="zh-CN" lang="zh-CN">中文</a><a href="./editor.en.html" data-site-locale="en" lang="en">English</a></span>
-    <button class="button" id="newFile" type="button">新建</button>
-    <label class="button primary file-button" for="fileInput">打开本地文件</label>
+    <div class="brand-cluster">
+      <a class="app-brand" href="./" aria-label="返回 Web-PPT 官网">
+        <span class="app-mark">P</span>
+        <span>Web-PPT</span>
+      </a>
+      <span class="beta-badge">编辑器 beta</span>
+    </div>
+    <div class="document-identity">
+      <span class="file-name" id="fileName">内置示例</span>
+      <span class="privacy-note"><i data-lucide="shield-check"></i>文件仅在本机处理</span>
+    </div>
+    <div class="header-actions">
+      <span class="site-language" id="siteLanguage" data-site-language role="group" aria-label="Language / 语言"><a href="./editor.html?lang=zh-CN" data-site-locale="zh-CN" lang="zh-CN">中文</a><a href="./editor.en.html" data-site-locale="en" lang="en">English</a></span>
+      <button class="button header-command" id="newFile" type="button"><i data-lucide="file-plus-2"></i><span>新建</span></button>
+      <label class="button header-command file-button" for="fileInput"><i data-lucide="folder-open"></i><span>打开本地文件</span></label>
+      <div class="save-cluster">
+        <button class="button primary save-button" id="saveFile" type="button" disabled><i data-lucide="save"></i><span>保存副本</span></button>
+        <button class="button primary save-menu-toggle" id="fileMenuToggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fileMenu" aria-label="更多保存与导出选项" disabled><i data-lucide="chevron-down"></i></button>
+        <div class="command-menu" id="fileMenu" role="menu" hidden>
+          <div class="command-menu-label">保存</div>
+          <button id="saveToFile" type="button" role="menuitem" hidden disabled><i data-lucide="save"></i><span>保存到文件</span></button>
+          <button id="saveAsFile" type="button" role="menuitem" title="更换保存位置" hidden disabled><i data-lucide="folder-output"></i><span>另存为</span></button>
+          <button id="saveCopyFromMenu" type="button" role="menuitem" disabled><i data-lucide="copy"></i><span>保存副本</span></button>
+          <div class="command-menu-separator"></div>
+          <div class="command-menu-label">导出</div>
+          <button id="exportDocument" type="button" role="menuitem" disabled><i data-lucide="file-output"></i><span>导出文件</span></button>
+          <button id="exportImages" type="button" role="menuitem" disabled><i data-lucide="images"></i><span>导出图片 ZIP</span></button>
+        </div>
+      </div>
+    </div>
     <input id="fileInput" type="file" accept=".pptx,.ppt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" />
   </header>
 
   <div class="toolbar" id="editorToolbar" aria-label="编辑工具栏">
-    <div class="tool-group mode-switch" aria-label="工作模式">
-      <button id="editMode" type="button" aria-pressed="true">编辑</button>
-      <button id="viewMode" type="button" aria-pressed="false">预览</button>
+    <div class="task-tabs" role="tablist" aria-label="编辑任务">
+      <button type="button" role="tab" aria-selected="true" aria-controls="taskStart" data-task-tab="start">开始</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="taskInsert" data-task-tab="insert">插入</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="taskReview" data-task-tab="review">审阅</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="taskPresent" data-task-tab="present">放映</button>
     </div>
-    <span class="tool-divider"></span>
-    <div class="tool-group">
-      <button id="undo" type="button" title="撤销（Ctrl/Cmd+Z）" disabled>↶ <span>撤销</span></button>
-      <button id="redo" type="button" title="重做（Ctrl/Cmd+Shift+Z）" disabled>↷ <span>重做</span></button>
+    <div class="task-panels">
+      <div class="task-panel" id="taskStart" role="tabpanel" data-task-panel="start">
+        <div class="tool-group">
+          <button id="undo" type="button" title="撤销（Ctrl/Cmd+Z）" disabled><i data-lucide="undo-2"></i><span>撤销</span></button>
+          <button id="redo" type="button" title="重做（Ctrl/Cmd+Shift+Z）" disabled><i data-lucide="redo-2"></i><span>重做</span></button>
+        </div>
+        <span class="tool-divider"></span>
+        <div class="tool-group">
+          <button id="inspectorToggle" type="button" aria-controls="objectPanel" aria-expanded="false"><i data-lucide="sliders-horizontal"></i><span>格式</span></button>
+          <button id="formatPainter" type="button" aria-pressed="false" disabled><i data-lucide="paintbrush"></i><span>格式刷</span></button>
+          <button id="formatPainterContinuous" type="button" aria-pressed="false" disabled><i data-lucide="paint-bucket"></i><span>连续格式刷</span></button>
+        </div>
+      </div>
+      <div class="task-panel" id="taskInsert" role="tabpanel" data-task-panel="insert" hidden>
+        <div class="tool-group edit-tools">
+          <button id="addSlide" type="button" disabled><i data-lucide="panel-top-open"></i><span>新建幻灯片</span></button>
+          <span class="tool-divider"></span>
+          <span class="tool-anchor">
+            <button id="addShape" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="shapePicker" disabled><i data-lucide="shapes"></i><span>形状</span><i class="button-chevron" data-lucide="chevron-down"></i></button>
+            <div class="tool-popover shape-picker" id="shapePicker" role="dialog" aria-label="选择形状" hidden>
+              <strong>常用形状</strong>
+              <div class="shape-grid">
+                <button type="button" data-shape-preset="rect"><i data-lucide="square"></i><span>矩形</span></button>
+                <button type="button" data-shape-preset="roundRect"><i data-lucide="square-round-corner"></i><span>圆角矩形</span></button>
+                <button type="button" data-shape-preset="ellipse"><i data-lucide="circle"></i><span>椭圆</span></button>
+                <button type="button" data-shape-preset="triangle"><i data-lucide="triangle"></i><span>三角形</span></button>
+                <button type="button" data-shape-preset="diamond"><i data-lucide="diamond"></i><span>菱形</span></button>
+                <button type="button" data-shape-preset="rightArrow"><i data-lucide="move-right"></i><span>右箭头</span></button>
+                <button type="button" data-shape-preset="star5"><i data-lucide="star"></i><span>星形</span></button>
+                <button type="button" data-shape-preset="cloud"><i data-lucide="cloud"></i><span>云形</span></button>
+                <button type="button" data-shape-preset="hexagon"><i data-lucide="hexagon"></i><span>六边形</span></button>
+              </div>
+            </div>
+          </span>
+          <button id="addImage" type="button" disabled><i data-lucide="image-plus"></i><span>图片</span></button>
+          <span class="tool-anchor">
+            <button id="addTable" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tablePicker" disabled><i data-lucide="table-2"></i><span>表格</span><i class="button-chevron" data-lucide="chevron-down"></i></button>
+            <div class="tool-popover table-picker" id="tablePicker" role="dialog" aria-label="选择表格大小" hidden>
+              <strong id="tableSizeLabel">1 × 1 表格</strong>
+              <div class="table-size-grid" id="tableSizeGrid" role="grid"></div>
+            </div>
+          </span>
+          <button id="mediaTools" type="button" disabled><i data-lucide="audio-lines"></i><span>媒体</span></button>
+        </div>
+      </div>
+      <div class="task-panel" id="taskReview" role="tabpanel" data-task-panel="review" hidden>
+        <div class="tool-group product-tools">
+          <button id="findText" type="button" disabled><i data-lucide="search"></i><span>查找</span></button>
+          <button id="replaceText" type="button" disabled><i data-lucide="replace"></i><span>替换</span></button>
+          <button id="commentsTools" type="button" disabled><i data-lucide="message-square-text"></i><span>批注</span></button>
+          <button id="fontTools" type="button" disabled><i data-lucide="type"></i><span>字体与缺字</span></button>
+        </div>
+      </div>
+      <div class="task-panel" id="taskPresent" role="tabpanel" data-task-panel="present" hidden>
+        <div class="tool-group mode-switch" aria-label="工作模式">
+          <button id="editMode" type="button" aria-pressed="true"><i data-lucide="pencil"></i><span>编辑</span></button>
+          <button id="viewMode" type="button" aria-pressed="false"><i data-lucide="eye"></i><span>预览</span></button>
+        </div>
+        <span class="tool-divider"></span>
+        <div class="tool-group">
+          <button id="playAnimations" type="button" disabled><i data-lucide="play"></i><span>播放动画</span></button>
+          <button id="slideSizeTools" type="button" disabled><i data-lucide="monitor-cog"></i><span>页面尺寸</span></button>
+        </div>
+      </div>
     </div>
-    <span class="tool-divider"></span>
-    <div class="tool-group edit-tools">
-      <button id="addShape" type="button" disabled><b class="shape-icon"></b><span>形状</span></button>
-      <button id="addImage" type="button" disabled>▧ <span>图片</span></button>
-      <button id="mediaTools" type="button" disabled>♫ <span>媒体</span></button>
-      <button id="fontTools" type="button" disabled><span>字体与缺字</span></button>
-      <button id="addTable" type="button" disabled>▦ <span>表格</span></button>
-    </div>
-    <span class="tool-divider"></span>
-    <div class="tool-group">
-      <button id="playAnimations" type="button" disabled>▶ <span>播放动画</span></button>
-      <button id="inspectorToggle" type="button" aria-controls="objectPanel" aria-expanded="false">⚙ <span>格式</span></button>
-    </div>
-    <span class="tool-divider"></span>
-    <div class="tool-group product-tools">
-      <button id="findText" type="button" disabled>⌕ <span>查找</span></button>
-      <button id="replaceText" type="button" disabled>⇄ <span>替换</span></button>
-      <button id="formatPainter" type="button" aria-pressed="false" disabled>▣ <span>格式刷</span></button>
-      <button id="formatPainterContinuous" type="button" aria-pressed="false" disabled>▣▣ <span>连续格式刷</span></button>
-    </div>
-    <div class="toolbar-spacer"></div>
-    <div class="tool-group zoom-tools" aria-label="缩放">
-      <button id="zoomOut" type="button" title="缩小" disabled>−</button>
-      <button id="fitZoom" type="button" disabled><span id="zoomLabel">适应</span></button>
-      <button id="zoomIn" type="button" title="放大" disabled>＋</button>
-    </div>
-    <button class="button" id="commentsTools" type="button" disabled>批注</button>
-    <button class="button" id="slideSizeTools" type="button" disabled>页面尺寸</button>
-    <button class="button" id="exportDocument" type="button" disabled>导出文件</button>
-    <button class="button" id="exportImages" type="button" disabled>导出图片 ZIP</button>
-    <button class="button" id="saveToFile" type="button" hidden disabled>保存到文件</button>
-    <button class="button" id="saveAsFile" type="button" title="更换保存位置" hidden disabled>另存为</button>
-    <button class="button save-button" id="saveFile" type="button" disabled>保存副本</button>
   </div>
 
   <main class="workspace">
     <aside class="slide-panel" aria-label="幻灯片列表">
       <div class="panel-heading">
         <span>幻灯片</span>
-        <span class="panel-actions"><span id="slideCount">0</span><button id="addSlide" type="button" title="新增幻灯片" aria-label="新增幻灯片" disabled>＋</button></span>
+        <span class="panel-actions"><span id="slideCount" hidden>0</span><button id="addSlideShortcut" type="button" title="新增幻灯片" aria-label="新增幻灯片" disabled><i data-lucide="plus"></i></button></span>
       </div>
       <div class="slide-list" id="slideList"></div>
     </aside>
@@ -91,9 +140,17 @@
         </div>
       </div>
       <div class="page-controls">
-        <button id="prevSlide" type="button" aria-label="上一页" disabled>‹</button>
-        <span id="pageIndicator">— / —</span>
-        <button id="nextSlide" type="button" aria-label="下一页" disabled>›</button>
+        <span class="page-controls-spacer"></span>
+        <span class="page-navigation">
+          <button id="prevSlide" type="button" aria-label="上一页" disabled><i data-lucide="chevron-left"></i></button>
+          <span id="pageIndicator">— / —</span>
+          <button id="nextSlide" type="button" aria-label="下一页" disabled><i data-lucide="chevron-right"></i></button>
+        </span>
+        <span class="zoom-tools" aria-label="缩放">
+          <button id="zoomOut" type="button" title="缩小" aria-label="缩小" disabled><i data-lucide="zoom-out"></i></button>
+          <button id="fitZoom" type="button" disabled><i data-lucide="scan"></i><span id="zoomLabel">适应</span></button>
+          <button id="zoomIn" type="button" title="放大" aria-label="放大" disabled><i data-lucide="zoom-in"></i></button>
+        </span>
       </div>
     </section>
 
@@ -102,7 +159,7 @@
       <div class="object-list" id="objectList"></div>
       <div class="inspector" id="editorInspector" aria-label="上下文格式">
         <section class="inspector-section search-inspector" id="searchInspector" hidden>
-          <div class="inspector-title"><h2>查找与替换</h2><button id="closeSearch" type="button" aria-label="关闭查找">×</button></div>
+          <div class="inspector-title"><h2>查找与替换</h2><button id="closeSearch" type="button" aria-label="关闭查找"><i data-lucide="x"></i></button></div>
           <label class="inspector-stack"><span>查找</span><input id="searchQuery" type="search" /></label>
           <label class="inspector-stack" id="replacementField" hidden><span>替换为</span><input id="searchReplacement" type="text" /></label>
           <div class="inspector-actions">

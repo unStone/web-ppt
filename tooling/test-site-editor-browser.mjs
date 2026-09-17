@@ -547,13 +547,21 @@ async function runContract(webSocketDebuggerUrl) {
       for (let attempt = 0; attempt < 20; attempt++) {
         const node = document.querySelector(${JSON.stringify(selector)});
         if (!node) return null;
+        const taskPanel = node.closest('[data-task-panel]');
+        if (taskPanel?.hidden) {
+          document.querySelector('[data-task-tab="' + taskPanel.dataset.taskPanel + '"]')?.click();
+        }
+        const fileMenu = node.closest('#fileMenu');
+        if (fileMenu?.hidden) document.querySelector('#fileMenuToggle')?.click();
         // 滚动后的异步面板重绘会替换节点；只重新定位，真实点击仍仅派发一次。
         node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (!node.isConnected) continue;
+        if (node.matches(':disabled') || node.closest('[hidden]')) continue;
         const rect = node.getBoundingClientRect();
         const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         if (!node.contains(document.elementFromPoint(point.x, point.y))) {
+          if (attempt < 19) continue;
           throw new Error('点击目标被遮挡：' + ${JSON.stringify(selector)});
         }
         return point;
@@ -569,6 +577,8 @@ async function runContract(webSocketDebuggerUrl) {
         type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
       });
     } catch (error) { throw new Error(`点击 ${selector} (${point.x}, ${point.y}) 失败：${error.message}`); }
+    if (selector === '#addShape') await click('#shapePicker [data-shape-preset="roundRect"]');
+    if (selector === '#addTable') await click('#tableSizeGrid [data-table-row="3"][data-table-column="3"]');
   };
   const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0) => {
     const params = { key, code, windowsVirtualKeyCode: virtualKeyCode, nativeVirtualKeyCode: virtualKeyCode, modifiers };

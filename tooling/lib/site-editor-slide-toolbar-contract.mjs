@@ -19,14 +19,14 @@ export async function runSiteEditorSlideToolbarContract(context) {
 
   await click('#addSlide'); await click('#addSlide');
   await waitFor("document.querySelector('#slideCount').textContent === '3'", '三页结构');
-  await click('#slideList .slide-item:nth-child(1)');
+  await click('#slideList [data-slide-id]:nth-child(1)');
   await waitFor("document.querySelector('#slideNotes').value === 'MOVED'", '返回首张页面');
   await click('#duplicateSlide');
   await waitFor("document.querySelector('#slideCount').textContent === '4'", '复制页面');
   await click('#undo'); await waitFor("document.querySelector('#slideCount').textContent === '3'", '复制页面撤销');
   await click('#redo'); await waitFor("document.querySelector('#slideCount').textContent === '4'", '复制页面重做');
 
-  await click('#slideList .slide-item:nth-child(4)');
+  await click('#slideList [data-slide-id]:nth-child(4)');
   await click('#deleteSlide');
   await waitFor("document.querySelector('#slideCount').textContent === '3'", '删除页面');
   await click('#undo'); await waitFor("document.querySelector('#slideCount').textContent === '4'", '删除页面撤销');
@@ -42,17 +42,17 @@ export async function runSiteEditorSlideToolbarContract(context) {
     target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer, clientY: y }));
     source.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: transfer }));
   })()`);
-  await waitFor(`document.querySelector('#slideList .slide-item:last-child')?.dataset.slideId === ${JSON.stringify(orderBefore[0])}`, '拖动页面排序');
+  await waitFor(`document.querySelector('#slideList [data-slide-id]:last-child')?.dataset.slideId === ${JSON.stringify(orderBefore[0])}`, '拖动页面排序');
   await click('#undo');
   await waitFor(`JSON.stringify([...document.querySelectorAll('#slideList [data-slide-id]')].map((node) => node.dataset.slideId)) === ${JSON.stringify(JSON.stringify(orderBefore))}`, '页面排序撤销');
   await click('#redo');
-  await waitFor(`document.querySelector('#slideList .slide-item:last-child')?.dataset.slideId === ${JSON.stringify(orderBefore[0])}`, '页面排序重做');
+  await waitFor(`document.querySelector('#slideList [data-slide-id]:last-child')?.dataset.slideId === ${JSON.stringify(orderBefore[0])}`, '页面排序重做');
 
   await saveAndReopen(context, 'slide-tools-reopen.pptx');
   await waitFor("document.querySelector('#slideCount').textContent === '3'", '页面结构重开');
   const notes = [];
   for (let index = 1; index <= 3; index++) {
-    await click(`#slideList .slide-item:nth-child(${index})`);
+    await click(`#slideList [data-slide-id]:nth-child(${index})`);
     notes.push(await evaluate("document.querySelector('#slideNotes').value"));
   }
   if (notes.join('|') !== 'MOVED||MOVED') {
