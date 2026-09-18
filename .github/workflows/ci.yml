@@ -38,9 +38,10 @@ jobs:
         # 甚至让快照随机漂移。
         run: git diff --exit-code --stat fixtures/
 
-      - name: 安装 LibreOffice 与中文字体
+      - name: 安装 LibreOffice、中文字体与 Poppler
         # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
+        # Poppler pdftotext 用于矢量 PDF 交叉阅读器验收（与 MuPDF / pypdf 并列）。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk poppler-utils
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
