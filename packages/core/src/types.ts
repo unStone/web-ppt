@@ -519,6 +519,16 @@ export interface MediaInfo {
   external?: boolean;
   /** 媒体 MIME，便于将来交给 <video>/<audio> */
   mime?: string;
+  /**
+   * 导出时间轴是否循环。仅 Schema 显式字段生效；
+   * OOXML timing / PPT 勾选「循环播放」**不**解析进此字段。
+   */
+  loop?: boolean;
+  /**
+   * 跨页续播到文稿结束。仅 Schema 显式字段生效；
+   * OOXML 跨页窗口 / timing **不**解析进此字段。
+   */
+  crossSlide?: boolean;
 }
 
 export interface ImageElement extends ElementBase {

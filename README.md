@@ -46,7 +46,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
 
-实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md)。
+矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与已知差异](docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md)。
 
 ## 快速开始
 
@@ -444,9 +444,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2234 项断言 + 186 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，2259 项断言 + 190 个渲染快照 |
 | `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](docs/font-glyphs.md) |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 165 份固件、1102 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 168 份固件、1122 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -461,7 +461,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开同一份 0.7 十一件清单 |
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
-| `npm run test:expanded` | 扩展能力 1789 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/expanded-capabilities.md) |
+| `npm run test:expanded` | 扩展能力 2002 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/expanded-capabilities.md) |
 | `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](docs/portable-rich-text.md) |
 | `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](docs/chart-hierarchical-categories.md) |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
@@ -499,7 +499,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site —— 官网，含浏览器内查看 Demo 与独立编辑器
 ├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
 ├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          186 个渲染快照基线
+└── test/snapshots/          190 个渲染快照基线
 ```
 
 `packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
@@ -518,7 +518,7 @@ web-ppt/                     npm workspaces monorepo
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 24 个测试文件 × 全部页 × 两条文本路径 = 186 个归一化 SVG 基线，逐字节比对 |
+| **渲染快照** | 24 个测试文件 × 全部页 × 两条文本路径 = 190 个归一化 SVG 基线，逐字节比对 |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |

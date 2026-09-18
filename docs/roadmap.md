@@ -2,7 +2,7 @@
 
 > 更新于 2026-09-09，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
 
-> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)、[经典图表多级类别编辑](chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 进入实验性 beta 交付，整项验收仍在进行。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
+> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)、[经典图表多级类别编辑](chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 功能验收已齐、待全仓门禁复验；音视频与长尾格式继续推进。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
 
 盘点 `0.5.0-beta.5` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
 路径与技术方案。范围与词汇沿用 [编辑能力技术方案](editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -199,7 +199,7 @@ flowchart LR
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
 | **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) ✅ | 功能完成；真实语料单独验收 |
 | **扩展（版本待定）** | 深度编辑、高级渲染与直接导出 | [七类扩展交付](wayfinder/ppt-expanded-capabilities/map.md) ✅，实现提交 `8803e07` | 自动验收通过；Windows 真机按用户要求跳过 |
-| **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表及正式字体已完成；下一项矢量 PDF，长尾格式先定样本及支持范围 |
+| **下一阶段（进行中）** | 内容流转、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表、正式字体已完成；矢量 PDF 功能齐待门禁；音视频与长尾继续 |
 | **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
 一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
@@ -476,12 +476,12 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 | 优先级 | 内容 | 当前状态 |
 |---|---|---|
 | P0 | 高级文本生成保存/跨文稿复制；经典图表多级类别及共享工作簿同步 | 高级文本、多级类别与共享工作簿同步已完成 |
-| P1 | 按需字体与字形能力 → 矢量、可搜索 PDF | 正式字体 Provider 已完成；下一项为矢量 PDF |
+| P1 | 按需字体与字形能力 → 矢量、可搜索 PDF | 正式字体 Provider 已完成；矢量 PDF 功能验收齐，待全仓门禁 |
 | P2 | 视频音轨/混音 → 内嵌视频逐帧合成 | 以固定时间轴及明确编解码支持矩阵交付 |
 | P3 | SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 先调查真实样本与原生语义，再逐项建立实现票 |
 
 范围、任务依赖和共同验收条件统一见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。
-高级文本流转、多级类别、共享图表及正式字体已计入当前功能；矢量 PDF、音视频与长尾格式仍按任务依赖推进。
+高级文本流转、多级类别、共享图表及正式字体已计入当前功能；矢量 PDF 功能验收已齐（待门禁）、音视频与长尾格式仍按任务依赖推进。
 
 ### 7.2 验证与发布
 

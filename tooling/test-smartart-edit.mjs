@@ -30,9 +30,14 @@ const make = async (bytes = input, options = {}) => {
 };
 const text = (element) => element.kind === 'group' ? element.children.map(text).join('|')
   : element.kind === 'shape' ? element.text?.paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n') ?? '' : '';
+const decoder = new TextDecoder();
+/** DiagramML / drawing 里的文本经 XML 转义；用 includes 比对时要对齐实体 */
+const xmlText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 for (const generated of [false, true]) {
   const { p, editor, api } = await make(), frames = [];
-  const items = smartart.listEditableSmartArt(editor.doc); assert.equal(items.length, 6);
+  // 含 matrix1 / radial1 共八份：缓存页 + 六族自排（linear…radial）
+  const items = smartart.listEditableSmartArt(editor.doc); assert.equal(items.length, 8);
   editor.subscribeRecovery((f) => frames.push(f));
   for (const [index, item] of items.entries()) {
     const nodes = api.query(item.id), first = nodes[0].id;
@@ -49,13 +54,24 @@ for (const generated of [false, true]) {
   if (generated) p.dispose();
   const bytes = await editor.save(); writeFileSync(join(out, `${generated ? 'generated' : 'patched'}.pptx`), bytes);
   const parts = unzipSync(bytes), drawings = Object.keys(parts).filter((p) => /\/web-ppt-drawing-[^/]+\.xml$/.test(p));
-  assert.equal(drawings.length, 6, '六份原生绘图缓存');
+  assert.equal(drawings.length, 8, '八份原生绘图缓存');
   const fresh = await make(bytes), reopened = smartart.listEditableSmartArt(fresh.editor.doc);
   for (const [index, item] of reopened.entries()) {
     assert(text(fresh.editor.effectiveElement(item.id)).includes(`修改文字 ${index} & <测试>`), '重开绘图包含新文字');
     assert(fresh.api.query(item.id).some((n) => n.text === `新增子节点 ${index}`), '数据模型保存新增节点');
   }
-  assert(new TextDecoder().decode(parts['ppt/diagrams/data1.xml']).includes('未知数据扩展'));
+  // 结构变更后必须重写 drawing：DiagramML 与缓存同含改字/新节点，不能残留旧几何文案
+  const drawXmls = drawings.map((part) => decoder.decode(parts[part]));
+  for (let index = 0; index < 8; index++) {
+    const dataXml = decoder.decode(parts[`ppt/diagrams/data${index + 1}.xml`]);
+    const edited = xmlText(`修改文字 ${index} & <测试>`);
+    const added = xmlText(`新增子节点 ${index}`);
+    assert(dataXml.includes(edited), `DiagramML data${index + 1} 含改字`);
+    assert(dataXml.includes(added), `DiagramML data${index + 1} 含新节点`);
+    assert(drawXmls.some((xml) => xml.includes(edited)), `drawing 缓存含改字 ${index}`);
+    assert(drawXmls.some((xml) => xml.includes(added)), `drawing 缓存含新节点 ${index}`);
+  }
+  assert(decoder.decode(parts['ppt/diagrams/data1.xml']).includes('未知数据扩展'));
   assert.deepEqual(await editor.save(), bytes, '重复保存稳定');
   const recovered = await make(input, { recoveryFrames: frames });
   assert.deepEqual(recovered.api.query(smartart.listEditableSmartArt(recovered.editor.doc)[0].id), api.query(items[0].id));
@@ -68,4 +84,4 @@ for (const generated of [false, true]) {
   for (const value of [{ p, editor }, fresh, recovered]) { value.p.dispose(); value.editor.dispose(); }
 }
 record();
-console.log('SmartArt：文字、增删节点、重排、父子关系、循环拒绝、原生绘图和数据保存、历史恢复通过');
+console.log('SmartArt：文字、增删节点、重排、matrix/radial、DiagramML↔drawing 一致、历史恢复通过');

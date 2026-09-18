@@ -14,6 +14,7 @@ import {vectorPdfMarkersContract} from './lib/vector-pdf-markers-contract.mjs';
 import {vectorPdfPatternsContract} from './lib/vector-pdf-patterns-contract.mjs';
 import {vectorPdfImagePatternsContract} from './lib/vector-pdf-image-patterns-contract.mjs';
 import {vectorPdfNormalizationContract} from './lib/vector-pdf-normalization-contract.mjs';
+import {vectorPdfDialectAuditContract} from './lib/vector-pdf-dialect-audit.mjs';
 
 const root=resolve('.'),out=resolve(root,'out/vector-pdf');mkdirSync(out,{recursive:true});
 const entry=resolve(out,'entry.mjs');
@@ -42,6 +43,7 @@ try{
   const chinese=await provider.register({id:'chinese',origin:'explicit',bytes:new Uint8Array(readFileSync('tooling/font-glyph-samples/chinese.ttf'))},{purpose:'view-print'});
   assert(chinese.ok);
   await vectorPdfNormalizationContract(api,{provider,segmentText:api.segmentFontText},root,out);
+  await vectorPdfDialectAuditContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfImagePatternsContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfPatternsContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfMarkersContract(api,{provider,segmentText:api.segmentFontText},root,out);
@@ -106,5 +108,16 @@ try{
       stdio:'inherit',env:{...process.env,PYTHONPATH:process.env.PYTHONPATH ?? resolve(root,'out/font-glyphs/python')},
     });
   }finally{geometryPres.dispose();}
+  const {vectorPdfCrossReaderContract}=await import('./lib/vector-pdf-cross-reader-contract.mjs');
+  vectorPdfCrossReaderContract(out);
+  const {vectorPdfLongDocCostContract}=await import('./lib/vector-pdf-long-doc-cost-contract.mjs');
+  await vectorPdfLongDocCostContract(api,{provider,segmentText:api.segmentFontText},root,out);
+  const {vectorPdfEntryCostContract}=await import('./lib/vector-pdf-entry-cost-contract.mjs');
+  const {existsSync}=await import('node:fs');
+  if(process.argv.includes('--dist')||existsSync(resolve(root,'packages/core/dist/pdf-vector.js'))){
+    await vectorPdfEntryCostContract(root,out);
+  }else{
+    console.log('矢量 PDF 入口成本：跳过（尚未构建 dist；verify / test:pdf:vector:dist 会复测）');
+  }
 }finally{provider.dispose();pres.dispose();}
 console.log(`矢量 PDF ${process.argv.includes('--dist')?'dist':'source'}：公开导出、文字、动画批次、批注、取消、重复调用与独立图形对照通过`);

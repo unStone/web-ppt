@@ -297,7 +297,7 @@ const FIXTURES = [
   { file: 'sample-placeholder.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-ole.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-math.pptx', minPages: 1, source: 'pptx' },
-  { file: 'sample-smartart.pptx', minPages: 6, source: 'pptx' },
+  { file: 'sample-smartart.pptx', minPages: 8, source: 'pptx' },
   { file: 'sample-embedfont.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-editor-engine-text.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-editor-advanced-run-format.pptx', minPages: 1, source: 'pptx' },
@@ -1029,18 +1029,20 @@ group('SmartArt');
       eq('取的是缓存里的文本', textsOf(cached).join('|'), '缓存A|缓存B|缓存C');
     }
 
-    // 第 2-6 页只有 data + layout，走自研布局回退
+    // 第 2-8 页只有 data + layout，走自研布局回退（含 matrix1→snake、radial1）
     const WANT = [
       [1, ['需求', '设计', '实现', '验收']],
       [2, ['计划', '执行', '检查', '改进']],
       [3, ['战略', '战术', '执行']],
       [5, ['第一条', '第二条', '第三条']],
+      [6, ['左上', '右上', '左下', '右下']],
+      [7, ['中心', '北', '东', '南', '西']],
     ];
     for (const [idx, texts] of WANT) {
       const g = groupOf(idx);
       if (!check(`第 ${idx + 1} 页排出 group`, g?.kind === 'group')) continue;
       eq(`第 ${idx + 1} 页节点文本`, textsOf(g).join('|'), texts.join('|'));
-      // 盒子不能重叠也不能跑出画框
+      // 盒子不能重叠也不能跑出画框——验收结构对得上，不要求与 PPT 像素一致
       const boxes = g.children.filter((e) => e.text);
       check(`第 ${idx + 1} 页节点在画框内`,
         boxes.every((b) => b.x >= -1 && b.y >= -1 && b.x + b.w <= g.w + 1 && b.y + b.h <= g.h + 1),
@@ -1062,8 +1064,32 @@ group('SmartArt');
       check('根节点在最上方', boxes.every((b) => b === ceo || b.y >= ceo.y), `${ceo.y}`);
     }
 
+    // matrix1→snake：2×2 网格应出现两行两列，不能塌成单行线性
+    const matrix = groupOf(6);
+    if (check('矩阵页排出 group', matrix?.kind === 'group')) {
+      const boxes = matrix.children.filter((e) => e.text);
+      const ys = [...new Set(boxes.map((b) => Math.round(b.y)))];
+      const xs = [...new Set(boxes.map((b) => Math.round(b.x)))];
+      check('矩阵至少两行', ys.length >= 2, ys.join(','));
+      check('矩阵至少两列', xs.length >= 2, xs.join(','));
+    }
+
+    // radial1：首节点近中心，卫星更靠外——用到中心距离区分，不比像素
+    const radial = groupOf(7);
+    if (check('径向页排出 group', radial?.kind === 'group')) {
+      const boxes = radial.children.filter((e) => e.text);
+      const cx = radial.w / 2, cy = radial.h / 2;
+      const dist = (b) => {
+        const dx = b.x + b.w / 2 - cx, dy = b.y + b.h / 2 - cy;
+        return Math.hypot(dx, dy);
+      };
+      const center = boxes[0];
+      check('径向中心最近', boxes.slice(1).every((b) => dist(b) > dist(center) + 1),
+        boxes.map((b) => Math.round(dist(b))).join(','));
+    }
+
     // 数据模型里的 parTrans / sibTrans / presOf 是噪声，混进树里会让节点翻倍
-    for (let i = 1; i < 6; i++) {
+    for (let i = 1; i < 8; i++) {
       const g = groupOf(i);
       const boxes = g ? g.children.filter((e) => e.text) : [];
       check(`第 ${i + 1} 页未混入 parTrans/presOf 幽灵节点`, boxes.length <= 5, `${boxes.length} 个节点`);

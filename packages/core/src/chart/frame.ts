@@ -26,6 +26,8 @@ export interface AxisView {
   catCount: number;
   size: number;
   color: string;
+  /** 同侧多轴时的外推车道：0 贴绘图区，越大越靠外 */
+  lane?: number;
 }
 
 /** 类目 × 数值 的映射（柱/条/线/面积） */
@@ -270,7 +272,14 @@ export function xExtent(groups: PlotGroup[]): Extent {
 // ---------- 分级 ----------
 
 function makeScale(e: Extent, ax: Axis, target: number): Scale {
-  const auto = niceScale(e.lo, e.hi, target);
+  // 双端都自动时，按 OOXML/Excel 习惯在数据外侧留约 5% 再分级，避免点贴边。
+  let lo0 = e.lo, hi0 = e.hi;
+  if (ax.min === null && ax.max === null && hi0 > lo0) {
+    const padAmt = (hi0 - lo0) * 0.05;
+    lo0 -= padAmt * 0.5;
+    hi0 += padAmt * 0.5;
+  }
+  const auto = niceScale(lo0, hi0, target);
   let min = ax.min !== null && Number.isFinite(ax.min) ? ax.min : auto.min;
   let max = ax.max !== null && Number.isFinite(ax.max) ? ax.max : auto.max;
   if (max < min) [min, max] = [max, min];
@@ -383,7 +392,8 @@ export function axisInsets(
   const ins: Insets = { l: m.textSize * 0.4, r: m.textSize * 0.8, t: m.textSize * 0.8, b: m.textSize * 0.3 };
 
   const add = (view: AxisView, side: Side, horizontal: boolean, wrap = false): void => {
-    if (showTicks(view)) ins[side] += (horizontal ? wrap ? wrapH(view.size) : lineH(view.size) : maxLabelW(view)) + gap;
+    const lanes = Math.max(1, (view.lane ?? 0) + 1);
+    if (showTicks(view)) ins[side] += ((horizontal ? wrap ? wrapH(view.size) : lineH(view.size) : maxLabelW(view)) + gap) * lanes;
     if (view.axis.title) ins[side] += titleH;
   };
   add(vAxis, vAxis.side === 'r' ? 'r' : 'l', false);
@@ -484,12 +494,13 @@ export function renderAxes(m: ChartModel, g: Grid, fonts: string[]): SlideElemen
     let space = 0;
     if (showTicks(view)) {
       space = (horizontal ? boxH : maxLabelW(view)) + gap;
+      const laneShift = (view.lane ?? 0) * space;
       for (let i = 0; i < view.labels.length; i++) {
         const label = view.labels[i];
         if (!label) continue;
         const boxW = wrap ? Math.max(g.hBand * 0.98, size * 2) : labelBoxW(label, size);
-        const x = horizontal ? pos(i) - boxW / 2 : view.side === 'r' ? rect.x + rect.w + gap : rect.x - gap - boxW;
-        const y = horizontal ? view.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap : pos(i) - boxH / 2;
+        const x = horizontal ? pos(i) - boxW / 2 : view.side === 'r' ? rect.x + rect.w + gap + laneShift : rect.x - gap - boxW - laneShift;
+        const y = horizontal ? view.side === 't' ? rect.y - gap - boxH - laneShift : rect.y + rect.h + gap + laneShift : pos(i) - boxH / 2;
         const el = textEl(x, y, boxW, boxH, label, { size, color: view.color,
           align: horizontal ? 'center' : view.side === 'r' ? 'left' : 'right',
           anchor: horizontal ? view.side === 't' ? 'bottom' : 'top' : 'middle', fonts });

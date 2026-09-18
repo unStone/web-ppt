@@ -44,4 +44,34 @@ for(const bytes of[example().subarray(0,100),file([comment(header(false),draw)])
 const source=readFileSync(join(root,'fixtures/sample-emf-plus.pptx'));api.enableEmfPlus();const p=await api.core.parse(source,{lazy:false});
 const svg=api.core.renderSlideToSvg(p,p.slides[0],{textMode:'svg'});check(svg.includes('linearGradient')||decodeURIComponent(svg).includes('linearGradient'),'PPTX 实际图片解析');p.dispose();
 check(api.decodeEmfPlus(new Uint8Array([1,2,3])).mode==='absent','其他格式交还默认解码器');
+// SourceCopy / ImageAttributes / 竖排 / Union 裁剪
+{
+  const image=new Buf().u32(version).u32(1).u32(2).u32(2).u32(8).u32(0x26200a).u32(0).raw([0,0,255,255,0,255,0,255,255,0,0,255,0,0,0,0]).bytes;
+  const attrs=new Buf().u32(version).u32(0).u32(0).u32(0xff000000).u32(0).u32(0).bytes;
+  const font=new Buf().u32(version).f(20).u32(2).u32(0).u32(0).u32(5).text('Arial').bytes;
+  const format=new Buf().u32(version).u32(2).u32(0).u32(0).u32(0).u32(0).u32(0).u32(0).u32(0).u32(0).bytes;
+  const sourceCopy=api.decodeEmfPlus(file([comment(header(false),
+    plus(0x4023,1),plus(0x400a,0x8000,q=>q.u32(0x804477cc).u32(1).rect(0,0,10,10)),eof())]));
+  check(sourceCopy.mode==='emf-plus',sourceCopy.reason);check(sourceCopy.svg.includes('#4477ccff'),'SourceCopy 强制不透明');
+  const withAttrs=api.decodeEmfPlus(file([comment(header(false),object(5,0,image),object(8,1,attrs),
+    plus(0x401a,0,q=>q.u32(1).u32(2).rect(0,0,2,2).rect(0,0,20,20)),eof())]));
+  check(withAttrs.mode==='emf-plus',withAttrs.reason);check(withAttrs.svg.includes('data:image/png'),'ImageAttributes wrap-only 可绘');
+  const matrix=new Buf().u32(version).u32(0).u32(0).u32(0xff000000).u32(0).u32(0);
+  for(const v of[0,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0, 0,0,0,0,1])matrix.f(v);
+  const gray=api.decodeEmfPlus(file([comment(header(false),object(5,0,image),object(8,1,matrix.bytes),
+    plus(0x401a,0,q=>q.u32(1).u32(2).rect(0,0,2,2).rect(0,0,20,20)),eof())]));
+  check(gray.mode==='emf-plus',gray.reason);check(gray.svg.includes('feColorMatrix'),'色矩阵走 SVG filter');
+  const vert=api.decodeEmfPlus(file([comment(header(false),object(6,0,font),object(7,1,format),
+    plus(0x401c,0x8000,q=>q.u32(0xff000000).u32(1).u32(2).rect(10,10,40,80).text('竖排')),eof())]));
+  check(vert.mode==='emf-plus',vert.reason);check(vert.svg.includes('rotate(-90'),'竖排 DrawString');
+  const driver=api.decodeEmfPlus(file([comment(header(false),object(6,0,font),
+    plus(0x4036,0x8000,q=>{q.u32(0xff000000).u32(3).u32(0).u32(2).text('AB');q.f(10).f(20).f(10).f(40);}),eof())]));
+  check(driver.mode==='emf-plus',driver.reason);check(driver.svg.includes('rotate(-90'),'竖排 DriverString');
+  const union=api.decodeEmfPlus(file([comment(header(false),
+    plus(0x4032,0,q=>q.rect(0,0,50,50)),plus(0x4032,0x200,q=>q.rect(25,25,50,50)),
+    plus(0x400a,0x8000,q=>q.u32(0xffff0000).u32(1).rect(0,0,100,100)),eof())]));
+  check(union.mode==='emf-plus',union.reason);check((union.svg.match(/<clipPath/g)||[]).length>=2,'Union 裁剪');
+  const xorReject=api.decodeEmfPlus(file([comment(header(false),plus(0x4032,0x300,q=>q.rect(0,0,10,10)),eof())]));
+  check(xorReject.mode==='unsupported'&&/XOR|无法用 SVG/.test(xorReject.reason||''),'XOR 裁剪拒绝并说明原因');
+}
 recordCount('emfPlus',count);console.log(`EMF+ ${count} 项通过`);

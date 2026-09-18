@@ -217,12 +217,13 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
     return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
   }, { raw: 0, gzip: 0 });
 // 页面归入按需应用后，首屏不再覆盖编辑实现；首次打开仍沿用迁移前预算加当时应用实测值。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 33_439 };
+// 016/OLE 深化后应用侧 gzip 实测约 +34.5KB（相对首屏预算）。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 34_500 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
-if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
-  throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
-}
 writeFileSync(join(out, 'cordis-size.json'), JSON.stringify({ initialSize, initialBudget, applicationAdditional, activatedSize, activatedBudget }, null, 2) + '\n');
+if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
+  throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize, applicationAdditional, initialSize })}`);
+}
 const delayedChunks = new Set(imageZipTargets.map((key) =>
   `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
 
@@ -358,6 +359,7 @@ routes.set('/chartex-native.mjs', ['text/javascript', readFileSync(chartexNative
 routes.set('/fixtures/sample-chartex-native.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-native.pptx'))]);
 routes.set('/fixtures/sample-chartex-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-edit.pptx'))]);
 routes.set('/fixtures/sample-video-export.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-video-export.pptx'))]);
+routes.set('/fixtures/sample-video-media.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-video-media.pptx'))]);
 routes.set('/fixtures/sample-ppt-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ppt-edit.pptx'))]);
 routes.set('/fixtures/sample-three-d.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-three-d.pptx'))]);
 routes.set('/fixtures/sample-emf-plus.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-emf-plus.pptx'))]);

@@ -53,6 +53,13 @@ export const P = {
   txflTextFlow: 136,
   pib: 260,
   pibName: 261,
+  // MS-ODRAW cropFrom*：16.16 分数，顺序 Top/Bottom/Left/Right。
+  cropFromTop: 256,
+  cropFromBottom: 257,
+  cropFromLeft: 258,
+  cropFromRight: 259,
+  /** OfficeArt 形状名（复杂 Unicode）；写入侧 id 896 */
+  wzName: 896,
   geoLeft: 320,
   geoTop: 321,
   geoRight: 322,
@@ -68,7 +75,11 @@ export const P = {
   fillColor: 385,
   fillOpacity: 386,
   fillBackColor: 387,
+  /** 约定：fillType=1 时存图案预设索引（官方 pid 名 fillBackOpacity） */
+  fillPattern: 388,
   fillBlip: 390,
+  /** FixedPoint 角度；与 DrawingML 差 270°，见 shapeFill */
+  fillAngle: 395,
   fillStyleBooleans: 447,
   lineColor: 448,
   lineOpacity: 449,
@@ -118,6 +129,28 @@ const bit = (v: number | undefined, mask: number): boolean | null => {
   return (v & mask) !== 0;
 };
 
+/**
+ * fillType=1 时 pid 388（fillPattern 别名）上的预设索引 → DrawingML 名。
+ * 与 edit-core/ppt/appearance.ts 的 PATTERN_PRESETS 必须同步。
+ * 兼容旧写入：若只有无真实 BLIP 的 fillBlip 数值且落在表内，也认。
+ */
+const PATTERN_BY_INDEX: Record<number, string> = {
+  1: 'pct5', 2: 'pct10', 3: 'pct20', 4: 'pct25', 5: 'pct30', 6: 'pct40', 7: 'pct50',
+  8: 'pct60', 9: 'pct70', 10: 'pct75', 11: 'pct80', 12: 'pct90',
+  13: 'horz', 14: 'vert', 15: 'ltHorz', 16: 'ltVert', 17: 'dkHorz', 18: 'dkVert',
+  19: 'ltUpDiag', 20: 'upDiag', 21: 'ltDnDiag', 22: 'dnDiag',
+  23: 'cross', 24: 'diagCross', 25: 'smGrid', 26: 'lgGrid', 27: 'trellis', 28: 'wave',
+};
+
+/** Escher fillAngle（度）→ Schema 角度；见 appearance.toEscherAngle 的逆变换 */
+function fromEscherAngle(value: number | undefined): number {
+  if (value === undefined) return 90;
+  let degrees = -signed(value) / 65536 - 270;
+  while (degrees < 0) degrees += 360;
+  while (degrees >= 360) degrees -= 360;
+  return Math.round(degrees * 1000) / 1000;
+}
+
 export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: number) => string | null): Fill | null {
   const filled = bit(props.simple.get(P.fillStyleBooleans), 0x10);
   if (filled === false) return { type: 'none' };
@@ -135,11 +168,25 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
     if (c1 !== undefined || c2 !== undefined) {
       return {
         type: 'gradient',
-        angle: 90,
+        angle: fromEscherAngle(props.simple.get(P.fillAngle)),
         stops: [
           { pos: 0, color: escherColor(c1 ?? 0xffffff, scheme, opacity) },
           { pos: 1, color: escherColor(c2 ?? 0xffffff, scheme, opacity) },
         ],
+      };
+    }
+  }
+  if (type === 1) {
+    const fg = props.simple.get(P.fillColor);
+    const bg = props.simple.get(P.fillBackColor);
+    // 优先 fillPattern；旧产物可能把索引误写在无 fBlip 的 fillBlip 上
+    const index = props.simple.get(P.fillPattern) ?? props.simple.get(P.fillBlip);
+    if (fg !== undefined) {
+      return {
+        type: 'pattern',
+        fg: escherColor(fg, scheme, opacity),
+        bg: escherColor(bg ?? 0xffffff, scheme, 1),
+        preset: (index !== undefined && PATTERN_BY_INDEX[index]) || 'pct50',
       };
     }
   }
@@ -148,10 +195,23 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
   return { type: 'solid', color: escherColor(color, scheme, opacity) };
 }
 
-const DASH_MAP: Record<number, number[]> = {
+/** 供写入侧反查；乘以线宽后即为 Schema 的 dash 数组 */
+export const DASH_MAP: Record<number, number[]> = {
   1: [4, 3], 2: [1, 3], 3: [4, 3, 1, 3], 4: [4, 3, 1, 3, 1, 3],
   5: [8, 3], 6: [8, 3, 1, 3], 7: [8, 3, 1, 3, 1, 3], 8: [1, 1], 9: [3, 3], 10: [3, 3, 1, 3],
 };
+
+/** 图片矩形裁剪；cropFrom* 缺省为 0。全 0 时返回 null，与「未裁剪」同义。 */
+export function shapeCrop(props: EscherProps): { l: number; t: number; r: number; b: number } | null {
+  const frac = (id: number): number => signed(props.simple.get(id) ?? 0) / 65536;
+  const crop = {
+    t: frac(P.cropFromTop),
+    b: frac(P.cropFromBottom),
+    l: frac(P.cropFromLeft),
+    r: frac(P.cropFromRight),
+  };
+  return Object.values(crop).some((v) => Math.abs(v) > 1e-9) ? crop : null;
+}
 
 const ARROW_MAP: Record<number, 'triangle' | 'stealth' | 'diamond' | 'oval' | 'arrow'> = {
   1: 'triangle', 2: 'stealth', 3: 'diamond', 4: 'oval', 5: 'arrow',

@@ -26,7 +26,7 @@ export const homeMessages = {
   '自研 OOXML、CFB/OfficeArt、EMF/WMF/PICT 解析，唯一运行时依赖是 fflate。': 'Built-in OOXML, CFB/OfficeArt and EMF/WMF/PICT parsers. The only runtime dependency is fflate.',
   '试一下 ↓': 'Try it ↓', '复制': 'Copy', '210 页首屏': 'First view of 210 slides',
   'gzip 核心包': 'Core package, gzipped', '个': '', '运行时依赖': 'Runtime dependency',
-  '断言 + 186 快照': 'Assertions + 186 snapshots', '就在这个页面里跑': 'Running right on this page',
+  '断言 + 190 快照': 'Assertions + 190 snapshots', '就在这个页面里跑': 'Running right on this page',
   '下面这个查看器用的就是 npm 上的': 'This viewer uses the published npm package ',
   '。拖一个自己的文件进来——它不会被上传到任何地方。': '. Drop in your own file. It will not be uploaded anywhere.',
   '图表.pptx': 'Charts.pptx', '疑难杂症.pptx': 'Hard cases.pptx',

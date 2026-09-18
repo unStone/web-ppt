@@ -25,8 +25,9 @@ export class VectorPaint {
     }
     this.resources.use('ExtGState',state); return `/${state.name} gs`;
   }
-  solid(fill:string,stroke = 'none'):string {
+  solid(fill:string,stroke = 'none',opacity = 1):string {
+    if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) throw new Error('PDF 透明度无效');
     const f = fill === 'none' ? undefined : pdfColor(fill), s = stroke === 'none' ? undefined : pdfColor(stroke);
-    return [this.alpha(f?.alpha ?? 1,s?.alpha ?? 1),f && `${f.rgb.map(n).join(' ')} rg`,s && `${s.rgb.map(n).join(' ')} RG`].filter(Boolean).join('\n');
+    return [this.alpha((f?.alpha ?? 1) * opacity,(s?.alpha ?? 1) * opacity),f && `${f.rgb.map(n).join(' ')} rg`,s && `${s.rgb.map(n).join(' ')} RG`].filter(Boolean).join('\n');
   }
 }

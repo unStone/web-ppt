@@ -136,6 +136,9 @@ export class VectorSvg {
     const width = spans.reduce((sum,s) => sum + s.parts.reduce((sum,p) => sum + p.run.xAdvance / p.run.unitsPerEm * s.style.size,0)
       + s.style.spacing * s.text.length + s.dx.reduce((a,b) => a + b,0),0);
     const anchor = el.getAttribute('text-anchor'); if (anchor === 'middle') x -= width / 2; else if (anchor === 'end') x -= width;
+    // SVG middle/central 以 em 盒中线定位；PDF Tj 走字母基线，约在 em 盒 80% 处，相差约 0.3em。
+    const baseline = el.getAttribute('dominant-baseline');
+    if (baseline === 'middle' || baseline === 'central') y += (spans[0]?.style.size ?? style.size) * 0.3;
     const commands:string[] = [], underlines:string[] = [], strikes:string[] = [];
     for (const span of spans) {
       y += span.dy; let character = 0;
@@ -176,9 +179,12 @@ export class VectorSvg {
       || /(?:^|;)\s*visibility\s*:\s*hidden(?:;|$)/.test(el.getAttribute('style') ?? '')) return '';
     if (el.getAttribute('data-render-error')) throw new Error('PDF 原生 SVG 渲染失败');
     const fallback = await this.fallback?.render(el,ancestors,() => this.rasterFontStyle(el,parent)); if (fallback !== undefined) return fallback;
-    for (const attr of ['filter','mask','opacity','fill-opacity','stroke-opacity']) {
-      if (attr === 'opacity' && el.localName === 'image') continue;
+    for (const attr of ['filter','mask','fill-opacity','stroke-opacity']) {
       if (el.getAttribute(attr) !== null) throw new Error(`PDF 暂不支持效果：${attr}`);
+    }
+    // 组级 opacity 会同时乘到后代填充与描边；当前方言只在图形/图片节点上出现，组级仍显式拒绝。
+    if (el.getAttribute('opacity') !== null && !['image','rect','path','line','circle','ellipse'].includes(el.localName)) {
+      throw new Error('PDF 暂不支持效果：opacity');
     }
     const style = inherit(el,parent), commands = ['q',transform(el.getAttribute('transform') ?? '')];
     const clip = el.getAttribute('clip-path'); if (clip) commands.push(this.clip(clip));
@@ -201,7 +207,10 @@ export class VectorSvg {
     } else if (['rect','path','line','circle','ellipse'].includes(el.localName)) {
       const fill = el.localName === 'line' ? 'none' : style.fill, reference = fill.startsWith('url(');
       const stroke = style.strokeWidth === 0 ? 'none' : style.stroke;
-      commands.push(this.paint.solid(reference ? 'none' : fill,stroke));
+      const opacityAttr = el.getAttribute('opacity');
+      const opacity = opacityAttr === null ? 1 : Math.max(0,Math.min(1,Number(opacityAttr)));
+      if (opacityAttr !== null && !Number.isFinite(opacity)) throw new Error('PDF 透明度无效');
+      commands.push(this.paint.solid(reference ? 'none' : fill,stroke,opacity));
       if (stroke !== 'none') {
         commands.push(`${n(style.strokeWidth)} w`);
         const cap = el.getAttribute('stroke-linecap'), join = el.getAttribute('stroke-linejoin'), dash = el.getAttribute('stroke-dasharray');

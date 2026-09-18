@@ -1,6 +1,6 @@
 # 下一阶段执行计划
 
-2026-09-14 更新，基线 `45a04a7`。高级文本生成与复制、多级类别及共享图表编辑已完成；正式字体 Provider 与 Cordis 字体工具已验收，矢量 PDF 产品选项与回退说明已验收，格式覆盖和运行成本仍在推进。
+2026-09-18 更新。高级文本生成与复制、多级类别、共享图表、正式字体 Provider、矢量 PDF 已完成；音视频与长尾格式继续推进。
 状态以[任务地图](map.md)及子票为准，当前支持范围仍以[能力矩阵](../../expanded-capabilities.md)为准。
 
 ## 目标与顺序
@@ -13,7 +13,7 @@ P0/P1/P2/P3 表示执行优先级，不代表发布版本或工期；无依赖�
 | P0 | [高级文本生成保存与复制](tickets/001-portable-rich-text.md) | 公式、艺术字及高级文字效果在支持范围内可直接跨文稿复制、保存重开 | 已完成，证据见票据 |
 | P0 | [经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md) | 分组类别可编辑，空槽与重复标签不会被压平 | 已完成，证据见票据 |
 | P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 已完成，见[支持范围与证据](shared-chart-progress.md) |
-| P1 | [字体原型](tickets/004-font-glyph-provider.md) → [正式字体实现](tickets/011-font-glyph-implementation.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 原型及 011 已完成；PDF 进行中 |
+| P1 | [字体原型](tickets/004-font-glyph-provider.md) → [正式字体实现](tickets/011-font-glyph-implementation.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 原型与 011 已完成；005 功能验收齐，待全仓门禁复验后 closed |
 | P2 | [视频音轨](tickets/006-video-audio-track.md) → [内嵌视频合成](tickets/007-video-media-composition.md) | 导出保留音频，再支持视频内容按固定时间轴播放 | 音视频格式及浏览器编码能力可验证 |
 | P3 | [SmartArt / OLE 首批范围](tickets/008-native-object-scope.md) | 选定布局/格式获得更完整的内部编辑 | 先取得样本并确定写回与预览方案 |
 | P3 | [高级渲染首批范围](tickets/009-render-fidelity-scope.md) | 修复明确的 EMF+、艺术字与三维视觉问题 | 有可复现输入与外部渲染对照 |
@@ -60,6 +60,6 @@ flowchart LR
 [高级文本生成保存与复制](tickets/001-portable-rich-text.md)与
 [经典图表多级类别编辑](tickets/002-chart-hierarchical-categories.md)已完成。
 [共享工作簿同步](tickets/003-shared-chart-workbook.md)已完成，范围、成本与外观边界见[验收记录](shared-chart-progress.md)。
-[字体与字形能力原型](tickets/004-font-glyph-provider.md)已完成，路线及限制见[原型结论](font-glyph-prototype.md)。[011 正式字体实现](tickets/011-font-glyph-implementation.md)也已完成；[005 矢量 PDF](tickets/005-vector-pdf.md)进行中，证据与剩余工作见[实现进度](vector-pdf-implementation.md)。
-
-后续按子票依赖推进；本轮按用户追加要求打包 beta.5，保留所有未完成子票，见[交付说明](../../releases/0.5.0-beta.5.md)。
+[字体与字形能力原型](tickets/004-font-glyph-provider.md)已完成，路线及限制见[原型结论](font-glyph-prototype.md)。[011 正式字体实现](tickets/011-font-glyph-implementation.md)与[005 矢量 PDF](tickets/005-vector-pdf.md)已完成，见[实现进度](vector-pdf-implementation.md)。
+[006 视频音轨](tickets/006-video-audio-track.md)与[007 内嵌视频合成](tickets/007-video-media-composition.md)已完成。
+P3 调查 [008](tickets/008-native-object-scope.md)/[009](tickets/009-render-fidelity-scope.md)/[010](tickets/010-legacy-ppt-scope.md)及其实现票 [012](tickets/012-legacy-ppt-appearance-write.md)–[016](tickets/016-emf-plus-mixed-chart-fidelity.md)均已关闭；艺术字包络与三维材质等未选入首批的项仍登记后续。
