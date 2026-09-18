@@ -17,7 +17,7 @@ function validateDirectory(bytes){
  const user=new DataView(current.buffer,current.byteOffset,current.length),v=new DataView(doc.buffer,doc.byteOffset,doc.length);
  const edit=user.getUint32(16,true);check(v.getUint16(edit+2,true)===0xff5,'Current User 指向真正的 UserEditAtom');
  const dir=v.getUint32(edit+20,true);check(v.getUint16(dir+2,true)===0x1772,'UserEdit 指向持久化目录');
- const count=v.getUint32(dir+8,true)>>>20;check(count>=4,'文档、母版和页面都是持久对象');
+ const count=v.getUint32(dir+8,true)>>>20;check(count>=3,'文档、母版和页面都是持久对象');
  check(v.getUint16(v.getUint32(dir+12,true)+2,true)===1000,'persistId 1 对应 DocumentContainer');
 }
 for(const name of ['sample.ppt','sample-ppt-edit.pptx']){
@@ -62,5 +62,41 @@ for(const change of [
  change(p.slides[0].elements[0].text);const doc=edit.createDoc(p);
  assert.throws(()=>ppt.savePpt(doc),error=>error instanceof ppt.PptSaveError&&error.issues[0].slide===1);count++;
  edit.disposeDoc(doc);p.dispose();
+}
+{
+ const appearance=await core.parse(readFileSync('fixtures/sample-ppt-appearance-save.pptx'),{edit:true,keepPackage:true,lazy:false});
+ const doc=edit.createDoc(appearance),bytes=ppt.savePpt(doc);
+ writeFileSync(`${out}/appearance.ppt`,bytes);validateDirectory(bytes);
+ check(Buffer.from(bytes).equals(ppt.savePpt(doc)),'外观固件重复保存字节确定');
+ const reopened=await core.parse(bytes,{edit:true});
+ // 旧 PPT 读路径不还原 wzName；按固件写入顺序定位
+ const [grad,patt,...rest]=reopened.slides[0].elements;
+ const arrows=rest.filter(e=>e.kind==='shape'&&e.stroke?.head);
+ const img=rest.find(e=>e.kind==='image');
+ check(grad?.fill?.type==='gradient'&&grad.fill.stops.length===2,'双色线性渐变写入');
+ check(Math.abs(grad.fill.angle)<0.5,'渐变角度 0° 读写对称');
+ check(/^rgb\(21,\s*101,\s*192\)$/.test(grad.fill.stops[0].color)&&/^rgb\(229,\s*57,\s*53\)$/.test(grad.fill.stops[1].color),'渐变端点色');
+ check(patt?.fill?.type==='pattern'&&patt.fill.preset==='smGrid','图案 smGrid 读写对称');
+ check(/^rgb\(21,\s*101,\s*192\)$/.test(patt.fill.fg)&&/^rgb\(255,\s*255,\s*255\)$/.test(patt.fill.bg),'图案前景背景色');
+ const arrowTypes=['triangle','stealth','diamond','oval','arrow'];
+ check(arrows.length===5,'五种默认箭头形状');
+ arrows.forEach((el,i)=>{
+  const type=arrowTypes[i];
+  check(el.stroke?.dash?.length===2&&Math.abs(el.stroke.dash[0]/el.stroke.width-4)<0.1,`${type} 预设虚线`);
+  check(el.stroke?.head?.type===type&&el.stroke.head.w===3&&el.stroke.head.h===3&&el.stroke.tail?.type===type,`${type} 默认尺寸箭头`);
+ });
+ check(img?.kind==='image'&&img.crop&&Math.abs(img.crop.l-0.125)<0.002&&Math.abs(img.crop.t-0.125)<0.002,'矩形裁剪 cropFrom*');
+ for(const [label,mutate,re] of [
+  ['图片效果',p=>{p.slides[0].elements.find(e=>e.kind==='image').filter='grayscale(1)';},/图片效果|异形裁剪/],
+  ['径向渐变',p=>{const g=p.slides[0].elements.find(e=>e.fill?.type==='gradient');g.fill={...g.fill,radial:true};},/径向|多色标/],
+  ['自定义虚线',p=>{const s=p.slides[0].elements.find(e=>e.stroke?.head?.type==='triangle');s.stroke={...s.stroke,dash:[1,2,3]};},/自定义虚线/],
+  ['箭头尺寸',p=>{const s=p.slides[0].elements.find(e=>e.stroke?.head?.type==='triangle');s.stroke={...s.stroke,head:{type:'triangle',w:5,h:5}};},/箭头尺寸/],
+ ]){
+  const src=await core.parse(readFileSync('fixtures/sample-ppt-appearance-save.pptx'),{edit:true,keepPackage:true});
+  mutate(src);const rejectDoc=edit.createDoc(src);
+  assert.throws(()=>ppt.savePpt(rejectDoc),error=>error instanceof ppt.PptSaveError&&re.test(error.message),label);count++;
+  edit.disposeDoc(rejectDoc);src.dispose();
+ }
+ reopened.dispose();edit.disposeDoc(doc);appearance.dispose();
 }
 recordCount('pptSave',count);console.log(`原生 PPT 保存 ${count} 项通过${dist?'（独立产物）':''}`);

@@ -45,7 +45,7 @@ export function showDocumentExport(presentation: Presentation, name: string, com
     dialog.querySelector<HTMLElement>('[data-resolution]')!.hidden = vector || ppt;
     dialog.querySelector<HTMLSelectElement>('[name=scale]')!.value = video?'1':'2';
     issues.replaceChildren(); issues.hidden = true;
-    setText(dialog.querySelector('[data-help]')!,ppt?'PPT 保留可编辑文字、形状、组合和 PNG/JPEG 图片；不支持的内容会阻止导出。原文件保持不变。':video?'WebM 保留动画与切换，无声音；内嵌音视频可选择使用静态封面。':vector?'普通文字可选择和搜索，普通图形保留矢量；特殊效果会转为局部图片并列出说明。需要可用的字体文件，可在“字体与缺字”中加载。':'PDF 使用图片页面保留外观，文字不可选中；勾选批注后同时写入原生 PDF 批注。');
+    setText(dialog.querySelector('[data-help]')!,ppt?'PPT 保留可编辑文字、形状、组合和 PNG/JPEG 图片；不支持的内容会阻止导出。原文件保持不变。':video?'WebM 保留动画与切换；PCM WAV 与可解码的 MP4 AAC 混入 Opus。progressive H.264 按静态 xfrm 合成（变换/裁剪/透明度）；失败时可勾选静态封面。循环/跨页仅认程序显式字段（PPT 勾选无效）；不跟随动画位移；音量与 mediacall 未支持。':vector?'普通文字可选择和搜索，普通图形保留矢量；特殊效果会转为局部图片并列出说明。需要可用的字体文件，可在“字体与缺字”中加载。':'PDF 使用图片页面保留外观，文字不可选中；勾选批注后同时写入原生 PDF 批注。');
   };
   let controller: AbortController | undefined;
   close.onclick = () => { if (controller) controller.abort(); else dialog.close(); };

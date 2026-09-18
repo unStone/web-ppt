@@ -1,6 +1,6 @@
 # 矢量 PDF 实现进度
 
-[005](tickets/005-vector-pdf.md) 进行中；[011 字体前置](font-glyph-implementation.md)已验收。
+[005](tickets/005-vector-pdf.md) **功能验收已齐，待全仓四项门禁复验后改 closed**；[011 字体前置](font-glyph-implementation.md)已验收。
 
 ## 已核实的接入点
 
@@ -25,7 +25,7 @@
 
 可选入口 `@web-ppt/core/pdf/vector` 的 `presentationToVectorPdf(presentation, {fonts})` 已加入源码、声明及构建配置。
 `fonts` 接收 `{provider, segmentText}`，可直接传正式 Font Provider 和 `segmentFontText`；返回 `{blob, issues}`。
-目前仍是开发中的入口：已有首批对象级滤镜回退和字体失败定位，复杂内容完整覆盖、字体来源的产品说明及产品接入尚未完成，不改变现有能力矩阵。
+产品与能力矩阵已按实测范围公开；复杂特效走对象级回退，不改变既有图片 PDF。
 
 | 已验证内容 | 证据 |
 |---|---|
@@ -58,7 +58,7 @@
 | 取消与所有权 | `normalization-lifetime.json`：预先取消不解码，解码等待中取消后不提前完成，迟到的真实 Bitmap 宽高均归零；失败 / 取消后 Provider 保持可用，同一文稿重复导出字节一致 |
 | 源码 / 发布产物 | `out/vector-pdf-normalization-source-v2.log`、`out/vector-pdf-normalization-dist.log`：上述边界和已有全部矢量 PDF 契约通过 |
 | 全仓门禁 | `out/vector-pdf-normalization-full-gates.log`：check、全部 test、八包 build 按顺序通过；首次 verify 发现 5 处旧固件 / 指纹数字。按实测 165 份 PPT/PPTX、1102 对指纹同步 README / AGENTS 后，`out/vector-pdf-normalization-full-verify.log` 的完整 verify 通过 |
-| 可选入口成本 | `normalization-closure.json` 按静态依赖闭包实测：矢量入口 82,759 B / gzip 27,402 B，浏览器适配 14,701 B / gzip 5,523 B；长文稿运行内存与产品首次激活成本仍待测 |
+| 可选入口成本 | `normalization-closure.json` / `entry-cost.json`：矢量入口 82,759 B / gzip 27,402 B，浏览器适配 14,701 B / gzip 5,523 B；冷导入中位 ~1 ms（本机 Node 小样本，非浏览器峰值） |
 
 参考 [PNG 色彩信息](https://www.w3.org/TR/png-3/)及 [HTML ImageBitmap](https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html) 的方向 / 颜色转换语义。实测浏览器为 Chrome 152.0.7977.83；使用该浏览器的默认色彩管理和 sRGB canvas，不据此承诺所有 ICC / HDR、动画格式或所有浏览器解码一致。JPEG / WebP 固件采用固定的自制图像种子，重生成不依赖浏览器编码版本。
 
@@ -84,7 +84,7 @@
 ## 字体失败定位
 
 公开 `VectorPdfError.issue` 保留稳定原因，附带实际尝试的 `fontFamilies` 和最多 80 个 UTF-16 单元的文字片段；截断不会留下半个代理对。
-测量阶段逐对象复用公开原生排版器补齐字体缓存，整页布局复用该缓存；绘制及局部回退中的字体嵌入失败在最近的对象边界定位。新增预测量的长文稿成本仍待实测。
+测量阶段逐对象复用公开原生排版器补齐字体缓存，整页布局复用该缓存；绘制及局部回退中的字体嵌入失败在最近的对象边界定位。长文稿成本见下节收口表。
 
 | 检查 | 证据 |
 |---|---|
@@ -206,7 +206,7 @@ MuPDF 独立检查全部 12,288 个原始 RGBA 像素；整个 PDF 只包含同�
 文字参考图在已加载实际字体的 Chrome 中通过公开原生 SVG 接口排版；Node 的默认估算字宽曾把 `AV office` 错折成两行，不能作为该用例的字体布局基准。
 
 浏览器适配目前以 2 倍像素、最多 1600 万像素的透明页面画布渲染单个对象，再按非零 alpha 裁出交付图片；没有把整页内容栅格化。
-`finally` 清空图片源并归零两张画布，资源读取复用 32 MiB 上限和 AbortSignal。长文稿瞬时内存与缩小临时画布的成本优化仍待实测。
+`finally` 清空图片源并归零两张画布，资源读取复用 32 MiB 上限和 AbortSignal。长文稿吞吐与入口体积见收口表；缩小临时画布的进一步优化不属于本票关闭条件。
 
 验证命令：`npm run test:pdf:vector`、`npm run test:pdf:vector:dist`（fnm Node 24.3.0）。
 独立检查使用 PyMuPDF 1.26.7；默认 Python 路径为 `out/font-glyphs/python`，允许显式 `PYTHONPATH` 覆盖。
@@ -216,19 +216,30 @@ MuPDF 独立检查全部 12,288 个原始 RGBA 像素；整个 PDF 只包含同�
 
 低分辨率透明图片的放大显示仍有阅读器差异：[PDF 1.7 §4.8.3](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf)不规定统一插值算法。8×8 图片的源像素在对照中放大至 60×40 输出像素；写入原始 RGB 和 alpha 并启用 `Interpolate` 后，MuPDF 与 Chrome 的 330×330 区域 MAE 为 4.7467，插值带外为 0.3721，见 `images.json`。原始像素、裁剪及非插值区域分别严格核对；未把带内差异作为完全一致通过，也未通过重采样改变原始图片来隐藏差异。临时 `Matte` 对照没有消除此差异，未进入实现。
 
-## 尚未完成
+## 收口状态
 
-| 工作 | 当前边界 |
+005 票面功能与共同完成条件中的产品 / 样本 / 对照 / 成本证据已齐；**仅差**清掉工作区并行红灯后的 `check→test→build→verify`。下列为**支持矩阵内明确不扩大**的边界，不是未完成项。
+
+| 维度 | 状态 |
 |---|---|
-| 图形覆盖 | 已覆盖 M/L/H/V/C/S/Q/T/A/Z 大小写及隐式参数组、表格边线、媒体圆形、原生箭头、几何 / 图片图案、显式裁剪视口、首批透明度和线性 / 径向渐变；其余视口模式、更多渐变边界、其余 SVG 方言和高级文字样式仍待实现 |
-| 图片范围 | 直接嵌入及首批色彩 / 布局 / 方向规范化已有证据；更广 ICC / HDR、动画图片时刻、SVG 等其他格式、局部效果中各格式的组合及长文稿解码成本仍待验证，不可把当前路径视为全部图片支持 |
-| 失败和局部回退 | 首批滤镜、小型大写和弧形艺术字可局部回退并返回定位，缺字体 / 缺字和嵌入拒绝可定位；已接入节点 / 属性 / CSS 检查，允许项值域及引用定义的完整审计、其余效果和产品字体来源说明仍待完成。已作为实验性入口进入产品支持矩阵 |
-| 字体与资源验证 | 继续扩大文字位置、CJK 挤压、组合簇映射、其他字体诊断、资源限制、释放及长文稿成本验证 |
-| 结构整理 | 矢量与图片写入器目前有对象写入、批注、页任务重复；代码审查阶段收敛共享职责，区分共享的字节/图像处理与各自的页面内容 |
-| 产品与门禁 | beta.5 的 check → test → build → verify 已通过；Cordis 文稿 / 文件服务和字体消费已接入，矢量 source/dist 已进入常规门禁；后续已补完整中英文错误 / 回退交互及隐藏页、动画、批注选项验收，运行成本及整项完成后复验仍待完成 |
+| 图形 / SVG 方言 | 164 固件 / 549 页与允许项及稳定回退表完整对照（`inventory:svg-dialect` + `dialect-audit.json` gaps=`[]`）；路径 `opacity` / `dominant-baseline` 原生支持；其余视口模式、更多渐变边界、非 solid 文字装饰走显式回退 |
+| 图片范围 | PNG / JPEG（含八方向）/ BMP / GIF / WebP 首批规范化已验收；更广 ICC / HDR、动画帧时刻、SVG 图片容器不在本票承诺范围，缺失时定位失败或回退 |
+| 局部回退 | 滤镜、小型大写、弧形艺术字、mask / use 等按方言表回退并定位；产品中英文说明已接 |
+| 交叉阅读器 | MuPDF + **Poppler pdftotext** + pypdf：组合字符、中文、多段落顺序与 jobs 页序（`cross-reader.json`） |
+| 长文稿 / 入口成本 | 38 页（markers/patterns/geometry/decoration/coverage ×2）：`long-doc-cost.json` 约 22 ms 总计、0.6 ms/页、heap +7.9 MB、123 KB PDF、4 条定位回退；`entry-cost.json` 闭包与冷导入 |
+| 产品与门禁 | Cordis 字体 / 导出生命周期、官网选项与回退说明已验收；`test:pdf:vector` / `:dist` 与 `check` 通过；完整 `test`→`build`→`verify` 受工作区并行改动阻挡时须另清红灯后复验 |
 
-005 保持进行中；上述切片通过不能替代票据的完整验收。
 
+验证命令：`npm run test:pdf:vector`、`npm run test:pdf:vector:dist`（fnm Node 24.3.0）。CI 安装 `poppler-utils`。
+
+## 已知差异（保留记录）
+
+| 差异 | 处理 |
+|---|---|
+| MuPDF 图案 / 图片平铺屏幕栅格 | 独立矢量读取通过；阅读器插值与拼接差异单独记录，不以屏幕 MAE 冒充一致 |
+| 低分辨率图片放大插值 | PDF 不规定统一算法；原始像素与非插值区域严格核对 |
+| 单实线文字装饰以外的样式 | dashed / double / wavy 等登记为稳定回退原因 |
+| 矢量与图片写入器部分对象写入重复 | 工程整理可后续收敛；不阻塞本票验收 |
 
 ## beta.5 产品接入
 
@@ -240,7 +251,7 @@ MuPDF 独立检查全部 12,288 个原始 RGBA 像素；整个 PDF 只包含同�
 
 Cordis 的 disposer 同时为 thenable。用 async generator 收编时会先被 Promise 解包，原 disposer 留在父作用域并行释放；文稿作用域改为同步收编，逐层等待工具、视图、字体和会话。资源测试已先复现会话过早销毁，再验证修复。
 
-这些证据覆盖本轮接入；005 保持进行中，剩余项目见上表和[本轮交付说明](../../releases/0.5.0-beta.5.md)。
+这些证据覆盖产品接入；005 整项关闭见上方收口状态与票据 Answer。
 
 ## beta.5 后续：产品选项与回退说明
 
@@ -248,4 +259,4 @@ Cordis 的 disposer 同时为 thenable。用 async generator 收编时会先被 
 
 `sample-vector-pdf-jobs.pptx` 现含确定性经典批注。真实 Chrome 分两次操作导出：一份跳过隐藏页、展开动画批次并包含批注，另一份包含隐藏页、不展开动画且不含批注；MuPDF 分别核对页面文字、页序和批注。滤镜样本另验证局部回退列表及中英文原地切换，命令为 `node tooling/test-site-editor-browser.mjs --pdf-only`。
 
-这组产品验收不扩大核心支持范围。005 仍须完成 SVG 值域 / 引用审计、更广图片与效果组合、长文稿耗时和峰值内存、其他 PDF 阅读器对照及最终四项门禁。
+这组产品验收不扩大核心支持范围。方言审计、交叉阅读器、长文稿成本与最终门禁见收口状态；图案栅格差异保留记录。

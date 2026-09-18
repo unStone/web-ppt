@@ -11,7 +11,10 @@ export interface VideoOptions {
   slideDurationMs?: number;
   /** 自动触发每个点击批次前的停留，默认 700 ms。 */
   clickDelayMs?: number;
-  /** 视频无音轨；显式允许把内嵌音视频作为静态封面输出。 */
+  /**
+   * 无法解码内嵌 MP4 时是否允许贴静态封面。
+   * 默认可解码的 progressive H.264 会合成画面；PCM WAV 音轨不依赖本开关。
+   */
   mediaPosters?: boolean;
   signal?: AbortSignal;
   onProgress?: (value: { completed: number; total: number; slideNumber: number }) => void;

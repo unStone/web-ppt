@@ -88,4 +88,37 @@ export function testSharedMixedAxes({ renderChartXml, assert }) {
     const a = center(painted(plain, 'rgb(0,0,255)')[0]), b = center(painted(formatted, 'rgb(0,0,255)')[0]);
     assert.deepEqual(b, a);
   }
+  // 自动轴域：双端未写 min/max 时分级覆盖数据并留出外侧空隙。
+  {
+    const axes = axis(1, 'b', 'val', 2) + axis(2, 'l', 'val', 1);
+    const elements = render(scatter(0, '0000FF', [10, 20], [30, 40], [1, 2]), axes);
+    const values = labels(elements).map(Number).filter(Number.isFinite);
+    assert.ok(Math.min(...values) <= 10, '自动 X/Y 下限不高于数据');
+    assert.ok(Math.max(...values) >= 40, '自动轴域覆盖数据上沿');
+  }
+  // 同侧独立轴标签外推，避免重叠。
+  {
+    const axes = axis(11, 'b', 'val', 12, { min: 0, max: 10 }) + axis(12, 'l', 'val', 11, { min: 0, max: 10 })
+      + axis(13, 'b', 'val', 14, { min: 0, max: 10 }) + axis(14, 'l', 'val', 13, { min: 100, max: 200 });
+    const elements = render(scatter(0, '0000FF', [1, 2], [3, 4], [11, 12]) + scatter(1, '00FF00', [1, 2], [120, 180], [13, 14]), axes);
+    const leftLabels = elements.filter(el => el.text && el.x + el.w < 200);
+    const xs = [...new Set(leftLabels.map(el => Math.round(el.x + el.w)))];
+    assert.ok(xs.length >= 2, `同侧双轴标签应分列：${JSON.stringify(xs)}`);
+  }
+  // 气泡半径：area 取根、w 线性，且 bubbleScale 缩放最大直径。
+  {
+    const bubble = (scale, represents, sizes) => {
+      const ser = (index, paint, xs, ys, sz) => `<c:ser><c:idx val="${index}"/><c:order val="${index}"/><c:tx><c:v>B${index}</c:v></c:tx>${color(paint)}${numberData('xVal', xs)}${numberData('yVal', ys)}${numberData('bubbleSize', sz)}</c:ser>`;
+      const plots = `<c:bubbleChart>${ser(0, '0000FF', [1, 2], [1, 2], sizes)}<c:bubbleScale val="${scale}"/><c:sizeRepresents val="${represents}"/><c:axId val="1"/><c:axId val="2"/></c:bubbleChart>`;
+      const axes = axis(1, 'b', 'val', 2, { min: 0, max: 3 }) + axis(2, 'l', 'val', 1, { min: 0, max: 3 });
+      return painted(render(plots, axes), 'rgb(0,0,255)').map(el => el.w).sort((a, b) => a - b);
+    };
+    const area = bubble(100, 'area', [100, 400]);
+    const width = bubble(100, 'w', [100, 400]);
+    const scaled = bubble(50, 'area', [100, 400]);
+    assert.ok(area.length === 2 && width.length === 2);
+    assert.ok(Math.abs(area[1] / area[0] - 2) < 0.15, `area 半径比≈√4：${area}`);
+    assert.ok(Math.abs(width[1] / width[0] - 4) < 0.2, `w 直径比≈4：${width}`);
+    assert.ok(scaled[1] < area[1] * 0.7, 'bubbleScale 50% 缩小最大气泡');
+  }
 }

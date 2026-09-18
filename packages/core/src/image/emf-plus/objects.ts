@@ -13,7 +13,13 @@ export interface Pen {
 export interface Font { name: string; size: number; unit: number; style: number }
 export interface Format { flags: number; align: number; lineAlign: number }
 export interface Bitmap { width: number; height: number; href: string }
-export interface ObjectTypes { 1: Paint; 2: Pen; 3: string; 5: Bitmap; 6: Font; 7: Format }
+/** ImageAttributes：wrap/clamp 必有；可选 5×5 色矩阵（剩余字节）。 */
+export interface ImageAttributes {
+  wrap: number;
+  clampColor: string;
+  matrix?: number[];
+}
+export interface ObjectTypes { 1: Paint; 2: Pen; 3: string; 5: Bitmap; 6: Font; 7: Format; 8: ImageAttributes }
 
 function brush(r: Bytes): Paint {
   r.u32(); const type = r.u32();
@@ -126,6 +132,21 @@ function decode(type: keyof ObjectTypes, r: Bytes): unknown {
     const size = r.f32(), unit = r.u32(), style = r.u32(); r.u32();
     if (size <= 0) throw new Error('EMF+ 非法字号');
     return { size, unit, style, name: r.text(r.count(4096)) };
+  }
+  if (type === 8) {
+    r.u32(); // reserved
+    const wrap = r.u32(), clamp = color(r.u32()); r.u32(); r.u32();
+    let matrix: number[] | undefined;
+    // 标准对象无色矩阵；仅当尾部恰好 25 个 float 时按色变换解释。
+    if (r.left === 100) {
+      const view = new DataView(r.bytes.buffer, r.bytes.byteOffset, r.bytes.byteLength);
+      matrix = Array.from({ length: 25 }, () => {
+        const n = view.getFloat32(r.p, true); r.take(4);
+        if (!Number.isFinite(n)) throw new Error('EMF+ 非法色矩阵');
+        return n;
+      });
+    } else if (r.left) r.take(r.left);
+    return { wrap, clampColor: clamp, matrix };
   }
   const flags = r.u32(); r.u32(); const align = r.u32(), lineAlign = r.u32();
   return { flags, align, lineAlign };

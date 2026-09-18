@@ -50,7 +50,15 @@ export function bindXYAxes(m: ChartModel, groups: PlotGroup[], region: Rect, car
 
 export function xyInsets(m: ChartModel, axes: XYAxes[], base: Insets): Insets {
   const insets = { ...base };
+  const sideLane = { l: 0, r: 0, t: 0, b: 0 };
+  const assigned = new Set<Axis>();
   for (const pair of axes) {
+    for (const view of [pair.x, pair.y]) {
+      if (assigned.has(view.axis)) continue;
+      assigned.add(view.axis);
+      // 每次重算留白时重置车道，避免 hWrap 二次 shrink 叠加上去。
+      view.lane = view.axis.del ? 0 : sideLane[view.side]++;
+    }
     const next = axisInsets(m, pair.x, pair.y, false);
     for (const side of ['l', 'r', 't', 'b'] as const) insets[side] = Math.max(insets[side], next[side]);
   }

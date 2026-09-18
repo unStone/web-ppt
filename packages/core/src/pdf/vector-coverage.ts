@@ -8,13 +8,13 @@ const common = new Set('id style fill stroke stroke-width font-family font-size 
 const metadata = new Set('role tabindex target rel pointer-events'.split(' '));
 const nodes:Record<string,string> = {
   svg:'xmlns xmlns:xlink viewBox x y width height overflow', g:'transform clip-path', a:'href transform clip-path',
-  path:'d transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin marker-start marker-end',
-  rect:'x y width height transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin',
-  line:'x1 y1 x2 y2 transform clip-path stroke-dasharray stroke-linecap stroke-linejoin marker-start marker-end',
-  circle:'cx cy r transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin',
-  ellipse:'cx cy rx ry transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin',
+  path:'d transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin marker-start marker-end opacity',
+  rect:'x y width height transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin opacity',
+  line:'x1 y1 x2 y2 transform clip-path stroke-dasharray stroke-linecap stroke-linejoin marker-start marker-end opacity',
+  circle:'cx cy r transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin opacity',
+  ellipse:'cx cy rx ry transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin opacity',
   image:'href xlink:href x y width height opacity preserveAspectRatio transform clip-path',
-  text:'x y text-anchor xml:space transform direction unicode-bidi', tspan:'dx dy xml:space', title:'', desc:'',
+  text:'x y text-anchor xml:space transform direction unicode-bidi dominant-baseline', tspan:'dx dy xml:space', title:'', desc:'',
 };
 const definitions:Record<string,string> = {
   linearGradient:'id x1 y1 x2 y2 gradientUnits', radialGradient:'id cx cy r fx fy gradientUnits',
@@ -29,6 +29,8 @@ const enums:Record<string,readonly string[]> = {
   'gradientUnits':['userSpaceOnUse','objectBoundingBox'], 'clipPathUnits':['userSpaceOnUse','objectBoundingBox'],
   'direction':['ltr','rtl'], 'unicode-bidi':['normal','embed'], 'xml:space':['preserve'],
   'markerUnits':['strokeWidth','userSpaceOnUse'],
+  // middle/central 来自图表占位与媒体标识；alphabetic/auto 与 PDF 基线一致，可忽略。
+  'dominant-baseline':['middle','central','alphabetic','auto'],
 };
 
 /** 未覆盖的视觉声明必须显式回退；增加渲染特性时不能再因 PDF 遍历器忽略属性而悄悄丢失。 */

@@ -5,10 +5,19 @@ import type { Font, Format } from './objects';
 export function fontAttrs(font: Font, size: number): string {
   return `font-family="${esc(font.name)}" font-size="${n(size)}"${font.style & 1 ? ' font-weight="700"' : ''}${font.style & 2 ? ' font-style="italic"' : ''}${font.style & 12 ? ` text-decoration="${[font.style & 4 ? 'underline' : '', font.style & 8 ? 'line-through' : ''].filter(Boolean).join(' ')}"` : ''}`;
 }
-/** 与 GDI 一样输出原生 text；字体度量不可用时保留字符语义，按 em 估算折行。 */
+/** 与 GDI 一样输出原生 text；字体度量不可用时保留字符语义，按 em 估算折行。竖排走字符叠放（由调用方旋转）。 */
 export function textLayout(text: string, box: Box, size: number, format: Format): string {
-  if (format.flags & 2) throw new Error('EMF+ 竖排字符串暂不支持');
+  const vertical = !!(format.flags & 2);
   const width = (s: string) => Array.from(s).reduce((sum, c) => sum + (c.charCodeAt(0) >= 0x2e80 ? 1 : /[il.,' ]/.test(c) ? 0.3 : 0.56) * size, 0);
+  if (vertical) {
+    // DirectionVertical：沿盒高自上而下排字；外层 text 再绕盒心旋转 -90°。
+    const chars = Array.from(text.replace(/\r\n?/g, '\n').replace(/\n/g, ''));
+    const lineH = size * 1.15;
+    const total = chars.length * lineH;
+    const top = box.y + Math.max(0, box.h - total) * (format.lineAlign === 1 ? 0.5 : format.lineAlign === 2 ? 1 : 0);
+    const x = box.x + box.w * (format.align === 1 ? 0.5 : format.align === 2 ? 1 : 0);
+    return chars.map((ch, i) => `<tspan x="${n(x)}" y="${n(top + size + i * lineH)}" text-anchor="middle">${esc(ch)}</tspan>`).join('');
+  }
   const lines: string[] = [];
   for (const paragraph of text.replace(/\r\n?/g, '\n').split('\n')) {
     let line = '';

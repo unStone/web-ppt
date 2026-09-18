@@ -6,11 +6,11 @@
 <filter id="s2" x="-30%" y="-30%" width="160%" height="160%">
 <feDropShadow in="SourceGraphic" dx="0" dy="4.01" stdDeviation="2" flood-color="rgba(0,0,0,0.5)" result="e1"/>
 </filter>
-<linearGradient id="s3" x1="0.5" y1="0" x2="0.5" y2="1">
+<linearGradient id="s3" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
 <stop offset="0%" stop-color="rgb(68,114,196)"/>
 <stop offset="100%" stop-color="rgb(237,125,49)"/>
 </linearGradient>
-<linearGradient id="s4" x1="0.5" y1="0" x2="0.5" y2="1">
+<linearGradient id="s4" x1="0" y1="0.5" x2="1" y2="0.5">
 <stop offset="0%" stop-color="rgb(255,82,82)"/>
 <stop offset="100%" stop-color="rgb(105,240,174)"/>
 </linearGradient>

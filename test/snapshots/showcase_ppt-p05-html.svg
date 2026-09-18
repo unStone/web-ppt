@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
 <defs>
-<pattern id="s1" patternUnits="userSpaceOnUse" width="150" height="120">
+<clipPath id="s1">
+<rect width="160" height="120"/>
+</clipPath>
+<pattern id="s2" patternUnits="userSpaceOnUse" width="150" height="120">
 <image href="blob:<runtime>" width="150" height="120" preserveAspectRatio="none" opacity="0.45"/>
 </pattern>
 </defs>
@@ -324,7 +327,9 @@
 </g>
 <g data-el="7224" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(790 235)">
-<image href="blob:<runtime>" width="160" height="120" preserveAspectRatio="none"/>
+<g clip-path="url(#s1)">
+<image href="blob:<runtime>" x="-80.05" y="-59.95" width="320.1" height="239.9" preserveAspectRatio="none"/>
+</g>
 </g>
 </g>
 <g data-el="7225" style="transform-box:fill-box;transform-origin:center">
@@ -381,7 +386,7 @@
 </g>
 <g data-el="7231" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(1090 235)">
-<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="url(#s1)" fill-rule="nonzero"/>
+<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="url(#s2)" fill-rule="nonzero"/>
 </g>
 </g>
 <g data-el="7232" style="transform-box:fill-box;transform-origin:center">

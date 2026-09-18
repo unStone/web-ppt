@@ -4,11 +4,17 @@ import { resolve,join } from 'node:path';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { recordCount } from './lib/measured.mjs';
 const root=resolve('.'),out=join(root,'out/video');mkdirSync(out,{recursive:true});
-const entry=join(out,'entry.mjs');writeFileSync(entry,`export * from '${root}/packages/viewer-core/src/video.ts';export { groupDuration } from '${root}/packages/viewer-core/src/video/timing.ts';export { WebmWriter } from '${root}/packages/viewer-core/src/video/webm.ts';export { parse } from '${root}/packages/core/src/index.ts';`);
+const entry=join(out,'entry.mjs');writeFileSync(entry,`export * from '${root}/packages/viewer-core/src/video.ts';
+export { groupDuration } from '${root}/packages/viewer-core/src/video/timing.ts';
+export { WebmWriter } from '${root}/packages/viewer-core/src/video/webm.ts';
+export { decodeWavPcm, videoAudioPlan } from '${root}/packages/viewer-core/src/video/audio.ts';
+export { demuxMp4Video, sampleIndexAt } from '${root}/packages/viewer-core/src/video/mp4-demux.ts';
+export { videoMediaPlan } from '${root}/packages/viewer-core/src/video/media.ts';
+export { parse } from '${root}/packages/core/src/index.ts';`);
 const bundled=await bundleBrowser({root,entry,output:join(out,'contract.mjs'),aliases:[['@web-ppt/core',join(root,'packages/core/src/index.ts')]]});
 const {videoPlan,presentationToVideo}=process.argv.includes('--dist') ? await import('@web-ppt/viewer-core/video') : bundled;
 const {parse}=process.argv.includes('--dist') ? await import('@web-ppt/core') : bundled;
-const {groupDuration,WebmWriter}=bundled;
+const {groupDuration,WebmWriter,decodeWavPcm,videoAudioPlan,demuxMp4Video,sampleIndexAt,videoMediaPlan}=bundled;
 let count=0;const check=(c,label)=>{assert(c,label);count++;};const bad=(fn,re)=>{assert.throws(fn,re);count++;};
 const p=await parse(readFileSync('fixtures/sample-video-export.pptx'),{lazy:false});
 const plan=videoPlan(p,{fps:12,slideDurationMs:300,clickDelayMs:100,skipHidden:true});
@@ -23,6 +29,56 @@ bad(()=>writer.addFrame(new Uint8Array([6]),83333,83333,false),/递增/);
 const webm=writer.finish(),bytes=new Uint8Array(await webm.arrayBuffer());check(webm.type==='video/webm'&&Buffer.from(bytes.subarray(0,4)).toString('hex')==='1a45dfa3','Real EBML signature');
 check(Buffer.from(bytes).includes('V_VP8')&&Buffer.from(bytes).includes('webm'),'Native WebM track codec');
 bad(()=>writer.finish(),/结束/);bad(()=>new WebmWriter(10,10,24,'VP9').finish(),/没有/);
+const head=new Uint8Array(19);head.set([...'OpusHead'].map(c=>c.charCodeAt(0)));head[8]=1;head[9]=1;
+const withAudio=new WebmWriter(480,270,12,'VP8',{sampleRate:48000,codecPrivate:head});
+withAudio.addFrame(new Uint8Array([1,2,3]),0,83333,true);
+withAudio.addAudio(new Uint8Array([9,8,7]),0,20000);
+withAudio.addAudio(new Uint8Array([6,5]),20000,20000);
+const audioWebm=new Uint8Array(await withAudio.finish().arrayBuffer());
+check(Buffer.from(audioWebm).includes('A_OPUS')&&Buffer.from(audioWebm).includes('OpusHead'),'WebM Opus track and codec private');
+const wav=decodeWavPcm(readFileSync('fixtures/sample-editor-media.wav'));
+check(wav.sampleRate===8000&&wav.channels===1&&wav.samples[0].length>0,'PCM WAV decode');
+bad(()=>decodeWavPcm(new Uint8Array([1,2,3,4])),/过短|RIFF/);
+const audioPres=await parse(readFileSync('fixtures/sample-video-audio.pptx'),{lazy:false});
+try{
+  const audioPlan=videoAudioPlan(videoPlan(audioPres,{fps:12,slideDurationMs:500,animations:false,transitions:false}));
+  check(audioPlan.clips.length===2&&audioPlan.clips[0].startMs===0,'Page-start audio clip');
+  check(audioPlan.clips[1].startMs===500,'Delayed second-page audio clip');
+  check(audioPlan.hasVideoMedia===false,'Audio-only deck has no video media');
+  const twin=structuredClone(audioPres.slides[0].elements.find(e=>e.media?.kind==='audio'));
+  twin.id=(twin.id||200)+1;audioPres.slides[0].elements.push(twin);
+  check(videoAudioPlan(videoPlan(audioPres,{fps:12,slideDurationMs:500,animations:false,transitions:false})).clips.length===3,'Same-page two-clip mix plus delayed page');
+}finally{audioPres.dispose();}
+const mp4=demuxMp4Video(readFileSync('fixtures/sample-editor-media.mp4'));
+check(mp4.codec==='avc1.42C00A'&&mp4.samples.length===3,'Progressive H.264 demux');
+check(sampleIndexAt(mp4.samples,400000)===2,'Sample index at 0.4s');
+// 可变帧率：时间戳不均匀时仍按 CTS 选帧。
+const vfr=[{timestamp:0,duration:100000,key:true,offset:0,size:1},{timestamp:100000,duration:50000,key:false,offset:1,size:1},{timestamp:150000,duration:250000,key:false,offset:2,size:1},{timestamp:400000,duration:100000,key:true,offset:3,size:1}];
+check(sampleIndexAt(vfr,120000)===1&&sampleIndexAt(vfr,399999)===2&&sampleIndexAt(vfr,400000)===3,'VFR sample index');
+bad(()=>demuxMp4Video(readFileSync('fixtures/sample-editor-media-fragmented.mp4')),/分片/);
+const mediaPres=await parse(readFileSync('fixtures/sample-video-media.pptx'),{lazy:false});
+try{
+  const mediaPlan=videoMediaPlan(videoPlan(mediaPres,{fps:10,slideDurationMs:600,animations:false,transitions:false}));
+  check(mediaPlan.hasVideoMedia&&mediaPlan.clips.length===2&&mediaPlan.clips[0].startMs===0,'Overlapping page-start video clips');
+  check(mediaPlan.clips[0].endMs===600&&mediaPlan.clips[0].w===160,'Page-end freeze window');
+  check(mediaPlan.clips[0].crop&&mediaPlan.clips[0].crop.l===0.1&&mediaPlan.clips[1].alpha===0.7,'Crop and alpha from schema');
+  const videos=mediaPres.slides[0].elements.filter(e=>e.media?.kind==='video');
+  check(videos.every(v=>v.media.loop!==true&&v.media.crossSlide!==true),'PPTX parse does not invent loop/crossSlide');
+  check(mediaPlan.clips[0].x===videos[0].x&&mediaPlan.clips[0].y===videos[0].y,'Compose uses static xfrm not animation matrix');
+  const video=videos[0];
+  video.media.loop=true;video.media.crossSlide=true;
+  const looped=videoMediaPlan(videoPlan(mediaPres,{fps:10,slideDurationMs:600,animations:false,transitions:false}));
+  check(looped.clips.some(c=>c.loop&&c.crossSlide&&c.endMs>600),'Explicit loop and crossSlide window');
+  const audioPlan=videoAudioPlan(videoPlan(mediaPres,{fps:10,slideDurationMs:600,animations:false,transitions:false}));
+  check(audioPlan.clips.length===1&&audioPlan.clips[0].startMs===600,'Delayed page-2 WAV vs page-1 video');
+}finally{mediaPres.dispose();}
 await assert.rejects(()=>presentationToVideo(p,{signal:AbortSignal.abort()}),e=>e.name==='AbortError');count++;
 await assert.rejects(()=>presentationToVideo(p),/WebCodecs/);count++;
-p.dispose();recordCount('video',count);console.log(`视频导出 ${count} 项通过`);
+p.dispose();
+if (!process.argv.includes('--dist')) {
+  const {videoAudioBrowserContract}=await import('./lib/video-audio-browser-contract.mjs');
+  await videoAudioBrowserContract(root); count++;
+  const {videoMediaBrowserContract}=await import('./lib/video-media-browser-contract.mjs');
+  await videoMediaBrowserContract(root); count++;
+}
+recordCount('video',count);console.log(`视频导出 ${count} 项通过`);

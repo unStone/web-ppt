@@ -20,37 +20,43 @@
 <g transform="translate(57.87 508)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 462.28)">
+<g transform="translate(57.87 469.9)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 416.56)">
+<g transform="translate(57.87 431.8)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 370.84)">
+<g transform="translate(57.87 393.7)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 325.12)">
+<g transform="translate(57.87 355.6)">
+<path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(57.87 317.5)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
 <g transform="translate(57.87 279.4)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 233.68)">
+<g transform="translate(57.87 241.3)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 187.96)">
+<g transform="translate(57.87 203.2)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 142.24)">
+<g transform="translate(57.87 165.1)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 96.52)">
+<g transform="translate(57.87 127)">
+<path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(57.87 88.9)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
 <g transform="translate(57.87 50.8)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(57.87 508)">
+<g transform="translate(57.87 469.9)">
 <path d="M 0 0 L 424.8 0" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
 </g>
 <g transform="translate(57.87 50.8)">
@@ -76,27 +82,32 @@
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">第四季度</tspan>
 </text>
 </g>
-<g transform="translate(26.8 498.67)">
+<g transform="translate(12.67 498.67)">
+<text x="39.2" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">-10%</tspan>
+</text>
+</g>
+<g transform="translate(26.8 460.57)">
 <text x="25.07" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 452.95)">
+<g transform="translate(19.73 422.47)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 407.23)">
+<g transform="translate(19.73 384.37)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 361.51)">
+<g transform="translate(19.73 346.27)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 315.79)">
+<g transform="translate(19.73 308.17)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40%</tspan>
 </text>
@@ -106,66 +117,71 @@
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 224.35)">
+<g transform="translate(19.73 231.97)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">60%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 178.63)">
+<g transform="translate(19.73 193.87)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">70%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 132.91)">
+<g transform="translate(19.73 155.77)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">80%</tspan>
 </text>
 </g>
-<g transform="translate(19.73 87.19)">
+<g transform="translate(19.73 117.67)">
 <text x="32.13" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">90%</tspan>
 </text>
 </g>
-<g transform="translate(12.67 41.47)">
+<g transform="translate(12.67 79.57)">
 <text x="39.2" y="13.63" text-anchor="end" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">100%</tspan>
 </text>
 </g>
-<g transform="translate(81.47 294.64)">
-<path d="M 0 0 L 59 0 L 59 213.36 L 0 213.36 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<g transform="translate(12.67 41.47)">
+<text x="39.2" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">110%</tspan>
+</text>
 </g>
-<g transform="translate(187.67 300.18)">
-<path d="M 0 0 L 59 0 L 59 207.82 L 0 207.82 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<g transform="translate(81.47 292.1)">
+<path d="M 0 0 L 59 0 L 59 177.8 L 0 177.8 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(293.87 344.1)">
-<path d="M 0 0 L 59 0 L 59 163.9 L 0 163.9 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<g transform="translate(187.67 296.72)">
+<path d="M 0 0 L 59 0 L 59 173.18 L 0 173.18 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(400.07 314.33)">
-<path d="M 0 0 L 59 0 L 59 193.67 L 0 193.67 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+<g transform="translate(293.87 333.32)">
+<path d="M 0 0 L 59 0 L 59 136.58 L 0 136.58 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(81.47 142.24)">
-<path d="M 0 0 L 59 0 L 59 152.4 L 0 152.4 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<g transform="translate(400.07 308.5)">
+<path d="M 0 0 L 59 0 L 59 161.4 L 0 161.4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(187.67 192.12)">
-<path d="M 0 0 L 59 0 L 59 108.07 L 0 108.07 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<g transform="translate(81.47 165.1)">
+<path d="M 0 0 L 59 0 L 59 127 L 0 127 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(293.87 162.94)">
-<path d="M 0 0 L 59 0 L 59 181.15 L 0 181.15 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<g transform="translate(187.67 206.66)">
+<path d="M 0 0 L 59 0 L 59 90.05 L 0 90.05 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(400.07 203.2)">
-<path d="M 0 0 L 59 0 L 59 111.13 L 0 111.13 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<g transform="translate(293.87 182.35)">
+<path d="M 0 0 L 59 0 L 59 150.96 L 0 150.96 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(81.47 50.8)">
-<path d="M 0 0 L 59 0 L 59 91.44 L 0 91.44 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<g transform="translate(400.07 215.9)">
+<path d="M 0 0 L 59 0 L 59 92.6 L 0 92.6 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(187.67 50.8)">
-<path d="M 0 0 L 59 0 L 59 141.32 L 0 141.32 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<g transform="translate(81.47 88.9)">
+<path d="M 0 0 L 59 0 L 59 76.2 L 0 76.2 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(293.87 50.8)">
-<path d="M 0 0 L 59 0 L 59 112.14 L 0 112.14 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<g transform="translate(187.67 88.9)">
+<path d="M 0 0 L 59 0 L 59 117.76 L 0 117.76 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(400.07 50.8)">
-<path d="M 0 0 L 59 0 L 59 152.4 L 0 152.4 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<g transform="translate(293.87 88.9)">
+<path d="M 0 0 L 59 0 L 59 93.45 L 0 93.45 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(400.07 88.9)">
+<path d="M 0 0 L 59 0 L 59 127 L 0 127 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 </g>
 <g transform="translate(493.33 260.27)">
 <path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
@@ -205,34 +221,40 @@
 <g transform="translate(62.4 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(105.05 50.8)">
+<g transform="translate(98.49 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(147.71 50.8)">
+<g transform="translate(134.58 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(190.36 50.8)">
+<g transform="translate(170.68 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(233.02 50.8)">
+<g transform="translate(206.77 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(275.67 50.8)">
+<g transform="translate(242.86 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(318.33 50.8)">
+<g transform="translate(278.95 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(360.98 50.8)">
+<g transform="translate(315.05 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(403.64 50.8)">
+<g transform="translate(351.14 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(446.29 50.8)">
+<g transform="translate(387.23 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
-<g transform="translate(488.95 50.8)">
+<g transform="translate(423.32 50.8)">
+<path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(459.42 50.8)">
+<path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(495.51 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
 </g>
 <g transform="translate(531.6 50.8)">
@@ -241,67 +263,77 @@
 <g transform="translate(62.4 484.67)">
 <path d="M 0 0 L 469.2 0" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
 </g>
-<g transform="translate(62.4 50.8)">
+<g transform="translate(98.49 50.8)">
 <path d="M 0 0 L 0 433.87" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
 </g>
-<g transform="translate(55.53 490.67)">
+<g transform="translate(52 490.67)">
+<text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">-2</tspan>
+</text>
+</g>
+<g transform="translate(91.63 490.67)">
 <text x="6.87" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0</tspan>
 </text>
 </g>
-<g transform="translate(98.19 490.67)">
+<g transform="translate(127.72 490.67)">
 <text x="6.87" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2</tspan>
 </text>
 </g>
-<g transform="translate(140.84 490.67)">
+<g transform="translate(163.81 490.67)">
 <text x="6.87" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4</tspan>
 </text>
 </g>
-<g transform="translate(183.5 490.67)">
+<g transform="translate(199.9 490.67)">
 <text x="6.87" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">6</tspan>
 </text>
 </g>
-<g transform="translate(226.15 490.67)">
+<g transform="translate(235.99 490.67)">
 <text x="6.87" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8</tspan>
 </text>
 </g>
-<g transform="translate(265.27 490.67)">
+<g transform="translate(268.55 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10</tspan>
 </text>
 </g>
-<g transform="translate(307.93 490.67)">
+<g transform="translate(304.65 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">12</tspan>
 </text>
 </g>
-<g transform="translate(350.58 490.67)">
+<g transform="translate(340.74 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">14</tspan>
 </text>
 </g>
-<g transform="translate(393.24 490.67)">
+<g transform="translate(376.83 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">16</tspan>
 </text>
 </g>
-<g transform="translate(435.89 490.67)">
+<g transform="translate(412.92 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">18</tspan>
 </text>
 </g>
-<g transform="translate(478.55 490.67)">
+<g transform="translate(449.02 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
 </text>
 </g>
-<g transform="translate(521.2 490.67)">
+<g transform="translate(485.11 490.67)">
 <text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">22</tspan>
+</text>
+</g>
+<g transform="translate(521.2 490.67)">
+<text x="10.4" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">24</tspan>
 </text>
 </g>
 <g transform="translate(23.07 403.02)">
@@ -319,23 +351,23 @@
 <tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">增长</tspan>
 </text>
 </g>
-<g transform="translate(62.4 367.16)">
-<path d="M 0 0 L 383.89 0 L 383.89 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<g transform="translate(98.49 367.16)">
+<path d="M 0 0 L 324.83 0 L 324.83 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(62.4 222.54)">
-<path d="M 0 0 L 191.95 0 L 191.95 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<g transform="translate(98.49 222.54)">
+<path d="M 0 0 L 162.42 0 L 162.42 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(62.4 77.92)">
-<path d="M 0 0 L 127.96 0 L 127.96 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<g transform="translate(98.49 77.92)">
+<path d="M 0 0 L 108.28 0 L 108.28 90.39 L 0 90.39 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(446.29 367.16)">
-<path d="M 0 0 L 85.31 0 L 85.31 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+<g transform="translate(423.32 367.16)">
+<path d="M 0 0 L 72.18 0 L 72.18 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(254.35 222.54)">
-<path d="M 0 0 L 63.98 0 L 63.98 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+<g transform="translate(260.91 222.54)">
+<path d="M 0 0 L 54.14 0 L 54.14 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
 </g>
-<g transform="translate(190.36 77.92)">
-<path d="M 0 0 L 149.29 0 L 149.29 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
+<g transform="translate(206.77 77.92)">
+<path d="M 0 0 L 126.32 0 L 126.32 90.39 L 0 90.39 Z" fill="rgb(165,165,165)" fill-rule="nonzero"/>
 </g>
 <g transform="translate(220.67 520.2)">
 <path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>

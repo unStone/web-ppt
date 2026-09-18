@@ -2,9 +2,11 @@
  * 生成 fixtures/sample-smartart.pptx —— SmartArt 的两条路径都要有覆盖。
  *
  * 第 1 页：带缓存 drawing part（PowerPoint 存出来的样子）—— 走「直接读画好的图形」
- * 第 2-6 页：只有 data + layout，没有 drawing —— 走自研布局回退，每页一个布局族
+ * 第 2-8 页：只有 data + layout，没有 drawing —— 走自研布局回退，覆盖六族
+ * （linear / cycle / pyramid / hierarchy / snake·matrix1 / radial·radial1）
  *
- * 此前 SmartArt 一个固件都没有，两条路径都从未被测过。
+ * matrix1 / radial1 的 uniqueId 与 Office 内置版式同形，layoutFamily 靠 uid 分族，
+ * 不依赖完整 constrLst；结果是「族与节点对得上」，不是与 PowerPoint 像素一致。
  */
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -109,6 +111,18 @@ const CASES = [
     title: '无 drawing · 竖排列表（linDir=fromT）',
     tree: [['第一条'], ['第二条'], ['第三条']],
     layout: layoutDef('urn:microsoft.com/office/officeart/2005/8/layout/vList2', 'lin', 'fromT'),
+  },
+  {
+    // matrix → snake 族：格子铺满，改字/增删后仍按 √n 网格重排
+    title: '无 drawing · 矩阵（matrix1→snake）',
+    tree: [['左上'], ['右上'], ['左下'], ['右下']],
+    layout: layoutDef('urn:microsoft.com/office/officeart/2005/8/layout/matrix1', 'snake'),
+  },
+  {
+    // radial1：首节点居中、其余绕圈；树形写成中心+卫星，flatten 后顺序与布局一致
+    title: '无 drawing · 径向（radial1）',
+    tree: [['中心', [['北'], ['东'], ['南'], ['西']]]],
+    layout: layoutDef('urn:microsoft.com/office/officeart/2005/8/layout/radial1', 'sp'),
   },
 ];
 

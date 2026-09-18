@@ -531,7 +531,9 @@ export function renderScatter(g: PlotGroup, p: XYPlot, env: PlotEnv): SlideEleme
  */
 export function renderBubbles(g: PlotGroup, p: XYPlot, env: PlotEnv): SlideElement[] {
   const scale = clamp(g.bubbleScale, 0, 300) / 100;
-  const maxR = Math.max(2, Math.min(p.rect.w, p.rect.h) * 0.13 * scale);
+  // Excel：最大气泡直径 ≈ 较小绘图边的 25% × bubbleScale%；area 按面积比取根，w 按直径比。
+  const maxDiameter = Math.max(4, Math.min(p.rect.w, p.rect.h) * 0.25 * scale);
+  const maxR = maxDiameter / 2;
   let maxSize = 0;
   for (const s of g.series) {
     for (const v of s.sizes ?? []) {

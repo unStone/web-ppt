@@ -3,7 +3,7 @@ export const expandedMessages = {
   'PPT 已导出': 'PPT exported',
   '帧率': 'Frame rate', '每页停留（秒）': 'Hold per slide (seconds)', '点击批次间隔（秒）': 'Click group delay (seconds)',
   '播放动画与切换': 'Play animations and transitions', '允许内嵌音视频使用静态封面': 'Allow static posters for embedded audio/video',
-  'WebM 保留动画与切换，无声音；内嵌音视频可选择使用静态封面。': 'WebM includes animations and transitions without sound. Embedded audio/video can use static posters.',
+  'WebM 保留动画与切换；PCM WAV 与可解码的 MP4 AAC 混入 Opus。progressive H.264 按静态 xfrm 合成（变换/裁剪/透明度）；失败时可勾选静态封面。循环/跨页仅认程序显式字段（PPT 勾选无效）；不跟随动画位移；音量与 mediacall 未支持。': 'WebM keeps animations and transitions. PCM WAV and decodable MP4 AAC mix into Opus. Progressive H.264 composes on the static xfrm (transforms, crop, opacity); enable static posters if decoding fails. Loop/cross-slide only honor explicit schema fields (PowerPoint checkboxes are ignored); animated motion is not followed; volume and mediacall are unsupported.',
   '正在编码视频帧 {completed} / {total}…': 'Encoding video frame {completed} / {total}…', '视频已导出': 'Video exported',
 
   '导出文件': 'Export file', '文件格式': 'File format', '清晰度': 'Resolution', '跳过隐藏页': 'Skip hidden slides',
