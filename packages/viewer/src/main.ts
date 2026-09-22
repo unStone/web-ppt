@@ -1,9 +1,32 @@
 import { bindCommentsTools } from './comments-tools';
 import { prepareAdvancedRendering } from '@web-ppt/core/advanced-rendering';
 import { prepareModernCharts } from '@web-ppt/core/modern-charts';
-import { parse, presentationToPrintableHtml, slideToPng, slideToSvgFile, slideText } from '@web-ppt/core';
+import { parse, presentationToPrintableHtml, slideToPng, slideToSvgFile } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 import type { Presentation } from '@web-ppt/core';
+import { bindSwipeNav } from '../../site/src/swipe-nav';
+import { presentRewindKey } from '../../site/src/present-back-key';
+import { bindBlankScreen } from '../../site/src/blank-screen';
+import { bindSlideNumber } from '../../site/src/slide-number';
+import { bindSlideEnds } from '../../site/src/slide-ends';
+import { bindSlideGrid } from '../../site/src/slide-grid';
+import { fetchBytes } from '../../site/src/fetch-bytes';
+import { abandonPresentation, createOpenGeneration, nextOpenPaint } from '../../site/src/open-session';
+import { clampOpenPage, clearOpenFileParam, clearOpenPageParam, parseOpenPage, writeOpenPageParam } from '../../site/src/open-page';
+import { cancelOpenPassword, openWithPresentationPassword } from '../../site/src/password-dialog';
+import { identifyOpenBytes } from '../../site/src/open-kind';
+import { formatOpenFileInfo } from './open-file-info';
+import { enableViewerNotes, resetViewerNotes, setViewerNotesOpen } from './viewer-notes';
+import { bindViewerSearch } from './viewer-search';
+import {
+  describeOpenFailure,
+  restoreOpenDropHint,
+  showOpenCancelled,
+  showOpenDownload,
+  showOpenError,
+  showOpenOpening,
+  showOpenParsing,
+} from './open-status';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -16,6 +39,7 @@ const fileInput = $<HTMLInputElement>('fileInput');
 const toast = $('toast');
 const notesPanel = $('notesPanel');
 const notesBody = $('notesBody');
+const btnNotes = $<HTMLButtonElement>('btnNotes');
 const searchInput = $<HTMLInputElement>('searchInput');
 const searchHits = $('searchHits');
 const zoomLabel = $('zoomLabel');
@@ -23,12 +47,16 @@ const animInfo = $('animInfo');
 const presenter = $('presenter');
 
 let viewer: Viewer | null = null;
+const opens = createOpenGeneration();
+let openAbort: AbortController | null = null;
+const addressPage = parseOpenPage(new URLSearchParams(location.search).get('p'));
+/** 只有地址驱动的那一次远程打开才回写 p。本地文件的页码不能写进还指着远程文件的地址。 */
+let bindAddressPage = false;
 const commentsTools = bindCommentsTools($<HTMLButtonElement>('btnComments'), () => viewer);
 let pres: Presentation | null = null;
 let toastTimer = 0;
 let fitMode = true;
-let hits: number[] = [];
-let hitPos = -1;
+let search: ReturnType<typeof bindViewerSearch> | undefined;
 
 function showToast(msg: string, ok = false): void {
   toast.textContent = msg;
@@ -49,6 +77,8 @@ function applyFit(): void {
   stage.style.aspectRatio = `${pres.width} / ${pres.height}`;
   viewer?.setZoom(1);
   zoomLabel.textContent = '适应';
+  syncSwipeSurface();
+  search?.syncHighlight();
 }
 
 function applyZoom(z: number): void {
@@ -60,6 +90,8 @@ function applyZoom(z: number): void {
   stage.style.width = `${pres.width * viewer.zoomLevel}px`;
   stage.style.height = `${pres.height * viewer.zoomLevel}px`;
   zoomLabel.textContent = `${Math.round(viewer.zoomLevel * 100)}%`;
+  syncSwipeSurface();
+  search?.syncHighlight();
 }
 
 function stepZoom(dir: 1 | -1): void {
@@ -73,24 +105,106 @@ function stepZoom(dir: 1 | -1): void {
 function updateChrome(): void {
   commentsTools.sync();
   if (!viewer) return;
+  enableViewerNotes(btnNotes);
   pageIndicator.textContent = `${viewer.index + 1} / ${viewer.count}`;
   thumbs.querySelectorAll('.thumb').forEach((t, i) => t.classList.toggle('active', i === viewer!.index));
   thumbs.querySelector('.thumb.active')?.scrollIntoView({ block: 'nearest' });
   notesBody.textContent = viewer.slide.notes ?? '';
   if (fitMode) applyFit();
+  if (bindAddressPage) writeOpenPageParam(viewer.index + 1);
+  search?.syncHighlight();
 }
 
-async function openData(data: ArrayBuffer, name: string): Promise<void> {
-  try {
-    const t0 = performance.now();
-    const parsed = (await Promise.all([prepareModernCharts(data), prepareAdvancedRendering(data)]), await parse(data));
-    const ms = Math.round(performance.now() - t0);
-    pres = parsed;
+function abortRemoteOpen(): void {
+  openAbort?.abort();
+  openAbort = null;
+}
 
-    commentsTools.reset();
-    viewer?.destroy();
+function detachOpen(): void {
+  commentsTools.reset();
+  exitPresent();
+  grid.reset();
+  numbers.clear();
+  blank.clear();
+  cancelOpenPassword();
+  search?.reset();
+  resetViewerNotes(notesPanel, notesBody, btnNotes);
+  viewer?.destroy();
+  viewer = null;
+  pres = null;
+  pageIndicator.textContent = '- / -';
+  thumbs.innerHTML = '';
+  grid.syncChrome();
+}
+
+function beginOpen(): number {
+  abortRemoteOpen();
+  bindAddressPage = false;
+  clearOpenPageParam();
+  clearOpenFileParam();
+  const token = opens.begin();
+  detachOpen();
+  fileInfo.textContent = '正在打开…';
+  showOpenOpening(stage);
+  return token;
+}
+
+function failOpen(stageError: string): void {
+  showOpenError(stage, stageError);
+  fileInfo.textContent = '未打开文件';
+  pageIndicator.textContent = '- / -';
+  grid.syncChrome();
+}
+
+async function finishOpen(data: ArrayBuffer, name: string, token: number, applyAddressPage = false): Promise<void> {
+  if (!opens.isCurrent(token)) return;
+  const identified = identifyOpenBytes(data);
+  if (identified.kind === 'reject') {
+    failOpen(identified.message);
+    return;
+  }
+  fileInfo.textContent = '正在打开…';
+  showOpenParsing(stage, data.byteLength);
+  await nextOpenPaint();
+  if (!opens.isCurrent(token)) return;
+  try {
+    await Promise.all([prepareModernCharts(data), prepareAdvancedRendering(data)]);
+    if (!opens.isCurrent(token)) return;
+    let parseMs = 0;
+    const opened = await openWithPresentationPassword(name, async (password) => {
+      const t0 = performance.now();
+      const parsed = await parse(data, password === undefined ? undefined : { password });
+      parseMs = Math.round(performance.now() - t0);
+      return parsed;
+    });
+    if (!opens.isCurrent(token)) {
+      abandonPresentation(opened);
+      return;
+    }
+    if (!opened) {
+      showOpenCancelled(stage, name);
+      fileInfo.textContent = '未打开文件';
+      pageIndicator.textContent = '- / -';
+      grid.syncChrome();
+      return;
+    }
+    const parsed = opened;
+    const ms = parseMs;
+    pres = parsed;
+    const start = applyAddressPage ? clampOpenPage(addressPage, parsed.slides.length) - 1 : 0;
+
     stage.innerHTML = '';
-    viewer = new Viewer(stage, parsed, { animate: false, autoAdvance: false, skipHidden: true });
+    viewer = new Viewer(stage, parsed, {
+      animate: false,
+      autoAdvance: false,
+      skipHidden: true,
+      index: start,
+    });
+    bindAddressPage = applyAddressPage;
+    if (!applyAddressPage) clearOpenPageParam();
+    stage.dataset.openPhase = 'ready';
+    blank.attach();
+    blank.clear();
     viewer.onChange = updateChrome;
     viewer.onLinkClick = (href) => {
       showToast(`打开链接：${href}`, true);
@@ -102,26 +216,83 @@ async function openData(data: ArrayBuffer, name: string): Promise<void> {
 
     buildThumbs(parsed.slides.length);
 
-    const notesCount = parsed.slides.filter((s) => s.notes).length;
-    const extra = parsed.source === 'ppt' ? ' · .ppt 二进制格式' : '';
-    fileInfo.textContent =
-      `${name} · ${parsed.slides.length} 页 · ${parsed.width | 0}×${parsed.height | 0}px · ${ms}ms` +
-      (notesCount ? ` · ${notesCount} 页有备注` : '') + extra;
+    fileInfo.textContent = formatOpenFileInfo({
+      name,
+      pages: parsed.slides.length,
+      width: parsed.width,
+      height: parsed.height,
+      parseMs: ms,
+      source: parsed.source,
+    });
 
     applyFit();
     updateChrome();
-    runSearch();
+    grid.syncChrome();
+    search?.enable();
   } catch (err) {
-    showToast(err instanceof Error ? err.message : String(err));
+    if (!opens.isCurrent(token)) return;
+    const reason = describeOpenFailure(err);
+    failOpen(reason);
+    showToast(reason);
     console.error(err);
   }
 }
 
-const openFile = async (file: File): Promise<void> => openData(await file.arrayBuffer(), file.name);
+const openFile = async (file: File): Promise<void> => {
+  const token = beginOpen();
+  const data = await file.arrayBuffer();
+  if (!opens.isCurrent(token)) return;
+  await finishOpen(data, file.name, token);
+};
+
+async function openRemote(src: string, explicit: boolean): Promise<void> {
+  abortRemoteOpen();
+  const token = opens.tryIdleBegin();
+  if (token == null) return;
+  detachOpen();
+  const ac = new AbortController();
+  openAbort = ac;
+  fileInfo.textContent = '正在下载…';
+  showOpenDownload(stage, 0, 0);
+  const name = decodeURIComponent(src.split('/').pop() || src);
+  try {
+    const { bytes } = await fetchBytes(src, (got, total) => {
+      if (opens.isCurrent(token)) showOpenDownload(stage, got, total);
+    }, ac.signal);
+    if (!opens.isCurrent(token)) return;
+    openAbort = null;
+    await finishOpen(bytes, explicit ? name : `${name}（内置示例）`, token, true);
+  } catch (error) {
+    if (!opens.isCurrent(token) || (error instanceof DOMException && error.name === 'AbortError')) return;
+    fileInfo.textContent = '未打开文件';
+    pageIndicator.textContent = '- / -';
+    if (!explicit) {
+      restoreOpenDropHint(stage);
+      return;
+    }
+    showOpenError(stage, `下载失败：${describeOpenFailure(error)}`);
+    grid.syncChrome();
+  }
+}
 
 // ---------- 缩略图（虚拟化） ----------
 
 let thumbObserver: IntersectionObserver | null = null;
+const compactBrowse = window.matchMedia('(max-width: 620px)');
+
+function resumePendingThumbs(): void {
+  // display:none 时交叉观察不触发；拉宽后必须重新 observe，否则一直是灰块
+  if (!thumbObserver || compactBrowse.matches) return;
+  thumbs.querySelectorAll<HTMLElement>('.thumb.pending').forEach((el) => {
+    thumbObserver!.observe(el);
+  });
+}
+
+function syncThumbsChrome(): void {
+  thumbs.setAttribute('aria-hidden', compactBrowse.matches ? 'true' : 'false');
+  resumePendingThumbs();
+  grid.syncChrome();
+}
 
 /**
  * 只渲染进入视口的缩略图。
@@ -156,7 +327,16 @@ function buildThumbs(count: number): void {
     }
   }, { root: thumbs, rootMargin: '300px 0px' });
 
+  // IO 第一次 watch 就会回调。先滚到当前页，深链才不会先 inflate 栏顶那几页。
+  const current = items[viewer?.index ?? 0];
+  if (current) {
+    const a = current.getBoundingClientRect();
+    const box = thumbs.getBoundingClientRect();
+    if (a.top < box.top) thumbs.scrollTop += a.top - box.top;
+    else if (a.bottom > box.bottom) thumbs.scrollTop += a.bottom - box.bottom;
+  }
   for (const it of items) thumbObserver.observe(it);
+  syncThumbsChrome();
 }
 
 function renderThumb(div: HTMLElement): void {
@@ -173,39 +353,65 @@ function renderThumb(div: HTMLElement): void {
   if (i === viewer.index) div.classList.add('active');
 }
 
-// ---------- 搜索 ----------
-
-function runSearch(): void {
-  const q = searchInput.value.trim();
-  hits = [];
-  hitPos = -1;
-  thumbs.querySelectorAll('.thumb').forEach((t) => t.classList.remove('hit'));
-  if (!q || !pres) {
-    searchHits.textContent = '';
-    return;
-  }
-  const lower = q.toLowerCase();
-  pres.slides.forEach((s, i) => {
-    if (slideText(s).toLowerCase().includes(lower)) hits.push(i);
-  });
-  searchHits.textContent = hits.length ? `${hits.length} 页` : '无结果';
-  hits.forEach((i) => thumbs.children[i]?.classList.add('hit'));
-  // 命中页可能还没渲染，滚动到它时再由观察器补上
-  if (hits.length) {
-    hitPos = 0;
-    viewer?.goTo(hits[0]);
-  }
-}
-
-function nextHit(): void {
-  if (!hits.length) return;
-  hitPos = (hitPos + 1) % hits.length;
-  viewer?.goTo(hits[hitPos]);
-}
-
 // ---------- 演示模式 ----------
 
 let presenting = false;
+const pvBlank = $<HTMLButtonElement>('pvBlank');
+// 必须排在黑屏之前：遮罩里的 Enter 会先被吃掉，合法页码就确认不到。
+const numbers = bindSlideNumber({
+  host: presenter,
+  presenting: () => presenting,
+  keysActive: () => !grid.showing(),
+  viewer: () => viewer,
+  onJump: () => {
+    blank.clear();
+    updateChrome();
+    if (presenting) renderPresenter();
+  },
+});
+// 必须排在黑屏之前：遮罩会把 Home / End 收成「只恢复」，首尾页就跳不过去。
+bindSlideEnds({
+  presenting: () => presenting,
+  keysActive: () => !grid.showing(),
+  viewer: () => viewer,
+  onJump: () => {
+    blank.clear();
+    updateChrome();
+    if (presenting) renderPresenter();
+  },
+});
+const blank = bindBlankScreen({
+  stage,
+  presenting: () => presenting,
+  keysActive: () => !grid.showing(),
+  button: pvBlank,
+});
+const grid = bindSlideGrid({
+  viewer: () => viewer,
+  thumbsVisible: () => !compactBrowse.matches,
+  keysActive: () => true,
+  browseButtons: [$<HTMLButtonElement>('btnGrid')],
+  presentButtons: [$<HTMLButtonElement>('pvGrid')],
+  onJump: () => {
+    blank.clear();
+    updateChrome();
+    if (presenting) renderPresenter();
+  },
+});
+search = bindViewerSearch({
+  query: searchInput,
+  hitsLabel: searchHits,
+  thumbs,
+  highlightRoots: () => [stage, notesBody],
+  presentation: () => pres,
+  viewer: () => viewer,
+  presenting: () => presenting,
+  onJump: () => {
+    if (grid.showing()) grid.close();
+    updateChrome();
+    if (presenting) renderPresenter();
+  },
+});
 
 function renderPresenter(): void {
   if (!viewer) return;
@@ -228,10 +434,15 @@ function restoreStage(): void {
 async function enterPresent(): Promise<void> {
   if (!viewer) return;
   presenting = true;
+  search?.syncHighlight();
   presenter.hidden = false;
   // 演示模式下才播放切换与元素动画
   viewer.setAnimate(true);
+  numbers.clear();
+  blank.clear();
+  blank.attach();
   renderPresenter();
+  syncSwipeSurface();
   try {
     await document.documentElement.requestFullscreen();
   } catch {
@@ -242,10 +453,35 @@ async function enterPresent(): Promise<void> {
 function exitPresent(): void {
   presenting = false;
   presenter.hidden = true;
+  numbers.clear();
+  blank.clear();
+  grid.close();
   viewer?.setAnimate(false);
   restoreStage();
+  syncSwipeSurface();
+  grid.syncChrome();
+  search?.syncHighlight();
   if (document.fullscreenElement) void document.exitFullscreen();
 }
+
+function isViewerSwipeTarget(target: EventTarget | null): boolean {
+  const el = target instanceof Element ? target : null;
+  if (!el) return false;
+  return !el.closest('a[href],button,input,select,textarea,[data-slide],.present-blank,.pv-side,.slide-grid');
+}
+
+function syncSwipeSurface(): void {
+  // 放大后要留给画布平移；放映里舞台已被 CSS 适应，始终允许滑。
+  stage.classList.toggle('swipe-x', presenting || fitMode);
+}
+
+bindSwipeNav({
+  host: stage,
+  viewer: () => viewer,
+  isAdvanceTarget: isViewerSwipeTarget,
+  allow: () => presenting || fitMode,
+  afterChange: () => { if (presenting) renderPresenter(); },
+});
 
 // ---------- 导出 ----------
 
@@ -308,56 +544,90 @@ $('btnExportSvg').addEventListener('click', () => void exportSvg());
 $('btnExportPdf').addEventListener('click', () => void exportPdf());
 $('btnPresent').addEventListener('click', () => void enterPresent());
 $('pvExit').addEventListener('click', exitPresent);
-$('btnNotes').addEventListener('click', () => {
-  notesPanel.hidden = !notesPanel.hidden;
-  $('btnNotes').classList.toggle('active', !notesPanel.hidden);
+btnNotes.addEventListener('click', () => {
+  if (!viewer) return;
+  setViewerNotesOpen(notesPanel, btnNotes, notesPanel.hidden);
+  search?.syncHighlight();
 });
-
-searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    if (hits.length) nextHit();
-    else runSearch();
-  }
-});
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = window.setTimeout(runSearch, 250);
-});
-let searchTimer = 0;
 
 document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+    if (search?.focusIfAllowed()) e.preventDefault();
+    return;
+  }
+  // Find again 是浏览态的 Ctrl/⌘+G。放映、空查询、别的输入由 findAgain 拒绝，这里也不拦截。
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'g' || e.key === 'G')) {
+    if (search?.findAgain(e.shiftKey ? -1 : 1)) e.preventDefault();
+    return;
+  }
   if (e.target instanceof HTMLInputElement) return;
+  // 网页表的退格和裸 P 只在放映里走上一步。浏览态留给页面，搜索框已在上面返回。
+  // Ctrl / ⌘+P 是打印，谓词不认修饰键，这里也不能 preventDefault。
+  if (presenting && presentRewindKey(e)) {
+    e.preventDefault();
+    viewer?.prev();
+    renderPresenter();
+    return;
+  }
   switch (e.key) {
     case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
-      e.preventDefault();
-      viewer?.next();
-      if (presenting) renderPresenter();
-      break;
     case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+      // 网页表写的是裸方向键。带修饰键时留给浏览器，不能退批次。
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) break;
       e.preventDefault();
-      viewer?.prev();
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') viewer?.prev();
+      else viewer?.next();
       if (presenting) renderPresenter();
       break;
-    case 'Home': viewer?.goTo(0); break;
+    case 'Home':
+    case 'End':
+      // 放映里的首尾页由 slide-ends 处理。冒泡到这里的是浏览态，或带修饰键的放映按键。
+      if (presenting) break;
+      if (e.key === 'Home') viewer?.goTo(0);
+      else if (viewer) viewer.goTo(viewer.count - 1);
+      break;
     case 'Enter':
       // 一次性播完本页剩余动画
       viewer?.finishAnimations();
       if (presenting) renderPresenter();
       break;
-    case 'End': if (viewer) viewer.goTo(viewer.count - 1); break;
     case '+': case '=': stepZoom(1); break;
     case '-': stepZoom(-1); break;
     case '0': applyFit(); break;
-    case 'n': case 'N': $('btnNotes').click(); break;
+    case 'n': case 'N':
+      if (!viewer) return;
+      btnNotes.click();
+      break;
     case 'f': case 'F': void enterPresent(); break;
-    case 'Escape': if (presenting) exitPresent(); break;
-    case '/': e.preventDefault(); searchInput.focus(); break;
+    case 'Escape':
+      if (grid.consumeEscape()) break;
+      if (presenting) {
+        exitPresent();
+        break;
+      }
+      if (!notesPanel.hidden) {
+        e.preventDefault();
+        setViewerNotesOpen(notesPanel, btnNotes, false);
+        search?.syncHighlight();
+      }
+      break;
+    case '/':
+      if (search?.focusIfAllowed()) e.preventDefault();
+      break;
   }
 });
 
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && presenting) exitPresent();
+});
+
+presenter.addEventListener('click', (e) => {
+  if (!presenting) return;
+  const el = e.target instanceof Element ? e.target : null;
+  // 侧栏、按钮、链接自己处理；点到当前页才前进
+  if (!el || el.closest('a[href], button, [data-slide], .pv-side, .present-blank, .slide-grid')) return;
+  viewer?.next();
+  renderPresenter();
 });
 
 // Ctrl/Cmd + 滚轮缩放
@@ -383,19 +653,10 @@ document.addEventListener('drop', (e) => {
 
 window.addEventListener('resize', () => {
   if (fitMode) applyFit();
+  syncThumbsChrome();
 });
+compactBrowse.addEventListener('change', syncThumbsChrome);
+syncThumbsChrome();
 
-// 启动时加载 ?file= 指定文件，否则加载内置示例
-void (async () => {
-  const target = new URLSearchParams(location.search).get('file') ?? '/sample.pptx';
-  try {
-    const res = await fetch(target);
-    if (res.ok) await openData(await res.arrayBuffer(), `${target.split('/').pop()}（内置示例）`);
-    else {
-      const hint = document.querySelector('#dropHint small');
-      if (hint) hint.textContent = '';
-    }
-  } catch {
-    /* 无示例文件时静默 */
-  }
-})();
+const requestedFile = new URLSearchParams(location.search).get('file');
+void openRemote(requestedFile ?? '/sample.pptx', requestedFile != null);

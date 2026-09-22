@@ -1,15 +1,35 @@
 import { PasswordRequiredError, WrongPasswordError } from '@web-ppt/core';
-import { setAttributeText, setText } from './i18n/runtime';
 
 export { PasswordRequiredError, WrongPasswordError } from '@web-ppt/core';
 
 type PasswordAttempt<T> = (password?: string) => Promise<T>;
 
+export type PasswordDialogCopy = {
+  text(target: Element, source: string, params?: Record<string, string>): void;
+  attr(target: Element, name: 'aria-label' | 'placeholder', source: string, params?: Record<string, string>): void;
+};
+
+function fill(source: string, params?: Record<string, string>): string {
+  if (!params) return source;
+  return source.replace(/\{(\w+)\}/g, (_, key: string) => {
+    if (!Object.prototype.hasOwnProperty.call(params, key)) {
+      throw new Error(`密码框文案缺少参数：${key}`);
+    }
+    return String(params[key]);
+  });
+}
+
+/** 默认中文写入。独立查看器没有词库，也不能加载站点语言运行时。 */
+const zhCopy: PasswordDialogCopy = {
+  text(target, source, params) { target.textContent = fill(source, params); },
+  attr(target, name, source, params) { target.setAttribute(name, fill(source, params)); },
+};
+
 function needsPassword(error: unknown): error is PasswordRequiredError | WrongPasswordError {
   return error instanceof PasswordRequiredError || error instanceof WrongPasswordError;
 }
 
-function buildDialog(name: string): {
+function buildDialog(name: string, copy: PasswordDialogCopy): {
   dialog: HTMLDialogElement;
   form: HTMLFormElement;
   input: HTMLInputElement;
@@ -34,13 +54,13 @@ function buildDialog(name: string): {
     </footer>
   </form>`;
 
-  setAttributeText(dialog, 'aria-label', '输入打开密码');
-  setText(dialog.querySelector('h2')!, '输入打开密码');
-  setText(dialog.querySelector('#viewerPasswordDescription')!, '“{name}” 已加密。密码只在本机用于解密，不会上传。', { name });
-  setText(dialog.querySelector('label')!, '密码');
-  setAttributeText(dialog.querySelector('input')!, 'placeholder', '请输入密码');
-  setText(dialog.querySelector('#viewerPasswordCancel')!, '取消');
-  setText(dialog.querySelector('#viewerPasswordSubmit')!, '打开文稿');
+  copy.attr(dialog, 'aria-label', '输入打开密码');
+  copy.text(dialog.querySelector('h2')!, '输入打开密码');
+  copy.text(dialog.querySelector('#viewerPasswordDescription')!, '“{name}” 已加密。密码只在本机用于解密，不会上传。', { name });
+  copy.text(dialog.querySelector('label')!, '密码');
+  copy.attr(dialog.querySelector('input')!, 'placeholder', '请输入密码');
+  copy.text(dialog.querySelector('#viewerPasswordCancel')!, '取消');
+  copy.text(dialog.querySelector('#viewerPasswordSubmit')!, '打开文稿');
 
   return {
     dialog,
@@ -52,6 +72,13 @@ function buildDialog(name: string): {
   };
 }
 
+let activeCancel: (() => void) | undefined;
+
+/** 换文件时必须 resolve 掉上一份密码框，只 remove 会让上一次 show() 挂死。 */
+export function cancelOpenPassword(): void {
+  activeCancel?.();
+}
+
 /**
  * 首次解析只负责发现加密；需要口令时才创建 UI，并始终用同一个输入闭包重试。
  * 口令提交后立即从 DOM 清空，成功、取消或异常时整个对话框都会移除。
@@ -59,6 +86,7 @@ function buildDialog(name: string): {
 export async function openWithPresentationPassword<T>(
   name: string,
   attempt: PasswordAttempt<T>,
+  copy: PasswordDialogCopy = zhCopy,
 ): Promise<T | null> {
   try {
     return await attempt();
@@ -67,10 +95,11 @@ export async function openWithPresentationPassword<T>(
   }
 
   return new Promise<T | null>((resolve, reject) => {
-    const { dialog, form, input, feedback, submit, cancel } = buildDialog(name);
+    const { dialog, form, input, feedback, submit, cancel } = buildDialog(name, copy);
     let settled = false;
 
     const cleanup = (): void => {
+      if (activeCancel === finishNull) activeCancel = undefined;
       input.value = '';
       if (dialog.open) dialog.close();
       dialog.remove();
@@ -81,6 +110,8 @@ export async function openWithPresentationPassword<T>(
       cleanup();
       resolve(value);
     };
+    const finishNull = (): void => finish(null);
+    activeCancel = finishNull;
     const fail = (error: unknown): void => {
       if (settled) return;
       settled = true;
@@ -89,7 +120,7 @@ export async function openWithPresentationPassword<T>(
     };
     const showWrongPassword = (): void => {
       feedback.setAttribute('role', 'alert');
-      setText(feedback, '密码错误，请重试');
+      copy.text(feedback, '密码错误，请重试');
       input.disabled = false;
       submit.disabled = false;
       input.focus();
@@ -103,7 +134,7 @@ export async function openWithPresentationPassword<T>(
       input.disabled = true;
       submit.disabled = true;
       feedback.setAttribute('role', 'status');
-      setText(feedback, '正在验证密码…');
+      copy.text(feedback, '正在验证密码…');
       void attempt(password).then(finish, (error) => {
         if (needsPassword(error)) showWrongPassword();
         else fail(error);

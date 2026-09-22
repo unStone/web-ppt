@@ -1,5 +1,15 @@
 import { readFileSync } from 'node:fs';
-import { runViewerFullscreenContract, runViewerCopyContract, runViewerNavigationKeysContract } from './site-viewer-controls-contract.mjs';
+import { runViewerFullscreenContract, runViewerCopyContract, runViewerNavigationKeysContract, runViewerPresentFallbackContract, runViewerSpeakerAidsContract, runViewerSwipeNavContract, runViewerBlankScreenContract } from './site-viewer-controls-contract.mjs';
+import { runViewerPresentBarContract } from './site-present-bar-browser-contract.mjs';
+import { runViewerSlideGridContract } from './site-slide-grid-browser-contract.mjs';
+import { runBlankPeriodContract } from './blank-period-browser-contract.mjs';
+import { runWhiteScreenContract } from './white-screen-browser-contract.mjs';
+import { runSlideNumberContract } from './slide-number-browser-contract.mjs';
+import { runSlideEndsContract } from './slide-ends-browser-contract.mjs';
+import { runNotesKeyContract } from './notes-key-browser-contract.mjs';
+import { runPresentVerticalContract } from './present-vertical-browser-contract.mjs';
+import { runPresentBackspaceContract } from './present-backspace-browser-contract.mjs';
+import { runPresentPrevLetterContract } from './present-prev-letter-browser-contract.mjs';
 import { runSiteLanguageInputContract } from './site-language-input-contract.mjs';
 
 export async function runSiteI18nGalleryContract({ evaluate, request, click, waitFor, onEvent }) {
@@ -34,11 +44,29 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await click('[data-site-locale="zh-CN"]');
     await waitFor("document.querySelector('.preview-stage .loading-label')?.textContent === '下载中 · 0.0MB'", '预览下载中切中文');
     if (pending.length !== 1) throw new Error('预览必须仅下载用户选择的一份样本');
+    await evaluate(`(() => {
+      const stage = document.querySelector('.preview-stage');
+      globalThis.__sawPreviewParsing = false;
+      const watch = () => {
+        if (stage?.dataset.openPhase === 'parsing' || /解析中|Parsing/.test(stage?.textContent ?? '')) {
+          globalThis.__sawPreviewParsing = true;
+        }
+      };
+      watch();
+      const mo = new MutationObserver(watch);
+      mo.observe(stage, { childList: true, subtree: true, attributes: true });
+      globalThis.__previewParsingWatch = mo;
+    })()`);
     await request('Fetch.fulfillRequest', { requestId: pending.shift(), responseCode: 200, body,
       responseHeaders: [{ name: 'Access-Control-Allow-Origin', value: '*' }] });
     await waitFor("document.querySelector('.preview-stage svg') && document.querySelector('.preview-meta').textContent.includes('7 页')", '真实样本文稿渲染');
+    if (!await evaluate("globalThis.__sawPreviewParsing === true && document.querySelector('.preview-stage')?.dataset.openPhase === 'ready'")) {
+      throw new Error('样本预览下载结束后没有经过解析中');
+    }
+    await evaluate('globalThis.__previewParsingWatch?.disconnect()');
     await click('.preview-next');
     await waitFor("document.querySelector('.preview-pager').textContent === '2 / 7'", '样本查看器第二页');
+    if (!await evaluate("new URL(location.href).searchParams.get('p') === '2'")) throw new Error('样本预览翻页没有回写 p');
     await evaluate("globalThis.__previewView = document.querySelector('.preview-stage').firstElementChild; globalThis.__previewBytes = document.querySelector('.preview-dl').href");
     await click('[data-site-locale="en"]');
     await waitFor("document.querySelector('.preview-meta').textContent.includes('Slides: 7') && document.querySelector('.preview-meta').textContent.includes('Parse ')", '已打开样本切英文');
@@ -48,8 +76,96 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await runViewerCopyContract(context, '.preview-share', '复制链接', 'Copy link');
     await runViewerFullscreenContract(context, '.preview-full', '.preview-stage', '.preview-pager');
     await runViewerNavigationKeysContract(context, '.preview-next', '.preview-pager');
+    await runViewerPresentFallbackContract(context, '.preview-full', '.preview-wrap', '.preview-stage', '.preview-pager');
+    await runViewerSpeakerAidsContract(context, '.preview-notes', '.preview-wrap', '.preview-pager', '.preview-full', '.preview-prev', '.preview-next');
+    await runViewerSwipeNavContract(context, '.preview-wrap', '.preview-stage', '.preview-pager', '.preview-notes', '.preview-full', '.preview-prev');
+    await runViewerBlankScreenContract(context, '.preview-full', '.preview-wrap', '.preview-stage', '.preview-pager', '.preview-prev', '.preview-p-next');
+    await runBlankPeriodContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      gridButton: '.preview-p-grid',
+      blankButton: '.preview-p-blank',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runWhiteScreenContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      nextButton: '.preview-p-next',
+      gridButton: '.preview-p-grid',
+      blankButton: '.preview-p-blank',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runSlideNumberContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runSlideEndsContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      nextButton: '.preview-next',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runNotesKeyContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      notesButton: '.preview-notes',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runPresentVerticalContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      notesButton: '.preview-notes',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+    });
+    await runPresentBackspaceContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      nextButton: '.preview-next',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+      notesOpen: "document.querySelector('.preview-wrap')?.classList.contains('has-speaker-aids')",
+    });
+    await runPresentPrevLetterContract(context, {
+      trigger: '.preview-full',
+      fullscreenRoot: '.preview-wrap',
+      host: '.preview-wrap',
+      stage: '.preview-stage',
+      pager: '.preview-pager',
+      prevButton: '.preview-prev',
+      nextButton: '.preview-next',
+      presenting: "document.querySelector('.preview-wrap')?.classList.contains('is-presenting')",
+      notesOpen: "document.querySelector('.preview-wrap')?.classList.contains('has-speaker-aids')",
+    });
+    await runViewerPresentBarContract(context, '.preview-full', '.preview-wrap', '.preview-stage', '.preview-pager');
+    await runViewerSlideGridContract(context, '.preview-grid', '.preview-p-grid', '.preview-full', '.preview-wrap', '.preview-pager', '.preview-prev', { hideBrowseOnWide: false });
     await click('.preview-close');
-    if (!await evaluate("document.querySelector('.preview').hidden && !document.querySelector('.preview #siteLanguage') && document.querySelector('#siteLanguage')?.isConnected && !new URL(location.href).searchParams.has('sample')")) throw new Error('关闭预览未归还语言入口或清理深链');
+    if (!await evaluate("document.querySelector('.preview').hidden && !document.querySelector('.preview #siteLanguage') && document.querySelector('#siteLanguage')?.isConnected && !new URL(location.href).searchParams.has('sample') && !new URL(location.href).searchParams.has('p')")) throw new Error('关闭预览未归还语言入口或清理深链');
     await click(`${card} button`);
     await waitFor("document.querySelector('.preview-stage .loading-label')", '再次打开样本');
     if (!await evaluate("document.querySelector('.preview-dl').hidden && new URL(document.querySelector('[data-site-locale=zh-CN]').href).searchParams.get('sample') === 'language-contract.pptx'")) throw new Error('下载中仍暴露旧下载，或语言链接丢失当前样本深链');

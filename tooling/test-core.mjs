@@ -2701,6 +2701,64 @@ group('headless 状态机');
       // 关掉动画不等于全部画出来：静态画面取动画终态
       eq('关闭动画后仍隐藏退场元素', [...st3.hiddenElementIds].join(','), '705');
       st3.destroy();
+
+      // 上一步先退回一批。合成文稿只借真实页的形状，批次自己写死，避免固件改组数把契约带跑。
+      const step = (target, kind, clickGroup) => ({
+        target, kind, clickGroup, trigger: 'click', effect: kind === 'emphasis' ? 'grow' : 'fade',
+        delayMs: 0, durationMs: 10,
+      });
+      const deck = {
+        ...animPres,
+        slides: [
+          { elements: [], animations: [step(1, 'entrance', 0), step(1, 'exit', 1)] },
+          { elements: [], hidden: true },
+          { elements: [], animations: [step(3, 'entrance', 0), step(9, 'emphasis', 1)] },
+        ],
+      };
+      const back = new St(deck, { animate: true, skipHidden: true, index: 2 });
+      const seen = [];
+      back.subscribe((change) => seen.push(change));
+      eq('末页起始光标', back.animationDone, 0);
+      back.next();
+      eq('next 先播入场不翻页', back.index, 2);
+      eq('入场播完计数', back.animationDone, 1);
+      check('入场之后目标不再隐藏', !back.hiddenElementIds.has(3));
+      back.prev();
+      eq('上一步留在本页', back.index, 2);
+      eq('上一步退回一批', back.animationDone, 0);
+      check('退回后入场重新隐藏', back.hiddenElementIds.has(3));
+      check('退回发 settle 而不是换页', seen.some((change) => change.type === 'animation' && change.settle)
+        && !seen.some((change) => change.type === 'slide'));
+      back.prev();
+      eq('开头再按上一步跳过隐藏页', back.index, 0);
+      eq('上一页落在终态', back.animationDone, back.animationTotal);
+      check('终态里退场保持隐藏', back.hiddenElementIds.has(1));
+      back.prev();
+      eq('从终态再退一批', back.animationDone, 1);
+      check('退回退场后元素重新可见', !back.hiddenElementIds.has(1));
+      back.prev();
+      eq('再退回到入场之前', back.animationDone, 0);
+      check('入场之前重新隐藏', back.hiddenElementIds.has(1));
+      const beforeStay = back.index;
+      back.prev();
+      eq('第一页开头再按上一步停住', back.index, beforeStay);
+      back.goTo(2);
+      eq('goTo 仍从目标页开头开始', back.animationDone, 0);
+      back.destroy();
+
+      const plain = new St(deck, { animate: false, skipHidden: true, index: 2 });
+      plain.prev();
+      eq('关闭动画时上一步仍整页回退', plain.index, 0);
+      eq('关闭动画不读批次光标', plain.animationDone, 0);
+      plain.destroy();
+
+      const settled = viewerLib.settledDeclaration;
+      eq('入场终态不另写样式', settled(step(1, 'entrance', 0)), null);
+      eq('强调放大停在结束帧', settled({ ...step(9, 'emphasis', 0), effect: 'grow' }).transform, 'scale(1.25)');
+      eq('路径终态取折线终点', settled({
+        ...step(4, 'motion', 0), kind: 'motion', effect: 'path',
+        motionPath: [[0, 0], [30, 40]],
+      }).transform, 'translate(30px, 40px)');
     }
     st.destroy();
   }

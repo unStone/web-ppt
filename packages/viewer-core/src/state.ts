@@ -25,8 +25,11 @@ export interface PresentationStateOptions {
 export type StateChange =
   /** 换页。`transition` 非空表示应播放切换效果 */
   | { type: 'slide'; index: number; previous: number; transition?: Transition }
-  /** 动画批次推进。`group` 是本次应播放的这一批 */
-  | { type: 'animation'; done: number; total: number; group: AnimStep[] | null }
+  /**
+   * 动画批次推进。`group` 是本次应播放的这一批。
+   * `settle` 表示光标退回了一批：UI 要重绘并摆到该光标的终态，不能再播一遍。
+   */
+  | { type: 'animation'; done: number; total: number; group: AnimStep[] | null; settle?: boolean }
   | { type: 'zoom'; zoom: number };
 
 type Listener = (change: StateChange) => void;
@@ -82,6 +85,13 @@ export class PresentationState {
 
   get hasPendingAnimation(): boolean {
     return this.animate && this.cursor < this.groups.length;
+  }
+
+  /** 光标之前已经结束的步骤。终态样式按这个顺序覆盖。 */
+  get completedSteps(): readonly AnimStep[] {
+    const steps: AnimStep[] = [];
+    for (let i = 0; i < this.cursor && i < this.groups.length; i++) steps.push(...this.groups[i]);
+    return steps;
   }
 
   /**
@@ -148,10 +158,33 @@ export class PresentationState {
     if (i < this.count) this.goTo(i);
   }
 
+  /**
+   * 放映时先退回一批已经播过的点击；本页还在开头，才去上一张可见页。
+   *
+   * 上一页要落在终态，否则入场又藏起来，没法继续往回退。
+   * 光标必须在发出 slide 之前拨到末批，不然会先画出开头那一帧。
+   * 浏览关掉动画时批次表是空的，这里仍是整页回退。
+   */
   prev(): void {
+    if (this.animate && this.cursor > 0) {
+      this.cursor--;
+      this.emit({
+        type: 'animation',
+        done: this.cursor,
+        total: this.groups.length,
+        group: null,
+        settle: true,
+      });
+      return;
+    }
     let i = this.idx - 1;
     while (i >= 0 && !this.visible(i)) i--;
-    if (i >= 0) this.goTo(i, 'backward');
+    if (i < 0) return;
+    const previous = this.idx;
+    this.idx = i;
+    this.loadAnimations();
+    if (this.animate) this.cursor = this.groups.length;
+    this.emit({ type: 'slide', index: this.idx, previous });
   }
 
   setZoom(z: number): void {

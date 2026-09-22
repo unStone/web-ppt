@@ -7,12 +7,23 @@ import { loadFontsFor } from '@web-ppt/fonts';
 import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { fetchBytes, whyFailed } from './fetch-bytes';
+import { identifyOpenBytes, mapOpenError } from './open-kind';
 import { fetchSamples, type Sample } from './samples-index';
 import { languageReady, refreshSiteLinks, setAttributeText, setMessage, setSiteLink, setText } from './i18n/runtime';
-import { createViewerStatus } from './viewer-status';
+import { createViewerStatus, setOpenPhase } from './viewer-status';
+import { abandonPresentation, nextOpenPaint } from './open-session';
 import { message } from './i18n/message';
 import { bindFullscreenLanguage, moveLanguageControl, ownsViewerKey } from './i18n/controls';
 import { bindCopyButton } from './copy-button';
+import { presentRewindKey } from './present-back-key';
+import { bindPresentMode, isPresentAdvanceTarget, presentVerticalStep } from './present-mode';
+import { bindBlankScreen } from './blank-screen';
+import { bindSlideNumber } from './slide-number';
+import { bindSlideEnds } from './slide-ends';
+import { bindSpeakerAids } from './speaker-aids';
+import { bindSwipeNav } from './swipe-nav';
+import { bindSlideGrid, type SlideGrid } from './slide-grid';
+import { clampOpenPage, clearOpenPageParam, parseOpenPage, writeOpenPageParam } from './open-page';
 
 /**
  * 样本页：先挑，再看。
@@ -67,7 +78,7 @@ function card(s: Sample): HTMLElement {
   inDemo.className = 'chip';
   setSiteLink(inDemo, `./?sample=${encodeURIComponent(s.file)}`);
   setText(inDemo, '在首页打开');
-  setAttributeText(inDemo, 'title', '带缩略图栏与全屏演示的完整查看器');
+  setAttributeText(inDemo, 'title', '带缩略图栏与演示的完整查看器');
   foot.append(inDemo);
 
   el.append(foot);
@@ -112,14 +123,25 @@ overlay.innerHTML =
   '<button class="chip act preview-share">复制链接</button>' +
   // download 属性等预览真的拿到文件、有了 href 再补上，理由同 index.html
   '<a class="chip act preview-dl">下载</a>' +
-  '<button class="chip preview-comments" type="button"></button><button class="chip act preview-full">全屏演示</button>' +
+  '<button class="chip preview-comments" type="button"></button><button class="chip preview-notes" type="button" disabled>演讲者备注</button>' +
+  '<button class="chip act preview-full" disabled>演示</button>' +
   '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>' +
   '</div>' +
-  '<div class="stage-wrap preview-wrap"><div class="stage preview-stage"></div></div>' +
+  '<div class="stage-wrap preview-wrap"><div class="stage preview-stage"></div>' +
+  '<div class="present-bar">' +
+  '<button class="icon preview-p-prev" title="上一页" aria-label="上一页">‹</button>' +
+  '<span class="pager preview-p-pager">— / —</span>' +
+  '<button class="icon preview-p-next" title="下一页" aria-label="下一页">›</button>' +
+  '<button class="icon preview-p-grid" aria-pressed="false">G</button>' +
+  '<button class="icon preview-p-notes" title="演讲者备注" aria-label="演讲者备注" disabled>N</button>' +
+  '<button class="icon preview-p-blank" aria-pressed="false">B</button>' +
+  '<button class="icon preview-p-exit" title="退出演示（Esc）" aria-label="退出演示">⨯</button>' +
+  '</div></div>' +
   '<div class="demo-foot">' +
   '<button class="icon preview-prev" title="上一页" aria-label="上一页">‹</button>' +
   '<span class="pager preview-pager">— / —</span>' +
   '<button class="icon preview-next" title="下一页" aria-label="下一页">›</button>' +
+  '<button class="chip preview-grid" hidden disabled></button>' +
   '</div></div>';
 document.body.append(overlay);
 
@@ -129,22 +151,87 @@ const pMeta = q<HTMLElement>('.preview-meta');
 const pStage = q<HTMLElement>('.preview-stage');
 const pWrap = q<HTMLElement>('.preview-wrap');
 const pPager = q<HTMLElement>('.preview-pager');
+const pPresentPager = q<HTMLElement>('.preview-p-pager');
+const pFull = q<HTMLButtonElement>('.preview-full');
 const pDl = q<HTMLAnchorElement>('.preview-dl');
 const pShare = q<HTMLButtonElement>('.preview-share');
 const resetShare = bindCopyButton(pShare, () => location.href, '复制链接');
 const releaseFullscreenLanguage = bindFullscreenLanguage(pWrap);
 let restoreLanguage: (() => void) | undefined;
+let slideGrid: SlideGrid | undefined;
+const present = bindPresentMode({
+  host: pWrap,
+  bar: q('.present-bar'),
+  viewer: () => viewer,
+  consumeEscape: () => slideGrid?.consumeEscape() ?? false,
+  afterChange: () => {
+    if (!present.presenting()) {
+      blank.clear();
+      numbers.clear();
+      slideGrid?.close();
+    }
+    syncPager(); speaker.sync(); slideGrid?.syncChrome();
+  },
+  onEnter: () => { numbers.clear(); blank.clear(); blank.attach(); },
+});
+const pBlank = q<HTMLButtonElement>('.preview-p-blank');
+// 必须排在黑屏之前：遮罩里的 Enter 会先被吃掉，合法页码就确认不到。
+const numbers = bindSlideNumber({
+  host: pWrap,
+  presenting: () => present.presenting(),
+  keysActive: () => !overlay.hidden && !slideGrid?.showing(),
+  viewer: () => viewer,
+  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+});
+// 必须排在黑屏之前：遮罩会把 Home / End 收成「只恢复」，首尾页就跳不过去。
+bindSlideEnds({
+  presenting: () => present.presenting(),
+  keysActive: () => !overlay.hidden && !slideGrid?.showing(),
+  viewer: () => viewer,
+  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+});
+const blank = bindBlankScreen({
+  stage: pStage,
+  presenting: () => present.presenting(),
+  keysActive: () => !overlay.hidden && !slideGrid?.showing(),
+  button: pBlank,
+});
+const speaker = bindSpeakerAids({
+  host: pWrap,
+  button: q<HTMLButtonElement>('.preview-notes'),
+  presentButton: q<HTMLButtonElement>('.preview-p-notes'),
+  viewer: () => viewer,
+  presenting: () => present.presenting(),
+  keysActive: () => !overlay.hidden && !slideGrid?.showing(),
+});
+slideGrid = bindSlideGrid({
+  viewer: () => viewer,
+  thumbsVisible: () => false,
+  keysActive: () => !overlay.hidden,
+  browseButtons: [q<HTMLButtonElement>('.preview-grid')],
+  presentButtons: [q<HTMLButtonElement>('.preview-p-grid')],
+  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+});
+bindSwipeNav({
+  host: pWrap,
+  viewer: () => viewer,
+  isAdvanceTarget: isPresentAdvanceTarget,
+  afterChange: () => { syncPager(); speaker.sync(); },
+});
 setAttributeText(q('[role="dialog"]'), 'aria-label', '样本预览');
 setText(pDl, '下载');
-setText(q('.preview-full'), '全屏演示');
+setText(pFull, '演示');
+setAttributeText(pFull, 'title', '播放动画，能全屏就全屏');
 setAttributeText(q('.preview-close'), 'title', '关闭（Esc）');
 setAttributeText(q('.preview-close'), 'aria-label', '关闭');
-for (const [selector, label] of [['.preview-prev', '上一页'], ['.preview-next', '下一页']] as const) {
+setAttributeText(q('.preview-p-exit'), 'title', '退出演示（Esc）');
+setAttributeText(q('.preview-p-exit'), 'aria-label', '退出演示');
+for (const [selector, label] of [['.preview-prev', '上一页'], ['.preview-next', '下一页'], ['.preview-p-prev', '上一页'], ['.preview-p-next', '下一页']] as const) {
   setAttributeText(q(selector), 'title', label);
   setAttributeText(q(selector), 'aria-label', label);
 }
 
-const { status: setStage, progress: setProgress } = createViewerStatus(pStage);
+const { status: setStage, progress: setProgress, parsing: setParsing } = createViewerStatus(pStage);
 
 /**
  * 补齐当前页缺的字体，到齐后重渲。
@@ -172,14 +259,24 @@ const commentsTools = bindCommentsTools(commentsButton, () => {
 
 function syncPager(): void {
   commentsTools.sync();
+  pFull.disabled = !viewer;
+  pFull.setAttribute('aria-pressed', String(present.presenting()));
   if (!viewer) return;
-  pPager.textContent = `${viewer.index + 1} / ${viewer.count}`;
+  const text = `${viewer.index + 1} / ${viewer.count}`;
+  pPager.textContent = text;
+  pPresentPager.textContent = text;
+  writeOpenPageParam(viewer.index + 1);
+  refreshSiteLinks();
 }
 
 function closePreview(): void {
   loadGeneration++;
   resetShare();
-  if (document.fullscreenElement === pWrap) void document.exitFullscreen();
+  speaker.reset();
+  present.exit();
+  slideGrid?.reset();
+  numbers.clear();
+  blank.clear();
   overlay.hidden = true;
   releaseFullscreenLanguage();
   restoreLanguage?.(); restoreLanguage = undefined;
@@ -187,6 +284,8 @@ function closePreview(): void {
   commentsTools.reset();
   viewer?.destroy();
   viewer = null;
+  pFull.disabled = true;
+  pFull.removeAttribute('aria-pressed');
   if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
   pDl.hidden = true;
   pDl.removeAttribute('href');
@@ -195,20 +294,36 @@ function closePreview(): void {
   setMessage(pMeta, '');
 }
 
-/** 地址栏等于「正在预览哪一份」，复制出去就能分享 */
-function syncUrl(file?: string): void {
+/**
+ * 地址栏等于「正在预览哪一份、哪一页」。
+ *
+ * 点卡打开不能带着上一份的 p——否则新稿套用旧页码。深链那一次才保留地址里的 p。
+ */
+function syncUrl(file?: string, keepPage = false): void {
   const url = new URL(location.href);
   if (file) url.searchParams.set('sample', file); else url.searchParams.delete('sample');
-  history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  if (!file || !keepPage) url.searchParams.delete('p');
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  const current = `${location.pathname}${location.search}${location.hash}`;
+  if (next !== current) history.replaceState(history.state, '', next);
   refreshSiteLinks();
 }
 
-async function openSample(s: Sample): Promise<void> {
+async function openSample(s: Sample, applyAddressPage = false): Promise<void> {
+  const requestedPage = applyAddressPage
+    ? parseOpenPage(new URLSearchParams(location.search).get('p'))
+    : 1;
   const generation = ++loadGeneration;
   resetShare();
+  speaker.reset();
+  present.exit();
+  slideGrid?.reset();
+  numbers.clear();
+  blank.clear();
+  pFull.disabled = true;
   overlay.hidden = false;
   restoreLanguage ??= moveLanguageControl(q('.preview-bar'));
-  syncUrl(s.file);
+  syncUrl(s.file, applyAddressPage);
   pTitle.textContent = s.title;
   setText(pMeta, '下载中…');
   pPager.textContent = '— / —';
@@ -233,7 +348,19 @@ async function openSample(s: Sample): Promise<void> {
   // hidden 不能区分「关闭后又打开」；每个异步出口都只允许当前预览落到 DOM。
   if (generation !== loadGeneration) return;
 
-  setStage('', 'spin');
+  const identified = identifyOpenBytes(bytes);
+  if (identified.kind === 'reject') {
+    if (generation !== loadGeneration) return;
+    setStage(message(identified.message), 'err');
+    setMessage(pMeta, '');
+    return;
+  }
+
+  setParsing(bytes.byteLength);
+  setText(pMeta, '解析中…');
+  await nextOpenPaint();
+  if (generation !== loadGeneration) return;
+
   const t0 = performance.now();
   let pres: Presentation;
   try {
@@ -241,19 +368,38 @@ async function openSample(s: Sample): Promise<void> {
     pres = await parse(bytes);
   } catch (e) {
     if (generation !== loadGeneration) return;
-    setStage(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
+    const mapped = mapOpenError(e);
+    setStage(mapped ? message(mapped) : message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
     setMessage(pMeta, '');
     return;
   }
   const parseMs = performance.now() - t0;
-  if (generation !== loadGeneration) return;
+  if (generation !== loadGeneration) {
+    abandonPresentation(pres);
+    return;
+  }
+
+  let start = 0;
+  try {
+    start = applyAddressPage ? clampOpenPage(requestedPage, pres.slides.length) - 1 : 0;
+  } catch (e) {
+    abandonPresentation(pres);
+    setStage(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
+    setMessage(pMeta, '');
+    return;
+  }
 
   pStage.innerHTML = '';
-  viewer = new Viewer(pStage, pres, { skipHidden: true });
-  viewer.onChange = () => { syncPager(); void ensureFonts(); };
-  // 浮层里点到幻灯片自带的外链会把人从站点带走，全屏演示时才放行
-  viewer.onLinkClick = () => document.fullscreenElement !== pWrap;
+  viewer = new Viewer(pStage, pres, { skipHidden: true, index: start });
+  setOpenPhase(pStage, 'ready');
+  blank.attach();
+  blank.clear();
+  viewer.onChange = () => { syncPager(); speaker.sync(); void ensureFonts(); };
+  // 浮层里点到幻灯片自带的外链会把人从站点带走，放映时才放行
+  viewer.onLinkClick = () => !present.presenting();
   syncPager();
+  speaker.sync();
+  slideGrid?.syncChrome();
 
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
   downloadUrl = URL.createObjectURL(new Blob([bytes]));
@@ -272,32 +418,33 @@ async function openSample(s: Sample): Promise<void> {
 q<HTMLButtonElement>('.preview-close').addEventListener('click', closePreview);
 q<HTMLButtonElement>('.preview-prev').addEventListener('click', () => viewer?.prev());
 q<HTMLButtonElement>('.preview-next').addEventListener('click', () => viewer?.next());
-q<HTMLButtonElement>('.preview-full').addEventListener('click', async () => {
-  const v = viewer;
-  if (!v) return;
-  // 先切初始态、等它真的画出来，再进全屏。理由同首页：同一个任务里改完 DOM
-  // 就请求全屏的话，放大动画拿到的还是上一帧像素（静态终态）
-  v.setAnimate(true);
-  await new Promise<void>((res) => {
-    let done = false;
-    const go = (): void => { if (!done) { done = true; res(); } };
-    requestAnimationFrame(() => requestAnimationFrame(go));
-    setTimeout(go, 60);
-  });
-  pWrap.requestFullscreen().catch(() => v.setAnimate(false));
-});
-document.addEventListener('fullscreenchange', () => {
-  if (document.fullscreenElement !== pWrap) viewer?.setAnimate(false);
-});
+q<HTMLButtonElement>('.preview-p-prev').addEventListener('click', () => viewer?.prev());
+q<HTMLButtonElement>('.preview-p-next').addEventListener('click', () => viewer?.next());
+pFull.addEventListener('click', () => void present.enter());
+q<HTMLButtonElement>('.preview-p-exit').addEventListener('click', () => present.exit());
 // 点浮层的空白处关掉；点到内容区不关
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closePreview(); });
 
 addEventListener('keydown', (e) => {
   if (overlay.hidden) return;
-  if (e.key === 'Escape' && !document.fullscreenElement) { closePreview(); return; }
+  if (e.key === 'Escape' && !present.presenting() && !document.fullscreenElement) {
+    if (slideGrid?.consumeEscape()) return;
+    closePreview();
+    return;
+  }
   if (!viewer || ownsViewerKey(e)) return;
-  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { viewer.next(); e.preventDefault(); }
-  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { viewer.prev(); e.preventDefault(); }
+  // 网页表写的是裸方向键。修饰键留给浏览器，不能在浮层里退批次。
+  // 退格和裸 P 只在放映里认。浮层浏览仍用左右和空格翻页。Ctrl / ⌘+P 留给打印。
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  // 浮层浏览仍只认左右和空格。Down / Up 留到放映，避免盖住页面时把竖向滚动吃掉。
+  const vertical = present.presenting() ? presentVerticalStep(e) : null;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ' || vertical === 'next') {
+    viewer.next(); e.preventDefault();
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev'
+    || (present.presenting() && presentRewindKey(e))) {
+    viewer.prev(); e.preventDefault();
+  }
 });
 
 /* ── 装载清单 ─────────────────────────────────── */
@@ -349,9 +496,14 @@ async function build(): Promise<void> {
 
   // 带 ?sample= 进来的（别人分享的地址）直接把预览打开。
   // 参数只用来在**已校验过来源的**清单里查条目，不会去 fetch 查询串本身。
-  const want = new URLSearchParams(location.search).get('sample');
+  const params = new URLSearchParams(location.search);
+  const want = params.get('sample');
   const hit = want ? shown.get(want) : undefined;
-  if (hit) void openSample(hit);
+  if (hit) void openSample(hit, true);
+  else if (!want && params.has('p')) {
+    clearOpenPageParam();
+    refreshSiteLinks();
+  }
 }
 
 void languageReady.then(build);

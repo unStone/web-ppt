@@ -77,6 +77,14 @@ try {
   assert.equal(await cancelled, null);
   assert.deepEqual(cancelledCalls, [undefined], '取消不能带空密码再解析一次');
 
+  const displaced = api.openWithPresentationPassword('stale.pptx', async () => {
+    throw new api.PasswordRequiredError();
+  });
+  await tick();
+  api.cancelOpenPassword();
+  assert.equal(await displaced, null, '换文件必须 resolve 掉上一份密码框');
+  assert.equal(document.querySelector('#viewerPasswordDialog'), null);
+
   const broken = new Error('文件损坏');
   await assert.rejects(api.openWithPresentationPassword('broken.pptx', async () => { throw broken; }),
     (error) => error === broken, '非密码错误必须交回原解析错误路径');

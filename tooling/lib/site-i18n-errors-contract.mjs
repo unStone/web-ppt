@@ -8,9 +8,9 @@ export async function runSiteI18nErrorsContract({ evaluate, click, waitFor }) {
     const input = document.querySelector('#fileInput');
     input.files = files.files; input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
-  await waitFor("document.querySelector('#statusText').textContent.startsWith('Could not open: ')", '英文打开失败提示');
+  await waitFor("document.querySelector('#statusText').textContent === 'This file is not a PowerPoint presentation. Drop a .pptx or .ppt file.'", '英文认文件人话');
   await click('[data-site-locale="zh-CN"]');
-  await waitFor("document.querySelector('#statusText').textContent.startsWith('打开失败：')", '已发生的错误随语言切换');
+  await waitFor("document.querySelector('#statusText').textContent === '无法识别的文件。请拖入 .pptx 或 .ppt。'", '认文件人话随语言切换');
   if (!await evaluate("globalThis.__languageErrorCanvas === document.querySelector('#canvasMount').firstElementChild && !document.querySelector('#editorApp').dataset.loading")) throw new Error('打开失败不能销毁现有文稿');
   await click('[data-site-locale="en"]');
   await click('#addShape');

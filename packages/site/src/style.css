@@ -220,8 +220,15 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   padding: 2px 3px; border-radius: 3px;
 }
-.stage-wrap { flex: 1; position: relative; min-width: 0; background: var(--bg-sunk); }
-.stage { position: absolute; inset: 14px; display: flex; align-items: center; justify-content: center; }
+.stage-wrap {
+  flex: 1; position: relative; min-width: 0; background: var(--bg-sunk);
+  /* 竖滑还给页面；水平滑由 swipe-nav 吃掉，避免被系统当成返回手势 */
+  touch-action: pan-y; overscroll-behavior-x: none;
+}
+.stage {
+  position: absolute; inset: 14px; display: flex; align-items: center; justify-content: center;
+  touch-action: pan-y;
+}
 .stage svg { max-width: 100%; max-height: 100%; box-shadow: var(--shadow); background: #fff; }
 .drop-hint {
   position: absolute; inset: 10px; display: none; place-items: center;
@@ -288,13 +295,25 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 }
 .link-toast a { color: var(--accent-ink); }
 
-/* ── 全屏演示 ─────────────────────────────────── */
-.stage-wrap:fullscreen { background: #000; }
-/* 全屏时不留边距，也不给幻灯片描阴影——投出去只该有幻灯片本身 */
-.stage-wrap:fullscreen .stage { inset: 0; }
-.stage-wrap:fullscreen .stage svg { box-shadow: none; }
+/* ── 演示：全屏是增强，.is-presenting 在全屏失败时仍盖住视口 ── */
+.stage-wrap:fullscreen,
+.stage-wrap.is-presenting { background: #000; }
+.stage-wrap.is-presenting {
+  position: fixed; inset: 0; z-index: 80; width: 100%; height: 100%; flex: none;
+}
+html.is-presenting,
+html.is-presenting body { overflow: hidden; }
+/* 放映时不留边距，也不给幻灯片描阴影——投出去只该有幻灯片本身 */
+.stage-wrap:fullscreen .stage,
+.stage-wrap.is-presenting .stage { inset: 0; background: #000; }
+.stage-wrap:fullscreen .stage svg,
+.stage-wrap.is-presenting .stage svg {
+  /* 浏览态给 SVG 垫白底是为了投影；放映里那层白会把 16:9 幻灯片两侧的黑底盖掉 */
+  box-shadow: none; user-select: none; background: transparent;
+}
 .fullscreen-language { display: none; }
-.stage-wrap:fullscreen .fullscreen-language {
+.stage-wrap:fullscreen .fullscreen-language,
+.stage-wrap.is-presenting .fullscreen-language {
   display: block; position: absolute; z-index: 2; top: 12px; right: 12px;
   background: var(--bg); padding: 5px 8px; border-radius: 8px;
 }
@@ -302,12 +321,130 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
   position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
   display: none; align-items: center; gap: 8px; padding: 7px 10px;
   border-radius: 999px; background: rgba(20,20,24,.72); backdrop-filter: blur(8px);
-  opacity: 0; transition: opacity .2s;
+  opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 3;
 }
-.stage-wrap:fullscreen .present-bar { display: flex; }
-.present-bar.show { opacity: 1; }
+.stage-wrap:fullscreen .present-bar,
+.stage-wrap.is-presenting .present-bar { display: flex; }
+.present-bar.show { opacity: 1; pointer-events: auto; }
 .present-bar .icon { background: transparent; border-color: rgba(255,255,255,.25); color: #fff; }
+.present-bar .icon[aria-pressed="true"] { background: rgba(255,255,255,.18); }
 .present-bar .pager { color: rgba(255,255,255,.8); }
+
+/* 只盖舞台：控制条、备注、语言入口必须还能点，否则没有键盘时只能卡在遮罩里 */
+.present-blank {
+  display: none; position: absolute; inset: 0; z-index: 1;
+  background: #000; cursor: pointer;
+}
+.present-blank.is-on { display: block; }
+.present-blank.is-white { background: #fff; }
+
+/* 放在宿主上而不是舞台里：paint 会清掉舞台。深色底加白边，黑白遮罩上都能看见。 */
+.slide-number { display: none; }
+.stage-wrap.is-presenting .slide-number:not([hidden]) {
+  display: block; position: absolute; z-index: 4; top: 16px; left: 16px;
+  padding: 8px 12px; border-radius: 8px; pointer-events: none;
+  background: #111; color: #fff; border: 1px solid rgba(255,255,255,.85);
+  font: 650 22px/1 ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* 按需网格盖住视口；点格子才跳页，避免和持久栏叠一套常驻入口 */
+.slide-grid {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: stretch; justify-content: center;
+  padding: 16px;
+  background: rgba(10, 10, 12, 0.72);
+}
+.slide-grid[hidden] { display: none; }
+.slide-grid-panel {
+  width: min(1100px, 100%);
+  display: flex; flex-direction: column; min-height: 0; max-height: 100%;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--fg); box-shadow: var(--shadow);
+}
+.slide-grid-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line-soft);
+}
+.slide-grid-title { font-size: 14px; font-weight: 650; }
+.slide-grid-close {
+  margin-left: auto; padding: 4px 10px; border: 1px solid var(--line);
+  border-radius: 6px; background: transparent; color: var(--fg-mute); cursor: pointer;
+}
+.slide-grid-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+  gap: 10px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0;
+  touch-action: pan-y;
+}
+.slide-grid-item {
+  position: relative; aspect-ratio: 16 / 9; padding: 0; overflow: hidden;
+  border: 2px solid var(--line); border-radius: 6px;
+  background: var(--bg-sunk); cursor: pointer; color: inherit;
+}
+.slide-grid-item.pending { background: var(--bg-soft); }
+.slide-grid-item.is-current { border-color: var(--accent); }
+.slide-grid-item.is-hidden { opacity: 0.55; }
+.slide-grid-item svg { width: 100%; height: 100%; display: block; }
+.slide-grid-no, .slide-grid-hidden {
+  position: absolute; font: 500 10px/1 var(--mono);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  padding: 2px 4px; border-radius: 3px;
+}
+.slide-grid-no { left: 4px; bottom: 4px; color: var(--fg-mute); }
+.slide-grid-hidden { right: 4px; top: 4px; color: var(--fg-faint); }
+
+/* 辅助层在 stage-wrap 里：放映铺满视口时跟着走，不必再搬 DOM */
+.speaker-aids {
+  position: absolute; top: 12px; right: 12px; bottom: 12px;
+  width: min(280px, 42%); z-index: 4; display: flex; flex-direction: column;
+  gap: 6px; padding: 10px 12px; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); color: var(--fg); box-shadow: var(--shadow);
+  touch-action: pan-y;
+}
+.speaker-aids[hidden] { display: none; }
+.speaker-aids-head { display: flex; align-items: center; gap: 8px; }
+.speaker-aids-title { font-size: 13px; font-weight: 650; }
+.speaker-aids-close {
+  margin-left: auto; padding: 2px 8px; border: 1px solid var(--line);
+  border-radius: 6px; background: transparent; color: var(--fg-mute); cursor: pointer;
+}
+.speaker-aids-label { font-size: 11px; color: var(--fg-mute); letter-spacing: .04em; }
+.speaker-next { background: #fff; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+.speaker-next svg { width: 100%; height: auto; display: block; }
+.speaker-next-empty { margin: 0; font-size: 12.5px; color: var(--fg-faint); }
+.speaker-next-empty::before { content: "没有下一页"; }
+html[lang="en"] .speaker-next-empty::before { content: "No next slide"; }
+.speaker-notes {
+  flex: 1; min-height: 0; overflow: auto; font-size: 13px; line-height: 1.65;
+  white-space: pre-wrap; touch-action: pan-y;
+}
+.speaker-notes:empty::after { content: "本页无备注"; color: var(--fg-faint); }
+html[lang="en"] .speaker-notes:empty::after { content: "No notes"; }
+.stage-wrap.has-speaker-aids .stage { right: min(304px, calc(42% + 14px)); }
+.stage-wrap.is-presenting .speaker-aids {
+  top: 48px; bottom: 72px;
+  background: #14161a; color: #e8e8ea; border-color: #262b33;
+}
+.stage-wrap.is-presenting .speaker-aids-title { color: #e8e8ea; }
+.stage-wrap.is-presenting .speaker-aids-close,
+.stage-wrap.is-presenting .speaker-aids-label,
+.stage-wrap.is-presenting .speaker-next-empty { color: #9aa3b2; border-color: #3a404a; }
+.stage-wrap.is-presenting.has-speaker-aids .stage { right: min(304px, calc(42% + 16px)); }
+
+@media (max-width: 720px) {
+  .speaker-aids {
+    top: auto; left: 12px; right: 12px; bottom: 12px; width: auto;
+    max-height: min(38%, 220px);
+  }
+  .stage-wrap.has-speaker-aids .stage,
+  .stage-wrap.is-presenting.has-speaker-aids .stage {
+    right: 14px; bottom: min(38%, 232px);
+  }
+  .stage-wrap.is-presenting .speaker-aids { bottom: 72px; }
+}
 
 /* ── 样本页 ───────────────────────────────────── */
 .samples-page .sample-grid {
@@ -346,6 +483,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
  * 舞台会直接塌成 0 高 —— 幻灯片还在 DOM 里，就是一点也看不见。
  */
 .preview-wrap { flex: 0 0 auto; height: min(64vh, 520px); }
+.preview-wrap.is-presenting { height: 100%; z-index: 90; }
 .preview .demo-foot { justify-content: center; }
 
 /* ── 表格 ─────────────────────────────────────── */

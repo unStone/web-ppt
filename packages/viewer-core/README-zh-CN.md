@@ -22,6 +22,7 @@ const pres = await parse(file);
 const v = new Viewer(container, pres, { animate: true, autoAdvance: true });
 
 v.next();              // 有待播动画时先播动画，否则翻页
+v.prev();              // 已播过的点击先退回一批，否则回到上一页的终态
 v.finishAnimations();  // 跳到本页动画终态
 v.setZoom(1.5);
 v.search('关键词');     // → 命中的页索引数组
@@ -43,6 +44,8 @@ st.subscribe((change) => {
     if (change.transition) playTransition(prevEl, nextEl, change.transition);
   } else if (change.type === 'animation' && change.group) {
     playGroup(container, change.group);
+  } else if (change.type === 'animation' && change.settle) {
+    // 重绘当前页，按 hiddenElementIds 收可见性，再铺已完成批次的终态
   }
 });
 

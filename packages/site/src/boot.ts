@@ -24,8 +24,9 @@ function start(): void {
 
 const demo = document.querySelector<HTMLElement>('#demoRoot');
 
-// 深链带着要看的样本进来，人就是冲渲染结果来的，别让他等滚动
-if (new URLSearchParams(location.search).has('sample')) start();
+// 深链带着样本或页码进来，人就是冲那一页来的，别让他等滚动
+const bootSearch = new URLSearchParams(location.search);
+if (bootSearch.has('sample') || bootSearch.has('p')) start();
 
 if (!demo || !('IntersectionObserver' in window)) {
   // 没有观察器的浏览器退回原来的行为。能力可以晚到，不能因此缺失。

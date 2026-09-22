@@ -8,7 +8,7 @@ export async function runStandaloneCommentsBrowserContract({ evaluate, request, 
     await waitFor(`document.querySelector('#fileInfo').textContent.includes(${JSON.stringify(name)})`, '独立查看器文稿');
   };
   await request('Page.navigate', { url: await evaluate("new URL('/standalone.html?file=/fixtures/sample-editor-comments.pptx', location.href).href") });
-  await waitFor("document.querySelector('#fileInfo')?.textContent.includes('（内置示例）')", '独立查看器入口');
+  await waitFor("document.querySelector('#fileInfo')?.textContent.includes('sample-editor-comments.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'", '独立查看器入口');
   await upload('comments.pptx');
   await click('#btnComments');
   await waitFor("document.querySelectorAll('#commentsPanel li').length === 2", '独立查看器批注');

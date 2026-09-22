@@ -8,13 +8,34 @@ import { eotToTtf } from 'mtx-decompressor';
 import { Viewer } from '@web-ppt/viewer-core';
 import { featuredOf, fetchSamples, type Sample } from './samples-index';
 import { fetchBytes, whyFailed } from './fetch-bytes';
-import { refreshSiteLinks, setMessage, setText, setAttributeText, setSiteLink } from './i18n/runtime';
-import { createViewerStatus } from './viewer-status';
-import { message } from './i18n/message';
+import { identifyOpenBytes, mapOpenError, type OpenKindMessage } from './open-kind';
+import { clampOpenPage, parseOpenPage } from './open-page';
+import { refreshSiteLinks, setAttributeMessage, setMessage, setText, setAttributeText, setSiteLink } from './i18n/runtime';
+import type { Message } from './i18n/messages';
+import { createViewerStatus, setOpenPhase } from './viewer-status';
+import { abandonPresentation, createOpenGeneration, nextOpenPaint } from './open-session';
+import { message, type SiteMessage } from './i18n/message';
 import { drawArch, initializeHardCases } from './home-illustrations';
 import { bindFullscreenLanguage, ownsViewerKey } from './i18n/controls';
+import { presentRewindKey } from './present-back-key';
+import { bindPresentMode, isPresentAdvanceTarget, presentVerticalStep } from './present-mode';
+import { bindBlankScreen } from './blank-screen';
+import { bindSlideNumber } from './slide-number';
+import { bindSlideEnds } from './slide-ends';
+import { bindSpeakerAids } from './speaker-aids';
+import { bindSwipeNav } from './swipe-nav';
+import { bindSlideGrid, type SlideGrid } from './slide-grid';
 import { bindCopyButton } from './copy-button';
-import { openWithPresentationPassword } from './password-dialog';
+import { cancelOpenPassword, openWithPresentationPassword, type PasswordDialogCopy } from './password-dialog';
+
+function passwordMessage(source: string, params?: Record<string, string>): SiteMessage {
+  return { source: source as Message, parameters: params ?? {} };
+}
+
+const passwordCopy: PasswordDialogCopy = {
+  text: (target, source, params) => setMessage(target, passwordMessage(source, params)),
+  attr: (target, name, source, params) => setAttributeMessage(target, name, passwordMessage(source, params)),
+};
 
 /**
  * 接上嵌入字体解码器。
@@ -52,10 +73,107 @@ const commentsTools = bindCommentsTools($<HTMLButtonElement>('#commentsTools'), 
 });
 /** 当前这份文件的字节，供「下载」直接用——已经在内存里，不必再走一次网络 */
 let currentUrl: string | null = null;
+bindFullscreenLanguage(stageWrap);
+const compactBrowse = window.matchMedia('(max-width: 620px)');
+let grid: SlideGrid | undefined;
+const present = bindPresentMode({
+  host: stageWrap,
+  bar: presentBar,
+  viewer: () => viewer,
+  consumeEscape: () => grid?.consumeEscape() ?? false,
+  afterChange: () => {
+    if (!present.presenting()) {
+      blank.clear();
+      numbers.clear();
+      grid?.close();
+    }
+    sync(); speaker.sync(); grid?.syncChrome();
+  },
+  onEnter: () => { linkToast.hidden = true; numbers.clear(); blank.clear(); blank.attach(); },
+});
+const demoKeysActive = (): boolean => {
+  if (grid?.showing()) return false;
+  if (present.presenting()) return true;
+  const r = demo.getBoundingClientRect();
+  return r.bottom >= 80 && r.top <= innerHeight - 80;
+};
+const pBlank = $<HTMLButtonElement>('#pBlank');
+// 必须排在黑屏之前：遮罩里的 Enter 会先被吃掉，合法页码就确认不到。
+const numbers = bindSlideNumber({
+  host: stageWrap,
+  presenting: () => present.presenting(),
+  keysActive: demoKeysActive,
+  viewer: () => viewer,
+  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+});
+// 必须排在黑屏之前：遮罩会把 Home / End 收成「只恢复」，首尾页就跳不过去。
+bindSlideEnds({
+  presenting: () => present.presenting(),
+  keysActive: demoKeysActive,
+  viewer: () => viewer,
+  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+});
+const blank = bindBlankScreen({
+  stage,
+  presenting: () => present.presenting(),
+  keysActive: demoKeysActive,
+  button: pBlank,
+});
+const speaker = bindSpeakerAids({
+  host: stageWrap,
+  button: $<HTMLButtonElement>('#speakerAids'),
+  presentButton: $<HTMLButtonElement>('#pNotes'),
+  viewer: () => viewer,
+  presenting: () => present.presenting(),
+  keysActive: demoKeysActive,
+});
+grid = bindSlideGrid({
+  viewer: () => viewer,
+  thumbsVisible: () => !compactBrowse.matches,
+  keysActive: () => {
+    if (present.presenting()) return true;
+    const r = demo.getBoundingClientRect();
+    return r.bottom >= 80 && r.top <= innerHeight - 80;
+  },
+  browseButtons: [$<HTMLButtonElement>('#gridBtn')],
+  presentButtons: [$<HTMLButtonElement>('#pGrid')],
+  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+});
+bindSwipeNav({
+  host: stageWrap,
+  viewer: () => viewer,
+  isAdvanceTarget: isPresentAdvanceTarget,
+  afterChange: () => { sync(); speaker.sync(); },
+});
 
 /* ── 载入并渲染 ───────────────────────────────── */
 
-const { status: setStatus, progress: setProgress } = createViewerStatus(stage);
+const { status: setStatus, opening: setOpening, progress: setProgress, parsing: setParsing } = createViewerStatus(stage);
+const opens = createOpenGeneration();
+const bootParams = new URLSearchParams(location.search);
+const requested = bootParams.get('sample');
+const addressPage = parseOpenPage(bootParams.get('p'));
+let applyAddressPage = true;
+
+function detachOpen(): void {
+  speaker.reset();
+  present.exit();
+  grid?.reset();
+  numbers.clear();
+  blank.clear();
+  commentsTools.reset();
+  cancelOpenPassword();
+  viewer?.destroy();
+  viewer = null;
+  presentBtn.disabled = true;
+  pager.textContent = '— / —';
+  pPager.textContent = '— / —';
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
+  thumbs.innerHTML = '';
+  downloadLink.hidden = true;
+  grid?.syncChrome();
+}
 
 /**
  * 把当前文件挂到「下载」按钮上。
@@ -71,49 +189,86 @@ function armDownload(bytes: ArrayBuffer, name: string): void {
 }
 
 /** netMs 为空表示本地文件，没有下载这一段 */
-async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<void> {
-  setStatus('', 'spin');
-  // 让上面这帧先画出来，否则大文件解析会把「下载中」一直定在屏幕上。
-  // 不能只等 rAF —— 标签页在后台时它根本不触发，await 会一直挂着；
-  // 补一个定时器兜底，谁先到算谁。
-  await new Promise((r) => {
-    let done = false;
-    const go = (): void => { if (!done) { done = true; r(null); } };
-    requestAnimationFrame(go);
-    setTimeout(go, 50);
-  });
+function rejectOpen(token: number, reason: OpenKindMessage | SiteMessage): void {
+  if (!opens.isCurrent(token)) return;
+  thumbs.innerHTML = '';
+  setStatus(typeof reason === 'string' ? message(reason) : reason, 'err');
+  setMessage(meta, '');
+  presentBtn.disabled = true;
+  grid?.reset();
+}
+
+async function show(bytes: ArrayBuffer, label: string, netMs: number | undefined, token: number): Promise<void> {
+  if (!opens.isCurrent(token)) return;
+  const identified = identifyOpenBytes(bytes);
+  if (identified.kind === 'reject') {
+    applyAddressPage = false;
+    rejectOpen(token, identified.message);
+    return;
+  }
+  setParsing(bytes.byteLength);
+  setText(meta, '解析中…');
+  await nextOpenPaint();
+  if (!opens.isCurrent(token)) return;
 
   const t0 = performance.now();
   let pres: Presentation;
   try {
     await Promise.all([prepareModernCharts(bytes), prepareAdvancedRendering(bytes)]);
+    if (!opens.isCurrent(token)) return;
     const opened = await openWithPresentationPassword(label, (password) =>
-      parse(bytes, password === undefined ? undefined : { password }));
+      parse(bytes, password === undefined ? undefined : { password }), passwordCopy);
+    if (!opens.isCurrent(token)) {
+      abandonPresentation(opened);
+      return;
+    }
     if (!opened) {
+      applyAddressPage = false;
       setStatus(message('已取消打开“{name}”', { name: label }));
       setMessage(meta, '');
+      presentBtn.disabled = true;
+      grid?.reset();
       return;
     }
     pres = opened;
   } catch (e) {
-    thumbs.innerHTML = '';
-    setStatus(message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }), 'err');
-    setMessage(meta, '');
+    if (!opens.isCurrent(token)) return;
+    applyAddressPage = false;
+    const mapped = mapOpenError(e);
+    rejectOpen(token, mapped ?? message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }));
     return;
   }
   const parseMs = performance.now() - t0;
+  if (!opens.isCurrent(token)) {
+    abandonPresentation(pres);
+    return;
+  }
+
+  let start = 0;
+  try {
+    start = applyAddressPage ? clampOpenPage(addressPage, pres.slides.length) - 1 : 0;
+  } catch (e) {
+    applyAddressPage = false;
+    abandonPresentation(pres);
+    rejectOpen(token, message('解析失败：{reason}', { reason: e instanceof Error ? e.message : String(e) }));
+    return;
+  }
+  applyAddressPage = false;
 
   commentsTools.reset();
   activeName = label;
-  viewer?.destroy();
   stage.innerHTML = '';
-  viewer = new Viewer(stage, pres, { skipHidden: true });
+  // 第十八轮后 slides[0] 会 inflate 第 1 页。先画 0 再 goTo，深链仍先付那一页。
+  viewer = new Viewer(stage, pres, { skipHidden: true, index: start });
+  setOpenPhase(stage, 'ready');
+  blank.attach();
+  blank.clear();
   // 每翻一页补一次字体：已经下过的切片是免费的，没下过的才是这一页真需要的
-  viewer.onChange = () => { sync(); void ensureFonts(pres); };
+  viewer.onChange = () => { sync(); speaker.sync(); void ensureFonts(pres); };
   // 演示时超链接照常打开；嵌在页面里时不行——第 5 页那种整页链接的封面
   // 会让任何一次点击都把人带走（orcid-ooxml-strict 就是这样）。
   viewer.onLinkClick = (href) => {
-    if (presenting()) return false;
+    if (present.presenting()) return false;
     showLinkToast(href);
     return true;
   };
@@ -121,15 +276,13 @@ async function show(bytes: ArrayBuffer, label: string, netMs?: number): Promise<
   downloadLink.hidden = netMs === undefined;
   if (netMs !== undefined) armDownload(bytes, label);
 
-  // 地址里带的页码只认一次，之后就归查看器自己管
-  if (pendingPage > 1) { viewer.goTo(Math.min(pendingPage, pres.slides.length) - 1); }
-  pendingPage = 1;
-
   void ensureFonts(pres);
 
   const renderT0 = performance.now();
   buildThumbs(pres);
   sync();
+  speaker.sync();
+  grid?.syncChrome();
 
   const kb = Math.round(bytes.byteLength / 1024);
   setText(meta, '{name} · {kb}KB · {pages} 页 · {network}解析 {parse}ms · 首屏 {paint}ms', {
@@ -194,6 +347,8 @@ cjkBtn.addEventListener('click', () => {
 
 function sync(): void {
   commentsTools.sync();
+  presentBtn.disabled = !viewer;
+  presentBtn.setAttribute('aria-pressed', String(present.presenting()));
   if (!viewer) return;
   pager.textContent = `${viewer.index + 1} / ${viewer.count}`;
   pPager.textContent = pager.textContent;
@@ -202,15 +357,20 @@ function sync(): void {
   thumbs.querySelectorAll('.thumb').forEach((t, i) => {
     t.classList.toggle('active', i === viewer!.index);
   });
-  // 只滚缩略图栏，不要用 scrollIntoView —— 它会滚动所有可滚动祖先，
-  // 包括 document 本身：首屏 Demo 一加载完就把整页往下拽一段。
-  const active = thumbs.children[viewer.index] as HTMLElement | undefined;
-  if (active) {
-    const a = active.getBoundingClientRect();
-    const box = thumbs.getBoundingClientRect();
-    if (a.top < box.top) thumbs.scrollTop += a.top - box.top;
-    else if (a.bottom > box.bottom) thumbs.scrollTop += a.bottom - box.bottom;
-  }
+  scrollThumbsTo(viewer.index);
+}
+
+/**
+ * 只滚缩略图栏，不要用 scrollIntoView —— 它会滚动所有可滚动祖先，
+ * 包括 document 本身：首屏 Demo 一加载完就把整页往下拽一段。
+ */
+function scrollThumbsTo(index: number): void {
+  const active = thumbs.children[index] as HTMLElement | undefined;
+  if (!active) return;
+  const a = active.getBoundingClientRect();
+  const box = thumbs.getBoundingClientRect();
+  if (a.top < box.top) thumbs.scrollTop += a.top - box.top;
+  else if (a.bottom > box.bottom) thumbs.scrollTop += a.bottom - box.bottom;
 }
 
 /**
@@ -237,18 +397,25 @@ function buildThumbs(pres: Presentation): void {
     el.dataset.n = String(i + 1);
     el.addEventListener('click', () => viewer?.goTo(i, i < viewer.index ? 'backward' : 'forward'));
     thumbs.appendChild(el);
-    io.observe(el);
   }
+  // IO 第一次 watch 就会按当前交叉回调。先滚到目标页再观察，避免深链先解栏顶。
+  if (viewer) scrollThumbsTo(viewer.index);
+  for (const el of thumbs.children) io.observe(el);
 }
 
 async function loadUrl(src: string, label: string): Promise<void> {
-  thumbs.innerHTML = '';
+  const token = opens.begin();
+  detachOpen();
   setProgress(0, 0);
   setText(meta, '下载中…');
   try {
-    const { bytes, ms } = await fetchBytes(src, setProgress);
-    await show(bytes, label, ms);
+    const { bytes, ms } = await fetchBytes(src, (got, total) => {
+      if (opens.isCurrent(token)) setProgress(got, total);
+    });
+    if (!opens.isCurrent(token)) return;
+    await show(bytes, label, ms, token);
   } catch (e) {
+    if (!opens.isCurrent(token)) return;
     // 样本取不到是网络或样本库的事，跟引擎无关。指一条还走得通的路：
     // 本地文件的解析压根不需要网络。
     setStatus(
@@ -276,7 +443,8 @@ const shareName = (src: string): string => src.slice(src.lastIndexOf('/') + 1);
 
 /* ── 交互 ─────────────────────────────────────── */
 
-function selectChip(chip: HTMLElement): void {
+function selectChip(chip: HTMLElement, fromAddress = false): void {
+  if (!fromAddress) applyAddressPage = false;
   document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
   chip.classList.add('active');
   void loadUrl(chip.dataset.src!, chip.textContent!.trim());
@@ -310,72 +478,23 @@ function showLinkToast(href: string): void {
   toastTimer = setTimeout(() => { linkToast.hidden = true; }, 6000);
 }
 
-/* ── 全屏演示 ─────────────────────────────────── */
+/* ── 演示 ─────────────────────────────────────── */
 
-const presenting = (): boolean => document.fullscreenElement === stageWrap;
-bindFullscreenLanguage(stageWrap);
-
-/**
- * 等浏览器真的把当前 DOM 画出一帧。
- *
- * 改完 DOM 就立刻请求全屏是不够的：两件事在同一个任务里，中间一帧都没画，
- * 全屏放大动画拿到的还是**上一帧的像素**。后台标签页里 rAF 不触发，
- * 所以补一个定时器兜底，谁先到算谁。
- */
-function nextPaint(): Promise<void> {
-  return new Promise((res) => {
-    let done = false;
-    const go = (): void => { if (!done) { done = true; res(); } };
-    requestAnimationFrame(() => requestAnimationFrame(go));
-    setTimeout(go, 60);
-  });
-}
-
-async function enterPresent(): Promise<void> {
-  if (!viewer || presenting()) return;
-
-  // 先切到动画初始态，**并且等它真的画出来**，再请求全屏。
-  // 少了这一步，全屏放大那两三百毫秒里显示的还是上一帧（静态终态），
-  // 进去之后才跳回第一步 —— 看着就是「先把这页演完，再从头演一遍」。
-  // 演示模式才播动画：嵌在页面里时逐批点击会让翻页变得很慢。
-  viewer.setAnimate(true);
-  linkToast.hidden = true;
-  await nextPaint();
-  try {
-    // 等一两帧不会丢掉用户手势授权（Chrome 的瞬时激活有 5 秒）
-    await stageWrap.requestFullscreen();
-  } catch {
-    viewer.setAnimate(false); // 没进成全屏就退回静态终态，别把内嵌视图留在第 0 步
-    return;
-  }
-  sync();
-}
-
-presentBtn.addEventListener('click', () => void enterPresent());
-$<HTMLButtonElement>('#pExit').addEventListener('click', () => void document.exitFullscreen());
+presentBtn.addEventListener('click', () => void present.enter());
+$<HTMLButtonElement>('#pExit').addEventListener('click', () => present.exit());
 $<HTMLButtonElement>('#pPrev').addEventListener('click', () => viewer?.prev());
 $<HTMLButtonElement>('#pNext').addEventListener('click', () => viewer?.next());
 
-document.addEventListener('fullscreenchange', () => {
-  if (presenting()) return;
-  viewer?.setAnimate(false);
-  sync();
-});
-
-// 鼠标停下就把控制条收起来，别挡着幻灯片
-let barTimer: ReturnType<typeof setTimeout> | null = null;
-stageWrap.addEventListener('mousemove', () => {
-  if (!presenting()) return;
-  presentBar.classList.add('show');
-  if (barTimer) clearTimeout(barTimer);
-  barTimer = setTimeout(() => presentBar.classList.remove('show'), 2000);
-});
-
 async function openFile(file: File): Promise<void> {
+  applyAddressPage = false;
+  const token = opens.begin();
   document.querySelectorAll('.samples .chip').forEach((c) => c.classList.remove('active'));
-  thumbs.innerHTML = '';
-  setStatus('', 'spin');
-  await show(await file.arrayBuffer(), file.name);
+  detachOpen();
+  setOpening();
+  setText(meta, '正在打开…');
+  const bytes = await file.arrayBuffer();
+  if (!opens.isCurrent(token)) return;
+  await show(bytes, file.name, undefined, token);
 }
 
 pick.addEventListener('change', () => {
@@ -400,20 +519,29 @@ demo.addEventListener('drop', (e) => {
   if (f) void openFile(f);
 });
 
-// demo 在视口内时方向键翻页；全屏演示时不看位置——它已经占满屏幕了
+// demo 在视口内时方向键翻页；放映时不看位置——覆盖层已经占满视口
 addEventListener('keydown', (e) => {
   if (!viewer) return;
   if (ownsViewerKey(e)) return;
-  if (!presenting()) {
+  if (!present.presenting()) {
     const r = demo.getBoundingClientRect();
     if (r.bottom < 80 || r.top > innerHeight - 80) return;
   }
-  // 空格/回车是演示时最顺手的「下一步」，但只在全屏里接管，
-  // 否则会把页面正常的滚动和按钮触发一起抢走
+  // 空格/回车只在放映里接管，避免抢走页面滚动和按钮激活。
+  // Down / Up 同样只在放映里认：浏览时它们还要滚动长页。
+  // 网页表写的是裸方向键。Ctrl / ⌘+方向键留给浏览器，不能退批次。
+  // 退格和裸 P 只在放映里认：浏览时它们不是翻页键。
+  // Mac 上标着 delete 的退格也是 Backspace。Ctrl / ⌘+P 是打印，不能在这里退批次。
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const vertical = present.presenting() ? presentVerticalStep(e) : null;
   const forward = e.key === 'ArrowRight' || e.key === 'PageDown'
-    || (presenting() && (e.key === ' ' || e.key === 'Enter'));
+    || (present.presenting() && (e.key === ' ' || e.key === 'Enter'))
+    || vertical === 'next';
   if (forward) { viewer.next(); e.preventDefault(); }
-  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { viewer.prev(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev'
+    || (present.presenting() && presentRewindKey(e))) {
+    viewer.prev(); e.preventDefault();
+  }
 });
 
 document.querySelectorAll<HTMLButtonElement>('.copy').forEach((btn) => {
@@ -432,9 +560,6 @@ initializeHardCases();
  * 内置样本在 HTML 写死的 chip 里就能查到，不必等远程清单；查不到才留给
  * `openRequestedSample` 去清单里找。两条都是白名单查表，不会去 fetch 查询串。
  */
-const params = new URLSearchParams(location.search);
-const requested = params.get('sample');
-let pendingPage = Math.max(1, Math.trunc(Number(params.get('p'))) || 1);
 // 参数读完就把地址还原成干净的主页。首页不写地址，留着这串参数只会在换了
 // 样本之后变成一个会撒谎的地址——指着 A 却显示着 B。
 const cleanUrl = new URL(location.href);
@@ -447,7 +572,7 @@ const builtinChip = requested
     .find((c) => shareName(c.dataset.src!) === requested)
   : undefined;
 
-if (builtinChip) selectChip(builtinChip);
+if (builtinChip) selectChip(builtinChip, true);
 else if (requested) setStatus('', 'spin'); // 等远程清单到了再说，省一次下载和一次闪烁
 else void loadUrl('demo/showcase.pptx', 'showcase.pptx');
 
@@ -517,6 +642,6 @@ function openRequestedSample(all: Sample[], bar: Element): void {
     chip.addEventListener('click', () => selectChip(chip as HTMLElement));
     bar.insertBefore(chip, bar.querySelector('.chip.more'));
   }
-  selectChip(chip);
+  selectChip(chip, true);
   demo.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }

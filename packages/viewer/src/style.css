@@ -27,6 +27,7 @@ body {
   align-items: center;
   gap: 14px;
   padding: 9px 14px;
+  padding-top: calc(9px + env(safe-area-inset-top, 0px));
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -108,6 +109,7 @@ main { flex: 1; display: flex; min-height: 0; }
   background: var(--panel);
   border-right: 1px solid var(--border);
   flex-shrink: 0;
+  touch-action: pan-y;
 }
 
 .thumb {
@@ -128,6 +130,33 @@ main { flex: 1; display: flex; min-height: 0; }
 .thumb.pending { background: #23272f; }
 .thumb.pending .no { background: rgba(0, 0, 0, 0.35); }
 .thumb.hit { box-shadow: 0 0 0 2px #ffb300; }
+
+/* foreignObject 里的 HTML 不吃页面 ::highlight；黄框叠在宿主里，缩放/滚动跟着字走。
+   舞台里的幻灯片包装是 inset:0 的绝对定位层；不给它建 stacking context，
+   foreignObject 会画在后续兄弟之上。当前这一处用深橙边，其余只留淡色，
+   否则同页多处看起来一样，回车又会跳过还没看的词。 */
+#stage > div:not(.ppt-find-layer):not(.present-blank):not(.open-status) {
+  z-index: 0;
+}
+.ppt-find-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 5;
+}
+.ppt-find-box {
+  position: absolute;
+  background: rgba(255, 196, 0, 0.28);
+  border-radius: 2px;
+}
+.ppt-find-box.ppt-find-current {
+  background: rgba(255, 196, 0, 0.72);
+  box-shadow: 0 0 0 2px #c2410c;
+}
 .thumb.hidden-slide { opacity: 0.45; }
 .thumb svg { width: 100%; height: auto; display: block; }
 
@@ -166,6 +195,7 @@ main { flex: 1; display: flex; min-height: 0; }
 }
 
 #stage {
+  position: relative;
   background: #fff;
   border-radius: 3px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
@@ -176,9 +206,56 @@ main { flex: 1; display: flex; min-height: 0; }
   justify-content: center;
 }
 
+#stage .present-blank {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  cursor: pointer;
+}
+
+#stage .present-blank.is-on { display: block; }
+#stage .present-blank.is-white { background: #fff; }
+
+#stage.swipe-x {
+  /* 竖滑还给备注/缩略图；水平滑由 swipe-nav 吃掉，避免被系统当成返回手势 */
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+}
+
 #stage.fit { width: 100%; max-width: 1200px; aspect-ratio: 16 / 9; }
 
 #dropHint { color: #666; font-size: 14px; text-align: center; line-height: 2; padding: 60px; }
+
+#stage .open-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: min(300px, 80%);
+  text-align: center;
+}
+#stage .open-status-label {
+  font: 500 13px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #222;
+  font-variant-numeric: tabular-nums;
+}
+#stage .open-status-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e6e8ee;
+  overflow: hidden;
+}
+#stage .open-status-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+#stage .open-status-note { font-size: 12px; color: #666; }
+#stage[data-open-phase='error'] .open-status-label { color: #b42318; }
 
 #notesPanel {
   border-top: 1px solid var(--border);
@@ -187,10 +264,11 @@ main { flex: 1; display: flex; min-height: 0; }
   max-height: 26%;
   overflow-y: auto;
   flex-shrink: 0;
+  touch-action: pan-y;
 }
 
 .notes-title { font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
-#notesBody { font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+#notesBody { position: relative; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
 #notesBody:empty::after { content: '（本页无备注）'; color: var(--muted); }
 
 #navbar {
@@ -199,6 +277,7 @@ main { flex: 1; display: flex; min-height: 0; }
   justify-content: center;
   gap: 14px;
   padding: 8px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -218,6 +297,14 @@ main { flex: 1; display: flex; min-height: 0; }
 }
 
 #presenter[hidden] { display: none; }
+#presenter .slide-number:not([hidden]) {
+  display: block; position: absolute; z-index: 5; top: 16px; left: 16px;
+  padding: 8px 12px; border-radius: 8px; pointer-events: none;
+  background: #111; color: #fff; border: 1px solid rgba(255,255,255,.85);
+  font: 650 22px/1 ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
 
 .pv-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
 #pvCurrent { width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; }
@@ -232,6 +319,7 @@ main { flex: 1; display: flex; min-height: 0; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+  touch-action: pan-y;
 }
 
 .pv-label { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
@@ -259,6 +347,75 @@ main { flex: 1; display: flex; min-height: 0; }
 
 #toast.ok { background: #2e7d32; }
 
+.password-dialog {
+  width: min(420px, calc(100vw - 32px)); padding: 0; margin: auto;
+  border: 1px solid var(--border); border-radius: 14px;
+  color: var(--text); background: var(--panel); box-shadow: 0 24px 80px #0008;
+  font-family: inherit;
+}
+.password-dialog::backdrop { background: #05070ab8; backdrop-filter: blur(3px); }
+.password-dialog form { display: grid; gap: 13px; padding: 22px; }
+.password-dialog h2 { margin: 0; font-size: 19px; }
+.password-dialog p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.password-dialog label { font-size: 13px; font-weight: 600; }
+.password-dialog input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); background: #2a2f38; font: inherit;
+}
+.password-dialog input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.password-dialog #viewerPasswordFeedback { min-height: 21px; color: #ff8a80; }
+.password-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.password-dialog button {
+  padding: 7px 15px; border: 1px solid var(--border); border-radius: 7px;
+  color: var(--text); background: #2a2f38; font: 500 13px/1.4 inherit; cursor: pointer;
+}
+.password-dialog button.primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+.password-dialog button:disabled { opacity: .55; cursor: wait; }
+
+.slide-grid {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: stretch; justify-content: center;
+  padding: 16px;
+  background: rgba(10, 10, 12, 0.72);
+}
+.slide-grid[hidden] { display: none; }
+.slide-grid-panel {
+  width: min(1100px, 100%);
+  display: flex; flex-direction: column; min-height: 0; max-height: 100%;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--panel); color: var(--text);
+}
+.slide-grid-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.slide-grid-title { font-size: 14px; font-weight: 650; }
+.slide-grid-close {
+  margin-left: auto; padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer;
+}
+.slide-grid-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+  gap: 10px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0;
+  touch-action: pan-y;
+}
+.slide-grid-item {
+  position: relative; aspect-ratio: 16 / 9; padding: 0; overflow: hidden;
+  border: 2px solid var(--border); border-radius: 6px;
+  background: #23272f; cursor: pointer; color: inherit;
+}
+.slide-grid-item.is-current { border-color: var(--accent); }
+.slide-grid-item.is-hidden { opacity: 0.55; }
+.slide-grid-item svg { width: 100%; height: 100%; display: block; }
+.slide-grid-no, .slide-grid-hidden {
+  position: absolute; font-size: 10px;
+  background: rgba(0, 0, 0, 0.6); color: #fff;
+  padding: 2px 4px; border-radius: 3px;
+}
+.slide-grid-no { left: 4px; bottom: 4px; }
+.slide-grid-hidden { right: 4px; top: 4px; color: #ffd54f; }
+
 body.dragging::after {
   content: '松开以打开文件';
   position: fixed;
@@ -272,4 +429,37 @@ body.dragging::after {
   color: var(--accent);
   pointer-events: none;
   z-index: 150;
+}
+
+/* 与官网同一条线：窄于此时 172px 栏比幻灯片更占地方，看稿失败 */
+@media (max-width: 620px) {
+  #thumbs { display: none; }
+  #topbar { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
+  .brand .tag { display: none; }
+  .file-info { min-width: 0; }
+  .search,
+  #btnZoomOut, #zoomLabel, #btnZoomIn, #btnFit,
+  .sep,
+  #btnComments, #btnExportPng, #btnExportSvg, #btnExportPdf { display: none; }
+  .hint { display: none; }
+  #stageScroll { padding: 10px; }
+}
+
+/* 320px 侧栏并排后舞台会低于约 360px，当前页必须先在 */
+@media (max-width: 720px) {
+  #presenter { flex-direction: column; }
+  .pv-main { flex: 1; min-height: 0; padding: 12px; }
+  #pvCurrent { height: 100%; min-height: 0; }
+  #pvCurrent svg { max-height: 100%; }
+  #pvCurrent #stage { width: 100%; max-width: 100%; max-height: 100%; }
+  .pv-side {
+    width: auto;
+    max-height: min(38%, 240px);
+    border-left: none;
+    border-top: 1px solid #262b33;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  .pv-next { max-height: 72px; overflow: hidden; }
+  .pv-notes { min-height: 0; }
 }

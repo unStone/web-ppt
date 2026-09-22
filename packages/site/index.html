@@ -103,7 +103,7 @@
     <li><b>42<i>ms</i></b><span>210 页首屏</span></li>
     <li><b>156<i>KB</i></b><span>gzip 核心包</span></li>
     <li><b>1<i>个</i></b><span>运行时依赖</span></li>
-    <li><b>11555</b><span>断言 + 186 快照</span></li>
+    <li><b>11584</b><span>断言 + 186 快照</span></li>
   </ul>
 </section>
 
@@ -133,12 +133,15 @@
       <div class="stage-wrap" id="stageWrap">
         <div class="stage" id="stage"></div>
         <div class="drop-hint" id="dropHint"><span>松手即可渲染</span></div>
-        <!-- 全屏演示时才显示：翻页 + 退出，鼠标不动会自己淡掉 -->
+        <!-- 放映时才显示：翻页 + 退出，鼠标不动会自己淡掉 -->
         <div class="present-bar" id="presentBar">
           <button class="icon" id="pPrev" title="上一页" aria-label="上一页">‹</button>
           <span class="pager" id="pPager">— / —</span>
           <button class="icon" id="pNext" title="下一页" aria-label="下一页">›</button>
-          <button class="icon" id="pExit" title="退出全屏（Esc）" aria-label="退出全屏">⨯</button>
+          <button class="icon" id="pGrid" aria-pressed="false">G</button>
+          <button class="icon" id="pNotes" title="演讲者备注" aria-label="演讲者备注" disabled>N</button>
+          <button class="icon" id="pBlank" aria-pressed="false">B</button>
+          <button class="icon" id="pExit" title="退出演示（Esc）" aria-label="退出演示">⨯</button>
         </div>
       </div>
     </div>
@@ -147,10 +150,12 @@
       <button class="icon" id="prev" title="上一页" aria-label="上一页">‹</button>
       <span class="pager" id="pager">— / —</span>
       <button class="icon" id="next" title="下一页" aria-label="下一页">›</button>
+      <button class="chip" id="gridBtn" hidden disabled></button>
       <div class="spacer"></div>
       <span class="meta" id="meta">载入中…</span>
       <button class="chip" id="commentsTools" type="button" disabled>批注</button>
-      <button class="chip act" id="present" title="全屏播放，按文件里的动画逐步展开">全屏演示</button>
+      <button class="chip" id="speakerAids" type="button" title="演讲者备注" disabled>演讲者备注</button>
+      <button class="chip act" id="present" title="播放动画，能全屏就全屏" disabled>演示</button>
       <!-- download 属性等有了 href 再加：HTML 规范要求 href 不在时这些属性一律省略，
            光秃秃的 <a download> 会被当成不可抓取的链接 -->
       <a class="chip act" id="download">下载</a>
@@ -378,7 +383,7 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
         <tr><td><code>@web-ppt/collab</code></td><td>可选字段级 LWW 协同适配</td><td><code>@web-ppt/edit-core</code></td><td>12.20KB gzip</td></tr>
         <tr><td><code>@web-ppt/react</code></td><td>React 组件与 hook 薄适配</td><td><code>@web-ppt/editor</code> + React</td><td>1.12KB gzip</td></tr>
         <tr><td><code>@web-ppt/vue</code></td><td>Vue 组件与 composable 薄适配</td><td><code>@web-ppt/editor</code> + Vue</td><td>1.34KB gzip</td></tr>
-        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>8.10KB gzip</td></tr>
+        <tr><td><code>@web-ppt/viewer-core</code></td><td>headless 状态机 + 播放层</td><td><code>@web-ppt/core</code></td><td>8.89KB gzip</td></tr>
         <tr><td><code>@web-ppt/fonts</code></td><td>字体替换与按需加载（可选）</td><td><code>@web-ppt/core</code></td><td>2.69KB gzip</td></tr>
       </tbody>
     </table>

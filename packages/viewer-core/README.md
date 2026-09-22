@@ -20,6 +20,7 @@ const pres = await parse(file);
 const v = new Viewer(container, pres, { animate: true, autoAdvance: true });
 
 v.next();              // plays a pending animation batch, otherwise advances the slide
+v.prev();              // rewinds one finished click, otherwise the previous slide at its end build
 v.finishAnimations();  // jump to this slide's end state
 v.setZoom(1.5);
 v.search('keyword');   // → array of matching slide indices
@@ -42,6 +43,8 @@ st.subscribe((change) => {
     if (change.transition) playTransition(prevEl, nextEl, change.transition);
   } else if (change.type === 'animation' && change.group) {
     playGroup(container, change.group);
+  } else if (change.type === 'animation' && change.settle) {
+    // repaint, then apply hiddenElementIds and the settled style of completed steps
   }
 });
 

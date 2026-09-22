@@ -11,8 +11,8 @@
     <div class="brand">Web-PPT <span class="tag">纯浏览器渲染</span></div>
     <div class="file-info" id="fileInfo">未打开文件</div>
     <div class="search">
-      <input id="searchInput" type="search" placeholder="搜索全文…" />
-      <span id="searchHits"></span>
+      <input id="searchInput" type="search" placeholder="搜索全文…" title="Enter 或 Ctrl/⌘+G 下一处，Shift+Enter 或 Ctrl/⌘+Shift+G 上一处" disabled />
+      <span id="searchHits" aria-live="polite"></span>
       <span id="animInfo"></span>
     </div>
     <div class="actions">
@@ -22,7 +22,7 @@
       <button id="btnFit" title="适应窗口 (0)">适应</button>
       <span class="sep"></span>
       <button id="btnComments" type="button" disabled>批注</button>
-      <button id="btnNotes" title="备注 (N)">备注</button>
+      <button id="btnNotes" type="button" title="备注 (N)" disabled aria-pressed="false" aria-expanded="false">备注</button>
       <button id="btnExportPng" title="导出当前页 PNG">PNG</button>
       <button id="btnExportSvg" title="导出当前页 SVG（矢量）">SVG</button>
       <button id="btnExportPdf" title="全部页面打印为 PDF">PDF</button>
@@ -33,7 +33,7 @@
   </header>
 
   <main>
-    <aside id="thumbs"></aside>
+    <aside id="thumbs" aria-hidden="false"></aside>
     <section id="stageWrap">
       <div id="stageScroll">
         <div id="stage">
@@ -45,7 +45,8 @@
         <button id="btnPrev" title="上一页 (←)">‹</button>
         <span id="pageIndicator">- / -</span>
         <button id="btnNext" title="下一页 (→)">›</button>
-        <span class="hint">← → 翻页 · +/− 缩放 · N 备注 · F 演示 · Enter 跳过动画</span>
+        <button id="btnGrid" hidden disabled>G</button>
+        <span class="hint">← → 翻页 · +/− 缩放 · N 备注 · F 演示 · B 或 . 黑屏 · W 或 , 白屏 · G 全部 · 数字+Enter 跳页 · Home / End 首尾页 · Backspace 上一步 · P 上一步 · Enter 跳过动画</span>
       </footer>
     </section>
   </main>
@@ -57,7 +58,7 @@
       <div id="pvNext" class="pv-next"></div>
       <div class="pv-label">备注</div>
       <div id="pvNotes" class="pv-notes"></div>
-      <div class="pv-foot"><span id="pvPage"></span><span id="pvAnim"></span><button id="pvExit">退出 (Esc)</button></div>
+      <div class="pv-foot"><span id="pvPage"></span><span id="pvAnim"></span><button id="pvGrid" aria-pressed="false">G</button><button id="pvBlank" title="黑屏（B 或 .）" aria-pressed="false">B</button><button id="pvExit">退出 (Esc)</button></div>
     </div>
   </div>
 

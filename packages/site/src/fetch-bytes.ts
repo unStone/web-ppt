@@ -16,13 +16,19 @@ export interface Fetched {
 export async function fetchBytes(
   src: string,
   onProgress: (got: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<Fetched> {
   const t0 = performance.now();
-  const res = await fetch(src);
+  const res = await fetch(src, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // Vite / 某些静态站会把未知路径回成 HTML 首页（仍是 200）。
+  // 那不是演示文稿，必须停在下载失败，不能让解析器报「不是 pptx」。
+  const type = (res.headers.get('content-type') || '').toLowerCase();
+  if (type.includes('text/html')) throw new Error('对方返回了网页而不是演示文稿');
 
   // Content-Length 可能没有（分块传输）：那就只报已下载量，不画百分比
   const total = Number(res.headers.get('content-length')) || 0;
+  onProgress(0, total);
   if (!res.body) {
     // 老浏览器没有流，退回一次性读取
     return { bytes: await res.arrayBuffer(), ms: performance.now() - t0 };

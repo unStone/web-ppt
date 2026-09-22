@@ -6,7 +6,7 @@ import { bundleBrowser } from './lib/bundle-browser.mjs';
 
 const { window, dom } = installDomEnv();
 dom.reconfigure({ url: 'https://web-ppt.test/editor.html?lang=zh-CN' });
-for (const name of ['location', 'history', 'localStorage', 'AbortController', 'DOMException']) {
+for (const name of ['location', 'history', 'localStorage', 'navigator', 'AbortController', 'DOMException']) {
   Object.defineProperty(globalThis, name, { value: window[name], configurable: true });
 }
 // 本用例观察服务与恢复决策的 DOM 边界；实际 IndexedDB 往返由官网浏览器契约验证。

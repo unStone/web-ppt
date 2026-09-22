@@ -9,6 +9,7 @@ import { attr, kids, parseXml } from '../xml';
 import { PackageAssetStore } from './asset-store';
 import type { AssetMode, DeferredAsset } from './asset-store';
 import type { Rels } from './slide-inheritance';
+import { openPreviewParts } from './zip-preview';
 
 const decoder = new TextDecoder();
 const EMPTY_BYTES = new Uint8Array(0);
@@ -48,10 +49,14 @@ export class Pkg {
   constructor(source: Uint8Array | OpcPackage, keepPackage = false) {
     const borrowed = !(source instanceof Uint8Array);
     captureChartExParser(this, borrowed ? source : undefined);
-    this.files = borrowed
-      ? source.parts as Record<string, Uint8Array>
+    if (borrowed) {
+      this.files = source.parts as Record<string, Uint8Array>;
+    } else {
       // Buffer 的 slice 共享原内存；只在解包边界换成普通视图，保留原包零拷贝身份。
-      : unzipSync(new Uint8Array(source.buffer, source.byteOffset, source.byteLength));
+      const zip = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+      // 预览不必先 inflate 后页和未引用嵌入物；编辑 keepPackage 仍整包，parts 展开才不会漏 part。
+      this.files = keepPackage ? unzipSync(zip) : openPreviewParts(zip);
+    }
     this.assetStore = new PackageAssetStore(keepPackage, borrowed ? 'layout-asset:' : 'asset:');
     if (borrowed) {
       for (const [url, asset] of Object.entries(source.assets ?? {})) {

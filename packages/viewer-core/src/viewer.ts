@@ -2,6 +2,7 @@ import type { Presentation, Slide } from '@web-ppt/core';
 import { renderSlideToSvg, slideToPng, staticHidden } from '@web-ppt/core';
 import { foreignObjectScalesCorrectly } from './foreign-object';
 import { playGroup, playTransition, type PlayHandle } from './playback';
+import { settledDeclaration } from './settled';
 import { PresentationState, type PresentationStateOptions } from './state';
 
 /**
@@ -57,8 +58,10 @@ export class Viewer {
         this.onChange?.(change.index);
       } else if (change.type === 'animation') {
         if (change.group) this.play(change.group);
+        else if (change.settle) this.paint();
         else this.applyVisibility();
-        this.onAnimStep?.(change.done, change.total);
+        // paint 自己会通知进度；再通知一次，计数会闪两次。
+        if (!change.settle) this.onAnimStep?.(change.done, change.total);
       } else if (change.type === 'zoom') {
         this.applyZoom();
       }
@@ -172,6 +175,7 @@ export class Viewer {
     }
     this.applyZoom();
     this.applyVisibility();
+    this.applySettled();
     this.onAnimStep?.(this.state.animationDone, this.state.animationTotal);
   }
 
@@ -197,6 +201,24 @@ export class Viewer {
       // 第 1 页的标题就是这么漏出来的。
       (node as HTMLElement).style.visibility = hidden.has(id) ? 'hidden' : '';
     });
+  }
+
+  /**
+   * 已播完的强调和路径不会写进隐藏集。重绘清掉 fill 之后，要把终态再铺回去。
+   */
+  private applySettled(): void {
+    const hidden = this.state.hiddenElementIds;
+    for (const step of this.state.completedSteps) {
+      const style = settledDeclaration(step);
+      if (!style || hidden.has(step.target)) continue;
+      const node = this.container.querySelector(`[data-el="${step.target}"]`);
+      // 动画目标在 SVG 上，不是 HTMLElement。SVGElement 同样有 style。
+      const styled = node as HTMLElement | null;
+      if (!styled?.style?.setProperty) continue;
+      for (const [key, value] of Object.entries(style)) {
+        styled.style.setProperty(key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`), value);
+      }
+    }
   }
 
   private applyZoom(): void {

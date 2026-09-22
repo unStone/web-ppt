@@ -9,6 +9,7 @@ import { createEditorViewport } from './editor-viewport';
 import { editorButtons as buttons, editorElements } from './editor-elements';
 import { setAttributeMessage, setMessage, setText, t } from './i18n/runtime';
 import { message, type SiteMessage, type SiteNotice } from './i18n/message';
+import type { OpenKindMessage } from './open-kind-error';
 
 export interface EditorPage {
   readonly current: EditorDocument | null;
@@ -21,6 +22,17 @@ export interface EditorPage {
 }
 
 declare module 'cordis' { interface Context { editorPage: EditorPage } }
+
+async function editorOpenFailure(error: unknown): Promise<SiteMessage> {
+  // 只看 name，映射按需加载——静态导入会把人话词条打进首开闭包。
+  if (error instanceof Error && error.name === 'OpenKindError') {
+    return message(error.message as OpenKindMessage);
+  }
+  const { mapOpenError } = await import('./open-kind-error');
+  const mapped = mapOpenError(error);
+  if (mapped) return message(mapped);
+  return message('打开失败：{detail}', { detail: error instanceof Error ? error.message : String(error) });
+}
 
 /** 页面状态和资源与服务在同一 Cordis 应用中，入口模块只负责首次启动与失败重试。 */
 export const editorPagePlugin = {
@@ -136,7 +148,7 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     setText(canvasState.querySelector('small')!, '解析和渲染完全在浏览器中进行');
     canvasState.querySelector('.spinner')?.removeAttribute('hidden');
     app.dataset.loading = 'true'; syncControls();
-    notice(message('正在解析 {name}…', { name }));
+    notice(message('正在打开 {name}', { name }));
     try {
       const prepared = await prepareEditorDocument(source, owner.recovery, requestSignal);
       const next = prepared.session;
@@ -162,7 +174,7 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
       mounted.view.element.focus();
     } catch (error) {
       if (stale()) return;
-      const failure = message('打开失败：{detail}', { detail: error instanceof Error ? error.message : String(error) });
+      const failure = await editorOpenFailure(error);
       if (current) { hideLoading(); notice(failure, 'error'); current.view.element.focus(); }
       else showOpenFailure(failure);
     }

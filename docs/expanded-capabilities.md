@@ -14,8 +14,8 @@
 | OLE 内部编辑 | `@web-ppt/edit-core/ole` | 嵌入对象数据面板 | 直接 OOXML、CFB Package/Ole10Native 中的 XLSX 单元格及 DOCX 普通段落；保留未改部件，公式交宿主重算 |
 | 墨迹内部编辑 | `@web-ppt/edit-core/ink` | 墨迹面板与画布手绘 | 笔刷、移动、采样点、增删；保留压力通道、原生 InkML 与兼容预览 |
 | 地图 | `@web-ppt/core/chart-ex` | 自动显示具有 geoCache 的 regionMap | 使用文件自带边界，支持压缩缓存、四种投影、孔洞及跨日期变更线；无缓存时保留兼容图，不请求地图服务 |
-| EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported |
-| 三维 | `@web-ppt/core/three-d` | 三维外观面板与自动渲染 | XYZ 相机矩阵、正交/透视、挤出、背面和曲线斜角；透视正面仍含原生 SVG 文字；材质/光照及网格为近似 |
+| EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported。打开前 `prepareAdvancedRendering` 只解 `.emf` / `.wmf` 与版式 XML，不解照片/视频。默认 `parse()` 不先 inflate 未引用的 `/media/`、`/embeddings/` 和后页私有部件，当前页在第一次渲染前按名补解 |
+| 三维 | `@web-ppt/core/three-d` | 三维外观面板与自动渲染 | XYZ 相机矩阵、正交/透视、挤出、背面和曲线斜角；透视正面仍含原生 SVG 文字；材质/光照及网格为近似。三维标记来自版式 XML，与媒体二次解压无关 |
 | 数学公式 | 核心渲染入口；`@web-ppt/edit-core/generate` 原生写入 | 自动渲染、复制与保存 | OMML 分式、根式、脚标、大算子与矩阵布局；支持范围内保留公式原子，复杂数学字体保真度仍依赖可用字体 |
 | 字体与字形 | `@web-ppt/fonts/glyphs` 及可选 HarfBuzz / Worker / browser 子入口 | 字体与缺字 → 检查 / 本机替换 | 静态 TTF/glyf、合规 EOT、Latin/Han 横排 LTR；保留 UTF-16 簇、定位与许可限制。Cordis 随文稿释放资源；本机字体用于预览及图片 / SVG / 实验性矢量 PDF 导出，不写 PPTX。复杂脚本、变量字体、CFF、WOFF 解压及非 400/700 浏览器样式绑定暂不支持；见[完整范围](font-glyphs.md) |
 | PDF | `@web-ppt/core/pdf` | 导出文档 → PDF | 直接下载图片页面 PDF；默认 2×、隐藏页、动画批次、原生批注/回复、进度和取消 |
@@ -86,7 +86,7 @@ try {
 
 | 命令 | 验证内容 |
 |---|---|
-| `npm run test:expanded` | 15 套源码契约：编辑/历史/恢复、两条保存、格式边界、确定性输出 |
+| `npm run test:expanded` | 16 套源码契约：编辑/历史/恢复、两条保存、格式边界、钩子准备扫描、确定性输出 |
 | `npm run test:expanded:dist` | 独立导入发布入口，验证跨包共享资源、扩展与渲染 hook；纳入 `verify` |
 | `node tooling/test-site-editor-browser.mjs` | 实际官网操作、下载和重开；包含透明三维网格的多倍率像素回归 |
 | `npm run test:fixtures:determinism` | 连续两次生成全部固件并逐字节比对 |

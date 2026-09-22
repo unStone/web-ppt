@@ -1,6 +1,7 @@
 import { runSiteChartHierarchyBrowserContract } from './lib/site-chart-hierarchy-browser-contract.mjs';
 import { runSiteFontBrowserContract } from './lib/site-font-browser-contract.mjs';
 import { runSiteEditorLifecycleBrowserContract } from './lib/site-editor-lifecycle-browser-contract.mjs';
+import { runSiteEditorOpenKindContract } from './lib/site-editor-open-kind-browser-contract.mjs';
 import { runSiteRecoveryBrowserContract } from './lib/site-recovery-browser-contract.mjs';
 import { runSiteToolsBrowserContract } from './lib/site-tools-browser-contract.mjs';
 import { runSiteFilesBrowserContract } from './lib/site-files-browser-contract.mjs';
@@ -14,6 +15,30 @@ import {siteFontWorkerFixture} from './lib/site-font-worker-fixture.mjs';
 import { runSiteThreeDBrowserContract } from './lib/site-three-d-browser-contract.mjs';
 import { runSiteMetafileBrowserContract } from './lib/site-metafile-browser-contract.mjs';
 import { runStandaloneCommentsBrowserContract } from './lib/standalone-comments-browser-contract.mjs';
+import { runStandaloneSwipeNavContract } from './lib/standalone-swipe-nav-browser-contract.mjs';
+import { runStandaloneBlankScreenContract } from './lib/standalone-blank-screen-browser-contract.mjs';
+import { runStandaloneBlankPeriodContract } from './lib/blank-period-browser-contract.mjs';
+import { runStandaloneWhiteScreenContract } from './lib/white-screen-browser-contract.mjs';
+import { runStandaloneSlideNumberContract } from './lib/slide-number-browser-contract.mjs';
+import { runStandaloneSlideEndsContract } from './lib/slide-ends-browser-contract.mjs';
+import { runStandaloneNotesKeyContract } from './lib/notes-key-browser-contract.mjs';
+import { runStandalonePresentVerticalContract } from './lib/present-vertical-browser-contract.mjs';
+import { runStandalonePresentRewindContract } from './lib/present-rewind-browser-contract.mjs';
+import { runStandalonePresentBackspaceContract } from './lib/present-backspace-browser-contract.mjs';
+import { runStandalonePresentPrevLetterContract } from './lib/present-prev-letter-browser-contract.mjs';
+import { runStandaloneSmallViewportContract } from './lib/standalone-small-viewport-browser-contract.mjs';
+import { runStandaloneSlideGridContract } from './lib/standalone-slide-grid-browser-contract.mjs';
+import { runStandaloneOpenSessionContract } from './lib/standalone-open-session-browser-contract.mjs';
+import { runStandaloneFileProgressContract } from './lib/standalone-file-progress-browser-contract.mjs';
+import { runStandalonePasswordContract } from './lib/standalone-password-browser-contract.mjs';
+import { runStandaloneOpenPageContract } from './lib/standalone-open-page-browser-contract.mjs';
+import { runStandaloneClearFileContract } from './lib/standalone-clear-file-browser-contract.mjs';
+import { runStandaloneOpenKindContract } from './lib/standalone-open-kind-browser-contract.mjs';
+import { runStandaloneOpenLazyContract } from './lib/standalone-open-lazy-browser-contract.mjs';
+import { runStandaloneNotesClearContract } from './lib/standalone-notes-clear-browser-contract.mjs';
+import { runStandaloneSearchLazyContract } from './lib/standalone-search-lazy-browser-contract.mjs';
+import { runStandaloneSearchHighlightContract } from './lib/standalone-search-highlight-browser-contract.mjs';
+import { runSiteSampleOpenPageContract } from './lib/site-sample-open-page-browser-contract.mjs';
 import { runSiteCommentEditBrowserContract } from './lib/site-comment-edit-browser-contract.mjs';
 import { runSiteResizeBrowserContract } from './lib/site-resize-browser-contract.mjs';
 import { runSiteChartDesignBrowserContract } from './lib/site-chart-design-browser-contract.mjs';
@@ -70,6 +95,7 @@ const aliases = [
   ['@web-ppt/fonts/glyphs/worker', join(root, 'packages/fonts/src/glyphs/worker.ts')],
   ['@web-ppt/fonts/glyphs/harfbuzz', join(root, 'packages/fonts/src/glyphs/harfbuzz.ts')],
   ['@web-ppt/fonts/glyphs', join(root, 'packages/fonts/src/glyphs/index.ts')],
+  ['@web-ppt/fonts', join(root, 'packages/fonts/src/index.ts')],
   ['@web-ppt/edit-core/ppt', join(root, 'packages/edit-core/src/ppt/index.ts')],
   ['@web-ppt/viewer-core/video', join(root, 'packages/viewer-core/src/video.ts')],
   ['@web-ppt/viewer-core/comments', join(root, 'packages/viewer-core/src/comments.ts')],
@@ -217,7 +243,11 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
     return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
   }, { raw: 0, gzip: 0 });
 // 页面归入按需应用后，首屏不再覆盖编辑实现；首次打开仍沿用迁移前预算加当时应用实测值。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 33_439 };
+// gzip 多 109B：编辑器打开按需认文件的 import() 入口，不把 Zip/fflate 打进首开闭包。
+// 再多 13B：钩子准备只认 .emf/.wmf，换掉整包 media 二次解压。
+// 再多 347B：默认 parse 跳过未引用 /media/，当前页按名补解。
+// 再多 97B：默认 parse 跳过后页 XML / embeddings，当前页按名补解。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 34_008 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
@@ -279,7 +309,12 @@ const routes = new Map([
     ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml]],
   ['/src/i18n-language.css', ['text/css', readFileSync(join(root, 'packages/site/src/i18n-language.css'))]],
   ['/editor-page.css', ['text/css; charset=utf-8', editorStyle]],
+  ['/missing-notes.pdf', ['application/pdf', Buffer.from('%PDF-1.4\n%%EOF')]],
   ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
+  ['/demo/held-remote.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
+  ['/demo/sample-chart.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart.pptx'))]],
+  ['/demo/sample-encrypted-agile.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-encrypted-agile.pptx'))]],
+  ['/demo/sample-hidden.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-hidden.pptx'))]],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
   ['/fixtures/sample-editor-shape-format.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx'))]],
   ['/fixtures/sample-editor-preset-shape.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-preset-shape.pptx'))]],
@@ -349,6 +384,17 @@ routes.set('/tools-shutdown.mjs', ['text/javascript', readFileSync(toolsShutdown
 routes.set('/standalone.css', ['text/css', readFileSync(join(root, 'packages/viewer/src/style.css'))]);
 routes.set('/standalone.html', ['text/html', readFileSync(join(root, 'packages/viewer/index.html'), 'utf8')
   .replace('/src/main.ts', '/standalone.mjs').replace('/src/style.css', '/standalone.css')]);
+if (!productionLanguages) {
+  const samplesBundle = join(out, 'samples.mjs');
+  execFileSync('npx', ['esbuild', join(root, 'packages/site/src/samples.ts'), '--bundle', '--format=esm',
+    '--platform=browser', '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${samplesBundle}`], { cwd: root, stdio: 'inherit' });
+  routes.set('/samples.mjs', ['text/javascript', readFileSync(samplesBundle)]);
+  routes.set('/samples.css', ['text/css', readFileSync(join(root, 'packages/site/src/style.css'))]);
+  routes.set('/samples.html', ['text/html; charset=utf-8', readFileSync(join(root, 'packages/site/samples.html'), 'utf8')
+    .replace('./src/samples.ts', '/samples.mjs').replace('./src/style.css', '/samples.css')]);
+}
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
 routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
@@ -701,6 +747,7 @@ async function runContract(webSocketDebuggerUrl) {
       if (consoleFailures.length) throw new Error(`语言生产页面错误：${consoleFailures.join(' | ')}`);
       return { bytes: 0 };
     }
+    await runSiteEditorOpenKindContract({ evaluate, waitFor, click });
     await runSiteEditorLifecycleBrowserContract({ evaluate, request, waitFor, click });
     await runSiteFilesBrowserContract({ evaluate });
     await runSiteToolsBrowserContract({ evaluate });
@@ -1061,6 +1108,35 @@ async function runContract(webSocketDebuggerUrl) {
     if (checkedInputFailure && !rejectedEditContextLoads) throw new Error('未实际触发 EditContext 模块下载失败');
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     await runStandaloneCommentsBrowserContract({ evaluate, request, waitFor, click });
+    await runStandaloneSwipeNavContract({ evaluate, request, waitFor, click });
+    await runStandaloneBlankScreenContract({ evaluate, request, waitFor, click });
+    await runStandaloneBlankPeriodContract({ evaluate, request, waitFor, click });
+    await runStandaloneWhiteScreenContract({ evaluate, request, waitFor, click });
+    await runStandaloneSlideNumberContract({ evaluate, request, waitFor, click });
+    await runStandaloneSlideEndsContract({ evaluate, request, waitFor, click });
+    await runStandaloneNotesKeyContract({ evaluate, request, waitFor });
+    await runStandalonePresentVerticalContract({ evaluate, request, waitFor });
+    await runStandalonePresentRewindContract({ evaluate, request, click, waitFor });
+    await runStandalonePresentBackspaceContract({ evaluate, request, click, waitFor });
+    await runStandalonePresentPrevLetterContract({ evaluate, request, click, waitFor });
+    await runStandaloneSmallViewportContract({ evaluate, request, waitFor, click });
+    await runStandaloneSlideGridContract({ evaluate, request, waitFor, click });
+    await runStandaloneOpenSessionContract({ evaluate, request, waitFor });
+    await runStandaloneFileProgressContract({ evaluate, request, waitFor });
+    await runStandalonePasswordContract({ evaluate, request, waitFor });
+    await runStandaloneOpenPageContract({ evaluate, request, waitFor, click });
+    await runStandaloneClearFileContract({ evaluate, request, waitFor, click });
+    await runStandaloneOpenKindContract({ evaluate, request, waitFor });
+    await runStandaloneOpenLazyContract({ evaluate, request, waitFor, click });
+    await runStandaloneNotesClearContract({ evaluate, request, waitFor, click });
+    await runStandaloneSearchLazyContract({ evaluate, request, waitFor, click });
+    await runStandaloneSearchHighlightContract({ evaluate, request, waitFor, click });
+    const onEvent = (listener) => {
+      const receive = (data) => listener(JSON.parse(data.toString()));
+      socket.on('message', receive);
+      return () => socket.off('message', receive);
+    };
+    await runSiteSampleOpenPageContract({ evaluate, request, waitFor, click, onEvent });
     if (consoleFailures.length) throw new Error(`独立查看器错误：${consoleFailures.join(' | ')}`);
     return { bytes: downloaded.bytes.length, prompt: rejected.prompt };
   } finally {

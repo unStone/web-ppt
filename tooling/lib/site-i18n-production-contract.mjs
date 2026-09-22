@@ -7,6 +7,8 @@ import { runSiteI18nRecoveryContract } from './site-i18n-recovery-contract.mjs';
 import { runSiteI18nStartupContract, runSiteI18nDictionaryFailureContract } from './site-i18n-startup-contract.mjs';
 import { runSiteI18nViewerContract } from './site-i18n-viewer-contract.mjs';
 import { runSiteI18nGalleryContract } from './site-i18n-gallery-contract.mjs';
+import { runSiteSampleOpenPageContract } from './site-sample-open-page-browser-contract.mjs';
+import { runSiteOpenStartPageContract } from './site-open-start-page-browser-contract.mjs';
 import { runSiteI18nMediaContract } from './site-i18n-media-contract.mjs';
 import { runSiteI18nHomeContract } from './site-i18n-home-contract.mjs';
 import { runSiteI18nChartContract } from './site-i18n-chart-contract.mjs';
@@ -32,6 +34,9 @@ export async function runSiteI18nProductionContract(context) {
       slides: runSiteI18nSlideToolsContract, accessibility: runSiteI18nAccessibilityContract,
       'view-labels': runSiteI18nViewLabelsContract, placeholders: runSiteI18nPlaceholderContract,
       bootstrap: runSiteI18nBootstrapContract, recovery: runSiteI18nRecoveryContract,
+      viewer: runSiteI18nViewerContract, gallery: runSiteI18nGalleryContract,
+      'sample-page': runSiteSampleOpenPageContract,
+      'open-start-page': runSiteOpenStartPageContract,
       preferences: runSiteLanguagePreferencesContract, 'file-save': runSiteLocalSaveContract, fonts: runSiteFontBrowserContract }[only];
     if (!contract) throw new Error(`未知的官网专项：${only}`);
     await contract(context); return;
@@ -89,6 +94,8 @@ export async function runSiteI18nProductionContract(context) {
   await runSiteI18nDictionaryFailureContract(context);
   await runSiteI18nViewerContract(context);
   await runSiteI18nGalleryContract(context);
+  await runSiteSampleOpenPageContract(context);
+  await runSiteOpenStartPageContract(context);
   await runSiteI18nHomeContract(context);
   await runSiteLanguagePreferencesContract(context);
 }

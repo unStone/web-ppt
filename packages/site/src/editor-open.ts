@@ -13,6 +13,10 @@ export async function prepareEditorDocument(source: File | Blob | ArrayBuffer | 
   recovery: SiteRecovery, signal: AbortSignal) {
   await languageReady;
   const bytes = source instanceof Blob ? await source.arrayBuffer() : source;
+  assertOpenActive(signal);
+  // 认错必须在钩子前：非 PK 会对整份字节扫 EMF+。按需加载，避免首开闭包再打一份 unzip。
+  const { rejectIfNotPresentation } = await import('./open-kind');
+  rejectIfNotPresentation(bytes);
   await Promise.all([prepareModernCharts(bytes), prepareAdvancedRendering(bytes)]);
   assertOpenActive(signal);
   const [adjustments, accessibility, inputEnhancement] = await Promise.all([

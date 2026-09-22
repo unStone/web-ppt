@@ -39,7 +39,7 @@ function cardHtml(s: Sample): string {
     (s.highlight ? `<p class="sample-highlight">${esc(s.highlight)}</p>` : '') +
     '<div class="sample-foot">' +
     '<button class="chip act" data-preview data-site-message>预览</button>' +
-    `<a class="chip" data-site-message href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与全屏演示的完整查看器">在首页打开</a>` +
+    `<a class="chip" data-site-message href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与演示的完整查看器">在首页打开</a>` +
     '</div>' +
     (credit ? `<p class="sample-credit">${credit}</p>` : '') +
     '</article>'
