@@ -184,10 +184,10 @@ export async function runSiteI18nViewerContract({ evaluate, request, click, wait
   await click('#next');
   await waitFor("document.querySelectorAll('#commentsPanel li').length === 1", '首页批注跟随翻页');
   await click('#commentsPanel [data-close]');
-  await runViewerFailureContract({ evaluate, click, waitFor });
+  await runViewerFailureContract({ evaluate, click, waitFor, request });
 }
 
-async function runViewerFailureContract({ evaluate, click, waitFor }) {
+async function runViewerFailureContract({ evaluate, click, waitFor, request }) {
   await evaluate(`(() => {
     const original = window.fetch;
     globalThis.__viewerFetch = original;
