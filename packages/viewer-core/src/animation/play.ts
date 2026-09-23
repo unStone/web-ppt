@@ -3,7 +3,7 @@ import { inwardGroupMask } from './clips';
 import { framesFor, revealSequence } from './frames';
 import type { ClipRegion } from './region';
 
-const MASK_KEYS = ['maskImage', 'maskRepeat', 'maskPosition', 'maskSize', 'maskComposite'] as const;
+const MASK_KEYS = ['maskImage', 'maskRepeat', 'maskPosition', 'maskSize', 'maskComposite', 'maskMode'] as const;
 
 /**
  * 段落 div 是整列排版框。短句居中时，揭开若相对这个框，条带会先切开字形两侧的空白。
@@ -79,11 +79,11 @@ const IRIS = new Set(['circle', 'diamond', 'plus']);
  * shape() 带 fill-box 挂在形状组上会把整组藏掉。
  * 组上改用整框蒙版减去光圈；文字宿主仍播洞。
  */
-function shapeGroupFrames(step: AnimStep, frames: readonly Keyframe[]): Keyframe[] {
+function shapeGroupFrames(step: AnimStep, frames: readonly Keyframe[], aspect: number): Keyframe[] {
   if (!IRIS.has(step.effect) || step.dir === 'out') return [...frames];
   if (!frames.some((frame) => String(frame.clipPath ?? '').startsWith('shape('))) return [...frames];
-  const hidden = inwardGroupMask(step.effect, false);
-  const shown = inwardGroupMask(step.effect, true);
+  const hidden = inwardGroupMask(step.effect, false, aspect);
+  const shown = inwardGroupMask(step.effect, true, aspect);
   return step.kind === 'exit' ? [shown, hidden] : [hidden, shown];
 }
 
@@ -118,14 +118,15 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
         offset: distance > 0 ? distances![index] / distance : index / (step.motionPath!.length - 1),
       }))
       : undefined;
-    const frames = motion ?? (step.kind === 'emphasis' ? [base.from, base.to] : revealSequence(step));
+    const aspect = elementAspect(node);
+    const frames = motion ?? (step.kind === 'emphasis' ? [base.from, base.to] : revealSequence(step, undefined, aspect));
 
     try {
       const easing = motion ? 'linear'
         : step.effect === 'appear' && step.kind === 'entrance' ? 'steps(1, start)'
           : step.effect === 'appear' && step.kind === 'exit' ? 'steps(1, end)'
             : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      const anim = node.animate(shapeGroupFrames(step, frames), {
+      const anim = node.animate(shapeGroupFrames(step, frames, aspect), {
         duration: step.durationMs,
         delay: start,
         easing,
@@ -172,7 +173,17 @@ function paragraphFrames(
   if (step.kind === 'emphasis' || step.kind === 'motion') return htmlClipFrames(shapeFrames);
   const region = elementContentRegion(host);
   if (!region) return htmlClipFrames(shapeFrames);
-  return htmlClipFrames(revealSequence(step, region));
+  const hostBox = host.getBoundingClientRect?.();
+  const aspect = hostBox && hostBox.height > 1 && hostBox.width > 1
+    ? (region.w / region.h) * (hostBox.width / hostBox.height)
+    : 1;
+  return htmlClipFrames(revealSequence(step, region, aspect));
+}
+
+function elementAspect(node: Element): number {
+  const box = node.getBoundingClientRect?.();
+  if (!box || !(box.height > 1) || !(box.width > 1)) return 1;
+  return box.width / box.height;
 }
 
 export { framesFor } from './frames';

@@ -1,7 +1,7 @@
 import type { AnimStep } from '@web-ppt/core';
 import {
   blindsClip, boxInClip, boxInMask, boxOutClip, checkerClip, circleClip, diamondClip,
-  plusClip, randomBarClip, splitClip, stripsClip, wheelClip, wipeClip,
+  dissolveClip, plusClip, randomBarClip, splitClip, stripsClip, wheelClip, wheelSequence, wipeClip,
 } from './clips';
 import { FULL_REGION, isFull, type ClipRegion } from './region';
 
@@ -33,8 +33,8 @@ function clipFrames(hidden: string, shown: string): Keyframes {
   };
 }
 
-/** 入场关键帧。region 缺省整框；段落把墨迹百分比传进来。 */
-export function entranceFrames(step: AnimStep, region: ClipRegion = FULL_REGION): Keyframes {
+/** 入场关键帧。region 缺省整框；段落把墨迹百分比传进来。aspect 是像素宽高比。 */
+export function entranceFrames(step: AnimStep, region: ClipRegion = FULL_REGION, aspect = 1): Keyframes {
   switch (step.effect) {
     case 'appear':
       return { from: { opacity: 0 }, to: { opacity: 1 } };
@@ -60,23 +60,36 @@ export function entranceFrames(step: AnimStep, region: ClipRegion = FULL_REGION)
     case 'spin':
       return { from: { opacity: 0, transform: 'rotate(-180deg) scale(0.4)' }, to: { opacity: 1, transform: 'rotate(0) scale(1)' } };
     case 'swivel':
-      return { from: { opacity: 0, transform: 'rotateY(90deg)' }, to: { opacity: 1, transform: 'rotateY(0)' } };
+      // SVG 不应用 rotateY / perspective，立体翻转会退化成整框淡入。
+      // 绕竖直轴从侧面转到正面，看得见的就是横向从一条线拉开。
+      return {
+        from: { opacity: 1, transform: 'scaleX(0)' },
+        to: { opacity: 1, transform: 'scaleX(1)' },
+      };
     case 'float':
       return { from: { opacity: 0, transform: 'translateY(30%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
     case 'bounce':
       return { from: { opacity: 0, transform: 'translateY(-60%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
-    case 'stretch':
-      return { from: { opacity: 0, transform: 'scaleX(0.05)' }, to: { opacity: 1, transform: 'scaleX(1)' } };
+    case 'stretch': {
+      const vertical = step.dir === 'vert' || step.dir === 'u' || step.dir === 'd';
+      return {
+        from: { opacity: 0, transform: vertical ? 'scaleY(0.05)' : 'scaleX(0.05)' },
+        to: { opacity: 1, transform: vertical ? 'scaleY(1)' : 'scaleX(1)' },
+      };
+    }
     case 'blinds':
       return clipFrames(blindsClip(step.dir, false, region), blindsClip(step.dir, true, region));
     case 'checker':
-      return clipFrames(checkerClip(step.dir, 'closed', region), checkerClip(step.dir, 'open', region));
+      return clipFrames(checkerClip(step.dir, 'closed', region, aspect), checkerClip(step.dir, 'open', region, aspect));
     case 'randomBar':
       return clipFrames(randomBarClip(step.dir, false, region), randomBarClip(step.dir, true, region));
     case 'strips':
       return clipFrames(stripsClip(step.dir, false, region), stripsClip(step.dir, true, region));
     case 'circle':
-      return clipFrames(circleClip(step.dir !== 'out', false, region), circleClip(step.dir !== 'out', true, region));
+      return clipFrames(
+        circleClip(step.dir !== 'out', false, region, aspect),
+        circleClip(step.dir !== 'out', true, region, aspect),
+      );
     case 'diamond':
       return clipFrames(diamondClip(step.dir !== 'out', false, region), diamondClip(step.dir !== 'out', true, region));
     case 'plus':
@@ -86,8 +99,9 @@ export function entranceFrames(step: AnimStep, region: ClipRegion = FULL_REGION)
     case 'split':
       return clipFrames(splitClip(step.dir, false, region), splitClip(step.dir, true, region));
     case 'wheel':
-      return clipFrames(wheelClip(step.dir, false, region), wheelClip(step.dir, true, region));
+      return clipFrames(wheelClip(step.dir, false, region, aspect), wheelClip(step.dir, true, region, aspect));
     case 'dissolve':
+      return clipFrames(dissolveClip('closed', region), dissolveClip('open', region));
     case 'fade':
     case 'random':
     default:
@@ -110,13 +124,25 @@ function emphasisFrames(step: AnimStep): Keyframes {
  * 棋盘中点只放开偶数格。结束帧仍铺满，否则入场停住时一半形状留在中线上。
  * 退场把两端对调，中点仍放在中间。
  */
-export function revealSequence(step: AnimStep, region: ClipRegion = FULL_REGION): Keyframe[] {
-  const entrance = entranceFrames(step, region);
+export function revealSequence(step: AnimStep, region: ClipRegion = FULL_REGION, aspect = 1): Keyframe[] {
+  if (step.effect === 'wheel') {
+    const clips = wheelSequence(step.dir, region, aspect);
+    const ordered = step.kind === 'exit' ? [...clips].reverse() : clips;
+    return ordered.map((clipPath, index) => ({
+      opacity: 1,
+      clipPath,
+      offset: index / (ordered.length - 1),
+    }));
+  }
+  const entrance = entranceFrames(step, region, aspect);
   const ordered = step.kind === 'exit' ? [entrance.to, entrance.from] : [entrance.from, entrance.to];
-  if (step.effect !== 'checker') return ordered;
+  if (step.effect !== 'checker' && step.effect !== 'dissolve') return ordered;
+  const middle = step.effect === 'checker'
+    ? checkerClip(step.dir, 'half', region, aspect)
+    : dissolveClip('half', region);
   return [
     { ...ordered[0], offset: 0 },
-    { opacity: 1, clipPath: checkerClip(step.dir, 'half', region), offset: 0.5 },
+    { opacity: 1, clipPath: middle, offset: 0.5 },
     { ...ordered[1], offset: 1 },
   ];
 }

@@ -936,7 +936,7 @@ group('动画 / 切换');
   check('百叶窗终态铺满对象', blindsFrames.to.clipPath.includes('0% 0%,100% 0%,100% 16.667%,0% 16.667%'),
     blindsFrames.to.clipPath);
   const verticalBlinds = revealFrames({ ...blindsStep, dir: 'vert' });
-  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('polygon(8.333% 0%,8.333% 0%'),
+  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('shape(from 8.333% 0%, line to 8.333% 0%'),
     verticalBlinds.from.clipPath);
   const boxFrames = revealFrames(boxStep);
   check('盒状向内从四边揭开，字形不缩放',

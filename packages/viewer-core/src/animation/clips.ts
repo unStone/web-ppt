@@ -47,25 +47,36 @@ function shapeHole(hole: readonly Point[]): string {
     + `${commands.join(', ')}, close)`;
 }
 
+/**
+ * 横条可以串成一条 polygon：相接的边落在左边界上，填色不会被斜线挖掉。
+ * 竖条若也串成一条，上一条的底边会连到下一条的顶边，斜线把窗口切成三角。
+ * 竖条每条单独成环。
+ */
+function slats(
+  vertical: boolean, spans: readonly (readonly [number, number])[], open: boolean, region: ClipRegion,
+): string {
+  const contours: Point[][] = [];
+  const flat: Point[] = [];
+  for (const [start, end] of spans) {
+    const mid = (start + end) / 2;
+    const near = open ? start : mid;
+    const far = open ? end : mid;
+    const quad = vertical
+      ? [place(region, near, 0), place(region, far, 0), place(region, far, 100), place(region, near, 100)]
+      : [place(region, 0, near), place(region, 100, near), place(region, 100, far), place(region, 0, far)];
+    if (vertical) contours.push(quad);
+    else flat.push(...quad);
+  }
+  return vertical ? shapeFill(contours) : polygon(flat);
+}
+
 /** `vert` 是竖条，其余（含 horizontal）是横条。固定 6 条。 */
 export function blindsClip(
   dir: string | undefined, open: boolean, region: ClipRegion = FULL_REGION,
 ): string {
-  const vertical = dir === 'vert';
-  const points: Point[] = [];
-  for (let index = 0; index < 6; index++) {
-    const start = (index / 6) * 100;
-    const end = ((index + 1) / 6) * 100;
-    const mid = (start + end) / 2;
-    const near = open ? start : mid;
-    const far = open ? end : mid;
-    if (vertical) {
-      points.push(place(region, near, 0), place(region, far, 0), place(region, far, 100), place(region, near, 100));
-    } else {
-      points.push(place(region, 0, near), place(region, 100, near), place(region, 100, far), place(region, 0, far));
-    }
-  }
-  return polygon(points);
+  const spans: [number, number][] = [];
+  for (let index = 0; index < 6; index++) spans.push([(index / 6) * 100, ((index + 1) / 6) * 100]);
+  return slats(dir === 'vert', spans, open, region);
 }
 
 /**
@@ -133,33 +144,46 @@ export function boxOutClip(open: boolean, region: ClipRegion = FULL_REGION): str
 export type CheckerPhase = 'closed' | 'half' | 'open';
 
 /**
- * 6×6。两帧点数必须一样，WAAPI 才能保持格子形状。
- * 半开只放开偶数格，用来做棋盘的中点；结束帧全部铺开，否则一半形状会留在中线上。
+ * 短边大约 6 格，格子尽量是正方形。`aspect` 是像素宽高比，缺省 1 时退回 6×6。
+ * `horz` 每格从左缘向右铺开，`vert` 从上缘向下铺开。收到中线时四边形会翻成蝴蝶结，
+ * 所以关闭帧贴着起始边留一条细缝。半开只放开偶数格。
  */
 export function checkerClip(
-  dir: string | undefined, phase: CheckerPhase, region: ClipRegion = FULL_REGION,
+  dir: string | undefined, phase: CheckerPhase, region: ClipRegion = FULL_REGION, aspect = 1,
 ): string {
   const vertical = dir === 'vert';
+  const { cols, rows, cw, ch } = checkerGrid(aspect);
   const contours: Point[][] = [];
-  for (let row = 0; row < 6; row++) {
-    for (let col = 0; col < 6; col++) {
-      const x0 = (col / 6) * 100;
-      const x1 = ((col + 1) / 6) * 100;
-      const y0 = (row / 6) * 100;
-      const y1 = ((row + 1) / 6) * 100;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x0 = col * cw;
+      const y0 = row * ch;
+      const x1 = x0 + cw;
+      const y1 = y0 + ch;
       const even = (col + row) % 2 === 0;
-      const open = phase === 'open' || (phase === 'half' && even);
-      const nearX = open || vertical ? x0 : (x0 + x1) / 2;
-      const farX = open || vertical ? x1 : (x0 + x1) / 2;
-      const nearY = open || !vertical ? y0 : (y0 + y1) / 2;
-      const farY = open || !vertical ? y1 : (y0 + y1) / 2;
+      const shown = phase === 'open' || (phase === 'half' && even);
+      const right = shown || vertical ? x1 : Math.min(x1, x0 + 0.2);
+      const bottom = shown || !vertical ? y1 : Math.min(y1, y0 + 0.2);
       contours.push([
-        place(region, nearX, nearY), place(region, farX, nearY),
-        place(region, farX, farY), place(region, nearX, farY),
+        place(region, x0, y0), place(region, right, y0),
+        place(region, right, bottom), place(region, x0, bottom),
       ]);
     }
   }
   return shapeFill(contours);
+}
+
+function checkerGrid(aspect: number): { cols: number; rows: number; cw: number; ch: number } {
+  const ratio = aspect > 0.2 && aspect < 5 ? aspect : 1;
+  const across = 6;
+  if (ratio >= 1) {
+    const rows = across;
+    const cols = Math.max(across, Math.round(rows * ratio));
+    return { cols, rows, cw: 100 / cols, ch: 100 / rows };
+  }
+  const cols = across;
+  const rows = Math.max(across, Math.round(cols / ratio));
+  return { cols, rows, cw: 100 / cols, ch: 100 / rows };
 }
 
 /** 宽度固定，禁止随机数，固件和放映才能对上同一条。 */
@@ -168,23 +192,13 @@ const RANDOM_BAR_WIDTHS = [6, 18, 9, 14, 22, 7, 15, 9];
 export function randomBarClip(
   dir: string | undefined, open: boolean, region: ClipRegion = FULL_REGION,
 ): string {
-  const vertical = dir === 'vert';
-  const points: Point[] = [];
+  const spans: [number, number][] = [];
   let cursor = 0;
   for (const width of RANDOM_BAR_WIDTHS) {
-    const start = cursor;
-    const end = cursor + width;
-    cursor = end;
-    const mid = (start + end) / 2;
-    const near = open ? start : mid;
-    const far = open ? end : mid;
-    if (vertical) {
-      points.push(place(region, near, 0), place(region, far, 0), place(region, far, 100), place(region, near, 100));
-    } else {
-      points.push(place(region, 0, near), place(region, 100, near), place(region, 100, far), place(region, 0, far));
-    }
+    spans.push([cursor, cursor + width]);
+    cursor += width;
   }
-  return polygon(points);
+  return slats(dir === 'vert', spans, open, region);
 }
 
 /** 斜条允许落在 0–100 之外，由裁剪框切掉。`lu`/`rd`/`ru` 是 `ld` 的翻转。 */
@@ -200,23 +214,33 @@ export function stripsClip(
     const start = (index * span) / 6;
     const end = ((index + 1) * span) / 6;
     const mid = (start + end) / 2;
-    const near = open ? start : mid;
-    const far = open ? end : mid;
+    // 收成零宽度时插值会把平行四边形翻过去，斜条中途变成三角。
+    const near = open ? start : mid - 0.2;
+    const far = open ? end : mid + 0.2;
     const quad: Point[] = [[near, 0], [far, 0], [far - 100, 100], [near - 100, 100]];
     contours.push(quad.map(([x, y]) => place(region, flipX ? 100 - x : x, flipY ? 100 - y : y)));
   }
   return shapeFill(contours);
 }
 
-function ring(region: ClipRegion, radius: number, count: number): Point[] {
-  const cx = region.l + region.w / 2;
-  const cy = region.t + region.h / 2;
+function ring(region: ClipRegion, radius: number, count: number, aspect = 1): Point[] {
   const points: Point[] = [];
   for (let index = 0; index < count; index++) {
-    const angle = (-90 + (index * 360) / count) * Math.PI / 180;
-    points.push([cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]);
+    points.push(rimPoint(region, -90 + (index * 360) / count, radius, aspect));
   }
   return points;
+}
+
+/** 百分比里 x、y 各自相对宽高。不按宽高比拉开，圆在扁矩形上会变成椭圆。 */
+function rimPoint(region: ClipRegion, degrees: number, radius: number, aspect: number): Point {
+  const ratio = aspect > 0.2 && aspect < 5 ? aspect : 1;
+  const angle = degrees * Math.PI / 180;
+  const cx = region.l + region.w / 2;
+  const cy = region.t + region.h / 2;
+  return [
+    cx + radius * Math.cos(angle),
+    cy + radius * Math.sin(angle) * ratio,
+  ];
 }
 
 function coverRadius(region: ClipRegion): number {
@@ -229,10 +253,10 @@ function containingRadius(region: ClipRegion, sides: number): number {
 }
 
 export function circleClip(
-  inward: boolean, open: boolean, region: ClipRegion = FULL_REGION,
+  inward: boolean, open: boolean, region: ClipRegion = FULL_REGION, aspect = 1,
 ): string {
   const radius = open === inward ? 0 : containingRadius(region, 12);
-  const points = ring(region, radius, 12);
+  const points = ring(region, radius, 12, aspect);
   return inward ? shapeHole(points) : polygon(points);
 }
 
@@ -318,35 +342,60 @@ export function splitClip(
   ]);
 }
 
+function wheelSpokes(dir: string | undefined): number {
+  return dir === '1' || dir === '2' || dir === '3' || dir === '8' ? Number(dir) : 4;
+}
+
+/**
+ * 辐条从 12 点方向顺时针扫开。进度 0 时每片收在起始射线上，1 时铺满自己的圆心角。
+ * 两帧之间若直接插值，外点沿弦滑动，扇形会比角度更早铺满。播放层按小角度分帧。
+ * 四辐的打开帧仍是每片一个三角形（24 个百分比）；单辐、双辐用折线去逼近圆弧。
+ */
 export function wheelClip(
-  dir: string | undefined, open: boolean, region: ClipRegion = FULL_REGION,
+  dir: string | undefined, open: boolean, region: ClipRegion = FULL_REGION, aspect = 1,
 ): string {
-  const spokes = dir === '1' || dir === '2' || dir === '3' || dir === '8' ? Number(dir) : 4;
-  if (spokes === 1) {
-    const radius = open ? Math.hypot(region.w, region.h) : 0;
-    return polygon(ring(region, radius, 3));
-  }
-  if (spokes === 2) {
-    const center: Point = [region.l + region.w / 2, region.t + region.h / 2];
-    const corner = (x: number, y: number): Point => open ? place(region, x, y) : center;
-    return shapeFill([
-      [corner(0, 0), corner(100, 0), corner(100, 100)],
-      [corner(0, 0), corner(0, 100), corner(100, 100)],
-    ]);
-  }
-  const radius = open ? containingRadius(region, spokes) : 0;
-  const rim = ring(region, radius, spokes);
-  const cx = region.l + region.w / 2;
-  const cy = region.t + region.h / 2;
-  const points: Point[] = [];
+  return wheelAt(dir, open ? 1 : 0, region, aspect);
+}
+
+export function wheelSequence(
+  dir: string | undefined, region: ClipRegion = FULL_REGION, aspect = 1,
+): string[] {
+  const spokes = wheelSpokes(dir);
+  const steps = spokes === 1 ? 12 : 8;
+  const frames: string[] = [];
+  for (let step = 0; step <= steps; step++) frames.push(wheelAt(dir, step / steps, region, aspect));
+  return frames;
+}
+
+function wheelAt(
+  dir: string | undefined, progress: number, region: ClipRegion, aspect: number,
+): string {
+  const spokes = wheelSpokes(dir);
+  const sweep = 360 / spokes;
+  const segments = spokes === 1 ? 12 : spokes === 2 ? 6 : 1;
+  const radius = containingRadius(region, Math.max(spokes, segments));
+  const center: Point = [region.l + region.w / 2, region.t + region.h / 2];
+  const contours: Point[][] = [];
   for (let index = 0; index < spokes; index++) {
-    const next = rim[(index + 1) % spokes];
-    points.push([cx, cy], rim[index], next);
+    const start = -90 + index * sweep;
+    const leading = start + sweep * progress;
+    const points: Point[] = [center];
+    for (let step = 0; step <= segments; step++) {
+      const finalAngle = start + (sweep * step) / segments;
+      points.push(rimPoint(region, Math.min(finalAngle, leading), radius, aspect));
+    }
+    contours.push(points);
   }
-  return polygon(points);
+  return shapeFill(contours);
 }
 
 const FULL_LAYER = 'linear-gradient(#000,#000)';
+
+/**
+ * 圆外透明，半径贴住蒙版格的短边。
+ * farthest-corner 在扁矩形里会盖满整格，减下去是矩形洞。
+ */
+const CIRCLE_LAYER = 'radial-gradient(circle closest-side, #000 99%, transparent 100%)';
 
 function maskUrl(markup: string): string {
   return `url("data:image/svg+xml,${encodeURIComponent(markup)}")`;
@@ -362,22 +411,81 @@ const PLUS_LAYER = maskUrl(
 );
 
 /**
+ * 圆形蒙版格必须是像素上的正方形，closest-side 的圆才盖得住对角线而不是变成椭圆。
+ * 宽高百分比按元素宽高比折算：格子边长等于元素对角线。
+ */
+function circleCover(aspect: number): readonly [number, number] {
+  const ratio = aspect > 0.2 && aspect < 5 ? aspect : 1;
+  const side = 100 * Math.hypot(ratio, 1);
+  return [side / ratio, side];
+}
+
+/**
  * 组上不用 shape()。整框蒙版减去光圈：exclude 掉第二层。
  * 只用于整框；段落文字走 shape(evenodd) 的洞。
  */
-export function inwardGroupMask(effect: string, open: boolean): Keyframe {
+export function inwardGroupMask(effect: string, open: boolean, aspect = 1): Keyframe {
   const layer = effect === 'diamond' ? DIAMOND_LAYER
     : effect === 'plus' ? PLUS_LAYER
-      : 'radial-gradient(#000,#000)';
-  const cover = effect === 'plus' ? '500% 500%' : '200% 200%';
+      : CIRCLE_LAYER;
+  const [coverW, coverH] = effect === 'plus' ? [500, 500]
+    : effect === 'circle' ? circleCover(aspect)
+      : [200, 200];
+  const scale = open ? 0 : 1;
   return {
     opacity: 1,
     maskImage: `${FULL_LAYER}, ${layer}`,
     maskRepeat: 'no-repeat, no-repeat',
     maskPosition: 'center, center',
-    maskSize: `100% 100%, ${open ? '0% 0%' : cover}`,
+    maskSize: `100% 100%, ${percent(coverW * scale)} ${percent(coverH * scale)}`,
     maskComposite: 'exclude',
+    // SVG 蒙版按透明度取形。不写的话十字图层会按外接矩形整块减掉。
+    maskMode: 'alpha, alpha',
     maskOrigin: 'fill-box',
     maskClip: 'fill-box',
-  };
+  } as Keyframe;
+}
+
+const DISSOLVE_COLS = 12;
+const DISSOLVE_ROWS = 8;
+const DISSOLVE_ORDER = perm(DISSOLVE_COLS * DISSOLVE_ROWS);
+
+function perm(count: number): number[] {
+  const items = Array.from({ length: count }, (_, index) => index);
+  let seed = 17;
+  for (let index = count - 1; index > 0; index--) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    const swap = seed % (index + 1);
+    const item = items[index];
+    items[index] = items[swap];
+    items[swap] = item;
+  }
+  return items;
+}
+
+/** 8×6 小格按固定顺序铺开。一起淡入看起来和淡入是同一个效果。 */
+export function dissolveClip(
+  phase: CheckerPhase, region: ClipRegion = FULL_REGION,
+): string {
+  const cols = DISSOLVE_COLS;
+  const rows = DISSOLVE_ROWS;
+  const limit = phase === 'open' ? DISSOLVE_ORDER.length : phase === 'half' ? DISSOLVE_ORDER.length / 2 : 0;
+  const shown = new Set(DISSOLVE_ORDER.slice(0, limit));
+  const contours: Point[][] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x0 = (col / cols) * 100;
+      const y0 = (row / rows) * 100;
+      const x1 = ((col + 1) / cols) * 100;
+      const y1 = ((row + 1) / rows) * 100;
+      const open = shown.has(row * cols + col);
+      const right = open ? x1 : Math.min(x1, x0 + 0.2);
+      const bottom = open ? y1 : Math.min(y1, y0 + 0.2);
+      contours.push([
+        place(region, x0, y0), place(region, right, y0),
+        place(region, right, bottom), place(region, x0, bottom),
+      ]);
+    }
+  }
+  return shapeFill(contours);
 }

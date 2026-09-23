@@ -64,7 +64,7 @@ filter 字符串优先于 `presetID`。有 filter 时效果和方向从 filter �
 
 ## 已验收的裁剪
 
-百叶窗：固定 6 条。`horz` 条带沿 Y 分，`vert` 沿 X 分。关闭时每条收成自己的中线，打开时铺满自己的槽。一条 `polygon(...) fill-box`。文本宿主用同一条多边形，去掉 `fill-box`。
+百叶窗：固定 6 条。`horz` 条带沿 Y 分，可以串成一条 `polygon`。`vert` 沿 X 分，每条单独成环，否则上下条之间的连线会斜着切开窗口。关闭时每条收成自己的中线，打开时铺满自己的槽。
 
 盒状向内，分两处，不要合成一种：
 
@@ -98,10 +98,10 @@ filter 字符串优先于 `presetID`。有 filter 时效果和方向从 filter �
 | `checkerboard(across\|down)` | `checker` / `horz` `vert` | 6×6，每格单独成环。中点只放开偶数格，结束帧铺满 |
 | `randombar(horizontal\|vertical)` | `randomBar` / `horz` `vert` | 8 条，宽度 `6,18,9,14,22,7,15,9` |
 | `strips(downLeft\|upLeft\|downRight\|upRight)` | `strips` / `ld` `lu` `rd` `ru` | 6 条平行四边形 |
-| `circle` / `diamond` / `plus` | 同名 / `in` `out` | 向外是多边形；向内文字用洞，形状组用蒙版 |
+| `circle` / `diamond` / `plus` | 同名 / `in` `out` | 向外是多边形。向内文字用洞，形状组用蒙版。圆形蒙版格按宽高比折成像素正方形，否则扁矩形上的洞是椭圆 |
 | `wipe` | `wipe` / `l` `r` `u` `d` | 单边 `inset` |
 | `barn(inVertical\|outVertical\|inHorizontal\|outHorizontal)` | `split` / `vert-in` `vert-out` `horz-in` `horz-out` | 两条边带 |
-| `wheel(1\|2\|3\|4\|8)`、`wedge` | `wheel` / 辐条数，`wedge` 为 `1` | 每个扇区一个三角形 |
+| `wheel(1\|2\|3\|4\|8)`、`wedge` | `wheel` / 辐条数，`wedge` 为 `1` | 每片从 12 点顺时针扫开。四辐打开帧仍是一个三角形；播放按小角度分帧，避免外点沿弦滑动把扇形提前铺满 |
 | `box(in\|out)` | `zoom` / `in` `out` | 矩形洞或四边蒙版，不缩放 |
 
 `hiddenBefore` 仍按整只形状隐藏。同一形状里未点名的段落会跟着出现。二进制时序仍没有 `paragraphRange`。形状填充上的向内盒状仍用四条蒙版，结束时填充中心可能留一条缝；文字已经改走矩形洞。

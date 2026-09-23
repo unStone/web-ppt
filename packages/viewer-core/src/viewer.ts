@@ -181,8 +181,10 @@ export class Viewer {
 
   private play(group: Parameters<typeof playGroup>[1]): void {
     this.playing?.cancel();
-    this.playing = playGroup(this.container, group);
+    // 光标拨过这一批之后，退场目标就已经在隐藏集里。
+    // 先套隐藏集，播放层再把正在播的目标显出来；顺序反了的话，退场第一帧就被藏掉。
     this.applyVisibility();
+    this.playing = playGroup(this.container, group);
   }
 
   /**
