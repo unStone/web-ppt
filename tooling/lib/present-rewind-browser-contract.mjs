@@ -43,7 +43,12 @@ export async function runPresentRewindContract({ evaluate, request, click, waitF
   const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
 
   await evaluate(`document.querySelector(${JSON.stringify(stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`);
-  await evaluate(`document.documentElement.requestFullscreen = () => Promise.reject(new TypeError('Fullscreen denied'))`);
+  // 放映调用的是舞台的 requestFullscreen。拦 documentElement 时 CI 仍能进全屏，
+  // Esc 关网格会连带退出全屏，fullscreenchange 把放映拆掉。
+  await evaluate(`(() => {
+    const el = document.querySelector(${JSON.stringify(host)});
+    el.requestFullscreen = () => Promise.reject(new TypeError('Fullscreen denied'));
+  })()`);
   if (await evaluate(notesOpen)) await click(`${host} .speaker-aids-close`);
   await click(trigger);
   await waitFor(presenting, '退回批次前进入放映');
