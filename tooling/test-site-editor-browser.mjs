@@ -247,7 +247,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 再多 13B：钩子准备只认 .emf/.wmf，换掉整包 media 二次解压。
 // 再多 347B：默认 parse 跳过未引用 /media/，当前页按名补解。
 // 再多 97B：默认 parse 跳过后页 XML / embeddings，当前页按名补解。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 34_008 };
+// 再多 748B：百叶窗和盒状按形状裁剪，同一窗口再套到 foreignObject 文本上。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 34_756 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

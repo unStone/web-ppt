@@ -1,4 +1,5 @@
 import { transitionPreferredDirection, type AnimStep, type Slide, type Transition } from '@web-ppt/core';
+import { blindsClip, boxInClip, boxInMask, boxOutClip, type ClipRegion } from './reveal-clip';
 
 /**
  * 动画与切换的播放层。全部走 Web Animations API，
@@ -24,6 +25,93 @@ function flyOffset(dir: string | undefined): [number, number] {
     case 'rd': return [100 * OFFSET, 100 * OFFSET];
     default: return [0, 100 * OFFSET];
   }
+}
+
+/**
+ * foreignObject 里的 HTML 不吃祖先 `<g>` 的 clip-path / mask。
+ * 文本要单独裁。HTML 百分比相对自身边框，fill-box 会让声明失效。
+ */
+const MASK_KEYS = ['maskImage', 'maskRepeat', 'maskPosition', 'maskSize'] as const;
+
+/**
+ * 段落 div 是整列排版框。短句居中时，盒状若相对这个框，上下两条通栏会先切开字形，
+ * 左右边落在字外。PowerPoint 围的是这段字的墨迹框。量不到时退回元素自身。
+ */
+function elementContentRegion(host: HTMLElement): ClipRegion | null {
+  const box = host.getBoundingClientRect?.();
+  const createRange = host.ownerDocument?.createRange;
+  if (!box || box.width < 1 || box.height < 1 || typeof createRange !== 'function') return null;
+  const range = createRange.call(host.ownerDocument);
+  range.selectNodeContents(host);
+  const ink = range.getBoundingClientRect();
+  if (ink.width < 1 || ink.height < 1) return null;
+  const left = Math.min(100, Math.max(0, ((ink.left - box.left) / box.width) * 100));
+  const top = Math.min(100, Math.max(0, ((ink.top - box.top) / box.height) * 100));
+  const right = Math.min(100, Math.max(left, ((ink.right - box.left) / box.width) * 100));
+  const bottom = Math.min(100, Math.max(top, ((ink.bottom - box.top) / box.height) * 100));
+  const w = right - left;
+  const h = bottom - top;
+  if (w < 1 || h < 1) return null;
+  return { l: left, t: top, w, h };
+}
+
+function paragraphElements(node: Element, range: AnimStep['paragraphRange']): Element[] {
+  if (!range || typeof node.querySelectorAll !== 'function') return [];
+  const marked: Element[] = [];
+  for (const el of node.querySelectorAll('[data-p]')) {
+    const index = Number(el.getAttribute('data-p'));
+    if (Number.isInteger(index) && index >= range.start && index <= range.end) marked.push(el);
+  }
+  // 编辑器会写 data-p。查看器为了不把编辑标记带进播放 SVG，段落只是文本根节点的直接子 div。
+  if (marked.length) return marked;
+  const found: Element[] = [];
+  for (const root of node.querySelectorAll('foreignObject > :first-child')) {
+    const children = [...root.children].filter((el) => el.localName === 'div');
+    for (let index = range.start; index <= range.end && index < children.length; index++) {
+      found.push(children[index]);
+    }
+  }
+  return found;
+}
+
+function paragraphClipFrames(
+  step: AnimStep, host: HTMLElement, shapeFrames: readonly Keyframe[],
+): Keyframe[] | null {
+  if (step.kind !== 'emphasis' && step.kind !== 'motion'
+    && step.effect === 'zoom' && (step.dir === 'in' || step.dir === 'out')) {
+    const region = elementContentRegion(host);
+    if (region) {
+      const entrance = step.dir === 'in'
+        ? {
+            from: { opacity: 1, clipPath: boxInClip(false, region) },
+            to: { opacity: 1, clipPath: boxInClip(true, region) },
+          }
+        : {
+            from: { opacity: 1, clipPath: boxOutClip(false, region) },
+            to: { opacity: 1, clipPath: boxOutClip(true, region) },
+          };
+      const pair = step.kind === 'exit' ? [entrance.to, entrance.from] : [entrance.from, entrance.to];
+      return htmlClipFrames(pair);
+    }
+  }
+  return htmlClipFrames(shapeFrames);
+}
+
+function htmlClipFrames(frames: readonly Keyframe[]): Keyframe[] | null {
+  const visual = (frame: Keyframe) => frame.clipPath !== undefined || frame.maskSize !== undefined;
+  if (!frames.some(visual)) return null;
+  return frames.map((frame) => {
+    const next: Keyframe = {};
+    if (frame.clipPath !== undefined) next.clipPath = String(frame.clipPath).replace(/ fill-box/g, '');
+    // HTML 不认 fill-box。蒙版百分比相对元素边框，和形状的 fill-box 是同一块区域。
+    for (const key of MASK_KEYS) if (frame[key] !== undefined) next[key] = frame[key];
+    if (frame.maskSize !== undefined) {
+      next.maskOrigin = 'border-box';
+      next.maskClip = 'border-box';
+    }
+    if (frame.offset !== undefined) next.offset = frame.offset;
+    return next;
+  });
 }
 
 function wipeClip(dir: string | undefined, hidden: boolean): string {
@@ -52,8 +140,16 @@ function entranceFrames(step: AnimStep): Keyframes {
       };
     }
     case 'zoom':
+      // in/out 来自 filter box(in)/box(out)。盒状是矩形揭开，字形保持原大。
+      if (step.dir === 'in') return { from: boxInMask(false), to: boxInMask(true) };
+      if (step.dir === 'out') {
+        return {
+          from: { opacity: 1, clipPath: boxOutClip(false) },
+          to: { opacity: 1, clipPath: boxOutClip(true) },
+        };
+      }
       return {
-        from: { opacity: 0, transform: step.dir === 'out' ? 'scale(1.6)' : 'scale(0.1)' },
+        from: { opacity: 0, transform: 'scale(0.1)' },
         to: { opacity: 1, transform: 'scale(1)' },
       };
     case 'grow':
@@ -68,8 +164,12 @@ function entranceFrames(step: AnimStep): Keyframes {
       return { from: { opacity: 0, transform: 'translateY(-60%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
     case 'stretch':
       return { from: { opacity: 0, transform: 'scaleX(0.05)' }, to: { opacity: 1, transform: 'scaleX(1)' } };
-    case 'wipe':
     case 'blinds':
+      return {
+        from: { opacity: 1, clipPath: blindsClip(step.dir, false) },
+        to: { opacity: 1, clipPath: blindsClip(step.dir, true) },
+      };
+    case 'wipe':
     case 'split':
     case 'wheel':
       return {
@@ -165,6 +265,23 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
         anim.finished.then(() => { node.style.visibility = 'hidden'; }).catch(() => undefined);
       }
       anims.push(anim);
+      const textFrames = htmlClipFrames(frames);
+      if (!textFrames || typeof node.querySelectorAll !== 'function') continue;
+      const paragraphs = paragraphElements(node, step.paragraphRange);
+      const hosts = paragraphs.length
+        ? paragraphs
+        : node.querySelectorAll('foreignObject > :first-child');
+      for (const host of hosts) {
+        if (!(host instanceof HTMLElement)) continue;
+        const local = paragraphs.length ? paragraphClipFrames(step, host, frames) : textFrames;
+        if (!local) continue;
+        anims.push(host.animate(local, {
+          duration: step.durationMs,
+          delay: start,
+          easing,
+          fill: 'both',
+        }));
+      }
     } catch {
       // 浏览器不支持某个属性时直接落到终态
       Object.assign(node.style, (frames[frames.length - 1] ?? to) as Record<string, string>);

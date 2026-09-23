@@ -335,6 +335,11 @@ export interface AnimStep {
    * 采样放在这边是因为它是纯数学，能在 Node 里测，也不必让播放层依赖 SVG 测长 API。
    */
   motionPath?: [number, number][];
+  /**
+   * 只作用于文字段落，含端点。对应 p:txEl/p:pRg。
+   * 不写时动画仍作用在整个形状上。
+   */
+  paragraphRange?: { start: number; end: number };
   /** 由查看器计算：属于第几个点击批次 */
   clickGroup?: number;
 }

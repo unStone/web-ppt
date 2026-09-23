@@ -114,9 +114,10 @@ export async function runAnimationEditorContract({ lib, load, check, window }) {
     const beforeStyles = [...editMount.querySelectorAll('[data-el]')]
       .map((node) => node.getAttribute('style'));
     const draft = edit.previewAnimations(steps);
-    const draftFirst = animations.calls.slice(-4);
-    check('草稿预览按紧邻前一步调度首个点击组并隐藏编辑 chrome', draftFirst.length === 4
-      && draftFirst.map((call) => call.options.delay).join('|') === '0|20|150|160'
+    // wipe 会给形状和 foreignObject 文本各建一段裁剪，所以首组是 5 段不是 4 段。
+    const draftFirst = animations.calls.slice(-5);
+    check('草稿预览按紧邻前一步调度首个点击组并隐藏编辑 chrome', draftFirst.length === 5
+      && draftFirst.map((call) => call.options.delay).join('|') === '0|0|20|150|160'
       && editMount.querySelector('[data-ppt-layer="interaction"]').style.visibility === 'hidden');
     draftFirst.forEach((call) => call.animation.finish());
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -135,7 +136,7 @@ export async function runAnimationEditorContract({ lib, load, check, window }) {
       && edit.queryAnimations().direct && edit.queryAnimations().value.length === 0);
 
     const pending = edit.previewAnimations(steps);
-    const pendingCalls = animations.calls.slice(-4);
+    const pendingCalls = animations.calls.slice(-5);
     edit.destroy();
     check('销毁视图取消未完成动画并安全收束 Promise',
       pendingCalls.every((call) => call.animation.cancelled) && await pending);

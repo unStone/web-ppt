@@ -119,7 +119,7 @@ const FILTER_EFFECT: Record<string, AnimEffect> = {
 };
 
 /** animEffect 的 filter 串，如 "slide(fromLeft)" / "wipe(up)" / "box(in)" */
-function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } | null {
+function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string; dirLocked?: boolean } | null {
   const m = /^([a-zA-Z]+)(?:\(([^)]*)\))?/.exec(filter);
   if (!m) return null;
   const effect = FILTER_EFFECT[m[1].toLowerCase()];
@@ -131,11 +131,14 @@ function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } 
     : arg.includes('top') || arg.includes('up') ? 'u'
       : arg.includes('bottom') || arg.includes('down') ? 'd' : null;
   const flip: Record<string, string> = { l: 'r', r: 'l', u: 'd', d: 'u' };
-  const dir = side
+  const name = m[1].toLowerCase();
+  // 与 pptx 相同：光圈的 in/out 不能占用盒状方向。
+  const iris = name === 'circle' || name === 'diamond' || name === 'plus';
+  const dir = iris ? undefined : side
     ? (from ? side : flip[side])
     : arg.includes('vertical') ? 'vert' : arg.includes('horizontal') ? 'horz'
       : arg.includes('in') ? 'in' : arg.includes('out') ? 'out' : undefined;
-  return { effect, dir };
+  return { effect, dir, dirLocked: iris };
 }
 
 /** TimeVariant：1 字节类型 + 值（0 = 布尔，1 = 整数，2 = 浮点，3 = UTF-16 串） */
@@ -259,7 +262,7 @@ function buildStep(dv: DataView, node: Rec, props: Map<number, number>): AnimSte
 
   const fromFilter = behavior.filter ? effectFromFilter(behavior.filter) : null;
   const effect = fromFilter?.effect ?? PRESET_EFFECT[props.get(TP.effectId) ?? 10] ?? 'fade';
-  const dir = fromFilter?.dir ?? SUBTYPE_DIR[props.get(TP.effectDir) ?? 0];
+  const dir = fromFilter?.dirLocked ? fromFilter.dir : (fromFilter?.dir ?? SUBTYPE_DIR[props.get(TP.effectDir) ?? 0]);
   const nodeType = props.get(TP.nodeType) ?? NODE_CLICK;
   const dur = behavior.duration ?? nodeDuration(dv, node) ?? 500;
 

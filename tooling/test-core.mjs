@@ -918,6 +918,45 @@ group('动画 / 切换');
     !canonicalTiming.readonly && canonicalTiming.animations?.length === 90,
     `${canonicalTiming.animations?.length ?? 0} steps / readonly=${canonicalTiming.readonly}`);
 
+  const revealTiming = (filter, presetID, subtype) => animationMod.parseSlideTiming(parseXml(
+    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="${presetID}" presetClass="entr" presetSubtype="${subtype}" nodeType="clickEffect" dur="500"><p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:tgtEl><p:spTgt spid="2"/></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
+  ).doc.documentElement, 1280, 720).animations?.[0];
+  const blindsStep = revealTiming('blinds(horizontal)', 3, 10);
+  const boxStep = revealTiming('box(in)', 4, 16);
+  const circleStep = revealTiming('circle(in)', 6, 16);
+  eq('水平百叶窗保留横条方向', blindsStep && `${blindsStep.effect}/${blindsStep.dir}`, 'blinds/horz');
+  eq('盒状向内仍走 zoom 的 in，避免和编辑器缩放往返分叉', boxStep && `${boxStep.effect}/${boxStep.dir}`, 'zoom/in');
+  eq('圆形光圈不占用盒状方向', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'zoom/undefined');
+  const revealFrames = (step) => viewerLib.framesFor(step);
+  const blindsFrames = revealFrames(blindsStep);
+  check('水平百叶窗是 6 条裁剪，不是整块擦除',
+    blindsFrames.from.clipPath.startsWith('polygon(0% 8.333%,100% 8.333%')
+      && blindsFrames.from.clipPath.includes('fill-box'),
+    blindsFrames.from.clipPath);
+  check('百叶窗终态铺满对象', blindsFrames.to.clipPath.includes('0% 0%,100% 0%,100% 16.667%,0% 16.667%'),
+    blindsFrames.to.clipPath);
+  const verticalBlinds = revealFrames({ ...blindsStep, dir: 'vert' });
+  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('polygon(8.333% 0%,8.333% 0%'),
+    verticalBlinds.from.clipPath);
+  const boxFrames = revealFrames(boxStep);
+  check('盒状向内从四边揭开，字形不缩放',
+    boxFrames.from.maskSize === '100% 0%, 100% 0%, 0% 100%, 0% 100%'
+      && boxFrames.to.maskSize === '100% 50%, 100% 50%, 50% 100%, 50% 100%'
+      && boxFrames.from.clipPath === undefined
+      && boxFrames.from.transform === undefined,
+    boxFrames.from.maskSize);
+  const boxOut = revealFrames({ ...boxStep, dir: 'out' });
+  eq('盒状向外从中心矩形扩大', boxOut.from.clipPath, 'inset(50% 50% 50% 50%) fill-box');
+  eq('盒状退出是入场的反向揭开', viewerLib.framesFor({ ...boxStep, kind: 'exit' }).from.clipPath, boxFrames.to.clipPath);
+  const plainZoom = revealFrames({ ...boxStep, dir: undefined });
+  eq('没有盒状方向的缩放仍是放大', plainZoom.from.transform, 'scale(0.1)');
+  const circleFrames = revealFrames(circleStep);
+  eq('圆形光圈不会被画成盒状', circleFrames.from.transform, 'scale(0.1)');
+  const paragraphBox = animationMod.parseSlideTiming(parseXml(
+    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="4" presetClass="entr" presetSubtype="16" nodeType="clickEffect" dur="2000"><p:animEffect transition="in" filter="box(in)"><p:cBhvr><p:tgtEl><p:spTgt spid="3"><p:txEl><p:pRg st="0" end="0"/></p:txEl></p:spTgt></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
+  ).doc.documentElement, 1280, 720).animations?.[0];
+  eq('盒状段落目标保留段落区间', paragraphBox && `${paragraphBox.paragraphRange?.start}-${paragraphBox.paragraphRange?.end}`, '0-0');
+
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     const withTrans = pres.slides.filter((s) => s.transition);
@@ -2157,6 +2196,68 @@ group('播放引擎');
         delayMs: 0, durationMs: 500, clickGroup: 0,
       }]);
       eq('appear 退场在终点阶跃并对齐保存语义', calls[0]?.opts.easing, 'steps(1, end)');
+
+      const textCalls = [];
+      const host = document.createElement('div');
+      host.animate = (frames, opts) => {
+        textCalls.push({ frames, opts });
+        return { finished: Promise.resolve(), finish() {} };
+      };
+      fakeNode.querySelectorAll = () => [host];
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        target: 1, kind: 'entrance', effect: 'blinds', dir: 'horz', trigger: 'click',
+        delayMs: 0, durationMs: 500, clickGroup: 0,
+      }]);
+      check('形状节点仍用 fill-box 裁剪', calls[0]?.frames[0].clipPath.includes('fill-box'),
+        calls[0]?.frames[0].clipPath);
+      check('foreignObject 文本单独裁剪且去掉 fill-box',
+        textCalls[0]?.frames[0].clipPath.includes('polygon(')
+          && !textCalls[0].frames[0].clipPath.includes('fill-box'),
+        textCalls[0]?.frames[0].clipPath);
+
+      const paragraphCalls = [];
+      const outerCalls = [];
+      const textRoot = document.createElement('div');
+      const paragraph = document.createElement('div');
+      paragraph.textContent = '213';
+      textRoot.appendChild(paragraph);
+      paragraph.getBoundingClientRect = () => ({
+        x: 0, y: 0, left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, toJSON() { return {}; },
+      });
+      paragraph.animate = (frames, opts) => {
+        paragraphCalls.push({ frames, opts });
+        return { finished: Promise.resolve(), finish() {} };
+      };
+      const outer = document.createElement('div');
+      outer.animate = (frames) => {
+        outerCalls.push(frames);
+        return { finished: Promise.resolve(), finish() {} };
+      };
+      const ink = {
+        x: 30, y: 10, left: 30, top: 10, width: 40, height: 20, right: 70, bottom: 30, toJSON() { return {}; },
+      };
+      const previousRange = document.createRange;
+      document.createRange = () => ({ selectNodeContents() {}, getBoundingClientRect: () => ink });
+      fakeNode.querySelectorAll = (selector) => {
+        if (selector === '[data-p]') return [];
+        if (selector === 'foreignObject > :first-child') return [textRoot];
+        return [outer];
+      };
+      try {
+        viewerLib.playGroup(fakeContainer, [{
+          target: 3, kind: 'entrance', effect: 'zoom', dir: 'in', trigger: 'click',
+          delayMs: 0, durationMs: 2000, clickGroup: 1, paragraphRange: { start: 0, end: 0 },
+        }]);
+      } finally {
+        document.createRange = previousRange;
+      }
+      check('盒状段落是墨迹上的矩形洞，结束时洞收到中心点',
+        paragraphCalls[0]?.frames[0].clipPath === 'shape(evenodd from 0% 0%, line to 100% 0%, line to 100% 100%, line to 0% 100%, close, move to 30% 10%, line to 70% 10%, line to 70% 30%, line to 30% 30%, close)'
+          && paragraphCalls[0].frames[1].clipPath === 'shape(evenodd from 0% 0%, line to 100% 0%, line to 100% 100%, line to 0% 100%, close, move to 50% 20%, line to 50% 20%, line to 50% 20%, line to 50% 20%, close)'
+          && paragraphCalls[0].frames[0].maskSize === undefined
+          && outerCalls.length === 0,
+        paragraphCalls[0]?.frames[0].clipPath);
     }
     check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
   }

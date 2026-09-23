@@ -175,7 +175,7 @@ const CLASS_KIND: Record<string, AnimStep['kind']> = {
 };
 
 /** p:animEffect@filter 形如 "wipe(up)" / "barn(inVertical)" / "fade" */
-function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } | null {
+function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string; dirLocked?: boolean } | null {
   const m = filter.match(/^([a-zA-Z]+)(?:\(([^)]*)\))?/);
   if (!m) return null;
   const name = m[1].toLowerCase();
@@ -186,7 +186,10 @@ function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } 
     : arg.includes('top') || arg.includes('up') ? 'u'
     : arg.includes('bottom') || arg.includes('down') ? 'd' : null;
   const flip: Record<string, string> = { l: 'r', r: 'l', u: 'd', d: 'u' };
-  const dirFromArg = side
+  // circle / diamond / plus 的 in/out 描述光圈，不是盒状方向。
+  // 盒状才占用 zoom 的 in/out，播放层据此做矩形揭开。
+  const iris = name === 'circle' || name === 'diamond' || name === 'plus';
+  const dirFromArg = iris ? undefined : side
     ? (from ? side : flip[side])
     : arg.includes('vertical') ? 'vert' : arg.includes('horizontal') ? 'horz'
     : arg.includes('in') ? 'in' : arg.includes('out') ? 'out' : undefined;
@@ -197,7 +200,8 @@ function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string } 
     wedge: 'wheel', wheel: 'wheel', image: 'fade',
   };
   const effect = table[name];
-  return effect ? { effect, dir: dirFromArg } : null;
+  // dirLocked：光圈没有盒状方向，不能再回退到 subtype 16/32。
+  return effect ? { effect, dir: dirFromArg, dirLocked: iris } : null;
 }
 
 /** 在节点子树里找第一个 spTgt 的 spid */
@@ -317,6 +321,22 @@ function findTargetId(el: Element, depth = 8): number | null {
     }
   }
   return null;
+}
+
+/** p:pRg 的 st/end 都含端点。缺一端或颠倒的区间不当成段落动画。 */
+function findParagraphRange(el: Element, depth = 8): { start: number; end: number } | undefined {
+  for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
+    if (c.localName === 'pRg') {
+      const start = numAttr(c, 'st');
+      const end = numAttr(c, 'end');
+      if (start !== null && end !== null && end >= start) return { start, end };
+    }
+    if (depth > 0) {
+      const hit = findParagraphRange(c, depth - 1);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
 }
 
 /** 真正承载视觉变化的行为节点；p:set 只是瞬时置位，其 dur=1 不代表动画时长 */
@@ -470,7 +490,7 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const filter = findFilter(cTn);
   const fromFilter = filter ? effectFromFilter(filter) : null;
   const effect: AnimEffect = fromFilter?.effect ?? PRESET_EFFECT[presetID] ?? 'fade';
-  const dir = fromFilter?.dir ?? SUBTYPE_DIR[subtype];
+  const dir = fromFilter?.dirLocked ? fromFilter.dir : (fromFilter?.dir ?? SUBTYPE_DIR[subtype]);
 
   const trigger: AnimStep['trigger'] =
     nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
@@ -482,6 +502,7 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const motionPath = rawPath && slideW > 0 && slideH > 0
     ? parseMotionPath(rawPath, slideW, slideH)
     : undefined;
+  const paragraphRange = findParagraphRange(cTn);
 
   return {
     target,
@@ -492,5 +513,6 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
     trigger,
     kind,
     motionPath,
+    ...(paragraphRange ? { paragraphRange } : {}),
   };
 }
