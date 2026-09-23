@@ -37,7 +37,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 12.20KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.34KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 11.97KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 12.93KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
 
 表中体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。

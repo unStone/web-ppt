@@ -39,7 +39,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 12.20 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 11.97 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 12.93 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.69 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
