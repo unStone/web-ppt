@@ -1,3 +1,4 @@
+import { effectFromFilter } from '../anim-filter';
 import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
@@ -174,35 +175,6 @@ const CLASS_KIND: Record<string, AnimStep['kind']> = {
   entr: 'entrance', exit: 'exit', emph: 'emphasis', path: 'motion', mediacall: 'emphasis', verb: 'emphasis',
 };
 
-/** p:animEffect@filter 形如 "wipe(up)" / "barn(inVertical)" / "fade" */
-function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string; dirLocked?: boolean } | null {
-  const m = filter.match(/^([a-zA-Z]+)(?:\(([^)]*)\))?/);
-  if (!m) return null;
-  const name = m[1].toLowerCase();
-  const arg = (m[2] ?? '').toLowerCase();
-  // "from*" 描述元素的来源方位，"up/down/left/right" 描述擦除推进方向，二者语义相反
-  const from = arg.startsWith('from');
-  const side = arg.includes('left') ? 'l' : arg.includes('right') ? 'r'
-    : arg.includes('top') || arg.includes('up') ? 'u'
-    : arg.includes('bottom') || arg.includes('down') ? 'd' : null;
-  const flip: Record<string, string> = { l: 'r', r: 'l', u: 'd', d: 'u' };
-  // circle / diamond / plus 的 in/out 描述光圈，不是盒状方向。
-  // 盒状才占用 zoom 的 in/out，播放层据此做矩形揭开。
-  const iris = name === 'circle' || name === 'diamond' || name === 'plus';
-  const dirFromArg = iris ? undefined : side
-    ? (from ? side : flip[side])
-    : arg.includes('vertical') ? 'vert' : arg.includes('horizontal') ? 'horz'
-    : arg.includes('in') ? 'in' : arg.includes('out') ? 'out' : undefined;
-  const table: Record<string, AnimEffect> = {
-    fade: 'fade', wipe: 'wipe', barn: 'split', blinds: 'blinds', box: 'zoom',
-    checkerboard: 'blinds', circle: 'zoom', diamond: 'zoom', dissolve: 'dissolve',
-    plus: 'zoom', randombar: 'blinds', slide: 'fly', strips: 'blinds',
-    wedge: 'wheel', wheel: 'wheel', image: 'fade',
-  };
-  const effect = table[name];
-  // dirLocked：光圈没有盒状方向，不能再回退到 subtype 16/32。
-  return effect ? { effect, dir: dirFromArg, dirLocked: iris } : null;
-}
 
 /** 在节点子树里找第一个 spTgt 的 spid */
 /**
@@ -490,7 +462,7 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const filter = findFilter(cTn);
   const fromFilter = filter ? effectFromFilter(filter) : null;
   const effect: AnimEffect = fromFilter?.effect ?? PRESET_EFFECT[presetID] ?? 'fade';
-  const dir = fromFilter?.dirLocked ? fromFilter.dir : (fromFilter?.dir ?? SUBTYPE_DIR[subtype]);
+  const dir = fromFilter?.dir ?? SUBTYPE_DIR[subtype];
 
   const trigger: AnimStep['trigger'] =
     nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
