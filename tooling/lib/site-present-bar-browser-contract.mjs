@@ -43,7 +43,7 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
     if (await evaluate("window.matchMedia('(hover: hover) and (pointer: fine)').matches")) {
       await pressT();
       await waitFor(shown, '能悬停时再唤出以便自动隐去');
-      await evaluate('await new Promise((resolve) => setTimeout(resolve, 2100))', true);
+      await evaluate('(async () => { await new Promise((resolve) => setTimeout(resolve, 2100)); })()', true);
       if (await evaluate(shown)) throw new Error('能悬停时 2s 后控制条应隐去');
     }
 
@@ -59,7 +59,7 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
       }
       if (!await evaluate(shown)) await pressT();
       await waitFor(`${presenting} && ${shown}`, '不能悬停时控制条保持可见');
-      await evaluate('await new Promise((resolve) => setTimeout(resolve, 2100))', true);
+      await evaluate('(async () => { await new Promise((resolve) => setTimeout(resolve, 2100)); })()', true);
       if (!await evaluate(`${presenting} && ${shown}`)) throw new Error('不能悬停时控制条不应自动隐去');
     } finally {
       await request('Emulation.setEmulatedMedia', { features: [] });
