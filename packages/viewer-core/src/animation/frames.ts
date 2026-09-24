@@ -71,10 +71,16 @@ export function entranceFrames(step: AnimStep, region: ClipRegion = FULL_REGION,
     case 'bounce':
       return { from: { opacity: 0, transform: 'translateY(-60%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
     case 'stretch': {
+      // 从对边长出来。中心缩放两头一起动，看起来像被压扁，而不是伸展。
       const vertical = step.dir === 'vert' || step.dir === 'u' || step.dir === 'd';
+      const origin = step.dir === 'u' ? 'center top'
+        : vertical ? 'center bottom'
+          : step.dir === 'r' ? 'right center'
+            : 'left center';
+      const axis = vertical ? 'scaleY' : 'scaleX';
       return {
-        from: { opacity: 0, transform: vertical ? 'scaleY(0.05)' : 'scaleX(0.05)' },
-        to: { opacity: 1, transform: vertical ? 'scaleY(1)' : 'scaleX(1)' },
+        from: { opacity: 1, transform: `${axis}(0)`, transformOrigin: origin },
+        to: { opacity: 1, transform: `${axis}(1)`, transformOrigin: origin },
       };
     }
     case 'blinds':
