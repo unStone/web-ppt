@@ -130,11 +130,11 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
         duration: step.durationMs,
         delay: start,
         easing,
-        fill: 'both',
+        // 入场不能 forwards。结束帧的 shape()/蒙版会留在元素上，图案就停在半块或一直空白。
+        // backwards 只盖住延迟期间，播完回到没裁剪的形状。
+        fill: step.kind === 'entrance' ? 'backwards' : 'both',
       });
-      if (step.kind === 'exit') {
-        anim.finished.then(() => { node.style.visibility = 'hidden'; }).catch(() => undefined);
-      }
+      anim.finished.then(() => settlePlayback(node, anim, step.kind)).catch(() => undefined);
       anims.push(anim);
       const paragraphs = paragraphElements(node, step.paragraphRange);
       const hosts = paragraphs.length
@@ -148,12 +148,14 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
           ? paragraphFrames(step, host, frames)
           : htmlClipFrames(frames);
         if (!local) continue;
-        anims.push(host.animate(local, {
+        const textAnim = host.animate(local, {
           duration: step.durationMs,
           delay: start,
           easing,
-          fill: 'both',
-        }));
+          fill: step.kind === 'entrance' ? 'backwards' : 'both',
+        });
+        textAnim.finished.then(() => settlePlayback(host, textAnim, step.kind)).catch(() => undefined);
+        anims.push(textAnim);
       }
     } catch {
       Object.assign(node.style, (frames[frames.length - 1] ?? base.to) as Record<string, string>);
@@ -165,6 +167,20 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     cancel: () => anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } }),
     finished: Promise.all(anims.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
   };
+}
+
+function settlePlayback(node: HTMLElement, anim: Animation, kind: AnimStep['kind']): void {
+  if (kind === 'exit') {
+    node.style.visibility = 'hidden';
+    return;
+  }
+  if (kind !== 'entrance') return;
+  anim.cancel();
+  node.style.clipPath = '';
+  node.style.maskImage = '';
+  node.style.maskSize = '';
+  node.style.maskComposite = '';
+  node.style.maskMode = '';
 }
 
 function paragraphFrames(
