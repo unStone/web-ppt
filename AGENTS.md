@@ -29,7 +29,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：2271 + 1132 + 575 + 258 + 197 + 29 + 31 + 9 + 444 + 12 + 134 + 130 + 870 + 104 + 31 项断言、186 个快照、1102 对编辑等价指纹；另含扩展能力 1796 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言 |
+| `npm test` | 全部测试：2289 + 1132 + 575 + 258 + 197 + 29 + 31 + 9 + 444 + 12 + 134 + 108 + 870 + 104 + 31 项断言、186 个快照、1102 对编辑等价指纹；另含扩展能力 1796 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建八个发布包 |
 | `npm run dev` | 启动 viewer |
@@ -69,6 +69,7 @@
 | **行距的基准不是字号** | `lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是**字体行高**（我们取 1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，每行矮两成。`spcPts` 是绝对点值，走另一条换算，两者别混 |
 | **量不到就得记住量不到** | `text-measure.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
+| **对象动画不按整框缩放做** | filter 压过 presetID。`box` 仍记成 `zoom`。`<g>` 的 clip 盖不住 `foreignObject`，文本要再播一条，段落盒状围墨迹上的矩形洞。解析、裁剪和加下一种效果见 [docs/animation-playback.md](docs/animation-playback.md) |
 
 ## 分层
 
@@ -81,6 +82,8 @@ EMF/WMF (GDI 流)  ─┘
 ```
 
 `src/geometry/` 是**格式无关的公共层**（ECMA-376 全部 187 个预设形状求值，零 import），两条链路共用。读 OOXML 的部分留在 `pptx/geometry.ts`。图表与图元文件解码器经 hook 注入，可 tree-shake。
+
+对象动画不进 `render/`。时序收成 `AnimStep`，播放在 `viewer-core`。加效果按 [docs/animation-playback.md](docs/animation-playback.md)。
 
 ## 发布
 

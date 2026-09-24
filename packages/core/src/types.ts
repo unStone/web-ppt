@@ -316,6 +316,7 @@ export interface Transition {
 
 export type AnimEffect =
   | 'appear' | 'fade' | 'fly' | 'wipe' | 'zoom' | 'split' | 'wheel' | 'blinds'
+  | 'checker' | 'randomBar' | 'strips' | 'circle' | 'diamond' | 'plus'
   | 'grow' | 'spin' | 'float' | 'bounce' | 'dissolve' | 'stretch' | 'swivel' | 'random';
 
 export interface AnimStep {

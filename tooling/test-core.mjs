@@ -926,7 +926,7 @@ group('动画 / 切换');
   const circleStep = revealTiming('circle(in)', 6, 16);
   eq('水平百叶窗保留横条方向', blindsStep && `${blindsStep.effect}/${blindsStep.dir}`, 'blinds/horz');
   eq('盒状向内仍走 zoom 的 in，避免和编辑器缩放往返分叉', boxStep && `${boxStep.effect}/${boxStep.dir}`, 'zoom/in');
-  eq('圆形光圈不占用盒状方向', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'zoom/undefined');
+  eq('圆形向内是自己的效果', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'circle/in');
   const revealFrames = (step) => viewerLib.framesFor(step);
   const blindsFrames = revealFrames(blindsStep);
   check('水平百叶窗是 6 条裁剪，不是整块擦除',
@@ -936,7 +936,7 @@ group('动画 / 切换');
   check('百叶窗终态铺满对象', blindsFrames.to.clipPath.includes('0% 0%,100% 0%,100% 16.667%,0% 16.667%'),
     blindsFrames.to.clipPath);
   const verticalBlinds = revealFrames({ ...blindsStep, dir: 'vert' });
-  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('polygon(8.333% 0%,8.333% 0%'),
+  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('shape(from 8.333% 0%, line to 8.333% 0%'),
     verticalBlinds.from.clipPath);
   const boxFrames = revealFrames(boxStep);
   check('盒状向内从四边揭开，字形不缩放',
@@ -951,7 +951,57 @@ group('动画 / 切换');
   const plainZoom = revealFrames({ ...boxStep, dir: undefined });
   eq('没有盒状方向的缩放仍是放大', plainZoom.from.transform, 'scale(0.1)');
   const circleFrames = revealFrames(circleStep);
-  eq('圆形光圈不会被画成盒状', circleFrames.from.transform, 'scale(0.1)');
+  const percentCount = (value) => String(value ?? '').match(/-?\d+(?:\.\d+)?%/g)?.length ?? 0;
+  check('圆形向内是整框上的洞，字形不缩放',
+    circleFrames.from.clipPath?.startsWith('shape(evenodd from 0% 0%')
+      && circleFrames.from.clipPath.includes('123.205%')
+      && circleFrames.to.clipPath?.includes('50% 50%')
+      && circleFrames.from.transform === undefined
+      && circleFrames.to.transform === undefined,
+    circleFrames.from.clipPath);
+  const circleOut = revealFrames(revealTiming('circle(out)', 6, 32));
+  eq('圆形向外保留 out', revealTiming('circle(out)', 6, 32) && `${revealTiming('circle(out)', 6, 32).effect}/${revealTiming('circle(out)', 6, 32).dir}`, 'circle/out');
+  check('圆形向外从中心张到 12 个点',
+    circleOut.from.clipPath?.startsWith('polygon(50% 50%,50% 50%')
+      && circleOut.from.clipPath.includes('fill-box')
+      && percentCount(circleOut.to.clipPath) === 24,
+    circleOut.to.clipPath);
+  const diamondIn = revealTiming('diamond(in)', 8, 16);
+  eq('菱形向内是自己的效果', diamondIn && `${diamondIn.effect}/${diamondIn.dir}`, 'diamond/in');
+  check('菱形向内的洞盖住四角', revealFrames(diamondIn).from.clipPath?.includes('-50%')
+    && revealFrames(diamondIn).to.clipPath?.includes('50% 50%'),
+    revealFrames(diamondIn).from.clipPath);
+  const plusOut = revealTiming('plus(out)', 13, 32);
+  eq('十字向外是自己的效果', plusOut && `${plusOut.effect}/${plusOut.dir}`, 'plus/out');
+  check('十字向外是 12 点轮廓', percentCount(revealFrames(plusOut).to.clipPath) === 24
+    && revealFrames(plusOut).to.clipPath?.includes('fill-box'),
+    revealFrames(plusOut).to.clipPath);
+  const checkerDown = revealTiming('checkerboard(down)', 18, 4);
+  const checkerAcross = revealTiming('checkerboard(across)', 18, 5);
+  eq('棋盘向下是竖向格子，不是擦除方向', checkerDown && `${checkerDown.effect}/${checkerDown.dir}`, 'checker/vert');
+  eq('棋盘横向是横向格子', checkerAcross && `${checkerAcross.effect}/${checkerAcross.dir}`, 'checker/horz');
+  const randomBar = revealTiming('randombar(vertical)', 14, 10);
+  eq('随机竖条是自己的效果', randomBar && `${randomBar.effect}/${randomBar.dir}`, 'randomBar/vert');
+  check('随机条第一条按 6% 从中线收起',
+    revealFrames({ ...randomBar, dir: 'horz' }).from.clipPath?.startsWith('polygon(0% 3%,100% 3%'),
+    revealFrames({ ...randomBar, dir: 'horz' }).from.clipPath);
+  const strips = revealTiming('strips(downLeft)', 18, 8);
+  eq('斜条 downLeft 是 ld，不是左边', strips && `${strips.effect}/${strips.dir}`, 'strips/ld');
+  const barnIn = revealTiming('barn(inVertical)', 16, 10);
+  const barnOut = revealTiming('barn(outHorizontal)', 16, 5);
+  eq('分裂向内竖向保留 in', barnIn && `${barnIn.effect}/${barnIn.dir}`, 'split/vert-in');
+  eq('分裂向外横向保留 out', barnOut && `${barnOut.effect}/${barnOut.dir}`, 'split/horz-out');
+  const wheel8 = revealTiming('wheel(8)', 19, 8);
+  const wedge = revealTiming('wedge', 20, 1);
+  eq('八辐轮保留辐条数', wheel8 && `${wheel8.effect}/${wheel8.dir}`, 'wheel/8');
+  eq('楔形是单辐轮', wedge && `${wedge.effect}/${wedge.dir}`, 'wheel/1');
+  check('四辐轮打开帧有 12 个点', percentCount(revealFrames(revealTiming('wheel(4)', 19, 4)).to.clipPath) === 24,
+    revealFrames(revealTiming('wheel(4)', 19, 4)).to.clipPath);
+  const wipeUp = revealFrames(revealTiming('wipe(up)', 22, 1));
+  const splitIn = revealFrames(barnIn);
+  check('擦除仍是单边 inset，和分裂不是同一条裁剪',
+    wipeUp.from.clipPath === 'inset(100% 0 0 0)' && wipeUp.from.clipPath !== splitIn.from.clipPath,
+    wipeUp.from.clipPath);
   const paragraphBox = animationMod.parseSlideTiming(parseXml(
     `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="4" presetClass="entr" presetSubtype="16" nodeType="clickEffect" dur="2000"><p:animEffect transition="in" filter="box(in)"><p:cBhvr><p:tgtEl><p:spTgt spid="3"><p:txEl><p:pRg st="0" end="0"/></p:txEl></p:spTgt></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
   ).doc.documentElement, 1280, 720).animations?.[0];
@@ -2244,11 +2294,21 @@ group('播放引擎');
         if (selector === 'foreignObject > :first-child') return [textRoot];
         return [outer];
       };
+      let checkerOpen = '';
       try {
         viewerLib.playGroup(fakeContainer, [{
           target: 3, kind: 'entrance', effect: 'zoom', dir: 'in', trigger: 'click',
           delayMs: 0, durationMs: 2000, clickGroup: 1, paragraphRange: { start: 0, end: 0 },
         }]);
+        const boxCalls = paragraphCalls.slice();
+        paragraphCalls.length = 0;
+        viewerLib.playGroup(fakeContainer, [{
+          target: 3, kind: 'entrance', effect: 'checker', dir: 'horz', trigger: 'click',
+          delayMs: 0, durationMs: 500, clickGroup: 1, paragraphRange: { start: 0, end: 0 },
+        }]);
+        checkerOpen = paragraphCalls[0]?.frames.at(-1)?.clipPath ?? '';
+        paragraphCalls.length = 0;
+        paragraphCalls.push(...boxCalls);
       } finally {
         document.createRange = previousRange;
       }
@@ -2258,6 +2318,9 @@ group('播放引擎');
           && paragraphCalls[0].frames[0].maskSize === undefined
           && outerCalls.length === 0,
         paragraphCalls[0]?.frames[0].clipPath);
+      check('段落棋盘的第一格落在墨迹上，不是占位框原点',
+        checkerOpen.startsWith('shape(from 30% 10%') && !checkerOpen.includes('fill-box'),
+        checkerOpen);
     }
     check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
   }

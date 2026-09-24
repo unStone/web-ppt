@@ -248,8 +248,11 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 再多 347B：默认 parse 跳过未引用 /media/，当前页按名补解。
 // 再多 97B：默认 parse 跳过后页 XML / embeddings，当前页按名补解。
 // 再多 748B：百叶窗和盒状按形状裁剪，同一窗口再套到 foreignObject 文本上。
-// 再多 1535B：盒状改成段落墨迹上的矩形洞。本次官网构建实测 gzip 546140。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 36_291 };
+// 再多 1535B：盒状改成段落墨迹上的矩形洞。
+// 再多 1577B：揭开类补齐。
+// 再多 1282B：圆形蒙版按宽高比取正方形、轮子按角度分帧、溶解改成细格。
+// 再多 42B：伸展改成从边缘长出。本次官网构建实测 gzip 549041。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 39_192 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

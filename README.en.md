@@ -39,7 +39,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 12.20 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 10.52 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 12.93 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.69 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
@@ -418,7 +418,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,271 assertions + 186 render snapshots |
+| `npm run test:core` | Core parsing / rendering — 2,289 assertions + 186 render snapshots |
 | `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/font-glyphs.md) |
 | `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1102 process-isolated SVG fingerprint pairs across 165 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
@@ -434,7 +434,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
 | `npm run test:edit:powerpoint` | On Windows, open the same 11-artifact 0.7 manifest in desktop PowerPoint with repair disabled |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
-| `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
+| `npm run test:metafile` | EMF / WMF / PICT decoders — 108 assertions + fuzzing |
 | `npm run test:expanded` | 1796 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
 | `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/portable-rich-text.md) |
 | `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/chart-hierarchical-categories.md) |
