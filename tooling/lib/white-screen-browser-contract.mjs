@@ -10,7 +10,6 @@ async function press(request, name, value, modifiers = 0) {
     key: name,
     code,
     windowsVirtualKeyCode: value,
-    nativeVirtualKeyCode: value,
     modifiers,
   };
   await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
@@ -65,11 +64,11 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
   search = null,
   hint = null,
 }) {
-  const veilOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
-  const whiteOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
-  const blackOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on:not(.is-white)`)})`;
+  const veilOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
+  const whiteOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
+  const blackOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on:not(.is-white)`)})`;
   const pageExpr = `document.querySelector(${JSON.stringify(pager)}).textContent`;
-  const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
+  const gridOn = `!!document.querySelector('.slide-grid:not([hidden])')`;
   const scroll = fullscreenRoot ?? stage;
   const background = `getComputedStyle(document.querySelector(${JSON.stringify(`${stage} .present-blank`)})).backgroundColor`;
 
@@ -117,17 +116,17 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     })()`);
     await request('Input.dispatchKeyEvent', {
       type: 'keyDown', key: 'w', code: 'KeyW', text: 'w', unmodifiedText: 'w',
-      windowsVirtualKeyCode: 87, nativeVirtualKeyCode: 87,
+      windowsVirtualKeyCode: 87,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87, nativeVirtualKeyCode: 87,
+      type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87,
     });
     await request('Input.dispatchKeyEvent', {
       type: 'keyDown', key: ',', code: 'Comma', text: ',', unmodifiedText: ',',
-      windowsVirtualKeyCode: 188, nativeVirtualKeyCode: 188,
+      windowsVirtualKeyCode: 188,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: ',', code: 'Comma', windowsVirtualKeyCode: 188, nativeVirtualKeyCode: 188,
+      type: 'keyUp', key: ',', code: 'Comma', windowsVirtualKeyCode: 188,
     });
     await waitFor(
       `document.querySelector(${JSON.stringify(search)}).value === 'zzzw,' && !${veilOn} && ${pageExpr} === ${JSON.stringify(browsePage)}`,
@@ -237,9 +236,9 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
       })()`);
       await request('Input.dispatchKeyEvent', {
         type: 'keyDown', key: 'w', code: 'KeyW', text: 'w', unmodifiedText: 'w',
-        windowsVirtualKeyCode: 87, nativeVirtualKeyCode: 87,
+        windowsVirtualKeyCode: 87,
       });
-      await request('Input.dispatchKeyEvent', { type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87, nativeVirtualKeyCode: 87 });
+      await request('Input.dispatchKeyEvent', { type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87 });
       await waitFor(
         `document.querySelector(${JSON.stringify(search)}).value.endsWith('w') && ${whiteOn} && ${pageExpr} === ${JSON.stringify(start)}`,
         '放映中搜索框里的 W 不改白屏',
@@ -276,7 +275,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     if (!await evaluate(whiteOn) || await evaluate(pageExpr) !== start || !await evaluate(gridOn)) {
       throw new Error('网格开着时 W 或逗号改了白屏、翻了页或关掉了网格');
     }
-    const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 };
+    const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 };
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...escape });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...escape });
     await waitFor(`!${gridOn} && ${presenting} && ${whiteOn} && ${pageExpr} === ${JSON.stringify(start)}`, 'Esc 先关网格且白屏还在');
@@ -329,7 +328,7 @@ export async function runStandaloneWhiteScreenContract({ evaluate, request, wait
   await waitFor("document.querySelector('#fileInfo')?.textContent === '未打开文件'", '白屏契约打开失败');
   await press(request, 'w', 87);
   await press(request, ',', 188);
-  if (await evaluate("document.querySelector('#stage .present-blank.is-on')")) {
+  if (await evaluate("!!document.querySelector('#stage .present-blank.is-on')")) {
     throw new Error('打开失败后 W 或逗号制造了遮罩');
   }
 

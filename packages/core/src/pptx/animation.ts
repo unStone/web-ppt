@@ -1,4 +1,5 @@
-import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
+import type { AnimStep, Transition, TransitionType } from '../types';
+import { resolveAnimationEffect } from '../animation-effects';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
 import { MC_NAMESPACE as MARKUP_COMPATIBILITY_NS, selectAlternateContent } from './markup-compatibility';
@@ -149,60 +150,9 @@ function findTransition(root: Element | null): Element | null {
 
 // ---------------- 元素动画 ----------------
 
-/** presetID → 效果。未列出的按类别退化为淡入/淡出。 */
-const PRESET_EFFECT: Record<number, AnimEffect> = {
-  1: 'appear', 2: 'fly', 3: 'blinds', 4: 'wipe', 5: 'dissolve', 6: 'zoom',
-  7: 'fly', 8: 'zoom', 9: 'dissolve', 10: 'fade', 11: 'appear', 12: 'fly',
-  13: 'zoom', 14: 'blinds', 15: 'spin', 16: 'split', 17: 'stretch', 18: 'blinds',
-  19: 'wheel', 20: 'wheel', 21: 'wipe', 22: 'zoom', 23: 'random', 24: 'spin',
-  25: 'bounce', 28: 'fade', 29: 'float', 30: 'grow', 31: 'fly', 32: 'spin',
-  33: 'float', 34: 'swivel', 35: 'fly', 36: 'stretch', 37: 'stretch', 38: 'fly',
-  39: 'float', 40: 'spin', 41: 'swivel', 42: 'float', 43: 'fly', 44: 'spin',
-  45: 'stretch', 46: 'stretch', 47: 'float', 48: 'zoom', 49: 'fly', 50: 'stretch',
-  51: 'swivel', 52: 'stretch', 53: 'grow', 59: 'grow', 61: 'spin',
-};
-
-/** presetSubtype → 方向（值表示「来自」的方位） */
-const SUBTYPE_DIR: Record<number, string> = {
-  1: 'u', 2: 'r', 4: 'd', 8: 'l',
-  3: 'rd', 6: 'ru', 9: 'lu', 12: 'ld',
-  5: 'horz', 10: 'vert',
-  16: 'in', 32: 'out',
-};
-
 const CLASS_KIND: Record<string, AnimStep['kind']> = {
   entr: 'entrance', exit: 'exit', emph: 'emphasis', path: 'motion', mediacall: 'emphasis', verb: 'emphasis',
 };
-
-/** p:animEffect@filter 形如 "wipe(up)" / "barn(inVertical)" / "fade" */
-function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string; dirLocked?: boolean } | null {
-  const m = filter.match(/^([a-zA-Z]+)(?:\(([^)]*)\))?/);
-  if (!m) return null;
-  const name = m[1].toLowerCase();
-  const arg = (m[2] ?? '').toLowerCase();
-  // "from*" 描述元素的来源方位，"up/down/left/right" 描述擦除推进方向，二者语义相反
-  const from = arg.startsWith('from');
-  const side = arg.includes('left') ? 'l' : arg.includes('right') ? 'r'
-    : arg.includes('top') || arg.includes('up') ? 'u'
-    : arg.includes('bottom') || arg.includes('down') ? 'd' : null;
-  const flip: Record<string, string> = { l: 'r', r: 'l', u: 'd', d: 'u' };
-  // circle / diamond / plus 的 in/out 描述光圈，不是盒状方向。
-  // 盒状才占用 zoom 的 in/out，播放层据此做矩形揭开。
-  const iris = name === 'circle' || name === 'diamond' || name === 'plus';
-  const dirFromArg = iris ? undefined : side
-    ? (from ? side : flip[side])
-    : arg.includes('vertical') ? 'vert' : arg.includes('horizontal') ? 'horz'
-    : arg.includes('in') ? 'in' : arg.includes('out') ? 'out' : undefined;
-  const table: Record<string, AnimEffect> = {
-    fade: 'fade', wipe: 'wipe', barn: 'split', blinds: 'blinds', box: 'zoom',
-    checkerboard: 'blinds', circle: 'zoom', diamond: 'zoom', dissolve: 'dissolve',
-    plus: 'zoom', randombar: 'blinds', slide: 'fly', strips: 'blinds',
-    wedge: 'wheel', wheel: 'wheel', image: 'fade',
-  };
-  const effect = table[name];
-  // dirLocked：光圈没有盒状方向，不能再回退到 subtype 16/32。
-  return effect ? { effect, dir: dirFromArg, dirLocked: iris } : null;
-}
 
 /** 在节点子树里找第一个 spTgt 的 spid */
 /**
@@ -379,6 +329,46 @@ function findFilter(el: Element, depth = 8): string | null {
   return null;
 }
 
+function findScale(el: Element, depth = 8): AnimStep['scale'] {
+  for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
+    if (c.localName === 'animScale') {
+      const from = kid(c, 'from');
+      const to = kid(c, 'to');
+      const values = [numAttr(from, 'x'), numAttr(from, 'y'), numAttr(to, 'x'), numAttr(to, 'y')];
+      if (values.every((value) => value !== null && Number.isFinite(value))) {
+        return {
+          fromX: values[0]! / 100000, fromY: values[1]! / 100000,
+          toX: values[2]! / 100000, toY: values[3]! / 100000,
+        };
+      }
+    }
+    if (depth > 0) {
+      const found = findScale(c, depth - 1);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+function findRotation(el: Element, depth = 8): AnimStep['rotation'] {
+  for (let c = el.firstElementChild; c; c = c.nextElementSibling) {
+    if (c.localName === 'animRot') {
+      const from = numAttr(c, 'from');
+      const to = numAttr(c, 'to');
+      const by = numAttr(c, 'by');
+      if (from !== null || to !== null || by !== null) {
+        const start = from ?? 0;
+        return { from: start / 60000, to: (to ?? start + (by ?? 0)) / 60000 };
+      }
+    }
+    if (depth > 0) {
+      const found = findRotation(c, depth - 1);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 function startDelay(cTn: Element): number {
   const cond = kid(kid(cTn, 'stCondLst'), 'cond');
   const raw = attr(cond, 'delay');
@@ -486,11 +476,8 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const subtype = numAttr(cTn, 'presetSubtype') ?? 0;
   const nodeType = attr(cTn, 'nodeType') ?? 'clickEffect';
 
-  // filter 字符串比 presetID 更贴近实际呈现，优先采用
   const filter = findFilter(cTn);
-  const fromFilter = filter ? effectFromFilter(filter) : null;
-  const effect: AnimEffect = fromFilter?.effect ?? PRESET_EFFECT[presetID] ?? 'fade';
-  const dir = fromFilter?.dirLocked ? fromFilter.dir : (fromFilter?.dir ?? SUBTYPE_DIR[subtype]);
+  const { effect, dir } = resolveAnimationEffect(presetID, subtype, filter ?? undefined);
 
   const trigger: AnimStep['trigger'] =
     nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
@@ -503,6 +490,8 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
     ? parseMotionPath(rawPath, slideW, slideH)
     : undefined;
   const paragraphRange = findParagraphRange(cTn);
+  const scale = findScale(cTn);
+  const rotation = findRotation(cTn);
 
   return {
     target,
@@ -513,6 +502,8 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
     trigger,
     kind,
     motionPath,
+    ...(scale ? { scale } : {}),
+    ...(rotation ? { rotation } : {}),
     ...(paragraphRange ? { paragraphRange } : {}),
   };
 }

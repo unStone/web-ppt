@@ -242,14 +242,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
     const bytes = readFileSync(resolve(root, key));
     return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
   }, { raw: 0, gzip: 0 });
-// 页面归入按需应用后，首屏不再覆盖编辑实现；首次打开仍沿用迁移前预算加当时应用实测值。
-// gzip 多 109B：编辑器打开按需认文件的 import() 入口，不把 Zip/fflate 打进首开闭包。
-// 再多 13B：钩子准备只认 .emf/.wmf，换掉整包 media 二次解压。
-// 再多 347B：默认 parse 跳过未引用 /media/，当前页按名补解。
-// 再多 97B：默认 parse 跳过后页 XML / embeddings，当前页按名补解。
-// 再多 748B：百叶窗和盒状按形状裁剪，同一窗口再套到 foreignObject 文本上。
-// 再多 1535B：盒状改成段落墨迹上的矩形洞。本次官网构建实测 gzip 546140。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 36_291 };
+// 首次打开的预算覆盖按需加载的动画蒙版与 OOXML 转角解析，数值来自当前官网构建实测。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 38_701 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
@@ -547,7 +541,10 @@ async function runContract(webSocketDebuggerUrl) {
       rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
     }, 15000);
     pending.set(id, { resolve: resolveRequest, reject: rejectRequest, timeout, method });
-    socket.send(JSON.stringify({ id, method, params }));
+    // nativeVirtualKeyCode 是操作系统键码；各契约传入的 Windows 值只可用于 windowsVirtualKeyCode。
+    const commandParams = method === 'Input.dispatchKeyEvent'
+      ? { ...params, nativeVirtualKeyCode: undefined } : params;
+    socket.send(JSON.stringify({ id, method, params: commandParams }));
   });
   const evaluate = async (expression, awaitPromise = false) => {
     const response = await request('Runtime.evaluate', { expression, awaitPromise, returnByValue: true })

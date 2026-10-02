@@ -21,17 +21,21 @@ export function groupSteps(steps: AnimStep[] | undefined): AnimStep[][] {
 /** 第 upTo 批动画开始前，哪些元素应处于隐藏状态 */
 export function hiddenBefore(groups: AnimStep[][], upTo: number): Set<number> {
   const hidden = new Set<number>();
-  // 入场动画未播放前隐藏
-  for (let g = upTo; g < groups.length; g++) {
-    for (const s of groups[g]) if (s.kind === 'entrance') hidden.add(s.target);
+  const seen = new Set<number>();
+  // 首个可见性事件为入场时，初始画面才应隐藏；同一元素后续再入场不能抹掉中间的可见阶段。
+  for (const group of groups) {
+    for (const step of group) {
+      if (step.kind !== 'entrance' && step.kind !== 'exit') continue;
+      if (seen.has(step.target)) continue;
+      seen.add(step.target);
+      if (step.kind === 'entrance') hidden.add(step.target);
+    }
   }
-  // 已播放的退场动画保持隐藏
-  for (let g = 0; g < upTo; g++) {
-    for (const s of groups[g]) if (s.kind === 'exit') hidden.add(s.target);
-  }
-  // 后续还有入场的元素不应因为早前的退场而被永久隐藏
-  for (let g = upTo; g < groups.length; g++) {
-    for (const s of groups[g]) if (s.kind === 'entrance') hidden.add(s.target);
+  for (let index = 0; index < upTo && index < groups.length; index++) {
+    for (const step of groups[index]) {
+      if (step.kind === 'entrance') hidden.delete(step.target);
+      else if (step.kind === 'exit') hidden.add(step.target);
+    }
   }
   return hidden;
 }

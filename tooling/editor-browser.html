@@ -81,6 +81,7 @@
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
     import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
     import { runViewerHyperlinkBrowserContract } from '/tooling/lib/viewer-hyperlink-browser-contract.mjs';
+    import { runViewerAnimationBrowserContract } from '/tooling/lib/viewer-animation-browser-contract.mjs';
     import {
       publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
@@ -590,6 +591,7 @@
       await runEditorShapeEffectsBrowserContract({ openEditor, load });
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
+      await runViewerAnimationBrowserContract({ Viewer, parse, load });
       const mediaPlayback = await runMediaInsertionBrowserContract({ core: mediaCore, load });
       report.dataset.mediaPlayback = mediaPlayback.map(({ name, mode, duration }) => `${name} ${mode} ${duration}s`).join(' / ');
       const imageZipResult = await runCoreImageZipBrowserContract({ presentationToImageZip, parse, load });

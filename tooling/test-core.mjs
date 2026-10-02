@@ -926,18 +926,22 @@ group('动画 / 切换');
   const circleStep = revealTiming('circle(in)', 6, 16);
   eq('水平百叶窗保留横条方向', blindsStep && `${blindsStep.effect}/${blindsStep.dir}`, 'blinds/horz');
   eq('盒状向内仍走 zoom 的 in，避免和编辑器缩放往返分叉', boxStep && `${boxStep.effect}/${boxStep.dir}`, 'zoom/in');
-  eq('圆形光圈不占用盒状方向', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'zoom/undefined');
+  eq('圆形光圈保留形状和收缩方向', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'circle/in');
   const revealFrames = (step) => viewerLib.framesFor(step);
   const blindsFrames = revealFrames(blindsStep);
-  check('水平百叶窗是 6 条裁剪，不是整块擦除',
-    blindsFrames.from.clipPath.startsWith('polygon(0% 8.333%,100% 8.333%')
-      && blindsFrames.from.clipPath.includes('fill-box'),
-    blindsFrames.from.clipPath);
-  check('百叶窗终态铺满对象', blindsFrames.to.clipPath.includes('0% 0%,100% 0%,100% 16.667%,0% 16.667%'),
-    blindsFrames.to.clipPath);
+  check('水平百叶窗由六条独立蒙版从上沿展开',
+    blindsFrames.from.maskImage.split('linear-gradient').length === 7
+      && blindsFrames.from.maskSize.startsWith('100% 0%')
+      && blindsFrames.from.maskPosition.includes('left 0% top 16.667%'),
+    blindsFrames.from.maskSize);
+  check('百叶窗终态铺满对象', blindsFrames.to.maskSize.includes('100% 16.667%')
+    && blindsFrames.to.maskOrigin === 'fill-box',
+    blindsFrames.to.maskSize);
   const verticalBlinds = revealFrames({ ...blindsStep, dir: 'vert' });
-  check('垂直百叶窗按竖条从中线打开', verticalBlinds.from.clipPath.startsWith('polygon(8.333% 0%,8.333% 0%'),
-    verticalBlinds.from.clipPath);
+  check('垂直百叶窗按竖条从左沿展开', verticalBlinds.from.maskSize.startsWith('0% 100%')
+    && verticalBlinds.from.maskPosition.includes('left 16.667% top 0%')
+    && verticalBlinds.to.maskSize.includes('16.667% 100%'),
+    verticalBlinds.from.maskSize);
   const boxFrames = revealFrames(boxStep);
   check('盒状向内从四边揭开，字形不缩放',
     boxFrames.from.maskSize === '100% 0%, 100% 0%, 0% 100%, 0% 100%'
@@ -947,11 +951,49 @@ group('动画 / 切换');
     boxFrames.from.maskSize);
   const boxOut = revealFrames({ ...boxStep, dir: 'out' });
   eq('盒状向外从中心矩形扩大', boxOut.from.clipPath, 'inset(50% 50% 50% 50%) fill-box');
-  eq('盒状退出是入场的反向揭开', viewerLib.framesFor({ ...boxStep, kind: 'exit' }).from.clipPath, boxFrames.to.clipPath);
+  eq('盒状退出是入场的反向揭开', viewerLib.framesFor({ ...boxStep, kind: 'exit' }).from.maskSize, boxFrames.to.maskSize);
   const plainZoom = revealFrames({ ...boxStep, dir: undefined });
-  eq('没有盒状方向的缩放仍是放大', plainZoom.from.transform, 'scale(0.1)');
+  eq('没有盒状方向的缩放从零放大', plainZoom.from.transform, 'scale(0)');
   const circleFrames = revealFrames(circleStep);
-  eq('圆形光圈不会被画成盒状', circleFrames.from.transform, 'scale(0.1)');
+  check('圆形光圈使用可见的图形蒙版而非缩放', circleFrames.from.maskImage.includes('data:image/svg+xml')
+    && circleFrames.from.transform === undefined, circleFrames.from.maskImage);
+  const effectsFixture = await lib.parse(load('sample-animation-effects.pptx'), { lazy: false });
+  const effectMatrix = [
+    ['appear', 'fade', 'fly', 'fly', 'wipe', 'zoom', 'zoom', 'zoom'],
+    ['blinds', 'blinds', 'checkerboard', 'checkerboard', 'randomBar', 'randomBar', 'strips', 'strips'],
+    ['strips', 'strips', 'circle', 'circle', 'diamond', 'diamond', 'plus', 'plus'],
+    ['split', 'split', 'split', 'wheel', 'wheel', 'wheel', 'grow', 'spin'],
+    ['float', 'bounce', 'dissolve', 'stretch', 'swivel', 'fade'],
+    ['circle', 'checkerboard', 'wheel', 'split', 'zoom', 'fade'],
+  ];
+  eq('动画效果固件完整解析六页', effectsFixture.slides.length, effectMatrix.length);
+  for (let index = 0; index < effectMatrix.length; index++) {
+    eq(`第 ${index + 1} 页逐个保留 PowerPoint 效果`,
+      effectsFixture.slides[index]?.animations?.map((step) => step.effect).join(','),
+      effectMatrix[index].join(','));
+  }
+  const variant = (page, index) => effectsFixture.slides[page].animations[index];
+  eq('劈裂保留向内竖向子类型', variant(3, 1).dir, 'in-vert');
+  eq('轮盘保留八轮辐子类型', variant(3, 5).dir, '8');
+  eq('放大旋转读取 OOXML 的终态角度', variant(3, 6).rotation?.to, 90);
+  eq('放大旋转终态保留对象旋转', viewerLib.settledDeclaration(variant(3, 6))?.transform,
+    'scale(1) rotate(90deg)');
+  check('随机条由 128 条独立细线遮掩对象',
+    revealFrames(variant(1, 4)).from.maskImage.split('linear-gradient').length === 129);
+  check('十字向内从四角独立揭开',
+    revealFrames(variant(2, 6)).from.maskImage.split('linear-gradient').length === 5
+      && revealFrames(variant(2, 6)).from.maskSize === '0% 0%, 0% 0%, 0% 0%, 0% 0%');
+  eq('真正缩放不误判为盒状', variant(0, 5).dir, undefined);
+  eq('包含 slide 子滤镜的上浮保留预设效果', variant(4, 0).effect, 'float');
+  eq('随机效果按文件记录的具体 fade 滤镜播放', variant(4, 5).effect, 'fade');
+  eq('伸展读取文件里的实际双轴起始比例',
+    viewerLib.framesFor(variant(4, 3)).from.transform, 'scale(0.2)');
+  eq('透明度强调使用 PowerPoint 默认的 50%',
+    viewerLib.framesFor(variant(5, 5)).to.opacity, 0.5);
+  check('棋盘、轮盘和光圈播放时使用不同裁剪几何',
+    new Set([variant(1, 2), variant(3, 4), variant(2, 2)].map((step) =>
+      `${viewerLib.framesFor(step).to.maskImage}/${viewerLib.framesFor(step).to.maskSize}`)).size === 3);
+  effectsFixture.dispose?.();
   const paragraphBox = animationMod.parseSlideTiming(parseXml(
     `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="4" presetClass="entr" presetSubtype="16" nodeType="clickEffect" dur="2000"><p:animEffect transition="in" filter="box(in)"><p:cBhvr><p:tgtEl><p:spTgt spid="3"><p:txEl><p:pRg st="0" end="0"/></p:txEl></p:spTgt></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
   ).doc.documentElement, 1280, 720).animations?.[0];
@@ -1000,6 +1042,11 @@ group('动画 / 切换');
       eq('全部切换类型都产出关键帧', ok, ALL_TRANS.length * 6);
       // 41 种效果若大量共用同一组关键帧，等于没实现
       check('切换效果视觉上互不相同', seen.size >= 24, `仅 ${seen.size} 种不同关键帧`);
+      const cutIn = tf({ type: 'cut', durationMs: 600 }, true);
+      const cutOut = tf({ type: 'cut', durationMs: 600 }, false);
+      check('切出在切点前保留旧页且新页不可见',
+        cutIn[0].opacity === 0 && cutIn[1].opacity === 0
+          && cutOut[0].opacity === 1 && cutOut[1].opacity === 1);
     }
 
     const anim = pres.slides.find((s) => s.animations?.length);
@@ -1898,6 +1945,60 @@ group('查看器');
       host.remove();
     }
 
+    // 退场需要先播完整个效果，再进入隐藏终态；切换未结束时点击只作用于新页。
+    {
+      const step = {
+        target: 705, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade',
+        delayMs: 0, durationMs: 600,
+      };
+      const slide = { ...pres.slides[6], animations: [step] };
+      const host = globalThis.document.createElement('div');
+      globalThis.document.body.appendChild(host);
+      const exitViewer = new viewerLib.Viewer(host, { ...pres, slides: [slide] }, {
+        animate: true, textMode: 'svg',
+      });
+      const exiting = host.querySelector('[data-el="705"]');
+      let resolveExit;
+      exiting.animate = () => ({
+        finished: new Promise((resolve) => { resolveExit = resolve; }),
+        finish() {}, cancel() {},
+      });
+      exitViewer.playNextAnimation();
+      check('退场播放期间元素仍可见', exiting.style.visibility !== 'hidden');
+      resolveExit();
+      await Promise.resolve();
+      await Promise.resolve();
+      check('退场结束后元素隐藏', exiting.style.visibility === 'hidden');
+      exitViewer.destroy();
+
+      const nativeAnimate = globalThis.window.HTMLElement.prototype.animate;
+      globalThis.window.HTMLElement.prototype.animate = () => ({
+        finished: new Promise(() => {}), cancel() {},
+      });
+      try {
+        const incoming = { ...slide, transition: { type: 'fade', durationMs: 60 } };
+        const switching = new viewerLib.Viewer(host, { ...pres, slides: [slide, incoming] }, {
+          animate: true, textMode: 'svg',
+        });
+        switching.goTo(1);
+        const outgoingNode = host.firstElementChild.querySelector('[data-el="705"]');
+        const incomingNode = host.lastElementChild.querySelector('[data-el="705"]');
+        let oldCalls = 0;
+        let newCalls = 0;
+        outgoingNode.animate = () => { oldCalls++; return { finished: Promise.resolve(), cancel() {} }; };
+        incomingNode.animate = () => { newCalls++; return { finished: Promise.resolve(), cancel() {} }; };
+        switching.playNextAnimation();
+        check('页面切换期间元素动画只作用于新页', oldCalls === 0 && newCalls === 1,
+          `旧页 ${oldCalls} 次，新页 ${newCalls} 次`);
+        check('页面切换期间旧页可见性不受新页影响',
+          outgoingNode.style.visibility !== 'hidden');
+        switching.destroy();
+      } finally {
+        globalThis.window.HTMLElement.prototype.animate = nativeAnimate;
+        host.remove();
+      }
+    }
+
     // 翻页与边界
     const v3 = new viewerLib.Viewer(box, pres, {});
     eq('初始页', v3.index, 0);
@@ -2065,6 +2166,12 @@ group('播放引擎');
   check('播完第一批后 11 仍隐藏', h1.has(11));
   const h3 = viewerLib.hiddenBefore(g2, 3);
   check('退场播完后 10 隐藏', h3.has(10), [...h3].join(','));
+  const repeated = viewerLib.groupSteps([
+    mk(12, 'entrance', 0), mk(12, 'exit', 1), mk(12, 'entrance', 2),
+  ]);
+  check('重复入场不提前隐藏第一次入场的终态', !viewerLib.hiddenBefore(repeated, 1).has(12));
+  check('两次入场之间的退场仍保持隐藏', viewerLib.hiddenBefore(repeated, 2).has(12));
+  check('第二次入场后重新显示', !viewerLib.hiddenBefore(repeated, 3).has(12));
 
   // 真实文件的动画分批与元素可见性联动
   const pres = parsed.get('showcase.pptx');
@@ -2209,12 +2316,11 @@ group('播放引擎');
         target: 1, kind: 'entrance', effect: 'blinds', dir: 'horz', trigger: 'click',
         delayMs: 0, durationMs: 500, clickGroup: 0,
       }]);
-      check('形状节点仍用 fill-box 裁剪', calls[0]?.frames[0].clipPath.includes('fill-box'),
-        calls[0]?.frames[0].clipPath);
-      check('foreignObject 文本单独裁剪且去掉 fill-box',
-        textCalls[0]?.frames[0].clipPath.includes('polygon(')
-          && !textCalls[0].frames[0].clipPath.includes('fill-box'),
-        textCalls[0]?.frames[0].clipPath);
+      eq('形状节点按 fill-box 绘制蒙版', calls[0]?.frames[0].maskOrigin, 'fill-box');
+      check('foreignObject 文本使用对应的 border-box 蒙版',
+        textCalls[0]?.frames[0].maskImage === calls[0]?.frames[0].maskImage
+          && textCalls[0]?.frames[0].maskOrigin === 'border-box',
+        textCalls[0]?.frames[0].maskOrigin);
 
       const paragraphCalls = [];
       const outerCalls = [];
@@ -2252,12 +2358,12 @@ group('播放引擎');
       } finally {
         document.createRange = previousRange;
       }
-      check('盒状段落是墨迹上的矩形洞，结束时洞收到中心点',
-        paragraphCalls[0]?.frames[0].clipPath === 'shape(evenodd from 0% 0%, line to 100% 0%, line to 100% 100%, line to 0% 100%, close, move to 30% 10%, line to 70% 10%, line to 70% 30%, line to 30% 30%, close)'
-          && paragraphCalls[0].frames[1].clipPath === 'shape(evenodd from 0% 0%, line to 100% 0%, line to 100% 100%, line to 0% 100%, close, move to 50% 20%, line to 50% 20%, line to 50% 20%, line to 50% 20%, close)'
-          && paragraphCalls[0].frames[0].maskSize === undefined
+      check('盒状段落的四边蒙版围绕文字墨迹框展开',
+        paragraphCalls[0]?.frames[0].maskSize === '40% 0%, 40% 0%, 0% 20%, 0% 20%'
+          && paragraphCalls[0].frames[1].maskSize === '40% 10.02%, 40% 10.02%, 20.04% 20%, 20.04% 20%'
+          && paragraphCalls[0].frames[0].maskOrigin === 'border-box'
           && outerCalls.length === 0,
-        paragraphCalls[0]?.frames[0].clipPath);
+        paragraphCalls[0]?.frames[0].maskSize);
     }
     check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
   }

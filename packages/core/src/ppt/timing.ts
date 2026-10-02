@@ -1,4 +1,5 @@
-import type { AnimEffect, AnimStep, Transition, TransitionType } from '../types';
+import type { AnimStep, Transition, TransitionType } from '../types';
+import { resolveAnimationEffect } from '../animation-effects';
 import { findAll, findRec, progBinaryBlobs, Rec, records, RT, TIME, utf16 } from './records';
 
 /**
@@ -86,60 +87,9 @@ const NODE_CLICK = 1;
 const NODE_WITH = 2;
 const NODE_AFTER = 3;
 
-/** effectId 即 OOXML 的 presetID，沿用同一张表 */
-const PRESET_EFFECT: Record<number, AnimEffect> = {
-  1: 'appear', 2: 'fly', 3: 'blinds', 4: 'wipe', 5: 'dissolve', 6: 'zoom',
-  7: 'fly', 8: 'zoom', 9: 'dissolve', 10: 'fade', 11: 'appear', 12: 'fly',
-  13: 'zoom', 14: 'blinds', 15: 'spin', 16: 'split', 17: 'stretch', 18: 'blinds',
-  19: 'wheel', 20: 'wheel', 21: 'wipe', 22: 'zoom', 23: 'random', 24: 'spin',
-  25: 'bounce', 28: 'fade', 29: 'float', 30: 'grow', 31: 'fly', 32: 'spin',
-  33: 'float', 34: 'swivel', 35: 'fly', 36: 'stretch', 37: 'stretch', 38: 'fly',
-  39: 'float', 40: 'spin', 41: 'swivel', 42: 'float', 43: 'fly', 44: 'spin',
-  45: 'stretch', 46: 'stretch', 47: 'float', 48: 'zoom', 49: 'fly', 50: 'stretch',
-  51: 'swivel', 52: 'stretch', 53: 'grow',
-};
-
-/** effectDir 即 OOXML 的 presetSubtype */
-const SUBTYPE_DIR: Record<number, string> = {
-  1: 'u', 2: 'r', 4: 'd', 8: 'l',
-  3: 'rd', 6: 'ru', 9: 'lu', 12: 'ld',
-  5: 'horz', 10: 'vert',
-  16: 'in', 32: 'out',
-};
-
 const CLASS_KIND: Record<number, AnimStep['kind']> = {
   1: 'entrance', 2: 'exit', 3: 'emphasis', 4: 'motion', 5: 'emphasis', 6: 'emphasis',
 };
-
-const FILTER_EFFECT: Record<string, AnimEffect> = {
-  fade: 'fade', wipe: 'wipe', barn: 'split', blinds: 'blinds', box: 'zoom',
-  checkerboard: 'blinds', circle: 'zoom', diamond: 'zoom', dissolve: 'dissolve',
-  plus: 'zoom', randombar: 'blinds', slide: 'fly', strips: 'blinds',
-  wedge: 'wheel', wheel: 'wheel', image: 'fade',
-};
-
-/** animEffect 的 filter 串，如 "slide(fromLeft)" / "wipe(up)" / "box(in)" */
-function effectFromFilter(filter: string): { effect: AnimEffect; dir?: string; dirLocked?: boolean } | null {
-  const m = /^([a-zA-Z]+)(?:\(([^)]*)\))?/.exec(filter);
-  if (!m) return null;
-  const effect = FILTER_EFFECT[m[1].toLowerCase()];
-  if (!effect) return null;
-  const arg = (m[2] ?? '').toLowerCase();
-  // "from*" 说的是元素来源方位，"up/down/left/right" 说的是擦除推进方向，二者相反
-  const from = arg.startsWith('from');
-  const side = arg.includes('left') ? 'l' : arg.includes('right') ? 'r'
-    : arg.includes('top') || arg.includes('up') ? 'u'
-      : arg.includes('bottom') || arg.includes('down') ? 'd' : null;
-  const flip: Record<string, string> = { l: 'r', r: 'l', u: 'd', d: 'u' };
-  const name = m[1].toLowerCase();
-  // 与 pptx 相同：光圈的 in/out 不能占用盒状方向。
-  const iris = name === 'circle' || name === 'diamond' || name === 'plus';
-  const dir = iris ? undefined : side
-    ? (from ? side : flip[side])
-    : arg.includes('vertical') ? 'vert' : arg.includes('horizontal') ? 'horz'
-      : arg.includes('in') ? 'in' : arg.includes('out') ? 'out' : undefined;
-  return { effect, dir, dirLocked: iris };
-}
 
 /** TimeVariant：1 字节类型 + 值（0 = 布尔，1 = 整数，2 = 浮点，3 = UTF-16 串） */
 function variantInt(dv: DataView, rec: Rec): number | null {
@@ -260,9 +210,9 @@ function buildStep(dv: DataView, node: Rec, props: Map<number, number>): AnimSte
   findBehavior(dv, node.start, node.start + node.len, behavior);
   if (behavior.target === undefined) return null;
 
-  const fromFilter = behavior.filter ? effectFromFilter(behavior.filter) : null;
-  const effect = fromFilter?.effect ?? PRESET_EFFECT[props.get(TP.effectId) ?? 10] ?? 'fade';
-  const dir = fromFilter?.dirLocked ? fromFilter.dir : (fromFilter?.dir ?? SUBTYPE_DIR[props.get(TP.effectDir) ?? 0]);
+  const { effect, dir } = resolveAnimationEffect(
+    props.get(TP.effectId) ?? 10, props.get(TP.effectDir) ?? 0, behavior.filter,
+  );
   const nodeType = props.get(TP.nodeType) ?? NODE_CLICK;
   const dur = behavior.duration ?? nodeDuration(dv, node) ?? 500;
 

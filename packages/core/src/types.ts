@@ -316,7 +316,8 @@ export interface Transition {
 
 export type AnimEffect =
   | 'appear' | 'fade' | 'fly' | 'wipe' | 'zoom' | 'split' | 'wheel' | 'blinds'
-  | 'grow' | 'spin' | 'float' | 'bounce' | 'dissolve' | 'stretch' | 'swivel' | 'random';
+  | 'grow' | 'spin' | 'float' | 'bounce' | 'dissolve' | 'stretch' | 'swivel' | 'random'
+  | 'checkerboard' | 'randomBar' | 'strips' | 'circle' | 'diamond' | 'plus';
 
 export interface AnimStep {
   /** 目标元素 id（对应 SlideElement.id） */
@@ -329,6 +330,10 @@ export interface AnimStep {
   trigger: 'click' | 'withPrev' | 'afterPrev';
   /** 动画类别 */
   kind: 'entrance' | 'exit' | 'emphasis' | 'motion';
+  /** p:animScale 的实际起止比例；100000 对应 1。 */
+  scale?: { fromX: number; fromY: number; toX: number; toY: number };
+  /** p:animRot 的实际起止角度，单位为度。 */
+  rotation?: { from: number; to: number };
   /**
    * 运动路径采样点：相对元素起始位置的位移（px），首点恒为 (0,0)。
    * 在 core 里按弧长等距重采样，播放层直接当关键帧用——

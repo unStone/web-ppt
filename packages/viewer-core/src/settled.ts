@@ -11,7 +11,13 @@ const SKIPPED_KEYFRAME_FIELD = new Set(['offset', 'easing', 'composite']);
  * 强调停在 fill 的结束帧上；路径停在采样折线的最后一点上。
  */
 export function settledDeclaration(step: AnimStep): Record<string, string> | null {
-  if (step.kind === 'entrance' || step.kind === 'exit') return null;
+  if (step.kind === 'entrance') {
+    if (step.effect === 'grow' && step.rotation) {
+      return { transform: String(framesFor(step).to.transform) };
+    }
+    return null;
+  }
+  if (step.kind === 'exit') return null;
   if (step.kind === 'motion') {
     const path = step.motionPath;
     if (!path?.length) return null;

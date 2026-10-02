@@ -1,7 +1,7 @@
-import type { Presentation, Slide } from '@web-ppt/core';
+import type { AnimStep, Presentation, Slide } from '@web-ppt/core';
 import { renderSlideToSvg, slideToPng, staticHidden } from '@web-ppt/core';
 import { foreignObjectScalesCorrectly } from './foreign-object';
-import { playGroup, playTransition, type PlayHandle } from './playback';
+import { playGroup, playTransitionControlled, type PlayHandle, type TransitionPlayHandle } from './playback';
 import { settledDeclaration } from './settled';
 import { PresentationState, type PresentationStateOptions } from './state';
 
@@ -33,6 +33,9 @@ export class Viewer {
   private media: 'badge' | 'player';
   private textMode: 'html' | 'svg';
   private playing: PlayHandle | null = null;
+  private playingGroup: AnimStep[] | null = null;
+  private transition: TransitionPlayHandle | null = null;
+  private currentLayer: HTMLElement | null = null;
   private cancelAuto: (() => void) | null = null;
   private unsubscribe: () => void;
 
@@ -59,7 +62,11 @@ export class Viewer {
       } else if (change.type === 'animation') {
         if (change.group) this.play(change.group);
         else if (change.settle) this.paint();
-        else this.applyVisibility();
+        else {
+          this.releasePlayback(true);
+          this.applyVisibility();
+          this.applySettled();
+        }
         // paint 自己会通知进度；再通知一次，计数会闪两次。
         if (!change.settle) this.onAnimStep?.(change.done, change.total);
       } else if (change.type === 'zoom') {
@@ -85,7 +92,15 @@ export class Viewer {
   next(): void { this.state.next(); }
   prev(): void { this.state.prev(); }
   setZoom(z: number): void { this.state.setZoom(z); }
-  finishAnimations(): void { this.state.finishAnimations(); }
+  finishAnimations(): void {
+    this.state.finishAnimations();
+    // 最后一批启动时光标已经到末尾，状态机此时不会再次发出终态事件。
+    if (this.playing) {
+      this.releasePlayback(true);
+      this.applyVisibility();
+      this.applySettled();
+    }
+  }
   search(q: string): number[] { return this.state.search(q); }
   text(i: number): string { return this.state.text(i); }
 
@@ -140,16 +155,24 @@ export class Viewer {
     return slideToPng(this.presentation, this.presentation.slides[i], scale);
   }
 
-  private paint(transition?: Parameters<typeof playTransition>[2]): void {
-    this.playing?.cancel();
-    this.playing = null;
+  private paint(transition?: Parameters<typeof playTransitionControlled>[2]): void {
+    const outgoingGroup = transition ? this.playingGroup : null;
+    const outgoingLayer = this.currentLayer;
+    this.releasePlayback(!!outgoingGroup);
+    if (outgoingGroup && outgoingLayer) {
+      // 连续点击跨页时，旧页先停到当前动画终点，再作为切换的离场画面。
+      this.applySettled(outgoingGroup, outgoingLayer, new Set());
+    }
+    this.transition?.cancel();
+    this.transition = null;
     this.cancelAuto?.();
 
-    const wrap = document.createElement('div');
+    const wrap = this.container.ownerDocument.createElement('div');
     wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center';
     wrap.innerHTML = this.slideSvg(this.index);
 
-    const previous = this.container.firstElementChild as HTMLElement | null;
+    const previous = this.currentLayer?.parentElement === this.container
+      ? this.currentLayer : this.container.firstElementChild as HTMLElement | null;
     // 幻灯片以绝对定位叠放，容器必须是定位上下文。
     // 只在容器确实是 static 时才动它——看内联 style 会漏掉样式表里设的定位，
     // 从而用内联值把宿主的布局覆盖掉。
@@ -161,10 +184,18 @@ export class Viewer {
 
     if (transition && previous) {
       this.container.appendChild(wrap);
-      void playTransition(previous, wrap, transition).then(() => this.startAutoAdvance());
+      this.currentLayer = wrap;
+      const playback = playTransitionControlled(previous, wrap, transition);
+      this.transition = playback;
+      void playback.finished.then(() => {
+        if (this.transition !== playback) return;
+        this.transition = null;
+        this.startAutoAdvance();
+      });
     } else {
       this.container.innerHTML = '';
       this.container.appendChild(wrap);
+      this.currentLayer = wrap;
       this.startAutoAdvance();
     }
 
@@ -180,9 +211,33 @@ export class Viewer {
   }
 
   private play(group: Parameters<typeof playGroup>[1]): void {
-    this.playing?.cancel();
-    this.playing = playGroup(this.container, group);
+    this.releasePlayback(true);
+    // 状态机在事件发出前已推进光标；新组尚未播完，不能提前写入它的强调/路径终态。
+    this.applySettled(this.state.completedSteps.slice(0, -group.length));
+    const layer = this.currentLayer;
+    if (!layer) return;
+    const playback = playGroup(layer, group);
+    this.playing = playback;
+    this.playingGroup = group;
     this.applyVisibility();
+    void playback.finished.then(() => {
+      if (this.playing !== playback) return;
+      this.releasePlayback(false);
+      this.applyVisibility();
+      this.applySettled();
+    });
+  }
+
+  private releasePlayback(finish: boolean): void {
+    const playback = this.playing;
+    if (!playback) return;
+    this.playing = null;
+    this.playingGroup = null;
+    if (finish) playback.cancel();
+    // 终态由隐藏集和 settledDeclaration 持有，释放 WAAPI 的 fill，避免遮住下一批。
+    for (const animation of playback.animations) {
+      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+    }
   }
 
   /**
@@ -192,26 +247,31 @@ export class Viewer {
    */
   private applyVisibility(): void {
     const hidden = this.state.hiddenElementIds;
-    this.container.querySelectorAll('[data-el]').forEach((node) => {
+    const activeExits = new Set(this.playingGroup?.filter((step) => step.kind === 'exit')
+      .map((step) => step.target));
+    this.currentLayer?.querySelectorAll('[data-el]').forEach((node) => {
       const id = Number(node.getAttribute('data-el'));
       // 不在隐藏集里的必须**清空**这条声明，不能写成 'visible'。
       // visibility 虽然继承，但后代显式写 visible 会把祖先的 hidden 顶掉
       // （和 display:none 不一样）。动画目标是**组**时就会中招：组藏了，
       // 组里每个形状却各自写着 visible，整组白藏 —— swiss-grid-systems
       // 第 1 页的标题就是这么漏出来的。
-      (node as HTMLElement).style.visibility = hidden.has(id) ? 'hidden' : '';
+      (node as HTMLElement).style.visibility = hidden.has(id) && !activeExits.has(id) ? 'hidden' : '';
     });
   }
 
   /**
    * 已播完的强调和路径不会写进隐藏集。重绘清掉 fill 之后，要把终态再铺回去。
    */
-  private applySettled(): void {
-    const hidden = this.state.hiddenElementIds;
-    for (const step of this.state.completedSteps) {
+  private applySettled(
+    steps: readonly AnimStep[] = this.state.completedSteps,
+    layer: HTMLElement | null = this.currentLayer,
+    hidden: ReadonlySet<number> = this.state.hiddenElementIds,
+  ): void {
+    for (const step of steps) {
       const style = settledDeclaration(step);
       if (!style || hidden.has(step.target)) continue;
-      const node = this.container.querySelector(`[data-el="${step.target}"]`);
+      const node = layer?.querySelector(`[data-el="${step.target}"]`);
       // 动画目标在 SVG 上，不是 HTMLElement。SVGElement 同样有 style。
       const styled = node as HTMLElement | null;
       if (!styled?.style?.setProperty) continue;
@@ -222,7 +282,7 @@ export class Viewer {
   }
 
   private applyZoom(): void {
-    const svg = this.container.querySelector('svg');
+    const svg = this.currentLayer?.querySelector('svg');
     if (!svg) return;
     const z = this.state.zoom;
     if (z === 1) {
@@ -271,7 +331,10 @@ export class Viewer {
     this.container.removeEventListener('click', this.handleClick);
     this.container.removeEventListener('keydown', this.handleKeyDown);
     this.unsubscribe();
-    this.playing?.cancel();
+    this.releasePlayback(false);
+    this.transition?.cancel();
+    this.transition = null;
+    this.currentLayer = null;
     this.cancelAuto?.();
     this.state.destroy();
     this.container.innerHTML = '';
