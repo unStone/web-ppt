@@ -329,6 +329,11 @@ export interface AnimStep {
   trigger: 'click' | 'withPrev' | 'afterPrev';
   /** 动画类别 */
   kind: 'entrance' | 'exit' | 'emphasis' | 'motion';
+  /** p:cmd 对媒体对象的调用；播放时间由 trigger、delayMs 和 durationMs 决定。 */
+  mediaCommand?: {
+    action: 'play' | 'pause' | 'resume' | 'stop' | 'togglePause';
+    fromSeconds?: number;
+  };
   /**
    * 运动路径采样点：相对元素起始位置的位移（px），首点恒为 (0,0)。
    * 在 core 里按弧长等距重采样，播放层直接当关键帧用——

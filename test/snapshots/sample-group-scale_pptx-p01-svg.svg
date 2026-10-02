@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="900" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 130)">
+<g transform=" scale(1 1) translate(0 0)">
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 0)">
+<path d="M 0 0 L 600 0 L 600 160 L 0 160 Z" fill="rgb(219,234,254)" fill-rule="nonzero"/>
+<text x="9.6" y="34.75" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">Work in pairs. Compare your </tspan>
+</text>
+<text x="9.6" y="73.15" text-anchor="start" xml:space="preserve">
+<tspan font-size="32" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">answers to Exercise 9.</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

@@ -289,6 +289,8 @@ const FIXTURES = [
   { file: 'sample-metafile.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
+  { file: 'sample-media-timing.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-group-scale.pptx', minPages: 2, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
@@ -360,6 +362,20 @@ group('批量图片导出');
 await runCoreImageZipContract({ imageZip, parsed, check, eq });
 
 group('渲染');
+{
+  const presentation = parsed.get('sample-group-scale.pptx');
+  if (check('归一化组合固件已解析', !!presentation)) {
+    const normal = presentation.slides[0].elements[0];
+    const normalized = presentation.slides[1].elements[0];
+    check('两个固件页面都包含组合', normal.kind === 'group' && normalized.kind === 'group');
+    near('归一化子坐标产生 600 倍组变换', normalized.scaleX, 600);
+    const html = lib.renderSlideToSvg(presentation, presentation.slides[1], { textMode: 'html' });
+    check('组内 HTML 按最终宽度排版', html.includes('width:600px;height:160px'), html.slice(0, 500));
+    check('组内 HTML 保持正常字号', html.includes('font-size:32px'), html.slice(0, 500));
+    const native = lib.renderSlideToSvg(presentation, presentation.slides[1], { textMode: 'svg' });
+    check('组内原生文本也保持正常字号', native.includes('font-size="32"'), native.slice(0, 500));
+  }
+}
 for (const [name, pres] of parsed) {
   for (const textMode of ['html', 'svg']) {
     let structErr = 0, dangling = 0, dupIds = 0;
@@ -2055,6 +2071,39 @@ group('播放引擎');
   eq('分批数量', groups.length, 2);
   eq('第二批含两步', groups[1].length, 2);
   eq('空动画返回空数组', viewerLib.groupSteps(undefined).length, 0);
+
+  const timedMedia = parsed.get('sample-media-timing.pptx');
+  if (check('媒体时间线固件已解析', !!timedMedia)) {
+    const steps = timedMedia.slides[0].animations ?? [];
+    eq('媒体调用与前一个效果属于同一点击批次', viewerLib.groupSteps(steps).length, 1);
+    const command = steps.find((step) => step.mediaCommand);
+    eq('playFrom 解析为媒体播放命令', command?.mediaCommand?.action, 'play');
+    eq('playFrom 起点按秒保留', command?.mediaCommand?.fromSeconds, 0);
+    eq('媒体持续时间不受视觉动画上限截断', command?.durationMs, 12000);
+    eq('媒体调用保持 afterPrev 时序', command?.trigger, 'afterPrev');
+
+    const calls = [];
+    const player = {
+      currentTime: 7,
+      paused: true,
+      play() { calls.push('play'); this.paused = false; return Promise.resolve(); },
+      pause() { calls.push('pause'); this.paused = true; },
+    };
+    const visualNode = {
+      style: {},
+      animate: () => ({ finished: Promise.resolve(), finish() {} }),
+      querySelectorAll: () => [],
+    };
+    const mediaNode = { querySelector: () => player };
+    const container = { querySelector: (selector) => selector.includes('101') ? visualNode : mediaNode };
+    const handle = viewerLib.playGroup(container, steps);
+    eq('afterPrev 音频不会抢在前一效果之前播放', calls.length, 0);
+    await handle.finished;
+    eq('前一效果结束后启动音频', calls.join(','), 'play');
+    eq('playFrom 将音频定位到指定起点', player.currentTime, 0);
+    handle.cancel();
+    eq('取消播放时暂停音频', calls.at(-1), 'pause');
+  }
 
   // 可见性：未播的入场元素隐藏，已播的退场元素隐藏
   const g2 = viewerLib.groupSteps([mk(10, 'entrance', 0), mk(11, 'entrance', 1), mk(10, 'exit', 2)]);

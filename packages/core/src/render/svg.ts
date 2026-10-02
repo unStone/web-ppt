@@ -42,6 +42,8 @@ interface Ctx {
   /** null 表示 frame 内部投影：既无编辑身份，也不暴露来源形状 ID。 */
   includeEditMarkers: boolean | null;
   resolveLink: (link: string | undefined) => string | undefined;
+  groupScaleX: number;
+  groupScaleY: number;
 }
 
 export interface RenderElementOptions {
@@ -109,6 +111,8 @@ function createCtx(opts: RenderElementOptions): Ctx {
     hidden: opts.hiddenElements && opts.hiddenElements.length ? new Set(opts.hiddenElements) : null,
     includeEditMarkers: opts.includeEditMarkers === true,
     resolveLink: (link) => link,
+    groupScaleX: 1,
+    groupScaleY: 1,
   };
 }
 
@@ -425,10 +429,18 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
 }
 
 function renderGroup(el: GroupElement, ctx: Ctx): string {
-  const childXf = `scale(${r(el.scaleX || 1)} ${r(el.scaleY || 1)}) translate(${r(-el.childX)} ${r(-el.childY)})`;
+  const scaleX = el.scaleX || 1;
+  const scaleY = el.scaleY || 1;
+  const childXf = `scale(${r(scaleX)} ${r(scaleY)}) translate(${r(-el.childX)} ${r(-el.childY)})`;
   // frame 的后代来自外部语义投影，数量可变化；编辑 DOM 只把框架本身当成稳定身份。
-  const childCtx = ctx.includeEditMarkers && el.editInfo && el.editInfo.editable === 'frame'
-    ? { ...ctx, includeEditMarkers: null } : ctx;
+  const childCtx: Ctx = {
+    ...ctx,
+    // 0–1 的子坐标空间来自归一化 OOXML；普通组合缩放仍应放大字号。
+    groupScaleX: ctx.groupScaleX * (scaleX > 1 && el.w / scaleX <= 1 && el.w > 1 ? scaleX : 1),
+    groupScaleY: ctx.groupScaleY * (scaleY > 1 && el.h / scaleY <= 1 && el.h > 1 ? scaleY : 1),
+    includeEditMarkers: ctx.includeEditMarkers && el.editInfo?.editable === 'frame'
+      ? null : ctx.includeEditMarkers,
+  };
   const children = el.children.map((c) => renderEl(c, childCtx)).join('');
   const marker = ctx.includeEditMarkers ? ' data-edit-group-children="1"' : '';
   return wrapEl(el, `<g${marker} transform="${flipTransform(el)} ${childXf}">${children}</g>`, ctx);
@@ -543,6 +555,18 @@ function renderText(
   vAlignOverride?: 'top' | 'middle' | 'bottom',
   vertOverride?: TextBody['vert'],
 ): string {
+  const scaleX = ctx.groupScaleX;
+  const scaleY = ctx.groupScaleY;
+  if (!Number.isFinite(scaleX) || scaleX <= 0 || !Number.isFinite(scaleY) || scaleY <= 0) {
+    throw new Error(`文本所在组合的缩放无效：scaleX=${scaleX}，scaleY=${scaleY}`);
+  }
+  // DrawingML 的字号和内边距使用物理尺寸，归一化组坐标却可缩到不足 1px。
+  // 先按最终尺寸排版，再抵消组变换，避免 HTML 在极窄的 foreignObject 中逐字换行。
+  const boxW = w * scaleX;
+  const boxH = h * scaleY;
+  const inGroup = scaleX !== 1 || scaleY !== 1;
+  const place = (markup: string): string => inGroup
+    ? `<g transform="scale(${1 / scaleX} ${1 / scaleY})">${markup}</g>` : markup;
   if (t.paragraphs.some((paragraph) => paragraph.runs.some((run) =>
     run.link?.startsWith('slide-part:') || /^slide:(next|previous|first|last)$/.test(run.link ?? '')))) {
     t = { ...t, paragraphs: t.paragraphs.map((paragraph) => ({
@@ -557,7 +581,7 @@ function renderText(
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
     // HTML 公共入口内部也做这一步；这里仅为独立 SVG 路径保留同一语义。
     if (t.autoFitCompute && !t.autoFitShape) {
-      const scale = resolveTextScale(t, w, h, ctx.measureText, {
+      const scale = resolveTextScale(t, boxW, boxH, ctx.measureText, {
         insets: marginsOverride,
         vert: vertOverride,
       });
@@ -568,17 +592,17 @@ function renderText(
       ctx.defs.push(markup.replace('__ID__', id));
       return id;
     };
-    return renderTextSvg(
+    return place(renderTextSvg(
       vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
-      w, h, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers, ctx.measureText,
-    );
+      boxW, boxH, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers, ctx.measureText,
+    ));
   }
-  const html = renderTextBodyToHtml(t, w, h, {
+  const html = renderTextBodyToHtml(t, boxW, boxH, {
     insets: marginsOverride,
     anchor: vAlignOverride,
     vert: vertOverride,
     includeEditMarkers: !!ctx.includeEditMarkers,
     measureText: ctx.measureText,
   });
-  return `<foreignObject width="${r(w)}" height="${r(h)}" style="overflow:visible">${html}</foreignObject>`;
+  return place(`<foreignObject width="${r(boxW)}" height="${r(boxH)}" style="overflow:visible">${html}</foreignObject>`);
 }
