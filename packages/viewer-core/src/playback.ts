@@ -1,5 +1,6 @@
 import { transitionPreferredDirection, type AnimStep, type Slide, type Transition } from '@web-ppt/core';
 import { blindsClip, boxInClip, boxInMask, boxOutClip, type ClipRegion } from './reveal-clip';
+import { scheduleMediaCommand, type ScheduledMediaCommand } from './media-playback';
 
 /**
  * 动画与切换的播放层。全部走 Web Animations API，
@@ -218,6 +219,7 @@ export interface PlayHandle {
 /** 播放一批动画；返回可取消的句柄 */
 export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
   const anims: Animation[] = [];
+  const mediaCommands: ScheduledMediaCommand[] = [];
   let previousStart = 0;
   let previousEnd = 0;
 
@@ -229,6 +231,12 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     previousEnd = start + step.durationMs;
     const node = container.querySelector(`[data-el="${step.target}"]`) as HTMLElement | null;
     if (!node) continue;
+
+    if (step.mediaCommand) {
+      const scheduled = scheduleMediaCommand(node, step.mediaCommand, start);
+      if (scheduled) mediaCommands.push(scheduled);
+      continue;
+    }
 
     const { from, to } = framesFor(step);
     node.style.visibility = 'visible';
@@ -290,8 +298,14 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
 
   return {
     animations: anims,
-    cancel: () => anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } }),
-    finished: Promise.all(anims.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
+    cancel: () => {
+      anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } });
+      mediaCommands.forEach((command) => command.cancel());
+    },
+    finished: Promise.all([
+      ...anims.map((a) => a.finished.catch(() => undefined)),
+      ...mediaCommands.map((command) => command.finished),
+    ]).then(() => undefined),
   };
 }
 

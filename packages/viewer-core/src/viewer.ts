@@ -182,6 +182,11 @@ export class Viewer {
   private play(group: Parameters<typeof playGroup>[1]): void {
     this.playing?.cancel();
     this.playing = playGroup(this.container, group);
+    void this.playing.finished.catch((error) => {
+      const event = this.container.ownerDocument.createEvent('CustomEvent');
+      event.initCustomEvent('web-ppt-playback-error', false, false, error);
+      this.container.dispatchEvent(event);
+    });
     this.applyVisibility();
   }
 
