@@ -289,6 +289,7 @@ const FIXTURES = [
   { file: 'sample-metafile.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
+  { file: 'sample-apostrophe.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
@@ -2502,6 +2503,15 @@ group('行距');
 
 group('CJK 标点挤压');
 {
+  const apostrophe = parsed.get('sample-apostrophe.pptx');
+  if (check('中英文混排固件已解析', !!apostrophe)) {
+    const html = lib.renderSlideToSvg(apostrophe, apostrophe.slides[0], { textMode: 'html' });
+    check('中文标点仍可按全角挤压', html.includes('margin-right:-0.5em'));
+    check('英语撇号不挤进后续字母',
+      !html.includes('<span style="margin-right:-0.5em">’</span>'), html.slice(0, 600));
+    const native = lib.renderSlideToSvg(apostrophe, apostrophe.slides[0], { textMode: 'svg' });
+    check('独立 SVG 保留英语撇号', native.includes('I’m ready.'));
+  }
   // 汉字和全角标点都占一整格，一行放不下时 PowerPoint 会把标点的空半格挤掉。
   // 不做这件事就会多断出一行 —— 换字体救不了，所有中文字体的格子一样大。
   const box = globalThis.document.createElement('div');

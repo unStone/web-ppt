@@ -418,9 +418,9 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,271 assertions + 186 render snapshots |
+| `npm run test:core` | Core parsing / rendering — 2,295 assertions + 188 render snapshots |
 | `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/font-glyphs.md) |
-| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1102 process-isolated SVG fingerprint pairs across 165 fixtures |
+| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1104 process-isolated SVG fingerprint pairs across 166 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
@@ -468,7 +468,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site — the website, with the viewer demo and standalone editor
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          186 render snapshot baselines
+└── test/snapshots/          188 render snapshot baselines
 ```
 
 `packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
@@ -485,7 +485,7 @@ Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM an
 |---|---|
 | **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
 | **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 24 test files × every slide × both text paths = 186 normalized SVG baselines, compared byte for byte |
+| **Render snapshots** | 25 test files × every slide × both text paths = 188 normalized SVG baselines, compared byte for byte |
 | **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
 | **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
 | **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |
