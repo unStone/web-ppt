@@ -19,6 +19,7 @@ function hiddenExpr(stage) {
 export async function runPresentRewindContract({ evaluate, request, click, waitFor }, {
   trigger,
   host,
+  fullscreenTarget = host,
   stage,
   pager,
   presenting,
@@ -43,10 +44,9 @@ export async function runPresentRewindContract({ evaluate, request, click, waitF
   const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
 
   await evaluate(`document.querySelector(${JSON.stringify(stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`);
-  // 放映调用的是舞台的 requestFullscreen。拦 documentElement 时 CI 仍能进全屏，
-  // Esc 关网格会连带退出全屏，fullscreenchange 把放映拆掉。
+  // 两个入口调用的全屏宿主不同；必须拦实际目标，Esc 才会交给放映键盘契约。
   await evaluate(`(() => {
-    const el = document.querySelector(${JSON.stringify(host)});
+    const el = document.querySelector(${JSON.stringify(fullscreenTarget)});
     el.requestFullscreen = () => Promise.reject(new TypeError('Fullscreen denied'));
   })()`);
   if (await evaluate(notesOpen)) await click(`${host} .speaker-aids-close`);
@@ -202,6 +202,7 @@ export async function runStandalonePresentRewindContract({ evaluate, request, cl
   await runPresentRewindContract({ evaluate, request, click, waitFor }, {
     trigger: '#btnPresent',
     host: '#presenter',
+    fullscreenTarget: 'html',
     stage: '#stage',
     pager: '#pageIndicator',
     presenting: "!document.querySelector('#presenter').hidden",
