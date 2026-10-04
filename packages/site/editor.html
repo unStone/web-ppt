@@ -156,7 +156,14 @@
 
     <aside class="object-panel" id="objectPanel" aria-label="对象与格式面板">
       <div class="panel-heading"><span>对象</span><small>双击可重命名</small></div>
+      <div class="object-search">
+        <input id="objectSearch" type="search" aria-label="查找当前页对象" placeholder="查找当前页对象" autocomplete="off" />
+        <button id="objectSearchPrevious" type="button" aria-label="上一个匹配对象" title="上一个匹配对象">↑</button>
+        <button id="objectSearchNext" type="button" aria-label="下一个匹配对象" title="下一个匹配对象">↓</button>
+        <output id="objectSearchCount" aria-live="polite"></output>
+      </div>
       <div class="object-list" id="objectList"></div>
+      <div class="object-divider" id="objectDivider" role="separator" tabindex="0" aria-label="调整对象列表高度" aria-orientation="horizontal" aria-controls="objectList editorInspector" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
       <div class="inspector" id="editorInspector" aria-label="上下文格式">
         <section class="inspector-section search-inspector" id="searchInspector" hidden>
           <div class="inspector-title"><h2>查找与替换</h2><button id="closeSearch" type="button" aria-label="关闭查找"><i data-lucide="x"></i></button></div>
@@ -168,6 +175,12 @@
           </div>
           <output id="searchCount">0 个结果</output>
         </section>
+        <div class="inspector-tabs" role="tablist" aria-label="属性任务">
+          <button id="objectTaskTab" type="button" role="tab" aria-controls="objectTaskPanel" aria-selected="false">对象</button>
+          <button id="slideTaskTab" type="button" role="tab" aria-controls="slideTaskPanel" aria-selected="true">页面</button>
+          <button id="presentTaskTab" type="button" role="tab" aria-controls="presentTaskPanel" aria-selected="false">放映</button>
+        </div>
+        <div id="objectTaskPanel" role="tabpanel" aria-labelledby="objectTaskTab" hidden>
         <section class="inspector-section" id="textInspector" hidden>
           <h2>文字</h2>
           <div class="inspector-actions text-style-actions">
@@ -417,6 +430,9 @@
           <small data-chart-status></small>
           <div data-chart-table></div>
         </section>
+        <p class="inspector-empty" id="inspectorEmpty">选择元素或文字以编辑格式</p>
+        </div>
+        <div id="slideTaskPanel" role="tabpanel" aria-labelledby="slideTaskTab">
         <section class="inspector-section" id="slideInspector">
           <h2>页面</h2>
           <label class="inspector-field"><span>背景色</span><input id="slideBackgroundColor" type="color" value="#ffffff" /></label>
@@ -429,6 +445,13 @@
           <textarea id="slideNotes" rows="4" placeholder="添加仅演讲者可见的备注"></textarea>
           <button id="applyNotes" type="button">保存备注</button>
         </section>
+        <section class="inspector-section recovery-inspector">
+          <h2>本机恢复</h2>
+          <label class="inspector-check"><input id="recoveryToggle" type="checkbox" /><span>自动保存恢复记录</span></label>
+          <small id="recoveryState">只写入本机浏览器；保存副本后恢复记录会标记为已保存。</small>
+        </section>
+        </div>
+        <div id="presentTaskPanel" role="tabpanel" aria-labelledby="presentTaskTab" hidden>
         <section class="inspector-section" id="transitionInspector">
           <h2>页面切换</h2>
           <label class="inspector-stack"><span>效果</span><select id="transitionType">
@@ -473,18 +496,14 @@
           <ol class="animation-timeline" id="animationTimeline"></ol>
           <button id="previewTimeline" type="button">预览时间线</button>
         </section>
-        <section class="inspector-section recovery-inspector">
-          <h2>本机恢复</h2>
-          <label class="inspector-check"><input id="recoveryToggle" type="checkbox" /><span>自动保存恢复记录</span></label>
-          <small id="recoveryState">只写入本机浏览器；保存副本后恢复记录会标记为已保存。</small>
-        </section>
-        <p class="inspector-empty" id="inspectorEmpty">选择元素或文字以编辑格式</p>
+        </div>
       </div>
-      <div class="object-help">
+      <details class="object-help">
+        <summary>操作提示</summary>
         <kbd>双击</kbd> 编辑文字<br />
         <kbd>拖动</kbd> 移动元素<br />
         <kbd>Delete</kbd> 删除选中元素
-      </div>
+      </details>
     </aside>
   </main>
 

@@ -16,5 +16,6 @@ export interface SelectionPane {
   setSlide(slideId: SlideId): void;
   setMode(mode: EditorMode): void;
   focusElement(id: ElementId): boolean;
+  revealElement(id: ElementId): boolean;
   destroy(): void;
 }

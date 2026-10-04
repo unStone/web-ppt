@@ -105,6 +105,19 @@ class DomSelectionPane implements SelectionPane {
     return true;
   }
 
+  revealElement(id: ElementId): boolean {
+    const item = this.itemsById.get(id);
+    if (!item) return false;
+    let parentId = item.parentId;
+    let changed = false;
+    while (parentId) {
+      changed = this.collapsed.delete(parentId) || changed;
+      parentId = this.itemsById.get(parentId)?.parentId ?? null;
+    }
+    if (changed) this.syncRows();
+    return this.focusElement(id);
+  }
+
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;

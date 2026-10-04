@@ -7,6 +7,7 @@ import { bindContentTools } from './editor-content-tools';
 import { createProductTools } from './editor-product-tools';
 import { createEditorInspector } from './editor-inspector';
 import { createSlideInspector } from './editor-slide-inspector';
+import { createEditorSidePanel } from './editor-side-panel';
 import { editorButtons, editorElements } from './editor-elements';
 import { message, type SiteNotice } from './i18n/message';
 import type {DocumentFontService} from './editor-document-fonts';
@@ -60,6 +61,7 @@ export const editorToolsPlugin = {
       yield () => inspector.destroy();
       const slides = createSlideInspector(editorElements.inspectorElement, context, notice, signal);
       yield () => slides.destroy();
+      const sidePanel = createEditorSidePanel(host.snapshot, signal);
       const reset = () => {
         generation++;
         requests.abort();
@@ -67,7 +69,7 @@ export const editorToolsPlugin = {
         closeMedia?.(); closeMedia = undefined;
         closeSize?.(); closeSize = undefined;
         closeFonts?.(); closeFonts = undefined; fontsLoading = false;
-        comments.reset(); inspector.reset();
+        comments.reset(); inspector.reset(); sidePanel.reset();
         chart?.destroy(); chart = undefined; chartLoading = undefined;
       };
       yield reset;
@@ -129,7 +131,7 @@ export const editorToolsPlugin = {
         bindSession() { if (!signal.aborted) { reset(); product.bindSession(); } },
         sync() {
           if (signal.aborted) return;
-          product.sync(); comments.sync(); inspector.sync(); slides.sync(); syncChart();
+          product.sync(); comments.sync(); inspector.sync(); slides.sync(); sidePanel.sync(); syncChart();
         },
         dispose() {
           if (signal.aborted) return;

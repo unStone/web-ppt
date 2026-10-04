@@ -27,16 +27,12 @@ export interface Sample {
  * 首页示例栏放这几个，其余去样本页挑。
  *
  * 按文件名钉死，不跟清单里的 `demo` 标记走：样本库会一直加，
- * 首页摆哪几个是官网自己的取舍——四种一眼能分辨的视觉风格，
- * 外加一个纯交互（内部跳页按钮）和一个装饰密度极高的。数组顺序即展示顺序。
+ * 首页用两种明显不同的视觉风格展示扩展样本；完整目录留在样本库。
+ * 数组顺序即展示顺序。
  */
 export const FEATURED = [
-  'taste-grammar-gallery.pptx',   // 结构图谱（64 页）
   'swiss-grid-systems.pptx',      // 瑞士网格
   'glassmorphism-saas.pptx',      // 玻璃拟态
-  'global-ai-capital.pptx',       // 暗色数据新闻
-  'eddi-welcome-tutorial.pptx',   // EDDi 互动病例教程
-  'sugar-rush-memphis.pptx',      // 孟菲斯风格
 ];
 
 /**

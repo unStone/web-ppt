@@ -43,6 +43,7 @@ import { runSiteCommentEditBrowserContract } from './lib/site-comment-edit-brows
 import { runSiteResizeBrowserContract } from './lib/site-resize-browser-contract.mjs';
 import { runSiteChartDesignBrowserContract } from './lib/site-chart-design-browser-contract.mjs';
 import { runSiteObjectEditBrowserContract } from './lib/site-object-edit-browser-contract.mjs';
+import { runSiteEditorSidePanelBrowserContract } from './lib/site-editor-side-panel-browser-contract.mjs';
 import { runSiteCommentsBrowserContract } from './lib/site-comments-browser-contract.mjs';
 import { runSiteAppearanceBrowserContract } from './lib/site-appearance-browser-contract.mjs';
 import { runSiteEditContextFailureContract } from './lib/site-edit-context-browser-contract.mjs';
@@ -81,6 +82,7 @@ const pdfOnly = process.argv.includes('--pdf-only');
 const threeDOnly = process.argv.includes('--three-d-only');
 const metafileOnly = process.argv.includes('--metafiles-only');
 const objectEditOnly = process.argv.includes('--object-edit-only');
+const sidePanelOnly = process.argv.includes('--side-panel-only');
 const productionLanguages = process.argv.includes('--i18n-dist');
 const productionDirectory = join(root, 'packages/site/dist');
 const out = join(root, 'out/site-editor-browser');
@@ -242,8 +244,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
     const bytes = readFileSync(resolve(root, key));
     return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
   }, { raw: 0, gzip: 0 });
-// 首次打开的预算覆盖按需加载的动画蒙版与 OOXML 转角解析，数值来自当前官网构建实测。
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 38_701 };
+// 首次打开的预算包含动画蒙版、OOXML 转角解析及对象查找和侧栏任务导航；新增交互实测增加约 2.0 KB gzip。
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 41_500 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
@@ -602,6 +604,11 @@ async function runContract(webSocketDebuggerUrl) {
         node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (!node.isConnected) continue;
+        const inspectorPanel = node.closest('[role="tabpanel"]');
+        if (inspectorPanel?.hidden) {
+          document.getElementById(inspectorPanel.getAttribute('aria-labelledby'))?.click();
+          continue;
+        }
         if (node.closest('[hidden]')) continue;
         const rect = node.getBoundingClientRect();
         const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -639,6 +646,11 @@ async function runContract(webSocketDebuggerUrl) {
     await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
       && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+    if (sidePanelOnly) {
+      await runSiteEditorSidePanelBrowserContract({ evaluate, waitFor, click });
+      if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
+      return { bytes: 0 };
+    }
     if (chartLegacyOnly) {
       await runSiteChartLegacyBrowserContract({ evaluate, request, waitFor, click });
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
@@ -777,6 +789,7 @@ async function runContract(webSocketDebuggerUrl) {
       };
     })()`);
     await runSiteEditorToolbarContract({ evaluate, waitFor, click, request, lazyMediaUrls, out });
+    await runSiteEditorSidePanelBrowserContract({ evaluate, waitFor, click });
     await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
     const desktopLayout = await evaluate(`(() => {
       const panel = document.querySelector('.object-panel').getBoundingClientRect();
@@ -1152,7 +1165,7 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(chartLegacyOnly ? '旧图表迁移浏览器专项通过（非完整门禁）' : recoveryOnly ? '官网恢复服务专项通过（非完整门禁）' : lifecycleOnly ? '编辑器产品生命周期专项通过（非完整门禁）' : chartSharedOnly ? '共享图表浏览器专项通过（非完整门禁）' : chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
+  console.log(sidePanelOnly ? '编辑器侧栏浏览器专项通过（非完整门禁）' : chartLegacyOnly ? '旧图表迁移浏览器专项通过（非完整门禁）' : recoveryOnly ? '官网恢复服务专项通过（非完整门禁）' : lifecycleOnly ? '编辑器产品生命周期专项通过（非完整门禁）' : chartSharedOnly ? '共享图表浏览器专项通过（非完整门禁）' : chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
     ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
     : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
     + `（下载 ${result.bytes} bytes）\x1b[0m`);

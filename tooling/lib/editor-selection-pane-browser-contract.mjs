@@ -82,6 +82,12 @@ export async function runEditorSelectionPaneBrowserContract({
   if (outerRow.getAttribute('aria-expanded') !== 'true' || rowFor(paneMount, inner.id).hidden) {
     throw new Error('ArrowRight 没有展开组合');
   }
+  key(outerRow, 'ArrowLeft');
+  if (pane.focusElement(child.id) || !pane.revealElement(child.id)
+    || rowFor(paneMount, child.id).hidden || document.activeElement !== rowFor(paneMount, child.id)
+    || pane.revealElement('missing-element')) {
+    throw new Error('选择窗格没有展开折叠祖先并定位目标对象');
+  }
   key(outerRow, 'End');
   if (document.activeElement !== initialRows.at(-1)) throw new Error('End 没有移动到最后一个可见树项');
   key(initialRows.at(-1), 'Home');

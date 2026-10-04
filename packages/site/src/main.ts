@@ -27,6 +27,9 @@ import { bindSwipeNav } from './swipe-nav';
 import { bindSlideGrid, type SlideGrid } from './slide-grid';
 import { bindCopyButton } from './copy-button';
 import { cancelOpenPassword, openWithPresentationPassword, type PasswordDialogCopy } from './password-dialog';
+import { bindMobileNav } from './site-nav';
+
+bindMobileNav();
 
 function passwordMessage(source: string, params?: Record<string, string>): SiteMessage {
   return { source: source as Message, parameters: params ?? {} };

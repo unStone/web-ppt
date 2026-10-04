@@ -33,6 +33,8 @@ export async function selectPaneObject({ evaluate, waitFor }, name) {
 export async function changeValue({ evaluate }, selector, value, event = 'change') {
   await evaluate(`(() => {
     const control = document.querySelector(${JSON.stringify(selector)});
+    const taskPanel = control.closest('[role="tabpanel"]');
+    if (taskPanel?.hidden) document.getElementById(taskPanel.getAttribute('aria-labelledby')).click();
     control.value = ${JSON.stringify(value)};
     control.dispatchEvent(new Event(${JSON.stringify(event)}, { bubbles: true }));
   })()`);

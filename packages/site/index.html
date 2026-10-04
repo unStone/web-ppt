@@ -72,7 +72,7 @@
 <header class="nav">
   <a class="brand" href="#top"><span class="mark">P</span> Web-PPT</a>
   <span class="site-language" id="siteLanguage" data-site-language role="group" aria-label="Language / 语言"><a href="./?lang=zh-CN" data-site-locale="zh-CN" lang="zh-CN">中文</a><a href="./index.en.html" data-site-locale="en" lang="en">English</a></span>
-  <nav>
+  <nav class="desktop-nav" aria-label="主导航">
     <a href="#demo">Demo</a>
     <a href="./editor.html">编辑器</a>
     <a href="#matrix">能力</a>
@@ -81,6 +81,21 @@
     <a href="#hard">疑难杂症</a>
     <a href="#proof">保真 &amp; 性能</a>
     <a class="ghost" href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+  <nav class="mobile-nav" aria-label="移动导航">
+    <a href="#demo">试用</a>
+    <a href="./editor.html">编辑器</a>
+    <details class="mobile-nav-more">
+      <summary>目录</summary>
+      <div class="mobile-nav-menu">
+        <a href="#proof">保真 &amp; 性能</a>
+        <a href="#matrix">能力</a>
+        <a href="#start">上手</a>
+        <a href="#arch">架构</a>
+        <a href="#hard">疑难杂症</a>
+        <a href="https://github.com/unStone/web-ppt" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </details>
   </nav>
 </header>
 
@@ -164,6 +179,49 @@
     <div class="link-toast" id="linkToast" hidden></div>
   </div>
   <p class="note">解析与渲染全部发生在你的设备上，没有任何网络请求把文件送出去。</p>
+</section>
+
+<!-- ── 保真与性能 ──────────────────────────────────────────── -->
+<section id="proof" class="section">
+  <h2>保真 &amp; 性能</h2>
+  <div class="two">
+    <div>
+      <h3>保真不靠"看着差不多"</h3>
+      <p class="sub">拿 LibreOffice 的实际渲染做 ground truth 逐档比对。主题色 <code>shade</code>/<code>tint</code> 必须在线性 RGB 里算：</p>
+      <div class="proof-table"><table class="cmp">
+        <thead><tr><th>档位</th><th>LibreOffice</th><th>sRGB 直乘</th><th>线性 RGB</th></tr></thead>
+        <tbody>
+          <tr><td>shade 20%</td><td><span class="sw" style="--c:rgb(33,56,97)"></span>33,56,97</td>
+              <td class="bad"><span class="sw" style="--c:rgb(14,23,39)"></span>Δ69</td>
+              <td class="good"><span class="sw" style="--c:rgb(28,51,93)"></span>Δ8</td></tr>
+          <tr><td>tint 60%</td><td><span class="sw" style="--c:rgb(176,187,222)"></span>176,187,222</td>
+              <td class="bad"><span class="sw" style="--c:rgb(143,170,220)"></span>Δ37</td>
+              <td class="good"><span class="sw" style="--c:rgb(176,188,222)"></span>Δ1</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">快照测试只能挡住"变了"，挡不住"一开始就错了"——所以要有外部真值。</p>
+    </div>
+    <div>
+      <h3>性能</h3>
+      <p class="sub">浏览器实测，210 页 / 11280 元素：</p>
+      <div class="proof-table"><table class="cmp">
+        <tbody>
+          <tr><td>惰性首屏（解析 + 首页渲染）</td><td class="big">42ms</td></tr>
+          <tr><td>全量解析</td><td>376ms（1.8ms/页）</td></tr>
+          <tr><td>单页渲染</td><td>0.09ms</td></tr>
+          <tr><td>JS 堆</td><td>40MB（0.19MB/页）</td></tr>
+        </tbody>
+      </table></div>
+      <div class="proof-table"><table class="cmp">
+        <thead><tr><th>优化</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td>惰性解析（默认）</td><td class="good">首屏 9×</td></tr>
+          <tr><td>Worker 解析</td><td class="good">主线程零阻塞</td></tr>
+          <tr><td>缩略图虚拟化</td><td class="good">210 页只渲 7 个</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
 </section>
 
 <!-- ── 能力矩阵 ────────────────────────────────────────────── -->
@@ -265,49 +323,6 @@ setMetafileDecoder(<span class="k">undefined</span>);  <span class="c">// 省 ~1
     <div><b>格式按魔数识别</b><span><code>PK</code> → pptx，<code>D0CF11E0</code> → ppt。调用方不需要关心扩展名。</span></div>
     <div><b>两条文本渲染路径</b><span>预览用 <code>foreignObject</code>（文本可选中）；导出用原生 <code>&lt;text&gt;</code> + 自实现测量断行与分栏——Chrome 会把含 <code>foreignObject</code> 的 SVG 判为污染画布，无法 <code>toBlob</code>。</span></div>
     <div><b>惰性解析</b><span>每页首次访问时才解析，210 页首屏 376ms → 42ms。</span></div>
-  </div>
-</section>
-
-<!-- ── 保真与性能 ──────────────────────────────────────────── -->
-<section id="proof" class="section">
-  <h2>保真 &amp; 性能</h2>
-  <div class="two">
-    <div>
-      <h3>保真不靠"看着差不多"</h3>
-      <p class="sub">拿 LibreOffice 的实际渲染做 ground truth 逐档比对。主题色 <code>shade</code>/<code>tint</code> 必须在线性 RGB 里算：</p>
-      <table class="cmp">
-        <thead><tr><th>档位</th><th>LibreOffice</th><th>sRGB 直乘</th><th>线性 RGB</th></tr></thead>
-        <tbody>
-          <tr><td>shade 20%</td><td><span class="sw" style="--c:rgb(33,56,97)"></span>33,56,97</td>
-              <td class="bad"><span class="sw" style="--c:rgb(14,23,39)"></span>Δ69</td>
-              <td class="good"><span class="sw" style="--c:rgb(28,51,93)"></span>Δ8</td></tr>
-          <tr><td>tint 60%</td><td><span class="sw" style="--c:rgb(176,187,222)"></span>176,187,222</td>
-              <td class="bad"><span class="sw" style="--c:rgb(143,170,220)"></span>Δ37</td>
-              <td class="good"><span class="sw" style="--c:rgb(176,188,222)"></span>Δ1</td></tr>
-        </tbody>
-      </table>
-      <p class="note">快照测试只能挡住"变了"，挡不住"一开始就错了"——所以要有外部真值。</p>
-    </div>
-    <div>
-      <h3>性能</h3>
-      <p class="sub">浏览器实测，210 页 / 11280 元素：</p>
-      <table class="cmp">
-        <tbody>
-          <tr><td>惰性首屏（解析 + 首页渲染）</td><td class="big">42ms</td></tr>
-          <tr><td>全量解析</td><td>376ms（1.8ms/页）</td></tr>
-          <tr><td>单页渲染</td><td>0.09ms</td></tr>
-          <tr><td>JS 堆</td><td>40MB（0.19MB/页）</td></tr>
-        </tbody>
-      </table>
-      <table class="cmp">
-        <thead><tr><th>优化</th><th>效果</th></tr></thead>
-        <tbody>
-          <tr><td>惰性解析（默认）</td><td class="good">首屏 9×</td></tr>
-          <tr><td>Worker 解析</td><td class="good">主线程零阻塞</td></tr>
-          <tr><td>缩略图虚拟化</td><td class="good">210 页只渲 7 个</td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 </section>
 
