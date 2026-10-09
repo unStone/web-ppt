@@ -111,3 +111,31 @@ mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
 pix.save(path.with_name('paints-6.png'))
 assert mae<1,mae
 print(f'垂直与斜向文字渐变：字形墨迹框取色、色相断言与 Chrome/MuPDF 对照通过，MAE={mae:.4f}')
+page=pdf[6]
+assert not page.get_images(),page.get_images()
+assert ''.join(page.get_text().split())=='Ab01',page.get_text()
+pix=page.get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
+reference=fitz.Pixmap(str(path.with_name('paints-7-reference.png')))
+if reference.alpha: reference=fitz.Pixmap(reference,0)
+# 多重渐变：两个 run 各自的渐变框（Chrome 对 tspan fill=url 按 tspan 分框，参考图已证）
+# 第一 run 前半红、第二 run 头部蓝、第二 run 尾部红——三个窗口的色相可判别分框语义
+def hue(x0,x1,channel):
+  best=None
+  for y in range(100,150):
+    for x in range(x0,x1):
+      r,g,b=pix.pixel(x,y)
+      score=r-b if channel=='r' else b-r
+      if (255,255,255)!=(r,g,b) and (best is None or score>best[0]): best=(score,(r,g,b))
+  return best
+firstRed=hue(105,140,'r'); secondBlue=hue(160,185,'b'); secondRed=hue(200,230,'r')
+assert firstRed and firstRed[0]>40,firstRed
+assert secondBlue and secondBlue[0]>40,secondBlue
+assert secondRed and secondRed[0]>40,secondRed
+a,b=pix.samples,reference.samples
+mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
+  for y in range(250) for x in range(360) for c in range(3))/(250*360*3)
+pix.save(path.with_name('paints-7.png'))
+# 分框语义由三窗色相断言承担；MAE 只作对照记录：两字窄 run 下墨迹框边界的
+# 亚像素差（pathBounds 曲线保守 vs Chrome ink bbox）被窄框放大，阈值放到 2
+assert mae<2,mae
+print(f'多重文字渐变：run 分框色相断言通过，Chrome/MuPDF 对照 MAE={mae:.4f}（窄 run 亚像素框差）')

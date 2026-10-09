@@ -118,10 +118,23 @@ const axisText=(id,name,x,ang,label)=>`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name=
   +`<a:lin ang="${ang}"/></a:gradFill><a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>${label}</a:t></a:r></a:p></p:txBody></p:sp>`;
 const verticalText=axisText(901,'verticalText',40,5400000,'bq');
 const diagonalText=axisText(902,'diagonalText',340,2700000,'io');
+// 多重渐变：同段两个 run 各自的渐变引用（第二个反向，色相可判别 span 框语义）
+const multiGradient=(id,name,first,second)=>`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
+  +`<p:spPr><a:xfrm><a:off x="381000" y="381000"/><a:ext cx="2857500" cy="762000"/></a:xfrm>`
+  +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>'
+  +`<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p>`
+  +`<a:r><a:rPr sz="3200"><a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="FF0000"/></a:gs>`
+  +'<a:gs pos="100000"><a:srgbClr val="0000FF"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>'
+  +`<a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>${first}</a:t></a:r>`
+  +`<a:r><a:rPr sz="3200"><a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="0000FF"/></a:gs>`
+  +'<a:gs pos="100000"><a:srgbClr val="FF0000"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>'
+  +`<a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>${second}</a:t></a:r></a:p></p:txBody></p:sp>`;
+const multiGradientText=multiGradient(903,'multiGradientText','Ab','01');
 writeFileSync(new URL('../fixtures/sample-vector-pdf-paints.pptx',import.meta.url),deck({
   name:'VectorPdfPaints',width:640,height:360,slides:[slideXml(transparent+opaque+label('ABC',440)),slideXml(axial+radial),
     slideXml(sp({x:40,y:40,w:160,h:100,fill:alphaGradient})+sp({x:280,y:40,w:200,h:100,fill:hardGradient})),
-    slideXml(alphaPicture+opaque),slideXml(gradientText),slideXml(verticalText+diagonalText)],slideRelationships:['','','',imageRel,'',''],
+    slideXml(alphaPicture+opaque),slideXml(gradientText),slideXml(verticalText+diagonalText),
+    slideXml(multiGradientText)],slideRelationships:['','','',imageRel,'','',''],
   extraTypes:'<Default Extension="png" ContentType="image/png"/>',extraEntries:[['ppt/media/alpha.png',rgba]],
 }));
 console.log('fixtures/sample-vector-pdf-paints.pptx：透明填充与独立透明描边');
