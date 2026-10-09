@@ -2,7 +2,7 @@ import type {LiteElement} from '../xml-lite';
 import {VectorDocument,pdfNumber as n} from './vector-document';
 import {pdfColor,type VectorPaint} from './vector-paint';
 import {pathBounds} from './vector-bounds';
-import {multiply,type Matrix} from './vector-matrix';
+import {type Matrix} from './vector-matrix';
 import type {VectorResources} from './vector-resources';
 
 interface Stop {pos:number; color:number[]; alpha:number}
@@ -22,12 +22,17 @@ export class VectorGradient {
    * 三实现实测（MuPDF / poppler / CoreGraphics）：PatternMatrix 在文字填充下
    * **不生效**（非恒等矩阵整段取末端色），正确表达是矩阵保持恒等、把局部
    * 端点经累计 CTM（ctm）换算成页面绝对坐标直接写进 Shading 的 Coords。
+   *
+   * objectBoundingBox 单位端点 (x1,y1)/(x2,y2) 经墨迹框（x..x+width、
+   * inkTop..inkTop+inkHeight，局部坐标）映射后绝对化；轴不限方向，
+   * 垂直 / 斜向的精度取决于墨迹框 y 的字形轮廓测量（VectorFonts.glyphBox）。
    */
-  textPattern(reference:string, definitions:ReadonlyMap<string,LiteElement>, x:number, width:number, ctm:Matrix):string {
-    if (width <= 0) throw new Error('PDF 文字渐变范围无效');
-    const m = multiply(ctm,[width,0,0,1,x,0]);
-    const point = (u:number):[number,number] => [m[0]*u + m[2]*.5 + m[4],m[1]*u + m[3]*.5 + m[5]];
-    const cacheKey = JSON.stringify([reference,m]);
+  textPattern(reference:string, definitions:ReadonlyMap<string,LiteElement>, x:number, width:number, inkTop:number, inkHeight:number, ctm:Matrix):string {
+    if (width <= 0 || inkHeight <= 0) throw new Error('PDF 文字渐变范围无效');
+    const at = (px:number,py:number):[number,number] =>
+      [ctm[0]*px + ctm[2]*py + ctm[4],ctm[1]*px + ctm[3]*py + ctm[5]];
+    const bx = (u:number):number => x + u * width, by = (v:number):number => inkTop + v * inkHeight;
+    const cacheKey = JSON.stringify([reference,bx(0),by(0),bx(1),by(1),ctm]);
     const cached = this.textPatterns.get(cacheKey);
     if (cached) return cached;
     const gid = /^url\(#([^)]*)\)$/.exec(reference)?.[1], gradient = gid && definitions.get(gid);
@@ -48,9 +53,9 @@ export class VectorGradient {
     if (stops.some(s => s.alpha !== 1)) throw new Error('PDF 暂不支持文字渐变透明度');
     const attr = (key:string,fallback:number):number => coordinate(gradient.getAttribute(key),fallback);
     const x1 = attr('x1',0), y1 = attr('y1',0), x2 = attr('x2',1), y2 = attr('y2',0);
-    if (y1 !== y2 || x1 === x2) throw new Error('PDF 暂不支持文字渐变方向');
+    if (y1 === y2 && x1 === x2) throw new Error('PDF 暂不支持文字渐变方向');
     // 端点换算成页面绝对坐标写进 Coords；PatternMatrix 恒等（文字填充下非恒等矩阵三实现均不生效）
-    const [ax1,ay1] = point(x1), [ax2,ay2] = point(x2);
+    const [ax1,ay1] = at(bx(x1),by(y1)), [ax2,ay2] = at(bx(x2),by(y2));
     const key = JSON.stringify(['text',ax1,ay1,ax2,ay2,stops]);
     let shading = this.shadings.get(key);
     if (!shading) {

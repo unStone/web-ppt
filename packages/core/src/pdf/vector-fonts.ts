@@ -2,6 +2,8 @@ import type {TextMeasure,TextRun} from '../index';
 import type {PdfFontFace,PdfFontSource,PdfGlyphRun} from './vector-types';
 import {escapeCssString,escapeXml} from '../render/serialize';
 import {PdfFontError} from './vector-error';
+import {pathBounds} from './vector-bounds';
+import {vectorPath} from './vector-path';
 
 export interface PdfTextStyle {fonts:string[]; b?:boolean; i?:boolean}
 export interface PdfShapedPart {face:PdfFontFace; run:PdfGlyphRun; text:string}
@@ -9,9 +11,28 @@ export interface PdfShapedPart {face:PdfFontFace; run:PdfGlyphRun; text:string}
 /** 每次导出独占缓存，取消或返回后即由调用栈释放；不接管宿主 Provider。 */
 export class VectorFonts {
   private cache = new Map<string,PdfShapedPart[]>();
+  private boxes = new Map<string,readonly [number,number,number,number]>();
   private characters = 0;
   constructor(private source:PdfFontSource,private language:string,private signal?:AbortSignal) {}
   abort():void {if (this.signal?.aborted) throw new DOMException('PDF 导出已取消','AbortError');}
+  /**
+   * 字形墨迹框（字体单位域，含曲线极值）。渐变的 objectBoundingBox 以真实墨迹
+   * 为准——advance 范围只在水平轴下等价，垂直 / 斜向的取色依赖 y，必须量轮廓。
+   * outline 走 provider 公开接口，仅对需要墨迹的渐变文字按字形惰性计算并缓存。
+   */
+  async glyphBox(part:PdfShapedPart,glyphId:number):Promise<readonly [number,number,number,number]> {
+    this.abort();
+    const key = `${part.face.id}|${glyphId}`, cached = this.boxes.get(key);
+    if (cached) return cached;
+    const outline = this.source.provider.outline;
+    if (!outline) throw new PdfFontError('outline-unavailable',[part.face.family],part.text);
+    const outlined = await outline.call(this.source.provider,part.face.id,glyphId,{purpose:'view-print',signal:this.signal});
+    this.abort();
+    if (!outlined.ok) throw new PdfFontError(outlined.reason,[part.face.family],part.text);
+    const box = pathBounds(vectorPath(outlined.value));
+    if (this.boxes.size < 16384) this.boxes.set(key,box);
+    return box;
+  }
   private key(text:string,style:PdfTextStyle):string {return JSON.stringify([text,style.fonts,!!style.b,!!style.i]);}
   async shape(text:string,style:PdfTextStyle):Promise<PdfShapedPart[]> {
     this.abort();

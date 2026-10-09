@@ -18,6 +18,8 @@ export interface PdfFontSource {
     resolve(request:PdfFontRequest & {family:string; weight:number; italic:boolean}):Promise<PdfFontResult<PdfFontFace>>;
     embedding(faceId:string,request:PdfFontRequest):Promise<PdfFontResult<{bytes:Uint8Array; info:PdfFontFace}>>;
     shape(faceId:string,text:string,options:PdfFontRequest & Omit<PdfFontSegment,'text'>):Promise<PdfFontResult<PdfGlyphRun>>;
+    /** 可选字形轮廓（SVG path）。垂直 / 斜向文字渐变的墨迹框依赖它；未提供的 provider 上该渐变回退 */
+    outline?(faceId:string,glyphId:number,request:PdfFontRequest):Promise<PdfFontResult<string>>;
   };
   segmentText(text:string,options:{direction:'ltr'; language:string}):PdfFontResult<PdfFontSegment[]>;
 }

@@ -83,3 +83,31 @@ mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
 pix.save(path.with_name('paints-5.png'))
 assert mae<1,mae
 print(f'文字渐变：Pattern colorspace 原生填充、左右色相与 Chrome/MuPDF 对照通过，MAE={mae:.4f}')
+page=pdf[5]
+assert not page.get_images(),page.get_images()
+assert ''.join(page.get_text().split())=='bqio',page.get_text()
+assert any(pdf.xref_get_key(i,'PatternType')[1]=='2' for i in range(1,pdf.xref_length()))
+pix=page.get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
+reference=fitz.Pixmap(str(path.with_name('paints-6-reference.png')))
+if reference.alpha: reference=fitz.Pixmap(reference,0)
+# 垂直渐变：同一字形上下取色依赖墨迹框 y（b 上伸部红、q 下伸部蓝）；
+# 斜向渐变窄小，按窗口扫描：左上窗最红像素须红占优，右下窗最蓝像素须蓝占优
+vertical=(pix.pixel(80,95),pix.pixel(145,150))
+assert vertical[0][0]>vertical[0][2]+40 and vertical[1][2]>vertical[1][0]+40,vertical
+def dominant(x0,x1,y0,y1,channel):
+  best=None
+  for y in range(y0,y1):
+    for x in range(x0,x1):
+      r,g,b=pix.pixel(x,y)
+      score=r-b if channel=='r' else b-r
+      if (255,255,255)!=(r,g,b) and (best is None or score>best[0]): best=(score,(r,g,b))
+  return best
+topLeft=dominant(518,546,90,116,'r'); bottomRight=dominant(552,582,124,144,'b')
+assert topLeft and topLeft[0]>40,topLeft
+assert bottomRight and bottomRight[0]>40,bottomRight
+a,b=pix.samples,reference.samples
+mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
+  for y in range(250) for x in range(800) for c in range(3))/(250*800*3)
+pix.save(path.with_name('paints-6.png'))
+assert mae<1,mae
+print(f'垂直与斜向文字渐变：字形墨迹框取色、色相断言与 Chrome/MuPDF 对照通过，MAE={mae:.4f}')

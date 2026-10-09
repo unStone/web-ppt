@@ -138,14 +138,38 @@ export class VectorSvg {
       + s.style.spacing * s.text.length + s.dx.reduce((a,b) => a + b,0),0);
     const anchor = el.getAttribute('text-anchor'); if (anchor === 'middle') x -= width / 2; else if (anchor === 'end') x -= width;
     const commands:string[] = [], underlines:string[] = [], strikes:string[] = [];
-    // 文字渐变：引用必须全元素一致且无装饰（下划线/删除线仍需纯色），Pattern 覆盖整段 x 推进范围
+    // 文字渐变：引用必须全元素一致且无装饰（下划线/删除线仍需纯色）、单行（tspan dy 的多行墨迹框语义待定）
     const gradientFills = new Set(spans.filter(s => s.style.fill.startsWith('url(')).map(s => s.style.fill));
     let textGradient = '';
     if (gradientFills.size > 1) throw new Error('PDF 暂不支持文字多重渐变');
     if (gradientFills.size === 1) {
       if (spans.some(s => s.style.decorations.length)) throw new Error('PDF 暂不支持文字渐变装饰');
-      textGradient = ctm === null ? (() => {throw new Error('PDF 暂不支持图案单元内文字渐变');})()
-        : this.gradient.textPattern(gradientFills.values().next().value!,this.definitions,x,width,ctm);
+      if (spans.some(s => s.dy)) throw new Error('PDF 暂不支持多行文字渐变');
+      if (ctm === null) throw new Error('PDF 暂不支持图案单元内文字渐变');
+      const gid = /^url\(#([^)]*)\)$/.exec(gradientFills.values().next().value!)?.[1];
+      const definition = gid && this.definitions.get(gid);
+      // 水平轴取色与 y 无关（第七步已验证），免轮廓；垂直 / 斜向的墨迹框 y 必须量字形轮廓
+      const horizontal = definition && Number(definition.getAttribute('y1') ?? 0) === Number(definition.getAttribute('y2') ?? 0);
+      let inkTop = 0, inkHeight = 1;
+      if (!horizontal) {
+        let minY = Infinity, maxY = -Infinity, glyphs = 0;
+        for (const span of spans) {
+          if (!span.parts.length) continue;
+          const scale = span.style.size / span.parts[0].run.unitsPerEm;
+          for (const part of span.parts) {
+            for (const glyph of part.run.glyphs) {
+              const box = await this.fonts.glyphBox(part,glyph.id);
+              glyphs++;
+              minY = Math.min(minY,(box[1] + glyph.yOffset) * scale);
+              maxY = Math.max(maxY,(box[3] + glyph.yOffset) * scale);
+            }
+          }
+        }
+        if (!glyphs || !Number.isFinite(minY) || !Number.isFinite(maxY) || maxY <= minY) throw new Error('PDF 文字渐变墨迹范围无效');
+        // 字体单位 y 向上（上伸正、下伸负），局部 SVG y 向下：框顶在基线上方 maxY 处
+        inkTop = y - maxY; inkHeight = maxY - minY;
+      }
+      textGradient = this.gradient.textPattern(gradientFills.values().next().value!,this.definitions,x,width,inkTop,inkHeight,ctm);
     }
     for (const span of spans) {
       y += span.dy; let character = 0;
