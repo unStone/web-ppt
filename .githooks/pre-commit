@@ -1,0 +1,4 @@
+#!/bin/sh
+# 由 package.json 的 prepare 脚本把 core.hooksPath 指到 .githooks/ 后生效。
+# 提交前检查暂存区是否触及需要同步文档的区域；放行规则见 check-doc-sync.mjs 头部注释。
+exec node "$(dirname "$0")/../tooling/check-doc-sync.mjs" pre-commit

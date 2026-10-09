@@ -45,6 +45,7 @@
 2. **格式按魔数识别**，不看扩展名：`PK` → pptx，`D0CF11E0` → ppt。
 3. **两条文本渲染路径**：`foreignObject` + HTML 排版（屏幕预览、PNG 导出）与原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）。理由是**可移植性**：`foreignObject` 只有浏览器认，Inkscape / librsvg / 设计工具打开会整块丢失文本。交出去的文件必须走 `<text>`，别合并这两条路径。
 4. **`core` 不碰 `document`**，要能在 Worker 里整包运行（`xml-lite.ts` 就是为此存在：Worker 里没有 `DOMParser`）。
+5. **依赖方向单向且可审计**：发布包只 import 声明的 deps/peer；`geometry/` 零外部依赖；core 的浏览器 DOM 只允许出现在五个白名单文件。由 `tooling/check-architecture-boundary.mjs` 在 build 与 verify 强制；分层模型、落位决策与反模式见 [docs/architecture-rules.md](docs/architecture-rules.md)。
 
 ## 已知陷阱
 
@@ -107,3 +108,4 @@ git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
 - **注释解释「为什么」，不复述「做了什么」**。非显然的约束、踩过的坑、格式规范的怪异之处才值得写
 - 文档能用图和表格表达的一律用图表，文字精简
 - 改 README / 官网里的数字（断言数、体积、性能）时**先实测**，不要照抄旧值
+- **提交与收尾时检查文档同步**（挂在项目上，跨客户端生效）：git pre-commit hook（`.githooks/`，`prepare` 脚本经 `core.hooksPath` 安装）检查暂存区，ZCode 的 Stop hook（`.zcode/config.json`）检查工作区，共用 `tooling/check-doc-sync.mjs`；改动触及 `packages/*/src`、固件、测试脚本、快照或流水线时列出待复查文档并首次拦截，同一批文件的重试放行。文档已更新或改动无关时直接重试即可。

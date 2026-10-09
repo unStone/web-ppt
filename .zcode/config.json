@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "enabled": true,
+    "events": {
+      "Stop": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "node \"${ZCODE_PROJECT_DIR}/tooling/check-doc-sync.mjs\"",
+              "timeout": 15,
+              "statusMessage": "检查文档是否需要同步"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
