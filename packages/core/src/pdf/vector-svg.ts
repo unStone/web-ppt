@@ -12,6 +12,7 @@ import {textDecorations,drawDecorations,type Decoration} from './vector-decorati
 import type {VectorPdfIssue,VectorPdfOptions} from './vector-types';
 import {locateVectorError} from './vector-error';
 import {svgStyle,svgLength} from './vector-style';
+import {multiply,svgMatrix,type Matrix} from './vector-matrix';
 import {drawMarkers} from './vector-markers';
 import {VectorPattern} from './vector-pattern';
 import {VectorResources} from './vector-resources';
@@ -118,7 +119,7 @@ export class VectorSvg {
     this.references.use('Font',font);
     return font;
   }
-  private async text(el:LiteElement,style:Style):Promise<string> {
+  private async text(el:LiteElement,style:Style,ctm:Matrix | null):Promise<string> {
     const spans:Span[] = [];
     const collect = async (node:LiteElement,parent:Style):Promise<void> => {
       const style = inherit(node,parent); let dx = numbers(node.getAttribute('dx') ?? ''), dy = Number(node.getAttribute('dy') ?? 0);
@@ -137,10 +138,19 @@ export class VectorSvg {
       + s.style.spacing * s.text.length + s.dx.reduce((a,b) => a + b,0),0);
     const anchor = el.getAttribute('text-anchor'); if (anchor === 'middle') x -= width / 2; else if (anchor === 'end') x -= width;
     const commands:string[] = [], underlines:string[] = [], strikes:string[] = [];
+    // 文字渐变：引用必须全元素一致且无装饰（下划线/删除线仍需纯色），Pattern 覆盖整段 x 推进范围
+    const gradientFills = new Set(spans.filter(s => s.style.fill.startsWith('url(')).map(s => s.style.fill));
+    let textGradient = '';
+    if (gradientFills.size > 1) throw new Error('PDF 暂不支持文字多重渐变');
+    if (gradientFills.size === 1) {
+      if (spans.some(s => s.style.decorations.length)) throw new Error('PDF 暂不支持文字渐变装饰');
+      textGradient = ctm === null ? (() => {throw new Error('PDF 暂不支持图案单元内文字渐变');})()
+        : this.gradient.textPattern(gradientFills.values().next().value!,this.definitions,x,width,ctm);
+    }
     for (const span of spans) {
       y += span.dy; let character = 0;
       if (span.style.stroke !== 'none') throw new Error('PDF 暂不支持文字描边');
-      commands.push(this.paint.solid(span.style.fill));
+      commands.push(span.style.fill.startsWith('url(') ? textGradient : this.paint.solid(span.style.fill));
       for (const part of span.parts) {
         const startX = x, startY = y;
         const font = await this.resource(part), scale = span.style.size / part.run.unitsPerEm;
@@ -162,15 +172,15 @@ export class VectorSvg {
     // SVG 下划线先于字形、删除线后于字形；整个 text 统一顺序，避免相邻字形的悬出部被后续线段盖住。
     return [...underlines,...commands,...strikes].filter(Boolean).join('\n');
   }
-  private async element(el:LiteElement,parent:Style,ancestors:readonly LiteElement[] = []):Promise<string> {
-    try {return await this.drawElement(el,parent,ancestors);}
+  private async element(el:LiteElement,parent:Style,ancestors:readonly LiteElement[] = [],ctm:Matrix | null = null):Promise<string> {
+    try {return await this.drawElement(el,parent,ancestors,ctm ?? [.75,0,0,-.75,0,this.pdf.height]);}
     catch (error) {
       const id = el.getAttribute('data-el');
       if (id === null && ancestors.length) throw error;
       locateVectorError(error,this.slideNumber,id === null ? undefined : Number(id),this.anonymous);
     }
   }
-  private async drawElement(el:LiteElement,parent:Style,ancestors:readonly LiteElement[]):Promise<string> {
+  private async drawElement(el:LiteElement,parent:Style,ancestors:readonly LiteElement[],ctm:Matrix | null):Promise<string> {
     this.fonts.abort();
     if (['defs','style','title','desc'].includes(el.localName) || el.getAttribute('visibility') === 'hidden'
       || /(?:^|;)\s*visibility\s*:\s*hidden(?:;|$)/.test(el.getAttribute('style') ?? '')) return '';
@@ -181,8 +191,12 @@ export class VectorSvg {
       if (el.getAttribute(attr) !== null) throw new Error(`PDF 暂不支持效果：${attr}`);
     }
     const style = inherit(el,parent), commands = ['q',transform(el.getAttribute('transform') ?? '')];
+    // PatternMatrix 按默认用户空间（页面绝对坐标）解释——MuPDF/poppler/CoreGraphics 三实现实测一致；
+    // 文字渐变需要累计 CTM 把局部范围换算成页面坐标。null 表示图案单元内部：无页面坐标语义，文字渐变回退
+    const tm = el.getAttribute('transform') ? svgMatrix(el.getAttribute('transform')!) : null;
+    let local = ctm === null || !tm ? ctm : multiply(ctm,tm);
     const clip = el.getAttribute('clip-path'); if (clip) commands.push(this.clip(clip));
-    if (el.localName === 'text') commands.push(await this.text(el,style));
+    if (el.localName === 'text') commands.push(await this.text(el,style,local));
     else if (el.localName === 'image') {
       if (el.getAttribute('preserveAspectRatio') !== 'none') throw new Error('PDF 暂不支持图片宽高比模式');
       commands.push(this.paint.alpha(Math.max(0,Math.min(1,Number(el.getAttribute('opacity') ?? 1))),1));
@@ -194,10 +208,11 @@ export class VectorSvg {
         const width = Number(el.getAttribute('width')), height = Number(el.getAttribute('height'));
         if (!width || !height) return '';
         // 平铺图片的 srcRect 可超出单元；视口裁剪必须随本格移动，否则会覆盖相邻翻转格。
-        commands.push(`1 0 0 1 ${n(Number(el.getAttribute('x') ?? 0))} ${n(Number(el.getAttribute('y') ?? 0))} cm`,
-          `0 0 ${n(width)} ${n(height)} re W n`);
+        const x0 = Number(el.getAttribute('x') ?? 0), y0 = Number(el.getAttribute('y') ?? 0);
+        commands.push(`1 0 0 1 ${n(x0)} ${n(y0)} cm`,`0 0 ${n(width)} ${n(height)} re W n`);
+        if (local) local = multiply(local,[1,0,0,1,x0,y0]);
       }
-      for (const child of el.children) commands.push(await this.element(child,style,[...ancestors,el]));
+      for (const child of el.children) commands.push(await this.element(child,style,[...ancestors,el],local));
     } else if (['rect','path','line','circle','ellipse'].includes(el.localName)) {
       const fill = el.localName === 'line' ? 'none' : style.fill, reference = fill.startsWith('url(');
       const stroke = style.strokeWidth === 0 ? 'none' : style.stroke;
@@ -213,11 +228,11 @@ export class VectorSvg {
       // SVG 先合成填充再合成描边；PDF 的 B 将两者作为同一对象，透明交叠处不会得到相同颜色。
       const definition = reference ? this.definitions.get(/^url\(#([^)]*)\)$/.exec(fill)?.[1] ?? '') : undefined;
       if (definition?.localName === 'pattern') commands.push(await this.pattern.fill(path,definition,el.getAttribute('fill-rule') === 'evenodd',
-        child => this.element(child,initialStyle,[...ancestors,el])));
+        child => this.element(child,initialStyle,[...ancestors,el],null)));
       else if (reference) commands.push(this.gradient.fill(path,fill,this.definitions,el.getAttribute('fill-rule') === 'evenodd'));
       else if (fill !== 'none') commands.push(path,el.getAttribute('fill-rule') === 'evenodd' ? 'f*' : 'f');
       if (stroke !== 'none') commands.push(path,'S');
-      commands.push(await drawMarkers(el,path,style.strokeWidth,this.definitions,child => this.element(child,initialStyle,[...ancestors,el])));
+      commands.push(await drawMarkers(el,path,style.strokeWidth,this.definitions,child => this.element(child,initialStyle,[...ancestors,el],null)));
     } else throw new Error(`PDF 暂不支持 SVG 节点：${el.localName}`);
     commands.push('Q'); return commands.filter(Boolean).join('\n');
   }

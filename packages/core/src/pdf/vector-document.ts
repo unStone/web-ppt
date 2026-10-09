@@ -12,7 +12,7 @@ export class VectorDocument {
   private objects:(Uint8Array[] | null)[] = [null,null,null];
   private pages:number[] = [];
   private size = 0;
-  constructor(private width:number,private height:number,private title = '') {
+  constructor(private width:number,/** 页面高度 pt；PatternMatrix 按页面绝对坐标写，矢量层要拿它构造根矩阵 */readonly height:number,private title = '') {
     if (![width,height].every(n => Number.isFinite(n) && n > 0 && n <= 14400)) throw new Error('PDF 页面尺寸必须为 0–14400 pt');
   }
   reserve():number {this.objects.push(null); return this.objects.length - 1;}

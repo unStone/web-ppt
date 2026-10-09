@@ -101,10 +101,18 @@ const hardGradient=gradient(false).replace('<a:gs pos="50000"><a:srgbClr val="00
   '<a:gs pos="50000"><a:srgbClr val="FF0000"/></a:gs><a:gs pos="50000"><a:srgbClr val="0000FF"/></a:gs>');
 const alphaPicture=picture.replace(/id="\d+"/,`id="${nextShapeId()}"`).replace('<a:blip r:embed="rIdImage"/>',
   '<a:blip r:embed="rIdImage"><a:alphaModFix amt="50000"/></a:blip>');
+// 文字渐变（rPr>a:gradFill）：水平轴左红右蓝，矢量 PDF 走 Pattern colorspace 原生填充。
+// 手写固定 id 而不经 sp()：sp 消耗全局自增 shape id，会令本脚本后续生成的固件全部漂移
+const gradientText='<p:sp><p:nvSpPr><p:cNvPr id="900" name="gradientText"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>'
+  +'<p:spPr><a:xfrm><a:off x="381000" y="381000"/><a:ext cx="2857500" cy="762000"/></a:xfrm>'
+  +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>'
+  +'<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:r><a:rPr sz="3200"><a:gradFill><a:gsLst>'
+  +'<a:gs pos="0"><a:srgbClr val="FF0000"/></a:gs><a:gs pos="100000"><a:srgbClr val="0000FF"/></a:gs></a:gsLst>'
+  +'<a:lin ang="0"/></a:gradFill><a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>AB</a:t></a:r></a:p></p:txBody></p:sp>';
 writeFileSync(new URL('../fixtures/sample-vector-pdf-paints.pptx',import.meta.url),deck({
   name:'VectorPdfPaints',width:640,height:360,slides:[slideXml(transparent+opaque+label('ABC',440)),slideXml(axial+radial),
     slideXml(sp({x:40,y:40,w:160,h:100,fill:alphaGradient})+sp({x:280,y:40,w:200,h:100,fill:hardGradient})),
-    slideXml(alphaPicture+opaque)],slideRelationships:['','','',imageRel],
+    slideXml(alphaPicture+opaque),slideXml(gradientText)],slideRelationships:['','','',imageRel,''],
   extraTypes:'<Default Extension="png" ContentType="image/png"/>',extraEntries:[['ppt/media/alpha.png',rgba]],
 }));
 console.log('fixtures/sample-vector-pdf-paints.pptx：透明填充与独立透明描边');

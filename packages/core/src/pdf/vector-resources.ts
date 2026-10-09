@@ -1,4 +1,4 @@
-type Kind = 'Font' | 'XObject' | 'ExtGState' | 'Shading';
+type Kind = 'Font' | 'XObject' | 'ExtGState' | 'Shading' | 'Pattern';
 
 /** 页、Form 和图案单元各自持有实际引用；不能把之前所有资源复制进每个新图案而产生平方增长。 */
 export class VectorResources {

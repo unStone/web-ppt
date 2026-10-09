@@ -10,9 +10,13 @@ export async function vectorPdfPaintsContract(api,fonts,root,out){
     const result=await api.presentationToVectorPdf(pres,{fonts});
     assert.deepEqual(result.issues,[]);
     writeFileSync(resolve(out,'paints.pdf'),new Uint8Array(await result.blob.arrayBuffer()));
+    // 参考图经 SVG-as-image 渲染，那是隔离上下文拿不到页面字体（AGENTS 陷阱表）；
+    // 必须把字体经 embeddedFonts 内联进 SVG，否则参考文字按回退字体断行，MAE 对照失真
+    const family='WebPPT Glyph Latin',src='data:font/ttf;base64,'+readFileSync('tooling/font-glyph-samples/latin.ttf').toString('base64');
+    const referencePres={...pres,embeddedFonts:[{family,src,bold:false,italic:false}]};
     await withChartBrowser(root,async browser=>{
       for(let i=0;i<pres.slides.length;i++){
-        let svg=api.renderSlideToSvg(pres,pres.slides[i],{textMode:'svg',idPrefix:'reference'})
+        let svg=api.renderSlideToSvg(referencePres,pres.slides[i],{textMode:'svg',idPrefix:'reference'})
           .replace('<svg ','<svg width="960" height="540" ');
         for(const el of pres.slides[i].elements.filter(el=>el.kind==='image')){
           const bytes=Buffer.from(await (await fetch(el.src)).arrayBuffer());svg=svg.replaceAll(el.src,'data:image/png;base64,'+bytes.toString('base64'));

@@ -98,7 +98,13 @@ export class VectorCoverage {
     for (const key of ['fill','stroke','clip-path','marker-start','marker-end']) {
       const value = style.get(key) ?? el.getAttribute(key); if (!value || value === 'none') continue;
       if (!value.startsWith('url(')) {if (key === 'clip-path') return 'svg-value-clip-path'; try {pdfColor(value);} catch {return `svg-value-${key}`;} continue;}
-      if (key === 'stroke' || (inText || tag === 'text' || tag === 'tspan') && key === 'fill') return 'svg-text-paint';
+      if (key === 'stroke' || (inText || tag === 'text' || tag === 'tspan') && key === 'fill') {
+        // 文字渐变只放行水平轴的线性渐变：颜色只依赖 x（字形推进精确），垂直/斜向/径向仍回退
+        const gid = /^url\(#([^)]*)\)$/.exec(value)?.[1], target2 = gid && this.definitions.get(gid);
+        if (key === 'stroke' || !target2 || target2.localName !== 'linearGradient'
+          || Number(target2.getAttribute('y1') ?? 0) !== Number(target2.getAttribute('y2') ?? 0)
+          || Number(target2.getAttribute('x2') ?? 1) === Number(target2.getAttribute('x1') ?? 0)) return 'svg-text-paint';
+      }
       const id = /^url\(#([^)]*)\)$/.exec(value)?.[1], target = id && this.definitions.get(id);
       if (!target || !id) return 'svg-reference';
       if (seen.has(id)) return 'svg-reference-cycle';

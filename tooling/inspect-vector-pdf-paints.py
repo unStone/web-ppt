@@ -64,3 +64,22 @@ for point,expected in [((125,120),(255,191,191)),((240,120),(128,128,255)),((125
   assert max(abs(a-b) for a,b in zip(actual,expected))<=1,(point,actual,expected)
 pix.save(path.with_name('paints-4.png'))
 print('图片透明度：保留 8×8 原始像素及源 alpha，叠加对象透明度且不影响相邻对象')
+page=pdf[4]
+assert not page.get_images(),page.get_images()
+assert page.get_text().strip()=='AB',page.get_text()
+# 文字渐变走 Pattern colorspace：Shading 包成 PatternType 2，Tj 前由 /Pattern cs /Ptn scn 设填充
+assert any(pdf.xref_get_key(i,'PatternType')[1]=='2' for i in range(1,pdf.xref_length())),[pdf.xref_get_key(i,'PatternType') for i in range(1,min(pdf.xref_length(),60))]
+assert b'/Pattern cs /Pt' in page.read_contents(),page.read_contents()[:200]
+pix=page.get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
+reference=fitz.Pixmap(str(path.with_name('paints-5-reference.png')))
+if reference.alpha: reference=fitz.Pixmap(reference,0)
+# 左侧字形红分量占优、右侧蓝分量占优：渐变按整段文字 x 范围分布
+left,right=pix.pixel(88,120),pix.pixel(150,120)
+assert left[0]>left[2]+40,(left,right)
+assert right[2]>right[0]+40,(left,right)
+a,b=pix.samples,reference.samples
+mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
+  for y in range(250) for x in range(360) for c in range(3))/(250*360*3)
+pix.save(path.with_name('paints-5.png'))
+assert mae<1,mae
+print(f'文字渐变：Pattern colorspace 原生填充、左右色相与 Chrome/MuPDF 对照通过，MAE={mae:.4f}')
