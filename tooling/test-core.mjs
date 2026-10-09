@@ -290,6 +290,7 @@ const FIXTURES = [
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
+  { file: 'sample-cjk-squeeze.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
   { file: 'sample-autofit.pptx', minPages: 6, source: 'pptx' },
   { file: 'sample-editor-sp-autofit.pptx', minPages: 2, source: 'pptx' },
@@ -2672,6 +2673,52 @@ group('CJK 标点挤压');
     // 同样 6 个字符，中文该比拉丁宽得多；宽度差异体现在断行上
     check('中文按整格估算', (wide.match(/<text /g) ?? []).length >= (latin.match(/<text /g) ?? []).length,
       `中文 ${(wide.match(/<text /g) ?? []).length} 行 vs 拉丁 ${(latin.match(/<text /g) ?? []).length} 行`);
+  }
+
+  // 完整规则：连续标点对与行首行尾的无条件挤压（放得下也收）；断行判定仍按全角
+  {
+    // 「他说：『好。』」7 字 277.2px、可用 880.8px 放得下：
+    // 『与：相邻收左半格；』与。相邻且在行尾收右半格；：与。的前驱都是汉字不收
+    const pairHtml = html(mk('他说：『好。』', 900));
+    check('连续标点对在 HTML 无条件收相邻侧',
+      (pairHtml.match(/margin-left:-0\.5em/g) ?? []).length === 1
+      && (pairHtml.match(/margin-right:-0\.5em/g) ?? []).length === 1,
+      pairHtml.slice(0, 400));
+    const pairNative = svgOf(mk('他说：『好。』', 900));
+    const pairDx = /dx="([^"]+)"/.exec(pairNative);
+    check('连续标点对在原生路径输出 dx', !!pairDx, pairNative.slice(0, 300));
+    if (pairDx) {
+      const vals = pairDx[1].split(' ').map(Number);
+      eq('dx 长度等于字符数', vals.length, 7);
+      near('『左移半格', vals[3], -23.1, 0.1);
+      check('其余字符不动', vals.filter((_, i) => i !== 3).every((v) => v === 0), pairDx[1]);
+    }
+  }
+  {
+    // 行首开标点：8 字 369.6px、可用 236.8px → 第一行 5 字，第二行「（注）」行首收左半格
+    const native = svgOf(mk('甲甲甲甲乙（注）', 256));
+    const dxLists = [...native.matchAll(/dx="([^"]+)"/g)].map((m) => m[1].split(' ').map(Number));
+    check('行首开标点收左半格',
+      dxLists.length === 1 && dxLists[0][0] === -23.1 && dxLists[0].length === 3,
+      JSON.stringify(dxLists));
+  }
+  {
+    // 行尾句读放得下也收右半格：不出 dx，收进行有效宽度（对齐与光标计算用）
+    const loose = lib.layoutText(mk('甲甲甲甲甲。', 900).text, 900, 200);
+    const line = loose.lines.at(-1);
+    check('行尾句读收进行宽',
+      !!line && line.squeezed === false && Math.abs(line.naturalWidth - line.width - 23.1) < 0.1,
+      JSON.stringify(line && { w: line.width, nw: line.naturalWidth, s: line.squeezed }));
+    const plain = lib.layoutText(mk('甲甲甲甲甲', 900).text, 900, 200);
+    const pl = plain.lines.at(-1);
+    check('无标点行宽零收缩', !!pl && pl.width === pl.naturalWidth,
+      JSON.stringify(pl && { w: pl.width, nw: pl.naturalWidth }));
+  }
+  {
+    // 「放不下才挤」不回归：全角超宽、挤掉句读半格后放得下 → squeezed
+    const tight = lib.layoutText(mk('甲甲甲甲甲。', 277).text, 277, 200);
+    const line = tight.lines.at(-1);
+    check('放不下才挤仍生效', !!line && line.squeezed === true, JSON.stringify(line && { s: line.squeezed }));
   }
   box.remove();
 }

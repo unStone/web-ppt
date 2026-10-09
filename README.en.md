@@ -406,9 +406,9 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | Region OR / XOR / DIFF | Needs region boolean operations, which SVG clipping can't express; COPY and AND work |
 | MTX-compressed embedded fonts | PowerPoint's `fntdata` is an EOT container, usually with MTX compression on. Uncompressed containers are unwrapped by core itself (including the XOR obfuscation); compressed ones need an injected decoder: `setFontDecoder(eotToTtf)` from [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor). Without it those fonts are skipped in favour of a substitute, rather than handing the browser bytes it's guaranteed to reject |
 | Line breaking when fonts are missing | Line breaks are decided by **the actual font's metrics**. If the deck's font isn't installed locally, something else is substituted, advance widths differ, and breaks land differently than in PowerPoint. This isn't a parsing problem — installing the original font, using the file's own embedded fonts, or wiring up [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) for metric-compatible free substitutes (Calibri→Carlito and friends, where every advance width matches) all fix it |
-| CJK punctuation squeezing | Only the "squeeze when it wouldn't otherwise fit" rule is implemented. PowerPoint's full rule set (consecutive punctuation, line-start and line-end handled differently) is finer, but those differences only affect the gaps around punctuation, not where the line breaks |
+| CJK punctuation squeezing | Full rule set: when a line doesn't fit, all squeezable half-cells are collected to preserve the break; once a line is formed, consecutive punctuation pairs, line-leading opening marks and line-trailing stops are collected unconditionally. Line-breaking itself always measures at full width, matching PowerPoint |
 | Line breaking before web fonts arrive | The native `<text>` path measures with canvas, and fonts load asynchronously, so the first frame breaks against the fallback. The `foreignObject` path is laid out by the browser and is unaffected |
-| Password-protected files | Files with an open password can't be parsed; the error explicitly says the file is encrypted |
+| Password-protected files | Files with an open password parse via `parse(bytes, { password })`; missing password throws `PasswordRequiredError`, wrong password throws `WrongPasswordError`. Agile AES-CBC / standard AES-ECB (.pptx) and RC4 CryptoAPI (.ppt) are covered |
 | OLE embedded objects | Renders the preview image PowerPoint stored (parsed out of the VML part), not the inner document; falls back to a placeholder box when the preview is in an undecodable format such as PICT |
 
 > The [capability matrix](docs/api/expanded-capabilities.md) is the authoritative source for scope and boundaries; this table lists only items that affect usage decisions.
@@ -420,9 +420,9 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,298 assertions + 186 render snapshots |
+| `npm run test:core` | Core parsing / rendering — 2,327 assertions + 188 render snapshots |
 | `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/api/font-glyphs.md) |
-| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1114 process-isolated SVG fingerprint pairs across 166 fixtures |
+| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1116 process-isolated SVG fingerprint pairs across 167 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
@@ -470,7 +470,7 @@ web-ppt/                     npm workspaces monorepo
 │   └── site/                @web-ppt/site — the website, with the viewer demo and standalone editor
 ├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
 ├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          186 render snapshot baselines
+└── test/snapshots/          188 render snapshot baselines
 ```
 
 `packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
@@ -487,7 +487,7 @@ Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM an
 |---|---|
 | **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
 | **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 24 test files × every slide × both text paths = 186 normalized SVG baselines, compared byte for byte |
+| **Render snapshots** | 25 test files × every slide × both text paths = 188 normalized SVG baselines, compared byte for byte |
 | **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
 | **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
 | **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |

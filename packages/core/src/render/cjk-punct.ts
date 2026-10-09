@@ -16,6 +16,11 @@
  * 规则取「放不下才挤」：放得下时保持全角。PowerPoint 的完整标点挤压规则
  * （连续标点、行首行尾各有不同处理）比这复杂，但那些差异只影响标点周围的
  * 空隙，而**断行位置**是版式塌不塌的关键，先把这一条做对。
+ *
+ * 完整规则由 squeezePlan 落地：断行判定仍按全角（与 PowerPoint 断行基线一致），
+ * 成行后无条件收掉三类空半格——行首起始标点的左半格、行尾句读的右半格、
+ * 连续标点对的相邻侧；「放不下才挤」则整行全量启用。三类无条件挤压只改变
+ * 行的有效宽度与逐字位置，不参与断行判定。
  */
 
 /** 墨在左半格，可挤掉右半格：句读与各类收尾符号 */
@@ -36,6 +41,44 @@ export function squeezeTotal(text: string): number {
   let n = 0;
   for (const ch of text) n += squeezeEm(ch);
   return n;
+}
+
+/** 一行字符的挤压位移计划，单位 em */
+export interface SqueezePlan {
+  /** dx[i]：第 i 个字符相对前位置的左移量（负值）；起始标点自己左移，其余让后继左移 */
+  dx: number[];
+  /** amount[i]：第 i 个字符被挤掉的宽度；行内各段字号不同时按各自字号换算 */
+  amount: number[];
+  /** 该行总共收窄的宽度（Σ amount）；行尾句读没有后继字符，只计入不产生 dx */
+  total: number;
+}
+
+/**
+ * 按「行」的视角计算挤压：行首行尾与连续标点都是跨 run 的整行性质，
+ * 必须把整行字符拼起来判定，按段切开就会漏掉段边界上的对。
+ *
+ * forceAll 为「放不下才挤」的全量开关；false 时仍无条件收三类——
+ * 行首起始标点、行尾句读、与前一个可挤标点相邻的标点。
+ */
+export function squeezePlan(chars: readonly string[], forceAll: boolean): SqueezePlan {
+  const n = chars.length;
+  const dx = new Array<number>(n).fill(0);
+  const amount = new Array<number>(n).fill(0);
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const em = squeezeEm(chars[i]);
+    if (!em) continue;
+    const forced = forceAll
+      || (i === 0 && isOpening(chars[i]))
+      || (i === n - 1 && !isOpening(chars[i]))
+      || (i > 0 && squeezeEm(chars[i - 1]) > 0);
+    if (!forced) continue;
+    amount[i] = em;
+    total += em;
+    if (isOpening(chars[i])) dx[i] -= em;
+    else if (i + 1 < n) dx[i + 1] -= em;
+  }
+  return { dx, amount, total };
 }
 
 /**

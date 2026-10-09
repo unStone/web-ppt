@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 600" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="960" height="600" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 70)">
+<path d="M 0 0 L 270 0 L 270 50 L 0 50 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="33.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" dx="0 0 0 0 0 -13.33 0 0 0">甲甲甲甲：『乙。』</tspan>
+</text>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 160)">
+<path d="M 0 0 L 155 0 L 155 90 L 0 90 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="37.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">丙丙丙丙丁</tspan>
+</text>
+<text x="9.6" y="69.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" dx="-13.33 0 0">（注）</tspan>
+</text>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 290)">
+<path d="M 0 0 L 185 0 L 185 50 L 0 50 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="33.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">丁丁丁丁丁。</tspan>
+</text>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 380)">
+<path d="M 0 0 L 178 0 L 178 50 L 0 50 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="33.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">戊戊戊戊戊。</tspan>
+</text>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(60 470)">
+<path d="M 0 0 L 200 0 L 200 50 L 0 50 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="33.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="26.67" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">庚庚庚庚</tspan>
+</text>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 70)">
+<path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<text x="100" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">1 连续标点对</tspan>
+</text>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 175)">
+<path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<text x="100" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">2 行首开标点</tspan>
+</text>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 290)">
+<path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<text x="100" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">3 行尾句读</tspan>
+</text>
+</g>
+</g>
+<g data-el="109" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 380)">
+<path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<text x="100" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">4 放不下才挤</tspan>
+</text>
+</g>
+</g>
+<g data-el="110" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(320 470)">
+<path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="rgb(166,166,166)" fill-rule="nonzero"/>
+<text x="100" y="19.48" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">5 无标点对照</tspan>
+</text>
+</g>
+</g>
+</svg>

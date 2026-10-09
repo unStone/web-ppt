@@ -28,7 +28,7 @@
 <div xmlns="http://www.w3.org/1999/xhtml" style="width:1104px;height:456.83px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:8px 0 0px 0;text-align:left;padding-left:36px;text-indent:-36px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:32px;color:rgb(26,26,26);">•&#160;</span>
-<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</span>
+<span style="font-size:32px;color:rgb(26,26,26);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">纯浏览器解析 OOXML（fflate + DOMParser）<span style="margin-right:-0.5em">，</span>零服务端依赖</span>
 </div>
 <div style="margin:5.33px 0 0px 0;text-align:left;padding-left:78px;text-indent:-30px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:26.67px;color:rgb(106,106,106);">–&#160;</span>

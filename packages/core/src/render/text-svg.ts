@@ -1,5 +1,5 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
-import { isOpening, squeezeEm, squeezeTotal } from './cjk-punct';
+import { squeezePlan, type SqueezePlan } from './cjk-punct';
 import { layoutText } from './text-layout';
 import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
 import type { TextMeasure } from './text-measure';
@@ -32,14 +32,6 @@ interface Seg {
   runIndex?: number;
   from?: number;
   to?: number;
-}
-
-interface Line {
-  segs: Seg[];
-  width: number;
-  size: number;
-  squeeze: number;
-  squeezed: boolean;
 }
 
 export function renderTextSvg(
@@ -99,18 +91,27 @@ export function renderTextSvg(
         from: segment.from, to: segment.to,
       };
     });
-    const renderLine: Line = {
-      segs,
-      width: line.naturalWidth,
-      size: 0,
-      squeeze: line.naturalWidth - line.width,
-      squeezed: line.squeezed,
-    };
     if (!segs.length) continue;
+    // 行首行尾与连续标点都是跨 run 的整行性质，拼起来算挤压计划：
+    // squeezed 行全量收，其余行只收无条件的三类（行首起始、行尾句读、连续对）
+    const chars: string[] = [];
+    const segRanges: Array<[number, number]> = [];
+    for (const seg of segs) {
+      const piece = [...seg.text];
+      segRanges.push([chars.length, chars.length + piece.length]);
+      chars.push(...piece);
+    }
+    const plan = squeezePlan(chars, line.squeezed);
+    const segSqueeze = segs.map((seg, i): number => {
+      const [from, to] = segRanges[i];
+      let em = 0;
+      for (let k = from; k < to; k++) em += plan.amount[k];
+      return em * fontSize(seg.run, scale);
+    });
 
     // 高亮底色需要绝对位置：按对齐方式反推行首 x。
     let cursor = line.x;
-    for (const seg of segs) {
+    for (const [i, seg] of segs.entries()) {
       if (seg.run.highlight) {
         const size = fontSize(seg.run, scale);
         out.push(
@@ -118,14 +119,14 @@ export function renderTextSvg(
           `height="${r(size * 1.12)}" fill="${esc(seg.run.highlight)}"/>`,
         );
       }
-      cursor += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
+      cursor += seg.width - segSqueeze[i];
     }
 
     const textAnchor = ANCHOR[line.align];
     if (segs.some((segment) => segment.run.math?.length)) {
       // 公式是 <g>，塞不进 <text>。含公式的行按绝对 x 逐段输出。
       let x = line.x;
-      for (const seg of segs) {
+      for (const [i, seg] of segs.entries()) {
         const math = seg.run.math?.length ? mathOf(seg.run, scale) : null;
         if (math) {
           out.push(withHyperlink(
@@ -140,11 +141,11 @@ export function renderTextSvg(
             )}</text>`,
           );
         }
-        x += seg.width - (line.squeezed ? squeezeTotal(seg.text) * fontSize(seg.run, scale) : 0);
+        x += seg.width - segSqueeze[i];
       }
     } else {
-      const tspans = line.squeezed
-        ? squeezedSpans(renderLine, scale, addDef, includeEditMarkers)
+      const tspans = plan.total > 0
+        ? planSpans(segs, segRanges, plan, scale, addDef, includeEditMarkers)
         : segs.map((segment) => spanSvg(
           segment, scale, addDef, undefined, includeEditMarkers,
         )).join('');
@@ -187,39 +188,30 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
 }
 
 /**
- * 挤压过的行：用 `<tspan dx>` 把标点的空半格收掉。
+ * 有挤压量的行：用 `<tspan dx>` 把标点的空半格收掉。
  *
  * `dx` 是**逐字符**的位移列表，所以只要在该收的下标处放一个负值即可，
  * 后面的字符会跟着整体左移。这样做与字体无关——不依赖字体是否提供
  * `halt` 半角替换字形，量多少就是多少。
  *
- * 位移可能落在段与段的交界上（比如标点和它后面的字属于不同 run），
- * 那就带到下一段的第一个字符上去。
+ * 位移计划按整行字符算好，这里只做段切分：落到段与段交界上的位移
+ * 天然属于下一段的首字符（整行下标本来就是连续的），无需跨界补丁。
  */
-function squeezedSpans(
-  line: Line,
+function planSpans(
+  segs: Seg[],
+  segRanges: Array<[number, number]>,
+  plan: SqueezePlan,
   scale: number,
   addDef: (m: string) => string,
   includeEditMarkers = false,
 ): string {
-  let carry = 0; // 位移落在段与段交界上时，带给下一段的第一个字符
-  return line.segs.map((seg) => {
+  return segs.map((seg, i) => {
+    const [from, to] = segRanges[i];
+    // plan 的位移是 em，tspan dx 的无单位值是用户坐标（px），要按本段字号换算
     const em = fontSize(seg.run, scale);
-    const chars = [...seg.text];
-    const dx = chars.map(() => 0);
-    let any = carry !== 0;
-    if (chars.length) dx[0] = carry;
-    carry = 0;
-
-    for (let i = 0; i < chars.length; i++) {
-      const amount = squeezeEm(chars[i]) * em;
-      if (!amount) continue;
-      any = true;
-      if (isOpening(chars[i])) dx[i] -= amount;              // 起始标点：自己左移
-      else if (i + 1 < chars.length) dx[i + 1] -= amount;    // 收尾标点：后面的字左移
-      else carry -= amount;                                  // 落在段末：带给下一段
-    }
-    return spanSvg(seg, scale, addDef, any ? dx : undefined, includeEditMarkers);
+    const dx = plan.dx.slice(from, to).map((v) => v * em);
+    const moved = dx.some((v) => v !== 0);
+    return spanSvg(seg, scale, addDef, moved ? dx : undefined, includeEditMarkers);
   }).join('');
 }
 

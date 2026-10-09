@@ -17,6 +17,7 @@ import { renderElementToSvg, renderSlideToSvg } from './render/svg';
 import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
+import { invalidateTextMeasureCaches } from './render/text-measure';
 import { isKnownPreset, resolveGeomPath } from './geometry/index';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 import { tableStyleCellAppearance, tableStylePreview } from './table-style';
@@ -28,7 +29,7 @@ export * from './edit-metadata';
 export * from './placeholder-match';
 export * from './text-body-edit';
 export { formatDrawingAutoNumber } from './text-auto-number';
-export { fitTextShapeHeight, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
+export { fitTextShapeHeight, invalidateTextMeasureCaches, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
 export {
   releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
   reparsePptxSlideWithLayout,

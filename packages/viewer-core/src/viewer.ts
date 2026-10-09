@@ -1,5 +1,5 @@
 import type { AnimStep, Presentation, Slide } from '@web-ppt/core';
-import { renderSlideToSvg, slideToPng, staticHidden } from '@web-ppt/core';
+import { invalidateTextMeasureCaches, renderSlideToSvg, slideToPng, staticHidden } from '@web-ppt/core';
 import { foreignObjectScalesCorrectly } from './foreign-object';
 import { playGroup, playTransitionControlled, type PlayHandle, type TransitionPlayHandle } from './playback';
 import { settledDeclaration } from './settled';
@@ -147,6 +147,7 @@ export class Viewer {
    * `foreignObject` 路径由浏览器自己重排，重渲只是顺带把缓存换掉。
    */
   refresh(): void {
+    invalidateTextMeasureCaches();
     this.svgCache.delete(this.index);
     this.paint();
   }

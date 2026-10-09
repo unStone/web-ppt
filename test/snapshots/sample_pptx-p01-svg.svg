@@ -22,7 +22,7 @@
 <g transform="translate(88 191.67)">
 <text x="9.6" y="42.75" text-anchor="start" xml:space="preserve">
 <tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">• </tspan>
-<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</tspan>
+<tspan font-size="32" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(26,26,26)" dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -16 0 0 0 0 0">纯浏览器解析 OOXML（fflate + DOMParser），零服务端依赖</tspan>
 </text>
 <text x="57.6" y="81.49" text-anchor="start" xml:space="preserve">
 <tspan font-size="26.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(106,106,106)">– </tspan>

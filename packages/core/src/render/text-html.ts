@@ -90,16 +90,24 @@ function runStyle(run: TextRun, scale: number): string {
   return css;
 }
 
-/** 字体无关的全角标点挤压，与原生 SVG 文本路径共用同一份判定表。 */
-function squeezedHtml(text: string): string {
+/**
+ * 字体无关的全角标点挤压，与原生 SVG 文本路径共用同一份判定表。
+ *
+ * forceAll 是「放不下才挤」的全量开关；false 时仍无条件收连续标点对的
+ * 相邻侧——它是字符级性质，与浏览器怎么断行无关。行首行尾的收半格
+ * 在这条路径上做不了：断行归浏览器，输出时不知道首尾落在哪。
+ */
+function squeezedHtml(text: string, forceAll: boolean): string {
+  const chars = [...text];
   let out = '';
-  for (const ch of text) {
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
     if (ch === '\n') {
       out += '<br/>';
       continue;
     }
     const em = squeezeEm(ch);
-    if (!em) {
+    if (!em || !(forceAll || (i > 0 && squeezeEm(chars[i - 1]) > 0))) {
       out += esc(ch);
       continue;
     }
@@ -120,9 +128,7 @@ function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string
     }
   }
   const empty = !run.text;
-  const content = run.text
-    ? (squeeze ? squeezedHtml(run.text) : esc(run.text).replace(/\n/g, '<br/>'))
-    : '&#160;';
+  const content = run.text ? squeezedHtml(run.text, squeeze) : '&#160;';
   const emptyMarker = marker && empty ? ' data-empty="true"' : '';
   const span = `<span${marker}${emptyMarker} style="${esc(runStyle(run, scale))}">${decorateText(content, run, 'span')}</span>`;
   return withHyperlink(span, run.link);

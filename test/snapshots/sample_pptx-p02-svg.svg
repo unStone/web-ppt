@@ -54,7 +54,7 @@
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">第二条，带换行</tspan>
 </text>
 <text x="39.6" y="79.87" text-anchor="start" xml:space="preserve">
-<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">（软换行后的小字）</tspan>
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="-9.33 0 0 0 0 0 0 0 0">（软换行后的小字）</tspan>
 </text>
 <text x="9.6" y="107.26" text-anchor="start" xml:space="preserve">
 <tspan font-size="24" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">1. </tspan>

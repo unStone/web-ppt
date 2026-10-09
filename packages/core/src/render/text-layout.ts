@@ -1,5 +1,5 @@
 import type { Paragraph, TextBody, TextRun } from '../types';
-import { squeezeTotal } from './cjk-punct';
+import { squeezePlan, squeezeTotal } from './cjk-punct';
 import { fontSize, mathOf, measureTextWidth } from './text-measure';
 import type { TextMeasure } from './text-measure';
 import type {
@@ -126,10 +126,32 @@ export interface Line {
   squeeze: number;
   /** 本行确实挤了标点才放得下；渲染时要把位移做出来 */
   squeezed: boolean;
+  /** 无条件挤压量（行首起始标点、行尾句读、连续标点对），成行即生效、与 squeezed 无关 */
+  baseSqueeze: number;
 }
 
 /** 行的实际占位宽度。挤压过的行要按挤压后算，否则居中 / 右对齐会偏 */
-const lineWidth = (line: Line): number => (line.squeezed ? line.width - line.squeeze : line.width);
+const lineWidth = (line: Line): number =>
+  line.squeezed ? line.width - line.squeeze : line.width - line.baseSqueeze;
+
+/**
+ * 行闭合时算无条件挤压：行首行尾与连续标点是跨 run 的整行性质，拼起来判定。
+ * 挤压量按各字符所在 run 的字号换算，行内字号不一时仍然准确。
+ */
+function baseSqueezeOf(line: Line): number {
+  const chars: string[] = [];
+  const sizes: number[] = [];
+  for (const seg of line.segs) {
+    for (const ch of seg.text) {
+      chars.push(ch);
+      sizes.push(seg.run.size);
+    }
+  }
+  const plan = squeezePlan(chars, false);
+  let total = 0;
+  for (let i = 0; i < chars.length; i++) total += plan.amount[i] * sizes[i];
+  return total;
+}
 
 function pushSeg(line: Line, token: Token): void {
   const last = line.segs[line.segs.length - 1];
@@ -153,13 +175,15 @@ function pushSeg(line: Line, token: Token): void {
 
 function wrap(tokens: Token[], maxWidth: number, wrapOn: boolean, firstIndent: number): Line[] {
   const lines: Line[] = [];
-  const blank = (): Line => ({ segs: [], width: 0, size: 0, squeeze: 0, squeezed: false });
+  const blank = (): Line => ({ segs: [], width: 0, size: 0, squeeze: 0, squeezed: false, baseSqueeze: 0 });
   let line: Line = blank();
   let limit = Math.max(1, maxWidth - Math.max(0, firstIndent));
 
   const flush = (): void => {
     // 自然宽度放不下、挤掉标点的空半格才放得下 —— 那就挤
     line.squeezed = line.width > limit && line.width - line.squeeze <= limit;
+    // 断行判定按全角，成行的无条件挤压只影响有效宽度，不反过来影响断行
+    line.baseSqueeze = line.squeezed ? 0 : baseSqueezeOf(line);
     lines.push(line);
     line = blank();
     limit = Math.max(1, maxWidth);
