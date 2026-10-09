@@ -51,6 +51,7 @@
     "diff:pptx": "node tooling/diff-package.mjs",
     "bench": "node --expose-gc tooling/bench.mjs",
     "bench:edit": "node tooling/bench-edit.mjs",
+    "bench:pdf": "node tooling/bench-vector-pdf.mjs",
     "dev:site": "npm run dev -w @web-ppt/site",
     "build:site": "npm run build && npm run build -w @web-ppt/site",
     "og": "node tooling/make-og-image.mjs",
