@@ -41,3 +41,12 @@ blocked_by: []
 | 验收工具 | 本机 ffprobe/ffmpeg 可用（已确认）；`tooling/test-video.mjs` 现有 VP8 断言基础（`test-video.mjs:24`）上扩双轨断言：ffprobe 读 streams（v_webm+a_opus）、时长差按声明的包边界核对、脉冲同轴测量 |
 
 依赖顺序：模型侧播放时机语义盘点（首版缺的列为拒绝项）→ 混音核（纯函数，Node 可测）→ 封装器双轨 → WebCodecs 接线与浏览器验收。
+
+## 进度（2026-10）
+
+| 步 | 状态 |
+|---|---|
+| 混音核 | ✅ `viewer-core/src/video/mix.ts`（`mixAudioClips`：确定性线性插值重采样、循环/endMs 截切、音量、限幅、声道布局；30 项 Node 断言并入 `test-video.mjs`） |
+| 封装器双轨 | ✅ `WebmWriter` 可选音频轨（A_OPUS TrackEntry + RFC 7845 OpusHead、簇内交错、流内递增校验；8 项断言含本机 ffprobe 两流实测，CI 无 ffprobe 时跳过增强并说明） |
+| 模型盘点 | **MediaInfo（core types.ts:524）只有 kind/src/external/mime——播放时机、音量、循环、时长全缺**，均在 OOXML `p:timing` 的媒体节点（cMediaNode 的 volume/loop 与动画时间线关联）。接线前须先补：解析 timing 树媒体节点 → Schema 扩展（startMs 由动画时间线换算、volume、loop）→ 跨页时间轴映射（videoPlan 页起点） |
+| 接线与验收 | 待模型补齐后：WAV PCM 直读 + decodeAudioData 解码 → mixAudioClips → WebCodecs AudioEncoder(Opus) isConfigSupported 前置 → addAudio 交错 → 真实 Chrome 导出 + ffprobe 双轨时长核对（工具已验证可用） |
