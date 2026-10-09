@@ -22,7 +22,7 @@
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
-**编辑器产品层使用 Cordis**：`packages/site/src/editor-application.ts` 是应用入口，页面、文稿、打开、恢复、文件及业务工具通过插件管理。新产品能力接入现有服务与文稿作用域；“无框架”指可发布的 SDK。分层与生命周期约定见 [docs/cordis-editor.md](docs/cordis-editor.md)。
+**编辑器产品层使用 Cordis**：`packages/site/src/editor-application.ts` 是应用入口，页面、文稿、打开、恢复、文件及业务工具通过插件管理。新产品能力接入现有服务与文稿作用域；“无框架”指可发布的 SDK。分层与生命周期约定见 [docs/design/cordis-editor.md](docs/design/cordis-editor.md)。
 
 ## 命令
 

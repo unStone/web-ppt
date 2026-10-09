@@ -51,7 +51,7 @@ MC 回退依赖继续保留。补丁保存、原包释放后的生成保存、�
 | 体积 | `tooling/check-chartex-boundary.mjs`；默认 core/worker 不含布局与工作簿实现，独立 OPC 不引入 core |
 
 当前真实 PPTX 仍只有漏斗；其余 XLSX 的数据证据不能替代原始 PPTX、Office 原生截图与混合产品旅程。
-因此 [语料票](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)、
-[层级票](wayfinder/ppt-data-fidelity/tickets/003-chartex-hierarchy-rendering.md)、
-[统计票](wayfinder/ppt-data-fidelity/tickets/004-chartex-statistical-rendering.md)及
-[集成票](wayfinder/ppt-data-fidelity/tickets/007-v08-integration-readiness.md)保持开放。
+因此 [语料票](../wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)、
+[层级票](../wayfinder/ppt-data-fidelity/tickets/003-chartex-hierarchy-rendering.md)、
+[统计票](../wayfinder/ppt-data-fidelity/tickets/004-chartex-statistical-rendering.md)及
+[集成票](../wayfinder/ppt-data-fidelity/tickets/007-v08-integration-readiness.md)保持开放。

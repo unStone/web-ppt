@@ -36,7 +36,7 @@ README、CHANGELOG 与路线图按实测同步。`npm run check && npm test && n
 - 八页原生/地图回退的屏幕、独立 SVG、PNG、打印与编辑保存专项已接入全量测试。
 
 功能集成已补：官网自动按需加载、图片/立体工具、画布 AT 与 EditContext；混合图表/媒体/外观的两条保存、
-Chrome 重开、双色调 PNG/SVG 像素与原生 IME 已通过专项验证。API 契约、迁移和类型负例见 [API 准备](../../../api-stability.md)。
+Chrome 重开、双色调 PNG/SVG 像素与原生 IME 已通过专项验证。API 契约、迁移和类型负例见 [API 准备](../../../api/api-stability.md)。
 
 仍保留外部验收：其他真实类型语料、现代 Office 原生布局、PowerPoint 媒体实际播放与正式冻结。
 用户于 2026-09-06 明确要求跳过 Windows 真机，本轮不继续传输或执行远程验证。
@@ -45,4 +45,4 @@ Chrome 重开、双色调 PNG/SVG 像素与原生 IME 已通过专项验证。AP
 
 ## 功能交付决定（2026-09-07）
 
-按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../api/comments.md)。

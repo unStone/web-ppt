@@ -1,9 +1,8 @@
 # 编辑能力技术方案
 
-> 状态：M0–M5 已实现，M6 完成动画编辑，整线随 `0.5.0-beta.1` 发布（`@next`）。
-> 实施记录见 [wayfinder 地图](wayfinder/ppt-editor/map.md)；尚未关闭的验收：PowerPoint 真机（[票据 010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)，缺 Windows runner）。
-> 生成式保存、组合/解组、顶点编辑、表样式、协同仍未实现，见地图前沿票据。本稿保留为架构与验收依据。
-> 前置阅读：[AGENTS.md](../AGENTS.md)（约束与陷阱）、[README.md](../README.md#架构)（分层）。
+> 状态：M0–M6 全部交付，含生成式保存、组合/解组、顶点编辑、表样式与协同适配包，各项独立验收记录见 [wayfinder 地图](../wayfinder/ppt-editor/map.md)；PowerPoint 真机验收仍按用户要求暂缓（[票据 010](../wayfinder/ppt-editor/tickets/010-prove-m1-save.md)）。
+> 本稿保留为架构与验收依据；当前能力全貌以 [roadmap](../roadmap.md) 为准。
+> 前置阅读：[AGENTS.md](../../AGENTS.md)（约束与陷阱）、[README.md](../../README.md#架构)（分层）。
 
 把只读渲染引擎变成编辑器，真正的难点不是"加个拖拽框"，而是三件事：
 
@@ -21,11 +20,11 @@
 
 | # | 决策 | 依据 | 代价 |
 |---|---|---|---|
-| D1 | 编辑模型 **另建 `EditDoc`**，不直接改 `Presentation` | `Presentation.slides` 惰性项是 `defineProperty` getter（[parser.ts:1485](../packages/core/src/pptx/parser.ts)），不能 clone；且 Schema 无身份、无 z 序、无"哪些是用户改的" | 多一层投影与缓存 |
+| D1 | 编辑模型 **另建 `EditDoc`**，不直接改 `Presentation` | `Presentation.slides` 惰性项是 `defineProperty` getter（[parser.ts:1485](../../packages/core/src/pptx/parser.ts)），不能 clone；且 Schema 无身份、无 z 序、无"哪些是用户改的" | 多一层投影与缓存 |
 | D2 | 每个元素分 **`src`（文件解析值）/ `ovr`（用户覆盖值）** 两层 | 只回写 `ovr` ⇒ 继承不被摊平、主题换色仍生效；这是 python-pptx「只动碰过的节点」在内存模型里的等价物 | 渲染前要 merge，多一次浅合并 |
 | D3 | 保存走 **原包补丁（patch）**，不是重新生成 | 重新生成必然丢 Schema 未建模的一切（SmartArt / chartex / OLE / 宏 / 自定义 XML）。python-pptx / POI / docx4j 全是补丁模型 | 要自带一套保序、保注释的 XML 树 |
 | D4 | 未改动的 zip 条目 **原始压缩流直通复制** | 一份 50MB 的稿子里 95% 是图片，重新 deflate 是纯浪费，且改变字节 = 无法验证"没碰过的部分真没碰" | 要自己读 zip 中央目录 |
-| D5 | 几何 **不再烘死**：Schema 增补 `geom: { preset, adj }`，缩放时重算路径 | [parser.ts:587](../packages/core/src/pptx/parser.ts) 在解析期用 `xf.w/xf.h` 求值，[svg.ts:465](../packages/core/src/render/svg.ts) 原样使用 ⇒ 现在改 `w` 形状不会变 | 编辑模式下多存 preset 名 + adj 表（约 50B/形状），只读用户不付费 |
+| D5 | 几何 **不再烘死**：Schema 增补 `geom: { preset, adj }`，缩放时重算路径 | [parser.ts:587](../../packages/core/src/pptx/parser.ts) 在解析期用 `xf.w/xf.h` 求值，[svg.ts:465](../../packages/core/src/render/svg.ts) 原样使用 ⇒ 现在改 `w` 形状不会变 | 编辑模式下多存 preset 名 + adj 表（约 50B/形状），只读用户不付费 |
 | D6 | 文本编辑走 **覆盖层 HTML contenteditable**，不在 `foreignObject` 里编辑 | WebKit bug 23113 不给 foreignObject 应用 SVG 缩放（AGENTS 已记录），在里面放光标必然错位 | 覆盖层要自己贴变换矩阵 |
 | D7 | 覆盖层与预览 **共用同一份 HTML 生成代码** | 排版差一点点，提交瞬间文字就会跳 | core 要导出 `renderTextBodyToHtml` |
 | D8 | 行盒来源可切换：`browser`（默认）/ `engine`（Safari、需与导出对齐时） | Safari 上静态层走 `<text>` 自实现断行，浏览器断行与它不一致 | 两套行盒实现，共用同一套光标映射 |
@@ -41,7 +40,7 @@
 | 路线 | 代表 | 优势 | 为什么不选 |
 |---|---|---|---|
 | **A. 声明式静态层 + DOM 交互层**（本方案用 SVG） | PPTist（同思路，静态层是 DOM 元素） | 复用现成的 187 预设几何、两条文本路径、快照测试；文本天然可选中、可无障碍；命中测试白送 | — |
-| B. Canvas 自绘全部内容 | OnlyOffice、Google Slides | 排版完全可控，跨浏览器一致 | 等于把已经写完并有 162 个快照护着的渲染层推倒重来；文本选中、无障碍、导出 SVG 全要重做。**收益只在"排版一致性"一项，而那一项可以用 §9.5 的 `engine` 行盒局部解决** |
+| B. Canvas 自绘全部内容 | OnlyOffice、Google Slides | 排版完全可控，跨浏览器一致 | 等于把已经写完并有 186 个快照护着的渲染层推倒重来；文本选中、无障碍、导出 SVG 全要重做。**收益只在"排版一致性"一项，而那一项可以用 §9.5 的 `engine` 行盒局部解决** |
 | C. 服务端转换 | Collabora / LibreOffice Online | 保真度最高 | 与本项目的立身之本（零服务端、文件不出浏览器）直接冲突 |
 
 ---
@@ -56,21 +55,21 @@
 | 两条文本路径 + 自实现测量断行（`render/text-svg.ts`） | `engine` 行盒模式与自动缩放直接复用 `layout()` / `autoFitScale()` |
 | `PresentationState` 是 headless 状态机 | 编辑器的"预览/演示"模式零成本复用 |
 | `tooling/lib/ooxml.mjs` 已有最小 zip 写入器 + PNG 编码器 | 保存链路的 zip 写入部分是现成的，搬进包里即可 |
-| 162 个渲染快照 + LibreOffice ground truth 对照 | 编辑后重渲的回归直接挂上去 |
+| 186 个渲染快照 + LibreOffice ground truth 对照 | 编辑后重渲的回归直接挂上去 |
 | 固件全部脚本生成、字节确定性 | 编辑用例的输入可以精确构造，不靠手工样本 |
 
 ### 1.2 负债（必须先改的）
 
 | # | 负债 | 证据 | 影响 | 解法 |
 |---|---|---|---|---|
-| L1 | 几何在解析期被烘成路径 | [parser.ts:587](../packages/core/src/pptx/parser.ts) `presetGeom(prst, xf.w, xf.h, adj)`；[svg.ts:465](../packages/core/src/render/svg.ts) `<path d="${el.path}">` 原样用 | 改 `w/h` 形状不变形，圆角矩形无法正确缩放 | D5：补 `geom` 字段 + `resolveGeomPath()` |
+| L1 | 几何在解析期被烘成路径 | [parser.ts:587](../../packages/core/src/pptx/parser.ts) `presetGeom(prst, xf.w, xf.h, adj)`；[svg.ts:465](../../packages/core/src/render/svg.ts) `<path d="${el.path}">` 原样用 | 改 `w/h` 形状不变形，圆角矩形无法正确缩放 | D5：补 `geom` 字段 + `resolveGeomPath()` |
 | L2 | 继承链被摊平 | `parseSp` 把 docDefaults → master → layout → 占位符 → 段落 → run 合成具体值 | 原样回写 = 把继承值固化，母版换字体不再生效 | D2：`src` / `ovr` 双层 |
 | L3 | 身份与关系丢失 | 只留 `id`（`cNvPr@id`）与 `name`；`ph type/idx`、`r:embed`、`style` 引用全丢 | 无法定位回写节点，无法判断"这是标题占位符" | 编辑模式下补 `origin` 溯源信息 |
-| L4 | 渲染是整页字符串 + 全局自增 `uid` | [svg.ts:11](../packages/core/src/render/svg.ts) `let uid = 0` | 同页两次渲染产物不同 ⇒ 不能 diff、不能增量 patch、快照无法比对编辑结果 | 加 `RenderOptions.idPrefix` + 每次渲染局部计数 |
-| L5 | `dispose()` 清空原包 | [parser.ts:133](../packages/core/src/pptx/parser.ts) `this.files = {}` | 保存时原字节已经没了 | `parse(bytes, { keepPackage: true })` 保留句柄，由编辑器管生命周期 |
-| L6 | 惰性 `slides` 是 getter 数组 | [parser.ts:1485](../packages/core/src/pptx/parser.ts) `Object.defineProperty` | `structuredClone` / 序列化不友好 | 建 `EditDoc` 时强制 `lazy: false` 或逐页取值固化 |
+| L4 | 渲染是整页字符串 + 全局自增 `uid` | [svg.ts:11](../../packages/core/src/render/svg.ts) `let uid = 0` | 同页两次渲染产物不同 ⇒ 不能 diff、不能增量 patch、快照无法比对编辑结果 | 加 `RenderOptions.idPrefix` + 每次渲染局部计数 |
+| L5 | `dispose()` 清空原包 | [parser.ts:133](../../packages/core/src/pptx/parser.ts) `this.files = {}` | 保存时原字节已经没了 | `parse(bytes, { keepPackage: true })` 保留句柄，由编辑器管生命周期 |
+| L6 | 惰性 `slides` 是 getter 数组 | [parser.ts:1485](../../packages/core/src/pptx/parser.ts) `Object.defineProperty` | `structuredClone` / 序列化不友好 | 建 `EditDoc` 时强制 `lazy: false` 或逐页取值固化 |
 | L7 | Safari 不给 foreignObject 应用 SVG 缩放 | WebKit bug 23113（AGENTS 陷阱表） | 文本编辑面若放在 foreignObject 里，光标必然错位 | D6：覆盖层放在 SVG 之外 |
-| L8 | `xml-lite` 丢注释与 PI | [xml-lite.ts:102](../packages/core/src/xml-lite.ts) 直接跳过 `<!--`，[:115](../packages/core/src/xml-lite.ts) 跳过 `<?`/`<!` | 拿它做写回会静默删掉 `mc:Ignorable` 之外的东西 | 写回自带保留型 XML 树（见 §11.2） |
+| L8 | `xml-lite` 丢注释与 PI | [xml-lite.ts:102](../../packages/core/src/xml-lite.ts) 直接跳过 `<!--`，[:115](../../packages/core/src/xml-lite.ts) 跳过 `<?`/`<!` | 拿它做写回会静默删掉 `mc:Ignorable` 之外的东西 | 写回自带保留型 XML 树（见 §11.2） |
 | L9 | `.ppt` 无写路径 | `ppt/parser.ts` 单向 | 无法保存回 `.ppt` | D12：转存 `.pptx` |
 | L10 | 文本行盒与字偏移未导出 | `layout()` / `wrap()` 是 `text-svg.ts` 内部函数 | `engine` 行盒模式与光标命中拿不到数据 | 导出 `layoutText()`，返回行盒 + 每字 x 偏移 |
 
@@ -82,8 +81,7 @@
 |---|---|
 | **目标** | 打开真实 `.pptx` → 编辑 → 保存回 `.pptx`，未编辑的部分字节级不变；纯前端、无服务端；单机优先，协同留接口 |
 | **非目标（本方案内）** | `.ppt` 写回、图表数据编辑、SmartArt 内部编辑、宏、审阅批注工作流、真实三维、模板市场、AI 生成 |
-| **已完成扩展** | 切换编辑（M5）、元素动画编辑（M6 独立验收） |
-| **明确后置** | 顶点编辑（M6）、协同（M6）、表样式库（M6） |
+| **已完成扩展** | 切换编辑（M5）、元素动画、顶点编辑、表样式库、组合/解组、生成式保存（M6）、协同适配包 `@web-ppt/collab` |
 
 ---
 
@@ -91,7 +89,7 @@
 
 ```mermaid
 flowchart TB
-    subgraph app["apps/editor（产品外壳，private）"]
+    subgraph app["packages/site（产品外壳，private，Cordis 应用）"]
         UI["面板 / 工具栏 / 缩略图 / 快捷键"]
     end
     subgraph adapters["可选框架薄适配"]
@@ -476,14 +474,14 @@ interface HistoryEntry {
 屏幕 px --(1/zoom, 减画布原点)--> 幻灯片 px --(组链逆变换)--> 元素本地 px
 ```
 
-组内元素的世界变换（与 [svg.ts:570](../packages/core/src/render/svg.ts) 的渲染变换严格对偶）：
+组内元素的世界变换（与 [svg.ts:570](../../packages/core/src/render/svg.ts) 的渲染变换严格对偶）：
 
 ```
 W(child) = T(gx,gy) · R(grot) · F(gflipH,gflipV) · S(sx,sy) · T(-chX,-chY) · L(child)
 其中 sx = g.w / g.chW，sy = g.h / g.chH
 ```
 
-> **一个好消息**：Schema 里组内子元素的坐标就是 OOXML `a:off` 的原值（÷9525），[parser.ts](../packages/core/src/pptx/parser.ts) 的 `parseGroup` 只把 `chOff/chExt` 存成 `childX/childY/scaleX/scaleY`，没有把子坐标搬到世界系。所以**组内移动的写回不需要反算**，直接写子空间坐标即可。
+> **一个好消息**：Schema 里组内子元素的坐标就是 OOXML `a:off` 的原值（÷9525），[parser.ts](../../packages/core/src/pptx/parser.ts) 的 `parseGroup` 只把 `chOff/chExt` 存成 `childX/childY/scaleX/scaleY`，没有把子坐标搬到世界系。所以**组内移动的写回不需要反算**，直接写子空间坐标即可。
 
 ### 7.3 选区模型
 
@@ -642,7 +640,7 @@ interface Mark { from: number; to: number; props: Partial<RunProps> }   // 半�
 
 两种模式共用同一套 `TextPos ↔ DOM Range` 映射接口，差别只在行盒生产者。这样才不会出现"编辑时是一种断行，提交后变另一种"。
 
-> 需要 core 导出 `layoutText(t, w, scale) → { lines: { y, height, segs: { runIdx, from, to, x, width }[] }[] }`——现在 `layout()` 是 `text-svg.ts` 的内部函数（[:263](../packages/core/src/render/text-svg.ts)），且不返回字符偏移。
+> 需要 core 导出 `layoutText(t, w, scale) → { lines: { y, height, segs: { runIdx, from, to, x, width }[] }[] }`——现在 `layout()` 是 `text-svg.ts` 的内部函数（[:263](../../packages/core/src/render/text-svg.ts)），且不返回字符偏移。
 
 ### 9.6 自动缩放
 
@@ -662,7 +660,7 @@ interface Mark { from: number; to: number; props: Partial<RunProps> }   // 半�
 | 粘贴 | 默认带格式（白名单）；Ctrl+Shift+V 纯文本；粘贴图片 → 直接插入 `AddImage` |
 | 拼写检查 | 关闭（`spellcheck="false"`），避免浏览器改 DOM |
 | 无障碍 | 编辑面是真实 DOM 文本，屏幕阅读器可读；静态层保留 `<desc>` |
-| 竖排 | 覆盖层用 `writing-mode`，与 [svg.ts:761](../packages/core/src/render/svg.ts) 的 `VERT_CSS` 同一张表 |
+| 竖排 | 覆盖层用 `writing-mode`，与 [svg.ts:761](../../packages/core/src/render/svg.ts) 的 `VERT_CSS` 同一张表 |
 | 表格单元格 | 同一套编辑面，容器换成单元格矩形；Tab 移动到下一格，末格 Tab 新增一行 |
 
 ---
@@ -686,7 +684,7 @@ flowchart TB
 | ② 交互 | 每帧（`requestAnimationFrame`） | 直接改属性，不重建 |
 | ③ 文本 | 每次输入 / 组词结束 | 段落级 |
 
-拖动中的做法（D11）：静态层里被拖的 `<g data-el>` 打上 `style="transform: translate(dx,dy)"`，松手时移除并重渲。**不重新生成 SVG 字符串**——全局 `uid`（[svg.ts:11](../packages/core/src/render/svg.ts)）会让每帧的 defs id 都变，等于每帧重建渐变/滤镜。
+拖动中的做法（D11）：静态层里被拖的 `<g data-el>` 打上 `style="transform: translate(dx,dy)"`，松手时移除并重渲。**不重新生成 SVG 字符串**——全局 `uid`（[svg.ts:11](../../packages/core/src/render/svg.ts)）会让每帧的 defs id 都变，等于每帧重建渐变/滤镜。
 
 ### 10.2 core 需要新增的导出
 
@@ -999,20 +997,20 @@ OOXML 的复杂类型是 **sequence**，顺序错了 PowerPoint 会报"需要修
 
 | 分类 | 键 | 责任与实现 |
 |---|---|---|
-| 历史 | `Ctrl/Cmd+Z` 撤销、`Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y` 重做 | editor：[`keyboard-history.ts`](../packages/editor/src/keyboard-history.ts) |
-| 剪贴板 | `Ctrl/Cmd+C/X/V` 复制剪切粘贴、`Ctrl/Cmd+Shift+V` 纯文本粘贴、`Ctrl/Cmd+D` 原位再制 | editor：[`element-clipboard.ts`](../packages/editor/src/element-clipboard.ts)、[`text-clipboard-controller.ts`](../packages/editor/src/text-clipboard-controller.ts) |
-| 删除 | `Delete/Backspace` 删除 | editor：[`keyboard-delete.ts`](../packages/editor/src/keyboard-delete.ts)；文字删除由 [`text-input-plan.ts`](../packages/editor/src/text-input-plan.ts) 接管 |
-| 全选 | `Ctrl/Cmd+A` | editor：[`keyboard-document.ts`](../packages/editor/src/keyboard-document.ts)、[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts)；文字内首次全选编辑面，再按一次全选本页直属元素 |
-| 保存 | `Ctrl/Cmd+S` | **产品层职责**：下载名、格式转换和文件句柄不属于编辑内核；官网落位于 [`editor-page.ts`](../packages/site/src/editor-page.ts) |
-| 选择 | `Tab` 下一个元素、`Shift+Tab` 上一个、`Esc` 退出/退组、双击进组或进文本 | editor：[`editor-keyboard.ts`](../packages/editor/src/editor-keyboard.ts)、[`slide-editor-keyboard-events.ts`](../packages/editor/src/slide-editor-keyboard-events.ts)、[`slide-pointer-controller.ts`](../packages/editor/src/slide-pointer-controller.ts) |
-| 变换 | 方向键 1px、`Shift+方向键` 10px、拖动时 `Shift` 等比 / `Alt` 从中心 / `Ctrl/Cmd` 关吸附、旋转时 `Shift` 吸 15° | editor：[`keyboard-nudge.ts`](../packages/editor/src/keyboard-nudge.ts) 与 move / resize / rotation gesture 控制器 |
-| 层级 | `Ctrl/Cmd+Shift+]` 置顶、`Ctrl/Cmd+]` 上移、`Ctrl/Cmd+[` 下移、`Ctrl/Cmd+Shift+[` 置底 | editor：[`keyboard-layer.ts`](../packages/editor/src/keyboard-layer.ts) |
-| 组合 | `Ctrl/Cmd+G` 组合、`Ctrl/Cmd+Shift+G` 解组 | editor：[`keyboard-group.ts`](../packages/editor/src/keyboard-group.ts) |
-| 查找 | `Ctrl/Cmd+F` 查找、`Ctrl/Cmd+H` 替换 | editor：[`text-search-view.ts`](../packages/editor/src/text-search-view.ts) |
-| 字符 | `Ctrl/Cmd+B/I/U`、`Ctrl/Cmd+Shift+>` / `<` 按字号档位增减 | editor：[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts) → `SetRunProps` |
-| 段落 | `Ctrl/Cmd+E/L/R/J` 对齐、`Shift+Enter` 软换行、`Tab` / `Shift+Tab` 升降级（编辑态） | editor：[`text-keyboard.ts`](../packages/editor/src/text-keyboard.ts)、[`text-input-plan.ts`](../packages/editor/src/text-input-plan.ts)、[`text-list-level.ts`](../packages/editor/src/text-list-level.ts)；表格单元格优先前后跳格，末格 `Tab` 追加行 |
-| 页 | `Ctrl/Cmd+M` 新建页、`PageUp/Down` 翻页 | editor：[`keyboard-document.ts`](../packages/editor/src/keyboard-document.ts)；新页仅适用于有版式的可写 PPTX，沿用当前版式并清空选择，事件视图独立回显 |
-| 演示 | `F5` 从头演示 | **产品层职责**：全屏授权、放映窗口和演讲者视图属于宿主；可组合 `viewer-core`，官网查看器示例见 [`main.ts`](../packages/site/src/main.ts) |
+| 历史 | `Ctrl/Cmd+Z` 撤销、`Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y` 重做 | editor：[`keyboard-history.ts`](../../packages/editor/src/keyboard-history.ts) |
+| 剪贴板 | `Ctrl/Cmd+C/X/V` 复制剪切粘贴、`Ctrl/Cmd+Shift+V` 纯文本粘贴、`Ctrl/Cmd+D` 原位再制 | editor：[`element-clipboard.ts`](../../packages/editor/src/element-clipboard.ts)、[`text-clipboard-controller.ts`](../../packages/editor/src/text-clipboard-controller.ts) |
+| 删除 | `Delete/Backspace` 删除 | editor：[`keyboard-delete.ts`](../../packages/editor/src/keyboard-delete.ts)；文字删除由 [`text-input-plan.ts`](../../packages/editor/src/text-input-plan.ts) 接管 |
+| 全选 | `Ctrl/Cmd+A` | editor：[`keyboard-document.ts`](../../packages/editor/src/keyboard-document.ts)、[`text-keyboard.ts`](../../packages/editor/src/text-keyboard.ts)；文字内首次全选编辑面，再按一次全选本页直属元素 |
+| 保存 | `Ctrl/Cmd+S` | **产品层职责**：下载名、格式转换和文件句柄不属于编辑内核；官网落位于 [`editor-page.ts`](../../packages/site/src/editor-page.ts) |
+| 选择 | `Tab` 下一个元素、`Shift+Tab` 上一个、`Esc` 退出/退组、双击进组或进文本 | editor：[`editor-keyboard.ts`](../../packages/editor/src/editor-keyboard.ts)、[`slide-editor-keyboard-events.ts`](../../packages/editor/src/slide-editor-keyboard-events.ts)、[`slide-pointer-controller.ts`](../../packages/editor/src/slide-pointer-controller.ts) |
+| 变换 | 方向键 1px、`Shift+方向键` 10px、拖动时 `Shift` 等比 / `Alt` 从中心 / `Ctrl/Cmd` 关吸附、旋转时 `Shift` 吸 15° | editor：[`keyboard-nudge.ts`](../../packages/editor/src/keyboard-nudge.ts) 与 move / resize / rotation gesture 控制器 |
+| 层级 | `Ctrl/Cmd+Shift+]` 置顶、`Ctrl/Cmd+]` 上移、`Ctrl/Cmd+[` 下移、`Ctrl/Cmd+Shift+[` 置底 | editor：[`keyboard-layer.ts`](../../packages/editor/src/keyboard-layer.ts) |
+| 组合 | `Ctrl/Cmd+G` 组合、`Ctrl/Cmd+Shift+G` 解组 | editor：[`keyboard-group.ts`](../../packages/editor/src/keyboard-group.ts) |
+| 查找 | `Ctrl/Cmd+F` 查找、`Ctrl/Cmd+H` 替换 | editor：[`text-search-view.ts`](../../packages/editor/src/text-search-view.ts) |
+| 字符 | `Ctrl/Cmd+B/I/U`、`Ctrl/Cmd+Shift+>` / `<` 按字号档位增减 | editor：[`text-keyboard.ts`](../../packages/editor/src/text-keyboard.ts) → `SetRunProps` |
+| 段落 | `Ctrl/Cmd+E/L/R/J` 对齐、`Shift+Enter` 软换行、`Tab` / `Shift+Tab` 升降级（编辑态） | editor：[`text-keyboard.ts`](../../packages/editor/src/text-keyboard.ts)、[`text-input-plan.ts`](../../packages/editor/src/text-input-plan.ts)、[`text-list-level.ts`](../../packages/editor/src/text-list-level.ts)；表格单元格优先前后跳格，末格 `Tab` 追加行 |
+| 页 | `Ctrl/Cmd+M` 新建页、`PageUp/Down` 翻页 | editor：[`keyboard-document.ts`](../../packages/editor/src/keyboard-document.ts)；新页仅适用于有版式的可写 PPTX，沿用当前版式并清空选择，事件视图独立回显 |
+| 演示 | `F5` 从头演示 | **产品层职责**：全屏授权、放映窗口和演讲者视图属于宿主；可组合 `viewer-core`，官网查看器示例见 [`main.ts`](../../packages/site/src/main.ts) |
 
 ## 附录 C：API 草案
 

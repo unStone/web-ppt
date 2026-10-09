@@ -2,7 +2,7 @@
 
 按需入口 `@web-ppt/edit-core/media`，不导入 DOM 或编码器。支持 PCM WAV / MP4 字节、显式外链、
 默认音频图标与海报替换；`editor/media`、`react/media`、`vue/media` 薄转发同一接口。
-官网通过「媒体」工具转发同一接口；[任务 005](wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)仍保留
+官网通过「媒体」工具转发同一接口；[任务 005](../wayfinder/ppt-data-fidelity/tickets/005-media-insertion.md)仍保留
 Windows PowerPoint 实测待办。
 
 ## 官网操作

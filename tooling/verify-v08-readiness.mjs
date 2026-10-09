@@ -43,6 +43,6 @@ check('批注与新能力公开类型契约进入 check', ['comments.ts', 'chart
 mkdirSync(resolve(root, 'out/v08-integration'), { recursive: true });
 writeFileSync(resolve(root, 'out/v08-integration/readiness.json'), JSON.stringify({
   functionalChecks: checks, artifacts: manifest.artifacts.length,
-  externalValidation: { windowsPowerPoint: 'deferred-by-user', nativeOfficeCorpus: 'see docs/chartex-native.md' },
+  externalValidation: { windowsPowerPoint: 'deferred-by-user', nativeOfficeCorpus: 'see docs/api/chartex-native.md' },
 }, null, 2) + '\n');
 console.log(`0.8 功能完成度检查通过：${checks.length} 项；Office 清单 ${manifest.artifacts.length} 件；Windows 真机暂缓`);

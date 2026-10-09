@@ -88,4 +88,4 @@ PYTHONPATH=out/font-glyphs/python python3 tooling/make-font-glyph-samples.py --f
 fnm exec --using=24.3.0 npm run measure:fonts
 ```
 
-固定上游、许可证与 hash 在 `tooling/font-glyph-samples/sources.json`、`manifest.json`。真实 MTX 另读本地 POI 语料，hash 不符或缺失时测量失败，不把合成压缩标志当成真实压缩。004 的历史证据保留在[原型结论](wayfinder/ppt-portability-fidelity/font-glyph-prototype.md)，011 进度见[实现记录](wayfinder/ppt-portability-fidelity/font-glyph-implementation.md)。
+固定上游、许可证与 hash 在 `tooling/font-glyph-samples/sources.json`、`manifest.json`。真实 MTX 另读本地 POI 语料，hash 不符或缺失时测量失败，不把合成压缩标志当成真实压缩。004 的历史证据保留在[原型结论](../wayfinder/ppt-portability-fidelity/font-glyph-prototype.md)，011 进度见[实现记录](../wayfinder/ppt-portability-fidelity/font-glyph-implementation.md)。

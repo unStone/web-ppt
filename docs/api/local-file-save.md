@@ -28,7 +28,7 @@
 - 下载只能确认浏览器已接受交付，不能检测用户后来在下载面板取消或操作系统最终是否保存。
 
 宿主分离交付与字节生成的公共入口：`@web-ppt/edit-core/save` 的 `serializeEditDoc(doc)` 和
-`Editor.captureSavepoint()`，调用、资源释放及恢复兼容约定见[编辑核心说明](../packages/edit-core/README-zh-CN.md)。
+`Editor.captureSavepoint()`，调用、资源释放及恢复兼容约定见[编辑核心说明](../../packages/edit-core/README-zh-CN.md)。
 已有 `Editor.save()` / `saveDetailed()` 保持“生成字节后确认”的便捷语义。
 
 ## 验证边界

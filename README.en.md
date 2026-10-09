@@ -44,9 +44,9 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
 
-See [appearance editing](docs/appearance-editing.md) for optional picture/3D tools, [browser enhancements](docs/browser-editing.md) for accessibility, EditContext and automatic ChartEx loading, and [API compatibility](docs/api-stability.md) for entry points and lifecycle rules.
+See [appearance editing](docs/api/appearance-editing.md) for optional picture/3D tools, [browser enhancements](docs/api/browser-editing.md) for accessibility, EditContext and automatic ChartEx loading, and [API compatibility](docs/api/api-stability.md) for entry points and lifecycle rules.
 
-Expanded editing, advanced rendering, PDF/WebM export and native PPT saving are available through optional entries. See the [capability matrix and format limits](https://github.com/unStone/web-ppt/blob/master/docs/expanded-capabilities.md).
+Expanded editing, advanced rendering, PDF/WebM export and native PPT saving are available through optional entries. See the [capability matrix and format limits](https://github.com/unStone/web-ppt/blob/master/docs/api/expanded-capabilities.md).
 
 Experimental vector PDF is available through `@web-ppt/core/pdf/vector` and the editor’s searchable PDF option. It requires usable font bytes; unsupported effects use object-level image fallback. See the [support scope and remaining validation](https://github.com/unStone/web-ppt/blob/master/docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md).
 
@@ -402,7 +402,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | 3D | Isometric approximation, not true projection; steep camera angles don't switch to a top-down view |
 | EMF+ | Not handled. Every metafile examined so far is **dual-mode** — the GDI records already carry the full drawing (16,125 GDI records vs 3 EMF+ comments in `sample-metafile.pptx`), so the GDI path suffices. Only pure EMF+ files would need it, and no sample has turned up |
 | Raster operation codes | SVG/CSS has no XOR/AND bitwise blending; `mix-blend-mode` is not equivalent |
-| chartex chart types | Opt-in `@web-ppt/core/chart-ex` implements native layouts except maps. Office fallback remains the default. Real funnel input, browser exports, frame editing and both save paths are covered; other original PPTX types and Office-native layout validation remain pending. See [scope and evidence](docs/chartex-native.md) |
+| chartex chart types | Opt-in `@web-ppt/core/chart-ex` implements native layouts except maps. Office fallback remains the default. Real funnel input, browser exports, frame editing and both save paths are covered; other original PPTX types and Office-native layout validation remain pending. See [scope and evidence](docs/api/chartex-native.md) |
 | Region OR / XOR / DIFF | Needs region boolean operations, which SVG clipping can't express; COPY and AND work |
 | MTX-compressed embedded fonts | PowerPoint's `fntdata` is an EOT container, usually with MTX compression on. Uncompressed containers are unwrapped by core itself (including the XOR obfuscation); compressed ones need an injected decoder: `setFontDecoder(eotToTtf)` from [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor). Without it those fonts are skipped in favour of a substitute, rather than handing the browser bytes it's guaranteed to reject |
 | Line breaking when fonts are missing | Line breaks are decided by **the actual font's metrics**. If the deck's font isn't installed locally, something else is substituted, advance widths differ, and breaks land differently than in PowerPoint. This isn't a parsing problem — installing the original font, using the file's own embedded fonts, or wiring up [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) for metric-compatible free substitutes (Calibri→Carlito and friends, where every advance width matches) all fix it |
@@ -419,14 +419,14 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,298 assertions + 186 render snapshots |
-| `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/font-glyphs.md) |
+| `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/api/font-glyphs.md) |
 | `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1114 process-isolated SVG fingerprint pairs across 166 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
 | `npm run test:chartex` | 104 native-ChartEx assertions: hierarchy/statistics, session configuration, both text and save paths |
-| `npm run test:comments` | 31 comment assertions: copying/recovery, both save paths, read-only panels, default-off exports, and escaping; [comment delivery](docs/comments.md) |
-| `npm run test:media` | 870 media-insertion assertions: WAV/MP4, external links, posters, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/media-insertion.md) |
+| `npm run test:comments` | 31 comment assertions: copying/recovery, both save paths, read-only panels, default-off exports, and escaping; [comment delivery](docs/api/comments.md) |
+| `npm run test:media` | 870 media-insertion assertions: WAV/MP4, external links, posters, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/api/media-insertion.md) |
 | `npm run test:editor` | 444 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
 | `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |
 | `npm run test:v07:libreoffice` | Open all 11 artifacts from the single 0.7 manifest in LibreOffice without repair |
@@ -436,8 +436,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
 | `npm run test:expanded` | 1796 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
-| `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/portable-rich-text.md) |
-| `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/chart-hierarchical-categories.md) |
+| `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/api/portable-rich-text.md) |
+| `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/api/chart-hierarchical-categories.md) |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |
@@ -552,4 +552,4 @@ Transitions and animations only play in present mode (the "Present" toolbar butt
 
 [MIT](https://github.com/unStone/web-ppt/blob/master/LICENSE)
 
-[Read-only comments and export](docs/comments.md): `@web-ppt/viewer-core/comments` and opt-in `showComments` export options.
+[Read-only comments and export](docs/api/comments.md): `@web-ppt/viewer-core/comments` and opt-in `showComments` export options.

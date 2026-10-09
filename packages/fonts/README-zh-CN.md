@@ -1,6 +1,6 @@
 # @web-ppt/fonts
 
-需要显式字体字节、定位字形、轮廓和 UTF-16 原文簇时，可选用 `@web-ppt/fonts/glyphs`，以及 `/glyphs/harfbuzz`、`/glyphs/worker`、`/glyphs/browser` 适配。字体包不携带字体字节、HarfBuzz 或 Cordis；默认入口保持原有网页字体加载能力。见[API 与验收复现](../../docs/font-glyphs.md)。
+需要显式字体字节、定位字形、轮廓和 UTF-16 原文簇时，可选用 `@web-ppt/fonts/glyphs`，以及 `/glyphs/harfbuzz`、`/glyphs/worker`、`/glyphs/browser` 适配。字体包不携带字体字节、HarfBuzz 或 Cordis；默认入口保持原有网页字体加载能力。见[API 与验收复现](../../docs/api/font-glyphs.md)。
 
 [English](README.md) · **简体中文**
 

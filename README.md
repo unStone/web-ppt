@@ -42,9 +42,9 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 表中体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。
 
-按需图片与立体编辑见[外观效果](docs/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/browser-editing.md)。[API 契约与迁移](docs/api-stability.md)说明公开入口和生命周期。
+按需图片与立体编辑见[外观效果](docs/api/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/api/browser-editing.md)。[API 契约与迁移](docs/api/api-stability.md)说明公开入口和生命周期。
 
-扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
+扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/api/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
 
 实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md)。
 
@@ -428,7 +428,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
 | EMF+ | 不处理。实测手上全部图元文件都是**双模式**——GDI 记录已承载完整绘制（`sample-metafile.pptx` 里 16125 条 GDI 记录 vs 3 条 EMF+ 注释），走 GDI 路径即可。只有纯 EMF+ 文件才需要，尚无样本 |
 | 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
-| chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](docs/chartex-native.md) |
+| chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](docs/api/chartex-native.md) |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
 | MTX 压缩的嵌入字体 | PowerPoint 的 `fntdata` 是 EOT 容器，绝大多数还开着 MTX 压缩。未压缩的容器 core 自己剥（含异或混淆），压缩的需要注入解码器：`setFontDecoder(eotToTtf)`（来自 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor)）。不注入就跳过这些字体，回退到替换字体，而不是塞一份浏览器注定拒绝的字节 |
 | 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题——装原字体、用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](packages/fonts) 换成度量兼容的免费替代字体（Calibri→Carlito 这类，前进宽度逐字相等）都能对齐 |
@@ -445,14 +445,14 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
 | `npm run test:core` | 核心解析 / 渲染，2298 项断言 + 186 个渲染快照 |
-| `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](docs/font-glyphs.md) |
+| `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](docs/api/font-glyphs.md) |
 | `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 166 份固件、1114 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
 | `npm run test:chartex` | ChartEx 原生 104 项断言：层级与统计边界、配置继承、两种文本及保存路径 |
-| `npm run test:comments` | 批注保存与导出 31 项断言：复制/恢复、两条保存、只读面板、默认关闭与安全转义；[批注交付](docs/comments.md) |
-| `npm run test:media` | 媒体插入 870 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存和严格 XML；[阶段 API](docs/media-insertion.md) |
+| `npm run test:comments` | 批注保存与导出 31 项断言：复制/恢复、两条保存、只读面板、默认关闭与安全转义；[批注交付](docs/api/comments.md) |
+| `npm run test:media` | 媒体插入 870 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存和严格 XML；[阶段 API](docs/api/media-insertion.md) |
 | `npm run test:editor` | 444 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
 | `npm run test:v07:libreoffice` | 用 LibreOffice 无修复打开 0.7 单一清单中的 11 份跨能力产物 |
@@ -461,9 +461,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开同一份 0.7 十一件清单 |
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
-| `npm run test:expanded` | 扩展能力 1796 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/expanded-capabilities.md) |
-| `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](docs/portable-rich-text.md) |
-| `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](docs/chart-hierarchical-categories.md) |
+| `npm run test:expanded` | 扩展能力 1796 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/api/expanded-capabilities.md) |
+| `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](docs/api/portable-rich-text.md) |
+| `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](docs/api/chart-hierarchical-categories.md) |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
@@ -588,4 +588,4 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 
 [MIT](LICENSE)
 
-[只读批注与导出](docs/comments.md)：`@web-ppt/viewer-core/comments`、`showComments`。
+[只读批注与导出](docs/api/comments.md)：`@web-ppt/viewer-core/comments`、`showComments`。

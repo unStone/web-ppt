@@ -28,8 +28,8 @@ squarify，旭日图使用按层极坐标堆叠，零值、负值、空值、单
 两个方向的全局 hook 切换不改变已打开文稿，主题、母版与补丁保存后的重解析沿用原配置。
 
 本票按用户确认的功能交付标准关闭；独立来源验收仍缺：缺原始层级 PPTX 与可原生显示现代图表的 Office oracle。现有 Windows 16.0 Build 4266
-把八页固件及真实漏斗都显示为图片，不能据此确认层级方向和几何保真。见[详细边界](../../../chartex-native.md)。
+把八页固件及真实漏斗都显示为图片，不能据此确认层级方向和几何保真。见[详细边界](../../../api/chartex-native.md)。
 
 ## 功能交付决定（2026-09-07）
 
-按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../api/comments.md)。

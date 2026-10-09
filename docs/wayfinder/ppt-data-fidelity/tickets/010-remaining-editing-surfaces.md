@@ -25,6 +25,6 @@ assignee: /root
 - Chrome 真实输入、外观工具、灰度/双色调 PNG 与 SVG 像素、混合保存重开，以及按需输入模块 503 回退通过。
 - 34 件统一保存工件逐件通过 LibreOffice 打开与 PDF 导出；图片、立体和混合文稿均含两条保存。
 - 两轴代码审查发现的问题已修复，复审无剩余发现。
-- [外观 API](../../../appearance-editing.md)、[浏览器增强](../../../browser-editing.md)与 [1.0 API 准备](../../../api-stability.md)已补齐。
+- [外观 API](../../../api/appearance-editing.md)、[浏览器增强](../../../api/browser-editing.md)与 [1.0 API 准备](../../../api/api-stability.md)已补齐。
 
 Windows 真机按用户要求暂缓；完整真实 ChartEx 类型语料、操作系统读屏/输入法候选窗口及发布验收继续单独登记。

@@ -1,11 +1,11 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-09-09，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-09-09，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
 
-> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](portable-rich-text.md)、[经典图表多级类别编辑](chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 进入实验性 beta 交付，整项验收仍在进行。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
+> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](api/portable-rich-text.md)、[经典图表多级类别编辑](api/chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 进入实验性 beta 交付，整项验收仍在进行。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
 
 盘点 `0.5.0-beta.5` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
-路径与技术方案。范围与词汇沿用 [编辑能力技术方案](editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
+路径与技术方案。范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
 
 判断做不做只用两条：**对使用者有没有成本**（运行时、体积、复杂度落不落到用户头上）、**有没有解法**。
 工作量不是理由；能做成按需入口 / 可 tree-shake 的等于零成本。
@@ -21,7 +21,7 @@
 图表深度编辑、批注编辑、页面确保适合、SmartArt/OLE/墨迹内部编辑、高级渲染、PDF/WebM 直接导出、
 原生 PPT 生成保存及无来源复制。编辑能力已贯通历史、恢复、协同与保存重开，官网生产页面中英文工作流通过。
 用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
-beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api-stability.md)。
+beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api/api-stability.md)。
 
 ### 1.2 验证状态
 
@@ -82,7 +82,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 切换 / 动画 | ✅ 20 种 / 四类按点击分批 | ✅ 6 种 / 5 步 | — |
 | 加密 | ✅ 标准 AES-ECB / 敏捷 AES-CBC | ✅ RC4 CryptoAPI | **打开密码文件不可解析** |
 | 数学公式 | ✅ OMML 解析与结构化 SVG 排版 | ❌ | 已覆盖分式、根式、脚标、大算子、矩阵等；数学字体与复杂细节继续对照 |
-| 嵌入字体 | ✅ EOT 剥壳；可选字体与字形 Provider | — | 常规解析使用解码 hook；产品编辑器通过独占 Worker 验证权限、应用字体及检查缺字，见[支持范围](font-glyphs.md) |
+| 嵌入字体 | ✅ EOT 剥壳；可选字体与字形 Provider | — | 常规解析使用解码 hook；产品编辑器通过独占 Worker 验证权限、应用字体及检查缺字，见[支持范围](api/font-glyphs.md) |
 
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。新增直接图片页面 PDF 与无音轨 WebM，均为按需入口。
@@ -107,10 +107,10 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 批注 | 新增、修改、删除、回复与字段级历史/协同 | — |
 | 媒体 | 按需 `AddMedia`：PCM WAV / MP4（含分片）/ 显式外链、默认音频图标、`ReplaceMediaPoster`；框架/官网入口、历史与保存、选中媒体播放与失败提示 | Windows PowerPoint 实测；无原包复制需先保存重开 |
 | SmartArt/OLE/墨迹 | 按需节点/嵌入内容/笔画内部编辑，原生保存 | 未识别宿主格式及布局边界见能力矩阵 |
-| 无来源复制 | 按需 `generate.copyPortableElements`：选中子树、资源、公式/艺术字/高级文字效果直接跨文稿复制 | 丢失原生语义及能力范围外的对象明确拒绝，见[支持矩阵](portable-rich-text.md) |
+| 无来源复制 | 按需 `generate.copyPortableElements`：选中子树、资源、公式/艺术字/高级文字效果直接跨文稿复制 | 丢失原生语义及能力范围外的对象明确拒绝，见[支持矩阵](api/portable-rich-text.md) |
 
 保存：补丁保存（原包直通，只改脏 part）、生成保存（无原包时确定性生成）、`.ppt` 编辑另存 `.pptx`，以及有明确能力校验的原生 `.ppt` 生成保存。
-原生 `.ppt` 根据当前投影生成新文件，不保留未知二进制记录；支持内容与拒绝条件见[保存矩阵](expanded-capabilities.md#原生-ppt-保存矩阵)。
+原生 `.ppt` 根据当前投影生成新文件，不保留未知二进制记录；支持内容与拒绝条件见[保存矩阵](api/expanded-capabilities.md#原生-ppt-保存矩阵)。
 
 ### 2.3 工程与产品
 
@@ -125,8 +125,8 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
 | 官网编辑页 | ✅ 独立 `editor.html`，本机打开/模板新建/编辑/保存/恢复 |
 | 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
-| 国际化 | ✅ 官网三页完整中英文、SEO、原地切换、动态工具/上下文名称及错误恢复；键盘/触屏、根路径/子路径生产回归通过，发布包不含站点词条，详见[验收矩阵](site-i18n.md) |
-| 文件保存 UX | ✅ 产品层 File System Access + 下载双路径、会话目标与另存为、延迟保存点及失败重试；详见[本机文件保存](local-file-save.md) |
+| 国际化 | ✅ 官网三页完整中英文、SEO、原地切换、动态工具/上下文名称及错误恢复；键盘/触屏、根路径/子路径生产回归通过，发布包不含站点词条，详见[验收矩阵](design/site-i18n.md) |
+| 文件保存 UX | ✅ 产品层 File System Access + 下载双路径、会话目标与另存为、延迟保存点及失败重试；详见[本机文件保存](api/local-file-save.md) |
 
 ---
 
@@ -163,7 +163,7 @@ flowchart TD
 | 图表类型/样式、批注编辑、页面确保适合 | 有（高频编辑工作流） | 独立入口，沿用事务/历史/恢复/协同 | ✅ **已完成** |
 | SmartArt / OLE / 墨迹内部编辑 | 有（只移动外框无法改内容） | 按可识别格式编辑原生数据 | ✅ **能力矩阵内已完成**，未知格式保留边界 |
 | PDF / WebM 直接导出 | 有（无需其他应用即可交付） | 图片页面 PDF、无音轨 WebM，浏览器按需编码 | ✅ **已完成** |
-| 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **功能完成，真机验收暂缓**，见[媒体操作与 API](media-insertion.md) |
+| 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **功能完成，真机验收暂缓**，见[媒体操作与 API](api/media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | ✅ **产品层双路径已完成**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | ✅ 按需渐进增强，真实 Chromium 输入与失败回退已验证 |
 | Safari LBSE | 无（engine 行盒已兜住） | 上游未默认开启 | **保留兜底，不要删** |
@@ -200,7 +200,7 @@ flowchart LR
 | **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) ✅ | 功能完成；真实语料单独验收 |
 | **扩展（版本待定）** | 深度编辑、高级渲染与直接导出 | [七类扩展交付](wayfinder/ppt-expanded-capabilities/map.md) ✅，实现提交 `8803e07` | 自动验收通过；Windows 真机按用户要求跳过 |
 | **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表及正式字体已完成；下一项矢量 PDF，长尾格式先定样本及支持范围 |
-| **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
+| **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api/api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
 一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
 
@@ -418,7 +418,7 @@ Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、�
 
 `@web-ppt/core/chart-ex` 已实现 squarify、分层圆弧、分箱/Pareto、箱线、累计瀑布和源顺序比例漏斗，
 输出统一 Schema；SDK 默认不加载实现，官网按内容类型自动加载，失败时保留回退。104 项专项、八页 Chrome 四类导出及两条保存通过。
-Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布局 oracle。详见[按需 API 与验收边界](chartex-native.md)。
+Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布局 oracle。详见[按需 API 与验收边界](api/chartex-native.md)。
 
 `regionMap` 已通过文件自带的 geoCache 边界实现，支持压缩缓存、四种投影、孔洞与跨日期变更线；
 无缓存时保留兼容预览，不依赖外部地图服务。`@web-ppt/edit-core/chart-ex` 同时提供七类现代图表的
@@ -432,7 +432,7 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 |---|---|---|---|
 | WebKit LBSE | 2026 年 7 月 Igalia 仍在做性能优化，**默认未开启**，需 runtime flag | Safari 的 `foreignObject` 缩放 bug 还在 | **保留 `034` 的 engine 行盒路径，不要因为「LBSE 快落地了」删掉** |
 | EditContext | 仍**只有 Chromium**，Safari/Firefox 未实现（有社区 polyfill） | 自绘文本 + 完整 IME 只能在 Chrome 用 | contenteditable 保持主路径；EditContext 只做渐进增强，且必须在两条路径跑同一套断言 |
-| File System Access | `showSaveFilePicker` **只有 Chromium**；Safari/Firefox 仅 OPFS，且 Firefox 是**有意不实现** | Safari/Firefox 保存只能是下载，无法原地覆盖 | ✅ 产品层双路径已接入：能力检测、当前会话目标与另存为；不支持则 download，拒绝/取消不偷偷下载。**不进 `editor` 包**，详见[交付与验证边界](local-file-save.md) |
+| File System Access | `showSaveFilePicker` **只有 Chromium**；Safari/Firefox 仅 OPFS，且 Firefox 是**有意不实现** | Safari/Firefox 保存只能是下载，无法原地覆盖 | ✅ 产品层双路径已接入：能力检测、当前会话目标与另存为；不支持则 download，拒绝/取消不偷偷下载。**不进 `editor` 包**，详见[交付与验证边界](api/local-file-save.md) |
 
 ---
 
@@ -440,7 +440,7 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 
 | 能力 | 入口与验证 |
 |---|---|
-| 图片/立体编辑、AT / EditContext | [外观编辑](appearance-editing.md)：历史/恢复/协同与两条保存；[浏览器增强](browser-editing.md)：读屏语义及真实 Chromium 输入 |
+| 图片/立体编辑、AT / EditContext | [外观编辑](api/appearance-editing.md)：历史/恢复/协同与两条保存；[浏览器增强](api/browser-editing.md)：读屏语义及真实 Chromium 输入 |
 | 图表深度编辑、批注编辑、页面适配 | `chart-design` / `chart-ex` / `comments` / `resize`：数据与原生 XML 同步，官网完整操作与只读边界回归 |
 | SmartArt / OLE / 墨迹 | `smartart` / `ole` / `ink`：节点、可识别 XLSX/DOCX 嵌入内容、InkML 笔画；保存原生数据与兼容预览 |
 | 地图 / EMF+ / 三维 | `chart-ex` / `emf-plus` / `three-d`：文件内边界、常见记录、真实相机投影；复杂格式和视觉近似明确列界 |
@@ -448,7 +448,7 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 | 原生 PPT / 无来源复制 | `ppt.savePpt` / `generate.copyPortableElements`：能力校验、浏览器下载/重开；LibreOffice 保留文字、曲线、组合、图片与备注 |
 | 产品集成与门禁 | 1796 项扩展断言、独立发布入口交叉验证、官网三张生产页面中英文工作流；108 份固件连续两次逐字节一致 |
 
-公开 API、格式边界与调用示例统一维护在[扩展能力矩阵](expanded-capabilities.md)；逐项问题与证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。
+公开 API、格式边界与调用示例统一维护在[扩展能力矩阵](api/expanded-capabilities.md)；逐项问题与证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。
 
 ---
 
@@ -489,6 +489,6 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 |---|---|---|---|
 | 1 | 补齐真实 ChartEx PPTX 类型语料及高级渲染对照 | 合成功能门禁和现有真实样本通过，完整类型覆盖待补 | 可信来源、可复现输入、逐类型原生布局与保存重开证据 |
 | 2 | Windows + 桌面 PowerPoint 自托管验收 | **按用户要求暂缓**，未计为通过 | 同一 Office 工件清单绑定提交与字节，无修复打开并核验原生内容 |
-| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api-stability.md)已完成，尚未正式冻结 | 外部验收与反馈收口后确定版本，再执行发布流程 |
+| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结 | 外部验收与反馈收口后确定版本，再执行发布流程 |
 
 Windows 真机仍列为正式发布条件；它不阻挡已完成代码与 roadmap 的提交、推送。

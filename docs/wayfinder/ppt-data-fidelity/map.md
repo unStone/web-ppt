@@ -48,7 +48,7 @@ tracker: local-markdown
   视觉证据、9 个源文件的缓存／工作簿核对与层级主来源调查；其他类型原始 PPTX、完整层级语义与原生布局仍缺证。
 - [层级](tickets/003-chartex-hierarchy-rendering.md)与[统计](tickets/004-chartex-statistical-rendering.md)原生实现已提供按需入口；
   104 项专项、八页 Chrome 导出、配置继承及两条保存已通过。真实漏斗另有三项语料回归，其他类型原始 PPTX
-  和 Office 原生布局仍待独立验收；功能票已关闭。详见[能力边界](../../chartex-native.md)。
+  和 Office 原生布局仍待独立验收；功能票已关闭。详见[能力边界](../../api/chartex-native.md)。
 - [集成验收](tickets/007-v08-integration-readiness.md)的统一 Office 清单已扩至 36 件经典图表、ChartEx 与媒体产物，
   Windows 工作流接入同一清单。已连接的 PowerPoint 16.0 Build 4266 可运行交互桌面探针，但现代图表全部显示图片。
 - [插入可交付的音视频](tickets/005-media-insertion.md)已实现 WAV / MP4（含分片）、显式外链、默认音频图标、海报替换与框架/官网按需入口；历史/恢复/协同与两条保存共用现有资源模型。官网原生播放、失效外链降级与冷启动媒体恢复已接通，PowerPoint 实测仍待完成。
@@ -59,7 +59,7 @@ tracker: local-markdown
 - [0.8 统一完成度](tickets/007-v08-integration-readiness.md)进入 `verify`；源码与包名产物共用批注和混合契约，来源专项不污染默认计数。
 - [剩余编辑与浏览器交互](tickets/010-remaining-editing-surfaces.md)：图片效果、立体设置、AT 与 EditContext，
   官网现代图表自动按需加载，以及混合内容的浏览器/保存旅程已实现。
-- [API 契约与迁移准备](../../api-stability.md)已补公开类型与 exports 回归；正式 1.0 冻结等待 beta 反馈。
+- [API 契约与迁移准备](../../api/api-stability.md)已补公开类型与 exports 回归；正式 1.0 冻结等待 beta 反馈。
 - Windows 真机按用户最新要求暂缓。真实语料和 Office 原生对照保持独立状态，不阻塞功能实现。
 
 ## Out of scope

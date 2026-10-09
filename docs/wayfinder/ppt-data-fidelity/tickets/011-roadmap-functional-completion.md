@@ -25,7 +25,7 @@ Windows 真机跳过；未取得的真实 Office 样本不阻塞本票，继续�
 
 ## 功能交付决定（2026-09-07）
 
-按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../api/comments.md)。
 
 ## 最终验收（2026-09-07）
 

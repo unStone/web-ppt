@@ -8,13 +8,13 @@ tracker: local-markdown
 
 ## Destination
 
-依据 [编辑能力技术方案](../../editing-design.md)，把当前只读引擎演进为稳定、易用的纯 Web PPT 编辑器：真实 `.pptx` 可打开、编辑、撤销、保存并保持未编辑内容；查看与编辑共用现有高保真预览链路；核心能力以无框架发布包交付，并为 React、Vue 等生态提供低成本适配面。
+依据 [编辑能力技术方案](../../design/editing-design.md)，把当前只读引擎演进为稳定、易用的纯 Web PPT 编辑器：真实 `.pptx` 可打开、编辑、撤销、保存并保持未编辑内容；查看与编辑共用现有高保真预览链路；核心能力以无框架发布包交付，并为 React、Vue 等生态提供低成本适配面。
 
 完成不是“画布上能拖动”，而是 M0–M4 的用户闭环、M5 的可恢复与性能打磨均通过自动验收；M6 的动画、顶点、表样式与协同以独立扩展验证，不污染单机主包。
 
 ## Notes
 
-- 领域词汇见 [CONTEXT.md](../../../CONTEXT.md)，架构与验收以 [编辑能力技术方案](../../editing-design.md) 为准。
+- 领域词汇见 [CONTEXT.md](../../../CONTEXT.md)，架构与验收以 [编辑能力技术方案](../../design/editing-design.md) 为准。
 - 必须遵守根目录 `AGENTS.md`：`render/` 只依赖 `types.ts`、格式按魔数识别、两条出片文本路径不合并、`core` 与 `edit-core` 不依赖 DOM。
 - 每个任务完成后必须运行 `npm run check && npm test && npm run build && npm run verify`；新增能力必须有确定性固件，写回保真还要做独立进程渲染对比与 LibreOffice ground truth。
 - 性能是接口契约：只读路径零额外负担；拖动帧 ≤ 8ms、单元素提交 ≤ 16ms、200 页/50MB 且只改 3 页的保存 ≤ 500ms、编辑内存增量 ≤ 40%。

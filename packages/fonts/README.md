@@ -6,7 +6,7 @@ The fonts a deck asks for usually aren't installed on the machine viewing it. Th
 
 There is **not one byte of font data in the package** (default entry: 2.8 KB gzip). Slices point at already-published [fontsource](https://fontsource.org/) versions served by jsDelivr; nothing downloads until it's actually rendered.
 
-For explicit font bytes, positioned glyphs, outlines and UTF-16 source clusters, use the optional `@web-ppt/fonts/glyphs` entry. The `/glyphs/harfbuzz`, `/glyphs/worker` and `/glyphs/browser` adapters keep the shaper, Worker and browser font lifetime under the host's control. No font bytes, HarfBuzz or Cordis are bundled. See the [API and verification guide](https://github.com/unStone/web-ppt/blob/master/docs/font-glyphs.md).
+For explicit font bytes, positioned glyphs, outlines and UTF-16 source clusters, use the optional `@web-ppt/fonts/glyphs` entry. The `/glyphs/harfbuzz`, `/glyphs/worker` and `/glyphs/browser` adapters keep the shaper, Worker and browser font lifetime under the host's control. No font bytes, HarfBuzz or Cordis are bundled. See the [API and verification guide](https://github.com/unStone/web-ppt/blob/master/docs/api/font-glyphs.md).
 
 ```bash
 npm i @web-ppt/fonts

@@ -29,7 +29,7 @@ blocked_by: []
 
 ## Answer
 
-2026-09-08 完成。[支持矩阵、公开 API 与成本](../../../chart-hierarchical-categories.md)已记录。
+2026-09-08 完成。[支持矩阵、公开 API 与成本](../../../api/chart-hierarchical-categories.md)已记录。
 
 - `levels` 保留根到叶的原生槽位；按单级字段编辑、撤销和合并，稳定身份不依赖标签。
 - 同步原生多级缓存、矩形公式及纵向/横向工作簿；重复父标签、空字符串、缺失槽与数值零保持区别。

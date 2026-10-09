@@ -29,8 +29,8 @@ blocked_by:
 
 与层级能力共享 104 项专项、八页 Chrome 四类导出和两条保存；真实漏斗另有三项输入回归。
 本票按用户确认的功能交付标准关闭；独立来源验收仍缺：其余类型原始 PPTX 与 Office 原生布局对照尚缺，官网已按内容类型自动加载原生入口，失败和不支持的类型保持 Office fallback。
-见[能力与来源边界](../../../chartex-native.md)。
+见[能力与来源边界](../../../api/chartex-native.md)。
 
 ## 功能交付决定（2026-09-07）
 
-按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../api/comments.md)。

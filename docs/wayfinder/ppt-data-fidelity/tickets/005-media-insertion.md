@@ -35,7 +35,7 @@ blocked_by: []
 伪装 WAV 拒绝、慢响应下连续播放，以及拖放隔离、切换文稿清理和关闭工具后的 DOM 回收。
 播放器属于主动打开的媒体工具，默认编辑画布仍展示海报，不引入第二套投影或模型。
 
-API、明确的输入范围与验证命令见[媒体插入](../../../media-insertion.md)。此前已修复通用插入宿主离开临时
+API、明确的输入范围与验证命令见[媒体插入](../../../api/media-insertion.md)。此前已修复通用插入宿主离开临时
 XML 祖先时丢失命名空间闭包的问题；严格 DOM 解析与 Chrome 播放作为独立回归，不能以宽松解析或
 LibreOffice 能打开代替它们。
 
@@ -50,4 +50,4 @@ LibreOffice 能打开代替它们。
 
 ## 功能交付决定（2026-09-07）
 
-按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../comments.md)。
+按用户确认的范围交付；Windows 真机暂缓，缺少的真实 Office 类型语料单独登记于 [002](002-chartex-fallback-corpus.md)，不阻塞本票功能完成。统一结果见 [roadmap](../../../roadmap.md) 与 [批注交付](../../../api/comments.md)。
