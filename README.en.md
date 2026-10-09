@@ -397,10 +397,10 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `.ppt` glow / soft edge / reflection | **The format has no such properties** — they're DrawingML (2007+) concepts with no representation in the OfficeArt binary (outer shadow is supported) |
 | `.ppt` 3D | OfficeArt has extrusion properties (`c3DExtrude*` / `c3DBooleans`), but no trustworthy samples: LibreOffice conversion bakes 3D into cube preset geometry *and* keeps the 3D properties, so implementing against it would double up |
 | `.ppt` SmartArt | Not implemented (auto-numbering and nested groups are) |
-| OMML math | Linear text only; no MathML typesetting |
+| OMML math | Fractions, radicals, sub/superscripts, large operators and matrices are laid out as structured SVG; fidelity of complex details depends on available fonts |
 | WordArt envelope warps | `textPath` can only bend the baseline; `textInflate` and friends don't scale glyphs positionally |
-| 3D | Isometric approximation, not true projection; steep camera angles don't switch to a top-down view |
-| EMF+ | Not handled. Every metafile examined so far is **dual-mode** — the GDI records already carry the full drawing (16,125 GDI records vs 3 EMF+ comments in `sample-metafile.pptx`), so the GDI path suffices. Only pure EMF+ files would need it, and no sample has turned up |
+| 3D | True camera projection (XYZ matrices, ortho/perspective, extrusion, curved bevels); materials, lighting and texture meshes are approximations |
+| EMF+ | Opt-in `@web-ppt/core/emf-plus` covers common drawing records (paths, gradients, images, text, clipping); unknown records fall back per format, and no pure-EMF+ sample has turned up |
 | Raster operation codes | SVG/CSS has no XOR/AND bitwise blending; `mix-blend-mode` is not equivalent |
 | chartex chart types | Opt-in `@web-ppt/core/chart-ex` implements native layouts except maps. Office fallback remains the default. Real funnel input, browser exports, frame editing and both save paths are covered; other original PPTX types and Office-native layout validation remain pending. See [scope and evidence](docs/api/chartex-native.md) |
 | Region OR / XOR / DIFF | Needs region boolean operations, which SVG clipping can't express; COPY and AND work |
@@ -410,6 +410,8 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | Line breaking before web fonts arrive | The native `<text>` path measures with canvas, and fonts load asynchronously, so the first frame breaks against the fallback. The `foreignObject` path is laid out by the browser and is unaffected |
 | Password-protected files | Files with an open password can't be parsed; the error explicitly says the file is encrypted |
 | OLE embedded objects | Renders the preview image PowerPoint stored (parsed out of the VML part), not the inner document; falls back to a placeholder box when the preview is in an undecodable format such as PICT |
+
+> The [capability matrix](docs/api/expanded-capabilities.md) is the authoritative source for scope and boundaries; this table lists only items that affect usage decisions.
 
 ## Development
 

@@ -423,10 +423,10 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
 | .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
 | .ppt SmartArt | 未实现（自动编号与嵌套组均已支持） |
-| OMML 公式 | 只取线性文本，不做 MathML 排版 |
+| OMML 公式 | 分式、根式、脚标、大算符与矩阵已做结构化 SVG 排版；复杂细节的保真度依赖可用字体 |
 | 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
-| 3D | 等轴测近似，非真实投影；大角度视角不切换俯视 |
-| EMF+ | 不处理。实测手上全部图元文件都是**双模式**——GDI 记录已承载完整绘制（`sample-metafile.pptx` 里 16125 条 GDI 记录 vs 3 条 EMF+ 注释），走 GDI 路径即可。只有纯 EMF+ 文件才需要，尚无样本 |
+| 3D | 真实相机投影（XYZ 矩阵、正交 / 透视、挤出、曲线斜角）；材质、光照与纹理网格为近似 |
+| EMF+ | 按需入口 `@web-ppt/core/emf-plus` 支持常见绘图（路径、渐变、图片、文字、裁剪等）；未知记录按格式回退，纯 EMF+ 文件仍无样本 |
 | 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
 | chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](docs/api/chartex-native.md) |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
@@ -436,6 +436,8 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | 网络字体到达前的断行 | 原生 `<text>` 路径用 canvas 量字宽，而字体是异步加载的：首帧会按回退字体断行。`foreignObject` 路径由浏览器排版，不受影响 |
 | 加密文件 | 设了打开密码的文件无法解析，会明确报「该文件已加密」 |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
+
+> 各能力的完整支持范围与边界以[能力矩阵](docs/api/expanded-capabilities.md)为权威源，本表只列对使用决策有影响的条目。
 
 ## 开发
 
