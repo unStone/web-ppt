@@ -47,6 +47,7 @@ blocked_by: []
 | 步 | 状态 |
 |---|---|
 | 混音核 | ✅ `viewer-core/src/video/mix.ts`（`mixAudioClips`：确定性线性插值重采样、循环/endMs 截切、音量、限幅、声道布局；30 项 Node 断言并入 `test-video.mjs`） |
-| 封装器双轨 | ✅ `WebmWriter` 可选音频轨（A_OPUS TrackEntry + RFC 7845 OpusHead、簇内交错、流内递增校验；8 项断言含本机 ffprobe 两流实测，CI 无 ffprobe 时跳过增强并说明） |
-| 模型盘点 | **MediaInfo（core types.ts:524）只有 kind/src/external/mime——播放时机、音量、循环、时长全缺**，均在 OOXML `p:timing` 的媒体节点（cMediaNode 的 volume/loop 与动画时间线关联）。接线前须先补：解析 timing 树媒体节点 → Schema 扩展（startMs 由动画时间线换算、volume、loop）→ 跨页时间轴映射（videoPlan 页起点） |
-| 接线与验收 | 待模型补齐后：WAV PCM 直读 + decodeAudioData 解码 → mixAudioClips → WebCodecs AudioEncoder(Opus) isConfigSupported 前置 → addAudio 交错 → 真实 Chrome 导出 + ffprobe 双轨时长核对（工具已验证可用） |
+| 封装器双轨 | ✅ `WebmWriter` 可选音频轨（A_OPUS TrackEntry + RFC 7845 OpusHead、簇内交错、流内递增校验；8 项断言含本机 ffprobe 两流实测） |
+| 模型层 | ✅ timing 树 `p:audio/p:video` 的 cMediaNode 解析（vol 千分比 / mute / repeatCount 循环 / spTgt spid），与效果按文档顺序合并编号 clickGroup（媒体 clickEffect 头独立开批）；`MediaInfo` 扩展 `spid` 与 `playback`，parser 按 spid 回填；media 固件 timing 段 + 4 项断言 |
+| 浏览器全链 | ✅ `presentationToVideo({ audio: true })`：页时间轴游标换算组起始毫秒 → fetch + OfflineAudioContext 解码（WAV / 可解嵌入音频）→ 混音核 → WebCodecs Opus 48kHz（isConfigSupported 前置、20ms 块、dequeue 背压）→ 毫秒时间戳交错写入；无音频媒体时无声导出、默认关闭时产物不变。真 Chrome 验收 `tooling/test-video-audio.mjs`（双轨 / Opus / 48kHz / 音轨时长边界，ffprobe 缺失环境降级为字节级断言），已挂入 `test:functional` |
+| 首版边界 | 视频文件的内嵌音轨（MP4/AAC 提轨）列为后续；外链音频受 CORS 约束、失败明确报错；组号超出动画批数的媒体落在最后一批 |

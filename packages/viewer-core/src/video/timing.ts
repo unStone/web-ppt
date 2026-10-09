@@ -13,6 +13,8 @@ export interface VideoOptions {
   clickDelayMs?: number;
   /** 视频无音轨；显式允许把内嵌音视频作为静态封面输出。 */
   mediaPosters?: boolean;
+  /** 导出音轨：timing 媒体节点（WAV / 可解码嵌入音频）按页时间轴混音为 Opus；无音频媒体时仍为无声视频 */
+  audio?: boolean;
   signal?: AbortSignal;
   onProgress?: (value: { completed: number; total: number; slideNumber: number }) => void;
 }
