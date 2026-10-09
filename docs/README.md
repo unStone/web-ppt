@@ -9,6 +9,7 @@
 | 1 | [AGENTS.md](../AGENTS.md) | 仓库约束、已知陷阱、命令与发布流程 | Agent + 维护者 · how-to |
 | 2 | [architecture.md](architecture.md) | 包依赖、四条解析链路、编辑闭环的全局架构 | Agent + 维护者 · reference |
 | 3 | [architecture-rules.md](architecture-rules.md) | 分层与依赖规范：依赖方向、落位决策、内聚耦合判定、反模式 | Agent + 维护者 · reference |
+| 4 | [specs/pptx-spec-map.md](specs/pptx-spec-map.md) · [specs/ppt-spec-map.md](specs/ppt-spec-map.md) | 格式规范地图：规范体系与版本、功能域 → 章节 → 仓库模块映射、规范没写清的坑 | 开发者 · reference |
 | 3 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 | Agent + 维护者 · reference |
 | 4 | [roadmap.md](roadmap.md) | 能力盘点、版本演进与缺口取舍 | 维护者 · reference |
 | 5 | [pitfalls.md](pitfalls.md) | 坑索引：实现陷阱在 AGENTS，交付与交互层面的坑收拢于此 | Agent + 维护者 · reference |
@@ -23,7 +24,8 @@
 flowchart LR
   ROOT["docs/"] --- GUIDE["README.md 文档地图<br/>pitfalls.md 坑索引"]
   ROOT --- SPECS["testing.md 测试规范<br/>releasing.md 发布运维<br/>powerpoint-runner.md 真机门禁"]
-  ROOT --- ARCH["architecture.md<br/>roadmap.md"]
+  ROOT --- ARCH["architecture.md · architecture-rules.md<br/>roadmap.md"]
+  ROOT --- SPECS2["specs/<br/>pptx / ppt 规范地图"]
   ROOT --- API["api/<br/>11 份对外能力文档"]
   ROOT --- DESIGN["design/<br/>6 份设计决策"]
   ROOT --- ITER["playback/ viewer/ parsing/<br/>35 份轮次迭代记录"]
@@ -39,6 +41,7 @@ flowchart LR
 | `viewer/` | 打开链路、深链、密码、查找等 16 轮迭代记录 | 维护者 · explanation |
 | `parsing/` | 惰性解析三步曲（钩子 → 媒体 → 后页部件） | 维护者 · explanation |
 | `wayfinder/` | 五张研发地图（map + tickets），`verify-v06/v07-readiness` 直接消费其内容做断言 | 维护者 · explanation + 验收工件，**勿移动、勿改结构** |
+| `specs/` | `.pptx`（ECMA-376 体系）与 `.ppt`（MS-PPT / CFB / Escher）的规范地图：功能域 → 规范章节 → 仓库模块 | 开发者 · reference |
 | `releases/` | 版本交付说明，CHANGELOG 以绝对 URL 指向此处 | 外部 · explanation |
 
 ## api/（11 份）

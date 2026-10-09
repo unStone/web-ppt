@@ -77,6 +77,15 @@ export function mathOf(run: TextRun, scale: number): MathLayout | null {
   return hit;
 }
 
+/**
+ * 字体环境变化（网络字体到货、嵌入字体经 FontFace 注册）后作废按度量缓存的布局结论。
+ * 宽度本身每次现量（canvas 会用已加载的字体），唯一按字体定型的是数学布局缓存；
+ * 幂等，重复调用只是空清理。
+ */
+export function invalidateTextMeasureCaches(): void {
+  mathCache.clear();
+}
+
 export function measureTextWidth(
   text: string,
   run: TextRun,
