@@ -437,7 +437,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run test:edit:powerpoint` | On Windows, open the same 11-artifact 0.7 manifest in desktop PowerPoint with repair disabled |
 | `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
 | `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
-| `npm run test:expanded` | 1817 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
+| `npm run test:expanded` | 1825 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
 | `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/api/portable-rich-text.md) |
 | `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/api/chart-hierarchical-categories.md) |
 | `npm run fixtures` | Regenerate every test file (deterministic output) |

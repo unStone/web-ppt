@@ -23,6 +23,35 @@ bad(()=>writer.addFrame(new Uint8Array([6]),83333,83333,false),/递增/);
 const webm=writer.finish(),bytes=new Uint8Array(await webm.arrayBuffer());check(webm.type==='video/webm'&&Buffer.from(bytes.subarray(0,4)).toString('hex')==='1a45dfa3','Real EBML signature');
 check(Buffer.from(bytes).includes('V_VP8')&&Buffer.from(bytes).includes('webm'),'Native WebM track codec');
 bad(()=>writer.finish(),/结束/);bad(()=>new WebmWriter(10,10,24,'VP9').finish(),/没有/);
+
+// 双轨 WebM：声明音频轨后 Opus TrackEntry / OpusHead / 交错块就位；ffprobe 本机增强核对流布局
+{
+  const plain=new WebmWriter(480,270,12,'VP8',{sampleRate:48000,channels:2});
+  plain.addFrame(new Uint8Array([1]),0,83333,true);
+  bad(()=>plain.finish(),/没有音频块/);
+  const silent=new WebmWriter(480,270,12,'VP8');
+  bad(()=>silent.addAudio(new Uint8Array([1]),0),/未声明音频轨/);
+  const dual=new WebmWriter(480,270,12,'VP8',{sampleRate:48000,channels:2});
+  dual.addFrame(new Uint8Array([1,2,3]),0,83333,true);
+  dual.addAudio(new Uint8Array([10,11]),0);
+  dual.addAudio(new Uint8Array([12,13]),20);
+  dual.addFrame(new Uint8Array([4,5]),83333,83334,false);
+  bad(()=>dual.addAudio(new Uint8Array([1]),20),/严格递增/);
+  const dualBytes=Buffer.from(new Uint8Array(await dual.finish().arrayBuffer()));
+  check(dualBytes.includes('A_OPUS')&&dualBytes.includes('OpusHead'),'音频轨含 A_OPUS 与 OpusHead');
+  check(dualBytes.includes('V_VP8'),'视频轨不受音频扩展影响');
+  try {
+    const {execFileSync}=await import('node:child_process');
+    writeFileSync(join(out,'dual.webm'),dualBytes);
+    const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-of','json',join(out,'dual.webm')],{encoding:'utf8'}));
+    check(probe.streams.length===2,'ffprobe 识别两条流');
+    check(probe.streams.some(s=>s.codec_name==='opus'),'音频流为 Opus');
+    check(probe.streams.some(s=>s.codec_name.startsWith('vp8')),'视频流为 VP8');
+  } catch (error) {
+    if (error.code==='ENOENT') console.log('  ffprobe 不在本机，跳过增强核对（字节级断言已覆盖封装结构）');
+    else throw error;
+  }
+}
 await assert.rejects(()=>presentationToVideo(p,{signal:AbortSignal.abort()}),e=>e.name==='AbortError');count++;
 await assert.rejects(()=>presentationToVideo(p),/WebCodecs/);count++;
 
