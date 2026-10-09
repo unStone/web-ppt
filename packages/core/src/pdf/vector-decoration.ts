@@ -13,10 +13,12 @@ export function textDecorations(el:LiteElement,parent:readonly Decoration[],colo
     return {line,color:css.get('text-decoration-color') ?? color,style:css.get('text-decoration-style') ?? 'solid'};
   })];
 }
-export function drawDecorations(decorations:readonly Decoration[],font:VectorFontResource,paint:VectorPaint,x:number,y:number,end:number,size:number):string {
+export function drawDecorations(decorations:readonly Decoration[],font:VectorFontResource,paint:VectorPaint,x:number,y:number,end:number,size:number,gradientStroke?:string):string {
   return decorations.map(decoration => {
     if (decoration.style !== 'solid') throw new Error(`PDF 文字装饰线型尚未支持：${decoration.style}`);
     const metrics = font.decoration(decoration.line,size), position = y + metrics.offset + metrics.thickness / 2;
-    return `q ${paint.solid('none',decoration.color)} ${n(metrics.thickness)} w ${n(x)} ${n(position)} m ${n(end)} ${n(position)} l S Q`;
+    // 装饰色继承渐变 fill 时（浏览器语义：线参与同一渐变框）用描边色彩空间的 Pattern
+    const color = decoration.color.startsWith('url(') && gradientStroke ? gradientStroke : paint.solid('none',decoration.color);
+    return `q ${color} ${n(metrics.thickness)} w ${n(x)} ${n(position)} m ${n(end)} ${n(position)} l S Q`;
   }).join('\n');
 }

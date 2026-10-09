@@ -422,7 +422,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
 | `npm run test:core` | Core parsing / rendering — 2,327 assertions + 188 render snapshots |
 | `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/api/font-glyphs.md) |
-| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1122 process-isolated SVG fingerprint pairs across 167 fixtures |
+| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1124 process-isolated SVG fingerprint pairs across 167 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
 | `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
 | `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |

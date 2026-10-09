@@ -139,12 +139,10 @@ export class VectorSvg {
     const anchor = el.getAttribute('text-anchor'); if (anchor === 'middle') x -= width / 2; else if (anchor === 'end') x -= width;
     const commands:string[] = [], underlines:string[] = [], strikes:string[] = [];
     // 文字渐变：引用必须全元素一致且无装饰（下划线/删除线仍需纯色）、单行（tspan dy 的多行墨迹框语义待定）
-    // 文字渐变按 span（引用元素）独立成框：多重渐变即同段多种引用；渐变与装饰 /
-    // 跨行 dy 的组合语义未定仍回退，图案单元内无页面坐标语义同样回退
+    // 文字渐变按 span（引用元素）独立成框：多重渐变即同段多种引用；跨行 dy 的
+    // 墨迹框按各行基线聚合，装饰线继承渐变（描边色彩空间复用同一 Pattern）
     const gradientSpans = spans.filter(s => s.style.fill.startsWith('url('));
-    if (gradientSpans.length && (ctm === null
-      || gradientSpans.some(s => s.style.decorations.length || s.dy)
-      || spans.some(s => s.dy))) throw new Error('PDF 暂不支持该文字渐变组合');
+    if (gradientSpans.length && ctm === null) throw new Error('PDF 暂不支持图案单元内文字渐变');
     // 预推进每 span：多重渐变下每个引用框取该 span 的墨迹范围（advance 含轴承空隙，
     // 少字 run 下相位偏差可见；Chrome 对 tspan fill=url 按 tspan 墨迹分框，参考图已证）
     const spanRange = new Map<number,[number,number]>();
@@ -155,8 +153,9 @@ export class VectorSvg {
         return def && Number(def.getAttribute('y1') ?? 0) !== Number(def.getAttribute('y2') ?? 0);
       });
       let minY = Infinity, maxY = -Infinity, glyphs = 0;
-      let cursor = x;
+      let cursor = x, baseY = y;
       for (const [index,span] of spans.entries()) {
+        baseY += span.dy;
         let minX = Infinity, maxX = -Infinity, localX = 0;
         for (const part of span.parts) {
           const scale = span.style.size / part.run.unitsPerEm;
@@ -167,8 +166,9 @@ export class VectorSvg {
               minX = Math.min(minX,(localX + glyph.xOffset + box[0]) * scale);
               maxX = Math.max(maxX,(localX + glyph.xOffset + box[2]) * scale);
               if (vertical) {
-                minY = Math.min(minY,(box[1] + glyph.yOffset) * scale);
-                maxY = Math.max(maxY,(box[3] + glyph.yOffset) * scale);
+                // 跨行 dy 的墨迹 y 按各行基线聚合（框 = 各行字形并集）
+                minY = Math.min(minY,baseY - (box[3] + glyph.yOffset) * scale);
+                maxY = Math.max(maxY,baseY - (box[1] + glyph.yOffset) * scale);
               }
             }
             localX += glyph.xAdvance;
@@ -180,8 +180,8 @@ export class VectorSvg {
       }
       if (vertical) {
         if (!glyphs || !Number.isFinite(minY) || !Number.isFinite(maxY) || maxY <= minY) throw new Error('PDF 文字渐变墨迹范围无效');
-        // 字体单位 y 向上（上伸正、下伸负），局部 SVG y 向下：框顶在基线上方 maxY 处
-        inkTop = y - maxY; inkHeight = maxY - minY;
+        // 聚合已在各 span 基线上换算成局部绝对 y（框顶小、框底大）
+        inkTop = minY; inkHeight = maxY - minY;
       }
       for (const span of gradientSpans) {
         const index = spans.indexOf(span);
@@ -192,7 +192,7 @@ export class VectorSvg {
     for (const span of spans) {
       y += span.dy; let character = 0;
       if (span.style.stroke !== 'none') throw new Error('PDF 暂不支持文字描边');
-      let fillCommand = '';
+      let fillCommand = '', strokeCommand = '';
       if (span.style.fill.startsWith('url(')) {
         const reference = span.style.fill, [start,end] = spanRange.get(spans.indexOf(span))!;
         const cacheKey = `${reference}@${start}-${end}`, cached = patternOf.get(cacheKey);
@@ -200,6 +200,12 @@ export class VectorSvg {
         else {
           fillCommand = this.gradient.textPattern(reference,this.definitions,start,end - start,inkTop,inkHeight,ctm!);
           patternOf.set(cacheKey,fillCommand);
+        }
+        // 装饰线继承渐变：同一 Pattern 走描边色彩空间，线段参与同一渐变框
+        if (span.style.decorations.length) {
+          const strokeKey = `S@${cacheKey}`, cachedStroke = patternOf.get(strokeKey);
+          strokeCommand = cachedStroke ?? this.gradient.textPattern(reference,this.definitions,start,end - start,inkTop,inkHeight,ctm!,true);
+          if (!cachedStroke) patternOf.set(strokeKey,strokeCommand);
         }
       } else fillCommand = this.paint.solid(span.style.fill);
       commands.push(fillCommand);
@@ -217,8 +223,8 @@ export class VectorSvg {
           }
           commands.push('EMC'); x += span.style.spacing * cluster.text.length;
         }
-        underlines.push(drawDecorations(span.style.decorations.filter(d => d.line === 'underline'),font,this.paint,startX,startY,x,span.style.size));
-        strikes.push(drawDecorations(span.style.decorations.filter(d => d.line === 'line-through'),font,this.paint,startX,startY,x,span.style.size));
+        underlines.push(drawDecorations(span.style.decorations.filter(d => d.line === 'underline'),font,this.paint,startX,startY,x,span.style.size,strokeCommand));
+        strikes.push(drawDecorations(span.style.decorations.filter(d => d.line === 'line-through'),font,this.paint,startX,startY,x,span.style.size,strokeCommand));
       }
     }
     // SVG 下划线先于字形、删除线后于字形；整个 text 统一顺序，避免相邻字形的悬出部被后续线段盖住。

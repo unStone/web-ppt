@@ -130,11 +130,19 @@ const multiGradient=(id,name,first,second)=>`<p:sp><p:nvSpPr><p:cNvPr id="${id}"
   +'<a:gs pos="100000"><a:srgbClr val="FF0000"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>'
   +`<a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>${second}</a:t></a:r></a:p></p:txBody></p:sp>`;
 const multiGradientText=multiGradient(903,'multiGradientText','Ab','01');
+// 渐变 + 下划线：装饰色继承渐变 fill（无 uFill），线参与同一渐变框
+const underlinedGradient=`<p:sp><p:nvSpPr><p:cNvPr id="904" name="underlinedGradient"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
+  +`<p:spPr><a:xfrm><a:off x="381000" y="381000"/><a:ext cx="2857500" cy="762000"/></a:xfrm>`
+  +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>'
+  +`<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:r><a:rPr sz="3200"><a:gradFill><a:gsLst>`
+  +'<a:gs pos="0"><a:srgbClr val="FF0000"/></a:gs><a:gs pos="100000"><a:srgbClr val="0000FF"/></a:gs></a:gsLst>'
+  +'<a:lin ang="0"/></a:gradFill><a:u val="sng"/><a:latin typeface="WebPPT Glyph Latin"/></a:rPr>'
+  +'<a:t>Ab</a:t></a:r></a:p></p:txBody></p:sp>';
 writeFileSync(new URL('../fixtures/sample-vector-pdf-paints.pptx',import.meta.url),deck({
   name:'VectorPdfPaints',width:640,height:360,slides:[slideXml(transparent+opaque+label('ABC',440)),slideXml(axial+radial),
     slideXml(sp({x:40,y:40,w:160,h:100,fill:alphaGradient})+sp({x:280,y:40,w:200,h:100,fill:hardGradient})),
     slideXml(alphaPicture+opaque),slideXml(gradientText),slideXml(verticalText+diagonalText),
-    slideXml(multiGradientText)],slideRelationships:['','','',imageRel,'','',''],
+    slideXml(multiGradientText),slideXml(underlinedGradient)],slideRelationships:['','','',imageRel,'','','',''],
   extraTypes:'<Default Extension="png" ContentType="image/png"/>',extraEntries:[['ppt/media/alpha.png',rgba]],
 }));
 console.log('fixtures/sample-vector-pdf-paints.pptx：透明填充与独立透明描边');

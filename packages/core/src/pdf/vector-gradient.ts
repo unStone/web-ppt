@@ -13,7 +13,7 @@ const coordinate = (value:string | null,fallback:number):number => value === nul
 export class VectorGradient {
   private shadings = new Map<string,Shading>();
   private masks = new Map<string,number>();
-  private textPatterns = new Map<string,string>();
+  private textPatterns = new Map<string,{name:string; object:number}>();
   constructor(private pdf:VectorDocument,private paint:VectorPaint,private resources:VectorResources) {}
   /**
    * 文字渐变：把 Shading 包成 Pattern（PatternType 2），经 Pattern colorspace 填充字形。
@@ -27,14 +27,12 @@ export class VectorGradient {
    * inkTop..inkTop+inkHeight，局部坐标）映射后绝对化；轴不限方向，
    * 垂直 / 斜向的精度取决于墨迹框 y 的字形轮廓测量（VectorFonts.glyphBox）。
    */
-  textPattern(reference:string, definitions:ReadonlyMap<string,LiteElement>, x:number, width:number, inkTop:number, inkHeight:number, ctm:Matrix):string {
+  textPattern(reference:string, definitions:ReadonlyMap<string,LiteElement>, x:number, width:number, inkTop:number, inkHeight:number, ctm:Matrix, stroke = false):string {
     if (width <= 0 || inkHeight <= 0) throw new Error('PDF 文字渐变范围无效');
     const at = (px:number,py:number):[number,number] =>
       [ctm[0]*px + ctm[2]*py + ctm[4],ctm[1]*px + ctm[3]*py + ctm[5]];
     const bx = (u:number):number => x + u * width, by = (v:number):number => inkTop + v * inkHeight;
     const cacheKey = JSON.stringify([reference,bx(0),by(0),bx(1),by(1),ctm]);
-    const cached = this.textPatterns.get(cacheKey);
-    if (cached) return cached;
     const gid = /^url\(#([^)]*)\)$/.exec(reference)?.[1], gradient = gid && definitions.get(gid);
     if (!gradient || gradient.localName !== 'linearGradient') throw new Error('PDF 文字渐变定义无效');
     if (gradient.getAttribute('gradientTransform') || (gradient.getAttribute('spreadMethod') ?? 'pad') !== 'pad') throw new Error('PDF 渐变变换或延伸方式尚未支持');
@@ -71,12 +69,18 @@ export class VectorGradient {
       shading = {name:`Sh${this.shadings.size + 1}`,object};
       this.shadings.set(key,shading);
     }
-    const pattern = this.pdf.add(`<< /PatternType 2 /Shading ${shading.object} 0 R >>`);
-    const name = `Pt${pattern}`;
-    this.resources.use('Pattern',{name,object:pattern});
-    const command = `/Pattern cs /${name} scn`;
-    this.textPatterns.set(cacheKey,command);
-    return command;
+    // Pattern 对象是文档级，Resources 注册是页级：跨页命中缓存时同样要在当前页注册，
+    // 否则命令引用的对象名在本页资源里不存在（整套导出时第 5/8 页同框命中暴露）
+    let entry = this.textPatterns.get(cacheKey);
+    if (!entry) {
+      const pattern = this.pdf.add(`<< /PatternType 2 /Shading ${shading.object} 0 R >>`);
+      entry = {name:`Pt${pattern}`,object:pattern};
+      this.textPatterns.set(cacheKey,entry);
+    }
+    this.resources.use('Pattern',entry);
+    // 装饰线走描边色彩空间（/Pattern CS /Pn SCN），与文字填充共用同一 Pattern 对象；
+    // 浏览器语义里装饰线继承 fill 并参与同一渐变框（渲染端 decorateText 的注释同源）
+    return stroke ? `/Pattern CS /${entry.name} SCN` : `/Pattern cs /${entry.name} scn`;
   }
 
   fill(path:string,reference:string,definitions:ReadonlyMap<string,LiteElement>,evenOdd:boolean):string {

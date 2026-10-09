@@ -139,3 +139,26 @@ pix.save(path.with_name('paints-7.png'))
 # 亚像素差（pathBounds 曲线保守 vs Chrome ink bbox）被窄框放大，阈值放到 2
 assert mae<2,mae
 print(f'多重文字渐变：run 分框色相断言通过，Chrome/MuPDF 对照 MAE={mae:.4f}（窄 run 亚像素框差）')
+page=pdf[7]
+assert not page.get_images(),page.get_images()
+pix=page.get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
+reference=fitz.Pixmap(str(path.with_name('paints-8-reference.png')))
+if reference.alpha: reference=fitz.Pixmap(reference,0)
+# 渐变 + 下划线：装饰色继承渐变（同一 Pattern 走描边色彩空间），线左端红右端蓝
+def underlineHue(x0,x1,channel):
+  best=None
+  for y in range(132,150):
+    for x in range(x0,x1):
+      r,g,b=pix.pixel(x,y)
+      score=r-b if channel=='r' else b-r
+      if (255,255,255)!=(r,g,b) and (best is None or score>best[0]): best=(score,(r,g,b))
+  return best
+leftRed=underlineHue(72,100,'r'); rightBlue=underlineHue(125,152,'b')
+assert leftRed and leftRed[0]>40,leftRed
+assert rightBlue and rightBlue[0]>40,rightBlue
+a,b=pix.samples,reference.samples
+mae=sum(abs(a[(y*pix.width+x)*3+c]-b[(y*pix.width+x)*3+c])
+  for y in range(250) for x in range(360) for c in range(3))/(250*360*3)
+pix.save(path.with_name('paints-8.png'))
+assert mae<1,mae
+print(f'渐变下划线：装饰线继承渐变（Pattern 描边）、两端色相与 Chrome/MuPDF 对照通过，MAE={mae:.4f}')
