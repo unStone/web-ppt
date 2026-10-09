@@ -598,6 +598,7 @@ function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | n
   const src = blipUrl(blipFill, env);
   const label = attr(cNvPr, 'name') ?? '图片';
   const media = parseMedia(kid(nv, 'nvPr'), env);
+  if (media) media.spid = numAttr(cNvPr, 'id') ?? undefined;
   const hyperlink = hyperlinkOf(cNvPr, env);
   // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
   if (!src && !media) {
@@ -1373,6 +1374,13 @@ export function parseSlide(
   const comments = parseSlideComments(pkg, slideRels, authors);
   const directTransition = parseTransition(slideRoot);
   const timing = parseSlideTiming(slideRoot, slideW, slideH);
+  // timing 树媒体节点的播放语义按 spid 回填到媒体元素；解析不到目标（如引用母版形状）时丢弃
+  for (const mediaTiming of timing.media ?? []) {
+    const target = elements.find(el => el.kind === 'image' && el.media?.spid === mediaTiming.spid);
+    if (target && target.kind === 'image' && target.media) target.media.playback = {
+      volume: mediaTiming.volume, loop: mediaTiming.loop, clickGroup: mediaTiming.clickGroup,
+    };
+  }
   const editEnv = edit ? envFor(slidePath, true) : null;
 
   return {

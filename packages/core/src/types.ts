@@ -529,6 +529,17 @@ export interface MediaInfo {
   external?: boolean;
   /** 媒体 MIME，便于将来交给 <video>/<audio> */
   mime?: string;
+  /** PowerPoint shape id（cNvPr id）；timing 树的媒体节点按它关联目标 */
+  spid?: number;
+  /** timing 树媒体节点（p:audio/p:video 的 cMediaNode）的播放语义；无动画关联的媒体没有 */
+  playback?: {
+    /** [0,1]，来自 cMediaNode@vol 千分比；mute 为 0 */
+    volume: number;
+    /** cTn@repeatCount="indefinite" */
+    loop: boolean;
+    /** 与 Slide.animations 的 clickGroup 同一套编号，导出层按页时间轴换算起始时刻 */
+    clickGroup: number;
+  };
 }
 
 export interface ImageElement extends ElementBase {

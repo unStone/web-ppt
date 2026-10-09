@@ -3112,6 +3112,22 @@ group('导出路径的分栏');
 group('媒体播放器');
 {
   const mp = parsed.get('sample-media.pptx');
+  // timing 媒体节点（cMediaNode）的播放语义按 spid 回填：volume / mute / loop / clickGroup
+  const first = mp.slides[0];
+  const playbackEls = first.elements.filter(e => e.kind === 'image' && e.media?.playback);
+  eq('timing 媒体回填数量', playbackEls.length, 2);
+  const tone = playbackEls.find(e => e.media.spid === 502);
+  check('配音跟随首组且音量 80%',
+    tone && Math.abs(tone.media.playback.volume - 0.8) < 1e-9
+      && tone.media.playback.loop === false && tone.media.playback.clickGroup === 0,
+    JSON.stringify(tone?.media.playback));
+  const silent = playbackEls.find(e => e.media.spid === 505);
+  check('clickEffect 头媒体独立成组且静音循环',
+    silent && silent.media.playback.volume === 0
+      && silent.media.playback.loop === true && silent.media.playback.clickGroup === 1,
+    JSON.stringify(silent?.media.playback));
+  check('全部媒体元素带 spid 关联键',
+    mp.slides[0].elements.every(e => e.kind !== 'image' || !e.media || typeof e.media.spid === 'number'));
   const withMedia = mp && mp.slides.findIndex((s2) =>
     s2.elements.some((e) => e.media?.src));
   if (check('存在带可播放源的媒体', withMedia >= 0)) {

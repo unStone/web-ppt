@@ -455,13 +455,31 @@ const titleSp = (text) =>
 const caption = (x, y, w, text) =>
   sp({ x, y, w, h: 26, fill: '<a:noFill/>', text: label(text, 1000, '5A6172'), name: 'caption' });
 
-function slideDoc(body, extraNs = '') {
+function slideDoc(body, extraNs = '', timing = '') {
   return (
     `${XML}<p:sld xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}"${extraNs}>` +
     `<p:cSld><p:spTree>${nvGrp}${body}</p:spTree></p:cSld>` +
+    timing +
     '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>'
   );
 }
+
+/** timing 树媒体节点段：媒体 pic 的 id 由 nextPicId 顺序推出（500 起自增） */
+const MEDIA_TIMING =
+  '<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>' +
+  '<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>' +
+  '<p:par><p:cTn id="3" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>' +
+  '<p:par><p:cTn id="4" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>' +
+  // 配音.wav（第二个媒体 pic）：跟随首个点击批（组 0），音量 80%
+  '<p:audio><p:cMediaNode vol="80000"><p:cTn id="5" fill="hold" display="0"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>' +
+  '<p:tgtEl><p:spTgt spid="502"/></p:tgtEl></p:cMediaNode></p:audio>' +
+  '</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>' +
+  '<p:par><p:cTn id="6" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>' +
+  // 无封面音频（第五个媒体 pic）：clickEffect 头独立成批（组 1），静音且循环
+  '<p:audio><p:cMediaNode vol="50000" mute="1"><p:cTn id="7" fill="hold" display="0" repeatCount="indefinite" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>' +
+  '<p:tgtEl><p:spTgt spid="505"/></p:tgtEl></p:cMediaNode></p:audio>' +
+  '</p:childTnLst></p:cTn></p:par>' +
+  '</p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>';
 
 // ---------------- 各页 ----------------
 
@@ -514,7 +532,9 @@ slides.push({
       caption(420, 452, 460, '无封面音频') +
       mediaPic({
         x: 470, y: 484, w: 150, h: 150, name: '无封面音频', kind: 'audio', linkRid: 'rId5',
-      }),
+      }) +
+      '',
+    '', MEDIA_TIMING,
   ),
   rels: [
     LAYOUT_REL,

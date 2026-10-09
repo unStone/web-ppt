@@ -420,7 +420,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,327 assertions + 188 render snapshots |
+| `npm run test:core` | Core parsing / rendering — 2,331 assertions + 188 render snapshots |
 | `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/api/font-glyphs.md) |
 | `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1124 process-isolated SVG fingerprint pairs across 167 fixtures |
 | `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |

@@ -381,8 +381,22 @@ export function parseTiming(timing: Element | null, slideW = 0, slideH = 0): Ani
   return parseTimingDetailed(timing, slideW, slideH).animations;
 }
 
+/** timing 树媒体节点（p:audio/p:video 的 cMediaNode）的播放语义；供导出层换算时间轴 */
+export interface MediaTiming {
+  /** 目标媒体形状的 PowerPoint shape id（cNvPr id） */
+  spid: number;
+  kind: 'audio' | 'video';
+  /** [0,1]，来自 cMediaNode@vol（千分比，默认 80000）；mute 视为 0 */
+  volume: number;
+  /** cTn@repeatCount="indefinite" */
+  loop: boolean;
+  /** 与 AnimStep.clickGroup 同一套编号：媒体在文档顺序上跟随最近的效果批次 */
+  clickGroup: number;
+}
+
 interface ParsedTiming {
   readonly animations?: AnimStep[];
+  readonly media?: MediaTiming[];
   readonly readonly: boolean;
 }
 
@@ -390,8 +404,12 @@ interface ParsedTiming {
  * 解析预算按真实 DOM 节点计数；即使来源已经判为只读，也不能再无界扫描宽树。
  * preset 子树仍参与计数，但不会把嵌套 cTn 重复解释成第二个效果。
  */
-function presetTimeNodes(timing: Element): Element[] | null {
-  const found: Element[] = [];
+/** 媒体节点的原始收集：与 preset 序列共用 visit 序号，供分组合并 */
+interface RawMediaNode { element: Element; order: number; kind: 'audio' | 'video' }
+
+function presetTimeNodes(timing: Element): { presets: { element: Element; order: number }[]; medias: RawMediaNode[] } | null {
+  const found: { element: Element; order: number }[] = [];
+  const medias: RawMediaNode[] = [];
   interface Cursor {
     next: Element | null;
     readonly depth: number;
@@ -406,7 +424,11 @@ function presetTimeNodes(timing: Element): Element[] | null {
     if (++visited > MAX_TIMING_NODES) return null;
     const preset: boolean = !current.insidePreset && current.depth <= 25
       && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
-    if (preset) found.push(current.element);
+    if (preset) found.push({ element: current.element, order: visited });
+    // 媒体节点（p:audio/p:video）不是效果，不进 steps；只收集原始元素供回填播放语义
+    if (!current.insidePreset && (current.element.localName === 'audio' || current.element.localName === 'video')) {
+      medias.push({ element: current.element, order: visited, kind: current.element.localName });
+    }
     const insidePreset: boolean = current.insidePreset || preset;
     const child: Element | null = current.element.firstElementChild;
     if (child) {
@@ -434,30 +456,66 @@ function presetTimeNodes(timing: Element): Element[] | null {
       };
     }
   }
-  return found;
+  return { presets: found, medias };
+}
+
+/** 从媒体节点（p:audio/p:video）提取播放语义；结构与 OOXML cMediaNode 对齐 */
+function mediaTimingOf(raw: RawMediaNode): MediaTiming | null {
+  // p:audio/p:video 直接子元素是 cMediaNode；容错地在浅层子树里找
+  const node = kid(raw.element, 'cMediaNode') ?? null;
+  if (!node) return null;
+  const spid = numAttr(kid(kid(node, 'tgtEl'), 'spTgt'), 'spid');
+  if (spid === null) return null;
+  const vol = numAttr(node, 'vol') ?? 80000;
+  const muted = numAttr(node, 'mute') === 1;
+  const cTn = kid(node, 'cTn');
+  return {
+    spid,
+    kind: raw.kind,
+    volume: muted ? 0 : Math.max(0, Math.min(1, vol / 100000)),
+    loop: attr(cTn, 'repeatCount') === 'indefinite',
+    clickGroup: 0,
+  };
 }
 
 function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): ParsedTiming {
   if (!timing) return { readonly: false };
   const steps: AnimStep[] = [];
   let readonly = timingHasUnsupportedContent(timing);
-  const timeNodes = presetTimeNodes(timing);
-  if (!timeNodes) return { readonly: true };
-  for (const time of timeNodes) {
-    const step = buildStep(time, slideW, slideH);
-    if (step) steps.push(step);
+  const collected = presetTimeNodes(timing);
+  if (!collected) return { readonly: true };
+  const built: { order: number; step: AnimStep }[] = [];
+  for (const { element, order } of collected.presets) {
+    const step = buildStep(element, slideW, slideH);
+    if (step) built.push({ order, step });
     else readonly = true;
   }
 
-  if (!steps.length) return { readonly };
+  if (!built.length && !collected.medias.length) return { readonly };
 
-  // 按点击批次编号：第一个效果与其后所有 withPrev/afterPrev 归为同一批
+  // 按点击批次编号：第一个效果与其后所有 withPrev/afterPrev 归为同一批。
+  // 媒体节点与效果按文档顺序合并编号——媒体跟随最近的效果批次，
+  // 自身是 clickEffect 头时同样开新批，与幻灯片上的触发顺序一致。
+  const medias = collected.medias
+    .map(raw => ({ raw, timing: mediaTimingOf(raw) }))
+    .filter((m): m is { raw: RawMediaNode; timing: MediaTiming } => m.timing !== null);
+  const merged: ({ order: number; step?: AnimStep; media?: { raw: RawMediaNode; timing: MediaTiming } })[]
+    = [...built.map(b => ({ order: b.order, step: b.step })),
+       ...medias.filter(m => m.timing).map(m => ({ order: m.raw.order, media: m }))]
+      .sort((a, b) => a.order - b.order);
   let group = -1;
-  for (const s of steps) {
-    if (s.trigger === 'click' || group < 0) group++;
-    s.clickGroup = group;
+  const result: MediaTiming[] = [];
+  for (const node of merged) {
+    // 媒体自身是 clickEffect 头时与效果同样开新批（PowerPoint 里点击触发的声音独立于上一批）
+    const startsGroup = node.step
+      ? node.step.trigger === 'click' || group < 0
+      : group < 0 || attr(kid(kid(node.media!.raw.element, 'cMediaNode'), 'cTn'), 'nodeType') === 'clickEffect';
+    if (startsGroup) group++;
+    if (node.step) node.step.clickGroup = group;
+    else { node.media!.timing.clickGroup = group; result.push(node.media!.timing); }
   }
-  return { animations: steps, readonly };
+  steps.push(...merged.filter(n => n.step).map(n => n.step!));
+  return { animations: steps, media: result, readonly };
 }
 
 export function parseSlideTiming(root: Element | null, slideW = 0, slideH = 0): ParsedTiming {
