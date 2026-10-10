@@ -27,7 +27,7 @@ jobs:
         # Trusted Publishing 要求 npm ≥ 11.5.1。钉在 11.x：npm 12 刚发布，
         # 实测 12.0.2 在环境完全达标（id-token 已注入、无任何 auth 配置）时
         # 仍直接报 ENEEDAUTH，根本不发起 OIDC 交换。
-        run: npm i -g npm@^11.5.1
+        run: npm i -g npm@11.5.1
 
       - name: OIDC 环境自检
         run: |
