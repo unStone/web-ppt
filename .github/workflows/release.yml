@@ -21,6 +21,7 @@ jobs:
           # Trusted Publishing 要求 Node ≥ 22.14.0
           node-version: 22
           cache: npm
+          registry-url: 'https://registry.npmjs.org'
           # 刻意不设 registry-url：它会写一个带 _authToken=${NODE_AUTH_TOKEN}
           # 的 .npmrc，而该变量为空，npm 会拿着空凭据去发布 —— scoped 包
           # 在无凭据时返回的是 404 而不是 401，极难排查。OIDC 自己会认 registry。
