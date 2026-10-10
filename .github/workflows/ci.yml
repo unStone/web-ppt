@@ -40,7 +40,7 @@ jobs:
 
       - name: 安装 LibreOffice 与中文字体
         # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
