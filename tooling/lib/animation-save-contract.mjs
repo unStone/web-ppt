@@ -285,10 +285,11 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   };
   const smallStress = await measureStress(1000);
   const largeStress = await measureStress(4000);
-  // 绝对毫秒受 CI 宿主速度影响；4 倍输入的增长率才能证明没有退化回 O(n²)。
+  // 绝对毫秒与比率都受 CI 宿主并行负载影响（cordis 页面服务轮先例：隔离绿、共享红）。
+  // 4 倍输入线性=4×、平方=16×：阈值 12 排除平方退化的同时给共享 runner 留噪声余量。
   const stressRatio = largeStress.elapsed / Math.max(smallStress.elapsed, 1);
   check('大量点击及同父行为/条件目标删除保持线性预算且不留引用',
-    stressRatio < 8 && !smallStress.hasTarget && !largeStress.hasTarget,
+    stressRatio < 12 && !smallStress.hasTarget && !largeStress.hasTarget,
     `1000=${smallStress.elapsed.toFixed(1)}ms，4000=${largeStress.elapsed.toFixed(1)}ms，${stressRatio.toFixed(2)}×`);
 
   const operationsPresentation = await core.parse(input, {

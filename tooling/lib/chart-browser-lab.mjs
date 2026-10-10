@@ -24,8 +24,10 @@ export async function withChartBrowser(root, run) {
       }
       const path = resolve(root, `.${decodeURIComponent(pathname)}`);
       if (!path.startsWith(resolve(root) + sep)) throw new Error('路径越界');
-      const bytes = readFileSync(path), script = ['.js', '.mjs'].includes(extname(path));
-      response.writeHead(200, { 'content-type': script ? 'text/javascript' : 'application/octet-stream',
+      const bytes = readFileSync(path), ext = extname(path), script = ['.js', '.mjs'].includes(ext);
+      // wasm 流式编译要求精确 MIME，否则 Chrome 拒绝 instantiate
+      const contentType = script ? 'text/javascript' : ext === '.wasm' ? 'application/wasm' : 'application/octet-stream';
+      response.writeHead(200, { 'content-type': contentType,
         'cache-control': 'no-store', ...(script ? { 'content-encoding': 'gzip' } : {}) }).end(script ? gzipSync(bytes) : bytes);
     } catch { response.writeHead(404).end(); }
   });
