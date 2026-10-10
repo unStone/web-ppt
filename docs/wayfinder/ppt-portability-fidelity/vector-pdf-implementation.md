@@ -58,7 +58,7 @@
 | 取消与所有权 | `normalization-lifetime.json`：预先取消不解码，解码等待中取消后不提前完成，迟到的真实 Bitmap 宽高均归零；失败 / 取消后 Provider 保持可用，同一文稿重复导出字节一致 |
 | 源码 / 发布产物 | `out/vector-pdf-normalization-source-v2.log`、`out/vector-pdf-normalization-dist.log`：上述边界和已有全部矢量 PDF 契约通过 |
 | 全仓门禁 | `out/vector-pdf-normalization-full-gates.log`：check、全部 test、八包 build 按顺序通过；首次 verify 发现 5 处旧固件 / 指纹数字。按实测 165 份 PPT/PPTX、1102 对指纹同步 README / AGENTS 后，`out/vector-pdf-normalization-full-verify.log` 的完整 verify 通过 |
-| 可选入口成本 | `normalization-closure.json` 按静态依赖闭包实测：矢量入口 82,759 B / gzip 27,402 B，浏览器适配 14,701 B / gzip 5,523 B。长文稿运行成本经 `npm run bench:pdf` 实测（深拷贝独立页、`sample-vector-pdf.pptx` 字体）：200 页 33ms / 堆增长 0.9MB / PDF 316KB，2,000 页 168ms / 4.3MB / 2.96MB，6,000 页 439ms / 35.4MB / RSS 增长 95.3MB / 8.84MB——每页成本随资源复用摊薄，核心入口在极限页数下为亚秒级；导出是纯同步循环，内存按前后增长量计口径（`out/vector-pdf/cost-*.json`）。产品首次激活成本由官网闭包预算门禁看守 |
+| 可选入口成本 | `normalization-closure.json` 按静态依赖闭包实测：矢量入口 82,759 B / gzip 27,402 B，浏览器适配 14,701 B / gzip 5,523 B。长文稿运行成本经 `npm run bench:pdf` 实测（深拷贝独立页、`sample-vector-pdf.pptx` 字体）：200 页 33ms / 堆增长 0.9MB / PDF 316KB，2,000 页 168ms / 4.3MB / 2.96MB，6,000 页 439ms / 35.4MB / RSS 增长 95.3MB / 8.84MB——每页成本随资源复用摊薄，核心入口在极限页数下为亚秒级；导出是纯同步循环，内存按前后增长量计口径（`out/vector-pdf/cost-*.json`）。**浏览器侧同口径实测**（真实 Chrome `performance.memory`，hb 经静态服务 ESM 直载）：200 页 28ms / 堆增长 3.1MB / 总堆 10.8MB，2,000 页 136ms / 12.2MB / 27.3MB，6,000 页 347ms / 32.3MB / 77.8MB——与 Node 口径同量级、线性摊薄，浏览器侧峰值内存待办收口。产品首次激活成本由官网闭包预算门禁看守 |
 
 参考 [PNG 色彩信息](https://www.w3.org/TR/png-3/)及 [HTML ImageBitmap](https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html) 的方向 / 颜色转换语义。实测浏览器为 Chrome 152.0.7977.83；使用该浏览器的默认色彩管理和 sRGB canvas，不据此承诺所有 ICC / HDR、动画格式或所有浏览器解码一致。JPEG / WebP 固件采用固定的自制图像种子，重生成不依赖浏览器编码版本。
 
@@ -223,7 +223,7 @@ MuPDF 独立检查全部 12,288 个原始 RGBA 像素；整个 PDF 只包含同�
 | 图形覆盖 | 已覆盖 M/L/H/V/C/S/Q/T/A/Z 大小写及隐式参数组、表格边线、媒体圆形、原生箭头、几何 / 图片图案、显式裁剪视口、首批透明度和线性 / 径向渐变（含端点重合色标的硬切换）。其余视口模式（嵌套 svg 的 `viewBox` 变换、`preserveAspectRatio` 对齐组合）经调研**当前无输入语义来源**：OOXML 图片填充全为拉伸语义（`blipFill` 无 meet/slice 概念），渲染器只输出 `preserveAspectRatio="none"` 与无 viewBox 的定位视口；覆盖检查器的显式拒绝（`svg-viewport-viewbox` / `svg-image-aspect-ratio`）是正确防御。该两项的前置条件是渲染器出现真实形态，届时同步放行检查、实现绘制并补契约。其余渐变边界、其余 SVG 方言和高级文字样式仍待实现 |
 | 图片范围 | 直接嵌入及首批色彩 / 布局 / 方向规范化已有证据；更广 ICC / HDR、动画图片时刻、SVG 等其他格式、局部效果中各格式的组合及长文稿解码成本仍待验证，不可把当前路径视为全部图片支持 |
 | 失败和局部回退 | 首批滤镜、小型大写和弧形艺术字可局部回退并返回定位，缺字体 / 缺字和嵌入拒绝可定位；已接入节点 / 属性 / CSS 检查，允许项值域及引用定义的完整审计、其余效果和产品字体来源说明仍待完成。已作为实验性入口进入产品支持矩阵 |
-| 字体与资源验证 | 继续扩大文字位置、CJK 挤压、组合簇映射、其他字体诊断、资源限制、释放及长文稿成本验证；Node 侧长文稿耗时与内存增长已实测（见可选入口成本行），浏览器侧峰值内存口径仍待补 |
+| 字体与资源验证 | 继续扩大文字位置、CJK 挤压、组合簇映射、其他字体诊断、资源限制、释放及长文稿成本验证；Node 侧长文稿耗时与内存增长已实测（见可选入口成本行），浏览器侧峰值内存已按同口径实测（见可选入口成本行） |
 | 文字渐变 | **已实现（任意轴 + 多重渐变 + 装饰继承）**：Shading 包成 PatternType 2、`/Pattern cs /Ptn scn` 填 Tj；坐标口径经三实现实测裁决：文字填充下**非恒等 PatternMatrix 三实现均不生效**，正确表达是矩阵恒等、局部端点经累计 CTM 换算成页面绝对坐标直接写 Shading Coords；VectorSvg 因此引入 CTM 追踪（图案单元内传 null 即回退）。渐变框按 span（引用元素）取**字形墨迹范围**（`VectorFonts.glyphBox`：provider 可选 `outline` + 现成 vectorPath/pathBounds，惰性缓存；字体单位 y 向上、SVG y 向下，跨行 dy 按各行基线聚合）——Chrome 对 tspan fill=url 按 tspan 墨迹分框，参考图证实；两字窄 run 下框边界亚像素差会放大，paints 第 7 页 MAE 1.70 记录该精度边界，分框语义由三窗色相断言承担。**装饰线继承渐变**（浏览器语义：线参与同一渐变框）：同一 Pattern 走描边色彩空间 `/Pattern CS /Pn SCN`，paints 第 8 页 MAE 0.46。实现陷阱：Pattern 对象是文档级而 Resources 注册是页级，跨页缓存命中必须重新 use（整套导出第 5/8 页同框命中时暴露为 MuPDF「cannot find Pattern resource」）。**透明文字渐变无输入语义来源**：渲染器 stop 不输出 stop-opacity、解析层不取 alpha，判前置条件。验收见 paints 第 5–8 页：水平 MAE 0.51、垂直斜向 0.40、多重分框色相断言、渐变下划线 0.46。边界：图案单元内仍回退；无 outline 的自定义 provider 上垂直 / 斜向回退（`outline-unavailable`）；PDFium 待产品端验证 |
 | 结构整理 | 矢量与图片写入器目前有对象写入、批注、页任务重复；代码审查阶段收敛共享职责，区分共享的字节/图像处理与各自的页面内容 |
 | 产品与门禁 | beta.5 的 check → test → build → verify 已通过；Cordis 文稿 / 文件服务和字体消费已接入，矢量 source/dist 已进入常规门禁；后续已补完整中英文错误 / 回退交互及隐藏页、动画、批注选项验收，运行成本及整项完成后复验仍待完成 |
@@ -249,4 +249,4 @@ Cordis 的 disposer 同时为 thenable。用 async generator 收编时会先被 
 
 `sample-vector-pdf-jobs.pptx` 现含确定性经典批注。真实 Chrome 分两次操作导出：一份跳过隐藏页、展开动画批次并包含批注，另一份包含隐藏页、不展开动画且不含批注；MuPDF 分别核对页面文字、页序和批注。滤镜样本另验证局部回退列表及中英文原地切换，命令为 `node tooling/test-site-editor-browser.mjs --pdf-only`。
 
-这组产品验收不扩大核心支持范围。005 仍须完成 SVG 值域 / 引用审计、更广图片与效果组合、浏览器侧峰值内存、其他 PDF 阅读器对照及最终四项门禁；长文稿耗时与堆增长已由 `npm run bench:pdf` 实测覆盖 Node 口径。
+这组产品验收不扩大核心支持范围。005 仍须完成 SVG 值域 / 引用审计、更广图片与效果组合、其他 PDF 阅读器对照及最终四项门禁；长文稿耗时与堆增长已由 `npm run bench:pdf` 实测覆盖 Node 口径。
