@@ -40,17 +40,8 @@ bad(()=>writer.finish(),/结束/);bad(()=>new WebmWriter(10,10,24,'VP9').finish(
   const dualBytes=Buffer.from(new Uint8Array(await dual.finish().arrayBuffer()));
   check(dualBytes.includes('A_OPUS')&&dualBytes.includes('OpusHead'),'音频轨含 A_OPUS 与 OpusHead');
   check(dualBytes.includes('V_VP8'),'视频轨不受音频扩展影响');
-  try {
-    const {execFileSync}=await import('node:child_process');
-    writeFileSync(join(out,'dual.webm'),dualBytes);
-    const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-of','json',join(out,'dual.webm')],{encoding:'utf8'}));
-    check(probe.streams.length===2,'ffprobe 识别两条流');
-    check(probe.streams.some(s=>s.codec_name==='opus'),'音频流为 Opus');
-    check(probe.streams.some(s=>s.codec_name.startsWith('vp8')),'视频流为 VP8');
-  } catch (error) {
-    if (error.code==='ENOENT') console.log('  ffprobe 不在本机，跳过增强核对（字节级断言已覆盖封装结构）');
-    else throw error;
-  }
+  // ffprobe 的流级核对集中在 test-video-audio.mjs（不计入 expanded 计数）：
+  // 本套件计数被 verify 按环境比对，依赖 ffprobe 存在与否会让声明随环境漂移
 }
 await assert.rejects(()=>presentationToVideo(p,{signal:AbortSignal.abort()}),e=>e.name==='AbortError');count++;
 await assert.rejects(()=>presentationToVideo(p),/WebCodecs/);count++;

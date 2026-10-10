@@ -11,7 +11,8 @@ type AudioMediaElement = MediaImage & { media: NonNullable<MediaImage['media']> 
 const audioElements = (elements: SlideElement[]): AudioMediaElement[] => {
   const found: AudioMediaElement[] = [];
   const walk = (list: SlideElement[]): void => { for (const el of list) {
-    if (el.kind==='image' && el.media && el.media.kind==='audio' && el.media.playback && el.media.src) found.push(el as AudioMediaElement);
+    // 视频媒体也参与（提轨）；无 timing 播放语义的媒体不响（与幻灯片触发一致）
+    if (el.kind==='image' && el.media && el.media.playback && el.media.src) found.push(el as AudioMediaElement);
     else if (el.kind==='group') walk(el.children);
   } };
   walk(elements); return found;
@@ -135,7 +136,18 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
           const startsAt=groupStarts.length
             ? groupStarts[Math.min(playback.clickGroup,groupStarts.length-1)]
             : pageStartMs+transitionMs;
-          const decoded=await decodeClip(element.media.src!,options.signal);healthy();
+          // 失败分级：音频媒体解不出 = 用户核心意图受损，显式抛错；
+          // 视频提轨（增强能力）失败不阻断（无轨视频常见），经 onWarning 用稳定 reason 暴露
+          let decoded;
+          try { decoded=await decodeClip(element.media.src!,options.signal); }
+          catch (error) {
+            if (!(error instanceof DOMException && error.name==='AbortError') && element.media.kind==='video') {
+              options.onWarning?.('video-audio-decode-failed',{slideNumber:page.slideNumber,elementName:element.name??''});
+              continue;
+            }
+            throw error;
+          }
+          healthy();
           clips.push({samples:decoded.samples,sampleRate:decoded.sampleRate,channels:decoded.channels,
             startMs:startsAt,loop:playback.loop,volume:playback.volume,
             endMs:playback.loop?undefined:startsAt+decoded.samples.length/decoded.channels/decoded.sampleRate*1000});

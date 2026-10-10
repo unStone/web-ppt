@@ -25,11 +25,13 @@ if (ffmpeg) execFileSync(ffmpeg, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sin
 
 const entry = join(out, 'entry.mjs');
 writeFileSync(entry, `export { parse } from '${root}/packages/core/src/index.ts';
-export { presentationToVideo } from '${root}/packages/viewer-core/src/video.ts';`);
+export { presentationToVideo } from '${root}/packages/viewer-core/src/video.ts';
+export { WebmWriter } from '${root}/packages/viewer-core/src/video/webm.ts';`);
 await bundleBrowser({ root, entry, output: join(out, 'contract.mjs'), aliases: [
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
 ] });
+const bundledModule = await import(join(out, 'contract.mjs'));
 
 let failures = 0;
 const check = (label, ok, detail = '') => { console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`); if (!ok) failures++; };
@@ -75,6 +77,17 @@ await withChartBrowser(root, async browser => {
     writeFileSync(join(out, 'track.webm'), trackWebm);
     check('无轨视频：onWarning 稳定 reason 且不阻断', JSON.stringify(track.warnings) === JSON.stringify([['video-audio-decode-failed','无轨视频']]), JSON.stringify(track.warnings));
     if (ffprobe) {
+      // 双轨封装器的流级核对也集中在此（test-video.mjs 保持环境无关计数）
+      const {WebmWriter} = bundledModule;
+      const dual=new WebmWriter(480,270,12,'VP8',{sampleRate:48000,channels:2});
+      dual.addFrame(new Uint8Array([1,2,3]),0,83333,true);
+      dual.addAudio(new Uint8Array([10,11]),0);
+      dual.addFrame(new Uint8Array([4,5]),83333,83334,false);
+      writeFileSync(join(out,'dual.webm'),Buffer.from(new Uint8Array(await dual.finish().arrayBuffer())));
+      const muxProbe = JSON.parse(execFileSync(ffprobe, ['-v','error','-show_streams','-of','json', join(out,'dual.webm')],{encoding:'utf8'}));
+      check('封装器双轨：ffprobe 识别视频 + Opus 流',
+        muxProbe.streams.length===2 && muxProbe.streams.some(s=>s.codec_name==='opus') && muxProbe.streams.some(s=>s.codec_name.startsWith('vp8')),
+        JSON.stringify(muxProbe.streams.map(s=>s.codec_name)));
       // 轨全长≈视频时长（静音段正常编码）；有声区间用响度判：前 0.5s 有信号、全轨均值被后半静音拉低
       const volume = (seconds) => {
         const args = seconds ? ['-t', String(seconds)] : [];
