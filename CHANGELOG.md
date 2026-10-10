@@ -4,6 +4,26 @@
 
 ## 未发布
 
+## 0.5.0-beta.6 - 2026-10-10
+
+### 新增
+
+- `presentationToVideo` 新增可选音轨：`audio: true` 时解析 timing 树媒体节点（`p:audio` 的音量 / 静音 / 循环 / 触发批次），按页时间轴确定性混音后以 Opus 48kHz 编码进 WebM 双轨；无音频媒体时仍为无声视频，默认关闭时产物与上一版逐字节一致。公开 `WebmWriter` 音频轨与 `mixAudioClips` 混音核；`MediaInfo` 扩展 `spid` 与 `playback` 播放语义。
+- 实验性矢量 PDF 的文字渐变原生支持（Pattern colorspace）：任意轴线性渐变、同段多 run 各自分框（按字形墨迹范围）、下划线 / 删除线继承渐变。坐标口径经 MuPDF / poppler / CoreGraphics 三实现实测裁决；透明渐变因渲染层无输入语义暂按稳定原因回退。
+
+### 改进
+
+- CJK 标点挤压补全 PowerPoint 完整规则：连续标点对、行首起始标点与行尾句读无条件收半格；断行判定仍按全角，与 PowerPoint 断行基线一致。
+- 网络字体到货后的重排补齐数学布局缓存失效：`invalidateTextMeasureCaches` 公开导出，`Viewer.refresh()` 完整覆盖字体环境变化。
+- 文档体系新增功能设计标准、分层依赖规范与 `.pptx` / `.ppt` 规范地图；依赖方向由 `check-architecture-boundary` 在 build 与 verify 机械审计。
+
+### 修复
+
+- 修复矢量 PDF 跨页复用渐变 Pattern 时未在当前页注册资源导致的整段取色错误（单页导出不触发）。
+- 修正 README 已知限制与能力矩阵的三处失真（EMF+ / OMML / 3D）及打开密码文件的能力描述。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
 ## 0.5.0-beta.5 - 2026-09-10
 
 ### 新增
