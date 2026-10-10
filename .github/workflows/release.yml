@@ -9,10 +9,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: npm
     permissions:
       contents: read
       id-token: write        # OIDC 换取短期发布令牌所必需，缺了会退回要 NPM_TOKEN
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
