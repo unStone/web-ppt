@@ -16,6 +16,12 @@ mkdirSync(out, { recursive: true });
 let ffprobe = null;
 try { execFileSync('ffprobe', ['-version'], { stdio: 'ignore' }); ffprobe = 'ffprobe'; }
 catch { console.log('  ffprobe 不在本机：跳过音轨独立核对'); }
+let ffmpeg = null;
+try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); ffmpeg = 'ffmpeg'; }
+catch { console.log('  ffmpeg 不在本机：提轨带声样本降级跳过'); }
+// 0.4s 440Hz 单声道 AAC@16k：参数全部固定，字节只进 out/（不入 fixtures），有 ffmpeg 即重生成
+if (ffmpeg) execFileSync(ffmpeg, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.4',
+  '-ar', '24000', '-ac', '1', '-c:a', 'aac', '-b:a', '16k', join(out, 'tone.mp4')]);
 
 const entry = join(out, 'entry.mjs');
 writeFileSync(entry, `export { parse } from '${root}/packages/core/src/index.ts';
