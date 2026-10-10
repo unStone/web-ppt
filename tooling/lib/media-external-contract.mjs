@@ -29,7 +29,7 @@ export async function runExternalMediaContract({ core, edit, media, source, asse
         assert.equal(editor.history.undoCount, history, '非法外链不污染历史');
       }
       const id = media.createMediaEditor(editor).exec(command(url));
-      assert.deepEqual(editor.effectiveElement(id).media, { kind, src: url, external: true });
+      { const m = editor.effectiveElement(id).media; assert.deepEqual({ kind: m.kind, src: m.src, external: m.external }, { kind, src: url, external: true }); }
       assert.deepEqual(editor.selection.ids, [id]);
       editor.undo(); assert.equal(doc.elements[id], undefined);
       editor.redo();
@@ -44,7 +44,9 @@ export async function runExternalMediaContract({ core, edit, media, source, asse
         const remote = new edit.Editor(remoteDoc, mode === 'recovery' ? { recoveryFrames: frames } : {});
         try {
           if (mode === 'external') for (const frame of frames) remote.applyExternalPatches(frame.patches);
-          assert.deepEqual(remote.effectiveElement(copy).media, { kind, src: url, external: true });
+          const effective = remote.effectiveElement(copy).media;
+          assert.deepEqual({ kind: effective.kind, src: effective.src, external: effective.external },
+            { kind, src: url, external: true });
           if (generated) remoteSource.dispose();
           const reopened = await core.parse(await remote.save(), { lazy: false });
           try { assert.equal(reopened.slides[0].elements.filter((el) => el.media?.external).length, 2); }
@@ -63,7 +65,9 @@ export async function runExternalMediaContract({ core, edit, media, source, asse
       try {
         const linked = reopened.slides[0].elements.filter((el) => el.media);
         assert.equal(linked.length, 2);
-        for (const element of linked) assert.deepEqual(element.media,
+        // spid / playback 是 timing 关联的附加语义，不属于外链标识的断言范围
+        for (const element of linked) assert.deepEqual(
+          { kind: element.media.kind, src: element.media.src, external: element.media.external },
           { kind, src: url, external: true }, '离线重开仍明确标识外链');
       } finally { reopened.dispose(); }
     } finally { editor.dispose(); edit.disposeDoc(doc); }

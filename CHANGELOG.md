@@ -8,7 +8,7 @@
 
 ### 新增
 
-- `presentationToVideo` 新增可选音轨：`audio: true` 时解析 timing 树媒体节点（`p:audio` 的音量 / 静音 / 循环 / 触发批次），按页时间轴确定性混音后以 Opus 48kHz 编码进 WebM 双轨；无音频媒体时仍为无声视频，默认关闭时产物与上一版逐字节一致。公开 `WebmWriter` 音频轨与 `mixAudioClips` 混音核；`MediaInfo` 扩展 `spid` 与 `playback` 播放语义。
+- `presentationToVideo` 新增可选音轨：`audio: true` 时解析 timing 树媒体节点（`p:audio` 的音量 / 静音 / 循环 / 触发批次），按页时间轴确定性混音后以 Opus 48kHz 编码进 WebM 双轨；视频文件的 AAC 音轨同样提取混入，无音轨或解码失败经 `onWarning` 以稳定原因跳过、不阻断导出。无音频媒体时仍为无声视频，默认关闭时产物与上一版逐字节一致。公开 `WebmWriter` 音频轨与 `mixAudioClips` 混音核；`MediaInfo` 扩展 `spid` 与 `playback` 播放语义。
 - 实验性矢量 PDF 的文字渐变原生支持（Pattern colorspace）：任意轴线性渐变、同段多 run 各自分框（按字形墨迹范围）、下划线 / 删除线继承渐变。坐标口径经 MuPDF / poppler / CoreGraphics 三实现实测裁决；透明渐变因渲染层无输入语义暂按稳定原因回退。
 
 ### 改进

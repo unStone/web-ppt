@@ -86,7 +86,7 @@ export async function runMediaPosterReplacementContract({ core, edit, media, sou
       try { for (const item of reopened.slides[0].elements.filter((el) => el.media)) {
         assert.deepEqual(reopened.package.assets[item.src].bytes, poster);
         if (sample.kind === 'embedded') assert.deepEqual(reopened.package.assets[item.media.src].bytes, sample.bytes);
-        else assert.deepEqual(item.media, { kind: sample.mediaKind, src: sample.url, external: true });
+        else { const m = item.media; assert.deepEqual({ kind: m.kind, src: m.src, external: m.external }, { kind: sample.mediaKind, src: sample.url, external: true }); }
       } } finally { reopened.dispose(); }
     } finally { editor.dispose(); edit.disposeDoc(doc); }
   }

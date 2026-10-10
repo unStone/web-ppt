@@ -4,7 +4,7 @@
  * 环境：需要 Chrome 与本地 ffprobe；CI 缺 ffprobe 时该脚本跳过并说明（接线断言由
  * 字节级检查覆盖，混音核与双轨封装另有 Node 全量断言）。
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
@@ -42,6 +42,44 @@ await withChartBrowser(root, async browser => {
   })()`);
   check('导出返回 WebM', bytes.type === 'video/webm');
   check('播放语义在场（0.8/组0 与 0/循环/组1）', JSON.stringify(bytes.names) === '[[0.8,false,0],[0,true,1]]', JSON.stringify(bytes.names));
+
+  // 提轨两条路径：带声 MP4（AAC）成功混入；无轨 MP4 经 onWarning 显式跳过且不阻断。
+  // tone.mp4 由本脚本开头 ffmpeg 现场生成（不进 fixtures）；CI 无 ffmpeg 时降级只跑无轨路径
+  const track = await browser.evaluate(`(async()=>{
+    const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
+    const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
+    const stubVideo = pres.slides[0].elements.find(e => e.kind === 'image' && e.media?.kind === 'video');
+    const toneResponse = await fetch('/out/video-audio/tone.mp4');
+    if (!toneResponse.ok) return { unavailable: true };
+    const realBytes = new Uint8Array(await toneResponse.arrayBuffer());
+    const realUrl = URL.createObjectURL(new Blob([realBytes], { type: 'video/mp4' }));
+    const warnings = [];
+    const mediaEl = (src, name) => ({ kind: 'image', x: 100, y: 100, w: 200, h: 120, rot: 0, flipH: false, flipV: false,
+      src: '', crop: null, name, media: { kind: 'video', src, mime: 'video/mp4', playback: { volume: 0.9, loop: false, clickGroup: 0 } } });
+    const single = { ...pres, slides: [{ ...pres.slides[0], animations: undefined,
+      elements: [mediaEl(realUrl, '带声视频'), mediaEl(stubVideo.media.src, '无轨视频')] }] };
+    const blob = await presentationToVideo(single, { audio: true, mediaPosters: true, fps: 12, slideDurationMs: 1200,
+      onWarning: (reason, detail) => warnings.push([reason, detail.elementName]) });
+    URL.revokeObjectURL(realUrl);
+    return { warnings, bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
+  })()`);
+  if (track?.unavailable) console.log('  tone.mp4 不存在（CI 无 ffmpeg）：提轨带声路径跳过，无轨路径由固件覆盖');
+  if (track && !track.unavailable) {
+    const trackWebm = Buffer.from(track.bytes);
+    writeFileSync(join(out, 'track.webm'), trackWebm);
+    check('无轨视频：onWarning 稳定 reason 且不阻断', JSON.stringify(track.warnings) === JSON.stringify([['video-audio-decode-failed','无轨视频']]), JSON.stringify(track.warnings));
+    if (ffprobe) {
+      // 轨全长≈视频时长（静音段正常编码）；有声区间用响度判：前 0.5s 有信号、全轨均值被后半静音拉低
+      const volume = (seconds) => {
+        const args = seconds ? ['-t', String(seconds)] : [];
+        const result = spawnSync('ffmpeg', [...args, '-v', 'info', '-i', join(out, 'track.webm'), '-map', '0:a', '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' });
+        // volumedetect 的统计打在 stderr
+        return Number(/mean_volume:\s*(-?[\d.]+) dB/.exec(result.stderr ?? '')?.[1] ?? NaN);
+      };
+      const head = volume(0.5), full = volume();
+      check('带声视频提轨：AAC 混入 Opus 轨且有声段≈0.4s', Number.isFinite(head) && Number.isFinite(full) && head > -40 && full < head - 3, `head=${head}dB full=${full}dB`);
+    }
+  }
   const webm = Buffer.from(bytes.bytes);
   writeFileSync(join(out, 'audio.webm'), webm);
   check('封装含 A_OPUS 音轨', webm.includes('A_OPUS'));

@@ -17,6 +17,8 @@ export interface VideoOptions {
   audio?: boolean;
   signal?: AbortSignal;
   onProgress?: (value: { completed: number; total: number; slideNumber: number }) => void;
+  /** 增强能力失败的显式通道（稳定 reason）：视频提轨解码失败不阻断导出，经此暴露；产品层可订阅展示 */
+  onWarning?: (reason: string, detail: { slideNumber: number; elementName: string }) => void;
 }
 export function groupDuration(steps: AnimStep[]): number {
   let start = 0, end = 0, duration = 0;
