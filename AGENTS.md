@@ -46,6 +46,7 @@
 3. **两条文本渲染路径**：`foreignObject` + HTML 排版（屏幕预览、PNG 导出）与原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）。理由是**可移植性**：`foreignObject` 只有浏览器认，Inkscape / librsvg / 设计工具打开会整块丢失文本。交出去的文件必须走 `<text>`，别合并这两条路径。
 4. **`core` 不碰 `document`**，要能在 Worker 里整包运行（`xml-lite.ts` 就是为此存在：Worker 里没有 `DOMParser`）。
 5. **依赖方向单向且可审计**：发布包只 import 声明的 deps/peer；`geometry/` 零外部依赖；core 的浏览器 DOM 只允许出现在五个白名单文件。由 `tooling/check-architecture-boundary.mjs` 在 build 与 verify 强制；分层模型、落位决策与反模式见 [docs/architecture-rules.md](docs/architecture-rules.md)。
+6. **功能设计按设计标准走**：交互五态与世代令牌、稳定 reason code 的显式回退、默认关闭产物逐字节不变、确定性优先、方向断言硬幅值如实、资源注册与使用同作用域——规则与真实案例见 [docs/design-standard.md](docs/design-standard.md)。
 
 ## 已知陷阱
 

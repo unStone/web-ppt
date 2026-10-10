@@ -9,12 +9,13 @@
 | 1 | [AGENTS.md](../AGENTS.md) | 仓库约束、已知陷阱、命令与发布流程 | Agent + 维护者 · how-to |
 | 2 | [architecture.md](architecture.md) | 包依赖、四条解析链路、编辑闭环的全局架构 | Agent + 维护者 · reference |
 | 3 | [architecture-rules.md](architecture-rules.md) | 分层与依赖规范：依赖方向、落位决策、内聚耦合判定、反模式 | Agent + 维护者 · reference |
-| 4 | [specs/pptx-spec-map.md](specs/pptx-spec-map.md) · [specs/ppt-spec-map.md](specs/ppt-spec-map.md) | 格式规范地图：规范体系与版本、功能域 → 章节 → 仓库模块映射、规范没写清的坑 | 开发者 · reference |
-| 3 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 | Agent + 维护者 · reference |
-| 4 | [roadmap.md](roadmap.md) | 能力盘点、版本演进与缺口取舍 | 维护者 · reference |
-| 5 | [pitfalls.md](pitfalls.md) | 坑索引：实现陷阱在 AGENTS，交付与交互层面的坑收拢于此 | Agent + 维护者 · reference |
-| 6 | [testing.md](testing.md) | 测试贡献规范：门禁关系、固件、快照、断言计数登记 | 贡献者 + Agent · how-to |
-| 7 | [releasing.md](releasing.md) | 发布与 CI 运维：流水线行为、发版 checklist、OIDC 坑 | 维护者 · how-to |
+| 4 | [design-standard.md](design-standard.md) | 功能设计标准：五态与世代令牌、错误回退、兼容演进、确定性、验收、资源生命周期 | Agent + 维护者 · reference |
+| 5 | [specs/pptx-spec-map.md](specs/pptx-spec-map.md) · [specs/ppt-spec-map.md](specs/ppt-spec-map.md) | 格式规范地图：规范体系与版本、功能域 → 章节 → 仓库模块映射、规范没写清的坑 | 开发者 · reference |
+| 6 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 | Agent + 维护者 · reference |
+| 7 | [roadmap.md](roadmap.md) | 能力盘点、版本演进与缺口取舍 | 维护者 · reference |
+| 8 | [pitfalls.md](pitfalls.md) | 坑索引：实现陷阱在 AGENTS，交付与交互层面的坑收拢于此 | Agent + 维护者 · reference |
+| 9 | [testing.md](testing.md) | 测试贡献规范：门禁关系、固件、快照、断言计数登记 | 贡献者 + Agent · how-to |
+| 10 | [releasing.md](releasing.md) | 发布与 CI 运维：流水线行为、发版 checklist、OIDC 坑 | 维护者 · how-to |
 
 性质词汇沿用 [Diátaxis](https://diataxis.fr/)：**reference**（持续查阅的事实）、**how-to**（面向任务的步骤）、**explanation**（理解背景的历史决策）。
 
