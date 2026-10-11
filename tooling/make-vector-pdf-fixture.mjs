@@ -158,6 +158,7 @@ writeFileSync(new URL('../fixtures/sample-vector-pdf-decoration.pptx',import.met
 }));
 console.log('fixtures/sample-vector-pdf-decoration.pptx：下划线、删除线与普通文字');
 
+
 const missingLabel=sp({x:40,y:40,w:220,h:100,fill:'<a:noFill/>',text:`<a:p>${run('ABC','Unavailable PDF Font')}</a:p>`});
 const missingGroup=effectGroup.replace(shadowText,missingLabel);
 writeFileSync(new URL('../fixtures/sample-vector-pdf-font-errors.pptx',import.meta.url),deck({
@@ -265,3 +266,13 @@ writeFileSync(new URL('../fixtures/sample-vector-pdf-normalization.pptx',import.
   extraEntries:normalizedSamples.map((sample,i)=>[`ppt/media/${normalizationName(sample,i)}`,sample.bytes]),
 }));
 console.log('fixtures/sample-vector-pdf-normalization.pptx：PNG 色彩 / 布局、八种 EXIF 方向与浏览器图片格式');
+
+// 多样式装饰：DrawingML 线型（dash/dot/dbl/wavy）→ CSS text-decoration-style → PDF dash/双线/波浪
+const styleRow=(y,attr)=>decorated(40,y,attr).replace('w="220"','w="140"')
+  +decorated(200,y,attr).replace('w="220"','w="140"').replace('sz="2400"','sz="2400"')
+  +decorated(360,y,attr).replace('w="220"','w="140"').replace('sz="2400"','sz="2400"');
+writeFileSync(new URL('../fixtures/sample-vector-pdf-decoration-styles.pptx',import.meta.url),deck({
+  name:'VectorPdfDecorationStyles',width:640,height:360,slides:[slideXml(
+    styleRow(40,'u="dash"')+styleRow(130,'u="dot"')+styleRow(220,'u="dbl"')+styleRow(310,'u="wavyDbl"'))],
+}));
+console.log('fixtures/sample-vector-pdf-decoration-styles.pptx：dash/dot/dbl/wavy 装饰线');

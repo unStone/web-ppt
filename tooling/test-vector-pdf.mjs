@@ -8,6 +8,7 @@ import {vectorPdfImagesContract} from './lib/vector-pdf-images-contract.mjs';
 import {vectorPdfEffectsContract} from './lib/vector-pdf-effects-contract.mjs';
 import {vectorPdfPaintsContract} from './lib/vector-pdf-paints-contract.mjs';
 import {vectorPdfDecorationContract} from './lib/vector-pdf-decoration-contract.mjs';
+import {vectorPdfDecorationStylesContract} from './lib/vector-pdf-decoration-styles-contract.mjs';
 import {vectorPdfFontErrorsContract} from './lib/vector-pdf-font-errors-contract.mjs';
 import {vectorPdfCoverageContract} from './lib/vector-pdf-coverage-contract.mjs';
 import {vectorPdfMarkersContract} from './lib/vector-pdf-markers-contract.mjs';
@@ -48,6 +49,7 @@ try{
   await vectorPdfCoverageContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfFontErrorsContract(api,{provider,segmentText:api.segmentFontText},out);
   await vectorPdfDecorationContract(api,{provider,segmentText:api.segmentFontText},root,out);
+  await vectorPdfDecorationStylesContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfPaintsContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfEffectsContract(api,{provider,segmentText:api.segmentFontText},root,out);
   await vectorPdfImagesContract(api,{provider,segmentText:api.segmentFontText},root,out);

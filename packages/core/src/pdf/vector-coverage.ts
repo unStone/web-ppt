@@ -60,7 +60,7 @@ export class VectorCoverage {
       if (key === 'cursor' || key === 'transform-box' && value === 'fill-box' || key === 'transform-origin' && value === 'center') continue;
       if (!css.has(key)) return `svg-css-${key}`;
       if ((key === 'text-decoration' || key === 'text-decoration-line') && !/^(underline|line-through)$/.test(value)) return `svg-css-${key}`;
-      if (key === 'text-decoration-style' && value !== 'solid') return 'svg-css-text-decoration-style';
+      if (key === 'text-decoration-style' && !['solid','dashed','dotted','double','wavy'].includes(value)) return 'svg-css-text-decoration-style';
     }
     for (const [key,values] of Object.entries(enums)) {
       const value = el.getAttribute(key); if (value !== null && !values.includes(value)) return `svg-value-${key}`;
