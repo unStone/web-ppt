@@ -14,7 +14,7 @@ const nodes:Record<string,string> = {
   circle:'cx cy r transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin',
   ellipse:'cx cy rx ry transform clip-path fill-rule stroke-dasharray stroke-linecap stroke-linejoin',
   image:'href xlink:href x y width height opacity preserveAspectRatio transform clip-path',
-  text:'x y text-anchor xml:space transform direction unicode-bidi', tspan:'dx dy xml:space', title:'', desc:'',
+  text:'x y text-anchor xml:space transform direction unicode-bidi stroke stroke-width paint-order', tspan:'dx dy xml:space stroke stroke-width paint-order', title:'', desc:'',
 };
 const definitions:Record<string,string> = {
   linearGradient:'id x1 y1 x2 y2 gradientUnits', radialGradient:'id cx cy r fx fy gradientUnits',
@@ -22,7 +22,7 @@ const definitions:Record<string,string> = {
   marker:'id viewBox refX refY markerWidth markerHeight markerUnits orient',
   pattern:'id x y width height patternUnits',
 };
-const css = new Set('fill stroke stroke-width font-family font-size font-weight font-style letter-spacing text-decoration text-decoration-line text-decoration-color text-decoration-style'.split(' '));
+const css = new Set('fill stroke stroke-width paint-order font-family font-size font-weight font-style letter-spacing text-decoration text-decoration-line text-decoration-color text-decoration-style'.split(' '));
 const enums:Record<string,readonly string[]> = {
   'text-anchor':['start','middle','end'], 'fill-rule':['nonzero','evenodd'], 'clip-rule':['nonzero','evenodd'],
   'stroke-linecap':['butt','round','square'], 'stroke-linejoin':['miter','round','bevel'],
@@ -74,7 +74,11 @@ export class VectorCoverage {
       const values = value.trim().split(/[\s,]+/).map(Number);
       if (values.some(n => !Number.isFinite(n) || key === 'stroke-dasharray' && n < 0)) return `svg-value-${key}`;
     }
-    if ((inText || tag === 'text' || tag === 'tspan') && (style.get('stroke') ?? el.getAttribute('stroke') ?? 'none') !== 'none') return 'svg-text-stroke';
+    // 文字描边仅放行 paint-order:stroke（OOXML 轮廓语义：描边在填色下方）；其他 paint-order 仍回退
+    const paintOrder = style.get('paint-order') ?? el.getAttribute('paint-order');
+    if ((inText || tag === 'text' || tag === 'tspan')
+      && (style.get('stroke') ?? el.getAttribute('stroke') ?? 'none') !== 'none'
+      && paintOrder !== 'stroke') return 'svg-text-stroke';
     for (const key of ['font-size','stroke-width','letter-spacing']) {
       const value = style.get(key) ?? el.getAttribute(key);
       if (value !== null && value !== undefined && (!Number.isFinite(svgLength(value)) || key !== 'letter-spacing' && svgLength(value) < 0)) return `svg-value-${key}`;

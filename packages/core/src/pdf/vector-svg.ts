@@ -191,7 +191,7 @@ export class VectorSvg {
     const patternOf = new Map<string,string>();
     for (const span of spans) {
       y += span.dy; let character = 0;
-      if (span.style.stroke !== 'none') throw new Error('PDF 暂不支持文字描边');
+      const hasStroke = span.style.stroke !== 'none';
       let fillCommand = '', strokeCommand = '';
       if (span.style.fill.startsWith('url(')) {
         const reference = span.style.fill, [start,end] = spanRange.get(spans.indexOf(span))!;
@@ -208,24 +208,42 @@ export class VectorSvg {
           if (!cachedStroke) patternOf.set(strokeKey,strokeCommand);
         }
       } else fillCommand = this.paint.solid(span.style.fill);
-      commands.push(fillCommand);
+      // 文字描边（paint-order:stroke）：先走 stroke-only 轨再走 fill 轨，字形位置完全复用
+      interface GlyphPos {font:string; size:number; x:number; y:number; cid:string}
+      const glyphPos: GlyphPos[] = [];
+      const fillGlyphs: string[] = [];
       for (const part of span.parts) {
         const startX = x, startY = y;
         const font = await this.resource(part), scale = span.style.size / part.run.unitsPerEm;
         for (const cluster of part.run.clusters) {
           const points = [...cluster.text];
           x += span.dx.slice(character,character + points.length).reduce((a,b) => a + b,0); character += points.length;
-          commands.push(`/Span << /ActualText <feff${unicodeHex(cluster.text)}> >> BDC`);
+          fillGlyphs.push(`/Span << /ActualText <feff${unicodeHex(cluster.text)}> >> BDC`);
           for (let i = cluster.glyphStart; i < cluster.glyphEnd; i++) {
             const glyph = part.run.glyphs[i], cid = font.cid(glyph.id,i === cluster.glyphStart ? cluster.text : '');
-            commands.push(`BT /${font.name} ${n(span.style.size)} Tf 1 0 0 -1 ${n(x + glyph.xOffset * scale)} ${n(y - glyph.yOffset * scale)} Tm <${pdfHex(cid)}> Tj ET`);
+            const px = x + glyph.xOffset * scale, py = y - glyph.yOffset * scale;
+            glyphPos.push({font:font.name,size:span.style.size,x:px,y:py,cid:pdfHex(cid)});
+            fillGlyphs.push(`BT /${font.name} ${n(span.style.size)} Tf 1 0 0 -1 ${n(px)} ${n(py)} Tm <${pdfHex(cid)}> Tj ET`);
             x += glyph.xAdvance * scale; y -= glyph.yAdvance * scale;
           }
-          commands.push('EMC'); x += span.style.spacing * cluster.text.length;
+          fillGlyphs.push('EMC'); x += span.style.spacing * cluster.text.length;
         }
         underlines.push(drawDecorations(span.style.decorations.filter(d => d.line === 'underline'),font,this.paint,startX,startY,x,span.style.size,strokeCommand));
         strikes.push(drawDecorations(span.style.decorations.filter(d => d.line === 'line-through'),font,this.paint,startX,startY,x,span.style.size,strokeCommand));
       }
+      if (hasStroke) {
+        // stroke 轨：每个字形独立 BT 块内设 1 Tr（stroke-only），paint-order:stroke 的描边在填色下方
+        const strokeColor = this.paint.solid('none',span.style.stroke);
+        const rgMatch = /([\d.]+ [\d.]+ [\d.]+) RG/.exec(strokeColor);
+        const strokeRG = rgMatch?.[1] ?? '0 0 0';
+        commands.push(`q ${strokeRG} RG ${n(span.style.strokeWidth)} w`);
+        for (const g of glyphPos) {
+          commands.push(`BT /${g.font} ${n(g.size)} Tf 1 Tr 1 0 0 -1 ${n(g.x)} ${n(g.y)} Tm <${g.cid}> Tj ET`);
+        }
+        commands.push('Q');
+      }
+      commands.push(fillCommand);
+      commands.push(...fillGlyphs);
     }
     // SVG 下划线先于字形、删除线后于字形；整个 text 统一顺序，避免相邻字形的悬出部被后续线段盖住。
     return [...underlines,...commands,...strikes].filter(Boolean).join('\n');

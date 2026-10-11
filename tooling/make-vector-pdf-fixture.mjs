@@ -276,3 +276,10 @@ writeFileSync(new URL('../fixtures/sample-vector-pdf-decoration-styles.pptx',imp
     styleRow(40,'u="dash"')+styleRow(130,'u="dot"')+styleRow(220,'u="dbl"')+styleRow(310,'u="wavyDbl"'))],
 }));
 console.log('fixtures/sample-vector-pdf-decoration-styles.pptx：dash/dot/dbl/wavy 装饰线');
+
+// 文字描边（paint-order:stroke）：OOXML rPr a:ln 轮廓 → SVG stroke + paint-order → PDF 双轨（stroke-only + fill）
+const outlinedText=sp({x:40,y:40,w:560,h:100,fill:'<a:noFill/>',text:'<a:p><a:r><a:rPr sz="3200"><a:ln w="19050"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln><a:latin typeface="WebPPT Glyph Latin"/></a:rPr><a:t>A0B</a:t></a:r></a:p>'});
+writeFileSync(new URL('../fixtures/sample-vector-pdf-text-stroke.pptx',import.meta.url),deck({
+  name:'VectorPdfTextStroke',width:640,height:360,slides:[slideXml(outlinedText)],
+}));
+console.log('fixtures/sample-vector-pdf-text-stroke.pptx：文字描边（a:ln 轮廓）');
