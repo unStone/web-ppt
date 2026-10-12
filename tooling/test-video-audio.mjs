@@ -51,6 +51,34 @@ await withChartBrowser(root, async browser => {
   check('导出返回 WebM', bytes.type === 'video/webm');
   check('播放语义在场（0.8/组0 与 0/循环/组1）', JSON.stringify(bytes.names) === '[[0.8,false,0],[0,true,1]]', JSON.stringify(bytes.names));
 
+  // 内嵌视频合成（videoOverlay）：真 MP4 帧叠加到画面（替代海报）
+  if (ffmpeg) {
+    const overlayResult = await browser.evaluate(`(async()=>{
+      try {
+        const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
+        const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
+        const toneResponse = await fetch('/out/video-audio/tone.mp4');
+        if (!toneResponse.ok) return { skipped: true };
+        const mp4Bytes = new Uint8Array(await toneResponse.arrayBuffer());
+        const videoUrl = URL.createObjectURL(new Blob([mp4Bytes], { type: 'video/mp4' }));
+        const mediaEl = { kind: 'image', x: 100, y: 100, w: 300, h: 200, rot: 0, flipH: false, flipV: false,
+          src: '', crop: null, name: '合成视频', media: { kind: 'video', src: videoUrl, mime: 'video/mp4',
+            playback: { volume: 1, loop: false, clickGroup: 0 } } };
+        const single = { ...pres, slides: [{ ...pres.slides[0], animations: undefined, elements: [mediaEl] }] };
+        const blob = await presentationToVideo(single, { videoOverlay: true, mediaPosters: true, fps: 12, slideDurationMs: 1500 });
+        URL.revokeObjectURL(videoUrl);
+        return { bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
+      } catch (error) { return { failed: String((error && error.stack) || error).slice(0, 200) }; }
+    })()`);
+    if (overlayResult?.skipped) console.log('  tone.mp4 不存在：视频合成路径跳过');
+    else if (overlayResult?.failed) check('视频合成导出', false, overlayResult.failed);
+    else {
+      const overlayWebm = Buffer.from(overlayResult.bytes);
+      writeFileSync(join(out, 'overlay.webm'), overlayWebm);
+      check('视频合成导出返回 WebM', overlayWebm.length > 1000, String(overlayWebm.length));
+    }
+  }
+
   // 提轨两条路径：带声 MP4（AAC）成功混入；无轨 MP4 经 onWarning 显式跳过且不阻断。
   // tone.mp4 由本脚本开头 ffmpeg 现场生成（不进 fixtures）；CI 无 ffmpeg 时降级只跑无轨路径
   const track = await browser.evaluate(`(async()=>{

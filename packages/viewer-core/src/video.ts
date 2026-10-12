@@ -3,6 +3,7 @@ import { VideoScene } from './video/scene';
 import { WebmWriter } from './video/webm';
 import { groupDuration, videoPlan, type VideoOptions } from './video/timing';
 import { mixAudioClips, type AudioClip } from './video/mix';
+import { MediaOverlay } from './video/media-overlay';
 export type { VideoOptions };
 export { videoPlan };
 
@@ -90,6 +91,8 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
   const context=canvas.getContext('2d');
   if (!context) { encoder.close();throw new Error('无法获取视频画布'); }
   const scene=new VideoScene(pres,!!options.showComments);
+  // 内嵌视频合成层：videoOverlay 开启时预加载并叠加当前帧（须与 render 同作用域）
+  const overlay = options.videoOverlay ? new MediaOverlay() : null;
   const stop=()=>{if(encoder.state!=='closed')encoder.close();};options.signal?.addEventListener('abort',stop,{once:true});
   const healthy=()=>{abort();if(failure)throw failure;};
   const drain=async()=>{
@@ -102,11 +105,14 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
       encoder.addEventListener('dequeue',ready);options.signal?.addEventListener('abort',cancel,{once:true});ready();
     });healthy();
   };
-  const render=async(duration: number,slideNumber: number,animations: Animation[] =[])=>{
+  const render=async(duration: number,slideNumber: number,animations: Animation[] =[],pageTimelineMs?: number)=>{
     const count=plan.frames(duration);
     for(let i=0;i<count;i++){
       healthy();for(const a of animations)a.currentTime=duration*i/count;
-      await scene.draw(context,plan.width,plan.height);healthy();await drain();
+      await scene.draw(context,plan.width,plan.height);healthy();
+      // 视频叠加：在 SVG 光栅化之后画当前帧，覆盖海报帧
+      if(overlay) await overlay.draw(context,slideNumber,(pageTimelineMs??0)+duration*i/count,plan.width/pres.width,plan.height/pres.height);
+      await drain();
       const timestamp=Math.round(frameNumber*1000000/plan.fps),next=Math.round((frameNumber+1)*1000000/plan.fps);
       const frame=new VideoFrame(canvas,{timestamp,duration:next-timestamp});
       try{encoder.encode(frame,{keyFrame:frameNumber%(plan.fps*2)===0});}finally{frame.close();}
@@ -117,6 +123,7 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
     await Promise.resolve();
   };
   try{
+    // 内嵌视频合成层：videoOverlay 开启时预加载并叠加当前帧
     // 音轨片段：音频开关开启时，按渲染循环的时间轴游标换算每个媒体组的起始毫秒。
     // 页时间轴 = [切换][组×N（点击停顿 + 组动画）][停留]；媒体在其批次的触发时刻起步
     const clips: AudioClip[] = [];
@@ -125,12 +132,14 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
       healthy();const hidden=page.groups.length?hiddenBefore(page.groups,0):staticHidden(page.slide);
       const transitionMs = previous&&page.transition?page.transition:0;
       const current=await scene.page(page.slide,[...hidden]);healthy();
-      if(transitionMs)await render(page.transition!,page.slideNumber,scene.transition(previous!,current,page.slide));
+      // 组 g 的触发时刻 = 页起点 + 切换 + 前 g 组时长；音轨与视频叠加共用同一换算
+      const groupStarts:number[]=[];{let cursorMs=pageStartMs+transitionMs;
+        for(const group of page.groups){groupStarts.push(cursorMs);cursorMs+=(page.click??0)+groupDuration(group);}}
+      if(overlay) await overlay.load(pres,page.slide,page.slideNumber,groupStarts);
+      let cursorMs = pageStartMs;
+      if(transitionMs){await render(page.transition!,page.slideNumber,scene.transition(previous!,current,page.slide),cursorMs);cursorMs+=transitionMs;}
       previous?.remove();
       if(options.audio){
-        // 组 g 的触发时刻 = 页起点 + 切换 + 前 g 组时长；组号超出动画批数的媒体落在最后一批
-        const groupStarts:number[]=[];let cursorMs=pageStartMs+transitionMs;
-        for(const group of page.groups){groupStarts.push(cursorMs);cursorMs+=(page.click??0)+groupDuration(group);}
         for(const element of audioElements(page.slide.elements)){
           const playback=element.media.playback!;
           const startsAt=groupStarts.length
@@ -154,11 +163,11 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
         }
       }
       for(const group of page.groups){
-        if(page.click)await render(page.click,page.slideNumber);
-        await render(groupDuration(group),page.slideNumber,scene.group(current,group));
+        if(page.click){await render(page.click,page.slideNumber,undefined,cursorMs);cursorMs+=page.click;}
+        await render(groupDuration(group),page.slideNumber,scene.group(current,group),cursorMs);cursorMs+=groupDuration(group);
       }
-      await render(page.hold,page.slideNumber);previous=current;
-      pageStartMs+=transitionMs+page.groups.reduce((n,g)=>n+(page.click??0)+groupDuration(g),0)+page.hold;
+      await render(page.hold,page.slideNumber,undefined,cursorMs);cursorMs+=page.hold;
+      pageStartMs=cursorMs;previous=current;
     }
     await encoder.flush();healthy();
     // 音轨编码在视频帧之后：混音核确定性计算 → Opus 块按毫秒时间戳交错写入
@@ -168,5 +177,5 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
       await encodeAudioTrack(writer,mixed,48000,2,options.signal);
     }
     return writer.finish();
-  }finally{options.signal?.removeEventListener('abort',stop);stop();scene.dispose();canvas.width=canvas.height=0;}
+  }finally{options.signal?.removeEventListener('abort',stop);stop();overlay?.dispose();scene.dispose();canvas.width=canvas.height=0;}
 }

@@ -13,8 +13,10 @@ export interface VideoOptions {
   clickDelayMs?: number;
   /** 视频无音轨；显式允许把内嵌音视频作为静态封面输出。 */
   mediaPosters?: boolean;
-  /** 导出音轨：timing 媒体节点（WAV / 可解码嵌入音频）按页时间轴混音为 Opus；无音频媒体时仍为无声视频 */
+  /** 导出音轨：timing 媒体节点的音频混为 Opus；无音频媒体时仍为无声视频 */
   audio?: boolean;
+  /** 导出时把内嵌视频的当前帧叠加到画面（替代海报帧）；需要 timing 播放语义 */
+  videoOverlay?: boolean;
   signal?: AbortSignal;
   onProgress?: (value: { completed: number; total: number; slideNumber: number }) => void;
   /** 增强能力失败的显式通道（稳定 reason）：视频提轨解码失败不阻断导出，经此暴露；产品层可订阅展示 */
