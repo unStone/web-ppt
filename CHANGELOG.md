@@ -15,6 +15,8 @@
 - 修复 `.pptx` 媒体源解析只认经典 `a:audioFile` / `a:videoFile` 引用：PowerPoint 2010+ 内嵌 mp3 / mp4 等时把经典关系写成 `Target="NULL"` 外链、字节只挂在 `p14:media` 的 `r:embed` 上，此前 `MediaInfo.src` 为 `null`，player 模式不生成播放器、编辑生成保存会丢失媒体字节。现按经典引用 → `p14:media`（`r:link` 优先于 `r:embed`）逐个取第一个可解析目标：包内关系要求部件存在，外链关系要求是带 scheme 的 URL；正常文件的解析结果不变。
 - 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。
 - 英语缩写中的弯撇号（`I’m`、`that’s`）不再按全角标点挤压半个 em，避免撇号与后一个字母重叠（#8）。中文句读的挤压规则不变。
+- 子坐标空间被归一化（不足 1px）的组合里，文字不再逐字换行后被组缩放放大，两条文本路径都按物理字号排版（#7）。
+- `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
 
 ## 0.5.0-beta.6 - 2026-10-10
 

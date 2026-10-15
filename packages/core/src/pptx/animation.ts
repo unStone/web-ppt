@@ -369,6 +369,27 @@ function findRotation(el: Element, depth = 8): AnimStep['rotation'] {
   return undefined;
 }
 
+/** PowerPoint 的 mediacall 用 p:cmd 表达播放控制，不能退化成视觉强调动画。 */
+function findMediaCommand(el: Element, depth = 8): AnimStep['mediaCommand'] | null {
+  for (let child = el.firstElementChild; child; child = child.nextElementSibling) {
+    if (child.localName === 'cmd') {
+      if ((attr(child, 'type') ?? 'call') !== 'call') return null;
+      const command = attr(child, 'cmd');
+      if (command === 'play' || command === 'pause' || command === 'resume'
+        || command === 'stop' || command === 'togglePause') return { action: command };
+      const start = /^playFrom\((\d+(?:\.\d+)?)\)$/.exec(command ?? '');
+      if (!start) return null;
+      const fromSeconds = Number(start[1]);
+      return Number.isFinite(fromSeconds) ? { action: 'play', fromSeconds } : null;
+    }
+    if (depth > 0) {
+      const nested = findMediaCommand(child, depth - 1);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
 function startDelay(cTn: Element): number {
   const cond = kid(kid(cTn, 'stCondLst'), 'cond');
   const raw = attr(cond, 'delay');
@@ -529,6 +550,8 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   if (target === null) return null;
 
   const presetClass = attr(cTn, 'presetClass') ?? 'entr';
+  const mediaCommand = presetClass === 'mediacall' ? findMediaCommand(cTn) : null;
+  if (presetClass === 'mediacall' && !mediaCommand) return null;
   const kind = CLASS_KIND[presetClass] ?? 'entrance';
   const presetID = numAttr(cTn, 'presetID') ?? 10;
   const subtype = numAttr(cTn, 'presetSubtype') ?? 0;
@@ -556,12 +579,13 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
     effect,
     dir,
     delayMs: startDelay(cTn),
-    durationMs: Math.max(60, Math.min(10000, dur)),
+    durationMs: mediaCommand ? Math.max(0, dur) : Math.max(60, Math.min(10000, dur)),
     trigger,
     kind,
     motionPath,
     ...(scale ? { scale } : {}),
     ...(rotation ? { rotation } : {}),
+    ...(mediaCommand ? { mediaCommand } : {}),
     ...(paragraphRange ? { paragraphRange } : {}),
   };
 }

@@ -39,7 +39,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 12.20 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook over the shared editor session and preview path | `editor` + optional React peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable over the shared editor session and preview path | `editor` + optional Vue peer | 1.34 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 13.07 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching | `@web-ppt/core` | 13.77 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (optional; zero font bytes in the package) | `@web-ppt/core` | 2.69 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
@@ -72,6 +72,8 @@ await viewer.exportPng(2);                            // → Blob
 
 // Make video / audio actually playable (pulls in foreignObject; screen preview only)
 const v2 = new Viewer(container, pres, { media: 'player' });
+// Fired on the container when a media call on the animation timeline (e.g. play after previous) is rejected by the browser
+container.addEventListener('web-ppt-playback-error', (e) => console.warn((e as CustomEvent).detail));
 
 const svg = await slideToSvgFile(pres, pres.slides[0]);
 const html = await presentationToPrintableHtml(pres); // print from the browser to get a PDF
@@ -424,7 +426,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values |
 
-Tests run the real parsing and rendering in Node with jsdom; no parsing logic is mocked. 192 render snapshots (27 test files × every slide × both text paths) are compared byte for byte, and fidelity is checked against LibreOffice renders as ground truth. Per-suite commands, assertion counts and test layers are in the [testing guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/testing.md); other commands and debug pages are in the [development guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/development.md) (both in Chinese). Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
+Tests run the real parsing and rendering in Node with jsdom; no parsing logic is mocked. 198 render snapshots (29 test files × every slide × both text paths) are compared byte for byte, and fidelity is checked against LibreOffice renders as ground truth. Per-suite commands, assertion counts and test layers are in the [testing guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/testing.md); other commands and debug pages are in the [development guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/development.md) (both in Chinese). Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
 
 ## Community
 

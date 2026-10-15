@@ -3,6 +3,7 @@ import {
   blindsClip, boxInMask, boxOutClip, checkerboardClip, dissolveClip,
   irisClip, randomBarsClip, splitClip, stripsClip, wheelClip, type ClipRegion,
 } from './reveal-clip';
+import { scheduleMediaCommand, type ScheduledMediaCommand } from './media-playback';
 
 /**
  * 元素动画播放层。全部走 Web Animations API，
@@ -289,6 +290,7 @@ export interface PlayHandle {
 export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
   const anims: Animation[] = [];
   const exits: HTMLElement[] = [];
+  const mediaCommands: ScheduledMediaCommand[] = [];
   let cancelled = false;
   let previousStart = 0;
   let previousEnd = 0;
@@ -301,6 +303,12 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     previousEnd = start + step.durationMs;
     const node = container.querySelector(`[data-el="${step.target}"]`) as HTMLElement | null;
     if (!node) continue;
+
+    if (step.mediaCommand) {
+      const scheduled = scheduleMediaCommand(node, step.mediaCommand, start);
+      if (scheduled) mediaCommands.push(scheduled);
+      continue;
+    }
     if (step.kind === 'exit') exits.push(node);
 
     const { from, to } = framesFor(step);
@@ -414,8 +422,16 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     cancel: () => {
       cancelled = true;
       anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } });
+      mediaCommands.forEach((command) => command.cancel());
       for (const node of exits) node.style.visibility = 'hidden';
     },
-    finished: Promise.all(anims.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
+    // 等全部视觉与媒体调用落定后再报告：媒体失败不能让批次提前收尾、截断仍在播的视觉动画。
+    finished: Promise.all([
+      Promise.all(anims.map((a) => a.finished.catch(() => undefined))),
+      Promise.allSettled(mediaCommands.map((command) => command.finished)),
+    ]).then(([, media]) => {
+      const failed = media.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (failed) throw failed.reason;
+    }),
   };
 }
