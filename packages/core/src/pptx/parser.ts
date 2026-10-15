@@ -544,39 +544,51 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
 
 // ---------------- 媒体（音频 / 视频） ----------------
 
-const VIDEO_TAGS = new Set(['videoFile', 'quickTimeFile', 'media']);
+const VIDEO_TAGS = new Set(['videoFile', 'quickTimeFile']);
 const AUDIO_TAGS = new Set(['audioFile', 'wavAudioFile', 'audioCd']);
 
 const isExternalTarget = (t: string): boolean => /^[a-z][a-z0-9+.-]*:/i.test(t);
 
-/** 在 p:nvPr（含 extLst 里的 p14:media）中找音视频引用 */
+/**
+ * 在 p:nvPr（含 extLst 里的 p14:media）中找音视频引用。
+ *
+ * 经典元素（ISO 29500 a:audioFile / a:videoFile 的 r:link）是标准引用，先试；
+ * p14:media（MS-PPTX 2.3.3.14）是 PowerPoint 2010+ 的媒体扩展，二者并存时自身按 r:link 优先于 r:embed。
+ * 新版 PowerPoint 内嵌 2007 不支持的容器（mp3 / mp4 等）时把经典关系写成 Target="NULL" TargetMode="External"，
+ * 真实字节只在 p14:media 的 r:embed 部件里——所以逐个候选取第一个能解析的：
+ * 包内关系要求部件真实存在，外链关系要求是带 scheme 的 URL。
+ */
 function parseMedia(nvPr: Element | null, env: Env): MediaInfo | undefined {
   if (!nvPr) return undefined;
-  let kind: MediaInfo['kind'] | null = null;
-  let node: Element | null = null;
+  let audio: Element | null = null;
+  let video: Element | null = null;
+  let extension: Element | null = null;
   const all = nvPr.getElementsByTagName('*');
   for (let i = 0; i < all.length; i++) {
     const ln = all[i].localName;
-    if (AUDIO_TAGS.has(ln)) {
-      kind = 'audio';
-      node = all[i];
-      break;
-    }
-    if (VIDEO_TAGS.has(ln) && !node) {
-      // p14:media 只是嵌入副本，若后面还有 audioFile 说明其实是音频
-      kind = 'video';
-      node = all[i];
-    }
+    if (!audio && AUDIO_TAGS.has(ln)) audio = all[i];
+    else if (!video && VIDEO_TAGS.has(ln)) video = all[i];
+    else if (!extension && ln === 'media') extension = all[i];
   }
-  if (!kind || !node) return undefined;
+  // p14:media 不区分音视频；有经典音频元素时以它为准
+  const kind: MediaInfo['kind'] | null = audio ? 'audio' : video || extension ? 'video' : null;
+  if (!kind) return undefined;
 
-  const rid = attr(node, 'r:link') ?? attr(node, 'r:embed');
-  const rel = rid ? env.rels[rid] : undefined;
-  if (!rel) return { kind, src: null };
-  if (isExternalTarget(rel.target)) return { kind, src: rel.target, external: true };
-  const ext = rel.target.slice(rel.target.lastIndexOf('.') + 1).toLowerCase();
-  const mime = MEDIA_MIME[ext] ?? (kind === 'audio' ? 'audio/mpeg' : 'video/mp4');
-  return { kind, src: env.pkg.blobUrl(rel.target, mime), mime };
+  const candidates = [audio ?? video, extension]
+    .flatMap((node) => (node ? [attr(node, 'r:link'), attr(node, 'r:embed')] : []));
+  for (const rid of candidates) {
+    const rel = rid ? env.rels[rid] : undefined;
+    if (!rel) continue;
+    if (rel.external) {
+      if (isExternalTarget(rel.target)) return { kind, src: rel.target, external: true };
+      continue;
+    }
+    const ext = rel.target.slice(rel.target.lastIndexOf('.') + 1).toLowerCase();
+    const mime = MEDIA_MIME[ext] ?? (kind === 'audio' ? 'audio/mpeg' : 'video/mp4');
+    const src = env.pkg.blobUrl(rel.target, mime);
+    if (src) return { kind, src, mime };
+  }
+  return { kind, src: null };
 }
 
 function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | null {

@@ -290,6 +290,7 @@ const FIXTURES = [
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-apostrophe.pptx', minPages: 1, source: 'pptx' },
+  { file: 'sample-media-fallback.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-cjk-squeeze.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
@@ -3116,6 +3117,44 @@ group('导出路径的分栏');
         Math.abs(xs[1] - (xs[0] + colW + el.text.columnGap)) < 1.5,
         `${xs[1]} vs ${xs[0] + colW + el.text.columnGap}`);
     }
+  }
+}
+
+// 经典 a:audioFile / a:videoFile 引用不可用（NULL / 缺部件 / 悬空 / 不可解析的外链）时回退到
+// p14:media；p14:media 自身按 MS-PPTX 2.3.3.14 先 r:link 后 r:embed（issue #7 repro-deck 第 4 页）
+group('媒体源回退');
+{
+  const fallback = await lib.parse(load('sample-media-fallback.pptx'), { keepPackage: true, lazy: false });
+  try {
+    const bySpid = new Map(fallback.slides[0].elements.filter((el) => el.media).map((el) => [el.media.spid, el]));
+    eq('回退固件媒体形状数', bySpid.size, 8);
+    const embedded = (spid, kind, part, mime) => {
+      const el = bySpid.get(spid);
+      const asset = el?.media.src ? fallback.package.assets[el.media.src] : undefined;
+      check(`${el?.name ?? spid} → ${part}`, el?.media.kind === kind && el.media.mime === mime
+        && el.media.external === undefined && asset?.sourcePart === part && asset.mime === mime,
+      JSON.stringify({ media: el?.media, sourcePart: asset?.sourcePart }));
+    };
+    const external = (spid, kind, url) => {
+      const el = bySpid.get(spid);
+      check(`${el?.name ?? spid} → ${url}`, el?.media.kind === kind && el.media.src === url
+        && el.media.external === true, JSON.stringify(el?.media));
+    };
+    embedded(10, 'audio', 'ppt/media/media1.wav', 'audio/wav');
+    embedded(11, 'video', 'ppt/media/media2.mp4', 'video/mp4');
+    embedded(12, 'video', 'ppt/media/media2.mp4', 'video/mp4');
+    embedded(13, 'audio', 'ppt/media/media1.wav', 'audio/wav');
+    external(14, 'video', 'https://example.com/media/promo.mp4');
+    external(15, 'audio', 'https://example.com/media/voice.mp3');
+    embedded(16, 'video', 'ppt/media/media2.mp4', 'video/mp4');
+    const none = bySpid.get(17);
+    check('两路都不可用时源为空', none?.media.kind === 'audio' && none.media.src === null, JSON.stringify(none?.media));
+    const badge = lib.renderSlideToSvg(fallback, fallback.slides[0]);
+    eq('只有两路都不可用的形状标为源不可用', (badge.match(/（源不可用）/g) ?? []).length, 1);
+    const player = lib.renderSlideToSvg(fallback, fallback.slides[0], { media: 'player', textMode: 'html' });
+    eq('player 模式为七个可用源生成原生控件', (player.match(/<(?:audio|video) controls/g) ?? []).length, 7);
+  } finally {
+    fallback.dispose();
   }
 }
 

@@ -14,6 +14,7 @@ import { runDefaultMediaPosterContract } from './lib/media-default-poster-contra
 import { runMediaPosterReplacementContract } from './lib/media-poster-replacement-contract.mjs';
 import { runMediaPosterBoundaries } from './lib/media-poster-boundaries.mjs';
 import { runMediaPosterReplayContract } from './lib/media-poster-replay-contract.mjs';
+import { runMediaFallbackSaveContract } from './lib/media-fallback-save-contract.mjs';
 let passed = 0;
 const assert = new Proxy(nodeAssert, { get: (target, key) => (...args) => {
   const result = target[key](...args); passed++; return result;
@@ -136,6 +137,8 @@ await runDefaultMediaPosterContract({ core, edit, media, source, assert, root, o
 await runMediaPosterReplayContract({ core, edit, media, source, assert });
 await runMediaPosterReplacementContract({ core, edit, media, source, assert, root, out });
 await runMediaPosterBoundaries({ core, edit, media, assert, root, out });
+await runMediaFallbackSaveContract({ core, edit, assert,
+  fallback: new Uint8Array(readFileSync(join(root, 'fixtures/sample-media-fallback.pptx'))) });
 const legacy = await core.parse(new Uint8Array(readFileSync(join(root, 'fixtures/sample.ppt'))), { edit: true });
 const legacyDoc = edit.createDoc(legacy, { idPrefix: 'media-legacy-' });
 const legacyEditor = new edit.Editor(legacyDoc);

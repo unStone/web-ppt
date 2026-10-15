@@ -136,10 +136,9 @@ export class Pkg {
         const target = attr(rel, 'Target');
         if (!id || !target) continue;
         const external = attr(rel, 'TargetMode') === 'External';
-        out[id] = {
-          type: attr(rel, 'Type') ?? '',
-          target: external ? target : resolvePath(dir, target),
-        };
+        out[id] = external
+          ? { type: attr(rel, 'Type') ?? '', target, external: true }
+          : { type: attr(rel, 'Type') ?? '', target: resolvePath(dir, target) };
       }
       this.relsCache.set(partPath, out);
     }

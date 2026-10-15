@@ -7,7 +7,8 @@ import { findPlaceholderByIdentity } from '../placeholder-match';
 import type { TextBody } from '../types';
 import { parseThemeSource, themeColorsForInheritance } from './theme-catalog';
 
-export type Rels = Record<string, { type: string; target: string }>;
+/** external：TargetMode="External"，target 保持原文；否则 target 已解析为包内绝对路径 */
+export type Rels = Record<string, { type: string; target: string; external?: true }>;
 
 export interface PptxPackageReader {
   readonly files?: Readonly<Record<string, Uint8Array>>;
