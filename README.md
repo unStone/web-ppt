@@ -450,7 +450,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对 |
 
-测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；190 个渲染快照（26 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
+测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；192 个渲染快照（27 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
 
 ## 交流
 
