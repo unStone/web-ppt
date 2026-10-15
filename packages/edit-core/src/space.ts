@@ -1,4 +1,5 @@
-import type { ElementBase, GroupElement } from '@web-ppt/core';
+import { placeGroupChild } from '@web-ppt/core';
+import type { ElementBase, GroupElement, SlideElement } from '@web-ppt/core';
 import { effectiveElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 
@@ -162,6 +163,56 @@ export function elementChildrenToSlideMatrix(doc: EditDoc, id: ElementId): Affin
     elementFrameToSlideMatrix(doc, id),
     composeSpaceMatrices(flipInFrame(element), childrenToGroupFrame(element)),
   );
+}
+
+/**
+ * 渲染器把组变换折算进子元素外框（描边、字号不随组缩放）；DOM 补丁与文字覆盖层
+ * 必须用同一份外框，否则组内元素重绘或编辑时会按子坐标尺寸错位、字号被组缩放放大。
+ */
+function renderedChain(doc: EditDoc, id: ElementId): SlideElement[] {
+  const out: SlideElement[] = [];
+  for (const elementId of elementChain(doc, id)) {
+    const own = effectiveElement(doc, elementId);
+    const parent = out[out.length - 1];
+    if (parent && parent.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${elementId}`);
+    out.push(parent ? placeGroupChild(parent, own) : own);
+  }
+  return out;
+}
+
+/** 元素在其父容器渲染坐标中的投影：组内子元素已折算组缩放。 */
+export function renderedElement(doc: EditDoc, id: ElementId): SlideElement {
+  const chain = renderedChain(doc, id);
+  return chain[chain.length - 1];
+}
+
+/** 渲染外框到幻灯片坐标：沿祖先组只叠加外框平移、旋转与翻转，缩放已进入外框尺寸。 */
+export function renderedFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const chain = renderedChain(doc, id);
+  let matrix = IDENTITY;
+  for (let index = 0; index < chain.length - 1; index++) {
+    matrix = composeSpaceMatrices(
+      matrix,
+      composeSpaceMatrices(elementFrameToParentMatrix(chain[index]), flipInFrame(chain[index])),
+    );
+  }
+  return composeSpaceMatrices(matrix, elementFrameToParentMatrix(chain[chain.length - 1]));
+}
+
+export function renderedContentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  return composeSpaceMatrices(renderedFrameToSlideMatrix(doc, id), flipInFrame(renderedElement(doc, id)));
+}
+
+/**
+ * 父组子坐标 → 父组渲染坐标。手势预览矩阵在模型父空间里求得，挂到组内 DOM 前需共轭到渲染坐标；
+ * 顶层元素的两套坐标相同。
+ */
+export function elementParentToRenderedParentMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const chain = renderedChain(doc, id);
+  const parent = chain[chain.length - 2];
+  if (!parent) return IDENTITY;
+  if (parent.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${id}`);
+  return childrenToGroupFrame(parent);
 }
 
 export function elementFrameToSlidePoint(doc: EditDoc, id: ElementId, point: SpacePoint): SpacePoint {

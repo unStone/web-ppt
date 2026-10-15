@@ -13,7 +13,7 @@
 
 - `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
 - 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。
-- 子坐标空间被归一化（不足 1px）的组合里，文字不再逐字换行后被组缩放放大，两条文本路径都按物理字号排版（#7）。
+- 组合缩放只映射子元素外框：渲染时把 `chOff` / `chExt` 折算进子元素的位置、尺寸、路径与表格行列，不再对子树整体 `scale()`，描边、字号、内边距与效果半径保持物理尺寸（与 PowerPoint、LibreOffice 一致）。WPS 产出的归一化组合（子坐标空间不足 1px）不再出现千像素描边或逐字换行；普通缩放组合内的字号与描边也不再随组放大，非等比组合里的旋转子元素保持矩形。编辑器的增量重绘、文字编辑覆盖层与拖动预览使用同一份外框；`@web-ppt/core` 公开 `placeGroupChild`，`@web-ppt/edit-core` / `@web-ppt/editor` 公开 `renderedElement`、`renderedFrameToSlideMatrix`、`renderedContentToSlideMatrix` 与 `elementParentToRenderedParentMatrix`（#7）。
 - `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
 
 ## 0.5.0-beta.6 - 2026-10-10

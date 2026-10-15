@@ -16,7 +16,7 @@
 </g>
 <g data-el="505" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(120 100)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g transform="translate(121.33 0)">
 <path d="M 0 26.578 A 26.578 26.578 0 0 1 26.578 0 L 770.755 0 A 26.578 26.578 0 0 1 797.333 26.578 L 797.333 132.888 A 26.578 26.578 0 0 1 770.755 159.467 L 26.578 159.467 A 26.578 26.578 0 0 1 0 132.888 Z" fill="#2E75B6" fill-rule="nonzero"/>
 <foreignObject width="797.33" height="159.47" style="overflow:visible">

@@ -33,7 +33,7 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 131.63 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 134.43 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Stable identity, command history, edit overrides, incremental save, and high-fidelity projection. No framework, no DOM. | `@web-ppt/core` | 185.70 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection, keyboard editing including layer order, move/resize/rotate gestures, and incremental three-layer DOM. No UI framework. | `core` + `edit-core` + `viewer-core` | 59.27 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration adapter and BroadcastChannel provider | optional `@web-ppt/edit-core` peer | 12.20 KB |
@@ -206,7 +206,7 @@ Opt into edit metadata and hand the result to the framework-agnostic `EditDoc` o
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, disposeDoc, effectiveElement, invalidateElement, toSlide } from '@web-ppt/edit-core';
+import { createDoc, disposeDoc, invalidateElement, renderedElement, toSlide } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
@@ -218,13 +218,14 @@ invalidateElement(doc, elementId);                  // invalidate this element, 
 const svg = renderSlideToSvg(source, toSlide(doc, slideId), { idPrefix: `${slideId}-` });
 
 // During interaction, render only the dirty element. Every concurrently mounted element needs a stable unique prefix.
-const part = renderElementToSvg(effectiveElement(doc, elementId), {
+// renderedElement folds ancestor group scaling into the frame, so a grouped element re-renders exactly as in the full slide.
+const part = renderElementToSvg(renderedElement(doc, elementId), {
   idPrefix: `${slideId}-${elementId}-`,
 });
 // Replace this element's markup and defs DOM partitions together.
 
 // Normal engines keep text editing outside SVG while sharing foreignObject's exact HTML/CSS.
-const element = effectiveElement(doc, elementId);
+const element = renderedElement(doc, elementId);
 if (element.kind === 'shape' && element.text) {
   const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
   textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h);
@@ -426,7 +427,7 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 | `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
 | `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values |
 
-Tests run the real parsing and rendering in Node with jsdom; no parsing logic is mocked. 194 render snapshots (27 test files × every slide × both text paths) are compared byte for byte, and fidelity is checked against LibreOffice renders as ground truth. Per-suite commands, assertion counts and test layers are in the [testing guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/testing.md); other commands and debug pages are in the [development guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/development.md) (both in Chinese). Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
+Tests run the real parsing and rendering in Node with jsdom; no parsing logic is mocked. 202 render snapshots (27 test files × every slide × both text paths) are compared byte for byte, and fidelity is checked against LibreOffice renders as ground truth. Per-suite commands, assertion counts and test layers are in the [testing guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/testing.md); other commands and debug pages are in the [development guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/development.md) (both in Chinese). Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
 
 ## Community
 
