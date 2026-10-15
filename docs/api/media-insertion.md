@@ -93,7 +93,7 @@ registerMediaEditing();
 |---|---|
 | `npm run test:media` | Editor/OPC 公开契约、输入拒绝与零网络请求、注册恢复、并发及撤销重做协同、`.ppt` 来源与两种保存、严格 DOM XML 解析 |
 | `node tooling/test-media-insertion.mjs --dist` | 相同契约消费构建后的发布入口；先执行 build |
-| `npm run test:editor` | Chrome 真实点击嵌入/外链媒体、解码默认及替换海报，视频产生实际画面帧；不关闭自动播放策略 |
+| `npm run test:editor` | Chrome 真实点击嵌入/外链媒体、解码默认及替换海报，视频产生实际画面帧；经典引用为 `NULL` 的 `p14:media` 回退媒体在 Viewer player 模式下真实播放；不关闭自动播放策略 |
 | `node tooling/test-site-editor-browser.mjs` | 官网插入、海报替换、撤销重做、冷启动恢复、保存重开；MP4 断网播放、外链延迟访问、404 降级、连续重试及关闭后的资源释放 |
 | `npm run test:media:libreoffice` | 共享媒体产物清单由 LibreOffice 打开并导出 PDF；不等价于 PowerPoint 播放证据 |
 | `node tooling/check-media-boundary.mjs` | 默认静态依赖不包含上传校验或图标；三种框架按需入口转发同一实现 |

@@ -29,6 +29,7 @@
     import { layoutText, parse } from '/out/editor/core.mjs';
     import * as mediaCore from '/out/editor/core.mjs';
     import { runMediaInsertionBrowserContract } from '/tooling/lib/media-insertion-browser-contract.mjs';
+    import { runViewerMediaFallbackBrowserContract } from '/tooling/lib/viewer-media-fallback-browser-contract.mjs';
     import { presentationToImageZip } from '/out/editor/image-zip.mjs';
     import { createBlankPptx } from '/out/editor/generate.mjs';
     import * as templates from '/out/editor/templates.mjs';
@@ -593,7 +594,11 @@
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
       await runViewerAnimationBrowserContract({ Viewer, parse, load });
       const mediaPlayback = await runMediaInsertionBrowserContract({ core: mediaCore, load });
-      report.dataset.mediaPlayback = mediaPlayback.map(({ name, mode, duration }) => `${name} ${mode} ${duration}s`).join(' / ');
+      const fallbackPlayback = await runViewerMediaFallbackBrowserContract({ Viewer, parse, load });
+      report.dataset.mediaPlayback = [
+        ...mediaPlayback.map(({ name, mode, duration }) => `${name} ${mode} ${duration}s`),
+        ...fallbackPlayback.map(({ spid, kind, duration }) => `p14 回退 ${spid} ${kind} ${duration}s`),
+      ].join(' / ');
       const imageZipResult = await runCoreImageZipBrowserContract({ presentationToImageZip, parse, load });
       const v06Result = await runV06IntegrationBrowserContract({
         lib: editorLib, createBlankPptx, presentationToImageZip, mount: ownedMount,

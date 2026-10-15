@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 540" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="960" height="540" fill="rgb(255,255,255)"/>
+<g data-el="10" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 60)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
+<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 218)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="16.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典 NULL 外链 → p14 内嵌音</tspan>
+</text>
+<text x="100" y="31.23" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">频</tspan>
+</text>
+</g>
+</g>
+<g data-el="11" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(265 60)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M90.59 59.82 L115.18 75 L90.59 90.18 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="102" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(265 218)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="16.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典 NULL 外链 → p14 内嵌视</tspan>
+</text>
+<text x="100" y="31.23" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">频</tspan>
+</text>
+</g>
+</g>
+<g data-el="12" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(490 60)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M90.59 59.82 L115.18 75 L90.59 90.18 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(490 218)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="16.83" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典指向缺失部件 → p14 内嵌视</tspan>
+</text>
+<text x="100" y="31.23" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">频</tspan>
+</text>
+</g>
+</g>
+<g data-el="13" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(715 60)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
+<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(715 218)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="24.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典关系不存在 → p14 内嵌音频</tspan>
+</text>
+</g>
+</g>
+<g data-el="14" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 300)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频（外链）</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M90.59 59.82 L115.18 75 L90.59 90.18 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(40 458)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="24.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典合法外链优先</tspan>
+</text>
+</g>
+</g>
+<g data-el="15" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(265 300)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频（外链）</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
+<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+<g data-el="106" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(265 458)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="24.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">p14 外链优先于 p14 内嵌</tspan>
+</text>
+</g>
+</g>
+<g data-el="16" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(490 300)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>视频</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M90.59 59.82 L115.18 75 L90.59 90.18 Z" fill="#fff"/>
+</g>
+</g>
+</g>
+<g data-el="107" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(490 458)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="24.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">经典相对外链 → p14 内嵌视频</tspan>
+</text>
+</g>
+</g>
+<g data-el="17" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(715 300)">
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频（源不可用）</title>
+<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
+<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
+<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+<g data-el="108" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(715 458)">
+<path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="none" fill-rule="nonzero"/>
+<text x="100" y="24.03" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(64,64,64)">两路都不可用</tspan>
+</text>
+</g>
+</g>
+</svg>

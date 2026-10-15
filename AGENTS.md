@@ -71,6 +71,7 @@
 | **中文的宽度是一整格** | 汉字与全角标点都占 1em，任何中文字体量出来都一样——所以「换字体」修不了中文的断行问题。一行放不下时 PowerPoint 靠**标点挤压**（收掉 `，` `。` 的空半格）而不是缩字，`render/cjk-punct.ts` 做的就是这件事。同理，量不到字时的回退估算必须把全角按整格算，按 0.55em 估会窄掉将近一半，自动缩放跟着一起错 |
 | **行距的基准不是字号** | `lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是**字体行高**（我们取 1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，每行矮两成。`spcPts` 是绝对点值，走另一条换算，两者别混 |
 | **量不到就得记住量不到** | `text-measure.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
+| **媒体的经典引用可能是 `NULL`** | PowerPoint 2010+ 内嵌 mp3 / mp4 等时，`a:audioFile` / `a:videoFile` 的 `r:link` 常指向 `Target="NULL" TargetMode="External"`，字节只在 `p:extLst` 里 `p14:media` 的 `r:embed` 上。只取经典引用就得到空源（issue #7）。`parseMedia` 按候选顺序取第一个能解析的目标，判定依据是关系的 TargetMode 与部件是否存在，别按字符串 `"NULL"` 特判 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 
 ## 分层
