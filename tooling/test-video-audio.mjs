@@ -65,9 +65,11 @@ await withChartBrowser(root, async browser => {
           src: '', crop: null, name: '合成视频', media: { kind: 'video', src: videoUrl, mime: 'video/mp4',
             playback: { volume: 1, loop: false, clickGroup: 0 } } };
         const single = { ...pres, slides: [{ ...pres.slides[0], animations: undefined, elements: [mediaEl] }] };
-        const blob = await presentationToVideo(single, { videoOverlay: true, mediaPosters: true, fps: 12, slideDurationMs: 1500 });
+        const warnings = [];
+        const blob = await presentationToVideo(single, { videoOverlay: true, mediaPosters: true, fps: 12, slideDurationMs: 1500,
+          onWarning: (reason, detail) => warnings.push([reason, detail.elementName]) });
         URL.revokeObjectURL(videoUrl);
-        return { bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
+        return { warnings, bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
       } catch (error) { return { failed: String((error && error.stack) || error).slice(0, 200) }; }
     })()`);
     if (overlayResult?.skipped) console.log('  tone.mp4 不存在：视频合成路径跳过');
@@ -76,8 +78,36 @@ await withChartBrowser(root, async browser => {
       const overlayWebm = Buffer.from(overlayResult.bytes);
       writeFileSync(join(out, 'overlay.webm'), overlayWebm);
       check('视频合成导出返回 WebM', overlayWebm.length > 1000, String(overlayWebm.length));
+      check('视频合成成功：无 onWarning', overlayResult.warnings.length === 0, JSON.stringify(overlayResult.warnings));
     }
-  }
+  } else console.log('  ffmpeg 缺失：视频合成成功路径跳过（失败 / 超时路径不依赖 ffmpeg，照常断言）');
+
+  // 视频合成失败两条路径：坏字节触发 error、永不就绪的 MediaSource 触发 5s 加载超时。
+  // 二者都必须经 onWarning 以稳定 reason 暴露（海报帧回退不得静默），且导出照常完成
+  const overlayFailure = await browser.evaluate(`(async()=>{
+    const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
+    const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
+    const brokenUrl = URL.createObjectURL(new Blob([new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7])], { type: 'video/mp4' }));
+    // 未添加 SourceBuffer 的 MediaSource 永远停在 HAVE_NOTHING，既不报错也不就绪
+    const stalledUrl = URL.createObjectURL(new MediaSource());
+    const mediaEl = (src, name) => ({ kind: 'image', x: 100, y: 100, w: 200, h: 120, rot: 0, flipH: false, flipV: false,
+      src: '', crop: null, name, media: { kind: 'video', src, mime: 'video/mp4', playback: { volume: 1, loop: false, clickGroup: 0 } } });
+    const single = { ...pres, slides: [{ ...pres.slides[0], animations: undefined,
+      elements: [mediaEl(brokenUrl, '损坏视频'), mediaEl(stalledUrl, '超时视频')] }] };
+    const warnings = [];
+    const started = performance.now();
+    const blob = await presentationToVideo(single, { videoOverlay: true, mediaPosters: true, fps: 12, slideDurationMs: 600,
+      onWarning: (reason, detail) => warnings.push([reason, detail.slideNumber, detail.elementName]) });
+    const elapsedMs = performance.now() - started;
+    URL.revokeObjectURL(brokenUrl); URL.revokeObjectURL(stalledUrl);
+    return { warnings, elapsedMs, type: blob.type, size: blob.size };
+  })()`);
+  const overlayWarnings = [...overlayFailure.warnings].sort((a, b) => a[2].localeCompare(b[2]));
+  check('视频合成失败：损坏 / 超时各报一次 video-overlay-unavailable（含页号与元素名）',
+    JSON.stringify(overlayWarnings) === JSON.stringify([['video-overlay-unavailable', 1, '损坏视频'], ['video-overlay-unavailable', 1, '超时视频']].sort((a, b) => a[2].localeCompare(b[2]))),
+    JSON.stringify(overlayFailure.warnings));
+  check('视频合成超时路径确实等满加载时限', overlayFailure.elapsedMs >= 5000, `${Math.round(overlayFailure.elapsedMs)}ms`);
+  check('视频合成失败不阻断导出', overlayFailure.type === 'video/webm' && overlayFailure.size > 1000, `${overlayFailure.type} ${overlayFailure.size}`);
 
   // 提轨两条路径：带声 MP4（AAC）成功混入；无轨 MP4 经 onWarning 显式跳过且不阻断。
   // tone.mp4 由本脚本开头 ffmpeg 现场生成（不进 fixtures）；CI 无 ffmpeg 时降级只跑无轨路径

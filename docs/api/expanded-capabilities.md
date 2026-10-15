@@ -20,7 +20,7 @@
 | 字体与字形 | `@web-ppt/fonts/glyphs` 及可选 HarfBuzz / Worker / browser 子入口 | 字体与缺字 → 检查 / 本机替换 | 静态 TTF/glyf、合规 EOT、Latin/Han 横排 LTR；保留 UTF-16 簇、定位与许可限制。Cordis 随文稿释放资源；本机字体用于预览及图片 / SVG / 实验性矢量 PDF 导出，不写 PPTX。复杂脚本、变量字体、CFF、WOFF 解压及非 400/700 浏览器样式绑定暂不支持；见[完整范围](font-glyphs.md) |
 | PDF | `@web-ppt/core/pdf` | 导出文档 → PDF | 直接下载图片页面 PDF；默认 2×、隐藏页、动画批次、原生批注/回复、进度和取消 |
 | 矢量 PDF（实验性） | `@web-ppt/core/pdf/vector` 与独立 `/browser` 适配 | 导出文档 → PDF（可搜索文字） | 需要实际且允许嵌入的字体字节；首版 Latin/Han 横排 LTR、基础图形、渐变 / 图案 / 图片和对象级特殊效果回退；缺失资源明确失败。005 整项仍在验收，见[实现范围与已知差异](../wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md) |
-| 视频 | `@web-ppt/viewer-core/video` | 导出文档 → WebM | WebCodecs VP9/VP8、动画/切换、帧率/码率/停留时间。`audio: true` 按 timing 媒体语义混音为 Opus 48kHz 音轨（含 MP4/AAC 提轨，提轨失败经 `onWarning` 暴露）；`videoOverlay: true` 以 `<video>` 当前帧替代海报（实验性，未支持裁剪 / 变换与循环）；均默认关闭。含嵌入媒体的文稿必须显式传 `mediaPosters: true` 才会导出 |
+| 视频 | `@web-ppt/viewer-core/video` | 导出文档 → WebM | WebCodecs VP9/VP8、动画/切换、帧率/码率/停留时间。`audio: true` 按 timing 媒体语义混音为 Opus 48kHz 音轨（含 MP4/AAC 提轨）；`videoOverlay: true` 以 `<video>` 当前帧替代海报（实验性，未支持裁剪 / 变换与循环）；均默认关闭，失败不阻断导出，经 `onWarning` 以稳定 reason 暴露（`video-audio-decode-failed` / `video-overlay-unavailable` / `video-overlay-frame-unavailable`）。含嵌入媒体的文稿必须显式传 `mediaPosters: true`，开启 `audio` / `videoOverlay` 时同样必需：二者只覆盖带 timing 播放语义的媒体，失败时退回海报 |
 | 无来源复制 | `@web-ppt/edit-core/generate` | 直接复制，再粘贴到另一文稿 | `copyPortableElements` 直接物化选中子树和资源；支持[公式、艺术字与高级文字效果](portable-rich-text.md)，保留祖先变换，复用生成保存的能力校验 |
 | 原生 PPT | `@web-ppt/edit-core/ppt` | 导出文档 → PPT | 生成真正的 CFB/Escher 二进制文件，能力矩阵见下文 |
 

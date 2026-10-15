@@ -9,6 +9,11 @@
 - `presentationToVideo` 新增实验性 `videoOverlay`：导出时以 `<video>` 当前帧替代内嵌视频的海报帧，媒体起始时刻与音轨共用同一时间轴；默认关闭时产物不变。
 - 实验性矢量 PDF 支持 dashed / dotted / double / wavy 文字装饰线，以及文字描边（描边轨在填色轨之下，等效 `paint-order:stroke`）。
 
+### 修复
+
+- `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
+- 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。
+
 ## 0.5.0-beta.6 - 2026-10-10
 
 ### 新增

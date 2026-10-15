@@ -62,14 +62,20 @@ async function encodeAudioTrack(writer: WebmWriter, mixed: Float32Array, sampleR
   } finally { signal?.removeEventListener('abort',stop); stop(); }
 }
 
-/** 浏览器固定时间轴导出；复用播放器补间，WebCodecs 编码 VP8/VP9，无音轨。 */
+/**
+ * 浏览器固定时间轴导出；复用播放器补间，WebCodecs 编码 VP8/VP9。
+ * `audio` 开启时把 timing 媒体的音频混为 Opus 48kHz 音轨，`videoOverlay` 开启时把内嵌视频当前帧
+ * 叠加到画面；两者默认关闭，关闭时产物与无此选项时逐字节一致。增强能力失败经 `onWarning` 暴露。
+ */
 export async function presentationToVideo(pres: Presentation, options: VideoOptions = {}): Promise<Blob> {
   const plan = videoPlan(pres,options);
   const abort = () => { if (options.signal?.aborted) throw new DOMException('视频导出已取消','AbortError'); };
   abort();
   if (typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'||typeof document==='undefined') throw new Error('当前浏览器不支持 WebCodecs 视频编码，请使用支持的 HTTPS 或本机浏览器');
   const hasMedia = (elements: SlideElement[]): boolean => elements.some(e=>e.kind==='image'&&!!e.media||e.kind==='group'&&hasMedia(e.children));
-  if (!options.mediaPosters && plan.pages.some(p=>hasMedia(p.slide.elements))) throw new Error('视频导出不包含内嵌音视频；请显式允许静态封面');
+  // audio / videoOverlay 只覆盖带 timing 播放语义的媒体，且失败按 reason 退回海报，
+  // 所以开启它们仍要求 mediaPosters：海报呈现必须是调用方显式接受的结果
+  if (!options.mediaPosters && plan.pages.some(p=>hasMedia(p.slide.elements))) throw new Error('文稿含内嵌音视频，导出时可能以静态封面呈现（含 audio / videoOverlay 未覆盖或失败的媒体）；请设置 mediaPosters: true 显式允许');
   let configuration: VideoEncoderConfig | undefined, codec: 'VP8'|'VP9' = 'VP9';
   for (const candidate of ['vp09.00.10.08','vp8']) {
     const config: VideoEncoderConfig = {codec:candidate,width:plan.width,height:plan.height,framerate:plan.fps,bitrate:plan.bitrate,latencyMode:'realtime'};
@@ -92,7 +98,7 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
   if (!context) { encoder.close();throw new Error('无法获取视频画布'); }
   const scene=new VideoScene(pres,!!options.showComments);
   // 内嵌视频合成层：videoOverlay 开启时预加载并叠加当前帧（须与 render 同作用域）
-  const overlay = options.videoOverlay ? new MediaOverlay() : null;
+  const overlay = options.videoOverlay ? new MediaOverlay(options.onWarning) : null;
   const stop=()=>{if(encoder.state!=='closed')encoder.close();};options.signal?.addEventListener('abort',stop,{once:true});
   const healthy=()=>{abort();if(failure)throw failure;};
   const drain=async()=>{
@@ -123,7 +129,6 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
     await Promise.resolve();
   };
   try{
-    // 内嵌视频合成层：videoOverlay 开启时预加载并叠加当前帧
     // 音轨片段：音频开关开启时，按渲染循环的时间轴游标换算每个媒体组的起始毫秒。
     // 页时间轴 = [切换][组×N（点击停顿 + 组动画）][停留]；媒体在其批次的触发时刻起步
     const clips: AudioClip[] = [];
