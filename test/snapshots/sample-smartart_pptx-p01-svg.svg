@@ -12,7 +12,7 @@
 </g>
 <g data-el="500" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(120 100)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g data-el="1" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(20 40)">
 <path d="M 30 0 L 160 0 L 190 60 L 160 120 L 30 120 L 0 60 Z" fill="rgb(46,117,182)" fill-rule="nonzero"/>

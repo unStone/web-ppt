@@ -117,7 +117,8 @@ const masterCanvas = editor.toDesignCanvas(master.target);
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
-const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
+// renderedElement folds ancestor group scaling into the frame, matching the full-slide render.
+const dirty = renderElementToSvg(editor.renderedElement(elementId), {
   idPrefix: `${slideId}-${elementId}-`,
 });
 // Replace this element's `dirty.markup` and `dirty.defs` partitions together.

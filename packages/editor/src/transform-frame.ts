@@ -26,6 +26,14 @@ function flipDelta(source: TransformFrame, next: TransformFrame): AffineMatrix {
   );
 }
 
+/**
+ * 组内节点挂在父组的渲染坐标里（组缩放已折算进外框），模型父空间求得的预览矩阵
+ * 需按 toRendered·M·toRendered⁻¹ 换算；顶层元素的 toRendered 为单位矩阵，结果不变。
+ */
+export function renderedPreviewMatrix(toRendered: AffineMatrix, matrix: AffineMatrix): AffineMatrix {
+  return composeSpaceMatrices(toRendered, composeSpaceMatrices(matrix, invertSpaceMatrix(toRendered)));
+}
+
 /** 预览 wrapper 位于元素父空间；矩阵把旧渲染框直接映射到新框，不触碰静态 markup。 */
 export function transformPreviewMatrix(source: TransformFrame, next: TransformFrame): AffineMatrix {
   return composeSpaceMatrices(

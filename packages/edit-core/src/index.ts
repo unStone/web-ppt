@@ -78,8 +78,9 @@ export {
 } from './fractional-index';
 export {
   composeSpaceMatrices, elementContentToSlideMatrix, elementFrameToParentMatrix, elementFrameToSlideMatrix,
-  elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix, elementParentToSlidePoint,
-  inverseTransformSpaceVector, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
+  elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToRenderedParentMatrix,
+  elementParentToSlideMatrix, elementParentToSlidePoint, inverseTransformSpaceVector, invertSpaceMatrix,
+  renderedContentToSlideMatrix, renderedElement, renderedFrameToSlideMatrix, screenToSlidePoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, spaceOrientationParity, transformSpacePoint,
   transformSpaceVector,
 } from './space';

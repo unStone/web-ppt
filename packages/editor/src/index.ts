@@ -10,8 +10,9 @@ export { applyWebPptAdapterBinding } from './framework-adapter-binding';
 export { WEB_PPT_IDLE_SNAPSHOT } from './framework-adapter-state';
 export { ELEMENT_CLIPBOARD_MIME } from './element-clipboard';
 export {
-  elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix,
-  elementParentToSlidePoint, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
+  elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToRenderedParentMatrix, elementParentToSlideMatrix,
+  elementParentToSlidePoint, invertSpaceMatrix, renderedContentToSlideMatrix, renderedElement,
+  renderedFrameToSlideMatrix, screenToSlidePoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, transformSpacePoint,
   queryElementCrop, queryElementEffects, queryElementFill, queryElementLink, queryElementStroke,
   queryElementPresetGeometry, queryParaProps, queryRunLink, queryRunProps, queryTableGrid,

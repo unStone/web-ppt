@@ -14,6 +14,7 @@ import {
   reparsePptxSlideWithLayout,
 } from './pptx/layout-reparse';
 import { renderElementToSvg, renderSlideToSvg } from './render/svg';
+import { placeGroupChild } from './render/group-space';
 import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
@@ -29,7 +30,10 @@ export * from './edit-metadata';
 export * from './placeholder-match';
 export * from './text-body-edit';
 export { formatDrawingAutoNumber } from './text-auto-number';
-export { fitTextShapeHeight, invalidateTextMeasureCaches, layoutText, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml };
+export {
+  fitTextShapeHeight, invalidateTextMeasureCaches, layoutText, placeGroupChild, renderElementToSvg, renderSlideToSvg,
+  renderTextBodyToHtml,
+};
 export {
   releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
   reparsePptxSlideWithLayout,

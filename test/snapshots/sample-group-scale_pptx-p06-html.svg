@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="116" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(20 580 330) translate(280 180)">
+<g transform="translate(300 150) scale(-1 1) translate(-300 -150)">
+<g data-el="113" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(30 15)">
+<path d="M 0 20.63 L 307.5 20.63 L 307.5 0 L 390 41.25 L 307.5 82.5 L 307.5 61.88 L 0 61.88 Z" fill="rgb(222,235,247)" fill-rule="nonzero" stroke="rgb(46,117,182)" stroke-width="3"/>
+<foreignObject width="390" height="82.5" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:390px;height:82.5px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:24px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">flip</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="114" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(30 210 180) translate(60 150)">
+<path d="M 0 0 L 300 0 L 300 60 L 0 60 Z" fill="rgb(251,229,214)" fill-rule="nonzero" stroke="rgb(197,90,17)" stroke-width="3"/>
+</g>
+</g>
+<g data-el="115" style="transform-box:fill-box;transform-origin:center">
+<g transform="rotate(120 480 195) translate(405 135)">
+<path d="M 0 0 L 150 0 L 150 120 L 0 120 Z" fill="rgb(226,240,217)" fill-rule="nonzero" stroke="rgb(84,130,53)" stroke-width="3"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

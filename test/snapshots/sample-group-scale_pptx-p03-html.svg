@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="105" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 120)">
+<g>
+<g data-el="103" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(0 0)">
+<path d="M 0 53.11 A 53.12 53.11 0 0 1 53.12 0 L 586.88 0 A 53.12 53.11 0 0 1 640 53.11 L 640 266.85 A 53.12 53.11 0 0 1 586.88 319.97 L 53.12 319.97 A 53.12 53.11 0 0 1 0 266.85 Z" fill="rgb(253,231,243)" fill-rule="nonzero" stroke="rgb(194,24,91)" stroke-width="3"/>
+<foreignObject width="640" height="320" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:640px;height:320px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:32px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">3px stroke · 24pt</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="104" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(31.98 268.81)">
+<path d="M 0 0 L 576 0" fill="none" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="2"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

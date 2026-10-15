@@ -1,5 +1,5 @@
 import {
-  outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint,
+  elementParentToRenderedParentMatrix, outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -9,7 +9,7 @@ import {
   constrainedRotation, pointerAngle, rotateElementAroundSlideCenter, shortestRotationDelta,
 } from './rotation-geometry';
 import { updateSelectionOverlayFrame } from './selection-overlay';
-import { transformFrameCorners, transformPreviewMatrix } from './transform-frame';
+import { renderedPreviewMatrix, transformFrameCorners, transformPreviewMatrix } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -18,6 +18,7 @@ type RotationCorners = [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
 interface RotationTarget {
   id: ElementId;
   source: TransformFrame;
+  toRendered: AffineMatrix;
   partition: SVGElement;
   wrapper: SVGGElement | null;
 }
@@ -93,6 +94,7 @@ export class RotationGestureController {
             x: element.x, y: element.y, w: element.w, h: element.h, rot: element.rot,
             flipH: element.flipH, flipV: element.flipV,
           },
+          toRendered: elementParentToRenderedParentMatrix(this.options.editor.doc, id),
           partition, wrapper: null,
         };
       });
@@ -196,7 +198,9 @@ export class RotationGestureController {
   private applyFrame(session: RotationSession, snapshot: PointerGestureSnapshot): void {
     const proposal = this.proposal(session, snapshot);
     for (const { target, frame } of proposal.frames) {
-      target.wrapper?.setAttribute('transform', matrixAttribute(transformPreviewMatrix(target.source, frame)));
+      target.wrapper?.setAttribute('transform', matrixAttribute(
+        renderedPreviewMatrix(target.toRendered, transformPreviewMatrix(target.source, frame)),
+      ));
     }
     updateSelectionOverlayFrame(this.options.interactionLayer, proposal.corners, this.options.zoom());
     if (proposal.displayedRotation !== null) {

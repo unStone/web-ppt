@@ -172,8 +172,9 @@ export async function runSnapGestureContract({ check, lib, root }) {
   const groupNode = container.querySelector(`[data-edit-id="${groupTarget.id}"]`);
   groupNode.dispatchEvent(pointer('pointerdown', 150, 250));
   view.element.dispatchEvent(pointer('pointermove', 264, 250));
+  // 组缩放已折算进子元素外框，组内拖动幽灵与选区同在渲染坐标：2 倍组里位移同为 120。
   const groupPreview = container.querySelector('[data-edit-drag-ghost]')
-    ?.getAttribute('transform') === 'translate(60 0)'
+    ?.getAttribute('transform') === 'translate(120 0)'
     && container.querySelector('[data-edit-selection-ids]')
       ?.getAttribute('transform') === 'translate(120 0)'
     && near(Number(container.querySelector('[data-edit-snap-guide="x"]')?.getAttribute('x1')), 340);
