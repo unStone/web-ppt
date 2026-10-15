@@ -1,6 +1,6 @@
 # 发布与 CI 运维
 
-给维护者的操作指南（how-to）：四条 GitHub workflow 的行为、发版 checklist、已知的坑。日常命令约定见 [AGENTS.md](../AGENTS.md)。
+给维护者的操作指南（how-to）：四条 GitHub workflow 的行为、发版 checklist、已知的坑。日常命令约定见 [AGENTS.md](../../AGENTS.md)。
 
 ## 1. 四条流水线
 

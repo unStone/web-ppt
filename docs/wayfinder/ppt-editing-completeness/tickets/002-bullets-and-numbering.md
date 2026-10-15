@@ -47,3 +47,23 @@ blocked_by: []
 - 真实 Chrome 验证工具栏、快捷键、图片项目符号样式以及保存后重新打开；图片字体、颜色和百分比大小未丢失。
 - `npm run check`、`npm test`、`npm run build`、`npm run verify` 全部通过，验证器完成 285 项一致性检查。
 - 规格完整性与工程标准双重复审均为 PASS。
+
+## 技术方案
+
+`SetParaProps` 扩展一个 `bullet` 字段：
+
+```ts
+bullet?: { kind: 'none' }
+       | ({ kind: 'char'; char: string } & BulletStyle)
+       | ({ kind: 'autoNum'; type: AutoNumType; startAt?: number } & BulletStyle)
+       | ({ kind: 'blip'; image: ImageRef } & BulletStyle)
+       | null   // null = 删覆盖，回到版式/母版继承
+```
+
+| 事实 | 影响 |
+|---|---|
+| `a:buNone` / `a:buChar` / `a:buAutoNum` / `a:buBlip` **互斥** | 写时必须先删同组其它元素（同 `SetFill` 的坑）；`xml/order.ts` 已登记这组 sequence |
+| 级别默认项目符号来自版式/母版 `a:lvlNpPr` | 「无覆盖」≠「无项目符号」，必须走 ppt-editor `068` 建立的九级继承重基 |
+| 自动编号续号 | `text-auto-number.ts` 的 `formatDrawingAutoNumber` 已实现，投影直接复用 |
+
+配套 `a:buFont` / `a:buClr` / `a:buSzPct` / `a:buSzPts`，图片资源按内容哈希去重并建立关系闭包。

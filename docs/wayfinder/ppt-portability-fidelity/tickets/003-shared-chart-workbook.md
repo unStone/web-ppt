@@ -29,7 +29,7 @@ blocked_by:
 
 ## Answer
 
-2026-09-09 完成。[支持范围、边界与证据](../shared-chart-progress.md)已收口。
+2026-09-09 完成。[支持范围、边界与证据](../notes/shared-chart-progress.md)已收口。
 
 文档级数据覆盖保持原生共享关系，类别、系列和 XY 记录编辑统一更新全部关联框架；整体历史、恢复、协同与原生保存通过。可证明的旧覆盖保留版本与复制来源，无法证明时保留原数据并明确显示未恢复。
 
@@ -39,7 +39,7 @@ blocked_by:
 | 产品 | Cordis 应用内的恢复首屏、中英文操作、复制、撤销/重做与保存重开通过 |
 | 仓库 | check / test / build 通过；八处文档数字按实测修正后完整 verify 通过；186 快照与 984 对全仓编辑指纹 |
 | 固件 | 157 份物理文件连续两次生成逐字节一致 |
-| 成本 | 最终发布包三次冷加载、六场景及六轮释放完成，原预算不变；[大文稿长尾公开](../shared-chart-browser-cost.md) |
-| 图像 | 12 份 LibreOffice 图像对照；整组 XY 遗漏已修复，自动轴域、标签布局、气泡半径及父级轴呈现仍有[明确差异](../mixed-chart-rendering.md) |
+| 成本 | 最终发布包三次冷加载、六场景及六轮释放完成，原预算不变；[大文稿长尾公开](../notes/shared-chart-browser-cost.md) |
+| 图像 | 12 份 LibreOffice 图像对照；整组 XY 遗漏已修复，自动轴域、标签布局、气泡半径及父级轴呈现仍有[明确差异](../notes/mixed-chart-rendering.md) |
 
 两份最终复核无剩余 P1/P2。混合图的 SSIM 下降事实已记录，外观调查登记到 [009](009-render-fidelity-scope.md)；本次完成共享数据、历史、恢复和保存闭环，不宣称整体保真提升。Windows PowerPoint 按原决定暂缓，未提交或发布版本。

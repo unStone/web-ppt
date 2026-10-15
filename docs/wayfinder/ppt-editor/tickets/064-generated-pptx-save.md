@@ -28,7 +28,7 @@ PPTX 保存」（[save/index.ts:103](../../../../packages/edit-core/src/save/ind
 - 同一 EditDoc 两次生成逐字节一致（确定性）；
 - 生成物重解析后的有效投影与保存前投影在干净进程中指纹一致（两条文本路径）；
 - LibreOffice 无修复打开、页数一致并导出 PDF；产物纳入 `office-artifacts.json` 清单，
-  接受 [powerpoint-runner](../../../powerpoint-runner.md) 真机验收；
+  接受 [powerpoint-runner](../../../engineering/powerpoint-runner.md) 真机验收；
 - 空文稿、单页多元素、含图片/表格/备注的固件由 `tooling/make-*.mjs` 确定性生成；
 - `npm run check && npm test && npm run build` 全绿。
 

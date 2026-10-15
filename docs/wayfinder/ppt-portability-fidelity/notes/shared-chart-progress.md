@@ -1,6 +1,6 @@
 # 共享图表：支持范围与验收
 
-2026-09-09，[任务 003](tickets/003-shared-chart-workbook.md)完成。共享数据、历史、恢复、协同和原生保存闭环已验收；混合图外观仍有[明确差异](mixed-chart-rendering.md)，不承诺与 Office 逐像素相同。
+2026-09-09，[任务 003](../tickets/003-shared-chart-workbook.md)完成。共享数据、历史、恢复、协同和原生保存闭环已验收；混合图外观仍有[明确差异](mixed-chart-rendering.md)，不承诺与 Office 逐像素相同。
 
 ## 支持范围
 
@@ -29,7 +29,7 @@
 | 区域或并发冲突 | 新增命令冲突时不改模型；并发产生的冲突保留覆盖，统一只读并拒绝保存，补齐/撤回后可恢复 |
 | 旧模型缺证据 | 缺来源身份、缺日志、身份碰撞、未知操作及同 stamp 矛盾明确拒绝，不猜测丢失版本；见[迁移范围](legacy-chart-migration.md)与[版本协议](versioned-chart-migration.md) |
 | 任意跨稿复杂部件 | 元素剪贴板仍要求目标已有匹配 OPC 闭包；旧资源原子拒绝，不向空白文稿自动迁移任意复杂部件 |
-| 图表外观 | 自动轴域、同侧轴标签布局、气泡半径和既有父级轴呈现仍有差异；见[图像实测](mixed-chart-rendering.md)及[009 后续调查](tickets/009-render-fidelity-scope.md) |
+| 图表外观 | 自动轴域、同侧轴标签布局、气泡半径和既有父级轴呈现仍有差异；见[图像实测](mixed-chart-rendering.md)及[009 后续调查](../tickets/009-render-fidelity-scope.md) |
 | Office 差异 | LibreOffice 会省略显式空字符串，部分情况下删除空 XY 系列；原生文件与编辑器仍保留。Windows PowerPoint 真机按原决定暂缓 |
 
 ## 模型与成本
@@ -79,5 +79,3 @@ fnm exec --using=24.3.0 npm run test:chart-shared:dist
 fnm exec --using=24.3.0 node tooling/measure-chart-shared-browser.mjs
 fnm exec --using=24.3.0 node tooling/measure-chart-shared-visual.mjs
 ```
-
-下一张为[字体与字形能力原型](tickets/004-font-glyph-provider.md)。本阶段地图仍未完成，本票未提交或发布版本。

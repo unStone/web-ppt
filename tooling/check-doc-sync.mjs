@@ -32,27 +32,27 @@ const stateFile = join(root, `out/hook/doc-sync-${mode}-state.json`);
 const cached = mode === 'pre-commit';
 const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
 
-/** 敏感区域 → 需要复查的文档。规则与 docs/testing.md、releasing.md 的职责对齐。 */
+/** 敏感区域 → 需要复查的文档。规则与 docs/engineering/testing.md、releasing.md 的职责对齐。 */
 const RULES = [
   {
     match: (f) => /^packages\/[^/]+\/src\//.test(f) || /^packages\/[^/]+\/package\.json$/.test(f),
-    docs: 'docs/architecture.md（分层与依赖是否变化）、docs/api/ 下对应能力文档、README 包表',
+    docs: 'docs/engineering/architecture.md（分层与依赖是否变化）、docs/api/ 下对应能力文档、对应 wayfinder 票据状态、README 包表',
   },
   {
     match: (f) => /^tooling\/make-[^/]+\.mjs$/.test(f) || /^fixtures\//.test(f),
-    docs: 'docs/testing.md 固件约定、README 测试文件表',
+    docs: 'docs/engineering/testing.md 固件约定与代表性固件表',
   },
   {
     match: (f) => /^tooling\/(test|check)-[^/]+\.mjs$/.test(f) || f === 'package.json',
-    docs: 'docs/testing.md（门禁与断言计数登记）、README / README.en / AGENTS 的断言数（npm test 后实测，verify 会比对）',
+    docs: 'docs/engineering/testing.md（门禁、套件表与断言计数登记）、AGENTS 的断言数（npm test 后实测，verify 会比对）、docs/engineering/development.md 命令表',
   },
   {
     match: (f) => /^test\/snapshots\//.test(f),
-    docs: 'README / README.en / AGENTS 的快照数（实测口径见 docs/testing.md）',
+    docs: 'README / README.en / AGENTS / docs/engineering/testing.md 的快照数',
   },
   {
     match: (f) => /^\.github\/workflows\//.test(f) || f === 'CHANGELOG.md',
-    docs: 'docs/releasing.md（流水线行为与发版 checklist）',
+    docs: 'docs/engineering/releasing.md（流水线行为与发版 checklist）',
   },
 ];
 

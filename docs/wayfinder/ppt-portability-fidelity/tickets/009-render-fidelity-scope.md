@@ -28,7 +28,7 @@ blocked_by: []
 | `fixtures/sample-chart-shared-mixed-records.pptx` | `c5682887209458261c8780a42c65ff50cb07be1ffe347d7d50e590fd7112cd5d` |
 | `fixtures/sample-chart-shared-mixed-scatter.pptx` | `c21221dabb06c495cec28a3a9ed9865b02b39ad668681b18a76c017bfadb2d5b` |
 
-原始、补丁及生成保存的输入哈希、两条路径截图、差异指标和修复前基线见[混合图渲染报告](../mixed-chart-rendering.md)。气泡原始输入 HTML SSIM 从 0.8444 降至 0.8213，生成保存从 0.8056 降至 0.7956；调查须解释具体区域差异，不把本条登记当作功能完成。
+原始、补丁及生成保存的输入哈希、两条路径截图、差异指标和修复前基线见[混合图渲染报告](../notes/mixed-chart-rendering.md)。气泡原始输入 HTML SSIM 从 0.8444 降至 0.8213，生成保存从 0.8056 降至 0.7956；调查须解释具体区域差异，不把本条登记当作功能完成。
 
 ## 输出与退出条件
 

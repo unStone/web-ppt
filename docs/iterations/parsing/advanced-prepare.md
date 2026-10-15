@@ -168,7 +168,7 @@ flowchart LR
 | `packages/core/src/advanced-rendering.ts` | filter 只认图元与版式 XML |
 | `tooling/test-advanced-rendering.mjs` | 坏照片不挡三维/EMF+；普通稿不启用；ChartEx 不从本入口启用；`--dist` 走发布入口 |
 | `package.json` `test:expanded` / `test:expanded:dist` | 纳入扩展门禁 |
-| `docs/expanded-capabilities.md` | 按需加载说明与本决策一致（若措辞需要） |
+| `docs/api/expanded-capabilities.md` | 按需加载说明与本决策一致（若措辞需要） |
 
 不变量：`render/` 只认 `types.ts`；core 不碰 `document`；`prepareAdvancedRendering` 签名不变。
 

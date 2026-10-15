@@ -1,6 +1,6 @@
 # 分层与依赖规范
 
-架构现状见 [architecture.md](architecture.md)；本文是**规则**：分层怎么定、依赖往哪走、新代码放哪里、什么算高内聚低耦合。机械可判定的四条由 `tooling/check-architecture-boundary.mjs` 在 `npm run build` 与 `npm run verify` 时强制，其余靠评审与 [AGENTS.md](../AGENTS.md) 约束。
+架构现状见 [architecture.md](architecture.md)；本文是**规则**：分层怎么定、依赖往哪走、新代码放哪里、什么算高内聚低耦合。机械可判定的四条由 `tooling/check-architecture-boundary.mjs` 在 `npm run build` 与 `npm run verify` 时强制，其余靠评审与 [AGENTS.md](../../AGENTS.md) 约束。
 
 ## 1. 分层模型
 

@@ -38,3 +38,42 @@ LibreOffice 网格 oracle、独立进程等价指纹和真实 Chrome 60 格完�
 - 最终门禁通过：`npm run check`、`npm test`、`npm run build`、`npm run verify`；实测 967 项编辑、450 项保存、
   109 项协同断言，72 份固件 / 246 页 / 492 对 SVG 指纹，284 项一致性检查。
 - 规格与标准双审查均为 PASS；实现提交 `156c7b8`，边界修复提交 `0b197b8`。
+
+## 技术方案
+
+**OOXML 落点**
+
+| 能力 | OOXML |
+|---|---|
+| 行 | `a:tbl/a:tr`，`@h` 行高（EMU） |
+| 列 | `a:tbl/a:tblGrid/a:gridCol@w`；**每行 `a:tc` 数必须等于 `gridCol` 数** |
+| 合并 | 锚格 `a:tc@gridSpan`（横跨）/ `@rowSpan`（纵跨）；被覆盖格写 `@hMerge="1"` / `@vMerge="1"` 且**仍须存在** |
+| 单元格 | `a:tcPr`：`@anchor` `@marL/R/T/B` `@vert` + `a:lnL/lnR/lnT/lnB/lnTlToBr/lnBlToTr` + 填充 |
+
+**结构编辑的四个约束**
+
+| 难点 | 后果 | 解法 |
+|---|---|---|
+| 删行/列会切断跨越它的合并矩形 | `hMerge`/`vMerge` 悬空 → PowerPoint 提示修复 | 删除前先把跨越边界的合并**分解**成独立格，作为同一事务的一部分 |
+| 表格 frame 的 `ext` 由行高列宽之和决定 | 插行后 frame 高度不对，视觉漂移 | 复用 ppt-editor `037`（spAutoFit）的 **entry 级因果历史**：结构改动与 frame 改高是一个原子单元 |
+| 协同/恢复日志需要稳定地址 | 行列索引随插删漂移 | 对称的 `rowId` / `colId`，与同一分配器对接 |
+| 条纹与首末行列样式由**序号**派生 | 插删后整表样式全变 | 投影缓存对表格**整体失效**，不做逐格失效 |
+
+**模型**：合并只保留**单一真值**——锚格 + 跨度。`hMerge`/`vMerge` 是投影期展开的产物，模型里不可写，
+从源头掐掉「两个地方都能改、改得不一致」这类 bug。
+
+**命令**
+
+```ts
+InsertRow{ id, at?: { before: TableRowId | null } }
+RemoveRow{ id, row: TableRowId }
+InsertColumn{ id, at?: { before: TableColumnId | null } }
+RemoveColumn{ id, column: TableColumnId }
+MergeCells{ id, from: TableCellRef, to: TableCellRef }
+SplitCell{ id, cell: TableCellRef }
+SetRowHeight{ id, row, height } / SetColumnWidth{ id, column, width }
+SetCellProps{ id, cell: TableCellRef, props }   // 属性值 null 恢复来源
+```
+
+**不变量**（进 `model-invariants.ts`，事务边界校验）：① 每行 `tc` 数 == `gridCol` 数
+② 合并矩形互不重叠、不越界 ③ 锚格自身不是 `hMerge`/`vMerge` ④ 行高列宽 ≥ 0。

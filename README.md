@@ -42,11 +42,11 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 表中体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。
 
-按需图片与立体编辑见[外观效果](docs/api/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/api/browser-editing.md)。[API 契约与迁移](docs/api/api-stability.md)说明公开入口和生命周期。
+按需图片与立体编辑见[外观效果](docs/api/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/api/browser-editing.md)。[API 契约与迁移](docs/api/api-stability.md)说明公开入口和生命周期；只读批注面板与导出开关（`@web-ppt/viewer-core/comments`、`showComments`）见[批注](docs/api/comments.md)。
 
 扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/api/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
 
-实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md)。
+实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md)。
 
 ## 快速开始
 
@@ -110,7 +110,7 @@ const catalog = listBuiltinTemplates(); // 极光 / 刊页 / 夜幕，以及轻�
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
 
-0.7 的统一门禁沿“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”走完三套模板；`SetTheme` 走
+0.7 的统一门禁（`npm run test:v07`）沿“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”走完三套模板；`SetTheme` 走
 `exec`，母版与版式走 `execDesign`，它们共享历史、恢复、协同和保存协议，但普通页面不能越权修改设计画布。
 
 ```ts
@@ -445,136 +445,12 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
-| `npm test` | 全部测试（核心 + 编辑模型/全固件等价 + 图元文件） |
-| `npm run test:core` | 核心解析 / 渲染，2331 项断言 + 188 个渲染快照 |
-| `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](docs/api/font-glyphs.md) |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 168 份固件、1126 对独立进程 SVG 指纹 |
-| `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
-| `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
-| `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
-| `npm run test:chartex` | ChartEx 原生 104 项断言：层级与统计边界、配置继承、两种文本及保存路径 |
-| `npm run test:comments` | 批注保存与导出 31 项断言：复制/恢复、两条保存、只读面板、默认关闭与安全转义；[批注交付](docs/api/comments.md) |
-| `npm run test:media` | 媒体插入 870 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存和严格 XML；[阶段 API](docs/api/media-insertion.md) |
-| `npm run test:editor` | 444 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
-| `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
-| `npm run test:v07:libreoffice` | 用 LibreOffice 无修复打开 0.7 单一清单中的 11 份跨能力产物 |
-| `npm run test:edit:m1` | M1 最小写回验收 + 71 份模型保存产物的 LibreOffice 真实打开测试 |
-| `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
-| `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开同一份 0.7 十一件清单 |
-| `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
-| `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
-| `npm run test:expanded` | 扩展能力 1822 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](docs/api/expanded-capabilities.md) |
-| `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](docs/api/portable-rich-text.md) |
-| `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](docs/api/chart-hierarchical-categories.md) |
-| `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
 | `npm run check` | TypeScript 类型检查 |
-| `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
-| `npm run test:adapters` | React / Vue 的 12 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
+| `npm test` | 全部测试 |
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
-| `npm run build:site` | 构建官网静态产物 |
-| `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排/叠加对比 |
-| `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |
-| `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx fixture 变更后需重跑） |
-| `npm run bench` | 大文件只读性能基准；追加 `-- --edit` 测编辑投影 |
-| `npm run bench:edit` | 210 页独立进程对照，强制检查只读零状态、编辑内存与提交重渲预算 |
-| `npm run demo-gif` | 录 README 用的演示 GIF（需要 Chrome 与 ffmpeg） |
+| `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对 |
 
-PowerPoint 真机门禁只在装有桌面版 PowerPoint 的 Windows 环境运行：脚本通过
-[`Presentations.Open2007`](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentations.open2007)
-显式传入 `OpenAndRepair = false`，同时开启全部警告，让需要修复的文件以自动化错误失败；文件不会上传。
-
-约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**（对编码代理同样适用）。
-
-### 仓库结构
-
-```
-web-ppt/                     npm workspaces monorepo
-├── packages/
-│   ├── core/                @web-ppt/core —— 解析 / 渲染 / 导出，无框架无 DOM 依赖
-│   ├── edit-core/           @web-ppt/edit-core —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖
-│   ├── editor/              @web-ppt/editor —— 编辑会话 + 三层增量 DOM 视图
-│   ├── react/               @web-ppt/react —— React 组件 + hook 薄适配
-│   ├── vue/                 @web-ppt/vue —— Vue 组件 + composable 薄适配
-│   ├── viewer-core/         @web-ppt/viewer-core —— headless 状态机 + 播放层
-│   ├── fonts/               @web-ppt/fonts —— 字体替换与按需加载
-│   ├── viewer/              @web-ppt/viewer —— 开箱即用查看器，纯原生 TS
-│   └── site/                @web-ppt/site —— 官网，含浏览器内查看 Demo 与独立编辑器
-├── fixtures/                测试用 pptx / ppt 样本（脚本生成，确定性）
-├── tooling/                 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准
-└── test/snapshots/          188 个渲染快照基线
-```
-
-`packages/viewer` 与 `packages/site` 都通过**包名**消费上游，与外部用户走同一条路径——
-边界一旦被破坏，它们立刻编译失败。`edit-core` 只提供纯数据模型；`editor` 集中管理浏览器 DOM
-与资源生命周期，React / Vue 等适配只包它的公开 seam，框架运行时不下沉到任何基础包。
-
-**为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState` 不必等官方封装；状态逻辑不再需要 jsdom 就能在 Node 里测；`@web-ppt/core` 完全不碰 `document`，Worker 里可整包运行。
-
-> 抽出来的当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，`next()` 会落在最后一张**隐藏**页上。它能活那么久，是因为当时 9 个 fixture 里**没有一张隐藏页**——快照测试挡得住「变了」，挡不住「一开始就没测过」。现已补上 `sample-hidden.pptx` / `.ppt`。
-
-### 测试策略
-
-在 Node 里用 jsdom 提供 DOM，esbuild 把 `src/` 打成 ESM 后跑真实解析与渲染——不 mock 任何解析逻辑。
-
-| 层次 | 覆盖 |
-|---|---|
-| **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
-| **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 25 个测试文件 × 全部页 × 两条文本路径 = 188 个归一化 SVG 基线，逐字节比对 |
-| **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
-| **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
-| **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |
-
-快照会归一化 blob URL、data URI（转摘要）与 defs id，因此跨机器稳定。渲染有意改动时：
-
-```bash
-UPDATE_SNAPSHOTS=1 npm run test:core
-```
-
-然后 `git diff test/snapshots/` 逐行确认改动符合预期再提交。
-
-测试套件本身经过**变异验证**：把已修复的 bug 逐个改回去，确认能被抓到。
-
-| 变异 | 捕获 |
-|---|---|
-| 填充规则 `nonzero` → `evenodd` | 40 项 |
-| `.ppt` 段落字段表插入错位字段 | 33 项 |
-| 关闭几何安全网 | 47 例模糊输入越界 |
-| 单元格边框标签拼回 `lnLeft` | 2 项 |
-| `shade` 退回 sRGB 空间 | 3 项 |
-| `cs` 字体不进字体栈 | 1 项 |
-
-> 快照只能发现「变化」，发现不了「一开始就是错的」——单元格边框那个 bug 就是被**外部 ground truth 对照**抓出来的，而非测试套件。两者互补，缺一不可。
-
-### 测试文件
-
-`npm run fixtures` 生成，字节确定性：
-
-| 文件 | 覆盖内容 |
-|---|---|
-| `showcase.pptx` | 120 形状 / 效果 / 填充 / 线条箭头 / 文字特性 / 表格 / 图片 / custGeom / 嵌套组合 / 3D / 动画 / 7 种切换 |
-| `sample-chart.pptx` | 14 个图表：柱 / 条 / 堆叠 / 折线 / 面积 / 饼 / 环 / 散点 / 次坐标轴组合 / 3D 柱 / 3D 饼 |
-| `sample-effects.pptx` | 内/外阴影 / 发光 / 柔化 / 倒影 / 15 种艺术字变形 / RTL |
-| `sample-media.pptx` | 视频/音频封面 / 墨迹 / 评论 / 分节 / 气泡·股价·复合饼·曲面图 |
-| `sample-metafile.pptx` | 内嵌 EMF 与 WMF |
-| `sample.pptx` · `sample.ppt` | 母版继承 / 最小合法 CFB |
-| `sample-hidden.pptx` · `.ppt` | 隐藏页导航：可见 · 隐 · 隐 · 可见 · 隐（pptx 走 `sld@show`，ppt 走 `F_HIDDEN`） |
-| `sample-cjk-squeeze.pptx` | 标点挤压完整规则：连续标点对 / 行首开标点 / 行尾句读 / 放不下才挤 / 无标点对照 |
-| `sample-autofit.pptx` | 文本自动缩放五种情形（溢出/放得下 × 裸 normAutofit、无 autofit、显式 fontScale、缩到 25% 下限），外加百分比行距与绝对行距的对照 |
-| `sample-placeholder.pptx` | 占位符几何继承：图片占位符空 spPr / 图片自带 xfrm / 形状占位符 |
-| `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
-| `sample-embedfont.pptx` | 嵌入字体的四种容器：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF |
-
-`.ppt` 样本可用 LibreOffice 从 pptx 转换生成：`npm run ppt-samples`，或 `soffice --headless --convert-to ppt <file>`。
-
-### 调试页
-
-| 页面 | 用途 |
-|---|---|
-| `/` | 查看器：缩略图（虚拟化）/ 缩放 / 搜索 / 备注 / 演示模式 / 导出 |
-| `/shapes.html` | 几何调试：全部预设形状实时渲染，可调调节值与宽高比 |
-
-演示模式（工具栏「演示」或 `F`）下才播放切换与动画：`→` 依次推进动画批次，播完再翻页；`Esc` 退出。
+测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；188 个渲染快照（25 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
 
 ## 交流
 
@@ -590,5 +466,3 @@ UPDATE_SNAPSHOTS=1 npm run test:core
 ## 许可
 
 [MIT](LICENSE)
-
-[只读批注与导出](docs/api/comments.md)：`@web-ppt/viewer-core/comments`、`showComments`。

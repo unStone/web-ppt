@@ -32,7 +32,7 @@ blocked_by: []
 
 ## Answer
 
-2026-09-09：可行。选择显式字体字节、可注入 HarfBuzz 和文稿独占 Worker，首版限制为静态 TTF/glyf、横排 Latin/汉字；详见[结论与支持矩阵](../font-glyph-prototype.md)。
+2026-09-09：可行。选择显式字体字节、可注入 HarfBuzz 和文稿独占 Worker，首版限制为静态 TTF/glyf、横排 Latin/汉字；详见[结论与支持矩阵](../notes/font-glyph-prototype.md)。
 
 - 交付可运行终端/浏览器原型、固定 OFL 样本及来源 hash、接口草案。逐字映射对照证明连字与组合音标必须整形。
 - 浏览器产出两份字体证明 PDF，MuPDF 独立提取原始中英文/连字/组合字符；29 个字形 ID 与位置匹配，最大原点误差 0.000011231 pt，无栅格图片。

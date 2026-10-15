@@ -45,9 +45,9 @@ blocked_by:
 | 成本 | 首次及重复加载、代表性完整中文字体和长文本、并发/取消压力；区分 JS 堆、WASM 容量、持有字节与 RSS，不把 004 的小样本数字外推到大文稿 |
 | 完成条件 | [共同完成条件](../plan.md#共同完成条件)及四项仓库门禁；005 在本票关闭前保持阻塞 |
 
-依据：[004 原型结论](../font-glyph-prototype.md)。本票不包含正式矢量 PDF、任意复杂语言整形或字体格式全覆盖。
+依据：[004 原型结论](../notes/font-glyph-prototype.md)。本票不包含正式矢量 PDF、任意复杂语言整形或字体格式全覆盖。
 
-正式接口、支持范围及完整证据见[实现进度](../font-glyph-implementation.md)。
+正式接口、支持范围及完整证据见[实现进度](../notes/font-glyph-implementation.md)。
 
 ## Answer
 
@@ -62,4 +62,4 @@ blocked_by:
 | 成本 / 原型 | 完整中文字体 10.6 MB / 31,036 字形以及长文本并发 / 取消实测完成；统计口径及未测 RSS 明示。确定性样本和许可已迁移，原型及私有依赖已删除 |
 | 门禁 | check、test、build、verify 全部通过；151 份 PPT 固件 / 988 对等价指纹、186 份快照，source / dist 字体合约均通过，原有预算未放宽 |
 
-日志、原始测量、包体积及审查修复见[验收记录](../font-glyph-implementation.md)，使用方式见[字体指南](../../../api/font-glyphs.md)。011 关闭后，005 的字体前置已满足；矢量 PDF 仍由 005 单独实现和验收。
+日志、原始测量、包体积及审查修复见[验收记录](../notes/font-glyph-implementation.md)，使用方式见[字体指南](../../../api/font-glyphs.md)。011 关闭后，005 的字体前置已满足；矢量 PDF 仍由 005 单独实现和验收。

@@ -1,51 +1,61 @@
 # 文档地图
 
-按「先看什么」组织：理解仓库 → 查 API 与能力边界 → 溯源某个功能的设计依据 → 查坑。
+文档按读者与时效分四层：入口在仓库根目录，现行规范必须与代码一致，规划与状态只有一个来源，决策与记录完成即冻结。新增文档先判断属于哪一层再放置。
+
+```mermaid
+flowchart TB
+  L0["L0 入口（仓库根）<br/>README · README.en · AGENTS · CONTEXT · CHANGELOG"]
+  L1["L1 现行规范（与代码一致）<br/>engineering/ · specs/ · api/"]
+  L2["L2 规划与状态（唯一来源）<br/>roadmap.md · wayfinder/"]
+  L3["L3 决策与记录（完成即冻结）<br/>design/ · ux/ · iterations/ · research/ · releases/"]
+  L0 --> L1 --> L2 --> L3
+```
+
+| 层 | 位置 | 读者 | 维护规则 |
+|---|---|---|---|
+| L0 入口 | 根目录 `README.md` / `README.en.md` / `AGENTS.md` / `CONTEXT.md` / `CHANGELOG.md` | 所有人 | 随每次改动同步；数字由 `npm run verify` 比对实测 |
+| L1 现行规范 | `engineering/`、`specs/`、`api/` | 改代码的人与 Agent、外部宿主开发者 | 代码变了就改；`tooling/check-doc-sync.mjs` 在提交时提示复查 |
+| L2 规划与状态 | `roadmap.md`、`wayfinder/` | 维护者 | 单票状态只写在票据 `status` 与 Resolution，跨地图汇总只写在 roadmap |
+| L3 决策与记录 | `design/`、`ux/`、`iterations/`、`research/`、`releases/` | 追溯原因的人 | 完成后冻结，只修链接与明显失真；新决策另写新文档 |
+
+类型词汇沿用 [Diátaxis](https://diataxis.fr/)：**reference**（持续查阅的事实）、**how-to**（面向任务的步骤）、**explanation**（理解背景的决策与历史）。
 
 ## 阅读入口
 
-| 顺序 | 文档 | 内容 | 读者 · 性质 |
-|---|---|---|---|
-| 1 | [AGENTS.md](../AGENTS.md) | 仓库约束、已知陷阱、命令与发布流程 | Agent + 维护者 · how-to |
-| 2 | [architecture.md](architecture.md) | 包依赖、四条解析链路、编辑闭环的全局架构 | Agent + 维护者 · reference |
-| 3 | [architecture-rules.md](architecture-rules.md) | 分层与依赖规范：依赖方向、落位决策、内聚耦合判定、反模式 | Agent + 维护者 · reference |
-| 4 | [design-standard.md](design-standard.md) | 功能设计标准：五态与世代令牌、错误回退、兼容演进、确定性、验收、资源生命周期 | Agent + 维护者 · reference |
-| 5 | [specs/pptx-spec-map.md](specs/pptx-spec-map.md) · [specs/ppt-spec-map.md](specs/ppt-spec-map.md) | 格式规范地图：规范体系与版本、功能域 → 章节 → 仓库模块映射、规范没写清的坑 | 开发者 · reference |
-| 6 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 | Agent + 维护者 · reference |
-| 7 | [roadmap.md](roadmap.md) | 能力盘点、版本演进与缺口取舍 | 维护者 · reference |
-| 8 | [pitfalls.md](pitfalls.md) | 坑索引：实现陷阱在 AGENTS，交付与交互层面的坑收拢于此 | Agent + 维护者 · reference |
-| 9 | [testing.md](testing.md) | 测试贡献规范：门禁关系、固件、快照、断言计数登记 | 贡献者 + Agent · how-to |
-| 10 | [releasing.md](releasing.md) | 发布与 CI 运维：流水线行为、发版 checklist、OIDC 坑 | 维护者 · how-to |
-
-性质词汇沿用 [Diátaxis](https://diataxis.fr/)：**reference**（持续查阅的事实）、**how-to**（面向任务的步骤）、**explanation**（理解背景的历史决策）。
-
-## 目录结构
-
-```mermaid
-flowchart LR
-  ROOT["docs/"] --- GUIDE["README.md 文档地图<br/>pitfalls.md 坑索引"]
-  ROOT --- SPECS["testing.md 测试规范<br/>releasing.md 发布运维<br/>powerpoint-runner.md 真机门禁"]
-  ROOT --- ARCH["architecture.md · architecture-rules.md<br/>roadmap.md"]
-  ROOT --- SPECS2["specs/<br/>pptx / ppt 规范地图"]
-  ROOT --- API["api/<br/>11 份对外能力文档"]
-  ROOT --- DESIGN["design/<br/>6 份设计决策"]
-  ROOT --- ITER["playback/ viewer/ parsing/<br/>35 份轮次迭代记录"]
-  ROOT --- WF["wayfinder/<br/>规划地图与验收票据"]
-  ROOT --- REL["releases/<br/>版本交付记录"]
-```
-
-| 目录 | 内容 | 读者 · 性质 |
+| 顺序 | 文档 | 内容 |
 |---|---|---|
-| `api/` | 各按需扩展入口的能力矩阵、API 契约与验收边界 | 外部宿主开发者 · reference |
-| `design/` | 编辑技术总纲、Cordis 产品层、编辑器 UI 与官网设计决策 | 维护者 · explanation |
-| `playback/` | 放映、黑白屏、跳页、备注、滑动翻页等 16 轮迭代记录 | 维护者 · explanation |
-| `viewer/` | 打开链路、深链、密码、查找等 16 轮迭代记录 | 维护者 · explanation |
-| `parsing/` | 惰性解析三步曲（钩子 → 媒体 → 后页部件） | 维护者 · explanation |
-| `wayfinder/` | 五张研发地图（map + tickets），`verify-v06/v07-readiness` 直接消费其内容做断言 | 维护者 · explanation + 验收工件，**勿移动、勿改结构** |
-| `specs/` | `.pptx`（ECMA-376 体系）与 `.ppt`（MS-PPT / CFB / Escher）的规范地图：功能域 → 规范章节 → 仓库模块 | 开发者 · reference |
-| `releases/` | 版本交付说明，CHANGELOG 以绝对 URL 指向此处 | 外部 · explanation |
+| 1 | [AGENTS.md](../AGENTS.md) | 仓库约束、已知陷阱、门禁命令 |
+| 2 | [engineering/architecture.md](engineering/architecture.md) | 包依赖、解析链路、编辑闭环的全局架构 |
+| 3 | [engineering/architecture-rules.md](engineering/architecture-rules.md) · [engineering/design-standard.md](engineering/design-standard.md) | 分层依赖规范、功能设计标准 |
+| 4 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 |
+| 5 | [engineering/testing.md](engineering/testing.md) · [engineering/development.md](engineering/development.md) | 测试与本地开发 |
+| 6 | [roadmap.md](roadmap.md) | 当前完成度、缺口取舍与下一步 |
 
-## api/（11 份）
+## L1 现行规范
+
+### engineering/
+
+| 文档 | 内容 | 性质 |
+|---|---|---|
+| [architecture.md](engineering/architecture.md) | 包与依赖、数据流、编辑闭环、字体体系、产品层、质量体系 | reference |
+| [architecture-rules.md](engineering/architecture-rules.md) | 分层模型、依赖方向、落位决策、内聚耦合判定、反模式；由 `check-architecture-boundary` 机械审计 | reference |
+| [design-standard.md](engineering/design-standard.md) | 五态与世代令牌、错误回退、兼容演进、确定性、验收、资源生命周期 | reference |
+| [pitfalls.md](engineering/pitfalls.md) | 交付与交互层面的坑索引（实现陷阱在 AGENTS） | reference |
+| [testing.md](engineering/testing.md) | 门禁关系、新增套件与固件、断言计数登记、测试套件表、测试分层 | how-to |
+| [development.md](engineering/development.md) | 启动、构建、对照与基准命令，调试页 | how-to |
+| [releasing.md](engineering/releasing.md) | 流水线行为、发版 checklist、OIDC 环境要求、常见失败 | how-to |
+| [powerpoint-runner.md](engineering/powerpoint-runner.md) | Windows PowerPoint 真机门禁的 runner 约束与证据 | how-to |
+
+### specs/
+
+| 文档 | 内容 |
+|---|---|
+| [pptx-spec-map.md](specs/pptx-spec-map.md) | ECMA-376 体系：功能域 → 规范章节 → 仓库模块，规范没写清的坑 |
+| [ppt-spec-map.md](specs/ppt-spec-map.md) | MS-PPT / CFB / Escher：记录模型与仓库模块映射 |
+
+### api/
+
+各按需扩展入口的能力矩阵、API 契约与验收边界，面向外部宿主开发者；`packages/*/README` 与 npm 页面以绝对链接引用，**路径保持不变**。
 
 | 文档 | 主题 |
 |---|---|
@@ -61,32 +71,67 @@ flowchart LR
 | [media-insertion.md](api/media-insertion.md) | 音视频插入、海报替换、恢复与协同 |
 | [portable-rich-text.md](api/portable-rich-text.md) | 生成保存与跨文稿复制（公式 / 艺术字） |
 
-## design/（6 份）
+## L2 规划与状态
+
+[roadmap.md](roadmap.md) 汇总跨地图的完成度与下一步。`wayfinder/` 是研发地图：每张地图一个 `map.md`（目标、约束、已关闭任务的一句话索引）加 `tickets/`（子任务，`status` 是进度的唯一事实来源）；`verify-v06/v07-readiness` 直接读取 0.6 与 0.7 地图，**勿移动、勿改结构**。
+
+| 地图 | 主题 | 状态 |
+|---|---|---|
+| [ppt-editor](wayfinder/ppt-editor/map.md) | 纯 Web PPT 编辑能力 M0–M6 | open（010 PowerPoint 真机验收暂缓、075 稳定版发布未完成） |
+| [ppt-editing-completeness](wayfinder/ppt-editing-completeness/map.md) | 0.6 高频编辑能力 | closed |
+| [ppt-template-theme](wayfinder/ppt-template-theme/map.md) | 0.7 模板与主题编辑 | closed |
+| [ppt-data-fidelity](wayfinder/ppt-data-fidelity/map.md) | 0.8 数据与保真（含 `research/` ChartEx 调研） | closed |
+| [ppt-expanded-capabilities](wayfinder/ppt-expanded-capabilities/map.md) | 七类扩展编辑、渲染与导出 | closed |
+| [ppt-portability-fidelity](wayfinder/ppt-portability-fidelity/map.md) | 内容流转、矢量 PDF、音视频与格式保真；[执行计划](wayfinder/ppt-portability-fidelity/plan.md)，实现记录与证据在 `notes/` | open |
+
+## L3 决策与记录
+
+### design/：技术设计
 
 | 文档 | 主题 |
 |---|---|
 | [editing-design.md](design/editing-design.md) | 编辑能力技术总纲：EditDoc / src-ovr / 补丁保存 / 三层视图（D1–D14 决策） |
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
-| [editor-interaction-redesign.md](design/editor-interaction-redesign.md) | 编辑页缩略图、任务型功能区、形状 / 表格选择器 |
-| [editor-desktop-layout.md](design/editor-desktop-layout.md) | 对象列表、分区拖动、属性页签桌面排版 |
-| [site-home-layout.md](design/site-home-layout.md) | 官网首页排版与窄屏导航 |
-| [site-i18n.md](design/site-i18n.md) | 官网三页中英文验收矩阵（契约文件清单） |
 
-## 轮次迭代记录（35 份）
+### ux/：界面设计与验收
 
-同主题多轮文档成组，后续轮次建立在早期轮次之上，按组阅读：
+| 文档 | 主题 |
+|---|---|
+| [editor-interaction-redesign.md](ux/editor-interaction-redesign.md) | 编辑页缩略图、任务型功能区、形状 / 表格选择器 |
+| [editor-desktop-layout.md](ux/editor-desktop-layout.md) | 对象列表、分区拖动、属性页签桌面排版 |
+| [site-home-layout.md](ux/site-home-layout.md) | 官网首页排版与窄屏导航 |
+| [site-i18n.md](ux/site-i18n.md) | 官网三页中英文验收矩阵（契约文件清单） |
+
+界面评审工具的产出保存在仓库根目录 `.impeccable/critique/`（由工具维护，不移动）。
+
+### iterations/：轮次迭代记录
+
+每份是一轮「目标 → 场景 → 范围 → 调研 → 方案 → 验收 → 自评」的完整记录。同主题多轮成组，后续轮次建立在早期轮次之上，按组阅读：
 
 | 组 | 文档（按轮次序） |
 |---|---|
-| 放映基础 | [present-mode](playback/present-mode.md) → [present-bar](playback/present-bar.md) → [present-vertical](playback/present-vertical.md) |
-| 后退三连 | [present-rewind](playback/present-rewind.md) → [present-backspace](playback/present-backspace.md) → [present-prev-letter](playback/present-prev-letter.md) |
-| 黑白屏三连 | [blank-screen](playback/blank-screen.md) → [blank-period](playback/blank-period.md) → [white-screen](playback/white-screen.md) |
-| 跳页与网格 | [slide-number](playback/slide-number.md)、[slide-ends](playback/slide-ends.md)、[slide-grid](playback/slide-grid.md) |
-| 演讲者辅助 | [speaker-aids](playback/speaker-aids.md)、[notes-key](playback/notes-key.md) |
-| 滑动翻页 | [swipe-nav](playback/swipe-nav.md)（官网）→ [viewer-swipe-nav](playback/viewer-swipe-nav.md)（查看器） |
-| 打开世代 | [open-session](viewer/open-session.md) 为全部打开类轮次的根 |
-| 认文件两连 | [open-kind](viewer/open-kind.md) → [editor-open-kind](viewer/editor-open-kind.md) |
-| 深链三连 | [viewer-open-page](viewer/viewer-open-page.md) → [sample-open-page](viewer/sample-open-page.md) → [open-start-page](viewer/open-start-page.md) |
-| 打开收口 | [viewer-open-lazy](viewer/viewer-open-lazy.md)、[viewer-clear-file](viewer/viewer-clear-file.md)、[viewer-file-progress](viewer/viewer-file-progress.md)、[viewer-password](viewer/viewer-password.md)、[viewer-small-viewport](viewer/viewer-small-viewport.md)、[viewer-notes-clear](viewer/viewer-notes-clear.md) |
-| 查找四连 | [viewer-search-lazy](viewer/viewer-search-lazy.md) → [viewer-search-highlight](viewer/viewer-search-highlight.md) → [viewer-search-occurrence](viewer/viewer-search-occurrence.md) → [viewer-search-again](viewer/viewer-search-again.md) |
-| 惰性解析三步曲 | [advanced-prepare](parsing/advanced-prepare.md) → [parse-preview-parts](parsing/parse-preview-parts.md) → [parse-preview-slides](parsing/parse-preview-slides.md) |
+| 放映基础 | [present-mode](iterations/playback/present-mode.md) → [present-bar](iterations/playback/present-bar.md) → [present-vertical](iterations/playback/present-vertical.md) |
+| 后退三连 | [present-rewind](iterations/playback/present-rewind.md) → [present-backspace](iterations/playback/present-backspace.md) → [present-prev-letter](iterations/playback/present-prev-letter.md) |
+| 黑白屏三连 | [blank-screen](iterations/playback/blank-screen.md) → [blank-period](iterations/playback/blank-period.md) → [white-screen](iterations/playback/white-screen.md) |
+| 跳页与网格 | [slide-number](iterations/playback/slide-number.md)、[slide-ends](iterations/playback/slide-ends.md)、[slide-grid](iterations/playback/slide-grid.md) |
+| 演讲者辅助 | [speaker-aids](iterations/playback/speaker-aids.md)、[notes-key](iterations/playback/notes-key.md) |
+| 滑动翻页 | [swipe-nav](iterations/playback/swipe-nav.md)（官网）→ [viewer-swipe-nav](iterations/playback/viewer-swipe-nav.md)（查看器） |
+| 打开世代 | [open-session](iterations/viewer/open-session.md) 为全部打开类轮次的根 |
+| 认文件两连 | [open-kind](iterations/viewer/open-kind.md) → [editor-open-kind](iterations/viewer/editor-open-kind.md) |
+| 深链三连 | [viewer-open-page](iterations/viewer/viewer-open-page.md) → [sample-open-page](iterations/viewer/sample-open-page.md) → [open-start-page](iterations/viewer/open-start-page.md) |
+| 打开收口 | [viewer-open-lazy](iterations/viewer/viewer-open-lazy.md)、[viewer-clear-file](iterations/viewer/viewer-clear-file.md)、[viewer-file-progress](iterations/viewer/viewer-file-progress.md)、[viewer-password](iterations/viewer/viewer-password.md)、[viewer-small-viewport](iterations/viewer/viewer-small-viewport.md)、[viewer-notes-clear](iterations/viewer/viewer-notes-clear.md) |
+| 查找四连 | [viewer-search-lazy](iterations/viewer/viewer-search-lazy.md) → [viewer-search-highlight](iterations/viewer/viewer-search-highlight.md) → [viewer-search-occurrence](iterations/viewer/viewer-search-occurrence.md) → [viewer-search-again](iterations/viewer/viewer-search-again.md) |
+| 惰性解析三步曲 | [advanced-prepare](iterations/parsing/advanced-prepare.md) → [parse-preview-parts](iterations/parsing/parse-preview-parts.md) → [parse-preview-slides](iterations/parsing/parse-preview-slides.md) |
+
+### research/：调研
+
+| 文档 | 主题 |
+|---|---|
+| [agent-loop.md](research/agent-loop.md) | Agent Loop 方案调研与本仓库的限定域循环 |
+| [browser-platform.md](research/browser-platform.md) | WebKit LBSE、EditContext、File System Access 的平台现状与对策 |
+
+### releases/：版本交付记录
+
+| 文档 | 内容 |
+|---|---|
+| [0.5.0-beta.5.md](releases/0.5.0-beta.5.md) | beta.5 交付时的模块进度、提交与验证证据；CHANGELOG 以绝对链接引用，**路径保持不变** |

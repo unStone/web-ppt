@@ -1,6 +1,6 @@
 # 字体与字形 Provider 验收记录
 
-[011](tickets/011-font-glyph-implementation.md) 已完成。正式 API、源码 / 发布产物、Cordis 产品入口及独立读取证明均已验收；005 可继续实现矢量 PDF。
+[011](../tickets/011-font-glyph-implementation.md) 已完成。正式 API、源码 / 发布产物、Cordis 产品入口及独立读取证明均已验收；005 可继续实现矢量 PDF。
 
 | 已接通部分 | 入口 / 证据 |
 |---|---|
@@ -80,7 +80,7 @@ editor 默认入口为 60,691 字节 gzip（59.27 KiB），既有预算未放宽
 | 产品门禁取证 | 窄屏触点误把布局视口坐标交给 CDP，记录显示约 67 px 水平偏移；按 visualViewport 原点换算后真实保存通过。未附加调试的 Worker URL 可为空，按新增 target 身份验证创建与退出 |
 | 独立浏览器发现 | 补非 Macintosh cmap language 为零的校验；HarfBuzz 能整形不等于字体格式有效，更不等于 Chrome 能安装 |
 
-API、来源、默认预算与复现步骤见[字体指南](../../api/font-glyphs.md)。
+API、来源、默认预算与复现步骤见[字体指南](../../../api/font-glyphs.md)。
 
 ## 完整中文字体成本
 

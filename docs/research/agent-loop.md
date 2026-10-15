@@ -20,7 +20,7 @@
 | specs/ | `docs/wayfinder/*/map.md` + `plan.md` + tickets，票据内写明「共同完成条件」 | 已有 |
 | fix_plan.md | [roadmap.md](../roadmap.md) 与各 map 的 status（open / closed） | 已有 |
 | 背压 | `check` / `test` / `build` / `verify` 四门禁 + readiness 审计 + counts 实测比对 | 已有，且强于多数项目 |
-| converge 证据 | [cordis-editor.md](cordis-editor.md) 的红绿 log 表（`out/**/*.log`） | 已有，手工驱动 |
+| converge 证据 | [cordis-editor.md](../design/cordis-editor.md) 的红绿 log 表（`out/**/*.log`） | 已有，手工驱动 |
 | 回环沉淀 | AGENTS.md 陷阱表「踩过的坑改动前先读」 | 已有 |
 
 缺的只有**自动回环**：从「门禁失败输出」自动回到「agent 下一轮输入」的这一层。

@@ -48,3 +48,12 @@ PowerPoint“确保适合”的全元素重排。所有命令都必须支持来�
   真实 Chrome 分布误差 0.012px、反馈 p95 0.2ms，页面尺寸三层同步 p95 0.2ms。
 - `npm run check && npm test && npm run build && npm run verify` 全绿：4,394 项断言，其中 core 2,188、
   edit-core 1,050、保存 482、PowerPoint 证据 9、editor 405、adapter 9、collab 121、metafile 130。
+
+## 技术方案
+
+| 命令 | 落点 | 复用 |
+|---|---|---|
+| `DistributeElements{ ids, axis }` | 批量 `a:off` | ppt-editor `028` 的世界 AABB + 父空间逆变换；≥3 个才允许 |
+| `SetAltText{ id, title, descr }` | `p:cNvPr@title/@descr` | 选择窗格的 `SetName` 已经在改同一个节点 |
+| `AddSection` / `RenameSection` / `MoveSection` / `RemoveSection` | `p:extLst/p14:sectionLst` | 解析侧已支持；ppt-editor `045` 删页闭包已经在维护 `sectionLst` |
+| `SetSlideSize{ w, h }` | `p:sldSz` | 仅改画布；按需 `createSlideSizeEditor(editor).setSize({ w, h, fit: 'ensureFit' })` 提供全稿等比适配 |

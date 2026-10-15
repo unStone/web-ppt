@@ -43,3 +43,14 @@ DrawingML EMU 坐标中求值，位置输出才换成 CSS px。`core/geometry/ha
 - 官网形状目录与调节柄入口、Chrome 预览不改模型、pointer capture、单历史提交、保存重开和 60 元素
   帧预算通过；批量删除 p95 为 7.2ms。历史条目字节只在内容变化时计量，无补丁订阅时不构造深拷贝事件，
   消除了可选历史/协同接缝的固定成本；core/edit-core/editor 默认入口均由构建守卫证明不含句柄表。
+
+## 技术方案
+
+| 命令 | 落点 | 说明 |
+|---|---|---|
+| `SetPreset{ id, preset }` | `a:prstGeom@prst` + 重置 `a:avLst` | 保留填充/描边/效果/`a:txBody`，只换几何 |
+| `SetAdj{ id, name, value }` | `a:avLst/a:gd@name@fmla="val N"` | 拖动调节柄 |
+
+调节柄来自预设定义里的 `a:ahLst`（adjust handle list）：`a:ahXY` 给出手柄坐标与 `minX/maxX/minY/maxY`，
+`a:ahPolar` 给出 `minR/maxR/minAng/maxAng`。句柄定义通过独立入口读取，与默认几何路径求值分开加载；
+公式在 DrawingML EMU 空间求值，最终位置才转 CSS px。
