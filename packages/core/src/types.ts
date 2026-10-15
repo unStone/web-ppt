@@ -334,6 +334,11 @@ export interface AnimStep {
   scale?: { fromX: number; fromY: number; toX: number; toY: number };
   /** p:animRot 的实际起止角度，单位为度。 */
   rotation?: { from: number; to: number };
+  /** p:cmd 对媒体对象的调用；播放时间由 trigger、delayMs 和 durationMs 决定。 */
+  mediaCommand?: {
+    action: 'play' | 'pause' | 'resume' | 'stop' | 'togglePause';
+    fromSeconds?: number;
+  };
   /**
    * 运动路径采样点：相对元素起始位置的位移（px），首点恒为 (0,0)。
    * 在 core 里按弧长等距重采样，播放层直接当关键帧用——

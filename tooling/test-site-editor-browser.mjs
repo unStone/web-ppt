@@ -246,7 +246,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
   }, { raw: 0, gzip: 0 });
 // 首次打开的预算包含动画蒙版、OOXML 转角解析及对象查找和侧栏任务导航；新增交互实测增加约 2.0 KB gzip。
 // beta.6 起含 timing 媒体播放语义解析（spid/playback/MediaTiming，core 激活闭包必经），gzip 余量按实测上调 300B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 41_800 };
+// 查看器按动画时间线执行 p:cmd 媒体调用并上报播放失败，实测超出 1519B，上调 1.6KB
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 43_400 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

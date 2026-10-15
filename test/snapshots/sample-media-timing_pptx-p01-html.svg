@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 140)">
+<path d="M 0 0 L 240 0 L 240 120 L 0 120 Z" fill="rgb(147,197,253)" fill-rule="nonzero"/>
+<foreignObject width="240" height="120" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:240px;height:120px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<div style="margin:0px 0 0px 0;text-align:left;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
+<span style="font-size:32px;color:rgb(0,0,0);font-family:'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">音频播放前的效果</span>
+</div>
+</div>
+</foreignObject>
+</g>
+</g>
+<g data-el="200" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(420 140)">
+<rect width="160" height="120" fill="rgb(38,42,48)"/>
+<g aria-hidden="true" pointer-events="none">
+<title>音频</title>
+<circle cx="80" cy="60" r="26.4" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.38"/>
+<path d="M67.25 55.34 H74.12 L83.88 48.91 V71.09 L74.12 64.66 H67.25 Z" fill="#fff"/>
+<path d="M87.21 53.35 A 8.32 8.32 0 0 1 87.21 66.65" fill="none" stroke="#fff" stroke-width="2.88" stroke-linecap="round"/>
+<path d="M92.75 48.36 A 14.97 14.97 0 0 1 92.75 71.64" fill="none" stroke="#fff" stroke-width="2.88" stroke-linecap="round" opacity="0.85"/>
+</g>
+</g>
+</g>
+</svg>
