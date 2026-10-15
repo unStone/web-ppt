@@ -18,8 +18,8 @@
 - 修复 `.pptx` 媒体源解析只认经典 `a:audioFile` / `a:videoFile` 引用：PowerPoint 2010+ 内嵌 mp3 / mp4 等时把经典关系写成 `Target="NULL"` 外链、字节只挂在 `p14:media` 的 `r:embed` 上，此前 `MediaInfo.src` 为 `null`，player 模式不生成播放器、编辑生成保存会丢失媒体字节。现按经典引用 → `p14:media`（`r:link` 优先于 `r:embed`）逐个取第一个可解析目标：包内关系要求部件存在，外链关系要求是带 scheme 的 URL；正常文件的解析结果不变。
 - 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。
 - 英语缩写中的弯撇号（`I’m`、`that’s`）不再按全角标点挤压半个 em，避免撇号与后一个字母重叠（#8）。中文句读的挤压规则不变。
-- 子坐标空间被归一化（不足 1px）的组合里，文字不再逐字换行后被组缩放放大，两条文本路径都按物理字号排版（#7）。
 - 对象动画「伸展」按 PowerPoint 子类型播放：水平展开（across）从中线向两侧长，自底部 / 顶部 / 左侧 / 右侧钉住对应边长出，不再一律从中心缩放并淡入；退场缩回同一条边。「挥舞」按 PowerPoint 的 `sin(2.5π·t)` 宽度（横向为高度）轨迹翻转并叠加淡入，中途会转到背面镜像，不再是一次 `rotateY`。
+- 组合缩放只映射子元素外框：渲染时把 `chOff` / `chExt` 折算进子元素的位置、尺寸、路径与表格行列，不再对子树整体 `scale()`，描边、字号、内边距与效果半径保持物理尺寸（与 PowerPoint、LibreOffice 一致）。WPS 产出的归一化组合（子坐标空间不足 1px）不再出现千像素描边或逐字换行；普通缩放组合内的字号与描边也不再随组放大，非等比组合里的旋转子元素保持矩形。编辑器按同一份刚体外框工作：选择框、命中、框选、对齐 / 分布、吸附、裁剪、顶点与调节柄不再把非等比组合里的旋转子元素当成斜切的平行四边形；缩放与旋转在父组渲染坐标里计算后换算回模型，旋转跨过 45° 等边界时画面宽高保持不变（模型宽高随组缩放承接的轴向互换），粘贴进非等比组合同样按画面落位。`@web-ppt/core` 公开 `placeGroupChild`、`placeGroupFrame` 与 `unplaceGroupFrame`；`@web-ppt/edit-core` / `@web-ppt/editor` 公开 `renderedElement`、`renderedFrameToSlideMatrix`、`renderedContentToSlideMatrix`、`elementParentToRenderedParentMatrix`、`elementEditFrame`、`elementEditParentToSlideMatrix`、`slideToElementEditParentPoint` 与 `editFrameToModelFrame`（edit-core 另有 `groupEditChildrenToSlideMatrix`、`groupEditFrameToModelFrame`）；`elementFrameToSlideMatrix` 与 `elementParentToSlideMatrix` 改为沿渲染链求值，只在非等比组合内的非 90° 整数倍旋转、或此类组合嵌套时结果不同（#7）。
 - `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
 
 ## 0.5.0-beta.6 - 2026-10-10

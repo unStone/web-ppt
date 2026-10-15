@@ -77,11 +77,14 @@ export {
   assertFractionalIndex, compareFractionalIndex, fractionalIndexBetween, initialFractionalIndex,
 } from './fractional-index';
 export {
-  composeSpaceMatrices, elementContentToSlideMatrix, elementFrameToParentMatrix, elementFrameToSlideMatrix,
-  elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix, elementParentToSlidePoint,
-  inverseTransformSpaceVector, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
-  slideToElementParentPoint, slideToScreenPoint, spaceOrientationParity, transformSpacePoint,
-  transformSpaceVector,
+  composeSpaceMatrices, editFrameToModelFrame, elementContentToSlideMatrix, elementEditFrame,
+  elementEditParentToSlideMatrix, elementFrameToParentMatrix, elementFrameToSlideMatrix,
+  elementChildrenToSlideMatrix, elementFrameToSlidePoint, elementParentToRenderedParentMatrix,
+  elementParentToSlideMatrix, elementParentToSlidePoint, groupEditChildrenToSlideMatrix, groupEditFrameToModelFrame,
+  inverseTransformSpaceVector, invertSpaceMatrix,
+  renderedContentToSlideMatrix, renderedElement, renderedFrameToSlideMatrix, screenToSlidePoint, slideToElementFramePoint,
+  slideToElementEditParentPoint, slideToElementParentPoint, slideToScreenPoint, spaceOrientationParity,
+  transformSpacePoint, transformSpaceVector,
 } from './space';
 export type {
   CreateDocOptions, DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutDesignTarget, LayoutPropertyState, LayoutOverrides, LayoutRecord, MasterCatalogItem, MasterDesignState, MasterDesignTarget, MasterOverrides, MasterParagraphPropertyInput, MasterParagraphPropertyOverrides, MasterParagraphStyle, MasterRecord, MasterRunPropertyOverrides, MasterTextLevelOverrides, MasterTextLevelState, MasterTextStyleOverrides, EditableKind, EditAnimationStep, EditDoc, EditDocMeta, EditIdentity, EditIdentityAllocation, EditIdentityRange, EditSaveState, ElementAltTextOverrides, ElementAltTextState, ElementCropState, ElementEffectsState, ElementFillState, ElementId, ElementImageReplacement, ElementInsertionSource, ElementLinkState, ElementMeta, ElementOverrides, ElementPresetGeometryState, ElementStrokeState, ImageCrop, LinkOverride, LinkSourceValue, LinkTarget, RelativeLinkSource, UnsupportedLinkSource, SlideAnimationState, SlideBackgroundState, SlideHiddenState, SlideImageBackground, SlideLayoutState, SlideNotesState, SlideTransitionState,
@@ -124,7 +127,7 @@ export {
 export {
   TEXT_ATOM, textBodyEditText, textPositionAtIndex, textPositionToIndex, textRunEditLength,
 } from './text-position';
-export type { AffineMatrix, ElementFrameTransform, SlideViewport, SpacePoint } from './space';
+export type { AffineMatrix, ElementEditFrame, ElementFrameTransform, SlideViewport, SpacePoint } from './space';
 export { EXTENSION_ADDRESSES, canonicalExtensionPath, canonicalExtensionPatch,
   extensionAddressPatches, isExtensionAddressPatch } from './extension-addresses';
 export { assertEditIdentityWatermark } from './identity-watermark';

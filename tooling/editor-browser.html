@@ -323,9 +323,11 @@
         const targetMatrix = base?.getScreenCTM();
         const overlayMatrix = polygon?.getScreenCTM();
         if (!targetMatrix || !overlayMatrix || !handle) throw new Error(`无法取得 ${record.src.name} 的屏幕矩阵`);
+        // 组缩放已折算进子元素外框，渲染节点的局部坐标是折算后的宽高，不是模型里的子坐标宽高。
+        const rendered = spaceSession.editor.renderedElement(record.id);
         const expected = [
-          new DOMPoint(0, 0), new DOMPoint(record.src.w, 0),
-          new DOMPoint(record.src.w, record.src.h), new DOMPoint(0, record.src.h),
+          new DOMPoint(0, 0), new DOMPoint(rendered.w, 0),
+          new DOMPoint(rendered.w, rendered.h), new DOMPoint(0, rendered.h),
         ].map((point) => screenPoint(point, targetMatrix));
         const actual = polygonPoints(polygon).map((point) => screenPoint(point, overlayMatrix));
         const error = Math.max(...actual.map((point, index) =>
@@ -638,6 +640,7 @@
       report.dataset.resizeP95 = resizeResult.p95.toFixed(3);
       report.dataset.resizeSingularP95 = resizeResult.singularP95.toFixed(3);
       report.dataset.rotationNestedError = rotationResult.nestedError.toFixed(3);
+      report.dataset.rotationNonUniformError = rotationResult.nonUniformError.toFixed(3);
       report.dataset.rotationMultiError = rotationResult.multiError.toFixed(3);
       report.dataset.rotationP95 = rotationResult.p95.toFixed(3);
       report.dataset.snapThresholdError = snapResult.thresholdError.toFixed(3);
@@ -732,8 +735,8 @@
         + `三档缩放手柄/锚点偏差 ${resizeResult.geometryError.toFixed(3)} / `
         + `${resizeResult.hitSizeError.toFixed(3)}px，缩放帧 p95 ${resizeResult.p95.toFixed(3)}ms\n`
         + `60 个 45° 元素近奇异缩放帧 p95 ${resizeResult.singularP95.toFixed(3)}ms`;
-      report.textContent += `\n嵌套/多选旋转偏差 ${rotationResult.nestedError.toFixed(3)} / `
-        + `${rotationResult.multiError.toFixed(3)}px，60 元素旋转帧 p95 ${rotationResult.p95.toFixed(3)}ms`;
+      report.textContent += `\n嵌套/非等比组合/多选旋转偏差 ${rotationResult.nestedError.toFixed(3)} / `
+        + `${rotationResult.nonUniformError.toFixed(3)} / ${rotationResult.multiError.toFixed(3)}px，60 元素旋转帧 p95 ${rotationResult.p95.toFixed(3)}ms`;
       report.textContent += `\n三档缩放吸附/组内/等距参考线偏差 ${snapResult.thresholdError.toFixed(3)} / `
         + `${snapResult.groupError.toFixed(3)} / ${snapResult.spacingError.toFixed(3)}px，`
         + `60 元素吸附帧 p95 ${snapResult.p95.toFixed(3)}ms`;

@@ -70,17 +70,20 @@ async function nestedGeometryContract(openEditor, load) {
       const handle = mount.querySelector('[data-edit-rotation-handle]');
       const start = center(handle.getBoundingClientRect());
       const parentStart = new DOMPoint(start.x, start.y).matrixTransform(parentMatrix.inverse());
-      const parentCenter = { x: record.src.x + record.src.w / 2, y: record.src.y + record.src.h / 2 };
+      // 组缩放折算进子元素外框后，父节点 DOM 里的坐标是渲染外框，不是模型子坐标。
+      // 固件两层组都是等比缩放，所以旋转角在两套坐标里相同。
+      const frame = session.editor.renderedElement(record.id);
+      const parentCenter = { x: frame.x + frame.w / 2, y: frame.y + frame.h / 2 };
       const parentEnd = rotatePoint(parentStart, parentCenter, 37);
       const end = new DOMPoint(parentEnd.x, parentEnd.y).matrixTransform(parentMatrix);
-      const expected = expectedFrameCorners(parentMatrix, { ...record.src, rot: 52 });
+      const expected = expectedFrameCorners(parentMatrix, { ...frame, rot: 52 });
       const staticSvg = mount.querySelector('[data-ppt-layer="static"] svg');
       const defs = staticSvg.querySelector('defs');
       handle.dispatchEvent(pointer('pointerdown', start, 120 + index));
       view.element.dispatchEvent(pointer('pointermove', end, 120 + index));
       await nextFrame();
       const preview = renderedTarget(mount, record.id);
-      geometryError = Math.max(geometryError, pointError(screenCorners(preview.matrix, record.src), expected));
+      geometryError = Math.max(geometryError, pointError(screenCorners(preview.matrix, frame), expected));
       if (!mount.querySelector('[data-edit-rotation-ghost]')
         || mount.querySelector(`[data-edit-id="${record.id}"]`) !== before.target
         || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
@@ -92,7 +95,7 @@ async function nestedGeometryContract(openEditor, load) {
       const committed = session.editor.effectiveElement(record.id);
       const committedTarget = renderedTarget(mount, record.id);
       geometryError = Math.max(
-        geometryError, pointError(screenCorners(committedTarget.matrix, record.src), expected),
+        geometryError, pointError(screenCorners(committedTarget.matrix, frame), expected),
       );
       if (Math.abs(committed.rot - 52) > 1e-6 || session.editor.history.undoCount !== 1
         || mount.querySelector('[data-edit-rotation-ghost]')) {
@@ -101,6 +104,56 @@ async function nestedGeometryContract(openEditor, load) {
       session.editor.undo();
     }
     if (geometryError > 0.5) throw new Error(`嵌套旋转幽灵角度/中心偏差 ${geometryError.toFixed(3)}px`);
+    return geometryError;
+  } finally {
+    session.dispose();
+    mount.remove();
+  }
+}
+
+/**
+ * 1.5×0.75 且自身旋转翻转的组合里，30° 子元素拖过 45°：画面必须是同一矩形绕中心转 37°，
+ * 预览与提交重合、画面宽高不变（组缩放承接的轴互换由模型宽高吸收）。
+ */
+async function nonUniformGeometryContract(openEditor, load) {
+  const mount = contractMount();
+  const session = await openEditor(await load('sample-group-scale.pptx'), { idPrefix: 'browser-rotate-skew-' });
+  try {
+    const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
+    const record = Object.values(session.editor.doc.elements)
+      .find((candidate) => candidate.src.name === '30° 子元素');
+    if (!record) throw new Error('组合缩放固件缺少 30° 子元素');
+    let slideId = record.parent;
+    while (session.editor.doc.elements[slideId]) slideId = session.editor.doc.elements[slideId].parent;
+    view.setSlide(slideId);
+    let geometryError = 0;
+    for (const [index, zoom] of [0.5, 1, 2].entries()) {
+      view.setZoom(zoom);
+      session.editor.select({ kind: 'elements', ids: [record.id], enteredGroup: record.parent });
+      const frame = session.editor.renderedElement(record.id);
+      const before = screenCorners(renderedTarget(mount, record.id).matrix, frame);
+      const screenCenter = { x: (before[0].x + before[2].x) / 2, y: (before[0].y + before[2].y) / 2 };
+      const expected = before.map((point) => rotatePoint(point, screenCenter, 37));
+      const handle = mount.querySelector('[data-edit-rotation-handle]');
+      const start = center(handle.getBoundingClientRect());
+      const end = rotatePoint(start, screenCenter, 37);
+      handle.dispatchEvent(pointer('pointerdown', start, 160 + index));
+      view.element.dispatchEvent(pointer('pointermove', end, 160 + index));
+      await nextFrame();
+      geometryError = Math.max(geometryError,
+        pointError(screenCorners(renderedTarget(mount, record.id).matrix, frame), expected));
+      view.element.dispatchEvent(pointer('pointerup', end, 160 + index));
+      const committed = session.editor.renderedElement(record.id);
+      geometryError = Math.max(geometryError,
+        pointError(screenCorners(renderedTarget(mount, record.id).matrix, committed), expected));
+      if (Math.abs(committed.w - frame.w) > 1e-6 || Math.abs(committed.h - frame.h) > 1e-6
+        || session.editor.history.undoCount !== 1 || mount.querySelector('[data-edit-rotation-ghost]')) {
+        throw new Error(`zoom ${zoom} 非等比组合内旋转未保持画面宽高或未单事务提交：`
+          + `${frame.w}×${frame.h} → ${committed.w}×${committed.h}`);
+      }
+      session.editor.undo();
+    }
+    if (geometryError > 0.5) throw new Error(`非等比组合内旋转的预览/提交偏差 ${geometryError.toFixed(3)}px`);
     return geometryError;
   } finally {
     session.dispose();
@@ -228,6 +281,7 @@ async function performanceContract(openEditor, load) {
 export async function runEditorRotationBrowserContract({ openEditor, load }) {
   return {
     nestedError: await nestedGeometryContract(openEditor, load),
+    nonUniformError: await nonUniformGeometryContract(openEditor, load),
     multiError: await multiGeometryContract(openEditor, load),
     p95: await performanceContract(openEditor, load),
   };

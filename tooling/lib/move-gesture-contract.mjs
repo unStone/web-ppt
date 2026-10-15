@@ -105,8 +105,9 @@ export async function runMoveGestureContract({ check, lib, root }) {
   nestedTarget.dispatchEvent(pointer('pointerdown', 300, 300));
   nestedView.element.dispatchEvent(pointer('pointermove', 340, 320));
   const nestedGhost = translation(nestedContainer.querySelector('[data-edit-drag-ghost]')?.getAttribute('transform'));
-  const parentDeltaExact = near(nestedGhost[0], -11.160254037844396)
-    && near(nestedGhost[1], 0.6698729810778019)
+  // 父级子坐标位移 (-11.16, 0.67) 经两层 2 倍组折算到父组渲染坐标（×4）后挂在幽灵上。
+  const parentDeltaExact = near(nestedGhost[0], -11.160254037844396 * 4)
+    && near(nestedGhost[1], 0.6698729810778019 * 4)
     && nestedContainer.querySelector('[data-edit-selection-ids]')?.getAttribute('transform') === 'translate(40 20)'
     && near(nestedSession.editor.effectiveElement(nestedRecord.id).x, 30)
     && near(nestedSession.editor.effectiveElement(nestedRecord.id).y, 20);

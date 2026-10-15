@@ -31,7 +31,8 @@ function targetScreenCorners(mount, session, record) {
   const base = target?.querySelector(':scope > g[transform]');
   const matrix = base?.getScreenCTM();
   if (!target || !matrix) throw new Error(`无法取得 ${record.src.name} 的屏幕矩阵`);
-  const frame = session.editor.effectiveElement(record.id);
+  // 渲染节点的局部坐标是组缩放折算后的外框，模型宽高只在顶层与之相同。
+  const frame = session.editor.renderedElement(record.id);
   return {
     target,
     corners: transformPoints([

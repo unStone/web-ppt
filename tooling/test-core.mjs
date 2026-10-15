@@ -20,6 +20,7 @@ import { normalizeSvg, snapshotName } from './lib/snapshot.mjs';
 import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
 import { runCoreImageZipContract } from './lib/core-image-zip-contract.mjs';
+import { runGroupTransformContract } from './lib/group-transform-contract.mjs';
 import { makeBmp, makeExifJpeg, makePng } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -372,20 +373,7 @@ group('批量图片导出');
 await runCoreImageZipContract({ imageZip, parsed, check, eq });
 
 group('渲染');
-{
-  const presentation = parsed.get('sample-group-scale.pptx');
-  if (check('归一化组合固件已解析', !!presentation)) {
-    const normal = presentation.slides[0].elements[0];
-    const normalized = presentation.slides[1].elements[0];
-    check('两个固件页面都包含组合', normal.kind === 'group' && normalized.kind === 'group');
-    near('归一化子坐标产生 600 倍组变换', normalized.scaleX, 600);
-    const html = lib.renderSlideToSvg(presentation, presentation.slides[1], { textMode: 'html' });
-    check('组内 HTML 按最终宽度排版', html.includes('width:600px;height:160px'), html.slice(0, 500));
-    check('组内 HTML 保持正常字号', html.includes('font-size:32px'), html.slice(0, 500));
-    const native = lib.renderSlideToSvg(presentation, presentation.slides[1], { textMode: 'svg' });
-    check('组内原生文本也保持正常字号', native.includes('font-size="32"'), native.slice(0, 500));
-  }
-}
+runGroupTransformContract({ lib, parsed, check, eq, near });
 for (const [name, pres] of parsed) {
   for (const textMode of ['html', 'svg']) {
     let structErr = 0, dangling = 0, dupIds = 0;

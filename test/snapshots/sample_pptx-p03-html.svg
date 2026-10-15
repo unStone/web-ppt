@@ -187,12 +187,12 @@
 </g>
 <g data-el="6" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(713.91 430.45)">
-<g transform=" scale(2 2) translate(0 0)">
+<g>
 <g data-el="7" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
-<path d="M 0 14.873 A 14.873 14.873 0 0 1 14.873 0 L 90.113 0 A 14.873 14.873 0 0 1 104.987 14.873 L 104.987 74.365 A 14.873 14.873 0 0 1 90.113 89.239 L 14.873 89.239 A 14.873 14.873 0 0 1 0 74.365 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
-<foreignObject width="104.99" height="89.24" style="overflow:visible">
-<div xmlns="http://www.w3.org/1999/xhtml" style="width:104.99px;height:89.24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<path d="M 0 29.75 A 29.75 29.75 0 0 1 29.75 0 L 180.23 0 A 29.75 29.75 0 0 1 209.97 29.75 L 209.97 148.73 A 29.75 29.75 0 0 1 180.23 178.48 L 29.75 178.48 A 29.75 29.75 0 0 1 0 148.73 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<foreignObject width="209.97" height="178.48" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:209.97px;height:178.48px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:16px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">组合内 A</span>
 </div>
@@ -201,10 +201,10 @@
 </g>
 </g>
 <g data-el="8" style="transform-box:fill-box;transform-origin:center">
-<g transform="translate(125.98 0)">
-<path d="M 0 44.619 A 52.493 44.619 0 0 1 104.987 44.619 A 52.493 44.619 0 0 1 0 44.619 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
-<foreignObject width="104.99" height="89.24" style="overflow:visible">
-<div xmlns="http://www.w3.org/1999/xhtml" style="width:104.99px;height:89.24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
+<g transform="translate(251.97 0)">
+<path d="M 0 89.24 A 104.99 89.24 0 0 1 209.97 89.24 A 104.99 89.24 0 0 1 0 89.24 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<foreignObject width="209.97" height="178.48" style="overflow:visible">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:209.97px;height:178.48px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:4.8px 9.6px 4.8px 9.6px;overflow:visible;">
 <div style="margin:0px 0 0px 0;text-align:center;padding-left:0px;text-indent:0px;line-height:1.2;white-space:pre-wrap;word-break:break-word;">
 <span style="font-size:16px;color:rgb(255,255,255);font-family:'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">组合内 B</span>
 </div>

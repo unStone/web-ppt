@@ -3,7 +3,7 @@ import { createElementAssetHydrator } from '../session-assets';
 import { elementOrder, elementParentChildren } from '../element-order';
 import { fractionalIndexBetween, initialFractionalIndex } from '../fractional-index';
 import {
-  composeSpaceMatrices, elementChildrenToSlideMatrix, invertSpaceMatrix,
+  composeSpaceMatrices, groupEditChildrenToSlideMatrix, groupEditFrameToModelFrame, invertSpaceMatrix,
 } from '../space';
 import type { AffineMatrix } from '../space';
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
@@ -154,16 +154,22 @@ export function pasteElementsPatches(
   const hydrateElementAssets = createElementAssetHydrator(payload.resources);
   const dx = command.at.x - payload.bounds.left;
   const dy = command.at.y - payload.bounds.top;
-  const destinationMatrix: AffineMatrix = doc.slides[destination.parent]
-    ? { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
-    : elementChildrenToSlideMatrix(doc, destination.parent);
+  // 目标组合内先求刚体的编辑外框，再按组缩放换算回子坐标：画面与渲染一致，旋转元素不会被组缩放斜切。
+  const intoGroup = !doc.slides[destination.parent];
+  const destinationMatrix: AffineMatrix = intoGroup
+    ? groupEditChildrenToSlideMatrix(doc, destination.parent)
+    : { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
   const placements = new Map(payload.roots.map((root) => {
     const source = payload.records[root];
     const local = composeSpaceMatrices(
       invertSpaceMatrix(destinationMatrix),
       translated(source.meta.frameToSlide!, dx, dy),
     );
-    return [root, sparsePlacement(source, decomposePlacement(local, source.src.w, source.src.h))] as const;
+    const edit = decomposePlacement(local, source.src.w, source.src.h);
+    const placement = intoGroup
+      ? { ...groupEditFrameToModelFrame(doc, destination.parent, edit), reflectH: edit.reflectH }
+      : edit;
+    return [root, sparsePlacement(source, placement)] as const;
   }));
   const idMap = new Map<string, ElementId>();
   for (const id of Object.keys(payload.records)) idMap.set(id, allocateElementId(doc));

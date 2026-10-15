@@ -14,6 +14,7 @@ import { runElementLayerSaveContract } from './lib/element-layer-save-contract.m
 import { runElementAlignContract } from './lib/element-align-contract.mjs';
 import { runCommonObjectSlideContract } from './lib/common-object-slide-contract.mjs';
 import { runElementClipboardContract } from './lib/element-clipboard-contract.mjs';
+import { runGroupRigidEditContract } from './lib/group-rigid-edit-contract.mjs';
 import { runTextEditContract } from './lib/text-edit-contract.mjs';
 import { runRunFormatContract } from './lib/run-format-contract.mjs';
 import { runAdvancedRunFormatContract } from './lib/advanced-run-format-contract.mjs';
@@ -127,6 +128,7 @@ await runElementAlignContract({ edit, core, load, check });
 await runCommonObjectSlideContract({ edit, core, load, check });
 await runGroupUngroupContract({ edit, core, load, check });
 await runElementClipboardContract({ edit, core, load, check });
+await runGroupRigidEditContract({ edit, core, load, check });
 await runTextEditContract({ edit, core, load, check });
 await runRunFormatContract({ edit, core, load, check });
 await runAdvancedRunFormatContract({ edit, core, load, check });

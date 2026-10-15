@@ -1,5 +1,5 @@
 import {
-  outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint,
+  elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -9,7 +9,7 @@ import {
   constrainedRotation, pointerAngle, rotateElementAroundSlideCenter, shortestRotationDelta,
 } from './rotation-geometry';
 import { updateSelectionOverlayFrame } from './selection-overlay';
-import { transformFrameCorners, transformPreviewMatrix } from './transform-frame';
+import { modelXfrmFields, transformFrameCorners, transformPreviewMatrix } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -17,6 +17,7 @@ type RotationCorners = [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
 
 interface RotationTarget {
   id: ElementId;
+  /** 编辑外框；旋转保持画面宽高，提交时由模型宽高吸收组缩放的轴向互换。 */
   source: TransformFrame;
   partition: SVGElement;
   wrapper: SVGGElement | null;
@@ -86,15 +87,7 @@ export class RotationGestureController {
       .map((id): RotationTarget | null => {
         const partition = findElementPartition(this.options.staticLayer, id);
         if (!partition) return null;
-        const element = this.options.editor.effectiveElement(id);
-        return {
-          id,
-          source: {
-            x: element.x, y: element.y, w: element.w, h: element.h, rot: element.rot,
-            flipH: element.flipH, flipV: element.flipV,
-          },
-          partition, wrapper: null,
-        };
+        return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
       });
     if (!targets.length || targets.some((target) => target === null)) return;
     const typedTargets = targets as RotationTarget[];
@@ -112,7 +105,7 @@ export class RotationGestureController {
       : selectionCenter;
     const startSlide = this.currentSlide({ x: event.clientX, y: event.clientY });
     const start = typedTargets.length === 1
-      ? slideToElementParentPoint(this.options.editor.doc, typedTargets[0].id, startSlide)
+      ? slideToElementEditParentPoint(this.options.editor.doc, typedTargets[0].id, startSlide)
       : startSlide;
     const session: RotationSession = {
       targets: typedTargets, selectionCenter, angleCenter,
@@ -146,7 +139,7 @@ export class RotationGestureController {
   private anglePointer(session: RotationSession, screen: SpacePoint): SpacePoint {
     const slide = this.currentSlide(screen);
     return session.targets.length === 1
-      ? slideToElementParentPoint(this.options.editor.doc, session.targets[0].id, slide)
+      ? slideToElementEditParentPoint(this.options.editor.doc, session.targets[0].id, slide)
       : slide;
   }
 
@@ -210,7 +203,10 @@ export class RotationGestureController {
     if (!proposal.frames.some(({ target, frame }) => this.changed(target.source, frame))) return null;
     return () => this.options.editor.transaction((transaction) => {
       for (const { target, frame } of proposal.frames) {
-        transaction.exec({ type: 'SetXfrm', id: target.id, x: frame.x, y: frame.y, rot: frame.rot });
+        transaction.exec({
+          type: 'SetXfrm', id: target.id,
+          ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'rot']),
+        });
       }
     }, '旋转元素');
   }

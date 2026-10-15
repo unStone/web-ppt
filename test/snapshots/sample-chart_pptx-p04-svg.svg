@@ -11,7 +11,7 @@
 </g>
 <g data-el="10" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(48 120)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g transform="translate(7.33 7.33)">
 <text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
 <tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">区域收入分布（饼图）</tspan>
@@ -102,7 +102,7 @@
 </g>
 <g data-el="11" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(640 120)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g transform="translate(7.33 7.33)">
 <text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
 <tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">两年对比（环形图）</tspan>

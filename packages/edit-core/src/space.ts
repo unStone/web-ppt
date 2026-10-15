@@ -1,4 +1,5 @@
-import type { ElementBase, GroupElement } from '@web-ppt/core';
+import { placeGroupChild, placeGroupFrame, unplaceGroupFrame } from '@web-ppt/core';
+import type { ElementBase, GroupElement, SlideElement } from '@web-ppt/core';
 import { effectiveElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 
@@ -122,25 +123,64 @@ export function invertSpaceMatrix(matrix: AffineMatrix): AffineMatrix {
   };
 }
 
-function parentToSlideMatrix(doc: EditDoc, chain: ElementId[]): AffineMatrix {
+/**
+ * 渲染器把组变换折算进子元素外框（描边、字号不随组缩放）。所有屏幕几何都沿这条渲染链求，
+ * 否则非等比组合里的旋转子元素会被当成斜切的平行四边形，选择框、命中与手势和画面对不上。
+ */
+interface RenderedChain {
+  elements: SlideElement[];
+  /** 末元素自身局部坐标各轴承接的组缩放；顶层元素为 1。 */
+  kx: number;
+  ky: number;
+}
+
+function renderedChain(doc: EditDoc, id: ElementId): RenderedChain {
+  const elements: SlideElement[] = [];
+  let kx = 1;
+  let ky = 1;
+  for (const elementId of elementChain(doc, id)) {
+    const own = effectiveElement(doc, elementId);
+    const parent = elements[elements.length - 1];
+    if (parent && parent.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${elementId}`);
+    if (parent) {
+      ({ kx, ky } = placeGroupFrame(parent, own));
+      elements.push(placeGroupChild(parent, own));
+    } else {
+      kx = 1;
+      ky = 1;
+      elements.push(own);
+    }
+  }
+  return { elements, kx, ky };
+}
+
+/** 父组渲染坐标 → 幻灯片：沿祖先组只叠加外框平移、旋转与翻转。 */
+function editParentToSlide(chain: RenderedChain): AffineMatrix {
   let matrix = IDENTITY;
-  for (let index = 0; index < chain.length - 1; index++) {
-    const element = effectiveElement(doc, chain[index]);
-    matrix = composeSpaceMatrices(matrix, elementFrameToParentMatrix(element));
-    if (element.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${chain[index]}`);
+  for (let index = 0; index < chain.elements.length - 1; index++) {
+    const element = chain.elements[index];
     matrix = composeSpaceMatrices(
-      matrix,
-      composeSpaceMatrices(flipInFrame(element), childrenToGroupFrame(element)),
+      matrix, composeSpaceMatrices(elementFrameToParentMatrix(element), flipInFrame(element)),
     );
   }
   return matrix;
 }
 
+function renderedParent(chain: RenderedChain, id: ElementId): GroupElement | null {
+  const parent = chain.elements[chain.elements.length - 2];
+  if (!parent) return null;
+  if (parent.kind !== 'group') throw new Error(`非组元素不能拥有子元素：${id}`);
+  return parent;
+}
+
+/** 模型局部坐标（0..w, 0..h）→ 幻灯片：渲染外框再乘上各轴组缩放，保持刚体。 */
 export function elementFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
-  const chain = elementChain(doc, id);
+  const chain = renderedChain(doc, id);
   return composeSpaceMatrices(
-    parentToSlideMatrix(doc, chain),
-    elementFrameToParentMatrix(effectiveElement(doc, chain[chain.length - 1])),
+    composeSpaceMatrices(
+      editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1]),
+    ),
+    scaling(chain.kx, chain.ky),
   );
 }
 
@@ -150,8 +190,16 @@ export function elementContentToSlideMatrix(doc: EditDoc, id: ElementId): Affine
   return composeSpaceMatrices(elementFrameToSlideMatrix(doc, id), flipInFrame(element));
 }
 
+/**
+ * 模型父空间（父组子坐标）→ 幻灯片。子元素中心按直接父组渲染后的缩放映射，
+ * 所以平移类命令在这里换算的位移与画面一致；外框尺寸与旋转改用编辑父空间计算。
+ */
 export function elementParentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
-  return parentToSlideMatrix(doc, elementChain(doc, id));
+  const chain = renderedChain(doc, id);
+  const parent = renderedParent(chain, id);
+  return parent
+    ? composeSpaceMatrices(editParentToSlide(chain), childrenToGroupFrame(parent))
+    : IDENTITY;
 }
 
 /** 组的子坐标系包含自身 frame、翻转及 chOff/chExt 缩放，不能等同于组所在父坐标系。 */
@@ -162,6 +210,91 @@ export function elementChildrenToSlideMatrix(doc: EditDoc, id: ElementId): Affin
     elementFrameToSlideMatrix(doc, id),
     composeSpaceMatrices(flipInFrame(element), childrenToGroupFrame(element)),
   );
+}
+
+/** 元素在其父容器渲染坐标中的投影：组内子元素已折算组缩放。 */
+export function renderedElement(doc: EditDoc, id: ElementId): SlideElement {
+  const chain = renderedChain(doc, id);
+  return chain.elements[chain.elements.length - 1];
+}
+
+/** 渲染外框到幻灯片坐标：沿祖先组只叠加外框平移、旋转与翻转，缩放已进入外框尺寸。 */
+export function renderedFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const chain = renderedChain(doc, id);
+  return composeSpaceMatrices(
+    editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1]),
+  );
+}
+
+export function renderedContentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  return composeSpaceMatrices(renderedFrameToSlideMatrix(doc, id), flipInFrame(renderedElement(doc, id)));
+}
+
+/**
+ * 父组子坐标 → 父组渲染坐标；顶层元素的两套坐标相同。
+ * 平移预览在模型父空间求得，挂到组内 DOM 前用它换算位移。
+ */
+export function elementParentToRenderedParentMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  const parent = renderedParent(renderedChain(doc, id), id);
+  return parent ? childrenToGroupFrame(parent) : IDENTITY;
+}
+
+/**
+ * 编辑外框：元素在父组渲染坐标里的刚体外框。缩放与旋转手势在这里计算，
+ * 提交前经 editFrameToModelFrame 写回模型，画面与提交结果因此一致。
+ */
+export interface ElementEditFrame extends ElementFrameTransform {
+  flipH: boolean;
+  flipV: boolean;
+}
+
+export function elementEditFrame(doc: EditDoc, id: ElementId): ElementEditFrame {
+  const element = renderedElement(doc, id);
+  return {
+    x: element.x, y: element.y, w: element.w, h: element.h, rot: element.rot,
+    flipH: element.flipH, flipV: element.flipV,
+  };
+}
+
+/** 父组渲染坐标（编辑父空间）→ 幻灯片。 */
+export function elementEditParentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
+  return editParentToSlide(renderedChain(doc, id));
+}
+
+export function slideToElementEditParentPoint(doc: EditDoc, id: ElementId, point: SpacePoint): SpacePoint {
+  return transformSpacePoint(invertSpaceMatrix(elementEditParentToSlideMatrix(doc, id)), point);
+}
+
+/**
+ * 编辑外框 → 模型外框（父组子坐标）。旋转只改角度，宽高按目标角度所在象限承接的组缩放除回去：
+ * 跨过 45° 等边界时画面尺寸保持不变，由模型宽高吸收轴向互换。
+ */
+export function editFrameToModelFrame(
+  doc: EditDoc, id: ElementId, frame: ElementFrameTransform,
+): ElementFrameTransform {
+  const parent = renderedParent(renderedChain(doc, id), id);
+  if (!parent) return { x: frame.x, y: frame.y, w: frame.w, h: frame.h, rot: frame.rot };
+  return { ...unplaceGroupFrame(parent, frame), rot: frame.rot };
+}
+
+/** 组合子元素的编辑父空间 → 幻灯片；粘贴进组合时用它把幻灯片外框换算成刚体的组内外框。 */
+export function groupEditChildrenToSlideMatrix(doc: EditDoc, groupId: ElementId): AffineMatrix {
+  const chain = renderedChain(doc, groupId);
+  const group = chain.elements[chain.elements.length - 1];
+  if (group.kind !== 'group') throw new Error(`非组元素没有子坐标系：${groupId}`);
+  return composeSpaceMatrices(
+    editParentToSlide(chain),
+    composeSpaceMatrices(elementFrameToParentMatrix(group), flipInFrame(group)),
+  );
+}
+
+/** 组合内的编辑外框 → 该组合子坐标里的模型外框。 */
+export function groupEditFrameToModelFrame(
+  doc: EditDoc, groupId: ElementId, frame: ElementFrameTransform,
+): ElementFrameTransform {
+  const group = renderedElement(doc, groupId);
+  if (group.kind !== 'group') throw new Error(`非组元素没有子坐标系：${groupId}`);
+  return { ...unplaceGroupFrame(group, frame), rot: frame.rot };
 }
 
 export function elementFrameToSlidePoint(doc: EditDoc, id: ElementId, point: SpacePoint): SpacePoint {

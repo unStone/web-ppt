@@ -31,7 +31,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 131.63KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 134.43KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 185.70KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 59.27KB |
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 12.20KB |
@@ -236,7 +236,7 @@ const svg = renderSlideToSvg(pres, pres.slides[0], { idPrefix: 'editor-slide-1-'
 
 ```ts
 import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, disposeDoc, effectiveElement, invalidateElement, toSlide } from '@web-ppt/edit-core';
+import { createDoc, disposeDoc, invalidateElement, renderedElement, toSlide } from '@web-ppt/edit-core';
 
 const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
 const doc = createDoc(source);
@@ -248,13 +248,14 @@ invalidateElement(doc, elementId);                  // 只失效该元素、组�
 const svg = renderSlideToSvg(source, toSlide(doc, slideId), { idPrefix: `${slideId}-` });
 
 // 交互时只渲染脏元素；同一 SVG 中每个元素必须使用独立、稳定的前缀。
-const part = renderElementToSvg(effectiveElement(doc, elementId), {
+// renderedElement 已把祖先组合的缩放折算进外框，组内元素的局部重渲与整页渲染一致。
+const part = renderElementToSvg(renderedElement(doc, elementId), {
   idPrefix: `${slideId}-${elementId}-`,
 });
 // part.markup 与 part.defs 应作为该元素自己的两个 DOM 分区一起替换。
 
 // 文本编辑层放在 SVG 外；正常浏览器与 foreignObject 预览复用完全相同的 HTML/CSS。
-const element = effectiveElement(doc, elementId);
+const element = renderedElement(doc, elementId);
 if (element.kind === 'shape' && element.text) {
   const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
   textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h);
@@ -452,7 +453,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对 |
 
-测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；202 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
+测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；210 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
 
 ## 交流
 

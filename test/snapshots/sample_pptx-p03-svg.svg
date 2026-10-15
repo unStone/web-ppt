@@ -147,19 +147,19 @@
 </g>
 <g data-el="6" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(713.91 430.45)">
-<g transform=" scale(2 2) translate(0 0)">
+<g>
 <g data-el="7" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
-<path d="M 0 14.873 A 14.873 14.873 0 0 1 14.873 0 L 90.113 0 A 14.873 14.873 0 0 1 104.987 14.873 L 104.987 74.365 A 14.873 14.873 0 0 1 90.113 89.239 L 14.873 89.239 A 14.873 14.873 0 0 1 0 74.365 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
-<text x="52.49" y="50" text-anchor="middle" xml:space="preserve">
+<path d="M 0 29.75 A 29.75 29.75 0 0 1 29.75 0 L 180.23 0 A 29.75 29.75 0 0 1 209.97 29.75 L 209.97 148.73 A 29.75 29.75 0 0 1 180.23 178.48 L 29.75 178.48 A 29.75 29.75 0 0 1 0 148.73 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<text x="104.99" y="94.61" text-anchor="middle" xml:space="preserve">
 <tspan font-size="16" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">组合内 A</tspan>
 </text>
 </g>
 </g>
 <g data-el="8" style="transform-box:fill-box;transform-origin:center">
-<g transform="translate(125.98 0)">
-<path d="M 0 44.619 A 52.493 44.619 0 0 1 104.987 44.619 A 52.493 44.619 0 0 1 0 44.619 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
-<text x="52.49" y="50" text-anchor="middle" xml:space="preserve">
+<g transform="translate(251.97 0)">
+<path d="M 0 89.24 A 104.99 89.24 0 0 1 209.97 89.24 A 104.99 89.24 0 0 1 0 89.24 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<text x="104.99" y="94.61" text-anchor="middle" xml:space="preserve">
 <tspan font-size="16" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">组合内 B</tspan>
 </text>
 </g>

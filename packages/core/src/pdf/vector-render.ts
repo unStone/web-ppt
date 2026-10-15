@@ -1,5 +1,5 @@
 import type {Presentation,Slide,SlideElement} from '../types';
-import {renderElementToSvg,renderSlideToSvg} from '@web-ppt/core';
+import {placeGroupChild,renderElementToSvg,renderSlideToSvg} from '@web-ppt/core';
 import type {VectorFonts} from './vector-fonts';
 import {locateVectorError} from './vector-error';
 
@@ -7,7 +7,8 @@ export async function vectorSlideMarkup(pres:Presentation,slide:Slide,slideNumbe
   // 原生同步测量回调没有对象身份；逐对象补齐真实测量，失败能定位到组内叶节点。
   // 仍使用同一原生排版器，整页渲染复用本次导出的测量缓存；不接管宿主字体生命周期。
   const prepare = async (el:SlideElement):Promise<void> => {
-    if (el.kind === 'group') {for (const child of el.children) await prepare(child); return;}
+    // 组内文字按折算后的外框排版，预测量必须用同一外框，否则归一化组合会按 1px 宽度断行。
+    if (el.kind === 'group') {for (const child of el.children) await prepare(placeGroupChild(el,child)); return;}
     try {await fonts.render(measureText => renderElementToSvg(el,{textMode:'svg',idPrefix:'pdf-measure',measureText}).markup);}
     catch (error) {locateVectorError(error,slideNumber,el.id,anonymous);}
   };
