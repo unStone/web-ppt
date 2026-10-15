@@ -11,7 +11,10 @@ export interface VideoOptions {
   slideDurationMs?: number;
   /** 自动触发每个点击批次前的停留，默认 700 ms。 */
   clickDelayMs?: number;
-  /** 视频无音轨；显式允许把内嵌音视频作为静态封面输出。 */
+  /**
+   * 显式允许内嵌音视频以静态封面呈现；文稿含媒体时必须开启，否则导出直接拒绝。
+   * 开启 `audio` / `videoOverlay` 时同样必需：二者只覆盖带 timing 播放语义的媒体，失败时退回封面。
+   */
   mediaPosters?: boolean;
   /** 导出音轨：timing 媒体节点的音频混为 Opus；无音频媒体时仍为无声视频 */
   audio?: boolean;
@@ -19,7 +22,12 @@ export interface VideoOptions {
   videoOverlay?: boolean;
   signal?: AbortSignal;
   onProgress?: (value: { completed: number; total: number; slideNumber: number }) => void;
-  /** 增强能力失败的显式通道（稳定 reason）：视频提轨解码失败不阻断导出，经此暴露；产品层可订阅展示 */
+  /**
+   * 增强能力失败的显式通道（稳定 reason），不阻断导出；产品层可订阅展示：
+   * - `video-audio-decode-failed`：视频提轨解码失败，该视频不混入音轨
+   * - `video-overlay-unavailable`：内嵌视频加载失败或超时，全程保留海报帧
+   * - `video-overlay-frame-unavailable`：内嵌视频取帧失败（seek 超时等），部分帧可能为海报或非目标时刻画面
+   */
   onWarning?: (reason: string, detail: { slideNumber: number; elementName: string }) => void;
 }
 export function groupDuration(steps: AnimStep[]): number {

@@ -32,9 +32,9 @@ blocked_by:
 
 | 项 | 当前实现 |
 |---|---|
-| 取帧方式 | `viewer-core/src/video/media-overlay.ts` 用浏览器 `<video>` seek + `drawImage` 叠加当前帧，替代海报帧；同一媒体字节 + 同一时间戳得到同一帧，seek 阈值 1/30s |
+| 取帧方式 | `viewer-core/src/video/media-overlay.ts` 用浏览器 `<video>` seek + `drawImage` 叠加当前帧，替代海报帧；同一媒体字节 + 同一时间戳得到同一帧，seek 阈值 1/30s；就绪条件为首帧可画（`loadeddata`） |
 | 时间轴 | 媒体组起始时刻与音轨共用同一 `groupStarts` 计算，时间轴游标贯通切换、点击批次与停留 |
-| 失败 | 元数据 5s 超时的视频退回海报帧 |
-| 验收 | 真实 Chrome 导出现场生成的 MP4 帧叠加成功（`tooling/test-video-audio.mjs`） |
+| 失败 | 不阻断导出，退回海报帧并经 `onWarning` 暴露稳定 reason：加载失败、5s 内未取得首帧或时长无效 → `video-overlay-unavailable`（每个元素一次）；seek 超时 500ms 或帧数据不可用 → `video-overlay-frame-unavailable`（每个元素一次）。海报回退以调用方显式传 `mediaPosters: true` 为前提 |
+| 验收 | 真实 Chrome（`tooling/test-video-audio.mjs`）：现场生成的 MP4 帧叠加成功且无 warning；损坏字节与永不就绪的 MediaSource 各报一次 `video-overlay-unavailable`（含页号与元素名），导出照常完成 |
 
-与本票范围的差距：未实现有界解封装与关键帧定位（依赖浏览器 `<video>` 的容器支持），元素裁剪 / 透明度 / 变换与层叠、循环与跨页策略、可变帧率、长视频内存边界、独立读取器的画面选择与音画同步验证均未登记；退回海报帧未经稳定 reason 暴露。补齐后关闭。
+与本票范围的差距：未实现有界解封装与关键帧定位（依赖浏览器 `<video>` 的容器支持），元素裁剪 / 透明度 / 变换与层叠、循环与跨页策略、可变帧率、长视频内存边界、独立读取器的画面选择与音画同步验证均未登记；`video-overlay-frame-unavailable` 尚无稳定复现的验收样本。补齐后关闭。
