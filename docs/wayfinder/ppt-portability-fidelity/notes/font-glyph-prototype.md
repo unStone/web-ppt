@@ -3,7 +3,7 @@
 2026-09-09，004：路线可行。采用显式字体字节、可注入整形器和文稿独占 Worker；首版以静态 TTF/glyf 和横排 Latin/汉字为边界。
 **后续校正：**011 的真实 FontFace 验证发现，下面记录的 6/6“可整形”中五份含非法 cmap language，Chrome 拒绝安装。正式 Provider 已补校验，详细限制见[实现记录](font-glyph-implementation.md)。本页保留历史测量，不能作为六份可安装字体的证明。
 
-本次只交付原型及证据，[011 正式实现](tickets/011-font-glyph-implementation.md)完成后才进入 [005 矢量 PDF](tickets/005-vector-pdf.md)。
+本次只交付原型及证据，[011 正式实现](../tickets/011-font-glyph-implementation.md)完成后才进入 [005 矢量 PDF](../tickets/005-vector-pdf.md)。
 
 ## 发现与选择
 
@@ -77,11 +77,11 @@ Worker 的 CDP 会话本机超时，因此没有声称取得 Worker JS 堆或瞬
 
 ## 样本、复现和架构
 
-- [正式 API 与复现说明](../../api/font-glyphs.md)、[公开类型](../../../packages/fonts/src/glyphs/types.ts)。本页数字保留为 004 历史记录；011 重新测量的产物位于 `out/font-glyphs/`。
+- [正式 API 与复现说明](../../../api/font-glyphs.md)、[公开类型](../../../../packages/fonts/src/glyphs/types.ts)。本页数字保留为 004 历史记录；011 重新测量的产物位于 `out/font-glyphs/`。
 - 固定上游提交、字节 hash、改名后的 OFL 子集及许可证已移入 `tooling/font-glyph-samples/`。生成器连续两次输出完全相同，manifest 覆盖 16 份样本/许可证文件。
 - 真实 MTX 只读取本地 POI 语料：`placeholder-layout-color.pptx`，SHA-256 `b683af99cf4e71db112fe87db15840846c53dbc7a6839cbf84804980d21af9ce`。未将其字体加入发布包或 OFL 子集。
 - `fixtures/sample-embedfont.pptx` 的 MTX 标志样本没有真实压缩，只能验证 hook 分支；本轮没有把它计入 6 份真实 MTX。
-- 004 阶段未改生产源码。011 已将正式 Provider 接入 Cordis 文稿服务，SDK 保持无框架；参见 [Cordis 约定](../../design/cordis-editor.md)。
+- 004 阶段未改生产源码。011 已将正式 Provider 接入 Cordis 文稿服务，SDK 保持无框架；参见 [Cordis 约定](../../../design/cordis-editor.md)。
 - 原型临时实现、入口与私有依赖已在 011 吸收时删除；正式 API 的独立证明取代旧命令，本页原始证据及边界仍保留。
 
 四项完整链式门禁通过；性能首轮受环境影响，按既有规则单次复测通过，未放宽预算。最终门禁、打包边界和文件 hash 见 `out/font-glyph-prototype/acceptance.json`。

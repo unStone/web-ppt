@@ -1,11 +1,9 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-09-09，上一轮扩展交付基线 `8803e07`。扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，验证证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-10-15，基线 `00e5af9`，当前包版本 `0.5.0-beta.6`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
-> 下一阶段按[内容流转、导出与保真计划](wayfinder/ppt-portability-fidelity/plan.md)推进；[高级文本生成保存与复制](api/portable-rich-text.md)、[经典图表多级类别编辑](api/chart-hierarchical-categories.md)、共享工作簿、字体 Provider 与 Cordis 产品层已完成；矢量 PDF 进入实验性 beta 交付，整项验收仍在进行。详见[本轮进度与下一步](releases/0.5.0-beta.5.md)。
-
-盘点 `0.5.0-beta.5` 的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的
-路径与技术方案。范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
+盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径。
+范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
 
 判断做不做只用两条：**对使用者有没有成本**（运行时、体积、复杂度落不落到用户头上）、**有没有解法**。
 工作量不是理由；能做成按需入口 / 可 tree-shake 的等于零成本。
@@ -23,16 +21,20 @@
 用户于 2026-09-06 要求跳过 Windows 真机验证，先完成功能；真实 ChartEx 类型语料、Windows 验收、
 beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api/api-stability.md)。
 
+下一阶段（[内容流转、导出与保真](wayfinder/ppt-portability-fidelity/map.md)）已完成高级文本流转、多级类别、
+共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）进行中，其中音轨已随
+`0.5.0-beta.6` 发布；SmartArt/OLE、高级渲染与旧 PPT（008–010）待调查。
+
 ### 1.2 验证状态
 
-当前完整门禁与本轮已知限制见[beta.5 交付说明](releases/0.5.0-beta.5.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
+门禁关系与测试套件见[测试规范](engineering/testing.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
 Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。
 
 ### 1.3 里程碑
 
 | M | 内容 | 状态 |
 |---|---|---|
-| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 702 对指纹逐字节等价 |
+| M0 | 地基：core 加法 + `EditDoc` + 投影渲染 | ✅ 全固件编辑等价指纹逐字节一致 |
 | M1 | 保存链路：保留型 XML + zip 直通 + 补丁引擎 | ⚠️ 自动证明全绿，**PowerPoint 真机验收缺席** |
 | M2 | 选择与变换：三层视图、命中、手柄、吸附、层级、对齐、剪贴板、历史 | ✅ |
 | M3 | 文本编辑：覆盖层、IME、扁平模型、段落/run 属性、autofit、Safari engine 行盒 | ✅ |
@@ -40,21 +42,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | M5 | 打磨：格式刷、查找替换、选择窗格、锁定、崩溃恢复、切换效果 | ✅ |
 | M6 | 扩展：动画、顶点、表样式、协同适配包 | ✅ 四项全部独立验收 |
 | M7 | 设计：主题、母版、版式、三套按需模板与统一交付旅程 | ✅ Chrome + 11 件 Office 清单 |
-| 扩展 | 图表/批注/页面适配/内部对象编辑、高级渲染、直接导出与旧 PPT | ✅ 七类能力完成，1796 项专项；支持边界见能力矩阵 |
-
-### 1.4 本次交付审计（已收口）
-
-`npm run verify` 首次运行暴露的全部是**源码对、交出去的东西不对**这一类；
-[建立跨产物一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) 已逐项修复并固化守卫：
-
-| # | 首次发现 | 处理结果 | 固化守卫 |
-|---|---|---|---|
-| 1 | 三份文档的断言数全线过期 | 按实测同步，见上方门禁表 | 各套件全绿后落盘，verify 定点比对 |
-| 2 | 快照目录会残留无消费者的旧基线 | 新增孤儿基线检查 | core 测试以本轮实际使用集合反查目录 |
-| 3 | README 与官网包表漏 `@web-ppt/collab` | 三张表均完整列八包 | 包表集合必须与非 private package 完全一致 |
-| 4 | collab 体积无发布入口声明 | 补 11.73KB gzip | 读取 `package.json#main` 后实测 gzip |
-| 5 | 14,288B 与 11.76KB 看似冲突 | 前者是排除 peer 的测试薄包，后者是发布入口 | CHANGELOG 同时声明并分别核对 |
-| 6 | 稳定版清单仍写七包 | 改为八包及真实发布顺序 | 发布包版本与构建清单同步比对 |
+| 扩展 | 图表/批注/页面适配/内部对象编辑、高级渲染、直接导出与旧 PPT | ✅ 七类能力完成；支持边界见能力矩阵 |
 
 ---
 
@@ -85,7 +73,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 嵌入字体 | ✅ EOT 剥壳；可选字体与字形 Provider | — | 常规解析使用解码 hook；产品编辑器通过独占 Worker 验证权限、应用字体及检查缺字，见[支持范围](api/font-glyphs.md) |
 
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
-批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。新增直接图片页面 PDF 与无音轨 WebM，均为按需入口。
+批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。直接导出有图片页面 PDF、实验性矢量 PDF（可搜索文字）与 WebM（可选 Opus 音轨、实验性内嵌视频帧合成），均为按需入口。
 
 ### 2.2 写：编辑命令与按需扩展
 
@@ -102,7 +90,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 链接 | `SetLink`（元素级 + run 级） | — |
 | 格式 | `ApplyFormat`（格式刷） | — |
 | 版式/母版/主题 | `SetTheme` + 主题目录；版式/母版设计画布 + 复用元素/背景/切换命令 + `p:txStyles` | — |
-| 经典图表 | 按需数据、多级类别与类型/样式编辑，cache/内嵌工作簿同步 | 共享工作簿仍只读；画布仅绘制叶级类别；不兼容类型转换明确拒绝 |
+| 经典图表 | 按需数据、多级类别与类型/样式编辑，cache/内嵌工作簿同步；`chart-shared` 共享工作簿联动编辑 | 画布未绘制父级分组轴；无法证明来源的旧数据只读；不兼容类型转换明确拒绝 |
 | 现代图表 | ChartEx 分层数据、增删行、工作簿同步 | 完整 Office 真机验收 |
 | 批注 | 新增、修改、删除、回复与字段级历史/协同 | — |
 | 媒体 | 按需 `AddMedia`：PCM WAV / MP4（含分片）/ 显式外链、默认音频图标、`ReplaceMediaPoster`；框架/官网入口、历史与保存、选中媒体播放与失败提示 | Windows PowerPoint 实测；无原包复制需先保存重开 |
@@ -125,7 +113,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 性能契约 | ✅ 抗环境负载，功能失败与预算超标分离 |
 | 官网编辑页 | ✅ 独立 `editor.html`，本机打开/模板新建/编辑/保存/恢复 |
 | 触屏 / 移动 | ✅ 手指细描边容差 + 双指缩放/平移 + 长按上下文 seam；查看模式保留页面滚动 |
-| 国际化 | ✅ 官网三页完整中英文、SEO、原地切换、动态工具/上下文名称及错误恢复；键盘/触屏、根路径/子路径生产回归通过，发布包不含站点词条，详见[验收矩阵](design/site-i18n.md) |
+| 国际化 | ✅ 官网三页完整中英文、SEO、原地切换、动态工具/上下文名称及错误恢复；键盘/触屏、根路径/子路径生产回归通过，发布包不含站点词条，详见[验收矩阵](ux/site-i18n.md) |
 | 文件保存 UX | ✅ 产品层 File System Access + 下载双路径、会话目标与另存为、延迟保存点及失败重试；详见[本机文件保存](api/local-file-save.md) |
 
 ---
@@ -162,7 +150,9 @@ flowchart TD
 | ChartEx 解析与编辑 | 有（现代图表需显示及改数） | 七类原生布局、分层数据与工作簿同步；地图读取 geoCache | ✅ **功能完成**，继续真实语料与 Office 原生验收 |
 | 图表类型/样式、批注编辑、页面确保适合 | 有（高频编辑工作流） | 独立入口，沿用事务/历史/恢复/协同 | ✅ **已完成** |
 | SmartArt / OLE / 墨迹内部编辑 | 有（只移动外框无法改内容） | 按可识别格式编辑原生数据 | ✅ **能力矩阵内已完成**，未知格式保留边界 |
-| PDF / WebM 直接导出 | 有（无需其他应用即可交付） | 图片页面 PDF、无音轨 WebM，浏览器按需编码 | ✅ **已完成** |
+| PDF / WebM 直接导出 | 有（无需其他应用即可交付） | 图片页面 PDF、WebM，浏览器按需编码 | ✅ **已完成** |
+| 矢量、可搜索 PDF | 有（图片 PDF 文字不可选、放大失真） | 独立入口写字体、字形与矢量路径，复杂效果局部回退 | **进行中**（005，实验性入口已发布） |
+| 视频音轨 / 内嵌视频合成 | 有（导出视频无声、媒体只剩海报） | 固定时间轴混音 + Opus；`<video>` 取帧合成 | **进行中**（006 已发布待补验收证据，007 首个切片） |
 | 媒体插入 | WAV / MP4 / 外链 + 海报编辑、框架/官网入口、按需恢复与播放降级已实现；PowerPoint 实测待补 | 有，独立按需入口 | **功能完成，真机验收暂缓**，见[媒体操作与 API](api/media-insertion.md) |
 | File System Access | 有（Safari/Firefox 无法原地覆盖） | 部分（仅 Chromium） | ✅ **产品层双路径已完成**，不进内核 |
 | EditContext | 无（contenteditable 已能用） | 部分（仅 Chromium） | ✅ 按需渐进增强，真实 Chromium 输入与失败回退已验证 |
@@ -182,7 +172,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    B["0.5.0-beta.5<br/>当前包版本"] --> V6["0.6 编辑完整度<br/>功能完成"]
+    B["0.5.0-beta.6<br/>当前包版本"] --> V6["0.6 编辑完整度<br/>功能完成"]
     V6 --> V7["0.7 模板与主题<br/>功能完成"]
     V7 --> V8["0.8 数据与保真<br/>功能完成"]
     V8 --> X["七类扩展<br/>实现与自动门禁完成"]
@@ -194,261 +184,36 @@ flowchart LR
 
 | 版本 | 主题 | 票据 | 阻塞 |
 |---|---|---|---|
-| **0.5.0** | 转正，零新能力 | 一致性闸门 ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
+| **0.5.0** | 转正，零新能力 | [一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
 | **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 ✅ | 无 |
 | **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
 | **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) ✅ | 功能完成；真实语料单独验收 |
 | **扩展（版本待定）** | 深度编辑、高级渲染与直接导出 | [七类扩展交付](wayfinder/ppt-expanded-capabilities/map.md) ✅，实现提交 `8803e07` | 自动验收通过；Windows 真机按用户要求跳过 |
-| **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表及正式字体已完成；下一项矢量 PDF，长尾格式先定样本及支持范围 |
+| **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表及正式字体已完成；矢量 PDF、视频音轨与内嵌视频合成进行中；长尾格式先定样本及支持范围 |
 | **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api/api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
 
 一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
 
 ---
 
-## 5. 已实现的技术方案
+## 5. 已实现能力的技术方案索引
 
-以下记录实现约束；历史票据中的验收目标与当前验证状态分开登记，当前状态以 §1 为准。
+技术方案与验收证据维护在对应票据或 API 文档中，本表只做索引。
 
-### 5.1 ✅ [补齐表格结构与单元格格式编辑](wayfinder/ppt-editing-completeness/tickets/001-table-structure-editing.md)
-
-已补齐行列增删、合并/拆分、行高列宽与单元格样式。
-
-**落点**
-
-| 能力 | OOXML |
+| 能力 | 方案与证据 |
 |---|---|
-| 行 | `a:tbl/a:tr`，`@h` 行高（EMU） |
-| 列 | `a:tbl/a:tblGrid/a:gridCol@w`；**每行 `a:tc` 数必须等于 `gridCol` 数** |
-| 合并 | 锚格 `a:tc@gridSpan`（横跨）/ `@rowSpan`（纵跨）；被覆盖格写 `@hMerge="1"` / `@vMerge="1"` 且**仍须存在** |
-| 单元格 | `a:tcPr`：`@anchor` `@marL/R/T/B` `@vert` + `a:lnL/lnR/lnT/lnB/lnTlToBr/lnBlToTr` + 填充 |
-
-**结构编辑的四个约束**：
-
-| 难点 | 后果 | 解法 |
-|---|---|---|
-| 删行/列会切断跨越它的合并矩形 | `hMerge`/`vMerge` 悬空 → PowerPoint 提示修复 | 删除前先把跨越边界的合并**分解**成独立格，作为同一事务的一部分 |
-| 表格 frame 的 `ext` 由行高列宽之和决定 | 插行后 frame 高度不对，视觉漂移 | 复用 `037`（spAutoFit）的 **entry 级因果历史**：结构改动与 frame 改高是一个原子单元 |
-| 协同/恢复日志需要稳定地址 | 行列索引随插删漂移 | 对称的 `rowId` / `colId`，与同一分配器对接 |
-| 条纹与首末行列样式由**序号**派生 | 插删后整表样式全变 | 投影缓存对表格**整体失效**，不做逐格失效 |
-
-**模型**：合并只保留**单一真值**——锚格 + 跨度。`hMerge`/`vMerge` 是投影期展开的产物，模型里不可写，
-从源头掐掉「两个地方都能改、改得不一致」这类 bug。
-
-**命令**
-
-```ts
-InsertRow{ id, at?: { before: TableRowId | null } }
-RemoveRow{ id, row: TableRowId }
-InsertColumn{ id, at?: { before: TableColumnId | null } }
-RemoveColumn{ id, column: TableColumnId }
-MergeCells{ id, from: TableCellRef, to: TableCellRef }
-SplitCell{ id, cell: TableCellRef }
-SetRowHeight{ id, row, height } / SetColumnWidth{ id, column, width }
-SetCellProps{ id, cell: TableCellRef, props }   // 属性值 null 恢复来源
-```
-
-**不变量**（进 `model-invariants.ts`，事务边界校验）：① 每行 `tc` 数 == `gridCol` 数
-② 合并矩形互不重叠、不越界 ③ 锚格自身不是 `hMerge`/`vMerge` ④ 行高列宽 ≥ 0。
-
-**验收**：确定性固件 `sample-editor-table-structure.pptx`（含预置合并）+ LibreOffice 网格 oracle +
-独立进程等价指纹 + PowerPoint 无修复打开 + 60 格提交预算。
-
-### 5.2 ✅ [切换预设形状并拖动调节柄](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md)
-
-编辑投影以互斥的 `presetGeometry` / `geometry` 稀疏覆盖保留语义；切换时用对侧 tombstone 保证
-历史、恢复与字段级 LWW 协同都只留下一个几何真值。
-
-| 命令 | 落点 | 说明 |
-|---|---|---|
-| `SetPreset{ id, preset }` | `a:prstGeom@prst` + 重置 `a:avLst` | 保留填充/描边/效果/`a:txBody`，只换几何 |
-| `SetAdj{ id, name, value }` | `a:avLst/a:gd@name@fmla="val N"` | 拖动调节柄 |
-
-调节柄来自预设定义里的 `a:ahLst`（adjust handle list）：
-`a:ahXY` 给出手柄坐标与 `minX/maxX/minY/maxY`，`a:ahPolar` 给出 `minR/maxR/minAng/maxAng`。
-句柄定义通过独立入口读取，与默认几何路径求值分开加载。
-
-- 表由固定 Apache POI 预设源生成并校验 commit + SHA-256：187 个预设，120 个含句柄
-- `@web-ppt/core/geometry/handles` 与 `@web-ppt/editor/adjustments` 都是独立构建的按需入口；构建守卫
-  禁止句柄定义进入 core、edit-core 与 editor 主入口
-- 公式在 DrawingML EMU 空间求值，最终位置才转 CSS px；187 预设通过同点拖拽恒等性质
-- 旋转形状拖动只更新 interaction 层，提交为单一历史事务；补丁与生成保存都回写规范 `prstGeom/avLst`
-
-### 5.3 ✅ [编辑项目符号与自动编号](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md)
-
-`SetParaProps` 扩展一个 `bullet` 字段：
-
-```ts
-bullet?: { kind: 'none' }
-       | ({ kind: 'char'; char: string } & BulletStyle)
-       | ({ kind: 'autoNum'; type: AutoNumType; startAt?: number } & BulletStyle)
-       | ({ kind: 'blip'; image: ImageRef } & BulletStyle)
-       | null   // null = 删覆盖，回到版式/母版继承
-```
-
-| 事实 | 影响 |
-|---|---|
-| `a:buNone` / `a:buChar` / `a:buAutoNum` / `a:buBlip` **互斥** | 写时必须先删同组其它元素（同 `SetFill` 的坑）；`xml/order.ts` 里这组 sequence **已经登记好了** |
-| 级别默认项目符号来自版式/母版 `a:lvlNpPr` | 「无覆盖」≠「无项目符号」，必须走 `068` 建立的九级继承重基 |
-| 自动编号续号 | `text-auto-number.ts` 的 `formatDrawingAutoNumber` 已实现，投影直接复用 |
-
-已贯通命令、查询、富文本剪贴板、格式刷、表格、恢复/协同、补丁与生成保存；配套
-`a:buFont` / `a:buClr` / `a:buSzPct` / `a:buSzPts`，图片资源按内容哈希去重并建立关系闭包。
-
-### 5.4 ✅ [补齐字符高级格式与清除格式](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md)
-
-`SetRunProps` 与 `TextRun` 现已贯通全部目标字段：
-
-| 属性 | 落点 |
-|---|---|
-| 高亮 | `a:rPr/a:highlight` |
-| 字距 | `a:rPr@spc`（1/100 pt） |
-| 大小写 | `a:rPr@cap="all\|small\|none"` |
-| 上下标 | `a:rPr@baseline`（1/1000 %） |
-| 下划线类型 | `a:rPr@u`（17 种，兼容旧布尔别名） |
-| 删除线类型 | `a:rPr@strike="sngStrike\|dblStrike"` |
-
-精确 `underline` / `strikeType` 与旧 `u` / `strike` 布尔别名并存：读取始终给旧消费者派生布尔值，
-旧写入在首次编辑时迁移到精确值。`ClearFormat{ id, range }` 以 mark 级清除意图删除来源 `a:rPr` 的
-视觉直设并回到 Source Value；文字、段落、超链接、动态字段和公式原子不变。折叠光标的清除留在视图，
-与下一次可信输入或 IME 原子提交，不制造零宽 OOXML run。
-
-### 5.5 ✅ [补齐分布、替代文字、节与页面尺寸](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md)
-
-全是既有基础设施的加法，合并成一张票：
-
-| 命令 | 落点 | 复用 |
-|---|---|---|
-| `DistributeElements{ ids, axis }` | 批量 `a:off` | `028` 的世界 AABB + 父空间逆变换；≥3 个才允许 |
-| `SetAltText{ id, title, descr }` | `p:cNvPr@title/@descr` | 选择窗格的 `SetName` 已经在改同一个节点 |
-| `AddSection` / `RenameSection` / `MoveSection` / `RemoveSection` | `p:extLst/p14:sectionLst` | 解析侧已支持；`045` 删页闭包已经在维护 `sectionLst` |
-| `SetSlideSize{ w, h }` | `p:sldSz` | 仅改画布；按需 `createSlideSizeEditor(editor).setSize({ w, h, fit: 'ensureFit' })` 提供全稿等比适配 |
-
-四组命令现已贯通 Source Value 恢复、原子历史、恢复日志、字段级协同、保留型/生成式保存与公开
-editor/adapter seam。仅改画布时，挂载视图在同一提交帧同步舞台、静态 SVG 与交互 viewBox；
-确保适合同步缩放文字、效果、表格和设计来源，组合仅缩放根框。节以稳定 `SlideId` 重建，复制/删除页不会留下漂移成员。
-
-### 5.6 ✅ [补齐触屏编辑手势](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md)
-
-Pointer Events 继续作为唯一输入边界，三项触屏能力现已在编辑器交互层闭环：
-
-| 项 | 实现 | 不变量 |
-|---|---|---|
-| 命中容差 | 手指在真实 SVG 几何外扩 12 个屏幕像素 | 鼠标/触控笔仍走浏览器精确命中；不改模型 |
-| 双指缩放/平移 | 单指升级双指，rAF 合帧发布 `viewport` | 只同步视图 zoom，外层滚动归宿主；不进历史/恢复/保存 |
-| 长按菜单 | 500ms 发布 `onContextRequest` | 移动 8px 即取消；菜单内容和呈现归产品层 |
-
-`pointercancel`、capture 丢失、切页/模式、宿主缩放和 destroy 统一收束；多视图不合并触点。真实 Chrome
-验证距离/中心误差均为 0、60 元素触屏帧 p95 约 1ms，并覆盖可信 capture 与长按阈值。查看模式不绑定
-编辑触屏事件且清空 `touch-action`，默认 viewer 路径没有新增依赖或运行时分支。
-
-### 5.7 ✅ [批量导出幻灯片图片](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md)
-
-按需入口 `@web-ppt/core/image-zip` 提供 `presentationToImageZip(pres, options)`：稳定原页码命名、
-隐藏页策略、动画终态、确定性 ZIP 元数据和 1–8 路有界并发都由 core 负责，产品层不再自行循环打包。
-单页仍复用 data URI + `foreignObject` 与 `SecurityError` 回退，默认 core 入口不暴露批量 API。
-
-直接 PDF 已提供 `core/pdf` 图片页面写入器，无打印对话框；矢量、可搜索文字仍使用 `presentationToPrintableHtml` + 浏览器打印。
-
-### 5.8 ✅ [模板与主题编辑（0.7，已完成）](wayfinder/ppt-template-theme/map.md)
-
-**收益排序：主题 > 版式 > 母版。** 改一处主题，全文档立刻变样，而 `phClr` / `fillRef` / `lnRef`
-的求值链路解析侧已经全通。
-
-| 阶段 | 命令 | 落点 | 难点 |
-|---|---|---|---|
-| 主题 ✅ | `SetTheme{ clrScheme?, fontScheme? }` | `ppt/theme/themeN.xml` | 按主题分支精确失效 |
-| 版式 ✅ | 以 `DesignTarget` 复用通用画布命令 | `ppt/slideLayouts/slideLayoutN.xml` | 反向索引 + 占位符重绑 |
-| 母版 ✅ | 同上 | `ppt/slideMasters/slideMasterN.xml` | 同上，再加 `p:txStyles` |
-
-**继承倒灌已由增量反向索引闭环**：`layoutId → SlideId[]` 在 `SetLayout` / `AddSlide` / `RemoveSlide`
-时维护，`masterId → layoutId[]` 接入同一条链；改设计来源只失效真正依赖它的后代。
-
-**占位符反向重绑也已完成**：版式改动后仍可匹配的页面占位符保留逻辑身份和直接覆盖，失去宿主的占位符
-固定必要外观并安全降级。
-
-写回无新基础设施：补丁引擎本来就能改任意 part。
-
-内置模板不是复制一批固定 `.pptx`。`@web-ppt/edit-core/templates` 复用生成保存的确定性骨架，提供极光、
-刊页、夜幕三套主题、母版和五种常用版式配方；现有 `createBlankPptx()` 保持字节兼容，未打开新建选择器的用户
-不加载模板目录或模板数据。
-
-**0.7 集成验收已闭环**：三套模板逐一走完“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，覆盖权限
-隔离、撤销重做、恢复后续编、字段级协同、直接覆盖、占位符身份与无关 DOM 身份；补丁保存、生成保存和 `.ppt`
-另存汇入唯一 11 件清单，由 LibreOffice 逐件打开，Windows PowerPoint 工作流消费同一清单并绑定提交与字节。
-
-### 5.9 [图表数据编辑（0.8，已完成）](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md)
-
-经典图表保留 `editable: 'frame'` 的原子画布身份，数据编辑通过独立按需入口完成。一个 `ChartDataset` 是唯一
-语义真值，保存时**同时投影到两处**：
-
-```mermaid
-flowchart LR
-    U["用户改数值"] --> C["ppt/charts/chartN.xml<br/>c:numCache / c:strCache"]
-    U --> X["ppt/embeddings/WorkbookN.xlsx<br/>sheet1.xml + sharedStrings.xml"]
-    C --> P["PowerPoint 显示的值"]
-    X --> E["双击「编辑数据」时 Excel 看到的值"]
-```
-
-实现覆盖柱/线/饼/面积等类别图、散点图、气泡图和组合图的系列、类别、点位增删改；稳定语义 ID、撤销重做、
-恢复帧与字段级 LWW 协同共用既有编辑模型。保存事务原子更新 cache、公式范围、工作表及 shared strings；共享
-图表 part、共享工作簿、歧义绑定和不可写来源显式只读，不能假装 Excel 已同步。
-
-`@web-ppt/core/chart-edit`、`@web-ppt/edit-core/chart`、`@web-ppt/editor/chart` 及 React/Vue 转发均为按需入口，
-官网数据表同样动态加载；默认 core / edit-core / editor 和官网初始依赖闭包没有增长。确定性固件来自 Apache POI
-真实嵌入工作簿语料；258 项专项断言、真实 Chrome、LibreOffice 打开与缓存/工作簿一致性均通过，Windows
-PowerPoint 继续消费同一工件清单提供提交绑定证据，真机运行按用户要求暂缓。
-扩展入口 `@web-ppt/edit-core/chart-design` 已补齐兼容类型切换与样式编辑，并沿用同一工作簿只读判断。
-
-### 5.10 ✅ ChartEx（0.8 与扩展）
-
-`cx:chartSpace` 是**另一套 schema**，按用户功能分为 7 类：树状图、旭日、直方图（含 Pareto）、箱线、瀑布、漏斗、地图。
-落在 `ppt/charts/chartEx1.xml`，通过 `p:graphicFrame` 的 `<mc:AlternateContent>` 挂载。
-
-**实测纠正（2026-09-05）：有预览图不等于回退已生效。** LibreOffice 官方语料中的 PowerPoint 漏斗 PPTX
-确实带有 `Fallback/p:pic`，旧解析器却把 Choice 的未知图表占位当成非空成功结果，两条 SVG 均丢图。
-[兼容回退修复](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md)现已恢复真实漏斗图片，并通过
-Chrome 屏幕与独立 SVG 解码；197 项专项守住整壳编辑、身份、补丁与生成保存。编辑会话按引用保留兼容
-源文件及实际依赖，原包释放后仍可导出；源数据缺失或与生成包冲突时明确拒绝，不能把预览图片等同于原生图表数据。
-新建/嵌套分组、解组、单独复制孩子及冷恢复后的来源转交已贯通；解组不重复物化表格追加行，生成保存保持有效层级顺序。
-另外八个真实 XLSX 只有公式引用与文字回退，不能替代其余六类 PPTX 的验收；完整证据见
-[回退与真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)。
-现已补齐这 9 个文件的定义名称、单元格类型与内嵌工作簿引用取证；层级空槽及重复标签不能直接压平，
-[统一输入约束](wayfinder/ppt-data-fidelity/research/chartex-data-model.md)已用于原生实现；歧义来源继续回退。
-
-`@web-ppt/core/chart-ex` 已实现 squarify、分层圆弧、分箱/Pareto、箱线、累计瀑布和源顺序比例漏斗，
-输出统一 Schema；SDK 默认不加载实现，官网按内容类型自动加载，失败时保留回退。104 项专项、八页 Chrome 四类导出及两条保存通过。
-Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布局 oracle。详见[按需 API 与验收边界](api/chartex-native.md)。
-
-`regionMap` 已通过文件自带的 geoCache 边界实现，支持压缩缓存、四种投影、孔洞与跨日期变更线；
-无缓存时保留兼容预览，不依赖外部地图服务。`@web-ppt/edit-core/chart-ex` 同时提供七类现代图表的
-分层数据编辑、增删行与工作簿同步；完整真实 PPTX 类型语料和 Office 原生布局验收仍待补齐。
-
-### 5.11 平台事实与对策
-
-调研结论（2026-08）：
-
-| 平台能力 | 事实 | 对我们的影响 | 对策 |
-|---|---|---|---|
-| WebKit LBSE | 2026 年 7 月 Igalia 仍在做性能优化，**默认未开启**，需 runtime flag | Safari 的 `foreignObject` 缩放 bug 还在 | **保留 `034` 的 engine 行盒路径，不要因为「LBSE 快落地了」删掉** |
-| EditContext | 仍**只有 Chromium**，Safari/Firefox 未实现（有社区 polyfill） | 自绘文本 + 完整 IME 只能在 Chrome 用 | contenteditable 保持主路径；EditContext 只做渐进增强，且必须在两条路径跑同一套断言 |
-| File System Access | `showSaveFilePicker` **只有 Chromium**；Safari/Firefox 仅 OPFS，且 Firefox 是**有意不实现** | Safari/Firefox 保存只能是下载，无法原地覆盖 | ✅ 产品层双路径已接入：能力检测、当前会话目标与另存为；不支持则 download，拒绝/取消不偷偷下载。**不进 `editor` 包**，详见[交付与验证边界](api/local-file-save.md) |
-
----
-
-### 5.12 ✅ 扩展编辑、渲染与导出
-
-| 能力 | 入口与验证 |
-|---|---|
-| 图片/立体编辑、AT / EditContext | [外观编辑](api/appearance-editing.md)：历史/恢复/协同与两条保存；[浏览器增强](api/browser-editing.md)：读屏语义及真实 Chromium 输入 |
-| 图表深度编辑、批注编辑、页面适配 | `chart-design` / `chart-ex` / `comments` / `resize`：数据与原生 XML 同步，官网完整操作与只读边界回归 |
-| SmartArt / OLE / 墨迹 | `smartart` / `ole` / `ink`：节点、可识别 XLSX/DOCX 嵌入内容、InkML 笔画；保存原生数据与兼容预览 |
-| 地图 / EMF+ / 三维 | `chart-ex` / `emf-plus` / `three-d`：文件内边界、常见记录、真实相机投影；复杂格式和视觉近似明确列界 |
-| PDF / WebM | 图片页面 PDF 含批注/回复，无音轨 WebM 含动画/切换；浏览器下载及 Poppler/FFmpeg 独立读取通过 |
-| 原生 PPT / 无来源复制 | `ppt.savePpt` / `generate.copyPortableElements`：能力校验、浏览器下载/重开；LibreOffice 保留文字、曲线、组合、图片与备注 |
-| 产品集成与门禁 | 1796 项扩展断言、独立发布入口交叉验证、官网三张生产页面中英文工作流；108 份固件连续两次逐字节一致 |
-
-公开 API、格式边界与调用示例统一维护在[扩展能力矩阵](api/expanded-capabilities.md)；逐项问题与证据见[交付记录](wayfinder/ppt-expanded-capabilities/map.md)。
+| 表格结构与单元格格式 | [0.6 票据 001](wayfinder/ppt-editing-completeness/tickets/001-table-structure-editing.md) |
+| 项目符号与自动编号 | [0.6 票据 002](wayfinder/ppt-editing-completeness/tickets/002-bullets-and-numbering.md) |
+| 预设形状切换与调节柄 | [0.6 票据 003](wayfinder/ppt-editing-completeness/tickets/003-preset-shape-adjustments.md) |
+| 字符高级格式与清除格式 | [0.6 票据 004](wayfinder/ppt-editing-completeness/tickets/004-advanced-run-formatting.md) |
+| 分布、替代文字、节与页面尺寸 | [0.6 票据 005](wayfinder/ppt-editing-completeness/tickets/005-common-object-and-slide-commands.md) |
+| 触屏编辑手势 | [0.6 票据 006](wayfinder/ppt-editing-completeness/tickets/006-touch-editing-gestures.md) |
+| 批量导出幻灯片图片 | [0.6 票据 007](wayfinder/ppt-editing-completeness/tickets/007-batch-image-export.md) |
+| 主题、版式、母版与内置模板 | [0.7 地图](wayfinder/ppt-template-theme/map.md)及其票据 |
+| 经典图表数据编辑 | [0.8 票据 001](wayfinder/ppt-data-fidelity/tickets/001-chart-data-editing.md)；类型与样式见[能力矩阵](api/expanded-capabilities.md) |
+| ChartEx 解析、回退与编辑 | [按需 API 与验收边界](api/chartex-native.md)、[兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md)、[真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md) |
+| 七类扩展编辑、渲染与导出 | [能力矩阵](api/expanded-capabilities.md)、[交付记录](wayfinder/ppt-expanded-capabilities/map.md) |
+| 浏览器平台能力的对策 | [浏览器平台能力与对策](research/browser-platform.md) |
 
 ---
 
@@ -464,7 +229,7 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 | `.ppt` 原生生成保存 | ✅ 已实现 | 基于投影生成；支持矩阵外拒绝，不保留未知二进制记录 |
 | SmartArt / OLE / 墨迹内部编辑 | ✅ 已实现 | 按可识别格式编辑；未知格式维持框架级操作 |
 | 三维相机投影与挤出 | ✅ 已实现 | 材质/光照和纹理网格为近似，不包含通用三维建模 |
-| 地图 / EMF+ / PDF / WebM | ✅ 按需实现 | 地图需 geoCache；EMF+ 有记录边界；PDF 为图片页面；WebM 无音轨 |
+| 地图 / EMF+ / PDF / WebM | ✅ 按需实现 | 地图需 geoCache；EMF+ 有记录边界；图片页面 PDF 稳定、矢量 PDF 实验性；WebM 音轨与内嵌视频合成默认关闭 |
 | 宏 / 模板市场 / AI 生成 / 服务端转换 | **维持范围外** | 不属于当前纯浏览器渲染与编辑目标 |
 
 ---
@@ -476,12 +241,11 @@ Windows 16.0 Build 4266 只显示现代图表的图片，不能作为原生布�
 | 优先级 | 内容 | 当前状态 |
 |---|---|---|
 | P0 | 高级文本生成保存/跨文稿复制；经典图表多级类别及共享工作簿同步 | 高级文本、多级类别与共享工作簿同步已完成 |
-| P1 | 按需字体与字形能力 → 矢量、可搜索 PDF | 正式字体 Provider 已完成；下一项为矢量 PDF |
-| P2 | 视频音轨/混音 → 内嵌视频逐帧合成 | 以固定时间轴及明确编解码支持矩阵交付 |
+| P1 | 按需字体与字形能力 → 矢量、可搜索 PDF | 正式字体 Provider 已完成；矢量 PDF（005）进行中，实验性入口已发布 |
+| P2 | 视频音轨/混音 → 内嵌视频合成 | 音轨（006）已随 beta.6 发布、待补验收证据；内嵌视频合成（007）首个切片已提交 |
 | P3 | SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 先调查真实样本与原生语义，再逐项建立实现票 |
 
 范围、任务依赖和共同验收条件统一见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。
-高级文本流转、多级类别、共享图表及正式字体已计入当前功能；矢量 PDF、音视频与长尾格式仍按任务依赖推进。
 
 ### 7.2 验证与发布
 

@@ -1,6 +1,6 @@
 ---
 title: 为视频导出增加固定时间轴音轨
-status: open
+status: in-progress
 priority: P2
 labels:
   - wayfinder:task
@@ -50,4 +50,7 @@ blocked_by: []
 | 封装器双轨 | ✅ `WebmWriter` 可选音频轨（A_OPUS TrackEntry + RFC 7845 OpusHead、簇内交错、流内递增校验；8 项断言含本机 ffprobe 两流实测） |
 | 模型层 | ✅ timing 树 `p:audio/p:video` 的 cMediaNode 解析（vol 千分比 / mute / repeatCount 循环 / spTgt spid），与效果按文档顺序合并编号 clickGroup（媒体 clickEffect 头独立开批）；`MediaInfo` 扩展 `spid` 与 `playback`，parser 按 spid 回填；media 固件 timing 段 + 4 项断言 |
 | 浏览器全链 | ✅ `presentationToVideo({ audio: true })`：页时间轴游标换算组起始毫秒 → fetch + OfflineAudioContext 解码（WAV / 可解嵌入音频）→ 混音核 → WebCodecs Opus 48kHz（isConfigSupported 前置、20ms 块、dequeue 背压）→ 毫秒时间戳交错写入；无音频媒体时无声导出、默认关闭时产物不变。真 Chrome 验收 `tooling/test-video-audio.mjs`（双轨 / Opus / 48kHz / 音轨时长边界，ffprobe 缺失环境降级为字节级断言），已挂入 `test:functional` |
-| 首版边界 | 视频文件的内嵌音轨（MP4/AAC 提轨）列为后续；外链音频受 CORS 约束、失败明确报错；组号超出动画批数的媒体落在最后一批 |
+| 视频提轨 | ✅ `0fce288`：视频媒体的 MP4/AAC 音轨经 `decodeAudioData` 提取混入；音频媒体解码失败抛错，视频提轨失败经 `onWarning('video-audio-decode-failed')` 暴露、不阻断导出（无轨视频与坏轨无法区分）；验收补响度断言。已随 0.5.0-beta.6 发布 |
+| 首版边界 | 外链音频受 CORS 约束、失败明确报错；组号超出动画批数的媒体落在最后一批 |
+
+实现已随 0.5.0-beta.6 发布，票据未关闭：验收中的固定时刻脉冲与画面标记同轴（独立 FFmpeg 测量偏差）、取消与资源释放的独立记录尚未登记，补齐证据后关闭。

@@ -30,7 +30,7 @@ blocked_by:
 - 机器可读报告绑定 Git revision、干净工作树、清单 SHA-256、每份 PPTX SHA-256、预期/实际页数、
   PowerPoint version/build、交互 session 与一小时时效；Node 校验器独立重读磁盘。9 项契约证明篡改字节、漏项、
   失败/过期报告、错误 revision、Session 0、错误页数与脏工作树都不能成为绿灯。运行手册见
-  [`docs/powerpoint-runner.md`](../../../powerpoint-runner.md)。
+  [`docs/engineering/powerpoint-runner.md`](../../../engineering/powerpoint-runner.md)。
 - 当前精确执行 `npm run check && npm test && npm run build`：core 2129、edit-core 679、保存 273、
   PowerPoint 报告 9、editor 288、59 份固件 / 181 页 / 362 对独立 SVG 指纹、metafile 130 全绿，五个发布包构建成功。
 - 当前 macOS 环境既无 Windows runner，也没有安装 Mac 桌面 PowerPoint，因而不能产生真实成功报告。

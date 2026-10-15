@@ -45,6 +45,8 @@ flowchart TD
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径，边界被破坏会立刻编译失败。发布顺序：`core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` → `collab`。
 
+**为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState`；状态逻辑不需要 jsdom 就能在 Node 里测；`core` 完全不碰 `document`，可整包进 Worker。抽出当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，`next()` 会落在最后一张隐藏页上——当时的固件里没有一张隐藏页，此后补上了 `sample-hidden.pptx` / `.ppt`。
+
 ## 2. 数据流：从文件到画面
 
 ```mermaid
@@ -82,7 +84,7 @@ flowchart LR
 
 ## 3. 数据流：编辑闭环
 
-领域概念（源值 / 覆盖 / 有效投影 / 补丁保存 / 生成保存）定义见 [CONTEXT.md](../CONTEXT.md)。
+领域概念（源值 / 覆盖 / 有效投影 / 补丁保存 / 生成保存）定义见 [CONTEXT.md](../../CONTEXT.md)。
 
 ```mermaid
 flowchart LR
@@ -97,7 +99,7 @@ flowchart LR
   COLLAB["collab<br/>LWW 补丁"] <--> SESSION
 ```
 
-三层 DOM 视图（定义见 [design/editing-design.md](design/editing-design.md#10-渲染层改造与三层视图)）：
+三层 DOM 视图（定义见 [design/editing-design.md](../design/editing-design.md#10-渲染层改造与三层视图)）：
 
 | 层 | 内容 | 更新粒度 |
 |---|---|---|
@@ -129,33 +131,22 @@ flowchart LR
 | 包 | 结构 |
 |---|---|
 | `viewer` | 单页查看器：缩略图虚拟化、搜索、批注面板、导出 |
-| `site` | Vite 多页面：官网（中英双语 + 实时 Demo）+ 编辑器应用。编辑器按 Cordis 插件分层：页面 / 打开 / 恢复 / 文件 / 业务工具为应用级插件，视图 / 字体 / 工具为文稿作用域插件，分层与生命周期约定见 [design/cordis-editor.md](design/cordis-editor.md) |
+| `site` | Vite 多页面：官网（中英双语 + 实时 Demo）+ 编辑器应用。编辑器按 Cordis 插件分层：页面 / 打开 / 恢复 / 文件 / 业务工具为应用级插件，视图 / 字体 / 工具为文稿作用域插件，分层与生命周期约定见 [design/cordis-editor.md](../design/cordis-editor.md) |
 
 ## 6. 测试与质量体系
 
 | 组成 | 说明 |
 |---|---|
-| `fixtures/`（173 个文件） | 全部由 `tooling/make-*.mjs` 确定性生成，重跑字节必须一致 |
-| `test/snapshots/`（186 个 SVG） | 两条文本路径的归一化快照基线；只发现「变了」，保真度另靠 ground truth |
+| `fixtures/` | 全部由 `tooling/make-*.mjs` 确定性生成，重跑字节必须一致 |
+| `test/snapshots/` | 两条文本路径的归一化快照基线；只发现「变了」，保真度另靠 ground truth |
 | LibreOffice 对照 | `npm run compare` 产出 SSIM / MAE / 热力图，用于横向比较与定位整片偏色 |
 | 边界审计 | `tooling/check-*-boundary.mjs`：模板、图表数据、媒体、chartex、i18n、字体等模块边界 |
 | dist 复验 | 多数测试以 `--dist` 再跑一遍（`npm run verify`），验证发布产物而非仅源码 |
 | 交叉进程指纹 | 渲染结果含跨解析累加的 defs id，同进程不可重复比对，见 `tooling/lib/ppt-fingerprint.mjs` |
-| 编辑等价 | 1114 对编辑等价指纹 + PowerPoint / LibreOffice 真实打开验证 |
+| 编辑等价 | 全固件只读 / 编辑投影独立进程指纹 + PowerPoint / LibreOffice 真实打开验证 |
 
-断言与体积的最新实测数字见 [AGENTS.md](../AGENTS.md) 与 [README.md](../README.md)，由 `npm run verify` 强制比对，不在此重复。
+门禁关系与测试贡献规范见 [testing.md](testing.md)；断言、快照与体积的实测数字由 `npm run verify` 与 README / AGENTS 比对，不在此重复。
 
-## 7. 不可破坏的约束
+## 7. 约束与发布
 
-| 约束 | 原因 |
-|---|---|
-| `render/` 只依赖 `types.ts` | 渲染层不认识任何文件格式，加新格式不动它一行 |
-| 魔数识别格式 | 扩展名不可信 |
-| 两条文本渲染路径不合并 | 可移植性：交出去的 SVG 必须在 Inkscape / librsvg 里不丢文本 |
-| `core` 不碰 `document` | 必须能整包进 Worker（`xml-lite.ts` 为此存在） |
-| 发布包不引入框架 | React / Vue / Cordis 全部停留在适配层与私有包 |
-| 新能力必须同时加固件 | 隐藏页零覆盖曾让真 bug 在近千项断言下存活 |
-
-## 8. 发布
-
-八个发布包版本号必须一致（当前 0.5.0-beta.5），打 tag 触发 `release.yml` 走 npm Trusted Publishing（OIDC），Secrets 不存凭据。新包首次发布走不了 OIDC，需先本地 `npm publish` 再配置 trusted publisher。详细流程与陷阱见 [AGENTS.md](../AGENTS.md#发布)。
+不可破坏的约束以 [AGENTS.md](../../AGENTS.md#不可破坏的约束) 为准，分层与依赖细则见 [architecture-rules.md](architecture-rules.md)；版本联动、流水线与发版 checklist 见 [releasing.md](releasing.md)。

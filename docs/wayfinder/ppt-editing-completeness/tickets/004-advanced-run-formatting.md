@@ -43,3 +43,17 @@ LibreOffice 文字 oracle、2,000 字符和真实可信输入契约通过；旧�
   验证点划线/双删除线、small caps、baseline 与清除字段格式，产物 33,898 bytes。
 - `npm run check && npm test && npm run build && npm run verify` 全绿：4,351 项断言，其中 core 2,188、
   edit-core 1,025、保存 475、PowerPoint 证据 9、editor 398、adapter 9、collab 117、metafile 130。
+
+## 技术方案
+
+| 属性 | 落点 |
+|---|---|
+| 高亮 | `a:rPr/a:highlight` |
+| 字距 | `a:rPr@spc`（1/100 pt） |
+| 大小写 | `a:rPr@cap="all\|small\|none"` |
+| 上下标 | `a:rPr@baseline`（1/1000 %） |
+| 下划线类型 | `a:rPr@u`（17 种，兼容旧布尔别名） |
+| 删除线类型 | `a:rPr@strike="sngStrike\|dblStrike"` |
+
+精确 `underline` / `strikeType` 与旧 `u` / `strike` 布尔别名并存：读取始终给旧消费者派生布尔值，
+旧写入在首次编辑时迁移到精确值。

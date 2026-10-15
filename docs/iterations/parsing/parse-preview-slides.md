@@ -187,7 +187,7 @@ flowchart LR
 | `packages/core/src/pptx/zip-preview.ts` | 扩大推迟集合；按名补解沿用现 Proxy |
 | `packages/core/src/pptx/package-reader.ts` | 注释与第十七轮一致：预览走推迟表 |
 | `tooling/test-parse-preview-parts.mjs` | 损坏后页 / 未引用 embeddings 不挡首屏；只读 length 不解后页；网格式访问才需要那一页；keepPackage 仍完整 |
-| `docs/expanded-capabilities.md` | 与默认 parse 推迟范围一致 |
+| `docs/api/expanded-capabilities.md` | 与默认 parse 推迟范围一致 |
 | `package.json` 既有门禁 | 不新增命令 |
 
 不变量：`render/` 只认 `types.ts`；core 不碰 `document`；`parse()` 签名不变。

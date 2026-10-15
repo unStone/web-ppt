@@ -1,6 +1,6 @@
 # .pptx 规范地图（ECMA-376 / OOXML）
 
-给未来开发的规范导航：`.pptx` 由哪几份规范定义、每个功能域读哪一节、对应仓库哪个模块、哪里有规范没写清的坑。仓库现状见 [architecture.md](../architecture.md)；坑的完整索引见 [pitfalls.md](../pitfalls.md)。
+给未来开发的规范导航：`.pptx` 由哪几份规范定义、每个功能域读哪一节、对应仓库哪个模块、哪里有规范没写清的坑。仓库现状见 [architecture.md](../engineering/architecture.md)；坑的完整索引见 [pitfalls.md](../engineering/pitfalls.md)。
 
 ## 1. 规范体系与版本
 
@@ -87,10 +87,10 @@ flowchart LR
 |---|---|---|
 | 嵌入字体不是裸 TTF | `fntdata` 是 EOT 容器且普遍开 MTX 压缩；**MTX 无公开规范**，只能注入逆向实现（`mtx-decompressor`） | [AGENTS 陷阱表](../../AGENTS.md#已知陷阱) |
 | 图表 XML 本身就是 OOXML | `chart/` 复用 `pptx/color` 是正当的（chart XML 是 DrawingML），不是分层违规 | 同上 |
-| 有预览图 ≠ 回退已生效 | `mc:AlternateContent` 的 Fallback 分支解析器可能拿 Choice 的占位当成功结果，两条路径都丢图——roadmap §5.10 实测纠正 | [roadmap](../roadmap.md) |
+| 有预览图 ≠ 回退已生效 | `mc:AlternateContent` 的 Fallback 分支解析器可能拿 Choice 的占位当成功结果，两条路径都丢图——2026-09-05 实测纠正 | [兼容回退票据](../wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) |
 | Strict / Transitional 混存 | 真实文件几乎全为 Transitional；保存写 Transitional 才是 PowerPoint 兼容路径 | 本仓库实现约定 |
 | VML 只在 Part 4 | OLE 预览图是 VML（Transitional 遗留），解析它不代表支持完整 VML | `pptx/parser.ts` |
-| LibreOffice 不是规范实现 | ground truth 对照只用于横向比较；它自己的近似（图表画法、空字符串省略）不能当 oracle | [pitfalls](../pitfalls.md) |
+| LibreOffice 不是规范实现 | ground truth 对照只用于横向比较；它自己的近似（图表画法、空字符串省略）不能当 oracle | [pitfalls](../engineering/pitfalls.md) |
 
 ## 6. 开发场景索引
 

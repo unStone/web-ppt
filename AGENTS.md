@@ -19,6 +19,7 @@
 | `fixtures/` | 测试样本，**全部由 `tooling/make-*.mjs` 确定性生成** |
 | `tooling/` | 测试框架 / fixture 生成 / LibreOffice 对照 / 性能基准 |
 | `test/snapshots/` | 188 个渲染快照基线 |
+| `docs/` | 工程规范、API、规划与设计记录；分层与阅读顺序见 [docs/README.md](docs/README.md) |
 
 `viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径——边界一旦被破坏，它们立刻编译失败。
 
@@ -45,8 +46,8 @@
 2. **格式按魔数识别**，不看扩展名：`PK` → pptx，`D0CF11E0` → ppt。
 3. **两条文本渲染路径**：`foreignObject` + HTML 排版（屏幕预览、PNG 导出）与原生 `<text>` + 自实现测量断行（独立 SVG 文件、打印 HTML）。理由是**可移植性**：`foreignObject` 只有浏览器认，Inkscape / librsvg / 设计工具打开会整块丢失文本。交出去的文件必须走 `<text>`，别合并这两条路径。
 4. **`core` 不碰 `document`**，要能在 Worker 里整包运行（`xml-lite.ts` 就是为此存在：Worker 里没有 `DOMParser`）。
-5. **依赖方向单向且可审计**：发布包只 import 声明的 deps/peer；`geometry/` 零外部依赖；core 的浏览器 DOM 只允许出现在五个白名单文件。由 `tooling/check-architecture-boundary.mjs` 在 build 与 verify 强制；分层模型、落位决策与反模式见 [docs/architecture-rules.md](docs/architecture-rules.md)。
-6. **功能设计按设计标准走**：交互五态与世代令牌、稳定 reason code 的显式回退、默认关闭产物逐字节不变、确定性优先、方向断言硬幅值如实、资源注册与使用同作用域——规则与真实案例见 [docs/design-standard.md](docs/design-standard.md)。
+5. **依赖方向单向且可审计**：发布包只 import 声明的 deps/peer；`geometry/` 零外部依赖；core 的浏览器 DOM 只允许出现在五个白名单文件。由 `tooling/check-architecture-boundary.mjs` 在 build 与 verify 强制；分层模型、落位决策与反模式见 [docs/engineering/architecture-rules.md](docs/engineering/architecture-rules.md)。
+6. **功能设计按设计标准走**：交互五态与世代令牌、稳定 reason code 的显式回退、默认关闭产物逐字节不变、确定性优先、方向断言硬幅值如实、资源注册与使用同作用域——规则与真实案例见 [docs/engineering/design-standard.md](docs/engineering/design-standard.md)。
 
 ## 已知陷阱
 
@@ -76,28 +77,21 @@
 
 三条输入链路各自独立收敛到 `types.ts`：
 
-```
-.pptx (Zip+OOXML) ─┐
-.ppt  (CFB+Escher) ─┼→ types.ts 统一 Schema → render/ → SVG
-EMF/WMF (GDI 流)  ─┘
+```mermaid
+flowchart LR
+  PPTX[".pptx（Zip + OOXML）"] --> T["types.ts 统一 Schema"]
+  PPT[".ppt（CFB + Escher）"] --> T
+  META["EMF / WMF（GDI 流）"] --> T
+  T --> R["render/"] --> SVG["SVG"]
 ```
 
 `src/geometry/` 是**格式无关的公共层**（ECMA-376 全部 187 个预设形状求值，零 import），两条链路共用。读 OOXML 的部分留在 `pptx/geometry.ts`。图表与图元文件解码器经 hook 注入，可 tree-shake。
 
 ## 发布
 
-全部包完成首次发布与 Trusted Publishing 配置后，版本号改完打 tag 即可；`release.yml` 走 npm
-Trusted Publishing（OIDC），**Secrets 里不存任何凭据**：
-
-```bash
-# 八个包的 package.json 版本必须一致，否则流水线直接失败
-git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
-```
-
-流水线：校验 tag 与包版本一致 → 类型检查 → 重生成固件 → 全部测试 → 构建 →
-按 `core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` → `collab` 顺序发布（`editor` 同时以
-`core`、`edit-core`、`viewer-core` 为 peer 依赖，框架适配包以 `editor` 和对应框架为 peer，
-`collab` 只以 `edit-core` 为 peer，其余发布包的依赖见各自 package.json）。
+八个包的 `package.json` 版本改成同一个值后打 tag，`release.yml` 走 npm Trusted Publishing（OIDC），
+**Secrets 里不存任何凭据**。流水线顺序、发版 checklist、OIDC 环境要求与常见失败见
+[docs/engineering/releasing.md](docs/engineering/releasing.md)。
 
 ⚠️ **新包的第一次发布走不了 OIDC**：npm 要求包已存在才能配置 Trusted Publishing，
 而包要先发布才会存在。新增包时得先在本地 `npm publish` 发一版，再去 npm 的包设置里
@@ -108,5 +102,6 @@ git tag -a v0.4.0 -m "v0.4.0" && git push origin v0.4.0
 - **注释与提交信息用中文**，遵循 Conventional Commits（破坏性变更用 `!`）
 - **注释解释「为什么」，不复述「做了什么」**。非显然的约束、踩过的坑、格式规范的怪异之处才值得写
 - 文档能用图和表格表达的一律用图表，文字精简
+- 新文档按 [docs/README.md](docs/README.md) 的分层放置；功能进度只写在 wayfinder 票据的 `status` 与 Resolution，跨地图汇总只写在 `docs/roadmap.md`，设计与迭代记录完成后冻结
 - 改 README / 官网里的数字（断言数、体积、性能）时**先实测**，不要照抄旧值
 - **提交与收尾时检查文档同步**（挂在项目上，跨客户端生效）：git pre-commit hook（`.githooks/`，`prepare` 脚本经 `core.hooksPath` 安装）检查暂存区，ZCode 的 Stop hook（`.zcode/config.json`）检查工作区，共用 `tooling/check-doc-sync.mjs`；改动触及 `packages/*/src`、固件、测试脚本、快照或流水线时列出待复查文档并首次拦截，同一批文件的重试放行。文档已更新或改动无关时直接重试即可。

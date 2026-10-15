@@ -1,6 +1,6 @@
 # 矢量 PDF 实现进度
 
-[005](tickets/005-vector-pdf.md) 进行中；[011 字体前置](font-glyph-implementation.md)已验收。
+[005](../tickets/005-vector-pdf.md) 进行中；[011 字体前置](font-glyph-implementation.md)已验收。
 
 ## 已核实的接入点
 
@@ -77,9 +77,16 @@
 默认线粗和线位采用当前原生 SVG 的 CSS auto 行为；OpenType `post` / `OS/2` 的建议度量属于 from-font，不能直接替代 auto。
 依据 [CSS Text Decoration](https://www.w3.org/TR/css-text-decor-4/) 以及 [Chromium 装饰线绘制](https://chromium.googlesource.com/chromium/src/third_party/%2B/refs/heads/main/blink/renderer/core/paint/text_decoration_info.cc)和[线位计算](https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/core/layout/text_decoration_offset.cc)。
 依据 [SVG 绘制顺序](https://www.w3.org/Graphics/SVG/1.1/text.html#TextDecorationProperties)，每个 text 统一先画下划线、再画字形、最后画删除线；独立像素检查曾捕获反序绘制把黑色下伸部盖成蓝色的问题。
-目前仅验证该字体的单实线；其他字体度量、显式避让、双线 / 点划 / 波浪 / 粗线和按词下划线仍待继续覆盖。
+多样式线型见下节；其他字体度量、显式避让、粗线和按词下划线仍待继续覆盖。
 
 最新证据：`out/vector-pdf-decoration-descenders-source.log` 与 `-dist.log` 均通过公开导出、独立读取和实际 Chrome 对照；`-check.log` 类型检查及 `-build.log` PDF 入口构建通过。核心包完整构建及现有原生文字回归记录见上表。
+
+## 多样式装饰线与文字描边
+
+| 能力 | 实现 | 验收 |
+|---|---|---|
+| 装饰线线型（`e784a2c`） | `vector-decoration.ts` 按 CSS `text-decoration-style` 映射：dashed → dash `[2t 1t]`，dotted → `[0 t]` + 圆帽，double → 间距 1.5t 的平行双线，wavy → 半波长 3t、振幅 0.75t 的贝塞尔正弦近似；粗细与线位仍取 auto 度量 | 固件 `sample-vector-pdf-decoration-styles.pptx`；MuPDF 墨迹断言四种线型均可见、双线墨迹大于波浪（`tooling/lib/vector-pdf-decoration-styles-contract.mjs`） |
+| 文字描边（`2530e20`） | 字形位置收集一次，描边轨（`1 Tr` + `RG` + `w`）画在填色轨（`0 Tr`）之下，等效 SVG `paint-order:stroke`；覆盖检查只放行 `paint-order:stroke` | 固件 `sample-vector-pdf-text-stroke.pptx`（`a:rPr/a:ln` 轮廓）；MuPDF 像素断言描边与填色两轨均可见（`tooling/lib/vector-pdf-text-stroke-contract.mjs`） |
 
 ## 字体失败定位
 
@@ -241,7 +248,7 @@ MuPDF 独立检查全部 12,288 个原始 RGBA 像素；整个 PDF 只包含同�
 
 Cordis 的 disposer 同时为 thenable。用 async generator 收编时会先被 Promise 解包，原 disposer 留在父作用域并行释放；文稿作用域改为同步收编，逐层等待工具、视图、字体和会话。资源测试已先复现会话过早销毁，再验证修复。
 
-这些证据覆盖本轮接入；005 保持进行中，剩余项目见上表和[本轮交付说明](../../releases/0.5.0-beta.5.md)。
+这些证据覆盖本轮接入；005 保持进行中，剩余项目见「尚未完成」一节。
 
 ## beta.5 后续：产品选项与回退说明
 

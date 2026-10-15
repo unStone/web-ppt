@@ -1,6 +1,6 @@
 # 带原始时钟的旧图表迁移
 
-属于 [003](tickets/003-shared-chart-workbook.md)，本文件描述正在实现的协议，不表示已交付。
+属于 [003](../tickets/003-shared-chart-workbook.md)，记录该协议的设计与分阶段实现证据；003 已整票验收，支持范围以[共享图表验收](shared-chart-progress.md)为准。
 
 | 层 | 职责 | 不承担 |
 |---|---|---|

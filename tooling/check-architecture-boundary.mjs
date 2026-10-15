@@ -4,7 +4,7 @@
  * 现有边界审计（check-template-boundary 等）守的是单个能力的产物位置，这里守的是
  * 整个仓库的分层不变量——它们一旦破坏，代价是隐性的：render 认识了文件格式，
  * 下一个输入格式就得改渲染层；geometry 依赖了别的模块，两条解析链路就不再共享
- * 同一个格式无关的公共层。规则与 docs/architecture-rules.md 一一对应。
+ * 同一个格式无关的公共层。规则与 docs/engineering/architecture-rules.md 一一对应。
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, normalize, relative } from 'node:path';

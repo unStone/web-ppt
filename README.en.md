@@ -44,11 +44,11 @@ Web-PPT keeps the file on the client, keeps the animations, and stays MIT all th
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
 
-See [appearance editing](docs/api/appearance-editing.md) for optional picture/3D tools, [browser enhancements](docs/api/browser-editing.md) for accessibility, EditContext and automatic ChartEx loading, and [API compatibility](docs/api/api-stability.md) for entry points and lifecycle rules.
+See [appearance editing](docs/api/appearance-editing.md) for optional picture/3D tools, [browser enhancements](docs/api/browser-editing.md) for accessibility, EditContext and automatic ChartEx loading, [API compatibility](docs/api/api-stability.md) for entry points and lifecycle rules, and [comments](docs/api/comments.md) for the read-only comment panel and opt-in `showComments` export options (`@web-ppt/viewer-core/comments`).
 
 Expanded editing, advanced rendering, PDF/WebM export and native PPT saving are available through optional entries. See the [capability matrix and format limits](https://github.com/unStone/web-ppt/blob/master/docs/api/expanded-capabilities.md).
 
-Experimental vector PDF is available through `@web-ppt/core/pdf/vector` and the editor’s searchable PDF option. It requires usable font bytes; unsupported effects use object-level image fallback. See the [support scope and remaining validation](https://github.com/unStone/web-ppt/blob/master/docs/wayfinder/ppt-portability-fidelity/vector-pdf-implementation.md).
+Experimental vector PDF is available through `@web-ppt/core/pdf/vector` and the editor’s searchable PDF option. It requires usable font bytes; unsupported effects use object-level image fallback. See the [support scope and remaining validation](https://github.com/unStone/web-ppt/blob/master/docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md).
 
 ## Quick start
 
@@ -114,7 +114,7 @@ const catalog = listBuiltinTemplates(); // Aurora / Editorial / Midnight plus li
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
 
-The 0.7 gate exercises `template → theme → master → layout → ordinary slide → reopen` for all three templates.
+The 0.7 gate (`npm run test:v07`) exercises `template → theme → master → layout → ordinary slide → reopen` for all three templates.
 `SetTheme` uses `exec`; masters and layouts use `execDesign`. They share history, recovery, collaboration, and save
 protocols, while ordinary-slide commands cannot mutate a design canvas.
 
@@ -419,128 +419,12 @@ Rendering fidelity isn't judged by "looks about right" — it's compared step by
 |---|---|
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
-| `npm test` | Everything (core + edit model/all-fixture equivalence + metafiles) |
-| `npm run test:core` | Core parsing / rendering — 2,331 assertions + 188 render snapshots |
-| `npm run test:fonts` | Font Provider 100 + Worker 136 + document 30 + measurement 15 assertions; plus real-browser font, diagnostics, cancellation and lifetime checks. [API guide](docs/api/font-glyphs.md) |
-| `npm run test:edit` | 1,132 edit-model + 575 save + 9 PowerPoint-evidence assertions, plus 1126 process-isolated SVG fingerprint pairs across 168 fixtures |
-| `npm run test:templates` | 29 built-in-template assertions covering deterministic generation, editing/recovery, save, and both text paths |
-| `npm run test:v07` | 31 0.7 cross-capability integration assertions over all templates, permission isolation, recovery, patch/generated save, and `.ppt` save-as |
-| `npm run test:v08` | 258 classic-chart data assertions across category/scatter/bubble/combo charts, history, collaboration, caches, and workbook sync; 197 compatibility-fallback assertions |
-| `npm run test:chartex` | 104 native-ChartEx assertions: hierarchy/statistics, session configuration, both text and save paths |
-| `npm run test:comments` | 31 comment assertions: copying/recovery, both save paths, read-only panels, default-off exports, and escaping; [comment delivery](docs/api/comments.md) |
-| `npm run test:media` | 870 media-insertion assertions: WAV/MP4, external links, posters, history, copying, recovery/collaboration, both save paths, and strict XML; [staged API](docs/api/media-insertion.md) |
-| `npm run test:editor` | 444 adapter/session/incremental DOM/selection/gesture/text/touch/engine-line assertions + real-Chrome framework lifecycle, trusted input, system clipboard, pointer-capture, matrix, and performance gates |
-| `npm run test:templates:libreoffice` | Compatibility alias for the single 0.7 LibreOffice manifest; no separate template subset |
-| `npm run test:v07:libreoffice` | Open all 11 artifacts from the single 0.7 manifest in LibreOffice without repair |
-| `npm run test:edit:m1` | Open all 71 model-save artifacts in LibreOffice without repair |
-| `npm run test:edit:libreoffice` | Open a patched save in LibreOffice and export it to PDF |
-| `npm run test:edit:powerpoint` | On Windows, open the same 11-artifact 0.7 manifest in desktop PowerPoint with repair disabled |
-| `npm run test:edit:equivalence` | Run only the byte-equivalence gate for read-only vs editable projection |
-| `npm run test:metafile` | EMF / WMF / PICT decoders — 130 assertions + fuzzing |
-| `npm run test:expanded` | 1822 expanded-capability assertions; `test:expanded:dist` checks independently loaded package entries |
-| `npm run test:portability` | 797 portable-rich-text assertions; `test:portability:dist` checks package entries; [formulas, text warp and effects](docs/api/portable-rich-text.md) |
-| `npm run test:chart-hierarchy` | 178 chart-hierarchy assertions: source/package APIs, hierarchy/empty slots, workbook sync, history, collaboration and reconstruction; [support matrix](docs/api/chart-hierarchical-categories.md) |
-| `npm run fixtures` | Regenerate every test file (deterministic output) |
 | `npm run check` | TypeScript type check |
-| `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values (`-- --net` also probes external links) |
-| `npm run test:adapters` | 12 React / Vue SSR, dependency-boundary, public-entry, and framework-excluded 5 KB size gates |
+| `npm test` | Every test suite |
 | `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
-| `npm run build:site` | Build the site's static output |
-| `npm run compare public/showcase.pptx` | Generate a LibreOffice reference and produce a side-by-side / overlay comparison |
-| `npm run ppt-samples` | Convert the pptx fixtures to `.ppt` via LibreOffice (re-run after changing a pptx fixture) |
-| `npm run bench` | Large-file read-only benchmark; append `-- --edit` for editing projection |
-| `npm run bench:edit` | 210-page process-isolated budget gate for zero read-only state, edit memory, and commit rendering |
-| `npm run demo-gif` | Record the README demo GIF (needs Chrome and ffmpeg) |
+| `npm run verify` | Cross-artifact consistency: license, versions, links, and documented numbers against measured values |
 
-Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
-
-### Repository layout
-
-```
-web-ppt/                     npm workspaces monorepo
-├── packages/
-│   ├── core/                @web-ppt/core — parse / render / export, no framework, no DOM
-│   ├── edit-core/           @web-ppt/edit-core — editing document model + render projection, no framework, no DOM
-│   ├── editor/              @web-ppt/editor — editing session + incremental three-layer DOM
-│   ├── react/               @web-ppt/react — thin React component + hook
-│   ├── vue/                 @web-ppt/vue — thin Vue component + composable
-│   ├── viewer-core/         @web-ppt/viewer-core — headless state machine + playback
-│   ├── fonts/               @web-ppt/fonts — font substitution and on-demand loading
-│   ├── viewer/              @web-ppt/viewer — batteries-included viewer, plain TS
-│   └── site/                @web-ppt/site — the website, with the viewer demo and standalone editor
-├── fixtures/                pptx / ppt test samples (script-generated, deterministic)
-├── tooling/                 test framework / fixture generation / LibreOffice comparison / benchmarks
-└── test/snapshots/          188 render snapshot baselines
-```
-
-`packages/viewer` and `packages/site` both consume upstream **by package name**, the same path an external user takes — break the boundary and they stop compiling immediately. `edit-core` stays a pure-data model; `editor` owns browser DOM and resource lifecycles; React / Vue adapters wrap that public seam without pushing framework runtimes into any base package.
-
-**Why `viewer-core` is its own package**: only ~24 lines of `Viewer` actually touch the DOM (inject SVG, set visibility, kick off playback); the other 200-odd are pure state advancement. Split apart, React / Vue / Svelte can drive `PresentationState` directly instead of waiting for an official wrapper; the state logic tests in Node without jsdom; and `@web-ppt/core` never touches `document`, so it runs whole inside a Worker.
-
-> The split surfaced a real bug on day one that 939 assertions had never hit: under `skipHidden`, if every remaining slide is hidden, `next()` lands on the last **hidden** slide. It survived that long because none of the 9 fixtures at the time contained a hidden slide — snapshot tests catch "this changed", never "this was never covered". `sample-hidden.pptx` / `.ppt` now exist.
-
-### Testing strategy
-
-Tests run in Node with jsdom supplying the DOM; esbuild bundles `src/` to ESM and the real parsing and rendering run against it. No parsing logic is ever mocked.
-
-| Layer | Coverage |
-|---|---|
-| **Structural assertions** | Geometry (54 shapes × 5 adjust-value sets + 648 fuzzed inputs), color, text inheritance chains, animation/transition, playback engine, table reconstruction, charts, text extraction |
-| **Invariants** | Every element's bounding box is finite, no `NaN` in paths, schema required fields present, SVG structurally valid, no dangling `url(#id)`, no duplicate ids, no `foreignObject` on export paths |
-| **Render snapshots** | 25 test files × every slide × both text paths = 188 normalized SVG baselines, compared byte for byte |
-| **Regression anchors** | Hard assertions for real bugs already fixed: `.ppt` font-size offset, animation duration read from the wrong node, fly-in direction mapped backwards, undecompressed BLIP |
-| **Robustness** | 70 malformed inputs — truncation (5%–95%), random byte corruption, empty files, fake magic numbers, all zeros. Each must either parse cleanly or throw a readable `Error`; crashing or emitting half-built output is a failure. A single shape that fails to parse degrades to a placeholder without taking the slide down |
-| **Viewer interaction** | Hyperlink routing (internal jumps vs external callback), index clamping, destroy cleanup |
-
-Snapshots normalize blob URLs, data URIs (hashed) and defs ids, so they're stable across machines. When a rendering change is intentional:
-
-```bash
-UPDATE_SNAPSHOTS=1 npm run test:core
-```
-
-Then review `git diff test/snapshots/` line by line before committing.
-
-The suite itself is **mutation-verified** — fixed bugs are reintroduced one at a time to confirm they get caught:
-
-| Mutation | Caught by |
-|---|---|
-| Fill rule `nonzero` → `evenodd` | 40 assertions |
-| Misaligned field in the `.ppt` paragraph field table | 33 assertions |
-| Geometry safety net disabled | 47 fuzzed inputs going out of bounds |
-| Cell border tag spelled back to `lnLeft` | 2 assertions |
-| `shade` reverted to sRGB space | 3 assertions |
-| `cs` font left out of the font stack | 1 assertion |
-
-> Snapshots find "this changed", never "this was wrong from the start" — the cell-border bug was caught by **external ground-truth comparison**, not by the suite. The two are complementary; neither is sufficient alone.
-
-### Test files
-
-Generated by `npm run fixtures`, byte-deterministic:
-
-| File | Covers |
-|---|---|
-| `showcase.pptx` | 120 shapes / effects / fills / line arrows / text features / tables / images / custGeom / nested groups / 3D / animations / 7 transitions |
-| `sample-chart.pptx` | 14 charts: column / bar / stacked / line / area / pie / doughnut / scatter / secondary-axis combo / 3D column / 3D pie |
-| `sample-effects.pptx` | Inner + outer shadow / glow / soft edge / reflection / 15 WordArt warps / RTL |
-| `sample-media.pptx` | Video and audio posters / ink / comments / sections / bubble · stock · pie-of-pie · surface charts |
-| `sample-metafile.pptx` | Embedded EMF and WMF |
-| `sample.pptx` · `sample.ppt` | Master inheritance / minimal valid CFB |
-| `sample-hidden.pptx` · `.ppt` | Hidden-slide navigation: visible · hidden · hidden · visible · hidden (pptx via `sld@show`, ppt via `F_HIDDEN`) |
-| `sample-autofit.pptx` | Five autofit cases (overflow / fits × bare normAutofit, no autofit, explicit fontScale, clamped at the 25% floor), plus percentage vs absolute line spacing |
-| `sample-placeholder.pptx` | Placeholder geometry inheritance: picture placeholder with empty spPr / picture with its own xfrm / shape placeholder |
-| `sample-ole.pptx` | OLE previews: decodable formats render as images, unrecognized ones fall back to a placeholder box |
-| `sample-embedfont.pptx` | Four embedded-font containers: uncompressed EOT / uncompressed + XOR / MTX-compressed flag / bare TTF |
-
-`.ppt` samples can be produced from the pptx ones with LibreOffice: `npm run ppt-samples`, or `soffice --headless --convert-to ppt <file>`.
-
-### Debug pages
-
-| Page | Purpose |
-|---|---|
-| `/` | Viewer: thumbnails (virtualized) / zoom / search / notes / present mode / export |
-| `/shapes.html` | Geometry debugging: every preset shape rendered live, with adjustable adjust values and aspect ratio |
-
-Transitions and animations only play in present mode (the "Present" toolbar button, or `F`): `→` advances animation batches and then the slide; `Esc` exits.
+Tests run the real parsing and rendering in Node with jsdom; no parsing logic is mocked. 188 render snapshots (25 test files × every slide × both text paths) are compared byte for byte, and fidelity is checked against LibreOffice renders as ground truth. Per-suite commands, assertion counts and test layers are in the [testing guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/testing.md); other commands and debug pages are in the [development guide](https://github.com/unStone/web-ppt/blob/master/docs/engineering/development.md) (both in Chinese). Conventions, architectural constraints, and known traps live in **[AGENTS.md](https://github.com/unStone/web-ppt/blob/master/AGENTS.md)** (they apply to coding agents too).
 
 ## Community
 
@@ -553,5 +437,3 @@ Transitions and animations only play in present mode (the "Present" toolbar butt
 ## License
 
 [MIT](https://github.com/unStone/web-ppt/blob/master/LICENSE)
-
-[Read-only comments and export](docs/api/comments.md): `@web-ppt/viewer-core/comments` and opt-in `showComments` export options.

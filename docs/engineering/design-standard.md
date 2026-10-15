@@ -1,6 +1,6 @@
 # 功能设计标准
 
-给新功能设计与评审用。代码怎么分层见 [architecture-rules.md](architecture-rules.md)；命令与门禁见 [AGENTS.md](../AGENTS.md)；测试怎么写见 [testing.md](testing.md)——本文管的是**功能怎么设计**：交互状态、错误与回退、兼容与演进、确定性、验收、资源生命周期。每条规则都附仓库真实踩过的坑作依据，规则本身可判定，评审时逐条对照。
+给新功能设计与评审用。代码怎么分层见 [architecture-rules.md](architecture-rules.md)；命令与门禁见 [AGENTS.md](../../AGENTS.md)；测试怎么写见 [testing.md](testing.md)——本文管的是**功能怎么设计**：交互状态、错误与回退、兼容与演进、确定性、验收、资源生命周期。每条规则都附仓库真实踩过的坑作依据，规则本身可判定，评审时逐条对照。
 
 ## 1. 交互状态：五态与世代令牌
 
@@ -25,7 +25,7 @@
 | 回退必须有**稳定 reason code** | 机器可读、支持人员凭它直接定位；产品文案按 code 分类说明原因 | 矢量 PDF 的回退列表按滤镜 / 特殊文字 / 剪裁遮罩 / 复杂填充分类，中英文切换不重跑导出 |
 | **禁止静默降级** | 出现以下任一即违规：无 reason、无日志、无能力边界声明 | 图表不兼容转换、缺字体（`face-unavailable`）、支持矩阵外的 `.ppt` 保存，全部显式拒绝 |
 | 接口存在 ≠ 支持 | 运行期能力必须前置探测（`isConfigSupported` / 探测 + 回退），探测失败显式报错 | WebCodecs Opus：不能因 `AudioEncoder` 存在就假定可编码；`ctx2d()` 探测结论必须缓存 |
-| 能力边界写成矩阵 | 每个按需入口声明支持范围与已知边界，不宣称完整支持 | [chartex-native](api/chartex-native.md) 的开放票据登记模式 |
+| 能力边界写成矩阵 | 每个按需入口声明支持范围与已知边界，不宣称完整支持 | [chartex-native](../api/chartex-native.md) 的开放票据登记模式 |
 
 错误信息本身遵循 fast-fail：写明失败对象、实际状态、预期条件（见 AGENTS 工程约定，这里只补产品面：错误文案随 reason code 走中英文双语，新增 code 必须双端同步）。
 
@@ -56,7 +56,7 @@
 | **方向断言硬，幅值断言如实** | 语义正确性用可判定的方向断言（色相 / 结构 / 序）承担；数值阈值放宽必须登记原因，不硬凑 | 多重文字渐变：分框语义三窗色相断言 + MAE 阈值分级放宽至 2（窄 run 亚像素框差登记在案） |
 | 真实现优先 | mock 只在真实边界（外部服务 / 时间 / 随机）且遵循契约；关键路径必须有真实现验收 | 真浏览器（withChartBrowser）、真 ffprobe、真 Cordis 注册/卸载 |
 | 规范分歧用**跨实现裁决矩阵** | 至少三个独立实现实测；分歧时不硬凑兼容，按「不可靠不上线」回退并登记候选路径 | PatternMatrix：MuPDF / poppler / CoreGraphics 三实现裁决坐标口径；PDFium 无环境路径如实登记 |
-| 变异验证 | 把已修复 bug 改回去必须被抓到 | 测试套件变异记录（AGENTS 已述，此处要求新回归锚点同样自检） |
+| 变异验证 | 把已修复 bug 改回去必须被抓到 | [testing.md §9](testing.md#9-测试分层) 的变异记录（新回归锚点同样自检） |
 | 环境缺失降级必须声明 | 跳过的断言打印原因与覆盖边界，「跳过」不冒充「通过」 | 音轨验收：CI 无 ffprobe 时降级字节级断言并打印说明 |
 | 数据取证用实测 | 文档数字（断言数 / 体积 / 快照数）改前先跑 `npm run verify` 拿实测 | verify 一致性闸门的存在理由 |
 
@@ -80,4 +80,4 @@
 | [architecture-rules.md](architecture-rules.md) | 代码分层与依赖方向（build / verify 机械强制） |
 | [testing.md](testing.md) | 测试贡献的操作指南 |
 | [pitfalls.md](pitfalls.md) | 坑索引——本文规则的案例来源 |
-| [AGENTS.md](../AGENTS.md) | 工程约定（fast-fail、注释、提交）与门禁命令 |
+| [AGENTS.md](../../AGENTS.md) | 工程约定（fast-fail、注释、提交）与门禁命令 |
