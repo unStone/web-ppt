@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(255,255,255)"/>
+<g data-el="101" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(100 100)">
+<path d="M 0 0 L 373 0 L 373 250 L 0 250 Z" fill="none" fill-rule="nonzero"/>
+<text x="9.6" y="48.04" text-anchor="start" xml:space="preserve">
+<tspan font-size="46.2" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)" dx="0 0 0 0 -23.1 0 0 0 -23.1">数一数，画一画。 </tspan>
+</text>
+<text x="9.6" y="103.48" text-anchor="start" xml:space="preserve">
+<tspan font-size="46.2" font-family="'Calibri','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(0,0,0)">I’m ready.</tspan>
+</text>
+</g>
+</g>
+</svg>
