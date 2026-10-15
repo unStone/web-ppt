@@ -37,7 +37,7 @@ Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT—�
 | [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 12.20KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.34KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 13.07KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 13.77KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
 
 表中体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。
@@ -70,6 +70,8 @@ await viewer.exportPng(2);                            // → Blob
 
 // 想让视频 / 音频真的能播（会引入 foreignObject，仅屏幕预览可用）
 const v2 = new Viewer(container, pres, { media: 'player' });
+// 动画时间线里的媒体调用（如上一动画之后自动播放）被浏览器拒绝时，容器收到该事件
+container.addEventListener('web-ppt-playback-error', (e) => console.warn((e as CustomEvent).detail));
 
 const svg = await slideToSvgFile(pres, pres.slides[0]);
 const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 PDF
@@ -450,7 +452,7 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对 |
 
-测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；192 个渲染快照（27 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
+测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；198 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
 
 ## 交流
 

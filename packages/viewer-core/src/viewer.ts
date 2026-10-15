@@ -221,11 +221,18 @@ export class Viewer {
     this.playing = playback;
     this.playingGroup = group;
     this.applyVisibility();
-    void playback.finished.then(() => {
+    const settle = (): void => {
       if (this.playing !== playback) return;
       this.releasePlayback(false);
       this.applyVisibility();
       this.applySettled();
+    };
+    void playback.finished.then(settle, (error: unknown) => {
+      // 媒体 play() 可被自动播放策略拒绝：视觉批次照常收尾，失败交给宿主而不是吞掉。
+      settle();
+      const event = this.container.ownerDocument.createEvent('CustomEvent');
+      event.initCustomEvent('web-ppt-playback-error', false, false, error);
+      this.container.dispatchEvent(event);
     });
   }
 

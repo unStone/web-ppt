@@ -11,6 +11,8 @@ const SKIPPED_KEYFRAME_FIELD = new Set(['offset', 'easing', 'composite']);
  * 强调停在 fill 的结束帧上；路径停在采样折线的最后一点上。
  */
 export function settledDeclaration(step: AnimStep): Record<string, string> | null {
+  // mediacall 归在强调类，但只控制播放；套默认强调终态会把媒体图标留成半透明。
+  if (step.mediaCommand) return null;
   if (step.kind === 'entrance') {
     if (step.effect === 'grow' && step.rotation) {
       return { transform: String(framesFor(step).to.transform) };
