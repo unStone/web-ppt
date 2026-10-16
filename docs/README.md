@@ -128,6 +128,7 @@ flowchart TB
 | 文档 | 主题 |
 |---|---|
 | [agent-loop.md](research/agent-loop.md) | Agent Loop 方案调研与本仓库的限定域循环 |
+| [ai-presentation-landscape.md](research/ai-presentation-landscape.md) | AI 演示文稿产品、Agent 操作 PPT 的做法与研究方向，及本仓库的 Agent 读写接口定位 |
 | [browser-platform.md](research/browser-platform.md) | WebKit LBSE、EditContext、File System Access 的平台现状与对策 |
 
 ### releases/：版本交付记录
