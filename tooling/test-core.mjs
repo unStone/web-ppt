@@ -984,8 +984,9 @@ group('动画 / 切换');
     ['split', 'split', 'split', 'wheel', 'wheel', 'wheel', 'grow', 'spin'],
     ['float', 'bounce', 'dissolve', 'stretch', 'swivel', 'fade'],
     ['circle', 'checkerboard', 'wheel', 'split', 'zoom', 'fade'],
+    ['stretch', 'stretch', 'stretch', 'stretch', 'stretch', 'swivel', 'swivel', 'stretch'],
   ];
-  eq('动画效果固件完整解析六页', effectsFixture.slides.length, effectMatrix.length);
+  eq('动画效果固件完整解析七页', effectsFixture.slides.length, effectMatrix.length);
   for (let index = 0; index < effectMatrix.length; index++) {
     eq(`第 ${index + 1} 页逐个保留 PowerPoint 效果`,
       effectsFixture.slides[index]?.animations?.map((step) => step.effect).join(','),
@@ -1007,6 +1008,21 @@ group('动画 / 切换');
   eq('随机效果按文件记录的具体 fade 滤镜播放', variant(4, 5).effect, 'fade');
   eq('伸展读取文件里的实际双轴起始比例',
     viewerLib.framesFor(variant(4, 3)).from.transform, 'scale(0.2)');
+  // PowerPoint 的伸展只写 ppt_x/ppt_y/ppt_w/ppt_h，方向全靠子类型：10 从中线水平展开，其余钉在对应边。
+  const stretchFrame = (index) => {
+    const frames = viewerLib.framesFor(variant(6, index));
+    return `${frames.from.transform}@${frames.from.transformOrigin}/${frames.from.opacity}→${frames.to.transform}`;
+  };
+  eq('伸展 across 从中线水平展开且不淡入', stretchFrame(0), 'scaleX(0)@center/1→scaleX(1)');
+  eq('伸展自底部钉住底边向上长', stretchFrame(1), 'scaleY(0)@center bottom/1→scaleY(1)');
+  eq('伸展自左侧钉住左边', stretchFrame(2), 'scaleX(0)@left center/1→scaleX(1)');
+  eq('伸展自顶部钉住顶边', stretchFrame(3), 'scaleY(0)@center top/1→scaleY(1)');
+  eq('伸展自右侧钉住右边', stretchFrame(4), 'scaleX(0)@right center/1→scaleX(1)');
+  eq('挥舞保留竖轴与横轴子类型', `${variant(6, 5).dir}/${variant(6, 6).dir}`, 'vert/horz');
+  const stretchExit = viewerLib.framesFor(variant(6, 7));
+  eq('伸展退场缩回同一条底边',
+    `${stretchExit.from.transform}→${stretchExit.to.transform}@${stretchExit.to.transformOrigin}`,
+    'scaleY(1)→scaleY(0)@center bottom');
   eq('透明度强调使用 PowerPoint 默认的 50%',
     viewerLib.framesFor(variant(5, 5)).to.opacity, 0.5);
   check('棋盘、轮盘和光圈播放时使用不同裁剪几何',
@@ -2356,6 +2372,27 @@ group('播放引擎');
         delayMs: 0, durationMs: 500, clickGroup: 0,
       }]);
       eq('appear 退场在终点阶跃并对齐保存语义', calls[0]?.opts.easing, 'steps(1, end)');
+
+      // 挥舞的宽度是 #ppt_w*sin(2.5*pi*$)：0.2 处正面最宽，0.6 处背面最宽（镜像），终点回到原宽。
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        target: 1, kind: 'entrance', effect: 'swivel', dir: 'vert', trigger: 'click',
+        delayMs: 0, durationMs: 1000, clickGroup: 0,
+      }]);
+      const swivel = calls[0]?.frames ?? [];
+      const swivelAt = (offset) => swivel.find((frame) => Math.abs(frame.offset - offset) < 1e-9)?.transform;
+      eq('挥舞按 sin 轨迹铺 41 帧并线性推进', `${swivel.length}/${calls[0]?.opts.easing}`, '41/linear');
+      eq('挥舞 0.2 处正面最宽', swivelAt(0.2), 'scaleX(1)');
+      eq('挥舞 0.6 处转到背面最宽', swivelAt(0.6), 'scaleX(-1)');
+      eq('挥舞终点回到原宽且完全不透明', `${swivelAt(1)}/${swivel.at(-1)?.opacity}`, 'scaleX(1)/1');
+      calls.length = 0;
+      viewerLib.playGroup(fakeContainer, [{
+        target: 1, kind: 'exit', effect: 'swivel', dir: 'horz', trigger: 'click',
+        delayMs: 0, durationMs: 1000, clickGroup: 0,
+      }]);
+      eq('横向挥舞退场改变高度，倒放到透明零高',
+        `${calls[0]?.frames[0].transform}/${calls[0]?.frames.at(-1).transform}/${calls[0]?.frames.at(-1).opacity}`,
+        'scaleY(1)/scaleY(0)/0');
 
       const textCalls = [];
       const host = document.createElement('div');
