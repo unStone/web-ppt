@@ -6,19 +6,36 @@ const require = (condition, message) => { if (!condition) throw new Error(messag
 const delay = () => new Promise(resolve => setTimeout(resolve, 50));
 
 export async function checkSubmittedExports(bytes, host, notice) {
-  const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+  const imageSource = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   const originalClick = HTMLAnchorElement.prototype.click;
+  const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+  const originalConvertToBlob = OffscreenCanvas.prototype.convertToBlob;
+  // Chromium 把这两种异步 PNG 编码排进主线程空闲任务，拿不到空闲周期时单页可拖到 5 秒以上。
+  let deferredEncodes = 0;
+  HTMLCanvasElement.prototype.toBlob = function (...args) { deferredEncodes++; return originalToBlob.apply(this, args); };
+  OffscreenCanvas.prototype.convertToBlob = function (...args) {
+    deferredEncodes++;
+    return originalConvertToBlob.apply(this, args);
+  };
   try {
     for (const format of ['pdf', 'zip']) {
       const app = await createEditorApplication(host, notice);
       let release, closing, rendered = false;
       const hold = new Promise(resolve => { release = resolve; });
       const downloads = [];
-      HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
-        rendered = true;
-        // 仅延迟浏览器光栅输出，PDF/ZIP 编码与下载仍使用生产实现。
-        void hold.then(() => originalToBlob.call(this, callback, ...args));
-      };
+      Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        configurable: true,
+        get: imageSource.get,
+        set(value) {
+          if (String(value).startsWith('data:image/svg+xml')) {
+            rendered = true;
+            // 仅延迟光栅化页面的 SVG 加载回调；PNG 编码同步进行，PDF/ZIP 编码与下载仍使用生产实现。
+            const loaded = this.onload;
+            this.onload = event => { void hold.then(() => loaded?.call(this, event)); };
+          }
+          imageSource.set.call(this, value);
+        },
+      });
       HTMLAnchorElement.prototype.click = function () {
         if (!this.download) return originalClick.call(this);
         downloads.push({ name: this.download, bytes: fetch(this.href).then(response => response.arrayBuffer()) });
@@ -48,6 +65,7 @@ export async function checkSubmittedExports(bytes, host, notice) {
         require(format === 'pdf' ? new TextDecoder().decode(saved.slice(0, 5)) === '%PDF-'
           : saved[0] === 0x50 && saved[1] === 0x4b, `${format} 下载包含真实编码结果`);
         require(!document.querySelector('#documentExportDialog'), '交付后关闭导出窗口');
+        require(deferredEncodes === 0, `${format} 光栅化不能经过空闲调度的异步 PNG 编码`);
       } finally {
         release();
         await closing;
@@ -55,7 +73,9 @@ export async function checkSubmittedExports(bytes, host, notice) {
       }
     }
   } finally {
-    HTMLCanvasElement.prototype.toBlob = originalToBlob;
+    Object.defineProperty(HTMLImageElement.prototype, 'src', imageSource);
     HTMLAnchorElement.prototype.click = originalClick;
+    HTMLCanvasElement.prototype.toBlob = originalToBlob;
+    OffscreenCanvas.prototype.convertToBlob = originalConvertToBlob;
   }
 }

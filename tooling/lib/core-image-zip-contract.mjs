@@ -29,13 +29,13 @@ export async function runCoreImageZipContract({ imageZip, parsed, check, eq }) {
       width: 0,
       height: 0,
       getContext: () => ({ fillStyle: '', fillRect() {}, drawImage() {} }),
-      toBlob(callback) {
+      toDataURL() {
         if (securityFailures-- > 0) {
           const error = new Error('tainted');
           error.name = 'SecurityError';
           throw error;
         }
-        queueMicrotask(() => callback(new Blob(['png'], { type: 'image/png' })));
+        return `data:image/png;base64,${btoa('png')}`;
       },
     };
   };
