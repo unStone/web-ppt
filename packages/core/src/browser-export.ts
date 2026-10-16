@@ -1,3 +1,4 @@
+import { canvasToPngBytes } from './canvas-png';
 import { validateRasterSize } from './raster-size';
 import { escapeXml } from './render/serialize';
 import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
@@ -122,9 +123,7 @@ async function rasterize(
     context.fillStyle = '#fff';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('导出 PNG 失败'))), 'image/png');
-    });
+    return new Blob([canvasToPngBytes(canvas, '导出 PNG 失败')], { type: 'image/png' });
   } finally {
     // 归零会立即释放浏览器的像素后备存储；批量导出只需再约束同时在途的页数。
     canvas.width = 0;

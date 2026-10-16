@@ -43,18 +43,22 @@ export async function runSiteI18nFilesContract({ evaluate, click, waitFor }) {
 
 async function runImageZipLanguageContract({ evaluate, click, waitFor }) {
   await click('[data-site-locale="en"]');
-  // 在浏览器编码边界暂缓回调；仍产出真实 PNG，避免依赖机器速度恰好撞上导出中状态。
+  // 在页面 SVG 加载边界暂缓回调；仍产出真实 PNG，避免依赖机器速度恰好撞上导出中状态。
   await evaluate(`(() => {
     globalThis.__languageDownload = null;
     globalThis.__languagePngCallbacks = [];
-    globalThis.__languageToBlob = HTMLCanvasElement.prototype.toBlob;
-    HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
-      globalThis.__languagePngCallbacks.push(() => globalThis.__languageToBlob.call(this, callback, ...args));
-    };
+    const source = globalThis.__languageImageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    Object.defineProperty(HTMLImageElement.prototype, 'src', { configurable: true, get: source.get, set(value) {
+      if (String(value).startsWith('data:image/svg+xml')) {
+        const loaded = this.onload;
+        this.onload = (event) => globalThis.__languagePngCallbacks.push(() => loaded?.call(this, event));
+      }
+      source.set.call(this, value);
+    } });
   })()`);
   try {
     await click('#exportImages');
-    await waitFor('globalThis.__languagePngCallbacks.length > 0', '图片 ZIP 正在异步编码');
+    await waitFor('globalThis.__languagePngCallbacks.length > 0', '图片 ZIP 正在光栅化');
     await waitFor("document.querySelector('#statusText').textContent.startsWith('Exporting ')", '英文导出进度');
     await click('[data-site-locale="zh-CN"]');
     await waitFor("document.querySelector('#statusText').textContent.startsWith('正在导出') && document.querySelector('#saveFile').disabled", '导出中切中文保留任务锁');
@@ -67,7 +71,7 @@ async function runImageZipLanguageContract({ evaluate, click, waitFor }) {
     await waitFor("document.querySelector('#statusText').textContent === 'Wait for the file task to finish before opening another presentation'", '文件任务忙碌拒绝随语言切换');
     await click('[data-site-locale="zh-CN"]');
   } finally {
-    await evaluate(`HTMLCanvasElement.prototype.toBlob = globalThis.__languageToBlob;
+    await evaluate(`Object.defineProperty(HTMLImageElement.prototype, 'src', globalThis.__languageImageSrc);
       globalThis.__languagePngCallbacks.splice(0).forEach((callback) => callback());`);
   }
   await waitFor("document.querySelector('#statusText').textContent === '已导出当前编辑态的图片 ZIP' && globalThis.__languageDownload?.size > 1000", '语言切换后完成真实 ZIP');
@@ -76,15 +80,15 @@ async function runImageZipLanguageContract({ evaluate, click, waitFor }) {
   await click('[data-site-locale="en"]');
   await waitFor("document.querySelector('#statusText').textContent === 'An image ZIP of the current edits is ready'", 'ZIP 完成状态切回英文');
   await evaluate(`(() => {
-    globalThis.__languageToBlob = HTMLCanvasElement.prototype.toBlob;
-    HTMLCanvasElement.prototype.toBlob = () => { throw new Error('<编码器失败>'); };
+    globalThis.__languageToDataUrl = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = () => { throw new Error('<编码器失败>'); };
   })()`);
   try {
     await click('#exportImages');
     await waitFor("document.querySelector('#statusText').textContent.startsWith('Could not export: ') && !document.querySelector('#saveFile').disabled", '英文导出失败摘要与任务解锁');
     await click('[data-site-locale="zh-CN"]');
     await waitFor("document.querySelector('#statusText').textContent.startsWith('导出失败：') && document.querySelector('#statusText').textContent.includes('<编码器失败>')", '导出错误保留原始诊断并随语言切换');
-  } finally { await evaluate('HTMLCanvasElement.prototype.toBlob = globalThis.__languageToBlob'); }
+  } finally { await evaluate('HTMLCanvasElement.prototype.toDataURL = globalThis.__languageToDataUrl'); }
   await click('[data-site-locale="zh-CN"]');
 }
 

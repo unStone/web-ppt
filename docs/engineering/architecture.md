@@ -80,7 +80,7 @@ flowchart LR
 | `crypto/` | 加密文档解密（hook 注入） |
 | `font/` | 嵌入字体 EOT 容器剥离（MTX 解压走 `setFontDecoder` hook） |
 | `ink/` `three-d/` | 墨迹、3D 效果 |
-| 顶层 | `types.ts`（Schema）、`xml.ts` / `xml-lite.ts`（Worker 里无 DOMParser 的回退）、`browser-export.ts`、`worker.ts`、`anim-steps.ts`、`transition.ts` |
+| 顶层 | `types.ts`（Schema）、`xml.ts` / `xml-lite.ts`（Worker 里无 DOMParser 的回退）、`browser-export.ts`、`canvas-png.ts`（光栅导出共用的同步 PNG 编码，避开 `toBlob` 的空闲调度）、`worker.ts`、`anim-steps.ts`、`transition.ts` |
 
 ## 3. 数据流：编辑闭环
 

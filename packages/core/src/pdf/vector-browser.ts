@@ -1,3 +1,4 @@
+import {canvasToPngBytes} from '../canvas-png';
 import type {VectorPdfRasterRequest,VectorPdfRasterResult} from './vector-types';
 export {normalizeVectorPdfImage} from './vector-image-browser';
 
@@ -30,8 +31,7 @@ export async function rasterizeVectorPdfObject(request:VectorPdfRasterRequest):P
     abort(); if (right < left) return null;
     crop.width = right - left + 1; crop.height = bottom - top + 1;
     target.drawImage(canvas,left,top,crop.width,crop.height,0,0,crop.width,crop.height);
-    const blob = await new Promise<Blob>((resolve,reject) => crop.toBlob(value => value ? resolve(value) : reject(new Error('PDF 局部 PNG 编码失败')),'image/png'));
-    const bytes = new Uint8Array(await blob.arrayBuffer()); abort();
+    const bytes = canvasToPngBytes(crop,'PDF 局部 PNG 编码失败'); abort();
     return {bytes,x:left / scale,y:top / scale,width:crop.width / scale,height:crop.height / scale};
   } finally {image.removeAttribute('src'); canvas.width = canvas.height = crop.width = crop.height = 0;}
 }

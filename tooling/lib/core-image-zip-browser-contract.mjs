@@ -157,11 +157,20 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   }
 
   const prototype = HTMLCanvasElement.prototype;
+  const nativeToDataUrl = prototype.toDataURL;
   const nativeToBlob = prototype.toBlob;
+  const nativeConvertToBlob = OffscreenCanvas.prototype.convertToBlob;
+  // Chromium 的 toBlob/convertToBlob 要等主线程空闲任务，可见页面实测单页最长 6.7 秒；导出不能再经过它们。
+  let deferredEncodes = 0;
+  prototype.toBlob = function deferred(...args) { deferredEncodes++; return nativeToBlob.apply(this, args); };
+  OffscreenCanvas.prototype.convertToBlob = function deferred(...args) {
+    deferredEncodes++;
+    return nativeConvertToBlob.apply(this, args);
+  };
   let securityCalls = 0;
-  prototype.toBlob = function wrapped(callback, ...args) {
+  prototype.toDataURL = function wrapped(...args) {
     if (securityCalls++ === 0) throw new DOMException('tainted', 'SecurityError');
-    return nativeToBlob.call(this, callback, ...args);
+    return nativeToDataUrl.apply(this, args);
   };
   try {
     const fallback = await presentationToImageZip({ ...hidden, slides: [hidden.slides[2]] }, { scale: 0.1 });
@@ -169,25 +178,34 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
       throw new Error('SecurityError 没有回退到原生 SVG 文本');
     }
   } finally {
-    prototype.toBlob = nativeToBlob;
+    prototype.toDataURL = nativeToDataUrl;
   }
 
   const many = { width: 4, height: 4, source: 'pptx', slides: Array.from({ length: 210 }, () => ({
     elements: [shape(1, '#336699', 0, 0, 4, 4)],
   })) };
+  // 编码是同步的，在途窗口从 SVG 交给 <img> 开始到编码结束；人为推迟 onload 才能观察批次上界。
+  const imageSource = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   let active = 0;
   let peak = 0;
   let released = 0;
-  prototype.toBlob = function delayed(callback, ...args) {
-    active++;
-    peak = Math.max(peak, active);
-    return nativeToBlob.call(this, (blob) => {
-      setTimeout(() => {
-        active--;
-        callback(blob);
-        queueMicrotask(() => { if (this.width === 0 && this.height === 0) released++; });
-      }, 2);
-    }, ...args);
+  Object.defineProperty(HTMLImageElement.prototype, 'src', {
+    configurable: true,
+    get: imageSource.get,
+    set(value) {
+      if (String(value).startsWith('data:image/svg+xml')) {
+        active++;
+        peak = Math.max(peak, active);
+        const loaded = this.onload;
+        this.onload = (event) => setTimeout(() => loaded?.call(this, event), 2);
+      }
+      imageSource.set.call(this, value);
+    },
+  });
+  prototype.toDataURL = function encoded(...args) {
+    active--;
+    queueMicrotask(() => { if (this.width === 0 && this.height === 0) released++; });
+    return nativeToDataUrl.apply(this, args);
   };
   try {
     const manyZip = await zipFiles(await presentationToImageZip(many, { scale: 1, concurrency: 3 }));
@@ -196,14 +214,19 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
       throw new Error(`210 页资源边界错误：files=${manyZip.files.length}, peak=${peak}, active=${active}, released=${released}`);
     }
   } finally {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', imageSource);
+    prototype.toDataURL = nativeToDataUrl;
     prototype.toBlob = nativeToBlob;
+    OffscreenCanvas.prototype.convertToBlob = nativeConvertToBlob;
   }
+  if (deferredEncodes !== 0) throw new Error(`图片导出仍经过空闲调度的异步编码：${deferredEncodes} 次`);
 
   let calls = 0;
-  prototype.toBlob = function failSecond(callback, ...args) {
+  prototype.toDataURL = function failSecond(...args) {
     calls++;
-    if (calls === 2) return void queueMicrotask(() => callback(null));
-    return nativeToBlob.call(this, callback, ...args);
+    // 规范规定编码失败时返回 "data:,"，导出必须按该页失败而不是写入空文件。
+    if (calls === 2) return 'data:,';
+    return nativeToDataUrl.apply(this, args);
   };
   let failure;
   try {
@@ -211,7 +234,7 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   } catch (error) {
     failure = error;
   } finally {
-    prototype.toBlob = nativeToBlob;
+    prototype.toDataURL = nativeToDataUrl;
   }
   if (failure?.slideNumber !== 2 || failure?.fileName !== 'slide-002.png') {
     throw new Error(`逐页原子错误缺少第 2 页上下文：${String(failure)}`);
