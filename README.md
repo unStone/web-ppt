@@ -6,441 +6,110 @@
 
 **简体中文** · [English](README.en.md)
 
-纯浏览器端 PPT 渲染引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。
-零服务端依赖；基础包零框架依赖，React / Vue 只存在于可选适配包，核心唯一运行时依赖是 fflate。
+纯浏览器端 PPT 渲染与编辑引擎：`.pptx` / `.ppt` → 统一 JSON Schema → SVG。零服务端，文件不出浏览器；基础包零框架，React / Vue 只在可选适配包，核心唯一运行时依赖是 fflate。
 
 **[▶ 在线 Demo](https://unstone.github.io/web-ppt/)** · **[✎ 在线编辑器](https://unstone.github.io/web-ppt/editor.html)**
-—— 拖一个自己的文件进去，解析、渲染与编辑全在本机，文件不出浏览器。
 
-![Web-PPT 渲染 showcase.pptx：144 个预设形状、切换效果、按点击分批播放的入场动画](docs/demo.gif)
+![Web-PPT 渲染 showcase.pptx](docs/demo.gif)
 
-*上图是 `npm run demo-gif` 跑出来的——录的是仓库里的 `fixtures/showcase.pptx`，引擎改了重跑一遍就是新的。*
+*`npm run demo-gif` 录制仓库里的 `fixtures/showcase.pptx`。*
 
-### 为什么做这个
-
-浏览器里显示 PPT，现有的每条路都要你放弃点什么：
+## 为什么做这个
 
 | 做法 | 代价 |
 |---|---|
-| Office Online `iframe` | 微软的预览要求**文件公网可达**——机密文件根本不能用 |
-| 服务端转换（LibreOffice / 无头 Office） | 要养一台常驻转换机并为它扩容；动画和逐步揭示被压平 |
-| 提前转 PDF / 图片 | 同样压平，还丢掉了文字选中与搜索 |
-| 现有前端库 | 不支持老的 `.ppt`；用量最大的那个 npm 包免费，但[源码需付费索取](https://github.com/501351981/pptx-preview) |
+| Office Online `iframe` | 要求文件**公网可达**，机密文件不能用 |
+| 服务端转换（LibreOffice / 无头 Office） | 要养常驻转换机；动画与逐步揭示被压平 |
+| 提前转 PDF / 图片 | 同样压平，还丢掉文字选中与搜索 |
+| 现有前端库 | 不支持老的 `.ppt`；用量最大的 npm 包[源码需付费索取](https://github.com/501351981/pptx-preview) |
 
-Web-PPT 把文件留在客户端、把动画留住、从上到下都是 MIT——**包括 1997–2003 的二进制 `.ppt`**，这个格式前端目前没有第二家解析。
+Web-PPT 把文件留在客户端、把动画留住、全链路 MIT，**包括 1997–2003 的二进制 `.ppt`**。
+
+## 包
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM 依赖 | fflate | 134.43KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 稳定身份、命令历史、编辑覆盖、增量保存与高保真投影，无框架无 DOM | `@web-ppt/core` | 185.70KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、文字/富文本剪贴板、智能吸附与三层增量 DOM 视图，无 UI 框架依赖 | `core` + `edit-core` + `viewer-core` | 59.27KB |
-| [`@web-ppt/collab`](packages/collab) | 可选的字段级 LWW 协同适配与 BroadcastChannel provider | `@web-ppt/edit-core` optional peer | 12.20KB |
-| [`@web-ppt/react`](packages/react) | React 组件 + hook，复用 editor 会话与预览链路 | `editor` + React optional peer | 1.12KB |
-| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable，复用 editor 会话与预览链路 | `editor` + Vue optional peer | 1.34KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `@web-ppt/core` | 13.77KB |
-| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（可选，包里零字节字体） | `@web-ppt/core` | 2.69KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 134.43KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core` | 185.70KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 59.27KB |
+| [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 12.20KB |
+| [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
+| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 13.77KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 2.69KB |
 
-表中体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。
-
-按需图片与立体编辑见[外观效果](docs/api/appearance-editing.md)；画布读屏、EditContext 和现代图表自动加载见[浏览器增强](docs/api/browser-editing.md)。[API 契约与迁移](docs/api/api-stability.md)说明公开入口和生命周期；只读批注面板与导出开关（`@web-ppt/viewer-core/comments`、`showComments`）见[批注](docs/api/comments.md)。
-
-扩展能力已接入官网：[图表深度编辑、批注、页面适配、SmartArt/OLE/墨迹、地图/EMF+/三维、PDF/WebM 与原生 PPT 保存](docs/api/expanded-capabilities.md)。各入口按需加载，格式能力边界见该文档。
-
-实验性矢量 PDF 通过 `@web-ppt/core/pdf/vector` 提供，编辑器可选择“PDF（可搜索文字）”。需要可用字体字节，特殊效果会局部转为图片；[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md)。
+体积按默认入口及全部相对静态分块逐文件 gzip 求和，不含 peer 与动态入口。
 
 ## 快速开始
+
+### 查看与导出
 
 ```bash
 npm i @web-ppt/core @web-ppt/viewer-core
 ```
 
 ```ts
-import { parse, slideToSvgFile, presentationToPrintableHtml } from '@web-ppt/core';
+import { parse, slideToSvgFile } from '@web-ppt/core';
 import { Viewer } from '@web-ppt/viewer-core';
 
-const pres = await parse(file);                       // File | Blob | ArrayBuffer | Uint8Array
-const viewer = new Viewer(container, pres, { animate: true, autoAdvance: true });
-
-viewer.next();                                        // 有待播动画时先播动画，否则翻页
-viewer.playNextAnimation();                           // 单独推进一批动画
-viewer.finishAnimations();                            // 跳到本页动画终态
-viewer.setZoom(1.5);
-viewer.search('关键词');                               // → 命中的页索引数组
-await viewer.exportPng(2);                            // → Blob
-
-// 想让视频 / 音频真的能播（会引入 foreignObject，仅屏幕预览可用）
-const v2 = new Viewer(container, pres, { media: 'player' });
-// 动画时间线里的媒体调用（如上一动画之后自动播放）被浏览器拒绝时，容器收到该事件
-container.addEventListener('web-ppt-playback-error', (e) => console.warn((e as CustomEvent).detail));
+const pres = await parse(file);                      // File | Blob | ArrayBuffer | Uint8Array
+const viewer = new Viewer(container, pres, { animate: true });
+viewer.next();                                       // 有动画先播，否则翻页
+viewer.search('关键词');
+await viewer.exportPng(2);                           // → Blob
 
 const svg = await slideToSvgFile(pres, pres.slides[0]);
-const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 PDF
-// 有动画的页按点击批次展开成多页，逐步揭示的结构不会被压平
-const stepped = await presentationToPrintableHtml(pres, { animationSteps: true });
 ```
 
-整份导出图片时显式加载按需入口；默认包含隐藏页并取每页动画终态，`skipHidden` 可跳过隐藏页，
-文件名始终保留原页码：
+图片 ZIP、打印 HTML、Worker 解析、媒体播放、直接驱动 `PresentationState` 见[查看器与渲染](docs/api/viewer.md)。
 
-```ts
-import { presentationToImageZip } from '@web-ppt/core/image-zip';
+### 编辑
 
-const zip = await presentationToImageZip(pres, {
-  scale: 2,
-  skipHidden: true,
-  concurrency: 2, // 1–8；限制同时存活的 canvas / Blob
-  onProgress: ({ completed, total, fileName }) => console.log(completed, total, fileName),
-});
-```
-
-需要可视编辑时，`@web-ppt/editor` 会统一管理解析资源、headless Editor 与全部挂载视图：
-
-编辑能力当前在 beta 线，整套依赖必须使用相同的 `next` 版本，避免与稳定查看包混装：
+编辑能力在 beta 线，整套依赖必须使用同一 `next` 版本：
 
 ```bash
 npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
-# React / Vue 项目再安装 @web-ppt/react@next react 或 @web-ppt/vue@next vue
 ```
-
-新建文稿可按需加载内置模板目录；三套模板只包含确定性主题、母版与版式配方，不进入默认入口：
-
-```ts
-import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/editor/templates';
-import { openEditor } from '@web-ppt/editor';
-
-const catalog = listBuiltinTemplates(); // 极光 / 刊页 / 夜幕，以及轻量预览色 token
-const session = await openEditor(createPptxFromTemplate(catalog[0].id));
-```
-
-0.7 的统一门禁（`npm run test:v07`）沿“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”走完三套模板；`SetTheme` 走
-`exec`，母版与版式走 `execDesign`，它们共享历史、恢复、协同和保存协议，但普通页面不能越权修改设计画布。
 
 ```ts
 import { openEditor } from '@web-ppt/editor';
-import { createDesignEditor, listLayouts, listMasters, queryMaster } from '@web-ppt/editor/design';
 
 const session = await openEditor(file);
-const slideView = session.mount(container, { mode: 'edit', zoom: 1 });
-const selectionPane = session.mountSelectionPane(paneContainer, { mode: 'edit' });
+const view = session.mount(container, { mode: 'edit', zoom: 1 });
 const slideId = session.editor.doc.slideOrder[0];
-const elementId = session.editor.doc.slides[slideId].children[0];
-session.editor.exec({ type: 'SetXfrm', id: elementId, x: 120 });
-session.editor.exec({ type: 'SetZ', id: elementId, to: 'front' });
-const layout = listLayouts(session.editor.doc)[0];
-const designView = createDesignEditor(layoutContainer, session, { target: layout.target });
-designView.exec({ type: 'SetBackground', target: layout.target, fill: { type: 'solid', color: '#112233' } });
-const master = listMasters(session.editor.doc)[0];
-designView.setTarget(master.target);
-const masterState = queryMaster(session.editor.doc, master.target); // 背景与 title/body/other × 9 级来源/有效值/覆盖
-designView.exec({
-  type: 'SetMasterTextStyle', target: master.target, category: 'body', level: 1,
-  paragraph: { align: 'right' }, run: { font: 'Aptos', size: 30 },
-});
-const current = session.toPresentation();             // 当前编辑态的只读投影，不触发保存点
-const imageZip = await import('@web-ppt/core/image-zip');
-const currentImages = await imageZip.presentationToImageZip(current);
-slideView.setMode('view'); // 静态预览不重建，只隐藏交互层
-selectionPane.setMode('view');
-designView.destroy();     // 设计画布是按需扩展，显式释放
-session.dispose();         // 释放全部视图、原包与 blob URL
+session.editor.exec({ type: 'SetXfrm', id: session.editor.doc.slides[slideId].children[0], x: 120 });
+session.dispose();
 ```
 
-React / Vue 不必自己翻译生命周期，可直接安装官方薄适配包；`mode`、`slideId`、`zoom` 都是受控属性，
-`source` 由组件拥有并释放，注入共享会话时必须显式写 `sessionOwnership="external"`：
+模板、设计画布、选择窗格、快捷键与剪贴板、低层 `EditDoc`、预设调节柄与保存链路见[编辑器接入](docs/api/editor.md)。
 
-```tsx
-import { WebPptEditor } from '@web-ppt/react';
+### 按需入口
 
-<WebPptEditor source={file} mode="edit" zoom={1} onError={console.error} />
-```
+- 图片 / 立体效果：[外观效果](docs/api/appearance-editing.md)
+- 画布读屏、EditContext、现代图表自动加载：[浏览器增强](docs/api/browser-editing.md)
+- 批注面板与导出开关：[批注](docs/api/comments.md)
+- 图表深度编辑、SmartArt/OLE/墨迹、PDF/WebM 与原生 PPT 保存：[扩展能力](docs/api/expanded-capabilities.md)
+- 实验性矢量 PDF：[支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md)
 
-需要选择窗格时，React/Vue 的 `WebPptSelectionPane` 直接复用 `useWebPptAdapter()` 返回的 adapter；
-无框架宿主使用 `session.mountSelectionPane()`。对象树支持键盘导航、重命名、锁定、隐藏和组合继承，
-文字/几何编辑不会重建目录 DOM。
+## 能力与边界
 
-单选形状/图片/组或文字范围后，`slideView.startFormatPainter()` 启用单次格式刷，
-`{ continuous: true }` 可跨页、跨视图连续使用。`Escape`、切换 view、删除来源或释放会话会立即退出；
-不兼容目标通过统一错误 seam 报告且不丢来源。React/Vue 直接用共享 adapter 的
-`startFormatPainter/cancelFormatPainter` 和 `snapshot.formatPainter`，不复制状态机；Chrome 60 元素完整反馈 p95 为 0.4ms。
+- `.pptx` 与 `.ppt` 覆盖 187 个 ECMA-376 预设、自定义几何、填充 / 描边 / 效果、主题继承、表格、图表、媒体、组合、切换、动画、备注、超链接与加密。
+- 两条文本渲染路径：`foreignObject` + HTML 排版用于屏幕预览；原生 `<text>` + 自实现断行用于独立 SVG 与打印，交出去的文件不依赖浏览器。
+- 编辑闭环以源值 + 覆盖、命令历史、补丁 / 生成保存、恢复与协同为基础；普通页面不能越权修改母版 / 版式。
 
-`Ctrl/Cmd+F` 与 `Ctrl/Cmd+H` 打开会话级查找/替换，`Enter` / `Shift+Enter` 循环导航，`Escape`
-关闭。view 模式可跨页查找与高亮，edit 模式才允许替换当前或全部；命中字段、公式、锁定对象时保持
-原子边界。React/Vue 使用 `adapter.openTextSearch()` 等动作和 `snapshot.textSearch` 渲染自己的搜索栏，
-不会复制索引或状态机。Chrome 契约实测 200 页首次索引 / 冷查询 p95 为 2.0 / 0.5ms，60 元素页导航 /
-替换完整反馈 p95 为 0.1 / 0.9ms。
+完整矩阵见[格式能力](docs/api/format-capabilities.md)，按需入口见[扩展能力](docs/api/expanded-capabilities.md)，缺失与近似实现见[格式限制](docs/api/format-limitations.md)。
 
-页面切换工具栏直接使用 `queryTransition` / `setTransition` / `previewTransition`：view/edit 均可即时
-预览当前值或尚未提交的值，只有 edit 能写入；连续预览会取消旧动画，默认挂载不自动播放。
-React/Vue 复用同一 adapter，支持 40 种效果、显式关闭、来源恢复、精确时长、自动换片与 morph 粒度。
-Chrome 实测 40 种效果与 60 元素复杂页启动 p95 0.1ms，200 页批量提交 / 单页反馈 p95 2.4 / 0.3ms。
+## 性能与保真
 
-元素动画工具栏使用 `queryAnimations` / `setAnimations` / `previewAnimations`：时间线以稳定元素身份表达，
-`null` 恢复来源，`[]` 显式清空；view/edit 都能预览当前值或尚未提交的合法值，预览不改模型、选区或历史。
-首版安全目录覆盖 appear/fade/fly/wipe/zoom/dissolve、spin/grow 与 2–256 顶点运动路径；复杂来源会返回
-`sourceReadonly`，产品应提示用户明确整条替换；公开 `MAX_ANIMATION_STEPS=128` 供工具栏提前约束。
-Chrome 实测 60 元素启动 / 200 页批量提交 / 单页反馈 p95 为 0.8 / 3.5 / 0.4ms。
+- 210 页 / 11280 元素：惰性首屏 **42ms**，全量解析 376ms，单页渲染 0.09ms，JS 堆 40MB。
+- 210 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对；`npm run compare` 再用 LibreOffice 做 ground truth。
+- Worker 解析主线程零阻塞；图片以 `asset:N` 令牌跨线程传递。
 
-Vue 使用同名 `WebPptEditor`（来自 `@web-ppt/vue`）和 kebab-case 属性。两包都支持 SSR 导入、文件替换、
-view/edit 切换、撤销、保存、多视图与卸载清理；Svelte、Web Component 等可直接复用 editor 的同一 adapter contract。
-
-编辑模式的 interaction SVG 会为普通、旋转/翻转及嵌套组元素绘制精确 OBB、8 个缩放柄和旋转柄；
-手柄始终保持屏幕像素尺寸。`@web-ppt/editor` 同时公开元素本地坐标、幻灯片坐标与屏幕坐标的纯函数，
-框架适配器无需复制组变换数学。元素和多选可直接移动；8 个缩放柄支持 Shift 等比、Alt 中心缩放与
-过锚翻面。旋转柄支持连续跨越 ±180°、动态 Shift 15° 约束、嵌套翻转组与共同中心多选；变换帧只改
-幽灵 DOM，松手才形成一个可撤销、可保存的事务。移动以屏幕 6px 为阈值吸附画布与同组兄弟的边缘、
-中线和等距位置，`Ctrl` 可临时关闭；参考线与等距箭头只进入 interaction SVG。空白画布拖过屏幕
-3px 后进入 PowerPoint 语义框选：只命中世界 OBB 四角完全落入的当前组直属元素，预览不改模型或静态 SVG。
-触屏点选只对手指增加 12px 细描边容差，鼠标和触控笔保持精确命中；单指沿用上述编辑手势，双指升级为
-不进历史的画布缩放/平移。宿主通过 `onTouchNavigate` 接管外层视口，通过 `onContextRequest` 呈现 500ms
-长按菜单；查看模式不绑定编辑触屏事件，页面滚动仍归浏览器。
-视图聚焦后，方向键以幻灯片空间微移 1px，`Shift`+方向键微移 10px；多选与嵌套组保持相同世界位移，
-一次物理长按只占一个可撤销、可保存的历史单元。`Tab` / `Shift+Tab` 按当前页或已进入组的直属绘制
-顺序循环选取可编辑元素；跨页共享选区从当前视图首项/末项重新开始。表单、Shadow DOM 与文本编辑焦点
-不会被画布劫持。
-
-`Ctrl/Cmd+Z` 撤销，`Ctrl/Cmd+Shift+Z` 或 `Ctrl/Cmd+Y` 重做；恢复的选区属于其它页面时，仅收到
-快捷键的视图自动切到结果页，其它共享视图不跳页。活动 pointer 预览和文本控件继续拥有自己的快捷键，
-单元素撤销重做仍只更新目标 DOM 分区。
-
-`Ctrl/Cmd+C/X/V` 通过浏览器同步 `ClipboardEvent` 复制、剪切、粘贴元素树，图片资源按 SHA-256 去重，
-超链接与 OOXML 关系在目标页重建；`Ctrl/Cmd+D` 不触碰系统剪贴板，直接偏移 10px 再制。粘贴、剪切和
-再制各自只形成一个撤销单元，view 模式、表单/contenteditable、文本选区及活动手势保留浏览器所有权。
-
-进入文字编辑后，同一组快捷键改为复制、剪切和粘贴文字：默认粘贴白名单内的字体、字号和粗斜下删格式，
-`Ctrl/Cmd+Shift+V` 强制纯文本；块节点生成段落，`<br>` 保持硬换行。外部 HTML 只解析为纯 JSON 片段，
-脚本、样式表、链接目标和图片源不会进入活动 DOM，清洗后文本与 `text/plain` 不一致时自动降级为纯文本。
-
-`Delete` / `Backspace` 把当前元素选区作为一个事务删除；组合会递归删除，图表、SmartArt、OLE 等
-框架对象只删除外框，不清理可能共享的关系或媒体。含内容占位符第一次只清空文字并保留框，第二次才删框。
-删除与撤销按稳定 z 序增量移除/插回 DOM，未触碰兄弟保持节点身份；表单、Shadow DOM、文本编辑焦点和
-活动 pointer 手势仍保留浏览器所有权。
-
-`Ctrl/Cmd+]` 上移一层，`Ctrl/Cmd+Shift+]` 置顶，`Ctrl/Cmd+[` 下移一层，`Ctrl/Cmd+Shift+[` 置底。
-多选保持内部相对顺序并只形成一个撤销单元；组内元素、超链接与 frame 对象沿用相同语义。DOM 只移动
-现有元素分区，不重建 markup/defs，边界操作也不会制造空历史。
-
-`Shift`、`Ctrl` 或 macOS `Cmd` 点击按当前页/组的绘制顺序加入或移除元素；与 `Alt` 组合时可继续穿透
-重叠对象。带修饰键框选会预览并提交既有选区与框中对象的对称差，空白修饰点击保留选区。所有这些操作
-只改 interaction SVG，不写历史或重建静态预览。
-
-直接开发编辑适配器、做增量更新或字符串比较时，可显式指定稳定的 SVG 命名空间：
-
-```ts
-import { renderSlideToSvg } from '@web-ppt/core';
-
-const svg = renderSlideToSvg(pres, pres.slides[0], { idPrefix: 'editor-slide-1-' });
-// 同一页 + 同一前缀的结果确定；同时挂载的每份 SVG 必须使用不同前缀。
-```
-
-编辑器需要回写锚点时，再显式开启编辑解析并交给无框架的 `EditDoc`；普通预览不会承担这些对象与原包的内存：
-
-```ts
-import { layoutText, parse, renderElementToSvg, renderSlideToSvg, renderTextBodyToHtml } from '@web-ppt/core';
-import { createDoc, disposeDoc, invalidateElement, renderedElement, toSlide } from '@web-ppt/edit-core';
-
-const source = await parse(file, { edit: true, keepPackage: true, lazy: false });
-const doc = createDoc(source);
-const slideId = doc.slideOrder[0];
-const elementId = doc.slides[slideId].children[0];
-
-doc.elements[elementId].ovr.x = 120;                 // src 不变，ovr 只记用户改动
-invalidateElement(doc, elementId);                  // 只失效该元素、组祖先和所属页
-const svg = renderSlideToSvg(source, toSlide(doc, slideId), { idPrefix: `${slideId}-` });
-
-// 交互时只渲染脏元素；同一 SVG 中每个元素必须使用独立、稳定的前缀。
-// renderedElement 已把祖先组合的缩放折算进外框，组内元素的局部重渲与整页渲染一致。
-const part = renderElementToSvg(renderedElement(doc, elementId), {
-  idPrefix: `${slideId}-${elementId}-`,
-});
-// part.markup 与 part.defs 应作为该元素自己的两个 DOM 分区一起替换。
-
-// 文本编辑层放在 SVG 外；正常浏览器与 foreignObject 预览复用完全相同的 HTML/CSS。
-const element = renderedElement(doc, elementId);
-if (element.kind === 'shape' && element.text) {
-  const textLayer = document.querySelector<HTMLElement>('[data-text-layer]')!;
-  textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h);
-  const editor = textLayer.firstElementChild as HTMLElement;
-  editor.contentEditable = 'true';
-  editor.spellcheck = false;
-
-  // Safari 安全路径不再让浏览器断行，而是直接序列化原生 SVG 共用的绝对行盒。
-  textLayer.innerHTML = renderTextBodyToHtml(element.text, element.w, element.h, {
-    layout: 'engine',
-  });
-  const engineLayout = layoutText(element.text, element.w, element.h);
-  // engineLayout.lines[*].segments[*].carets 是 TextRun.text 的 UTF-16 偏移。
-}
-
-disposeDoc(doc);                                     // 同时释放被接管的原包
-```
-
-`renderTextBodyToHtml` 默认输出 `data-p` / `data-r`、空 run、项目符号和有效 autofit 比例标记，
-供 IME 结束后的 DOM 反解与选区还原；它不访问 DOM，也不会替调用方管理焦点。
-文本、属性和 CSS 边界会转义，`javascript:` / `file:` 等危险链接只保留为不可点击数据。
-`{ layout: 'engine' }` 会把 `layoutText()` 的软换行拆成带源 UTF-16 半开区间的绝对定位分段，
-同时以不可见锚点保留硬换行、空 run/段和公式原子；`white-space: pre` 确保浏览器不会二次断行。
-
-`layoutText` 与原生 SVG `<text>` 共用断行、CJK 标点挤压、分栏、行距与 autofit 算法。
-它返回段落/run 身份、行盒和 UTF-16 光标停靠点；竖排坐标通过返回的 `transform` 映射到元素局部坐标，
-公式作为只允许首尾停靠的原子段。只要行盒、不做字符命中时传 `{ includeCarets: false }` 可跳过逐字测量。
-
-缩放预设形状时，投影会从保留的 `preset + adj` 自动重算路径。`doc.meta.readonly`
-会明确指出输入是否缺少可靠的保存上下文，避免用户编辑完才发现不能保存。
-切换类型可直接提交 `SetPreset`，调节值提交 `SetAdj`；需要可视化句柄时再按需加载独立入口：
-
-```ts
-import { resolvePresetAdjustmentHandles } from '@web-ppt/core/geometry/handles';
-import { createPresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
-
-const handles = resolvePresetAdjustmentHandles({ preset: 'roundRect', adj: {} }, 320, 180);
-const adjustments = createPresetAdjustmentEditor(session, view);
-adjustments.start(elementId); // interaction 层预览，pointerup 形成一个撤销事务
-```
-
-句柄表覆盖 187 个规范预设，其中 120 个含句柄；公式按 EMU 求值，默认 core、edit-core 与 editor
-入口均不包含这张表。
-保存链路可按需导入 `@web-ppt/edit-core/xml`：保留型树对未修改 part 逐字节回环，定点改属性时
-保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走
-OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field
-和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
-编辑模型主入口及其静态分块合计 185.70KB gzip，不含 peer；保存代码按需加载。
-
-### 接自己的 UI
-
-`Viewer` 只是 `PresentationState` 之上 24 行 DOM 绑定。要接 React / Vue，直接驱动状态机：
-
-```ts
-import { PresentationState, playGroup, playTransition } from '@web-ppt/viewer-core';
-
-const st = new PresentationState(pres, { animate: true, skipHidden: true });
-st.subscribe((c) => {
-  if (c.type === 'slide') setIndex(c.index);          // c.transition 非空时该播切换
-  if (c.type === 'animation' && c.group) playGroup(el, c.group);
-});
-st.next();                     // 有待播动画先播动画，否则翻页
-st.hiddenElementIds;           // 当前批次下应隐藏的元素 id
-st.search('关键词');            // → 命中的页索引数组
-```
-
-图元文件解码器（约 15KB gzip）默认已接入；若要裁剪体积，可移除 `src/index.ts` 里的 `setMetafileDecoder` 调用。
-
-## 能力矩阵
-
-| 能力 | .pptx | .ppt |
-|---|---|---|
-| 预设几何 | ✅ 187 个预设（ECMA-376 全集） | ✅ MSOSPT 全表映射 |
-| 自定义几何 | ✅ custGeom + gdLst 公式求值 + arcTo | ✅ pVertices / pSegmentInfo |
-| 填充 | ✅ 纯色 / 线性 / 径向渐变 / 图片 / 平铺 / 图案 / 主题色变换 | ✅ 纯色 / 渐变 / 图片 |
-| 描边 | ✅ 虚线 / 线端箭头 / 端点 / 连接样式 | ✅ 虚线 / 箭头 |
-| 效果 | ✅ 外阴影 / 内阴影 / 发光 / 柔化边缘 / 倒影 | ⚠️ 忽略 |
-| 立体（3D） | ✅ 挤出 / 斜角 / 轮廓 / 材质 / 视角 | ⚠️ 忽略 |
-| 主题样式引用 | ✅ fillRef / lnRef / effectRef + phClr | — |
-| 文本 | ✅ 完整（见下）+ 艺术字变形 | ✅ 字号 / 颜色 / 粗斜下划线 / 对齐 / 项目符号 |
-| 样式继承 | ✅ 母版 → 版式 → 占位符 → 段落 → run | ✅ 母版 TxMasterStyle → 形状 |
-| 图片 | ✅ 裁剪（含形状填充）/ 裁进形状 / 透明度 / 灰度 | ✅ Pictures 流 + DEFLATE 解压 |
-| EMF / WMF / PICT | ✅ 解码为 SVG | ✅ 解码为 SVG（PICT 为 Mac 版所存） |
-| 表格 | ✅ tableStyles / 条纹 / 合并 / 边框 / 垂直对齐 | ✅ 表格属性 + 网格启发式还原 |
-| 图表 | ✅ 柱/条/堆叠/折线/面积/饼/环/散点/雷达/气泡/股价/复合饼/曲面 · 次坐标轴 · 3D | ✅ 经内嵌 EMF 预览渲染 |
-| 媒体 · 墨迹 · 评论 · 节 | ✅ 封面帧+播放标识 / InkML 笔迹 / 结构化评论 / 分节 | ❌ |
-| SmartArt | ✅ 缓存 drawing part，无缓存时按数据模型自行排布（6 种布局族） | ❌ |
-| 组合 | ✅ 嵌套 + 子坐标系缩放 | ✅ 展平 + 坐标映射 |
-| 切换效果 | ✅ 20 种（淡入/推进/擦除/覆盖/分割/缩放…） | ✅ 经 SSSlideInfoAtom，实测 6 种 |
-| 元素动画 | ✅ 入场 / 退场 / 强调 / 运动路径，按点击分批 | ✅ 入场 / 退场 / 强调，实测 5 步 |
-| 演讲者备注 · 超链接 | ✅ | ✅ |
-| OLE 嵌入对象 | ✅ 内嵌 p:pic 预览 / 旧式 VML 快照（含 PICT） | ❌ |
-| 加密文档 | ✅ 标准（AES-ECB）/ 敏捷（AES-CBC 分段） | ✅ RC4 CryptoAPI（40/56/128 位） |
-| 数学公式 OMML | ✅ 分式 / 根式 / 上下标 / 大算符 / 矩阵 / 定界符 / 重音 / 极限 | ❌ |
-| 隐藏页 | ✅ `sld@show="0"` | ✅ `SSSlideInfoAtom` F_HIDDEN |
-
-文本细项（pptx）：字号 / 字体 / 粗斜体 / 下划线 / 删除线 / 上下标 / 字间距 / 大小写 / 描边 / 渐变填充 / 高亮 / 竖排 / 分栏 / 自动缩放 / 字符与图片项目符号 / 自动编号 / 超链接 / 页码页脚域 / RTL / 15 种艺术字变形预设。
+详见[性能与保真基准](docs/engineering/performance.md)。
 
 ## 架构
 
-```mermaid
-flowchart LR
-    A[".pptx<br/>Zip + OOXML"] -->|"fflate + DOMParser"| S["统一 Schema<br/>src/types.ts"]
-    B[".ppt<br/>CFB + OfficeArt"] -->|"自研 CFB + Escher 解析"| S
-    M["EMF / WMF<br/>图元文件"] -->|"自研 GDI 解释器"| S
-    S --> H["HTML 文本渲染<br/>foreignObject"]
-    S --> V["SVG 文本渲染<br/>自实现断行"]
-    H --> P["屏幕预览<br/>可选中 · 动画 · 切换"]
-    V --> E["PNG / SVG / PDF 导出"]
-```
-
-| 设计 | 理由 |
-|---|---|
-| 解析层与渲染层完全解耦 | 渲染层只依赖 `src/types.ts`，加新输入格式不动它一行；格式按魔数识别（`PK` → pptx，`D0CF11E0` → ppt），不看扩展名 |
-| 两条文本渲染路径 | `foreignObject` + HTML 排版给屏幕预览与 PNG 导出（文本可选中、支持分栏）；原生 `<text>` + 自实现测量断行给独立 SVG 与打印 HTML——`foreignObject` 只有浏览器认，Inkscape / librsvg / 设计工具打开会整块丢失文本，交出去的文件必须自包含 |
-| Safari 运行时探测 | WebKit [15 年未修的老 bug](https://bugs.webkit.org/show_bug.cgi?id=23113) 不给 `foreignObject` 里的 HTML 应用外层 SVG 缩放；中招就整页切到 `<text>` 路径 |
-| 图表 / 图元解码器经 hook 注入 | 可按需 tree-shake。注意 `chart/` **是第四条解析链路而非渲染插件**——它读 `ppt/charts/chart1.xml`（本身即 OOXML/DrawingML）并产出 `SlideElement[]`；hook 只为打破 `pptx/parser → chart → pptx/color` 的模块环 |
-
-## 性能
-
-浏览器实测，210 页 / 11280 元素：
-
-| 指标 | 数值 |
-|---|---|
-| **惰性首屏**（解析 + 第 1 页 + 渲染） | **42ms** |
-| 全量解析 | 376ms（1.8ms/页） |
-| 单页渲染 | 0.09ms |
-| 缓存命中（重复访问同页） | 0ms |
-| JS 堆 | 40 MB（0.19 MB/页） |
-
-| 优化 | 效果 |
-|---|---|
-| **惰性解析**（默认开启） | 每页首次访问时才解析，首屏 376ms → 42ms（**9×**） |
-| **Worker 解析** | 主线程零阻塞；实测与主线程忙循环并发 573ms vs 串行 942ms |
-| **缩略图虚拟化** | 210 页初始只渲染 7 个，滚动时按需补 |
-
-耗时分布（浏览器）：XML 解析 30%（原生 `DOMParser`）、Schema 构建 63%、解压 7%、渲染 <1%。
-**WebAssembly 在这条路径上帮不上**——XML 解析已是原生 C++，Schema 构建是 DOM 遍历 + 字符串 + 建对象，全是 WASM 的弱项，且跨边界封送成本会吃掉收益。
-
-### Worker 用法
-
-```ts
-import { parseInWorker } from '@web-ppt/core';
-
-const worker = new Worker(new URL('@web-ppt/core/worker', import.meta.url), { type: 'module' });
-const pres = await parseInWorker(worker, bytes);   // 主线程零阻塞
-```
-
-Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动回退到自带的 `xml-lite`
-——纯 JS，实测约为原生的 1.8×，与原生结构等价（测试逐节点比对了全部 slide XML）。
-图片不能跨线程传 blob URL，Worker 输出 `asset:N` 令牌 + 原始字节，主线程兑现成真实 URL。
-
-## 保真度基准
-
-渲染保真度不靠"看着差不多"判断，而是拿 **LibreOffice 的实际渲染做 ground truth 逐档比对**。例如主题色的 `shade`/`tint`：
-
-| 档位 | LibreOffice | sRGB 直乘（旧） | 线性 RGB（现） |
-|---|---|---|---|
-| shade 20% | rgb(33,56,97) | rgb(14,23,39) Δ69 | rgb(28,51,93) Δ8 |
-| tint 60% | rgb(176,187,222) | rgb(143,170,220) Δ37 | rgb(176,188,222) Δ1 |
-
-`npm run compare <file>` 可对任意文件生成并排/叠加对照页。
-
-## 已知限制
-
-| 项 | 说明 |
-|---|---|
-| .ppt 的发光 / 柔化 / 倒影 | **格式本身没有这些属性**——它们是 DrawingML(2007+) 的概念，OfficeArt 二进制里无从表达（外阴影已支持） |
-| .ppt 的 3D | OfficeArt 有挤出属性（`c3DExtrude*`/`c3DBooleans`），但缺可信样本：LibreOffice 转换会把 3D 烘进 cube 预设几何又保留 3D 属性，照此实现会双重叠加 |
-| .ppt SmartArt | 未实现（自动编号与嵌套组均已支持） |
-| OMML 公式 | 分式、根式、脚标、大算符与矩阵已做结构化 SVG 排版；复杂细节的保真度依赖可用字体 |
-| 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
-| 3D | 真实相机投影（XYZ 矩阵、正交 / 透视、挤出、曲线斜角）；材质、光照与纹理网格为近似 |
-| EMF+ | 按需入口 `@web-ppt/core/emf-plus` 支持常见绘图（路径、渐变、图片、文字、裁剪等）；未知记录按格式回退，纯 EMF+ 文件仍无样本 |
-| 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
-| chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](docs/api/chartex-native.md) |
-| Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
-| MTX 压缩的嵌入字体 | PowerPoint 的 `fntdata` 是 EOT 容器，绝大多数还开着 MTX 压缩。未压缩的容器 core 自己剥（含异或混淆），压缩的需要注入解码器：`setFontDecoder(eotToTtf)`（来自 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor)）。不注入就跳过这些字体，回退到替换字体，而不是塞一份浏览器注定拒绝的字节 |
-| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：PPT 指定的字体本机没有时回退到别的字体，字宽不同，换行位置就会与 PowerPoint 不一致。这不是解析问题——装原字体、用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](packages/fonts) 换成度量兼容的免费替代字体（Calibri→Carlito 这类，前进宽度逐字相等）都能对齐 |
-| CJK 标点挤压 | 完整规则：行放不下时全量挤压保断行；成行后无条件收连续标点对的相邻侧、行首起始标点左半格与行尾句读右半格。断行判定始终按全角，与 PowerPoint 一致 |
-| 网络字体到达前的断行 | 原生 `<text>` 路径用 canvas 量字宽，而字体是异步加载的：首帧会按回退字体断行。`foreignObject` 路径由浏览器排版，不受影响 |
-| 加密文件 | 设了打开密码的文件可解析：`parse(bytes, { password })`。未传密码抛 `PasswordRequiredError`，密码错误抛 `WrongPasswordError`，支持敏捷 AES-CBC / 标准 AES-ECB（.pptx）与 RC4 CryptoAPI（.ppt） |
-| OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
-
-> 各能力的完整支持范围与边界以[能力矩阵](docs/api/expanded-capabilities.md)为权威源，本表只列对使用决策有影响的条目。
+`.pptx`、`.ppt`、EMF/WMF 与图表四条解析链路各自收敛到统一 Schema，再由 `render/` 输出 SVG；编辑器在 `EditDoc` 上做覆盖、历史与三层增量视图。依赖方向、数据流与质量体系见[架构总览](docs/engineering/architecture.md)，硬性约束见[架构规则](docs/engineering/architecture-rules.md)。
 
 ## 开发
 
@@ -451,9 +120,9 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | `npm run check` | TypeScript 类型检查 |
 | `npm test` | 全部测试 |
 | `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
-| `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对 |
+| `npm run verify` | 许可证 / 版本 / 链接 / 文档数字与实测比对 |
 
-测试在 Node 里用 jsdom 跑真实解析与渲染，不 mock 解析逻辑；210 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对，保真度另以 LibreOffice 渲染作 ground truth 对照。分套件命令、断言数与测试分层见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，约定、架构约束与已知陷阱见 **[AGENTS.md](AGENTS.md)**。全部文档的分层与阅读顺序见[文档地图](docs/README.md)。
+测试分套件、断言数与快照说明见[测试规范](docs/engineering/testing.md)，其余命令与调试页见[本地开发](docs/engineering/development.md)，提交约定与已知陷阱见[AGENTS.md](AGENTS.md)，全部文档的阅读顺序见[文档地图](docs/README.md)。
 
 ## 交流
 
@@ -462,9 +131,6 @@ Worker 里没有 `DOMParser`（Window-only API），因此 `parseXml` 会自动�
 | 问题反馈 / 需求 | [GitHub Issues](https://github.com/unStone/web-ppt/issues) |
 | 讨论 | [GitHub Discussions](https://github.com/unStone/web-ppt/discussions) |
 | 微信交流群 | [置顶 Issue 里的二维码](https://github.com/unStone/web-ppt/issues?q=is%3Aissue+label%3A%E4%BA%A4%E6%B5%81%E7%BE%A4) |
-
-微信群二维码 7 天失效，所以放在 Issue 里而不是直接贴进 README——
-换码只需编辑那条 Issue，README 和已发布的 npm 包都不用动。
 
 ## 许可
 

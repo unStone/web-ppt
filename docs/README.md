@@ -28,8 +28,9 @@ flowchart TB
 | 2 | [engineering/architecture.md](engineering/architecture.md) | 包依赖、解析链路、编辑闭环的全局架构 |
 | 3 | [engineering/architecture-rules.md](engineering/architecture-rules.md) · [engineering/design-standard.md](engineering/design-standard.md) | 分层依赖规范、功能设计标准 |
 | 4 | [CONTEXT.md](../CONTEXT.md) | 领域语言：源值 / 覆盖 / 有效投影 / 补丁与生成保存 |
-| 5 | [engineering/testing.md](engineering/testing.md) · [engineering/development.md](engineering/development.md) | 测试与本地开发 |
-| 6 | [roadmap.md](roadmap.md) | 当前完成度、缺口取舍与下一步 |
+| 5 | [api/viewer.md](api/viewer.md) · [api/editor.md](api/editor.md) | 查看器 / 编辑器接入与低层 API |
+| 6 | [engineering/testing.md](engineering/testing.md) · [engineering/development.md](engineering/development.md) | 测试与本地开发 |
+| 7 | [roadmap.md](roadmap.md) | 当前完成度、缺口取舍与下一步 |
 
 ## L1 现行规范
 
@@ -42,6 +43,7 @@ flowchart TB
 | [design-standard.md](engineering/design-standard.md) | 五态与世代令牌、错误回退、兼容演进、确定性、验收、资源生命周期 | reference |
 | [pitfalls.md](engineering/pitfalls.md) | 交付与交互层面的坑索引（实现陷阱在 AGENTS） | reference |
 | [testing.md](engineering/testing.md) | 门禁关系、新增套件与固件、断言计数登记、测试套件表、测试分层 | how-to |
+| [performance.md](engineering/performance.md) | 浏览器实测性能、Worker 收益、LibreOffice 保真基准与对照方法 | reference |
 | [development.md](engineering/development.md) | 启动、构建、对照与基准命令，调试页 | how-to |
 | [releasing.md](engineering/releasing.md) | 流水线行为、发版 checklist、OIDC 环境要求、常见失败 | how-to |
 | [powerpoint-runner.md](engineering/powerpoint-runner.md) | Windows PowerPoint 真机门禁的 runner 约束与证据 | how-to |
@@ -55,10 +57,14 @@ flowchart TB
 
 ### api/
 
-各按需扩展入口的能力矩阵、API 契约与验收边界，面向外部宿主开发者；`packages/*/README` 与 npm 页面以绝对链接引用，**路径保持不变**。
+查看器 / 编辑器的用法、能力矩阵、API 契约与验收边界，面向外部宿主开发者；`packages/*/README` 与 npm 页面以绝对链接引用，**路径保持不变**。
 
 | 文档 | 主题 |
 |---|---|
+| [viewer.md](api/viewer.md) | 查看器、图片 ZIP / 打印导出、Worker 解析、状态机接法与稳定渲染 |
+| [editor.md](api/editor.md) | 编辑器会话、模板、设计画布、交互 / 剪贴板、低层 EditDoc 与保存 |
+| [format-capabilities.md](api/format-capabilities.md) | `.pptx` / `.ppt` 能力矩阵与文本细项 |
+| [format-limitations.md](api/format-limitations.md) | 格式缺失、近似实现与待验收边界 |
 | [expanded-capabilities.md](api/expanded-capabilities.md) | 全部按需扩展入口的能力矩阵（索引层） |
 | [api-stability.md](api/api-stability.md) | 1.0 API 契约边界与宿主迁移动作 |
 | [appearance-editing.md](api/appearance-editing.md) | 图片效果与立体效果编辑 |
