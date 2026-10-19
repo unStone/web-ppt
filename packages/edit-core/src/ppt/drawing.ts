@@ -1,6 +1,6 @@
 import type { ElementBase, Fill, SlideElement } from '@web-ppt/core';
 import { atom,concat,container,properties,signed,u16,u32,utf16,type Property } from './binary';
-import { fillProperties,strokeProperties } from './appearance';
+import { fillProperties,strokeProperties,cropProperties } from './appearance';
 import { geometry } from './geometry';
 import { FontTable,textRecords } from './text';
 import { Pictures } from './pictures';
@@ -43,7 +43,9 @@ export class Drawings {
     }
     let textbox:Uint8Array|undefined;
     if(el.kind==='image'){
-      if(el.crop&&Object.values(el.crop).some(Boolean)||el.clipPath||el.filter||el.duotone||el.alpha!==undefined&&el.alpha!==1||el.media)throw new Error('PPT 写入暂不支持裁剪、图片效果或音视频');
+      if(el.clipPath||el.filter||el.duotone||el.alpha!==undefined&&el.alpha!==1||el.media)throw new Error('PPT 写入暂不支持异形裁剪、图片效果或音视频');
+      // 矩形 srcRect 裁剪可映射 cropFrom*；异形 clip / 效果仍拒绝。
+      if(el.crop&&Object.values(el.crop).some(Boolean)) props.push(...cropProperties(el.crop));
       props.push({id:260,value:this.pictures.add(el.src),blip:true},...fillProperties(null),...strokeProperties(el.stroke));
     }else {
       props.push(...geometry(el),...fillProperties(el.openGeom?null:el.fill),...strokeProperties(el.stroke));

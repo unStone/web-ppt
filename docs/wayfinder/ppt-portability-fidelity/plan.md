@@ -14,9 +14,9 @@ P0/P1/P2/P3 表示执行优先级，不代表发布版本或工期；无依赖�
 | P0 | [共享工作簿与图表同步](tickets/003-shared-chart-workbook.md) | 修改共享数据后，所有关联图表一致更新且可整体撤销 | 多级类别完成 |
 | P1 | [字体原型](tickets/004-font-glyph-provider.md) → [正式字体实现](tickets/011-font-glyph-implementation.md) → [矢量 PDF](tickets/005-vector-pdf.md) | 普通文本可选择/搜索，普通图形放大不失真；特殊效果明确回退 | 按箭头顺序，前一票关闭后启动 |
 | P2 | [视频音轨](tickets/006-video-audio-track.md) → [内嵌视频合成](tickets/007-video-media-composition.md) | 导出保留音频，再支持视频内容按固定时间轴播放 | 音视频格式及浏览器编码能力可验证 |
-| P3 | [SmartArt / OLE 首批范围](tickets/008-native-object-scope.md) | 选定布局/格式获得更完整的内部编辑 | 先取得样本并确定写回与预览方案 |
+| P3 | [SmartArt / OLE 首批范围](tickets/008-native-object-scope.md) → [013](tickets/013-smartart-matrix-radial.md) / [014](tickets/014-ole-docx-runs-tables.md) / [015](tickets/015-ole-xlsx-styles-richtext.md) | 选定布局/格式获得更完整的内部编辑 | 先取得样本并确定写回与预览方案 |
 | P3 | [高级渲染首批范围](tickets/009-render-fidelity-scope.md) | 修复明确的 EMF+、艺术字与三维视觉问题 | 有可复现输入与外部渲染对照 |
-| P3 | [旧 PPT 增量写入范围](tickets/010-legacy-ppt-scope.md) | 支持矩阵内增加文字、外观及播放属性的原生保存 | 确认旧格式对应结构及独立读取证据 |
+| P3 | [旧 PPT 增量写入范围](tickets/010-legacy-ppt-scope.md) → [外观写入 012](tickets/012-legacy-ppt-appearance-write.md) | 支持矩阵内增加文字、外观及播放属性的原生保存 | 确认旧格式对应结构及独立读取证据 |
 
 ## 依赖与分批交付
 

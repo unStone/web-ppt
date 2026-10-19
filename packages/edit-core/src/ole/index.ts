@@ -3,10 +3,13 @@ import { registerEditExtension } from '../extension-runtime';
 import { objectSource } from '../object-source';
 import { OLE, oleSource, oleState, storedOle } from './state';
 import { normalizeOleEdits, editOleParts, readOleContent } from './content';
-import type { OleCellValue, OleEdits } from './content';
+import type { OleCellStyle, OleCellValue, OleEdits, OleRichRun } from './content';
 import { olePreviewSvg } from './preview';
 import { saveOle } from './save';
-export type { OleCell, OleCellValue, OleSheet, OleParagraph, OleContent, OleEdits } from './content';
+export type {
+  OleCell, OleCellValue, OleCellStyle, OleRichRun, OleRun, OleRunFormat,
+  OleSheet, OleParagraph, OleContent, OleEdits,
+} from './content';
 export { cellPosition } from './content';
 export function queryOleContent(doc: EditDoc, id: ElementId) { return oleState(doc, id).content; }
 export function listEditableOle(doc: EditDoc) {
@@ -54,17 +57,48 @@ export function createOleEditor(editor: Pick<Editor, 'doc' | 'exec'>) {
   const change = (id: ElementId, action: (edits: OleEdits) => void) => {
     const { edits } = oleState(editor.doc, id); action(edits); editor.exec({ type: 'Extension', namespace: 'ole', id, payload: edits });
   };
+  const mergeCell = (edits: OleEdits, sheet: string, ref: string, patch: OleEdits['cells'][number]) => {
+    const prev = edits.cells.find((c) => c.sheet === sheet && c.ref === ref);
+    edits.cells = edits.cells.filter((c) => c.sheet !== sheet || c.ref !== ref);
+    edits.cells.push({ ...prev, ...patch, sheet, ref });
+  };
   return { query: (id: ElementId) => queryOleContent(editor.doc, id),
     setCell(id: ElementId, sheet: string, ref: string, value: OleCellValue) { change(id, (edits) => {
       const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'xlsx') throw new Error('对象不是工作簿');
       const cell = original.sheets.find((s) => s.id === sheet)?.cells.find((c) => c.ref === ref);
+      const prev = edits.cells.find((c) => c.sheet === sheet && c.ref === ref);
       edits.cells = edits.cells.filter((c) => c.sheet !== sheet || c.ref !== ref);
-      if (cell?.formula !== undefined || (cell?.value ?? null) !== value) edits.cells.push({ sheet, ref, value });
+      const valueChanged = cell?.formula !== undefined || (cell?.value ?? null) !== value;
+      if (valueChanged || prev?.style !== undefined || prev?.richText !== undefined) {
+        edits.cells.push({
+          sheet, ref, value,
+          ...(prev?.style !== undefined ? { style: prev.style } : {}),
+          ...(prev?.richText !== undefined ? { richText: prev.richText } : {}),
+        });
+      }
+    }); },
+    setCellStyle(id: ElementId, sheet: string, ref: string, style: OleCellStyle | null) { change(id, (edits) => {
+      if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
+      mergeCell(edits, sheet, ref, { sheet, ref, style });
+    }); },
+    setCellRichText(id: ElementId, sheet: string, ref: string, richText: OleRichRun[] | null) { change(id, (edits) => {
+      if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
+      mergeCell(edits, sheet, ref, { sheet, ref, richText, ...(richText ? { value: richText.map((r) => r.text).join('') } : {}) });
     }); },
     setParagraph(id: ElementId, index: number, text: string) { change(id, (edits) => {
       const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'docx') throw new Error('对象不是文档');
       edits.paragraphs = edits.paragraphs.filter((p) => p.index !== index);
       if (original.paragraphs[index]?.text !== text) edits.paragraphs.push({ index, text });
+    }); },
+    setRun(id: ElementId, paragraph: number, run: number, text: string) { change(id, (edits) => {
+      const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'docx') throw new Error('对象不是文档');
+      const current = original.paragraphs[paragraph]?.runs[run];
+      let entry = edits.paragraphs.find((p) => p.index === paragraph);
+      edits.paragraphs = edits.paragraphs.filter((p) => p.index !== paragraph);
+      if (!entry) entry = { index: paragraph, runs: [] };
+      const runs = [...(entry.runs ?? [])].filter((r) => r.index !== run);
+      if (current?.text !== text) runs.push({ index: run, text });
+      if (runs.length || entry.text !== undefined) edits.paragraphs.push({ ...entry, runs: runs.length ? runs : undefined });
     }); },
     exportContent(id: ElementId) { const state = oleState(editor.doc, id); return state.pkg.wrap(state.changes); },
     reset(id: ElementId) { editor.exec({ type: 'Extension', namespace: 'ole', id, payload: null }); },

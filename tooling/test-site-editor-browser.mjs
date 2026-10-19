@@ -249,7 +249,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 查看器按动画时间线执行 p:cmd 媒体调用并上报播放失败（实测超出 1519B，上调 1.6KB），叠加媒体源回退的 100B
 // 光栅导出改走同步 toDataURL（canvas-png.ts 与 PDF 局部回退共用，避开 toBlob 的空闲调度）实测 553,463B gzip，较修复前增 232B，上调 200B
 // 伸展按子类型钉边、挥舞按 sin 轨迹采样属于查看器播放必经代码，实测 553,709B gzip，超出 160B，上调 200B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 43_900 };
+// .ppt 读取补上 fillAngle / fillFocus 首尾色规则、fillBackOpacity、cropFrom* 与 wzName，属于 .ppt 首次渲染必经代码，实测超出 672B，上调 700B
+// 以上两项分别实测；合在同一闭包后 gzip 不按两者之和压缩，合并后实测 554,467B，超出 18B，上调 100B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 44_700 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

@@ -11,7 +11,7 @@
 | 批注编辑 | `@web-ppt/edit-core/comments` | 批注面板：新增、修改、删除、回复 | 字段级历史、恢复和协同；删除父批注时将回复提升为独立批注 |
 | 页面适配 | `@web-ppt/edit-core/resize` | 页面尺寸 → 确保适合 | 全稿等比居中；同步文字、表格、效果、母版/版式与批注锚点；组合仅缩放根框；支持仅改画布 |
 | SmartArt 内部编辑 | `@web-ppt/edit-core/smartart` | SmartArt 数据面板 | 文字、增删节点及后代、父子关系和同级排序；按当前布局族重排，保存原生数据与 drawing 缓存 |
-| OLE 内部编辑 | `@web-ppt/edit-core/ole` | 嵌入对象数据面板 | 直接 OOXML、CFB Package/Ole10Native 中的 XLSX 单元格及 DOCX 普通段落；保留未改部件，公式交宿主重算 |
+| OLE 内部编辑 | `@web-ppt/edit-core/ole` | 嵌入对象数据面板 | 直接 OOXML、CFB Package/Ole10Native 中的 XLSX 单元格及 DOCX 普通段落（含表格单元格内段落）；保留未改部件，公式交宿主重算。SDK 另提供 DOCX 单个 run 改字（相邻格式保留）、XLSX 单元格字体/填充/边框样式与 sharedStrings 富文本读写，官网面板尚未接入这三项 |
 | 墨迹内部编辑 | `@web-ppt/edit-core/ink` | 墨迹面板与画布手绘 | 笔刷、移动、采样点、增删；保留压力通道、原生 InkML 与兼容预览 |
 | 地图 | `@web-ppt/core/chart-ex` | 自动显示具有 geoCache 的 regionMap | 使用文件自带边界，支持压缩缓存、四种投影、孔洞及跨日期变更线；无缓存时保留兼容图，不请求地图服务 |
 | EMF+ | `@web-ppt/core/emf-plus` | 按内容自动加载 | 路径、透明色、渐变、基本形状/样条、图片、文字、裁剪、继续对象与 GetDC；未知绘图令 Dual 整体回退，Only 返回 unsupported。打开前 `prepareAdvancedRendering` 只解 `.emf` / `.wmf` 与版式 XML，不解照片/视频。默认 `parse()` 不先 inflate 未引用的 `/media/`、`/embeddings/` 和后页私有部件，当前页在第一次渲染前按名补解 |
@@ -71,16 +71,16 @@ try {
 |---|---|
 | 页尺寸、顺序、隐藏页 | 保留；1–1000 页，边长 96–5376 px，顶层坐标受 PPT 的 16 位范围约束 |
 | 横排文字 | UTF-16 中英文、字体、字号、粗斜体、单下划线、上下标、基础段落对齐/间距/单字符项目符号；PPT 字号量化到整点 |
-| 形状 | 原生自定义路径与贝塞尔、纯色/透明填充、实线描边、位置、旋转、翻转 |
+| 形状 | 原生自定义路径与贝塞尔、纯色/透明填充、首尾两色的线性渐变（含各自透明度）、实线与十种预设虚线、五种默认尺寸箭头、位置、旋转、翻转、形状名 |
 | 组合 | 原生嵌套及子坐标系，最多八层 |
-| PNG/JPEG | 保留原始图像字节，源文稿释放后仍可写入 |
+| PNG/JPEG | 保留原始图像字节，源文稿释放后仍可写入；四边矩形裁剪写入 cropFrom* |
 | 演讲者备注 | 原生 Notes 容器与占位符；保留段落与实际制表符 |
 | 自动适应/竖排/多栏/艺术字/复杂字符格式/文字链接 | 明确拒绝 |
-| 裁剪/图片效果、渐变/图案填充、自定义虚线、复杂箭头 | 明确拒绝 |
+| 异形裁剪/图片效果、多色标/非端点色标/径向渐变、图案与图片形状填充、自定义虚线、非默认尺寸箭头 | 明确拒绝 |
 | 表格、图表、SmartArt/OLE/墨迹、音视频、公式、三维或其他原生对象 | 明确拒绝，使用 PPTX 保存 |
 | 批注、节、动画、页面切换 | 明确拒绝，使用 PPTX 保存 |
 
-协议依据：[MS-PPT DocumentContainer](https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-ppt/6254c4d1-5217-4e16-b20d-c04ddcce31c9)。独立 LibreOffice 重开已验证文字、贝塞尔形状、组合、图片与备注；Windows PowerPoint 真机按用户要求跳过。
+协议依据：[MS-PPT DocumentContainer](https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-ppt/6254c4d1-5217-4e16-b20d-c04ddcce31c9)。独立 LibreOffice 重开已验证文字、贝塞尔形状、组合、图片与备注，以及四个象限的渐变方向与首尾色、终点透明度和四边裁剪；Windows PowerPoint 真机按用户要求跳过。线性渐变的首尾色由 fillAngle 的符号与 fillFocus 共同决定，读取 `.ppt` 时按 LibreOffice 的 PowerPoint 兼容规则还原，焦点 40–60 读为两侧对称的轴向渐变。
 
 ## 验证入口
 

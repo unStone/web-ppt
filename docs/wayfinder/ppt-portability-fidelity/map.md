@@ -34,12 +34,15 @@ SmartArt/OLE、高级渲染和旧 PPT。每项交付都有明确支持矩阵、�
 - [005 矢量 PDF](tickets/005-vector-pdf.md)进行中：可选入口、文字和基础图形、页任务、首批图片/裁剪、透明度/渐变及对象级滤镜回退已有 source / dist 与独立读取证据；已补基础文字装饰、字体失败定位、首批 SVG 覆盖检查、原生表格 / 圆形 / 箭头、几何图案及图片填充 / 平铺 / 背景。首批图片规范化已通过浏览器与独立像素对照；图案的阅读器栅格差异保留。Cordis 产品入口、字体选择和导出资源消费已接入；其后补入文字渐变、多样式装饰线、文字描边及浏览器侧长文稿成本；其余图形、文字效果与完整产品验收继续推进，见[实现进度](notes/vector-pdf-implementation.md)。
 - [006 视频音轨](tickets/006-video-audio-track.md)进行中：混音核、WebM 双轨封装、timing 媒体语义、Opus 编码与 MP4/AAC 提轨已随 0.5.0-beta.6 发布；独立 FFmpeg 同轴测量等验收证据待登记。
 - [007 内嵌视频合成](tickets/007-video-media-composition.md)进行中：`videoOverlay` 以 `<video>` seek 叠加当前帧的首个切片已提交；解封装、裁剪 / 变换、循环与音画同步验收待完成。
+- 已完成[旧 PPT 外观写入](tickets/012-legacy-ppt-appearance-write.md)：首尾两色线性渐变、预设虚线、默认尺寸箭头、图片矩形裁剪与形状名原生写入；读取侧按 fillAngle 符号与 fillFocus 还原首尾色并读取裁剪。LibreOffice 双向对照一致；图案填充没有可写的预设记录，继续拒绝。调查票 [010](tickets/010-legacy-ppt-scope.md) 随之关闭。
+- 已完成[SmartArt matrix1 / radial1 验收](tickets/013-smartart-matrix-radial.md)：两种布局的确定性固件、解析结构、改字 / 增删后 DiagramML 与 drawing 一致。
+- [OLE DOCX run 与表格](tickets/014-ole-docx-runs-tables.md)、[OLE XLSX 样式与富文本](tickets/015-ole-xlsx-styles-richtext.md)进行中：模型、SDK 与契约已完成；官网面板入口和外部读取器验证待补。调查票 [008](tickets/008-native-object-scope.md) 等待真实 Office 样本。
 - 用户再次指出的产品外壳 Cordis 方案已补齐[文稿、打开、新建、恢复、文件、业务工具与页面服务](../../design/cordis-editor.md)，视口、模式、导航、历史按钮和页面状态由同一应用持有，发布 SDK 保持无框架。页面生命周期专项、双轴复审及三张生产页面完整中英文回归通过；首次性能失败经隔离复测后，最终四项仓库门禁按原预算全部通过。此项补回原约定，不替代本地图 001–010 的范围。
 
 ## Not yet specified
 
 - 字体首版容器、语言和按需方式已由 004 确定，正式工程实现由 011 承接；复杂脚本、变量字体、CFF 与 WOFF 解压的后续支持方式尚未确定。
-- SmartArt/OLE、EMF+/艺术字/三维和旧 PPT 的首批真实样本及边界正在等待对应调查票；其具体实现票在调查收口后创建。
+- SmartArt/OLE 的真实 Office 样本仍缺（见 008）；EMF+/艺术字/三维的首批范围等待调查票 009；旧 PPT 的复杂文字、超链接、切换与动画、表格与图表仍是 010 列出的后续候选。
 - 高级文本与多级类别入口已记录冷加载、耗时和内存采样；其他入口及浏览器峰值内存仍待实测，不预填虚构工期或收益数字。
 - 发布版本和 API 冻结时机仍由 beta 反馈及外部验收决定，不因计划建立而提前承诺。
 

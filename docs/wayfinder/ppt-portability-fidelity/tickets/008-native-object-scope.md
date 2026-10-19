@@ -27,3 +27,14 @@ blocked_by: []
 - 选出可独立交付的具体布局/内容，不以“支持更多”作为实现票标题或验收条件。
 - 分别新建 SmartArt、DOCX、XLSX 实现票，写清模型、原生内容/预览一致性、历史/协同和独立读取验收。
 - 将尚无预览或可逆写入方案的范围继续登记待调查；本研究关闭不表示对象编辑完成。
+
+## 当前进度
+
+基于代码与确定性固件的范围已拆成三张实现票：[013 SmartArt matrix1 / radial1](013-smartart-matrix-radial.md)、[014 DOCX run 与表格单元格](014-ole-docx-runs-tables.md)、[015 XLSX 样式与富文本](015-ole-xlsx-styles-richtext.md)。
+退出条件里的真实样本（来源、哈希、截图）尚未取得，所以本票保持 open；确定性固件不能替代真实 Office 样本。
+
+| 待取得的真实样本 | 用途 |
+|---|---|
+| PowerPoint 存出的 matrix / radial / 带 constrLst 的组织结构图 | 核对布局族边界，以及仅改字时能否保留缓存 |
+| 嵌入 Word（表格、多 run 粗斜体） | DOCX 改写后由 Word / LibreOffice 打开验证 |
+| 嵌入 Excel（样式、富文本、普通公式） | XLSX 改写后由 Excel / LibreOffice 打开验证 |

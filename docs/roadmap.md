@@ -23,7 +23,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 
 下一阶段（[内容流转、导出与保真](wayfinder/ppt-portability-fidelity/map.md)）已完成高级文本流转、多级类别、
 共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）进行中，其中音轨已随
-`0.5.0-beta.6` 发布；SmartArt/OLE、高级渲染与旧 PPT（008–010）待调查。
+`0.5.0-beta.6` 发布；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）的 SDK 已完成、官网入口与外部读取验证待补；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查。
 
 ### 1.2 验证状态
 
@@ -249,7 +249,7 @@ flowchart LR
 | P0 | 收口进行中票据：矢量 PDF（005）、音轨验收证据（006）、内嵌视频合成（007） | 005 实验性入口已发布；006 已随 beta.6 发布；007 失败告警已补 |
 | P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 规划，见 §7.2 |
 | P2 | Agent 读写接口第二批：命令工具面、MCP server 与 Agent Skill | 依赖第一批 |
-| P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充依赖命令工具面；长尾格式先调查真实样本 |
+| P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充依赖命令工具面；旧 PPT 外观写入（012）与 SmartArt matrix / radial（013）已完成，OLE 014 / 015 待补官网入口与外部读取，其余长尾格式先调查真实样本 |
 | P4 | Agent 任务评测集 | 依赖第二批 |
 
 内容流转、PDF 与音视频的范围、依赖和共同验收条件见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。
