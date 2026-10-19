@@ -1,7 +1,5 @@
 import type { TableElement } from '@web-ppt/core';
-import {
-  composeSpaceMatrices, elementContentToSlideMatrix, elementFrameToSlideMatrix,
-} from '@web-ppt/edit-core';
+import { composeSpaceMatrices } from '@web-ppt/edit-core';
 import type { Editor, TableCellAddress } from '@web-ppt/edit-core';
 import type { ActiveText } from './text-editor-types';
 
@@ -38,20 +36,21 @@ export function resolveActiveText(
 ): ActiveText | null {
   const record = editor.doc.elements[id];
   if (!record || record.meta.editable !== 'full') return null;
-  const element = editor.effectiveElement(id);
+  // 覆盖层与画面同源：组内文字按折算后的外框排版，字号不随组缩放。
+  const element = editor.renderedElement(id);
   if (!address) {
     const text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
     return element.kind === 'shape' && text
       ? {
         id, text, width: element.w, height: element.h,
-        matrix: elementFrameToSlideMatrix(editor.doc, id),
+        matrix: editor.renderedFrameToSlideMatrix(id),
       }
       : null;
   }
   if (element.kind !== 'table') return null;
   const frame = tableCellFrame(element, address);
   if (!frame) return null;
-  const matrix = elementContentToSlideMatrix(editor.doc, id);
+  const matrix = editor.renderedContentToSlideMatrix(id);
   return {
     id,
     cell: { ...address },

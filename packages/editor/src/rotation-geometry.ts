@@ -1,6 +1,6 @@
 import {
-  elementFrameToSlidePoint, elementParentToSlideMatrix, inverseTransformSpaceVector,
-  slideToElementParentPoint, spaceOrientationParity, transformSpaceVector,
+  elementEditParentToSlideMatrix, inverseTransformSpaceVector, slideToElementEditParentPoint,
+  spaceOrientationParity, transformSpacePoint, transformSpaceVector,
 } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import type { TransformFrame } from './transform-frame';
@@ -33,7 +33,10 @@ function nearestEquivalentAngle(degrees: number, reference: number): number {
   return degrees + Math.round((reference - degrees) / 360) * 360;
 }
 
-/** 多选中心在幻灯片空间刚性旋转；方向轴反解回父空间，避免把组缩放误当成角度。 */
+/**
+ * 多选中心在幻灯片空间刚性旋转；source 是编辑外框，父空间只含平移、旋转与翻转，
+ * 方向轴反解回父空间时只需处理翻转带来的手性。
+ */
 export function rotateElementAroundSlideCenter(
   doc: EditDoc,
   id: ElementId,
@@ -41,10 +44,10 @@ export function rotateElementAroundSlideCenter(
   selectionCenter: SpacePoint,
   degrees: number,
 ): TransformFrame {
-  const center = elementFrameToSlidePoint(doc, id, { x: source.w / 2, y: source.h / 2 });
+  const parent = elementEditParentToSlideMatrix(doc, id);
+  const center = transformSpacePoint(parent, { x: source.x + source.w / 2, y: source.y + source.h / 2 });
   const nextCenter = rotatePointAround(center, selectionCenter, degrees);
-  const nextParentCenter = slideToElementParentPoint(doc, id, nextCenter);
-  const parent = elementParentToSlideMatrix(doc, id);
+  const nextParentCenter = slideToElementEditParentPoint(doc, id, nextCenter);
   const radians = source.rot * Math.PI / 180;
   const sourceWorldAxis = transformSpaceVector(parent, {
     x: Math.cos(radians), y: Math.sin(radians),

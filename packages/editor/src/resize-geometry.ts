@@ -1,6 +1,5 @@
 import {
-  elementFrameToSlidePoint, elementParentToSlideMatrix, inverseTransformSpaceVector,
-  slideToElementParentPoint,
+  elementEditParentToSlideMatrix, inverseTransformSpaceVector, slideToElementEditParentPoint, transformSpacePoint,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { MIN_FRAME_SIZE } from './transform-frame';
@@ -275,8 +274,10 @@ export function resizeMultiElementFrames(
   };
   const orientationParity = (horizontalFlip === verticalFlip) ? 1 : -1;
   const fitCache = new Map<string, { w: number; h: number; rot: number }>();
+  // source 是编辑外框，父空间为父组渲染坐标，所以选区缩放在这里求出的外框就是画面上的结果。
   return targets.map(({ id, source }) => {
-    const center = elementFrameToSlidePoint(doc, id, { x: source.w / 2, y: source.h / 2 });
+    const parent = elementEditParentToSlideMatrix(doc, id);
+    const center = transformSpacePoint(parent, { x: source.x + source.w / 2, y: source.y + source.h / 2 });
     const mappedCenter = {
       x: mapSelectionAxis(
         center.x, selectionSource.x, selectionSource.w,
@@ -287,8 +288,7 @@ export function resizeMultiElementFrames(
         selectionNext.y, selectionNext.h, verticalFlip,
       ),
     };
-    const parentCenter = slideToElementParentPoint(doc, id, mappedCenter);
-    const parent = elementParentToSlideMatrix(doc, id);
+    const parentCenter = slideToElementEditParentPoint(doc, id, mappedCenter);
     const key = frameFitKey(source, parent, scale, orientationParity);
     let fitted = fitCache.get(key);
     if (!fitted) {

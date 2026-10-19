@@ -112,7 +112,8 @@ const masterCanvas = editor.toDesignCanvas(master.target);
 
 const slide = editor.toSlide(slideId);
 const svg = renderSlideToSvg(source, slide, { idPrefix: `${slideId}-` });
-const dirty = renderElementToSvg(editor.effectiveElement(elementId), {
+// renderedElement 已把祖先组合的缩放折算进外框，与整页渲染一致。
+const dirty = renderElementToSvg(editor.renderedElement(elementId), {
   idPrefix: `${slideId}-${elementId}-`,
 });
 // 把该元素自己的 dirty.markup 与 dirty.defs 两个 DOM 分区一起替换。

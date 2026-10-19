@@ -56,7 +56,8 @@ function renderElementParts(
   textMode: 'html' | 'svg',
   inserting = false,
 ): { next: SVGElement; nextDefs: SVGElement[] } | null {
-  const element = editor.effectiveElement(id);
+  // 组内节点挂在父组的渲染坐标里，外框必须先折算祖先组变换，与整页渲染一致。
+  const element = editor.renderedElement(id);
   const record = editor.doc.elements[id]!;
   // 插入组合时可复用现有孩子；重绘现存组合必须带上孩子，否则替换容器会把内容一并清空。
   const structuralShell = inserting

@@ -32,6 +32,7 @@ import {
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
 import { effectiveElement, toSlide } from './projection';
+import { renderedContentToSlideMatrix, renderedElement, renderedFrameToSlideMatrix } from './space';
 import { RecoveryJournal, restoreRecoveryFrames } from './recovery';
 import type { RecoveryFrameSource, RecoverySubscriber } from './recovery-types';
 import {
@@ -289,6 +290,10 @@ export class Editor {
   toSlide(id: SlideId) { return toSlide(this.doc, id); }
   toDesignCanvas(target: DesignTarget) { return toDesignCanvas(this.doc, target); }
   effectiveElement(id: ElementId) { return effectiveElement(this.doc, id); }
+  /** 组变换折算后的外框，与画面同源；覆盖层经实例调用，避免独立打包的入口读到另一份投影缓存。 */
+  renderedElement(id: ElementId) { return renderedElement(this.doc, id); }
+  renderedFrameToSlideMatrix(id: ElementId) { return renderedFrameToSlideMatrix(this.doc, id); }
+  renderedContentToSlideMatrix(id: ElementId) { return renderedContentToSlideMatrix(this.doc, id); }
 
   dispose(): void {
     this.unsubscribeExtensions();

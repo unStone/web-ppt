@@ -202,7 +202,8 @@ try {
     + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
     + ` · 缩放帧 p95 ${result.resizeP95}ms`
     + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
-    + ` · 旋转嵌套/多选偏差 ${result.rotationNestedError}/${result.rotationMultiError}px`
+    + ` · 旋转嵌套/非等比组合/多选偏差 ${result.rotationNestedError}/${result.rotationNonUniformError}`
+    + `/${result.rotationMultiError}px`
     + ` · 旋转60 p95 ${result.rotationP95}ms`
     + ` · 吸附阈值/组内/等距偏差 ${result.snapThresholdError}/${result.snapGroupError}/${result.snapSpacingError}px`
     + ` · 吸附60 p95 ${result.snapP95}ms`

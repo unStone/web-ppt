@@ -10,8 +10,10 @@ export { applyWebPptAdapterBinding } from './framework-adapter-binding';
 export { WEB_PPT_IDLE_SNAPSHOT } from './framework-adapter-state';
 export { ELEMENT_CLIPBOARD_MIME } from './element-clipboard';
 export {
-  elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToSlideMatrix,
-  elementParentToSlidePoint, invertSpaceMatrix, screenToSlidePoint, slideToElementFramePoint,
+  editFrameToModelFrame, elementEditFrame, elementEditParentToSlideMatrix,
+  elementFrameToSlideMatrix, elementFrameToSlidePoint, elementParentToRenderedParentMatrix, elementParentToSlideMatrix,
+  elementParentToSlidePoint, invertSpaceMatrix, renderedContentToSlideMatrix, renderedElement,
+  renderedFrameToSlideMatrix, screenToSlidePoint, slideToElementEditParentPoint, slideToElementFramePoint,
   slideToElementParentPoint, slideToScreenPoint, transformSpacePoint,
   queryElementCrop, queryElementEffects, queryElementFill, queryElementLink, queryElementStroke,
   queryElementPresetGeometry, queryParaProps, queryRunLink, queryRunProps, queryTableGrid,
@@ -70,4 +72,4 @@ export type {
 } from '@web-ppt/edit-core';
 export type { SelectionPaneItem } from '@web-ppt/edit-core';
 export type { SnapMargins } from './snap';
-export type { AffineMatrix, SlideViewport, SpacePoint } from '@web-ppt/edit-core';
+export type { AffineMatrix, ElementEditFrame, SlideViewport, SpacePoint } from '@web-ppt/edit-core';

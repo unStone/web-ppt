@@ -1,5 +1,5 @@
 import {
-  outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint,
+  elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -10,7 +10,7 @@ import {
 } from './resize-geometry';
 import type { ResizeHandle } from './resize-geometry';
 import { updateSelectionOverlayFrame } from './selection-overlay';
-import { transformFrameCorners, transformPreviewMatrix } from './transform-frame';
+import { modelXfrmFields, transformFrameCorners, transformPreviewMatrix } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -18,6 +18,7 @@ type ResizeCorners = [SpacePoint, SpacePoint, SpacePoint, SpacePoint];
 
 interface ResizeTarget {
   id: ElementId;
+  /** 编辑外框：在父组渲染坐标里按画面缩放，提交时换算回模型。 */
   source: TransformFrame;
   partition: SVGElement;
   wrapper: SVGGElement | null;
@@ -82,15 +83,7 @@ export class ResizeGestureController {
       .map((id): ResizeTarget | null => {
         const partition = findElementPartition(this.options.staticLayer, id);
         if (!partition) return null;
-        const element = this.options.editor.effectiveElement(id);
-        return {
-          id,
-          source: {
-            x: element.x, y: element.y, w: element.w, h: element.h, rot: element.rot,
-            flipH: element.flipH, flipV: element.flipV,
-          },
-          partition, wrapper: null,
-        };
+        return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
       });
     if (!targets.length || targets.some((target) => target === null)) return;
     const typedTargets = targets as ResizeTarget[];
@@ -133,7 +126,7 @@ export class ResizeGestureController {
     const modifiers = { altKey: snapshot.altKey, shiftKey: snapshot.shiftKey };
     if (session.targets.length === 1) {
       const target = session.targets[0];
-      const parent = slideToElementParentPoint(this.options.editor.doc, target.id, slide);
+      const parent = slideToElementEditParentPoint(this.options.editor.doc, target.id, slide);
       const frame = resizeElementFrame(target.source, session.handle, parent, modifiers);
       return {
         frames: [{ target, frame }],
@@ -189,8 +182,7 @@ export class ResizeGestureController {
       for (const { target, frame } of proposal.frames) {
         transaction.exec({
           type: 'SetXfrm', id: target.id,
-          x: frame.x, y: frame.y, w: frame.w, h: frame.h,
-          ...(Math.abs(frame.rot - target.source.rot) >= 1e-9 ? { rot: frame.rot } : {}),
+          ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'w', 'h']),
         });
         if (frame.flipH !== target.source.flipH || frame.flipV !== target.source.flipV) {
           transaction.exec({ type: 'SetFlip', id: target.id, h: frame.flipH, v: frame.flipV });

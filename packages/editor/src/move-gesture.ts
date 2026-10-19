@@ -1,5 +1,8 @@
-import { outermostSelectedElementIds, screenToSlidePoint, slideToElementParentPoint } from '@web-ppt/edit-core';
-import type { Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
+import {
+  elementEditFrame, elementParentToRenderedParentMatrix, outermostSelectedElementIds, screenToSlidePoint,
+  slideToElementParentPoint, transformSpaceVector,
+} from '@web-ppt/edit-core';
+import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
@@ -15,6 +18,8 @@ interface MoveTarget {
   x: number;
   y: number;
   startParent: SpacePoint;
+  /** 模型父空间 → 父组渲染坐标；组内 wrapper 的位移须经它换算。 */
+  toRendered: AffineMatrix;
   partition: SVGElement;
   wrapper: SVGGElement | null;
 }
@@ -76,6 +81,7 @@ export class MoveGestureController {
         return {
           id, x: source.x, y: source.y,
           startParent: slideToElementParentPoint(this.options.editor.doc, id, startSlide),
+          toRendered: elementParentToRenderedParentMatrix(this.options.editor.doc, id),
           partition, wrapper: null,
         };
       });
@@ -151,10 +157,10 @@ export class MoveGestureController {
   private applyFrame(session: MoveSession, snapshot: PointerGestureSnapshot): void {
     const proposal = this.proposal(session, snapshot);
     for (const { target, point } of this.positions(session, proposal.delta)) {
-      target.wrapper?.setAttribute('transform', translate({
+      target.wrapper?.setAttribute('transform', translate(transformSpaceVector(target.toRendered, {
         x: point.x - target.x,
         y: point.y - target.y,
-      }));
+      })));
     }
     session.overlay?.setAttribute('transform', translate(proposal.delta));
     if (session.guideLayer) renderSnapGuides(session.guideLayer, proposal.guides, this.options.zoom());
@@ -181,7 +187,7 @@ export class MoveGestureController {
 
   private selectionBounds(ids: readonly ElementId[]): SnapBounds {
     return boundsOf(ids.flatMap((id) => transformFrameCorners(
-      this.options.editor.doc, id, this.options.editor.effectiveElement(id),
+      this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id),
     )));
   }
 

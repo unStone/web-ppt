@@ -136,6 +136,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           resizeHitError: report.dataset.resizeHitError, resizeP95: report.dataset.resizeP95,
           resizeSingularP95: report.dataset.resizeSingularP95,
           rotationNestedError: report.dataset.rotationNestedError,
+          rotationNonUniformError: report.dataset.rotationNonUniformError,
           rotationMultiError: report.dataset.rotationMultiError,
           rotationP95: report.dataset.rotationP95,
           snapThresholdError: report.dataset.snapThresholdError,

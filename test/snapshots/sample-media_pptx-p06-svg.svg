@@ -11,7 +11,7 @@
 </g>
 <g data-el="514" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(40 120)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g transform="translate(6.97 6.97)">
 <text x="288.03" y="20.88" text-anchor="middle" xml:space="preserve">
 <tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">渠道收入（子母饼：末 3 项拆到次饼）</tspan>
@@ -148,7 +148,7 @@
 </g>
 <g data-el="515" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(650 120)">
-<g transform=" scale(1 1) translate(0 0)">
+<g>
 <g transform="translate(6.97 6.97)">
 <text x="288.03" y="20.88" text-anchor="middle" xml:space="preserve">
 <tspan font-size="17.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">复合条饼（占比 &lt; 6% 拆到次条）</tspan>

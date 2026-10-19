@@ -251,7 +251,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 伸展按子类型钉边、挥舞按 sin 轨迹采样属于查看器播放必经代码，实测 553,709B gzip，超出 160B，上调 200B
 // .ppt 读取补上 fillAngle / fillFocus 首尾色规则、fillBackOpacity、cropFrom* 与 wzName，属于 .ppt 首次渲染必经代码，实测超出 672B，上调 700B
 // 以上两项分别实测；合在同一闭包后 gzip 不按两者之和压缩，合并后实测 554,467B，超出 18B，上调 100B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 44_700 };
+// 组变换折算进子元素外框（完整 path data 缩放 + 编辑器渲染外框）属于同步渲染必经代码，实测超出 1922B，上调 2.0KB
+// 编辑器几何改按刚体外框求值（编辑外框、反算模型、粘贴落位）属于编辑器同步加载代码，实测超出 460B，上调 500B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 47_200 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

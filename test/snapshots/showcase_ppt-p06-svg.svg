@@ -34,9 +34,9 @@
 </g>
 <g data-el="8196" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(655.17 27.17)">
-<g transform=" scale(1 1) translate(-655.17 -27.17)">
+<g>
 <g data-el="8197" style="transform-box:fill-box;transform-origin:center">
-<g transform="rotate(15 804.75 183.58) translate(684.83 53.67)">
+<g transform="rotate(15 149.58 156.42) translate(29.67 26.5)">
 <path d="M 0 39.972 A 39.972 39.972 0 0 1 39.972 0 L 199.861 0 A 39.972 39.972 0 0 1 239.833 39.972 L 239.833 219.861 A 39.972 39.972 0 0 1 199.861 259.833 L 39.972 259.833 A 39.972 39.972 0 0 1 0 219.861 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
 <text x="119.92" y="132.95" text-anchor="middle" xml:space="preserve">
 <tspan font-size="12" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">外层 </tspan>
@@ -45,10 +45,10 @@
 </g>
 </g>
 <g data-el="8198" style="transform-box:fill-box;transform-origin:center">
-<g transform="translate(930.83 119)">
-<g transform=" scale(1 1) translate(-930.83 -119)">
+<g transform="translate(275.67 91.83)">
+<g>
 <g data-el="8199" style="transform-box:fill-box;transform-origin:center">
-<g transform="rotate(15 1090.75 198.25) translate(970.83 148.33)">
+<g transform="rotate(15 159.92 79.25) translate(40 29.33)">
 <path d="M 0 49.917 A 119.917 49.917 0 0 1 239.833 49.917 A 119.917 49.917 0 0 1 0 49.917 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
 <text x="119.92" y="52.05" text-anchor="middle" xml:space="preserve">
 <tspan font-size="9.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层</tspan>
@@ -57,7 +57,7 @@
 </g>
 </g>
 <g data-el="8200" style="transform-box:fill-box;transform-origin:center">
-<g transform="rotate(15 1059.58 314.08) translate(939.67 264.17)">
+<g transform="rotate(15 128.75 195.08) translate(8.83 145.17)">
 <path d="M 0 49.917 A 119.917 49.917 0 0 1 239.833 49.917 A 119.917 49.917 0 0 1 0 49.917 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
 <text x="119.92" y="52.05" text-anchor="middle" xml:space="preserve">
 <tspan font-size="9.33" font-family="'Arial','Arial Unicode MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层</tspan>

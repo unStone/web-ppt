@@ -30,30 +30,30 @@
 </g>
 <g data-el="610" style="transform-box:fill-box;transform-origin:center">
 <g transform="rotate(15 940 220) translate(680 90)">
-<g transform=" scale(2 2) translate(0 0)">
+<g>
 <g data-el="446" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
-<path d="M 0 20 A 20 20 0 0 1 20 0 L 100 0 A 20 20 0 0 1 120 20 L 120 110 A 20 20 0 0 1 100 130 L 20 130 A 20 20 0 0 1 0 110 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
-<text x="60" y="69.03" text-anchor="middle" xml:space="preserve">
+<path d="M 0 40 A 40 40 0 0 1 40 0 L 200 0 A 40 40 0 0 1 240 40 L 240 220 A 40 40 0 0 1 200 260 L 40 260 A 40 40 0 0 1 0 220 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+<text x="120" y="134.03" text-anchor="middle" xml:space="preserve">
 <tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">外层 A</tspan>
 </text>
 </g>
 </g>
 <g data-el="611" style="transform-box:fill-box;transform-origin:center">
-<g transform="translate(140 10)">
-<g transform=" scale(2 2) translate(0 0)">
+<g transform="translate(280 20)">
+<g>
 <g data-el="447" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(0 0)">
-<path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
-<text x="30" y="15.64" text-anchor="middle" xml:space="preserve">
+<path d="M 0 50 A 120 50 0 0 1 240 50 A 120 50 0 0 1 0 50 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+<text x="120" y="53.14" text-anchor="middle" xml:space="preserve">
 <tspan font-size="9.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层1</tspan>
 </text>
 </g>
 </g>
 <g data-el="448" style="transform-box:fill-box;transform-origin:center">
-<g transform="translate(0 30)">
-<path d="M 0 12.5 A 30 12.5 0 0 1 60 12.5 A 30 12.5 0 0 1 0 12.5 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
-<text x="30" y="15.64" text-anchor="middle" xml:space="preserve">
+<g transform="translate(0 120)">
+<path d="M 0 50 A 120 50 0 0 1 240 50 A 120 50 0 0 1 0 50 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+<text x="120" y="53.14" text-anchor="middle" xml:space="preserve">
 <tspan font-size="9.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(255,255,255)">内层2</tspan>
 </text>
 </g>

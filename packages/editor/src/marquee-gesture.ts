@@ -1,4 +1,4 @@
-import { effectiveElement, screenToSlidePoint } from '@web-ppt/edit-core';
+import { elementEditFrame, screenToSlidePoint } from '@web-ppt/edit-core';
 import type { Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
@@ -95,7 +95,7 @@ export class MarqueeGestureController {
     session.candidates = this.options.candidateIds(session.enteredGroup).map((id) => ({
       id,
       corners: transformFrameCorners(
-        this.options.editor.doc, id, effectiveElement(this.options.editor.doc, id),
+        this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id),
       ),
       preview: null,
     }));

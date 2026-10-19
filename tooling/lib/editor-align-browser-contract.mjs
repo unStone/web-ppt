@@ -5,14 +5,16 @@ const p95 = (samples) => {
   return samples[Math.floor(samples.length * 0.95)];
 };
 
-function frameLeft(mount, record) {
+function frameLeft(mount, session, record) {
   const node = mount.querySelector(`[data-edit-id="${record.id}"]`);
   const base = node?.querySelector(':scope > g[transform]');
   const matrix = base?.getScreenCTM();
   if (!matrix) throw new Error(`浏览器对齐缺少元素框 CTM：${record.id}`);
+  // 组内元素的渲染节点用组缩放折算后的外框作局部坐标。
+  const frame = session.editor.renderedElement(record.id);
   return Math.min(...[
-    new DOMPoint(0, 0), new DOMPoint(record.src.w, 0),
-    new DOMPoint(record.src.w, record.src.h), new DOMPoint(0, record.src.h),
+    new DOMPoint(0, 0), new DOMPoint(frame.w, 0),
+    new DOMPoint(frame.w, frame.h), new DOMPoint(0, frame.h),
   ].map((point) => point.matrixTransform(matrix).x));
 }
 
@@ -35,11 +37,11 @@ export async function runEditorAlignBrowserContract({ openEditor, load }) {
     const leaf = byName('align-group-leaf');
     session.editor.exec({ type: 'AlignElements', ids: [plain.id, rotated.id], edge: 'left' });
     mount.querySelector('svg')?.getBoundingClientRect();
-    const plainRotated = [frameLeft(mount, plain), frameLeft(mount, rotated)];
+    const plainRotated = [frameLeft(mount, session, plain), frameLeft(mount, session, rotated)];
     geometryError = Math.abs(plainRotated[0] - plainRotated[1]);
     session.editor.exec({ type: 'AlignElements', ids: [plain.id, leaf.id], edge: 'left' });
     mount.querySelector('svg')?.getBoundingClientRect();
-    const plainLeaf = [frameLeft(mount, plain), frameLeft(mount, leaf)];
+    const plainLeaf = [frameLeft(mount, session, plain), frameLeft(mount, session, leaf)];
     geometryError = Math.max(geometryError, Math.abs(plainLeaf[0] - plainLeaf[1]));
     geometryDetail = JSON.stringify({ plainRotated, plainLeaf });
     if (geometryError > 0.5) {
