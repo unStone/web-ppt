@@ -10,9 +10,9 @@ import { getPptDecryptor } from '../crypto/hook';
 import { isPptEncrypted } from '../crypto/ppt';
 import { PasswordRequiredError } from '../crypto/ooxml';
 import {
-  ESCHER, EscherProps, MSO_SHAPE, P, Scheme, SP_FLAG, escherColor, extractBlips,
+  ESCHER, EscherProps, MSO_SHAPE, P, Scheme, SP_FLAG, complexString, escherColor, extractBlips,
   isTableGroup, MSO_PICTURE_FRAME, parseOpt, readAnchor, readChildAnchor, readSp, readSpgr,
-  shapeFill, shapeShadow, shapeStroke, tableRowHeights,
+  shapeCrop, shapeFill, shapeShadow, shapeStroke, tableRowHeights,
 } from './escher';
 import { ansi, findAll, findRec, Rec, records, RT, utf16 } from './records';
 import { parseAnimations, parseSlideShowInfo } from './timing';
@@ -633,6 +633,7 @@ function elementBase(
   sp: { id: number; flags: number },
   props: EscherProps,
   scheme: Scheme,
+  dv?: DataView,
 ): ElementBase {
   const rotationRaw = props.simple.get(P.rotation);
   const base: ElementBase = {
@@ -644,6 +645,10 @@ function elementBase(
     // 动画按 Escher 形状 id 定位目标
     id: sp.id,
   };
+  if (dv) {
+    const name = complexString(dv, props, P.wzName);
+    if (name) base.name = name;
+  }
   const shadow = shapeShadow(props, scheme);
   if (shadow) base.effects = { shadow };
   return base;
@@ -670,7 +675,7 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   const box = anchorBox(ctx, rec, origin);
   if (!box || box.w <= 0 || box.h <= 0) return null;
 
-  const base = elementBase(box, sp, props, ctx.scheme);
+  const base = elementBase(box, sp, props, ctx.scheme, dv);
   const shapeLink = clientDataLink(ctx, rec);
   if (shapeLink) base.link = shapeLink;
 
@@ -688,7 +693,11 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   }
   if (pib !== undefined && (shapeType === MSO_PICTURE_FRAME || pib > 0)) {
     if (preview) {
-      const img: ImageElement = { kind: 'image', ...base, src: preview, crop: null, stroke: shapeStroke(props, ctx.scheme) };
+      const img: ImageElement = {
+        kind: 'image', ...base, src: preview,
+        crop: shapeCrop(props),
+        stroke: shapeStroke(props, ctx.scheme),
+      };
       return img;
     }
   }
@@ -856,7 +865,7 @@ function parseSpgrContainer(ctx: Ctx, rec: Rec, parent: Origin, depth = 0): Slid
     const spaceH = self.space.h * ctx.scale;
     const group: GroupElement = {
       kind: 'group',
-      ...elementBase(self.box, self.sp, self.props, ctx.scheme),
+      ...elementBase(self.box, self.sp, self.props, ctx.scheme, ctx.dv),
       childX: self.space.x * ctx.scale,
       childY: self.space.y * ctx.scale,
       scaleX: self.box.w / spaceW,

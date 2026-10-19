@@ -53,6 +53,13 @@ export const P = {
   txflTextFlow: 136,
   pib: 260,
   pibName: 261,
+  // MS-ODRAW cropFrom*：16.16 分数，顺序 Top/Bottom/Left/Right。
+  cropFromTop: 256,
+  cropFromBottom: 257,
+  cropFromLeft: 258,
+  cropFromRight: 259,
+  /** OfficeArt 形状名（复杂属性，UTF-16） */
+  wzName: 896,
   geoLeft: 320,
   geoTop: 321,
   geoRight: 322,
@@ -68,7 +75,11 @@ export const P = {
   fillColor: 385,
   fillOpacity: 386,
   fillBackColor: 387,
+  fillBackOpacity: 388,
+  fillFocus: 396,
   fillBlip: 390,
+  /** FixedPoint 角度；与 Schema 的换算及其符号的含义见 linearShade */
+  fillAngle: 395,
   fillStyleBooleans: 447,
   lineColor: 448,
   lineOpacity: 449,
@@ -118,6 +129,28 @@ const bit = (v: number | undefined, mask: number): boolean | null => {
   return (v & mask) !== 0;
 };
 
+/**
+ * 线性 shade 的方向与首尾色。fillAngle 的正负号与 fillFocus 共同决定哪一色在起点：
+ * 角度 ≥ 0、焦点为 0、焦点为负各翻转一次，焦点落在 40–60 之间是两侧对称的轴向渐变。
+ * 规则与 LibreOffice msdffimp 的 ImportGradientColor 一致（它按 PowerPoint 实测保真）；
+ * 角度本身 Schema = 90 − fillAngle（DrawingML 0° 为左→右、顺时针）。
+ */
+function linearShade(props: EscherProps): { angle: number; backFirst: boolean; axial: boolean } {
+  const raw = props.simple.get(P.fillAngle);
+  const degrees = raw === undefined ? 0 : signed(raw) / 65536;
+  // foreFirst 为真时 fillColor 在起点（对应 LibreOffice 的 nChgColors）。
+  let foreFirst = degrees >= 0;
+  let focus = signed(props.simple.get(P.fillFocus) ?? 0);
+  if (focus === 0) foreFirst = !foreFirst;
+  else if (focus < 0) { focus = -focus; foreFirst = !foreFirst; }
+  const axial = focus > 40 && focus < 60;
+  if (axial) foreFirst = !foreFirst;
+  let angle = 90 - degrees;
+  while (angle < 0) angle += 360;
+  while (angle >= 360) angle -= 360;
+  return { angle: Math.round(angle * 1000) / 1000, backFirst: !foreFirst, axial };
+}
+
 export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: number) => string | null): Fill | null {
   const filled = bit(props.simple.get(P.fillStyleBooleans), 0x10);
   if (filled === false) return { type: 'none' };
@@ -132,14 +165,22 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
   if (type === 4 || type === 5 || type === 6 || type === 7) {
     const c1 = props.simple.get(P.fillColor);
     const c2 = props.simple.get(P.fillBackColor);
+    const backOpacity = (props.simple.get(P.fillBackOpacity) ?? 65536) / 65536;
     if (c1 !== undefined || c2 !== undefined) {
+      const fore = escherColor(c1 ?? 0xffffff, scheme, opacity);
+      const back = escherColor(c2 ?? 0xffffff, scheme, backOpacity);
+      // 5 / 6 以中心或形状为焦点，没有线性方向可读，沿用竖向近似。
+      if (type === 5 || type === 6) {
+        return { type: 'gradient', angle: 90, stops: [{ pos: 0, color: fore }, { pos: 1, color: back }] };
+      }
+      const shade = linearShade(props);
+      const [start, end] = shade.backFirst ? [back, fore] : [fore, back];
       return {
         type: 'gradient',
-        angle: 90,
-        stops: [
-          { pos: 0, color: escherColor(c1 ?? 0xffffff, scheme, opacity) },
-          { pos: 1, color: escherColor(c2 ?? 0xffffff, scheme, opacity) },
-        ],
+        angle: shade.angle,
+        stops: shade.axial
+          ? [{ pos: 0, color: start }, { pos: 0.5, color: end }, { pos: 1, color: start }]
+          : [{ pos: 0, color: start }, { pos: 1, color: end }],
       };
     }
   }
@@ -148,10 +189,23 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
   return { type: 'solid', color: escherColor(color, scheme, opacity) };
 }
 
+/** edit-core/ppt/appearance.ts 的 DASH_PRESETS 按同一张表反查，两边必须同步。 */
 const DASH_MAP: Record<number, number[]> = {
   1: [4, 3], 2: [1, 3], 3: [4, 3, 1, 3], 4: [4, 3, 1, 3, 1, 3],
   5: [8, 3], 6: [8, 3, 1, 3], 7: [8, 3, 1, 3, 1, 3], 8: [1, 1], 9: [3, 3], 10: [3, 3, 1, 3],
 };
+
+/** 图片矩形裁剪；cropFrom* 缺省为 0。全 0 时返回 null，与「未裁剪」同义。 */
+export function shapeCrop(props: EscherProps): { l: number; t: number; r: number; b: number } | null {
+  const frac = (id: number): number => signed(props.simple.get(id) ?? 0) / 65536;
+  const crop = {
+    t: frac(P.cropFromTop),
+    b: frac(P.cropFromBottom),
+    l: frac(P.cropFromLeft),
+    r: frac(P.cropFromRight),
+  };
+  return Object.values(crop).some((v) => Math.abs(v) > 1e-9) ? crop : null;
+}
 
 const ARROW_MAP: Record<number, 'triangle' | 'stealth' | 'diamond' | 'oval' | 'arrow'> = {
   1: 'triangle', 2: 'stealth', 3: 'diamond', 4: 'oval', 5: 'arrow',

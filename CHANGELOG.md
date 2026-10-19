@@ -7,10 +7,13 @@
 ### 新增
 
 - `presentationToVideo` 新增实验性 `videoOverlay`：导出时以 `<video>` 当前帧替代内嵌视频的海报帧，媒体起始时刻与音轨共用同一时间轴；默认关闭时产物不变。
+- `savePpt` 原生写入首尾两色线性渐变（两端透明度分别保留）、十种预设虚线、五种默认尺寸箭头、图片四边矩形裁剪与形状名；图案填充、多色标或径向渐变、自定义虚线与非默认箭头尺寸仍以 `PptSaveError` 拒绝
+- `@web-ppt/edit-core/ole` 新增 `setRun`（嵌入 DOCX 单个 run 改字，相邻格式保留）、`setCellStyle`（嵌入 XLSX 字体 / 填充 / 边框）与 `setCellRichText`（sharedStrings 富文本）；`OleParagraph` 新增 `runs` 与表格行列 `table`，`OleCell` 新增 `styleIndex`、`style` 与 `richText`
 - 实验性矢量 PDF 支持 dashed / dotted / double / wavy 文字装饰线，以及文字描边（描边轨在填色轨之下，等效 `paint-order:stroke`）。
 
 ### 修复
 
+- 读取 `.ppt` 时线性渐变不再一律按竖向、前景色在上渲染：方向取自 fillAngle，首尾色按 fillAngle 的符号与 fillFocus 还原（与 LibreOffice 的 PowerPoint 兼容规则一致，焦点 40–60 为两侧对称渐变），终点透明度取自 fillBackOpacity；图片的 cropFrom* 裁剪与 wzName 形状名不再丢失。
 - `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
 - 修复 `.pptx` 媒体源解析只认经典 `a:audioFile` / `a:videoFile` 引用：PowerPoint 2010+ 内嵌 mp3 / mp4 等时把经典关系写成 `Target="NULL"` 外链、字节只挂在 `p14:media` 的 `r:embed` 上，此前 `MediaInfo.src` 为 `null`，player 模式不生成播放器、编辑生成保存会丢失媒体字节。现按经典引用 → `p14:media`（`r:link` 优先于 `r:embed`）逐个取第一个可解析目标：包内关系要求部件存在，外链关系要求是带 scheme 的 URL；正常文件的解析结果不变。
 - 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。

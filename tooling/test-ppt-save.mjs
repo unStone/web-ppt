@@ -63,4 +63,43 @@ for(const change of [
  assert.throws(()=>ppt.savePpt(doc),error=>error instanceof ppt.PptSaveError&&error.issues[0].slide===1);count++;
  edit.disposeDoc(doc);p.dispose();
 }
+{
+ const appearance=await core.parse(readFileSync('fixtures/sample-ppt-appearance-save.pptx'),{edit:true,keepPackage:true,lazy:false});
+ const doc=edit.createDoc(appearance),bytes=ppt.savePpt(doc);
+ writeFileSync(`${out}/appearance.ppt`,bytes);validateDirectory(bytes);
+ check(Buffer.from(bytes).equals(ppt.savePpt(doc)),'外观固件重复保存字节确定');
+ const reopened=await core.parse(bytes,{edit:true});
+ const named=name=>reopened.slides[0].elements.find(e=>e.name===name);
+ check(['grad-0','grad-45','grad-90','grad-180','arrow-oval','裁剪图'].every(name=>named(name)),'wzName 形状名原生保存');
+ for(const angle of [0,45,90,180]){
+  const fill=named(`grad-${angle}`)?.fill;
+  check(fill?.type==='gradient'&&fill.stops.length===2&&Math.abs(fill.angle-angle)<0.01,`渐变角度 ${angle}° 读写对称`);
+  check(fill.stops[0].color==='rgb(21,101,192)'&&/^rgba?\(229,57,53/.test(fill.stops[1].color),`渐变 ${angle}° 端点色顺序`);
+ }
+ check(named('grad-0').fill.stops[1].color==='rgb(229,57,53)','不透明终点色不带 alpha');
+ check(named('grad-45').fill.stops[0].color==='rgb(21,101,192)'&&named('grad-45').fill.stops[1].color==='rgba(229,57,53,0.5)',
+  '起点与终点透明度分别写入 fillOpacity / fillBackOpacity');
+ for(const type of ['triangle','stealth','diamond','oval','arrow']){
+  const el=named(`arrow-${type}`);
+  check(el.stroke?.dash?.length===2&&Math.abs(el.stroke.dash[0]/el.stroke.width-4)<0.1,`${type} 预设虚线`);
+  check(el.stroke?.head?.type===type&&el.stroke.head.w===3&&el.stroke.head.h===3&&el.stroke.tail?.type===type,`${type} 默认尺寸箭头`);
+ }
+ const img=named('裁剪图'),crop=img?.crop;
+ check(img?.kind==='image'&&crop&&Math.abs(crop.l-0.1)<1e-4&&Math.abs(crop.t-0.05)<1e-4
+  &&Math.abs(crop.r-0.2)<1e-4&&Math.abs(crop.b-0.15)<1e-4,'四边不同的矩形裁剪逐边读写对称');
+ for(const [label,mutate,re] of [
+  ['图片效果',p=>{p.slides[0].elements.find(e=>e.kind==='image').filter='grayscale(1)';},/图片效果|异形裁剪/],
+  ['径向渐变',p=>{const g=p.slides[0].elements.find(e=>e.fill?.type==='gradient');g.fill={...g.fill,radial:true};},/径向|多色标/],
+  ['中间色标',p=>{const g=p.slides[0].elements.find(e=>e.fill?.type==='gradient');g.fill={...g.fill,stops:[{...g.fill.stops[0],pos:0.2},g.fill.stops[1]]};},/非端点色标/],
+  ['图案填充',p=>{const g=p.slides[0].elements.find(e=>e.fill?.type==='gradient');g.fill={type:'pattern',preset:'smGrid',fg:'rgb(21,101,192)',bg:'rgb(255,255,255)'};},/图案/],
+  ['自定义虚线',p=>{const s=p.slides[0].elements.find(e=>e.stroke?.head?.type==='triangle');s.stroke={...s.stroke,dash:[1,2,3]};},/自定义虚线/],
+  ['箭头尺寸',p=>{const s=p.slides[0].elements.find(e=>e.stroke?.head?.type==='triangle');s.stroke={...s.stroke,head:{type:'triangle',w:5,h:5}};},/箭头尺寸/],
+ ]){
+  const src=await core.parse(readFileSync('fixtures/sample-ppt-appearance-save.pptx'),{edit:true,keepPackage:true});
+  mutate(src);const rejectDoc=edit.createDoc(src);
+  assert.throws(()=>ppt.savePpt(rejectDoc),error=>error instanceof ppt.PptSaveError&&re.test(error.message),label);count++;
+  edit.disposeDoc(rejectDoc);src.dispose();
+ }
+ reopened.dispose();edit.disposeDoc(doc);appearance.dispose();
+}
 recordCount('pptSave',count);console.log(`原生 PPT 保存 ${count} 项通过${dist?'（独立产物）':''}`);

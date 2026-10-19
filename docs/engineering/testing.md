@@ -65,9 +65,9 @@ flowchart LR
 
 | 命令 | 覆盖 |
 |---|---|
-| `npm run test:core` | 核心解析 / 渲染，2458 项断言 + 198 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，2491 项断言 + 202 个渲染快照 |
 | `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
-| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 173 份固件、1140 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1132 项 + 保存 575 项 + PowerPoint 证据 9 项 + 174 份固件、1152 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -77,7 +77,7 @@ flowchart LR
 | `npm run test:editor` | 444 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:adapters` | React / Vue 的 12 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
-| `npm run test:expanded` | 扩展能力 1822 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](../api/expanded-capabilities.md) |
+| `npm run test:expanded` | 扩展能力 2047 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](../api/expanded-capabilities.md) |
 | `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](../api/portable-rich-text.md) |
 | `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](../api/chart-hierarchical-categories.md) |
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
@@ -95,7 +95,7 @@ flowchart LR
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 29 个测试文件 × 全部页 × 两条文本路径 = 198 个归一化 SVG 基线，逐字节比对（更新流程见 §5） |
+| **渲染快照** | 29 个测试文件 × 全部页 × 两条文本路径 = 202 个归一化 SVG 基线，逐字节比对（更新流程见 §5） |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |
