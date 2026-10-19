@@ -85,6 +85,8 @@ session.dispose();
 
 Templates, design canvas, selection pane, shortcuts and clipboard, low-level `EditDoc`, preset handles and save paths: [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
 
+The 0.7 template journey (`npm run test:v07`) covers template → theme → master → layout → ordinary slide → reopen; details are in [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
+
 ### Optional entries
 
 - Picture / 3D effects: [appearance editing](https://github.com/unStone/web-ppt/blob/master/docs/api/appearance-editing.md)

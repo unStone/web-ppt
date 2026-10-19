@@ -83,6 +83,8 @@ session.dispose();
 
 模板、设计画布、选择窗格、快捷键与剪贴板、低层 `EditDoc`、预设调节柄与保存链路见[编辑器接入](docs/api/editor.md)。
 
+0.7 的模板旅程（`npm run test:v07`）覆盖“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，细节见[编辑器接入](docs/api/editor.md)。
+
 ### 按需入口
 
 - 图片 / 立体效果：[外观效果](docs/api/appearance-editing.md)
