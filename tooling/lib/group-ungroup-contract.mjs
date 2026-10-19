@@ -141,20 +141,119 @@ export async function runGroupUngroupContract({ edit, core, load, check }) {
     crossParentRejected = /同一父级/.test(String(error));
   }
   boundaryEditor.exec({ type: 'SetXfrm', id: boundaryGroup.id, w: boundaryGroup.src.w * 1.2 });
-  const beforeRisk = JSON.stringify(boundaryDoc.elements);
+  // 撤销会重新插入组合记录，对象键顺序随之变化；原子性比较只看稳定 id 排序后的值。
+  const stableElements = () => JSON.stringify(Object.keys(boundaryDoc.elements).sort()
+    .map((id) => [id, boundaryDoc.elements[id]]));
+  const beforeRisk = stableElements();
   const historyBeforeRisk = boundaryEditor.history.undoCount;
-  let irreversibleRejected = false;
-  try { boundaryEditor.exec({ type: 'Ungroup', id: boundaryGroup.id }); } catch (error) {
-    irreversibleRejected = /旋转与非等比缩放/.test(String(error));
-  }
+  const riskTargets = [];
+  const collectRiskTargets = (id) => {
+    riskTargets.push(id);
+    for (const childId of boundaryDoc.elements[id].children ?? []) collectRiskTargets(childId);
+  };
+  boundaryGroup.children?.forEach(collectRiskTargets);
+  const riskGeometry = new Map(riskTargets.map((id) => [id, contentCorners(edit, boundaryDoc, id)]));
+  boundaryEditor.exec({ type: 'Ungroup', id: boundaryGroup.id });
+  const nonUniformUngrouped = !boundaryDoc.elements[boundaryGroup.id]
+    && riskTargets.every((id) => samePoints(riskGeometry.get(id), contentCorners(edit, boundaryDoc, id)));
+  boundaryEditor.undo();
   let unknownRejected = false;
   try {
     boundaryEditor.exec({ type: 'Group', ids: [boundaryPlain.id, boundaryGroup.id], extra: true });
   } catch (error) { unknownRejected = /未知字段/.test(String(error)); }
-  check('组合边界拒绝跨父、不可逆解组与未知字段且保持原子', crossParentRejected
-    && irreversibleRejected && unknownRejected && JSON.stringify(boundaryDoc.elements) === beforeRisk
+  check('组合边界拒绝跨父与未知字段，旋转+非等比组合按渲染外框无损解组且可撤销', crossParentRejected
+    && nonUniformUngrouped && unknownRejected && stableElements() === beforeRisk
     && boundaryEditor.history.undoCount === historyBeforeRisk);
   edit.disposeDoc(boundaryDoc);
+
+  const rigidBytes = load('sample-group-scale.pptx');
+  if (check('找到非等比旋转翻转组合固件', !!rigidBytes)) {
+    const rigidPresentation = await core.parse(rigidBytes, {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const rigidDoc = edit.createDoc(rigidPresentation, { idPrefix: 'ungroup-rigid-' });
+    const rigidEditor = new edit.Editor(rigidDoc);
+    const rigidByName = (name) => Object.values(rigidDoc.elements)
+      .find((record) => record.src.name === name);
+    const rigidGroup = rigidByName('旋转翻转组合');
+    const rigidChildren = rigidGroup?.children?.map((id) => rigidDoc.elements[id]) ?? [];
+    if (check('固件含旋转翻转的非等比组合与 30° / 120° 旋转子元素', !!rigidGroup
+      && rigidChildren.some((record) => record.src.name === '30° 子元素')
+      && rigidChildren.some((record) => record.src.name === '120° 子元素'))) {
+      const rigidTargets = [];
+      const collectRigidTargets = (id) => {
+        rigidTargets.push(id);
+        for (const childId of rigidDoc.elements[id].children ?? []) collectRigidTargets(childId);
+      };
+      rigidGroup.children.forEach(collectRigidTargets);
+      const rigidGeometry = new Map(rigidTargets.map((id) => [
+        id, contentCorners(edit, rigidDoc, id),
+      ]));
+      const renderedContent = (id) => {
+        const element = edit.renderedElement(rigidDoc, id);
+        return [{ x: 0, y: 0 }, { x: element.w, y: 0 },
+          { x: element.w, y: element.h }, { x: 0, y: element.h }]
+          .map((point) => edit.transformSpacePoint(
+            edit.renderedContentToSlideMatrix(rigidDoc, id), point));
+      };
+      const rigidRendered = new Map(rigidTargets.map((id) => [id, renderedContent(id)]));
+      const rigidPaths = new Map(rigidTargets.flatMap((id) => {
+        const element = edit.renderedElement(rigidDoc, id);
+        return element.kind === 'shape' && element.path ? [[id, element.path]] : [];
+      }));
+      const rigidParent = rigidGroup.parent;
+      rigidEditor.exec({ type: 'Ungroup', id: rigidGroup.id });
+      const rigidError = rigidTargets.reduce((maximum, id) => Math.max(maximum,
+        pointError(rigidGeometry.get(id), contentCorners(edit, rigidDoc, id)),
+        pointError(rigidRendered.get(id), renderedContent(id))), 0);
+      const child30 = rigidByName('30° 子元素');
+      const child120 = rigidByName('120° 子元素');
+      const arrow = rigidByName('箭头');
+      check('旋转+非等比组合解组后孩子世界内容不减，模型外框按象限承接组缩放', rigidError <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, child30.id).w - 300) <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, child30.id).h - 60) <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, child120.id).w - 150) <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, child120.id).h - 120) <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, arrow.id).w - 390) <= 1e-8
+        && Math.abs(edit.effectiveElement(rigidDoc, arrow.id).h - 82.5) <= 1e-8
+        && [child30, child120, arrow].every((record) => edit.effectiveElement(rigidDoc, record.id).flipH)
+        && [child30, child120, arrow].every((record) => rigidDoc.elements[record.id].parent
+          === rigidParent),
+        `最大偏差 ${rigidError}`);
+      const pathMismatch = [...rigidPaths].filter(([id, path]) =>
+        edit.effectiveElement(rigidDoc, id).path !== path);
+      check('非等比组缩放的预设路径固化为自由形状，解组后路径逐字保持', rigidPaths.size === 3
+        && pathMismatch.length === 0 && !!rigidDoc.elements[arrow.id].ovr.geometry,
+      `路径不一致 ${pathMismatch.length} 个`);
+      const rigidSaved = await rigidEditor.save();
+      const rigidReopenedPresentation = await core.parse(rigidSaved, {
+        edit: true, keepPackage: true, lazy: false, assets: 'defer',
+      });
+      const rigidReopened = edit.createDoc(rigidReopenedPresentation, {
+        idPrefix: 'ungroup-rigid-open-',
+      });
+      const reopenedArrow = Object.values(rigidReopened.elements)
+        .find((record) => record.src.name === '箭头');
+      check('非等比解组保存重开后自由形状路径逐字保持', !!reopenedArrow
+        && edit.effectiveElement(rigidReopened, reopenedArrow.id).path === rigidPaths.get(arrow.id));
+      edit.disposeDoc(rigidReopened);
+      rigidEditor.undo();
+      check('非等比组合解组可撤销回组合模型', !!rigidDoc.elements[rigidGroup.id]
+        && rigidGroup.children.every((id) => rigidDoc.elements[id].parent === rigidGroup.id));
+
+      // 组自身不旋转、只有孩子带转角时，旧仿射分解同样会合成斜切；解组也必须无损。
+      rigidEditor.exec({ type: 'SetXfrm', id: rigidGroup.id, rot: 0 });
+      const skewBefore = new Map(rigidTargets.map((id) => [id, contentCorners(edit, rigidDoc, id)]));
+      rigidEditor.exec({ type: 'Ungroup', id: rigidGroup.id });
+      const skewError = rigidTargets.reduce((maximum, id) => Math.max(maximum,
+        pointError(skewBefore.get(id), contentCorners(edit, rigidDoc, id))), 0);
+      check('组无旋转时非等比缩放下的旋转孩子仍无损解组', skewError <= 1e-8
+        && !rigidDoc.elements[rigidGroup.id], `最大偏差 ${skewError}`);
+      rigidEditor.undo();
+      rigidEditor.undo();
+    }
+    edit.disposeDoc(rigidDoc);
+  }
 
   let degenerateFramesPersist = true;
   for (const zeroAxis of ['w', 'h']) {

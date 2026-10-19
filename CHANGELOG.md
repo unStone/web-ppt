@@ -13,6 +13,7 @@
 
 ### 修复
 
+- 组合同时带旋转与非等比缩放时不再拒绝解组：解组改按 `placeGroupChild` / `placeGroupFrame` 的渲染外框回填孩子 frame，旋转子元素的宽高按转角象限承接组缩放；非等比缩放下预设形状的渲染路径会固化为自由形状覆盖，保存写回 `custGeom`，箭头、圆角等依赖宽高比例的几何不再变形。只有需要改变旋转的框架对象（图表 / OLE 等）仍显式拒绝。
 - 读取 `.ppt` 时线性渐变不再一律按竖向、前景色在上渲染：方向取自 fillAngle，首尾色按 fillAngle 的符号与 fillFocus 还原（与 LibreOffice 的 PowerPoint 兼容规则一致，焦点 40–60 为两侧对称渐变），终点透明度取自 fillBackOpacity；图片的 cropFrom* 裁剪与 wzName 形状名不再丢失。
 - `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
 - 修复 `.pptx` 媒体源解析只认经典 `a:audioFile` / `a:videoFile` 引用：PowerPoint 2010+ 内嵌 mp3 / mp4 等时把经典关系写成 `Target="NULL"` 外链、字节只挂在 `p14:media` 的 `r:embed` 上，此前 `MediaInfo.src` 为 `null`，player 模式不生成播放器、编辑生成保存会丢失媒体字节。现按经典引用 → `p14:media`（`r:link` 优先于 `r:embed`）逐个取第一个可解析目标：包内关系要求部件存在，外链关系要求是带 scheme 的 URL；正常文件的解析结果不变。

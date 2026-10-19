@@ -20,6 +20,7 @@ import { renderTextBodyToHtml } from './render/text-html';
 import { fitTextShapeHeight } from './render/text-fit';
 import { layoutText } from './render/text-layout';
 import { invalidateTextMeasureCaches } from './render/text-measure';
+import { scalePathData } from './render/path-scale';
 import { isKnownPreset, resolveGeomPath } from './geometry/index';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 import { tableStyleCellAppearance, tableStylePreview } from './table-style';
@@ -33,7 +34,7 @@ export * from './text-body-edit';
 export { formatDrawingAutoNumber } from './text-auto-number';
 export {
   fitTextShapeHeight, invalidateTextMeasureCaches, layoutText, placeGroupChild, placeGroupFrame, renderElementToSvg,
-  renderSlideToSvg, renderTextBodyToHtml, unplaceGroupFrame,
+  renderSlideToSvg, renderTextBodyToHtml, scalePathData, unplaceGroupFrame,
 };
 export {
   releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,

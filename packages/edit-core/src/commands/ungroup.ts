@@ -1,9 +1,12 @@
+import { placeGroupChild, placeGroupFrame, scalePathData } from '@web-ppt/core';
+import type { GroupElement, SlideElement } from '@web-ppt/core';
 import { elementOrder, elementParentChildren } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
 import { effectiveElement } from '../projection';
+import { customGeometryFromSvgPath } from '../custom-geometry-path';
 import {
-  composeSpaceMatrices, elementChildrenToSlideMatrix, elementFrameToParentMatrix,
-  elementParentToSlideMatrix, invertSpaceMatrix,
+  composeSpaceMatrices, elementEditParentToSlideMatrix, groupEditFrameToModelFrame,
+  invertSpaceMatrix, renderedElement, renderedFrameToSlideMatrix,
 } from '../space';
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { CommandPatches, ElementHierarchyPatch, UngroupCommand, XfrmField } from './types';
@@ -21,7 +24,7 @@ function decomposeFrame(
 ) {
   return decomposeFrameMatrix(
     matrix, width, height,
-    `${label} 的组合变换会产生 PPTX 无法表达的斜切，不能无损解组`,
+    `${label} 的渲染外框退化或不是刚体，无法写回 PPTX frame，不能无损解组`,
   );
 }
 
@@ -51,6 +54,37 @@ function sparseTransform(
 
 function effectiveRecord(record: ElementRecord) {
   return { ...record.src, ...record.ovr };
+}
+
+/**
+ * 非等比组缩放会把预设几何的路径按轴拉伸；解组后若让投影按新外框重算预设，
+ * 箭头、圆角等依赖宽高比例的几何会变形。把渲染路径固化成自由形状覆盖，保存时写回 custGeom。
+ */
+function bakeScaledShapePath(
+  group: GroupElement,
+  parent: GroupElement | null,
+  child: SlideElement,
+  placement: ReturnType<typeof decomposeFrame>,
+  record: ElementRecord,
+  overrides: ElementRecord['ovr'],
+): void {
+  if (record.meta.editable !== 'full' || child.kind !== 'shape' || !child.path) return;
+  const own = placeGroupFrame(group, child);
+  // 父组先按组的转角缩放整组，解组后改按孩子的最终转角缩放；象限不同时两轴的顺序会互换。
+  const before = parent ? placeGroupFrame(parent, group) : null;
+  const after = parent ? placeGroupFrame(parent, { ...child, ...placement }) : null;
+  const ratioX = before && after ? before.kx / after.kx : 1;
+  const ratioY = before && after ? before.ky / after.ky : 1;
+  const remap = Math.abs(ratioX - 1) > EPSILON || Math.abs(ratioY - 1) > EPSILON;
+  if (Math.abs(own.kx - own.ky) <= EPSILON && !remap) return;
+  const placed = placeGroupChild(group, child);
+  if (placed.kind !== 'shape' || !placed.path) return;
+  const width = placed.w * ratioX;
+  const height = placed.h * ratioY;
+  if (width <= 0 || height <= 0) return;
+  const path = remap ? scalePathData(placed.path, ratioX, ratioY) : placed.path;
+  overrides.geometry = customGeometryFromSvgPath(path, width, height, child.openGeom === true);
+  delete overrides.presetGeometry;
 }
 
 function movedMeta(
@@ -85,20 +119,23 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
   }
   const effectiveGroup = effectiveElement(doc, group.id);
   if (effectiveGroup.kind !== 'group') throw new Error(`组合投影类型无效：${group.id}`);
-  if (Math.abs(effectiveGroup.rot) > EPSILON
-    && Math.abs(Math.abs(effectiveGroup.scaleX) - Math.abs(effectiveGroup.scaleY)) > EPSILON) {
-    throw new Error('组合同时包含旋转与非等比缩放，不能无损解组');
-  }
   const parent = group.parent;
+  const parentRecord = doc.elements[parent];
+  if (parentRecord && parentRecord.src.kind !== 'group') {
+    throw new Error(`组合 ${group.id} 的父级不是画布或组合：${parent}`);
+  }
   const siblings = elementParentChildren(doc, parent);
   const groupIndex = siblings.indexOf(group.id);
   if (groupIndex < 0) throw new Error(`组合 ${group.id} 不在父级 children 中`);
   const children = [...group.children];
   const sources = ungroupInsertionSources(doc, group);
-  const groupToParent = composeSpaceMatrices(
-    invertSpaceMatrix(elementParentToSlideMatrix(doc, group.id)),
-    elementChildrenToSlideMatrix(doc, group.id),
-  );
+  // 渲染器把组 chOff/chExt 折算进孩子外框，不再对子树整体缩放；因此按渲染外框求孩子
+  // 在父级编辑坐标里的刚体矩阵，而不是组合仿射矩阵（后者会把非等比缩放与旋转合成斜切）。
+  const parentToEdit = invertSpaceMatrix(elementEditParentToSlideMatrix(doc, group.id));
+  const parentPlaced = parentRecord ? renderedElement(doc, parent) : null;
+  if (parentPlaced && parentPlaced.kind !== 'group') {
+    throw new Error(`组合 ${group.id} 的父级投影不是组合：${parent}`);
+  }
   const beforeOrder = groupIndex > 0 ? elementOrder(doc.elements[siblings[groupIndex - 1]]) : null;
   const afterOrder = groupIndex + 1 < siblings.length
     ? elementOrder(doc.elements[siblings[groupIndex + 1]]) : null;
@@ -107,17 +144,24 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
   for (const childId of children) {
     const before = doc.elements[childId];
     if (!before) throw new Error(`组合 ${group.id} 引用了不存在的孩子：${childId}`);
-    const child = effectiveElement(doc, childId);
-    const placement = decomposeFrame(
-      composeSpaceMatrices(groupToParent, elementFrameToParentMatrix(child)),
+    const child = renderedElement(doc, childId);
+    const editFrame = decomposeFrame(
+      composeSpaceMatrices(parentToEdit, renderedFrameToSlideMatrix(doc, childId)),
       child.w, child.h, `元素 ${childId}`,
     );
+    // 父级是组合时，模型坐标还要去掉父组的 chOff/chExt 缩放；画布根直接使用编辑坐标。
+    const placement = parentRecord
+      ? { ...groupEditFrameToModelFrame(doc, parent, editFrame), reflectH: editFrame.reflectH }
+      : editFrame;
     const order = fractionalIndexBetween(previous, afterOrder, childId);
     previous = order;
     const cloned = cloneHierarchyRecord(before);
+    const overrides = sparseTransform(before, placement, cloned.ovr);
+    bakeScaledShapePath(effectiveGroup, parentPlaced, effectiveElement(doc, childId),
+      placement, before, overrides);
     moved[childId] = {
       ...cloned, parent, z: order, order,
-      ovr: sparseTransform(before, placement, cloned.ovr),
+      ovr: overrides,
       meta: { ...movedMeta(before, parent, cloned.meta),
         ...(sources.has(childId) ? { insertion: sources.get(childId)! } : {}),
       },

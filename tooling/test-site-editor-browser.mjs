@@ -253,7 +253,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 以上两项分别实测；合在同一闭包后 gzip 不按两者之和压缩，合并后实测 554,467B，超出 18B，上调 100B
 // 组变换折算进子元素外框（完整 path data 缩放 + 编辑器渲染外框）属于同步渲染必经代码，实测超出 1922B，上调 2.0KB
 // 编辑器几何改按刚体外框求值（编辑外框、反算模型、粘贴落位）属于编辑器同步加载代码，实测超出 460B，上调 500B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 47_200 };
+// 解组按渲染外框固化非等比组缩放下的预设路径（自由形状覆盖）属于命令层同步代码，实测超出 98B，上调 100B
+// 父组象限换轴时按比例重映射已缩放路径，并公开复用 scalePathData，实测再超出 246B，上调 300B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 47_600 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

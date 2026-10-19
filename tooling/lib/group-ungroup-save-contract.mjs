@@ -70,6 +70,8 @@ export async function runGroupUngroupSaveContract({ edit, core, load, check, sav
     type: 'SetLink', id: sourceChild.id,
     target: { kind: 'external', href: 'https://example.com/child-kept' },
   });
+  // 来源组合本身带旋转与翻转；拉宽后成为非等比，解组必须按渲染外框写回孩子 xfrm。
+  ungroupedEditor.exec({ type: 'SetXfrm', id: sourceGroup.id, w: sourceGroup.src.w * 1.2 });
   ungroupedEditor.exec({ type: 'Ungroup', id: sourceGroup.id });
   const ungroupedSaved = await ungroupedEditor.saveDetailed();
   saveArtifact('ungroup-elements.pptx', ungroupedSaved.bytes);

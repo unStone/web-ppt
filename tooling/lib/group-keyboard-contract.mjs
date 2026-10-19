@@ -166,14 +166,23 @@ export async function runGroupKeyboardContract({ check, lib, root }) {
     && sourceSharedContainer.querySelector('[data-ppt-layer="static"] svg') === sourceSharedSvg);
   source.dispose();
 
+  // 旋转与非等比缩放已能按渲染外框无损解组；仍不可逆的是需要改变框架对象旋转的组合。
   const rejectionErrors = [];
-  const rejection = await lib.openEditor(bytes, { idPrefix: 'editor-group-reject-' });
+  const frameBytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-layer.pptx')));
+  const rejection = await lib.openEditor(frameBytes, { idPrefix: 'editor-group-reject-' });
   const rejectionView = rejection.mount(document.createElement('div'), {
     mode: 'edit', textMode: 'svg', onError: (error) => rejectionErrors.push(String(error)),
   });
-  const risky = Object.values(rejection.editor.doc.elements)
-    .find((record) => record.src.name === 'space-outer-group');
-  rejection.editor.exec({ type: 'SetXfrm', id: risky.id, w: risky.src.w * 1.2 });
+  const rejectionByName = (name) => Object.values(rejection.editor.doc.elements)
+    .find((record) => record.src.name === name);
+  const frameTarget = rejectionByName('layer-frame');
+  const shapeTarget = rejectionByName('layer-back');
+  rejection.editor.select({
+    kind: 'elements', ids: [frameTarget.id, shapeTarget.id], enteredGroup: null,
+  });
+  rejection.editor.exec({ type: 'Group', ids: [frameTarget.id, shapeTarget.id] });
+  const risky = rejection.editor.doc.elements[rejection.editor.selection.ids[0]];
+  rejection.editor.exec({ type: 'SetXfrm', id: risky.id, rot: 20 });
   rejection.editor.history.clear();
   rejection.editor.markSaved();
   rejection.editor.select({ kind: 'elements', ids: [risky.id], enteredGroup: null });
@@ -181,7 +190,7 @@ export async function runGroupKeyboardContract({ check, lib, root }) {
     ctrlKey: true, shiftKey: true,
   }));
   check('不可逆解组消费快捷键、向宿主报告原因且不污染历史', !rejectedAccepted
-    && rejectionErrors.length === 1 && /旋转与非等比缩放/.test(rejectionErrors[0])
+    && rejectionErrors.length === 1 && /框架对象.*不能无损写回解组后的旋转/.test(rejectionErrors[0])
     && rejection.editor.history.undoCount === 0 && !rejection.editor.isDirty());
   rejection.dispose();
 }
