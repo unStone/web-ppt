@@ -248,7 +248,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // beta.6 起含 timing 媒体播放语义解析（spid/playback/MediaTiming，core 激活闭包必经），gzip 余量按实测上调 300B
 // 查看器按动画时间线执行 p:cmd 媒体调用并上报播放失败（实测超出 1519B，上调 1.6KB），叠加媒体源回退的 100B
 // 光栅导出改走同步 toDataURL（canvas-png.ts 与 PDF 局部回退共用，避开 toBlob 的空闲调度）实测 553,463B gzip，较修复前增 232B，上调 200B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 43_700 };
+// 伸展按子类型钉边、挥舞按 sin 轨迹采样属于查看器播放必经代码，实测 553,709B gzip，超出 160B，上调 200B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 43_900 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

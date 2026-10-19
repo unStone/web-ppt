@@ -151,6 +151,38 @@ export function wipeClip(dir: string | undefined, hidden: boolean): string {
   }
 }
 
+/**
+ * 伸展（presetID 17）把 ppt_w / ppt_h 从 0 长到原尺寸，ppt_x / ppt_y 同时从对边移回，
+ * 所以除了子类型 10（水平展开，dir 为 vert）从中线向两侧长，其余都钉在一条边上。
+ * 子类型编号与方向的对应见 LibreOffice oox 的 getConvertedSubType 与 effects.xml。
+ */
+const STRETCH_ANCHOR: Record<string, { origin: string; axis: 'scaleX' | 'scaleY' | 'scale' }> = {
+  d: { origin: 'center bottom', axis: 'scaleY' },
+  u: { origin: 'center top', axis: 'scaleY' },
+  l: { origin: 'left center', axis: 'scaleX' },
+  r: { origin: 'right center', axis: 'scaleX' },
+  lu: { origin: 'left top', axis: 'scale' },
+  ru: { origin: 'right top', axis: 'scale' },
+  ld: { origin: 'left bottom', axis: 'scale' },
+  rd: { origin: 'right bottom', axis: 'scale' },
+};
+
+function stretchAnchor(dir: string | undefined): { origin: string; axis: 'scaleX' | 'scaleY' | 'scale' } {
+  return (dir ? STRETCH_ANCHOR[dir] : undefined) ?? { origin: 'center', axis: 'scaleX' };
+}
+
+/**
+ * 挥舞（presetID 19）的宽度按 `#ppt_w*sin(2.5*pi*$)` 变化并叠加淡入：对象来回翻转约 1.25 圈，
+ * 中途会镜像，所以不能用一次 rotateY 近似。dir 为 horz 时改为高度变化。
+ */
+function swivelFrame(dir: string | undefined, progress: number): Keyframe {
+  const factor = Math.round(Math.sin(2.5 * Math.PI * progress) * 10000) / 10000;
+  return {
+    opacity: progress,
+    transform: dir === 'horz' ? `scaleY(${factor})` : `scaleX(${factor})`,
+  };
+}
+
 /** 入场动画的关键帧 */
 function entranceFrames(step: AnimStep): Keyframes {
   switch (step.effect) {
@@ -184,19 +216,24 @@ function entranceFrames(step: AnimStep): Keyframes {
     case 'spin':
       return { from: { opacity: 0, transform: 'rotate(-180deg) scale(0.4)' }, to: { opacity: 1, transform: 'rotate(0) scale(1)' } };
     case 'swivel':
-      return { from: { opacity: 0, transform: 'rotateY(90deg)' }, to: { opacity: 1, transform: 'rotateY(0)' } };
+      return { from: swivelFrame(step.dir, 0), to: swivelFrame(step.dir, 1) };
     case 'float':
       return { from: { opacity: 0, transform: 'translateY(30%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
     case 'bounce':
       return { from: { opacity: 0, transform: 'translateY(-60%)' }, to: { opacity: 1, transform: 'translateY(0)' } };
-    case 'stretch':
+    case 'stretch': {
+      if (step.scale) {
+        return {
+          from: { opacity: 0, transform: scaleTransform(step.scale.fromX, step.scale.fromY) },
+          to: { opacity: 1, transform: scaleTransform(step.scale.toX, step.scale.toY) },
+        };
+      }
+      const { origin, axis } = stretchAnchor(step.dir);
       return {
-        from: { opacity: 0, transform: step.scale
-          ? scaleTransform(step.scale.fromX, step.scale.fromY)
-          : step.dir === 'vert' ? 'scaleY(0.2)' : 'scaleX(0.2)' },
-        to: { opacity: 1, transform: step.scale
-          ? scaleTransform(step.scale.toX, step.scale.toY) : 'scale(1)' },
+        from: { opacity: 1, transform: `${axis}(0)`, transformOrigin: origin },
+        to: { opacity: 1, transform: `${axis}(1)`, transformOrigin: origin },
       };
+    }
     case 'blinds':
       return {
         from: blindsClip(step.dir, false),
@@ -362,6 +399,11 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
             ...dissolveClip(step.kind === 'exit' ? 1 - index / 8 : index / 8, step.target),
             offset: index / 8,
           }))
+        : step.effect === 'swivel' && (step.kind === 'entrance' || step.kind === 'exit')
+          ? Array.from({ length: 41 }, (_, index) => ({
+            ...swivelFrame(step.dir, step.kind === 'exit' ? 1 - index / 40 : index / 40),
+            offset: index / 40,
+          }))
         : step.effect === 'bounce' && step.kind === 'entrance'
           ? [
             { opacity: 0, transform: 'translateY(-60%)', offset: 0 },
@@ -376,7 +418,7 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
       const easing = step.motionPath?.length || step.effect === 'randomBar'
         || step.effect === 'strips' || step.effect === 'wheel'
         || step.effect === 'circle' || step.effect === 'diamond' || step.effect === 'plus'
-        || step.effect === 'dissolve' || step.effect === 'bounce' ? 'linear'
+        || step.effect === 'dissolve' || step.effect === 'bounce' || step.effect === 'swivel' ? 'linear'
         : step.effect === 'appear' && step.kind === 'entrance' ? 'steps(1, start)'
           : step.effect === 'appear' && step.kind === 'exit' ? 'steps(1, end)'
             : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
