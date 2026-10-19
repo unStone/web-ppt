@@ -64,9 +64,11 @@ check('中英文 API 文档不再声称表格只能追加',
     && contains('packages/edit-core/README.md', ['queryTableGrid', 'MergeCells', 'SetCellProps'])
     && !read('packages/edit-core/README-zh-CN.md').includes('当前有意只提供表格尾部追加语义')
     && !read('packages/edit-core/README.md').includes('intentionally exposes append-only'));
-check('中英文根文档公开当前编辑态批量导出',
-  contains('README.md', ['session.toPresentation()', '当前编辑态'])
-    && contains('README.en.md', ['session.toPresentation()', 'current edited state']));
+// 根文档收敛为入口，当前编辑态导出示例由持续维护的 API 文档持有。
+check('中英文根文档可定位当前编辑态批量导出',
+  contains('README.md', ['docs/api/editor.md'])
+    && contains('README.en.md', ['docs/api/editor.md'])
+    && contains('docs/api/editor.md', ['session.toPresentation()', '当前编辑态', 'presentationToImageZip']));
 check('更新日志覆盖七类 0.6 能力与集成修复', contains('CHANGELOG.md', [
   '表格', '项目符号', '预设形状', '高级字符', '等距分布', '触屏', 'image-zip',
   '动态页码字段', '替代文字',
