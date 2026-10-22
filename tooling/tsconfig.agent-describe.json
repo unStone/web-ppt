@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.base.json",
+  "include": ["../packages/edit-core/src/describe/types.ts"]
+}

@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-10-15，基线 `68781e5`，当前包版本 `0.5.0-beta.6`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-10-22，基线 `9ac631d`，当前包版本 `0.5.0-beta.6`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径，以及面向 AI Agent 的下一阶段（依据见 [AI 与演示文稿调研](research/ai-presentation-landscape.md)）。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -26,6 +26,8 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 `0.5.0-beta.6` 发布；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）的 SDK 已完成、官网入口与外部读取验证待补；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查。
 
 ### 1.2 验证状态
+
+Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）已完成，提供按需入口、稳定编辑身份、完整 JSON 预算与生成 Schema；布局检查（002）及无 Office 渲染（003）处于前沿。
 
 门禁关系与测试套件见[测试规范](engineering/testing.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
 Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。
@@ -247,7 +249,7 @@ flowchart LR
 |---|---|---|
 | P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 撇号挤压（#10）、归一化组合文字（#9）与组合缩放映射子元素外框（#16，编辑器几何同步）已修复；#8 中字体回退导致的溢出未处理 |
 | P0 | 收口进行中票据：矢量 PDF（005）、音轨验收证据（006）、内嵌视频合成（007） | 005 实验性入口已发布；006 已随 beta.6 发布；007 失败告警已补 |
-| P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 规划，见 §7.2 |
+| P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 001 结构化读出已完成；002 布局检查与 003 Node 渲染处于前沿 |
 | P2 | Agent 读写接口第二批：命令工具面、MCP server 与 Agent Skill | 依赖第一批 |
 | P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充依赖命令工具面；旧 PPT 外观写入（012）与 SmartArt matrix / radial（013）已完成，OLE 014 / 015 待补官网入口与外部读取，其余长尾格式先调查真实样本 |
 | P4 | Agent 任务评测集 | 依赖第二批 |
@@ -255,6 +257,8 @@ flowchart LR
 内容流转、PDF 与音视频的范围、依赖和共同验收条件见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。
 
 ### 7.2 Agent 读写接口
+
+范围、依赖和验收见 [研发地图](wayfinder/ppt-agent-interface/map.md)，状态以票据为准；[describe API 与 Schema](api/agent-describe.md)提供已实现入口的接入契约。
 
 目标：让任何 Agent（Claude、Copilot、Codex、浏览器内 Agent）不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。仓库只提供确定性能力，不内置模型。行业现状与依据见[调研](research/ai-presentation-landscape.md)。
 

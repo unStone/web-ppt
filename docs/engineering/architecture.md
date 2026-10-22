@@ -112,6 +112,7 @@ flowchart LR
 | 域 | 代表模块 |
 |---|---|
 | 文档模型 | `document.ts`、`document-extensions.ts`、`identities.ts`、`element-*` |
+| Agent 读取 | 按需 `describe/`：复用有效投影、选择与几何查询，输出稳定 ID 与预算受限的 JSON；Schema 生成/校验仅为开发依赖 |
 | 命令与历史 | `commands/`、`history.ts`、`transaction-validation.ts` |
 | 投影 | `projection.ts`、`dynamic-projection.ts`、`layout-projection.ts`、`theme-projection.ts`、`design.ts` |
 | 保存 | `save/`（补丁 + 生成）、`ppt/`、`opc/` |
