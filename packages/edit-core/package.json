@@ -104,6 +104,9 @@
       "import": "./dist/describe.js"
     },
     "./describe/schema.json": "./schemas/describe.schema.json",
+    "./lint": { "types": "./dist/lint/index.d.ts", "import": "./dist/lint.js" },
+    "./lint/schema.json": "./schemas/lint.schema.json",
+    "./lint/sampler": { "types": "./dist/lint/sampler.d.ts", "import": "./dist/lint-sampler.js" },
     "./ppt": {
       "types": "./dist/ppt/index.d.ts",
       "import": "./dist/ppt.js"
@@ -117,7 +120,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "postbuild": "node ../../tooling/build-agent-describe.mjs",
+    "postbuild": "node ../../tooling/build-agent-describe.mjs && vite build --config vite.lint.config.ts",
     "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.appearance.config.ts && vite build --config vite.resize.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json && vite build --config vite.comments.config.ts && vite build --config vite.chart-design.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.smartart.config.ts && vite build --config vite.cfb.config.ts && vite build --config vite.ole.config.ts && vite build --config vite.ink.config.ts && vite build --config vite.ppt.config.ts",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
@@ -126,7 +129,9 @@
     "@web-ppt/core": "^0.5.0-beta.6"
   },
   "dependencies": {
-    "fflate": "^0.8.2"
+    "culori": "^4.0.2",
+    "fflate": "^0.8.2",
+    "rbush": "^4.0.1"
   },
   "publishConfig": {
     "access": "public"

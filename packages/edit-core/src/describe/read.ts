@@ -49,7 +49,7 @@ function placeholder(doc: EditDoc, slideId: string, id: ElementId): DescriptionP
   };
 }
 
-function readSlide(doc: EditDoc, slideId: string, number: number): DescriptionSlide {
+function readSlide(doc: EditDoc, slideId: string, number: number, observe?: (page: number, id: string, element: SlideElement) => void): DescriptionSlide {
   const slide = toSlide(doc, slideId), record = doc.slides[slideId];
   const layout = doc.layouts[record.layoutId ?? ''];
   const master = layout ? doc.masters[layout.origin.masterPart] : undefined;
@@ -76,6 +76,7 @@ function readSlide(doc: EditDoc, slideId: string, number: number): DescriptionSl
     const ownLocked = locked || state?.locked === true || host.meta.locked === true || host.meta.moveLocked === true;
     const frameObject = element.kind === 'group'
       && (host.meta.editable === 'frame' || element.editInfo?.editable === 'frame');
+    observe?.(number, id, element);
     elements.push({
       id, kind: element.kind, name: state?.name ?? element.name ?? '',
       altText: { title: alt.title, description: alt.descr }, path: nextPath,
@@ -121,13 +122,13 @@ function readSlide(doc: EditDoc, slideId: string, number: number): DescriptionSl
   };
 }
 
-export function readDescription(doc: EditDoc): PresentationDescription {
+export function readDescription(doc: EditDoc, observe?: (page: number, id: string, element: SlideElement) => void): PresentationDescription {
   if (!doc || !doc.meta || !Number.isFinite(doc.meta.width) || !Number.isFinite(doc.meta.height)
     || doc.meta.width <= 0 || doc.meta.height <= 0 || !['pptx', 'ppt'].includes(doc.meta.source)) {
     throw new DescribeError('invalid-document', 'describe 要求尺寸为正有限数值、来源为 pptx/ppt 的 EditDoc');
   }
   const slides = doc.slideOrder.map((id, index) => {
-    try { return readSlide(doc, id, index + 1); }
+    try { return readSlide(doc, id, index + 1, observe); }
     catch (error) {
       if (error instanceof DescribeError) throw error;
       throw new DescribeError('invalid-document', `页面 ${index + 1}（${id}）读取失败：${error instanceof Error ? error.message : String(error)}`, index + 1);

@@ -34,7 +34,7 @@ flowchart TD
 | 包 | 职责 | 依赖方式 | 运行时依赖 |
 |---|---|---|---|
 | `core` | 四条链路解析 → 统一 Schema → SVG / PNG / PDF 导出；无 DOM 依赖，可整包进 Worker | — | fflate |
-| `edit-core` | 编辑文档（源值 + 覆盖）、命令与历史、有效投影、补丁/生成保存；无 DOM 依赖 | peer `core` | fflate |
+| `edit-core` | 编辑文档（源值 + 覆盖）、命令与历史、有效投影、补丁/生成保存；无 DOM 依赖 | peer `core` | fflate；Culori / RBush 仅用于按需 lint |
 | `viewer-core` | 纯状态机 `PresentationState` + 播放（动画/切换/墨迹/视频），DOM 耦合仅 Viewer 一处 | peer `core` | — |
 | `editor` | 编辑会话、三层增量 DOM 视图、手势/键盘/吸附、文本编辑面、IndexedDB 恢复存储 | peer `core` + `edit-core` + `viewer-core` | — |
 | `react` / `vue` | 组件 + hook 薄适配，只包 `editor` 公开 seam | peer `editor` + 对应框架 | — |
@@ -113,6 +113,7 @@ flowchart LR
 |---|---|
 | 文档模型 | `document.ts`、`document-extensions.ts`、`identities.ts`、`element-*` |
 | Agent 读取 | 按需 `describe/`：复用有效投影、选择与几何查询，输出稳定 ID 与预算受限的 JSON；Schema 生成/校验仅为开发依赖 |
+| 布局检查 | 按需 `lint/`：共享 describe 的投影身份，复用行盒与图片元数据；Culori/RBush 仅进入该入口，SVG 采样与宿主光栅化分离 |
 | 命令与历史 | `commands/`、`history.ts`、`transaction-validation.ts` |
 | 投影 | `projection.ts`、`dynamic-projection.ts`、`layout-projection.ts`、`theme-projection.ts`、`design.ts` |
 | 保存 | `save/`（补丁 + 生成）、`ppt/`、`opc/` |

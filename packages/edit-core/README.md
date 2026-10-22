@@ -10,6 +10,10 @@ an editable document back to the existing high-fidelity `Slide` schema. It has n
 slide geometry, placeholder ancestry, paragraphs, and explicit character/token budget truncation.
 The opt-in entry and its published JSON Schema are documented in [Agent describe](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-describe.md).
 
+`@web-ppt/edit-core/lint` adds deterministic layout observations with host-supplied font measurements,
+explicit resource failures and cancellation. Complex paint can use the opt-in SVG contrast sampler;
+see [Layout lint](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-layout-lint.md).
+
 ```bash
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```

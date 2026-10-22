@@ -19,6 +19,10 @@
 
 Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；CI 和发布流水线的 npm 调用均包含这些生命周期脚本。
 
+同一生命周期也执行布局检查及无 dist 的编辑基准回归。语料对照使用真实 Canvas 字宽和 SVG 前景/底图取色，Node 注入这些真实观测复核纯计算，另用真实 HarfBuzz Provider 覆盖七项正反例；未准备字宽不得作为最终报告交付。
+
+布局检查的发布浏览器复验显式使用空 paths 配置，并审计构建输入图不含 packages/*/src，避免自动读取工作区 tsconfig 后混用源码与发布运行时。
+
 ## 3. 登记断言计数
 
 文档与官网的断言数字由实测产生，链路是：
@@ -69,8 +73,9 @@ flowchart LR
 |---|---|
 | `npm run test:core` | 核心解析 / 渲染，2529 项断言 + 210 个渲染快照 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
+| `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
 | `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
-| `npm run test:edit` | 编辑模型 1154 项 + 保存 575 项 + PowerPoint 证据 9 项 + 175 份固件、1164 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1154 项 + 保存 575 项 + PowerPoint 证据 9 项 + 176 份固件、1194 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -133,6 +138,7 @@ flowchart LR
 | `sample-autofit.pptx` | 文本自动缩放五种情形（溢出/放得下 × 裸 normAutofit、无 autofit、显式 fontScale、缩到 25% 下限），外加百分比行距与绝对行距的对照 |
 | `sample-placeholder.pptx` | 占位符几何继承：图片占位符空 spPr / 图片自带 xfrm / 形状占位符 |
 | `sample-agent-describe.pptx` | Agent 结构化读出：版式/母版占位符链、组合缩放、段落层级、中文与代理对、节、备注和隐藏页 |
+| `sample-agent-lint.pptx` | 七项检查的正反例及裁剪反例；对比度临界颜色验证比较前不四舍五入 |
 | `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
 | `sample-embedfont.pptx` | 嵌入字体的四种容器：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF |
 

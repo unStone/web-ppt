@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 新增按需 `@web-ppt/edit-core/lint` 七项布局检查与 `/lint/sampler` SVG 颜色采样协议：稳定元素定位、真实字体测量、显式资源错误、进度与取消，随包提供生成 Schema。
 - 新增按需 `@web-ppt/edit-core/describe`：从当前 `EditDoc` 读出页面、设计来源、稳定元素 ID、页面外框和段落文字；支持完整 JSON 的字符 / token 预算及显式截断，随包发布由 TypeScript 类型生成的 JSON Schema。
 - `presentationToVideo` 新增实验性 `videoOverlay`：导出时以 `<video>` 当前帧替代内嵌视频的海报帧，媒体起始时刻与音轨共用同一时间轴；默认关闭时产物不变。
 - `savePpt` 原生写入首尾两色线性渐变（两端透明度分别保留）、十种预设虚线、五种默认尺寸箭头、图片四边矩形裁剪与形状名；图案填充、多色标或径向渐变、自定义虚线与非默认箭头尺寸仍以 `PptSaveError` 拒绝
@@ -14,6 +15,7 @@
 
 ### 修复
 
+- 编辑性能基准统一使用完整源码别名和同一个运行时，不再依赖尚未构建的 dist 或重复的会话 WeakMap；增加干净构建状态的真实回归。
 - 组合同时带旋转与非等比缩放时不再拒绝解组：解组改按 `placeGroupChild` / `placeGroupFrame` 的渲染外框回填孩子 frame，旋转子元素的宽高按转角象限承接组缩放；非等比缩放下预设形状的渲染路径会固化为自由形状覆盖，保存写回 `custGeom`，箭头、圆角等依赖宽高比例的几何不再变形。只有需要改变旋转的框架对象（图表 / OLE 等）仍显式拒绝。
 - 读取 `.ppt` 时线性渐变不再一律按竖向、前景色在上渲染：方向取自 fillAngle，首尾色按 fillAngle 的符号与 fillFocus 还原（与 LibreOffice 的 PowerPoint 兼容规则一致，焦点 40–60 为两侧对称渐变），终点透明度取自 fillBackOpacity；图片的 cropFrom* 裁剪与 wzName 形状名不再丢失。
 - `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
