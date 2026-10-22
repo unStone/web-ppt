@@ -20,7 +20,7 @@
 | `npm run bench` | 大文件只读性能基准；追加 `-- --edit` 测编辑投影 |
 | `npm run bench:edit` | 210 页独立进程对照，强制检查只读零状态、编辑内存与提交重渲预算 |
 | `npm run bench:pdf` | 矢量 PDF 长文稿耗时与内存基准 |
-| `npm run demo-gif` | 录 README 用的演示 GIF（需要 Chrome 与 ffmpeg） |
+| `npm run demo-gif` | 从样本库下载样本并录 README 用的演示 GIF（需要 Chrome 与 ffmpeg）；`-- swiss` 只录一份，`-- --stills eddi` 逐页截图并导出跳页按钮位置，用来挑分镜 |
 
 ## 调试页
 
