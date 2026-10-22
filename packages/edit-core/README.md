@@ -6,6 +6,10 @@ The headless, framework-agnostic editing model for [Web-PPT](https://github.com/
 It keeps parsed source values separate from user overrides, assigns stable session identities, and projects
 an editable document back to the existing high-fidelity `Slide` schema. It has no DOM dependency.
 
+`@web-ppt/edit-core/describe` reads the current document as deterministic JSON with stable element IDs,
+slide geometry, placeholder ancestry, paragraphs, and explicit character/token budget truncation.
+The opt-in entry and its published JSON Schema are documented in [Agent describe](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-describe.md).
+
 ```bash
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```

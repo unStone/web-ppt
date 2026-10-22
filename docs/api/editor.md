@@ -2,6 +2,8 @@
 
 `@web-ppt/editor` 管理解析资源、headless `Editor` 与全部挂载视图；`@web-ppt/edit-core` 提供编辑文档模型、命令历史、投影与保存；`@web-ppt/react` / `@web-ppt/vue` 是薄适配层。查看器见[查看器与渲染](viewer.md)，格式边界见[格式能力](format-capabilities.md)。
 
+外部 Agent 可按需使用 [describe 结构化读出](agent-describe.md)，获得当前编辑态的稳定元素 ID、页面坐标、占位符来源和段落文字。
+
 ## 安装
 
 编辑能力当前在 beta 线，整套依赖必须使用相同的 `next` 版本，避免与稳定查看包混装：

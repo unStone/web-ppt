@@ -1,5 +1,7 @@
 # @web-ppt/edit-core
 
+按需入口 `@web-ppt/edit-core/describe` 从当前编辑文档读出稳定元素 ID、页面坐标、占位符来源与段落文字，支持完整 JSON 的字符/token 预算及显式截断；[API 与发布 Schema](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-describe.md)。
+
 [English](README.md) · **简体中文**
 
 [Web-PPT](https://github.com/unStone/web-ppt) 的无 DOM、无框架编辑模型。

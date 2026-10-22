@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 新增按需 `@web-ppt/edit-core/describe`：从当前 `EditDoc` 读出页面、设计来源、稳定元素 ID、页面外框和段落文字；支持完整 JSON 的字符 / token 预算及显式截断，随包发布由 TypeScript 类型生成的 JSON Schema。
 - `presentationToVideo` 新增实验性 `videoOverlay`：导出时以 `<video>` 当前帧替代内嵌视频的海报帧，媒体起始时刻与音轨共用同一时间轴；默认关闭时产物不变。
 - `savePpt` 原生写入首尾两色线性渐变（两端透明度分别保留）、十种预设虚线、五种默认尺寸箭头、图片四边矩形裁剪与形状名；图案填充、多色标或径向渐变、自定义虚线与非默认箭头尺寸仍以 `PptSaveError` 拒绝
 - `@web-ppt/edit-core/ole` 新增 `setRun`（嵌入 DOCX 单个 run 改字，相邻格式保留）、`setCellStyle`（嵌入 XLSX 字体 / 填充 / 边框）与 `setCellRichText`（sharedStrings 富文本）；`OleParagraph` 新增 `runs` 与表格行列 `table`，`OleCell` 新增 `styleIndex`、`style` 与 `richText`
