@@ -64,6 +64,7 @@ flowchart TB
 | [viewer.md](api/viewer.md) | 查看器、图片 ZIP / 打印导出、Worker 解析、状态机接法与稳定渲染 |
 | [editor.md](api/editor.md) | 编辑器会话、模板、设计画布、交互 / 剪贴板、低层 EditDoc 与保存 |
 | [agent-describe.md](api/agent-describe.md) | Agent 结构化读出、稳定 ID、预算截断与 JSON Schema |
+| [agent-layout-lint.md](api/agent-layout-lint.md) | Agent 七项布局检查、字体/颜色输入、取消与 SVG 采样协议 |
 | [format-capabilities.md](api/format-capabilities.md) | `.pptx` / `.ppt` 能力矩阵与文本细项 |
 | [format-limitations.md](api/format-limitations.md) | 格式缺失、近似实现与待验收边界 |
 | [expanded-capabilities.md](api/expanded-capabilities.md) | 全部按需扩展入口的能力矩阵（索引层） |

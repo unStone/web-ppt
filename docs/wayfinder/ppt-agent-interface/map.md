@@ -51,11 +51,11 @@ flowchart LR
 
 - 范围已在 roadmap §6 确定：只提供确定性读出、检查、渲染、命令与模板填充；MCP / WebMCP 适配放在独立包或站点插件。
 - describe 使用 `@web-ppt/edit-core/describe` 独立子入口，输入为现有 `EditDoc`，直接返回其稳定身份；JSON Schema 以同包 `describe/schema.json` 子路径发布。实现与验收方案见 [001 技术方案](../../design/agent-describe.md)。
+- lint 使用 `@web-ppt/edit-core/lint` 与独立 `/lint/sampler`，共享当前投影身份；输入要求真实字体/资源，复杂颜色由可注入光栅化器采样，见 [002 技术方案](../../design/agent-layout-lint.md)。
 
 ## Not yet specified
 
-- lint 的公开入口位置由 002 确定；命令工具面与 MCP 是否合并为同一个新包由 004 确定。新增发布包会使「八包同版本」变为九包，并且首版须本地发布后再配置 Trusted Publishing（见 AGENTS「发布」）。
-- lint 各检查项的阈值（重叠面积比例、对比度标准）在 002 用固件误报统计确定，不预设数值。
+- 命令工具面与 MCP 是否合并为同一个新包由 004 确定。新增发布包会使「八包同版本」变为九包，并且首版须本地发布后再配置 Trusted Publishing（见 AGENTS「发布」）。
 - WebMCP 接口仍处于 Chrome origin trial，006 启动时按当时的规范草案重新核对接口名。
 
 ## Out of scope
@@ -67,3 +67,4 @@ flowchart LR
 ## Resolution
 
 - [结构化读出 describe](tickets/001-structured-describe.md)
+- [布局检查 lint](tickets/002-layout-lint.md)
