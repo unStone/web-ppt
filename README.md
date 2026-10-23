@@ -153,22 +153,7 @@ session.dispose();
 
 ## 架构
 
-```mermaid
-flowchart LR
-  subgraph parse["四条解析链路"]
-    PPTX[".pptx<br/>Zip + OOXML"]
-    PPT[".ppt<br/>CFB + Escher"]
-    META["EMF / WMF / PICT<br/>GDI 解释器"]
-    CHART["chart XML<br/>c: 与 cx:chartSpace"]
-  end
-  PPTX & PPT & META & CHART --> SCHEMA["统一 Schema<br/>types.ts"]
-  SCHEMA --> RENDER["render/"]
-  SCHEMA -->|"只读源值"| EDIT["edit-core<br/>源值 + 覆盖 · 命令历史"]
-  EDIT -->|"有效投影"| RENDER
-  EDIT --> SAVE["补丁 / 生成保存<br/>.pptx · .ppt"]
-  RENDER --> HTML["foreignObject + HTML 排版<br/>屏幕预览 · PNG"]
-  RENDER --> NATIVE["原生 text + 自实现断行<br/>独立 SVG · 打印 · 矢量 PDF"]
-```
+![Web-PPT 架构：.pptx、.ppt、图元文件与 chart XML 四条解析链路收敛到统一 Schema；render/ 直接渲染出 HTML 排版与原生 text 两条路径，edit-core 在只读源值上叠加覆盖，投影回 render/ 并负责保存](docs/architecture.svg)
 
 四条解析链路各自收敛到统一 Schema，渲染层只认 Schema、不认文件格式；编辑器在只读源值之上叠加覆盖，投影回同一套渲染。依赖方向、数据流与质量体系见[架构总览](docs/engineering/architecture.md)，硬性约束见[架构规则](docs/engineering/architecture-rules.md)。
 

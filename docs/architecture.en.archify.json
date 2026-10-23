@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Web-PPT architecture",
+    "quality_profile": "showcase",
+    "viewBox": [
+      900,
+      604
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "stages": [
+    {
+      "label": "Four parsers"
+    },
+    {
+      "label": "One schema"
+    },
+    {
+      "label": "Render & edit"
+    },
+    {
+      "label": "Output"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "pptx",
+      "type": "frontend",
+      "label": ".pptx",
+      "sublabel": "Zip + OOXML",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "ppt",
+      "type": "frontend",
+      "label": ".ppt",
+      "sublabel": "CFB + Escher",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "meta",
+      "type": "frontend",
+      "label": "Metafiles",
+      "sublabel": "EMF · WMF · PICT",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "chart",
+      "type": "frontend",
+      "label": "chart XML",
+      "sublabel": "c: and cx:chartSpace",
+      "stage": 0,
+      "row": 3
+    },
+    {
+      "id": "schema",
+      "type": "database",
+      "label": "Schema",
+      "sublabel": "types.ts",
+      "stage": 1,
+      "row": 1,
+      "height": 404,
+      "yOffset": -116,
+      "tag": "read-only"
+    },
+    {
+      "id": "render",
+      "type": "backend",
+      "label": "render/",
+      "sublabel": "knows only the schema",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "edit",
+      "type": "backend",
+      "label": "edit-core",
+      "sublabel": "source + overrides · history",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "html",
+      "type": "external",
+      "label": "HTML layout",
+      "sublabel": "screen preview · PNG",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "native",
+      "type": "external",
+      "label": "Native text",
+      "sublabel": "standalone SVG · print · PDF",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "save",
+      "type": "external",
+      "label": ".pptx · .ppt",
+      "sublabel": "patch / generated save",
+      "stage": 3,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "pptx-schema",
+      "from": "pptx",
+      "to": "schema",
+      "label": "OOXML",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelSegment": 0
+    },
+    {
+      "id": "ppt-schema",
+      "from": "ppt",
+      "to": "schema",
+      "label": "CFB",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelSegment": 0
+    },
+    {
+      "id": "meta-schema",
+      "from": "meta",
+      "to": "schema",
+      "label": "GDI",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelSegment": 0
+    },
+    {
+      "id": "chart-schema",
+      "from": "chart",
+      "to": "schema",
+      "label": "charts",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelSegment": 0
+    },
+    {
+      "id": "schema-render",
+      "from": "schema",
+      "to": "render",
+      "label": "render",
+      "variant": "emphasis"
+    },
+    {
+      "id": "schema-edit",
+      "from": "schema",
+      "to": "edit",
+      "label": "read source"
+    },
+    {
+      "id": "edit-render",
+      "from": "edit",
+      "to": "render",
+      "label": "projection",
+      "variant": "dashed"
+    },
+    {
+      "id": "render-html",
+      "from": "render",
+      "to": "html",
+      "label": "foreignObject",
+      "route": "straight"
+    },
+    {
+      "id": "render-native",
+      "from": "render",
+      "to": "native",
+      "label": "line breaking"
+    },
+    {
+      "id": "edit-save",
+      "from": "edit",
+      "to": "save",
+      "label": "save",
+      "route": "straight"
+    }
+  ]
+}
