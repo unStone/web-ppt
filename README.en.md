@@ -153,22 +153,7 @@ Full matrix: [format capabilities](https://github.com/unStone/web-ppt/blob/maste
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  subgraph parse["Four parsing pipelines"]
-    PPTX[".pptx<br/>Zip + OOXML"]
-    PPT[".ppt<br/>CFB + Escher"]
-    META["EMF / WMF / PICT<br/>GDI interpreter"]
-    CHART["chart XML<br/>c: and cx:chartSpace"]
-  end
-  PPTX & PPT & META & CHART --> SCHEMA["One schema<br/>types.ts"]
-  SCHEMA --> RENDER["render/"]
-  SCHEMA -->|"read-only source"| EDIT["edit-core<br/>source + overrides · history"]
-  EDIT -->|"effective projection"| RENDER
-  EDIT --> SAVE["patch / generated save<br/>.pptx · .ppt"]
-  RENDER --> HTML["foreignObject + HTML layout<br/>screen preview · PNG"]
-  RENDER --> NATIVE["native text + own line breaking<br/>standalone SVG · print · vector PDF"]
-```
+![Web-PPT architecture: .pptx, .ppt, metafile and chart XML parsers converge on one schema; render/ draws it through the HTML-layout and native-text paths, while edit-core layers overrides on read-only source values, projects back into render/ and saves](https://raw.githubusercontent.com/unStone/web-ppt/master/docs/architecture.en.svg)
 
 Every parsing pipeline converges on one schema, and the renderer knows the schema, never a file format; the editor layers overrides on read-only source values and projects back into the same renderer. See [architecture overview](https://github.com/unStone/web-ppt/blob/master/docs/engineering/architecture.md) and [architecture rules](https://github.com/unStone/web-ppt/blob/master/docs/engineering/architecture-rules.md).
 

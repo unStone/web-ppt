@@ -52,14 +52,15 @@ const CHROME_CANDIDATES = [
  * `goTo` 的页码从 0 起，按跳过隐藏页之后的顺序数。
  * `click` 点当前页里指向 `slide` 页的跳页按钮，和观众在样本页里点的是同一个元素。
  *
- * `colors` 是调色板上限：大片平色的版式 128 色肉眼看不出差别，
- * 满页插画的课件压到 128 色会出明显色带。
+ * `colors` 是调色板上限，按样本实测取能保住画面的最小值：GIF 越小，GitHub 图片
+ * 代理越早开始播放。黑白灰加红色锚点的瑞士网格 32 色与 128 色并排看不出差别、
+ * 体积减半；满页插画的 EDDi 压到 32 色时粉色便签会偏成橙紫，64 色才守得住。
  */
 const REELS = {
   swiss: {
     sample: 'swiss-grid-systems.pptx',
     out: 'docs/demo-swiss.gif',
-    colors: 128,
+    colors: 32,
     // 封面 → 八条原则 → 三款字体 → 网格四类 → 16px 推导 → 数字时代 → 结尾：
     // 每页都是同一套模块网格的不同用法，连着看才看得出「网格」本身。
     // 每页一组 onBegin 入场序列，引擎还不会进页自动起播（PowerPoint 会），
@@ -72,7 +73,7 @@ const REELS = {
   eddi: {
     sample: 'eddi-welcome-tutorial.pptx',
     out: 'docs/demo-eddi.gif',
-    colors: 256,
+    colors: 64,
     // 整份课件没有一次「下一页」，全靠按钮跳页导航：JOIN → 开场 → 课程 → 工作台，
     // 再从「工具与材料」总览点进邮件说明、点返回、再点进疫情统计
     story: [
@@ -343,6 +344,7 @@ async function record(name, reel, deck, cdp) {
   }
 
   /* 合成 GIF：先统计全片调色板再套用，比逐帧自适应小得多也稳得多。
+     不抖动：幻灯片多是大片平色，抖动撒出的噪点会打断 LZW 的长串重复，实测反而更大。
      外加 1px 灰边：白底幻灯片放在 GitHub 的白底页面上，没有边界就和正文糊成一片 */
   const frame = `scale=${W - 2}:-1:flags=lanczos,pad=iw+2:ih+2:1:1:color=0xD0D7DE`;
   const out = join(root, reel.out);
@@ -354,7 +356,7 @@ async function record(name, reel, deck, cdp) {
     ff(['-framerate', String(FPS), '-i', src,
       '-vf', `${frame},palettegen=max_colors=${reel.colors}:stats_mode=diff`, pal]);
     ff(['-framerate', String(FPS), '-i', src, '-i', pal,
-      '-lavfi', `${frame}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+      '-lavfi', `${frame}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`,
       '-loop', '0', out]);
   } finally {
     rmSync(work, { recursive: true, force: true });
