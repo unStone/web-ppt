@@ -24,9 +24,6 @@ import { bindSpeakerAids } from './speaker-aids';
 import { bindSwipeNav } from './swipe-nav';
 import { bindSlideGrid, type SlideGrid } from './slide-grid';
 import { clampOpenPage, clearOpenPageParam, parseOpenPage, writeOpenPageParam } from './open-page';
-import { bindMobileNav } from './site-nav';
-
-bindMobileNav();
 
 /**
  * 样本页：先挑，再看。
