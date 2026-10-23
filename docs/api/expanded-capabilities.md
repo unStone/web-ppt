@@ -4,6 +4,8 @@
 
 | 能力 | 公开入口 | 官网操作 | 支持范围与边界 |
 |---|---|---|---|
+| Agent 结构化读出 | `@web-ppt/edit-core/describe` | 外部 Agent / SDK 接入 | 当前页、设计来源、稳定元素身份、页面坐标与段落文字；完整 JSON 预算与显式截断；[接口与 Schema](agent-describe.md) |
+| Agent 布局检查 | `@web-ppt/edit-core/lint` 与 `/lint/sampler` | 外部 Agent / SDK 接入 | 七项确定性观察、真实测量、必需资源失败及取消；复杂颜色通过同协议的 SVG 采样器，详见[输入与支持范围](agent-layout-lint.md) |
 | 经典图表多级类别 | `@web-ppt/edit-core/chart` | 数据面板逐级编辑、空槽开关、类别与系列增删 | 两级/三级、横向矩阵、稳定身份及工作簿同步；[支持矩阵与只读边界](chart-hierarchical-categories.md) |
 | 共享工作簿与图表 | `@web-ppt/edit-core/chart-shared` | 数据面板编辑，关联页面同步；复制、撤销与恢复 | 共享缓存、重叠/独立区域、多表及类别/XY 共同记录已验收；[支持范围与证据](../wayfinder/ppt-portability-fidelity/notes/shared-chart-progress.md)。旧身份无法证明时显示未恢复并拒绝保存；混合图自动轴域、标签布局与气泡半径仍有[外观差异](../wayfinder/ppt-portability-fidelity/notes/mixed-chart-rendering.md) |
 | 经典图表类型与样式 | `@web-ppt/edit-core/chart-design` | 图表数据面板中的类型、排列、图例、标题、标签、配色 | 八类图表的兼容转换；遵循工作簿只读规则，类别型与 XY 数据不互转，组合图保留原生结构 |

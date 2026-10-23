@@ -128,7 +128,7 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
 | [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 135.31 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core` | 185.70 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 185.70 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 59.27 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 12.20 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |

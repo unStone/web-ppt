@@ -6,49 +6,28 @@
  * 把 showcase.pptx 的页复制若干遍拼成大文件，测量解析与渲染耗时、内存占用。
  * 真实场景里 200 页 / 数十 MB 的演示文稿很常见，这里给出可复现的数量级参考。
  */
-import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { makeZip } from './lib/ooxml.mjs';
+import { bundleBrowser } from './lib/bundle-browser.mjs';
 
 installDomEnv();
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-execFileSync('npx', ['esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--outfile=${join(root, 'out/core/bench.mjs')}`], { cwd: root });
-const lib = await import(`file://${join(root, 'out/core/bench.mjs')}?t=${Date.now()}`);
-const editLib = EDIT_MODE() ? await (async () => {
-  const file = join(root, 'out/core/bench-edit.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/index.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error',
-    `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-    `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
-  return import(`file://${file}?t=${Date.now()}`);
-})() : null;
-const editXmlLib = EDIT_MODE() ? await (async () => {
-  const file = join(root, 'out/core/bench-edit-xml.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/xml/index.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${file}`], { cwd: root });
-  return import(`file://${file}?t=${Date.now()}`);
-})() : null;
-const editOpcLib = EDIT_MODE() ? await (async () => {
-  const file = join(root, 'out/core/bench-edit-opc.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/opc/index.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${file}`], { cwd: root });
-  return import(`file://${file}?t=${Date.now()}`);
-})() : null;
-const editSaveLib = EDIT_MODE() ? await (async () => {
-  const file = join(root, 'out/core/bench-edit-save.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/edit-core/src/save/index.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error',
-    `--alias:@web-ppt/core/geometry/handles=${join(root, 'packages/core/src/geometry/handles/index.ts')}`,
-    `--alias:@web-ppt/core/geometry=${join(root, 'packages/core/src/geometry/index.ts')}`,
-    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`, `--outfile=${file}`], { cwd: root });
-  return import(`file://${file}?t=${Date.now()}`);
-})() : null;
+const directory = join(root, 'out/core');
+mkdirSync(directory, { recursive: true });
+const entry = join(directory, 'bench-entry.mjs');
+const modules = { core: 'core/src/index.ts', ...(EDIT_MODE() ? {
+  edit: 'edit-core/src/index.ts', xml: 'edit-core/src/xml/index.ts',
+  opc: 'edit-core/src/opc/index.ts', save: 'edit-core/src/save/index.ts',
+} : {}) };
+writeFileSync(entry, Object.entries(modules).map(([name, file]) =>
+  `export * as ${name} from ${JSON.stringify(join(root, 'packages', file))};`).join('\n'));
+// 基准与功能门禁使用同一源码解析图；拆成多个 bundle 会重复 WeakMap 并偷偷依赖旧 dist。
+const runtime = await bundleBrowser({ root, entry, output: join(directory, 'bench-runtime.mjs') });
+const { core: lib, edit: editLib, xml: editXmlLib, opc: editOpcLib, save: editSaveLib } = runtime;
 
 function EDIT_MODE() { return process.argv.includes('--edit'); }
 const JSON_MODE = process.argv.includes('--json');

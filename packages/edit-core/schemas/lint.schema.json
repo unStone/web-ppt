@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/LayoutLintReport",
+  "definitions": {
+    "LayoutLintReport": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LayoutCheck"
+          }
+        },
+        "totalSlides": {
+          "type": "number"
+        },
+        "totalElements": {
+          "type": "number"
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LayoutIssue"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "checks",
+        "totalSlides",
+        "totalElements",
+        "issues"
+      ],
+      "additionalProperties": false
+    },
+    "LayoutCheck": {
+      "type": "string",
+      "enum": [
+        "text-overflow",
+        "element-overlap",
+        "off-canvas",
+        "low-contrast",
+        "missing-font",
+        "placeholder-prompt-left",
+        "image-distorted"
+      ]
+    },
+    "LayoutIssue": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "$ref": "#/definitions/LayoutCheck"
+        },
+        "slideNumber": {
+          "type": "number"
+        },
+        "elementId": {
+          "type": "string"
+        },
+        "bounds": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false
+        },
+        "cell": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "number"
+                },
+                "column": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "row",
+                "column"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "reason",
+        "slideNumber",
+        "elementId",
+        "bounds",
+        "cell",
+        "measurements"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
