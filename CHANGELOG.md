@@ -4,6 +4,8 @@
 
 ## 未发布
 
+## 0.5.0-beta.7 - 2026-10-26
+
 ### 新增
 
 - 新增按需 `@web-ppt/edit-core/lint` 七项布局检查与 `/lint/sampler` SVG 颜色采样协议：稳定元素定位、真实字体测量、显式资源错误、进度与取消，随包提供生成 Schema。
@@ -32,6 +34,8 @@
 - 有封面且源可用的音频不再叠加灰色播放标识（封面本身就是喇叭图标）；`media: 'player'` 下音频不显示原生控件条，`Viewer` 点击封面播放 / 暂停，播放被拒绝时同样派发 `web-ppt-playback-error`。官网查看器改用 player 模式，放映中点击媒体不翻页。
 - 等线缺席时西文改用合成字族：`local()` 引用系统 Arial 度量族，粗体 `size-adjust: 95.4%`、下划线 `74.6%`，只在页面出现等线时声明；`@web-ppt/fonts` 的替换路径对 Arimo 套用同一组参数。取代窄体回退与连续空格半字宽的处理；依据是 #8 附带的 PowerPoint 导出图逐词拟合，断行与填空线长度与 PowerPoint 一致。
 - `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
 
 ## 0.5.0-beta.6 - 2026-10-10
 
