@@ -102,25 +102,69 @@ export function isInstalled(family: string, doc: Document = globalThis.document)
  * （我们是把 CSS 文本注入到页面里，相对路径会按页面地址解析，必然 404）。
  * `unicode-range` 原样保留——按需下载全靠它。
  */
-export function rewriteFontFaceCss(css: string, original: string, cssHref: string): string {
+export function rewriteFontFaceCss(
+  css: string,
+  original: string,
+  cssHref: string,
+  opts: { readonly preferLocal?: boolean } = {},
+): string {
   const dir = cssHref.slice(0, cssHref.lastIndexOf('/') + 1);
   const name = original.replace(/['\\]/g, '');
-  return css
+  const rewritten = css
     .replace(/font-family:\s*'[^']*'/g, `font-family: '${name}'`)
-    .replace(/url\(\.\/([^)]+)\)/g, (_m, rel: string) => `url(${dir}${rel})`)
-    // 系统里有同名字体就直接用系统的，一个字节都不下
-    .replace(/src:\s*url\(/g, `src: local('${name}'), url(`);
+    .replace(/url\(\.\/([^)]+)\)/g, (_m, rel: string) => `url(${dir}${rel})`);
+  // 系统里有同名字体就直接用系统的，一个字节都不下
+  return opts.preferLocal === false ? rewritten : rewritten.replace(/src:\s*url\(/g, `src: local('${name}'), url(`);
+}
+
+function coversCodePoint(block: string, codePoint: number): boolean {
+  const ranges = block.match(/unicode-range:\s*([^;}]*)/)?.[1];
+  if (!ranges) return true;
+  return ranges.split(',').some((part) => {
+    const [from, to = from] = part.trim().replace(/^U\+/i, '').split('-');
+    const low = parseInt(from.replace(/\?/g, '0'), 16);
+    const high = parseInt(to.replace(/\?/g, 'F'), 16);
+    return codePoint >= low && codePoint <= high;
+  });
+}
+
+/**
+ * 把西文替代字体的前进宽度拉向原字体：粗体的每条声明加 size-adjust；覆盖下划线的那条声明
+ * 再复制一份只含 U+5F 的面单独缩放。同字重的面按声明逆序匹配 unicode-range，所以下划线面
+ * 必须追加在最后。它按替代字体自己的度量缩放，调用方不能再让 local(原字体名) 抢先命中。
+ */
+function adjustLatinFaceCss(
+  css: string,
+  weight: number,
+  adjust: { readonly bold: number; readonly underscore: number },
+): string {
+  const blocks = css.match(/@font-face\s*\{[^}]*\}/g) ?? [];
+  const sized = (block: string, percent: number): string => block.replace(/\s*\}$/, `\n  size-adjust: ${percent}%;\n}`);
+  const out = weight >= 600 ? blocks.map((block) => sized(block, adjust.bold)) : [...blocks];
+  const underscore = blocks.find((block) => coversCodePoint(block, 0x5f));
+  if (underscore) {
+    const only = /unicode-range:/.test(underscore)
+      ? underscore.replace(/unicode-range:\s*[^;}]*/, 'unicode-range: U+5F')
+      : underscore.replace(/\s*\}$/, '\n  unicode-range: U+5F;\n}');
+    out.push(sized(only, adjust.underscore));
+  }
+  return out.join('\n');
 }
 
 /* ── 主流程 ───────────────────────────────────── */
 
 const injected = new Set<string>();
 const cssCache = new Map<string, Promise<string | null>>();
+const LATIN_CHARS = /[\u0000-\u024f\u1e00-\u1eff\u2000-\u206f]/;
 
 async function fetchCss(url: string): Promise<string | null> {
   let job = cssCache.get(url);
   if (!job) {
-    job = fetch(url).then((r) => (r.ok ? r.text() : null)).catch(() => null);
+    job = fetch(url).then((r) => (r.ok ? r.text() : null)).catch(() => null).then((css) => {
+      // 短时网络失败不应永久缓存成“该字重不存在”；下一页仍可重试。
+      if (css === null) cssCache.delete(url);
+      return css;
+    });
     cssCache.set(url, job);
   }
   return job;
@@ -141,7 +185,10 @@ export async function loadFontsFor(usages: readonly FontUsage[], opts: LoadOptio
 
   const jobs = usages.map(async (usage): Promise<LoadResult> => {
     const { family } = usage;
-    if (skipInstalled && isInstalled(family, doc)) return { family, status: 'installed' };
+    // 已注入的网页字体会改变探针宽度，不能拿它当“本机已装原字体”，否则翻页后
+    // 新遇到的字重与字形永远不会加载。
+    const alreadyInjected = [...injected].some((tag) => tag.startsWith(`${family}|`));
+    if (skipInstalled && !alreadyInjected && isInstalled(family, doc)) return { family, status: 'installed' };
 
     const sub = substituteFor(family, opts.overrides);
     if (!sub) return { family, status: 'unmapped' };
@@ -158,19 +205,22 @@ export async function loadFontsFor(usages: readonly FontUsage[], opts: LoadOptio
     let ok = false;
     for (const key of wanted) {
       const [w, it] = key.split('|');
-      const href = cssUrl(sub.family, Number(w), it === 'true', base);
-      if (!href) continue;
-
-      const tag = `${family}|${key}`;
-      if (!injected.has(tag)) {
+      const faces = [sub.family, ...(sub.latinFamily && LATIN_CHARS.test(usage.chars) ? [sub.latinFamily] : [])];
+      for (const face of faces) {
+        const href = cssUrl(face, Number(w), it === 'true', base);
+        if (!href) continue;
+        const tag = `${family}|${key}|${face}`;
+        if (injected.has(tag)) continue;
         const css = await fetchCss(href);
         if (!css) continue;
         injected.add(tag);
         const style = doc.createElement('style');
         style.dataset.webPptFont = family;
-        // 标出中日韩，宿主要撤回时才认得出该撤哪些
+        // 西文声明也属于这次 CJK 替换；关闭中文替换时两条声明必须一起撤回。
         if (sub.cjk) style.dataset.webPptCjk = '1';
-        style.textContent = rewriteFontFaceCss(css, family, href);
+        const adjust = face === sub.latinFamily ? sub.latinSizeAdjust : undefined;
+        const rewritten = rewriteFontFaceCss(css, family, href, { preferLocal: !adjust });
+        style.textContent = adjust ? adjustLatinFaceCss(rewritten, Number(w), adjust) : rewritten;
         doc.head.appendChild(style);
       }
 

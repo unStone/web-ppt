@@ -6,6 +6,40 @@ import { escapeCssString } from './serialize';
 
 const MATH_FAMILY = "'Cambria Math','Latin Modern Math','STIX Two Math','Times New Roman',serif";
 const FALLBACK = [`'PingFang SC'`, `'Hiragino Sans GB'`, `'Microsoft YaHei'`, 'sans-serif'];
+/**
+ * 等线缺席时的西文替身。按 issue #8 附带的 PowerPoint 导出图逐词拟合：常规体西文前进宽度
+ * 约为 Arial 的 0.996 倍，粗体约 0.954 倍，下划线只有 0.415em（Arial 为 0.556em）。
+ * CJK 回退字体自带的西文宽出 6% 以上，断行会整体提前。
+ *
+ * 合成字族用 local() 引用系统 Arial 度量族，再按实测 size-adjust：粗体整体缩到 95.4%，
+ * 下划线单独缩到 74.6%（填空线由连续下划线组成，长度直接决定它落在哪一行）。代价是粗体
+ * 字形也随之变小——宽度与字高不能同时对上，断行一致优先。它只在页面 <style> 里声明，
+ * 字体栈里排在 '等线' 之后：真装了等线时原字体先生效。`@web-ppt/fonts` 的替换路径
+ * 对 Arimo 套用同一组参数（测试断言两边数值一致）。
+ */
+export const DENGXIAN_LATIN_METRICS = { boldSizeAdjust: 95.4, underscoreSizeAdjust: 74.6 } as const;
+export const DENGXIAN_LATIN_FAMILY = 'WebPPT DengXian Latin';
+const DENGXIAN_LATIN_FALLBACK = [`'${DENGXIAN_LATIN_FAMILY}'`, `'Arial'`, `'Helvetica'`, `'Arimo'`, `'Liberation Sans'`];
+const ARIAL_REGULAR = ['Arial', 'ArialMT', 'Helvetica', 'Arimo', 'Arimo-Regular', 'Liberation Sans', 'LiberationSans'];
+const ARIAL_BOLD = ['Arial Bold', 'Arial-BoldMT', 'Helvetica Bold', 'Helvetica-Bold', 'Arimo Bold', 'Arimo-Bold',
+  'Liberation Sans Bold', 'LiberationSans-Bold'];
+
+function isDengXian(run: Pick<TextRun, 'fonts'>): boolean {
+  return /^(等线|dengxian)$/i.test(run.fonts[0] ?? '');
+}
+
+/** 合成字族的 @font-face；页面里出现等线西文时由 renderSlideToSvg 放进根 <style>。 */
+export function dengXianLatinFontFaces(): string {
+  const { boldSizeAdjust, underscoreSizeAdjust } = DENGXIAN_LATIN_METRICS;
+  const face = (names: readonly string[], weight: string, extra: string): string =>
+    `@font-face{font-family:'${DENGXIAN_LATIN_FAMILY}';src:${names.map((name) => `local('${name}')`).join(',')};`
+    + `font-weight:${weight};${extra}}`;
+  // 同字重的面按声明逆序匹配 unicode-range，下划线面必须写在整体面之后。
+  return face(ARIAL_REGULAR, '1 599', '')
+    + face(ARIAL_BOLD, '600 1000', `size-adjust:${boldSizeAdjust}%;`)
+    + face(ARIAL_REGULAR, '1 599', `unicode-range:U+5F;size-adjust:${underscoreSizeAdjust}%;`)
+    + face(ARIAL_BOLD, '600 1000', `unicode-range:U+5F;size-adjust:${underscoreSizeAdjust}%;`);
+}
 
 /** 自定义文字宽度测量；返回值是整个字符串含字距后的 px 宽度。 */
 export type TextMeasure = (text: string, run: Readonly<TextRun>, scale: number) => number;
@@ -47,7 +81,8 @@ function stack(fonts: readonly string[], fallback: readonly string[]): string {
 }
 
 export function fontFamily(run: TextRun): string {
-  return run.fonts.length ? stack(run.fonts, FALLBACK) : stack(['Helvetica', 'Arial'], FALLBACK);
+  const fallback = isDengXian(run) ? [...DENGXIAN_LATIN_FALLBACK, ...FALLBACK] : FALLBACK;
+  return run.fonts.length ? stack(run.fonts, fallback) : stack(['Helvetica', 'Arial'], fallback);
 }
 
 export function fontSize(run: TextRun, scale: number): number {

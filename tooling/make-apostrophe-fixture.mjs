@@ -7,7 +7,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const shape = sp({
   x: 100, y: 100, w: 373, h: 250, name: '中英文标点',
   bodyPr: '<a:bodyPr wrap="square" anchor="t"/>',
-  text: '<a:p><a:r><a:rPr sz="3465"/><a:t>数一数，画一画。 I’m ready.</a:t></a:r></a:p>',
+  text: '<a:p><a:r><a:rPr sz="3465"><a:latin typeface="等线"/></a:rPr><a:t>数一数，画一画。 I’m ready.</a:t></a:r></a:p>',
 });
 const bytes = deck({
   name: 'Apostrophe', width: 1280, height: 720,

@@ -259,7 +259,8 @@ async function show(bytes: ArrayBuffer, label: string, netMs: number | undefined
   activeName = label;
   stage.innerHTML = '';
   // 第十八轮后 slides[0] 会 inflate 第 1 页。先画 0 再 goTo，深链仍先付那一页。
-  viewer = new Viewer(stage, pres, { skipHidden: true, index: start });
+  // player：音频要能随动画时间线与点击真实发声；badge 模式下页面里根本没有媒体元素。
+  viewer = new Viewer(stage, pres, { skipHidden: true, index: start, media: 'player' });
   setOpenPhase(stage, 'ready');
   blank.attach();
   blank.clear();

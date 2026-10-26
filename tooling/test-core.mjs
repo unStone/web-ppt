@@ -301,6 +301,7 @@ const FIXTURES = [
   { file: 'sample-media-fallback.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-media-timing.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-group-scale.pptx', minPages: 2, source: 'pptx' },
+  { file: 'sample-wps-interop.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-hidden.pptx', minPages: 5, source: 'pptx' },
   { file: 'sample-cjk-squeeze.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-image-zip.pptx', minPages: 3, source: 'pptx' },
@@ -2622,6 +2623,7 @@ group('字体替换');
 
   eq('大小写与空白无关', fontsLib.substituteFor('  ARIAL  ')?.family, 'Arimo');
   eq('中文黑体系归到思源黑体', fontsLib.substituteFor('微软雅黑')?.family, 'Noto Sans SC');
+  eq('等线西文按 Arial 度量替换', fontsLib.substituteFor('等线')?.latinFamily, 'Arimo');
   eq('中文宋体系归到思源宋体', fontsLib.substituteFor('宋体')?.family, 'Noto Serif SC');
   check('中文条目标了 cjk', fontsLib.substituteFor('宋体')?.cjk === true);
   check('拉丁条目没标 cjk', fontsLib.substituteFor('Calibri')?.cjk === false);
@@ -2635,7 +2637,7 @@ group('字体替换');
     fontsLib.substituteFor('Calibri', { calibri: { family: 'X', metricCompatible: false, cjk: false } })?.family, 'X');
 
   // 每个替代字体都得有对应的 fontsource 包，否则 loadFontsFor 会静默取不到
-  const targets = new Set(Object.values(fontsLib.SUBSTITUTIONS).map((s) => s.family));
+  const targets = new Set(Object.values(fontsLib.SUBSTITUTIONS).flatMap((s) => [s.family, s.latinFamily].filter(Boolean)));
   for (const t of targets) {
     check(`${t} 有钉死版本的来源`, !!fontsLib.PACKAGES[t], Object.keys(fontsLib.PACKAGES).join(','));
     check(`${t} 版本号是精确值`, /^\d+\.\d+\.\d+$/.test(fontsLib.PACKAGES[t]?.version ?? ''),
@@ -2707,6 +2709,66 @@ group('字体替换');
   check('src 以 local() 开头', /src:\s*local\('微软雅黑'\), url\(/.test(out), out);
   check('unicode-range 原样保留', out.includes('unicode-range: U+4e00-9fff'), out);
   check('改写不残留替代字体名', !out.includes('Noto Sans SC'), out);
+
+  // 等线的 CJK 字形与西文字形分别选源；两条 @font-face 都顶着原家族名，
+  // 英文撇号与普通拉丁字母必须同属西文替身，且西文声明排在 CJK 声明之后。
+  {
+    const styles = [];
+    const probe = {
+      font: '',
+      measureText() { return { width: this.font.includes('等线') && styles.length ? 110 : 100 }; },
+    };
+    const doc = {
+      createElement: (tag) => tag === 'canvas' ? { getContext: () => probe } : {
+        dataset: {}, textContent: '',
+        remove() { styles.splice(styles.indexOf(this), 1); },
+      },
+      head: { appendChild: (style) => styles.push(style) },
+      fonts: { load: async () => [] },
+      querySelectorAll: () => [...styles],
+    };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => ({
+      ok: true,
+      text: async () => `@font-face { font-family: '${url.includes('/arimo') ? 'Arimo' : 'Noto Sans SC'}'; `
+        + `font-weight: ${url.includes('/700.css') ? 700 : 400}; `
+        + "src: url(./files/a.woff2); unicode-range: U+0000-024F,U+2000-206F; }",
+    });
+    try {
+      const first = await fontsLib.loadFontsFor(
+        [{ family: '等线', styles: [{ bold: true, italic: false }], chars: 'Speaking中文', count: 10 }],
+        { document: doc, base: 'https://issue78.test' },
+      );
+      eq('等线混合字形注册成功', first[0]?.status, 'substituted');
+      eq('等线分两条字体声明', styles.length, 2);
+      check('西文替身覆盖在 CJK 声明之后',
+        styles[0]?.textContent.includes('noto-sans-sc')
+        && styles[1]?.textContent.includes('/arimo'), styles);
+      check('两条声明沿用原家族名', styles.every((s) => s.textContent.includes("font-family: '等线'")), styles);
+      check('西文声明包含英文撇号', styles[1]?.textContent.includes('U+2000-206F'), styles[1]);
+      const boldLatin = styles[1]?.textContent ?? '';
+      check('粗体西文按实测整体缩放', boldLatin.includes('size-adjust: 95.4%'), boldLatin);
+      check('粗体西文另有只含下划线的缩放面',
+        /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(boldLatin), boldLatin);
+      check('缩放过的西文面不让 local(等线) 抢先命中', !boldLatin.includes("local('等线')"), boldLatin);
+      const nextPage = await fontsLib.loadFontsFor(
+        [{ family: '等线', styles: [{ bold: false, italic: false }], chars: 'I’m 中文', count: 6 }],
+        { document: doc, base: 'https://issue78.test' },
+      );
+      eq('后续页面的常规字重没有被网页字体误判为系统字体', nextPage[0]?.status, 'substituted');
+      eq('后续页面补齐中西文常规字重', styles.length, 4);
+      check('后续常规字重的西文仍覆盖在 CJK 之后',
+        styles[2]?.textContent.includes('font-weight: 400')
+        && styles[3]?.textContent.includes('/arimo'), styles);
+      const regularLatin = styles[3]?.textContent ?? '';
+      check('常规体西文不整体缩放、只缩下划线',
+        !regularLatin.includes('size-adjust: 95.4%')
+        && /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(regularLatin), regularLatin);
+    } finally {
+      fontsLib.unloadFonts({ document: doc });
+      globalThis.fetch = originalFetch;
+    }
+  }
 }
 
 // ---------------- 14f. 行距 ----------------
@@ -2735,6 +2797,40 @@ group('行距');
   }
 }
 
+// ---------------- WPS / PowerPoint 默认结构 ----------------
+
+group('WPS 互操作');
+{
+  const interop = parsed.get('sample-wps-interop.pptx');
+  if (check('互操作固件已解析', !!interop)) {
+    const elements = interop.slides[0].elements;
+    const byName = (name) => elements.find((el) => el.name === name);
+    const colorOf = (name) => byName(name)?.text?.paragraphs[0]?.runs[0]?.color;
+    eq('fontRef lt1 压过 defaultTextStyle 的 tx1', colorOf('fontRef 白字'), 'rgb(255,255,255)');
+    eq('rPr 显式颜色仍优先于 fontRef', colorOf('rPr 显式颜色'), 'rgb(255,192,0)');
+    eq('形状 lstStyle 颜色仍优先于 fontRef', colorOf('lstStyle 颜色'), 'rgb(31,56,100)');
+    const csRuns = byName('cs 字体')?.text?.paragraphs[0]?.runs ?? [];
+    eq('拉丁文字不把 cs 字体放进字体栈', csRuns[0]?.fonts.join('|'), '微软雅黑');
+    eq('复杂文种文字保留 cs 字体', csRuns[1]?.fonts.join('|'), '微软雅黑|Arial Black');
+    eq('bgRef 1001 取 bgFillStyleLst 第 1 项', JSON.stringify(interop.slides[0].background),
+      JSON.stringify({ type: 'solid', color: 'rgb(255,255,255)' }));
+
+    const icon = byName('仅 SVG 图标');
+    eq('只有 svgBlip 的图片解析为图片', icon?.kind, 'image');
+    check('svgBlip 图片取到 SVG 部件', typeof icon?.src === 'string' && icon.src.length > 0, icon?.src);
+
+    // 尾尖在左上方：底座落在上边 2/12–5/12（x 40–100），不再从下边穿过整个框。
+    check('圆角标注的尾巴从上边伸出', byName('尾尖朝上的圆角标注')?.path?.includes('L 40 0 L 39.427 -25.67 L 100 0'),
+      byName('尾尖朝上的圆角标注')?.path);
+    check('矩形标注的尾巴从右边伸出', byName('尾尖朝右的矩形标注')?.path?.includes('L 200 16.667 L 250 40 L 200 41.667'),
+      byName('尾尖朝右的矩形标注')?.path);
+    const grouped = lib.renderSlideToSvg(interop, interop.slides[0], { textMode: 'html' });
+    const callout = grouped.slice(grouped.indexOf('data-el="103"'));
+    const tip = callout.match(/<path d="M [^"]*?L ([\d.]+) 0 L ([\d.]+) (-[\d.]+) L ([\d.]+) 0/);
+    check('归一化组合内标注尾尖在框上方', !!tip && Number(tip[3]) < 0, callout.slice(0, 400));
+  }
+}
+
 // ---------------- 14e. 标点挤压 ----------------
 
 group('CJK 标点挤压');
@@ -2745,8 +2841,22 @@ group('CJK 标点挤压');
     check('中文标点仍可按全角挤压', html.includes('margin-right:-0.5em'));
     check('英语撇号不挤进后续字母',
       !html.includes('<span style="margin-right:-0.5em">’</span>'), html.slice(0, 600));
+    check('等线缺字时西文先落到合成字族与 Arial 度量族',
+      html.includes("font-family:'等线','WebPPT DengXian Latin','Arial','Helvetica'"), html.slice(0, 600));
     const native = lib.renderSlideToSvg(apostrophe, apostrophe.slides[0], { textMode: 'svg' });
     check('独立 SVG 保留英语撇号', native.includes('I’m ready.'));
+    check('独立 SVG 与 HTML 使用同一等线兜底',
+      native.includes("font-family=\"'等线','WebPPT DengXian Latin','Arial','Helvetica'"), native.slice(0, 600));
+    // 缺等线时的合成字族与 @web-ppt/fonts 的替换路径必须是同一组实测参数。
+    const faces = html.match(/<style>(.*?)<\/style>/s)?.[1] ?? '';
+    const adjust = fontsLib.substituteFor('等线')?.latinSizeAdjust;
+    check('页面声明等线合成字族', faces.includes("font-family:'WebPPT DengXian Latin'"), faces);
+    check('合成字族粗体缩放与字体包一致', faces.includes(`font-weight:600 1000;size-adjust:${adjust?.bold}%;`), faces);
+    check('合成字族下划线缩放与字体包一致',
+      (faces.match(new RegExp(`unicode-range:U\\+5F;size-adjust:${adjust?.underscore}%;`, 'g')) ?? []).length === 2, faces);
+    const plain = parsed.get('sample.pptx');
+    check('没有等线的页面不声明合成字族',
+      !lib.renderSlideToSvg(plain, plain.slides[0], { textMode: 'html' }).includes('WebPPT DengXian Latin'));
   }
   // 汉字和全角标点都占一整格，一行放不下时 PowerPoint 会把标点的空半格挤掉。
   // 不做这件事就会多断出一行 —— 换字体救不了，所有中文字体的格子一样大。
@@ -3280,7 +3390,9 @@ group('媒体源回退');
     const badge = lib.renderSlideToSvg(fallback, fallback.slides[0]);
     eq('只有两路都不可用的形状标为源不可用', (badge.match(/（源不可用）/g) ?? []).length, 1);
     const player = lib.renderSlideToSvg(fallback, fallback.slides[0], { media: 'player', textMode: 'html' });
-    eq('player 模式为七个可用源生成原生控件', (player.match(/<(?:audio|video) controls/g) ?? []).length, 7);
+    eq('player 模式为四个可用视频源生成原生控件', (player.match(/<video controls/g) ?? []).length, 4);
+    eq('player 模式为三个可用音频源生成封面点击播放', (player.match(/<g data-media-toggle=""/g) ?? []).length, 3);
+    eq('player 模式音频不显示原生控件', (player.match(/<audio controls/g) ?? []).length, 0);
   } finally {
     fallback.dispose();
   }
@@ -3323,6 +3435,46 @@ group('媒体播放器');
     check('导出路径强制退回 badge，无 foreignObject', !exported.includes('<foreignObject'),
       exported.slice(exported.indexOf('<foreignObject'), exported.indexOf('<foreignObject') + 60));
     check('导出路径仍保留播放标识', exported.includes('<circle'));
+  }
+
+  // 音频封面就是喇叭图标：不再叠播放标识；无封面时仍要标识。player 模式不露控件条，点封面切换播放。
+  const audios = mp.slides.flatMap((s) => s.elements).filter((e) => e.kind === 'image' && e.media?.kind === 'audio');
+  const faced = audios.find((e) => e.src && e.media.src);
+  const faceless = audios.find((e) => !e.src);
+  if (check('媒体固件含有封面与无封面音频', !!faced && !!faceless)) {
+    const badgeOf = (el, media) => lib.renderElementToSvg(el, { media, textMode: 'html', idPrefix: 'audio-' }).markup;
+    check('有封面的音频不叠播放标识', !badgeOf(faced, 'badge').includes('<circle'));
+    check('无封面的音频保留播放标识', badgeOf(faceless, 'badge').includes('<circle'));
+    const facedPlayer = badgeOf(faced, 'player');
+    check('player 模式音频不显示原生控件', /<audio\b/.test(facedPlayer) && !/<audio[^>]+controls/.test(facedPlayer));
+    check('player 模式音频封面是点击目标', /<g data-media-toggle=""[^>]*><title>音频<\/title><image /.test(facedPlayer),
+      facedPlayer.slice(0, 300));
+    check('不画标识的音频仍保留类型说明', badgeOf(faced, 'badge').includes('<title>音频</title>'));
+
+    const index = mp.slides.findIndex((s) => s.elements.includes(faced));
+    const host = globalThis.document.createElement('div');
+    globalThis.document.body.appendChild(host);
+    const viewer = new viewerLib.Viewer(host, mp, { index, media: 'player', textMode: 'html' });
+    const face = host.querySelector(`[data-el="${faced.id}"] [data-media-toggle]`);
+    const audio = face?.querySelector('audio');
+    if (check('Viewer 渲染出音频封面点击目标', !!face && !!audio)) {
+      const calls = [];
+      let paused = true;
+      Object.defineProperty(audio, 'paused', { get: () => paused });
+      audio.play = () => { calls.push('play'); paused = false; return Promise.resolve(); };
+      audio.pause = () => { calls.push('pause'); paused = true; };
+      const click = () => {
+        const event = new globalThis.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        face.querySelector('image').dispatchEvent(event);
+        return event;
+      };
+      check('点击音频封面阻止默认行为', click().defaultPrevented);
+      click();
+      eq('点击音频封面依次播放与暂停', calls.join(','), 'play,pause');
+      eq('点击音频封面不翻页', viewer.index, index);
+    }
+    viewer.destroy();
+    host.remove();
   }
 }
 

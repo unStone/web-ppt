@@ -255,7 +255,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 编辑器几何改按刚体外框求值（编辑外框、反算模型、粘贴落位）属于编辑器同步加载代码，实测超出 460B，上调 500B
 // 解组按渲染外框固化非等比组缩放下的预设路径（自由形状覆盖）属于命令层同步代码，实测超出 98B，上调 100B
 // 父组象限换轴时按比例重映射已缩放路径，并公开复用 scalePathData，实测再超出 246B，上调 300B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 47_600 };
+// 楔形标注按规范 guide 求值、svgBlip 图片、fontRef 字色层、bgRef 样式索引、按文种取 cs 字体、等线西文合成字族
+// 与音频封面点击播放都属于同步渲染 / 查看器必经代码，实测 558,721B gzip，较上一预算超出 1272B，上调 1300B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 48_900 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

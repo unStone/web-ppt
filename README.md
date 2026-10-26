@@ -134,7 +134,7 @@ session.dispose();
 | [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 13.99KB |
-| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 2.84KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 3.44KB |
 
 体积按默认入口及全部相对静态分块逐文件 gzip 求和，不含 peer 与动态入口。
 
@@ -146,7 +146,7 @@ session.dispose();
 | 文本渲染 | `foreignObject` + HTML 排版用于屏幕预览；原生 `<text>` + 自实现断行用于独立 SVG 与打印，交出去的文件不依赖浏览器 |
 | 编辑闭环 | 源值 + 覆盖、命令历史、补丁 / 生成保存、恢复与协同；普通页面不能越权修改母版 / 版式 |
 | 性能 | 210 页 / 11280 元素：惰性首屏 **42ms**，全量解析 376ms，单页渲染 0.09ms，JS 堆 40MB |
-| 回归 | 210 个渲染快照（29 个测试文件 × 全部页 × 两条文本路径）逐字节比对；`npm run compare` 再用 LibreOffice 做 ground truth |
+| 回归 | 212 个渲染快照（30 个测试文件 × 全部页 × 两条文本路径）逐字节比对；`npm run compare` 再用 LibreOffice 做 ground truth |
 | 主线程 | Worker 解析主线程零阻塞；图片以 `asset:N` 令牌跨线程传递 |
 
 完整矩阵见[格式能力](docs/api/format-capabilities.md)，缺失与近似实现见[格式限制](docs/api/format-limitations.md)，基准方法见[性能与保真基准](docs/engineering/performance.md)。

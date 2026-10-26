@@ -9,7 +9,7 @@ import type { TextBody, TextRun, TextVert } from '../types';
 import { isOpening, squeezeEm } from './cjk-punct';
 import { layoutText, paraNeedsSqueeze, resolveTextScale } from './text-layout';
 import type { TextLayoutLine } from './text-layout-types';
-import { mathOf } from './text-measure';
+import { fontFamily, mathOf } from './text-measure';
 import type { TextMeasure } from './text-measure';
 import { withHyperlink } from './hyperlink';
 import { bulletTextRun, decorateText } from './text-decoration';
@@ -77,7 +77,7 @@ function runStyle(run: TextRun, scale: number): string {
     : `color:${run.color};`;
   if (run.b) css += 'font-weight:700;';
   if (run.i) css += 'font-style:italic;';
-  if (run.fonts.length) css += `font-family:${stack(run.fonts, FONT_FALLBACK)};`;
+  if (run.fonts.length) css += `font-family:${fontFamily(run)};`;
   if (run.spacing) css += `letter-spacing:${r(run.spacing)}px;`;
   if (run.caps === 'all') css += 'text-transform:uppercase;';
   else if (run.caps === 'small') css += 'font-variant:small-caps;';

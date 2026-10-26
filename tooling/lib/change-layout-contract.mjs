@@ -112,8 +112,12 @@ export async function runChangeLayoutContract({ edit, core, load, check }) {
       && bodyParagraphs[0].runs[0].underlineColor === null
       && bodyParagraphs[0].runs[0].color === 'rgb(255,245,230)',
   JSON.stringify(bodyParagraphs[0].runs[0]));
+  // 复杂文种槽位仍按版式重基；拉丁正文不含复杂文种，cs 不进入渲染字体栈。
   check('字符字体按脚本槽独立重基，Latin 直设不阻断东亚与复杂文字继承',
-    bodyParagraphs[0].runs[0].fonts.join('|') === 'Source Latin|Target EA|Target CS');
+    JSON.stringify(bodyParagraphs[0].runs[0].editInfo?.fontSlots)
+      === JSON.stringify({ latin: 'Source Latin', eastAsian: 'Target EA', complexScript: 'Target CS' })
+      && bodyParagraphs[0].runs[0].fonts.join('|') === 'Source Latin|Target EA',
+  JSON.stringify({ fonts: bodyParagraphs[0].runs[0].fonts, slots: bodyParagraphs[0].runs[0].editInfo?.fontSlots }));
   check('项目符号颜色、字体与绝对字号 choice 都保留页面直设语义',
     bodyParagraphs[1].bulletColor === null
       && bodyParagraphs[1].bulletFont === null
@@ -236,13 +240,9 @@ export async function runChangeLayoutContract({ edit, core, load, check }) {
   fontRebaseEditor.exec({ type: 'SetLayout', id: fontRebaseSlide, layoutId: fontRebaseTarget });
   const fontRebasedRun = fontRebaseEditor.effectiveElement(fontRebaseShape.id)
     .text.paragraphs[0].runs[0];
-  const expectedFontSlots = {
-    latin: fontRebasedRun.fonts[0] ?? null,
-    eastAsian: fontRebasedRun.fonts[1] ?? null,
-    complexScript: fontRebasedRun.fonts[2] ?? null,
-  };
+  const expectedFontSlots = { latin: 'Target Latin', eastAsian: 'Target EA', complexScript: 'Target CS' };
   check('字体 set→clear 后换版式会同步逐脚本有效值与继承 provenance',
-    fontRebasedRun.fonts.join('|') === 'Target Latin|Target EA|Target CS'
+    fontRebasedRun.fonts.join('|') === 'Target Latin|Target EA'
       && JSON.stringify(fontRebasedRun.editInfo?.fontSlots) === JSON.stringify(expectedFontSlots)
       && JSON.stringify(fontRebasedRun.editInfo?.inheritedFontSlots)
         === JSON.stringify(expectedFontSlots),

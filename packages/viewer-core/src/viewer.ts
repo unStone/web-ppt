@@ -230,10 +230,14 @@ export class Viewer {
     void playback.finished.then(settle, (error: unknown) => {
       // 媒体 play() 可被自动播放策略拒绝：视觉批次照常收尾，失败交给宿主而不是吞掉。
       settle();
-      const event = this.container.ownerDocument.createEvent('CustomEvent');
-      event.initCustomEvent('web-ppt-playback-error', false, false, error);
-      this.container.dispatchEvent(event);
+      this.reportPlaybackError(error);
     });
+  }
+
+  private reportPlaybackError(error: unknown): void {
+    const event = this.container.ownerDocument.createEvent('CustomEvent');
+    event.initCustomEvent('web-ppt-playback-error', false, false, error);
+    this.container.dispatchEvent(event);
   }
 
   private releasePlayback(finish: boolean): void {
@@ -308,6 +312,15 @@ export class Viewer {
 
   private handleClick = (e: MouseEvent): void => {
     const el = e.target as Element | null;
+
+    // player 模式下的音频封面：点一下播放，再点暂停（PowerPoint 放映里的 ppaction://media）。
+    const media = el?.closest('[data-media-toggle]')?.querySelector('audio');
+    if (media) {
+      e.preventDefault();
+      if (media.paused) Promise.resolve(media.play()).catch((error: unknown) => this.reportPlaybackError(error));
+      else media.pause();
+      return;
+    }
 
     const jump = el?.closest('[data-slide]');
     if (jump) {

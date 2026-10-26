@@ -5,6 +5,7 @@ import type {
 } from '../types';
 import { renderTextBodyToHtml } from './text-html';
 import type { TextMeasure } from './text-measure';
+import { DENGXIAN_LATIN_FAMILY, dengXianLatinFontFaces } from './text-measure';
 import { resolveTextScale } from './text-layout';
 import { renderTextSvg } from './text-svg';
 import { withHyperlink } from './hyperlink';
@@ -69,8 +70,8 @@ export interface RenderElementOptions {
   hiddenElements?: readonly number[];
   /**
    * 媒体呈现方式：
-   * - 'badge'（默认）：只画封面帧 + 播放标识，纯 SVG，导出安全
-   * - 'player'：嵌入真实 <video>/<audio>，可播放
+   * - 'badge'（默认）：只画封面帧 + 播放标识（有封面且源可用的音频不叠标识），纯 SVG，导出安全
+   * - 'player'：嵌入真实 <video>/<audio>，可播放；音频不显示控件，封面带 `data-media-toggle`
    *
    * 'player' 靠 foreignObject 承载，只有浏览器认；而 textMode 为 'svg' 恰恰意味着
    * 产物要脱离浏览器使用（独立 SVG 文件 / 被光栅化），此时一律退回 badge。
@@ -163,7 +164,7 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
 
   const fontFaces = (pres.embeddedFonts ?? [])
     .map((f) => `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};}`)
-    .join('');
+    .join('') + (body.includes(DENGXIAN_LATIN_FAMILY) ? dengXianLatinFontFaces() : '');
   const styleTag = fontFaces ? `<style>${fontFaces}</style>` : '';
   const notes = opts.includeNotes && slide.notes
     ? `<desc>${esc(slide.notes)}</desc>`
@@ -359,25 +360,36 @@ function mediaBadge(el: ImageElement, media: MediaInfo): string {
       `<path d="M${r(cx - t * 0.62)} ${r(cy - t)} L${r(cx + t)} ${r(cy)} L${r(cx - t * 0.62)} ${r(cy + t)} Z" fill="#fff"/>`;
   }
 
-  const label = media.kind === 'audio' ? '音频' : '视频';
-  const note = media.src ? (media.external ? `${label}（外链）` : label) : `${label}（源不可用）`;
-  return `<g aria-hidden="true" pointer-events="none"><title>${esc(note)}</title>${ring}${glyph}</g>`;
+  return `<g aria-hidden="true" pointer-events="none">${mediaTitle(media)}${ring}${glyph}</g>`;
 }
 
-/** 真实播放器：<video> 用封面帧做 poster，<audio> 贴底显示以免盖住封面 */
-function mediaPlayer(el: ImageElement, media: MediaInfo): string {
-  const common = 'width:100%;height:100%;display:block;object-fit:contain;background:#000';
-  const inner = media.kind === 'audio'
-    ? `<audio controls preload="none" src="${esc(media.src ?? '')}" style="width:100%;display:block"></audio>`
-    : `<video controls preload="metadata" src="${esc(media.src ?? '')}"`
-      + (el.src ? ` poster="${esc(el.src)}"` : '')
-      + ` style="${common}"></video>`;
-  // 音频控件本身很矮，贴在元素底部，上面仍露出封面帧
-  const h = media.kind === 'audio' ? Math.min(el.h, 54) : el.h;
-  const y = media.kind === 'audio' ? el.h - h : 0;
-  return `<foreignObject x="0" y="${r(y)}" width="${r(el.w)}" height="${r(h)}">`
-    + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%">${inner}</div>`
-    + '</foreignObject>';
+/** 媒体类型与来源说明：悬停提示与无障碍名称，不随标识是否绘制而丢失。 */
+function mediaTitle(media: MediaInfo): string {
+  const label = media.kind === 'audio' ? '音频' : '视频';
+  const note = media.src ? (media.external ? `${label}（外链）` : label) : `${label}（源不可用）`;
+  return `<title>${esc(note)}</title>`;
+}
+
+/** 真实视频播放器：封面帧做 poster，原生控件铺满元素。 */
+function videoPlayer(el: ImageElement, media: MediaInfo): string {
+  const style = 'width:100%;height:100%;display:block;object-fit:contain;background:#000';
+  return `<foreignObject x="0" y="0" width="${r(el.w)}" height="${r(el.h)}">`
+    + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%">`
+    + `<video controls preload="metadata" src="${esc(media.src ?? '')}"`
+    + (el.src ? ` poster="${esc(el.src)}"` : '')
+    + ` style="${style}"></video></div></foreignObject>`;
+}
+
+/**
+ * 真实音频播放器不露原生控件条——它比喇叭图标还高，会把图标整个盖住。封面本身是点击目标：
+ * 放映时点喇叭播放 / 暂停，与 PowerPoint 的 ppaction://media 一致。0×0 的 foreignObject
+ * 只为让 <audio> 进入 DOM，播放不需要它占位。
+ */
+function audioPlayer(face: string, media: MediaInfo): string {
+  return `<g data-media-toggle="" style="cursor:pointer">${face}`
+    + '<foreignObject width="0" height="0">'
+    + `<div xmlns="http://www.w3.org/1999/xhtml"><audio preload="none" src="${esc(media.src ?? '')}"></audio></div>`
+    + '</foreignObject></g>';
 }
 
 function renderImage(el: ImageElement, ctx: Ctx): string {
@@ -418,11 +430,18 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
 
   const flip = flipTransform(el);
   if (flip) img = `<g transform="${flip}">${img}</g>`;
-  // 播放标识画在翻转之外，避免图标被镜像
+  // 播放标识画在翻转之外，避免图标被镜像。音频的封面就是 PowerPoint 生成的喇叭图标，
+  // 再叠一层标识只会把它盖住；没有封面或源不可用时才需要标识说明情况。
   if (el.media) {
-    img += ctx.media === 'player' && el.media.src
-      ? mediaPlayer(el, el.media)
-      : mediaBadge(el, el.media);
+    const player = ctx.media === 'player' && !!el.media.src;
+    if (player && el.media.kind === 'video') {
+      img += videoPlayer(el, el.media);
+    } else {
+      // SVG 只认作为首个子元素的 <title>，不画标识时说明要排在封面之前。
+      img = el.media.kind === 'video' || !el.src || !el.media.src
+        ? img + mediaBadge(el, el.media) : mediaTitle(el.media) + img;
+      if (player) img = audioPlayer(img, el.media);
+    }
   }
   return wrapEl(el, img, ctx);
 }

@@ -23,7 +23,9 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 
 下一阶段（[内容流转、导出与保真](wayfinder/ppt-portability-fidelity/map.md)）已完成高级文本流转、多级类别、
 共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）进行中，其中音轨已随
-`0.5.0-beta.6` 发布；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）的 SDK 已完成、官网入口与外部读取验证待补；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查。
+`0.5.0-beta.6` 发布；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）的 SDK 已完成、官网入口与外部读取验证待补；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查，外部语料中已有的样本及完成步骤已登记在票据中。
+
+外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，待随 `0.5.0-beta.7` 发布。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）已完成，提供按需入口、稳定编辑身份、完整 JSON 预算与生成 Schema；布局检查（002）及无 Office 渲染（003）处于前沿，其余票据继续按依赖推进。
 
 ### 1.2 验证状态
 
@@ -164,7 +166,7 @@ flowchart TD
 | 未覆盖光栅操作码 / Region 布尔 | 依具体文件而定 | 尚无完整实现，需可信样本与 SVG 表达验证 | **保真边界**，不宣称完整支持 |
 | 三维相机与挤出 | 有（相机和深度影响外观） | XYZ 矩阵、正交/透视投影及曲线斜角 | ✅ **已完成**，材质/光照及网格为近似 |
 | 地图图表 regionMap | 有 | 文件内 geoCache 边界，无外部地图数据包 | ✅ 按需实现；无缓存时兼容回退 |
-| Agent 读写接口：结构化读出、布局检查、无 Office 渲染、命令工具面、模板填充 | 有（Agent 现在靠解压改 XML 与 LibreOffice 出图验证，慢且易产出需修复的文件） | 有（复用 `Presentation`、`EditDoc` 命令、`layoutText`、字体 Provider 与补丁保存；独立按需包） | **下一阶段**，见 §7.2 |
+| Agent 读写接口：结构化读出、布局检查、无 Office 渲染、命令工具面、模板填充 | 有（Agent 现在靠解压改 XML 与 LibreOffice 出图验证，慢且易产出需修复的文件） | 有（复用 `Presentation`、`EditDoc` 命令、`layoutText`、字体 Provider 与补丁保存；独立按需包） | **下一阶段**，见 §7.2 与[研发地图](wayfinder/ppt-agent-interface/map.md) |
 | 内置模型 / 生成服务 | 有（需服务端或数 GB 模型下载，违背零服务端与文件不出浏览器） | 有，但与 Office 套件和模型厂商正面竞争 | **不做**；模型由宿主或外部 Agent 提供 |
 | 宏 / 模板市场 / 服务端转换 | — | — | **不做**（非目标） |
 
@@ -172,33 +174,32 @@ flowchart TD
 
 ## 4. 演进路线
 
-版本主题沿用原规划；功能完成不代表对应版本已经发布。已交付扩展和下一阶段计划均未分配发布版本。
+0.6 / 0.7 / 0.8 原规划的功能主题已全部随 `0.5.0-beta.N` 发布到 `@next`，无法再从 beta 线中拆出，因此并入 0.5.0。
+`0.5.0-beta.7` 是 0.5.0 的范围截止点，此后 master 进入 0.6 线；0.6–0.8 按 Agent 读写接口的依赖批次重新分配，因为每批都扩展公开 API，1.0 之前用 minor 版本标记。
+本节只分配内容和发布条件，不承诺日期。
 
 ```mermaid
 flowchart LR
-    B["0.5.0-beta.6<br/>当前包版本"] --> V6["0.6 编辑完整度<br/>功能完成"]
-    V6 --> V7["0.7 模板与主题<br/>功能完成"]
-    V7 --> V8["0.8 数据与保真<br/>功能完成"]
-    V8 --> X["七类扩展<br/>实现与自动门禁完成"]
-    X --> N["下一阶段计划<br/>内容流转 · PDF · 音视频 · 格式保真"]
-    X --> AG["Agent 读写接口<br/>读出 · 检查 · 渲染 · 命令 · 模板填充"]
-    B --> S["稳定版交付<br/>Windows 验收暂缓"]
-    X --> V1["1.0 API 冻结<br/>待 beta 反馈及外部验收"]
-    S --> V1
+    B6["0.5.0-beta.6<br/>已发布"] --> B7["0.5.0-beta.7<br/>外部缺陷修复，0.5 范围截止"]
+    B7 --> S5["0.5.0 → latest<br/>Windows 验收 + beta 反馈"]
+    B7 --> V6["0.6.0<br/>下一阶段收口 + Agent 第一批"]
+    V6 --> V7["0.7.0<br/>命令工具面 + MCP"]
+    V7 --> V8["0.8.0<br/>模板填充 · WebMCP · 评测集"]
+    V8 --> V1["1.0.0<br/>API 冻结"]
+    S5 --> V6
 ```
 
-| 版本 | 主题 | 票据 | 阻塞 |
+| 版本 | 内容 | 票据 | 发布条件 |
 |---|---|---|---|
-| **0.5.0** | 转正，零新能力 | [一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) ✅ · PowerPoint 真机 · 转正七步（八包） | PowerPoint 真机需 Windows + 桌面 PowerPoint |
-| **0.6** | 编辑完整度 | [补齐 0.6 高频编辑能力](wayfinder/ppt-editing-completeness/map.md)：表格 · 列表 · 预设形状 · 字符格式 · 常用命令 · 触屏 · 批量导出 ✅ | 无 |
-| **0.7** | 模板与主题 | [主题编辑 · 版式编辑 · 母版编辑 · 内置模板 · 集成验收](wayfinder/ppt-template-theme/map.md) ✅ | 无 |
-| **0.8** | 数据与保真 | [图表数据编辑 · chartex 解析 · 媒体插入 · 官网 i18n](wayfinder/ppt-data-fidelity/map.md) ✅ | 功能完成；真实语料单独验收 |
-| **扩展（版本待定）** | 深度编辑、高级渲染与直接导出 | [七类扩展交付](wayfinder/ppt-expanded-capabilities/map.md) ✅，实现提交 `8803e07` | 自动验收通过；Windows 真机按用户要求跳过 |
-| **下一阶段（进行中）** | 内容流转、矢量 PDF、音视频与格式保真 | [执行计划与任务依赖](wayfinder/ppt-portability-fidelity/plan.md) | 高级文本、多级类别、共享图表及正式字体已完成；矢量 PDF、视频音轨与内嵌视频合成进行中；长尾格式先定样本及支持范围 |
-| **Agent 读写接口（规划）** | 结构化读出、布局检查、无 Office 渲染、命令工具面、MCP / WebMCP 适配与模板填充 | 见 §7.2；研发地图在范围确认后建立 | 无外部阻塞；WebMCP 依赖 Chrome origin trial |
-| **1.0** | 稳定 API | [API 契约、迁移说明与类型回归已补](api/api-stability.md) | 正式冻结依赖 beta 反馈及外部验收 |
+| **0.5.0-beta.7**（`next`） | CHANGELOG「未发布」全部条目与 #8 西文字体回退修复：#7 组合缩放与解组、#8 撇号、旧 PPT 外观写入、OLE DOCX / XLSX SDK、矢量 PDF 文字装饰与描边、`videoOverlay` 失败告警 | 下一阶段 [012](wayfinder/ppt-portability-fidelity/tickets/012-legacy-ppt-appearance-write.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md) 的已完成部分 | 四项门禁；发布后请 #7 / #8 报告者复测 |
+| **0.5.0**（`latest`） | `0.5.0-beta.7` 的全部内容：编辑主线、[0.6 编辑完整度](wayfinder/ppt-editing-completeness/map.md)、[0.7 模板与主题](wayfinder/ppt-template-theme/map.md)、[0.8 数据与保真](wayfinder/ppt-data-fidelity/map.md)、[七类扩展](wayfinder/ppt-expanded-capabilities/map.md)及下一阶段已发布入口；实验性入口保持实验性标记 | [075 转正七步](wayfinder/ppt-editor/tickets/075-0.5.0-stable-release.md)，[一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) ✅ | [010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md) Windows 真机（暂缓）、beta 反馈周期；beta.7 之后发现的问题在 0.5 维护分支以 `0.5.0-beta.N` 修复 |
+| **0.6.0** | 下一阶段收口：矢量 PDF 转为正式入口、视频音轨与内嵌视频合成、OLE 官网入口；Agent 第一批：describe、lint、Node 渲染 | 下一阶段 [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) / [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) / [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md)；Agent [001](wayfinder/ppt-agent-interface/tickets/001-structured-describe.md) / [002](wayfinder/ppt-agent-interface/tickets/002-layout-lint.md) / [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) | 所列票据关闭；`0.6.0-beta.N` 反馈周期；Windows 真机 |
+| **0.7.0** | Agent 第二批：命令工具面、MCP server 与 Agent Skill；新增发布包 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) | 所列票据关闭；新包首版本地发布并配置 Trusted Publishing；beta 反馈周期；Windows 真机 |
+| **0.8.0** | 模板填充生成、编辑器 WebMCP、Agent 任务评测集 | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) / [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 所列票据关闭；beta 反馈周期；Windows 真机 |
+| **1.0.0** | 冻结现有公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.8 beta 反馈收口；ChartEx 真实语料与 Windows 验收（§7.3） |
 
-一致性闸门已完成。Windows 真机按用户要求暂缓，继续作为正式发布条件。
+长尾格式（下一阶段 [008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md) 及其后续实现票）不绑定版本，关闭时随当时的 beta 线发布。
+每个稳定版都需要绑定其提交的 Windows 真机结果；Windows 按用户要求暂缓期间，各版本只发布到 `next`。
 
 ---
 
@@ -247,7 +248,7 @@ flowchart LR
 
 | 优先级 | 内容 | 当前状态 |
 |---|---|---|
-| P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 撇号挤压（#10）、归一化组合文字（#9）与组合缩放映射子元素外框（#16，编辑器几何同步）已修复；#8 中字体回退导致的溢出未处理 |
+| P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 组合外框映射、定时音频、英语撇号已修复；附件复验中的楔形标注方向、fontRef 白字、仅 svgBlip 图标、音频封面点击播放已修复，等线西文改为按 PowerPoint 实测缩放的 Arial 度量合成字族（粗体 95.4%、下划线 74.6%），附件断行与原图一致；待发布给报告者复测 |
 | P0 | 收口进行中票据：矢量 PDF（005）、音轨验收证据（006）、内嵌视频合成（007） | 005 实验性入口已发布；006 已随 beta.6 发布；007 失败告警已补 |
 | P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 001 结构化读出与 002 布局检查已完成；003 Node 渲染处于前沿 |
 | P2 | Agent 读写接口第二批：命令工具面、MCP server 与 Agent Skill | 依赖第一批 |
@@ -261,6 +262,7 @@ flowchart LR
 范围、依赖和验收见 [研发地图](wayfinder/ppt-agent-interface/map.md)，状态以票据为准；[describe API 与 Schema](api/agent-describe.md)和[布局检查 API](api/agent-layout-lint.md)提供接入契约。
 
 目标：让任何 Agent（Claude、Copilot、Codex、浏览器内 Agent）不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。仓库只提供确定性能力，不内置模型。行业现状与依据见[调研](research/ai-presentation-landscape.md)。
+下表每项对应[研发地图](wayfinder/ppt-agent-interface/map.md)中的一张票（001–008，顺序同表），票据写明范围、复用和完成条件，状态以票据为准。
 
 ```mermaid
 flowchart LR
@@ -290,6 +292,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | 补齐真实 ChartEx PPTX 类型语料及高级渲染对照 | 合成功能门禁和现有真实样本通过，完整类型覆盖待补 | 可信来源、可复现输入、逐类型原生布局与保存重开证据 |
 | 2 | Windows + 桌面 PowerPoint 自托管验收 | **按用户要求暂缓**，未计为通过 | 同一 Office 工件清单绑定提交与字节，无修复打开并核验原生内容 |
-| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结 | 外部验收与反馈收口后确定版本，再执行发布流程 |
+| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结；版本内容与发布条件见 §4 | 各版本按 §4 的发布条件执行发布流程 |
 
 Windows 真机仍列为正式发布条件；它不阻挡已完成代码与 roadmap 的提交、推送。

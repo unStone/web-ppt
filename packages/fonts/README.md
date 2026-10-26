@@ -47,7 +47,7 @@ On-demand loading is left entirely to `unicode-range` — fontsource's CSS ships
 | Courier New | Cousine | ✓ |
 | Segoe UI / Tahoma / Verdana | Open Sans | ✗ similar shapes only |
 
-Chinese: Microsoft YaHei / PingFang / SimHei / DengXian → Noto Sans SC, the SimSun family → Noto Serif SC, KaiTi → LXGW WenKai.
+Chinese: Microsoft YaHei / PingFang / SimHei / DengXian → Noto Sans SC, the SimSun family → Noto Serif SC, KaiTi → LXGW WenKai. For DengXian, Latin letters and punctuation use Arimo under the original family name, scaled to PowerPoint measurements: bold gets `size-adjust: 95.4%`, and a separate U+5F face shrinks the underscore to 74.6%. The extra Latin font loads only when those characters occur.
 
 Only **redistributable, subsettable** fonts are included (OFL / Apache). MiSans, HarmonyOS Sans and Alibaba PuHuiTi are "free for commercial use" but each restricts redistribution and modification, so they stay out of the built-in table — add them yourself through `overrides`:
 

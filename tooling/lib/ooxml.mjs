@@ -273,6 +273,7 @@ ${body}
 export function deck({
   name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '',
   extraEntries = [], masterShapes = '', layoutShapes = '', slideRelationships = [],
+  bgFillStyleLst = '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'.repeat(3),
 }) {
   const slideOverrides = slides.map((_, i) =>
     `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
@@ -317,7 +318,7 @@ ${slideOverrides}${extraTypes}
 <a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>
 <a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>
 <a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>
-<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst>
+<a:bgFillStyleLst>${bgFillStyleLst}</a:bgFillStyleLst>
 </a:fmtScheme>
 </a:themeElements>
 </a:theme>`],
