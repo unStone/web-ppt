@@ -24,7 +24,8 @@ viewer.setZoom(1.5);
 viewer.search('关键词');                               // → 命中的页索引数组
 await viewer.exportPng(2);                            // → Blob
 
-// 想让视频 / 音频真的能播（会引入 foreignObject，仅屏幕预览可用）
+// 想让视频 / 音频真的能播（会引入 foreignObject，仅屏幕预览可用）。
+// 视频带原生控件；音频不露控件，点击喇叭封面播放 / 暂停（宿主放映层应把 [data-media-toggle] 排除出「点击翻页」）
 const v2 = new Viewer(container, pres, { media: 'player' });
 // 动画时间线里的媒体调用（如上一动画之后自动播放）被浏览器拒绝时，容器收到该事件
 container.addEventListener('web-ppt-playback-error', (e) => console.warn((e as CustomEvent).detail));

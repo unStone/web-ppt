@@ -134,7 +134,7 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.34 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 13.99 KB |
-| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 2.84 KB |
+| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 3.44 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
 
@@ -146,7 +146,7 @@ Sizes sum the gzipped default entry and every relative static chunk, excluding p
 | Text rendering | `foreignObject` + HTML layout for screen preview; native `<text>` + own line breaking for standalone SVG and print, so exported files don't depend on a browser |
 | Editing loop | Source values + overrides, command history, patch / generated save, recovery and collaboration; ordinary slides cannot mutate masters or layouts |
 | Performance | 210 slides / 11,280 elements: **42 ms** lazy first paint, 376 ms full parse, 0.09 ms single-slide render, 40 MB JS heap |
-| Regression | 210 render snapshots (29 test files × every slide × both text paths) compared byte for byte; `npm run compare` adds LibreOffice as ground truth |
+| Regression | 212 render snapshots (30 test files × every slide × both text paths) compared byte for byte; `npm run compare` adds LibreOffice as ground truth |
 | Main thread | Worker parsing blocks the main thread for zero time; images cross the boundary as `asset:N` tokens |
 
 Full matrix: [format capabilities](https://github.com/unStone/web-ppt/blob/master/docs/api/format-capabilities.md); gaps and approximations: [format limitations](https://github.com/unStone/web-ppt/blob/master/docs/api/format-limitations.md); methodology: [performance and fidelity benchmarks](https://github.com/unStone/web-ppt/blob/master/docs/engineering/performance.md) (docs are currently maintained in Chinese).

@@ -1,10 +1,12 @@
 /**
- * 经典引用不可用、字节只在 p14:media 的媒体（issue #7）：Viewer 的 player 模式必须生成原生控件，
- * 并且 Chrome 能从回退得到的 blob 真实解码播放到结束——只断言 src 非空挡不住「指错部件」。
+ * 经典引用不可用、字节只在 p14:media 的媒体（issue #7）：Viewer 的 player 模式必须生成播放器
+ * （视频带原生控件，音频由真实点击封面启动），并且 Chrome 能从回退得到的 blob 真实解码播放到结束
+ * ——只断言 src 非空挡不住「指错部件」。
  */
 export async function runViewerMediaFallbackBrowserContract({ Viewer, parse, load }) {
   const mount = document.createElement('div');
-  mount.style.cssText = 'position:fixed;left:0;top:0;width:960px;height:540px;background:white';
+  // 音频要真实点击封面，整页必须落在视口内；测试窗口可能只有 800px 宽，Viewer 会按容器等比缩放。
+  mount.style.cssText = 'position:fixed;left:0;top:0;width:min(960px,100vw);aspect-ratio:16/9;background:white';
   document.body.append(mount);
   const presentation = await parse(await load('sample-media-fallback.pptx'), { lazy: false });
   let viewer;
@@ -20,6 +22,34 @@ export async function runViewerMediaFallbackBrowserContract({ Viewer, parse, loa
     if (layout !== expected) throw new Error(`Viewer player 模式控件与回退源不符：${layout}`);
     for (const { player, spid } of players.filter(({ player }) => player.src.startsWith('blob:'))) {
       player.muted = true;
+      if (player.localName === 'audio') {
+        // 音频不露控件：真实点击封面，由 Viewer 的 data-media-toggle 处理启动播放。
+        if (player.controls) throw new Error(`音频 ${spid} 不应显示原生控件条`);
+        const face = player.closest('[data-media-toggle]');
+        if (!face) throw new Error(`音频 ${spid} 封面缺少点击播放目标`);
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => finish(new Error(`音频 ${spid} 点击封面后未播放结束`)), 10000);
+          const finish = (error) => {
+            clearTimeout(timeout);
+            player.removeEventListener('ended', ended);
+            player.removeEventListener('error', failed);
+            delete face.dataset.mediaPlayback;
+            error ? reject(error) : resolve();
+          };
+          const ended = () => finish();
+          const failed = () => finish(new Error(`音频 ${spid} 播放失败：${player.error?.message}`));
+          player.addEventListener('ended', ended);
+          player.addEventListener('error', failed);
+          face.addEventListener('click', (event) => {
+            delete face.dataset.mediaPlayback;
+            if (!event.isTrusted) finish(new Error('音频封面播放缺少真实用户点击'));
+          }, { once: true });
+          face.dataset.mediaPlayback = '';
+        });
+        if (!(player.duration > 0 && player.currentTime > 0) || player.error) throw new Error(`音频 ${spid} 未被真实解码`);
+        results.push({ spid, kind: player.localName, duration: player.duration });
+        continue;
+      }
       const play = document.createElement('button');
       play.textContent = `播放回退媒体 ${spid} 验收`;
       play.dataset.mediaPlayback = '';

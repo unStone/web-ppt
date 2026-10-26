@@ -222,7 +222,11 @@ function parseFillElement(el: Element | null, env: Env): Fill | null {
 
 function blipTarget(blipFill: Element | null, env: Env): string | null {
   const blip = kid(blipFill, 'blip');
-  const rid = attr(blip, 'r:embed') ?? attr(blip, 'r:link');
+  // PowerPoint 总在 a:blip 上留位图兼容副本；WPS 插入的图标常只写 extLst 里的 asvg:svgBlip。
+  const svgBlip = kids(kid(blip, 'extLst'), 'ext')
+    .map((ext) => kid(ext, 'svgBlip'))
+    .find((node): node is Element => node !== null) ?? null;
+  const rid = attr(blip, 'r:embed') ?? attr(blip, 'r:link') ?? attr(svgBlip, 'r:embed') ?? attr(svgBlip, 'r:link');
   return rid ? env.rels[rid]?.target ?? null : null;
 }
 
@@ -282,6 +286,15 @@ function parseLnElement(ln: Element | null, env: Env, fallback: Stroke | null): 
   return { color, width, dash, cap, join, head, tail, compound: attr(ln, 'cmpd') ?? fallback?.compound };
 }
 
+/**
+ * 非占位符形状的 fontRef 颜色压过 presentation defaultTextStyle 的方案色：
+ * PowerPoint 新建形状的白字靠它，而 defaultTextStyle 几乎总写着 tx1。
+ * 只把它当兜底色会让每个真实文件里的白字变黑；形状自己的 lstStyle 与 rPr 仍在它之后。
+ */
+function styleTextColorLayer(color: string | null): LevelStyles[] {
+  return color ? [{ def: { rp: { color } }, lvls: [] }] : [];
+}
+
 /** p:style 的主题引用 → 底层样式 */
 function resolveStyleRefs(style: Element | null, env: Env): { fill: Fill | null; stroke: Stroke | null; fontColor: string | null; effects: ReturnType<typeof parseEffects> } {
   if (!style) return { fill: null, stroke: null, fontColor: null, effects: undefined };
@@ -326,7 +339,10 @@ function defaultShapeEditInfo(env: Env): NonNullable<Slide['editInfo']>['default
   const textTemplate = parseTextBody(source.text, {
     ctx: env.ctx,
     fonts: env.theme.fonts,
-    chain: [env.docDefaults, extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts)],
+    chain: [
+      env.docDefaults, ...styleTextColorLayer(style.fontColor),
+      extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts),
+    ],
     defaultColor: style.fontColor,
     slideNum: env.slideNum,
     edit: true,
@@ -490,6 +506,8 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
       chain.push(env.masterStyles[cat]);
       chain.push(extractLstStyle(walk(masterSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
       chain.push(extractLstStyle(walk(layoutSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
+    } else {
+      chain.push(...styleTextColorLayer(styleRef.fontColor));
     }
     chain.push(extractLstStyle(kid(txBody, 'lstStyle'), env.ctx, env.theme.fonts));
     const textEnv: TextEnv = {
@@ -1282,7 +1300,11 @@ function resolvedSlideBackground(
     if (!bgRef) continue;
     const idx = Number(attr(bgRef, 'idx') ?? '0');
     const phClr = childColor(bgRef, env.ctx);
-    const styleEl = env.theme.bgFillStyles[Math.min(idx, env.theme.bgFillStyles.length) - 1] ?? null;
+    // ST_StyleMatrixColumnIndex：1001 起是 bgFillStyleLst 的第 1 项，1–999 指向 fillStyleLst。
+    // 把 1001 直接夹到列表末项，会把最常见的 bg1 纯白背景画成主题第三档渐变。
+    const styles = idx > 1000 ? env.theme.bgFillStyles : env.theme.fillStyles;
+    const position = idx > 1000 ? idx - 1000 : idx;
+    const styleEl = position > 0 ? styles[Math.min(position, styles.length) - 1] ?? null : null;
     const fill = styleEl
       ? parseFillElement(styleEl, withPhClr(env, phClr))
       : (phClr ? { type: 'solid' as const, color: phClr } : null);

@@ -4,14 +4,8 @@
 <rect width="960" height="540" fill="rgb(255,255,255)"/>
 <g data-el="10" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(40 60)">
-<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
-<g aria-hidden="true" pointer-events="none">
 <title>音频</title>
-<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
-<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
-<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
-<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
-</g>
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
 </g>
 </g>
 <g data-el="101" style="transform-box:fill-box;transform-origin:center">
@@ -69,14 +63,8 @@
 </g>
 <g data-el="13" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(715 60)">
-<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
-<g aria-hidden="true" pointer-events="none">
 <title>音频</title>
-<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
-<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
-<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
-<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
-</g>
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
 </g>
 </g>
 <g data-el="104" style="transform-box:fill-box;transform-origin:center">
@@ -107,14 +95,8 @@
 </g>
 <g data-el="15" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(265 300)">
-<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
-<g aria-hidden="true" pointer-events="none">
 <title>音频（外链）</title>
-<circle cx="100" cy="75" r="33" fill="rgba(17,17,17,0.55)" stroke="rgba(255,255,255,0.92)" stroke-width="2.97"/>
-<path d="M84.06 69.18 H92.65 L104.85 61.14 V88.86 L92.65 80.82 H84.06 Z" fill="#fff"/>
-<path d="M109.01 66.68 A 10.4 10.4 0 0 1 109.01 83.32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
-<path d="M115.94 60.45 A 18.71 18.71 0 0 1 115.94 89.55" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>
-</g>
+<image href="blob:<runtime>" width="200" height="150" preserveAspectRatio="none"/>
 </g>
 </g>
 <g data-el="106" style="transform-box:fill-box;transform-origin:center">

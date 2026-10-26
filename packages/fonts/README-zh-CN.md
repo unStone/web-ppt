@@ -47,7 +47,7 @@ viewer.refresh(); // 排版是同步的、加载是异步的，首帧一定按�
 | Courier New | Cousine | ✓ |
 | Segoe UI / Tahoma / Verdana | Open Sans | ✗ 仅形近 |
 
-中文：微软雅黑 / 苹方 / 黑体 / 等线 → Noto Sans SC，宋体系 → Noto Serif SC，楷体 → 霞鹜文楷。
+中文：微软雅黑 / 苹方 / 黑体 / 等线 → Noto Sans SC，宋体系 → Noto Serif SC，楷体 → 霞鹜文楷。等线的西文字母与标点单独用 Arimo，仍注册为原家族名，并按 PowerPoint 实测缩放：粗体 `size-adjust: 95.4%`，下划线另起一条只含 U+5F 的声明 `size-adjust: 74.6%`；仅在页面实际包含西文时加载，避免 Noto Sans SC 的西文字宽让正文提前换行。
 
 只收**可再分发、可子集化**的字体（OFL / Apache）。MiSans、HarmonyOS Sans、阿里普惠这些「免费商用」的许可各自限制再分发与改字，不进内置表——要用就自己往 `overrides` 里加：
 

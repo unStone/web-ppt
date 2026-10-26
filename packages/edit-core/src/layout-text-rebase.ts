@@ -1,16 +1,10 @@
 import {
-  PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_BODY_PROPERTY_BITS, TEXT_RUN_DIRECT_BITS,
+  PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_BODY_PROPERTY_BITS, TEXT_RUN_DIRECT_BITS, textRunFontStack,
 } from '@web-ppt/core';
 import type {
   Paragraph, TextBody, TextRun, TextRunDirectFlags,
 } from '@web-ppt/core';
 import { FONT_DIRECT_BITS, LAYOUT_RUN_DIRECT_FIELDS } from './run-property-fields';
-
-function stackFromSlots(slots: NonNullable<TextRun['editInfo']>['fontSlots']): string[] {
-  return [...new Set([
-    slots.latin, slots.eastAsian, slots.complexScript,
-  ].filter((font): font is string => !!font))];
-}
 
 function rebasedRun(
   source: TextRun,
@@ -32,7 +26,7 @@ function rebasedRun(
       complexScript: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontComplexScript
         ? sourceSlots.complexScript : targetSlots.complexScript,
     };
-    out.fonts = stackFromSlots(fontSlots);
+    out.fonts = textRunFontStack(fontSlots, source.text);
     out.editInfo = { ...source.editInfo!, fontSlots };
   } else if (!(direct & FONT_DIRECT_BITS)) {
     out.fonts = structuredClone(target.fonts);

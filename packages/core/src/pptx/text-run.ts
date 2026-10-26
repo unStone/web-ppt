@@ -1,4 +1,4 @@
-import { textRunDirectFlags } from '../edit-metadata';
+import { textRunDirectFlags, textRunFontStack } from '../edit-metadata';
 import type { TextFontSlots, TextRunDirectFlags } from '../edit-metadata';
 import type { TextRun } from '../types';
 import { pt100 } from '../xml';
@@ -11,15 +11,6 @@ function effectiveFontSlots(rp: RunProps, env: TextEnv): TextFontSlots {
     eastAsian: rp.ea ?? env.fonts.minor.ea,
     complexScript: rp.cs ?? env.fonts.minor.cs ?? null,
   };
-}
-
-function fontStack(slots: TextFontSlots): string[] {
-  const { latin, eastAsian: ea, complexScript: cs } = slots;
-  const fonts: string[] = [];
-  if (latin) fonts.push(latin);
-  if (ea && ea !== latin) fonts.push(ea);
-  if (cs && cs !== latin && cs !== ea) fonts.push(cs);
-  return fonts;
 }
 
 function decorationProps(
@@ -35,7 +26,7 @@ function decorationProps(
   };
 }
 
-function effectiveRunProps(rp: RunProps, env: TextEnv): {
+function effectiveRunProps(rp: RunProps, env: TextEnv, text: string): {
   readonly props: NonNullable<TextRun['editInfo']>['inheritedRunProps'];
   readonly fontSlots: TextFontSlots;
 } {
@@ -46,7 +37,7 @@ function effectiveRunProps(rp: RunProps, env: TextEnv): {
     ...decorationProps(rp),
     size: pt100(rp.sz ?? 1800),
     color: rp.color ?? env.defaultColor ?? 'rgb(0,0,0)',
-    fonts: fontStack(fontSlots),
+    fonts: textRunFontStack(fontSlots, text),
     baseline: rp.baseline || undefined,
     spacing: rp.spc || undefined,
     caps: rp.caps && rp.caps !== 'none' ? rp.caps : undefined,
@@ -67,8 +58,8 @@ export function finalizeRun(
   inherited?: RunProps,
   direct: TextRunDirectFlags = textRunDirectFlags(0),
 ): TextRun {
-  const effective = effectiveRunProps(rp, env);
-  const inheritedEffective = env.edit && inherited ? effectiveRunProps(inherited, env) : null;
+  const effective = effectiveRunProps(rp, env, text);
+  const inheritedEffective = env.edit && inherited ? effectiveRunProps(inherited, env, text) : null;
   return {
     text,
     ...effective.props,

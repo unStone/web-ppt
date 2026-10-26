@@ -18,6 +18,10 @@
 export interface Substitution {
   /** 替代字体的家族名 */
   family: string;
+  /** 中日韩字体的西文替代家族；其字形声明须在 CJK 声明之后注册。 */
+  latinFamily?: string;
+  /** 西文替代家族的实测 size-adjust（百分比）：粗体整体与下划线单独缩放，用来对上原字体的前进宽度。 */
+  latinSizeAdjust?: { readonly bold: number; readonly underscore: number };
   /**
    * 前进宽度与原字体逐字相等。为真时断行与 PowerPoint 完全一致，
    * 为假时只是形近，行高仍可能要靠 `size-adjust` 修。
@@ -51,6 +55,8 @@ const LATIN: Record<string, Substitution> = {
   georgia: { family: 'Tinos', metricCompatible: false, cjk: false },
 };
 
+const DENGXIAN_LATIN = { latinFamily: 'Arimo', latinSizeAdjust: { bold: 95.4, underscore: 74.6 } } as const;
+
 const CJK: Record<string, Substitution> = {
   // 黑体系
   微软雅黑: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
@@ -60,8 +66,10 @@ const CJK: Record<string, Substitution> = {
   'pingfang sc': { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
   黑体: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
   simhei: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
-  等线: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
-  dengxian: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
+  // 等线西文按 PowerPoint 导出实测：常规体与 Arial 等宽（0.996 倍），粗体 0.954 倍，下划线 0.415em。
+  // Noto Sans SC 自带的西文宽出一截。参数与 core 的缺字合成字族一致，测试断言两边相同。
+  等线: { family: 'Noto Sans SC', ...DENGXIAN_LATIN, metricCompatible: false, cjk: true },
+  dengxian: { family: 'Noto Sans SC', ...DENGXIAN_LATIN, metricCompatible: false, cjk: true },
   'source han sans sc': { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
   思源黑体: { family: 'Noto Sans SC', metricCompatible: false, cjk: true },
   'hiragino sans gb': { family: 'Noto Sans SC', metricCompatible: false, cjk: true },

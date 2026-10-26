@@ -24,6 +24,13 @@
 - 英语缩写中的弯撇号（`I’m`、`that’s`）不再按全角标点挤压半个 em，避免撇号与后一个字母重叠（#8）。中文句读的挤压规则不变。
 - 对象动画「伸展」按 PowerPoint 子类型播放：水平展开（across）从中线向两侧长，自底部 / 顶部 / 左侧 / 右侧钉住对应边长出，不再一律从中心缩放并淡入；退场缩回同一条边。「挥舞」按 PowerPoint 的 `sin(2.5π·t)` 宽度（横向为高度）轨迹翻转并叠加淡入，中途会转到背面镜像，不再是一次 `rotateY`。
 - 组合缩放只映射子元素外框：渲染时把 `chOff` / `chExt` 折算进子元素的位置、尺寸、路径与表格行列，不再对子树整体 `scale()`，描边、字号、内边距与效果半径保持物理尺寸（与 PowerPoint、LibreOffice 一致）。WPS 产出的归一化组合（子坐标空间不足 1px）不再出现千像素描边或逐字换行；普通缩放组合内的字号与描边也不再随组放大，非等比组合里的旋转子元素保持矩形。编辑器按同一份刚体外框工作：选择框、命中、框选、对齐 / 分布、吸附、裁剪、顶点与调节柄不再把非等比组合里的旋转子元素当成斜切的平行四边形；缩放与旋转在父组渲染坐标里计算后换算回模型，旋转跨过 45° 等边界时画面宽高保持不变（模型宽高随组缩放承接的轴向互换），粘贴进非等比组合同样按画面落位。`@web-ppt/core` 公开 `placeGroupChild`、`placeGroupFrame` 与 `unplaceGroupFrame`；`@web-ppt/edit-core` / `@web-ppt/editor` 公开 `renderedElement`、`renderedFrameToSlideMatrix`、`renderedContentToSlideMatrix`、`elementParentToRenderedParentMatrix`、`elementEditFrame`、`elementEditParentToSlideMatrix`、`slideToElementEditParentPoint` 与 `editFrameToModelFrame`（edit-core 另有 `groupEditChildrenToSlideMatrix`、`groupEditFrameToModelFrame`）；`elementFrameToSlideMatrix` 与 `elementParentToSlideMatrix` 改为沿渲染链求值，只在非等比组合内的非 90° 整数倍旋转、或此类组合嵌套时结果不同（#7）。
+- `wedgeRectCallout` / `wedgeRoundRectCallout` 按 ECMA-376 guide 求值：尾巴从尾尖所在一侧的边伸出，圆角取 `adj3`；此前底座固定在下边，尾尖朝上时尾巴穿过整个框只剩一条细线（#7 附件）。
+- 非占位符形状 `p:style` 的 `fontRef` 颜色压过 presentation `defaultTextStyle` 的方案色，形状自身 `lstStyle` 与 `rPr` 仍优先；PowerPoint 默认形状里的白字不再渲染成黑字。
+- 背景 `bgRef` 按 ST_StyleMatrixColumnIndex 取主题样式：`1001` 起对应 `bgFillStyleLst` 第 1 项、`1`–`999` 对应 `fillStyleLst`；此前 `idx="1001"` 被夹到列表末项，最常见的白色背景被画成主题第三档渐变。
+- run 的字体栈只在文字含复杂文种（阿拉伯文、希伯来文、泰文、天城文等）时才纳入 `a:cs` 字体；此前拉丁字体缺席时 `cs`（如 WPS 常写的 Arial Black）会接管拉丁字母，标题被撑宽断行。新增公开函数 `textRunFontStack` 供编辑投影共用。
+- 只写 `asvg:svgBlip`、`a:blip` 上没有位图兼容副本的图片（WPS 插入的图标）按 SVG 部件渲染，不再显示为不支持的对象。
+- 有封面且源可用的音频不再叠加灰色播放标识（封面本身就是喇叭图标）；`media: 'player'` 下音频不显示原生控件条，`Viewer` 点击封面播放 / 暂停，播放被拒绝时同样派发 `web-ppt-playback-error`。官网查看器改用 player 模式，放映中点击媒体不翻页。
+- 等线缺席时西文改用合成字族：`local()` 引用系统 Arial 度量族，粗体 `size-adjust: 95.4%`、下划线 `74.6%`，只在页面出现等线时声明；`@web-ppt/fonts` 的替换路径对 Arimo 套用同一组参数。取代窄体回退与连续空格半字宽的处理；依据是 #8 附带的 PowerPoint 导出图逐词拟合，断行与填空线长度与 PowerPoint 一致。
 - `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
 
 ## 0.5.0-beta.6 - 2026-10-10

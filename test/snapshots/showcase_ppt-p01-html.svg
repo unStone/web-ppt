@@ -1281,7 +1281,7 @@
 </g>
 <g data-el="3222" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(789 296)">
-<path d="M 0 0 L 50 0 L 50 34 L 30 34 L 14.586 38.25 L 20 34 L 0 34 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="0.98"/>
+<path d="M 0 0 L 8.333 0 L 8.333 0 L 20.833 0 L 50 0 L 50 19.833 L 50 19.833 L 50 28.333 L 50 34 L 20.833 34 L 14.586 38.25 L 8.333 34 L 0 34 L 0 28.333 L 0 19.833 L 0 19.833 Z" fill="rgb(165,165,165)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="0.98"/>
 </g>
 </g>
 <g data-el="3223" style="transform-box:fill-box;transform-origin:center">
@@ -1298,7 +1298,7 @@
 </g>
 <g data-el="3224" style="transform-box:fill-box;transform-origin:center">
 <g transform="translate(865 296)">
-<path d="M 5.668 0 L 44.332 0 A 5.668 5.668 0 0 1 50 5.668 L 50 28.332 A 5.668 5.668 0 0 1 44.332 34 L 30 34 L 14.586 38.25 L 20 34 L 5.668 34 A 5.668 5.668 0 0 1 0 28.332 L 0 5.668 A 5.668 5.668 0 0 1 5.668 0 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="0.98"/>
+<path d="M 0 5.667 A 5.667 5.667 0 0 1 5.667 0 L 8.333 0 L 8.333 0 L 20.833 0 L 44.333 0 A 5.667 5.667 0 0 1 50 5.667 L 50 19.833 L 50 19.833 L 50 28.333 L 50 28.333 A 5.667 5.667 0 0 1 44.333 34 L 20.833 34 L 14.586 38.25 L 8.333 34 L 5.667 34 A 5.667 5.667 0 0 1 0 28.333 L 0 28.333 L 0 19.833 L 0 19.833 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(31,56,100)" stroke-width="0.98"/>
 </g>
 </g>
 <g data-el="3225" style="transform-box:fill-box;transform-origin:center">

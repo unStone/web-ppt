@@ -4,6 +4,25 @@ export interface TextFontSlots {
   readonly complexScript: string | null;
 }
 
+const COMPLEX_SCRIPT = new RegExp('[' + [
+  'Arabic', 'Hebrew', 'Syriac', 'Thaana', 'Nko', 'Thai', 'Lao', 'Khmer', 'Myanmar', 'Tibetan',
+  'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Sinhala',
+].map((script) => `\\p{Script=${script}}`).join('') + ']', 'u');
+
+/**
+ * run 的渲染字体栈。PowerPoint 只对复杂文种字符启用 a:cs 字体；CSS 字体栈不分文种，cs 一旦入栈，
+ * 拉丁字体缺席时它会抢在中文回退之前接管拉丁字母（WPS 常给标题写 cs="Arial Black"，整行被撑宽断行）。
+ * 所以只有文字里确有复杂文种时 cs 才入栈。解析与编辑投影共用这一规则。
+ */
+export function textRunFontStack(slots: TextFontSlots, text: string): string[] {
+  const { latin, eastAsian: ea, complexScript: cs } = slots;
+  const fonts: string[] = [];
+  if (latin) fonts.push(latin);
+  if (ea && ea !== latin) fonts.push(ea);
+  if (cs && cs !== latin && cs !== ea && COMPLEX_SCRIPT.test(text)) fonts.push(cs);
+  return fonts;
+}
+
 export interface TextRunEditInfo {
   readonly inheritedRunProps: {
     readonly b: boolean;

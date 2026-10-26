@@ -15,7 +15,7 @@
 | chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](chartex-native.md) |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |
 | MTX 压缩的嵌入字体 | PowerPoint 的 `fntdata` 是 EOT 容器，绝大多数还开着 MTX 压缩。未压缩的容器 core 自己剥（含异或混淆），压缩的需要注入解码器：`setFontDecoder(eotToTtf)`（来自 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor)）。不注入就跳过这些字体，回退到替换字体，而不是塞一份浏览器注定拒绝的字节 |
-| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：缺原字体时，字宽变化会改变换行。装原字体、使用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](../../packages/fonts) 加载替代字体。Calibri→Carlito 度量兼容；等线的西文使用窄体回退与按需加载的 Roboto Condensed，但不是逐字度量兼容，仍需按具体文稿验收 |
+| 字体缺失导致的断行差异 | 断行由**实际字体的度量**决定：缺原字体时，字宽变化会改变换行。装原字体、使用文件自带的嵌入字体，或接 [`@web-ppt/fonts`](../../packages/fonts) 加载替代字体。Calibri→Carlito 度量兼容；缺等线时西文用 Arial 度量族合成（按需加载时用 Arimo）：按 PowerPoint 导出图实测，粗体整体缩到 95.4%、下划线缩到 74.6%，断行与填空线长度与 PowerPoint 一致；代价是粗体字形略小，空格仍比等线宽约 0.03em |
 | CJK 标点挤压 | 完整规则：行放不下时全量挤压保断行；成行后无条件收连续标点对的相邻侧、行首起始标点左半格与行尾句读右半格。断行判定始终按全角，与 PowerPoint 一致 |
 | 网络字体到达前的断行 | 字体异步加载期间，原生 `<text>` 先按回退字体测量；`foreignObject` 先由浏览器按回退字体排版。字体到齐后宿主需要刷新当前页，官网查看器会自动执行 |
 | 加密文件 | 设了打开密码的文件可解析：`parse(bytes, { password })`。未传密码抛 `PasswordRequiredError`，密码错误抛 `WrongPasswordError`，支持敏捷 AES-CBC / 标准 AES-ECB（.pptx）与 RC4 CryptoAPI（.ppt） |

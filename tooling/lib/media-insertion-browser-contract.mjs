@@ -42,8 +42,12 @@ export async function runMediaInsertionBrowserContract({ core, load }) {
         reopened = await core.parse(saved, { lazy: false });
         mount.innerHTML = core.renderSlideToSvg(reopened, reopened.slides[0], { textMode: 'html', media: 'player' });
         const player = mount.querySelector(sample.kind);
-        if (!player?.controls || (sample.url ? player.src !== sample.url : !/^(blob:|data:(audio|video)\/)/.test(player.src))) {
-          throw new Error(`保存重开未产生离线原生控件：${player?.outerHTML ?? mount.innerHTML.slice(-1000)}`);
+        // 视频带原生控件；音频不露控件条，以封面作为点击播放目标。
+        const playable = sample.kind === 'video'
+          ? player?.controls
+          : player && !player.controls && !!player.closest('[data-media-toggle]');
+        if (!playable || (sample.url ? player.src !== sample.url : !/^(blob:|data:(audio|video)\/)/.test(player.src))) {
+          throw new Error(`保存重开未产生离线播放器：${player?.outerHTML ?? mount.innerHTML.slice(-1000)}`);
         }
         if (sample.url && !core.renderSlideToSvg(reopened, reopened.slides[0], { media: 'badge' }).includes('（外链）')) {
           throw new Error('外链保存重开缺少可识别来源标识');
@@ -87,6 +91,6 @@ export async function runMediaInsertionBrowserContract({ core, load }) {
       } finally { mount.replaceChildren(); reopened?.dispose(); editor.dispose(); disposeDoc(doc); }
     }
   } finally { mount.remove(); original.dispose(); }
-  console.log('媒体原生控件播放通过（嵌入/显式外链）', results);
+  console.log('媒体播放器播放通过（嵌入/显式外链）', results);
   return results;
 }

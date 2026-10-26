@@ -27,7 +27,7 @@ export function isPresentAdvanceTarget(target: EventTarget | null): boolean {
   const el = target instanceof Element ? target : null;
   if (!el) return false;
   return !el.closest(
-    'a[href],button,input,select,textarea,[data-slide],.present-bar,.fullscreen-language,.link-toast,.preview-bar,.demo-foot,.pv-side,.speaker-aids,.present-blank,.slide-grid',
+    'a[href],button,input,select,textarea,audio,video,[data-media-toggle],[data-slide],.present-bar,.fullscreen-language,.link-toast,.preview-bar,.demo-foot,.pv-side,.speaker-aids,.present-blank,.slide-grid',
   );
 }
 

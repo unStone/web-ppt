@@ -183,6 +183,31 @@ function wedgeTail(w: number, h: number, a: Adj): Pt {
 }
 
 /**
+ * wedgeRectCallout / wedgeRoundRectCallout 的规范 guide（dz / xg1 / t1…t8）：
+ * 尾尖相对中心更偏竖直就从上下边出尾巴，否则从左右边；底座占该边 2/12–5/12
+ * 或 7/12–10/12，取靠近尾尖的一段。不出尾巴的三条边上，尖端退化成边上的点。
+ * 底座固定画在下边时，尾尖朝上会穿过整个框，只剩一条细线。
+ */
+function wedgeEdges(w: number, h: number, a: Adj): {
+  x1: number; x2: number; y1: number; y2: number; top: Pt; right: Pt; bottom: Pt; left: Pt;
+} {
+  const tip = wedgeTail(w, h, a);
+  const dxPos = tip[0] - w / 2;
+  const dyPos = tip[1] - h / 2;
+  const dq = w === 0 ? 0 : dxPos * h / w;
+  const vertical = Math.abs(dyPos) - Math.abs(dq) > 0;
+  const x1 = w * (dxPos > 0 ? 7 : 2) / 12;
+  const y1 = h * (dyPos > 0 ? 7 : 2) / 12;
+  return {
+    x1, x2: w * (dxPos > 0 ? 10 : 5) / 12, y1, y2: h * (dyPos > 0 ? 10 : 5) / 12,
+    top: vertical && dyPos <= 0 ? tip : [x1, 0],
+    right: !vertical && dxPos > 0 ? tip : [w, y1],
+    bottom: vertical && dyPos > 0 ? tip : [x1, h],
+    left: !vertical && dxPos <= 0 ? tip : [0, y1],
+  };
+}
+
+/**
  * 标注引线：文本框底边出发的 1-3 段折线。段数即形状名末尾的数字。
  *
  * 注意 accent* / 无 border 的变体在规范里文本框是「只填充不描边」的，
@@ -974,17 +999,23 @@ const PRESETS: Record<string, PathFn> = {
 
   // 标注
   wedgeRectCallout: (w, h, a) => {
-    const [tx, ty] = wedgeTail(w, h, a);
-    return poly([[0, 0], [w, 0], [w, h], [w * 0.6, h], [tx, ty], [w * 0.4, h], [0, h]]);
+    const { x1, x2, y1, y2, top, right, bottom, left } = wedgeEdges(w, h, a);
+    return poly([
+      [0, 0], [x1, 0], top, [x2, 0], [w, 0], [w, y1], right, [w, y2],
+      [w, h], [x2, h], bottom, [x1, h], [0, h], [0, y2], left, [0, y1],
+    ]);
   },
   wedgeRoundRectCallout: (w, h, a) => {
-    const [tx, ty] = wedgeTail(w, h, a);
-    const c = Math.min(w, h) * 0.1667;
-    return (
-      `M ${n(c)} 0 L ${n(w - c)} 0 A ${n(c)} ${n(c)} 0 0 1 ${n(w)} ${n(c)} L ${n(w)} ${n(h - c)} ` +
-      `A ${n(c)} ${n(c)} 0 0 1 ${n(w - c)} ${n(h)} L ${n(w * 0.6)} ${n(h)} L ${n(tx)} ${n(ty)} L ${n(w * 0.4)} ${n(h)} ` +
-      `L ${n(c)} ${n(h)} A ${n(c)} ${n(c)} 0 0 1 0 ${n(h - c)} L 0 ${n(c)} A ${n(c)} ${n(c)} 0 0 1 ${n(c)} 0 Z`
-    );
+    const { x1, x2, y1, y2, top, right, bottom, left } = wedgeEdges(w, h, a);
+    const c = Math.min(w, h) * av(a, 'adj3', 16667);
+    const arc = (x: number, y: number): string => `A ${n(c)} ${n(c)} 0 0 1 ${n(x)} ${n(y)}`;
+    const line = (...pts: Pt[]): string => pts.map(([x, y]) => `L ${n(x)} ${n(y)}`).join(' ');
+    return [
+      `M 0 ${n(c)}`, arc(c, 0), line([x1, 0], top, [x2, 0], [w - c, 0]),
+      arc(w, c), line([w, y1], right, [w, y2], [w, h - c]),
+      arc(w - c, h), line([x2, h], bottom, [x1, h], [c, h]),
+      arc(0, h - c), line([0, y2], left, [0, y1]), 'Z',
+    ].join(' ');
   },
   wedgeEllipseCallout: (w, h, a) => {
     const [tx, ty] = wedgeTail(w, h, a);
