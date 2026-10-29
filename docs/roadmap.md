@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-10-29，基线 `v0.5.0`，当前包版本 `0.5.0`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-10-30，基线 `v0.5.0`，当前包版本 `0.5.0`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径，以及面向 AI Agent 的下一阶段（依据见 [AI 与演示文稿调研](research/ai-presentation-landscape.md)）。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -280,9 +280,10 @@ flowchart LR
 
 | 项 | 剩余 | 完成判定 |
 |---|---|---|
-| Chrome 启动等待 | 测试里自带的 10 秒 stderr 等待统一改用 `tooling/lib/chrome-devtools-launch.mjs`，以 DevToolsActivePort 为准（0.5.0 首次发布即因此失败） | 仓库内不再有按 stderr 正则取端口的启动代码 |
-| CI 偶发失败 | 排查 master 上编辑性能预算（50MB 恢复、210 页回环超 500ms）与站点 `Runtime.evaluate` 超时 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
-| 发布凭据口径 | `release.yml` 实际用 `secrets.NPM_TOKEN`，[发布流程](engineering/releasing.md)与 AGENTS 写的是 OIDC，二者取一 | 文档、工作流与 0.7 新包首发步骤一致 |
+| Chrome 启动等待 | ✅ 已完成（52079f0）：统一走 `tooling/lib/chrome-devtools-launch.mjs`，以 DevToolsActivePort 为准 | 仓库内不再有按 stderr 正则取端口的启动代码 |
+| CI 偶发失败 | `Runtime.evaluate` 超时根因已定位：chart-loading 契约中被 `Fetch.enable` 拦截却无人 `failRequest` 的请求会永久挂起（84c45a9 当次 runner 性能采样全部健康，排除单纯机器慢），负例阶段已改为持续失败迟到请求；编辑性能预算（50MB 恢复、210 页回环超 500ms）为 `continue-on-error` 采样，不阻断 CI，根因待查 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
+| 发布凭据口径 | ✅ 已完成：`release.yml` 删除 `secrets.NPM_TOKEN` 残留 env（实际为空值），与文档统一为 OIDC | 文档、工作流与 0.7 新包首发步骤一致 |
+| 发布提速 | 已实施：release 在 tag 指向 commit 的 push CI 绿色时跳过重复门禁（check / test:functional / 性能采样 / bench），0.5.0 实测约省 27 分钟；判定拿不到绿色一律全量，见[发布流程](engineering/releasing.md) | 下次 tag 发布实际走绿色快路径并核对耗时 |
 | 0.5.x 缺陷 | 0.5.0 用户反馈的问题 | 以 `0.5.N` 补丁版发布，不混入 0.6 能力 |
 
 #### 0.6.0：下一阶段收口 + Agent 第一批

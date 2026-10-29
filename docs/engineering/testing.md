@@ -65,6 +65,10 @@ flowchart LR
 
 浏览器性能契约（如复制 16ms 预算）受宿主并行负载影响，历史上固定基线曾从 5ms 漂到 40ms。现状：CI 与发布流水线保留采样并落红灯证据，但 `continue-on-error` 不阻断发布；独立运行（隔离环境）则必须过预算。判定性能回归时先跑隔离复测，再下结论。
 
+## 7.5 本地跑不全的套件
+
+`npm run test:site:i18n` 的触屏悬停契约（`site-present-bar-browser-contract`）依赖 `Emulation.setEmulatedMedia` 改写 `hover` / `pointer` 媒体特性：CI 的 Linux headless Chrome 没有输入设备、默认即 `(hover: none)`，断言恒过；macOS Chrome 实测（2026-10-30 headless 最小复现）仿真不生效、`matchMedia` 仍报可悬停，本地必红。本地验证该套件的其他契约时跑到此断言即止，以 CI 结果为准。
+
 ## 8. 测试套件
 
 `npm test` 运行全部功能套件；下表的分套件命令用于定位问题。断言数由 §3 的链路实测比对，改文案前先跑测试拿实测值。
