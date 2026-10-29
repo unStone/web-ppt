@@ -11,9 +11,18 @@ export async function runSiteI18nChartLoadingContract(context) {
     await waitFor(ready, '冷启动文稿就绪');
     const paused = [];
     let resolvePaused, timeout;
+    // 负例阶段置 true：迟到的图表模块请求在事件处直接失败，不再进入 continueRequest 清单，
+    // 否则 finally 会对已被 Fetch.failRequest 结案的请求再发 Fetch.continueRequest 而报错。
+    let failingArrivals = false;
     const requested = new Promise((resolve) => { resolvePaused = resolve; });
     const unsubscribe = onEvent((event) => {
-      if (event.method === 'Fetch.requestPaused') { paused.push(event.params.requestId); resolvePaused(); }
+      if (event.method !== 'Fetch.requestPaused') return;
+      if (failingArrivals) {
+        void request('Fetch.failRequest', { requestId: event.params.requestId, errorReason: 'Aborted' });
+        return;
+      }
+      paused.push(event.params.requestId);
+      resolvePaused();
     });
     await request('Network.setCacheDisabled', { cacheDisabled: true });
     await request('Fetch.enable', { patterns: chartChunks[kind].map((path) => ({ urlPattern: `*${path}`, requestStage: 'Request' })) });
@@ -27,6 +36,10 @@ export async function runSiteI18nChartLoadingContract(context) {
       if (abandoned) await selectPaneObject(context, 'Title');
       const before = await evaluate("document.querySelector('#statusText').textContent");
       for (const requestId of paused.splice(0)) await request('Fetch.failRequest', { requestId, errorReason: 'Aborted' });
+      // 批量失败后仍可能有迟到的图表模块请求被 Fetch.enable 拦截：无人处理的拦截请求
+      // 会永久挂起，CI 上两次把它表现为 Runtime.evaluate 15 秒超时（84c45a9 时 runner
+      // 性能采样全部健康，排除了单纯机器慢）。负例阶段内把新到请求按同一语义失败掉。
+      failingArrivals = true;
       if (abandoned) {
         // 等待浏览器同一模块图的失败结算，不用固定延时猜测旧 import 是否已经拒绝。
         if (!await evaluate(`import(${JSON.stringify(chartChunks[kind][0])}).then(() => false, () => true)`, true)) {
@@ -45,6 +58,7 @@ export async function runSiteI18nChartLoadingContract(context) {
       }
     } finally {
       clearTimeout(timeout);
+      failingArrivals = false;
       for (const requestId of paused) await request('Fetch.continueRequest', { requestId });
       await request('Fetch.disable'); await request('Network.setCacheDisabled', { cacheDisabled: false }); unsubscribe();
     }

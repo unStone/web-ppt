@@ -11,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read          # 门禁信任判定要读该 commit 的 CI run 结论
       id-token: write        # OIDC 换取短期发布令牌所必需，缺了会退回要 NPM_TOKEN
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,7 +65,21 @@ jobs:
           done
           echo "tag $tag 与八个包版本一致"
 
+      - name: 门禁信任判定
+        # tag 指向的 commit 若已有绿色的 push CI，说明同口径门禁（check / fixtures /
+        # test:functional / 性能采样 / bench / build / verify）已在干净环境全量跑过，
+        # 下面的重复步骤可以跳过。判定拿不到绿色（查无 run、未完成、结论非成功、
+        # API 失败）时一律走全量，安全级别与改造前一致。
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # annotated tag 的 GITHUB_SHA 是 tag 对象而非 commit，CI run 按 commit SHA 索引
+          commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          node tooling/check-ci-green.mjs --sha "$commit"
+
       - name: 类型检查
+        if: steps.gate.outputs.ci-green != 'green'
         run: npm run check
 
       - name: 校验 npm 首发引导已完成
@@ -88,14 +101,17 @@ jobs:
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、PR CI 共用，避免拆分清单漏跑新套件。
+        if: steps.gate.outputs.ci-green != 'green'
         run: npm run test:functional
 
       # 与 CI 同口径：保留性能采样，但 beta 阶段不让宿主并行负载阻断发布。
       - name: 浏览器 DOM 编辑层性能采样
+        if: steps.gate.outputs.ci-green != 'green'
         continue-on-error: true
         run: npm run test:editor:performance
 
       - name: 编辑性能预算
+        if: steps.gate.outputs.ci-green != 'green'
         continue-on-error: true
         run: npm run bench:edit
 
