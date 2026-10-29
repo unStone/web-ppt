@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { availableParallelism, setPriority, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
+import { waitForDevToolsPort } from './lib/chrome-devtools-launch.mjs';
 
 const browser = [
   process.env.CHROME_BIN,
@@ -41,20 +42,14 @@ const chromeLoads = Array.from({ length: Math.min(6, availableParallelism()) }, 
     '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, url,
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
-  const ready = new Promise((resolve, reject) => {
-    let diagnostics = '';
-    const timeout = setTimeout(() => reject(new Error('负载 Chrome 启动超时')), 10_000);
-    child.stderr.on('data', (chunk) => {
-      diagnostics += chunk.toString('utf8');
-      if (!diagnostics.includes('DevTools listening on ')) return;
-      clearTimeout(timeout);
-      resolve();
-    });
-    child.once('error', reject);
-    child.once('close', (code) => {
-      clearTimeout(timeout);
-      reject(new Error(`负载 Chrome 提前退出 ${code}`));
-    });
+  let diagnostics = '', spawnError;
+  child.once('error', (error) => { spawnError = error; });
+  child.stderr.on('data', (chunk) => { diagnostics += chunk.toString('utf8'); });
+  // 端口以 DevToolsActivePort 为准：CI 负载高时 stderr 的监听日志可能迟于固定窗口。
+  const ready = waitForDevToolsPort({
+    profile,
+    isRunning: () => !spawnError && running(child),
+    diagnostics: () => `负载 Chrome：${spawnError ? `${spawnError.message}\n` : ''}${diagnostics}`,
   });
   return { child, profile, ready };
 });

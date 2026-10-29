@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import WebSocket from 'ws';
+import { waitForDevToolsPort } from './chrome-devtools-launch.mjs';
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -38,17 +39,16 @@ export async function withChartBrowser(root, run) {
   try {
     const address = await new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address())));
     const url = `http://127.0.0.1:${address.port}/`;
-    const port = await new Promise((resolve, reject) => {
-      child = spawn(executable, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-        '--enable-precise-memory-info', `--user-data-dir=${profile}`, '--remote-debugging-port=0', url], { stdio: ['ignore', 'ignore', 'pipe'] });
-      let stderr = '';
-      const timer = setTimeout(() => reject(new Error('Chrome 启动超时')), 10000);
-      child.stderr.on('data', bytes => {
-        stderr += bytes.toString(); const match = stderr.match(/DevTools listening on ws:\/\/[^:]+:(\d+)/);
-        if (match) { clearTimeout(timer); resolve(Number(match[1])); }
-      });
-      child.once('error', error => { clearTimeout(timer); reject(error); });
-      child.once('close', code => { clearTimeout(timer); reject(new Error(`Chrome 提前退出 ${code}`)); });
+    child = spawn(executable, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+      '--enable-precise-memory-info', `--user-data-dir=${profile}`, '--remote-debugging-port=0', url], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '', spawnError;
+    child.once('error', error => { spawnError = error; });
+    child.stderr.on('data', bytes => { stderr += bytes.toString(); });
+    // 端口以 DevToolsActivePort 为准：CI 负载高时 stderr 的监听日志可能迟于固定窗口。
+    const port = await waitForDevToolsPort({
+      profile,
+      isRunning: () => !spawnError && child.exitCode === null && child.signalCode === null,
+      diagnostics: () => spawnError ? `${spawnError.message}\n${stderr}` : stderr,
     });
     let target;
     for (let attempt = 0; attempt < 100 && !target; attempt++) {

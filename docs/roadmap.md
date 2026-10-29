@@ -25,11 +25,9 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）进行中，其中音轨已随
 `0.5.0-beta.6` 发布；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）的 SDK 已完成、官网入口与外部读取验证待补；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查，外部语料中已有的样本及完成步骤已登记在票据中。
 
-外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复并随 `0.5.0` 发布。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）已完成，提供按需入口、稳定编辑身份、完整 JSON 预算与生成 Schema；布局检查（002）及无 Office 渲染（003）处于前沿，其余票据继续按依赖推进。
+外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）与布局检查（002）已完成，提供按需入口、稳定编辑身份、完整 JSON 预算与生成 Schema；无 Office 渲染（003）处于前沿，其余票据继续按依赖推进。
 
 ### 1.2 验证状态
-
-Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）已完成，提供按需入口、稳定编辑身份、完整 JSON 预算与生成 Schema；布局检查（002）及无 Office 渲染（003）处于前沿。
 
 门禁关系与测试套件见[测试规范](engineering/testing.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
 Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。
@@ -181,7 +179,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     B6["0.5.0-beta.6<br/>已发布"] --> B7["0.5.0-beta.7<br/>外部缺陷修复，0.5 范围截止"]
-    B7 --> S5["0.5.0 → latest<br/>Windows 验收 + beta 反馈"]
+    B7 --> S5["0.5.0 → latest<br/>已发布，真机经用户豁免"]
     B7 --> V6["0.6.0<br/>下一阶段收口 + Agent 第一批"]
     V6 --> V7["0.7.0<br/>命令工具面 + MCP"]
     V7 --> V8["0.8.0<br/>模板填充 · WebMCP · 评测集"]
@@ -244,16 +242,105 @@ flowchart LR
 
 ## 7. 下一步计划与交付
 
-### 7.1 待开发能力
+### 7.1 到 1.0 的分版本计划
 
-| 优先级 | 内容 | 当前状态 |
+§4 给出每个版本装什么，本节给出执行顺序、每项剩余工作与发布前的检查项。票据关闭以各自的完成条件为准；表中「剩余」只摘要差距，不替代票据。
+
+```mermaid
+flowchart LR
+    subgraph P05["0.5.x 补丁线"]
+      S["发布与 CI 稳定性"]
+    end
+    subgraph P06["0.6.0"]
+      A3["Agent 003<br/>Node 渲染"]
+      F5["005 矢量 PDF<br/>转正式入口"]
+      F6["006 音轨证据"] --> F7["007 视频合成"]
+      F14["014 / 015<br/>OLE 官网入口"]
+    end
+    subgraph P07["0.7.0"]
+      A4["Agent 004<br/>命令工具面"] --> A5["Agent 005<br/>MCP + Skill"]
+    end
+    subgraph P08["0.8.0"]
+      A6["Agent 006<br/>WebMCP"]
+      A7["Agent 007<br/>模板填充"]
+      A8["Agent 008<br/>评测集（非门禁）"]
+    end
+    subgraph P10["1.0.0"]
+      Z["API 冻结<br/>ChartEx 语料 · Windows 真机"]
+    end
+    S --> P06
+    A3 --> A5
+    A4 --> A6
+    A4 --> A7
+    A5 --> A8
+    P08 --> Z
+```
+
+#### 0.5.x 补丁线（现在）
+
+| 项 | 剩余 | 完成判定 |
 |---|---|---|
-| P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 组合外框映射、定时音频、英语撇号已修复；附件复验中的楔形标注方向、fontRef 白字、仅 svgBlip 图标、音频封面点击播放已修复，等线西文改为按 PowerPoint 实测缩放的 Arial 度量合成字族（粗体 95.4%、下划线 74.6%），附件断行与原图一致；已随 `0.5.0` 发布，待报告者复测 |
-| P0 | 收口进行中票据：矢量 PDF（005）、音轨验收证据（006）、内嵌视频合成（007） | 005 实验性入口已发布；006 已随 beta.6 发布；007 失败告警已补 |
-| P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 001 结构化读出与 002 布局检查已完成；003 Node 渲染处于前沿 |
-| P2 | Agent 读写接口第二批：命令工具面、MCP server 与 Agent Skill | 依赖第一批 |
-| P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充与 WebMCP 依赖命令工具面；旧 PPT 外观写入（012）与 SmartArt matrix / radial（013）已完成，OLE 014 / 015 待补官网入口与外部读取；008 / 009 已登记外部语料样本与完成步骤，可立即开始 |
-| P4 | Agent 任务评测集 | 依赖第二批 |
+| Chrome 启动等待 | 测试里自带的 10 秒 stderr 等待统一改用 `tooling/lib/chrome-devtools-launch.mjs`，以 DevToolsActivePort 为准（0.5.0 首次发布即因此失败） | 仓库内不再有按 stderr 正则取端口的启动代码 |
+| CI 偶发失败 | 排查 master 上编辑性能预算（50MB 恢复、210 页回环超 500ms）与站点 `Runtime.evaluate` 超时 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
+| 发布凭据口径 | `release.yml` 实际用 `secrets.NPM_TOKEN`，[发布流程](engineering/releasing.md)与 AGENTS 写的是 OIDC，二者取一 | 文档、工作流与 0.7 新包首发步骤一致 |
+| 0.5.x 缺陷 | 0.5.0 用户反馈的问题 | 以 `0.5.N` 补丁版发布，不混入 0.6 能力 |
+
+#### 0.6.0：下一阶段收口 + Agent 第一批
+
+| 票据 | 剩余 | 可并行 |
+|---|---|---|
+| Agent [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) Node 渲染 | 全部完成条件：Node 与浏览器原生路径 SVG 指纹一致、未注入测字 / 光栅化的稳定 reason、LibreOffice 对照、耗时记录 | 是；0.7 的 005 依赖它，最先开工 |
+| [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) 矢量 PDF | 透明文字渐变、更多色彩空间与图片范围、字体资源边界、值域 / 引用审计、其他 PDF 阅读器对照、共同门禁；关闭后去掉实验性标记 | 是 |
+| [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) 视频音轨 | 功能已发布，补 FFmpeg 测量的音画同步、两路混音 / 循环 / 跨页、取消与背压证据 | 是 |
+| [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) 内嵌视频合成 | 有界解封装与关键帧定位；元素裁剪 / 透明度 / 变换 / 层叠；循环与跨页策略；可变帧率；长视频内存边界；独立读取器验证；`video-overlay-frame-unavailable` 稳定样本 | 006 之后 |
+| [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md) OLE 深度编辑 | 官网嵌入对象面板入口与中英文文案；LibreOffice 打开改写后文档 | 是 |
+
+发布检查项：
+
+| 顺序 | 检查项 |
+|---|---|
+| 1 | 上表票据全部关闭；`videoOverlay` 若仍未达到 007 完成条件，保持默认关闭与实验性标记并在 CHANGELOG 说明 |
+| 2 | 四项门禁与 master CI 绿；`0.6.0-beta.1` 发到 `next` |
+| 3 | beta 反馈周期，问题以 `0.6.0-beta.N` 修复 |
+| 4 | Windows 真机（[010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)）通过，或由用户明确豁免并在 CHANGELOG 记录，不计为通过 |
+| 5 | 转正 `0.6.0` 到 `latest`；`npm view` 核对八包 `latest` 一致 |
+
+#### 0.7.0：命令工具面 + MCP
+
+| 票据 | 剩余 | 顺序 |
+|---|---|---|
+| Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) 命令工具面 | 开工前确定是否与 005 合为一个新包，写入[研发地图](wayfinder/ppt-agent-interface/map.md) Decisions；命令 Schema 由类型生成并由 `verify` 比对；非法输入原子拒绝；批量命令一次撤销；两条保存路径的外部打开 | 第一 |
+| Agent [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) MCP server 与 Skill | stdio 服务与 Skill 文档；固定任务清单在真实 Claude Code 与 Codex 会话完成并落盘；工具调用无网络请求；新包体积与冷启动实测，八个既有包体积不变 | 004 与 0.6 的 003 之后 |
+
+发布检查项在 0.6.0 基础上增加：新包首版本地发布并配置发布授权，`release.yml` 发布顺序加入新包，`verify` 的「N 个发布包」核对改为新数目。
+
+#### 0.8.0：模板填充 · WebMCP · 评测集
+
+| 票据 | 剩余 | 是否阻挡发布 |
+|---|---|---|
+| Agent [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) 模板填充 | 大纲 Schema；三套内置模板与一份外部模板 lint 零错误；保存重开 describe 一致；同输入逐字节一致；非法大纲原子拒绝 | 是 |
+| Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) 编辑器 WebMCP | origin trial Chrome 端到端；不支持时编辑页激活闭包体积与行为不变；文稿切换 / 关闭后注册状态正确 | 是；若 WebMCP 规范或 origin trial 在发布时不可用，按票据降级要求只发布不注册路径并说明 |
+| Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) 评测集 | 一条命令复跑判定；记录有无 lint 两种配置的完成率与失败分布 | 否（票据规定不作为发布门禁），结果作为 1.0 冻结工具 Schema 的依据 |
+
+#### 1.0.0：API 冻结
+
+| 项 | 剩余 | 完成判定 |
+|---|---|---|
+| 冻结范围 | [API 契约](api/api-stability.md)仍写着 `0.5.0-beta.5`，需更新为 0.8 的实际公开面：八个既有包 + Agent 新包的 exports 子路径、describe / lint / 工具 / 大纲四份 JSON Schema、恢复与协同协议版本 | 冻结清单逐条对应 `package.json#exports` 与生成 Schema，`verify` 比对 |
+| 实验性入口 | 逐项决定转正或明确排除在冻结之外（矢量 PDF 若已在 0.6 转正则不在此列；`videoOverlay`、WebM 音轨等） | 每项在 API 契约中有「稳定 / 排除」结论 |
+| 迁移说明 | 汇总 0.5–0.8 的全部语义变化（如 0.5.0 的 `elementFrameToSlideMatrix` 沿渲染链求值） | API 契约的迁移表覆盖每一项，类型契约 `tooling/type-contracts/` 有对应负例 |
+| ChartEx 真实语料 | [002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)：除漏斗外六类缺 PowerPoint 存出的 PPTX | 逐类型来源、哈希、原生布局与保存重开证据；缺失的类型在[能力边界](api/chartex-native.md)中如实标注 |
+| Windows 真机 | [010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)：自托管 runner 跑出绑定 revision 的 30/30 报告 | 报告通过 Node 校验器；1.0 不再适用豁免 |
+| 发布 | `1.0.0-rc.N` 到 `next` 收集反馈，再转正 | 与 0.6.0 发布检查项相同 |
+
+#### 不绑定版本
+
+| 票据 | 下一步 |
+|---|---|
+| [008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) SmartArt / OLE 真实样本 | 从 LibreOffice `sd/qa/unit/data/pptx` 取 matrix、radial、带 constrLst 的组织结构图与嵌入 `.xlsx`，登记到 `fixtures/corpus.json` |
+| [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md) 高级渲染 | 对已登记的 EMF+ 与三维样本跑 `npm run compare` 出候选清单，再做根因矩阵 |
+
+两张票关闭后拆出的实现票随当时的 beta 线发布；若修正改变公开类型，须在 1.0 冻结前完成。
 
 内容流转、PDF 与音视频的范围、依赖和共同验收条件见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。
 
@@ -292,6 +379,6 @@ flowchart LR
 |---|---|---|---|
 | 1 | 补齐真实 ChartEx PPTX 类型语料及高级渲染对照 | 合成功能门禁和现有真实样本通过，完整类型覆盖待补 | 可信来源、可复现输入、逐类型原生布局与保存重开证据 |
 | 2 | Windows + 桌面 PowerPoint 自托管验收 | **按用户要求延后**，0.5.0 转正时经用户决定豁免，未计为通过；后续稳定版仍需要 | 同一 Office 工件清单绑定提交与字节，无修复打开并核验原生内容 |
-| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结；版本内容与发布条件见 §4 | 各版本按 §4 的发布条件执行发布流程 |
+| 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结；版本内容见 §4，执行顺序与发布检查项见 §7.1 | 各版本按 §7.1 的发布检查项执行发布流程 |
 
 Windows 真机仍列为正式发布条件；它不阻挡已完成代码与 roadmap 的提交、推送。

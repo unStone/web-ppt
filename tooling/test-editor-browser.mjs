@@ -7,6 +7,7 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clearPerformanceFailures, runPerformanceAttempts } from './lib/browser-performance-contract.mjs';
 import { browserResult } from './lib/editor-browser-devtools-contract.mjs';
+import { waitForDevToolsPort } from './lib/chrome-devtools-launch.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const candidates = [
@@ -69,24 +70,18 @@ async function waitForExternalLoadRelease() {
 }
 
 async function launch(url) {
-  return new Promise((resolveLaunch, reject) => {
-    child = spawn(browser, [
-      '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-      `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
-    ], { stdio: ['ignore', 'ignore', 'pipe'] });
-    const timeout = setTimeout(() => reject(new Error('Chrome DevTools 启动超时')), 10000);
-    child.stderr.on('data', (chunk) => {
-      diagnostics += chunk.toString('utf8');
-      const match = diagnostics.match(/DevTools listening on ws:\/\/[^:]+:(\d+)\//);
-      if (!match) return;
-      clearTimeout(timeout);
-      resolveLaunch(Number(match[1]));
-    });
-    child.once('error', reject);
-    child.once('close', (code) => {
-      clearTimeout(timeout);
-      if (code !== 0) reject(new Error(`Chrome 提前退出 ${code}`));
-    });
+  child = spawn(browser, [
+    '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let spawnError;
+  child.once('error', (error) => { spawnError = error; });
+  child.stderr.on('data', (chunk) => { diagnostics += chunk.toString('utf8'); });
+  // 端口以 DevToolsActivePort 为准：CI 负载高时 stderr 的监听日志可能迟于固定窗口。
+  return waitForDevToolsPort({
+    profile,
+    isRunning: () => !spawnError && browserRunning(),
+    diagnostics: () => spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics,
   });
 }
 
