@@ -37,4 +37,4 @@ const png = await renderSlidePngInNode(pres, pres.slides[0], { measureText, rast
 
 - core 不新增任何运行时依赖；光栅化器与字体字节均由宿主注入，不在仓库内捆绑。
 - `foreignObject` 路径（HTML 排版）仅浏览器可用，本入口恒为原生 `<text>`——文本在 Inkscape / librsvg 等工具中不丢失。
-- 数学公式 run 在 `withFontMeasurement` 的测量回调中会抛 `unsupported-layout`（fonts 包语义）；含公式的页面应先经该回调的失败结果分流。
+- 数学公式 run 沿用公式布局自带的 `mathMeasure`（Node 无 canvas 时按字符数确定性估算），不经注入的字体测量；两端测量源不同，含公式的页面跨端比对时以公式布局差异为边界记录。
