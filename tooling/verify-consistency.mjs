@@ -230,7 +230,7 @@ if (!siteStat) {
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
-    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout',
+    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -337,6 +337,8 @@ if (!counts) {
     // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接
     ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
     ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
+    ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['docs/engineering/testing.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],

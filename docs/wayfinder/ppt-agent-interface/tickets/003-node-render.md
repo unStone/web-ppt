@@ -1,6 +1,6 @@
 ---
 title: Node 无 Office 渲染
-status: open
+status: in-progress
 priority: P1
 labels:
   - wayfinder:task
@@ -32,3 +32,17 @@ Agent 在没有浏览器、LibreOffice 和 Office 的 Node 环境中，怎样得
 ## 不做
 
 - 不在仓库内捆绑光栅化器或字体字节。
+
+## 进度
+
+| 部分 | 状态 | 证据 |
+|---|---|---|
+| Node 按需入口 `@web-ppt/core/node` | ✅ | `renderSlideSvgInNode` / `renderSlidePngInNode`；缺测字 / 光栅化注入抛 `NodeRenderError`，reason 为 `node-measure-required` / `node-rasterizer-required`，不退回估算断行 |
+| 纯 Node 可行性 | ✅ | 无 jsdom：`parse + renderSlideToSvg(textMode:'svg', measureText)` 整链可跑；Node 原生 `URL.createObjectURL` 的 blob 地址可被 `fetch` 解析回字节（编辑器字体资源测试依赖此能力），`tooling/test-agent-node-render.mjs` worker 子进程不装 dom-env |
+| 渲染确定性口径 | ✅ | 资源地址是会话态（浏览器同样如此），确定性按实际字节寻址：blob 地址替换为 `data:` URI 后独立进程两次渲染 SHA256 一致（与等价指纹的既有口径一致） |
+| 注入测量端到端 | ✅ | `@web-ppt/fonts/glyphs` 的 `withFontMeasurement`（HarfBuzz）注入 `renderSlideSvgInNode`：连字行 669px 与字体布局套件同源、autofit 用注入字宽、入口与 `renderSlideToSvg` 同参逐字节一致 |
+| 跨进程确定性 | ✅ | 独立进程两次渲染 SHA256 一致（sample 全部页） |
+| 耗时记录 | ✅ | `out/agent-node-render/timing.json`：sample 3 页 parse 14ms / 渲染 4ms；showcase 7 页 parse 37ms / 渲染 9ms（M 系本地） |
+| 架构边界 | ✅ | `check-node-boundary.mjs`：默认 core 入口零触达 Node 入口；core 无新增运行时依赖；`node-export.ts` 无 DOM 引用 |
+| 浏览器指纹对照 | ⏳ 第二批 | 同一字体下浏览器原生路径与 Node 注入路径整页 SVG 指纹比对，不一致逐条定位 |
+| LibreOffice 对照 | ⏳ 第二批 | 记录 SSIM 等差异与边界，作为说明而非及格线 |
