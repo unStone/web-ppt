@@ -127,11 +127,13 @@ export function measureTextWidth(
   scale: number,
   measurer?: TextMeasure,
 ): number {
+  // 数学公式布局自带测量（mathMeasure 用专用数学字体栈），不经外部 measurer——
+  // 注入测字（Node 的 withFontMeasurement）遇到公式 run 时走这里，而不是整页拒绝。
+  if (run.math?.length) return mathOf(run, scale)?.w ?? 0;
   if (measurer) {
     const width = measurer(text, run, scale);
     return Number.isFinite(width) && width > 0 ? width : 0;
   }
-  if (run.math?.length) return mathOf(run, scale)?.w ?? 0;
   if (!text) return 0;
   const context = ctx2d();
   const size = fontSize(run, scale);

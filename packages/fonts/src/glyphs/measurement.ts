@@ -22,7 +22,6 @@ export async function withFontMeasurement<T>(provider: ReturnType<typeof createF
   let collecting = false, characters = 0;
   const measureText: TextMeasure = (text,run,scale) => {
     if (!text) return 0;
-    if (run.math?.length) throw new FontFault('unsupported-layout');
     const key = JSON.stringify([text,run.fonts,!!run.b,!!run.i]);
     const em = cache.get(key);
     const size = run.size * scale * (run.baseline ? 0.65 : 1);
