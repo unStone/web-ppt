@@ -6,7 +6,7 @@
 flowchart TB
   L0["L0 入口（仓库根）<br/>README · README.en · AGENTS · CONTEXT · CHANGELOG"]
   L1["L1 现行规范（与代码一致）<br/>engineering/ · specs/ · api/"]
-  L2["L2 规划与状态（唯一来源）<br/>roadmap.md · wayfinder/"]
+  L2["L2 规划与状态（唯一来源）<br/>roadmap.md · wayfinder/ · product/"]
   L3["L3 决策与记录（完成即冻结）<br/>design/ · ux/ · iterations/ · research/ · releases/"]
   L0 --> L1 --> L2 --> L3
 ```
@@ -15,7 +15,7 @@ flowchart TB
 |---|---|---|---|
 | L0 入口 | 根目录 `README.md` / `README.en.md` / `AGENTS.md` / `CONTEXT.md` / `CHANGELOG.md` | 所有人 | 随每次改动同步；数字由 `npm run verify` 比对实测 |
 | L1 现行规范 | `engineering/`、`specs/`、`api/` | 改代码的人与 Agent、外部宿主开发者 | 代码变了就改；`tooling/check-doc-sync.mjs` 在提交时提示复查 |
-| L2 规划与状态 | `roadmap.md`、`wayfinder/` | 维护者 | 单票状态只写在票据 `status` 与 Resolution，跨地图汇总只写在 roadmap |
+| L2 规划与状态 | `roadmap.md`、`wayfinder/`、`product/` | 维护者 | 单票状态只写在票据 `status` 与 Resolution，跨地图汇总只写在 roadmap；版本 PRD 评审通过后随版本发布冻结 |
 | L3 决策与记录 | `design/`、`ux/`、`iterations/`、`research/`、`releases/` | 追溯原因的人 | 完成后冻结，只修链接与明显失真；新决策另写新文档 |
 
 类型词汇沿用 [Diátaxis](https://diataxis.fr/)：**reference**（持续查阅的事实）、**how-to**（面向任务的步骤）、**explanation**（理解背景的决策与历史）。
@@ -93,6 +93,14 @@ flowchart TB
 | [ppt-portability-fidelity](wayfinder/ppt-portability-fidelity/map.md) | 内容流转、矢量 PDF、音视频与格式保真；[执行计划](wayfinder/ppt-portability-fidelity/plan.md)，实现记录与证据在 `notes/` | open |
 | [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | open |
 
+### product/：版本级产品需求
+
+每个 minor / major 版本一份 PRD：使用者、用户流程、范围边界与验收引用，评审通过后作为该级的执行依据，版本发布后冻结。配套技术方案写在 `design/<版本>.md`。
+
+| 文档 | 主题 |
+|---|---|
+| [0.6.0.md](product/0.6.0.md) | 0.6.0 下一阶段收口 + Agent 第一批（待评审） |
+
 ## L3 决策与记录
 
 ### design/：技术设计
@@ -101,6 +109,7 @@ flowchart TB
 |---|---|
 | [editing-design.md](design/editing-design.md) | 编辑能力技术总纲：EditDoc / src-ovr / 补丁保存 / 三层视图（D1–D14 决策） |
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
+| [0.6.0.md](design/0.6.0.md) | 0.6.0 实施编排、决策与风险（对应 [PRD](product/0.6.0.md)，待评审） |
 
 ### ux/：界面设计与验收
 
