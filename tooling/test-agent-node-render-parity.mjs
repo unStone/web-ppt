@@ -21,6 +21,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import WebSocket from 'ws';
 import { countedAssert } from './lib/counted-assert.mjs';
 import { fontSample } from './lib/font-glyph-samples.mjs';
 import { waitForDevToolsPort } from './lib/chrome-devtools-launch.mjs';
@@ -125,7 +126,7 @@ try {
     const id = ++serial;
     const timer = setTimeout(() => reject(new Error(`Chrome DevTools ${method} 请求超时`)), 180_000);
     const onMessage = (event) => {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data.toString());
       if (message.id !== id) return;
       clearTimeout(timer);
       socket.removeEventListener('message', onMessage);
@@ -143,7 +144,7 @@ try {
   };
   await new Promise((resolve) => {
     socket.addEventListener('message', (event) => {
-      if (JSON.parse(event.data).method === 'Page.loadEventFired') resolve();
+      if (JSON.parse(event.data.toString()).method === 'Page.loadEventFired') resolve();
     });
     void request('Page.enable');
     void request('Page.navigate', { url: `http://127.0.0.1:${port}/parity.html` });
