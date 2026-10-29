@@ -93,10 +93,10 @@ Image ZIP, printable HTML, Worker parsing, media playback and driving `Presentat
 
 ### Edit
 
-Editing is on the beta line; install the whole stack from the same `next` version:
+Editing is stable as of 0.5.0; install the whole stack from the same version:
 
 ```bash
-npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
+npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
 ```
 
 ```ts
@@ -127,13 +127,13 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 135.31 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 136.05 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 185.70 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 59.27 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 12.20 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.34 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 13.99 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 14.09 KB |
 | [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 3.44 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.

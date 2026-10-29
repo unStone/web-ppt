@@ -93,10 +93,10 @@ const svg = await slideToSvgFile(pres, pres.slides[0]);
 
 ### 编辑
 
-编辑能力在 beta 线，整套依赖必须使用同一 `next` 版本：
+编辑能力自 0.5.0 起稳定，整套依赖必须使用同一版本：
 
 ```bash
-npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
+npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
 ```
 
 ```ts
@@ -127,13 +127,13 @@ session.dispose();
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 135.31KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 136.05KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 185.70KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 59.27KB |
 | [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 12.20KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 13.99KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 14.09KB |
 | [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 3.44KB |
 
 体积按默认入口及全部相对静态分块逐文件 gzip 求和，不含 peer 与动态入口。

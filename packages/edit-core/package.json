@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/edit-core",
-  "version": "0.5.0-beta.7",
+  "version": "0.5.0",
   "description": "Headless, framework-agnostic editing document model and render projection for Web-PPT.",
   "keywords": [
     "pptx",
@@ -104,9 +104,15 @@
       "import": "./dist/describe.js"
     },
     "./describe/schema.json": "./schemas/describe.schema.json",
-    "./lint": { "types": "./dist/lint/index.d.ts", "import": "./dist/lint.js" },
+    "./lint": {
+      "types": "./dist/lint/index.d.ts",
+      "import": "./dist/lint.js"
+    },
     "./lint/schema.json": "./schemas/lint.schema.json",
-    "./lint/sampler": { "types": "./dist/lint/sampler.d.ts", "import": "./dist/lint-sampler.js" },
+    "./lint/sampler": {
+      "types": "./dist/lint/sampler.d.ts",
+      "import": "./dist/lint-sampler.js"
+    },
     "./ppt": {
       "types": "./dist/ppt/index.d.ts",
       "import": "./dist/ppt.js"
@@ -126,7 +132,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.5.0-beta.7"
+    "@web-ppt/core": "^0.5.0"
   },
   "dependencies": {
     "culori": "^4.0.2",

@@ -6,11 +6,11 @@
 
 ## 安装
 
-编辑能力当前在 beta 线，整套依赖必须使用相同的 `next` 版本，避免与稳定查看包混装：
+编辑能力自 0.5.0 起稳定，整套依赖必须使用相同版本：
 
 ```bash
-npm i @web-ppt/core@next @web-ppt/edit-core@next @web-ppt/viewer-core@next @web-ppt/editor@next
-# React / Vue 项目再安装 @web-ppt/react@next react 或 @web-ppt/vue@next vue
+npm i @web-ppt/core @web-ppt/edit-core @web-ppt/viewer-core @web-ppt/editor
+# React / Vue 项目再安装 @web-ppt/react react 或 @web-ppt/vue vue
 ```
 
 ## 打开与挂载

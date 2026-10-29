@@ -216,7 +216,8 @@ for (const [file, pattern] of [
 
 // 官网：版本号与首屏那几个大字最容易被忘掉，JSON-LD 的 softwareVersion 已经修过一次。
 const siteHtml = read('packages/site/index.html');
-const latestStable = /^## (\d+\.\d+\.\d+)$/m.exec(read('CHANGELOG.md'))?.[1] ?? '';
+// 稳定版与 beta 条目标题统一带日期；prerelease 后缀（-beta.N）不匹配 \d 组，天然不会当最新稳定版。
+const latestStable = /^## (\d+\.\d+\.\d+)(?: - .*)?$/m.exec(read('CHANGELOG.md'))?.[1] ?? '';
 const declaredVersion = /"softwareVersion":\s*"([^"]+)"/.exec(siteHtml)?.[1];
 check(`官网 JSON-LD 声明版本 ${declaredVersion}`, declaredVersion === latestStable,
   `CHANGELOG 最新稳定版是 ${latestStable}`);
