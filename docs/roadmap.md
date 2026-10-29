@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-10-22，基线 `9ac631d`，当前包版本 `0.5.0-beta.6`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-10-29，基线 `2324164`，当前包版本 `0.5.0-beta.7`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径，以及面向 AI Agent 的下一阶段（依据见 [AI 与演示文稿调研](research/ai-presentation-landscape.md)）。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -248,11 +248,11 @@ flowchart LR
 
 | 优先级 | 内容 | 当前状态 |
 |---|---|---|
-| P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 组合外框映射、定时音频、英语撇号已修复；附件复验中的楔形标注方向、fontRef 白字、仅 svgBlip 图标、音频封面点击播放已修复，等线西文改为按 PowerPoint 实测缩放的 Arial 度量合成字族（粗体 95.4%、下划线 74.6%），附件断行与原图一致；待发布给报告者复测 |
+| P0 | 外部用户报告的渲染缺陷：组内形状缩放与位置错误（[#7](https://github.com/unStone/web-ppt/issues/7)）、英文撇号被标点挤压与文字溢出（[#8](https://github.com/unStone/web-ppt/issues/8)） | 组合外框映射、定时音频、英语撇号已修复；附件复验中的楔形标注方向、fontRef 白字、仅 svgBlip 图标、音频封面点击播放已修复，等线西文改为按 PowerPoint 实测缩放的 Arial 度量合成字族（粗体 95.4%、下划线 74.6%），附件断行与原图一致；已随 `0.5.0-beta.7` 发布，待报告者复测 |
 | P0 | 收口进行中票据：矢量 PDF（005）、音轨验收证据（006）、内嵌视频合成（007） | 005 实验性入口已发布；006 已随 beta.6 发布；007 失败告警已补 |
 | P1 | Agent 读写接口第一批：结构化读出、布局检查、无 Office 渲染 | 001 结构化读出与 002 布局检查已完成；003 Node 渲染处于前沿 |
 | P2 | Agent 读写接口第二批：命令工具面、MCP server 与 Agent Skill | 依赖第一批 |
-| P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充依赖命令工具面；旧 PPT 外观写入（012）与 SmartArt matrix / radial（013）已完成，OLE 014 / 015 待补官网入口与外部读取，其余长尾格式先调查真实样本 |
+| P3 | 模板填充生成；编辑器 WebMCP；SmartArt/OLE、高级渲染、原生 PPT 的增量能力 | 模板填充与 WebMCP 依赖命令工具面；旧 PPT 外观写入（012）与 SmartArt matrix / radial（013）已完成，OLE 014 / 015 待补官网入口与外部读取；008 / 009 已登记外部语料样本与完成步骤，可立即开始 |
 | P4 | Agent 任务评测集 | 依赖第二批 |
 
 内容流转、PDF 与音视频的范围、依赖和共同验收条件见[下一阶段执行计划](wayfinder/ppt-portability-fidelity/plan.md)。

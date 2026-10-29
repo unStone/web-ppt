@@ -36,7 +36,7 @@ SmartArt/OLE、高级渲染和旧 PPT。每项交付都有明确支持矩阵、�
 - [007 内嵌视频合成](tickets/007-video-media-composition.md)进行中：`videoOverlay` 以 `<video>` seek 叠加当前帧的首个切片已提交；解封装、裁剪 / 变换、循环与音画同步验收待完成。
 - 已完成[旧 PPT 外观写入](tickets/012-legacy-ppt-appearance-write.md)：首尾两色线性渐变、预设虚线、默认尺寸箭头、图片矩形裁剪与形状名原生写入；读取侧按 fillAngle 符号与 fillFocus 还原首尾色并读取裁剪。LibreOffice 双向对照一致；图案填充没有可写的预设记录，继续拒绝。调查票 [010](tickets/010-legacy-ppt-scope.md) 随之关闭。
 - 已完成[SmartArt matrix1 / radial1 验收](tickets/013-smartart-matrix-radial.md)：两种布局的确定性固件、解析结构、改字 / 增删后 DiagramML 与 drawing 一致。
-- [OLE DOCX run 与表格](tickets/014-ole-docx-runs-tables.md)、[OLE XLSX 样式与富文本](tickets/015-ole-xlsx-styles-richtext.md)进行中：模型、SDK 与契约已完成；官网面板入口和外部读取器验证待补。调查票 [008](tickets/008-native-object-scope.md) 等待真实 Office 样本。
+- [OLE DOCX run 与表格](tickets/014-ole-docx-runs-tables.md)、[OLE XLSX 样式与富文本](tickets/015-ole-xlsx-styles-richtext.md)进行中：模型、SDK 与契约已完成；官网面板入口和外部读取器验证待补。调查票 [008](tickets/008-native-object-scope.md) 已从 POI 语料登记 PowerPoint 存出的 SmartArt 与嵌入 Word 样本，matrix / radial / 组织结构图与嵌入 `.xlsx` 仍缺。
 - 用户再次指出的产品外壳 Cordis 方案已补齐[文稿、打开、新建、恢复、文件、业务工具与页面服务](../../design/cordis-editor.md)，视口、模式、导航、历史按钮和页面状态由同一应用持有，发布 SDK 保持无框架。页面生命周期专项、双轴复审及三张生产页面完整中英文回归通过；首次性能失败经隔离复测后，最终四项仓库门禁按原预算全部通过。此项补回原约定，不替代本地图 001–010 的范围。
 
 ## Not yet specified

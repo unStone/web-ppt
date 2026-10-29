@@ -38,3 +38,25 @@ blocked_by: []
 | PowerPoint 存出的 matrix / radial / 带 constrLst 的组织结构图 | 核对布局族边界，以及仅改字时能否保留缓存 |
 | 嵌入 Word（表格、多 run 粗斜体） | DOCX 改写后由 Word / LibreOffice 打开验证 |
 | 嵌入 Excel（样式、富文本、普通公式） | XLSX 改写后由 Excel / LibreOffice 打开验证 |
+
+## 样本获取路径
+
+Windows 真机暂缓期间，样本先从已钉住来源的公开测试语料获取。语料只作为本地测试输入，放在 `corpus/`（已 gitignore），来源与 git blob SHA1 登记在 `fixtures/corpus.json`，不入库、不分发。2026-10-19 扫描本地 POI 语料（`apache/poi@29c9cac` 的 `test-data/slideshow`）的结果如下，生成程序取自 `docProps/app.xml`：
+
+| 用途 | 已有真实样本 | 生成程序 | 仍缺 |
+|---|---|---|---|
+| SmartArt 线性 / 层级布局族 | `60810.pptx`（vList5、lProcess2、hProcess9）、`customGeo.pptx`（hierarchy4、hList1）、`ae.ac.uaeu.faculty_nafaachbili_GeomLec1.pptx`（vList3）、`SmartArt.pptx`（default）、`smartart-simple.pptx`（venn1）、`smartart-rotated-text.pptx`（AlternatingHexagons） | PowerPoint 12 / 14 / 16（Windows 与 Mac） | matrix、radial、带 constrLst 的组织结构图 |
+| 嵌入 Word | `bug62513.pptx`：5 个 DOCX，其中 1 个含表格，粗体 run 13–84 处，1 个含斜体 run | PowerPoint 14 | — |
+| 嵌入 Excel | 仅 `aascu.org_workarea_downloadasset.aspx_id=5864.pptx` 的 `.xls`（旧二进制格式，不在 015 范围） | PowerPoint 12 | PowerPoint 存出的嵌入 `.xlsx` |
+
+缺口的下一个来源是 LibreOffice 测试语料 `sd/qa/unit/data/pptx`，其中有 `tdf145528_SmartArt_Matrix.pptx`、`smartart-cycle-matrix.pptx`、`smartart-org-chart.pptx`、`smartart-org-chart2.pptx`、`smartart-snake-rows.pptx`、`ole.pptx`。这些文件不一定由 PowerPoint 存出：加入 `fixtures/corpus.json` 前逐个核对 `docProps/app.xml`，只有 PowerPoint 生成的文件计为真实 Office 样本。
+
+## 完成本票的步骤
+
+| 顺序 | 动作 | 产出 |
+|---|---|---|
+| 1 | 把核对通过的 LibreOffice 样本作为新语料集登记进 `fixtures/corpus.json`（上表 POI 样本已在清单中） | 来源、提交、SHA1 |
+| 2 | 对每个样本记录现状：两条文字路径截图、解析得到的布局族，以及仅改字后 drawing 缓存是否保留 | 本票 Answer 中的逐样本矩阵 |
+| 3 | 用 `bug62513.pptx` 的 DOCX 验证 014：改 run 与表格单元格后由 LibreOffice 打开 | 014 的外部读取证据 |
+| 4 | 嵌入 `.xlsx` 仍无 PowerPoint 样本时，015 的外部读取证据登记为缺失，不用合成文件代替 | 015 的边界说明 |
+| 5 | 按矩阵把已有实现能覆盖的样本记为支持，其余登记为后续候选或排除原因 | 关闭本票 |
