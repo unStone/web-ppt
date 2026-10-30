@@ -65,12 +65,19 @@ const savedBytes = await editor.save();
 writeFileSync(join(out, 'edited.pptx'), Buffer.from(savedBytes));
 
 // ---------------- 重组改写后的嵌入文档 ----------------
+// [Content_Types].xml 排首 + 默认压缩：CI 的旧版 LibreOffice 对 store 模式或
+// 乱序条目的 OOXML 包会报 source file could not be loaded。
+function rezip(parts) {
+  const ordered = { '[Content_Types].xml': parts['[Content_Types].xml'] };
+  for (const key of Object.keys(parts).sort()) if (key !== '[Content_Types].xml') ordered[key] = parts[key];
+  return zipSync(ordered, { level: 6 });
+}
 const documents = [];
 for (const item of ole.listEditableOle(editor.doc)) {
   const pkg = ole.readEmbeddedPackage(api.exportContent(item.id));
   assert.ok(pkg, `嵌入对象 ${item.id} 可解出原生文档`);
   const file = join(out, `embedded-${item.id}.${pkg.kind}`);
-  writeFileSync(file, zipSync(pkg.parts, { level: 0 }));
+  writeFileSync(file, rezip(pkg.parts));
   documents.push({ kind: pkg.kind, file });
 }
 assert.ok(documents.some((d) => d.kind === 'docx') && documents.some((d) => d.kind === 'xlsx'), '两类嵌入文档都重组成功');
