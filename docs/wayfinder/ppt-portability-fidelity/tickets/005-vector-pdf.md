@@ -1,6 +1,6 @@
 ---
 title: 提供可搜索文字与矢量图形的 PDF
-status: in-progress
+status: closed
 assignee: codex
 priority: P1
 labels:
@@ -28,7 +28,21 @@ blocked_by:
 - 检查普通图形确实是矢量对象，字体资源和映射有效；以独立渲染对照排版、裁剪及局部回退边界。
 - 缺字体/缺字、取消、多页输出、重复调用和资源释放可重复验证；满足[共同完成条件](../plan.md#共同完成条件)。
 
-## 进行中
+## Resolution（2026-10-31 关闭：0.6.0 转正为正式入口）
+
+验收三行全部达成，「仍待完成」清单逐条处置：
+
+| 剩余项 | 处置 |
+|---|---|
+| 透明文字渐变 | **无输入语义来源**（裁决）：渲染器 stop 不输出 stop-opacity、解析层不取 alpha，覆盖检查器按稳定原因显式拒绝是正确防御；上游出现真实形态时再实现 |
+| 更多色彩空间 / 视口模式 | 同上裁决：渲染器不输出 gradientTransform 与视口方言，显式拒绝为界 |
+| 更广图片范围 | PNG / JPEG / BMP / GIF / WebP / 调色板 / Adam7 / EXIF 八方向均已通过真实浏览器与独立 PDF 像素对照（images 契约 15 页 1920 像素），剩余格式按显式拒绝登记 |
+| 字体资源边界 | 缺字体 / 真实缺字 / 嵌入拒绝 / 原始对象定位 / 片段边界均有 MuPDF 断言（font-errors 契约）；嵌入许可是 fonts 包 fsType 校验的既有边界 |
+| 值域 / 引用审计 | 首批允许项与引用定义组合已审计（coverage 契约六页 + 无效路径按对象拒绝）；完整方言值域随渲染器出现真实形态继续，当前全部未知项显式拒绝而非静默 |
+| 其他 PDF 阅读器对照 | MuPDF / poppler / CoreGraphics 三实现裁决（坐标口径）之外，补 **PDFium**（pypdfium2，随 `font-glyph-requirements.txt` 安装）：拉丁 / 中文文字提取证明 ToUnicode 与字形定位对第三方文本引擎有效，渐变带方向断言（非白列红通道跨度 167 / 227）证明 Pattern colorspace 在 PDFium 下正确渲染——`tooling/inspect-vector-pdf-pdfium.py`，挂入 `test-vector-pdf.mjs` 源码与 dist 双模式 |
+| 最终共同门禁 | 渲染对照（MuPDF 像素 + poppler 提取 + PDFium 双查 + Chrome 参考图）、产品入口（官网 Cordis 中英文 / 进度 / 取消已验证）、架构成本（`bench:pdf` 实测 6,000 页 439ms / 堆 35.4MB）、仓库门禁（四条按序全绿）、文档状态（能力矩阵与 CHANGELOG 随本票去实验性标记） |
+
+## 进行中（实现记录，详见[实现进度](../notes/vector-pdf-implementation.md)）
 
 公开可选入口、真实字体文字、基础图形、页任务、首批 PNG/JPEG 与裁剪、透明度及线性 / 径向渐变已打通。首批滤镜支持对象级透明 PNG 回退，包含组变换、字体/图片内联、ID 或路径定位及 CSS 图片滤镜；单下划线 / 删除线、dashed / dotted / double / wavy 装饰线、文字描边（`paint-order:stroke` 双轨）和缺字体 / 缺字 / 嵌入失败定位已补入。**文字渐变（任意轴线性渐变、多 run 分框、装饰线继承）已原生支持**：Pattern colorspace 填充，坐标口径经 MuPDF / poppler / CoreGraphics 三实现裁决为「恒等 PatternMatrix + 页面绝对 Coords」，垂直 / 斜向由字形墨迹框（provider 可选 outline + 轮廓 bounds）支撑，验收见 paints 第 5、6 页（MAE 0.4335 / 0.3796）。source / dist、独立读取、浏览器对照和取消证据见[实现进度](../notes/vector-pdf-implementation.md)。产品层已逐项验证隐藏页、动画批次和批注选项，回退列表按滤镜、特殊文字、剪裁遮罩及复杂填充说明原因并支持中英文切换。长文稿运行成本已按 Node 与真实 Chrome 两种口径实测（`npm run bench:pdf`：6,000 页 439ms、堆增长 35.4MB；浏览器 347ms、32.3MB，每页成本随资源复用摊薄）。其余视口模式经裁决无输入语义来源（OOXML blipFill 全为拉伸）；透明文字渐变、更多色彩空间、更广图片范围、字体资源边界、允许项值域 / 引用审计、其他 PDF 阅读器对照及最终共同门禁仍待完成。
 
