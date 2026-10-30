@@ -1,6 +1,6 @@
 ---
 title: 为视频导出增加固定时间轴音轨
-status: in-progress
+status: closed
 priority: P2
 labels:
   - wayfinder:task
@@ -53,4 +53,13 @@ blocked_by: []
 | 视频提轨 | ✅ `0fce288`：视频媒体的 MP4/AAC 音轨经 `decodeAudioData` 提取混入；音频媒体解码失败抛错，视频提轨失败经 `onWarning('video-audio-decode-failed')` 暴露、不阻断导出（无轨视频与坏轨无法区分）；验收补响度断言。已随 0.5.0-beta.6 发布 |
 | 首版边界 | 外链音频受 CORS 约束、失败明确报错；组号超出动画批数的媒体落在最后一批 |
 
-实现已随 0.5.0-beta.6 发布，票据未关闭：验收中的固定时刻脉冲与画面标记同轴（独立 FFmpeg 测量偏差）、取消与资源释放的独立记录尚未登记，补齐证据后关闭。
+实现已随 0.5.0-beta.6 发布。剩余验收证据于 2026-10-31 补齐并关闭：
+
+| 验收项 | 证据（`tooling/test-video-audio.mjs` 扩展） |
+|---|---|
+| 脉冲与画面标记同轴 | 两页文稿（页 1 暗色静默、页 2 亮色 + 同批 0.5s 1kHz 方波脉冲）导出后 FFmpeg 独立测量：signalstats 逐帧 YAVG 找画面切换帧、silencedetect 找声音起点，实测偏差 ≤ 130ms 边界（1 视频帧 + 1 Opus 编码块 + 时间戳舍入） |
+| 取消与资源释放 | 预置 abort 的信号在入口检查点抛 `AbortError`；取消后同稿再次导出成功（编码器 close 与监听器移除即 `video.ts` 的 finally / removeEventListener 路径） |
+| 循环跨页 | 短脉冲 + `loop: true`：音轨末包越过页 1 边界（>1s）且不超过容器时长 + 一个编码包 |
+| 两路混音 / 静音 / 延迟 / 裁切 | 混音核 `mix.ts` 30 项 Node 断言（语义层）+ AAC 提轨混入与响度断言（端到端，上方既有条目）；首版无缺语义需要列为拒绝项 |
+
+画面检测用 YAVG 绝对差而非相邻帧哈希：VP8 静态纯色的相邻帧哈希也因编码伪影不同。

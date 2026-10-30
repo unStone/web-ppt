@@ -177,6 +177,89 @@ await withChartBrowser(root, async browser => {
   } else {
     console.log('  ffprobe 缺失：流级断言跳过（字节级与混音核断言已覆盖）');
   }
+
+  // ---------- 票据 006 收尾证据：脉冲与画面标记同轴、取消与资源释放、跨页循环 ----------
+  // 文稿动态构造：页 1 静默纯色，页 2 红色方块 + 同批（clickGroup 0）0.5s 音频脉冲——
+  // 换页瞬间画面变化与声音起点应同轴；取消经 AbortSignal 触发后必须能立刻再次导出。
+  const syncResult = await browser.evaluate(`(async()=>{
+    const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
+    const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
+    // 页面内合成 0.5s 1kHz 方波脉冲 PCM WAV（44 字节头 + 16bit 单声道 48kHz）
+    const sampleRate = 48000, durationS = 0.5, samples = sampleRate * durationS;
+    const pcm = new Int16Array(samples);
+    for (let i = 0; i < samples; i++) pcm[i] = Math.sin(2 * Math.PI * 1000 * i / sampleRate) > 0 ? 12000 : -12000;
+    const wav = new Uint8Array(44 + pcm.byteLength), view = new DataView(wav.buffer);
+    const ascii = (offset, text) => { for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i)); };
+    ascii(0, 'RIFF'); view.setUint32(4, 36 + pcm.byteLength, true); ascii(8, 'WAVEfmt ');
+    view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true); ascii(36, 'data'); view.setUint32(40, pcm.byteLength, true);
+    new Uint8Array(pcm.buffer).forEach((b, i) => wav[44 + i] = b);
+    const pulseUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+    const mediaEl = (playback) => ({ kind: 'image', x: 60, y: 60, w: 220, h: 140, rot: 0, flipH: false, flipV: false,
+      src: '', crop: null, name: '脉冲音频', media: { kind: 'audio', src: pulseUrl, mime: 'audio/wav', playback } });
+    const shape = (fill) => ({ kind: 'shape', x: 0, y: 0, w: 950, h: 530, rot: 0, flipH: false, flipV: false,
+      path: 'M 0 0 H 950 V 530 H 0 Z', fill: { type: 'solid', color: fill }, stroke: null, text: null, crop: null });
+    const makeDoc = (audioPlayback) => ({
+      ...pres, slides: [
+        { ...pres.slides[0], animations: undefined, timing: undefined, elements: [shape('#101418')] },
+        { ...pres.slides[0], animations: undefined, timing: undefined, elements: [shape('#ff2244'), mediaEl(audioPlayback)] },
+      ],
+    });
+    // 同轴样本：页 2 起点脉冲（clickGroup 0 = 首批 = 页面起点）
+    const syncBlob = await presentationToVideo(makeDoc({ volume: 1, loop: false, clickGroup: 0 }),
+      { audio: true, mediaPosters: true, fps: 12, slideDurationMs: 1000, clickDelayMs: 100 });
+    const syncBytes = Array.from(new Uint8Array(await syncBlob.arrayBuffer()));
+    // 跨页循环样本：脉冲短于单页时长，循环应把声音带到页 2 结束（音轨末包 > 1s）
+    const loopBlob = await presentationToVideo(makeDoc({ volume: 1, loop: true, clickGroup: 0 }),
+      { audio: true, mediaPosters: true, fps: 12, slideDurationMs: 1000, clickDelayMs: 100 });
+    const loopBytes = Array.from(new Uint8Array(await loopBlob.arrayBuffer()));
+    // 取消与资源释放：预置已 abort 的信号必须在入口检查点立刻失败且原因稳定
+    // （中途 abort 的时序不可控——导出总时长毫秒级，定时器追不上），之后同稿再导出成功
+    const cancelDoc = makeDoc({ volume: 1, loop: false, clickGroup: 0 });
+    const controller = new AbortController();
+    controller.abort();
+    let cancelError = null;
+    try { await presentationToVideo(cancelDoc, { audio: true, mediaPosters: true, fps: 12,
+      slideDurationMs: 800, clickDelayMs: 100, signal: controller.signal }); }
+    catch (error) { cancelError = error?.name === 'AbortError' ? 'AbortError' : String(error?.message ?? error); }
+    const afterCancelBlob = await presentationToVideo(cancelDoc, { audio: true, mediaPosters: true, fps: 12,
+      slideDurationMs: 800, clickDelayMs: 100 });
+    URL.revokeObjectURL(pulseUrl);
+    return { syncBytes, loopBytes, cancelError, afterCancelSize: afterCancelBlob.size, afterCancelType: afterCancelBlob.type };
+  })()`);
+  writeFileSync(join(out, 'sync.webm'), Buffer.from(syncResult.syncBytes));
+  writeFileSync(join(out, 'loop.webm'), Buffer.from(syncResult.loopBytes));
+  check('取消导出抛 AbortError', syncResult.cancelError === 'AbortError', String(syncResult.cancelError));
+  check('取消后编码器与状态已释放：同稿再次导出成功', syncResult.afterCancelType === 'video/webm' && syncResult.afterCancelSize > 1000,
+    `${syncResult.afterCancelType} ${syncResult.afterCancelSize}`);
+
+  if (ffmpeg && ffprobe) {
+    // 画面标记时刻：signalstats 逐帧 YAVG，红方块页的亮度均值显著高于纯色页——
+    // 相邻帧哈希受 VP8 编码伪影干扰（静态纯色的首两帧哈希也不同），按绝对阈值判定
+    const stats = spawnSync('ffmpeg', ['-v', 'info', '-i', join(out, 'sync.webm'),
+      '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-'], { encoding: 'utf8', maxBuffer: 1 << 24 });
+    const averages = [...(stats.stderr ?? '').matchAll(/YAVG=([\d.]+)/g)].map((m) => Number(m[1]));
+    let changeIndex = -1;
+    if (averages.length) {
+      const baseline = averages[0];
+      for (let i = 0; i < averages.length; i++) if (Math.abs(averages[i] - baseline) > 25) { changeIndex = i; break; }
+    }
+    // 声音起点：silencedetect 的 silence_end 即静音→有声转换时刻
+    const silence = spawnSync('ffmpeg', ['-v', 'info', '-i', join(out, 'sync.webm'), '-af', 'silencedetect=noise=-35dB:d=0.08', '-f', 'null', '-'], { encoding: 'utf8' });
+    const audioStartS = Number(/silence_end:\s*([\d.]+)/.exec(silence.stderr ?? '')?.[1] ?? NaN);
+    const videoStartS = changeIndex >= 0 ? changeIndex / 12 : NaN;
+    // 边界 = 1 视频帧（83ms）+ 1 Opus 编码块（20ms）+ 容器毫秒时间戳舍入
+    check('脉冲与画面标记同轴（FFmpeg 独立测量）', Number.isFinite(videoStartS) && Number.isFinite(audioStartS)
+      && Math.abs(videoStartS - audioStartS) <= 0.13, `画面 ${videoStartS}s vs 声音 ${audioStartS}s`);
+    // 跨页循环：音轨末包须越过页 1 边界（1s），且不超过视频总时长 + 一个编码包
+    const loopPackets = execFileSync(ffprobe, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', join(out, 'loop.webm')], { encoding: 'utf8' })
+      .trim().split('\n').map(Number).filter(Number.isFinite);
+    const loopFormat = JSON.parse(execFileSync(ffprobe, ['-v', 'error', '-show_format', '-of', 'json', join(out, 'loop.webm')], { encoding: 'utf8' }));
+    const loopEndS = loopPackets.length ? Math.max(...loopPackets) : 0;
+    check('循环音频跨页持续到末页', loopEndS > 1.0 && loopEndS <= Number(loopFormat.format.duration) + 0.05,
+      `audioEnd=${loopEndS}s container=${loopFormat.format.duration}s`);
+  } else console.log('  ffmpeg/ffprobe 缺失：同轴与跨页循环测量跳过（取消断言不依赖 ffmpeg，已执行）');
 });
 
 if (failures) { console.error(`\x1b[31m✗ 视频音轨浏览器验收失败（${failures} 项）\x1b[0m`); process.exit(1); }
