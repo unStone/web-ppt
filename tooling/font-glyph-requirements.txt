@@ -3,3 +3,4 @@ brotli==1.2.0
 zopfli==0.4.3
 pymupdf==1.26.7
 pypdfium2==5.14.0
+pillow==10.4.0
