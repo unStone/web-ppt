@@ -1,6 +1,6 @@
 ---
 title: 实现 OLE 嵌入 XLSX 的单元格样式与 sharedStrings 富文本
-status: in-progress
+status: closed
 priority: P3
 labels:
   - wayfinder:task
@@ -24,4 +24,9 @@ blocked_by: []
 | SDK | `setCellStyle` 优先复用相同的 font / fill / border / xf，否则追加；`setCellRichText` 追加 `<si><r>…` 并设 `t="s"`，传 `null` 时去掉格式、保留文字 |
 | 写入约束 | 新写入的颜色是 4 字节 ARGB；新建 styles / sharedStrings 关系时 Id 不与既有关系冲突 |
 | 契约 | `tooling/test-ole-edit.mjs`：读取样式与富文本、写入后查询结果逐字段一致、去富文本保留文字、保存重开与恢复一致 |
-| 待完成 | 官网嵌入对象面板的样式与富文本入口及中英文文案；外部读取器（LibreOffice / Excel）打开改写后工作簿的验证 |
+| 官网样式与富文本入口 | ✅ 嵌入对象面板新增选定单元格的样式表单（字体 / 填充 / 边框，空字段保持原值、颜色须为六位十六进制）与富文本表单（片段文字 + 粗斜体下划线 + 颜色），中英文文案齐全；浏览器契约覆盖应用、撤销（值不受影响）与英文文案 |
+| 外部读取器验证 | ✅ `tooling/test-ole-edit-libreoffice.mjs`：改写后的 XLSX 经 LibreOffice 打开（fods 断言富文本文字）并重写往返（styles.xml 颜色与 sharedStrings 的 run 边界保留） |
+
+## Resolution（2026-10-30 关闭）
+
+全部完成条件满足：SDK（`setCellStyle` / `setCellRichText`）+ 官网面板样式与富文本入口（含中英文与撤销语义）+ LibreOffice 外部打开与重写往返验证。`readEmbeddedPackage` 随本票从 `@web-ppt/edit-core/ole` 公开导出，供宿主提取嵌入文档做外部验证。

@@ -60,6 +60,10 @@ jobs:
         # 共用唯一清单，避免两套真实软件门禁的验收范围分叉。
         run: node tooling/test-v07-libreoffice-all.mjs
 
+      - name: OLE 嵌入文档外部打开测试
+        # 嵌入 DOCX/XLSX 改写后由 LibreOffice 打开核对（票据 014 / 015 的外部读取器验收）
+        run: node tooling/test-ole-edit-libreoffice.mjs
+
       - name: 编辑性能预算
         continue-on-error: true
         run: npm run bench:edit

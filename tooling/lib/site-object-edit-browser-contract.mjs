@@ -42,12 +42,47 @@ export async function runSiteObjectEditBrowserContract(context) {
   await waitFor(`!!document.querySelector('${ole} textarea')`, 'OLE 文档内部工具');
   await changeValue(context, `${ole} textarea`, '浏览器修改的嵌入标题');
   await waitFor(`document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`, 'OLE 文档段落编辑');
+  // 014：run 级编辑——只改一个片段，段落里其余片段不动
+  await waitFor(`document.querySelectorAll('${ole} .ole-run input').length >= 2`, 'OLE 文档 run 级工具');
+  const runBefore = await evaluate(`document.querySelector('${ole} .ole-run input')?.value`);
+  await changeValue(context, `${ole} .ole-run input`, '片段级改字');
+  await waitFor(`document.querySelector('${ole} .ole-run input')?.value === '片段级改字'`, 'OLE run 级编辑生效');
+  await click('#undo');
+  await waitFor(`document.querySelector('${ole} .ole-run input')?.value === ${JSON.stringify(runBefore)} && document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`,
+    'run 级撤销只回退片段，整段替换保留');
+  await click('#redo');
+  await waitFor(`document.querySelector('${ole} .ole-run input')?.value === '片段级改字'`, 'OLE run 级重做');
   await captureSaveAndReopen(context, 'ole-edit-reopened.pptx');
   await selectPaneObject(context, 'Object 21');
   await waitFor(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.value === '6789'`, 'OLE 工作簿保存重开');
   await click('#slideList [data-slide-id]:nth-child(2)');
   await selectPaneObject(context, 'Object 22');
-  await waitFor(`document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`, 'OLE 文档保存重开');
+  await waitFor(`document.querySelector('${ole} .ole-run input')?.value === '片段级改字'`, 'OLE run 级保存重开');
+  // 015：单元格样式与富文本入口（选中 B2 后操作，含英文文案与撤销）
+  await click('#slideList [data-slide-id]:nth-child(1)');
+  await selectPaneObject(context, 'Object 21');
+  await waitFor(`!!document.querySelector('${ole} [aria-label="营业数据 B2"]')`, 'OLE 工作簿再次就绪');
+  await evaluate(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.focus()`);
+  await waitFor(`document.querySelector('${ole} .ole-style') !== null`, '样式与富文本表单在场');
+  await evaluate(`(() => { const form = document.querySelector('${ole} .ole-style'); const color = form.querySelector('[aria-label="填充颜色"]'); color.value = 'e2efda'; [...form.querySelectorAll('button')].find((n) => n.textContent === '应用样式').click(); })()`);
+  await click('#undo');
+  await waitFor(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.value === '6789'`, '样式命令撤销后单元格值不受影响');
+  await click('[data-site-locale="en"]');
+  await waitFor(`[...document.querySelectorAll('${ole} .ole-style button')].some((n) => n.textContent === 'Apply style')`, '样式表单英文文案');
+  await click('[data-site-locale="zh-CN"]');
+  await evaluate(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.focus()`);
+  await evaluate(`(() => {
+    const rich = document.querySelector('${ole} .ole-rich');
+    rich.querySelector('input[aria-label="富文本片段文字"]').value = '富文本一';
+    [...rich.querySelectorAll('button')].find((n) => n.textContent === '添加片段').click();
+  })()`);
+  await evaluate(`(() => {
+    const rich = document.querySelector('${ole} .ole-rich');
+    rich.querySelectorAll(':scope > div > div:nth-of-type(2) > input')[0].value = '富文本二';
+    [...rich.querySelectorAll('button')].find((n) => n.textContent === '设为富文本').click();
+  })()`);
+  await click('#undo');
+  await waitFor(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.value === '6789'`, '富文本命令撤销后单元格值不受影响');
   await openFixture(context, '/fixtures/sample-ink-edit.pptx', 'ink-edit-ui.pptx');
   await selectPaneObject(context, '墨迹 1');
   const ink = '[data-ink-editor]';

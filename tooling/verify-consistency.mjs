@@ -230,7 +230,7 @@ if (!siteStat) {
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
-    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity',
+    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -341,6 +341,8 @@ if (!counts) {
     ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /Agent Node 双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
     ['AGENTS.md', /双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
+    ['docs/engineering/testing.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
+    ['AGENTS.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
     ['docs/engineering/testing.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['docs/engineering/testing.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],

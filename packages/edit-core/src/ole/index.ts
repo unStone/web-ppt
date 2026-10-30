@@ -11,6 +11,8 @@ export type {
   OleSheet, OleParagraph, OleContent, OleEdits,
 } from './content';
 export { cellPosition } from './content';
+// 宿主从嵌入容器字节解出原生文档（parts + kind），用于外部读取器验证或导出下载
+export { readEmbeddedPackage } from './container';
 export function queryOleContent(doc: EditDoc, id: ElementId) { return oleState(doc, id).content; }
 export function listEditableOle(doc: EditDoc) {
   return Object.values(doc.elements).filter((record) => objectSource(doc, record.id, OLE)).flatMap((record) => {
