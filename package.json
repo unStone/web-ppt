@@ -24,6 +24,7 @@
     "test": "npm run test:functional && npm run test:editor:performance",
     "test:media": "node tooling/test-media-insertion.mjs",
     "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
+    "test:ole:libreoffice": "node tooling/test-ole-edit.mjs && node tooling/test-ole-edit-libreoffice.mjs",
     "test:core": "node tooling/test-core.mjs && node tooling/test-parse-preview-parts.mjs",
     "test:edit": "node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-chart-data.mjs && node tooling/test-edit-powerpoint-report.mjs && node tooling/test-edit-equivalence.mjs",
     "test:edit:save": "node tooling/test-edit-save.mjs",

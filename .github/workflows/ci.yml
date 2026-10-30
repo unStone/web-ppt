@@ -40,7 +40,9 @@ jobs:
 
       - name: 安装 LibreOffice 与中文字体
         # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
+        # writer / calc 是 OLE 嵌入文档外部打开测试的导入 filter——只装 impress 时
+        # soffice 对 .docx/.xlsx 报 "source file could not be loaded"。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
@@ -59,6 +61,10 @@ jobs:
       - name: 0.7 统一清单外部打开测试
         # 共用唯一清单，避免两套真实软件门禁的验收范围分叉。
         run: node tooling/test-v07-libreoffice-all.mjs
+
+      - name: OLE 嵌入文档外部打开测试
+        # 嵌入 DOCX/XLSX 改写后由 LibreOffice 打开核对（票据 014 / 015 的外部读取器验收）
+        run: node tooling/test-ole-edit-libreoffice.mjs
 
       - name: 编辑性能预算
         continue-on-error: true

@@ -28,6 +28,18 @@ export const expandedMessages = {
   '布尔值': 'Boolean', '写入单元格': 'Write cell', '还原嵌入内容': 'Restore embedded content',
   '请输入数字': 'Enter a number', '布尔值填写 true 或 false': 'Enter true or false for a Boolean',
 
+  '文字片段 {number}{badges}': 'Text run {number}{badges}', '段落 {paragraph} 文字片段 {number}': 'Paragraph {paragraph} text run {number}',
+  '粗体': 'Bold', '斜体': 'Italic', '下划线': 'Underline', '文字片段': 'Text run',
+  '选定单元格 {ref}': 'Selected cell {ref}', '请先在表格中选择单元格': 'Select a cell in the table first',
+  '选定单元格样式': 'Style of the selected cell', '字体名称': 'Font name', '字色': 'Text color',
+  '填充颜色': 'Fill color', '边框颜色': 'Border color', '边框样式': 'Border style', '不修改边框': 'Keep border',
+  '细边框': 'Thin', '中边框': 'Medium', '粗边框': 'Thick', '虚线边框': 'Dashed', '点线边框': 'Dotted', '双线边框': 'Double',
+  '应用样式': 'Apply style', '清除样式': 'Clear style', '颜色须为六位十六进制': 'Color must be six hex digits',
+  '字号必须是正数': 'Font size must be a positive number',
+  '选定单元格富文本': 'Rich text of the selected cell', '富文本片段文字': 'Rich text run',
+  '添加片段': 'Add run', '设为富文本': 'Set rich text', '清除富文本保留文字': 'Clear rich text, keep plain text',
+  '至少一个文字片段': 'At least one text run is required',
+
   'SmartArt 节点': 'SmartArt nodes', '空节点': 'Empty node', '节点文字': 'Node text', '父节点': 'Parent node', '顶层节点': 'Top level',
   '应用节点文字': 'Apply node text', '增加同级节点': 'Add sibling', '增加子节点': 'Add child', '新节点': 'New node',
   '删除节点及后代': 'Remove node and descendants', '节点上移': 'Move node up', '节点下移': 'Move node down',
