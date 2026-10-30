@@ -75,10 +75,10 @@ for (const item of ole.listEditableOle(editor.doc)) {
 }
 assert.ok(documents.some((d) => d.kind === 'docx') && documents.some((d) => d.kind === 'xlsx'), '两类嵌入文档都重组成功');
 
-/** soffice 转换并等待产物；独立 profile 避免与本机 GUI 实例的锁冲突。 */
+/** soffice 转换并等待产物；独立 profile 避免与本机 GUI 实例的锁冲突，显式 filter 名兼容旧版。 */
 function convert(file, format, outdir = out) {
   execFileSync(soffice, ['-env:UserInstallation=file:///tmp/ole-lo-verify', '--headless', '--norestore',
-    '--convert-to', format, '--outdir', outdir, file], { stdio: 'ignore', timeout: 120_000 });
+    '--convert-to', format, '--outdir', outdir, file], { timeout: 120_000 });
   const stem = file.split('/').pop().replace(/\.[^.]+$/, '');
   const suffix = `.${format.split(':')[0]}`;
   const produced = readdirSync(outdir).map((f) => join(outdir, f)).find((f) => f.split('/').pop().startsWith(stem) && f.endsWith(suffix) && f !== file);
@@ -90,21 +90,21 @@ function convert(file, format, outdir = out) {
 {
   const docx = documents.find((d) => d.kind === 'docx');
   // 本机 txt filter 存在 Io Abort 问题，fodt（Flat XML）同样承载全文且可断言
-  const flat = readFileSync(convert(docx.file, 'fodt'), 'utf8');
+  const flat = readFileSync(convert(docx.file, 'fodt:OpenDocument Text Flat XML'), 'utf8');
   assert.ok(flat.includes(RUN_TEXT), 'DOCX 经 LibreOffice 打开后改写的 run 文字在场');
 }
 
 // ---------------- XLSX：Flat XML 断言富文本拼接值；转回 XLSX 后 SDK 读回样式 ----------------
 {
   const xlsx = documents.find((d) => d.kind === 'xlsx');
-  const flat = readFileSync(convert(xlsx.file, 'fods'), 'utf8');
+  const flat = readFileSync(convert(xlsx.file, 'fods:OpenDocument Spreadsheet Flat XML'), 'utf8');
   assert.ok(flat.includes(RICH_FIRST) && flat.includes(RICH_SECOND), '工作簿经 LibreOffice 打开后富文本各片段文字在场');
 
   // 往返：LibreOffice 重写为新的 xlsx 后，样式与富文本语义仍在（unzip 后直接核对
   // styles.xml / sharedStrings.xml——办公软件重写会重排样式索引，按语义而非索引断言）
   const roundTripDir = join(out, 'roundtrip');
   mkdirSync(roundTripDir, { recursive: true });
-  const roundTrip = convert(xlsx.file, 'xlsx', roundTripDir);
+  const roundTrip = convert(xlsx.file, 'xlsx:Calc MS Excel 2007 XML', roundTripDir);
   const rewritten = unzipSync(new Uint8Array(readFileSync(roundTrip)));
   const styles = new TextDecoder().decode(rewritten['xl/styles.xml'] ?? new Uint8Array());
   assert.ok(styles.includes(FONT_COLOR), 'LibreOffice 重写后字体颜色仍在 styles.xml');
