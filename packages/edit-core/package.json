@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/edit-core",
-  "version": "0.5.0",
+  "version": "0.6.0-beta.1",
   "description": "Headless, framework-agnostic editing document model and render projection for Web-PPT.",
   "keywords": [
     "pptx",
