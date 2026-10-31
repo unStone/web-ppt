@@ -22,7 +22,7 @@
 beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0 API 准备](api/api-stability.md)。
 
 下一阶段（[内容流转、导出与保真](wayfinder/ppt-portability-fidelity/map.md)）已完成高级文本流转、多级类别、
-共享工作簿与正式字体 Provider；矢量 PDF（005）已完成——四独立实现对照（MuPDF / poppler / CoreGraphics / PDFium）收口并于 0.6.0 转正为正式入口；内嵌视频合成（007）进行中，视频音轨（006）已完成——功能随
+共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）均已完成——005 经四独立实现对照（MuPDF / poppler / CoreGraphics / PDFium）于 0.6.0 转正为正式入口；006 功能随
 `0.5.0-beta.6` 发布，脉冲同轴（FFmpeg 独立测量）、取消与资源释放、循环跨页证据于 2026-10-31 补齐；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）已完成——官网面板含 run 级改字、单元格样式与富文本入口，LibreOffice 外部打开与重写往返验证在 CI；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查，外部语料中已有的样本及完成步骤已登记在票据中。
 
 外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）、布局检查（002）与 Node 无 Office 渲染（003）已完成——`@web-ppt/core/node` 按需入口提供稳定 reason 的注入校验、跨进程确定性（资源按字节寻址）与双端指纹对照（148/152 页逐字节一致，差异页均归因），其余票据继续按依赖推进。
