@@ -42,7 +42,8 @@ jobs:
         # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
         # writer / calc 是 OLE 嵌入文档外部打开测试的导入 filter——只装 impress 时
         # soffice 对 .docx/.xlsx 报 "source file could not be loaded"。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk
+        # ffmpeg 供视频导出测试生成媒体与独立提帧断言（缺失时相关套件自行降级）。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk ffmpeg
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
