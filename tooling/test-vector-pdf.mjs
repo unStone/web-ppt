@@ -110,5 +110,14 @@ try{
       stdio:'inherit',env:{...process.env,PYTHONPATH:process.env.PYTHONPATH ?? resolve(root,'out/font-glyphs/python')},
     });
   }finally{geometryPres.dispose();}
+  // PDFium 独立对照（票据 005「其他 PDF 阅读器」）：文字提取证明 ToUnicode 与字形
+  // 定位对第三方文本引擎有效；渐变带方向断言排除文字间隙白底后取非白列极值。
+  const pdfiumEnv={...process.env,PYTHONPATH:process.env.PYTHONPATH ?? resolve(root,'out/font-glyphs/python')};
+  execFileSync('python3',['tooling/inspect-vector-pdf-pdfium.py',
+    'expect',resolve(out,'first-slice.pdf'),'1','AV office ffi',
+    'expect',resolve(out,'text.pdf'),'1','中文测试',
+    'expect',resolve(out,'paints.pdf'),'1','ABC',
+    'gradient',resolve(out,'paints.pdf'),'5',
+    'gradient',resolve(out,'paints.pdf'),'6'],{stdio:'inherit',env:pdfiumEnv});
 }finally{provider.dispose();pres.dispose();}
 console.log(`矢量 PDF ${process.argv.includes('--dist')?'dist':'source'}：公开导出、文字、动画批次、批注、取消、重复调用与独立图形对照通过`);
