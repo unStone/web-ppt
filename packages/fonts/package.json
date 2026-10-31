@@ -64,7 +64,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.5.0"
+    "@web-ppt/core": "^0.6.0-beta.1"
   },
   "publishConfig": {
     "access": "public"
