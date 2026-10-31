@@ -2,9 +2,16 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## 未发布
+## 0.6.0-beta.1 - 2026-10-31
 
+0.6.0 第一批与第二批全部七张票据收口：Agent Node 渲染、矢量 PDF 转正、视频音轨证据、内嵌视频合成、OLE 深度编辑官网入口。
+
+- 新增 `@web-ppt/core/node` 按需入口（Agent 无 Office 渲染）：`renderSlideSvgInNode` / `renderSlidePngInNode` 在纯 Node 环境渲染 `.pptx` / `.ppt` 为原生 `<text>` SVG 或宿主光栅化 PNG；测字与光栅化全部注入（推荐 `@web-ppt/fonts/glyphs` 的 `withFontMeasurement`），缺注入抛稳定 reason（`node-measure-required` / `node-rasterizer-required`）不退回估算断行；跨进程确定性按资源字节寻址口径验证，与浏览器原生路径 148/152 页整页 SVG 指纹逐字节一致（差异页归因：公式测量源 / 艺术字字距放大）。
 - 矢量 PDF 转为正式入口（去除实验性标记）：验收对照扩展到 MuPDF / poppler / CoreGraphics / PDFium 四个独立实现；文字提取（含中文与组合字符）对第三方文本引擎有效，文字渐变（Pattern colorspace）在 PDFium 下方向断言通过。透明文字渐变与渐变变换方言经裁决无输入语义来源（渲染层不产出该形态），覆盖检查器按稳定原因显式拒绝。
+- 内嵌视频合成（`videoOverlay`，仍默认关闭）升级：组链经 `placeGroupChild` 折算、元素 rotate / flip / 裁剪 / 透明度 / CSS filter 与媒体间层叠在画布按 SVG 渲染一致重建；`playback.loop` 循环取模；跨页策略为元素随所属页呈现。可变帧率按时间戳取帧、60s 长视频内存有界（<60MB）、`video-overlay-frame-unavailable` 稳定复现样本（MSE 缺口媒体）均通过独立验收。
+- 视频音轨（`audio`，已随 0.5.0-beta.6 发布）补齐验收证据：FFmpeg 独立测量的脉冲与画面标记同轴（偏差 ≤130ms 声明边界）、`AbortSignal` 取消与资源释放、循环音频跨页持续。
+- OLE 嵌入文档官网面板补齐：嵌入 DOCX 的 run 级改字（保留相邻 run 格式）、嵌入 XLSX 的单元格样式（字体 / 填充 / 边框）与 sharedStrings 富文本入口，中英文文案与撤销语义齐全；`readEmbeddedPackage` 自 `@web-ppt/edit-core/ole` 公开导出供宿主提取嵌入文档；改写后的 DOCX / XLSX 经 LibreOffice 打开与重写往返验证（文字、颜色与 run 边界保留）。
+- `@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
 
 ## 0.5.0 - 2026-10-29
 
