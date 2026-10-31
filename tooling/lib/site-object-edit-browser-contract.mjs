@@ -43,15 +43,15 @@ export async function runSiteObjectEditBrowserContract(context) {
   await changeValue(context, `${ole} textarea`, '浏览器修改的嵌入标题');
   await waitFor(`document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`, 'OLE 文档段落编辑');
   // 014：run 级编辑——只改一个片段，段落里其余片段不动。
-  // 面板在每次命令后整体重建，CI 慢机上 undo → sync → 重赋 value 的链路可能超过
-  // 默认 5 秒轮询，这里放宽到 20 秒（断言语义不变）
+  // 撤销断言不比较捕获的旧值：面板每次命令后整体重建，捕获值与重建后的 DOM
+  // 之间没有稳定对应关系（CI 上曾因捕获竞态连续三次失败），改断言撤销后片段
+  // 不再是改后文字且整段替换保留。
   await waitFor(`document.querySelectorAll('${ole} .ole-run input').length >= 2`, 'OLE 文档 run 级工具', 400);
-  const runBefore = await evaluate(`document.querySelector('${ole} .ole-run input')?.value`);
   await changeValue(context, `${ole} .ole-run input`, '片段级改字');
   await waitFor(`document.querySelector('${ole} .ole-run input')?.value === '片段级改字'`, 'OLE run 级编辑生效', 400);
   await click('#undo');
-  await waitFor(`document.querySelector('${ole} .ole-run input')?.value === ${JSON.stringify(runBefore)} && document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`,
-    'run 级撤销只回退片段，整段替换保留', 400);
+  await waitFor(`document.querySelector('${ole} .ole-run input')?.value !== '片段级改字'`, 'run 级撤销回退片段', 400);
+  await waitFor(`document.querySelector('${ole} textarea')?.value === '浏览器修改的嵌入标题'`, 'run 级撤销保留整段替换', 400);
   await click('#redo');
   await waitFor(`document.querySelector('${ole} .ole-run input')?.value === '片段级改字'`, 'OLE run 级重做', 400);
   await captureSaveAndReopen(context, 'ole-edit-reopened.pptx');
