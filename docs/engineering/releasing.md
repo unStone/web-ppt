@@ -24,7 +24,7 @@
 
 方括号里的四步只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这四步已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（0.5.0 实测省约 27 分钟）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
 
-跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。
+跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。`verify-v08-readiness` 另读源码模式批注测试的落盘报告（`out/comments/source-report.json`），快路径下由构建后的「生成 verify 依赖的测试落盘」步骤补生成。
 
 ## 3. Trusted Publishing（OIDC）的环境要求
 
