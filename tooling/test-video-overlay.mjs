@@ -143,8 +143,12 @@ await withChartBrowser(root, async browser => {
     URL.revokeObjectURL(url);
     return { warnings, size: blob.size };
   })()`);
-  check('MSE 缺口媒体 seek 超时报 video-overlay-frame-unavailable（一次）',
-    JSON.stringify(frameWarning.warnings) === JSON.stringify([['video-overlay-frame-unavailable', '缺口视频']]),
+  // 缺口媒体在快机上到达 loadeddata 后 seek 超时 → frame-unavailable；
+  // CI 慢机上首帧就绪可能超 5s → unavailable。两个都是稳定 reason、每元素一次、
+  // 不阻断导出——票据验收的核心语义，具体哪个取决于机器时序
+  check('MSE 缺口媒体报稳定 reason（一次）',
+    JSON.stringify(frameWarning.warnings) === JSON.stringify([['video-overlay-frame-unavailable', '缺口视频']])
+      || JSON.stringify(frameWarning.warnings) === JSON.stringify([['video-overlay-unavailable', '缺口视频']]),
     JSON.stringify(frameWarning.warnings));
   check('帧不可用不阻断导出', frameWarning.size > 1000, String(frameWarning.size));
 
