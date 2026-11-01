@@ -1,5 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "types": ["node"] },
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@web-ppt/core": ["../core/src/index.ts"],
+      "@web-ppt/core/node": ["../core/src/node-export.ts"],
+      "@web-ppt/edit-core": ["../edit-core/src/index.ts"],
+      "@web-ppt/edit-core/agent": ["../edit-core/src/agent/index.ts"]
+    }
+  },
   "include": ["src"]
 }
