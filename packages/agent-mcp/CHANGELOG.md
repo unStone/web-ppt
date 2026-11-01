@@ -1,5 +1,490 @@
 # 更新日志
 
-## 未发布
+本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-- 新增本地 stdio MCP server 与 Agent Skill，复用确定性命令工具面完成打开、读出、检查、渲染、编辑和保存；文件只经调用方指定路径读写。
+## 0.7.0-beta.1 - 2026-11-02
+
+- 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，图片字节使用 Base64；支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及补丁 / 生成保存。Schema 不符、目标缺失和语义拒绝均带稳定 reason 与命令序号，失败不改变文稿或历史；独立按需入口不引入 MCP / 模型依赖，core 与 edit-core 默认闭包逐字节不变。
+- 新增 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill：打开、describe、单元素查询、lint、SVG/PNG 渲染、原子编辑、撤销/重做、保存和关闭；只读写调用方指定路径，会话串行、关闭取消、保存原子落盘且无网络请求。协议不返回整份 Base64；真实 Claude Code 与 Codex 已完成改标题、替换图片、新增页面和溢出修复，产物通过 LibreOffice 与 Quick Look。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
+
+## 0.6.0-beta.1 - 2026-10-31
+
+0.6.0 第一批与第二批全部七张票据收口：Agent Node 渲染、矢量 PDF 转正、视频音轨证据、内嵌视频合成、OLE 深度编辑官网入口。
+
+- 新增 `@web-ppt/core/node` 按需入口（Agent 无 Office 渲染）：`renderSlideSvgInNode` / `renderSlidePngInNode` 在纯 Node 环境渲染 `.pptx` / `.ppt` 为原生 `<text>` SVG 或宿主光栅化 PNG；测字与光栅化全部注入（推荐 `@web-ppt/fonts/glyphs` 的 `withFontMeasurement`），缺注入抛稳定 reason（`node-measure-required` / `node-rasterizer-required`）不退回估算断行；跨进程确定性按资源字节寻址口径验证，与浏览器原生路径 148/152 页整页 SVG 指纹逐字节一致（差异页归因：公式测量源 / 艺术字字距放大）。
+- 矢量 PDF 转为正式入口（去除实验性标记）：验收对照扩展到 MuPDF / poppler / CoreGraphics / PDFium 四个独立实现；文字提取（含中文与组合字符）对第三方文本引擎有效，文字渐变（Pattern colorspace）在 PDFium 下方向断言通过。透明文字渐变与渐变变换方言经裁决无输入语义来源（渲染层不产出该形态），覆盖检查器按稳定原因显式拒绝。
+- 内嵌视频合成（`videoOverlay`，仍默认关闭）升级：组链经 `placeGroupChild` 折算、元素 rotate / flip / 裁剪 / 透明度 / CSS filter 与媒体间层叠在画布按 SVG 渲染一致重建；`playback.loop` 循环取模；跨页策略为元素随所属页呈现。可变帧率按时间戳取帧、60s 长视频内存有界（<60MB）、`video-overlay-frame-unavailable` 稳定复现样本（MSE 缺口媒体）均通过独立验收。
+- 视频音轨（`audio`，已随 0.5.0-beta.6 发布）补齐验收证据：FFmpeg 独立测量的脉冲与画面标记同轴（偏差 ≤130ms 声明边界）、`AbortSignal` 取消与资源释放、循环音频跨页持续。
+- OLE 嵌入文档官网面板补齐：嵌入 DOCX 的 run 级改字（保留相邻 run 格式）、嵌入 XLSX 的单元格样式（字体 / 填充 / 边框）与 sharedStrings 富文本入口，中英文文案与撤销语义齐全；`readEmbeddedPackage` 自 `@web-ppt/edit-core/ole` 公开导出供宿主提取嵌入文档；改写后的 DOCX / XLSX 经 LibreOffice 打开与重写往返验证（文字、颜色与 run 边界保留）。
+- `@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+## 0.5.0 - 2026-10-29
+
+0.5.0 稳定版：`0.5.0-beta.7` 的全部内容转正到 `latest`，编辑线自此成为稳定能力——编辑文档模型与三层视图、模板/主题/母版/版式设计画布、图表数据与样式、批注、页面确保适合、SmartArt/OLE/墨迹内部编辑、高级渲染、PNG/SVG/批量 ZIP/可打印 HTML/图片 PDF 与实验性矢量 PDF/WebM 导出、原生 `.ppt` 生成保存、无来源富文本复制，以及 Agent `describe` 结构化读出与 `lint` 布局检查按需入口。相对 0.4.5 的逐项变化见下方 `0.5.0-beta.1` 至 `0.5.0-beta.7` 条目。
+
+破坏性变更核对：无 API 撤除；0.5 线新增能力均为增量或按需入口，唯一语义变化是 `elementFrameToSlideMatrix` / `elementParentToSlideMatrix` 改为沿渲染链求值（仅非等比组合内非 90° 整数倍旋转等场景结果不同，见 beta.7 条目）。
+
+安装：无版本号安装即得 0.5.0，八包必须同版本；`@next` 标签留给 0.6 线。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+Windows PowerPoint 真机验收经维护者决定延后，0.5.0 先行转正；四项自动门禁（含 LibreOffice 外部打开清单）全部通过，后续问题以 0.5.x 补丁版修复。
+
+## 0.5.0-beta.7 - 2026-10-26
+
+### 新增
+
+- 新增按需 `@web-ppt/edit-core/lint` 七项布局检查与 `/lint/sampler` SVG 颜色采样协议：稳定元素定位、真实字体测量、显式资源错误、进度与取消，随包提供生成 Schema。
+- 新增按需 `@web-ppt/edit-core/describe`：从当前 `EditDoc` 读出页面、设计来源、稳定元素 ID、页面外框和段落文字；支持完整 JSON 的字符 / token 预算及显式截断，随包发布由 TypeScript 类型生成的 JSON Schema。
+- `presentationToVideo` 新增实验性 `videoOverlay`：导出时以 `<video>` 当前帧替代内嵌视频的海报帧，媒体起始时刻与音轨共用同一时间轴；默认关闭时产物不变。
+- `savePpt` 原生写入首尾两色线性渐变（两端透明度分别保留）、十种预设虚线、五种默认尺寸箭头、图片四边矩形裁剪与形状名；图案填充、多色标或径向渐变、自定义虚线与非默认箭头尺寸仍以 `PptSaveError` 拒绝
+- `@web-ppt/edit-core/ole` 新增 `setRun`（嵌入 DOCX 单个 run 改字，相邻格式保留）、`setCellStyle`（嵌入 XLSX 字体 / 填充 / 边框）与 `setCellRichText`（sharedStrings 富文本）；`OleParagraph` 新增 `runs` 与表格行列 `table`，`OleCell` 新增 `styleIndex`、`style` 与 `richText`
+- 实验性矢量 PDF 支持 dashed / dotted / double / wavy 文字装饰线，以及文字描边（描边轨在填色轨之下，等效 `paint-order:stroke`）。
+
+### 修复
+
+- 编辑性能基准统一使用完整源码别名和同一个运行时，不再依赖尚未构建的 dist 或重复的会话 WeakMap；增加干净构建状态的真实回归。
+- 组合同时带旋转与非等比缩放时不再拒绝解组：解组改按 `placeGroupChild` / `placeGroupFrame` 的渲染外框回填孩子 frame，旋转子元素的宽高按转角象限承接组缩放；非等比缩放下预设形状的渲染路径会固化为自由形状覆盖，保存写回 `custGeom`，箭头、圆角等依赖宽高比例的几何不再变形。只有需要改变旋转的框架对象（图表 / OLE 等）仍显式拒绝。
+- 读取 `.ppt` 时线性渐变不再一律按竖向、前景色在上渲染：方向取自 fillAngle，首尾色按 fillAngle 的符号与 fillFocus 还原（与 LibreOffice 的 PowerPoint 兼容规则一致，焦点 40–60 为两侧对称渐变），终点透明度取自 fillBackOpacity；图片的 cropFrom* 裁剪与 wzName 形状名不再丢失。
+- `presentationToVideo` 的 `videoOverlay`：内嵌视频加载失败或超时不再静默退回海报帧，改为经 `onWarning` 以稳定原因 `video-overlay-unavailable` 暴露（附页号与元素名），seek 超时或帧不可用报 `video-overlay-frame-unavailable`，导出均不中断；就绪条件改为首帧可画，避免只取到元数据时首帧停在海报上。未开启 `videoOverlay` 时产物不变。
+- 修复 `.pptx` 媒体源解析只认经典 `a:audioFile` / `a:videoFile` 引用：PowerPoint 2010+ 内嵌 mp3 / mp4 等时把经典关系写成 `Target="NULL"` 外链、字节只挂在 `p14:media` 的 `r:embed` 上，此前 `MediaInfo.src` 为 `null`，player 模式不生成播放器、编辑生成保存会丢失媒体字节。现按经典引用 → `p14:media`（`r:link` 优先于 `r:embed`）逐个取第一个可解析目标：包内关系要求部件存在，外链关系要求是带 scheme 的 URL；正常文件的解析结果不变。
+- 修正视频导出过期说明：`presentationToVideo` 已支持可选音轨；含内嵌媒体时 `mediaPosters: true` 在开启 `audio` / `videoOverlay` 时仍必需，拒绝信息与文档同步说明原因。
+- 英语缩写中的弯撇号（`I’m`、`that’s`）不再按全角标点挤压半个 em，避免撇号与后一个字母重叠（#8）。中文句读的挤压规则不变。
+- 对象动画「伸展」按 PowerPoint 子类型播放：水平展开（across）从中线向两侧长，自底部 / 顶部 / 左侧 / 右侧钉住对应边长出，不再一律从中心缩放并淡入；退场缩回同一条边。「挥舞」按 PowerPoint 的 `sin(2.5π·t)` 宽度（横向为高度）轨迹翻转并叠加淡入，中途会转到背面镜像，不再是一次 `rotateY`。
+- 组合缩放只映射子元素外框：渲染时把 `chOff` / `chExt` 折算进子元素的位置、尺寸、路径与表格行列，不再对子树整体 `scale()`，描边、字号、内边距与效果半径保持物理尺寸（与 PowerPoint、LibreOffice 一致）。WPS 产出的归一化组合（子坐标空间不足 1px）不再出现千像素描边或逐字换行；普通缩放组合内的字号与描边也不再随组放大，非等比组合里的旋转子元素保持矩形。编辑器按同一份刚体外框工作：选择框、命中、框选、对齐 / 分布、吸附、裁剪、顶点与调节柄不再把非等比组合里的旋转子元素当成斜切的平行四边形；缩放与旋转在父组渲染坐标里计算后换算回模型，旋转跨过 45° 等边界时画面宽高保持不变（模型宽高随组缩放承接的轴向互换），粘贴进非等比组合同样按画面落位。`@web-ppt/core` 公开 `placeGroupChild`、`placeGroupFrame` 与 `unplaceGroupFrame`；`@web-ppt/edit-core` / `@web-ppt/editor` 公开 `renderedElement`、`renderedFrameToSlideMatrix`、`renderedContentToSlideMatrix`、`elementParentToRenderedParentMatrix`、`elementEditFrame`、`elementEditParentToSlideMatrix`、`slideToElementEditParentPoint` 与 `editFrameToModelFrame`（edit-core 另有 `groupEditChildrenToSlideMatrix`、`groupEditFrameToModelFrame`）；`elementFrameToSlideMatrix` 与 `elementParentToSlideMatrix` 改为沿渲染链求值，只在非等比组合内的非 90° 整数倍旋转、或此类组合嵌套时结果不同（#7）。
+- `wedgeRectCallout` / `wedgeRoundRectCallout` 按 ECMA-376 guide 求值：尾巴从尾尖所在一侧的边伸出，圆角取 `adj3`；此前底座固定在下边，尾尖朝上时尾巴穿过整个框只剩一条细线（#7 附件）。
+- 非占位符形状 `p:style` 的 `fontRef` 颜色压过 presentation `defaultTextStyle` 的方案色，形状自身 `lstStyle` 与 `rPr` 仍优先；PowerPoint 默认形状里的白字不再渲染成黑字。
+- 背景 `bgRef` 按 ST_StyleMatrixColumnIndex 取主题样式：`1001` 起对应 `bgFillStyleLst` 第 1 项、`1`–`999` 对应 `fillStyleLst`；此前 `idx="1001"` 被夹到列表末项，最常见的白色背景被画成主题第三档渐变。
+- run 的字体栈只在文字含复杂文种（阿拉伯文、希伯来文、泰文、天城文等）时才纳入 `a:cs` 字体；此前拉丁字体缺席时 `cs`（如 WPS 常写的 Arial Black）会接管拉丁字母，标题被撑宽断行。新增公开函数 `textRunFontStack` 供编辑投影共用。
+- 只写 `asvg:svgBlip`、`a:blip` 上没有位图兼容副本的图片（WPS 插入的图标）按 SVG 部件渲染，不再显示为不支持的对象。
+- 有封面且源可用的音频不再叠加灰色播放标识（封面本身就是喇叭图标）；`media: 'player'` 下音频不显示原生控件条，`Viewer` 点击封面播放 / 暂停，播放被拒绝时同样派发 `web-ppt-playback-error`。官网查看器改用 player 模式，放映中点击媒体不翻页。
+- 等线缺席时西文改用合成字族：`local()` 引用系统 Arial 度量族，粗体 `size-adjust: 95.4%`、下划线 `74.6%`，只在页面出现等线时声明；`@web-ppt/fonts` 的替换路径对 Arimo 套用同一组参数。取代窄体回退与连续空格半字宽的处理；依据是 #8 附带的 PowerPoint 导出图逐词拟合，断行与填空线长度与 PowerPoint 一致。
+- `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+## 0.5.0-beta.6 - 2026-10-10
+
+### 新增
+
+- `presentationToVideo` 新增可选音轨：`audio: true` 时解析 timing 树媒体节点（`p:audio` 的音量 / 静音 / 循环 / 触发批次），按页时间轴确定性混音后以 Opus 48kHz 编码进 WebM 双轨；视频文件的 AAC 音轨同样提取混入，无音轨或解码失败经 `onWarning` 以稳定原因跳过、不阻断导出。无音频媒体时仍为无声视频，默认关闭时产物与上一版逐字节一致。公开 `WebmWriter` 音频轨与 `mixAudioClips` 混音核；`MediaInfo` 扩展 `spid` 与 `playback` 播放语义。
+- 实验性矢量 PDF 的文字渐变原生支持（Pattern colorspace）：任意轴线性渐变、同段多 run 各自分框（按字形墨迹范围）、下划线 / 删除线继承渐变。坐标口径经 MuPDF / poppler / CoreGraphics 三实现实测裁决；透明渐变因渲染层无输入语义暂按稳定原因回退。
+
+### 改进
+
+- CJK 标点挤压补全 PowerPoint 完整规则：连续标点对、行首起始标点与行尾句读无条件收半格；断行判定仍按全角，与 PowerPoint 断行基线一致。
+- 网络字体到货后的重排补齐数学布局缓存失效：`invalidateTextMeasureCaches` 公开导出，`Viewer.refresh()` 完整覆盖字体环境变化。
+- 文档体系新增功能设计标准、分层依赖规范与 `.pptx` / `.ppt` 规范地图；依赖方向由 `check-architecture-boundary` 在 build 与 verify 机械审计。
+
+### 修复
+
+- 修复矢量 PDF 跨页复用渐变 Pattern 时未在当前页注册资源导致的整段取色错误（单页导出不触发）。
+- 修正 README 已知限制与能力矩阵的三处失真（EMF+ / OMML / 3D）及打开密码文件的能力描述。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+## 0.5.0-beta.5 - 2026-09-10
+
+### 新增
+
+- 高级文本生成保存与跨文稿复制支持公式、艺术字及已声明的高级文字效果；经典图表支持多级类别与共享工作簿同步，保留历史、恢复、协同和原生保存闭环。
+- 新增实验性 `@web-ppt/core/pdf/vector` 及独立 browser 适配入口：支持范围内的文字可搜索，图形保留矢量，特殊效果按对象回退为图片并返回位置说明。
+  编辑器导出窗口通过 Cordis 文件 / 字体服务提供入口，缺字体可定位并加载本机字体后重试；取消、换稿和退出等待实际资源消费结束。此版本不代表 005 整项验收完成；复杂文字效果、更多 SVG 组合、其他 PDF 阅读器及长文稿成本仍待收口。
+- 新增 `@web-ppt/fonts/glyphs` 可选字体 Provider 及 HarfBuzz、Worker、FontFace 适配：验证原始容器与嵌入限制，返回定位字形、轮廓和 UTF-16 原文簇；整形器和字体字节由宿主提供。
+  产品编辑器由 Cordis 文稿服务检查、应用和释放字体，提供中英文缺字诊断与本机替换；原始字体模式避免主线程重复解压，替换和安装失败会归还旧字体预算。当前字体资源用于预览及图片 / SVG / 实验性矢量 PDF 导出，不写入 PPTX。
+- 可选 `@web-ppt/collab/migration` 入口为扩展字段保留带原 stamp 的 `set/del` 操作证据；来源元素或页面删除后仍可恢复。
+  与默认入口共用协同会话和回滚，旧检查点缺少证据时保持未知；共享图表可按原操作裁决矛盾字段和删除，后续原操作可补齐缺失证据。
+- 编辑核心可原子执行已裁决的扩展迁移凭据，保留来源操作、删除赢家和冷恢复语义；拒绝不完整来源及父子字段冲突。
+  可选协同入口在远端接收和延迟消息消费时重新裁决，保留更晚本地操作；默认入口拒绝凭据，原始版本不会替换为运输消息的时钟。
+  恢复日志在提交前准备声明，旧字段按原地址和顺序重放；解析器乱序释放不会复活旧实例。
+- 包体积核对改为默认入口及全部相对静态分块逐文件 gzip 后求和，修正旧表漏算共享分块的问题；peer 与动态入口仍另计。
+- 官网编辑产品层通过同一 Cordis 应用管理文稿、打开、新建、恢复、文件、业务工具与页面状态；页面插件持有模式、导航、历史和视口，入口仅保留启动及重试。
+  新打开取消旧模板和图片选择，退出先停止页面与 SDK 编辑输入，再等待已提交文件交付，最后释放文稿、监听、观察器和弹窗；重建后命令不重复。发布 SDK 保持无框架依赖。
+- 图片插入、替换和背景接口支持 `options.signal`；取消会释放待选入口，并在读取、解码及提交边界阻止迟到修改，
+  避免应用退出等待文件交付期间旧工具继续写入文稿。
+- 共享图表入口迁移独立数据区域的旧局部编辑，保留旧撤销历史、协同时钟及迟到消息；支持加载前复制页及
+  多旧所有者/新旧数据的相等或不同字段合并。删除整张原页及中间副本后，幸存副本仍可编辑、保存和冷恢复。
+  可选协同入口让复制快照继承可证明的原 set/del 版本，保留副本远端更新后的撤销重做，并裁决已加载共享入口的迟到复制。
+  缺失原版本或同版本矛盾的字段、无来源记录及日志的旧裸模型、身份冲突仍保留只读，完整范围见迁移记录。
+
+### 验证与范围
+
+- `@web-ppt/collab` 发布入口为 12.20KB gzip；包含相对静态分块。排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+- 字体及 PDF 独立读取依赖固定版本并接入 CI / 发布环境；矢量 PDF 源码与产物契约纳入常规功能和一致性门禁。
+- 保留 beta.4 的密码弹窗与 CI 稳定性修复。视频仍无音轨、内嵌视频合成和长尾格式扩展待后续；Windows PowerPoint 真机继续暂缓。
+- 模块成果与下一步见[本轮交付说明](https://github.com/unStone/web-ppt/blob/master/docs/releases/0.5.0-beta.5.md)。
+
+## 0.5.0-beta.4 - 2026-09-09
+
+### 剩余功能收口
+
+- 补齐四个产品入口的只读批注面板、PNG/SVG/ZIP 标记与打印正文；生成保存不再丢失批注，复制页独立分配批注部件和索引。
+- 批注复制覆盖连续保存、撤销/重做、来源释放、外部补丁、恢复、最大索引及显式 Internal/未知 XML 扩展。
+- 十页混合固件贯通七种原生现代布局、地图回退、经典数据、WAV/MP4、图片/立体和批注；新增包名产物契约及 0.8 功能完成度门禁。
+- 新增按需图片效果和立体编辑，官网控件共用历史、恢复、协同与两条保存；双色调在 PNG/独立 SVG 中使用真实颜色。
+- 官网与查看器遇到 ChartEx 自动按需启用原生解析，加载失败继续显示来源预览；SDK 默认行为不变。
+- 新增可选画布读屏目录和 EditContext，真实 Chromium 覆盖预编辑、连续输入、撤销及加载失败回退。
+- 修复经典图表系列标题与子节点顺序、零挤出重开及未加载扩展时双色调生成保存丢失。
+- 补充混合内容保存旅程、公开 API 契约和迁移说明；Windows 真机按用户要求暂缓。
+
+### 新增
+
+- 新增 `@web-ppt/core/chart-ex` 与显式解析 hook：树状图、旭日、直方图/Pareto、箱线、瀑布和漏斗输出原生 Schema；
+  地图、歧义数据与不支持的来源保留 Office fallback。主题、母版与保存后继续沿用文稿打开时的解析配置。
+  SDK 默认入口不加载实现；官网按内容类型自动加载。其他类型真实 PPTX 和 Office 原生布局验收尚未完成。
+- 官网增加中英文基础入口：三张页面输出静态英文镜像与双语 SEO，URL 优先于本机偏好和浏览器语言；
+  原地切换保留文稿、选区和撤销历史，中文默认不下载英文词库。编辑页打开/保存/图片 ZIP、转换确认、
+  模板选择、本机恢复、动态工具与无障碍文案均已接入；模板和恢复提示内可直接切换语言。
+- 媒体按需入口支持 PCM WAV / MP4（含分片）、显式 HTTP(S) 外链、确定性音频图标和独立海报替换；
+  editor / React / Vue 和官网媒体工具转发同一 API，默认入口不加载媒体校验或图标。
+  官网支持选中媒体试听、失效外链提示与按需媒体日志恢复，外链仅在点击播放时访问；切换文稿和关闭工具释放播放器。
+- 经典图表新增按需数据编辑入口，支持系列、类别和数值增删改；稀疏覆盖贯通历史、恢复与协同，保存同时同步
+  图表缓存和内嵌工作簿。官网数据检查器动态加载，默认入口不携带图表编辑实现。
+- 主题、母版、版式与内置模板现已组成同一条公开编辑链：主题经 `exec`，母版与版式经 `execDesign`
+  精确传播到依赖页，页面直设继续优先；三套模板共用历史、恢复、字段级协同与保存协议。
+- 新增独立按需模板入口：极光、刊页、夜幕三套确定性配方各自物化主题、母版、五种常用版式和可编辑标题页；
+  官网、无框架 editor 与 React/Vue 只转发同一目录，默认入口不加载配方或预览数据。
+- 编辑模型补齐字符、自动编号和图片项目符号；结构化来源值、富文本剪贴板、格式刷、表格文字、恢复、协同
+  以及补丁/生成保存使用同一套项目符号语义。
+- 新增预设形状切换、DrawingML 调节值和独立 `@web-ppt/editor/adjustments` 拖柄入口；187 个预设中
+  120 个含句柄的定义由固定规范源生成，未使用时不进入 editor 主包。
+- 高级字符格式新增 17 种精确下划线、双删除线、高亮、字距、大小写与基线上下标；`ClearFormat` 删除
+  来源直设并保留文字、动态字段、公式和链接身份。
+- 新增按需入口 `@web-ppt/core/image-zip`：以稳定原页码命名批量导出动画终态 PNG，支持隐藏页策略、
+  1–8 路有界并发、确定性 ZIP 元数据与逐页进度；任一页失败会携带页码原子拒绝，不返回半成品。
+  它复用单页 data URI + `foreignObject` 光栅化与 `SecurityError` 原生文本回退，不引入第二套渲染器。
+- 编辑模型、无框架 editor 与 React/Vue 类型入口补齐对象等距分布、替代文字、节管理和页面尺寸；四组能力
+  贯通来源恢复、历史/恢复、字段级协同及保留型/生成式保存，页面尺寸采用不重排元素的“最大化”语义。
+- 无框架 editor 新增仅触屏启用的细描边命中容差、双指缩放/平移和 500ms 长按上下文请求；导航结果经
+  adapter 与 React/Vue 公开 seam 交给宿主，不写模型、历史、恢复日志或保存内容，查看模式保留页面滚动。
+- `EditorSession.toPresentation()` 公开当前编辑态只读投影，让官网可直接批量导出图片 ZIP，同时保持脏状态
+  与保存点不变；资源生命周期仍由会话统一拥有。
+
+### 改进
+
+- `@web-ppt/collab` 发布入口为 11.76KB gzip；契约测试使用的完整薄包在排除 peer 后为 14,288B gzip。
+
+### 修复
+
+- 官网打开加密 `.pptx` / `.ppt` 时弹出密码对话框：错误密码可原地重试，正确后继续查看；core 暴露可识别的 `PasswordRequiredError`，避免界面依赖错误文案判断。
+- 官网内联 CSS 后仅删除无引用产物，并等 Vite 生成预加载清单后再检查，避免共享样式缺失导致动态编辑模块打不开。
+- 无封面媒体新增海报后可保存；兼容分支媒体继续保留整壳限制。生成保存不再重放旧海报关系。
+- 公开 Patch 事件补齐图片资源闭包，修复接收端撤销回收后无法重做；提交及历史双向闭包超限在提交前原子拒绝，
+  合并历史超限则保留独立撤销单元。
+  无 OOXML 所属页的新建对象可恢复，仍被无来源海报引用的资源不可被远端删除。
+- MC 兼容内容按声明命名空间与实际能力选择；真实 ChartEx 漏斗回退图恢复显示，编辑以完整兼容外壳为身份。
+  移动、复制、层级、撤销与两条保存同步保留所有表示及原始数据；编辑会话保留兼容来源，原包释放后仍可生成保存，缺失或冲突的源依赖明确报错。
+- 复制、外部补丁回放和恢复分配对象 ID 时计入未显示的兼容分支，避免新增形状撞 ID；OPC 写回不再因
+  Node Buffer 的切片共享内存而污染调用方输入。
+- 0.7 集成验收打通“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，并修复普通页面事务可绕过
+  设计画布权限的问题；普通页面权限隔离现由唯一提交入口统一执行。
+- LibreOffice 与 Windows PowerPoint 改为消费同一份 11 件 Office 清单；清单、产物字节和 PowerPoint
+  报告均绑定当前提交，避免两套验收范围悄然分叉。
+- 0.6 跨能力新建旅程打通表格、项目符号、预设形状、高级字符、等距分布、替代文字、节、页面尺寸、
+  触屏与批量导出；恢复后分别走补丁和生成保存，再由 Chrome 与 LibreOffice 重开验证。
+- 生成保存现在保留动态页码字段与替代文字；此前这些能力单独测试可用，但从空白文稿混合编辑后会拒绝
+  动态字段或丢失 `cNvPr@title/@descr`。
+
+## 0.5.0-beta.3 - 2026-08-31
+
+### 新增
+
+- `@web-ppt/edit-core` 新增稳定表格网格：任意位置插删行列、行高列宽、合并拆分与直接单元格格式都按
+  稳定行列身份寻址，并通过公开 `queryTableGrid` 与纯数据命令进入历史、恢复和保存链路。
+- 表格 tombstone 与完整合并真值让删除只改变可见投影；被合并覆盖的文字和格式休眠而不销毁，拆分、撤销及
+  保存重开后仍恢复同一逻辑格。`@web-ppt/collab` 同步覆盖并发插删、合并和“至少保留一行一列”的确定性收敛；
+  发布入口为 11.76KB gzip；契约测试使用的完整薄包在排除 peer 后为 14,288B gzip，两种口径不混用。
+
+### 改进
+
+- 发布前一致性门禁统一核对版本、许可证、链接、断言数、快照数、包体积和发布包清单，并把 0.6 后续能力拆为
+  可独立验收的 Wayfinder 票据。
+
+## 0.5.0-beta.2 - 2026-08-30
+
+### 新增
+
+- 无原包文档现在可确定性生成完整 PPTX；`.ppt` 编辑后可明确另存为 `.pptx`，官网同时贯通空白新建、
+  真实版式加页、保存下载与本机恢复。
+- 编辑模型与无框架 DOM 层新增组合/解组、九级文本列表升降级、附录 B 快捷键、上下文工具栏、
+  顶点编辑扩展和表格样式应用/写回。
+- 新增可选的 `@web-ppt/collab`：字段级 LWW、分数序与确定性页序重物化把 `Editor` 补丁流接到
+  可插拔 provider，支持离线幂等回放、remove-wins、远端历史 rebase 和 BroadcastChannel 双标签页。
+  OOXML 元素身份由 provider 分配的副本 slot 精确分区；协同包不进入单机 `editor` 入口。
+  发布入口为 10.70KB gzip；契约测试使用的完整薄包在排除 peer 后为 13,023B gzip，两种口径不混用。
+
+### 改进
+
+- 官网延后加载编辑引擎，样本在构建期预渲染并内联关键 CSS，同时补齐 WCAG 对比度与稳定 chunk 命名。
+- 浏览器性能契约将功能失败与预算超标分离，并在检测到并行负载时只允许一次全新 Chrome 重测。
+
+## 0.5.0-beta.1 - 2026-08-27
+
+### 新增
+
+- `@web-ppt/edit-core`、`@web-ppt/editor` 与框架适配层新增元素动画编辑闭环：稳定
+  `SlideId` / `ElementId` 时间线支持来源恢复、显式清空、撤销恢复、删除/复制页联动，以及
+  view/edit 共用的无副作用即时预览。首个安全目录覆盖入场/退场的 appear、fade、fly、wipe、zoom、
+  dissolve，强调 spin/grow 和 2–256 顶点运动路径；复杂 MCE、build、扩展或条件时间树会标记
+  `sourceReadonly`，只有调用方明确整条替换才写回；公开 `MAX_ANIMATION_STEPS=128`，保证允许写入的
+  最重时间线仍能在有界解析预算内完整回读。
+- 元素动画保存按 OOXML 官方 preset/filter 重建规范 `p:tnLst`，保留 timing 根属性、`bldLst`、
+  `extLst` 与无关 MCE，并精确回读 trigger、delay、duration、方向和路径。真实 Chrome 实测 60 元素
+  启动、200 页批量提交、单页反馈 p95 为 0.8/3.5/0.4ms；确定性 5 页固件及 LibreOffice 打开验证通过。
+
+- `@web-ppt/editor` 新增显式启用的纯浏览器自动保存：完整源字节 SHA-256 把同内容输入绑定到同一日志，
+  IndexedDB 以串行批次原子追加恢复帧，并按分块数、总估算字节、记录数和保留期压缩清理。`openEditor`
+  在解析和挂载前完成 restore/discard/cancel 决策，clean 尾帧不提示；adapter 与 React/Vue 共用
+  `recovering + onRecovery` seam；原子代际占位拒绝旧页面在 discard 后复活日志。真实 Chrome 中 50MB
+  指纹为 42.2ms，1,000 帧写入/关闭重开恢复为 131.5/14.9ms，压缩后 10 个分块，同步提交增量 0.000ms。
+
+- `@web-ppt/edit-core` 新增版本化 `RecoveryFrame`、`Editor.subscribeRecovery()` 与
+  `restoreRecoveryFrames()`：事务、撤销/重做、非历史写入、选区、保存点、图片资源和身份水位都能按
+  严格序号写成纯 JSON。会话图片 URL 在 patch 中先变成保留 token，资源闭包缺失会原子拒绝；回放先在
+  写时复制模型上完整验真，并拒绝身份水位倒退，坏尾帧不会污染目标；恢复保留选区与脏状态，
+  但不伪造旧历史。未订阅时普通编辑零日志深拷贝。210 页 / 50MB 基准中，1,000 帧为 316.3KB，
+  JSON 往返 1.6ms、回放 269.9ms；`@web-ppt/editor.openEditor()` 可在挂载前透传同一日志。
+
+- `renderSlideToSvg` 新增 `RenderOptions.idPrefix`。指定后，同一页与同一前缀会生成
+  逐字节相同的 SVG，供编辑器增量更新和确定性比较使用；省略时仍维持全局唯一 id，
+  主视图与缩略图同时挂载不会发生 defs 冲突。
+- 新增 `renderElementToSvg(element, options) → { markup, defs }`。编辑器可用每元素唯一的
+  稳定 `idPrefix` 只重渲脏元素，并在同一次 DOM 更新中替换它自己的节点与 defs；
+  整页与元素入口复用同一分发和两条文本路径，不存在第二套近似渲染器。
+- 新增无 DOM 的 `renderTextBodyToHtml(text, width, height, options)`。屏幕预览和后续
+  contenteditable 覆盖层共用同一份段落、run、CJK 标点、分栏与 autofit 排版；默认输出
+  可反解的编辑标记，并隔离危险链接协议，原生 SVG 文本导出路径保持独立。
+- 新增纯函数 `layoutText(text, width, height, options)`。它与原生 `<text>` 输出共用断行、
+  CJK 挤压、分栏、行距及 autofit，并公开段落/run 身份、UTF-16 字符区间与光标停靠点，
+  供 Safari engine 模式命中选区；竖排返回仿射变换，公式保持原子，测量器可注入。
+- `renderTextBodyToHtml` 新增 `{ layout: 'engine' }`：直接把 `layoutText()` 的视觉行与源 UTF-16
+  半开区间序列化为绝对定位、禁止二次断行的可编辑 HTML。`@web-ppt/editor` 的 `textMode: 'svg'`
+  以及 `auto` Safari 降级现在让静态 SVG 与 `contenteditable` 共用这组行盒；硬换行、空 run/段、
+  项目符号、RTL、竖排、分栏、公式和裸 autofit 在进入、输入、提交与退出时保持同一布局。真实
+  Chrome 的 2,000 字符完整上屏多轮 p95 为 8.3–17.8ms、行盒最大偏差 0.009px；editor 入口为
+  27.46KB gzip。
+- `parse` 新增完全可选的 `edit` / `keepPackage`：前者保留页与元素的 OOXML 回写锚点、
+  占位符身份，后者通过 `Presentation.package` 保留原始 ZIP 与解压 part。默认解析的
+  对象形状和资源生命周期不变；`dispose()` 会同时释放保留的原包。
+- `.pptx` 与 `.ppt` 的编辑解析会额外保留预设形状的 `preset + adj` 语义（OOXML 含
+  版式/母版继承），并新增纯函数 `resolveGeomPath`；编辑投影改变宽高后可重新求值路径，
+  不再复用解析期烘焙的几何。
+- 新增无 DOM、无框架的 `@web-ppt/edit-core`：把解析结果转换为带稳定身份与分数 z 序的
+  扁平 `EditDoc`，以 `src` / `ovr` 分离源值和用户改动，并通过 `toSlide` 投影回现有
+  渲染 Schema。元素、组祖先和页面缓存按修改路径精确失效；图表、SmartArt、OLE、
+  墨迹与媒体只开放框架级变换，内部派生节点不可误编辑。
+- `@web-ppt/edit-core` 新增无 DOM 的 `Editor`、可 JSON 序列化的 `SetXfrm` 与双向 patch。
+  事务失败整体回滚；撤销/重做恢复选区，同路径改动按 500ms 分组，远端 origin 不进入本地历史，
+  默认保留 200 组 / 8MB。固定种子 200 条命令通过撤销、重做与 JSON 回放全等，500 条非法命令
+  不污染文档；210 页实测 200 组撤销/重做含脏页重渲均约 0.5ms/次，历史约 64KB。
+- 新增按需入口 `@web-ppt/edit-core/xml`：无 DOM 的保留型 XML 树支持 UTF-8 / UTF-16
+  字节回环、限定名与 namespace URI 查询、属性最小改写和 OOXML sequence 有序插入；声明、
+  注释、PI、前缀、属性顺序、自闭合形态及 `AlternateContent` 不被重建。默认编辑模型入口为
+  8.28KB gzip，保存期 XML 入口独立为 7.14KB gzip。
+- 新增按需入口 `@web-ppt/edit-core/opc`：无修改保存复用原始字节；脏 part 定点重压，净条目的
+  本地头、extra field 与压缩流逐字直通。新增/删除 part、重复保存和确定性输出均有契约；zip64、
+  数据描述符、存档注释、加密条目、未知压缩与多磁盘格式会给出原因并整包重压。入口为 4.27KB gzip，
+  210 页 / 50.6MB 修改并序列化 3 页后的实测保存为 84.0ms；保存结果可随文档或独立释放。
+- 新增 M0 自动门禁：29 份固件（含吸附、加密 OOXML、RC4 `.ppt` 与 hardcases）的只读链路和
+  编辑投影分别在独立进程渲染，两条文本路径共 232 对原始 SVG 指纹必须完全一致；
+  210 页基准同时强制检查默认路径零编辑状态、编辑常驻内存增量、文本行盒与提交重渲预算。
+- `@web-ppt/editor` 在编辑模式直接消费浏览器 SVG 命中：组默认选外层，双击 / Escape
+  逐层进退，Alt+点击按 `elementsFromPoint` z 序循环；选择只更新交互层，多视图各自拥有监听器。
+- `@web-ppt/editor` 公开元素本地 / 幻灯片 / 屏幕坐标变换，并为普通、旋转翻转和嵌套组元素绘制
+  OBB、8 个缩放柄与旋转柄。手柄尺寸不随 zoom 变化；真实 Chrome 三档缩放的最大矩阵偏差为
+  0.000px，9 个手柄的位置与尺寸最大偏差同为 0.000px，60 元素页完整选择框上屏 p95 为 0.100ms。
+- `@web-ppt/editor` 支持主指针拖动单选与多选：3px 阈值后以 pointer capture 和 rAF 合并幽灵帧，
+  松手只提交一个可撤销 `SetXfrm` 事务；嵌套旋转翻转组按各自父空间换算。取消、丢失捕获、切页、
+  view 模式和销毁均不写模型。真实 Chrome 嵌套幽灵偏差 0.000px，60 元素拖动帧 p95 0.100ms。
+- `@web-ppt/editor` 绑定 8 个恒屏幕尺寸缩放柄，支持单选/多选、旋转翻转与嵌套组、Shift 等比、
+  Alt 中心缩放及过锚翻面；移动与缩放共用可回收的 pointer capture/rAF 状态机，松手一次提交并可
+  精确保存。真实 Chrome 三档 zoom 的手柄/锚点最大偏差 0.009px，缩放帧 p95 0.100ms；60 个
+  45° 元素的近奇异多选缩放 p95 0.600ms。
+- `@web-ppt/editor` 绑定旋转柄：单选按元素父空间处理自身翻转与多层旋转/翻转组，多选围绕共同 AABB
+  中心同步旋转；角度跨 ±180° 连续累计，Shift 可动态吸附 15°，松手以一个事务精确保存。真实 Chrome
+  三档 zoom 的嵌套/多选幽灵最大偏差为 0.000/0.009px，60 元素旋转帧 p95 0.300ms，可信 pointer
+  capture 与撤销门禁通过。
+- `@web-ppt/editor` 的移动手势新增屏幕 6px 吸附：画布中线/边缘、显式页边距、同组兄弟边缘/中线与
+  横纵等距按稳定优先级逐轴裁决；`Ctrl` 可动态关闭，视图也可用 `snapping` / `setSnapping()` 全局切换。
+  对齐线和双向等距箭头只进入 interaction SVG，取消零提交。真实 Chrome 三档 zoom、缩放组和等距线
+  最大偏差均为 0.000px，60 元素吸附帧 p95 0.200ms，可信 pointer capture 与撤销门禁通过；editor
+  发布入口实测为 15.87KB gzip。
+
+## 0.4.5
+
+### 修复
+
+- **`@web-ppt/viewer-core` 与 `@web-ppt/fonts` 的 npm 页面在 0.4.4 里仍是中文**。
+  包内容是对的（tarball 里躺着英文版），错的是 npm 用来渲染页面的那份元数据。
+
+  原因是 npm 认哪个文件当 README 并不看「是不是叫 README.md」：
+  `@npmcli/package-json` 用 `{README,README.*}` 去 glob 再取第一个像 markdown
+  的命中，而 0.4.4 引入的 `README.zh-CN.md` 同样匹配 `README.*`，实测还排在
+  `README.md` 前面。`files` 只挡住了 tarball，挡不住元数据。
+
+  本地化 README 改用连字符（`README-zh-CN.md`），并在 `sync-package-docs.mjs`
+  里加了守卫：包目录里出现 `README.*` 旁支就直接让发布失败。
+
+## 0.4.4
+
+本版没有代码改动，只动文档——但 npm 上看到的东西全变了，所以值得单独发一版。
+
+### 变更
+
+- **npm 页面改英文**。三个包的 README 与 `description` 之前全是中文，
+  而 npm 的读者以国际开发者为主，等于最有说服力的能力矩阵对他们不存在。
+  现在 `@web-ppt/core` 的 npm 页取仓库的 `README.en.md`，另两个包各自
+  维护英文版，中文移到同目录的 `README.zh-CN.md`，两边顶部互链。
+
+  GitHub 首页仍是中文，两个入口各自面向自己的人群。
+
+- **README 首屏补了演示 GIF 与定位段**。GIF 由 `npm run demo-gif` 录制，
+  录的是仓库自己生成的 `fixtures/showcase.pptx`，引擎改了重跑即可，
+  不是一次性的手工录屏。
+
+## 0.4.3
+
+### 变更
+
+- **静态画面改回动画终态**，撤销 0.4.1 里改成初始态的那次调整。
+
+  对齐 PowerPoint 的模型：普通视图与缩略图看到的是「这一页演完的样子」，
+  按 F5 进入演示才从第一步开始建。所以**进全屏时画面跳一次是预期行为**，
+  不是 bug —— 0.4.1 当时是把这个跳变当成缺陷去消除的，方向错了。
+
+  「不能简单摊开全画」这条不变：一页里入场与退场的元素属于不同时刻，
+  全画出来等于把几帧叠在一起。全员退场的收尾页终态是空白，那种情况仍然
+  退回全部可见。
+
+## 0.4.2
+
+### 修复
+
+- **动画目标是「组」时，整组藏不住**。`visibility` 和 `display:none` 不一样：
+  它虽然继承，但后代显式写 `visible` 会把祖先的 `hidden` 顶掉。查看器原本给
+  隐藏集之外的每个元素都写死 `visible`，于是组藏了、组里每个形状却各自写着
+  `visible`，整组照常显示——看着就像「预览显示的还是动画终态」。
+
+  现在不在隐藏集里就清空这条声明，让继承自然生效。之前只在动画目标为叶子形状
+  的样本上验过，那种结构没有子元素，所以一直没暴露。
+
+## 0.4.1
+
+全是中文排版的修正。四处都由同一份小学课件暴露出来，每一处都拿 PowerPoint
+自己写进文件的 `spAutoFit` 框高做的判据 —— 那个高度是它按实际行数算完存下来的，
+等于文件自己作证该排几行。
+
+### 修复
+
+- **CJK 标点挤压**。汉字和全角标点都占一整格，但标点的墨迹只占半格
+  （`，` `。` 的墨在左半格，`（` `《` 在右半格）。一行放不下时 PowerPoint 会把
+  这些空半格挤掉，我们没做，于是多断出一行。规则取「放不下才挤」：放得下时
+  保持全角。两条渲染路径算同一笔账——原生 `<text>` 用逐字符 `dx`，
+  HTML 用负边距，都与字体无关，不依赖字体是否提供 `halt` 半角替换字形。
+
+  顺带一句：这类问题**换字体救不了**。所有中文字体的方格一样大，黑体、
+  PingFang、思源黑体量出来完全相同
+- **量不到字时的中文估宽**。回退估算原本把每个字符都当 0.55em，中文因此窄掉
+  将近一半。Node / jsdom 里恒走这条路，于是**自动缩放对中文一直缩不够**——
+  autofit 固件实测旧值排出来 204px、框只有 140px，仍然溢出；按全角整格算
+  之后是 146px
+- **百分比行距的基准**。`lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是
+  **字体的行高**（≈1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，
+  每行矮两成。中文文档里 1.5 倍行距是标配，影响面不小；行距偏紧还会连累
+  自动缩放与居中 / 底对齐文本的位置
+- **静态画面改取动画初始态**（原本取终态）。缩略图、主视图、进演示模式后的
+  第一帧现在是同一个画面，不再「先把这页演完、再从头演一遍」。
+  「不能全部画出来」的理由不变：一页里入场与退场的元素属于不同时刻，摊开画
+  等于把几帧叠在一起。例外从「全员退场的收尾页」换成「整页都带入场动画的
+  封面页」——那种情况初始态一片空白，退回全部可见
+
+### 其它
+
+- 测试：1848 → **1873 项断言**，快照 160 → 162 个。`sample-autofit.pptx` 补一页
+  把百分比行距与绝对行距放在一起对照——之前 17 个固件里没有一个用过
+  `spcPct`，这条路径从没被走过
+- `@web-ppt/viewer-core` 与 `@web-ppt/fonts` 本版无改动，跟随版本号对齐
+
+## 0.4.0
+
+本版围绕**字体**：嵌入字体此前从来没有真正生效过，替换字体则完全没有。
+顺带修掉一个让静态画面把动画的几帧叠在一起的问题。
+
+### 新增
+
+- **嵌入字体真的能用了**。PowerPoint 的 `ppt/fonts/*.fntdata` 不是裸 TTF，是 EOT 容器，
+  而且实测**全部**开着 MTX 压缩（POI 语料 6/6、ORCID 样本 10/10）。此前把这段字节
+  原样当 `font/ttf` 塞进 `@font-face`，浏览器一个都不认，只在控制台留一行
+  `invalid sfntVersion`。现在 core 自己剥容器（含异或混淆），MTX 解压走
+  `setFontDecoder()` 注入——官网接的是 [`mtx-decompressor`](https://www.npmjs.com/package/mtx-decompressor) 的 `eotToTtf`，
+  core 本身仍然只依赖 fflate。解不出来就跳过这个字体，不再塞浏览器注定拒绝的字节
+- **`collectFonts(slides)`**：统计若干页用到哪些字体、每个字体要渲染哪些字。
+  纯函数、只依赖 `types.ts`，`.ppt` 链路同样适用，Worker 里能跑
+- **新包 [`@web-ppt/fonts`](packages/fonts)**（gzip 2.8KB，**包里零字节字体**）：
+  文件没带字体、本机也没装时的兜底。拉丁换**度量兼容**的免费字体
+  （Calibri→Carlito、Arial→Arimo 等，前进宽度逐字相等，断行与 PowerPoint 对齐），
+  中文换思源系 / 霞鹜文楷。切片指向钉死版本的 fontsource，按 `unicode-range` 只下用到的那几片
+- **`Viewer.refresh()`**：重渲当前页而不动页码与动画进度。网络字体到货后必须重渲——
+  排版是同步的、加载是异步的，首帧一定是按回退字体断的行
+
+### 修复
+
+- **静态渲染取动画终态，而不是「全部可见」**。一页里入场与退场的元素属于不同时刻，
+  全画出来等于把几帧叠在一起：ORCID 那份样本的第 7 页三段文字本该逐条替换，
+  叠起来一个字都读不出。终态会清空整页时（全员退场的收尾页）退回全部可见
+- **run 没写 `a:latin` 时落到主题的 minorFont**。ECMA-376 的继承链最后一站就是
+  `fontScheme/minorFont`，此前直接当「没有字体」，渲染掉到 CSS 通用回退上，
+  字宽与 PowerPoint 对不齐。真实文件大多在母版 txStyles 里写了 `+mn-lt` 所以少见，
+  但这是「断行对不齐」的一个隐藏来源
+- 字体栈去重：主题的 ea 字体常常正好是回退列表里的 `PingFang SC`，之前会拼出重复项
+
+### 其它
+
+- 测试：1689 → **1848 项断言**，快照 158 → 160 个；新增 `sample-embedfont.pptx`
+  覆盖嵌入字体的四种容器形态（未压缩 EOT / 未压缩+异或 / MTX 压缩 / 裸 TTF）
+- `@web-ppt/core` gzip 84KB 不变；`@web-ppt/viewer-core` 6.8KB → 7.4KB
+- 两个既有包的 peer 依赖同步升到 `^0.4.0`
+
+## 0.3.0
+
+本版把 ECMA-376 的几处主要缺口补齐，并首次拿 **Apache POI 的 242 个公开测试文件**跑批验证：
+排除 22 个故意损坏的模糊测试样本后，真实文件成功率 **210/220 = 95.5%**。
+
+### 新增
+
+- **预设几何补齐到规范全集**：163 → **187 个**。此前缺的 24 个走的是
+  `PRESETS[name] ?? PRESETS.rect`，会**静默画成矩形**，不报错也不进 `unsupported`——
+  `accentCallout*` 这类常见形状出现即无声画错
+- **运动路径动画**：`p:animMotion@path` 此前从未被读取，`presetClass="path"` 一律退化成淡入。
+  现按弧长等距重采样成位移点，播放层走 linear 缓动（PowerPoint 的路径动画是匀速）
+- **切换效果 21 → 41 种**：补上 PowerPoint 2010+ 的全部 19 种 p14 扩展，以及 p159 的
+  **morph**——按形状 id 在前后两页之间配对做几何补间，不是淡入淡出
+- **数学公式 OMML 真排版**：此前只把 `m:t` 拼成一行文字（分式变成 `a+b/2c`）。
+  现做完整箱模型排版，覆盖分式 / 根式 / 上下标 / 大算符 / 定界符 / 矩阵 / 重音 / 极限等 12 类结构
+- **加密文档**：
+  - `.pptx` 标准加密（AES-ECB）与敏捷加密（AES-CBC 分段）
+  - `.ppt` 老式 RC4 CryptoAPI（40 / 56 / 128 位）
+  - 用法 `parse(input, { password })`；密码错误抛 `WrongPasswordError`，与「文件损坏」区分开
+- **PICT（Apple QuickDraw）解码器**：Mac 版 PowerPoint 存的 OLE 预览与图片此前只能是裂图
+- **SmartArt 无缓存 drawing part 时自行排布**：python-pptx / Google Slides 导出的文件
+  常常只写数据与版式定义，此前只能得到灰色占位框。现支持线性 / 循环 / 金字塔 / 层级 /
+  蛇形 / 辐射六种布局族
+
+### 修复
+
+- `borderCallout2` 的引线是三点**开放**子路径，会被 `fill` 补成实心楔形——引线画成了黑三角
+- 后台标签页的 `document.timeline` 是暂停的，`Animation.finished` 永不 resolve，
+  切换的收尾逻辑（移除旧图层）就永远不执行，配合自动换片会让图层持续堆积
+- OLE 预览优先读 `p:oleObj` 内嵌的 `p:pic`（Office 2010+ 的主要写法），旧式 VML 快照作为后备
+
+### 其它
+
+- `@web-ppt/core` gzip 68KB → 84KB（新增的解码器与公式排版；加密与 PICT 走 hook 注入，可 tree-shake）
+- 测试：1298 → **1689 项断言**，快照 142 → 158 个
+- `@web-ppt/viewer-core` 的 peer 依赖同步升到 `^0.3.0`
+
+## 0.2.0 及更早
+
+见 [提交历史](https://github.com/unStone/web-ppt/commits/master)。
