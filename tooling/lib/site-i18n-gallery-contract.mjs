@@ -70,7 +70,9 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await evaluate("globalThis.__previewView = document.querySelector('.preview-stage').firstElementChild; globalThis.__previewBytes = document.querySelector('.preview-dl').href");
     await click('[data-site-locale="en"]');
     await waitFor("document.querySelector('.preview-meta').textContent.includes('Slides: 7') && document.querySelector('.preview-meta').textContent.includes('Parse ')", '已打开样本切英文');
-    if (!await evaluate("document.querySelector('.preview-title').textContent === '复制' && document.querySelector('.preview-pager').textContent === '2 / 7' && globalThis.__previewView === document.querySelector('.preview-stage').firstElementChild && globalThis.__previewBytes === document.querySelector('.preview-dl').href && document.querySelector('.preview-dl').download === 'language-contract.pptx'")) throw new Error('语言切换改变样本内容、页码、视图或下载');
+    // 语言重渲染里 meta 与 title/pager 的更新不是同一帧，CI 慢机上一次性读取会
+    // 读到旧标题；轮询等待全部条件同时成立（样本内容 / 页码 / 视图 / 下载不变）
+    await waitFor("document.querySelector('.preview-title').textContent === '复制' && document.querySelector('.preview-pager').textContent === '2 / 7' && globalThis.__previewView === document.querySelector('.preview-stage').firstElementChild && globalThis.__previewBytes === document.querySelector('.preview-dl').href && document.querySelector('.preview-dl').download === 'language-contract.pptx'", '语言切换不改变样本内容、页码、视图或下载');
     const context = { evaluate, request, click, waitFor };
     await runSiteLanguageInputContract(context, '样本预览');
     await runViewerCopyContract(context, '.preview-share', '复制链接', 'Copy link');
