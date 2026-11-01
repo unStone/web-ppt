@@ -283,7 +283,7 @@ flowchart LR
 | Chrome 启动等待 | ✅ 已完成（52079f0）：统一走 `tooling/lib/chrome-devtools-launch.mjs`，以 DevToolsActivePort 为准 | 仓库内不再有按 stderr 正则取端口的启动代码 |
 | CI 偶发失败 | `Runtime.evaluate` 超时根因已定位：chart-loading 契约中被 `Fetch.enable` 拦截却无人 `failRequest` 的请求会永久挂起（84c45a9 当次 runner 性能采样全部健康，排除单纯机器慢），负例阶段已改为持续失败迟到请求；编辑性能预算（50MB 恢复、210 页回环超 500ms）为 `continue-on-error` 采样，不阻断 CI，根因待查 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
 | 发布凭据口径 | ✅ 已完成：`release.yml` 删除 `secrets.NPM_TOKEN` 残留 env（实际为空值），与文档统一为 OIDC | 文档、工作流与 0.7 新包首发步骤一致 |
-| 发布提速 | 已实施：release 在 tag 指向 commit 的 push CI 绿色时跳过重复门禁（check / test:functional / 性能采样 / bench），0.5.0 实测约省 27 分钟；判定拿不到绿色一律全量，见[发布流程](engineering/releasing.md) | 下次 tag 发布实际走绿色快路径并核对耗时 |
+| 发布提速 | ✅ 已完成并实测（2026-11-01，tag `v0.6.0-beta.1` 快路径运行 41278752772）：门禁信任判定跳过 check / test:functional / 性能采样 / bench 四个重复门禁，**42.5 → 10.3 分钟（-76%）**；构建、verify（含 `--dist` 复验）与八包发布照常执行。快路径与全量的行为差异已全部显式化（verify 对测试落盘依赖的三处降级见 [发布流程](engineering/releasing.md)） | ✅ 2026-11-01 实测通过 |
 | 0.5.x 缺陷 | 0.5.0 用户反馈的问题 | 以 `0.5.N` 补丁版发布，不混入 0.6 能力 |
 
 #### 0.6.0：下一阶段收口 + Agent 第一批
