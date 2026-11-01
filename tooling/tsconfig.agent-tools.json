@@ -3,6 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@web-ppt/core": ["../packages/core/src/index.ts"],
+      "@web-ppt/core/geometry": ["../packages/core/src/geometry/index.ts"],
       "@web-ppt/edit-core": ["../packages/edit-core/src/index.ts"]
     }
   },
