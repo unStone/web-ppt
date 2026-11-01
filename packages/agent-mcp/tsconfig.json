@@ -5,7 +5,22 @@
     "types": ["node"],
     "paths": {
       "@web-ppt/core": ["../core/src/index.ts"],
+      "@web-ppt/core/worker": ["../core/src/worker.ts"],
       "@web-ppt/core/node": ["../core/src/node-export.ts"],
+      "@web-ppt/core/geometry": ["../core/src/geometry/index.ts"],
+      "@web-ppt/core/geometry/handles": ["../core/src/geometry/handles/index.ts"],
+      "@web-ppt/core/pdf": ["../core/src/pdf.ts"],
+      "@web-ppt/core/pdf/vector": ["../core/src/pdf/vector.ts"],
+      "@web-ppt/core/pdf/vector/browser": ["../core/src/pdf/vector-browser.ts"],
+      "@web-ppt/core/image-zip": ["../core/src/image-zip.ts"],
+      "@web-ppt/core/three-d": ["../core/src/three-d.ts"],
+      "@web-ppt/core/emf-plus": ["../core/src/emf-plus.ts"],
+      "@web-ppt/core/advanced-rendering": ["../core/src/advanced-rendering.ts"],
+      "@web-ppt/core/modern-charts": ["../core/src/modern-charts.ts"],
+      "@web-ppt/core/ink-edit": ["../core/src/ink-edit.ts"],
+      "@web-ppt/core/diagram-edit": ["../core/src/diagram-edit.ts"],
+      "@web-ppt/core/chart-ex": ["../core/src/chart-ex.ts"],
+      "@web-ppt/core/chart-edit": ["../core/src/chart-edit.ts"],
       "@web-ppt/edit-core": ["../edit-core/src/index.ts"],
       "@web-ppt/edit-core/agent": ["../edit-core/src/agent/index.ts"]
     }
