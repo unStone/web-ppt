@@ -1,10 +1,10 @@
 import type {
-  CellBorders, CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags,
+  CellBorders, CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags, TableCell,
   Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
   TableCreationDefaults,
   SlideElement, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
   TextCapsStyle, TextStrikeStyle, TextUnderlineStyle, ThemeColorScheme, ThemeColorSlot,
-  ThemeFontScheme,
+  ThemeFontScheme, TextFontSlots, TextRunEditInfo,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 import type { ElementId, FractionalIndex, SlideId } from './identities';
@@ -303,7 +303,7 @@ export interface TableCellOverrides {
   borders?: CellBorders;
   margins?: [number, number, number, number];
   vAlign?: 'top' | 'middle' | 'bottom';
-  vert?: NonNullable<import('@web-ppt/core').TableCell['vert']>;
+  vert?: NonNullable<TableCell['vert']>;
 }
 
 export interface TableRowInsertion {
@@ -339,11 +339,11 @@ export interface TextMark {
   /** 删除直接格式后用于恢复继承所得的有效值；只含字符格式 P0 字段。 */
   readonly inheritedProps?: RunProperties;
   /** 完整继承字符元数据；改级后不能继续沿用旧层级的非面板字段。 */
-  readonly inheritedRunProps?: import('@web-ppt/core').TextRunEditInfo['inheritedRunProps'];
+  readonly inheritedRunProps?: TextRunEditInfo['inheritedRunProps'];
   /** 继承字体可能分别含 latin/ea/cs，不能为面板的单字体值而丢掉回退栈。 */
   readonly inheritedFonts?: readonly string[];
   /** 去重字体栈不足以还原脚本槽；清除 font 直设与换级重基必须保留槽位身份。 */
-  readonly inheritedFontSlots?: import('@web-ppt/core').TextFontSlots;
+  readonly inheritedFontSlots?: TextFontSlots;
   /** 只说明来源链接不可安全编辑，不携带原始 action 或危险 URL。 */
   readonly sourceLinkReadonly?: true;
 }

@@ -9,6 +9,7 @@
 | `packages/core/` | `@web-ppt/core` —— 解析 / 渲染 / 导出，无框架无 DOM 依赖 |
 | `packages/edit-core/` | `@web-ppt/edit-core` —— 编辑文档模型 + 渲染投影，无框架无 DOM 依赖 |
 | `packages/collab/` | `@web-ppt/collab` —— 可选字段级 LWW 协同适配，以 `edit-core` 为 peer |
+| `packages/agent-mcp/` | `@web-ppt/agent-mcp` —— 本机 stdio MCP server 与 Agent Skill，以 `core` / `edit-core` 为 peer |
 | `packages/editor/` | `@web-ppt/editor` —— 编辑会话 + 三层 DOM 视图，无框架运行时依赖 |
 | `packages/react/` | `@web-ppt/react` —— React 组件 + hook 薄适配，React 为 optional peer |
 | `packages/vue/` | `@web-ppt/vue` —— Vue 组件 + composable 薄适配，Vue 为 optional peer |
@@ -30,9 +31,9 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：2592 + 1154 + 575 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1196 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
+| `npm test` | 全部测试：2592 + 1154 + 575 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1202 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；Agent 命令工具面 55 项断言；本机 MCP 35 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
 | `npm run fixtures` | 重新生成全部测试文件 |
-| `npm run build` | 构建八个发布包 |
+| `npm run build` | 构建九个发布包 |
 | `npm run dev` | 启动 viewer |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`npm run verify -- --net` 另查外链可达） |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
@@ -91,7 +92,7 @@ flowchart LR
 
 ## 发布
 
-八个包的 `package.json` 版本改成同一个值后打 tag，`release.yml` 走 npm Trusted Publishing（OIDC），
+九个包的 `package.json` 版本改成同一个值后打 tag，`release.yml` 走 npm Trusted Publishing（OIDC），
 **Secrets 里不存任何凭据**。流水线顺序、发版 checklist、OIDC 环境要求与常见失败见
 [docs/engineering/releasing.md](docs/engineering/releasing.md)。
 

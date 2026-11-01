@@ -1,3 +1,5 @@
+import type { TextCapsStyle, TextRun, TextStrikeStyle, TextUnderlineStyle } from './types';
+
 export interface TextFontSlots {
   readonly latin: string | null;
   readonly eastAsian: string | null;
@@ -29,19 +31,19 @@ export interface TextRunEditInfo {
     readonly i: boolean;
     readonly u: boolean;
     readonly strike: boolean;
-    readonly underline?: import('./types').TextUnderlineStyle;
-    readonly strikeType?: import('./types').TextStrikeStyle;
+    readonly underline?: TextUnderlineStyle;
+    readonly strikeType?: TextStrikeStyle;
     readonly size: number;
     readonly color: string;
     readonly fonts: string[];
     readonly baseline?: number;
     readonly spacing?: number;
-    readonly caps?: import('./types').TextCapsStyle;
+    readonly caps?: TextCapsStyle;
     readonly outline?: { color: string; width: number } | null;
     readonly gradient?: string | null;
-    readonly gradientFill?: import('./types').TextRun['gradientFill'];
+    readonly gradientFill?: TextRun['gradientFill'];
     readonly shadow?: string | null;
-    readonly shadowEffect?: import('./types').TextRun['shadowEffect'];
+    readonly shadowEffect?: TextRun['shadowEffect'];
     readonly generationIssues?: readonly string[];
     readonly highlight?: string | null;
     readonly underlineColor?: string | null;

@@ -40,10 +40,11 @@ flowchart TD
 | `react` / `vue` | 组件 + hook 薄适配，只包 `editor` 公开 seam | peer `editor` + 对应框架 | — |
 | `fonts` | 字体替换表、按需加载、字形子集 | peer `core` | — |
 | `collab` | 字段级 LWW 协同：原子补丁、BroadcastChannel 传输、冲突解决与检查点 | peer `edit-core` | — |
+| `agent-mcp` | 本机 stdio MCP server 与 Agent Skill；复用 004 命令工具面，只读写调用方指定路径 | peer `core` + `edit-core` | MCP SDK 仅在此包 |
 | `viewer`（私有） | 工具栏 / 缩略图虚拟化 / 批注面板 / 导出的完整查看器页面 | 直接依赖 | — |
 | `site`（私有） | 官网、浏览器内 Demo、Cordis 编辑器应用 | 直接依赖（按包名消费） | cordis、harfbuzzjs、mtx-decompressor 等 |
 
-`viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径，边界被破坏会立刻编译失败。发布顺序：`core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` → `collab`。
+`viewer` 与 `site` 通过**包名**消费上游，与外部用户走同一条路径，边界被破坏会立刻编译失败。发布顺序：`core` → `edit-core` → `viewer-core` → `editor` → `react` → `vue` → `fonts` → `collab` → `agent-mcp`。
 
 **为什么 viewer-core 是独立包**：`Viewer` 里真正耦合 DOM 的只有约 24 行（塞 SVG、设可见性、调播放），其余 200 多行是纯状态推进。拆开后 React / Vue / Svelte 可直接驱动 `PresentationState`；状态逻辑不需要 jsdom 就能在 Node 里测；`core` 完全不碰 `document`，可整包进 Worker。抽出当天就测出一个 939 项断言从没碰到的真 bug：`skipHidden` 下若后续全是隐藏页，`next()` 会落在最后一张隐藏页上——当时的固件里没有一张隐藏页，此后补上了 `sample-hidden.pptx` / `.ppt`。
 
@@ -114,6 +115,7 @@ flowchart LR
 | 文档模型 | `document.ts`、`document-extensions.ts`、`identities.ts`、`element-*` |
 | Agent 读取 | 按需 `describe/`：复用有效投影、选择与几何查询，输出稳定 ID 与预算受限的 JSON；Schema 生成/校验仅为开发依赖 |
 | 布局检查 | 按需 `lint/`：共享 describe 的投影身份，复用行盒与图片元数据；Culori/RBush 仅进入该入口，SVG 采样与宿主光栅化分离 |
+| Agent 命令工具 | 按需 `agent/`：全命令生成 Schema、单次 `Editor` 原子事务、编辑后 lint、历史、Node 渲染与保存；Ajv 仅开发期生成校验器，MCP 不在此层 |
 | 命令与历史 | `commands/`、`history.ts`、`transaction-validation.ts` |
 | 投影 | `projection.ts`、`dynamic-projection.ts`、`layout-projection.ts`、`theme-projection.ts`、`design.ts` |
 | 保存 | `save/`（补丁 + 生成）、`ppt/`、`opc/` |

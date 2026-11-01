@@ -7,7 +7,7 @@
 | workflow | 触发 | 职责 |
 |---|---|---|
 | `ci.yml` | push 到 master / PR | 类型检查 → 重生成固件并 `git diff` 验证确定性 → `test:functional` → 性能采样（不阻断）→ LibreOffice / 统一清单外部打开测试 |
-| `release.yml` | 推 `v*` tag 或手动 | 见 §2，发布八个包到 npm |
+| `release.yml` | 推 `v*` tag 或手动 | 见 §2，发布九个包到 npm |
 | `powerpoint.yml` | 仅 `workflow_dispatch`，限 master / tag | 装有桌面 Office 的自托管 Windows 机器执行真机门禁（不跑 PR 代码），运行手册见 [powerpoint-runner.md](powerpoint-runner.md) |
 | `pages.yml` | push 到 master | 部署官网，单实例并发（新推送取消排队旧任务） |
 
@@ -15,12 +15,12 @@
 
 | # | 动作 | 说明 |
 |---|---|---|
-| 1 | 八个包 `package.json` 版本改成同一个值 | 流水线第一步逐包校验 tag 与版本一致，不一致直接失败 |
+| 1 | 九个包 `package.json` 版本改成同一个值 | 流水线第一步逐包校验 tag 与版本一致，不一致直接失败 |
 | 2 | 更新 `CHANGELOG.md` | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
 | 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数） |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
 
-流水线内部顺序：`npm ci` → Python / LibreOffice 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab` 顺序发布（peer 依赖序，不能反）。
+流水线内部顺序：`npm ci` → Python / LibreOffice 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。
 
 方括号里的四步只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这四步已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（**实测 2026-11-01：42.5 → 10.3 分钟，-76%**）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
 
@@ -37,7 +37,7 @@
 
 ## 4. 重跑与跳过的语义
 
-- 发布用 `tooling/publish-if-new.sh`：registry 已有该版本就跳过。八步串行发布中间挂掉后整个 job 重跑，没有这层守卫，前面已成功的包会以 EPUBLISHCONFLICT 再次弄红，埋掉真正的失败原因。
+- 发布用 `tooling/publish-if-new.sh`：registry 已有该版本就跳过。九步串行发布中间挂掉后整个 job 重跑，没有这层守卫，前面已成功的包会以 EPUBLISHCONFLICT 再次弄红，埋掉真正的失败原因。
 - 门禁信任判定（§2）只在目标 commit 的 push CI 绿时跳过重复门禁；rerun 失败的 release 时若 CI 也红了，会自动回退全量路径，不需要人工干预。
 - LibreOffice 缺席时图元测试合法跳过 22 项，但 verify 按文档声明的完整 130 项拒绝发布——发布流水线因此显式安装 `libreoffice-impress fonts-noto-cjk`；本地补跑相关验证前先确认环境等价。
 - 性能采样与编辑性能预算在 beta 阶段 `continue-on-error`：保留红灯证据但不让受宿主负载干扰的 p95 阻断发布（见 [testing.md](testing.md#7-性能门禁的现状)）。
@@ -46,7 +46,7 @@
 
 | 症状 | 定位 |
 |---|---|
-| tag 与包版本不一致 | 第一步校验红，改齐八个 package.json 重打 tag |
+| tag 与包版本不一致 | 第一步校验红，改齐九个 package.json 重打 tag |
 | scoped 包发布报 404（不是 401） | OIDC 没配上或包不存在：新包先本地首发 + 配 trusted publisher。已有包也要**逐包**在 npm 包设置里配 Trusted Publisher（GitHub Actions · `unStone/web-ppt` · `release.yml`，允许直接 publish）——每个包单独配置、互相不继承，0.5.0-beta.7 的 7 个包曾因此全部 404。配完 2 天内须完成一次成功发布，否则配置过期 |
 | verify 报体积 / 断言数漂移 | 数字声明与实测不符：先本地实测（`npm test` 后 `npm run build` 再 `npm run verify`），不要照抄旧值 |
 | verify 跳过体积核对 | 没先 `npm run build`，dist 不存在时体积组整体跳过——「跳过」不等于「通过」 |

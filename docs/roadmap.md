@@ -310,8 +310,8 @@ flowchart LR
 
 | 票据 | 剩余 | 顺序 |
 |---|---|---|
-| Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) 命令工具面 | 开工前确定是否与 005 合为一个新包，写入[研发地图](wayfinder/ppt-agent-interface/map.md) Decisions；命令 Schema 由类型生成并由 `verify` 比对；非法输入原子拒绝；批量命令一次撤销；两条保存路径的外部打开 | 第一 |
-| Agent [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) MCP server 与 Skill | stdio 服务与 Skill 文档；固定任务清单在真实 Claude Code 与 Codex 会话完成并落盘；工具调用无网络请求；新包体积与冷启动实测，八个既有包体积不变 | 004 与 0.6 的 003 之后 |
+| Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) 命令工具面 | ✅ 已完成（2026-11-02）：独立 `edit-core/agent`；全命令 Schema、克隆预检与原子编辑、编辑后观察、历史、渲染和保存；55 项断言与两种外部读取器通过 | ✅ 已关闭 |
+| Agent [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) MCP server 与 Skill | ✅ 已完成（2026-11-02）：真实 Claude Code 与 Codex 固定任务、无网络、原子保存及两种外部读取器通过；2880B gzip，冷加载 91.63ms；八个既有包默认闭包逐字节不变 | ✅ 已关闭 |
 
 发布检查项在 0.6.0 基础上增加：新包首版本地发布并配置发布授权，`release.yml` 发布顺序加入新包，`verify` 的「N 个发布包」核对改为新数目。
 

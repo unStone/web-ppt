@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@web-ppt/core": ["../packages/core/src/index.ts"],
+      "@web-ppt/edit-core": ["../packages/edit-core/src/index.ts"]
+    }
+  },
+  "include": ["../packages/edit-core/src/agent/types.ts"]
+}

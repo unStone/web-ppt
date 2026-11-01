@@ -2,6 +2,13 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 0.7.0-beta.1 - 2026-11-02
+
+- 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，图片字节使用 Base64；支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及补丁 / 生成保存。Schema 不符、目标缺失和语义拒绝均带稳定 reason 与命令序号，失败不改变文稿或历史；独立按需入口不引入 MCP / 模型依赖，core 与 edit-core 默认闭包逐字节不变。
+- 新增 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill：打开、describe、单元素查询、lint、SVG/PNG 渲染、原子编辑、撤销/重做、保存和关闭；只读写调用方指定路径，会话串行、关闭取消、保存原子落盘且无网络请求。协议不返回整份 Base64；真实 Claude Code 与 Codex 已完成改标题、替换图片、新增页面和溢出修复，产物通过 LibreOffice 与 Quick Look。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
+
 ## 0.6.0-beta.1 - 2026-10-31
 
 0.6.0 第一批与第二批全部七张票据收口：Agent Node 渲染、矢量 PDF 转正、视频音轨证据、内嵌视频合成、OLE 深度编辑官网入口。

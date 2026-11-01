@@ -2,12 +2,14 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "types": [],
     // 类型检查直接走源码，不依赖任何包已经构建过 —— 干净 clone 上 `npm run check` 也能过。
     // 只放在这里：各包的 tsconfig.build.json 设了 rootDir: src，
     // 若在 base 里全局映射，会把上游源码拖进下游的 .d.ts 产物。
     "paths": {
       "@web-ppt/core": ["./packages/core/src/index.ts"],
       "@web-ppt/core/worker": ["./packages/core/src/worker.ts"],
+      "@web-ppt/core/node": ["./packages/core/src/node-export.ts"],
       "@web-ppt/core/geometry": ["./packages/core/src/geometry/index.ts"],
       "@web-ppt/core/geometry/handles": ["./packages/core/src/geometry/handles/index.ts"],
       "@web-ppt/core/pdf": ["./packages/core/src/pdf.ts"],
@@ -24,6 +26,8 @@
       "@web-ppt/core/chart-edit": ["./packages/core/src/chart-edit.ts"],
       "@web-ppt/edit-core": ["./packages/edit-core/src/index.ts"],
       "@web-ppt/edit-core/describe": ["./packages/edit-core/src/describe/index.ts"],
+      "@web-ppt/edit-core/agent": ["./packages/edit-core/src/agent/index.ts"],
+      "@web-ppt/agent-mcp": ["./packages/agent-mcp/src/index.ts"],
       "@web-ppt/edit-core/lint": ["./packages/edit-core/src/lint/index.ts"],
       "@web-ppt/edit-core/lint/sampler": ["./packages/edit-core/src/lint/sampler.ts"],
       "@web-ppt/edit-core/xml": ["./packages/edit-core/src/xml/index.ts"],
@@ -90,6 +94,8 @@
     "tooling/type-contracts/appearance-browser.ts",
     "tooling/type-contracts/chartex.ts",
     "tooling/type-contracts/comments.ts",
-    "tooling/type-contracts/site-i18n.ts"
-  ]
+    "tooling/type-contracts/site-i18n.ts",
+    "tooling/type-contracts/agent-tools.ts"
+  ],
+  "exclude": ["packages/agent-mcp/src"]
 }

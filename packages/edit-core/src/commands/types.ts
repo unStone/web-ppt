@@ -2,7 +2,8 @@ import type { CellBorders, Effects, Fill, Stroke, TableCell } from '@web-ppt/cor
 import type {
   DesignTarget, EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyInput, ProjectionInvalidation,
   RunPropertyOverrides, SlideId, TextFragment, TextOverride,
-  SlideRecord, TableCellAddress, TextBodyPropertyOverrides,
+  SlideRecord, TableCellAddress, TextBodyPropertyOverrides, TableRowId, TableColumnId, TableCellRef,
+  TableRowInsertion, TableColumnInsertion, TableMergeRegion, TableCellOverrides, TableCellRowRef, TableCellColumnRef, SectionId,
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
 import type { ElementHierarchyPatch, GroupCommand, UngroupCommand } from './group-types';
@@ -326,58 +327,58 @@ export interface InsertRowCommand {
   readonly type: 'InsertRow';
   readonly id: ElementId;
   /** 省略仍兼容尾部追加；null 也表示尾部。 */
-  readonly at?: { readonly before: import('../types').TableRowId | null };
+  readonly at?: { readonly before: TableRowId | null };
 }
 
 export interface InsertColumnCommand {
   readonly type: 'InsertColumn';
   readonly id: ElementId;
-  readonly at?: { readonly before: import('../types').TableColumnId | null };
+  readonly at?: { readonly before: TableColumnId | null };
 }
 
 export interface RemoveRowCommand {
   readonly type: 'RemoveRow';
   readonly id: ElementId;
-  readonly row: import('../types').TableRowId;
+  readonly row: TableRowId;
 }
 
 export interface RemoveColumnCommand {
   readonly type: 'RemoveColumn';
   readonly id: ElementId;
-  readonly column: import('../types').TableColumnId;
+  readonly column: TableColumnId;
 }
 
 export interface SetRowHeightCommand {
   readonly type: 'SetRowHeight';
   readonly id: ElementId;
-  readonly row: import('../types').TableRowId;
+  readonly row: TableRowId;
   readonly height: number;
 }
 
 export interface SetColumnWidthCommand {
   readonly type: 'SetColumnWidth';
   readonly id: ElementId;
-  readonly column: import('../types').TableColumnId;
+  readonly column: TableColumnId;
   readonly width: number;
 }
 
 export interface MergeCellsCommand {
   readonly type: 'MergeCells';
   readonly id: ElementId;
-  readonly from: import('../types').TableCellRef;
-  readonly to: import('../types').TableCellRef;
+  readonly from: TableCellRef;
+  readonly to: TableCellRef;
 }
 
 export interface SplitCellCommand {
   readonly type: 'SplitCell';
   readonly id: ElementId;
-  readonly cell: import('../types').TableCellRef;
+  readonly cell: TableCellRef;
 }
 
 export interface SetCellPropsCommand {
   readonly type: 'SetCellProps';
   readonly id: ElementId;
-  readonly cell: import('../types').TableCellRef;
+  readonly cell: TableCellRef;
   readonly props: {
     readonly fill?: Exclude<Fill, { type: 'image' }> | null;
     readonly borders?: CellBorders | null;
@@ -410,11 +411,11 @@ type PageOnlyCommand = AddSlideCommand | MoveSlideCommand | RemoveSlideCommand |
 
 /** 版式命令沿用元素命令语言；只有画布属性命令显式携带 DesignTarget。 */
 export type DesignCommand = Exclude<Command, PageOnlyCommand | SetBackgroundCommand | SetTransitionCommand>
-  | Extract<SetBackgroundCommand, { readonly target: import('../types').DesignTarget }>
-  | Extract<SetTransitionCommand, { readonly target: import('../types').DesignTarget }>
-  | Extract<AddShapeCommand, { readonly target: import('../types').DesignTarget }>
-  | Extract<AddImageCommand, { readonly target: import('../types').DesignTarget }>
-  | Extract<AddTableCommand, { readonly target: import('../types').DesignTarget }>;
+  | Extract<SetBackgroundCommand, { readonly target: DesignTarget }>
+  | Extract<SetTransitionCommand, { readonly target: DesignTarget }>
+  | Extract<AddShapeCommand, { readonly target: DesignTarget }>
+  | Extract<AddImageCommand, { readonly target: DesignTarget }>
+  | Extract<AddTableCommand, { readonly target: DesignTarget }>;
 
 type SetXfrmPatch = { [F in XfrmField]: {
   readonly op: 'set';
@@ -517,12 +518,12 @@ export type ElementTextPatch = {
   readonly origin: string;
 } | {
   readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, import('../types').TableCellColumnRef, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
   readonly value: TextOverride;
   readonly origin: string;
 } | {
   readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', import('../types').TableCellRowRef, import('../types').TableCellColumnRef, 'text'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
   readonly origin: string;
 };
 
@@ -584,7 +585,7 @@ export interface SlideTreeSnapshot {
   /** 复制发生时已证明的原操作；恢复与重做只运输这份不可变证据。 */
   readonly extensionCopies?: string;
   /** 页面结构 Patch 同步维护稳定节成员；省略表示该页不属于任何节。 */
-  readonly sectionId?: import('../types').SectionId;
+  readonly sectionId?: SectionId;
 }
 
 export type SlideTreePatch = {
@@ -604,14 +605,14 @@ export type SlideOrderPatch = {
 export type TableRowPatch = {
   readonly op: 'insert' | 'remove';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableRows', string];
-  readonly value: import('../types').TableRowInsertion;
+  readonly value: TableRowInsertion;
   readonly origin: string;
 };
 
 export type TableColumnPatch = {
   readonly op: 'insert' | 'remove';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableColumns', string];
-  readonly value: import('../types').TableColumnInsertion;
+  readonly value: TableColumnInsertion;
   readonly origin: string;
 };
 
@@ -626,7 +627,7 @@ export type TableGridEntryPatch = {
 export type TableMergePatch = {
   readonly op: 'set';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
-  readonly value: readonly import('../types').TableMergeRegion[];
+  readonly value: readonly TableMergeRegion[];
   readonly origin: string;
 } | {
   readonly op: 'del';
@@ -638,7 +639,7 @@ export type TableCellPropsPatch = {
   readonly op: 'set' | 'del';
   readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', string,
     'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'];
-  readonly value?: import('../types').TableCellOverrides[keyof Omit<import('../types').TableCellOverrides, 'text'>];
+  readonly value?: TableCellOverrides[keyof Omit<TableCellOverrides, 'text'>];
   readonly origin: string;
 };
 

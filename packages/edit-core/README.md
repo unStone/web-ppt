@@ -14,6 +14,10 @@ The opt-in entry and its published JSON Schema are documented in [Agent describe
 explicit resource failures and cancellation. Complex paint can use the opt-in SVG contrast sampler;
 see [Layout lint](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-layout-lint.md).
 
+`@web-ppt/edit-core/agent` exposes every editor command through generated JSON Schemas, atomic batches,
+post-edit lint observations, undo/redo, Node rendering, and patch/generated saving. It is transport-neutral
+and has no MCP or model dependency; see [Agent command tools](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-command-tools.md).
+
 ```bash
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```

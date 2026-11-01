@@ -120,6 +120,7 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 | Picture / 3D effects | [appearance editing](https://github.com/unStone/web-ppt/blob/master/docs/api/appearance-editing.md) |
 | Screen-reader canvas, EditContext, automatic ChartEx loading | [browser enhancements](https://github.com/unStone/web-ppt/blob/master/docs/api/browser-editing.md) |
 | Comment panel and export opt-ins | [comments](https://github.com/unStone/web-ppt/blob/master/docs/api/comments.md) |
+| Agent command tools, atomic editing and saving | [command tool surface](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-command-tools.md) |
 | Chart editing, SmartArt/OLE/ink, PDF/WebM and native PPT saving | [expanded capabilities](https://github.com/unStone/web-ppt/blob/master/docs/api/expanded-capabilities.md) |
 | Experimental vector PDF | [scope and remaining validation](https://github.com/unStone/web-ppt/blob/master/docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md) |
 
@@ -131,6 +132,7 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 185.70 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 59.27 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 12.20 KB |
+| [`@web-ppt/agent-mcp`](https://github.com/unStone/web-ppt/tree/master/packages/agent-mcp) | Local stdio MCP server and Agent Skill. | `core` + `edit-core` + MCP SDK | 2.81 KB |
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.34 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 14.09 KB |
@@ -165,7 +167,7 @@ Every parsing pipeline converges on one schema, and the renderer knows the schem
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
 | `npm run check` | TypeScript type check |
 | `npm test` | Every test suite |
-| `npm run build` | Build all eight publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab) |
+| `npm run build` | Build all nine publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp) |
 | `npm run verify` | License / version / links / documented numbers against measured values |
 | `npm run demo-gif` | Re-record the README demo GIFs from the sample gallery (needs Chrome and ffmpeg) |
 

@@ -17,6 +17,7 @@
 | `npm run schema:describe` | 从 TypeScript 输出类型重新生成 Agent describe 的发布 Schema |
 | `npm run schema:lint` / `npm run test:lint` | 生成布局报告 Schema / 验证七项检查、字体服务、实际像素采样和全固件环境对照 |
 | `npm run test:describe` / `npm run test:describe:dist` | 结构化读出源码 / 发布入口、Schema 与全部固件跨进程一致性验证 |
+| `npm run schema:agent` / `npm run test:agent[:dist]` | 重新生成全命令工具 Schema 与校验器 / 验证源码或发布入口的原子编辑、观察、历史和保存；`test:agent:libreoffice` 补充外部读取器 |
 | `npm run ppt-samples` | 用 LibreOffice 把 pptx 测试文件转成 `.ppt` 样本（pptx 固件变更后需重跑） |
 | `npm run compare public/showcase.pptx` | 用 LibreOffice 生成参考图做并排 / 叠加对比，产出 SSIM / MAE / 热力图 |
 | `npm run diff:pptx -- before.pptx after.pptx` | 报告两个 PPTX 新增、删除与变化的 part |

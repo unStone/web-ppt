@@ -337,6 +337,10 @@ if (!counts) {
     // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接
     ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
     ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    ['docs/engineering/testing.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
+    ['AGENTS.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
+    ['docs/engineering/testing.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
+    ['AGENTS.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
     ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /Agent Node 双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],

@@ -30,7 +30,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stateFile = join(root, `out/hook/doc-sync-${mode}-state.json`);
 /** pre-commit 看暂存区（这次提交），Stop 看工作区（这次会话），git 参数只差 --cached */
 const cached = mode === 'pre-commit';
-const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
 
 /** 敏感区域 → 需要复查的文档。规则与 docs/engineering/testing.md、releasing.md 的职责对齐。 */
 const RULES = [

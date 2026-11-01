@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/edit-core",
-  "version": "0.6.0-beta.1",
+  "version": "0.7.0-beta.1",
   "description": "Headless, framework-agnostic editing document model and render projection for Web-PPT.",
   "keywords": [
     "pptx",
@@ -113,6 +113,11 @@
       "types": "./dist/lint/sampler.d.ts",
       "import": "./dist/lint-sampler.js"
     },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "import": "./dist/agent.js"
+    },
+    "./agent/schema.json": "./schemas/agent-tools.schema.json",
     "./ppt": {
       "types": "./dist/ppt/index.d.ts",
       "import": "./dist/ppt.js"
@@ -126,13 +131,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "postbuild": "node ../../tooling/build-agent-describe.mjs && vite build --config vite.lint.config.ts",
+    "postbuild": "node ../../tooling/build-agent-describe.mjs && vite build --config vite.lint.config.ts && node ../../tooling/build-agent-tools.mjs",
     "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.appearance.config.ts && vite build --config vite.resize.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json && vite build --config vite.comments.config.ts && vite build --config vite.chart-design.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.smartart.config.ts && vite build --config vite.cfb.config.ts && vite build --config vite.ole.config.ts && vite build --config vite.ink.config.ts && vite build --config vite.ppt.config.ts",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.6.0-beta.1"
+    "@web-ppt/core": "^0.7.0-beta.1"
   },
   "dependencies": {
     "culori": "^4.0.2",

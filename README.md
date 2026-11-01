@@ -120,6 +120,7 @@ session.dispose();
 | 图片 / 立体效果 | [外观效果](docs/api/appearance-editing.md) |
 | 画布读屏、EditContext、现代图表自动加载 | [浏览器增强](docs/api/browser-editing.md) |
 | 批注面板与导出开关 | [批注](docs/api/comments.md) |
+| Agent 全命令工具、原子编辑与保存 | [命令工具面](docs/api/agent-command-tools.md) |
 | 图表深度编辑、SmartArt/OLE/墨迹、PDF/WebM 与原生 PPT 保存 | [扩展能力](docs/api/expanded-capabilities.md) |
 | 实验性矢量 PDF | [支持范围与待验收项](docs/wayfinder/ppt-portability-fidelity/notes/vector-pdf-implementation.md) |
 
@@ -131,6 +132,7 @@ session.dispose();
 | [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 185.70KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 59.27KB |
 | [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 12.20KB |
+| [`@web-ppt/agent-mcp`](packages/agent-mcp) | 本机 stdio MCP server 与 Agent Skill | `core` + `edit-core` + MCP SDK | 2.81KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 14.09KB |
@@ -165,7 +167,7 @@ session.dispose();
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
 | `npm run check` | TypeScript 类型检查 |
 | `npm test` | 全部测试 |
-| `npm run build` | 构建八个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab） |
+| `npm run build` | 构建九个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp） |
 | `npm run verify` | 许可证 / 版本 / 链接 / 文档数字与实测比对 |
 | `npm run demo-gif` | 从样本库重录 README 演示 GIF（需要 Chrome 与 ffmpeg） |
 

@@ -1,0 +1,62 @@
+{
+  "name": "@web-ppt/agent-mcp",
+  "version": "0.7.0-beta.1",
+  "description": "Local-only MCP stdio server and Agent Skill for deterministic PPT reading, editing, rendering and saving.",
+  "keywords": [
+    "pptx",
+    "ppt",
+    "powerpoint",
+    "mcp",
+    "agent",
+    "stdio",
+    "offline",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "unStone",
+  "homepage": "https://github.com/unStone/web-ppt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unStone/web-ppt.git",
+    "directory": "packages/agent-mcp"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/agent-mcp.js",
+  "module": "./dist/agent-mcp.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "web-ppt-agent": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/agent-mcp.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "prepack": "node ../../tooling/sync-package-docs.mjs"
+  },
+  "peerDependencies": {
+    "@web-ppt/core": "^0.7.0-beta.1",
+    "@web-ppt/edit-core": "^0.7.0-beta.1"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

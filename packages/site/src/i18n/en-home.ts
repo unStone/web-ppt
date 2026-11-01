@@ -119,6 +119,7 @@ export const homeMessages = {
   '编辑模型、历史与增量保存': 'Editing model, history and incremental save',
   '无框架编辑会话与三层 DOM': 'Framework-free editing session and three-layer DOM',
   '可选字段级 LWW 协同适配': 'Optional field-level LWW collaboration',
+  '本机 stdio MCP server 与 Agent Skill': 'Local stdio MCP server and Agent Skill',
   'React 组件与 hook 薄适配': 'Thin React components and hooks', 'Vue 组件与 composable 薄适配': 'Thin Vue components and composables',
   'headless 状态机 + 播放层': 'Headless state machine + playback', '字体替换与按需加载（可选）': 'Optional font substitution and on-demand loading',
   '体积按默认入口及全部相对静态分块逐文件 gzip 后求和，不含 peer 或动态加载入口。': 'Sizes sum the gzipped default entry and all relative static chunks, excluding peers and dynamic entries.',

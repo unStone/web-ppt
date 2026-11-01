@@ -4,6 +4,8 @@
 
 `@web-ppt/edit-core/lint` 检查文字溢出、重叠、越界、对比度、字体、提示文字和图片比例，返回稳定 reason 与实测值；真实测字及宿主资源通过显式接口提供，复杂颜色可接入独立的 `/lint/sampler`。[API 与发布 Schema](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-layout-lint.md)。
 
+`@web-ppt/edit-core/agent` 提供全命令生成 Schema、原子批量、编辑后布局观察、撤销 / 重做、Node 渲染和补丁 / 生成保存；入口与传输协议无关，不依赖 MCP 或模型服务。[API、JSON Schema 与失败协议](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-command-tools.md)。
+
 [English](README.md) · **简体中文**
 
 [Web-PPT](https://github.com/unStone/web-ppt) 的无 DOM、无框架编辑模型。
