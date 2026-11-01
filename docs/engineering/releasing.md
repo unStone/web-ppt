@@ -22,9 +22,9 @@
 
 流水线内部顺序：`npm ci` → Python / LibreOffice 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab` 顺序发布（peer 依赖序，不能反）。
 
-方括号里的四步只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这四步已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（0.5.0 实测省约 27 分钟）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
+方括号里的四步只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这四步已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（**实测 2026-11-01：42.5 → 10.3 分钟，-76%**）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
 
-跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。`verify-v08-readiness` 另读源码模式批注测试的落盘报告（`out/comments/source-report.json`），快路径下由构建后的「生成 verify 依赖的测试落盘」步骤补生成。
+跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。verify 链对测试落盘依赖的三处降级（`verify-v08-readiness` 的产物检查、`measure-expanded` 的套件计数、`verify-consistency` 的 counts）在快路径下黄字跳过、全量路径行为不变——完整性均由同 commit 的 CI 覆盖。
 
 ## 3. Trusted Publishing（OIDC）的环境要求
 
