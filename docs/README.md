@@ -68,6 +68,8 @@ flowchart TB
 | [agent-node-render.md](api/agent-node-render.md) | Agent Node 无 Office 渲染：测字 / 光栅化注入、稳定 reason 与确定性 |
 | [agent-command-tools.md](api/agent-command-tools.md) | Agent 全命令 JSON Schema、原子编辑、编辑后观察、历史与保存 |
 | [agent-mcp.md](api/agent-mcp.md) | 本机 stdio MCP、文件会话、配置注入、无网络约束与 Agent Skill |
+| [agent-webmcp.md](api/agent-webmcp.md) | 官网当前文稿的原生 WebMCP 工具、权限、取消与保存交付 |
+| [agent-template-fill.md](api/agent-template-fill.md) | 结构化大纲、模板角色匹配、原生内容、设计修复及确定性生成 |
 | [format-capabilities.md](api/format-capabilities.md) | `.pptx` / `.ppt` 能力矩阵与文本细项 |
 | [format-limitations.md](api/format-limitations.md) | 格式缺失、近似实现与待验收边界 |
 | [expanded-capabilities.md](api/expanded-capabilities.md) | 全部按需扩展入口的能力矩阵（索引层） |
@@ -114,6 +116,8 @@ flowchart TB
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
 | [agent-command-tools.md](design/agent-command-tools.md) | Agent 命令 Schema、原子事务、错误定位与按需成本决策 |
 | [agent-mcp.md](design/agent-mcp.md) | Agent 005 实施计划：stdio、文件会话、无网络约束、真实 Agent 验收与发布 |
+| [agent-webmcp.md](design/agent-webmcp.md) | Agent 006 原生接口、文稿作用域、任务串行与验收方案 |
+| [agent-template-fill.md](design/agent-template-fill.md) | Agent 007 私有生成阶段、原子拒绝、完整检查与规范化身份 |
 | [0.6.0.md](design/0.6.0.md) | 0.6.0 实施编排、决策与风险（对应 [PRD](product/0.6.0.md)，待评审） |
 
 ### ux/：界面设计与验收

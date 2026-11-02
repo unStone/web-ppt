@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-11-02，基线 `v0.7.0`，当前包版本 `0.7.0`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-11-03，Git 基线 `v0.7.0`，当前包版本 `0.8.0-beta.1`（发布准备），npm 最新稳定版 `0.6.0`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径，以及面向 AI Agent 的下一阶段（依据见 [AI 与演示文稿调研](research/ai-presentation-landscape.md)）。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -25,7 +25,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）均已完成——005 经四独立实现对照（MuPDF / poppler / CoreGraphics / PDFium）于 0.6.0 转正为正式入口；006 功能随
 `0.5.0-beta.6` 发布，脉冲同轴（FFmpeg 独立测量）、取消与资源释放、循环跨页证据于 2026-10-31 补齐；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）已完成——官网面板含 run 级改字、单元格样式与富文本入口，LibreOffice 外部打开与重写往返验证在 CI；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查，外部语料中已有的样本及完成步骤已登记在票据中。
 
-外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）、布局检查（002）与 Node 无 Office 渲染（003）已完成——`@web-ppt/core/node` 按需入口提供稳定 reason 的注入校验、跨进程确定性（资源按字节寻址）与双端指纹对照（148/152 页逐字节一致，差异页均归因），其余票据继续按依赖推进。
+外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）、布局检查（002）、Node 无 Office 渲染（003）、命令工具面（004）、本机 MCP（005）、编辑器 WebMCP（006）与模板填充（007）已完成。模板填充覆盖三套内置与真实外部模板，实际修复设计后完整七项检查零问题，原生内容与发布产物通过独立读取器；任务评测（008）继续按依赖推进。
 
 ### 1.2 验证状态
 
@@ -106,7 +106,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 
 | 能力 | 状态 |
 |---|---|
-| 发布包 | ✅ 8 个（core / edit-core / viewer-core / editor / react / vue / fonts / collab），`latest` 同版本 `0.5.0`；`@next` 留给 0.6 线 |
+| 发布包 | npm 已发布 8 包，`latest` 同版本 `0.6.0`；本轮含新增 `agent-mcp` 的九包 `0.8.0-beta.1` 准备发布到 `next` |
 | 框架适配 | ✅ React 1.12KB + Vue 1.34KB gzip，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
@@ -189,15 +189,16 @@ flowchart LR
 
 | 版本 | 内容 | 票据 | 发布条件 |
 |---|---|---|---|
-| **0.5.0-beta.7**（`next`） | CHANGELOG「未发布」全部条目与 #8 西文字体回退修复：#7 组合缩放与解组、#8 撇号、旧 PPT 外观写入、OLE DOCX / XLSX SDK、矢量 PDF 文字装饰与描边、`videoOverlay` 失败告警 | 下一阶段 [012](wayfinder/ppt-portability-fidelity/tickets/012-legacy-ppt-appearance-write.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md) 的已完成部分 | 四项门禁；发布后请 #7 / #8 报告者复测 |
-| **0.5.0**（`latest`） | `0.5.0-beta.7` 的全部内容：编辑主线、[0.6 编辑完整度](wayfinder/ppt-editing-completeness/map.md)、[0.7 模板与主题](wayfinder/ppt-template-theme/map.md)、[0.8 数据与保真](wayfinder/ppt-data-fidelity/map.md)、[七类扩展](wayfinder/ppt-expanded-capabilities/map.md)及下一阶段已发布入口；实验性入口保持实验性标记 | [075 转正七步](wayfinder/ppt-editor/tickets/075-0.5.0-stable-release.md)，[一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) ✅ | ✅ 2026-10-29 发布；[010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md) Windows 真机与 beta 反馈周期经用户决定豁免先行，后续问题以 0.5.x 补丁版修复 |
-| **0.6.0** | 下一阶段收口：矢量 PDF 转为正式入口、视频音轨与内嵌视频合成、OLE 官网入口；Agent 第一批：describe、lint、Node 渲染 | 下一阶段 [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) / [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) / [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md)；Agent [001](wayfinder/ppt-agent-interface/tickets/001-structured-describe.md) / [002](wayfinder/ppt-agent-interface/tickets/002-layout-lint.md) / [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) | ✅ 2026-11-02 转正；Windows 真机经维护者决定延后且未计为通过 |
-| **0.7.0**（`latest`） | Agent 第二批：命令工具面、MCP server 与 Agent Skill；新增发布包 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) | ✅ 2026-11-02 转正；Windows 真机经维护者决定延后且未计为通过 |
+| **0.5.0-beta.7** | #7 组合缩放与解组、#8 撇号及西文字体回退、旧 PPT 外观写入、OLE DOCX / XLSX SDK、矢量 PDF 文字装饰与描边、`videoOverlay` 失败告警 | 下一阶段 [012](wayfinder/ppt-portability-fidelity/tickets/012-legacy-ppt-appearance-write.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md) 的已完成部分 | 四项门禁；发布后请 #7 / #8 报告者复测 |
+| **0.5.0** | `0.5.0-beta.7` 的全部内容：编辑主线、[0.6 编辑完整度](wayfinder/ppt-editing-completeness/map.md)、[0.7 模板与主题](wayfinder/ppt-template-theme/map.md)、[0.8 数据与保真](wayfinder/ppt-data-fidelity/map.md)、[七类扩展](wayfinder/ppt-expanded-capabilities/map.md)及下一阶段已发布入口；实验性入口保持实验性标记 | [075 转正七步](wayfinder/ppt-editor/tickets/075-0.5.0-stable-release.md)，[一致性闸门](wayfinder/ppt-editor/tickets/076-cross-artifact-consistency-gate.md) ✅ | ✅ 2026-10-29 发布；[010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md) Windows 真机与 beta 反馈周期经用户决定豁免先行，后续问题以 0.5.x 补丁版修复 |
+| **0.6.0**（`latest`） | 下一阶段收口：矢量 PDF 转为正式入口、视频音轨与内嵌视频合成、OLE 官网入口；Agent 第一批：describe、lint、Node 渲染 | 下一阶段 [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) / [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) / [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md)；Agent [001](wayfinder/ppt-agent-interface/tickets/001-structured-describe.md) / [002](wayfinder/ppt-agent-interface/tickets/002-layout-lint.md) / [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) | ✅ 2026-11-02 转正；Windows 真机经维护者决定延后且未计为通过 |
+| **0.7.0**（未发布） | Agent 第二批：命令工具面、MCP server 与 Agent Skill；新增发布包 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) | 流水线因 `agent-mcp` 未完成首发而终止；能力并入 `0.8.0-beta.1` |
+| **0.8.0-beta.1**（准备发布到 `next`） | 模板填充生成、编辑器 WebMCP，包含尚未发布的 0.7 线能力 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) / [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) | 四项自动门禁；新包首发与发布授权；九包 registry 核验 |
 | **0.8.0** | 模板填充生成、编辑器 WebMCP、Agent 任务评测集 | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) / [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 所列票据关闭；beta 反馈周期；Windows 真机 |
 | **1.0.0** | 冻结现有公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.8 beta 反馈收口；ChartEx 真实语料与 Windows 验收（§7.3） |
 
 长尾格式（下一阶段 [008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md) 及其后续实现票）不绑定版本，关闭时随当时的 beta 线发布。
-每个稳定版原则上绑定其提交的 Windows 真机结果；Windows 真机按用户要求延后，0.5.0 于 2026-10-29、0.6.0 与 0.7.0 于 2026-11-02 经维护者决定豁免先行转正且均未计为通过，后续稳定版仍以真机结果为准。
+每个稳定版原则上绑定其提交的 Windows 真机结果；Windows 真机按用户要求延后，0.5.0 于 2026-10-29、0.6.0 于 2026-11-02 经维护者决定豁免先行转正且均未计为通过，后续稳定版仍以真机结果为准。
 
 ---
 
@@ -310,8 +311,8 @@ flowchart LR
 
 | 票据 | 剩余 | 顺序 |
 |---|---|---|
-| Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) 命令工具面 | ✅ 已完成（2026-11-02）：独立 `edit-core/agent`；全命令 Schema、克隆预检与原子编辑、编辑后观察、历史、渲染和保存；55 项断言与两种外部读取器通过 | ✅ 已关闭 |
-| Agent [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) MCP server 与 Skill | ✅ 已完成（2026-11-02）：真实 Claude Code 与 Codex 固定任务、无网络、原子保存及两种外部读取器通过；2880B gzip，冷加载 91.63ms；八个既有包默认闭包逐字节不变 | ✅ 已关闭 |
+| Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) 命令工具面 | ✅ 已完成（2026-11-02）：独立 `edit-core/agent`；全命令 Schema、克隆预检与原子编辑、编辑后观察、历史、渲染和保存；79 项断言与两种外部读取器通过，验收补齐超链接与设计目标区分 | ✅ 已关闭 |
+| Agent [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) MCP server 与 Skill | ✅ 已完成（2026-11-02）：真实 Claude Code 与 Codex 固定任务、无网络、原子保存及两种外部读取器通过；当前 beta 发布入口 3091B gzip，验收冷加载样本 99.93ms；57 项回归覆盖文件交付队列与交付后确认保存点，八个既有包默认闭包逐字节不变 | ✅ 已关闭 |
 
 发布检查项在 0.6.0 基础上增加：新包首版本地发布并配置发布授权，`release.yml` 发布顺序加入新包，`verify` 的「N 个发布包」核对改为新数目。
 
@@ -319,8 +320,8 @@ flowchart LR
 
 | 票据 | 剩余 | 是否阻挡发布 |
 |---|---|---|
-| Agent [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) 模板填充 | 大纲 Schema；三套内置模板与一份外部模板 lint 零错误；保存重开 describe 一致；同输入逐字节一致；非法大纲原子拒绝 | 是 |
-| Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) 编辑器 WebMCP | origin trial Chrome 端到端；不支持时编辑页激活闭包体积与行为不变；文稿切换 / 关闭后注册状态正确 | 是；若 WebMCP 规范或 origin trial 在发布时不可用，按票据降级要求只发布不注册路径并说明 |
+| Agent [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) 模板填充 | ✅ 已完成（2026-11-02）：独立 `edit-core/fill`、六类页面、八种原生图表、POTX 类型转换与真实设计修复；三套内置和外部模板全部七项零问题，483 项业务 + 70 项浏览器回归，原生内容、跨进程与源码/发布字节确定性、独立读取器及最终四项门禁通过 | ✅ 已关闭 |
+| Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) 编辑器 WebMCP | ✅ 已完成（2026-11-02）：八工具复用当前 Editor；127 项浏览器断言、原生 Chrome 官方测试标志下中英文固定任务与真实下载重开、LibreOffice / Quick Look 通过；不支持时不加载插件，原激活预算不变，四项门禁全部通过 | ✅ 已关闭；部署仍须由浏览器提供原生试验能力 |
 | Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) 评测集 | 一条命令复跑判定；记录有无 lint 两种配置的完成率与失败分布 | 否（票据规定不作为发布门禁），结果作为 1.0 冻结工具 Schema 的依据 |
 
 #### 1.0.0：API 冻结
@@ -379,7 +380,7 @@ flowchart LR
 | 顺序 | 动作 | 当前状态 | 完成条件 |
 |---|---|---|---|
 | 1 | 补齐真实 ChartEx PPTX 类型语料及高级渲染对照 | 合成功能门禁和现有真实样本通过，完整类型覆盖待补 | 可信来源、可复现输入、逐类型原生布局与保存重开证据 |
-| 2 | Windows + 桌面 PowerPoint 自托管验收 | **按用户要求延后**，0.5.0、0.6.0 与 0.7.0 转正时经维护者决定豁免，均未计为通过；后续稳定版仍需要 | 同一 Office 工件清单绑定提交与字节，无修复打开并核验原生内容 |
+| 2 | Windows + 桌面 PowerPoint 自托管验收 | **按用户要求延后**，0.5.0 与 0.6.0 转正时经维护者决定豁免，均未计为通过；后续稳定版仍需要 | 同一 Office 工件清单绑定提交与字节，无修复打开并核验原生内容 |
 | 3 | beta 反馈、API 冻结与版本发布 | [API 契约与迁移准备](api/api-stability.md)已完成，尚未正式冻结；版本内容见 §4，执行顺序与发布检查项见 §7.1 | 各版本按 §7.1 的发布检查项执行发布流程 |
 
 Windows 真机仍列为正式发布条件；它不阻挡已完成代码与 roadmap 的提交、推送。

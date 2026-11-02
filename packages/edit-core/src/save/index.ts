@@ -41,6 +41,7 @@ import { createLayoutFallbackGeometryResolver } from './layout-fallback-source';
 import {
   materializeNotesParts, patchSlideNotesRelationship, prepareNotesSave,
 } from './notes';
+import { materializeNotesMaster, prepareNotesMasterSave } from './notes-master';
 import { hasNameOverride } from './name';
 import { hasAltTextOverride } from './alt-text';
 import { hasGeometryOverride } from './geometry';
@@ -231,6 +232,7 @@ export function saveEditDoc(
     }
   }
   const notesPlan = prepareNotesSave(doc, nextBaselines, nextCreatedParts);
+  const notesMaster = prepareNotesMasterSave(doc, nextBaselines, nextCreatedParts);
   const hasCreatedSlideHistory = activeCreatedSlides.length > 0
     || [...nextCreatedParts].some((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part));
   const currentSlideParts = doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []);
@@ -507,6 +509,7 @@ export function saveEditDoc(
 
   materializeDuplicateComments(doc, activeCreatedSlides, nextBaselines, nextCreatedParts, changes);
   for (const runtime of registeredEditExtensions().values()) runtime.materializePackage?.(doc, nextBaselines, nextCreatedParts, changes);
+  materializeNotesMaster(doc, notesMaster, nextBaselines, changes);
   const result = patchOpcPackage(doc.package, changes satisfies OpcPartChanges);
   commitSavedPackage(doc, result.package, nextBaselines, [...nextCreatedParts].sort());
   return result;

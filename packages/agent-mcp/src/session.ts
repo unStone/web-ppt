@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { openAgentSession } from '@web-ppt/edit-core/agent';
+import { disposeOpcPackage } from '@web-ppt/edit-core/opc';
+import { serializeEditDoc } from '@web-ppt/edit-core/save';
 import type {
   AgentSession, AgentToolName, AgentToolInput, AgentToolResult, AgentRenderInput,
 } from '@web-ppt/edit-core/agent';
@@ -56,10 +58,20 @@ export class AgentMcpSessionManager {
 
   async save(sessionId: string, pathInput: unknown): Promise<AgentMcpSaveResult> {
     const path = localPath(pathInput);
-    const result = await this.call(sessionId, 'save', {});
-    if (!result.ok) return result;
-    await atomicWrite(path, Buffer.from(result.value.bytes, 'base64'));
-    return { ok: true, value: { ...result.value, path } };
+    return this.run(sessionId, async (session) => {
+      const { editor, doc } = session;
+      const confirm = editor.captureSavepoint();
+      const saveMode = doc.package && !doc.package.disposed ? 'patch' : 'generated';
+      const result = await serializeEditDoc(doc);
+      if (result.package !== doc.package) disposeOpcPackage(result.package);
+      await atomicWrite(path, result.bytes);
+      confirm();
+      return { ok: true, value: {
+        bytes: Buffer.from(result.bytes).toString('base64'), path, saveMode, packageMode: result.mode,
+        fallbackReason: result.fallbackReason, preservedEntries: result.preservedEntries,
+        rewrittenEntries: result.rewrittenEntries,
+      } };
+    });
   }
 
   async render(
@@ -67,13 +79,14 @@ export class AgentMcpSessionManager {
     input: AgentRenderInput,
     pathInput?: unknown,
   ): Promise<AgentMcpRenderResult> {
-    const result = await this.call(sessionId, 'render', input);
-    if (!result.ok) return result;
-    if (pathInput === undefined) return result;
-    const path = localPath(pathInput);
-    const bytes = result.value.format === 'svg' ? new TextEncoder().encode(result.value.data) : Buffer.from(result.value.data, 'base64');
-    await atomicWrite(path, bytes);
-    return { ok: true, value: { ...result.value, path } };
+    const path = pathInput === undefined ? undefined : localPath(pathInput);
+    return this.run(sessionId, async (session) => {
+      const result = await session.call('render', input);
+      if (!result.ok || path === undefined) return result;
+      const bytes = result.value.format === 'svg' ? new TextEncoder().encode(result.value.data) : Buffer.from(result.value.data, 'base64');
+      await atomicWrite(path, bytes);
+      return { ok: true, value: { ...result.value, path } };
+    });
   }
 
   async close(sessionId: string): Promise<{ readonly closed: true }> {

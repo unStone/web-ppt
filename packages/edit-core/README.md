@@ -18,6 +18,10 @@ see [Layout lint](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-
 post-edit lint observations, undo/redo, Node rendering, and patch/generated saving. It is transport-neutral
 and has no MCP or model dependency; see [Agent command tools](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-command-tools.md).
 
+`@web-ppt/edit-core/fill` creates native editable presentations from a template and a structured outline.
+It validates the outline, matches placeholder roles, preserves input bytes, repairs the generated copy,
+and returns the final file, canonical description, and complete layout report. See [Template fill](https://github.com/unStone/web-ppt/blob/master/docs/api/agent-template-fill.md).
+
 ```bash
 npm i @web-ppt/core@next @web-ppt/edit-core@next
 ```

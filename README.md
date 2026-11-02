@@ -132,7 +132,7 @@ session.dispose();
 | [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 185.70KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 59.27KB |
 | [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 12.20KB |
-| [`@web-ppt/agent-mcp`](packages/agent-mcp) | 本机 stdio MCP server 与 Agent Skill | `core` + `edit-core` + MCP SDK | 2.81KB |
+| [`@web-ppt/agent-mcp`](packages/agent-mcp) | 本机 stdio MCP server 与 Agent Skill | `core` + `edit-core` + MCP SDK | 3.02KB |
 | [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 14.09KB |

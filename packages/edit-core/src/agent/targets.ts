@@ -15,6 +15,10 @@ function exists(value: unknown): value is string { return typeof value === 'stri
 function sameTarget(left: DesignTarget, right: DesignTarget): boolean {
   return left.kind === right.kind && left.id === right.id;
 }
+function explicitDesignTarget(command: Command): DesignTarget | null {
+  if (command.type === 'SetLink' || !('target' in command)) return null;
+  return command.target ?? null;
+}
 function assertDesign(doc: EditDoc, target: DesignTarget, index: number): void {
   const records = target.kind === 'layout' ? doc.layouts : doc.masters;
   if (!records[target.id]) missing(index, target.id, target.kind === 'layout' ? '版式' : '母版');
@@ -28,7 +32,8 @@ function assertElement(doc: EditDoc, id: string, index: number): void {
 
 export function assertCommandTargets(doc: EditDoc, command: Command, index: number): void {
   const input = command as unknown as Record<string, unknown>;
-  if (!!input.target && typeof input.target === 'object') assertDesign(doc, input.target as DesignTarget, index);
+  const design = explicitDesignTarget(command);
+  if (design) assertDesign(doc, design, index);
   if (command.type === 'SetTheme') {
     if (!doc.themes[command.id]) missing(index, command.id, '主题');
     return;
@@ -117,7 +122,8 @@ function canvasOfElement(doc: EditDoc, id: ElementId): DesignTarget | null {
 
 function commandDesignTarget(doc: EditDoc, command: Command): DesignTarget | null {
   const input = command as unknown as Record<string, unknown>;
-  if (!!input.target && typeof input.target === 'object') return input.target as DesignTarget;
+  const design = explicitDesignTarget(command);
+  if (design) return design;
   const ids: readonly string[] = command.type === 'ApplyFormat' ? [command.from, command.to]
     : 'ids' in command && Array.isArray(command.ids) ? command.ids
       : exists(input.id) ? [input.id] : [];

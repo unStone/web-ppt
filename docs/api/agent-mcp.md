@@ -40,11 +40,12 @@ web-ppt-agent
 
 ## 会话与文件边界
 
-- 同一 `sessionId` 的操作串行执行；并发调用不会交叉编辑、lint 或保存。
+- 同一 `sessionId` 的操作串行执行；保存和渲染的文件写入完成后，才执行下一项操作或完成关闭。
 - 会话在打开成功后才公开。关闭时先取消活动 lint / render，再释放文档；后续调用返回 `session-disposed` 或 `target-not-found`。
 - URL 不作为文件路径接受。打开、保存和渲染只使用调用方给出的本地路径。
 - 保存使用同目录临时文件、同步关闭和 rename；失败删除临时文件，不留下半份 PPTX。
 - `ppt_save` 根据包状态自动选择补丁或生成保存，不另造保存语义。
+- 文件写入成功后才确认保存点；生成或写入失败保留文稿的脏状态。
 
 错误以 `isError` 返回，JSON 包含 `reason`、`message`、`commandIndex`、`elementId`、`slideNumber`。编辑失败不修改文稿或历史；lint 观察失败与已提交编辑分开表示。
 

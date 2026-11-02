@@ -22,7 +22,9 @@
       "@web-ppt/core/chart-ex": ["../core/src/chart-ex.ts"],
       "@web-ppt/core/chart-edit": ["../core/src/chart-edit.ts"],
       "@web-ppt/edit-core": ["../edit-core/src/index.ts"],
-      "@web-ppt/edit-core/agent": ["../edit-core/src/agent/index.ts"]
+      "@web-ppt/edit-core/agent": ["../edit-core/src/agent/index.ts"],
+      "@web-ppt/edit-core/opc": ["../edit-core/src/opc/index.ts"],
+      "@web-ppt/edit-core/save": ["../edit-core/src/save/index.ts"]
     }
   },
   "include": ["src"]

@@ -78,13 +78,15 @@ flowchart LR
 | `npm run test:core` | 核心解析 / 渲染，2592 项断言 + 212 个渲染快照 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
-| `npm run test:agent` | Agent 命令工具面 55 项断言：全命令 Schema、三类原子拒绝、批量一次撤销、样式 / lint / 渲染、补丁 / 生成保存；发布入口由 `test:agent:dist` 复验，`test:agent:libreoffice` 补充外部读取器证据 |
-| `npm run test:mcp` | 本机 MCP 35 项断言：文件会话、并发顺序、取消、原子保存、真实 stdio 全链路、根 Schema、无网络调用与发布边界；`test:mcp:dist` 复验，真实 Claude Code / Codex 任务由 `validate-agent-mcp-evaluation.mjs` 机判 |
+| `npm run test:agent` | Agent 命令工具面 79 项断言：全命令 Schema、三类原子拒绝、超链接与设计目标区分、批量一次撤销、样式 / lint / 渲染、补丁 / 生成保存；发布入口由 `test:agent:dist` 复验，`test:agent:libreoffice` 补充外部读取器证据 |
+| `npm run test:mcp` | 本机 MCP 57 项断言：文件会话、并发顺序、关闭等待文件写入、交付成功后确认保存点、取消、原子保存、真实 stdio 全链路、根 Schema、无网络调用与发布边界；`test:mcp:dist` 复验，真实 Claude Code / Codex 任务由 `validate-agent-mcp-evaluation.mjs` 机判 |
+| `npm run test:webmcp` | 官网 WebMCP 127 项浏览器断言：工具注册、真实编辑与保存重开、渲染、同一历史、恢复、协同、只读、取消及切换；注册平台边界可注入失败，不支持路径检查动态块未加载，原生浏览器另验 |
+| `npm run test:fill` | 模板填充 483 项 + 浏览器 70 项断言：六类页面、八种原生图表、完整七项检查与副本设计修复、POTX 类型转换、输入保护、Unicode、调用快照、裁剪精度、动态字段、备注闭包、独立进程确定性和双文字路径；`test:fill:dist` 检查类型、Schema、按需闭包和纯发布入口 |
 | `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
 | `node tooling/test-agent-node-render.mjs` | Agent Node 渲染 21 项断言：缺测字 / 光栅化注入的稳定 reason、注入渲染、跨进程确定性、HarfBuzz 真实测量整页渲染与 PNG 尺寸换算；`--dist` 复验 `@web-ppt/core/node` 发布入口 |
 | `node tooling/test-agent-node-render-parity.mjs` | Agent Node 双端对照 4 项断言：同一字体字节双端注册（浏览器 FontFace / Node Provider）下全部固件整页 SVG 指纹比对，差异页必须归因（公式测量源 / textPath 字距放大）；缺字固件不满足同一字体前提，跳过并计数；`--dist` 复验 |
 | `npm run test:ole:libreoffice` | OLE 外部打开 11 项断言：嵌入 DOCX run 改字与 XLSX 样式 / 富文本改写后重组为独立文档，LibreOffice 打开转换（fodt / fods / xlsx）核对文字、颜色与 run 边界；CI 在功能测试后单独执行 |
-| `npm run test:edit` | 编辑模型 1154 项 + 保存 575 项 + PowerPoint 证据 9 项 + 179 份固件、1202 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1154 项 + 保存 582 项 + PowerPoint 证据 9 项 + 181 份固件、1210 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -150,6 +152,8 @@ flowchart LR
 | `sample-agent-lint.pptx` | 七项检查的正反例及裁剪反例；对比度临界颜色验证比较前不四舍五入 |
 | `sample-agent-tools.pptx` | Agent 命令工具面：可编辑标题、越界观察与第二页；用于原子命令、历史和两种保存 |
 | `sample-agent-mcp.pptx` | 本机 MCP：标题、溢出文本与可替换图片；用于真实 stdio 及 Claude Code / Codex 四项任务 |
+| `sample-agent-webmcp.pptx` | 官网 WebMCP：两页同文标题、溢出文本与可替换图片，覆盖全稿编辑、浏览器资源和保存重开 |
+| `sample-template-fill.pptx` | 模板填充：六种占位符版式、两页原始示例与包内保留锚点；覆盖生成、替换原始示例、图表和输入保护 |
 | `sample-wps-interop.pptx` | WPS / PowerPoint 默认结构：fontRef 白字与显式颜色对照、仅 svgBlip 图标、两种楔形标注尾巴方向、归一化组合内标注、bgRef 1001 背景、拉丁与阿拉伯文的 cs 字体 |
 | `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
 | `sample-embedfont.pptx` | 嵌入字体的四种容器：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF |

@@ -3,6 +3,8 @@
 `@web-ppt/editor` 管理解析资源、headless `Editor` 与全部挂载视图；`@web-ppt/edit-core` 提供编辑文档模型、命令历史、投影与保存；`@web-ppt/react` / `@web-ppt/vue` 是薄适配层。查看器见[查看器与渲染](viewer.md)，格式边界见[格式能力](format-capabilities.md)。
 
 外部 Agent 可按需使用 [describe 结构化读出](agent-describe.md)，获得当前编辑态的稳定元素 ID、页面坐标、占位符来源和段落文字。
+官网当前文稿的浏览器 Agent 接口见 [WebMCP](agent-webmcp.md)，命令、历史与恢复复用同一编辑会话。
+按结构化大纲创建新文稿可使用[模板填充生成](agent-template-fill.md)，支持副本设计修复和原生图片、图表及完整检查。
 
 ## 安装
 
@@ -191,6 +193,8 @@ adjustments.start(elementId); // interaction 层预览，pointerup 形成一个�
 句柄表覆盖 187 个规范预设，其中 120 个含句柄；公式按 EMU 求值，默认 core、edit-core 与 editor 入口均不包含这张表。
 
 保存链路可按需导入 `@web-ppt/edit-core/xml`：保留型树对未修改 part 逐字节回环，定点改属性时保留声明、注释、PI、命名空间前缀、属性顺序、自闭合形态和 `AlternateContent`，新增节点统一走 OOXML sequence 顺序表。`@web-ppt/edit-core/opc` 再把脏 part 合回原包：净条目连本地头、extra field 和压缩流一起逐字直通；无修改保存直接复用原始字节，特殊 ZIP 特性会返回可展示的降级原因。
+
+新增或改写备注时，增量保存补齐备注母版、主题、内容类型和目录/关系闭包，并复用已有备注母版设计。未编辑旧来源保持原包字节；新增资源和关系基线随撤销、重做及共享备注分叉完整恢复。
 
 ## 相关
 

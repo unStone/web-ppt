@@ -55,9 +55,8 @@ flowchart LR
 - 命令工具面使用 `@web-ppt/edit-core/agent`，不与 MCP 合并；全命令 Schema 由现有 `Command` 类型生成，批量只经一次 `Editor` 原子事务。005 的 MCP SDK 仍进入独立 Node 新包，首版须本地发布后再配置 Trusted Publishing。实现与验收方案见 [004 技术方案](../../design/agent-command-tools.md)。
 - MCP 使用独立 `@web-ppt/agent-mcp` 与低层 `Server` + stdio；根输入 Schema 解引用后展开到顶层，避免客户端参数类型强制转换。文件会话串行、关闭取消、原子保存且协议不返回整份 Base64。实施与真实 Agent 验收方案见 [005 技术方案](../../design/agent-mcp.md)。
 
-## Not yet specified
-
-- WebMCP 接口仍处于 Chrome origin trial，006 启动时按当时的规范草案重新核对接口名。
+- WebMCP 按 2026-10-27 草案使用 `document.modelContext`，注册信号负责注销，执行信号独立取消。官网条件加载文稿插件，借用现有 Editor；保存交付与只读异步任务复用文件服务，切换先注销再等待资源。见 [006 技术方案](../../design/agent-webmcp.md)。
+- 模板填充使用独立 `edit-core/fill` 和公开大纲 Schema；私有文稿保证输入保护，生成副本实际修复设计后执行完整检查，最终字节重开规范化身份。原生图表与工作簿通过生成阶段建立，调用方仍使用既有编辑/保存协议。见 [007 技术方案](../../design/agent-template-fill.md)。
 
 ## Out of scope
 
@@ -71,3 +70,5 @@ flowchart LR
 - [布局检查 lint](tickets/002-layout-lint.md)
 - [命令工具面](tickets/004-command-tool-surface.md)
 - [MCP server 与 Agent Skill](tickets/005-mcp-server-skill.md)
+- [编辑器 WebMCP](tickets/006-editor-webmcp.md)
+- [模板填充生成](tickets/007-template-fill.md)

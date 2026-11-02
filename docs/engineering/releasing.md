@@ -15,10 +15,11 @@
 
 | # | 动作 | 说明 |
 |---|---|---|
-| 1 | 九个包 `package.json` 版本改成同一个值 | 流水线第一步逐包校验 tag 与版本一致，不一致直接失败 |
+| 1 | 九个包 `package.json` 版本改成同一个值 | 同步内部 peer 范围、`package-lock.json` 和 MCP 协议版本；预发布 peer 范围必须包含当前 beta。流水线逐包校验 tag 与版本一致 |
 | 2 | 更新 `CHANGELOG.md` | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
 | 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数） |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
+| 5 | 等待发布流水线成功，逐包查询官方 registry 的版本与 dist-tag，并完成安装验证 | beta 使用 `next`，稳定版使用 `latest`；tag、提交或文档条目不代表 npm 已发布。新包首发与发布授权未完成时，保留待发布状态 |
 
 流水线内部顺序：`npm ci` → Python / LibreOffice 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。
 

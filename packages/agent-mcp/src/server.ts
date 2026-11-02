@@ -74,7 +74,7 @@ function sessionIdOf(args: JsonObject): string {
 
 export function createAgentMcpServer(options: AgentMcpOptions = {}) {
   const manager = new AgentMcpSessionManager(options);
-  const server = new Server({ name: 'web-ppt-agent', version: '0.7.0' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'web-ppt-agent', version: '0.8.0-beta.1' }, { capabilities: { tools: {} } });
   const tools = toolDefinitions();
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
   server.setRequestHandler(CallToolRequestSchema, async (request) => {

@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/agent-mcp",
-  "version": "0.7.0",
+  "version": "0.8.0-beta.1",
   "description": "Local-only MCP stdio server and Agent Skill for deterministic PPT reading, editing, rendering and saving.",
   "keywords": [
     "pptx",
@@ -48,8 +48,8 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.7.0",
-    "@web-ppt/edit-core": "^0.7.0"
+    "@web-ppt/core": "^0.8.0-beta.1",
+    "@web-ppt/edit-core": "^0.8.0-beta.1"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",

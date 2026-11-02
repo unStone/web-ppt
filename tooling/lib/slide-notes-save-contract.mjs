@@ -1,4 +1,5 @@
 import { diffPackageBytes } from '../diff-package.mjs';
+import { hasNotesMasterClosure, withoutNotesMasterClosure } from './notes-package-contract.mjs';
 
 const decoder = new TextDecoder();
 
@@ -16,6 +17,8 @@ export async function runSlideNotesSaveContract({ core, edit, load, check, saveA
   const notesPart = 'ppt/notesSlides/notesSlide1.xml';
   const notesRelsPart = 'ppt/notesSlides/_rels/notesSlide1.xml.rels';
   const sourceRels = presentation.package.parts[notesRelsPart];
+  check('已有备注固件原生包含 presentation、notesMaster、主题与 notesSlide 完整关系闭包',
+    hasNotesMasterClosure(presentation.package.parts));
 
   editor.exec({ type: 'SetNotes', id: slideId, text: '第一段\n\n第三段\n' });
   const saved = await editor.saveDetailed();
@@ -75,25 +78,59 @@ export async function runSlideNotesSaveContract({ core, edit, load, check, saveA
   const absentReopened = await core.parse(absentSaved.bytes, { lazy: false, assets: 'defer' });
   check('无 notes 的旧页首次保存只创建必要 OPC 闭包并可重开',
     absentDiff.added.sort().join(',') === [
+      'ppt/notesMasters/_rels/notesMaster1.xml.rels',
+      'ppt/notesMasters/notesMaster1.xml',
       'ppt/notesSlides/_rels/notesSlide1.xml.rels',
       'ppt/notesSlides/notesSlide1.xml',
     ].join(',')
       && absentDiff.changed.sort().join(',') === [
-        '[Content_Types].xml', `ppt/slides/_rels/${absentSlidePart.split('/').at(-1)}.rels`,
+        '[Content_Types].xml', 'ppt/_rels/presentation.xml.rels', 'ppt/presentation.xml',
+        `ppt/slides/_rels/${absentSlidePart.split('/').at(-1)}.rels`,
       ].sort().join(',')
       && absentReopened.slides[0].notes === '旧页首次备注');
+  check('首次创建备注同时物化两个方向的母版关系、主题与 Content Types',
+    hasNotesMasterClosure(absentSaved.package.parts));
   const absentAgain = await absentEditor.saveDetailed();
   check('首次创建 notes 后连续保存进入 identity',
     absentAgain.mode === 'identity' && absentAgain.bytes === absentSaved.bytes);
   absentEditor.undo();
   const absentRestored = await absentEditor.saveDetailed();
-  check('保存后撤销首次备注会清理关系、Content Type 与两个新 part',
+  check('保存后撤销首次备注会清理新增闭包并恢复原关系与 Content Types',
     diffPackageBytes(absentInput, absentRestored.bytes).equal);
   absentEditor.redo();
   const absentRedone = await absentEditor.saveDetailed();
   check('重做首次备注复用同一 OPC 身份并得到确定性包',
     diffPackageBytes(absentSaved.bytes, absentRedone.bytes).equal);
   edit.disposeDoc(absentDoc);
+
+  const legacyInput = withoutNotesMasterClosure(input);
+  const legacyPresentation = await core.parse(legacyInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const legacyDoc = edit.createDoc(legacyPresentation, { idPrefix: 'slide-notes-legacy-save-' });
+  const legacyEditor = new edit.Editor(legacyDoc);
+  const legacySaved = await legacyEditor.saveDetailed();
+  check('历史缺母版闭包但未编辑备注时保存仍逐字节直通',
+    !hasNotesMasterClosure(legacyPresentation.package.parts)
+      && legacySaved.mode === 'identity' && legacySaved.bytes === legacyInput);
+  legacyEditor.exec({ type: 'SetNotes', id: legacyDoc.slideOrder[0], text: '显式修改历史备注' });
+  const legacyEdited = await legacyEditor.saveDetailed();
+  check('补齐被编辑历史备注的闭包时其它未编辑 notes 关系仍逐字直通',
+    [2, 3, 4].every(index => {
+      const part = `ppt/notesSlides/_rels/notesSlide${index}.xml.rels`;
+      return legacyEdited.package.parts[part] === legacyPresentation.package.parts[part];
+    }));
+  legacyEditor.undo();
+  const legacyRestored = await legacyEditor.saveDetailed();
+  check('历史备注缺母版与回指时保存后撤销仍恢复完整原包',
+    diffPackageBytes(legacyInput, legacyRestored.bytes).equal);
+  legacyEditor.exec({ type: 'RemoveSlide', id: legacyDoc.slideOrder[1] });
+  await legacyEditor.saveDetailed();
+  legacyEditor.undo();
+  const legacySlideRestored = await legacyEditor.saveDetailed();
+  check('历史备注来源暂存在 detached baseline 时撤销删页不触发额外闭包修理',
+    diffPackageBytes(legacyInput, legacySlideRestored.bytes).equal);
+  edit.disposeDoc(legacyDoc);
 
   const sharedInput = load('sample-editor-remove-slide-shared-notes.pptx');
   const sharedPresentation = await core.parse(sharedInput, {
@@ -122,6 +159,20 @@ export async function runSlideNotesSaveContract({ core, edit, load, check, saveA
   check('保存后撤销共享备注分叉恢复原共享关系且不残留克隆 part',
     diffPackageBytes(sharedInput, sharedRestored.bytes).equal);
   edit.disposeDoc(sharedDoc);
+
+  const legacySharedInput = withoutNotesMasterClosure(sharedInput);
+  const legacySharedPresentation = await core.parse(legacySharedInput, {
+    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  });
+  const legacySharedDoc = edit.createDoc(legacySharedPresentation, { idPrefix: 'slide-notes-legacy-shared-' });
+  const legacySharedEditor = new edit.Editor(legacySharedDoc);
+  legacySharedEditor.exec({ type: 'SetNotes', id: legacySharedDoc.slideOrder[2], text: '缺闭包来源的独立备注' });
+  await legacySharedEditor.saveDetailed();
+  legacySharedEditor.undo();
+  const legacySharedRestored = await legacySharedEditor.saveDetailed();
+  check('历史共享备注分叉保存后撤销恢复原共享关系且无新增闭包残留',
+    diffPackageBytes(legacySharedInput, legacySharedRestored.bytes).equal);
+  edit.disposeDoc(legacySharedDoc);
 
   const newPresentation = await core.parse(absentInput, {
     edit: true, keepPackage: true, lazy: false, assets: 'defer',

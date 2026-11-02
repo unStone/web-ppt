@@ -8,6 +8,8 @@
 | Agent 布局检查 | `@web-ppt/edit-core/lint` 与 `/lint/sampler` | 外部 Agent / SDK 接入 | 七项确定性观察、真实测量、必需资源失败及取消；复杂颜色通过同协议的 SVG 采样器，详见[输入与支持范围](agent-layout-lint.md) |
 | Agent 命令工具面 | `@web-ppt/edit-core/agent` | 外部 Agent / SDK / 协议适配层 | 全命令生成 Schema、原子批量、单元素查询、编辑后 lint、撤销 / 重做、Node 渲染与两种保存；[接口与失败协议](agent-command-tools.md) |
 | 本机 MCP 与 Skill | `@web-ppt/agent-mcp` | Claude Code / Codex / 其他 MCP 宿主 | stdio 打开、读出、检查、渲染、编辑和保存；只读写调用方指定路径、无网络请求；[启动、配置与工具协议](agent-mcp.md) |
+| 编辑器 WebMCP | 官网 Cordis 文稿插件 | 提供原生 WebMCP 的浏览器 Agent | 当前文稿的八个工具、同一历史 / 恢复 / 协同、取消与下载交付；不支持时不加载插件；[接口与边界](agent-webmcp.md) |
+| 模板填充生成 | `@web-ppt/edit-core/fill` | 结构化大纲 / SDK 调用方 | 六类页面、八种原生图表、图片与文字适配、完整布局检查和副本设计调整；输入不变、规范化身份与跨进程字节确定性；[接口与边界](agent-template-fill.md) |
 | 经典图表多级类别 | `@web-ppt/edit-core/chart` | 数据面板逐级编辑、空槽开关、类别与系列增删 | 两级/三级、横向矩阵、稳定身份及工作簿同步；[支持矩阵与只读边界](chart-hierarchical-categories.md) |
 | 共享工作簿与图表 | `@web-ppt/edit-core/chart-shared` | 数据面板编辑，关联页面同步；复制、撤销与恢复 | 共享缓存、重叠/独立区域、多表及类别/XY 共同记录已验收；[支持范围与证据](../wayfinder/ppt-portability-fidelity/notes/shared-chart-progress.md)。旧身份无法证明时显示未恢复并拒绝保存；混合图自动轴域、标签布局与气泡半径仍有[外观差异](../wayfinder/ppt-portability-fidelity/notes/mixed-chart-rendering.md) |
 | 经典图表类型与样式 | `@web-ppt/edit-core/chart-design` | 图表数据面板中的类型、排列、图例、标题、标签、配色 | 八类图表的兼容转换；遵循工作簿只读规则，类别型与 XY 数据不互转，组合图保留原生结构 |

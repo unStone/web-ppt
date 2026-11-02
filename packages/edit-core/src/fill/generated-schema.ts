@@ -1,0 +1,371 @@
+export const templateFillSchema = {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/TemplateFillOutline",
+  "definitions": {
+    "TemplateFillOutline": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "slides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateFillSlide"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "version",
+        "slides"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillSlide": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TemplateFillTitleSlide"
+        },
+        {
+          "$ref": "#/definitions/TemplateFillSectionSlide"
+        },
+        {
+          "$ref": "#/definitions/TemplateFillContentSlide"
+        },
+        {
+          "$ref": "#/definitions/TemplateFillTwoColumnSlide"
+        },
+        {
+          "$ref": "#/definitions/TemplateFillImageSlide"
+        },
+        {
+          "$ref": "#/definitions/TemplateFillChartSlide"
+        }
+      ]
+    },
+    "TemplateFillTitleSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "title"
+        },
+        "subtitle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillSectionSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "section"
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateFillParagraph"
+          }
+        }
+      },
+      "required": [
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillParagraph": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "level": {
+          "type": "number",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        "bullet": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillContentSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "content"
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateFillParagraph"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "body",
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillTwoColumnSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "two-column"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/TemplateFillParagraph"
+            }
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "columns",
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillImageSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "image": {
+          "$ref": "#/definitions/TemplateFillImage"
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateFillParagraph"
+          }
+        }
+      },
+      "required": [
+        "image",
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillImage": {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "string"
+        },
+        "mime": {
+          "type": "string",
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp"
+          ]
+        },
+        "altText": {
+          "type": "string"
+        },
+        "fit": {
+          "type": "string",
+          "enum": [
+            "contain",
+            "cover"
+          ]
+        }
+      },
+      "required": [
+        "bytes",
+        "mime"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillChartSlide": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "layoutId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "chart"
+        },
+        "chart": {
+          "$ref": "#/definitions/TemplateFillChart"
+        }
+      },
+      "required": [
+        "chart",
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillChart": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "bar",
+            "line",
+            "pie",
+            "doughnut",
+            "area",
+            "scatter",
+            "radar",
+            "bubble"
+          ]
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateFillChartSeries"
+          }
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "categories",
+        "series"
+      ],
+      "additionalProperties": false
+    },
+    "TemplateFillChartSeries": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "x": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "sizes": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "required": [
+        "name",
+        "values"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$id": "https://web-ppt.dev/schemas/template-fill.schema.json"
+} as const;

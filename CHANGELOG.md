@@ -2,15 +2,21 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## 0.7.0 - 2026-11-02
+## 0.8.0-beta.1 - 2026-11-03
 
-0.7.0 稳定版：`0.7.0-beta.1` 的全部内容转正到 `latest`，包括 Agent 全命令工具面，以及独立的 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill。真实 Claude Code 与 Codex 固定任务、无网络调用、原子保存及外部读取器验收均通过。
+本版使用 npm `next` 通道，九包需安装同一版本。`0.7.0` 的发布流水线因 `agent-mcp` 未完成首发而终止，其已实现能力一并纳入本次 beta；稳定版仍为 `0.6.0`。
 
-安装：无版本号安装即得 0.7.0，九包必须同版本；`@next` 标签留给 0.8 线。
+- 新增 `@web-ppt/edit-core/fill`：按结构化大纲选择模板版式，生成标题、章节、正文、双栏、图片及八种原生图表；生成副本可修复出血、字体、对比度和文字适配，完整检查后保存并规范化重开。输入保持不变，大纲 Schema 公开，跨进程产物字节确定。
+- 修复备注增量保存缺少备注母版闭包导致独立读取器超时；仅作用显式改写或新建备注，保持未编辑来源字节、已有母版设计和完整撤销语义。
+- 官网编辑器按需提供八个原生 WebMCP 工具，浏览器 Agent 可读取、检查、修改、撤销重做、渲染和下载当前文稿，复用现有历史、恢复与协同。切换或关闭文稿时注销并取消工具；不支持接口时不加载插件。
+- 修复 Agent `SetLink` 命令误把超链接目标当作母版或版式目标而拒绝合法链接。
+- 修复本机 MCP 保存和渲染的文件写入未完整纳入会话队列；关闭与后续操作等待交付结束，保存写入成功后才确认保存点。
+- 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及保存；独立按需入口不引入 MCP / 模型依赖。
+- 新增 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill：打开、describe、单元素查询、lint、SVG/PNG 渲染、原子编辑、撤销/重做、保存和关闭；会话串行、关闭取消、原子落盘且无网络请求。真实 Claude Code 与 Codex 固定任务产物已通过 LibreOffice 与 Quick Look。
 
 `@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
 
-Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.7.0 先行转正，四项自动门禁与 LibreOffice 外部打开清单全部通过。
+Windows PowerPoint 真机验收继续延后，未记为通过；稳定版仍需 beta 反馈与真机验收。
 
 ## 0.6.0 - 2026-11-02
 
@@ -21,13 +27,6 @@ Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.7.
 `@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
 
 Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.6.0 先行转正，四项自动门禁与 LibreOffice 外部打开清单全部通过。
-
-## 0.7.0-beta.1 - 2026-11-02
-
-- 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，图片字节使用 Base64；支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及补丁 / 生成保存。Schema 不符、目标缺失和语义拒绝均带稳定 reason 与命令序号，失败不改变文稿或历史；独立按需入口不引入 MCP / 模型依赖，core 与 edit-core 默认闭包逐字节不变。
-- 新增 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill：打开、describe、单元素查询、lint、SVG/PNG 渲染、原子编辑、撤销/重做、保存和关闭；只读写调用方指定路径，会话串行、关闭取消、保存原子落盘且无网络请求。协议不返回整份 Base64；真实 Claude Code 与 Codex 已完成改标题、替换图片、新增页面和溢出修复，产物通过 LibreOffice 与 Quick Look。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
 
 ## 0.6.0-beta.1 - 2026-10-31
 

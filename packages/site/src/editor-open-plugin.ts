@@ -1,5 +1,4 @@
 import type { Context } from 'cordis';
-import { bindEditorFileOpen } from './editor-file-actions';
 import { whyFailed } from './fetch-bytes';
 import { message, type SiteMessage, type SiteNotice } from './i18n/message';
 
@@ -24,6 +23,51 @@ export interface EditorOpening {
 
 declare module 'cordis' {
   interface Context { editorOpening: EditorOpening }
+}
+
+/** 本地选择与拖放共用同一入口，避免两套替换/忙碌判断逐渐分叉。 */
+function bindEditorFileOpen(
+  input: HTMLInputElement,
+  dropLayer: HTMLElement,
+  open: (file: File | undefined) => void,
+  signal: AbortSignal,
+): void {
+  input.addEventListener('change', () => {
+    open(input.files?.[0]);
+    input.value = '';
+  }, { signal });
+  let dragDepth = 0;
+  signal.addEventListener('abort', () => { dropLayer.hidden = true; }, { once: true });
+  const inDialog = (event: DragEvent): boolean => {
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('dialog[open]')) return false;
+    dragDepth = 0;
+    dropLayer.hidden = true;
+    // 模态工具中的文件属于该工具；文件输入仍保留浏览器原生拖放默认行为。
+    if (!(target instanceof HTMLInputElement && target.type === 'file')) event.preventDefault();
+    return true;
+  };
+  window.addEventListener('dragenter', (event) => {
+    if (inDialog(event)) return;
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    dragDepth++;
+    dropLayer.hidden = false;
+  }, { signal });
+  window.addEventListener('dragover', (event) => {
+    if (inDialog(event)) return;
+    if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+  }, { signal });
+  window.addEventListener('dragleave', () => {
+    if (--dragDepth <= 0) { dragDepth = 0; dropLayer.hidden = true; }
+  }, { signal });
+  window.addEventListener('drop', (event) => {
+    if (inDialog(event)) return;
+    event.preventDefault();
+    dragDepth = 0;
+    dropLayer.hidden = true;
+    open(event.dataTransfer?.files[0]);
+  }, { signal });
 }
 
 /** 打开意图跨解析、恢复和模板选择持续存在；应用卸载必须取消整条链路。 */
