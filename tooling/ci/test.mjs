@@ -24,7 +24,7 @@ import { runGroup } from './run-group.mjs';
 const scripts = {
   'pretest:functional': 'node tooling/pre.mjs',
   'prepretest:functional': 'node tooling/must-not-run.mjs',
-  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded && npm run test:chart-shared',
+  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-save.mjs && node tooling/test-v07-integration.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded && npm run test:chart-shared && node tooling/collect-v08-office-artifacts.mjs',
   'test:expanded': 'node tooling/expanded.mjs',
   'pretest:expanded': 'node tooling/expanded-pre.mjs',
   'posttest:expanded': 'node tooling/expanded-post.mjs',
@@ -38,15 +38,19 @@ const scripts = {
 };
 const source = createPlan(scripts, 'source');
 assert.deepEqual(source.leaves.map((leaf) => leaf.command), [
-  'node tooling/pre.mjs', 'node tooling/a.mjs', 'node tooling/test-edit-save.mjs', 'node tooling/test-edit-equivalence.mjs',
+  'node tooling/pre.mjs', 'node tooling/a.mjs', 'node tooling/test-edit-save.mjs', 'node tooling/test-v07-integration.mjs', 'node tooling/test-edit-equivalence.mjs',
   'node tooling/expanded-pre.mjs', 'node tooling/expanded.mjs', 'node tooling/expanded-post.mjs',
   'node tooling/chart-shared.mjs', `node ${MIGRATION_SCRIPT}`,
+  'node tooling/collect-v08-office-artifacts.mjs',
 ]);
 assert.equal(source.groups.agent[0].command, 'node tooling/pre.mjs');
 assert.deepEqual(source.groups.saving.map((leaf) => leaf.command), ['node tooling/test-edit-save.mjs']);
 assert.deepEqual(source.groups.editing.map((leaf) => leaf.command), ['node tooling/a.mjs']);
+assert.deepEqual(source.groups.integration.map((leaf) => leaf.command), [
+  'node tooling/test-v07-integration.mjs', 'node tooling/collect-v08-office-artifacts.mjs',
+]);
 const ordered = createPlan({ ...scripts,
-  'test:functional': 'node tooling/before.mjs && node tooling/test-edit-save.mjs && node tooling/after.mjs',
+  'test:functional': 'node tooling/before.mjs && node tooling/test-edit-save.mjs && node tooling/test-v07-integration.mjs && node tooling/after.mjs && node tooling/collect-v08-office-artifacts.mjs',
 }, 'source');
 assert.deepEqual(ordered.groups.editing.map((leaf) => leaf.command), ['node tooling/before.mjs', 'node tooling/after.mjs']);
 assert.equal(createPlan({ ...scripts, verify: 'node tooling/test-edit-save.mjs' }, 'dist').groups.base[0].command,
@@ -88,6 +92,7 @@ assert.throws(() => partitionFixtures(fixtures, 0.5, 4), /无效/);
 const root = resolve(import.meta.dirname, '../..');
 const repositoryScripts = readJson(join(root, 'package.json')).scripts;
 const repositorySource = createPlan(repositoryScripts, 'source');
+assert.deepEqual(repositorySource.groups.integration.map((leaf) => leaf.command), source.groups.integration.map((leaf) => leaf.command));
 const repositoryCases = readMigrationCaseNames(join(root, MIGRATION_SCRIPT));
 assert.deepEqual(selectMigrationCases(repositoryCases, 0, 1), repositoryCases, '本地默认执行必须保留全部用例与原顺序');
 const migrationSlices = Array.from({ length: MIGRATION_SHARDS }, (_, index) => selectMigrationCases(repositoryCases, index, MIGRATION_SHARDS));
@@ -123,6 +128,8 @@ const files = {
   'pre.mjs': "recordCount('pre', 1);",
   'a.mjs': "recordCount('a', 2);",
   'test-edit-save.mjs': "recordCount('save', 5);",
+  'test-v07-integration.mjs': "recordCount('v07', 31);",
+  'collect-v08-office-artifacts.mjs': '',
   'expanded.mjs': "recordCount('expanded', 3);",
   'test-edit-equivalence.mjs': "recordCount('fixtures', 1); recordCount('equivalence', 2);",
   'expanded-pre.mjs': '', 'expanded-post.mjs': '', 'base.mjs': '', 'dist-agent.mjs': '',
@@ -136,7 +143,7 @@ function fakeResults(phase) {
     const directory = resultDirectory(temporary, phase, group);
     const plan = groupPlan(scripts, phase, group);
     const counts = phase === 'source'
-      ? group === 'saving' ? { save: 5 } : group === 'editing' ? { a: 2 } : group === 'agent' ? { pre: 1 } : group === 'expanded' ? { expanded: 3 } : {}
+      ? group === 'saving' ? { save: 5 } : group === 'editing' ? { a: 2 } : group === 'integration' ? { v07: 31 } : group === 'agent' ? { pre: 1 } : group === 'expanded' ? { expanded: 3 } : {}
       : phase === 'external' ? { oleLibreOffice: 11 } : group === 'expanded' ? { expanded: 3 } : {};
     if (group.startsWith('equivalence-')) {
       const index = Number(group.slice('equivalence-'.length));
@@ -168,7 +175,7 @@ try {
   assert.throws(() => merge('source'), /external\/office 缺少 plan/);
   assert.throws(() => merge('all'), /external\/office 缺少 plan/);
   fakeResults('external');
-  assert.deepEqual(merge('source').counts, { fixtures: fixtures.length, equivalence: fixtures.length * 2, save: 5, a: 2, pre: 1, expanded: 3, oleLibreOffice: 11 });
+  assert.deepEqual(merge('source').counts, { fixtures: fixtures.length, equivalence: fixtures.length * 2, save: 5, a: 2, v07: 31, pre: 1, expanded: 3, oleLibreOffice: 11 });
   assert.deepEqual(merge('all').counts, merge('source').counts);
   assert.equal(merge('source').summaries.filter((summary) => summary.phase === 'external').length, 1);
   assert.equal(merge('all').summaries.filter((summary) => summary.phase === 'external').length, 1);
@@ -209,6 +216,9 @@ try {
   assert.throws(() => merge('source', { scripts: added }), /执行计划/);
   rmSync(join(resultDirectory(temporary, 'source', 'saving'), 'result.json'));
   assert.throws(() => merge('source'), /source\/saving 缺少 result/);
+  fakeResults('source');
+  rmSync(join(resultDirectory(temporary, 'source', 'integration'), 'result.json'));
+  assert.throws(() => merge('source'), /source\/integration 缺少 result/);
   fakeResults('source');
   const editing = resultDirectory(temporary, 'source', 'editing');
   rmSync(join(editing, 'counts.json'));

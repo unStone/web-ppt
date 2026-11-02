@@ -96,21 +96,16 @@ jobs:
           retention-days: 1
 
   editing:
-    needs: saving
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
-          office: 'true'
-      - uses: actions/download-artifact@v4
-        with:
-          name: save-inputs
-          path: out/edit-save
+          office: impress
       - name: 源码编辑与保存契约
         run: node tooling/ci/run-group.mjs source editing
-      - name: 0.7 统一清单外部打开测试
-        run: node tooling/test-v07-libreoffice-all.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: source-editing
@@ -124,10 +119,10 @@ jobs:
           overwrite: true
           path: |
             out/comments/source-report.json
-            out/v07-integration/*.pptx
-            out/v07-integration/office-artifacts.json
-            out/v08-integration/*.pptx
-            out/v08-integration/office-artifacts.json
+            out/builtin-templates/*.pptx
+            out/chartex-native/*.pptx
+            out/v08-integration/chart-data-*.pptx
+            out/media-insertion/*.pptx
           if-no-files-found: error
           retention-days: 1
       - name: 上传快照差异
@@ -140,6 +135,46 @@ jobs:
             test/snapshots/
             out/core/
           retention-days: 7
+
+  integration:
+    name: source (integration)
+    needs: [saving, editing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          office: impress
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - uses: actions/download-artifact@v4
+        with:
+          name: edit-inputs
+          path: out
+      - name: 跨能力集成与完整清单
+        run: node tooling/ci/run-group.mjs source integration
+      - name: 0.7 统一清单外部打开测试
+        run: node tooling/test-v07-libreoffice-all.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-integration
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-inputs
+          overwrite: true
+          path: |
+            out/v07-integration/*.pptx
+            out/v07-integration/office-artifacts.json
+            out/v08-integration/*.pptx
+            out/v08-integration/office-artifacts.json
+          if-no-files-found: error
+          retention-days: 1
 
   source:
     needs: changes
@@ -173,7 +208,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           python: 'true'
-          office: 'true'
+          office: impress
       - uses: actions/download-artifact@v4
         with:
           name: save-inputs
@@ -217,7 +252,7 @@ jobs:
           retention-days: 1
 
   verify:
-    needs: [saving, editing, source, browser, office, build]
+    needs: [saving, editing, integration, source, browser, office, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -241,6 +276,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: edit-inputs
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-inputs
           path: out
       - uses: actions/download-artifact@v4
         with:
@@ -325,7 +364,7 @@ jobs:
   # 保留原 required check 名称；路径过滤只跳过重任务，不跳过此结论。
   check:
     if: always()
-    needs: [changes, build, saving, editing, source, browser, dist, verify, site, office, performance]
+    needs: [changes, build, saving, editing, integration, source, browser, dist, verify, site, office, performance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

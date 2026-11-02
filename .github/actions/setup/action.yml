@@ -5,7 +5,7 @@ inputs:
     description: 安装 PDF 独立读取依赖
     default: 'false'
   office:
-    description: 安装 LibreOffice 的 Impress、Writer 和 Calc
+    description: impress 只安装演示文稿读取器，true 同时安装 Writer 和 Calc
     default: 'false'
   media:
     description: 安装 ffmpeg
@@ -32,7 +32,12 @@ runs:
     - name: 安装字体与外部读取器
       run: |
         packages=(fonts-noto-cjk)
-        if [[ "$OFFICE" == true ]]; then packages+=(libreoffice-impress libreoffice-writer libreoffice-calc); fi
+        case "$OFFICE" in
+          false) ;;
+          impress) packages+=(libreoffice-impress) ;;
+          true) packages+=(libreoffice-impress libreoffice-writer libreoffice-calc) ;;
+          *) echo "不支持的 LibreOffice 配置：$OFFICE" >&2; exit 1 ;;
+        esac
         if [[ "$MEDIA" == true ]]; then packages+=(ffmpeg); fi
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends "${packages[@]}"

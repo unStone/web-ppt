@@ -3,7 +3,7 @@ import { MIGRATION_SHARDS, MIGRATION_SCRIPT } from './migration-shards.mjs';
 
 export const EQUIVALENCE_SHARDS = 4;
 export const SOURCE_GROUPS = Object.freeze([
-  'saving', 'editing', 'browser-unit', 'browser', 'agent', 'expanded', 'render', 'charts',
+  'saving', 'editing', 'integration', 'browser-unit', 'browser', 'agent', 'expanded', 'render', 'charts',
   ...Array.from({ length: MIGRATION_SHARDS }, (_, index) => `migration-${index}`),
   ...Array.from({ length: EQUIVALENCE_SHARDS }, (_, index) => `equivalence-${index}`),
 ]);
@@ -70,6 +70,7 @@ function groupForLeaf(leaf, phase) {
   if (phase === 'external') return 'office';
   if (leaf.executable === 'node' && leaf.args.includes(MIGRATION_SCRIPT)) return 'migration';
   if (phase === 'source' && leaf.command === 'node tooling/test-edit-save.mjs') return 'saving';
+  if (phase === 'source' && ['node tooling/test-v07-integration.mjs', 'node tooling/collect-v08-office-artifacts.mjs'].includes(leaf.command)) return 'integration';
   if (phase === 'source' && from('pretest:functional')) return 'agent';
   if (phase === 'dist' && from('postverify')) return 'agent';
   if (phase === 'source' && leaf.args.includes('tooling/test-edit-equivalence.mjs')) return 'equivalence';

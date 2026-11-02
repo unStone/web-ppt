@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 类型检查 | `npm run check` | 走源码的 tsc 全仓类型错误 | 不需要构建，最快失败 |
 | 测试 | `npm test` = `test:functional` + `test:editor:performance` | 行为回归、快照漂移、契约破坏 | 唯一入口清单，见 §2 |
-| 构建 | `npm run build` | 八个包的产物编译 + 七个边界审计（§6） | verify 要读 dist |
+| 构建 | `npm run build` | 九个包的产物编译 + 七个边界审计（§6） | verify 要读 dist |
 | 跨产物一致性 | `npm run verify` | 文档数字照抄旧值、死链、发布包清单漂移、`--dist` 复验 | 必须最后跑：读 dist 体积与测试落盘的断言数 |
 
 ## 2. 新增测试套件
@@ -29,13 +29,14 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 
 | 组 | 顺序与产物依赖 |
 |---|---|
-| saving | 独立执行保存契约，尽早提供 PPTX，供 editing、browser、site 和模型外部打开验证并行消费 |
-| editing | 下载 saving 产物后执行核心、图表数据与媒体、集成清单；提供批注源码报告及 Office 清单，并验证 0.7 外部打开 |
+| saving | 独立执行保存契约，尽早提供 PPTX，供 integration、browser、site 和模型外部打开验证并行消费 |
+| editing | 核心、图表数据、媒体和模型测试直接并行；提供批注源码报告及集成所需的生成文件，保留图元的 LibreOffice 环境 |
+| integration | 消费 saving 与 editing 产物执行 0.7 集成、外部打开及 0.8 完整清单；只上传已经齐备的最终 Office 工件 |
 | browser-unit | 不依赖保存产物的页面、会话和浏览器工具契约，直接并行执行 |
 | browser | 下载 saving 产物后执行官网真实浏览器契约及下载产物的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
 | agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
 | equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
-| migration-0 / migration-1 | 迁移形状矩阵与其余用例分别执行；从唯一 cases 对象核对全部 45 个顶层用例，保留逐用例进程及冷恢复子进程 |
+| migration-0 / migration-1 | 迁移形状矩阵与其余用例分别执行；从唯一 cases 对象核对完整顶层用例集合，保留逐用例进程及冷恢复子进程 |
 | dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
 | external/office | 从 `test:ci:office` 执行完整模型清单和 OLE 真实打开；计数随源码结果合并，缺失即失败 |
 | check | 始终生成结论；代码提交要求全部 job 成功且执行计划、计数、固件全集完整，文档提交允许重任务跳过 |
