@@ -2,6 +2,26 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 0.7.0 - 2026-11-02
+
+0.7.0 稳定版：`0.7.0-beta.1` 的全部内容转正到 `latest`，包括 Agent 全命令工具面，以及独立的 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill。真实 Claude Code 与 Codex 固定任务、无网络调用、原子保存及外部读取器验收均通过。
+
+安装：无版本号安装即得 0.7.0，九包必须同版本；`@next` 标签留给 0.8 线。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
+
+Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.7.0 先行转正，四项自动门禁与 LibreOffice 外部打开清单全部通过。
+
+## 0.6.0 - 2026-11-02
+
+0.6.0 稳定版：`0.6.0-beta.1` 的全部内容转正到 `latest`，包括 Agent 结构化读出、布局检查与 Node 无 Office 渲染，矢量 PDF 正式入口，视频音轨与内嵌视频合成，以及 OLE DOCX / XLSX 深度编辑官网入口。相对 0.5.0 的逐项变化见下方 `0.6.0-beta.1` 条目。
+
+安装：无版本号安装即得 0.6.0，八包必须同版本；`@next` 标签留给 0.7 线。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
+
+Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.6.0 先行转正，四项自动门禁与 LibreOffice 外部打开清单全部通过。
+
 ## 0.7.0-beta.1 - 2026-11-02
 
 - 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，图片字节使用 Base64；支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及补丁 / 生成保存。Schema 不符、目标缺失和语义拒绝均带稳定 reason 与命令序号，失败不改变文稿或历史；独立按需入口不引入 MCP / 模型依赖，core 与 edit-core 默认闭包逐字节不变。
