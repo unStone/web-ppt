@@ -20,6 +20,7 @@
 | [优化前同一源码版本](https://github.com/unStone/web-ppt/actions/runs/41370894820) | 41 分 42 秒 | 成功 |
 | [第一轮并行](https://github.com/unStone/web-ppt/actions/runs/41385870740) | 11 分 44 秒 | 21 个 job 成功，墙钟减少 71.9% |
 | [第二轮依赖优化](https://github.com/unStone/web-ppt/actions/runs/41387561178) | 8 分 46 秒 | 22 个 job 成功，墙钟减少 79.0% |
+| [第三轮关键路径优化](https://github.com/unStone/web-ppt/actions/runs/41389087919) | 7 分 34 秒 | 23 个 job 成功，墙钟减少 81.9% |
 
 第一轮关键路径为 changes → editing → browser → office → check：编辑组准备 32 秒、执行 4 分 47 秒；浏览器组准备 30 秒、执行 2 分 50 秒；外部软件组准备 42 秒、执行 1 分 39 秒。全部 runner 合计 46 分 58 秒，其中准备 8 分 48 秒、执行 36 分 35 秒；并行增加了短环境准备，减少了等待结果的时间。
 
@@ -28,6 +29,10 @@
 第二轮包含连续推送后等待旧运行取消的 31 秒；runner 总耗时 46 分 25 秒。真实汇总核对 53 个计数、OLE 11 项及 959 项一致性检查，最终 check 验证 17 个分组，官网总数及 OLE 声明均未跳过；[逐 job 第二轮数据](ci-jobs-after-round2.csv)保留各阶段耗时。
 
 最终复审进一步把浏览器前 15 条独立测试（45.59 秒）提前并行，只有依赖保存产物的真实官网浏览器测试等待 saving；dist/base 只需 Node 和 jsdom，不再安装字体，减少约 10 秒准备时间。
+
+第三轮的最后完成分支为 build → dist/charts → check，其中图表复验执行 4 分 29 秒。继续把迁移的 45 个独立顶层用例拆为形状矩阵和其余用例两组，源码及产物分别执行；汇总从唯一 cases 对象核对完整用例集合、结果及提交身份，减少图表复验串行等待。
+
+发布的九步显式使用 `--verified-build`，从根构建及 verify 已验证的产物执行真实 prepack、完整性检查后发布 tarball，避免每包重复构建。精确 npm 11.5.1 的九包打包与离线发布 dry-run 校验 898 个 dist 文件的字节及 mtime 未变；没有真实发布或 OIDC 交换。
 
 ## 本地构建
 

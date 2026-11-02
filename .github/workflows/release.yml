@@ -115,8 +115,7 @@ jobs:
         continue-on-error: true
         run: npm run bench:edit
 
-      # 各包的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
-      # 万一构建失败，能在动 registry 之前就失败掉
+      # 根构建和 verify 完成后，发布步骤显式复用产物，避免逐包重复构建。
       - name: 构建
         run: npm run build
 
@@ -141,31 +140,31 @@ jobs:
       # 新包第一版在本地手工发过的情况同理。
       - name: 发布 @web-ppt/core
         working-directory: packages/core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # 新包第一版仍须按仓库 AGENTS 的说明手工引导发布并配置 Trusted Publishing；
       # registry 已存在后，后续版本才由这里接管。
       - name: 发布 @web-ppt/edit-core
         working-directory: packages/edit-core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/viewer-core
         working-directory: packages/viewer-core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/editor
         working-directory: packages/editor
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # react/vue 只依赖已发布的 editor 与各自 optional peer，因此必须排在 editor 后面。
       # 两个新包的第一版仍须本地手工发布，再到 npm 配好 Trusted Publishing。
       - name: 发布 @web-ppt/react
         working-directory: packages/react
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/vue
         working-directory: packages/vue
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # 注意：npm 要求包已存在才能配置 Trusted Publishing，所以**新包的第一版
       # 走不了 OIDC**（scoped 包在无凭据时返回的是 404，不是 401，极难排查）。
@@ -173,13 +172,13 @@ jobs:
       # trusted publisher，之后这一步才会通。
       - name: 发布 @web-ppt/fonts
         working-directory: packages/fonts
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # collab 只以 edit-core 为 peer；首版仍须先手工发布并配置 Trusted Publishing。
       - name: 发布 @web-ppt/collab
         working-directory: packages/collab
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/agent-mcp
         working-directory: packages/agent-mcp
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build

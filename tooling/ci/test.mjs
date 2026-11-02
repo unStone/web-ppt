@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 import { createPlan, digest, expandScript, groupPlan, groupsForPhase, partitionFixtures } from './plan.mjs';
 import { mergeResults, readJson, resultDirectory, writeJson } from './results.mjs';
 import { expectedCountKeys } from './count-claims.mjs';
+import { readMigrationCaseNames } from './migration-cases.mjs';
+import { MIGRATION_SHARDS, MIGRATION_SCRIPT, selectMigrationCases } from './migration-shards.mjs';
 import { checkJobResults } from './job-status.mjs';
 
 const jobs = (code, result) => ({ changes: { result: 'success', outputs: { code } }, build: { result } });
@@ -22,12 +24,14 @@ import { runGroup } from './run-group.mjs';
 const scripts = {
   'pretest:functional': 'node tooling/pre.mjs',
   'prepretest:functional': 'node tooling/must-not-run.mjs',
-  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded',
+  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded && npm run test:chart-shared',
   'test:expanded': 'node tooling/expanded.mjs',
   'pretest:expanded': 'node tooling/expanded-pre.mjs',
   'posttest:expanded': 'node tooling/expanded-post.mjs',
-  verify: 'node tooling/base.mjs && npm run test:expanded:dist',
+  verify: 'node tooling/base.mjs && npm run test:expanded:dist && npm run test:chart-shared:dist',
   'test:expanded:dist': 'node tooling/expanded.mjs --dist',
+  'test:chart-shared': `node tooling/chart-shared.mjs && node ${MIGRATION_SCRIPT}`,
+  'test:chart-shared:dist': `node tooling/chart-shared.mjs --dist && node ${MIGRATION_SCRIPT} --dist`,
   postverify: 'node tooling/dist-agent.mjs',
   'pretest:ci:office': 'node tooling/external-pre.mjs',
   'test:ci:office': 'node tooling/external-save.mjs && node tooling/external-ole.mjs',
@@ -36,6 +40,7 @@ const source = createPlan(scripts, 'source');
 assert.deepEqual(source.leaves.map((leaf) => leaf.command), [
   'node tooling/pre.mjs', 'node tooling/a.mjs', 'node tooling/test-edit-save.mjs', 'node tooling/test-edit-equivalence.mjs',
   'node tooling/expanded-pre.mjs', 'node tooling/expanded.mjs', 'node tooling/expanded-post.mjs',
+  'node tooling/chart-shared.mjs', `node ${MIGRATION_SCRIPT}`,
 ]);
 assert.equal(source.groups.agent[0].command, 'node tooling/pre.mjs');
 assert.deepEqual(source.groups.saving.map((leaf) => leaf.command), ['node tooling/test-edit-save.mjs']);
@@ -53,6 +58,16 @@ assert.deepEqual(createPlan(scripts, 'dist').groups.agent.map((leaf) => leaf.com
 assert.deepEqual(createPlan(scripts, 'external').groups.office.map((leaf) => leaf.command), [
   'node tooling/external-pre.mjs', 'node tooling/external-save.mjs', 'node tooling/external-ole.mjs',
 ]);
+for (const phase of ['source', 'dist']) {
+  const plan = createPlan(scripts, phase);
+  assert.deepEqual(plan.groups.charts.map((leaf) => leaf.command), [`node tooling/chart-shared.mjs${phase === 'dist' ? ' --dist' : ''}`]);
+  for (let index = 0; index < MIGRATION_SHARDS; index++) {
+    const [leaf] = plan.groups[`migration-${index}`];
+    assert.equal(plan.groups[`migration-${index}`].length, 1);
+    assert.equal(leaf.command, `node ${MIGRATION_SCRIPT}${phase === 'dist' ? ' --dist' : ''}`);
+    assert.deepEqual(leaf.args.slice(-4), ['--shard-index', String(index), '--shard-count', String(MIGRATION_SHARDS)]);
+  }
+}
 const added = { ...scripts, 'test:functional': `${scripts['test:functional']} && python3 tooling/new.py` };
 assert.equal(createPlan(added, 'source').groups.editing.at(-1).command, 'python3 tooling/new.py');
 for (const source of [
@@ -73,6 +88,16 @@ assert.throws(() => partitionFixtures(fixtures, 0.5, 4), /无效/);
 const root = resolve(import.meta.dirname, '../..');
 const repositoryScripts = readJson(join(root, 'package.json')).scripts;
 const repositorySource = createPlan(repositoryScripts, 'source');
+const repositoryCases = readMigrationCaseNames(join(root, MIGRATION_SCRIPT));
+assert.deepEqual(selectMigrationCases(repositoryCases, 0, 1), repositoryCases, '本地默认执行必须保留全部用例与原顺序');
+const migrationSlices = Array.from({ length: MIGRATION_SHARDS }, (_, index) => selectMigrationCases(repositoryCases, index, MIGRATION_SHARDS));
+assert.deepEqual(migrationSlices[0], ['legacy-shapes']);
+assert.deepEqual(migrationSlices[1], repositoryCases.filter((name) => name !== 'legacy-shapes'));
+assert.deepEqual(migrationSlices.flat().sort(), [...repositoryCases].sort());
+assert.equal(new Set(migrationSlices.flat()).size, repositoryCases.length);
+assert.throws(() => selectMigrationCases(repositoryCases, 0, 3), /无效迁移分片/);
+assert.throws(() => selectMigrationCases(repositoryCases, 2, 2), /无效迁移分片/);
+assert.throws(() => selectMigrationCases(['other'], 0, 2), /legacy-shapes/);
 const editorLeaves = expandScript(repositoryScripts, 'test:editor:functional').map((leaf) => leaf.command);
 const browserCommands = repositorySource.groups.browser.map((leaf) => leaf.command);
 const browserUnitCommands = repositorySource.groups['browser-unit'].map((leaf) => leaf.command);
@@ -102,6 +127,8 @@ const files = {
   'test-edit-equivalence.mjs': "recordCount('fixtures', 1); recordCount('equivalence', 2);",
   'expanded-pre.mjs': '', 'expanded-post.mjs': '', 'base.mjs': '', 'dist-agent.mjs': '',
   'external-pre.mjs': '', 'external-save.mjs': '', 'external-ole.mjs': "countedAssert('oleLibreOffice');",
+  'chart-shared.mjs': '',
+  'test-chart-shared-legacy-migration.mjs': "const cases = { first: () => {}, 'legacy-shapes': () => {}, last: () => {} };",
 };
 for (const [name, contents] of Object.entries(files)) writeFileSync(join(temporary, 'tooling', name), contents);
 function fakeResults(phase) {
@@ -116,6 +143,14 @@ function fakeResults(phase) {
       const selected = partitionFixtures(fixtures, index, 4);
       Object.assign(counts, { fixtures: selected.length, equivalence: selected.length * 2 });
       writeJson(join(directory, 'equivalence.json'), { index, total: 4, fixtures: selected, svgCount: counts.equivalence });
+    }
+    if (group.startsWith('migration-')) {
+      const index = Number(group.slice('migration-'.length));
+      const names = selectMigrationCases(readMigrationCaseNames(join(temporary, MIGRATION_SCRIPT)), index, MIGRATION_SHARDS);
+      writeJson(join(directory, 'migration.json'), {
+        version: 1, mode: phase, index, total: MIGRATION_SHARDS, cases: names,
+        results: names.map((name) => ({ name, exitCode: 0, signal: null })),
+      });
     }
     writeJson(join(directory, 'plan.json'), plan);
     writeJson(join(directory, 'counts.json'), counts);
@@ -137,6 +172,24 @@ try {
   assert.deepEqual(merge('all').counts, merge('source').counts);
   assert.equal(merge('source').summaries.filter((summary) => summary.phase === 'external').length, 1);
   assert.equal(merge('all').summaries.filter((summary) => summary.phase === 'external').length, 1);
+  for (const phase of ['source', 'dist']) {
+    const migration = resultDirectory(temporary, phase, 'migration-1');
+    const receipt = readJson(join(migration, 'migration.json'));
+    const mergePhase = phase === 'source' ? 'source' : 'all';
+    rmSync(join(migration, 'migration.json'));
+    assert.throws(() => merge(mergePhase), /缺少迁移用例覆盖证据/);
+    writeJson(join(migration, 'migration.json'), { ...receipt, cases: [receipt.cases[0], receipt.cases[0]] });
+    assert.throws(() => merge(mergePhase), /迁移用例覆盖重复、缺失/);
+    writeJson(join(migration, 'migration.json'), { ...receipt, cases: ['unknown', ...receipt.cases.slice(1)] });
+    assert.throws(() => merge(mergePhase), /迁移用例覆盖重复、缺失/);
+    writeJson(join(migration, 'migration.json'), { ...receipt, mode: phase === 'source' ? 'dist' : 'source' });
+    assert.throws(() => merge(mergePhase), /迁移用例覆盖重复、缺失/);
+    writeJson(join(migration, 'migration.json'), {
+      ...receipt, results: receipt.results.map((item, index) => index ? item : { ...item, exitCode: 1 }),
+    });
+    assert.throws(() => merge(mergePhase), /迁移用例覆盖重复、缺失/);
+    writeJson(join(migration, 'migration.json'), receipt);
+  }
   const office = resultDirectory(temporary, 'external', 'office');
   writeJson(join(office, 'counts.json'), {});
   const missingOfficeCount = readJson(join(office, 'result.json'));
@@ -213,6 +266,17 @@ try {
   assert.deepEqual(expectedCountKeys(temporary, source.groups.editing), ['a', 'newSuite']);
   writeFileSync(join(temporary, 'tooling/a.mjs'), 'recordCount(key, 1);');
   assert.throws(() => expectedCountKeys(temporary, source.groups.editing), /字面量/);
+  const badCases = join(temporary, 'tooling/bad-cases.mjs');
+  for (const declaration of [
+    'const cases = { first: f, first: g };', 'const cases = { ...other };',
+    "const cases = { ['computed']: f };", 'const cases = { shorthand };',
+    'const cases = { method() {} };', 'const cases = loadCases();',
+    'let cases = { first: f };', 'const cases = { first: f }; const cases = { second: g };',
+    'const cases = {',
+  ]) {
+    writeFileSync(badCases, declaration);
+    assert.throws(() => readMigrationCaseNames(badCases), /迁移契约清单无效/);
+  }
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { digest, groupPlan, groupsForPhase, partitionFixtures, EQUIVALENCE_SHARDS } from './plan.mjs';
 import { expectedCountKeys } from './count-claims.mjs';
+import { readMigrationCaseNames } from './migration-cases.mjs';
+import { MIGRATION_SHARDS, MIGRATION_SCRIPT, selectMigrationCases } from './migration-shards.mjs';
 
 export const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'));
 export function writeJson(file, value) {
@@ -31,6 +33,7 @@ export function mergeResults({ root, scripts, phase, revision = revisionAt(root)
   const ordinary = [];
   const equivalence = [];
   const summaries = [];
+  let migrationCases;
   for (const current of phases) for (const group of groupsForPhase(current)) {
     const directory = resultDirectory(root, current, group);
     for (const file of ['plan.json', 'result.json', 'counts.json']) {
@@ -57,6 +60,19 @@ export function mergeResults({ root, scripts, phase, revision = revisionAt(root)
         || command.command !== expected.commands[index].command || command.status !== 'success'
         || !Number.isFinite(command.durationMs) || command.durationMs < 0)) {
       throw new Error(`CI 分组 ${current}/${group} 的命令缺失、重复、乱序或失败`);
+    }
+    if (group.startsWith('migration-')) {
+      const receiptFile = join(directory, 'migration.json');
+      if (!existsSync(receiptFile)) throw new Error(`CI 分组 ${current}/${group} 缺少迁移用例覆盖证据`);
+      migrationCases ??= readMigrationCaseNames(join(root, MIGRATION_SCRIPT));
+      const index = Number(group.slice('migration-'.length));
+      const selected = selectMigrationCases(migrationCases, index, MIGRATION_SHARDS);
+      const receipt = readJson(receiptFile);
+      if (receipt.version !== 1 || receipt.mode !== current || receipt.index !== index || receipt.total !== MIGRATION_SHARDS
+        || digest(receipt.cases) !== digest(selected) || !Array.isArray(receipt.results) || receipt.results.length !== selected.length
+        || receipt.results.some((item, position) => item.name !== selected[position] || item.exitCode !== 0 || item.signal || item.error)) {
+        throw new Error(`CI 分组 ${current}/${group} 的迁移用例覆盖重复、缺失、错误或未成功`);
+      }
     }
     if (group.startsWith('equivalence-')) {
       const evidenceFile = join(directory, 'equivalence.json');

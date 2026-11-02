@@ -3,6 +3,8 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
+import { selectMigrationCases } from './ci/migration-shards.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { moduleClosure } from './lib/module-closure.mjs';
 import { runLegacyBareModel } from './lib/chart-shared-unresolved-contract.mjs';
@@ -36,7 +38,12 @@ import { runLegacyMigrationPrecopied, runLegacyMigrationDisjoint, runLegacyMigra
   resumeLegacyMigrationRemovedSourceSlide }
   from './lib/chart-shared-legacy-merge-contract.mjs';
 
-const dist = process.argv.includes('--dist'), variant = dist ? ['--dist'] : [];
+const { values } = parseArgs({ options: {
+  dist: { type: 'boolean', default: false }, case: { type: 'string' },
+  'shard-index': { type: 'string', default: '0' }, 'shard-count': { type: 'string', default: '1' },
+} });
+const dist = values.dist, variant = dist ? ['--dist'] : [];
+const shardIndex = Number(values['shard-index']), shardCount = Number(values['shard-count']);
 const root = resolve('.'), out = join(root, `out/chart-shared/legacy-migration${dist ? '-dist' : ''}`);
 const cases = { 'bare-model': runLegacyBareModel,
   'identity-copy-only': context => runLegacyMigrationIdentityCollision(context, true),
@@ -69,8 +76,12 @@ const resumedCases = { 'checkpoint-resume': resumeLegacyMigrationCheckpoint,
   'versioned-copy-resume': resumeChartCopyVersions, 'versioned-copy-redo-resume': resumeChartCopyRedo,
   'versioned-copy-late-resume': resumeChartCopyLate, 'versioned-copy-remote-restore-resume': resumeChartCopyRemoteRestore,
   'shape-matrix': runLegacyChartShape, 'shape-matrix-cold': resumeLegacyChartShape };
+const selected = values.case;
+const caseNames = selectMigrationCases(Object.keys(cases), shardIndex, shardCount);
+if (selected !== undefined && (!selected || shardIndex !== 0 || shardCount !== 1)) {
+  throw new Error('迁移内部 --case 必须是非空名称且不能同时使用顶层分片参数');
+}
 mkdirSync(out, { recursive: true });
-const selected = process.argv.find(argument => argument.startsWith('--case='))?.slice(7);
 const runtime = join(out, 'runtime.mjs');
 const lateRuntime = join(out, 'late-runtime.mjs');
 if (selected) {
@@ -123,7 +134,7 @@ export * as migration from '@web-ppt/collab/migration';\n`);
     await bundleBrowser({ root, entry: lateEntry, output: lateRuntime, aliases });
   }
   // 注册表属于进程；每个契约都必须确实先用普通入口编辑，再加载共享实现。
-  const results = Object.keys(cases).map(name => {
+  const results = caseNames.map(name => {
     // legacy-shapes 自己还会串行启动 28 个独立进程验证冷恢复，不能套用单场景的 60 秒上限。
     const child = spawnSync(process.execPath, [resolve(import.meta.filename), `--case=${name}`, ...variant],
       { cwd: root, encoding: 'utf8', timeout: name === 'legacy-shapes' ? 180_000 : 60_000 });
@@ -135,4 +146,10 @@ export * as migration from '@web-ppt/collab/migration';\n`);
   });
   writeFileSync(join(out, 'result.json'), JSON.stringify(results, null, 2) + '\n');
   if (results.some(result => result.exitCode !== 0)) process.exitCode = 1;
+  else if (process.env.WEB_PPT_MIGRATION_REPORT) {
+    writeFileSync(process.env.WEB_PPT_MIGRATION_REPORT, `${JSON.stringify({
+      version: 1, mode: dist ? 'dist' : 'source', index: shardIndex, total: shardCount,
+      cases: caseNames, results,
+    }, null, 2)}\n`);
+  }
 }

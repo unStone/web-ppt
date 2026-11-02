@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createPlan, EQUIVALENCE_SHARDS } from './ci/plan.mjs';
+import { createPlan, shardCountForLeaf } from './ci/plan.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const scripts = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts;
@@ -20,8 +20,7 @@ for (const phase of ['source', 'dist']) {
   const plan = createPlan(scripts, phase);
   const assigned = Object.values(plan.groups).flat();
   for (const leaf of plan.leaves) {
-    const equivalence = phase === 'source' && leaf.args.includes('tooling/test-edit-equivalence.mjs');
-    assert.equal(assigned.filter((command) => command.id === leaf.id).length, equivalence ? EQUIVALENCE_SHARDS : 1,
+    assert.equal(assigned.filter((command) => command.id === leaf.id).length, shardCountForLeaf(leaf, phase),
       `${phase} 唯一门禁命令必须完整进入 CI：${leaf.command}`);
   }
 }
@@ -74,4 +73,5 @@ execFileSync(process.execPath, [resolve(root, 'tooling/ci/test.mjs')], { cwd: ro
 execFileSync(process.execPath, [resolve(root, 'tooling/test-ci-trust.mjs')], { cwd: root, stdio: 'inherit' });
 execFileSync(process.execPath, [resolve(root, 'tooling/test-edit-office-selection.mjs')], { cwd: root, stdio: 'inherit' });
 execFileSync(process.execPath, [resolve(root, 'tooling/test-pages-release.mjs')], { cwd: root, stdio: 'inherit' });
+execFileSync(process.execPath, [resolve(root, 'tooling/test-release-pack.mjs')], { cwd: root, stdio: 'inherit' });
 console.log('测试门禁唯一入口：本地、PR CI 与发布流水线编排一致');

@@ -42,6 +42,7 @@ PR 连续推送通过 `cancel-in-progress` 取消旧运行；master / main 的 C
 ## 4. 重跑与跳过的语义
 
 - 发布用 `tooling/publish-if-new.sh`：registry 已有该版本就跳过。九步串行发布中间挂掉后整个 job 重跑，没有这层守卫，前面已成功的包会以 EPUBLISHCONFLICT 再次弄红，埋掉真正的失败原因。
+- release 在根 `build` 和 `verify` 完成后使用 `--verified-build`：运行真实 `npm pack` 保留 `prepack` 的文档同步，校验包身份、完整性及发布文件清单，再从当前包目录发布明确的 `.tgz`，保持 `next` / `latest` 标签。默认调用 helper 及普通本地 `npm publish` 仍执行 `prepublishOnly` 构建；未知或重复参数立即失败。生命周期由本地真实 tarball dry-run 验证，OIDC 交换仍须以正式发布结果为准。
 - 门禁信任判定（§2）只在目标 commit 的 push CI 绿时跳过重复门禁；rerun 失败的 release 时若 CI 也红了，会自动回退全量路径，不需要人工干预。
 - LibreOffice 缺席时图元测试合法跳过 22 项，但 verify 按文档声明的完整 130 项拒绝发布；发布全量路径显式安装 `libreoffice-impress`，快路径复用同提交完整 CI 的证据。中文字体与 PDF 读取依赖始终安装，保持发布产物复验环境一致。
 - 性能采样与编辑性能预算在 beta 阶段 `continue-on-error`：保留红灯证据但不让受宿主负载干扰的 p95 阻断发布（见 [testing.md](testing.md#7-性能门禁的现状)）。

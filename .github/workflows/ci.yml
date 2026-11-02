@@ -148,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [browser-unit, agent, expanded, render, charts, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
+        group: [browser-unit, agent, expanded, render, charts, migration-0, migration-1, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -196,7 +196,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [agent, expanded, render, charts]
+        group: [agent, expanded, render, charts, migration-0, migration-1]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup

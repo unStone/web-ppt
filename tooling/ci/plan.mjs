@@ -1,11 +1,15 @@
 import { createHash } from 'node:crypto';
+import { MIGRATION_SHARDS, MIGRATION_SCRIPT } from './migration-shards.mjs';
 
 export const EQUIVALENCE_SHARDS = 4;
 export const SOURCE_GROUPS = Object.freeze([
   'saving', 'editing', 'browser-unit', 'browser', 'agent', 'expanded', 'render', 'charts',
+  ...Array.from({ length: MIGRATION_SHARDS }, (_, index) => `migration-${index}`),
   ...Array.from({ length: EQUIVALENCE_SHARDS }, (_, index) => `equivalence-${index}`),
 ]);
-export const DIST_GROUPS = Object.freeze(['base', 'agent', 'expanded', 'render', 'charts']);
+export const DIST_GROUPS = Object.freeze(['base', 'agent', 'expanded', 'render', 'charts',
+  ...Array.from({ length: MIGRATION_SHARDS }, (_, index) => `migration-${index}`),
+]);
 export const EXTERNAL_GROUPS = Object.freeze(['office']);
 
 export function digest(value) {
@@ -64,6 +68,7 @@ export function expandScript(scripts, entry) {
 function groupForLeaf(leaf, phase) {
   const from = (...scripts) => scripts.some((script) => leaf.ancestry.includes(script));
   if (phase === 'external') return 'office';
+  if (leaf.executable === 'node' && leaf.args.includes(MIGRATION_SCRIPT)) return 'migration';
   if (phase === 'source' && leaf.command === 'node tooling/test-edit-save.mjs') return 'saving';
   if (phase === 'source' && from('pretest:functional')) return 'agent';
   if (phase === 'dist' && from('postverify')) return 'agent';
@@ -84,15 +89,21 @@ export function createPlan(scripts, phase) {
   const leaves = expandScript(scripts, entry);
   for (const leaf of leaves) {
     const group = groupForLeaf(leaf, phase);
-    if (group !== 'equivalence') groups[group].push(leaf);
-    else for (let index = 0; index < EQUIVALENCE_SHARDS; index++) {
-      groups[`equivalence-${index}`].push({
-        ...leaf, shard: { index, total: EQUIVALENCE_SHARDS },
-        args: [...leaf.args, '--shard-index', String(index), '--shard-count', String(EQUIVALENCE_SHARDS)],
+    const shards = shardCountForLeaf(leaf, phase);
+    if (shards === 1) groups[group].push(leaf);
+    else for (let index = 0; index < shards; index++) {
+      groups[`${group}-${index}`].push({
+        ...leaf, shard: { index, total: shards },
+        args: [...leaf.args, '--shard-index', String(index), '--shard-count', String(shards)],
       });
     }
   }
   return { phase, leaves, groups };
+}
+
+export function shardCountForLeaf(leaf, phase) {
+  const group = groupForLeaf(leaf, phase);
+  return group === 'equivalence' ? EQUIVALENCE_SHARDS : group === 'migration' ? MIGRATION_SHARDS : 1;
 }
 
 export function groupPlan(scripts, phase, group) {

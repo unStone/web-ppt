@@ -35,6 +35,7 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 | browser | 下载 saving 产物后执行官网真实浏览器契约及下载产物的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
 | agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
 | equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
+| migration-0 / migration-1 | 迁移形状矩阵与其余用例分别执行；从唯一 cases 对象核对全部 45 个顶层用例，保留逐用例进程及冷恢复子进程 |
 | dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
 | external/office | 从 `test:ci:office` 执行完整模型清单和 OLE 真实打开；计数随源码结果合并，缺失即失败 |
 | check | 始终生成结论；代码提交要求全部 job 成功且执行计划、计数、固件全集完整，文档提交允许重任务跳过 |

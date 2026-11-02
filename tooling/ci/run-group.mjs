@@ -32,6 +32,7 @@ export function runGroup({ root, scripts, phase, group, revision = revisionAt(ro
       cwd: root, stdio: 'inherit', env: {
         ...process.env, WEB_PPT_COUNTS_FILE: countsFile,
         WEB_PPT_EQUIVALENCE_REPORT: join(directory, 'equivalence.json'),
+        WEB_PPT_MIGRATION_REPORT: join(directory, 'migration.json'),
       },
     });
     result.commands.push({
