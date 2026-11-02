@@ -17,11 +17,30 @@
 2. `package.json` 挂 script，并**加入 `test:functional`**——它是本地 `npm test`、PR CI 与发布流水线共用的唯一入口，单独挂 script 不进清单就会漏跑。
 3. 发布产物也要覆盖的能力，script 里支持 `--dist`（改从 `packages/*/dist` 加载），并把它加进 `npm run verify` 的 `--dist` 序列；否则只验了源码没验交付物。
 
-Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；CI 和发布流水线的 npm 调用均包含这些生命周期脚本。
+Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；本地和发布流水线通过 npm 执行，CI 自动展开同一份清单及其生命周期后分组执行。
 
 同一生命周期也执行布局检查及无 dist 的编辑基准回归。语料对照使用真实 Canvas 字宽和 SVG 前景/底图取色，Node 注入这些真实观测复核纯计算，另用真实 HarfBuzz Provider 覆盖七项正反例；未准备字宽不得作为最终报告交付。
 
 布局检查的发布浏览器复验显式使用空 paths 配置，并审计构建输入图不含 packages/*/src，避免自动读取工作区 tsconfig 后混用源码与发布运行时。
+
+### CI 分组与构建复用
+
+`tooling/ci/plan.mjs` 从 npm scripts 推导执行计划；新增命令默认进入源码 editing / 产物 base 组，出现不支持的 shell 语法立即失败。变更分组时必须同步检查产物依赖，避免在新机器上依赖另一组未传输的文件。
+
+| 组 | 顺序与产物依赖 |
+|---|---|
+| editing | 核心、编辑保存、图表数据与媒体、集成清单；提供保存 PPTX、批注源码报告及 Office 清单 |
+| browser | 下载 editing 保存产物，再执行浏览器源码契约；PDF 独立读取依赖同样必需 |
+| agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
+| equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
+| dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
+| check | 始终生成结论；代码提交要求全部 job 成功且执行计划、计数、固件全集完整，文档提交允许重任务跳过 |
+
+每组写入 `out/ci-results/<phase>-<group>/`；合并校验提交 SHA、run ID、执行计划和实测计数，缺失或冲突立即失败。只有有真实数据依赖的 job 使用 `needs`，独立性能采样仍保留 beta 阶段的容错语义。
+
+`npm run build` 用 Turbo 的本地任务缓存复用完整串行构建，缓存包含九包 dist 与三份默认入口证明；源码、构建配置、依赖锁和实际 Node / 平台 / 架构参与缓存键。`node tooling/test-build-cache.mjs` 验证连续命中、环境失效及删除或篡改产物后的逐字节恢复，`npm run build -- --force` 可强制重建。
+
+CI 的 npm / pip 下载缓存分别由 setup-node / setup-python 管理，不把 node_modules、浏览器 profile 或构建缓存放进 Actions 缓存。Pages 直接部署可信 push CI 已验证的站点产物，相关信任规则见 [releasing.md](releasing.md)。
 
 ## 3. 登记断言计数
 

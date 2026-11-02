@@ -11,7 +11,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const file = join(dirname(fileURLToPath(import.meta.url)), '../../out/verify/counts.json');
+const file = process.env.WEB_PPT_COUNTS_FILE
+  ?? join(dirname(fileURLToPath(import.meta.url)), '../../out/verify/counts.json');
 
 export function recordCount(key, value) {
   mkdirSync(dirname(file), { recursive: true });
