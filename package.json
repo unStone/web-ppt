@@ -5,6 +5,7 @@
   "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
   "license": "MIT",
   "type": "module",
+  "packageManager": "npm@11.19.0",
   "workspaces": [
     "packages/*"
   ],
@@ -25,12 +26,14 @@
     "postverify": "npm run test:describe:dist && node tooling/measure-agent-describe.mjs && npm run test:lint:dist && node tooling/measure-agent-lint.mjs && npm run test:agent:dist && node tooling/measure-agent-tools.mjs && npm run test:mcp:dist && node tooling/measure-agent-mcp.mjs",
     "prepare": "git config core.hooksPath .githooks || true",
     "dev": "npm run dev -w @web-ppt/viewer",
-    "build": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/react && npm run build -w @web-ppt/vue && npm run build -w @web-ppt/fonts && npm run build -w @web-ppt/collab && node tooling/build-agent-mcp.mjs && node tooling/check-template-boundary.mjs && node tooling/check-chart-data-boundary.mjs && node tooling/check-media-boundary.mjs && node tooling/check-site-i18n.mjs && node tooling/check-chartex-boundary.mjs && node tooling/check-appearance-browser-boundary.mjs && node tooling/check-architecture-boundary.mjs",
+    "build": "node tooling/build.mjs",
+    "build:packages": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/react && npm run build -w @web-ppt/vue && npm run build -w @web-ppt/fonts && npm run build -w @web-ppt/collab && node tooling/build-agent-mcp.mjs && node tooling/check-template-boundary.mjs && node tooling/check-chart-data-boundary.mjs && node tooling/check-media-boundary.mjs && node tooling/check-site-i18n.mjs && node tooling/check-chartex-boundary.mjs && node tooling/check-appearance-browser-boundary.mjs && node tooling/check-architecture-boundary.mjs",
     "check": "tsc -p tsconfig.json --noEmit && tsc -p packages/agent-mcp/tsconfig.json --noEmit",
     "test": "npm run test:functional && npm run test:editor:performance",
     "test:media": "node tooling/test-media-insertion.mjs",
     "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
     "test:ole:libreoffice": "node tooling/test-ole-edit.mjs && node tooling/test-ole-edit-libreoffice.mjs",
+    "test:ci:office": "node tooling/test-edit-libreoffice-all.mjs && node tooling/test-ole-edit-libreoffice.mjs",
     "test:core": "node tooling/test-core.mjs && node tooling/test-parse-preview-parts.mjs",
     "test:edit": "node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-chart-data.mjs && node tooling/test-edit-powerpoint-report.mjs && node tooling/test-edit-equivalence.mjs",
     "test:edit:save": "node tooling/test-edit-save.mjs",
@@ -109,9 +112,11 @@
     "skills-ref": "^0.1.5",
     "terser": "^5.51.2",
     "ts-json-schema-generator": "2.4.0",
+    "turbo": "2.11.10",
     "typescript": "^5.5.4",
     "vite": "^5.4.8",
     "vue": "3.5.41",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "yaml": "2.9.1"
   }
 }

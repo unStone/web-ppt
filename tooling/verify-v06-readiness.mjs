@@ -55,8 +55,11 @@ check('官网工具栏覆盖 0.6 可视入口与按需图片导出',
       'textBulletKind', 'shapePreset', 'textUnderlineStyle', 'textHighlight',
     ])
     && contains('tooling/test-site-editor-browser.mjs', ['--splitting', '--metafile=', 'dynamic-import'])
-    && contains('.github/workflows/ci.yml', ['test-edit-libreoffice-all.mjs --include-site'])
+    && contains('.github/workflows/ci.yml', ['test-edit-libreoffice-all.mjs --site-only', 'run-group.mjs external office'])
     && contains('tooling/test-edit-libreoffice-all.mjs', [
+      'selectEditOfficeArtifacts',
+    ])
+    && contains('tooling/lib/edit-office-selection.mjs', [
       '--include-site', 'ALL_OFFICE_ARTIFACTS', 'EDIT_SAVE_OFFICE_ARTIFACTS',
     ]));
 check('中英文 API 文档不再声称表格只能追加',
