@@ -9,6 +9,7 @@
       "DOM.Iterable"
     ],
     "strict": true,
+    "types": [],
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
