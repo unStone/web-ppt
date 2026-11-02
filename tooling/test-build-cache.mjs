@@ -40,6 +40,10 @@ for (const file of Object.keys(initial.inputs)) {
 }
 assert.notEqual(initial.hash, dry({ ...process.env, NODE_ENV: '__build_cache_invalidation__' }).hash,
   '实际构建环境发生变化时必须使缓存失效');
+assert.notEqual(initial.hash, dry({
+  ...process.env,
+  NODE_OPTIONS: [process.env.NODE_OPTIONS, '--stack-trace-limit=97'].filter(Boolean).join(' '),
+}).hash, 'Node 运行选项发生变化时必须使缓存失效');
 
 const runs = [];
 function build(name, force = false) {
@@ -87,11 +91,23 @@ assert.deepEqual(snapshot(), expected, '连续构建的全部产物必须逐字�
 
 // 仅改动生成产物，验证缓存命中会恢复文件，而非只重放成功日志。
 appendFileSync(join(root, 'packages/core/dist/core.js'), '\ninvalid cached output\n');
+writeFileSync(join(root, 'packages/core/dist/stale.js'), 'export const stale = true;\n');
+writeFileSync(join(root, 'packages/edit-core/dist/stale.d.ts'), 'export declare const stale: true;\n');
+writeFileSync(join(root, proofs[0]), '{"expired":true}\n');
+const damaged = snapshot();
+dry();
+assert.deepEqual(snapshot(), damaged, 'dry-run 不得清理或恢复已有产物');
+execFileSync(process.execPath, [launcher, '--help'], { cwd: root, stdio: 'pipe' });
+assert.deepEqual(snapshot(), damaged, 'help 不得清理或恢复已有产物');
+const invalid = spawnSync(process.execPath, [launcher, '--unknown-build-option'], { cwd: root, encoding: 'utf8' });
+assert.notEqual(invalid.status, 0, '未知参数必须在清理产物前失败');
+assert.match(invalid.stderr, /构建参数不受支持/);
+assert.deepEqual(snapshot(), damaged, '无效参数不得清理或恢复已有产物');
 rmSync(join(root, 'packages/agent-mcp/dist'), { recursive: true });
-for (const proof of proofs) {
+for (const proof of proofs.slice(1)) {
   assert.ok(existsSync(join(root, proof)), `缺少独立入口证明：${proof}`);
   rmSync(join(root, proof));
 }
 assert.equal(build('restore').cache.status, 'HIT', '删除或篡改输出时仍应从缓存恢复');
 assert.deepEqual(snapshot(), expected, '全部九包产物和独立入口证明必须从缓存逐字节恢复');
-console.log('构建缓存通过：完整输入、环境失效、连续命中与输出恢复');
+console.log('构建缓存通过：完整输入、环境失效、连续命中、只读参数与完整输出恢复');

@@ -21,7 +21,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      code: ${{ github.event_name == 'workflow_dispatch' || steps.paths.outputs.code == 'true' }}
+      code: ${{ github.event_name == 'workflow_dispatch' || steps.paths.outputs.code == 'true' || steps.paths.outputs.runtime == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -33,6 +33,9 @@ jobs:
               - '**'
               - '!**/*.md'
               - '!docs/**'
+            runtime:
+              # 发布的 Agent Skill 是工具输入，其 Markdown 变化仍需验证。
+              - 'packages/*/skills/**'
 
   build:
     needs: changes
@@ -145,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [agent, expanded, render, charts, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
+        group: [browser-unit, agent, expanded, render, charts, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -218,7 +221,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
       - uses: actions/download-artifact@v4
         with:
           name: packages

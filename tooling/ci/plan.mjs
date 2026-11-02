@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 export const EQUIVALENCE_SHARDS = 4;
 export const SOURCE_GROUPS = Object.freeze([
-  'saving', 'editing', 'browser', 'agent', 'expanded', 'render', 'charts',
+  'saving', 'editing', 'browser-unit', 'browser', 'agent', 'expanded', 'render', 'charts',
   ...Array.from({ length: EQUIVALENCE_SHARDS }, (_, index) => `equivalence-${index}`),
 ]);
 export const DIST_GROUPS = Object.freeze(['base', 'agent', 'expanded', 'render', 'charts']);
@@ -68,7 +68,9 @@ function groupForLeaf(leaf, phase) {
   if (phase === 'source' && from('pretest:functional')) return 'agent';
   if (phase === 'dist' && from('postverify')) return 'agent';
   if (phase === 'source' && leaf.args.includes('tooling/test-edit-equivalence.mjs')) return 'equivalence';
-  if (phase === 'source' && from('test:editor:functional')) return 'browser';
+  if (phase === 'source' && from('test:editor:functional')) {
+    return leaf.command === 'node tooling/test-site-editor-browser.mjs' ? 'browser' : 'browser-unit';
+  }
   if (from('test:expanded', 'test:expanded:dist', 'test:portability', 'test:portability:dist')) return 'expanded';
   if (from('test:chart-hierarchy', 'test:chart-hierarchy:dist', 'test:chart-shared', 'test:chart-shared:dist')) return 'charts';
   if (from('test:fonts', 'test:fonts:dist', 'test:pdf:vector', 'test:pdf:vector:dist')

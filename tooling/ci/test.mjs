@@ -71,6 +71,24 @@ assert.throws(() => partitionFixtures(fixtures, 4, 4), /无效/);
 assert.throws(() => partitionFixtures(fixtures, 0.5, 4), /无效/);
 
 const root = resolve(import.meta.dirname, '../..');
+const repositoryScripts = readJson(join(root, 'package.json')).scripts;
+const repositorySource = createPlan(repositoryScripts, 'source');
+const editorLeaves = expandScript(repositoryScripts, 'test:editor:functional').map((leaf) => leaf.command);
+const browserCommands = repositorySource.groups.browser.map((leaf) => leaf.command);
+const browserUnitCommands = repositorySource.groups['browser-unit'].map((leaf) => leaf.command);
+assert.deepEqual(browserCommands, ['node tooling/test-site-editor-browser.mjs']);
+assert.deepEqual(browserUnitCommands, editorLeaves.filter((command) => !browserCommands.includes(command)));
+assert.equal(browserUnitCommands.length, editorLeaves.length - 1);
+assert.equal(new Set([...browserUnitCommands, ...browserCommands]).size, editorLeaves.length,
+  '编辑器功能命令必须无重复且完整分配到两个浏览器分组');
+assert.equal(browserCommands[0], editorLeaves.at(-1), '需要保存产物的最后一个命令仍在 browser');
+const newBrowserLeaf = 'node tooling/new-browser-unit.mjs';
+const newBrowserPlan = createPlan({ ...repositoryScripts,
+  'test:editor:functional': `${repositoryScripts['test:editor:functional']} && ${newBrowserLeaf}`,
+}, 'source');
+assert.equal(newBrowserPlan.groups['browser-unit'].at(-1).command, newBrowserLeaf,
+  '新增编辑器功能命令必须自动进入无需保存产物的分组');
+assert.deepEqual(newBrowserPlan.groups.browser.map((leaf) => leaf.command), browserCommands);
 mkdirSync(join(root, 'out/ci-tests'), { recursive: true });
 const temporary = mkdtempSync(join(root, 'out/ci-tests/test-'));
 const revision = 'test-revision';

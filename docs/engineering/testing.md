@@ -31,7 +31,8 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 |---|---|
 | saving | 独立执行保存契约，尽早提供 PPTX，供 editing、browser、site 和模型外部打开验证并行消费 |
 | editing | 下载 saving 产物后执行核心、图表数据与媒体、集成清单；提供批注源码报告及 Office 清单，并验证 0.7 外部打开 |
-| browser | 下载 saving 产物后执行浏览器源码契约及官网真实下载的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
+| browser-unit | 不依赖保存产物的页面、会话和浏览器工具契约，直接并行执行 |
+| browser | 下载 saving 产物后执行官网真实浏览器契约及下载产物的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
 | agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
 | equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
 | dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
@@ -43,6 +44,8 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 `npm run build` 用 Turbo 的本地任务缓存复用完整串行构建，缓存包含九包 dist 与三份默认入口证明；源码、构建配置、依赖锁和实际 Node / 平台 / 架构参与缓存键。`node tooling/test-build-cache.mjs` 验证连续命中、环境失效及删除或篡改产物后的逐字节恢复，`npm run build -- --force` 可强制重建。
 
 CI 的 npm / pip 下载缓存分别由 setup-node / setup-python 管理，不把 node_modules、浏览器 profile 或构建缓存放进 Actions 缓存。Pages 直接部署可信 push CI 已验证的站点产物，相关信任规则见 [releasing.md](releasing.md)。
+
+纯文档路径跳过重任务；发布包内的 `packages/*/skills/**` 属于 Agent 工具输入，其 Markdown 改动仍触发完整验证。
 
 ## 3. 登记断言计数
 

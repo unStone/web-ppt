@@ -14,7 +14,7 @@
         "packages/*/skills/**",
         "tooling/**"
       ],
-      "env": ["WEB_PPT_BUILD_RUNTIME", "NODE_ENV", "VITE_*"],
+      "env": ["WEB_PPT_BUILD_RUNTIME", "NODE_ENV", "NODE_OPTIONS", "VITE_*"],
       "outputs": [
         "packages/core/dist/**",
         "packages/edit-core/dist/**",
