@@ -56,6 +56,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: packages
+          overwrite: true
           path: |
             packages/*/dist/
             out/agent-describe/default-entry-proof.json
@@ -64,28 +65,61 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  editing:
+  saving:
+    name: source (saving)
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+      - name: 源码保存契约
+        run: node tooling/ci/run-group.mjs source saving
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-saving
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: save-inputs
+          overwrite: true
+          path: |
+            out/edit-save/*.pptx
+            out/edit-save/office-artifacts.json
+          if-no-files-found: error
+          retention-days: 1
+
+  editing:
+    needs: saving
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
         with:
           office: 'true'
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
       - name: 源码编辑与保存契约
         run: node tooling/ci/run-group.mjs source editing
+      - name: 0.7 统一清单外部打开测试
+        run: node tooling/test-v07-libreoffice-all.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: source-editing
+          overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
       - uses: actions/upload-artifact@v4
         with:
           name: edit-inputs
+          overwrite: true
           path: |
-            out/edit-save/*.pptx
             out/comments/source-report.json
             out/v07-integration/*.pptx
             out/v07-integration/office-artifacts.json
@@ -98,6 +132,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: snapshot-actual
+          overwrite: true
           path: |
             test/snapshots/
             out/core/
@@ -122,34 +157,33 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: source-${{ matrix.group }}
+          overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
 
   browser:
-    needs: editing
+    needs: saving
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
           python: 'true'
+          office: 'true'
       - uses: actions/download-artifact@v4
         with:
-          name: edit-inputs
-          path: out
+          name: save-inputs
+          path: out/edit-save
       - name: 浏览器源码功能契约
         run: node tooling/ci/run-group.mjs source browser
+      - name: 官网下载产物外部打开测试
+        run: node tooling/test-edit-libreoffice-all.mjs --site-only
       - uses: actions/upload-artifact@v4
         with:
           name: source-browser
+          overwrite: true
           path: out/ci-results/
-          if-no-files-found: error
-          retention-days: 1
-      - uses: actions/upload-artifact@v4
-        with:
-          name: site-sample
-          path: out/site-editor-browser/sample.pptx
           if-no-files-found: error
           retention-days: 1
 
@@ -174,12 +208,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.group }}
+          overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
 
   verify:
-    needs: [editing, source, browser, build]
+    needs: [saving, editing, source, browser, office, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -194,8 +229,16 @@ jobs:
           path: out/ci-results
       - uses: actions/download-artifact@v4
         with:
+          name: external-office
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        with:
           name: edit-inputs
           path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
       - name: 核对源码分组完整性与合并计数
         run: node tooling/ci/merge-results.mjs source
       - name: 跨产物一致性
@@ -203,12 +246,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-base
+          overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
 
   site:
-    needs: [editing, build]
+    needs: [saving, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -220,8 +264,8 @@ jobs:
           name: packages
       - uses: actions/download-artifact@v4
         with:
-          name: edit-inputs
-          path: out
+          name: save-inputs
+          path: out/edit-save
       - name: 官网双语生产回归
         run: npm run test:site:i18n
         env:
@@ -229,12 +273,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: site-dist
+          overwrite: true
           path: packages/site/dist/
           if-no-files-found: error
           retention-days: 7
 
   office:
-    needs: [editing, browser]
+    needs: saving
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -243,18 +288,17 @@ jobs:
           office: 'true'
       - uses: actions/download-artifact@v4
         with:
-          name: edit-inputs
-          path: out
-      - uses: actions/download-artifact@v4
-        with:
-          name: site-sample
-          path: out/site-editor-browser
+          name: save-inputs
+          path: out/edit-save
       - name: 保存产物外部打开测试
-        run: node tooling/test-edit-libreoffice-all.mjs --include-site
-      - name: 0.7 统一清单外部打开测试
-        run: node tooling/test-v07-libreoffice-all.mjs
-      - name: OLE 嵌入文档外部打开测试
-        run: node tooling/test-ole-edit-libreoffice.mjs
+        run: node tooling/ci/run-group.mjs external office
+      - uses: actions/upload-artifact@v4
+        with:
+          name: external-office
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
 
   performance:
     needs: changes
@@ -274,16 +318,14 @@ jobs:
   # 保留原 required check 名称；路径过滤只跳过重任务，不跳过此结论。
   check:
     if: always()
-    needs: [changes, build, editing, source, browser, dist, verify, site, office, performance]
+    needs: [changes, build, saving, editing, source, browser, dist, verify, site, office, performance]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: 核对全部门禁结论
         env:
           RESULTS: ${{ toJSON(needs) }}
-        run: |
-          node -e 'const jobs = JSON.parse(process.env.RESULTS); if (jobs.changes.result !== "success") throw new Error("路径检查未成功"); const code = jobs.changes.outputs.code === "true"; for (const [name, job] of Object.entries(jobs)) { if (name === "changes") continue; const expected = code ? "success" : "skipped"; if (job.result !== expected) throw new Error(`${name}: ${job.result}, expected ${expected}`); }'
-      - uses: actions/checkout@v4
-        if: needs.changes.outputs.code == 'true'
+        run: node tooling/ci/job-status.mjs
       - uses: actions/setup-node@v4
         if: needs.changes.outputs.code == 'true'
         with:
@@ -302,6 +344,11 @@ jobs:
         with:
           pattern: dist-*
           merge-multiple: true
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        if: needs.changes.outputs.code == 'true'
+        with:
+          name: external-office
           path: out/ci-results
       - name: 核对全部执行计划
         if: needs.changes.outputs.code == 'true'

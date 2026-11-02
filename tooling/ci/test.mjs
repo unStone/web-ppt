@@ -5,29 +5,54 @@ import { pathToFileURL } from 'node:url';
 import { createPlan, digest, expandScript, groupPlan, groupsForPhase, partitionFixtures } from './plan.mjs';
 import { mergeResults, readJson, resultDirectory, writeJson } from './results.mjs';
 import { expectedCountKeys } from './count-claims.mjs';
+import { checkJobResults } from './job-status.mjs';
+
+const jobs = (code, result) => ({ changes: { result: 'success', outputs: { code } }, build: { result } });
+assert.doesNotThrow(() => checkJobResults(jobs('true', 'success')));
+assert.doesNotThrow(() => checkJobResults(jobs('false', 'skipped')));
+for (const result of ['failure', 'cancelled', 'skipped', undefined]) {
+  assert.throws(() => checkJobResults(jobs('true', result)), /预期 success/);
+}
+assert.throws(() => checkJobResults(jobs('false', 'success')), /预期 skipped/);
+assert.throws(() => checkJobResults(jobs(undefined, 'skipped')), /输出无效/);
+assert.throws(() => checkJobResults({ ...jobs('true', 'success'), changes: { result: 'failure' } }), /路径检查未成功/);
+assert.throws(() => checkJobResults({ changes: jobs('true', 'success').changes }), /缺少门禁/);
 import { runGroup } from './run-group.mjs';
 
 const scripts = {
   'pretest:functional': 'node tooling/pre.mjs',
   'prepretest:functional': 'node tooling/must-not-run.mjs',
-  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded',
+  'test:functional': 'node tooling/a.mjs && node tooling/test-edit-save.mjs && node tooling/test-edit-equivalence.mjs && npm run test:expanded',
   'test:expanded': 'node tooling/expanded.mjs',
   'pretest:expanded': 'node tooling/expanded-pre.mjs',
   'posttest:expanded': 'node tooling/expanded-post.mjs',
   verify: 'node tooling/base.mjs && npm run test:expanded:dist',
   'test:expanded:dist': 'node tooling/expanded.mjs --dist',
   postverify: 'node tooling/dist-agent.mjs',
+  'pretest:ci:office': 'node tooling/external-pre.mjs',
+  'test:ci:office': 'node tooling/external-save.mjs && node tooling/external-ole.mjs',
 };
 const source = createPlan(scripts, 'source');
 assert.deepEqual(source.leaves.map((leaf) => leaf.command), [
-  'node tooling/pre.mjs', 'node tooling/a.mjs', 'node tooling/test-edit-equivalence.mjs',
+  'node tooling/pre.mjs', 'node tooling/a.mjs', 'node tooling/test-edit-save.mjs', 'node tooling/test-edit-equivalence.mjs',
   'node tooling/expanded-pre.mjs', 'node tooling/expanded.mjs', 'node tooling/expanded-post.mjs',
 ]);
 assert.equal(source.groups.agent[0].command, 'node tooling/pre.mjs');
+assert.deepEqual(source.groups.saving.map((leaf) => leaf.command), ['node tooling/test-edit-save.mjs']);
+assert.deepEqual(source.groups.editing.map((leaf) => leaf.command), ['node tooling/a.mjs']);
+const ordered = createPlan({ ...scripts,
+  'test:functional': 'node tooling/before.mjs && node tooling/test-edit-save.mjs && node tooling/after.mjs',
+}, 'source');
+assert.deepEqual(ordered.groups.editing.map((leaf) => leaf.command), ['node tooling/before.mjs', 'node tooling/after.mjs']);
+assert.equal(createPlan({ ...scripts, verify: 'node tooling/test-edit-save.mjs' }, 'dist').groups.base[0].command,
+  'node tooling/test-edit-save.mjs', '源码保存分组不能改变发布产物门禁分配');
 assert.deepEqual(source.groups.expanded.map((leaf) => leaf.command), [
   'node tooling/expanded-pre.mjs', 'node tooling/expanded.mjs', 'node tooling/expanded-post.mjs',
 ]);
 assert.deepEqual(createPlan(scripts, 'dist').groups.agent.map((leaf) => leaf.command), ['node tooling/dist-agent.mjs']);
+assert.deepEqual(createPlan(scripts, 'external').groups.office.map((leaf) => leaf.command), [
+  'node tooling/external-pre.mjs', 'node tooling/external-save.mjs', 'node tooling/external-ole.mjs',
+]);
 const added = { ...scripts, 'test:functional': `${scripts['test:functional']} && python3 tooling/new.py` };
 assert.equal(createPlan(added, 'source').groups.editing.at(-1).command, 'python3 tooling/new.py');
 for (const source of [
@@ -54,9 +79,11 @@ mkdirSync(join(temporary, 'tooling'), { recursive: true });
 const files = {
   'pre.mjs': "recordCount('pre', 1);",
   'a.mjs': "recordCount('a', 2);",
+  'test-edit-save.mjs': "recordCount('save', 5);",
   'expanded.mjs': "recordCount('expanded', 3);",
   'test-edit-equivalence.mjs': "recordCount('fixtures', 1); recordCount('equivalence', 2);",
   'expanded-pre.mjs': '', 'expanded-post.mjs': '', 'base.mjs': '', 'dist-agent.mjs': '',
+  'external-pre.mjs': '', 'external-save.mjs': '', 'external-ole.mjs': "countedAssert('oleLibreOffice');",
 };
 for (const [name, contents] of Object.entries(files)) writeFileSync(join(temporary, 'tooling', name), contents);
 function fakeResults(phase) {
@@ -64,8 +91,8 @@ function fakeResults(phase) {
     const directory = resultDirectory(temporary, phase, group);
     const plan = groupPlan(scripts, phase, group);
     const counts = phase === 'source'
-      ? group === 'editing' ? { a: 2 } : group === 'agent' ? { pre: 1 } : group === 'expanded' ? { expanded: 3 } : {}
-      : group === 'expanded' ? { expanded: 3 } : {};
+      ? group === 'saving' ? { save: 5 } : group === 'editing' ? { a: 2 } : group === 'agent' ? { pre: 1 } : group === 'expanded' ? { expanded: 3 } : {}
+      : phase === 'external' ? { oleLibreOffice: 11 } : group === 'expanded' ? { expanded: 3 } : {};
     if (group.startsWith('equivalence-')) {
       const index = Number(group.slice('equivalence-'.length));
       const selected = partitionFixtures(fixtures, index, 4);
@@ -85,11 +112,33 @@ const merge = (phase, overrides = {}) => mergeResults({ root: temporary, scripts
 try {
   fakeResults('source');
   fakeResults('dist');
-  assert.deepEqual(merge('source').counts, { fixtures: fixtures.length, equivalence: fixtures.length * 2, a: 2, pre: 1, expanded: 3 });
+  assert.throws(() => merge('source'), /external\/office 缺少 plan/);
+  assert.throws(() => merge('all'), /external\/office 缺少 plan/);
+  fakeResults('external');
+  assert.deepEqual(merge('source').counts, { fixtures: fixtures.length, equivalence: fixtures.length * 2, save: 5, a: 2, pre: 1, expanded: 3, oleLibreOffice: 11 });
   assert.deepEqual(merge('all').counts, merge('source').counts);
+  assert.equal(merge('source').summaries.filter((summary) => summary.phase === 'external').length, 1);
+  assert.equal(merge('all').summaries.filter((summary) => summary.phase === 'external').length, 1);
+  const office = resultDirectory(temporary, 'external', 'office');
+  writeJson(join(office, 'counts.json'), {});
+  const missingOfficeCount = readJson(join(office, 'result.json'));
+  missingOfficeCount.countsDigest = digest({});
+  writeJson(join(office, 'result.json'), missingOfficeCount);
+  assert.throws(() => merge('source'), /oleLibreOffice/);
+  assert.throws(() => merge('all'), /oleLibreOffice/);
+  fakeResults('external');
+  const oldOffice = readJson(join(office, 'result.json'));
+  writeJson(join(office, 'result.json'), { ...oldOffice, runId: 'previous-run' });
+  assert.throws(() => merge('source'), /external\/office 未成功执行/);
+  writeJson(join(office, 'result.json'), { ...oldOffice, revision: 'old-revision' });
+  assert.throws(() => merge('all'), /external\/office 未成功执行/);
+  fakeResults('external');
   assert.throws(() => merge('source', { revision: 'old-revision' }), /当前提交/);
   assert.throws(() => merge('source', { runId: 'previous-run' }), /当前提交/);
   assert.throws(() => merge('source', { scripts: added }), /执行计划/);
+  rmSync(join(resultDirectory(temporary, 'source', 'saving'), 'result.json'));
+  assert.throws(() => merge('source'), /source\/saving 缺少 result/);
+  fakeResults('source');
   const editing = resultDirectory(temporary, 'source', 'editing');
   rmSync(join(editing, 'counts.json'));
   assert.throws(() => merge('source'), /缺少 counts/);
@@ -132,6 +181,10 @@ try {
   writeJson(join(temporary, 'out/verify/counts.json'), { sourceProof: 42 });
   run('dist', 'node tooling/success.mjs');
   assert.deepEqual(readJson(join(resultDirectory(temporary, 'dist', 'base'), 'counts.json')), { sourceProof: 42, success: 7 });
+  runGroup({ root: temporary, phase: 'external', group: 'office', revision, runId,
+    scripts: { 'test:ci:office': 'node tooling/success.mjs' },
+  });
+  assert.deepEqual(readJson(join(office, 'counts.json')), { success: 7 }, '外部读取器组必须使用独立空计数');
   writeFileSync(join(temporary, 'tooling/failure.mjs'), 'process.exit(7);');
   writeFileSync(join(temporary, 'tooling/later.mjs'), "throw new Error('不得运行');");
   assert.throws(() => run('source', 'node tooling/failure.mjs && node tooling/later.mjs'), /exit=7/);

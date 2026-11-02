@@ -33,6 +33,7 @@
     "test:media": "node tooling/test-media-insertion.mjs",
     "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
     "test:ole:libreoffice": "node tooling/test-ole-edit.mjs && node tooling/test-ole-edit-libreoffice.mjs",
+    "test:ci:office": "node tooling/test-edit-libreoffice-all.mjs && node tooling/test-ole-edit-libreoffice.mjs",
     "test:core": "node tooling/test-core.mjs && node tooling/test-parse-preview-parts.mjs",
     "test:edit": "node tooling/test-edit.mjs && node tooling/test-edit-save.mjs && node tooling/test-chart-data.mjs && node tooling/test-edit-powerpoint-report.mjs && node tooling/test-edit-equivalence.mjs",
     "test:edit:save": "node tooling/test-edit-save.mjs",
@@ -115,6 +116,7 @@
     "typescript": "^5.5.4",
     "vite": "^5.4.8",
     "vue": "3.5.41",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "yaml": "2.9.1"
   }
 }

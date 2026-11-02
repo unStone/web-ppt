@@ -27,7 +27,7 @@ function validateCounts(counts, label) {
 }
 
 export function mergeResults({ root, scripts, phase, revision = revisionAt(root), fixtures = fixtureNames(root), runId = process.env.GITHUB_RUN_ID ?? null }) {
-  const phases = phase === 'all' ? ['source', 'dist'] : [phase];
+  const phases = phase === 'all' ? ['source', 'dist', 'external'] : phase === 'source' ? ['source', 'external'] : [phase];
   const ordinary = [];
   const equivalence = [];
   const summaries = [];
@@ -48,7 +48,7 @@ export function mergeResults({ root, scripts, phase, revision = revisionAt(root)
       throw new Error(`CI 分组 ${current}/${group} 未成功执行当前提交 ${revision} 的完整计划`);
     }
     if (result.countsDigest !== digest(counts)) throw new Error(`CI 分组 ${current}/${group} 的计数丢失或被改写`);
-    if (current === 'source') {
+    if (current === 'source' || current === 'external') {
       const missing = expectedCountKeys(root, expected.commands).filter((key) => !Object.hasOwn(counts, key));
       if (missing.length) throw new Error(`CI 分组 ${current}/${group} 缺少源码声明的计数：${missing.join(', ')}`);
     }

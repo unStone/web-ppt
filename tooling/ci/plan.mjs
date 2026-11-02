@@ -2,10 +2,11 @@ import { createHash } from 'node:crypto';
 
 export const EQUIVALENCE_SHARDS = 4;
 export const SOURCE_GROUPS = Object.freeze([
-  'editing', 'browser', 'agent', 'expanded', 'render', 'charts',
+  'saving', 'editing', 'browser', 'agent', 'expanded', 'render', 'charts',
   ...Array.from({ length: EQUIVALENCE_SHARDS }, (_, index) => `equivalence-${index}`),
 ]);
 export const DIST_GROUPS = Object.freeze(['base', 'agent', 'expanded', 'render', 'charts']);
+export const EXTERNAL_GROUPS = Object.freeze(['office']);
 
 export function digest(value) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -14,7 +15,8 @@ export function digest(value) {
 export function groupsForPhase(phase) {
   if (phase === 'source') return SOURCE_GROUPS;
   if (phase === 'dist') return DIST_GROUPS;
-  throw new Error(`未知 CI 阶段 ${phase}；预期 source 或 dist`);
+  if (phase === 'external') return EXTERNAL_GROUPS;
+  throw new Error(`未知 CI 阶段 ${phase}；预期 source、dist 或 external`);
 }
 
 // 这里只接受仓库门禁实际使用的命令模型；遇到 shell 扩展必须先明确扩展模型。
@@ -61,6 +63,8 @@ export function expandScript(scripts, entry) {
 
 function groupForLeaf(leaf, phase) {
   const from = (...scripts) => scripts.some((script) => leaf.ancestry.includes(script));
+  if (phase === 'external') return 'office';
+  if (phase === 'source' && leaf.command === 'node tooling/test-edit-save.mjs') return 'saving';
   if (phase === 'source' && from('pretest:functional')) return 'agent';
   if (phase === 'dist' && from('postverify')) return 'agent';
   if (phase === 'source' && leaf.args.includes('tooling/test-edit-equivalence.mjs')) return 'equivalence';
@@ -74,7 +78,8 @@ function groupForLeaf(leaf, phase) {
 
 export function createPlan(scripts, phase) {
   const groups = Object.fromEntries(groupsForPhase(phase).map((group) => [group, []]));
-  const leaves = expandScript(scripts, phase === 'source' ? 'test:functional' : 'verify');
+  const entry = { source: 'test:functional', dist: 'verify', external: 'test:ci:office' }[phase];
+  const leaves = expandScript(scripts, entry);
   for (const leaf of leaves) {
     const group = groupForLeaf(leaf, phase);
     if (group !== 'equivalence') groups[group].push(leaf);

@@ -3,8 +3,8 @@ import { mergeResults, readJson, writeJson } from './results.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const [phase, ...unknown] = process.argv.slice(2);
-if (unknown.length || !['source', 'dist', 'all'].includes(phase)) {
-  throw new Error('用法：node tooling/ci/merge-results.mjs source|dist|all');
+if (unknown.length || !['source', 'dist', 'external', 'all'].includes(phase)) {
+  throw new Error('用法：node tooling/ci/merge-results.mjs source|dist|external|all');
 }
 const scripts = readJson(join(root, 'package.json')).scripts;
 const result = mergeResults({ root, scripts, phase });

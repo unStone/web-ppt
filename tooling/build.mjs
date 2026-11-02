@@ -2,9 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
+const args = process.argv.slice(2);
 const result = spawnSync(process.execPath, [
   join(root, 'node_modules/turbo/bin/turbo'), 'run', 'build:packages',
-  '--cache=local:rw', ...process.argv.slice(2),
+  // --force 与 --cache 互斥；强制构建仍由 turbo.json 禁用远程缓存。
+  ...(args.includes('--force') ? [] : ['--cache=local:rw']), ...args,
 ], {
   cwd: root,
   stdio: 'inherit',

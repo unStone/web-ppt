@@ -29,6 +29,17 @@ const ci = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
 for (const command of ['run-group.mjs source', 'run-group.mjs dist', 'merge-results.mjs source', 'merge-results.mjs all']) {
   assert.ok(ci.includes(`tooling/ci/${command}`), `CI 必须接入唯一门禁编排：${command}`);
 }
+for (const command of [
+  'node tooling/test-edit-libreoffice-all.mjs --site-only',
+  'node tooling/test-v07-libreoffice-all.mjs',
+  'node tooling/ci/run-group.mjs external office',
+]) {
+  assert.equal(ci.split(`run: ${command}\n`).length - 1, 1,
+    `CI 必须且只能执行一次外部软件门禁：${command}`);
+}
+assert.equal(scripts['test:ci:office'],
+  'node tooling/test-edit-libreoffice-all.mjs && node tooling/test-ole-edit-libreoffice.mjs',
+  '外部软件门禁必须保留完整模型清单及 OLE 嵌入文档真实打开');
 for (const workflow of ['release.yml']) {
   const source = readFileSync(resolve(root, '.github/workflows', workflow), 'utf8');
   assert.equal(
@@ -61,4 +72,6 @@ for (const workflow of readdirSync(workflows).filter(name => name !== 'ci.yml' &
 }
 execFileSync(process.execPath, [resolve(root, 'tooling/ci/test.mjs')], { cwd: root, stdio: 'inherit' });
 execFileSync(process.execPath, [resolve(root, 'tooling/test-ci-trust.mjs')], { cwd: root, stdio: 'inherit' });
+execFileSync(process.execPath, [resolve(root, 'tooling/test-edit-office-selection.mjs')], { cwd: root, stdio: 'inherit' });
+execFileSync(process.execPath, [resolve(root, 'tooling/test-pages-release.mjs')], { cwd: root, stdio: 'inherit' });
 console.log('测试门禁唯一入口：本地、PR CI 与发布流水线编排一致');

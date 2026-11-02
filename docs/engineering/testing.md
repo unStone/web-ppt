@@ -29,14 +29,16 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 
 | 组 | 顺序与产物依赖 |
 |---|---|
-| editing | 核心、编辑保存、图表数据与媒体、集成清单；提供保存 PPTX、批注源码报告及 Office 清单 |
-| browser | 下载 editing 保存产物，再执行浏览器源码契约；PDF 独立读取依赖同样必需 |
+| saving | 独立执行保存契约，尽早提供 PPTX，供 editing、browser、site 和模型外部打开验证并行消费 |
+| editing | 下载 saving 产物后执行核心、图表数据与媒体、集成清单；提供批注源码报告及 Office 清单，并验证 0.7 外部打开 |
+| browser | 下载 saving 产物后执行浏览器源码契约及官网真实下载的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
 | agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
 | equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
 | dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
+| external/office | 从 `test:ci:office` 执行完整模型清单和 OLE 真实打开；计数随源码结果合并，缺失即失败 |
 | check | 始终生成结论；代码提交要求全部 job 成功且执行计划、计数、固件全集完整，文档提交允许重任务跳过 |
 
-每组写入 `out/ci-results/<phase>-<group>/`；合并校验提交 SHA、run ID、执行计划和实测计数，缺失或冲突立即失败。只有有真实数据依赖的 job 使用 `needs`，独立性能采样仍保留 beta 阶段的容错语义。
+每组写入 `out/ci-results/<phase>-<group>/`；合并校验提交 SHA、run ID、执行计划和实测计数，缺失或冲突立即失败。源码和 external 合并完成后才运行一致性校验，确保 OLE 数字与官网总数也被实际核对；只有有真实数据依赖的 job 使用 `needs`，独立性能采样仍保留 beta 阶段的容错语义。
 
 `npm run build` 用 Turbo 的本地任务缓存复用完整串行构建，缓存包含九包 dist 与三份默认入口证明；源码、构建配置、依赖锁和实际 Node / 平台 / 架构参与缓存键。`node tooling/test-build-cache.mjs` 验证连续命中、环境失效及删除或篡改产物后的逐字节恢复，`npm run build -- --force` 可强制重建。
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { selectLatestPushCI, evaluateCITrust, readGitHubCIPages } from './lib/ci-trust.mjs';
+import { SOURCE_GROUPS, DIST_GROUPS } from './ci/plan.mjs';
 
 const repository = 'unStone/web-ppt';
 const sha = 'f0f7a15e8a68669878359f2c26071c79ddad537d';
@@ -21,9 +22,9 @@ const legacy = [job('check', [
 ].map(step))];
 const modern = [
   ...['changes', 'build', 'editing', 'browser', 'verify', 'site', 'office', 'performance'].map(name => job(name)),
-  ...['agent', 'expanded', 'render', 'charts', 'equivalence-0', 'equivalence-1', 'equivalence-2', 'equivalence-3']
+  ...SOURCE_GROUPS.filter(group => !['editing', 'browser'].includes(group))
     .map(group => job(`source (${group})`)),
-  ...['agent', 'expanded', 'render', 'charts'].map(group => job(`dist (${group})`)),
+  ...DIST_GROUPS.filter(group => group !== 'base').map(group => job(`dist (${group})`)),
   job('check', [step('核对全部门禁结论'), step('核对全部执行计划')]),
 ];
 const evaluate = (jobs, candidate = run) => evaluateCITrust({ ...identity, run: candidate, jobs });
