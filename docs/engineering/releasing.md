@@ -51,6 +51,8 @@ npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
 
 `--file` 只填 `release.yml`；当前 workflow 没有 environment，因此不传 `--env`。创建和读取可能要求 npm 网页认证，认证期间保持 CLI 进程运行；回读应匹配仓库、文件及 `createPackage` 权限，记录 registry 实际返回的权限列表。
 
+新配置须在创建后两天内完成首次成功发布，才能验证并绑定仓库不可变身份；超过期限须删除后重建。`trust list` 仅证明配置可读取，已有版本的跳过运行或 dry-run 不能代替这次激活，见 [npm 配置有效期](https://docs.npmjs.com/trusted-publishers/#trusted-publisher-configuration-expiry)。
+
 已有版本会被逐包跳过，手动重跑可验证触发与幂等性，但不能把跳过当作实际 OIDC 发布证据。[0.8.0-beta.1 实际发布](https://github.com/unStone/web-ppt/actions/runs/41680224362)的八个既有包通过 OIDC 发布，MCP 首发使用本机账号，其 GitHub 关系已创建并回读；[手动重跑](https://github.com/unStone/web-ppt/actions/runs/41686583749)验证了触发与逐包跳过。后续未发布版本使用同一工作流。
 
 ## 4. 重跑与跳过的语义
