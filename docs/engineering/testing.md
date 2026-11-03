@@ -23,6 +23,8 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 
 此审计仅处理受控仓库配置，不接收 PPT 或 Agent 提供的 glob / ignore 模式。开发依赖仍有既有 glob / minimatch 审计告警，不能把工程门禁通过表述为 `npm audit` 清零。
 
+官网语言与迟到响应契约将 `FontFaceSet.load` 的真实完成回调延后至场景清理，避免后台字体刷新与语言操作同时改变视图容器；原生结果、异常和全部视图/下载断言保留。测试在清理阶段恢复方法并移除脚本，`test:site:font-gate` 验证该边界；触屏场景用 CDP 输入能力仿真，并恢复原触点及 hover / pointer 能力。
+
 [Agent 任务评测票据 008](../wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md)明确不作为发布门禁：其自测由 `npm run test:agent-eval` 独立执行，真实模型调用仅通过 `eval:agent:run` 显式发起，`eval:agent` 仅重判保存证据。确定性评测固件仍挂入统一生成与 CI 字节检查，不以模型成功率决定发布。
 
 同一生命周期也执行布局检查及无 dist 的编辑基准回归。语料对照使用真实 Canvas 字宽和 SVG 前景/底图取色，Node 注入这些真实观测复核纯计算，另用真实 HarfBuzz Provider 覆盖七项正反例；未准备字宽不得作为最终报告交付。

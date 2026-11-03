@@ -11,6 +11,7 @@ import { runPresentVerticalContract } from './present-vertical-browser-contract.
 import { runPresentBackspaceContract } from './present-backspace-browser-contract.mjs';
 import { runPresentPrevLetterContract } from './present-prev-letter-browser-contract.mjs';
 import { runSiteLanguageInputContract } from './site-language-input-contract.mjs';
+import { installGalleryFontCompletionGate } from './site-font-completion-gate.mjs';
 
 export async function runSiteI18nGalleryContract({ evaluate, request, click, waitFor, onEvent }) {
   const transfers = [];
@@ -29,11 +30,14 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     }));
     else pending.push(requestId);
   });
-  await request('Fetch.enable', { patterns: [{ urlPattern: 'https://unstone.github.io/web-ppt-samples/*' }] });
+  // 字体加载会合法刷新 Viewer；语言契约期间隔离其完成回调，保留严格的视图身份断言。
+  const fonts = await installGalleryFontCompletionGate({ request, evaluate });
   try {
+    await request('Fetch.enable', { patterns: [{ urlPattern: 'https://unstone.github.io/web-ppt-samples/*' }] });
     await request('Page.navigate', { url: await evaluate("new URL('samples.en.html', location.href).href") });
     const card = '.sample-card[data-file="language-contract.pptx"]';
     await waitFor(`document.querySelector('${card} button')?.textContent === 'Preview'`, '新增样本卡片英文入口');
+    await fonts.assertActive();
     if (!await evaluate(`document.querySelector('${card} h3').textContent === '复制'
       && document.querySelector('${card} .sample-credit').textContent.includes('<中文作者>')
       && document.querySelector('${card} .sample-foot a').href.includes('index.en.html?sample=language-contract.pptx')
@@ -70,8 +74,6 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await evaluate("globalThis.__previewView = document.querySelector('.preview-stage').firstElementChild; globalThis.__previewBytes = document.querySelector('.preview-dl').href");
     await click('[data-site-locale="en"]');
     await waitFor("document.querySelector('.preview-meta').textContent.includes('Slides: 7') && document.querySelector('.preview-meta').textContent.includes('Parse ')", '已打开样本切英文');
-    // 语言重渲染里 meta 与 title/pager 的更新不是同一帧，CI 慢机上一次性读取会
-    // 读到旧标题；轮询等待全部条件同时成立（样本内容 / 页码 / 视图 / 下载不变）
     await waitFor("document.querySelector('.preview-title').textContent === '复制' && document.querySelector('.preview-pager').textContent === '2 / 7' && globalThis.__previewView === document.querySelector('.preview-stage').firstElementChild && globalThis.__previewBytes === document.querySelector('.preview-dl').href && document.querySelector('.preview-dl').download === 'language-contract.pptx'", '语言切换不改变样本内容、页码、视图或下载');
     const context = { evaluate, request, click, waitFor };
     await runSiteLanguageInputContract(context, '样本预览');
@@ -194,10 +196,14 @@ export async function runSiteI18nGalleryContract({ evaluate, request, click, wai
     await click('.preview-close');
     if (await evaluate("!!document.querySelector('#commentsPanel')")) throw new Error('关闭预览未释放批注');
   } finally {
-    for (const requestId of pending) await request('Fetch.failRequest', { requestId, errorReason: 'Aborted' });
-    await Promise.all(transfers);
-    await request('Fetch.disable');
-    unsubscribe();
+    try {
+      for (const requestId of pending) await request('Fetch.failRequest', { requestId, errorReason: 'Aborted' });
+      await Promise.all(transfers);
+      await request('Fetch.disable');
+    } finally {
+      unsubscribe();
+      await fonts.release();
+    }
   }
 }
 

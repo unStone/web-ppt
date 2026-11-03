@@ -19,6 +19,7 @@
 | `npm run test:describe` / `npm run test:describe:dist` | 结构化读出源码 / 发布入口、Schema 与全部固件跨进程一致性验证 |
 | `npm run schema:agent` / `npm run test:agent[:dist]` | 重新生成全命令工具 Schema 与校验器 / 验证源码或发布入口的原子编辑、观察、历史和保存；`test:agent:libreoffice` 补充外部读取器 |
 | `npm run test:webmcp` | 验证官网文稿工具注册、真实编辑、渲染、保存重开、取消与生命周期，以及不支持路径的按需边界 |
+| `npm run test:site:font-gate` | 验证语言测试的字体完成隔离、真实结果/异常传递与方法/脚本清理；主功能门禁与双语生产回归均自动执行 |
 | `npm run schema:fill` / `npm run test:fill[:dist]` | 生成大纲 Schema / 验证模板生成、设计调整、七项检查和源码或独立发布入口；`TEMPLATE_FILL_EXTERNAL` 可指定真实外部模板 |
 | `npm run measure:fill` | 实测新入口体积、独立进程冷导入及真实浏览器六页完整生成的时间与内存口径 |
 | `npm run fixtures:agent-eval` / `npm run test:agent-eval` | 生成八类评测输入/参考固件 / 验证真实测量、独立判定、生产 MCP 路径与进程记录；不调用模型 |
