@@ -1,19 +1,12 @@
 /** 在 showcase 之外单独生成一个内嵌 EMF/WMF 的 pptx，用于端到端验证图元文件解码 */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { dirname, join as pjoin } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeZip, NS, XML, px, nvGrp, sp, solid, label, slideXml } from './lib/ooxml.mjs';
+import { readCanonicalMetafiles } from './lib/metafile-assets.mjs';
 
-const root = pjoin(dirname(fileURLToPath(import.meta.url)), '..');
-const emfPath = pjoin(root, 'out/metafile/showcase.emf');
-const wmfPath = pjoin(root, 'out/metafile/showcase.wmf');
-if (!existsSync(emfPath)) {
-  console.log('跳过：先运行 node tooling/test-metafile.mjs 生成 EMF/WMF 样本');
-  process.exit(0);
-}
-const emf = readFileSync(emfPath);
-const wmf = existsSync(wmfPath) ? readFileSync(wmfPath) : emf;
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const { 'showcase.emf': emf, 'showcase.wmf': wmf } = readCanonicalMetafiles(join(root, 'tooling/metafile-assets'));
 
 const W = 1280, H = 720;
 const pic = (id, rid, x, y, w, h, name) => `<p:pic>

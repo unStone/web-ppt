@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "generator": "tooling/make-agent-eval-fixture.mjs",
+  "tasks": [
+    {
+      "version": 1,
+      "id": "case-01",
+      "kind": "clean",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-01-input.pptx",
+      "referenceName": "case-01-reference.pptx",
+      "inputSha256": "25457b2e2c9191c2292d941d0f273c18665b3566347a59f7d0deeec1f7e01c35",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-02",
+      "kind": "text-overflow",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-02-input.pptx",
+      "referenceName": "case-02-reference.pptx",
+      "inputSha256": "48763d8039e6dd43d697b082fc95c6166f89847c3a52541e9949a1ab45d3b336",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-03",
+      "kind": "element-overlap",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-03-input.pptx",
+      "referenceName": "case-03-reference.pptx",
+      "inputSha256": "9121bc7728a3d5879d3e291762314d958483f42ee530de102246f7c3fbf4ea89",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-04",
+      "kind": "off-canvas",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-04-input.pptx",
+      "referenceName": "case-04-reference.pptx",
+      "inputSha256": "9c0210a92733de62693b3092dd383c4a2576393822ea3f7d500226f9f41f5a56",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-05",
+      "kind": "low-contrast",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-05-input.pptx",
+      "referenceName": "case-05-reference.pptx",
+      "inputSha256": "6c6d3cff60a18621593fafb443ef08aab4ba13604a4ee7c577b6d30c668e3b3b",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-06",
+      "kind": "missing-font",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-06-input.pptx",
+      "referenceName": "case-06-reference.pptx",
+      "inputSha256": "39a977ada6b8f0316574c7a78fe1c38ed1acccf14975a18f574960e7d8c00414",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-07",
+      "kind": "placeholder-prompt-left",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-07-input.pptx",
+      "referenceName": "case-07-reference.pptx",
+      "inputSha256": "9c752dde0fb4f35c053051bf5354747e107a880117690bd85339c6570efe73ed",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    },
+    {
+      "version": 1,
+      "id": "case-08",
+      "kind": "image-distorted",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-08-input.pptx",
+      "referenceName": "case-08-reference.pptx",
+      "inputSha256": "395d2f51e5ad441321b576d2d2cb077b97062f1021cb643583f76cb40988ada4",
+      "referenceSha256": "375ad3359139643e92d62923b01371ad3793909c780545c0c0b0c810d0c20336"
+    }
+  ]
+}

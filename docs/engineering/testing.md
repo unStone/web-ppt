@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 类型检查 | `npm run check` | 走源码的 tsc 全仓类型错误 | 不需要构建，最快失败 |
 | 测试 | `npm test` = `test:functional` + `test:editor:performance` | 行为回归、快照漂移、契约破坏 | 唯一入口清单，见 §2 |
-| 构建 | `npm run build` | 八个包的产物编译 + 七个边界审计（§6） | verify 要读 dist |
+| 构建 | `npm run build` | 九个发布包的产物编译与各能力边界审计（§6） | verify 要读 dist |
 | 跨产物一致性 | `npm run verify` | 文档数字照抄旧值、死链、发布包清单漂移、`--dist` 复验 | 必须最后跑：读 dist 体积与测试落盘的断言数 |
 
 ## 2. 新增测试套件
@@ -18,6 +18,8 @@
 3. 发布产物也要覆盖的能力，script 里支持 `--dist`（改从 `packages/*/dist` 加载），并把它加进 `npm run verify` 的 `--dist` 序列；否则只验了源码没验交付物。
 
 Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；CI 和发布流水线的 npm 调用均包含这些生命周期脚本。
+
+[Agent 任务评测票据 008](../wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md)明确不作为发布门禁：其自测由 `npm run test:agent-eval` 独立执行，真实模型调用仅通过 `eval:agent:run` 显式发起，`eval:agent` 仅重判保存证据。确定性评测固件仍挂入统一生成与 CI 字节检查，不以模型成功率决定发布。
 
 同一生命周期也执行布局检查及无 dist 的编辑基准回归。语料对照使用真实 Canvas 字宽和 SVG 前景/底图取色，Node 注入这些真实观测复核纯计算，另用真实 HarfBuzz Provider 覆盖七项正反例；未准备字宽不得作为最终报告交付。
 
@@ -47,6 +49,8 @@ flowchart LR
 | **新能力必须同时加固件** | 历史教训：隐藏页曾零固件覆盖，`skipHidden` 的真 bug 在近千项断言下存活；快照挡得住「变了」，挡不住「一开始就没测过」 |
 
 `.ppt` 样本特殊：LibreOffice 转换非确定性，`make-ppt-samples.mjs` 按**渲染结果**而非字节比对，内容没变就保留原文件。
+
+`sample-metafile.pptx` 的项目自有 EMF/WMF 固定存于 `tooling/metafile-assets/`，清单记录来源、字节数和 SHA256；生成器不读取 `out/` 中的本机 LibreOffice 缓存。更换资源必须明确更新基线，缺失或损坏不能跳过生成。
 
 ## 5. 渲染快照基线
 
@@ -82,6 +86,7 @@ flowchart LR
 | `npm run test:mcp` | 本机 MCP 57 项断言：文件会话、并发顺序、关闭等待文件写入、交付成功后确认保存点、取消、原子保存、真实 stdio 全链路、根 Schema、无网络调用与发布边界；`test:mcp:dist` 复验，真实 Claude Code / Codex 任务由 `validate-agent-mcp-evaluation.mjs` 机判 |
 | `npm run test:webmcp` | 官网 WebMCP 127 项浏览器断言：工具注册、真实编辑与保存重开、渲染、同一历史、恢复、协同、只读、取消及切换；注册平台边界可注入失败，不支持路径检查动态块未加载，原生浏览器另验 |
 | `npm run test:fill` | 模板填充 483 项 + 浏览器 70 项断言：六类页面、八种原生图表、完整七项检查与副本设计修复、POTX 类型转换、输入保护、Unicode、调用快照、裁剪精度、动态字段、备注闭包、独立进程确定性和双文字路径；`test:fill:dist` 检查类型、Schema、按需闭包和纯发布入口 |
+| `npm run test:agent-eval` | 独立评测自测：八类输入/参考固件、真实字体、完整七项检查、原文/可见性/媒体/原生设计保护、实际 MCP 修复可达性，以及进程、协议变换、保存哈希和证据完整性；不调用模型，不进入发布门禁 |
 | `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
 | `node tooling/test-agent-node-render.mjs` | Agent Node 渲染 21 项断言：缺测字 / 光栅化注入的稳定 reason、注入渲染、跨进程确定性、HarfBuzz 真实测量整页渲染与 PNG 尺寸换算；`--dist` 复验 `@web-ppt/core/node` 发布入口 |
 | `node tooling/test-agent-node-render-parity.mjs` | Agent Node 双端对照 4 项断言：同一字体字节双端注册（浏览器 FontFace / Node Provider）下全部固件整页 SVG 指纹比对，差异页必须归因（公式测量源 / textPath 字距放大）；缺字固件不满足同一字体前提，跳过并计数；`--dist` 复验 |
@@ -96,6 +101,7 @@ flowchart LR
 | `npm run test:editor` | 451 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `npm run test:adapters` | React / Vue 的 12 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
+| `npm run test:metafile:fixture` | 图元固件确定性 115 项断言：原有复杂媒体保留、缓存独立、资源哈希、失败不覆盖和双进程重建；`test:metafile:fixture:dist` 使用发布入口复验 |
 | `npm run test:expanded` | 扩展能力 2047 项断言；`test:expanded:dist` 验证独立发布入口，参见[能力矩阵](../api/expanded-capabilities.md) |
 | `npm run test:portability` | 高级文本流转 797 项断言；`test:portability:dist` 验证发布入口，参见[公式、艺术字与文字效果](../api/portable-rich-text.md) |
 | `npm run test:chart-hierarchy` | 多级类别 178 项断言；源码与发布入口、层级/空槽、工作簿、历史、协同及重建；[支持矩阵](../api/chart-hierarchical-categories.md) |
@@ -135,6 +141,8 @@ flowchart LR
 ## 10. 代表性固件
 
 全部固件由 `npm run fixtures` 确定性生成；下表列出覆盖面最广的几份。
+
+可选 Agent 评测的八类输入与参考产物另存于 `tooling/agent-eval/fixtures/`，由同一生成入口覆盖，但不改变下表默认解析样本计数；其 `manifest.json` 记录每份生成字节的 SHA256。
 
 | 文件 | 覆盖内容 |
 |---|---|

@@ -36,6 +36,21 @@
 | setup-node **不设 `registry-url`** | 它会写带空 `NODE_AUTH_TOKEN` 的 .npmrc；npm 拿空凭据发布时，scoped 包返回 404 而非 401，极难排查 |
 | 新包第一版**走不了 OIDC** | npm 只允许已存在的包配置 Trusted Publishing；先本地 `npm publish` 发一版，再去 npm 包设置配 trusted publisher。流水线有「首发引导校验」步骤会提前报出缺的包 |
 
+### GitHub 触发与包授权
+
+推送 `v*` tag 会触发发布；也可在 GitHub Actions 的「发布」页面选择 Run workflow，或运行 `gh workflow run release.yml --repo unStone/web-ppt --ref <已验证的tag或分支>`。工作流使用 OIDC，不添加 `NPM_TOKEN` secret。
+
+新包首发公开后，用 npm 官方 CLI 配置关系；维护端要求 npm ≥ 11.15，发布 runner 仍使用已验证的 11.5.1：
+
+```bash
+npm trust github @web-ppt/agent-mcp --repo unStone/web-ppt --file release.yml --allow-publish --yes --registry=https://registry.npmjs.org/
+npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
+```
+
+`--file` 只填 `release.yml`；当前 workflow 没有 environment，因此不传 `--env`。创建和读取可能要求 npm 网页认证，认证期间保持 CLI 进程运行；回读应匹配仓库、文件及 `createPackage` 权限，记录 registry 实际返回的权限列表。
+
+已有版本会被逐包跳过，手动重跑可验证触发与幂等性，但不能把跳过当作实际 OIDC 发布证据。[0.8.0-beta.1 实际发布](https://github.com/unStone/web-ppt/actions/runs/41680224362)的八个既有包通过 OIDC 发布，MCP 首发使用本机账号，其 GitHub 关系已创建并回读；[手动重跑](https://github.com/unStone/web-ppt/actions/runs/41686583749)验证了触发与逐包跳过。后续未发布版本使用同一工作流。
+
 ## 4. 重跑与跳过的语义
 
 - 发布用 `tooling/publish-if-new.sh`：registry 已有该版本就跳过。九步串行发布中间挂掉后整个 job 重跑，没有这层守卫，前面已成功的包会以 EPUBLISHCONFLICT 再次弄红，埋掉真正的失败原因。
@@ -51,3 +66,5 @@
 | scoped 包发布报 404（不是 401） | OIDC 没配上或包不存在：新包先本地首发 + 配 trusted publisher。已有包也要**逐包**在 npm 包设置里配 Trusted Publisher（GitHub Actions · `unStone/web-ppt` · `release.yml`，允许直接 publish）——每个包单独配置、互相不继承，0.5.0-beta.7 的 7 个包曾因此全部 404。配完 2 天内须完成一次成功发布，否则配置过期 |
 | verify 报体积 / 断言数漂移 | 数字声明与实测不符：先本地实测（`npm test` 后 `npm run build` 再 `npm run verify`），不要照抄旧值 |
 | verify 跳过体积核对 | 没先 `npm run build`，dist 不存在时体积组整体跳过——「跳过」不等于「通过」 |
+| CLI 显示成功或 processing，但精确版本尚不可读 | 等待官方 registry 的目标版本与 tarball 可读并比对 integrity，再做全新安装；`0.0.0-stage` 占位版本不计作目标版本发布完成，不据此猜测或执行审批 |
+| `npm whoami` 返回 401 | 当前登录凭据无效，先通过 `npm login --registry=https://registry.npmjs.org/` 刷新身份；`PUT 404` 本身不能判定是身份、scope 还是发布状态问题 |

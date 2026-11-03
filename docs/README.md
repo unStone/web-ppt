@@ -46,6 +46,7 @@ flowchart TB
 | [performance.md](engineering/performance.md) | 浏览器实测性能、Worker 收益、LibreOffice 保真基准与对照方法 | reference |
 | [development.md](engineering/development.md) | 启动、构建、对照与基准命令，调试页 | how-to |
 | [releasing.md](engineering/releasing.md) | 流水线行为、发版 checklist、OIDC 环境要求、常见失败 | how-to |
+| [agent-evaluation.md](engineering/agent-evaluation.md) | Agent 配对评测、自测、离线重判、证据与统计边界 | how-to |
 | [powerpoint-runner.md](engineering/powerpoint-runner.md) | Windows PowerPoint 真机门禁的 runner 约束与证据 | how-to |
 
 ### specs/
@@ -118,6 +119,7 @@ flowchart TB
 | [agent-mcp.md](design/agent-mcp.md) | Agent 005 实施计划：stdio、文件会话、无网络约束、真实 Agent 验收与发布 |
 | [agent-webmcp.md](design/agent-webmcp.md) | Agent 006 原生接口、文稿作用域、任务串行与验收方案 |
 | [agent-template-fill.md](design/agent-template-fill.md) | Agent 007 私有生成阶段、原子拒绝、完整检查与规范化身份 |
+| [agent-task-eval.md](design/agent-task-eval.md) | Agent 008 固件、独立判定、单变量观察装饰器与真实配对记录 |
 | [0.6.0.md](design/0.6.0.md) | 0.6.0 实施编排、决策与风险（对应 [PRD](product/0.6.0.md)，待评审） |
 
 ### ux/：界面设计与验收
