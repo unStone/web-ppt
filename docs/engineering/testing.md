@@ -89,7 +89,7 @@ flowchart LR
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
 | `npm run test:agent` | Agent 命令工具面 79 项断言：全命令 Schema、三类原子拒绝、超链接与设计目标区分、批量一次撤销、样式 / lint / 渲染、补丁 / 生成保存；发布入口由 `test:agent:dist` 复验，`test:agent:libreoffice` 补充外部读取器证据 |
-| `npm run test:mcp` | 本机 MCP 57 项断言：文件会话、并发顺序、关闭等待文件写入、交付成功后确认保存点、取消、原子保存、真实 stdio 全链路、根 Schema、无网络调用与发布边界；`test:mcp:dist` 复验，真实 Claude Code / Codex 任务由 `validate-agent-mcp-evaluation.mjs` 机判 |
+| `npm run test:mcp` | 本机 MCP 58 项断言：包清单唯一来源的真实握手版本、文件会话、并发顺序、关闭等待文件写入、交付成功后确认保存点、取消、原子保存、真实 stdio 全链路、根 Schema、无网络调用与发布边界；`test:mcp:dist` 复验，真实 Claude Code / Codex 任务由 `validate-agent-mcp-evaluation.mjs` 机判 |
 | `npm run test:webmcp` | 官网 WebMCP 127 项浏览器断言：工具注册、真实编辑与保存重开、渲染、同一历史、恢复、协同、只读、取消及切换；注册平台边界可注入失败，不支持路径检查动态块未加载，原生浏览器另验 |
 | `npm run test:fill` | 模板填充 483 项 + 浏览器 70 项断言：六类页面、八种原生图表、完整七项检查与副本设计修复、POTX 类型转换、输入保护、Unicode、调用快照、裁剪精度、动态字段、备注闭包、独立进程确定性和双文字路径；`test:fill:dist` 检查类型、Schema、按需闭包和纯发布入口 |
 | `npm run test:agent-eval` | 独立评测自测：八类输入/参考固件、真实字体、完整七项检查、原文/可见性/媒体/原生设计保护、实际 MCP 修复可达性，以及进程、协议变换、保存哈希和证据完整性；不调用模型，不进入发布门禁 |

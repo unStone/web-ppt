@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { listAgentTools } from '@web-ppt/edit-core/agent';
@@ -73,8 +74,13 @@ function sessionIdOf(args: JsonObject): string {
 }
 
 export function createAgentMcpServer(options: AgentMcpOptions = {}) {
+  // 包名解析同时覆盖独立构建块和源码测试 bundle，避免版本随构建或手写常量漂移。
+  const packageVersion: unknown = createRequire(import.meta.url)('@web-ppt/agent-mcp/package.json').version;
+  if (typeof packageVersion !== 'string' || !packageVersion) {
+    throw new Error(`@web-ppt/agent-mcp/package.json version 必须为非空字符串，实际：${JSON.stringify(packageVersion)}`);
+  }
   const manager = new AgentMcpSessionManager(options);
-  const server = new Server({ name: 'web-ppt-agent', version: '0.8.0-beta.1' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'web-ppt-agent', version: packageVersion }, { capabilities: { tools: {} } });
   const tools = toolDefinitions();
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
   server.setRequestHandler(CallToolRequestSchema, async (request) => {

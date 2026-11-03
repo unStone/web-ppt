@@ -13,6 +13,7 @@ import { measureText } from './lib/agent-mcp-runtime.mjs';
 
 const { assert: check, record } = countedAssert('agentMcp');
 const root = resolve(import.meta.dirname, '..');
+const manifest = JSON.parse(await readFile(join(root, 'packages/agent-mcp/package.json'), 'utf8'));
 const out = join(root, 'out/agent-mcp');
 await mkdir(out, { recursive: true });
 const dist = process.argv.includes('--dist');
@@ -162,6 +163,7 @@ try {
   const transport = new StdioClientTransport({ command: process.execPath, args: [cliPath, '--config', configPath], stderr: 'pipe' });
   client = new Client({ name: 'agent-mcp-contract', version: '1.0.0' }, { capabilities: {} });
   await client.connect(transport);
+  check.equal(client.getServerVersion()?.version, manifest.version, 'MCP 初始化版本必须来自当前包清单');
   const listed = await client.listTools();
   check.deepEqual(listed.tools.map((tool) => tool.name), [
     'ppt_open', 'ppt_describe', 'ppt_element', 'ppt_lint', 'ppt_render', 'ppt_edit',

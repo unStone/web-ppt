@@ -22,6 +22,8 @@ web-ppt-agent
 
 编程宿主可用 `createAgentMcpServer(options)` 注入同一组选项，或直接创建 `AgentMcpSessionManager`。
 
+初始化的 `serverInfo.version` 是当前安装包的软件版本，唯一读取自身公开的 `@web-ppt/agent-mcp/package.json`。自行打包 Node 宿主时须保留该元数据的可解析性；源码与发布产物握手均校验版本一致。
+
 ## 工具
 
 | 工具 | 必要输入 | 结果 |

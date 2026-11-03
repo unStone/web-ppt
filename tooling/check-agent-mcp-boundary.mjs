@@ -11,6 +11,7 @@ const read = (name) => readFileSync(join(root, name), 'utf8');
 const manifest = JSON.parse(read('packages/agent-mcp/package.json'));
 assert.equal(manifest.exports['.'].import, './dist/agent-mcp.js');
 assert.equal(manifest.exports['.'].types, './dist/index.d.ts');
+assert.equal(manifest.exports['./package.json'], './package.json', 'MCP 握手必须可通过自身公开清单读取唯一版本来源');
 assert.equal(manifest.bin['web-ppt-agent'], './dist/cli.js');
 assert(manifest.files.includes('skills'));
 assert.equal(import.meta.resolve('@web-ppt/agent-mcp'), pathToFileURL(join(root, 'packages/agent-mcp/dist/agent-mcp.js')).href);

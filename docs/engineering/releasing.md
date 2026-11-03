@@ -15,7 +15,7 @@
 
 | # | 动作 | 说明 |
 |---|---|---|
-| 1 | 九个包 `package.json` 版本改成同一个值 | 同步内部 peer 范围、`package-lock.json` 和 MCP 协议版本；预发布 peer 范围必须包含当前 beta。流水线逐包校验 tag 与版本一致 |
+| 1 | 九个包 `package.json` 版本改成同一个值 | 同步内部 peer 范围和 `package-lock.json`；预发布 peer 范围必须包含当前 beta。MCP 握手软件版本自动读取包清单，回归校验一致；流水线逐包校验 tag 与版本一致 |
 | 2 | 更新 `CHANGELOG.md` | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
 | 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数） |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
@@ -53,7 +53,9 @@ npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
 
 新配置须在创建后两天内完成首次成功发布，才能验证并绑定仓库不可变身份；超过期限须删除后重建。`trust list` 仅证明配置可读取，已有版本的跳过运行或 dry-run 不能代替这次激活，见 [npm 配置有效期](https://docs.npmjs.com/trusted-publishers/#trusted-publisher-configuration-expiry)。
 
-已有版本会被逐包跳过，手动重跑可验证触发与幂等性，但不能把跳过当作实际 OIDC 发布证据。[0.8.0-beta.1 实际发布](https://github.com/unStone/web-ppt/actions/runs/41680224362)的八个既有包通过 OIDC 发布，MCP 首发使用本机账号，其 GitHub 关系已创建并回读；[手动重跑](https://github.com/unStone/web-ppt/actions/runs/41686583749)验证了触发与逐包跳过。后续未发布版本使用同一工作流。
+已有版本会被逐包跳过，手动重跑可验证触发与幂等性，但不能把跳过当作实际 OIDC 发布证据。[0.8.0-beta.2 实际发布](https://github.com/unStone/web-ppt/actions/runs/41736895205)的九个包均实际发布并生成 GitHub provenance，MCP 由此完成首次成功 OIDC 发布激活；[此前的手动重跑](https://github.com/unStone/web-ppt/actions/runs/41686583749)只验证了触发与逐包跳过。
+
+发布前必须用真实 stdio Client 校验 `serverInfo.version` 等于包清单版本；MCP 服务通过自身公开的 `package.json` 读取该值，不维护第二份版本常量。安装验收继续独立检查实际发布 CLI 的握手版本。
 
 ## 4. 重跑与跳过的语义
 
