@@ -19,7 +19,9 @@
 
 Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；CI 和发布流水线的 npm 调用均包含这些生命周期脚本。
 
-模板二进制边界按 npm 实际打包文件清单审计，覆盖全部非 private workspace；仓库中的评测文稿不属于 SDK 交付物。`preverify` 使用真实 npm 打包正反例验证边界，禁止发布包夹带 PPTX / POTX 等二进制模板，不以全仓文件位置代替交付清单。
+模板二进制边界调用 npm 使用的 `@npmcli/map-workspaces`、`@npmcli/arborist` 与 `npm-packlist` 正式 API，覆盖全部非 private workspace，保留祖先忽略规则及捆绑依赖；仓库中的评测文稿不属于 SDK 交付物。三库在根开发依赖中锁定，审计不进入生命周期脚本；`preverify` 用真实 npm 清单对照及正反例验证边界，不允许发布包夹带 PPTX / POTX 等二进制模板。
+
+此审计仅处理受控仓库配置，不接收 PPT 或 Agent 提供的 glob / ignore 模式。开发依赖仍有既有 glob / minimatch 审计告警，不能把工程门禁通过表述为 `npm audit` 清零。
 
 [Agent 任务评测票据 008](../wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md)明确不作为发布门禁：其自测由 `npm run test:agent-eval` 独立执行，真实模型调用仅通过 `eval:agent:run` 显式发起，`eval:agent` 仅重判保存证据。确定性评测固件仍挂入统一生成与 CI 字节检查，不以模型成功率决定发布。
 

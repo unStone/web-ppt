@@ -82,7 +82,7 @@ check('0.7 公开类型契约覆盖主题、版式、母版与模板', [
   'v07-theme.ts', 'v07-layout.ts', 'v07-master.ts', 'v07-templates.ts',
 ].every((file) => existsSync(join(root, 'tooling/type-contracts', file))));
 
-const publishedPackages = auditPublishedTemplateBinaries(root);
+const publishedPackages = await auditPublishedTemplateBinaries(root);
 check('内置模板不以固定二进制交付', publishedPackages.length > 0);
 check('中英文文档与更新日志公开 0.7 统一旅程和验收命令',
   contains('README.md', ['npm run test:v07', '模板 → 主题 → 母版 → 版式'])

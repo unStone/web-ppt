@@ -1,48 +1,42 @@
-import { execFileSync } from 'node:child_process';
-import { extname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { extname, join, resolve } from 'node:path';
+import Arborist from '@npmcli/arborist';
+import mapWorkspaces from '@npmcli/map-workspaces';
+import packlist from 'npm-packlist';
 
 const templateExtensions = new Set([
   '.ppt', '.pptx', '.pptm', '.pot', '.potx', '.potm', '.pps', '.ppsx', '.ppsm',
   '.ppa', '.ppam', '.sldx', '.sldm', '.thmx', '.odp', '.otp',
 ]);
 
-export function auditPublishedTemplateBinaries(root) {
-  const npmJson = (args) => {
-    const output = execFileSync('npm', [...args, '--ignore-scripts', '--cache', join(root, 'out/agent-eval/npm-publish-audit-cache')], {
-      cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, timeout: 120_000,
-    });
-    try {
-      return JSON.parse(output);
-    } catch (cause) {
-      throw new Error(`npm 发布清单不是有效 JSON：${root} / npm ${args.join(' ')}`, { cause });
+export async function auditPublishedTemplateBinaries(directory) {
+  const root = resolve(directory);
+  const readPackage = (path) => JSON.parse(readFileSync(join(path, 'package.json'), 'utf8'));
+  const workspaces = await mapWorkspaces({ cwd: root, pkg: readPackage(root) });
+  const publicWorkspaces = [];
+  for (const [name, directory] of [...workspaces].sort(([a], [b]) => a.localeCompare(b))) {
+    const path = resolve(directory);
+    const manifest = readPackage(path);
+    if (manifest.name !== name || (manifest.private !== undefined && typeof manifest.private !== 'boolean')) {
+      throw new Error(`npm workspace 发布声明无效：${path}；预期 name=${name} 和布尔 private`);
     }
-  };
-  const workspaces = npmJson(['pkg', 'get', 'name', 'private', '--workspaces', '--json', '--include-workspace-root=false']);
-  if (!workspaces || typeof workspaces !== 'object' || Array.isArray(workspaces)) {
-    throw new Error(`npm workspace 清单无效：${root}；预期包名到 name/private 的映射`);
+    if (manifest.private === true) continue;
+    publicWorkspaces.push({ name, path });
   }
-  const names = Object.entries(workspaces).flatMap(([key, value]) => {
-    if (!value || value.name !== key || (value.private !== undefined && typeof value.private !== 'boolean')) {
-      throw new Error(`npm workspace 发布声明无效：${root} / ${key}；预期相同 name 和布尔 private`);
-    }
-    return value.private === true ? [] : [value.name];
-  }).sort();
-  if (names.length === 0) throw new Error(`没有可发布的 npm workspace：${root}；预期至少一个非 private 包`);
+  if (publicWorkspaces.length === 0) throw new Error(`没有可发布的 npm workspace：${root}；预期至少一个非 private 包`);
 
-  // 仓库内的自测证据可以是二进制；交付边界必须由 npm 自身的打包规则判定。
-  const packed = npmJson(['pack', '--dry-run', '--json', '--include-workspace-root=false', ...names.flatMap((name) => ['--workspace', name])]);
-  if (!Array.isArray(packed) || packed.length !== names.length ||
-      new Set(packed.map((entry) => entry?.name)).size !== names.length ||
-      packed.some((entry) => !names.includes(entry?.name))) {
-    throw new Error(`npm pack 发布包集合不符：${root}；预期 ${names.join(', ')}`);
-  }
-  const packages = packed.map((entry) => {
-    if (!Array.isArray(entry.files) || entry.files.length === 0 ||
-        entry.files.some((file) => !file || typeof file.path !== 'string' || file.path.length === 0)) {
-      throw new Error(`npm pack 缺少有效文件清单：${root} / ${entry.name}`);
+  const workspacePaths = publicWorkspaces.map(({ path }) => path);
+  const packages = [];
+  for (const { name, path } of publicWorkspaces) {
+    // 独立加载待发布目录，避免把 workspace 的普通依赖误作 bundled dependency。
+    const tree = await new Arborist({ path }).loadActual();
+    // 三个路径参数保留 npm 对 workspace 祖先忽略规则的实际处理。
+    const files = await packlist(tree, { path, prefix: root, workspaces: workspacePaths });
+    if (!Array.isArray(files) || files.length === 0 || files.some((file) => typeof file !== 'string' || file.length === 0)) {
+      throw new Error(`npm-packlist 缺少有效文件清单：${path} / ${name}`);
     }
-    return { name: entry.name, files: entry.files.map(({ path }) => path) };
-  });
+    packages.push({ name, files });
+  }
   const binaries = packages.flatMap(({ name, files }) => files
     .filter((path) => templateExtensions.has(extname(path).toLowerCase()))
     .map((path) => `${name}: ${path}`));

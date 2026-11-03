@@ -27,7 +27,7 @@
 
 跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。verify 链对测试落盘依赖的三处降级（`verify-v08-readiness` 的产物检查、`measure-expanded` 的套件计数、`verify-consistency` 的 counts）在快路径下黄字跳过、全量路径行为不变——完整性均由同 commit 的 CI 覆盖。
 
-`verify` 按 npm 实际打包清单拒绝公开包夹带演示稿或模板二进制，私有评测文稿不属于 SDK 交付。审计使用 `--ignore-scripts --dry-run`，不执行包生命周期或创建 tarball；正式发布仍按原有 `prepack` 同步文档。
+`verify` 按 npm 实际打包清单拒绝公开包夹带演示稿或模板二进制，私有评测文稿不属于 SDK 交付。审计调用锁定的 npm workspace、Arborist 与 packlist 正式 API，不执行包生命周期或创建 tarball；正式发布仍按原有 `prepack` 同步文档。
 
 ## 3. Trusted Publishing（OIDC）的环境要求
 

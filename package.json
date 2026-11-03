@@ -111,6 +111,8 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
+    "@npmcli/arborist": "9.9.1",
+    "@npmcli/map-workspaces": "5.0.3",
     "@resvg/resvg-js": "^2.6.2",
     "@types/culori": "4.0.1",
     "@types/emscripten": "1.41.5",
@@ -123,6 +125,7 @@
     "fflate": "0.8.3",
     "harfbuzzjs": "1.6.1",
     "jsdom": "^29.1.1",
+    "npm-packlist": "10.0.4",
     "pngjs": "^7.0.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
