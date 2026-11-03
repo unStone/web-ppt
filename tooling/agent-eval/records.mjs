@@ -14,7 +14,9 @@ const textExtensions = ['.json', '.jsonl', '.toml', '.txt', '.log', '.md'];
 export function summarizeResults(results) {
   const classification = row => {
     if (row.pass) return null;
-    if (!row.attempted || row.failures.some(item => item.category === 'infrastructure')) return 'infrastructure';
+    if (!row.attempted) return 'infrastructure';
+    if (row.failures.some(item => item.category === 'resource')) return 'resource';
+    if (row.failures.some(item => item.category === 'infrastructure')) return 'infrastructure';
     if (row.failures.some(item => item.category === 'protocol')) return 'protocol';
     return 'task';
   };
@@ -25,16 +27,20 @@ export function summarizeResults(results) {
   }
   const summary = { version: 1, conditions: {},
     countDefinitions: { attempted: 'Observed CLI process PID; missing records do not prove startup',
-      highLevelFailures: 'Mutually exclusive: infrastructure > protocol > task',
+      highLevelFailures: 'Mutually exclusive terminal outcome: resource > infrastructure > protocol > task; resource requires observed runner/host budget evidence',
+      semanticCompletionRate: 'Saved bytes pass final semantic judgment; does not waive workflow, protocol or budget failures',
       failuresByReason: 'Per-run reason counts may overlap; do not sum as failed runs' },
     pairs: { planned: 0, recorded: 0, attempted: 0, evaluable: 0, evaluated: 0,
     bothPassed: 0, withOnly: 0, withoutOnly: 0, neither: 0 },
   limitations: ['受控任务与有限配对样本不支持普遍因果结论。',
-    '基础设施失败单独保留，不归因于自动 lint 反馈。'] };
+    '基础设施失败单独保留，不归因于自动 lint 反馈。',
+    '资源限制表示在统一预算下终止，不断言其根因一定来自模型或外部服务；所有原始诊断仍保留。'] };
   for (const condition of conditions) {
     const rows = results.filter(row => row.condition === condition);
     const attempted = rows.filter(row => row.attempted).length;
     const passed = rows.filter(row => row.pass).length;
+    const semanticPassed = rows.filter(row => row.semanticPass === true).length;
+    const semanticUnknown = rows.filter(row => typeof row.semanticPass !== 'boolean').length;
     const infrastructureFailures = rows.filter(row => classification(row) === 'infrastructure').length;
     const evaluable = rows.filter(row => row.attempted && classification(row) !== 'infrastructure').length;
     const failuresByReason = {};
@@ -52,9 +58,13 @@ export function summarizeResults(results) {
     summary.conditions[condition] = { planned: rows.length, total: rows.length, attempted,
       notStarted: rows.length - attempted, passed,
       failed: rows.length - passed, infrastructureFailures,
+      resourceFailures: rows.filter(row => classification(row) === 'resource').length,
       taskFailures: rows.filter(row => classification(row) === 'task').length,
       protocolFailures: rows.filter(row => classification(row) === 'protocol').length,
       completionRate: rows.length ? passed / rows.length : null,
+      semanticAssessed: rows.filter(row => row.semanticAssessed === true).length,
+      semanticPassed, semanticUnknown,
+      semanticCompletionRate: rows.length && !semanticUnknown ? semanticPassed / rows.length : null,
       attemptedCompletionRate: attempted ? passed / attempted : null,
       evaluable, evaluableCompletionRate: evaluable ? passed / evaluable : null,
       usageTotals: Object.keys(usageTotals).length ? usageTotals : null,

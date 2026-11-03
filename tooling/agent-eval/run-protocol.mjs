@@ -38,8 +38,26 @@ function deliveryFor(original, toolName, condition) {
 }
 
 export function inspectProtocol(records, { condition = 'with-lint', outputPath, outputBytes,
-  portableOutputPath, requireLifecycle = false, requireCatalog = false } = {}) {
+  portableOutputPath, requireLifecycle = false, requireCatalog = false, maxCalls } = {}) {
   const failures = [];
+  const resourceLimits = [];
+  const noteCallLimit = (record, source) => {
+    const observed = record.callCount ?? record.callIndex;
+    if (!Number.isSafeInteger(maxCalls) || !Number.isSafeInteger(observed) || observed <= maxCalls) {
+      failures.push({ category: 'protocol', reason: 'resource-limit-unverifiable', source,
+        sequence: record.sequence, callIndex: record.callIndex });
+      return;
+    }
+    const previous = resourceLimits.find(item => item.kind === 'tool-calls');
+    if (previous) {
+      previous.observed = Math.max(previous.observed, observed);
+      previous.evidence.push({ source, sequence: record.sequence ?? null });
+      return;
+    }
+    resourceLimits.push({ kind: 'tool-calls', reason: 'call-budget-exceeded', limit: maxCalls,
+      observed, evidence: [{ source, sequence: record.sequence ?? null }] });
+    failures.push({ category: 'resource', reason: 'call-budget-exceeded' });
+  };
   const requests = new Map();
   const saves = [];
   const catalogs = [];
@@ -47,14 +65,24 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
   let automaticLintRemoved = 0;
   let explicitLintCalls = 0;
   for (const record of records) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) {
+      failures.push({ category: 'protocol', reason: 'invalid-protocol-record' });
+      continue;
+    }
     if (record.direction === 'lifecycle') {
       if (record.event === 'closed') closed = true;
-      if (record.event === 'fatal') failures.push({ category: 'infrastructure', reason: record.reason ?? 'mcp-host-fatal' });
+      if (record.event === 'fatal' && record.reason === 'call-budget-exceeded') noteCallLimit(record, 'host-lifecycle');
+      else if (record.event === 'fatal') failures.push({ category: 'infrastructure', reason: record.reason ?? 'mcp-host-fatal' });
       if (record.event === 'closed' && record.error) failures.push({ category: 'infrastructure', reason: 'mcp-cleanup-failed', message: record.error });
       continue;
     }
+    if (!Object.hasOwn(record, 'original') || !Object.hasOwn(record, 'delivered')) {
+      failures.push({ category: 'protocol', reason: 'incomplete-protocol-record', sequence: record.sequence });
+      continue;
+    }
     const original = record.original;
-    if (!original || typeof original !== 'object') {
+    if (!original || typeof original !== 'object' || Array.isArray(original)
+      || !record.delivered || typeof record.delivered !== 'object' || Array.isArray(record.delivered)) {
       failures.push({ category: 'protocol', reason: 'invalid-protocol-record' });
       continue;
     }
@@ -66,6 +94,9 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
     if (record.direction === 'server-to-client' && record.toolName && original.result) {
       try {
         const payloads = toolPayloads(original);
+        if (original.result.isError && payloads.some(payload => payload.ok === false && payload.error?.reason === 'eval-call-limit')) {
+          noteCallLimit(record, 'host-tool-response');
+        }
         if (payloads.some(payload => payload.error?.reason === 'eval-path-not-allowed')) {
           failures.push({ category: 'protocol', reason: 'eval-path-not-allowed', callIndex: record.callIndex });
         }
@@ -127,5 +158,5 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
   if (requireCatalog && catalogs.length === 0) failures.push({ category: 'protocol', reason: 'tool-catalog-unobserved' });
   if (new Set(catalogs).size > 1) failures.push({ category: 'protocol', reason: 'tool-catalog-changed' });
   return { failures, saved: saved ?? null, toolCatalogSha256: catalogs[0] ?? null,
-    automaticLintRemoved, explicitLintCalls, callCount: requests.size, closed };
+    automaticLintRemoved, explicitLintCalls, callCount: requests.size, closed, resourceLimits };
 }

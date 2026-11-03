@@ -97,6 +97,7 @@ test('保存产物必须对应真实成功ppt_save，附加孤立媒体式伪证
   { direction: 'server-to-client', toolName: 'ppt_save', callIndex: 1,
     original: { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: '{"ok":true,"value":{"path":"/experiment/runs/r001/work/result.pptx"}}' }] } },
     savedFile: { path, sha256: sha(outputBytes), bytes: outputBytes.length } }];
+  for (const record of records) record.delivered = structuredClone(record.original);
   assert.equal(inspectProtocol(records, { outputPath: path, outputBytes }).failures.length, 0);
   assert(inspectProtocol([], { outputPath: path, outputBytes }).failures.some(failure => failure.reason === 'successful-save-unobserved'));
   assert(inspectProtocol(records, { outputPath: path, outputBytes: Buffer.from('later changed') }).failures.some(failure => failure.reason === 'saved-artifact-hash-mismatch'));
@@ -159,6 +160,7 @@ test('依赖清单和锁进入源码指纹，Node运行环境单独记录', asyn
   const directory = await work();
   const fakeRoot = join(directory, 'metadata-project');
   const files = ['AGENTS.md', 'packages/agent-mcp/skills/web-ppt/SKILL.md',
+    'tooling/lib/template-fill-measurement.mjs', 'tooling/lib/ooxml.mjs',
     'tooling/agent-eval/runner.mjs', 'tooling/template-fill-fonts/manifest.json',
     'tooling/template-fill-fonts/regular.ttf', 'tooling/template-fill-fonts/bold.ttf'];
   for (const path of files) {
@@ -171,6 +173,9 @@ test('依赖清单和锁进入源码指纹，Node运行环境单独记录', asyn
   await writeFile(join(fakeRoot, 'package-lock.json'), JSON.stringify(lock));
   const first = await captureImplementation(fakeRoot);
   assert.equal(first.files['package.json'], sha(packageBytes));
+  for (const path of ['tooling/lib/template-fill-measurement.mjs', 'tooling/lib/ooxml.mjs']) {
+    assert.equal(first.files[path], sha(await readFile(join(fakeRoot, path))));
+  }
   assert.equal(first.runtime.node, process.version);
   assert.equal(first.runtime.platform, process.platform);
   assert.equal(first.runtime.arch, process.arch);
@@ -186,16 +191,25 @@ test('依赖清单和锁进入源码指纹，Node运行环境单独记录', asyn
   await writeFile(join(fakeRoot, 'package-lock.json'), JSON.stringify(lock));
   const third = await captureImplementation(fakeRoot);
   assert.notEqual(third.fingerprint, second.fingerprint);
+  for (const path of ['tooling/lib/template-fill-measurement.mjs', 'tooling/lib/ooxml.mjs']) {
+    const previous = await captureImplementation(fakeRoot);
+    await writeFile(join(fakeRoot, path), `changed indirect helper ${path}`);
+    assert.notEqual((await captureImplementation(fakeRoot)).fingerprint, previous.fingerprint);
+  }
 });
 
 test('成功隐藏或结构编辑即使随后撤销也失败，原子拒绝不算已执行', () => {
   const call = { direction: 'client-to-server', toolName: 'ppt_edit', callIndex: 3,
     original: { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'ppt_edit',
       arguments: { commands: [{ type: 'SetElementHidden', id: 'title', hidden: true }, { type: 'RemoveElement', id: 'body' }] } } } };
-  const reply = ok => ({ direction: 'server-to-client', toolName: 'ppt_edit', callIndex: 3,
-    original: { jsonrpc: '2.0', id: 3, result: { isError: !ok,
+  call.delivered = structuredClone(call.original);
+  const reply = ok => {
+    const original = { jsonrpc: '2.0', id: 3, result: { isError: !ok,
       content: [{ type: 'text', text: JSON.stringify(ok ? { ok: true, value: {} }
-        : { ok: false, error: { reason: 'command-rejected' } }) }] } } });
+        : { ok: false, error: { reason: 'command-rejected' } }) }] } };
+    return { direction: 'server-to-client', toolName: 'ppt_edit', callIndex: 3,
+      original, delivered: structuredClone(original) };
+  };
   const accepted = inspectProtocol([call, reply(true)]).failures.filter(item => item.reason === 'unauthorized-edit-operation');
   assert.equal(accepted.length, 2);
   const rejected = inspectProtocol([call, reply(false)]).failures;
@@ -314,4 +328,61 @@ test('host预算上限在CLI与模型启动前立即校验', async () => {
     maxCalls: 10001, onProgress: () => {} }, { invocationFactory: () => { configured = true; } }), /10000/);
   assert.equal(configured, false);
   await assert.rejects(readFile(join(directory, 'manifest.json')), error => error.code === 'ENOENT');
+});
+
+test('非lifecycle记录不能省略原始或交付字段，完整消息不新增该错误', () => {
+  const original = { jsonrpc: '2.0', method: 'notifications/initialized' };
+  const valid = { direction: 'client-to-server', callIndex: null, toolName: null,
+    original, delivered: structuredClone(original) };
+  const result = inspectProtocol([valid]);
+  assert.equal(result.failures.some(item => item.reason === 'incomplete-protocol-record'), false);
+  const missingOriginal = { ...valid }; delete missingOriginal.original;
+  const missingDelivered = { ...valid }; delete missingDelivered.delivered;
+  for (const row of [missingOriginal, missingDelivered]) {
+    assert(inspectProtocol([row]).failures.some(item => item.reason === 'incomplete-protocol-record'));
+  }
+  assert(inspectProtocol([{ ...valid, delivered: null }]).failures.some(item => item.reason === 'invalid-protocol-record'));
+});
+
+test('已观察到的工具预算是资源终止，后续transport错误保留而非另计外部故障', () => {
+  const protocol = inspectProtocol([{ direction: 'lifecycle', event: 'fatal', sequence: 137,
+    reason: 'call-budget-exceeded', callCount: 65 }], { maxCalls: 64 });
+  assert.equal(protocol.resourceLimits[0].observed, 65);
+  assert(protocol.failures.some(item => item.category === 'resource' && item.reason === 'call-budget-exceeded'));
+  const row = { taskId: 'a', repetition: 1, condition: 'with-lint', attempted: true,
+    pass: false, semanticPass: true, semanticAssessed: true,
+    failures: [...protocol.failures, { category: 'infrastructure', reason: 'mcp-service-unavailable', message: 'Transport closed' }] };
+  const summary = summarizeResults([row]);
+  assert.equal(summary.conditions['with-lint'].passed, 0);
+  assert.equal(summary.conditions['with-lint'].resourceFailures, 1);
+  assert.equal(summary.conditions['with-lint'].infrastructureFailures, 0);
+  assert.equal(summary.conditions['with-lint'].semanticPassed, 1);
+  assert.equal(summary.conditions['with-lint'].semanticCompletionRate, 1);
+  assert.equal(summary.conditions['with-lint'].failuresByReason['mcp-service-unavailable'], 1);
+  const unverifiable = inspectProtocol([{ direction: 'lifecycle', event: 'fatal',
+    reason: 'call-budget-exceeded', callCount: 64 }], { maxCalls: 64 });
+  assert.equal(unverifiable.resourceLimits.length, 0);
+  assert(unverifiable.failures.some(item => item.reason === 'resource-limit-unverifiable'));
+  const capacity = summarizeResults([{ taskId: 'b', repetition: 1, condition: 'with-lint',
+    attempted: true, pass: false, semanticPass: false, failures: [
+      { category: 'infrastructure', reason: 'agent-service-failed', message: 'Selected model is at capacity' },
+      { category: 'task', reason: 'output-missing' }] }]);
+  assert.equal(capacity.conditions['with-lint'].infrastructureFailures, 1);
+  assert.equal(capacity.conditions['with-lint'].resourceFailures, 0);
+});
+
+test('实际controller超时归资源限制，不生成save或把缺产物另计高级任务失败', async () => {
+  const directory = join(await work(), 'resource-timeout');
+  const report = await runExperiment({ repoRoot: root, directory, model: 'test', effort: 'test',
+    taskIds: ['case-01'], timeoutMs: 120, maxCalls: 20, onProgress: () => {} }, {
+    invocationFactory: () => ({ command: process.execPath, args: [support, 'hang'], graceMs: 50 }),
+  });
+  assert(report.results.every(row => row.pass === false && row.semanticPass === false));
+  assert(report.results.every(row => row.resourceLimits.some(limit => limit.kind === 'wall-clock')));
+  for (const condition of ['with-lint', 'without-lint']) {
+    assert.equal(report.summary.conditions[condition].resourceFailures, 1);
+    assert.equal(report.summary.conditions[condition].infrastructureFailures, 0);
+    assert.equal(report.summary.conditions[condition].taskFailures, 0);
+    assert.equal(report.summary.conditions[condition].semanticCompletionRate, 0);
+  }
 });

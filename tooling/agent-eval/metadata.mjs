@@ -29,6 +29,7 @@ async function sourceFiles(root, directory, files = {}, extensions = ['.mjs']) {
 export async function captureImplementation(repoRoot) {
   const files = await sourceFiles(repoRoot, join(repoRoot, 'tooling/agent-eval'));
   for (const path of ['package.json', 'package-lock.json', 'tooling/template-fill-fonts/manifest.json',
+    'tooling/lib/template-fill-measurement.mjs', 'tooling/lib/ooxml.mjs',
     'tooling/template-fill-fonts/regular.ttf', 'tooling/template-fill-fonts/bold.ttf',
     'packages/agent-mcp/skills/web-ppt/SKILL.md']) {
     files[path] = sha(await readFile(join(repoRoot, path)));

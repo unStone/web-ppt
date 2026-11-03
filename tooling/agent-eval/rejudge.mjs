@@ -44,6 +44,7 @@ async function optionalJsonl(path, failures, reason) {
 export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   const runDirectory = resolveInside(experimentDirectory, plan.directory);
   const failures = [];
+  const resourceLimits = [];
   const runBytes = await optionalBytes(join(runDirectory, 'run.json'));
   if (!runBytes) return { ...plan, attempted: false, pass: false, failures: [failure('run-record-missing', plan.id)] };
   const run = JSON.parse(runBytes.toString('utf8'));
@@ -51,7 +52,11 @@ export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   for (const key of ['id', 'taskId', 'condition', 'repetition']) assert.equal(run[key], plan[key], `${plan.id} ${key}不匹配`);
   if (!run.process) failures.push(failure('agent-not-started', run.reason ?? run.status));
   else {
-    if (run.process.status === 'timeout') failures.push(failure('agent-timeout'));
+    if (run.process.status === 'timeout') {
+      failures.push(failure('agent-timeout', undefined, 'resource'));
+      resourceLimits.push({ kind: 'wall-clock', reason: 'agent-timeout',
+        limitMs: run.requested.timeoutMs, observedMs: run.process.elapsedMs, source: 'runner-timer' });
+    }
     if (run.process.status === 'cancelled') failures.push(failure('agent-cancelled'));
     if (run.process.spawnError) failures.push(failure('agent-cli-unavailable', run.process.spawnError.message));
     if (run.process.status === 'failed') failures.push(failure('agent-process-failed', `exit=${run.process.exitCode}, signal=${run.process.signal}`));
@@ -73,8 +78,9 @@ export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   const protocol = inspectProtocol(protocolEvents, { condition: plan.condition,
     outputPath: resolveInside(runDirectory, run.paths.output), outputBytes: output,
     portableOutputPath: `<experiment>/${plan.directory}/${run.paths.output}`,
-    requireLifecycle: true, requireCatalog: true });
+    requireLifecycle: true, requireCatalog: true, maxCalls: run.requested.maxCalls });
   failures.push(...protocol.failures);
+  resourceLimits.push(...protocol.resourceLimits);
   let judgment = null;
   if (input && output) {
     try {
@@ -87,7 +93,7 @@ export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   }
   return { ...plan, attempted: Number.isInteger(run.process?.pid) && run.process.pid > 0,
     pass: Boolean(judgment?.pass) && failures.length === 0,
-    semanticPass: judgment?.pass ?? false, failures,
+    semanticPass: judgment?.pass ?? false, semanticAssessed: judgment !== null, failures, resourceLimits,
     inputSha256: input ? sha(input) : null, outputSha256: output ? sha(output) : null,
     promptSha256: prompt ? sha(prompt) : null,
     process: run.process, requested: run.requested, cliVersion: run.cliVersion,
@@ -153,7 +159,8 @@ export async function rejudgeExperiment(directory, { requireIntegrity = true, ju
   if (results.some(run => run.actualModels?.length === 0)) {
     summary.limitations.push('部分CLI记录未公开实际服务端model字段，仅记录请求model；不把请求值伪装为服务端观察值。');
   }
-  const report = { version: 1, experiment: manifest.id, engine: manifest.engine, manifest, rejudgment, results, summary };
+  const report = { version: 1, outcomePolicyVersion: 2, experiment: manifest.id,
+    engine: manifest.engine, manifest, rejudgment, results, summary };
   if (writeReport) await writeFile(join(root, 'results.json'), `${JSON.stringify(report, null, 2)}\n`);
   return report;
 }
