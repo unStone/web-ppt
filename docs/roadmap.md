@@ -25,7 +25,7 @@ beta 反馈和正式发布继续单独登记。API 契约和迁移准备见 [1.0
 共享工作簿与正式字体 Provider；矢量 PDF（005）、视频音轨（006）与内嵌视频合成（007）均已完成——005 经四独立实现对照（MuPDF / poppler / CoreGraphics / PDFium）于 0.6.0 转正为正式入口；006 功能随
 `0.5.0-beta.6` 发布，脉冲同轴（FFmpeg 独立测量）、取消与资源释放、循环跨页证据于 2026-10-31 补齐；旧 PPT 外观写入（012）与 SmartArt matrix / radial 验收（013）已完成，OLE DOCX / XLSX 深度编辑（014 / 015）已完成——官网面板含 run 级改字、单元格样式与富文本入口，LibreOffice 外部打开与重写往返验证在 CI；SmartArt/OLE 真实样本（008）与高级渲染（009）待调查，外部语料中已有的样本及完成步骤已登记在票据中。
 
-外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的结构化读出（001）、布局检查（002）、Node 无 Office 渲染（003）、命令工具面（004）、本机 MCP（005）、编辑器 WebMCP（006）与模板填充（007）已完成。模板填充覆盖三套内置与真实外部模板，实际修复设计后完整七项检查零问题，原生内容与发布产物通过独立读取器；任务评测（008）继续按依赖推进。
+外部报告的组合缩放（#7）与英文撇号（#8）缺陷已修复，两张 issue 已于 2026-10-29 关闭。Agent [研发地图](wayfinder/ppt-agent-interface/map.md)的八张票据全部完成：结构化读出、布局检查、Node 无 Office 渲染、命令工具面、本机 MCP、编辑器 WebMCP、模板填充与任务评测。模板填充覆盖三套内置与真实外部模板，实际修复设计后完整七项检查零问题，原生内容与发布产物通过独立读取器；评测保留全部真实配对证据，可离线复判，有限样本未显示自动反馈的确定性成功率收益。
 
 ### 1.2 验证状态
 
@@ -164,7 +164,7 @@ flowchart TD
 | 未覆盖光栅操作码 / Region 布尔 | 依具体文件而定 | 尚无完整实现，需可信样本与 SVG 表达验证 | **保真边界**，不宣称完整支持 |
 | 三维相机与挤出 | 有（相机和深度影响外观） | XYZ 矩阵、正交/透视投影及曲线斜角 | ✅ **已完成**，材质/光照及网格为近似 |
 | 地图图表 regionMap | 有 | 文件内 geoCache 边界，无外部地图数据包 | ✅ 按需实现；无缓存时兼容回退 |
-| Agent 读写接口：结构化读出、布局检查、无 Office 渲染、命令工具面、模板填充 | 有（Agent 现在靠解压改 XML 与 LibreOffice 出图验证，慢且易产出需修复的文件） | 有（复用 `Presentation`、`EditDoc` 命令、`layoutText`、字体 Provider 与补丁保存；独立按需包） | **下一阶段**，见 §7.2 与[研发地图](wayfinder/ppt-agent-interface/map.md) |
+| Agent 读写接口：结构化读出、布局检查、无 Office 渲染、命令工具面、模板填充 | 有（Agent 需要确定性读取、编辑与检查） | 有（复用 `Presentation`、`EditDoc` 命令、`layoutText`、字体 Provider 与补丁保存；独立按需包） | **已实现**，见 §7.2 与[研发地图](wayfinder/ppt-agent-interface/map.md) |
 | 内置模型 / 生成服务 | 有（需服务端或数 GB 模型下载，违背零服务端与文件不出浏览器） | 有，但与 Office 套件和模型厂商正面竞争 | **不做**；模型由宿主或外部 Agent 提供 |
 | 宏 / 模板市场 / 服务端转换 | — | — | **不做**（非目标） |
 
@@ -236,7 +236,7 @@ flowchart LR
 | SmartArt / OLE / 墨迹内部编辑 | ✅ 已实现 | 按可识别格式编辑；未知格式维持框架级操作 |
 | 三维相机投影与挤出 | ✅ 已实现 | 材质/光照和纹理网格为近似，不包含通用三维建模 |
 | 地图 / EMF+ / PDF / WebM | ✅ 按需实现 | 地图需 geoCache；EMF+ 有记录边界；图片页面 PDF 稳定、矢量 PDF 实验性；WebM 音轨与内嵌视频合成默认关闭 |
-| Agent 读写接口 | **纳入下一阶段** | 只提供确定性读出、检查、渲染、命令与模板填充；不内置模型、不调用模型服务；MCP / WebMCP 适配放在独立包或站点插件 |
+| Agent 读写接口 | **已实现** | SDK 只提供确定性读出、检查、渲染、命令与模板填充，不内置模型或调用模型服务；MCP / WebMCP 位于独立包或站点插件，私有评测通过显式命令调用外部 Agent |
 | 宏 / 模板市场 / 内置模型与生成服务 / 服务端转换 | **维持范围外** | 不属于当前纯浏览器渲染与编辑目标 |
 
 ---
@@ -291,7 +291,7 @@ flowchart LR
 
 | 票据 | 剩余 | 可并行 |
 |---|---|---|
-| Agent [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) Node 渲染 | 全部完成条件：Node 与浏览器原生路径 SVG 指纹一致、未注入测字 / 光栅化的稳定 reason、LibreOffice 对照、耗时记录 | 是；0.7 的 005 依赖它，最先开工 |
+| Agent [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) Node 渲染 | ✅ 已完成：同字体跨端指纹、差异归因、未注入能力的稳定 reason、LibreOffice 对照与耗时证据见票据 Resolution | ✅ 已关闭 |
 | [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) 矢量 PDF | ✅ 已完成（2026-10-31）：PDFium 对照补齐四实现收口，无输入语义来源项裁决为显式拒绝，实验性标记已去除；处置明细见票据 Resolution | 是 |
 | [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) 视频音轨 | 功能已发布，补 FFmpeg 测量的音画同步、两路混音 / 循环 / 跨页、取消与背压证据 | 是 |
 | [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) 内嵌视频合成 | 有界解封装与关键帧定位；元素裁剪 / 透明度 / 变换 / 层叠；循环与跨页策略；可变帧率；长视频内存边界；独立读取器验证；`video-overlay-frame-unavailable` 稳定样本 | 006 之后 |
@@ -322,7 +322,7 @@ flowchart LR
 |---|---|---|
 | Agent [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) 模板填充 | ✅ 已完成（2026-11-02）：独立 `edit-core/fill`、六类页面、八种原生图表、POTX 类型转换与真实设计修复；三套内置和外部模板全部七项零问题，483 项业务 + 70 项浏览器回归，原生内容、跨进程与源码/发布字节确定性、独立读取器及最终四项门禁通过 | ✅ 已关闭 |
 | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) 编辑器 WebMCP | ✅ 已完成（2026-11-02）：八工具复用当前 Editor；127 项浏览器断言、原生 Chrome 官方测试标志下中英文固定任务与真实下载重开、LibreOffice / Quick Look 通过；不支持时不加载插件，原激活预算不变，四项门禁全部通过 | ✅ 已关闭；部署仍须由浏览器提供原生试验能力 |
-| Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) 评测集 | 一条命令复跑判定；记录有无 lint 两种配置的完成率与失败分布 | 否（票据规定不作为发布门禁），结果作为 1.0 冻结工具 Schema 的依据 |
+| Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) 评测集 | ✅ 已完成（2026-11-04）：真实八对 Codex 试验、生产 MCP、协议与文件语义独立判定、全部尝试和可移植证据；`npm run eval:agent` 可离线复判。受控样本未显示自动反馈的确定性收益，统计与局限见票据 Answer | ✅ 已关闭；评测结果不作为发布门禁，作为接口设计证据 |
 
 #### 1.0.0：API 冻结
 

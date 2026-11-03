@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "r006",
+  "taskId": "case-03",
+  "condition": "without-lint",
+  "repetition": 1,
+  "directory": "runs/r006",
+  "status": "timeout",
+  "process": {
+    "status": "timeout",
+    "pid": 80091,
+    "exitCode": null,
+    "signal": "SIGTERM",
+    "startedAt": "2026-11-03T19:28:14.139Z",
+    "endedAt": "2026-11-03T19:32:14.173Z",
+    "elapsedMs": 240034
+  },
+  "paths": {
+    "input": "work/input.pptx",
+    "output": "work/result.pptx",
+    "prompt": "evidence/prompt.txt",
+    "stdout": "evidence/agent.jsonl",
+    "stderr": "evidence/agent.stderr.log",
+    "protocol": "evidence/protocol.jsonl"
+  },
+  "requested": {
+    "model": "gpt-6.1-sol",
+    "effort": "ultra",
+    "timeoutMs": 240000,
+    "maxCalls": 64
+  },
+  "cliVersion": "codex-cli 0.166.0",
+  "expectedCliVersion": "codex-cli 0.166.0",
+  "cliVersionObservedBeforeStart": "codex-cli 0.166.0",
+  "inputSha256": "9121bc7728a3d5879d3e291762314d958483f42ee530de102246f7c3fbf4ea89",
+  "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a",
+  "configuration": {
+    "command": "codex",
+    "args": [
+      "exec",
+      "--ignore-user-config",
+      "--strict-config",
+      "--ephemeral",
+      "--json",
+      "--color",
+      "never",
+      "-C",
+      "<experiment>/runs/r006/work",
+      "-c",
+      "projects={\"<experiment>/runs/r006/work\"={trust_level=\"trusted\"}}",
+      "-m",
+      "gpt-6.1-sol",
+      "-c",
+      "model_reasoning_effort=\"ultra\"",
+      "-o",
+      "<experiment>/runs/r006/evidence/final-message.txt",
+      "-"
+    ],
+    "configPath": "<experiment>/runs/r006/work/.codex/config.toml"
+  }
+}

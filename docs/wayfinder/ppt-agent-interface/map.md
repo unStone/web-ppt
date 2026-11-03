@@ -1,6 +1,6 @@
 ---
 title: 为 AI Agent 提供确定性的 PPT 读写接口
-status: open
+status: closed
 labels:
   - wayfinder:map
 tracker: local-markdown
@@ -8,7 +8,7 @@ tracker: local-markdown
 
 ## Destination
 
-任何 Agent（Claude Code、Codex、Copilot、浏览器内 Agent）不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。仓库只提供确定性能力：结构化读出、布局检查、无 Office 渲染、命令编辑、模板填充与保存；不内置模型，也不调用模型服务。
+任何 Agent（Claude Code、Codex、Copilot、浏览器内 Agent）不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。发布的 SDK 只提供确定性能力：结构化读出、布局检查、无 Office 渲染、命令编辑、模板填充与保存；不内置模型，也不调用模型服务。私有评测工具通过显式命令调用外部 Agent，结果不作为发布门禁。
 
 规划基线 `9ac631d`。范围与行业依据见 [roadmap §7.2](../../roadmap.md#72-agent-读写接口) 与 [AI 与演示文稿调研](../../research/ai-presentation-landscape.md)，版本分配见 [roadmap §4](../../roadmap.md#4-演进路线)。
 
@@ -57,10 +57,11 @@ flowchart LR
 
 - WebMCP 按 2026-10-27 草案使用 `document.modelContext`，注册信号负责注销，执行信号独立取消。官网条件加载文稿插件，借用现有 Editor；保存交付与只读异步任务复用文件服务，切换先注销再等待资源。见 [006 技术方案](../../design/agent-webmcp.md)。
 - 模板填充使用独立 `edit-core/fill` 和公开大纲 Schema；私有文稿保证输入保护，生成副本实际修复设计后执行完整检查，最终字节重开规范化身份。原生图表与工作簿通过生成阶段建立，调用方仍使用既有编辑/保存协议。见 [007 技术方案](../../design/agent-template-fill.md)。
+- 配对评测复用生产 MCP，只移除成功编辑结果中的自动 lint；保存文件与原始/交付协议独立判定。默认命令离线重判，真实模型显式运行，全部尝试保留；见 [008 技术方案](../../design/agent-task-eval.md)。
 
 ## Out of scope
 
-- 内置模型、调用模型服务、提示词模板或生成服务。
+- 发布 SDK 内置模型、调用模型服务、提示词模板或生成服务。
 - 依赖 COM 或桌面 Office 的自动化；LibreOffice 只作为对照工具，不作为运行依赖。
 - 把 Agent 接口做成第二套编辑模型；所有写操作经 `EditDoc` 命令，享有同一套历史、恢复、协同与保存。
 
@@ -68,7 +69,9 @@ flowchart LR
 
 - [结构化读出 describe](tickets/001-structured-describe.md)
 - [布局检查 lint](tickets/002-layout-lint.md)
+- [Node 无 Office 渲染](tickets/003-node-render.md)
 - [命令工具面](tickets/004-command-tool-surface.md)
 - [MCP server 与 Agent Skill](tickets/005-mcp-server-skill.md)
 - [编辑器 WebMCP](tickets/006-editor-webmcp.md)
 - [模板填充生成](tickets/007-template-fill.md)
+- [Agent 任务评测集](tickets/008-agent-task-eval.md)

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "observedAt": "2026-11-03T19:25:48.487Z",
+  "frozenCommit": "a8710e1",
+  "purpose": "Supplement for two indirect source files omitted by the initial fingerprint list; no runtime code changed",
+  "provenance": "Both files are tracked in the captured clean implementation commit; current bytes match that frozen commit",
+  "entries": [
+    {
+      "path": "tooling/lib/template-fill-measurement.mjs",
+      "bytes": 1985,
+      "sha256": "5e6a7a7187d26fa597078632019e74253e714439ad68ea5cfed4355a4c033f35",
+      "matchesFrozenCommit": true
+    },
+    {
+      "path": "tooling/lib/ooxml.mjs",
+      "bytes": 19954,
+      "sha256": "6df9c0a952f277f346e661ad9d850abfe023af8965a9b62a999c802771e783f5",
+      "matchesFrozenCommit": true
+    }
+  ]
+}

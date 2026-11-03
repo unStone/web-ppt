@@ -1,8 +1,8 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { V07_OFFICE_ARTIFACTS } from './lib/v07-office-artifacts.mjs';
+import { auditPublishedTemplateBinaries } from './lib/published-template-binaries.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFileSync(join(root, file), 'utf8');
@@ -82,9 +82,8 @@ check('0.7 公开类型契约覆盖主题、版式、母版与模板', [
   'v07-theme.ts', 'v07-layout.ts', 'v07-master.ts', 'v07-templates.ts',
 ].every((file) => existsSync(join(root, 'tooling/type-contracts', file))));
 
-const trackedPptx = execFileSync('git', ['ls-files', '*.pptx'], { cwd: root, encoding: 'utf8' })
-  .split('\n').filter(Boolean);
-check('内置模板不以固定二进制交付', trackedPptx.every((file) => file.startsWith('fixtures/')));
+const publishedPackages = auditPublishedTemplateBinaries(root);
+check('内置模板不以固定二进制交付', publishedPackages.length > 0);
 check('中英文文档与更新日志公开 0.7 统一旅程和验收命令',
   contains('README.md', ['npm run test:v07', '模板 → 主题 → 母版 → 版式'])
     && contains('README.en.md', ['npm run test:v07', 'template → theme → master → layout'])

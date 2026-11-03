@@ -97,7 +97,7 @@ flowchart TB
 | [ppt-data-fidelity](wayfinder/ppt-data-fidelity/map.md) | 0.8 数据与保真（含 `research/` ChartEx 调研） | closed |
 | [ppt-expanded-capabilities](wayfinder/ppt-expanded-capabilities/map.md) | 七类扩展编辑、渲染与导出 | closed |
 | [ppt-portability-fidelity](wayfinder/ppt-portability-fidelity/map.md) | 内容流转、矢量 PDF、音视频与格式保真；[执行计划](wayfinder/ppt-portability-fidelity/plan.md)，实现记录与证据在 `notes/` | open |
-| [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | open |
+| [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | closed |
 
 ### product/：版本级产品需求
 
