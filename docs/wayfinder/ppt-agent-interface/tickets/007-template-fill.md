@@ -32,6 +32,10 @@ blocked_by:
 - 同一输入两次生成，产物逐字节一致。
 - 大纲中的非法内容（未知页类型、缺图、图表数据形状不符）原子拒绝。
 
+## 参考
+
+上游 office-kit/pptx（MIT，`18b7e75`）的 `replaceTokensInPresentation` 与 `test/e2e-template-to-deck.test.ts` 展示了占位符号填充与模板到成稿的验收方式，可用于核对大纲字段与边界情形；本票仍以 `EditDoc` 命令实现，不引入其对象模型。
+
 ## 不做
 
 - 不生成内容本身，大纲由调用方或外部 Agent 提供；不做模板市场。

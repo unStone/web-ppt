@@ -88,13 +88,14 @@ flowchart TB
 
 | 地图 | 主题 | 状态 |
 |---|---|---|
-| [ppt-editor](wayfinder/ppt-editor/map.md) | 纯 Web PPT 编辑能力 M0–M6 | open（010 PowerPoint 真机验收暂缓、075 稳定版发布未完成） |
+| [ppt-editor](wayfinder/ppt-editor/map.md) | 纯 Web PPT 编辑能力 M0–M6 | open（010 PowerPoint 真机验收暂缓） |
 | [ppt-editing-completeness](wayfinder/ppt-editing-completeness/map.md) | 0.6 高频编辑能力 | closed |
 | [ppt-template-theme](wayfinder/ppt-template-theme/map.md) | 0.7 模板与主题编辑 | closed |
 | [ppt-data-fidelity](wayfinder/ppt-data-fidelity/map.md) | 0.8 数据与保真（含 `research/` ChartEx 调研） | closed |
 | [ppt-expanded-capabilities](wayfinder/ppt-expanded-capabilities/map.md) | 七类扩展编辑、渲染与导出 | closed |
 | [ppt-portability-fidelity](wayfinder/ppt-portability-fidelity/map.md) | 内容流转、矢量 PDF、音视频与格式保真；[执行计划](wayfinder/ppt-portability-fidelity/plan.md)，实现记录与证据在 `notes/` | open |
 | [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | open |
+| [ppt-desktop-parity](wayfinder/ppt-desktop-parity/map.md) | 桌面演示软件能力补齐：SmartArt 引擎与新建、新建图表、动画库、公式、放映工具、MP4 / 讲义导出、嵌入字体、导入安全与 OOXML 门禁；含外部代码参考规则 | open |
 
 ### product/：版本级产品需求
 
