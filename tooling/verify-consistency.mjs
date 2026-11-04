@@ -230,7 +230,7 @@ if (!siteStat) {
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile', 'metafileFixture', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
-    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice',
+    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice', 'zipSecurity',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -347,6 +347,8 @@ if (!counts) {
     ['AGENTS.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
     ['docs/engineering/testing.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
     ['AGENTS.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
+    ['docs/engineering/testing.md', /ZIP 安全 ([\d,]+) 项断言/, ['zipSecurity']],
+    ['AGENTS.md', /ZIP 安全 ([\d,]+) 项断言/, ['zipSecurity']],
     ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /Agent Node 双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],

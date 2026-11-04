@@ -6,6 +6,7 @@
     "paths": {
       "@web-ppt/core": ["../core/src/index.ts"],
       "@web-ppt/core/worker": ["../core/src/worker.ts"],
+      "@web-ppt/core/zip": ["../core/src/zip.ts"],
       "@web-ppt/core/node": ["../core/src/node-export.ts"],
       "@web-ppt/core/geometry": ["../core/src/geometry/index.ts"],
       "@web-ppt/core/geometry/handles": ["../core/src/geometry/handles/index.ts"],

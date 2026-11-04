@@ -19,8 +19,8 @@ const gzip = gzipSync(implementation).length;
 if (gzip > 22000) throw new Error(`ChartEx 按需入口超过 22KB gzip：${gzip}`);
 const opc = await build({
   stdin: { contents: "export * from '@web-ppt/edit-core/opc';", resolveDir: process.cwd(), sourcefile: 'opc-boundary.mjs' },
-  bundle: true, platform: 'browser', format: 'esm', minify: true, write: false, metafile: true,
+  bundle: true, platform: 'browser', format: 'esm', minify: true, write: false, metafile: true, external: ['@web-ppt/core/zip'],
 });
 if (Object.keys(opc.metafile.inputs).some((file) => file.includes('packages/core/')))
   throw new Error('通用 OPC 补丁器不能因解析上下文继承引入 core');
-console.log(`ChartEx 边界通过：默认入口无布局/工作簿实现，按需入口 ${gzip}B gzip；独立 OPC ${gzipSync(opc.outputFiles[0].contents).length}B，无 core 依赖`);
+console.log(`ChartEx 边界通过：默认入口无布局/工作簿实现，按需入口 ${gzip}B gzip；独立 OPC ${gzipSync(opc.outputFiles[0].contents).length}B，ZIP 安全入口外部复用，无其他 core 实现`);

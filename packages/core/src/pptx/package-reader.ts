@@ -1,4 +1,3 @@
-import { unzipSync } from 'fflate';
 import { captureChartExParser } from '../chart/hook';
 import { embeddedFontToSfnt } from '../font/eot';
 import { readImageMetadata } from '../image-metadata';
@@ -6,6 +5,8 @@ import type { ImageMetadata } from '../image-metadata';
 import { METAFILE_EXT, metafileDataUrl } from '../metafile';
 import type { OpcPackage } from '../types';
 import { attr, kids, parseXml } from '../xml';
+import { ZipReader } from '../zip';
+import type { ZipLimitOptions } from '../zip';
 import { PackageAssetStore } from './asset-store';
 import type { AssetMode, DeferredAsset } from './asset-store';
 import type { Rels } from './slide-inheritance';
@@ -46,7 +47,7 @@ export class Pkg {
   private opcHandle: OpcPackage | undefined;
   private isDisposed = false;
 
-  constructor(source: Uint8Array | OpcPackage, keepPackage = false) {
+  constructor(source: Uint8Array | OpcPackage, keepPackage = false, zipLimits?: ZipLimitOptions) {
     const borrowed = !(source instanceof Uint8Array);
     captureChartExParser(this, borrowed ? source : undefined);
     if (borrowed) {
@@ -54,8 +55,9 @@ export class Pkg {
     } else {
       // Buffer 的 slice 共享原内存；只在解包边界换成普通视图，保留原包零拷贝身份。
       const zip = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+      const reader = new ZipReader(zip, zipLimits);
       // 预览不必先 inflate 后页和未引用嵌入物；编辑 keepPackage 仍整包，parts 展开才不会漏 part。
-      this.files = keepPackage ? unzipSync(zip) : openPreviewParts(zip);
+      this.files = keepPackage ? reader.unzip() : openPreviewParts(reader);
     }
     this.assetStore = new PackageAssetStore(keepPackage, borrowed ? 'layout-asset:' : 'asset:');
     if (borrowed) {

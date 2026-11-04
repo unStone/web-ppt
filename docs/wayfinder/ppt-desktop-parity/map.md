@@ -89,3 +89,5 @@ flowchart LR
 - `.odp` 导出、宏与 ActiveX。
 
 ## Resolution
+
+- [004 导入解压上限与 ZIP 安全](tickets/004-import-archive-limits.md)：统一安全读取、可配置上限、57 项断言、真实语料与性能对照通过。

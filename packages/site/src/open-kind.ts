@@ -4,7 +4,7 @@
  * 解析器按魔数说话，报出来的是 Zip / CFB。人拖进来的却是 PDF / Word / 图片。
  * 必须在钩子扫描之前认完：prepareAdvancedRendering 对非 PK 会扫整份字节找 EMF+。
  */
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import { OPEN_KIND, OpenKindError, type OpenKindMessage, type OpenKindResult } from './open-kind-error';
 
 export { OPEN_KIND, OpenKindError, mapOpenError } from './open-kind-error';
@@ -42,7 +42,7 @@ function looksLikeHtml(bytes: Uint8Array): boolean {
 function identifyZip(bytes: Uint8Array): OpenKindResult {
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes, {
+    files = safeUnzipSync(bytes, {
       filter: (entry) => (
         entry.name === '[Content_Types].xml'
         || entry.name === 'ppt/presentation.xml'

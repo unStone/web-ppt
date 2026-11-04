@@ -8,10 +8,12 @@
  * 因此 Worker 输出 `asset:N` 令牌 + 原始字节，由主线程兑现成真实 URL。
  */
 import { parsePptxDeferred } from './pptx/parser';
+import type { ZipLimitOptions, ZipSafetyReason } from './zip';
 
 export interface WorkerRequest {
   id: number;
   bytes: ArrayBuffer;
+  zip?: ZipLimitOptions;
 }
 
 export interface WorkerResponse {
@@ -21,16 +23,17 @@ export interface WorkerResponse {
   presentation?: unknown;
   assets?: { mime: string; data: ArrayBuffer }[];
   error?: string;
+  reason?: ZipSafetyReason;
 }
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
-  const { id, bytes } = e.data;
+  const { id, bytes, zip } = e.data;
   try {
     const view = new Uint8Array(bytes);
     if (!(view[0] === 0x50 && view[1] === 0x4b)) {
       throw new Error('Worker 仅支持 .pptx；.ppt 请在主线程解析');
     }
-    const { presentation, assets } = parsePptxDeferred(view);
+    const { presentation, assets } = parsePptxDeferred(view, zip);
 
     // dispose 是函数，无法结构化克隆，剥掉
     const { dispose, ...plain } = presentation;
@@ -45,7 +48,13 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     const res: WorkerResponse = { id, ok: true, presentation: plain, assets: buffers };
     (self as unknown as Worker).postMessage(res, buffers.map((b) => b.data));
   } catch (err) {
-    const res: WorkerResponse = { id, ok: false, error: err instanceof Error ? err.message : String(err) };
+    const error = err as Error & { reason?: ZipSafetyReason };
+    const res: WorkerResponse = {
+      id,
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      reason: error.reason,
+    };
     (self as unknown as Worker).postMessage(res);
   }
 };

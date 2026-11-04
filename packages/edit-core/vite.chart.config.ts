@@ -10,7 +10,7 @@ export default defineConfig({
       fileName: (_format, name) => `${name}.js`, formats: ['es'] },
     rollupOptions: {
       external: [
-        '@web-ppt/core', '@web-ppt/core/chart-edit', '@web-ppt/core/geometry',
+        '@web-ppt/core', '@web-ppt/core/chart-edit', '@web-ppt/core/geometry', '@web-ppt/core/zip',
         '@web-ppt/edit-core', '@web-ppt/edit-core/xml', '@web-ppt/edit-core/opc', 'fflate',
       ],
     },

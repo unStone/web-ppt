@@ -20,6 +20,7 @@ import {
   buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
 } from './diagram';
 import type { AssetMode, DeferredAsset } from './asset-store';
+import type { ZipLimitOptions } from '../zip';
 import {
   layoutCatalogPaths, layoutPlaceholderTemplate, masterCatalogPaths,
 } from './layout-catalog';
@@ -1090,6 +1091,8 @@ export interface PptxParseOptions {
   edit?: boolean;
   /** 保留原始 ZIP 与解压 part，通过 `Presentation.package` 暴露；默认关闭 */
   keepPackage?: boolean;
+  /** 覆盖 ZIP 条目数、声明大小、实际输出与压缩比安全上限 */
+  zip?: ZipLimitOptions;
   /**
    * 资源产出方式。`defer` 下图片不建 blob URL，而是发 `asset:N` 令牌并把字节
    * 收进 `assets`，供 Worker 把结果传回主线程后再兑现成真实 URL。
@@ -1103,15 +1106,15 @@ export interface PptxParseResult {
   assets: DeferredAsset[];
 }
 
-export function parsePptxDeferred(bytes: Uint8Array): PptxParseResult {
-  const pkg = new Pkg(bytes);
+export function parsePptxDeferred(bytes: Uint8Array, zip?: ZipLimitOptions): PptxParseResult {
+  const pkg = new Pkg(bytes, false, zip);
   pkg.assetMode = 'defer';
   const presentation = buildPresentation(pkg, { lazy: false, assets: 'defer' });
   return { presentation, assets: pkg.deferred };
 }
 
 export function parsePptx(bytes: Uint8Array, opts: PptxParseOptions = {}): Presentation {
-  const pkg = new Pkg(bytes, opts.keepPackage === true);
+  const pkg = new Pkg(bytes, opts.keepPackage === true, opts.zip);
   if (opts.assets === 'defer') pkg.assetMode = 'defer';
   return buildPresentation(pkg, opts);
 }

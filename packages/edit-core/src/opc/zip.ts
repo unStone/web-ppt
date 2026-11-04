@@ -1,4 +1,5 @@
 import { deflateSync } from 'fflate';
+import { validateZipArchive } from '@web-ppt/core/zip';
 import { equalBytes } from './bytes';
 import { crc32 } from './crc32';
 import type { OpcFallbackReason } from './types';
@@ -212,6 +213,7 @@ export function parseZipArchive(bytes: Uint8Array): ZipArchive {
     }
     throw new Error('ZIP 中央目录与 EOCD 之间存在未识别记录');
   }
+  validateZipArchive(bytes);
   return { entries };
 }
 

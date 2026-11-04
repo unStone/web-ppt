@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import { patchOpcPackage, disposeOpcPackage } from '@web-ppt/edit-core/opc';
 import { parseXmlTree, serializeXmlTreeBytes, setXmlAttribute, reorderXmlChildren as sortRows } from '@web-ppt/edit-core/xml';
 import type { ChartExDataset } from '@web-ppt/core/chart-ex';
@@ -22,7 +22,7 @@ const resolve = (base: string, target: string) => {
 export function chartExWorkbook(bytes: Uint8Array, datasets: ChartExDataset[]) {
   let total = 0, count = 0;
   if (bytes.length > 16 * 1024 * 1024) throw new Error('ChartEx 工作簿超限');
-  const parts = unzipSync(bytes, { filter(file) {
+  const parts = safeUnzipSync(bytes, { filter(file) {
     total += file.originalSize;
     if (total > 64 * 1024 * 1024 || ++count > 512) throw new Error('ChartEx 工作簿解压超限');
     return true;

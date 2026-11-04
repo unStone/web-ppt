@@ -1,6 +1,7 @@
 ---
 title: 导入解压上限与 ZIP 安全
-status: open
+status: closed
+assignee: kimi
 priority: P1
 labels:
   - wayfinder:task
@@ -35,3 +36,31 @@ blocked_by: []
 ## 参考
 
 上游 `src/internal/opc/zip.ts` 的条目顺序与名称处理（MIT，`18b7e75`）。HeyPuter 对 fflate 的补丁属于 AGPL，只作为问题存在的旁证，不移植；本仓库的解压上限按自己的读取路径实现。
+
+## Answer
+
+新增 `core/zip` 的 `ZipReader`：构造时校验 EOCD、中央目录、本地头、条目名称和声明上限，同时缓存压缩负载位置；读取时使用 fflate 解压，并以声明大小 + 1 字节的有界输出缓冲区识别静默截断。ZIP64 以 `zip64-unsupported` 明确拒绝。
+
+`parse(..., { zip })` 与 `parseInWorker(..., { zip })` 可覆盖默认上限。核心解析、惰性补解、OPC 保存、OLE、模板填充、经典图表 / ChartEx 工作簿及官网格式识别均使用同一实现；OPC 不支持直通时仍按既有 reason 整包重压，安全校验不改变这条兼容路径。
+
+| 默认限制 | 值 |
+|---|---:|
+| 条目数 | 4096 |
+| 单条目解压大小 | 128 MiB |
+| 总解压大小 | 512 MiB |
+| 压缩比 | 1000 |
+
+确定性恶意固件隔离在 `fixtures/zip-security/`。`npm run test:zip` 实测 57 项断言，伪造的 8 MiB 输出在 16 字节声明边界被拒绝，堆容量增长与回收后堆增量均有 2 MiB 上限断言；`test:zip:dist` 复验同一发布入口。
+
+210 页 / 12,810 个元素的交替对照中，旧发布产物解析中位数为 308.35ms，新实现为 276.31ms，约下降 10.4%；负载位置缓存避免惰性补解重复扫描。原始采样保存在 `out/zip-security/performance.json`。
+
+## Resolution（2026-11-05）
+
+| 验收项 | 结果 |
+|---|---|
+| 恶意输入与内存 | 压缩炸弹、伪造大小、条目数、大小写 / 分隔符重复、路径穿越、ZIP64 与 EOCD 负例均由稳定 reason 拒绝；堆容量增长和回收后占用有硬上限 |
+| 兼容与性能 | 全部固件、172 份无编辑保存、212 个快照通过；POI 208/208 个有效文件与旧产物一致，ChartEx 1/1、PPT Master 21/21 渲染干净；210 页性能无回退 |
+| 发布边界 | `@web-ppt/core/zip` 由下游按需包外部复用；`npm run test:zip:dist` 通过 |
+| 工程门禁 | `npm run check`、`npm test`、`npm run build`、`npm run verify` 全部通过 |
+
+Windows PowerPoint 真机仍按用户要求暂缓，未计为通过。

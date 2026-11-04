@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import { setChartExParser } from '@web-ppt/core';
 import type { ChartParser } from './chart/hook';
 
@@ -10,7 +10,7 @@ export async function prepareModernCharts(bytes: Uint8Array | ArrayBuffer): Prom
   if (data[0] !== 0x50 || data[1] !== 0x4b) return;
   let types: Uint8Array | undefined;
   try {
-    types = unzipSync(data, { filter: (entry) => entry.name === '[Content_Types].xml'
+    types = safeUnzipSync(data, { filter: (entry) => entry.name === '[Content_Types].xml'
       && entry.originalSize <= 4 * 1024 * 1024 })['[Content_Types].xml'];
   } catch { return; }
   if (!types || !new TextDecoder().decode(types).includes('vnd.ms-office.chartex+xml')) return;

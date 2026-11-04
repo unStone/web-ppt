@@ -86,6 +86,7 @@ flowchart LR
 | 命令 | 覆盖 |
 |---|---|
 | `npm run test:core` | 核心解析 / 渲染，2592 项断言 + 212 个渲染快照 |
+| `npm run test:zip` | ZIP 安全 57 项断言：中央目录、声明与实际大小、条目数、压缩比、重复名称、路径穿越、真实 parse 与内存峰值；`test:zip:dist` 复验发布入口 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
 | `npm run test:agent` | Agent 命令工具面 79 项断言：全命令 Schema、三类原子拒绝、超链接与设计目标区分、批量一次撤销、样式 / lint / 渲染、补丁 / 生成保存；发布入口由 `test:agent:dist` 复验，`test:agent:libreoffice` 补充外部读取器证据 |

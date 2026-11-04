@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 let ready: Promise<void> | undefined;
 let threeD: Promise<void> | undefined;
 
@@ -17,7 +17,7 @@ export async function prepareAdvancedRendering(input: Uint8Array | ArrayBuffer):
     if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
       let total = 0;
       // 解析只对 .emf/.wmf 走图元 hook；解照片找不到会被用到的 EMF+，还会占满预算漏掉三维 XML。
-      const media = unzipSync(bytes, { filter: e => (/\/media\/.+\.[ew]mf$/i.test(e.name) || /^ppt\/(slides|slideLayouts|slideMasters|theme)\/.*\.xml$/.test(e.name)) && e.originalSize <= 32 * 1024 * 1024
+      const media = safeUnzipSync(bytes, { filter: e => (/\/media\/.+\.[ew]mf$/i.test(e.name) || /^ppt\/(slides|slideLayouts|slideMasters|theme)\/.*\.xml$/.test(e.name)) && e.originalSize <= 32 * 1024 * 1024
         && (total += e.originalSize) <= 128 * 1024 * 1024 });
       needed = Object.values(media).some(contains);
       spatial = Object.entries(media).some(([name, data]) => name.endsWith('.xml')

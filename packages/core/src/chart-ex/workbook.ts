@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import type { ChartEnv } from '../chart/hook';
 import { attr, parseXml } from '../xml';
 import { child, children, integer, LIMIT, number } from './data';
@@ -23,7 +23,7 @@ export function workbookResolver(root: Element, env: ChartEnv): (formula: Elemen
       if (!bytes)
         throw new Error('ChartEx 工作簿不可用');
       let size = 0;
-      const parts = unzipSync(bytes, { filter: (file) => {
+      const parts = safeUnzipSync(bytes, { filter: (file) => {
           size += file.originalSize;
           if (size > 32 * 1024 * 1024)
             throw new Error('ChartEx 工作簿超限');

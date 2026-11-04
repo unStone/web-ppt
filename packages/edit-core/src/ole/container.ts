@@ -1,5 +1,5 @@
 import { isCompoundFile, readCompoundFile, patchCompoundFile } from '@web-ppt/edit-core/cfb';
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import { patchOpcPackage, disposeOpcPackage } from '@web-ppt/edit-core/opc';
 import { parseXmlTree, xmlElementChildren } from '@web-ppt/edit-core/xml';
 import type { XmlElement } from '@web-ppt/edit-core/xml';
@@ -67,7 +67,7 @@ export function readEmbeddedPackage(source: Uint8Array): EmbeddedPackage | null 
   if (!zip(bytes)) return null;
   let size = 0, count = 0;
   if (bytes.length > 32 * 1024 * 1024) throw new Error('嵌入文档超限');
-  const parts = unzipSync(bytes, { filter(file) {
+  const parts = safeUnzipSync(bytes, { filter(file) {
     if ((size += file.originalSize) > 64 * 1024 * 1024 || ++count > 2048) throw new Error('嵌入文档解压超限'); return true;
   } });
   if (!parts['_rels/.rels']) return null;

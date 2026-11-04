@@ -132,6 +132,7 @@ const aliases = [
   ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
   ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
   ['@web-ppt/core/node', join(root, 'packages/core/src/node-export.ts')],
+  ['@web-ppt/core/zip', join(root, 'packages/core/src/zip.ts')],
   ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ['@web-ppt/edit-core/agent', join(root, 'packages/edit-core/src/agent/index.ts')],
   ['@web-ppt/edit-core/lint/sampler', join(root, 'packages/edit-core/src/lint/sampler.ts')],
@@ -260,7 +261,8 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 父组象限换轴时按比例重映射已缩放路径，并公开复用 scalePathData，实测再超出 246B，上调 300B
 // 楔形标注按规范 guide 求值、svgBlip 图片、fontRef 字色层、bgRef 样式索引、按文种取 cs 字体、等线西文合成字族
 // 与音频封面点击播放都属于同步渲染 / 查看器必经代码，实测 558,721B gzip，较上一预算超出 1272B，上调 1300B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 48_900 };
+// ZIP 中央目录预检、有界输出与真实语料的 EOCD 尾随换行兼容，合计实测超出 2162B，上调 2200B
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 51_100 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import type { OpcPackage } from '@web-ppt/core';
 import {
   findXmlAttribute, findXmlChild, insertXmlChild, parseXmlTree, serializeXmlTreeBytes,
@@ -115,7 +115,7 @@ export function seedTemplateCharts(bytes: Uint8Array, placements: readonly Templ
   for (const placement of placements) validatePlacement(placement);
   if (!placements.length) return bytes.slice();
   let total = 0, count = 0;
-  const parts = unzipSync(bytes, { filter(file) {
+  const parts = safeUnzipSync(bytes, { filter(file) {
     total += file.originalSize;
     if (++count > 20_000 || file.originalSize > 64 * 1024 * 1024 || total > 512 * 1024 * 1024) {
       throw new TemplateFillError('resource-limit', '图表生成输入包解压规模超过安全上限');

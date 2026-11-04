@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import type { ZipReader } from '../zip';
 
 /**
  * 预览首屏不必先 inflate 的部件。
@@ -18,21 +18,19 @@ export function isPreviewDeferredPart(name: string): boolean {
  * 不把未解部件列进 ownKeys——内部 Object.keys 不会误触发整包 inflate。
  * keepPackage 不得走这里：编辑层会展开 parts。
  */
-export function openPreviewParts(source: Uint8Array): Record<string, Uint8Array> {
+export function openPreviewParts(reader: ZipReader): Record<string, Uint8Array> {
   const deferred = new Set<string>();
-  const ready = unzipSync(source, {
-    filter: (entry) => {
-      if (!isPreviewDeferredPart(entry.name)) return true;
-      deferred.add(entry.name);
-      return false;
-    },
+  const ready = reader.unzip((entry) => {
+    if (!isPreviewDeferredPart(entry.name)) return true;
+    deferred.add(entry.name);
+    return false;
   });
   if (deferred.size === 0) return ready;
 
   const inflate = (name: string): Uint8Array | undefined => {
     if (Object.prototype.hasOwnProperty.call(ready, name)) return ready[name];
     if (!deferred.has(name)) return undefined;
-    const extracted = unzipSync(source, { filter: (entry) => entry.name === name });
+    const extracted = reader.unzip((entry) => entry.name === name);
     deferred.delete(name);
     const data = extracted[name];
     if (!data) return undefined;

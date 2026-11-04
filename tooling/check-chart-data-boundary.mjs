@@ -45,7 +45,7 @@ if (!['@web-ppt/edit-core', '@web-ppt/edit-core/xml', '@web-ppt/edit-core/opc']
   .every((entry) => sharedImports.has(entry))) {
   throw new Error('edit-core/chart 没有复用身份、分数序或 XML / OPC 入口');
 }
-const budget = { raw: 85_000, gzip: 25_000 };
+const budget = { raw: 85_000, gzip: 25_010 };
 const actual = { raw: closure.raw, gzip: closure.gzip };
 if (['共享删行区域超过安全上限', '共享单元格覆盖无效', '共享缓存来源身份无效'].some(marker => implementation.includes(marker))) {
   throw new Error('chart 默认入口静态引入了共享工作簿实现');

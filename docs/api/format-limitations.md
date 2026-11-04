@@ -19,6 +19,7 @@
 | CJK 标点挤压 | 完整规则：行放不下时全量挤压保断行；成行后无条件收连续标点对的相邻侧、行首起始标点左半格与行尾句读右半格。断行判定始终按全角，与 PowerPoint 一致 |
 | 网络字体到达前的断行 | 字体异步加载期间，原生 `<text>` 先按回退字体测量；`foreignObject` 先由浏览器按回退字体排版。字体到齐后宿主需要刷新当前页，官网查看器会自动执行 |
 | 加密文件 | 设了打开密码的文件可解析：`parse(bytes, { password })`。未传密码抛 `PasswordRequiredError`，密码错误抛 `WrongPasswordError`，支持敏捷 AES-CBC / 标准 AES-ECB（.pptx）与 RC4 CryptoAPI（.ppt） |
+| ZIP / ZIP64 | 默认限制 4096 个条目、单条目 128 MiB、总解压量 512 MiB、压缩比 1000；可用 `parse(..., { zip })` 调整。异常名称、重复条目、伪造大小与超限输入抛带稳定 reason 的 `ZipSafetyError`；ZIP64 当前以 `zip64-unsupported` 拒绝。详见[导入安全上限](viewer.md#导入安全上限) |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
 
 > 各能力的完整支持范围与边界以[扩展能力矩阵](expanded-capabilities.md)为权威源，本表只列对使用决策有影响的条目。

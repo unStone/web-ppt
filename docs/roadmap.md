@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-11-04，Git 基线 `v0.8.0-beta.3`，九包 npm `next` 均为 `0.8.0-beta.3`；MCP 实际安装握手版本与包清单一致。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-11-05，Git 基线 `v0.8.0-beta.3`，九包 npm `next` 均为 `0.8.0-beta.3`；MCP 实际安装握手版本与包清单一致。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力和缺口，给出到 1.0 的版本路径。缺口来自三处：现有开放票据、与 [HeyPuter presentation](https://github.com/HeyPuter/everything/tree/007af35ff7e31684d29030c0056c9d5a238dfc62/src/presentation)（2026-11-02 版本）的逐模块对比、上游 [office-kit/pptx](https://github.com/office-kit/pptx/tree/18b7e75cfa7fd1c6e9891ce1285a76c7889b644b) 0.28.0 的能力核对。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -20,7 +20,7 @@
 | 读：解析与渲染 | `.pptx` / `.ppt` / EMF / WMF / EMF+ / PICT 收敛到统一 Schema；187 个预设几何、三维相机投影、15 种艺术字变形、OMML、ChartEx 与地图、加密文件、嵌入字体读取均已完成 |
 | 写：编辑与保存 | 编辑主线（M0–M7）、七类扩展（图表深度编辑、批注、页面适配、SmartArt / OLE / 墨迹内部编辑、高级渲染、PDF / WebM、原生 `.ppt`、无来源复制）与内容流转（高级文本、多级类别、共享工作簿、字体 Provider、矢量 PDF、视频音轨与内嵌视频合成、旧 PPT 外观写入、OLE 深度编辑）已完成 |
 | Agent 接口 | [研发地图](wayfinder/ppt-agent-interface/map.md) 001–008 全部完成：describe、lint、Node 渲染、命令工具面、MCP 与 Skill、WebMCP、模板填充与任务评测 |
-| 桌面能力补齐 | 新建[研发地图](wayfinder/ppt-desktop-parity/map.md)，20 张票处于规划状态，范围与判定见 §3 |
+| 桌面能力补齐 | [研发地图](wayfinder/ppt-desktop-parity/map.md)已建立；004 导入安全完成，其余 19 张票处于规划状态，范围与判定见 §3 |
 | 外部缺陷 | #7 组合缩放与 #8 英文撇号已于 2026-10-29 修复并关闭 |
 
 ### 1.2 验证状态
@@ -42,7 +42,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | M7 | 设计：主题、母版、版式、三套按需模板与统一交付旅程 | ✅ Chrome + 11 件 Office 清单 |
 | 扩展 | 图表/批注/页面适配/内部对象编辑、高级渲染、直接导出与旧 PPT | ✅ 七类能力完成；支持边界见能力矩阵 |
 | M8 | Agent 读写接口 | ✅ 001–008 全部完成 |
-| M9 | 桌面能力补齐：新建图表 / SmartArt、SmartArt 引擎、动画库、公式、放映、导出、导入安全与 OOXML 门禁 | 规划中 |
+| M9 | 桌面能力补齐：新建图表 / SmartArt、SmartArt 引擎、动画库、公式、放映、导出、导入安全与 OOXML 门禁 | 进行中（004 已完成） |
 
 ---
 
@@ -73,7 +73,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 加密 | ✅ 标准 AES-ECB / 敏捷 AES-CBC | ✅ RC4 CryptoAPI | — |
 | 数学公式 | ✅ OMML 解析与结构化 SVG 排版 | ❌ | 数学字体与复杂细节继续对照 |
 | 嵌入字体 | ✅ EOT 剥壳；可选字体与字形 Provider | — | 只读不写（桌面 012） |
-| 导入安全 | ⚠️ 解压前不检查声明大小、条目数与压缩比 | ⚠️ | 解压上限与 ZIP 安全（桌面 004） |
+| 导入安全 | ✅ 中央目录与名称校验；条目数、大小、压缩比和实际输出上限；稳定 reason | ✅ 同一安全边界 | ZIP64 以 `zip64-unsupported` 拒绝；上限可由宿主覆盖（桌面 004 已完成） |
 
 导出：PNG（data: URI + foreignObject，像素与预览一致）、独立 SVG 文件（原生 `<text>`，自包含）、
 批量动画终态 PNG ZIP（按需入口、有界并发）与可打印 HTML（按动画批次展开）。直接导出有图片页面 PDF、矢量 PDF（可搜索文字）与 WebM（可选 Opus 音轨、实验性内嵌视频帧合成），均为按需入口。
@@ -142,7 +142,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | SmartArt 与图表细节 | layoutDef 约束 / 规则解释器；趋势线、误差线、数据表 | 6 种布局族；三类图表元素不绘制 | 对方领先 → 桌面 001、003 |
 | 创作面 | 新建图表与 SmartArt、22 套主题、动画库与窗格、公式、合并形状、绘图笔、视图、审阅工具 | 编辑已有对象为主 | 对方领先 → 桌面 002、006–008、013–018 |
 | 放映与交付 | 演讲者双窗口、笔与激光笔、录制、MP4 / GIF / 讲义 PDF | WebM、矢量 PDF（嵌入字体、中文可搜索） | 各有领先 → 桌面 009–011、019 |
-| 工程验证 | Vitest 约 2471 用例、Playwright 约 923 用例（含 axe），无渲染快照 | 逐字节快照、LibreOffice SSIM 对照、真机门禁、确定性固件 | 本仓库领先；导入安全与 OOXML 校验缺失 → 桌面 004、005 |
+| 工程验证 | Vitest 约 2471 用例、Playwright 约 923 用例（含 axe），无渲染快照 | 逐字节快照、LibreOffice SSIM 对照、真机门禁、确定性固件 | 本仓库领先；导入安全已由桌面 004 完成，OOXML 校验缺失 → 桌面 005 |
 
 外部代码的参考规则（上游 MIT 可移植、HeyPuter AGPL 不移植）见[桌面地图](wayfinder/ppt-desktop-parity/map.md#外部代码参考规则)。
 
@@ -154,7 +154,7 @@ flowchart TD
     G --> C["G3 解析保真<br/>SmartArt 引擎 · 图表细节 · 样本调查"]
     G --> D["G4 创作能力<br/>新建图表 / SmartArt · 动画库 · 公式 · 合并形状"]
     G --> E["G5 放映与交付<br/>放映工具 · MP4 · 讲义 · 嵌入字体"]
-    G --> F["G6 工程安全<br/>导入上限 · OOXML 门禁"]
+    G --> F["G6 工程安全<br/>OOXML 门禁"]
 ```
 
 | 缺口 | 用户有成本？ | 有解法？ | 判定 |
@@ -162,7 +162,6 @@ flowchart TD
 | Windows 真机验收 | 有（PowerPoint 修复提示风险） | 有（自托管 runner） | 按用户要求延后；1.0 不再豁免 |
 | ChartEx 真实语料 | 有（六类缺 PowerPoint 存出样本） | 有（公开语料或真机） | [data-fidelity 002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)，1.0 条件 |
 | SmartArt / OLE 真实样本、高级渲染根因 | 依样本而定 | 有（公开语料 + `npm run compare`） | [portability 008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md)，不绑定版本；008 的样本同时服务桌面 001 |
-| 导入解压无上限 | 有（恶意文件可耗尽标签页内存） | 有（解压前校验目录与声明大小） | 桌面 [004](wayfinder/ppt-desktop-parity/tickets/004-import-archive-limits.md)，P1，0.8.0 |
 | 缺 OOXML 结构与语义校验 | 有（LibreOffice 容忍的错误 PowerPoint 会要求修复） | 有（XSD + Open XML SDK，上游有现成工具） | 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)，P1，0.8.0 |
 | 不能新建图表 | 有（图表是第二高频对象） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.8.0 |
 | 趋势线 / 误差线 / 数据表不绘制 | 有（显示比 PowerPoint 少元素） | 有（上游预览器可参考） | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md)，P1，0.8.0 |
@@ -291,13 +290,12 @@ flowchart LR
 | CI 偶发失败 | `Runtime.evaluate` 超时的根因已定位并修复（被 `Fetch.enable` 拦截却未失败的请求永久挂起）；编辑性能预算（50MB 恢复、210 页回环超 500ms）为 `continue-on-error` 采样，根因待查 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
 | 已发布版本的缺陷 | 用户反馈的问题 | 以补丁版发布，不混入下一 minor 的能力 |
 
-#### 0.8.0：新建图表 · 导入安全 · OOXML 门禁
+#### 0.8.0：新建图表 · OOXML 门禁
 
-Agent 004–008 已完成并随 `0.8.0-beta.3` 交付；以下是桌面能力的剩余发布门禁。
+Agent 004–008 已完成并随 `0.8.0-beta.3` 交付；桌面 004 导入安全已完成。以下是剩余发布门禁。
 
 | 票据 | 剩余 | 是否阻挡发布 |
 |---|---|---|
-| 桌面 [004](wayfinder/ppt-desktop-parity/tickets/004-import-archive-limits.md) 导入安全 | 全部完成条件：解压前目录与大小校验、名称规范化与重复名拒绝、可配置上限、内存峰值断言 | 是 |
 | 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) OOXML 门禁 | XSD 与 Open XML SDK 两道校验进入 CI；现有保存产物零错误或逐条登记例外；负例拦截 | 是 |
 | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 是 |
 | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | 趋势线、误差线、数据表进入 Schema 与两条文本路径；编辑命令与入口 | 是 |

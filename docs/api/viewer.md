@@ -36,6 +36,25 @@ const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 P
 const stepped = await presentationToPrintableHtml(pres, { animationSteps: true });
 ```
 
+## 导入安全上限
+
+`parse()` 在解压前检查 EOCD、中央目录、条目名称、声明大小和压缩比，解压时再核对实际输出；核心解析、Worker、保存原包、OLE 与内嵌工作簿共用这套边界。默认上限如下，宿主可通过 `zip` 逐项覆盖：
+
+| 选项 | 默认值 | 含义 |
+|---|---:|---|
+| `maxEntries` | 4096 | 单个 ZIP 的条目数 |
+| `maxEntryBytes` | 128 MiB | 单条目声明与实际解压大小 |
+| `maxTotalBytes` | 512 MiB | 全包声明与实际解压总量 |
+| `maxCompressionRatio` | 1000 | 单条目声明解压大小 / 压缩大小 |
+
+```ts
+const pres = await parse(file, {
+  zip: { maxTotalBytes: 256 * 1024 * 1024, maxCompressionRatio: 300 },
+});
+```
+
+重复名称（含大小写与 `/` / `\\` 变体）、路径穿越、伪造大小和超限输入抛出 `ZipSafetyError`，其 `reason` 是稳定的 `zip-*` 代码。ZIP64 当前以 `zip64-unsupported` 明确拒绝。Worker 使用同一配置：`parseInWorker(worker, bytes, { zip })`。
+
 ## 图片 ZIP 导出
 
 整份导出图片时显式加载按需入口；默认包含隐藏页并取每页动画终态，`skipHidden` 可跳过隐藏页，文件名始终保留原页码：

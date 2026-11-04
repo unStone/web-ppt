@@ -9,6 +9,7 @@
     "paths": {
       "@web-ppt/core": ["./packages/core/src/index.ts"],
       "@web-ppt/core/worker": ["./packages/core/src/worker.ts"],
+      "@web-ppt/core/zip": ["./packages/core/src/zip.ts"],
       "@web-ppt/core/node": ["./packages/core/src/node-export.ts"],
       "@web-ppt/core/geometry": ["./packages/core/src/geometry/index.ts"],
       "@web-ppt/core/geometry/handles": ["./packages/core/src/geometry/handles/index.ts"],

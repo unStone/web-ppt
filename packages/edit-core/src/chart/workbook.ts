@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { safeUnzipSync } from '@web-ppt/core/zip';
 import {
   parseXmlTree, xmlElementChildren,
 } from '@web-ppt/edit-core/xml';
@@ -30,7 +30,7 @@ export function unzipWorkbook(bytes: Uint8Array): Record<string, Uint8Array> {
   if (bytes.length > MAX_WORKBOOK_BYTES) throw new Error('内嵌工作簿压缩包超过安全上限');
   let count = 0;
   let total = 0;
-  return unzipSync(bytes, { filter: (file) => {
+  return safeUnzipSync(bytes, { filter: (file) => {
     count++;
     total += file.originalSize;
     if (count > MAX_WORKBOOK_PARTS || file.originalSize > MAX_WORKBOOK_PART_BYTES

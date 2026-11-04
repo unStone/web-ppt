@@ -14,6 +14,7 @@
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
+| `npm run test:zip` / `npm run test:zip:dist` | 验证恶意 ZIP、声明与实际大小、名称安全、真实 parse / 保存 / OLE 边界及内存上限；分别走源码与发布产物 |
 | `npm run schema:describe` | 从 TypeScript 输出类型重新生成 Agent describe 的发布 Schema |
 | `npm run schema:lint` / `npm run test:lint` | 生成布局报告 Schema / 验证七项检查、字体服务、实际像素采样和全固件环境对照 |
 | `npm run test:describe` / `npm run test:describe:dist` | 结构化读出源码 / 发布入口、Schema 与全部固件跨进程一致性验证 |

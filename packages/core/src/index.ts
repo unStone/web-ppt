@@ -24,7 +24,11 @@ import { scalePathData } from './render/path-scale';
 import { isKnownPreset, resolveGeomPath } from './geometry/index';
 import type { Presentation, Slide, SlideElement, TextBody } from './types';
 import { tableStyleCellAppearance, tableStylePreview } from './table-style';
+import { ZipSafetyError } from './zip';
+import type { ZipLimitOptions, ZipSafetyReason } from './zip';
 
+export { DEFAULT_ZIP_LIMITS, ZipReader, ZipSafetyError, safeUnzipSync, validateZipArchive } from './zip';
+export type { SafeUnzipOptions, ZipLimitOptions, ZipLimits, ZipSafetyReason } from './zip';
 export * from './types';
 export { transitionDefaultDirection, transitionPreferredDirection } from './transition';
 export { tableStyleCellAppearance, tableStylePreview };
@@ -90,6 +94,8 @@ export interface ParseOptions {
   edit?: boolean;
   /** 保留原始 ZIP 字节与解压 part，并通过 `Presentation.package` 暴露；默认关闭 */
   keepPackage?: boolean;
+  /** 覆盖 ZIP 条目数、声明大小、实际输出与压缩比安全上限 */
+  zip?: ZipLimitOptions;
   /** 打开密码。文件加密时必填，密码错误抛 {@link WrongPasswordError} */
   password?: string;
 }
@@ -192,7 +198,11 @@ let workerSeq = 0;
  * ```
  * 返回的 `Presentation` 是纯数据，`dispose()` 由本函数补上以回收图片 URL。
  */
-export function parseInWorker(worker: Worker, input: ArrayBuffer | Uint8Array): Promise<Presentation> {
+export function parseInWorker(
+  worker: Worker,
+  input: ArrayBuffer | Uint8Array,
+  options: Pick<ParseOptions, 'zip'> = {},
+): Promise<Presentation> {
   const bytes = input instanceof Uint8Array
     ? input.slice().buffer as ArrayBuffer
     : input;
@@ -200,11 +210,12 @@ export function parseInWorker(worker: Worker, input: ArrayBuffer | Uint8Array): 
 
   return new Promise<Presentation>((resolve, reject) => {
     const onMessage = (e: MessageEvent<{ id: number; ok: boolean; presentation?: Presentation;
-      assets?: { mime: string; data: ArrayBuffer }[]; error?: string }>): void => {
+      assets?: { mime: string; data: ArrayBuffer }[]; error?: string; reason?: ZipSafetyReason }>): void => {
       if (e.data.id !== id) return;
       worker.removeEventListener('message', onMessage);
       if (!e.data.ok || !e.data.presentation) {
-        reject(new Error(e.data.error ?? 'Worker 解析失败'));
+        const message = e.data.error ?? 'Worker 解析失败';
+        reject(e.data.reason ? new ZipSafetyError(e.data.reason, message) : new Error(message));
         return;
       }
       const urls: (string | null)[] = [];
@@ -224,7 +235,7 @@ export function parseInWorker(worker: Worker, input: ArrayBuffer | Uint8Array): 
       resolve(pres);
     };
     worker.addEventListener('message', onMessage);
-    worker.postMessage({ id, bytes }, [bytes]);
+    worker.postMessage({ id, bytes, zip: options.zip }, [bytes]);
   });
 }
 
