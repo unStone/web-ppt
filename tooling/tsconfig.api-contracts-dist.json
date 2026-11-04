@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {}
+  },
+  "include": [
+    "type-contracts/agent-tools.ts",
+    "type-contracts/agent-read.ts",
+    "type-contracts/template-fill.ts",
+    "type-contracts/recovery-collab.ts",
+    "type-contracts/agent-mcp.ts"
+  ],
+  "exclude": []
+}

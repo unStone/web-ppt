@@ -96,7 +96,10 @@
     "tooling/type-contracts/chartex.ts",
     "tooling/type-contracts/comments.ts",
     "tooling/type-contracts/site-i18n.ts",
-    "tooling/type-contracts/agent-tools.ts"
+    "tooling/type-contracts/agent-tools.ts",
+    "tooling/type-contracts/agent-read.ts",
+    "tooling/type-contracts/template-fill.ts",
+    "tooling/type-contracts/recovery-collab.ts"
   ],
   "exclude": ["packages/agent-mcp/src"]
 }

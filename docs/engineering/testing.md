@@ -9,7 +9,7 @@
 | 类型检查 | `npm run check` | 走源码的 tsc 全仓类型错误 | 不需要构建，最快失败 |
 | 测试 | `npm test` = `test:functional` + `test:editor:performance` | 行为回归、快照漂移、契约破坏 | 唯一入口清单，见 §2 |
 | 构建 | `npm run build` | 九个发布包的产物编译与各能力边界审计（§6） | verify 要读 dist |
-| 跨产物一致性 | `npm run verify` | 文档数字照抄旧值、死链、发布包清单漂移、`--dist` 复验 | 必须最后跑：读 dist 体积与测试落盘的断言数 |
+| 跨产物一致性 | `npm run verify` | 文档数字照抄旧值、死链、发布包清单与 API 候选漂移、`--dist` 复验 | 必须最后跑：读 dist 体积与测试落盘的断言数 |
 
 ## 2. 新增测试套件
 
@@ -67,6 +67,8 @@ flowchart LR
 
 ## 6. 边界审计与门禁契约
 
+- `check-api-contract.mjs` 比对[API 冻结候选](../api/api-contract.json)与九包全部 exports、MCP CLI / Skill、四份 JSON Schema 及版本化数据协议；`--dist` 严格检查实际交付入口和声明，缺产物直接失败。源码审计和 `test-api-contract.mjs` 变异自测进入 `pretest:functional`，产物审计进入 `preverify`；候选通过不代表 1.0 正式冻结。
+- 有意改变公开面时，先更新[兼容边界与迁移说明](../api/api-stability.md)、类型契约和行为回归，再运行 `npm run schema:api-contract` 并审查清单差异。新增 `agent-read.ts`、`template-fill.ts`、`recovery-collab.ts`、`agent-mcp.ts` 的正例与负例连同 `agent-tools.ts` 同时检查源码和产物；发布配置 `tooling/tsconfig.api-contracts-dist.json` 清空 paths，以包名解析真实声明，不能只更新摘要绕过兼容评审。
 - `tooling/check-*-boundary.mjs` 系列守模块边界：模板配方必须只在 `edit-core/templates` 动态入口（默认入口不许碰运气靠 tree-shaking）、图表数据、媒体、chartex、字体字形、站点 i18n 等，多数在 `npm run build` 末尾对 dist 产物做 sentinel 检查；`check-architecture-boundary.mjs` 则审计源码的分层依赖方向（render 白名单、geometry 零依赖、DOM 边界、包依赖单向），规则见 [architecture-rules.md](architecture-rules.md)，build 与 verify 双挂。
 - `test-test-gate-contract.mjs`（verify 第一步）守的是测试框架自身的契约——失败用例必须把 request 传给后续打开检查这类门禁有效性，属于「测试自己的测试」。
 - 测试套件经过变异验证：把已修复的 bug 逐个改回去确认能被抓到，新增回归锚点时照此自检。
@@ -75,9 +77,9 @@ flowchart LR
 
 浏览器性能契约（如复制 16ms 预算）受宿主并行负载影响，历史上固定基线曾从 5ms 漂到 40ms。现状：CI 与发布流水线保留采样并落红灯证据，但 `continue-on-error` 不阻断发布；独立运行（隔离环境）则必须过预算。判定性能回归时先跑隔离复测，再下结论。
 
-## 7.5 本地跑不全的套件
+## 7.5 浏览器输入能力仿真
 
-`npm run test:site:i18n` 的触屏悬停契约（`site-present-bar-browser-contract`）依赖 `Emulation.setEmulatedMedia` 改写 `hover` / `pointer` 媒体特性：CI 的 Linux headless Chrome 没有输入设备、默认即 `(hover: none)`，断言恒过；macOS Chrome 实测（2026-10-30 headless 最小复现）仿真不生效、`matchMedia` 仍报可悬停，本地必红。本地验证该套件的其他契约时跑到此断言即止，以 CI 结果为准。
+`npm run test:site:i18n` 的触屏悬停契约使用 CDP 输入能力仿真，并检查真实 `hover` / `pointer` 结果；场景结束恢复原触点、媒体能力和字体方法。不得通过替换 `matchMedia`、跳过断言或直接套用 CI 结果宣布本地通过。
 
 ## 8. 测试套件
 
@@ -85,6 +87,7 @@ flowchart LR
 
 | 命令 | 覆盖 |
 |---|---|
+| `npm run test:api-contract` / `npm run test:api-contract:dist` | API 冻结候选的全部发布入口、Schema 和协议漂移；变异自测验证增删改均能被拒绝；dist 模式由 verify 严格核对发布文件与声明，并以真实包名运行类型正反例 |
 | `npm run test:core` | 核心解析 / 渲染，2592 项断言 + 212 个渲染快照 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |

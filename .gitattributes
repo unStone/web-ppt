@@ -1,2 +1,4 @@
 # 评测证据按字节记录哈希，跨平台检出不能转换换行。
 tooling/agent-eval/records/** -text
+# 发布 Skill 的摘要同样以实际字节为准。
+packages/agent-mcp/skills/** -text

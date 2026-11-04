@@ -75,6 +75,7 @@ flowchart TB
 | [format-limitations.md](api/format-limitations.md) | 格式缺失、近似实现与待验收边界 |
 | [expanded-capabilities.md](api/expanded-capabilities.md) | 全部按需扩展入口的能力矩阵（索引层） |
 | [api-stability.md](api/api-stability.md) | 1.0 API 契约边界与宿主迁移动作 |
+| [api-contract.json](api/api-contract.json) | 九包公开入口、JSON Schema、持久化协议与 MCP 资源的机器可核对候选清单 |
 | [appearance-editing.md](api/appearance-editing.md) | 图片效果与立体效果编辑 |
 | [browser-editing.md](api/browser-editing.md) | 画布读屏、EditContext、现代图表自动加载 |
 | [chart-hierarchical-categories.md](api/chart-hierarchical-categories.md) | 经典图表多级类别编辑 |
@@ -117,6 +118,7 @@ flowchart TB
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
 | [agent-command-tools.md](design/agent-command-tools.md) | Agent 命令 Schema、原子事务、错误定位与按需成本决策 |
 | [agent-mcp.md](design/agent-mcp.md) | Agent 005 实施计划：stdio、文件会话、无网络约束、真实 Agent 验收与发布 |
+| [api-contract-candidate.md](design/api-contract-candidate.md) | 1.0 API 候选清单、漂移检查、类型回归与 beta 发布验证 |
 | [agent-webmcp.md](design/agent-webmcp.md) | Agent 006 原生接口、文稿作用域、任务串行与验收方案 |
 | [agent-template-fill.md](design/agent-template-fill.md) | Agent 007 私有生成阶段、原子拒绝、完整检查与规范化身份 |
 | [agent-task-eval.md](design/agent-task-eval.md) | Agent 008 固件、独立判定、单变量观察装饰器与真实配对记录 |
