@@ -19,6 +19,7 @@ export interface EditorDocument {
   readonly pane: SelectionPane;
   adjustments: PresetAdjustmentEditor | null;
   fonts?: DocumentFontService;
+  stopAgentTools?(): void;
 }
 
 export interface EditorHost {
@@ -86,9 +87,8 @@ export const documentWorkspace = {
     let release = ctx.effect(() => () => { config.session.dispose(); });
     const own = (fiber: Fiber) => {
       const previous = release;
-      // Cordis disposer 也是 thenable；async generator 的 yield 会先解包它，导致原 disposer
-      // 仍被根作用域并行释放。同步收编原函数，才能按工具、视图、字体、会话的顺序等待清理。
-      release = ctx.effect(function* () { yield previous; yield fiber.dispose; });
+      // Cordis disposer 也是 thenable；以同步集合收编原函数，才能避免异步解包后并行释放。
+      release = ctx.effect(() => [previous, fiber.dispose]);
       return fiber;
     };
     await own(ctx.plugin(editorFontsPlugin,{session:config.session,signal:config.signal}));
@@ -96,5 +96,11 @@ export const documentWorkspace = {
     await own(ctx.plugin(documentView,config));
     if (ctx.fiber.uid === null || config.signal.aborted) return;
     await own(ctx.plugin(documentTools,config));
+    if (ctx.fiber.uid === null || config.signal.aborted) return;
+    if (typeof (document as Document & { modelContext?: { registerTool?: unknown } }).modelContext?.registerTool === 'function') {
+      const { editorWebMcpPlugin } = await import('./editor-webmcp-plugin');
+      if (ctx.fiber.uid === null || config.signal.aborted) return;
+      await own(ctx.plugin(editorWebMcpPlugin, { signal: config.signal }));
+    }
   },
 };

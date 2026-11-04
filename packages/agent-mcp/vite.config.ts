@@ -7,7 +7,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         /^node:/, /^@modelcontextprotocol\/sdk\//, 'zod', '@cfworker/json-schema',
-        '@web-ppt/core', '@web-ppt/core/node', '@web-ppt/edit-core', '@web-ppt/edit-core/agent',
+        /^@web-ppt\/(?:core|edit-core)(?:\/|$)/,
       ],
     },
   },

@@ -31,7 +31,7 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：2592 + 1154 + 575 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1202 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；Agent 命令工具面 55 项断言；本机 MCP 35 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
+| `npm test` | 全部测试：2592 + 1154 + 582 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1210 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；Agent 命令工具面 79 项断言；本机 MCP 58 项断言；官网 WebMCP 127 项浏览器断言；模板填充 483 项 + 浏览器 70 项断言；图元固件确定性 115 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建九个发布包 |
 | `npm run dev` | 启动 viewer |
@@ -61,6 +61,7 @@
 | **固件覆盖盲区** | 加能力时**必须同时加固件**。隐藏页曾经零固件覆盖，让一个 `skipHidden` 的真 bug 在 986 项断言下活了很久 |
 | **LibreOffice 转换非确定性** | `.ppt` 样本由 LibreOffice 转出，字节不可重复。`make-ppt-samples.mjs` 因此按**渲染结果**而非字节比对，内容没变就保留原文件 |
 | **固件必须确定性** | `npm run fixtures` 重跑两次字节必须一致，CI 会验。写生成脚本时不要引入时间戳 / 随机数 |
+| **图元固件不能读取运行缓存** | `sample-metafile.pptx` 的媒体来自 `tooling/metafile-assets/` 的固定项目自有资源并校验哈希；`out/metafile` 中的本机 LibreOffice 导出只用于运行时对照，不能作为固件生成输入，否则字体或软件版本会改变已提交样本 |
 | **文档数字会悄悄过期** | 断言数、快照数、包体积、版本号散落在 README / README.en / AGENTS / 官网十几处，改一处忘另一处没有任何提示。实测下来快照数（176→178）、七个包的体积、官网 JSON-LD 的 `softwareVersion`（停在 0.3.0）全都漂了，README 还写着「七个发布包」。`npm run verify` 把这些拉到一处比对——**改数字前先跑它拿实测值，不要照抄旧值** |
 | **npm 认的 README 不一定是 README.md** | `@npmcli/package-json` 用 `{README,README.*}` 去 glob 再取第一个像 markdown 的命中——`README.zh-CN.md` 同样匹配，实测还排在 `README.md` 前面。结果是 tarball 里是英文版（`files` 挡住了别的），npm 页面显示的却是中文版，只有 `npm view <pkg> readme` 看得出来（0.4.4 就这么翻了车）。本地化 README 一律用连字符 `README-zh-CN.md`；`sync-package-docs.mjs` 里有守卫，别绕过 |
 | **package-lock 不能用镜像源** | 用 `--registry=npmmirror` 装依赖会把镜像 URL 烘进 lock，新版 npm 直接 `EALLOWREMOTE` 拒绝。装依赖一律用官方源；本机代理导致 TLS 失败时用 `env -u HTTP_PROXY -u HTTPS_PROXY npm i` 绕开 |
@@ -74,6 +75,7 @@
 | **行距的基准不是字号** | `lnSpc/spcPct` 是「单倍行距」的百分比，而单倍行距是**字体行高**（我们取 1.2em），不是字号。把 150% 直接当 CSS `line-height:1.5` 用，每行矮两成。`spcPts` 是绝对点值，走另一条换算，两者别混 |
 | **量不到就得记住量不到** | `text-measure.ts` 的 2D 上下文探测必须只做一次。Node / jsdom / 反指纹浏览器里 `getContext('2d')` 恒为 null，不缓存这个结论就会在每次测字时新建一个 `<canvas>`，一页文本能造出上千个 |
 | **媒体的经典引用可能是 `NULL`** | PowerPoint 2010+ 内嵌 mp3 / mp4 等时，`a:audioFile` / `a:videoFile` 的 `r:link` 常指向 `Target="NULL" TargetMode="External"`，字节只在 `p:extLst` 里 `p14:media` 的 `r:embed` 上。只取经典引用就得到空源（issue #7）。`parseMedia` 按候选顺序取第一个能解析的目标，判定依据是关系的 TargetMode 与部件是否存在，别按字符串 `"NULL"` 特判 |
+| **备注不能只有 notesSlide** | 新增或改写备注必须同时具备 notesMaster、主题、Content-Type、notesSlide 隐式关系与 Presentation 显式目录/关系。缺闭包时 LibreOffice 可容忍，Quick Look 会超时。未编辑旧来源保持字节直通；补关系前先捕获基线，撤销与共享备注分叉才能恢复原包 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 
 ## 分层

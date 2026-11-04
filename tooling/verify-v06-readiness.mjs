@@ -49,7 +49,10 @@ check('官网工具栏覆盖 0.6 可视入口与按需图片导出',
     && contains('packages/site/src/editor-page-plugin.ts', ['fileHost: { buttons', 'application?.files', 'onTouchNavigate: viewport.onTouchNavigate'])
     && contains('packages/site/src/editor-files-plugin.ts', ['createEditorFileActions', "ctx.provide('editorFiles'", 'exportImages'])
     && contains('packages/site/src/editor-file-actions.ts', [
-      "import('@web-ppt/core/image-zip')", 'session.toPresentation()', 'busy',
+      "import('./editor-file-delivery')", 'exportDocumentImages', 'session.toPresentation()', 'busy',
+    ])
+    && contains('packages/site/src/editor-file-delivery.ts', [
+      "import('@web-ppt/core/image-zip')", 'presentationToImageZip(presentation', 'download(blob',
     ])
     && contains('packages/site/src/editor-inspector.ts', [
       'textBulletKind', 'shapePreset', 'textUnderlineStyle', 'textHighlight',

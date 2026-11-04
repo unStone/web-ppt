@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "condition": "with-lint",
+  "inputPath": "<experiment>/runs/r016/work/input.pptx",
+  "outputPath": "<experiment>/runs/r016/work/result.pptx",
+  "renderDirectory": "<experiment>/runs/r016/work/render",
+  "protocolPath": "<experiment>/runs/r016/evidence/protocol.jsonl",
+  "maxCalls": 64
+}

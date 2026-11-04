@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"01a1a2b9-eca0-7c80-a1a8-9e6919b8bc15"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"我会仅使用 ppt_eval MCP 工具打开 `input.pptx`，运行默认七项检查，然后关闭会话。\n"}}
+{"type":"item.started","item":{"id":"item_1","type":"mcp_tool_call","server":"ppt_eval","tool":"ppt_open","arguments":{"path":"input.pptx"},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"mcp_tool_call","server":"ppt_eval","tool":"ppt_open","arguments":{"path":"input.pptx"},"result":null,"error":{"message":"MCP tool call requires approval, but approval policy is never"},"status":"failed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"预检受阻：`ppt_open` 需要审批，但当前策略为 `never`。未创建会话，无法执行七项检查和关闭；未编辑、渲染或保存文档。"}}
+{"type":"turn.completed","usage":{"input_tokens":74914,"cached_input_tokens":46336,"cache_write_input_tokens":0,"output_tokens":529,"reasoning_output_tokens":374}}

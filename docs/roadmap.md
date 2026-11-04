@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-11-03，代码基线 `f0f7a15`，包版本号 `0.7.0`（**尚未发布**；npm `latest` 为 `0.6.0`）。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-11-04，Git 基线 `v0.8.0-beta.3`，九包 npm `next` 均为 `0.8.0-beta.3`；MCP 实际安装握手版本与包清单一致。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力和缺口，给出到 1.0 的版本路径。缺口来自三处：现有开放票据、与 [HeyPuter presentation](https://github.com/HeyPuter/everything/tree/007af35ff7e31684d29030c0056c9d5a238dfc62/src/presentation)（2026-11-02 版本）的逐模块对比、上游 [office-kit/pptx](https://github.com/office-kit/pptx/tree/18b7e75cfa7fd1c6e9891ce1285a76c7889b644b) 0.28.0 的能力核对。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -16,10 +16,10 @@
 
 | 线 | 状态 |
 |---|---|
-| 发布 | `0.6.0` 于 2026-11-02 发布，八个既有包 `latest` 一致。`0.7.0` 的代码与版本号已提交（`f0f7a15`），**未打 tag、未发布**；新包 `@web-ppt/agent-mcp` 在 npm 上不存在，需要维护者先本地首发并配置 Trusted Publishing |
+| 发布 | 九包 npm `next` 均为 `0.8.0-beta.3`，既有八包稳定版为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`；实际 OIDC、匿名隔离安装与 MCP 握手均已验证 |
 | 读：解析与渲染 | `.pptx` / `.ppt` / EMF / WMF / EMF+ / PICT 收敛到统一 Schema；187 个预设几何、三维相机投影、15 种艺术字变形、OMML、ChartEx 与地图、加密文件、嵌入字体读取均已完成 |
 | 写：编辑与保存 | 编辑主线（M0–M7）、七类扩展（图表深度编辑、批注、页面适配、SmartArt / OLE / 墨迹内部编辑、高级渲染、PDF / WebM、原生 `.ppt`、无来源复制）与内容流转（高级文本、多级类别、共享工作簿、字体 Provider、矢量 PDF、视频音轨与内嵌视频合成、旧 PPT 外观写入、OLE 深度编辑）已完成 |
-| Agent 接口 | [研发地图](wayfinder/ppt-agent-interface/map.md) 001–005（describe、lint、Node 渲染、命令工具面、MCP 与 Skill）已完成；006–008 未开始 |
+| Agent 接口 | [研发地图](wayfinder/ppt-agent-interface/map.md) 001–008 全部完成：describe、lint、Node 渲染、命令工具面、MCP 与 Skill、WebMCP、模板填充与任务评测 |
 | 桌面能力补齐 | 新建[研发地图](wayfinder/ppt-desktop-parity/map.md)，20 张票处于规划状态，范围与判定见 §3 |
 | 外部缺陷 | #7 组合缩放与 #8 英文撇号已于 2026-10-29 修复并关闭 |
 
@@ -41,7 +41,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | M6 | 扩展：动画、顶点、表样式、协同适配包 | ✅ 四项全部独立验收 |
 | M7 | 设计：主题、母版、版式、三套按需模板与统一交付旅程 | ✅ Chrome + 11 件 Office 清单 |
 | 扩展 | 图表/批注/页面适配/内部对象编辑、高级渲染、直接导出与旧 PPT | ✅ 七类能力完成；支持边界见能力矩阵 |
-| M8 | Agent 读写接口 | ⚠️ 001–005 完成；WebMCP、模板填充、评测集未开始 |
+| M8 | Agent 读写接口 | ✅ 001–008 全部完成 |
 | M9 | 桌面能力补齐：新建图表 / SmartArt、SmartArt 引擎、动画库、公式、放映、导出、导入安全与 OOXML 门禁 | 规划中 |
 
 ---
@@ -111,7 +111,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 
 | 能力 | 状态 |
 |---|---|
-| 发布包 | ⚠️ 9 个（core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp）；八个既有包 `latest` 为 `0.6.0`，`agent-mcp` 未首发 |
+| 发布包 | npm 九包 `next` 均为 `0.8.0-beta.3`；既有八包 `latest` 为 `0.6.0`，MCP 的 `latest` 为 `beta.1`；九包实际 OIDC 与匿名隔离安装均通过，MCP Trusted Publisher 已激活且握手软件版本正确 |
 | 框架适配 | ✅ React + Vue 薄适配，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
@@ -150,8 +150,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 
 ```mermaid
 flowchart TD
-    G["开放缺口"] --> A["G1 交付<br/>0.7.0 发布 · 真机 · ChartEx 语料"]
-    G --> B["G2 Agent 接口<br/>WebMCP · 模板填充 · 评测集"]
+    G["开放缺口"] --> A["G1 交付<br/>0.8 转正 · 真机 · ChartEx 语料"]
     G --> C["G3 解析保真<br/>SmartArt 引擎 · 图表细节 · 样本调查"]
     G --> D["G4 创作能力<br/>新建图表 / SmartArt · 动画库 · 公式 · 合并形状"]
     G --> E["G5 放映与交付<br/>放映工具 · MP4 · 讲义 · 嵌入字体"]
@@ -160,11 +159,9 @@ flowchart TD
 
 | 缺口 | 用户有成本？ | 有解法？ | 判定 |
 |---|---|---|---|
-| 0.7.0 未发布 | 有（命令工具面与 MCP 无法安装） | 有（本地首发 agent-mcp 后走流水线） | **现在执行**，见 §7.1 |
 | Windows 真机验收 | 有（PowerPoint 修复提示风险） | 有（自托管 runner） | 按用户要求延后；1.0 不再豁免 |
 | ChartEx 真实语料 | 有（六类缺 PowerPoint 存出样本） | 有（公开语料或真机） | [data-fidelity 002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)，1.0 条件 |
 | SmartArt / OLE 真实样本、高级渲染根因 | 依样本而定 | 有（公开语料 + `npm run compare`） | [portability 008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md)，不绑定版本；008 的样本同时服务桌面 001 |
-| WebMCP、模板填充、评测集 | 有（浏览器内 Agent 与按模板生成） | 有（命令工具面已就绪） | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) / [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md)，0.8.0 |
 | 导入解压无上限 | 有（恶意文件可耗尽标签页内存） | 有（解压前校验目录与声明大小） | 桌面 [004](wayfinder/ppt-desktop-parity/tickets/004-import-archive-limits.md)，P1，0.8.0 |
 | 缺 OOXML 结构与语义校验 | 有（LibreOffice 容忍的错误 PowerPoint 会要求修复） | 有（XSD + Open XML SDK，上游有现成工具） | 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)，P1，0.8.0 |
 | 不能新建图表 | 有（图表是第二高频对象） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.8.0 |
@@ -182,7 +179,7 @@ flowchart TD
 | 拼写检查 | 待查（编辑器主动关闭了原生拼写检查，原因未记录） | 有（浏览器原生） | 先查清关闭原因再决定，登记在桌面地图 Not yet specified |
 | 同义词与翻译 | 待定 | 需要在线服务或大体积本机词典 | 词典来源与语言覆盖未确定，登记在桌面地图 Not yet specified |
 | 墨迹转文字 / 转公式 | 有 | **无**（跨平台浏览器没有本机手写识别） | 不提供；墨迹转形状归入桌面 009 |
-| 云端存储、账号、内置 AI 助手 / 生成服务 | — | 违背零服务端与不内置模型 | **不做**；浏览器内 Agent 走 Agent 006 WebMCP |
+| 云端存储、账号、内置 AI 助手 / 生成服务 | — | 违背零服务端与不内置模型 | **不做**；浏览器内 Agent 走已实现的 WebMCP |
 | 宏 / 模板市场 / 服务端转换 / `.odp` | — | — | **不做**（非目标） |
 
 ---
@@ -193,23 +190,24 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    V6["0.6.0<br/>已发布"] --> V7["0.7.0<br/>命令工具面 + MCP<br/>待发布"]
-    V7 --> V8["0.8.0<br/>Agent 第三批 · 新建图表<br/>导入安全 · OOXML 门禁"]
+    V6["0.6.0<br/>已发布"] --> V7["0.7.0<br/>未单独发布<br/>能力并入 0.8 beta"]
+    V7 --> V8["0.8.0<br/>beta.3 已发布<br/>桌面安全与图表补齐"]
     V8 --> V9["0.9.0<br/>SmartArt · 动画库 · 公式<br/>放映 · 导出 · 字体 · 合并形状"]
     V9 --> V1["1.0.0<br/>API 冻结"]
 ```
 
 | 版本 | 内容 | 票据 | 发布条件 |
 |---|---|---|---|
-| **0.6.0**（`latest`） | 矢量 PDF 转正、视频音轨与内嵌视频合成、OLE 官网入口；Agent describe、lint、Node 渲染 | 已关闭 | ✅ 2026-11-02 发布；Windows 真机经维护者决定延后且未计为通过 |
-| **0.7.0** | Agent 命令工具面、MCP server 与 Agent Skill；新增 `@web-ppt/agent-mcp` | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md)（已关闭） | 代码与版本号已提交，**未发布**；检查项见 §7.1 |
-| **0.8.0** | Agent 第三批；新建图表与图表细节渲染；导入安全与 OOXML 门禁 | Agent 006 / 007 / 008；桌面 002 / 003 / 004 / 005 | 所列票据关闭（Agent 008 不阻挡）；四项门禁 + OOXML 门禁；beta 反馈周期 |
+| **0.6.0**（八包 `latest`） | 矢量 PDF 转正、视频音轨与内嵌视频合成、OLE 官网入口；Agent describe、lint、Node 渲染 | 已关闭 | ✅ 2026-11-02 发布；Windows 真机经维护者决定延后且未计为通过 |
+| **0.7.0**（未单独发布） | Agent 命令工具面、MCP server 与 Agent Skill；新增 `@web-ppt/agent-mcp` | Agent 004 / 005（已关闭） | 首发流水线终止后，能力并入 `0.8.0-beta.1` |
+| **0.8.0-beta.1–3**（`next` 为 beta.3） | Agent 第三批、九包发布与安装验收、MCP 握手版本修正 | Agent 004–008（已关闭） | ✅ 2026-11-04 发布；四项门禁、CI、OIDC、隔离安装与真实 CLI 握手通过 |
+| **0.8.0** | Agent 第三批转正；新建图表与图表细节渲染；导入安全与 OOXML 门禁 | 桌面 002 / 003 / 004 / 005 | 所列票据关闭；四项门禁 + OOXML 门禁；beta 反馈周期 |
 | **0.9.0** | SmartArt 引擎与新建、动画库、公式、放映工具、MP4 / JPEG / GIF、讲义与备注页、嵌入字体写入、合并形状 | 桌面 001 / 006–013 | 所列票据关闭；beta 反馈周期 |
 | **1.0.0** | 冻结 0.9 的全部公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.9 beta 反馈收口；ChartEx 真实语料与 Windows 真机（§7.3） |
 
 版本分配的理由：
 
-- 0.8.0 先做导入安全与 OOXML 门禁，后续所有新建能力（图表、SmartArt、公式、字体）的保存产物都在这道门禁下验收；新建图表同时是 Agent 007 模板填充的图表数据入口。
+- 0.8.0 先做导入安全与 OOXML 门禁，后续所有新建能力（图表、SmartArt、公式、字体）的保存产物都在这道门禁下验收；新建图表复用 Agent 007 模板填充的原生图表生成能力。
 - 桌面 001 优先级为 P1，可以立即开工，但完成条件依赖 portability 008 的真实样本，所以放在 0.9.0 发布，不让样本获取阻挡 0.8.0。
 - P3 票（桌面 014–020）与长尾格式票不绑定版本，关闭时随当时的 beta 线发布；1.0 之后以 minor 版本追加，不改变已冻结的接口。
 
@@ -233,7 +231,7 @@ flowchart LR
 | ChartEx 解析、回退与编辑 | [按需 API 与验收边界](api/chartex-native.md)、[兼容回退](wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md)、[真实语料调查](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md) |
 | 七类扩展编辑、渲染与导出 | [能力矩阵](api/expanded-capabilities.md)、[交付记录](wayfinder/ppt-expanded-capabilities/map.md) |
 | 内容流转、矢量 PDF 与音视频 | [研发地图](wayfinder/ppt-portability-fidelity/map.md)、[执行计划](wayfinder/ppt-portability-fidelity/plan.md) |
-| Agent describe / lint / Node 渲染 / 命令工具面 / MCP | [describe](api/agent-describe.md)、[lint](api/agent-layout-lint.md)、[Node 渲染](api/agent-node-render.md)、[命令工具面](api/agent-command-tools.md)、[MCP](api/agent-mcp.md) |
+| Agent 全部读写接口 | [研发地图](wayfinder/ppt-agent-interface/map.md)与 `docs/api/agent-*.md` |
 | 浏览器平台能力的对策 | [浏览器平台能力与对策](research/browser-platform.md) |
 
 ---
@@ -251,7 +249,7 @@ flowchart LR
 | SmartArt / OLE / 墨迹内部编辑 | ✅ 已实现 | 按可识别格式编辑；未知格式维持框架级操作 |
 | 三维相机投影与挤出 | ✅ 已实现 | 材质/光照和纹理网格为近似，不包含通用三维建模 |
 | 地图 / EMF+ / PDF / WebM | ✅ 按需实现 | 地图需 geoCache；EMF+ 有记录边界；WebM 音轨与内嵌视频合成默认关闭 |
-| Agent 读写接口 | ⚠️ 001–005 已实现，006–008 进行中 | 只提供确定性读出、检查、渲染、命令与模板填充；不内置模型、不调用模型服务；MCP / WebMCP 适配放在独立包或站点插件 |
+| Agent 读写接口 | ✅ 已实现 | 只提供确定性读出、检查、渲染、命令与模板填充；不内置模型、不调用模型服务；私有评测通过显式命令调用外部 Agent |
 | 桌面能力补齐 | **纳入 0.8–0.9** | 范围见[桌面地图](wayfinder/ppt-desktop-parity/map.md)；涉及最终用户流程的票先确认用户流程与验收标准 |
 | 外部代码参考 | **只移植 MIT 来源** | office-kit/pptx（`18b7e75`）可移植并登记来源；HeyPuter presentation（AGPL）只作功能对比，不复制、不移植 |
 | 墨迹转文字 / 转公式 | **不提供** | 跨平台浏览器没有本机手写识别；墨迹转形状在桌面 009 |
@@ -268,17 +266,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    subgraph P07["0.7.0（现在）"]
-      R7["agent-mcp 本地首发<br/>→ tag v0.7.0"]
-    end
-    subgraph P08["0.8.0"]
+    subgraph P08["0.8.0（现在）"]
       S4["桌面 004 导入安全"]
       V5["桌面 005 OOXML 门禁"]
       C2["桌面 002 新建图表"]
       C3["桌面 003 图表细节"]
-      A6["Agent 006 WebMCP"]
-      A7["Agent 007 模板填充"]
-      A8["Agent 008 评测集（非门禁）"]
     end
     subgraph P09["0.9.0"]
       E1["桌面 001 SmartArt 引擎"] --> E6["桌面 006 新建 SmartArt"]
@@ -287,20 +279,10 @@ flowchart LR
     subgraph P10["1.0.0"]
       Z["API 冻结<br/>ChartEx 语料 · Windows 真机"]
     end
-    R7 --> P08
-    C2 --> A7
     V5 --> P09
+    P08 --> P09
     P09 --> Z
 ```
-
-#### 0.7.0 发布（现在）
-
-| 顺序 | 检查项 |
-|---|---|
-| 1 | 维护者本地 `npm publish` 首发 `@web-ppt/agent-mcp@0.7.0`，再在 npm 包设置中配置 Trusted Publishing（新包首发无法走 OIDC，见 AGENTS.md「发布」） |
-| 2 | `release.yml` 的发布顺序包含 agent-mcp，且已发布版本跳过逻辑能处理首发后的重跑 |
-| 3 | 四项门禁与 master CI 绿后推送 tag `v0.7.0` |
-| 4 | `npm view` 核对九个包 `latest` 均为 `0.7.0`；CHANGELOG 记录 Windows 真机延后且未计为通过 |
 
 #### 补丁线
 
@@ -309,7 +291,9 @@ flowchart LR
 | CI 偶发失败 | `Runtime.evaluate` 超时的根因已定位并修复（被 `Fetch.enable` 拦截却未失败的请求永久挂起）；编辑性能预算（50MB 恢复、210 页回环超 500ms）为 `continue-on-error` 采样，根因待查 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
 | 已发布版本的缺陷 | 用户反馈的问题 | 以补丁版发布，不混入下一 minor 的能力 |
 
-#### 0.8.0：Agent 第三批 · 新建图表 · 导入安全 · OOXML 门禁
+#### 0.8.0：新建图表 · 导入安全 · OOXML 门禁
+
+Agent 004–008 已完成并随 `0.8.0-beta.3` 交付；以下是桌面能力的剩余发布门禁。
 
 | 票据 | 剩余 | 是否阻挡发布 |
 |---|---|---|
@@ -317,9 +301,6 @@ flowchart LR
 | 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) OOXML 门禁 | XSD 与 Open XML SDK 两道校验进入 CI；现有保存产物零错误或逐条登记例外；负例拦截 | 是 |
 | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 是 |
 | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | 趋势线、误差线、数据表进入 Schema 与两条文本路径；编辑命令与入口 | 是 |
-| Agent [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) 模板填充 | 大纲 Schema；三套内置模板与一份外部模板 lint 零错误；保存重开 describe 一致；同输入逐字节一致；非法大纲原子拒绝 | 是 |
-| Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) 编辑器 WebMCP | origin trial Chrome 端到端；不支持时编辑页激活闭包体积与行为不变；文稿切换 / 关闭后注册状态正确 | 是；规范或 origin trial 在发布时不可用时，按票据降级要求只发布不注册路径并说明 |
-| Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) 评测集 | 一条命令复跑判定；记录有无 lint 两种配置的完成率与失败分布 | 否，结果作为 1.0 冻结工具 Schema 的依据 |
 
 #### 0.9.0：创作、放映与交付补齐
 
@@ -344,7 +325,7 @@ flowchart LR
 | 迁移说明 | 汇总 0.5–0.9 的全部语义变化（如 0.5.0 的 `elementFrameToSlideMatrix` 沿渲染链求值） | API 契约的迁移表覆盖每一项，类型契约 `tooling/type-contracts/` 有对应负例 |
 | ChartEx 真实语料 | [002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)：除漏斗外六类缺 PowerPoint 存出的 PPTX | 逐类型来源、哈希、原生布局与保存重开证据；缺失的类型在[能力边界](api/chartex-native.md)中如实标注 |
 | Windows 真机 | [010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)：自托管 runner 跑出绑定 revision 的 30/30 报告 | 报告通过 Node 校验器；1.0 不再适用豁免 |
-| 发布 | `1.0.0-rc.N` 到 `next` 收集反馈，再转正 | 与 0.7.0 发布检查项相同 |
+| 发布 | `1.0.0-rc.N` 到 `next` 收集反馈，再转正 | 按当时发布检查项执行 |
 
 #### 不绑定版本
 
@@ -358,10 +339,7 @@ flowchart LR
 
 ### 7.2 Agent 读写接口
 
-范围、依赖和验收见 [研发地图](wayfinder/ppt-agent-interface/map.md)，状态以票据为准；[describe API 与 Schema](api/agent-describe.md)和[布局检查 API](api/agent-layout-lint.md)提供接入契约。
-
-目标：让任何 Agent（Claude、Copilot、Codex、浏览器内 Agent）不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。仓库只提供确定性能力，不内置模型。行业现状与依据见[调研](research/ai-presentation-landscape.md)。
-下表每项对应[研发地图](wayfinder/ppt-agent-interface/map.md)中的一张票（001–008，顺序同表），票据写明范围、复用和完成条件，状态以票据为准。
+[研发地图](wayfinder/ppt-agent-interface/map.md)的八张票据已全部完成，范围、依赖和验收以各票据为准。目标已经实现：Agent 不依赖 LibreOffice 与桌面 Office，就能读懂、修改并验证 `.pptx` / `.ppt`，产物保持原生可编辑。仓库只提供确定性能力，不内置模型。行业现状与依据见[调研](research/ai-presentation-landscape.md)。
 
 ```mermaid
 flowchart LR
@@ -374,16 +352,15 @@ flowchart LR
     M --> E["Agent 任务评测集"]
 ```
 
-| 能力 | 使用者可见结果 | 复用 | 使用者成本 | 完成条件 |
-|---|---|---|---|---|
-| 结构化读出 `describe` | 按页输出版式名、占位符角色、稳定元素 id、类型、包围盒、层级、文字与备注，可设 token 上限；`.pptx` / `.ppt` 同一结构 | `Presentation`、`edit-metadata`、占位符匹配 | 新按需入口，基础包不变 | 发布 JSON Schema；全部固件通过 Schema 校验且两次输出逐字节一致 |
-| 布局检查 `lint` | 文字溢出、元素重叠、越出画布、文字对比度不足、缺字体、占位提示文字残留、图片变形，每项带稳定 reason、元素 id 与包围盒 | `layoutText`、autofit、字体 Provider 测量、有效填充求值 | 同上 | 每类检查有正反例固件；在现有固件上统计误报并逐条复核 |
-| 无 Office 渲染 | Node 中直接得到 SVG（原生 `<text>` 路径）；PNG 由宿主注入的光栅化器生成，替代 LibreOffice + pdftoppm | 原生 `<text>` 路径、字体 Provider | 光栅化器不进依赖；只在使用时注入 | 同字体下 Node 与浏览器原生路径 SVG 指纹一致；LibreOffice 对照记录差异 |
-| 命令工具面 | 查询与编辑命令各有 JSON Schema 输入描述；批量命令原子提交；每次提交返回受影响元素与该页 lint 结果，失败返回稳定 reason | `EditDoc` 命令、`dispatch`、历史、补丁保存 | 独立包 | 全部公开命令都有 Schema 且由类型生成，`verify` 比对；非法输入有原子拒绝测试 |
-| MCP server + Agent Skill | 本机 stdio 服务提供打开、读出、检查、渲染、编辑、保存；文件不离开本机；Skill 文档说明读出 → 编辑 → 检查 → 渲染的循环 | 命令工具面 | 独立 Node 包，MCP SDK 只在该包 | 真实 Claude Code 与 Codex 会话完成固定任务清单；保存产物由 LibreOffice 与独立读取器无修复打开 |
-| 编辑器 WebMCP | 官网编辑器在支持 `document.modelContext` 时注册同一组工具，浏览器内 Agent 可直接编辑当前文稿，改动进入历史与恢复 | 命令工具面、Cordis 插件 | 站点插件，发布 SDK 不变 | 有 origin trial 的 Chrome 中端到端可用；不支持时不注册且无报错 |
-| 模板填充生成 | 输入模板与内容大纲 JSON，按占位符角色选版式、填文字 / 图片 / 图表数据并适配文字，保留主题与母版 | 内置模板、`AddSlide` from layout、图表数据编辑、`FitTextShape`、生成保存 | 按需入口 | 三套内置模板与外部模板生成结果 lint 零错误；保存重开与独立读取器通过；同输入产物逐字节一致 |
-| Agent 任务评测集 | 基于固件的可机判编辑任务，对比 Agent 在有无 lint 观察时的完成率 | 上述全部 | 仅仓库工具 | 任务、判定与结果落盘，可复跑 |
+| 能力 | 交付入口 | 状态 |
+|---|---|---|
+| 结构化读出与布局检查 | [describe](api/agent-describe.md)、[lint](api/agent-layout-lint.md) | ✅ 稳定 Schema、确定性输出与七类检查 |
+| 无 Office 渲染 | [Node 渲染](api/agent-node-render.md) | ✅ 同字体跨端指纹与外部对照 |
+| 命令工具面 | [命令工具](api/agent-command-tools.md) | ✅ 全命令 Schema、原子编辑与编辑后观察 |
+| MCP server + Agent Skill | [MCP](api/agent-mcp.md) | ✅ 真实 Agent、无网络、安装与握手验收 |
+| 编辑器 WebMCP | [WebMCP](api/agent-webmcp.md) | ✅ 原生 Chrome 固定任务与不支持时零成本 |
+| 模板填充生成 | [模板填充](api/agent-template-fill.md) | ✅ 内置与外部模板、原生图表与确定性生成 |
+| Agent 任务评测集 | [评测规范](engineering/agent-evaluation.md) | ✅ 真实配对证据与离线复判；结果不作为发布门禁 |
 
 ### 7.3 验证与发布
 

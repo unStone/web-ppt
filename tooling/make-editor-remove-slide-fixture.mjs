@@ -43,7 +43,8 @@ const sectionExtension = `<p:extLst><p:ext uri="{REMOVE-SLIDE-SECTIONS}">
 const bytes = deck({
   name: 'Remove Slide Theme', width: 1280, height: 720,
   slides: [1, 2, 3, 4].map(slide), presExtra: sectionExtension,
-  presRels: '<Relationship Id="rId300" Type="urn:web-ppt:unknown" Target="../customXml/keep.xml"/>',
+  presRels: '<Relationship Id="rId300" Type="urn:web-ppt:unknown" Target="../customXml/keep.xml"/>'
+    + `<Relationship Id="notes-master-keep" Type="${REL}/notesMaster" Target="notesMasters/notesMasterKeep.xml"/>`,
   extraTypes: '<Default Extension="png" ContentType="image/png"/>'
     + [1, 2, 3, 4].map((index) =>
       `<Override PartName="/ppt/notesSlides/notesSlide${index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`).join('')
@@ -56,7 +57,8 @@ const bytes = deck({
     ['customXml/keep.xml', `${XML}<keep xmlns="urn:web-ppt:remove-slide">原位保留</keep>`],
     ['ppt/charts/chartKeep.xml', `${XML}<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart/></c:chartSpace>`],
     ['ppt/comments/commentKeep.xml', `${XML}<p:cmLst xmlns:p="${NS.p}"><p:cm authorId="42" idx="7"><p:pos x="100" y="200"/><p:text>只保留不级联</p:text></p:cm></p:cmLst>`],
-    ['ppt/notesMasters/notesMasterKeep.xml', `${XML}<p:notesMaster xmlns:a="${NS.a}" xmlns:p="${NS.p}"><p:cSld><p:spTree>${nvGrp}</p:spTree></p:cSld></p:notesMaster>`],
+    ['ppt/notesMasters/notesMasterKeep.xml', `${XML}<p:notesMaster xmlns:a="${NS.a}" xmlns:p="${NS.p}"><p:cSld><p:spTree>${nvGrp}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:hf/><p:notesStyle/></p:notesMaster>`],
+    ['ppt/notesMasters/_rels/notesMasterKeep.xml.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="theme-keep" Type="${REL}/theme" Target="../theme/theme1.xml"/></Relationships>`],
   ],
 });
 
@@ -65,6 +67,8 @@ const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(f
 replace('ppt/presentation.xml', (xml) => IDS.reduce((value, id, index) => value
   .replace(`id="${256 + index}" r:id="rId${index + 2}"`,
     `xmlns:fixture="urn:web-ppt:remove-slide" fixture:slot="${index + 1}" id="${id}" r:id="${RIDS[index]}"`), xml));
+replace('ppt/presentation.xml', (xml) => xml.replace('</p:sldMasterIdLst>',
+  '</p:sldMasterIdLst><p:notesMasterIdLst><p:notesMasterId r:id="notes-master-keep"/></p:notesMasterIdLst>'));
 replace('ppt/_rels/presentation.xml.rels', (xml) => RIDS.reduce((value, rid, index) => value
   .replace(`Id="rId${index + 2}" Type="${REL}/slide"`, `Id="${rid}" Type="${REL}/slide"`), xml));
 
@@ -75,7 +79,7 @@ for (let index = 1; index <= 4; index++) {
   replace(`ppt/slides/_rels/slide${index}.xml.rels`, (xml) => xml.replace('</Relationships>',
     `<Relationship Id="rId8" Type="${REL}/image" Target="../media/shared.png"/><Relationship Id="rId9" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide${index}.xml"/>${index === 2 ? `<Relationship Id="rId96" Type="${REL}/comments" Target="../comments/commentKeep.xml"/><Relationship Id="rId97" Type="${REL}/chart" Target="../charts/chartKeep.xml"/><Relationship Id="rId99" Type="urn:web-ppt:unknown" Target="../../customXml/keep.xml"/>` : ''}</Relationships>`));
   files[`ppt/notesSlides/notesSlide${index}.xml`] = encoder.encode(notes(index));
-  files[`ppt/notesSlides/_rels/notesSlide${index}.xml.rels`] = encoder.encode(`${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/hyperlink" Target="https://example.com/note/${index}" TargetMode="External"/>${index === 2 ? `<Relationship Id="rId2" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/>` : ''}</Relationships>`);
+  files[`ppt/notesSlides/_rels/notesSlide${index}.xml.rels`] = encoder.encode(`${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/hyperlink" Target="https://example.com/note/${index}" TargetMode="External"/><Relationship Id="rId2" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/><Relationship Id="rId10" Type="${REL}/slide" Target="../slides/slide${index}.xml"/></Relationships>`);
 }
 
 const output = makeZip(Object.entries(files));

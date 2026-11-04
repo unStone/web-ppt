@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.log
+# stderr 属于离线复判的完整证据，必须随可移植记录提交。
+!tooling/agent-eval/records/**/evidence/agent.stderr.log
 .DS_Store
 out/
 corpus/

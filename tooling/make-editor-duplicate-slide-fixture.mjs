@@ -1,4 +1,4 @@
-/** 页面复制固件：在删除固件的复杂关系图上增加嵌套组与 notes→slide 回指。 */
+/** 页面复制固件：在删除固件的完整关系图上增加嵌套组与非规范 OPC 身份。 */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,9 +24,6 @@ const nestedGroup = `<p:grpSp>
 </p:grpSp></p:grpSp>`;
 
 replace('ppt/slides/slide2.xml', (xml) => xml.replace('</p:spTree>', `${nestedGroup}</p:spTree>`));
-replace('ppt/notesSlides/_rels/notesSlide2.xml.rels', (xml) => xml.replace('</Relationships>',
-  `<Relationship Id="rId10" Type="${REL}/slide" Target="../slides/slide2.xml"/></Relationships>`));
-
 const output = makeZip(Object.entries(files));
 writeFileSync(join(root, 'fixtures/sample-editor-duplicate-slide.pptx'), output);
 console.log(`fixtures/sample-editor-duplicate-slide.pptx 已生成（${(output.length / 1024).toFixed(1)} KB）`);

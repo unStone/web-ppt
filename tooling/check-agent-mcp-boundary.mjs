@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve, join } from 'node:path';
+import ts from 'typescript';
 import { moduleClosure } from './lib/module-closure.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -10,10 +11,19 @@ const read = (name) => readFileSync(join(root, name), 'utf8');
 const manifest = JSON.parse(read('packages/agent-mcp/package.json'));
 assert.equal(manifest.exports['.'].import, './dist/agent-mcp.js');
 assert.equal(manifest.exports['.'].types, './dist/index.d.ts');
+assert.equal(manifest.exports['./package.json'], './package.json', 'MCP 握手必须可通过自身公开清单读取唯一版本来源');
 assert.equal(manifest.bin['web-ppt-agent'], './dist/cli.js');
 assert(manifest.files.includes('skills'));
 assert.equal(import.meta.resolve('@web-ppt/agent-mcp'), pathToFileURL(join(root, 'packages/agent-mcp/dist/agent-mcp.js')).href);
 const closure = moduleClosure(join(root, 'packages/agent-mcp/dist/agent-mcp.js'));
+const imports = new Set(closure.files.flatMap(file => {
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
+  return source.statements.flatMap(statement => ts.isImportDeclaration(statement)
+    && ts.isStringLiteral(statement.moduleSpecifier) ? [statement.moduleSpecifier.text] : []);
+}));
+for (const peer of ['@web-ppt/edit-core/agent', '@web-ppt/edit-core/opc', '@web-ppt/edit-core/save']) {
+  assert(imports.has(peer), `MCP 必须通过公开 peer 入口 ${peer} 复用上游，不能把上游实现打入本包`);
+}
 assert(closure.source.includes('createAgentMcpServer'));
 assert(!/node:http|node:https|fetch\(/.test(closure.source), 'stdio 包不能包含 HTTP 客户端或服务器调用');
 assert(read('packages/agent-mcp/dist/cli.js').startsWith('#!/usr/bin/env node'));

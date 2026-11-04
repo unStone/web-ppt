@@ -46,6 +46,7 @@ flowchart TB
 | [performance.md](engineering/performance.md) | 浏览器实测性能、Worker 收益、LibreOffice 保真基准与对照方法 | reference |
 | [development.md](engineering/development.md) | 启动、构建、对照与基准命令，调试页 | how-to |
 | [releasing.md](engineering/releasing.md) | 流水线行为、发版 checklist、OIDC 环境要求、常见失败 | how-to |
+| [agent-evaluation.md](engineering/agent-evaluation.md) | Agent 配对评测、自测、离线重判、证据与统计边界 | how-to |
 | [powerpoint-runner.md](engineering/powerpoint-runner.md) | Windows PowerPoint 真机门禁的 runner 约束与证据 | how-to |
 
 ### specs/
@@ -68,6 +69,8 @@ flowchart TB
 | [agent-node-render.md](api/agent-node-render.md) | Agent Node 无 Office 渲染：测字 / 光栅化注入、稳定 reason 与确定性 |
 | [agent-command-tools.md](api/agent-command-tools.md) | Agent 全命令 JSON Schema、原子编辑、编辑后观察、历史与保存 |
 | [agent-mcp.md](api/agent-mcp.md) | 本机 stdio MCP、文件会话、配置注入、无网络约束与 Agent Skill |
+| [agent-webmcp.md](api/agent-webmcp.md) | 官网当前文稿的原生 WebMCP 工具、权限、取消与保存交付 |
+| [agent-template-fill.md](api/agent-template-fill.md) | 结构化大纲、模板角色匹配、原生内容、设计修复及确定性生成 |
 | [format-capabilities.md](api/format-capabilities.md) | `.pptx` / `.ppt` 能力矩阵与文本细项 |
 | [format-limitations.md](api/format-limitations.md) | 格式缺失、近似实现与待验收边界 |
 | [expanded-capabilities.md](api/expanded-capabilities.md) | 全部按需扩展入口的能力矩阵（索引层） |
@@ -94,7 +97,7 @@ flowchart TB
 | [ppt-data-fidelity](wayfinder/ppt-data-fidelity/map.md) | 0.8 数据与保真（含 `research/` ChartEx 调研） | closed |
 | [ppt-expanded-capabilities](wayfinder/ppt-expanded-capabilities/map.md) | 七类扩展编辑、渲染与导出 | closed |
 | [ppt-portability-fidelity](wayfinder/ppt-portability-fidelity/map.md) | 内容流转、矢量 PDF、音视频与格式保真；[执行计划](wayfinder/ppt-portability-fidelity/plan.md)，实现记录与证据在 `notes/` | open |
-| [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | open |
+| [ppt-agent-interface](wayfinder/ppt-agent-interface/map.md) | Agent 读写接口：结构化读出、布局检查、Node 渲染、命令工具面、MCP / WebMCP、模板填充与评测集 | closed |
 | [ppt-desktop-parity](wayfinder/ppt-desktop-parity/map.md) | 桌面演示软件能力补齐：SmartArt 引擎与新建、新建图表、动画库、公式、放映工具、MP4 / 讲义导出、嵌入字体、导入安全与 OOXML 门禁；含外部代码参考规则 | open |
 
 ### product/：版本级产品需求
@@ -115,6 +118,9 @@ flowchart TB
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
 | [agent-command-tools.md](design/agent-command-tools.md) | Agent 命令 Schema、原子事务、错误定位与按需成本决策 |
 | [agent-mcp.md](design/agent-mcp.md) | Agent 005 实施计划：stdio、文件会话、无网络约束、真实 Agent 验收与发布 |
+| [agent-webmcp.md](design/agent-webmcp.md) | Agent 006 原生接口、文稿作用域、任务串行与验收方案 |
+| [agent-template-fill.md](design/agent-template-fill.md) | Agent 007 私有生成阶段、原子拒绝、完整检查与规范化身份 |
+| [agent-task-eval.md](design/agent-task-eval.md) | Agent 008 固件、独立判定、单变量观察装饰器与真实配对记录 |
 | [0.6.0.md](design/0.6.0.md) | 0.6.0 实施编排、决策与风险（对应 [PRD](product/0.6.0.md)，待评审） |
 
 ### ux/：界面设计与验收

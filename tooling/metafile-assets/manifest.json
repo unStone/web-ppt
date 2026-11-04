@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "generator": "tooling/make-metafile-assets.mjs",
+  "source": {
+    "commit": "88c8df92ee853fa2dc45a413fa38316527b20025",
+    "path": "fixtures/sample-metafile.pptx",
+    "bytes": 580673,
+    "sha256": "8f042fece7c31a68f832bdd2d6bfb8c491d9f3a101b71120a928778931efa99b",
+    "description": "项目自有 showcase 演示稿在既有固件中的 EMF/WMF 导出媒体"
+  },
+  "assets": [
+    {
+      "name": "showcase.emf",
+      "part": "ppt/media/image1.emf",
+      "bytes": 1390844,
+      "sha256": "4f5b556314ad27250c649e4b7e6bc671e5d7e84ed49bf9e96108aa200d96dfbf"
+    },
+    {
+      "name": "showcase.wmf",
+      "part": "ppt/media/image2.wmf",
+      "bytes": 1632500,
+      "sha256": "e77a7d6aca9f2e46fa4271704da5f539e0d792b7a955eba6d9f388a352b8afe2"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ jobs:
         # 生成脚本必须是确定性的：同样的输入重跑两次字节一致。
         # 否则任何人跑一次 npm run fixtures 都会带进无关 diff，
         # 甚至让快照随机漂移。
-        run: git diff --exit-code --stat fixtures/
+        run: git diff --exit-code --stat fixtures/ tooling/agent-eval/fixtures/
 
       - name: 安装 LibreOffice 与中文字体
         # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。

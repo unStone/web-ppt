@@ -77,8 +77,11 @@ async function startApplication(context: Context, host: EditorHost, notice: Site
         const resumeFiles = files.pause();
         try {
           if (stale()) return;
+          // 此处开始关闭旧文稿；取消工具后即使替换过期，也要完成旧作用域的释放。
+          const stopAgentTools = active?.ctx.get('editorDocument')?.stopAgentTools;
+          stopAgentTools?.();
           await files.whenIdle();
-          if (stale()) return;
+          if (stale() && !stopAgentTools) return;
           tools?.reset();
           await active?.dispose();
           await recovery.flush(currentSession ?? null);
@@ -122,6 +125,7 @@ async function startApplication(context: Context, host: EditorHost, notice: Site
     dispose(): Promise<void> {
       if (closing) return closing;
       disposed = true;
+      active?.ctx.get('editorDocument')?.stopAgentTools?.();
       initializing?.abort();
       revision++;
       page?.stop();

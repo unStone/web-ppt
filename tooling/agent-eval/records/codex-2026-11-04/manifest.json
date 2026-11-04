@@ -1,0 +1,411 @@
+{
+  "version": 1,
+  "id": "codex-2026-11-04",
+  "createdAt": "2026-11-03T19:14:20.039Z",
+  "engine": "codex-cli",
+  "cli": {
+    "version": "codex-cli 0.166.0",
+    "authentication": "ChatGPT"
+  },
+  "configuration": {
+    "model": "gpt-6.1-sol",
+    "effort": "ultra",
+    "timeoutMs": 240000,
+    "maxCalls": 64,
+    "repetitions": 1
+  },
+  "implementation": {
+    "commit": "a8710e1c31efbdc6d48535a0fbba4a2e553854ed",
+    "dirty": false,
+    "files": {
+      "tooling/agent-eval/cli-events.mjs": "eda7d2112908d0616076818ff5b106520984c9a58272238c4cf38c6daf157da1",
+      "tooling/agent-eval/codex-config.mjs": "d85dee6685e14553d789197f5adf78bd64367d41cadf4d2db3c1e8c35ec5d9aa",
+      "tooling/agent-eval/experiment.mjs": "7838414b343724d34f90a007f7198566b6dd321df241a86717926f7c5051c71c",
+      "tooling/agent-eval/fixtures.mjs": "5f7d5ddfa366ad50e724f66142b14c8fcaab8b04c3e2f97f68d1fc49541ca5c9",
+      "tooling/agent-eval/host.mjs": "59b4c251004c16ab8f5500e134f785045e3538f5d1d54db6425411d8dbb044ba",
+      "tooling/agent-eval/judge-package.mjs": "2b3d083e5bd805088ab66e2471a084e7d0b7ac9ea22718b831dc63a2dd340517",
+      "tooling/agent-eval/judge-preservation.mjs": "6dfba165a08feac48d8ee95b99098864742df0cc931d6b2ee1a86b6f1cedfd3a",
+      "tooling/agent-eval/judge.mjs": "06e73fdde139c042ee99fe18823a25e434a28c40ca871efadbcc54def56a2057",
+      "tooling/agent-eval/metadata.mjs": "67852df80899fc667c444b01383535a6dd01b09fda2318f43f953997a989c8d0",
+      "tooling/agent-eval/paths.mjs": "9504a60e129df577a26e4c8469baaba2b9e3724c856c36000da45beb01a0bc9c",
+      "tooling/agent-eval/protocol-log.mjs": "2dc2f3a2b26c5b374367d4d55cde512d95067eb6ae5e1fa3f13f1f5444bb9721",
+      "tooling/agent-eval/records.mjs": "c1efc7e2a4acfccf32bb7b4e18138a16eb7030d82d43a6569ab098c1c4d4afba",
+      "tooling/agent-eval/rejudge.mjs": "711bf50102e61660702c9c5a03d36f1a4ae2ed607155fc284e85f3ccc698ad0f",
+      "tooling/agent-eval/run-protocol.mjs": "8dcb327360f1e0614bac6e95bbf5c7afc000ba956315b062dae56f7b0765b1b0",
+      "tooling/agent-eval/run.mjs": "cb6b5c68c434272fb67d1fb452568f1902d460971a14173d0d216d1a3df0dd70",
+      "tooling/agent-eval/runtime.mjs": "92e13055ee72ddc6f6fca28869a12bfb6b5f4b1e1099b1906bd9d2649d7f2f93",
+      "tooling/agent-eval/schedule.mjs": "8b45ff2664eb8d853dc9a854de61d873b3f8da48b9de300026beb50a155b13fd",
+      "tooling/agent-eval/subprocess.mjs": "d3fa50db8c6c5439dc5849d504d16f56074ef83d95f51ebba30b310f37706d7c",
+      "tooling/agent-eval/tasks.mjs": "9cc5a8a97077c0c95e8e5a644ba2d4135beff06c1eab8d60cc62093fe5711396",
+      "tooling/agent-eval/test-support/agent-process.mjs": "f6616079f4673b7598ca19f349466c09d1fc965a12fa9d33d21c0a4168dacbae",
+      "tooling/agent-eval/test-support/mcp-agent-process.mjs": "621b6e4ba003e06b4ef8d2b78f98b3421c611ccc3ef41305a78f174ac3c9e6af",
+      "tooling/agent-eval/transport.mjs": "e90a575a2b1e2cd43bceebb46a10f839da011b2dc3bc30b053480bdc19afcf37",
+      "package.json": "1d9f40a3b250ebc5904f096460b84a71744557f2d9754d05f4c5c7ff9dc54253",
+      "package-lock.json": "90d97ba70784cbd326689199b30fff73d7be521543df082c2513a9f4c5ac874b",
+      "tooling/template-fill-fonts/manifest.json": "c8ed5b304f745f97e0df39337e6ea783c322009d0bc57dd87bd95ab12e1fbbb9",
+      "tooling/template-fill-fonts/regular.ttf": "2a7423a5b373352e5ce010c59656fef0c58d6e608fb153f87f9a0d94244efea6",
+      "tooling/template-fill-fonts/bold.ttf": "87048387d5a38be9a8776e76bfdabc91290843e9640a28fa92f2ca1003ae7348",
+      "packages/agent-mcp/skills/web-ppt/SKILL.md": "b00bfe762457040e3d8181d6d4555e155a465f28a5ff7261bfa15ac26c931348"
+    },
+    "packages": {
+      "@web-ppt/core": {
+        "version": "0.8.0-beta.1",
+        "manifestSha256": "44cbb9166b307714d86136259bc61c6b2b6da2bd87c2e6b757a5f2a6cd678010",
+        "entrySha256": "cb5e2866f390ed74f9d2311fca0fbcb9386eb3512889f556fd12a6810ad2d0fe",
+        "distFiles": {
+          "dist/advanced-rendering.js": "f1724e4770cfaa7973ec64022410864fae9e9426dfd75f64d78a8afdb6086a58",
+          "dist/chart-edit.js": "ae5a7ec3b3085bfa238b5b7a7d0cd77ee33577ffe90b73cac43e5216fe53c84e",
+          "dist/chart-ex.js": "e23f55fa471d9a1056d0c06ac1f87760e6211b70cc5f71f375ae6fdaf06ba41a",
+          "dist/comment-export-CpTHwH59.js": "aa1d598d3f65f53eda1def362523f9a9b74826c9187b86504ec88a4fc3d33145",
+          "dist/core.js": "cb5e2866f390ed74f9d2311fca0fbcb9386eb3512889f556fd12a6810ad2d0fe",
+          "dist/diagram-edit.js": "31de58b4c9235a57e559329a130acb5a97bf300d4cb81ce00b0c7af515b68071",
+          "dist/document-Sjh4KWFC.js": "7c7f6de7d8d40672bd159df5c7fa6b8f608f3ddf1cc26fe43e1740e5eb6e8fc0",
+          "dist/emf-plus.js": "babe8541ec06ec5643d8dc111cf9478a0397d3ec4ec4221571b1b4b253711ed4",
+          "dist/geometry-handles.js": "df3dc12ca37561092d70437c25efd58115afe8816f613cf1ee8acb9cf5df0c7f",
+          "dist/geometry.js": "96521bd74ccb760b386ee2c15102fad5e76e257bb77d807654a637b4d4939dd8",
+          "dist/image-zip.js": "ca1410f20f829c9aa7cc2b2f18905061e1744b3204bed796557b8341f16828bc",
+          "dist/ink-edit.js": "76286e34edbc5aded2cf601e9d1fd4af5c9f0219be37652e231d3c20ca15f3d6",
+          "dist/modern-charts.js": "911b4a552e712d3afd36f12e35e89f70e7931e86a9bb49c622d17b0c00c5a691",
+          "dist/node.js": "453e2d4cfe63af966f4c3c226baf616d83a5b0428c5343a784fabe24d3b474a5",
+          "dist/parser-BilK6vNH.js": "dcfa1484e451d1db220d7374c8c2a8412e584dd7aef987b4d0dd395a3f2e5e5d",
+          "dist/pdf-vector-browser.js": "0930e3bb1e0dd9fbb81d1db600293480d6c6847715001013b88be4441af96d1d",
+          "dist/pdf-vector.js": "7290ff6f160d3a39b09dfe7de01155133fab1519e2189b1d500c5f2f527615e8",
+          "dist/pdf.js": "18d8c60e17b17aecb5329b3fe62b62d930c28a803f1a876f7b04463130847326",
+          "dist/three-d.js": "f20459f6139f99f57acb6bfab48f53473fc022bbdd9dc6e6f6ef9ff69dee5ea9",
+          "dist/vector-image-input-DvER4vWX.js": "958a60c51d492899194f2862143cba304678f9f494cd132471b52e4c6ac90891",
+          "dist/worker.js": "c6332fa5210333df924ab4bd83544cbb3a0445952bb221e9a65d6267b31ecbf5"
+        }
+      },
+      "@web-ppt/edit-core": {
+        "version": "0.8.0-beta.1",
+        "manifestSha256": "d9655888c1257143555ef37d4fc517f4d293819f4877bbb59e090943f9117fb4",
+        "entrySha256": "b760984817304683e5829a80664d2bf0dc050c9b089a07aa743bfb6882bfd96f",
+        "distFiles": {
+          "dist/agent.js": "e89b6365f35cb1b968f98b134eb68b345ab3c67debe11336f7c25f2ca42bbdc9",
+          "dist/appearance.js": "b40502608bf4a714a0307d49e9a1da837eea83623cc9cbaf3031db2b9702f8ac",
+          "dist/cfb.js": "84732b707a7cea89505e6ff60336f972643c23c03e7f2511cf39ee7479858fe0",
+          "dist/chart-design.js": "022f58c1d1e397c491ff26c9e97a8113c5d9592bb726a2c8a9b5eca876bfd34a",
+          "dist/chart-ex.js": "347a18bc90ed59b21d84837c0cf984cf10a238ce2a1e8633729e2ac861291f20",
+          "dist/chart-shared.js": "a8820680743b87ace69d95293ac79c12419a2a0dace3f45f5ca608820d2e3836",
+          "dist/chart.js": "0d2870810780e1439f7e887a9ff7c0a925c05b2be25613499b5d8c029812e9bf",
+          "dist/clipboard-links-GuPtqr1z.js": "8f6ec7f8edac89640330e378558b5ef956718c6369ee18b69ca41cd86508bdc3",
+          "dist/comments.js": "194f47971de7cf2ee1ff243febd67ab0d5caf9ba67eb21ebd74624c169ee1a99",
+          "dist/describe.js": "0a9628e1f7d6632fa26e183c9e558c031e7095d9fb4b712c9e370fa691708c6f",
+          "dist/edit-core.js": "b760984817304683e5829a80664d2bf0dc050c9b089a07aa743bfb6882bfd96f",
+          "dist/fill.js": "f3637f334f11ce0736f1dee0829ffa004aef795718d0a4cd6b0d97819dc99e8e",
+          "dist/generate.js": "ba322f650f2406a992dbdefc777cde63ed0e936d7888e8bbc4c9969126cd6b90",
+          "dist/index-2ti1e4_F.js": "db399cd7bbe8821f3888ffdaca6ecff3c6dc6f2e0eb87fedd0111db746e7508f",
+          "dist/index-BbsPmmoy.js": "adbf1a01ca8570be2a154013af3ffaa7b6701657817d59ea6d7d16ade8cd1cb9",
+          "dist/index-C2r7c6G6.js": "b6ff45eb913639c7110762ec40c22379614d93cc31088b6cda6b944f60a96a0b",
+          "dist/index-CYDvbiwF.js": "ad7087ad7e8b73753a6e2b8e86918e7855f22f4974f8b3461f237446c1e14038",
+          "dist/ink.js": "9bd8d3c6b542f1a834b7b0c3914fe32b56aa546f4d132d7a2ab4a4ab1146d3ee",
+          "dist/lint-sampler.js": "51415c9c23e44a2692c410c5c6dd7ade369e0b7e82e8c99323a41c097be15401",
+          "dist/lint.js": "c1ceecad4c0218340d9cf06b26ad2419228becc849a197fab5c7c1ac8731db90",
+          "dist/media.js": "be92002eb6e805ebfa22dd758300d52e6c204967103833778bc16a188717ca03",
+          "dist/model-invariants-BM19JVxy.js": "931b79229ee2ff061d1abe9f72242ddfa077d02ce009c28cef6cb196e445d053",
+          "dist/ole.js": "b22e7b8ef16ec5554cae39bfa438c9c8d1c0ec243331ff871d6d4b04c693b4ec",
+          "dist/opc.js": "822cf6a87b09870fb94a9abf0d228b8f1716b3d1b9b29aef04eb39afd634cbaa",
+          "dist/patch-BwhfBbYE.js": "ec1a05c15c42c9fa3af3b02a17bb406c20d1eb982a39d727d74fffd6aefe1fc5",
+          "dist/ppt.js": "cde1626054634807b636c07b9c9404de7b1f0d177226fdee02a475c57b7908f9",
+          "dist/query-BHLjWjnu.js": "7ace383e3acbff717e363de286de3467779c9f9c8d2d52ada51d3f394a98e995",
+          "dist/resize.js": "70bfbc9466383adff41b3b0088700c0dd447a07a789175ebe3d7150c038997d7",
+          "dist/save.js": "00bcc6b587ab0a58f1e6ce44cc61fa170478c090090228bcc27a61445e27e760",
+          "dist/slide-parts-zyOP9lia.js": "efe482e4709e8cd6a50c57aeec39bf5e9c262c42f790e573e71982aa68e5bfcf",
+          "dist/smartart.js": "f6c221d9861ab520a313fbbdb1528e46e6e3d105a706284d9ba1c6efa0ed439f",
+          "dist/templates.js": "ec6e5ec4a5e579c2e1cf5373d28af10b2683dc54402d4e1ac4e53707e559327c",
+          "dist/xml.js": "6c173f00fc4afc9aebddb4f3129833f0bae6cc1f1612d84320819d1b2f45c132"
+        }
+      },
+      "@web-ppt/fonts": {
+        "version": "0.8.0-beta.1",
+        "manifestSha256": "2fe31adac882a23fb699d79d2e908cdb22481a62b333085b5504dbecd4496544",
+        "entrySha256": "597e4cb7957bdaf4e7be4e087288069b976e68e34a2c1b8fa2201e18e9b1099c",
+        "distFiles": {
+          "dist/fault-HMYM9DhC.js": "a70cb307ffdda409fafc8f16ccab4984b5d71cad7011ff63e42fbfc6b26ad0d5",
+          "dist/fonts.js": "597e4cb7957bdaf4e7be4e087288069b976e68e34a2c1b8fa2201e18e9b1099c",
+          "dist/glyphs-browser.js": "a7f02a53225002dced851eaafe9f675a64ffd72c4d414a122dda7d615c4b076c",
+          "dist/glyphs-harfbuzz.js": "a2822278780c027b8918a52e372dcd6eaaa718da1c84bcc806b7bc0a2f65b257",
+          "dist/glyphs-worker.js": "3411c6de3fe75c5543728642e5e9e73a4fb06a7e18ed6daf482c37c034474b37",
+          "dist/glyphs.js": "32440b70c53bc9eafd6047200d429ac6841cf6521cf6b1d40d387a11f0f66150",
+          "dist/provider-9-K8y5p4.js": "942a010a72a050990d68f9dc772fe3a8a36e56927ccd8c0c9cd0b0149f5b11af"
+        }
+      },
+      "@web-ppt/agent-mcp": {
+        "version": "0.8.0-beta.1",
+        "manifestSha256": "df83c2901035b012b812fa5f1408d6648d9bbb5041208411a7937576d4336ad6",
+        "entrySha256": "5b7d3c855e0dfb31dfc84db3c779490375cee2afcf43d10982e50b9c6e784870",
+        "distFiles": {
+          "dist/agent-mcp.js": "5b7d3c855e0dfb31dfc84db3c779490375cee2afcf43d10982e50b9c6e784870",
+          "dist/cli.js": "9ec3434c0aebb2e48cf742691938d61eafc02c241d7f3860eb27be6eaf7f6d62",
+          "dist/server-IR4Cfdfl.js": "13204e9ba42c1809cbb233cde86b27b10b327e8bde29790312714b4d9d54e782"
+        }
+      }
+    },
+    "instructionFiles": {
+      "project": "f6b1ab8790d19fc852ce72d3833f4e754980949743bfc594b3a284aa019fbb3a",
+      "user": "4c7cef5c85fe8569621814955b10430d27dce6696d22a5197a0282aadee8f8a1",
+      "router": "4c7cef5c85fe8569621814955b10430d27dce6696d22a5197a0282aadee8f8a1"
+    },
+    "dependencyLocks": {
+      "@modelcontextprotocol/sdk": {
+        "version": "1.32.2",
+        "resolved": "https://registry.npmjs.org/@modelcontextprotocol/sdk/-/sdk-1.32.2.tgz",
+        "integrity": "sha512-SWsVtH/0vULSQStoZ6xxH2K09Li8fXYTMC64ZeogCdpZ3XSi1eCPOByV1OpuJxuI3OcmHhosDWYyii07tpPsLw==",
+        "source": "package-lock.json#packages[\"node_modules/@modelcontextprotocol/sdk\"]"
+      },
+      "harfbuzzjs": {
+        "version": "1.6.1",
+        "resolved": "https://registry.npmjs.org/harfbuzzjs/-/harfbuzzjs-1.6.1.tgz",
+        "integrity": "sha512-+JeJmO+HzXjDwpfCOdGSyM2bNP8WzJNFKl/8TKivbInMYDtfRIuPIDLtnBNmQzcJw6GptbhHY6o5gaH6deCMEw==",
+        "source": "package-lock.json#packages[\"node_modules/harfbuzzjs\"]"
+      },
+      "culori": {
+        "version": "4.0.2",
+        "resolved": "https://registry.npmjs.org/culori/-/culori-4.0.2.tgz",
+        "integrity": "sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw==",
+        "source": "package-lock.json#packages[\"node_modules/culori\"]"
+      },
+      "smol-toml": {
+        "version": "1.9.1",
+        "resolved": "https://registry.npmjs.org/smol-toml/-/smol-toml-1.9.1.tgz",
+        "integrity": "sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==",
+        "source": "package-lock.json#packages[\"node_modules/smol-toml\"]"
+      },
+      "@resvg/resvg-js": {
+        "version": "2.6.2",
+        "resolved": "https://registry.npmjs.org/@resvg/resvg-js/-/resvg-js-2.6.2.tgz",
+        "integrity": "sha512-xBaJish5OeGmniDj9cW5PRa/PtmuVU3ziqrbr5xJj901ZDN4TosrVaNZpEiLZAxdfnhAe7uQ7QFWfjPe9d9K2Q==",
+        "source": "package-lock.json#packages[\"node_modules/@resvg/resvg-js\"]"
+      }
+    },
+    "runtime": {
+      "node": "v24.3.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "contextFingerprint": "3a60f719556547d4524d12a28f963c2aa0e280f0aeae02465ca39d20aca313f3",
+    "fingerprint": "2dd76eb227d8a6545114dd7ec03f2b7e411d0f88725e3579d89d84157ca7320a"
+  },
+  "order": "alternating-condition-first-within-task",
+  "tasks": [
+    {
+      "version": 1,
+      "id": "case-01",
+      "kind": "clean",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-01-input.pptx",
+      "referenceName": "case-01-reference.pptx",
+      "inputSha256": "25457b2e2c9191c2292d941d0f273c18665b3566347a59f7d0deeec1f7e01c35",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-02",
+      "kind": "text-overflow",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-02-input.pptx",
+      "referenceName": "case-02-reference.pptx",
+      "inputSha256": "48763d8039e6dd43d697b082fc95c6166f89847c3a52541e9949a1ab45d3b336",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-03",
+      "kind": "element-overlap",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-03-input.pptx",
+      "referenceName": "case-03-reference.pptx",
+      "inputSha256": "9121bc7728a3d5879d3e291762314d958483f42ee530de102246f7c3fbf4ea89",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-04",
+      "kind": "off-canvas",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-04-input.pptx",
+      "referenceName": "case-04-reference.pptx",
+      "inputSha256": "9c0210a92733de62693b3092dd383c4a2576393822ea3f7d500226f9f41f5a56",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-05",
+      "kind": "low-contrast",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-05-input.pptx",
+      "referenceName": "case-05-reference.pptx",
+      "inputSha256": "6c6d3cff60a18621593fafb443ef08aab4ba13604a4ee7c577b6d30c668e3b3b",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-06",
+      "kind": "missing-font",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-06-input.pptx",
+      "referenceName": "case-06-reference.pptx",
+      "inputSha256": "39a977ada6b8f0316574c7a78fe1c38ed1acccf14975a18f574960e7d8c00414",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-07",
+      "kind": "placeholder-prompt-left",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-07-input.pptx",
+      "referenceName": "case-07-reference.pptx",
+      "inputSha256": "9c752dde0fb4f35c053051bf5354747e107a880117690bd85339c6570efe73ed",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    },
+    {
+      "version": 1,
+      "id": "case-08",
+      "kind": "image-distorted",
+      "expectedTitle": "Approved quarterly report",
+      "titleName": "Evaluation title",
+      "fontFamily": "WebPPT Template Fill Latin",
+      "minFontSize": 12,
+      "fixtureName": "case-08-input.pptx",
+      "referenceName": "case-08-reference.pptx",
+      "inputSha256": "395d2f51e5ad441321b576d2d2cb077b97062f1021cb643583f76cb40988ada4",
+      "promptSha256": "c419645502f8cf14a789af78de7d94bdd86a757d8cd5158c8754d98304abc95a"
+    }
+  ],
+  "runs": [
+    {
+      "id": "r001",
+      "taskId": "case-01",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r001"
+    },
+    {
+      "id": "r002",
+      "taskId": "case-01",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r002"
+    },
+    {
+      "id": "r003",
+      "taskId": "case-02",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r003"
+    },
+    {
+      "id": "r004",
+      "taskId": "case-02",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r004"
+    },
+    {
+      "id": "r005",
+      "taskId": "case-03",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r005"
+    },
+    {
+      "id": "r006",
+      "taskId": "case-03",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r006"
+    },
+    {
+      "id": "r007",
+      "taskId": "case-04",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r007"
+    },
+    {
+      "id": "r008",
+      "taskId": "case-04",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r008"
+    },
+    {
+      "id": "r009",
+      "taskId": "case-05",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r009"
+    },
+    {
+      "id": "r010",
+      "taskId": "case-05",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r010"
+    },
+    {
+      "id": "r011",
+      "taskId": "case-06",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r011"
+    },
+    {
+      "id": "r012",
+      "taskId": "case-06",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r012"
+    },
+    {
+      "id": "r013",
+      "taskId": "case-07",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r013"
+    },
+    {
+      "id": "r014",
+      "taskId": "case-07",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r014"
+    },
+    {
+      "id": "r015",
+      "taskId": "case-08",
+      "condition": "without-lint",
+      "repetition": 1,
+      "directory": "runs/r015"
+    },
+    {
+      "id": "r016",
+      "taskId": "case-08",
+      "condition": "with-lint",
+      "repetition": 1,
+      "directory": "runs/r016"
+    }
+  ],
+  "completedAt": "2026-11-03T19:57:05.940Z"
+}

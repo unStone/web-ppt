@@ -1,5 +1,6 @@
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import fsPromises, { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { syncBuiltinESMExports } from 'node:module';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
@@ -8,9 +9,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { bundleNode } from './lib/bundle-node.mjs';
 import { countedAssert } from './lib/counted-assert.mjs';
+import { measureText } from './lib/agent-mcp-runtime.mjs';
 
 const { assert: check, record } = countedAssert('agentMcp');
 const root = resolve(import.meta.dirname, '..');
+const manifest = JSON.parse(await readFile(join(root, 'packages/agent-mcp/package.json'), 'utf8'));
 const out = join(root, 'out/agent-mcp');
 await mkdir(out, { recursive: true });
 const dist = process.argv.includes('--dist');
@@ -22,6 +25,61 @@ const api = dist ? {
   core: await import('@web-ppt/core'), mcp: await import('@web-ppt/agent-mcp'),
 } : await bundleNode({ root, entry, output: join(out, 'contract.mjs') });
 const { core, mcp } = api;
+
+async function withBlockedRename(path, action) {
+  const originalRename = fsPromises.rename;
+  let started;
+  let release;
+  const ready = new Promise((resolve) => { started = resolve; });
+  const permitted = new Promise((resolve) => { release = resolve; });
+  fsPromises.rename = async (source, destination) => {
+    if (destination === path) {
+      started();
+      await permitted;
+    }
+    return originalRename(source, destination);
+  };
+  syncBuiltinESMExports();
+  try {
+    await action(ready, release);
+  } finally {
+    release();
+    fsPromises.rename = originalRename;
+    syncBuiltinESMExports();
+  }
+}
+
+for (const operation of ['save', 'render']) {
+  for (const next of ['edit', 'close', 'dispose']) {
+    const writing = new mcp.AgentMcpSessionManager({ measureText });
+    const opened = await writing.open(join(out, 'source.pptx'));
+    const description = await writing.call(opened.sessionId, 'describe', {});
+    const id = description.value.slides[0].elements[0].id;
+    const path = join(out, `queued-${operation}-${next}.${operation === 'save' ? 'pptx' : 'svg'}`);
+    await withBlockedRename(path, async (ready, release) => {
+      const pending = operation === 'save'
+        ? writing.save(opened.sessionId, path)
+        : writing.render(opened.sessionId, { slideNumber: 1, format: 'svg' }, path);
+      await ready;
+      let finished = false;
+      const following = (next === 'edit'
+        ? writing.call(opened.sessionId, 'edit', { commands: [{ type: 'SetName', id, name: '写入之后' }] })
+        : next === 'close' ? writing.close(opened.sessionId) : writing.dispose())
+        .then((value) => { finished = true; return value; });
+      await new Promise((resolve) => setImmediate(resolve));
+      try {
+        check.equal(finished, false, `${operation} 文件交付完成前不得执行 ${next}`);
+      } finally {
+        release();
+      }
+      check((await pending).ok);
+      await following;
+      check((await readFile(path)).length > 0);
+    });
+    await writing.dispose();
+  }
+}
+
 const manager = new mcp.AgentMcpSessionManager();
 await check.rejects(() => manager.open('https://example.invalid/deck.pptx'), (error) => error.reason === 'invalid-path');
 await check.rejects(() => manager.open(join(out, 'missing.pptx')), (error) => error.reason === 'open-failed');
@@ -45,12 +103,28 @@ check(undone.ok && undone.value.history.redoCount === 1);
 const redone = await manager.call(opened.sessionId, 'redo', {});
 check(redone.ok && redone.value.history.undoCount === 2);
 const savedPath = join(out, 'saved.pptx');
-const saved = await manager.save(opened.sessionId, savedPath);
+// MCP 不公开脏状态，直接观察真实 Editor 的保存点，避免只验证文件存在。
+const editor = manager.sessions.get(opened.sessionId).session.editor;
+check(editor.isDirty());
+let saved;
+await withBlockedRename(savedPath, async (ready, release) => {
+  const pending = manager.save(opened.sessionId, savedPath);
+  await ready;
+  try {
+    check(editor.isDirty(), '文件交付完成前必须保留脏状态');
+  } finally {
+    release();
+  }
+  saved = await pending;
+});
 check(saved.ok && saved.value.path === savedPath && saved.value.saveMode === 'patch');
+check(!editor.isDirty(), '文件交付成功后确认保存点');
 const savedPres = await core.parse(await readFile(savedPath), { lazy: false });
 check(savedPres.slides[0].elements.some((element) => element.name === '第二次'));
 savedPres.dispose();
+await manager.call(opened.sessionId, 'edit', { commands: [{ type: 'SetName', id: title.id, name: '尚未交付' }] });
 await check.rejects(() => manager.save(opened.sessionId, join(out, 'missing-dir', 'failed.pptx')), (error) => error.reason === 'save-failed');
+check(editor.isDirty(), '文件交付失败必须保留脏状态');
 check(!(await readdir(out)).some((name) => name.endsWith('.tmp')));
 await check.rejects(() => manager.save(opened.sessionId, 'https://example.invalid/saved.pptx'), (error) => error.reason === 'invalid-path');
 await manager.close(opened.sessionId);
@@ -89,6 +163,7 @@ try {
   const transport = new StdioClientTransport({ command: process.execPath, args: [cliPath, '--config', configPath], stderr: 'pipe' });
   client = new Client({ name: 'agent-mcp-contract', version: '1.0.0' }, { capabilities: {} });
   await client.connect(transport);
+  check.equal(client.getServerVersion()?.version, manifest.version, 'MCP 初始化版本必须来自当前包清单');
   const listed = await client.listTools();
   check.deepEqual(listed.tools.map((tool) => tool.name), [
     'ppt_open', 'ppt_describe', 'ppt_element', 'ppt_lint', 'ppt_render', 'ppt_edit',

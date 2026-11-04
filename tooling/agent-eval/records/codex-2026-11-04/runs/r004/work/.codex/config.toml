@@ -1,0 +1,65 @@
+model = "gpt-6.1-sol"
+model_reasoning_effort = "ultra"
+approval_policy = "never"
+default_permissions = "agent_eval"
+
+[features]
+shell_tool = false
+multi_agent = false
+apps = false
+plugins = false
+remote_plugin = false
+browser_use = false
+browser_use_external = false
+computer_use = false
+image_generation = false
+view_image = false
+sleep_tool = false
+
+[permissions.agent_eval]
+extends = ":read-only"
+
+[permissions.agent_eval.filesystem]
+"<repo>/tooling/agent-eval" = "deny"
+"<experiment>" = "deny"
+"<experiment>/runs/r004/evidence" = "deny"
+"<experiment>/runs/r004/work/.codex" = "deny"
+
+[mcp_servers.ppt_eval]
+command = "<home>/.local/share/fnm/node-versions/v24.3.0/installation/bin/node"
+args = [ "<repo>/tooling/agent-eval/host.mjs", "--config", "<experiment>/runs/r004/evidence/host.json" ]
+cwd = "<experiment>/runs/r004/work"
+enabled_tools = [ "ppt_open", "ppt_describe", "ppt_element", "ppt_lint", "ppt_render", "ppt_edit", "ppt_undo", "ppt_redo", "ppt_save", "ppt_close" ]
+default_tools_approval_mode = "prompt"
+startup_timeout_sec = 30
+tool_timeout_sec = 240
+
+[mcp_servers.ppt_eval.tools.ppt_open]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_describe]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_element]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_lint]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_render]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_edit]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_undo]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_redo]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_save]
+approval_mode = "approve"
+
+[mcp_servers.ppt_eval.tools.ppt_close]
+approval_mode = "approve"

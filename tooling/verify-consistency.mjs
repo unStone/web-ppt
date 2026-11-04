@@ -229,7 +229,7 @@ if (!siteStat) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
+    'metafile', 'metafileFixture', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
     'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
@@ -341,6 +341,12 @@ if (!counts) {
     ['AGENTS.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
     ['docs/engineering/testing.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
     ['AGENTS.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
+    ['docs/engineering/testing.md', /官网 WebMCP ([\d,]+) 项浏览器断言/, ['siteWebMcp']],
+    ['AGENTS.md', /官网 WebMCP ([\d,]+) 项浏览器断言/, ['siteWebMcp']],
+    ['docs/engineering/testing.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
+    ['AGENTS.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
+    ['docs/engineering/testing.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
+    ['AGENTS.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
     ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /Agent Node 双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],

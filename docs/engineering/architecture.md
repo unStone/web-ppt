@@ -116,6 +116,7 @@ flowchart LR
 | Agent 读取 | 按需 `describe/`：复用有效投影、选择与几何查询，输出稳定 ID 与预算受限的 JSON；Schema 生成/校验仅为开发依赖 |
 | 布局检查 | 按需 `lint/`：共享 describe 的投影身份，复用行盒与图片元数据；Culori/RBush 仅进入该入口，SVG 采样与宿主光栅化分离 |
 | Agent 命令工具 | 按需 `agent/`：全命令生成 Schema、单次 `Editor` 原子事务、编辑后 lint、历史、Node 渲染与保存；Ajv 仅开发期生成校验器，MCP 不在此层 |
+| 模板填充 | 按需 `fill/`：大纲校验、私有文稿、角色匹配、原生图表生成、真实检查与设计修复；保存后规范化重开，返回实际最终身份，默认入口不引入生成实现 |
 | 命令与历史 | `commands/`、`history.ts`、`transaction-validation.ts` |
 | 投影 | `projection.ts`、`dynamic-projection.ts`、`layout-projection.ts`、`theme-projection.ts`、`design.ts` |
 | 保存 | `save/`（补丁 + 生成）、`ppt/`、`opc/` |
@@ -136,6 +137,7 @@ flowchart LR
 |---|---|
 | `viewer` | 单页查看器：缩略图虚拟化、搜索、批注面板、导出 |
 | `site` | Vite 多页面：官网（中英双语 + 实时 Demo）+ 编辑器应用。编辑器按 Cordis 插件分层：页面 / 打开 / 恢复 / 文件 / 业务工具为应用级插件，视图 / 字体 / 工具为文稿作用域插件，分层与生命周期约定见 [design/cordis-editor.md](../design/cordis-editor.md) |
+| WebMCP | `site` 文稿插件条件动态加载；借用同一 Editor，文件任务由应用服务串行持有，切换先取消工具再排空资源；[接口与边界](../api/agent-webmcp.md) |
 
 ## 6. 测试与质量体系
 

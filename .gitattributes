@@ -1,0 +1,2 @@
+# 评测证据按字节记录哈希，跨平台检出不能转换换行。
+tooling/agent-eval/records/** -text

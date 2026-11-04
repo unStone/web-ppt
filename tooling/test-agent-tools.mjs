@@ -43,6 +43,53 @@ assert(style.ok && style.value.id === title.id && typeof style.value.value.direc
 const lint = await session.call('lint', { checks: ['off-canvas'] });
 assert(lint.ok && lint.value.checks.join() === 'off-canvas');
 
+const linkSession = await agent.openAgentSession(input, { idPrefix: 'agent-tools-link-' });
+const linkDoc = linkSession.doc;
+const linkTitle = Object.values(linkDoc.elements).find((element) => element.src.name === '页面标题').id;
+for (const target of [
+  { kind: 'external', href: 'https://example.com/presentation' },
+  { kind: 'slide', slideId: linkDoc.slideOrder[1] },
+  { kind: 'none' },
+  null,
+]) {
+  const result = await linkSession.call('edit', { commands: [{ type: 'SetLink', id: linkTitle, target }] });
+  assert(result.ok, `SetLink ${target?.kind ?? 'inherit'}: ${JSON.stringify(result)}`);
+  const queried = await linkSession.call('element', { id: linkTitle, query: 'link' });
+  assert(queried.ok);
+  assert.deepEqual(queried.value.value.value, target?.kind === 'none' ? null : target);
+}
+for (const target of [{ kind: 'layout', id: 'missing-layout' }, { kind: 'master', id: 'missing-master' }]) {
+  const before = JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries });
+  const result = await linkSession.call('edit', { commands: [{
+    type: 'AddShape', target, preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 },
+  }] });
+  assert(!result.ok && result.error.reason === 'target-not-found' && result.error.elementId === target.id);
+  assert.equal(JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries }), before);
+}
+const missingLinkBefore = JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries });
+const missingLink = await linkSession.call('edit', { commands: [{
+  type: 'SetLink', id: linkTitle, target: { kind: 'slide', slideId: 'missing-slide' },
+}] });
+assert(!missingLink.ok && missingLink.error.reason === 'target-not-found' && missingLink.error.elementId === 'missing-slide');
+assert.equal(JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries }), missingLinkBefore);
+const layoutId = Object.keys(linkDoc.layouts)[0];
+const addedDesignShape = await linkSession.call('edit', { commands: [{
+  type: 'AddShape', target: { kind: 'layout', id: layoutId }, preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 },
+}] });
+assert(addedDesignShape.ok, JSON.stringify(addedDesignShape));
+const designShapeId = addedDesignShape.value.affectedElements.find((id) => linkDoc.elements[id]?.parent === layoutId);
+assert(designShapeId);
+const designLink = await linkSession.call('edit', { commands: [{
+  type: 'SetLink', id: designShapeId, target: { kind: 'external', href: 'https://example.com/layout' },
+}] });
+assert(designLink.ok, JSON.stringify(designLink));
+const designLinkValue = await linkSession.call('element', { id: designShapeId, query: 'link' });
+assert(designLinkValue.ok && designLinkValue.value.value.value.href === 'https://example.com/layout');
+const undoLink = await linkSession.call('undo', {});
+assert(undoLink.ok);
+assert.equal(edit.queryElementLink(linkDoc, [designShapeId]).value, null);
+linkSession.dispose();
+
 const snapshot = () => JSON.stringify({ doc, undo: session.editor.history.undoEntries, redo: session.editor.history.redoEntries });
 for (const test of [
   { input: { commands: [{ type: 'SetName', id: title.id, name: 'x', extra: true }] }, reason: 'invalid-input' },
