@@ -1,0 +1,1320 @@
+{
+  "formatVersion": 1,
+  "phase": "candidate",
+  "packages": [
+    {
+      "name": "@web-ppt/agent-mcp",
+      "directory": "packages/agent-mcp",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/agent-mcp.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        }
+      ],
+      "bin": {
+        "web-ppt-agent": "./dist/cli.js"
+      }
+    },
+    {
+      "name": "@web-ppt/collab",
+      "directory": "packages/collab",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/collab.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./migration",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/migration/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/migration.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/core",
+      "directory": "packages/core",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/core.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./advanced-rendering",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/advanced-rendering.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/advanced-rendering.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-edit",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-edit.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-edit.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-ex",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-ex.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-ex.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./diagram-edit",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/diagram-edit.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/diagram-edit.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./emf-plus",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/emf-plus.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/emf-plus.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./geometry",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/geometry/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/geometry.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./geometry/handles",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/geometry/handles/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/geometry-handles.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./image-zip",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/image-zip.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/image-zip.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./ink-edit",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/ink-edit.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/ink-edit.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./modern-charts",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/modern-charts.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/modern-charts.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./node",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/node-export.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/node.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./pdf",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/pdf.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/pdf.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./pdf/vector",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/pdf/vector.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/pdf-vector.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./pdf/vector/browser",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/pdf/vector-browser.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/pdf-vector-browser.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./three-d",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/three-d.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/three-d.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./worker",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/worker.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/worker.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/edit-core",
+      "directory": "packages/edit-core",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/edit-core.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./agent",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/agent/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/agent.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./agent/schema.json",
+          "resolution": "./schemas/agent-tools.schema.json"
+        },
+        {
+          "subpath": "./appearance",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/appearance/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/appearance.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./cfb",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/cfb/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/cfb.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-design",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-design/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-design.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-ex",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-ex/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-ex.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-shared",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-shared/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-shared.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./comments",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/comments/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/comments.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./describe",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/describe/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/describe.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./describe/schema.json",
+          "resolution": "./schemas/describe.schema.json"
+        },
+        {
+          "subpath": "./fill",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/fill/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/fill.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./fill/schema.json",
+          "resolution": "./schemas/template-fill.schema.json"
+        },
+        {
+          "subpath": "./generate",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/generate/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/generate.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./ink",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/ink/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/ink.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./lint",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/lint/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/lint.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./lint/sampler",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/lint/sampler.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/lint-sampler.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./lint/schema.json",
+          "resolution": "./schemas/lint.schema.json"
+        },
+        {
+          "subpath": "./media",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/media/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/media.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./ole",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/ole/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/ole.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./opc",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/opc/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/opc.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./ppt",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/ppt/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/ppt.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./resize",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/resize/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/resize.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./save",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/save/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/save.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./smartart",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/smartart/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/smartart.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./templates",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/templates/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/templates.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./xml",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/xml/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/xml.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/editor",
+      "directory": "packages/editor",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/editor.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./accessibility",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/canvas-accessibility.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/accessibility.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./adjustments",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/adjustments/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/adjustments.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-shared",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-shared/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-shared.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./design",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/design/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/design.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./edit-context",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/edit-context/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/edit-context.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./media",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/media/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/media.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./templates",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/templates/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/templates.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./vertex",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/vertex/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/vertex.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/fonts",
+      "directory": "packages/fonts",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/fonts.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./glyphs",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/glyphs/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/glyphs.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./glyphs/browser",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/glyphs/browser.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/glyphs-browser.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./glyphs/harfbuzz",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/glyphs/harfbuzz.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/glyphs-harfbuzz.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./glyphs/worker",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/glyphs/worker.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/glyphs-worker.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/react",
+      "directory": "packages/react",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/react.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-shared",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-shared/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-shared.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./media",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/media/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/media.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./templates",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/templates/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/templates.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/viewer-core",
+      "directory": "packages/viewer-core",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/viewer-core.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./comments",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/comments.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/comments.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./video",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/video.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/video.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    },
+    {
+      "name": "@web-ppt/vue",
+      "directory": "packages/vue",
+      "type": "module",
+      "exports": [
+        {
+          "subpath": ".",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/vue.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./chart-shared",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/chart-shared/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/chart-shared.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./media",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/media/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/media.js"
+              }
+            ]
+          }
+        },
+        {
+          "subpath": "./package.json",
+          "resolution": "./package.json"
+        },
+        {
+          "subpath": "./templates",
+          "resolution": {
+            "conditions": [
+              {
+                "condition": "types",
+                "resolution": "./dist/templates/index.d.ts"
+              },
+              {
+                "condition": "import",
+                "resolution": "./dist/templates.js"
+              }
+            ]
+          }
+        }
+      ],
+      "bin": {}
+    }
+  ],
+  "schemas": [
+    {
+      "specifier": "@web-ppt/edit-core/agent/schema.json",
+      "target": "./schemas/agent-tools.schema.json",
+      "dialect": "http://json-schema.org/draft-07/schema#",
+      "id": "https://web-ppt.dev/schemas/agent-tools.schema.json",
+      "sha256": "204615480ec8b360533ff8991b76ffd920c2a498adeb5a353ad6d9280f39267a"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/describe/schema.json",
+      "target": "./schemas/describe.schema.json",
+      "dialect": "http://json-schema.org/draft-07/schema#",
+      "id": null,
+      "sha256": "335791d05d1154f60cd9ee0fcfd4b31b1cace4581892bf40f8be19fdb68e05fe"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/fill/schema.json",
+      "target": "./schemas/template-fill.schema.json",
+      "dialect": "http://json-schema.org/draft-07/schema#",
+      "id": "https://web-ppt.dev/schemas/template-fill.schema.json",
+      "sha256": "bce209c0caaabd7a96406078ce1579a0969784cc204ec5f925459eea6e35c6fd"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/lint/schema.json",
+      "target": "./schemas/lint.schema.json",
+      "dialect": "http://json-schema.org/draft-07/schema#",
+      "id": null,
+      "sha256": "e55e5e620e337796d508d6852133897857e852a33940d48c7d8e7108c3785ec3"
+    }
+  ],
+  "resources": [
+    {
+      "package": "@web-ppt/agent-mcp",
+      "target": "./skills/web-ppt/SKILL.md",
+      "sha256": "b00bfe762457040e3d8181d6d4555e155a465f28a5ff7261bfa15ac26c931348"
+    }
+  ],
+  "protocols": [
+    {
+      "specifier": "@web-ppt/collab",
+      "symbol": "CollabMessage",
+      "property": "version",
+      "version": 1,
+      "source": "packages/collab/src/types.ts"
+    },
+    {
+      "specifier": "@web-ppt/collab",
+      "symbol": "CollaborationCheckpoint",
+      "property": "version",
+      "version": 1,
+      "source": "packages/collab/src/types.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/describe",
+      "symbol": "PresentationDescription",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/describe/types.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core",
+      "symbol": "EDITOR_RECOVERY_VERSION",
+      "version": 1,
+      "source": "packages/edit-core/src/recovery.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core",
+      "symbol": "ElementClipboardPayload",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/commands/clipboard-types.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core",
+      "symbol": "ExtensionMigrationReceipt",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/extension-migration-receipt.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/fill",
+      "symbol": "TemplateFillOutline",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/fill/types.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core/lint",
+      "symbol": "LayoutLintReport",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/lint/report.ts"
+    },
+    {
+      "specifier": "@web-ppt/edit-core",
+      "symbol": "RecoveryFrame",
+      "property": "version",
+      "version": 1,
+      "source": "packages/edit-core/src/recovery-types.ts"
+    },
+    {
+      "specifier": "@web-ppt/editor",
+      "symbol": "RecoveryStoreJournal",
+      "property": "version",
+      "version": 1,
+      "source": "packages/editor/src/recovery-store.ts"
+    }
+  ]
+}

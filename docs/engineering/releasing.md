@@ -16,7 +16,7 @@
 | # | 动作 | 说明 |
 |---|---|---|
 | 1 | 九个包 `package.json` 版本改成同一个值 | 同步内部 peer 范围和 `package-lock.json`；预发布 peer 范围必须包含当前 beta。MCP 握手软件版本自动读取包清单，回归校验一致；流水线逐包校验 tag 与版本一致 |
-| 2 | 更新 `CHANGELOG.md` | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
+| 2 | 更新 `CHANGELOG.md`，复查 API 候选和迁移说明 | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红）；公开面改变时按[API 契约](../api/api-stability.md)更新文档、类型回归和机器清单 |
 | 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数） |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
 | 5 | 等待发布流水线成功，逐包查询官方 registry 的版本与 dist-tag，并完成安装验证 | beta 使用 `next`，稳定版使用 `latest`；tag、提交或文档条目不代表 npm 已发布。新包首发与发布授权未完成时，保留待发布状态 |
@@ -28,6 +28,8 @@
 跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。verify 链对测试落盘依赖的三处降级（`verify-v08-readiness` 的产物检查、`measure-expanded` 的套件计数、`verify-consistency` 的 counts）在快路径下黄字跳过、全量路径行为不变——完整性均由同 commit 的 CI 覆盖。
 
 `verify` 按 npm 实际打包清单拒绝公开包夹带演示稿或模板二进制，私有评测文稿不属于 SDK 交付。审计调用锁定的 npm workspace、Arborist 与 packlist 正式 API，不执行包生命周期或创建 tarball；正式发布仍按原有 `prepack` 同步文档。
+
+API 候选门禁在功能测试前检查源码清单并执行变异自测，在 `verify` 前用 `node tooling/check-api-contract.mjs --dist` 严格检查九包全部 exports、声明、MCP CLI / Skill、四份 Schema 和协议版本。`docs/api/api-contract.json` 处于 candidate 阶段；通过该门禁不宣布 1.0 冻结，也不替代 beta 反馈、真实语料或 PowerPoint 验收。
 
 ## 3. Trusted Publishing（OIDC）的环境要求
 
@@ -73,6 +75,7 @@ npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
 | tag 与包版本不一致 | 第一步校验红，改齐九个 package.json 重打 tag |
 | scoped 包发布报 404（不是 401） | OIDC 没配上或包不存在：新包先本地首发 + 配 trusted publisher。已有包也要**逐包**在 npm 包设置里配 Trusted Publisher（GitHub Actions · `unStone/web-ppt` · `release.yml`，允许直接 publish）——每个包单独配置、互相不继承，0.5.0-beta.7 的 7 个包曾因此全部 404。配完 2 天内须完成一次成功发布，否则配置过期 |
 | verify 报体积 / 断言数漂移 | 数字声明与实测不符：先本地实测（`npm test` 后 `npm run build` 再 `npm run verify`），不要照抄旧值 |
+| API 候选清单漂移或发布入口缺失 | 对照[API 契约](../api/api-stability.md)核实 exports、Schema、协议和产物；有意变更须补迁移说明与类型 / 行为回归后才用 `--write` 更新清单，缺产物则修正构建，不跳过审计 |
 | verify 跳过体积核对 | 没先 `npm run build`，dist 不存在时体积组整体跳过——「跳过」不等于「通过」 |
 | CLI 显示成功或 processing，但精确版本尚不可读 | 等待官方 registry 的目标版本与 tarball 可读并比对 integrity，再做全新安装；`0.0.0-stage` 占位版本不计作目标版本发布完成，不据此猜测或执行审批 |
 | `npm whoami` 返回 401 | 当前登录凭据无效，先通过 `npm login --registry=https://registry.npmjs.org/` 刷新身份；`PUT 404` 本身不能判定是身份、scope 还是发布状态问题 |

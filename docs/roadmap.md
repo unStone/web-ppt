@@ -196,6 +196,7 @@ flowchart LR
 | **0.8.0-beta.1**（已发布） | 模板填充生成、编辑器 WebMCP，包含 0.7 线已实现能力 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) / [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) | ✅ 2026-11-04 发布；同提交完整 CI 与发布门禁通过，八包实际 OIDC 发布成功、MCP 首发和发布关系回读通过；九包 registry 全新安装验收通过 |
 | **0.8.0-beta.2**（已发布） | Agent 评测工具、确定性图元固件与发布文件清单审计 | Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 九包已实际 OIDC 发布，MCP 关系完成首次激活；隔离安装发现握手软件版本硬编码为 `beta.1`，修正版见 `beta.3` |
 | **0.8.0-beta.3**（`next`） | MCP 握手软件版本来自包清单，源码/产物回归共同校验 | [MCP 接口](api/agent-mcp.md) | ✅ 2026-11-04 九包实际 OIDC 发布；四项门禁、同提交 CI、九包本地候选及官方 registry 匿名隔离安装通过；Node 20/24 的真实 CLI 握手 `beta.3` 与十工具正确 |
+| **0.8.0-beta.4**（准备发布） | 1.0 API 候选清单、漂移检查与源码/发布类型契约 | [API 契约](api/api-stability.md) · [候选清单](api/api-contract.json) | 四项门禁、同提交 CI、九包 OIDC 与隔离安装待完成；正式冻结条件继续保留 |
 | **0.8.0** | 模板填充生成、编辑器 WebMCP、Agent 任务评测集 | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) / [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 所列票据关闭；beta 反馈周期；Windows 真机 |
 | **1.0.0** | 冻结现有公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.8 beta 反馈收口；ChartEx 真实语料与 Windows 验收（§7.3） |
 
@@ -330,9 +331,9 @@ flowchart LR
 
 | 项 | 剩余 | 完成判定 |
 |---|---|---|
-| 冻结范围 | [API 契约](api/api-stability.md)仍写着 `0.5.0-beta.5`，需更新为 0.8 的实际公开面：八个既有包 + Agent 新包的 exports 子路径、describe / lint / 工具 / 大纲四份 JSON Schema、恢复与协同协议版本 | 冻结清单逐条对应 `package.json#exports` 与生成 Schema，`verify` 比对 |
-| 实验性入口 | 逐项决定转正或明确排除在冻结之外（矢量 PDF 若已在 0.6 转正则不在此列；`videoOverlay`、WebM 音轨等） | 每项在 API 契约中有「稳定 / 排除」结论 |
-| 迁移说明 | 汇总 0.5–0.8 的全部语义变化（如 0.5.0 的 `elementFrameToSlideMatrix` 沿渲染链求值） | API 契约的迁移表覆盖每一项，类型契约 `tooling/type-contracts/` 有对应负例 |
+| 冻结范围 | `beta.4` 建立[候选清单](api/api-contract.json)，覆盖九包条件导出、describe / lint / 工具 / 大纲四份 JSON Schema、恢复/协同协议与 MCP 资源；正式冻结待反馈及交付条件满足 | 统一测试审计源码漂移，`verify` 复验全部交付目标与公开声明，更新清单须显式执行并审查差异 |
+| 实验性入口 | `beta.4` 已逐项记录候选边界：矢量 PDF、WebM 音轨纳入稳定候选，`videoOverlay` 保持实验性；官网 WebMCP 不属于发布 SDK 冻结范围 | 每项在 API 契约中有明确结论，正式冻结前结合 beta 反馈复查 |
+| 迁移说明 | `beta.4` 已补充 0.5 组合坐标语义与 0.6–0.8 Node、媒体、Agent、MCP 和模板填充迁移表；新增公开面类型正反例同时校验源码与发布声明 | 后续公开面变化继续同步迁移说明与类型/行为回归 |
 | ChartEx 真实语料 | [002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)：除漏斗外六类缺 PowerPoint 存出的 PPTX | 逐类型来源、哈希、原生布局与保存重开证据；缺失的类型在[能力边界](api/chartex-native.md)中如实标注 |
 | Windows 真机 | [010](wayfinder/ppt-editor/tickets/010-prove-m1-save.md)：自托管 runner 跑出绑定 revision 的 30/30 报告 | 报告通过 Node 校验器；1.0 不再适用豁免 |
 | 发布 | `1.0.0-rc.N` 到 `next` 收集反馈，再转正 | 与 0.6.0 发布检查项相同 |

@@ -14,6 +14,8 @@
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
+| `npm run test:api-contract` / `npm run test:api-contract:dist` | 检查 API 候选清单及变异自测 / 检查 npm 交付文件与公开类型声明 |
+| `npm run schema:api-contract` | 有意修改公开面并补齐迁移说明后，显式生成候选清单；必须审查差异 |
 | `npm run schema:describe` | 从 TypeScript 输出类型重新生成 Agent describe 的发布 Schema |
 | `npm run schema:lint` / `npm run test:lint` | 生成布局报告 Schema / 验证七项检查、字体服务、实际像素采样和全固件环境对照 |
 | `npm run test:describe` / `npm run test:describe:dist` | 结构化读出源码 / 发布入口、Schema 与全部固件跨进程一致性验证 |
