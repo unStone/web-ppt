@@ -4,6 +4,8 @@
 
 ## 0.8.0-beta.3 - 2026-11-04
 
+九包已实际通过 GitHub OIDC 发布到 npm `next`。官方 registry 的匿名下载、实际 SRI、隔离安装、SDK / fill Schema 和 MCP `beta.3` 握手及十工具均通过，Node 20 / 24 均已复验。
+
 - MCP 初始化的 `serverInfo.version` 唯一读取自身公开包清单，源码、独立构建和隔离安装均报告实际软件版本。
 - MCP 源码与发布产物回归均验证真实 stdio 握手版本，避免后续发版遗漏手写常量。
 

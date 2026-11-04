@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-11-04，Git 基线 `v0.8.0-beta.2`，九包 npm `next` 均为 `0.8.0-beta.2`；MCP 握手版本修正版 `beta.3` 为发布候选。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-11-04，Git 基线 `v0.8.0-beta.3`，九包 npm `next` 均为 `0.8.0-beta.3`；MCP 实际安装握手版本与包清单一致。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力清单，并给出 0.5 转正到 1.0 的路径，以及面向 AI Agent 的下一阶段（依据见 [AI 与演示文稿调研](research/ai-presentation-landscape.md)）。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -106,7 +106,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 
 | 能力 | 状态 |
 |---|---|
-| 发布包 | npm 九包 `next` 均为 `0.8.0-beta.2`；既有八包 `latest` 为 `0.6.0`，MCP 的 `latest` 为 `beta.1`；九包实际 OIDC 发布已通过，MCP Trusted Publisher 已激活，`beta.3` 修正握手软件版本 |
+| 发布包 | npm 九包 `next` 均为 `0.8.0-beta.3`；既有八包 `latest` 为 `0.6.0`，MCP 的 `latest` 为 `beta.1`；九包实际 OIDC 与匿名隔离安装均通过，MCP Trusted Publisher 已激活且握手软件版本正确 |
 | 框架适配 | ✅ React 1.12KB + Vue 1.34KB gzip，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
@@ -194,8 +194,8 @@ flowchart LR
 | **0.6.0**（`latest`） | 下一阶段收口：矢量 PDF 转为正式入口、视频音轨与内嵌视频合成、OLE 官网入口；Agent 第一批：describe、lint、Node 渲染 | 下一阶段 [005](wayfinder/ppt-portability-fidelity/tickets/005-vector-pdf.md) / [006](wayfinder/ppt-portability-fidelity/tickets/006-video-audio-track.md) / [007](wayfinder/ppt-portability-fidelity/tickets/007-video-media-composition.md) / [014](wayfinder/ppt-portability-fidelity/tickets/014-ole-docx-runs-tables.md) / [015](wayfinder/ppt-portability-fidelity/tickets/015-ole-xlsx-styles-richtext.md)；Agent [001](wayfinder/ppt-agent-interface/tickets/001-structured-describe.md) / [002](wayfinder/ppt-agent-interface/tickets/002-layout-lint.md) / [003](wayfinder/ppt-agent-interface/tickets/003-node-render.md) | ✅ 2026-11-02 转正；Windows 真机经维护者决定延后且未计为通过 |
 | **0.7.0**（未发布） | Agent 第二批：命令工具面、MCP server 与 Agent Skill；新增发布包 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) | 流水线因 `agent-mcp` 未完成首发而终止；能力并入 `0.8.0-beta.1` |
 | **0.8.0-beta.1**（已发布） | 模板填充生成、编辑器 WebMCP，包含 0.7 线已实现能力 | Agent [004](wayfinder/ppt-agent-interface/tickets/004-command-tool-surface.md) / [005](wayfinder/ppt-agent-interface/tickets/005-mcp-server-skill.md) / [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) | ✅ 2026-11-04 发布；同提交完整 CI 与发布门禁通过，八包实际 OIDC 发布成功、MCP 首发和发布关系回读通过；九包 registry 全新安装验收通过 |
-| **0.8.0-beta.2**（`next`） | Agent 评测工具、确定性图元固件与发布文件清单审计 | Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 九包已实际 OIDC 发布，MCP 关系完成首次激活；隔离安装发现握手软件版本硬编码为 `beta.1`，修正版见 `beta.3` |
-| **0.8.0-beta.3**（发布候选） | MCP 握手软件版本来自包清单，源码/产物回归共同校验 | [MCP 接口](api/agent-mcp.md) | 九包及 peer 已统一；源码、dist 各 58 项及真实 tarball 握手通过，等待完整门禁、CI、发布和 registry 验收 |
+| **0.8.0-beta.2**（已发布） | Agent 评测工具、确定性图元固件与发布文件清单审计 | Agent [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 九包已实际 OIDC 发布，MCP 关系完成首次激活；隔离安装发现握手软件版本硬编码为 `beta.1`，修正版见 `beta.3` |
+| **0.8.0-beta.3**（`next`） | MCP 握手软件版本来自包清单，源码/产物回归共同校验 | [MCP 接口](api/agent-mcp.md) | ✅ 2026-11-04 九包实际 OIDC 发布；四项门禁、同提交 CI、九包本地候选及官方 registry 匿名隔离安装通过；Node 20/24 的真实 CLI 握手 `beta.3` 与十工具正确 |
 | **0.8.0** | 模板填充生成、编辑器 WebMCP、Agent 任务评测集 | Agent [006](wayfinder/ppt-agent-interface/tickets/006-editor-webmcp.md) / [007](wayfinder/ppt-agent-interface/tickets/007-template-fill.md) / [008](wayfinder/ppt-agent-interface/tickets/008-agent-task-eval.md) | 所列票据关闭；beta 反馈周期；Windows 真机 |
 | **1.0.0** | 冻结现有公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.8 beta 反馈收口；ChartEx 真实语料与 Windows 验收（§7.3） |
 

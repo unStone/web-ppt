@@ -55,6 +55,8 @@ npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
 
 已有版本会被逐包跳过，手动重跑可验证触发与幂等性，但不能把跳过当作实际 OIDC 发布证据。[0.8.0-beta.2 实际发布](https://github.com/unStone/web-ppt/actions/runs/41736895205)的九个包均实际发布并生成 GitHub provenance，MCP 由此完成首次成功 OIDC 发布激活；[此前的手动重跑](https://github.com/unStone/web-ppt/actions/runs/41686583749)只验证了触发与逐包跳过。
 
+[0.8.0-beta.3 实际发布](https://github.com/unStone/web-ppt/actions/runs/41746792166)再次完成九包 OIDC 发布。匿名 registry 下载的实际 SRI、九包隔离安装、SDK 入口及 fill Schema 均通过，Node 20 / 24 的实际 CLI 握手均报告 `beta.3` 并提供十个工具。
+
 发布前必须用真实 stdio Client 校验 `serverInfo.version` 等于包清单版本；MCP 服务通过自身公开的 `package.json` 读取该值，不维护第二份版本常量。安装验收继续独立检查实际发布 CLI 的握手版本。
 
 ## 4. 重跑与跳过的语义
