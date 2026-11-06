@@ -64,7 +64,7 @@ export async function runTransitionEditorContract({ lib, viewer, load, check, wi
     const history = session.editor.history.undoCount;
     const selection = JSON.stringify(session.editor.selection);
     check('默认挂载不创建切换控制器动画且查询直接读取有效模型',
-      animations.calls.length === 0 && view.queryTransition().value.type === 'fade'
+      animations.calls.length === 0 && view.queryTransition().value.type === 'wedge'
         && view.transitionPreview === null
         && !view.queryTransition().direct
         && !container.querySelector('[data-ppt-transition-preview]'));
@@ -99,7 +99,7 @@ export async function runTransitionEditorContract({ lib, viewer, load, check, wi
         && other.queryTransition().value.type === 'morph'
         && other.queryTransition().value.morphBy === 'byWord');
     check('恢复来源同样使用当前稳定页身份', view.setTransition(null)
-      && other.queryTransition().value.type === 'fade' && !other.queryTransition().direct);
+      && other.queryTransition().value.type === 'wedge' && !other.queryTransition().direct);
 
     const pending = other.previewTransition({ type: 'wipe', dir: 'd', durationMs: 700 });
     const pendingCalls = animations.calls.slice(-2);
@@ -117,7 +117,7 @@ export async function runTransitionEditorContract({ lib, viewer, load, check, wi
     });
     adapter.setView({ slideId: adapter.snapshot.session.editor.doc.slideOrder[1], mode: 'edit' });
     check('无 DOM 挂载的 ready adapter 仍可查询和编辑模型',
-      adapter.queryTransition().value.type === 'fade'
+      adapter.queryTransition().value.type === 'wedge'
         && adapter.setTransition({ type: 'cut', durationMs: 320 })
         && adapter.queryTransition().value.type === 'cut');
     adapter.setView({ mode: 'view' });
@@ -129,7 +129,7 @@ export async function runTransitionEditorContract({ lib, viewer, load, check, wi
     adapter.setView({ mode: 'view' });
     adapter.attach(mount);
     check('框架 adapter 公开同一查询与查看权限边界',
-      adapter.queryTransition().value.type === 'fade'
+      adapter.queryTransition().value.type === 'wedge'
         && adapter.setTransition({ type: 'cut' }) === false);
     const adapterPreview = adapter.previewTransition({ type: 'cut', durationMs: 300 });
     const adapterCalls = animations.calls.slice(-2);

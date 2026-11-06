@@ -74,7 +74,7 @@ export async function runThemeEditContract({ edit, core, load, check }) {
     reopenedTheme.colors.accent1 === 'rgb(17,34,51)'
       && reopenedTheme.fonts.minor.latin === 'Theme Edited Latin'
       && fillColor(edit.effectiveElement(reopened, reopenedShape.id)) === 'rgb(17,34,51)'
-      && new TextDecoder().decode(reopened.package.parts[source.id]).includes('data-keep="theme-source"')
+      && new TextDecoder().decode(reopened.package.parts[source.id]).includes('tk:keep="theme-source"')
       && Buffer.compare(Buffer.from(reopened.package.parts[other.id]), Buffer.from(otherTheme)) === 0);
   edit.disposeDoc(reopened);
 

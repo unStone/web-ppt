@@ -1,3 +1,4 @@
+import { unzipSync, zipSync } from 'fflate';
 import { diffPackageBytes } from '../diff-package.mjs';
 
 const decoder = new TextDecoder();
@@ -70,7 +71,7 @@ export async function runHyperlinkSaveContract({ edit, core, load, check, saveAr
   const hoverSaved = await editor.saveDetailed();
   const hoverXml = decoder.decode(hoverSaved.package.parts[part]);
   const hoverRels = decoder.decode(hoverSaved.package.parts[relsPart]);
-  check('替换 click 链接保留 hlinkMouseOver、未知属性/扩展及其关系',
+  check('替换 click 链接保留 hlinkHover、未知属性/扩展及其关系',
     hoverXml.includes('tooltip="KEEP-HOVER" fixture:keep="hover"')
       && hoverXml.includes('fixture:keep="click"')
       && hoverXml.includes('uri="{KEEP-CLICK}"')
@@ -145,4 +146,40 @@ export async function runHyperlinkSaveContract({ edit, core, load, check, saveAr
       && !removedTargetRels.includes('Id="rId8"')
       && !removedTargetRels.includes('Target="slide3.xml"'));
   edit.disposeDoc(removedTargetDoc);
+
+  // 形状的悬停链接在 p:cNvPr 里叫 hlinkHover（文字 run 里才叫 hlinkMouseOver）。
+  // 下面两个变体在内存里改写固件，覆盖「只有悬停链接时新增点击链接」与「悬停链接目标页被删除」。
+  const variant = async (rewrite, idPrefix) => {
+    const files = unzipSync(load('sample-editor-hyperlinks.pptx').slice());
+    const slide = decoder.decode(files['ppt/slides/slide1.xml']);
+    const next = rewrite(slide);
+    if (next === slide) throw new Error(`${idPrefix} 固件改写没有命中`);
+    files['ppt/slides/slide1.xml'] = new TextEncoder().encode(next);
+    const variantPresentation = await core.parse(zipSync(files), {
+      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    });
+    const variantDoc = edit.createDoc(variantPresentation, { idPrefix });
+    return { variantDoc, variantEditor: new edit.Editor(variantDoc) };
+  };
+  const hoverOnly = await variant((xml) => xml.replace(
+    /(<p:cNvPr id="\d+" name="link-hover-preserve">)\s*<a:hlinkClick\b[\s\S]*?<\/a:hlinkClick>/, '$1'), 'hyperlink-hover-only-');
+  hoverOnly.variantEditor.exec({
+    type: 'SetLink', id: byName(hoverOnly.variantDoc, 'link-hover-preserve').id,
+    target: { kind: 'external', href: 'https://example.com/click-added' },
+  });
+  const hoverOnlyXml = decoder.decode((await hoverOnly.variantEditor.saveDetailed()).package.parts['ppt/slides/slide1.xml']);
+  const hoverOnlyProperties = hoverOnlyXml.match(/<p:cNvPr[^>]*name="link-hover-preserve">[\s\S]*?<\/p:cNvPr>/)?.[0] ?? '';
+  check('只有悬停链接的形状新增点击链接时，hlinkClick 按 schema 写在 hlinkHover 之前',
+    hoverOnlyProperties.includes('<a:hlinkClick')
+      && hoverOnlyProperties.indexOf('<a:hlinkClick') < hoverOnlyProperties.indexOf('<a:hlinkHover'));
+  edit.disposeDoc(hoverOnly.variantDoc);
+
+  const hoverJump = await variant((xml) => xml.replace(
+    '<a:hlinkHover r:id="rId3" tooltip="KEEP-HOVER" fixture:keep="hover"/>',
+    '<a:hlinkHover r:id="rId8" action="ppaction://hlinksldjump"/>'), 'hyperlink-hover-dangling-');
+  hoverJump.variantEditor.exec({ type: 'RemoveSlide', id: hoverJump.variantDoc.slideOrder[2] });
+  const hoverJumpXml = decoder.decode((await hoverJump.variantEditor.saveDetailed()).package.parts['ppt/slides/slide1.xml']);
+  check('悬停链接的目标页删除后 hlinkHover 一并清理，不留悬空 r:id',
+    !hoverJumpXml.includes('<a:hlinkHover r:id="rId8"') && !hoverJumpXml.includes('r:id="rId8"'));
+  edit.disposeDoc(hoverJump.variantDoc);
 }

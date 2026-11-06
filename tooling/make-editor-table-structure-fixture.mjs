@@ -29,9 +29,8 @@ const table = `<p:graphicFrame>
 <p:nvGraphicFramePr><p:cNvPr id="${nextShapeId()}" name="结构编辑基线"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
 <p:xfrm><a:off x="${px(120)}" y="${px(110)}"/><a:ext cx="${px(width)}" cy="${px(height)}"/></p:xfrm>
 <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl>
-<a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${widths.map((value) => `<a:gridCol w="${px(value)}"/>`).join('')}</a:tblGrid>
+<a:tblPr firstRow="1" bandRow="1"><a:extLst><a:ext uri="{TABLE-STRUCTURE-KEEP}"><fixture:keep xmlns:fixture="urn:web-ppt:fixture" value="grid"/></a:ext></a:extLst></a:tblPr><a:tblGrid>${widths.map((value) => `<a:gridCol w="${px(value)}"/>`).join('')}</a:tblGrid>
 ${rows.map((cells, index) => `<a:tr h="${px(heights[index])}">${cells.join('')}</a:tr>`).join('\n')}
-<a:extLst><a:ext uri="{TABLE-STRUCTURE-KEEP}"><fixture:keep xmlns:fixture="urn:web-ppt:fixture" value="grid"/></a:ext></a:extLst>
 </a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 
 const bytes = deck({

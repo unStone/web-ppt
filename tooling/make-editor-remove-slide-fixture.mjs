@@ -19,7 +19,7 @@ const pageField = (index) => `<p:sp>
 <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{10000000-0000-0000-0000-00000000000${index}}" type="slidenum"><a:rPr sz="1200"/><a:t>${index}</a:t></a:fld></a:p></p:txBody>
 </p:sp>`;
 const nextLink = (index) => `<p:sp>
-<p:nvSpPr><p:cNvPr id="${30 + index}" name="下一页 ${index}"><a:hlinkClick action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:nvSpPr><p:cNvPr id="${30 + index}" name="下一页 ${index}"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(1180)}" y="${px(40)}"/><a:ext cx="${px(40)}" cy="${px(40)}"/></a:xfrm><a:prstGeom prst="rightArrow"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr>
 </p:sp>`;
 const sharedPicture = (index) => `<p:pic>
@@ -55,7 +55,7 @@ const bytes = deck({
   extraEntries: [
     ['ppt/media/shared.png', makePng(1, 1, () => [33, 150, 243])],
     ['customXml/keep.xml', `${XML}<keep xmlns="urn:web-ppt:remove-slide">原位保留</keep>`],
-    ['ppt/charts/chartKeep.xml', `${XML}<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart/></c:chartSpace>`],
+    ['ppt/charts/chartKeep.xml', `${XML}<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:layout/><c:barChart><c:barDir val="col"/><c:axId val="1"/><c:axId val="2"/></c:barChart></c:plotArea><c:plotVisOnly val="1"/></c:chart></c:chartSpace>`],
     ['ppt/comments/commentKeep.xml', `${XML}<p:cmLst xmlns:p="${NS.p}"><p:cm authorId="42" idx="7"><p:pos x="100" y="200"/><p:text>只保留不级联</p:text></p:cm></p:cmLst>`],
     ['ppt/notesMasters/notesMasterKeep.xml', `${XML}<p:notesMaster xmlns:a="${NS.a}" xmlns:p="${NS.p}"><p:cSld><p:spTree>${nvGrp}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:hf/><p:notesStyle/></p:notesMaster>`],
     ['ppt/notesMasters/_rels/notesMasterKeep.xml.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="theme-keep" Type="${REL}/theme" Target="../theme/theme1.xml"/></Relationships>`],

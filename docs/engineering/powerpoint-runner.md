@@ -48,3 +48,13 @@ npm run test:edit:powerpoint
 Node 校验器会独立重读清单和文件字节，只接受一小时内、与当前 HEAD 完全绑定且全部成功的报告。
 LibreOffice 门禁读取同一个 `out/v07-integration/office-artifacts.json`，逐件验证页数与无修复打开；Windows
 工作流无论成功失败都会上传这份清单、报告和对应 `.pptx`，便于复核。
+
+## 与 OOXML 合法性门禁的分工
+
+[OOXML 门禁](testing.md#7-6-ooxml-合法性门禁)（`npm run test:ooxml`）用 ECMA-376 XSD 与 Open XML
+SDK 在 Linux CI 上拦截结构性非法（sequence 顺序、必填子元素、枚举取值），它在每次推送时运行、
+覆盖全部保存产物；本门禁验证的是桌面 PowerPoint 的实际接受度，覆盖 0.7 统一清单的 11 件产物。
+两者的关系：XSD / SDK 都不覆盖渲染语义与 PowerPoint 的私有宽容度，**通过校验不等于 PowerPoint
+验收通过**；而 LibreOffice 能容忍的顺序错误 PowerPoint 可能要求修复，OOXML 门禁正是为在真机
+之前拦下这类差距。真机门禁按 [0.8.0 发布条件](../roadmap.md) 仍是正式发布的独立条件，暂缓期间
+由维护者显式决定豁免口径并记录在 roadmap。

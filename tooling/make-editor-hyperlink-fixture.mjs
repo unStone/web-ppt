@@ -26,7 +26,7 @@ const hoverShape = sp({
   /<p:cNvPr id="(\d+)" name="link-hover-preserve"\/>/,
   `<p:cNvPr id="$1" name="link-hover-preserve">
 <a:hlinkClick r:id="rId2" tooltip="KEEP-CLICK" fixture:keep="click"><a:extLst><a:ext uri="{KEEP-CLICK}"><fixture:keep value="click"/></a:ext></a:extLst></a:hlinkClick>
-<a:hlinkMouseOver r:id="rId3" tooltip="KEEP-HOVER" fixture:keep="hover"/>
+<a:hlinkHover r:id="rId3" tooltip="KEEP-HOVER" fixture:keep="hover"/>
 </p:cNvPr>`,
 );
 
@@ -35,7 +35,7 @@ const relativeShape = sp({
   fill: solid('accent3'), text: label('next', 1400),
 }).replace(
   /<p:cNvPr id="(\d+)" name="link-relative-next"\/>/,
-  '<p:cNvPr id="$1" name="link-relative-next"><a:hlinkClick action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr>',
+  '<p:cNvPr id="$1" name="link-relative-next"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr>',
 );
 
 const richText = sp({

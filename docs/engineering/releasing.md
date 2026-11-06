@@ -6,7 +6,7 @@
 
 | workflow | 触发 | 职责 |
 |---|---|---|
-| `ci.yml` | push 到 master / PR | 类型检查 → 重生成固件并 `git diff` 验证确定性 → `test:functional` → 性能采样（不阻断）→ LibreOffice / 统一清单外部打开测试 |
+| `ci.yml` | push 到 master / PR | 类型检查 → 重生成固件并 `git diff` 验证确定性 → `test:functional` → 性能采样（不阻断）→ LibreOffice / 统一清单外部打开测试 → 构建 → OOXML 合法性门禁 |
 | `release.yml` | 推 `v*` tag 或手动 | 见 §2，发布九个包到 npm |
 | `powerpoint.yml` | 仅 `workflow_dispatch`，限 master / tag | 装有桌面 Office 的自托管 Windows 机器执行真机门禁（不跑 PR 代码），运行手册见 [powerpoint-runner.md](powerpoint-runner.md) |
 | `pages.yml` | push 到 master | 部署官网，单实例并发（新推送取消排队旧任务） |
@@ -17,11 +17,11 @@
 |---|---|---|
 | 1 | 九个包 `package.json` 版本改成同一个值 | 同步内部 peer 范围和 `package-lock.json`；预发布 peer 范围必须包含当前 beta。MCP 握手软件版本自动读取包清单，回归校验一致；流水线逐包校验 tag 与版本一致 |
 | 2 | 更新 `CHANGELOG.md` | 当前版本条目会被 verify 审计（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
-| 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数） |
+| 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify`，再跑 `npm run test:ooxml` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数）；OOXML 门禁读 `npm test` 落盘的保存产物，本机需要 xmllint 与 .NET SDK 8，CI 与发布流水线自带 |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
 | 5 | 等待发布流水线成功，逐包查询官方 registry 的版本与 dist-tag，并完成安装验证 | beta 使用 `next`，稳定版使用 `latest`；tag、提交或文档条目不代表 npm 已发布。新包首发与发布授权未完成时，保留待发布状态 |
 
-流水线内部顺序：`npm ci` → Python / LibreOffice 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。
+流水线内部顺序：`npm ci` → Python / LibreOffice / .NET 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional` → 性能采样（不阻断）→ 编辑性能预算] → `build` → [OOXML 门禁] → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。OOXML 门禁与方括号里的四步一样只在拿不到绿色 CI 时补跑（依赖功能测试落盘的保存产物）。
 
 方括号里的四步只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这四步已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（**实测 2026-11-01：42.5 → 10.3 分钟，-76%**）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
 

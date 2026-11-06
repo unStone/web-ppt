@@ -31,12 +31,13 @@
 | 命令 | 说明 |
 |---|---|
 | `npm run check` | 全仓类型检查（走源码，**不需要先构建**） |
-| `npm test` | 全部测试：2592 + 1154 + 582 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1210 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；Agent 命令工具面 79 项断言；本机 MCP 58 项断言；官网 WebMCP 127 项浏览器断言；模板填充 483 项 + 浏览器 70 项断言；图元固件确定性 115 项断言；ZIP 安全 57 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
+| `npm test` | 全部测试：2592 + 1154 + 584 + 258 + 197 + 29 + 31 + 9 + 451 + 12 + 134 + 130 + 892 + 104 + 31 项断言、212 个快照、1210 对编辑等价指纹；另含扩展能力 2047 项断言、高级文本流转 797 项断言、多级类别 178 项断言；字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；Agent Node 渲染 21 项断言、双端对照 4 项断言；Agent 命令工具面 79 项断言；本机 MCP 58 项断言；官网 WebMCP 127 项浏览器断言；模板填充 483 项 + 浏览器 70 项断言；图元固件确定性 115 项断言；ZIP 安全 57 项断言；OLE 外部打开 11 项断言（LibreOffice 步骤在 CI 与 `npm run test:ole:libreoffice`） |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建九个发布包 |
 | `npm run dev` | 启动 viewer |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`npm run verify -- --net` 另查外链可达） |
 | `npm run compare <file>` | 用 LibreOffice 做 ground truth 对比，产出 SSIM / MAE / Δmax / 差异像素占比 + 热力图 |
+| `npm run test:ooxml` | OOXML 合法性 4 项断言：全部保存产物过 ECMA-376 XSD + Open XML SDK 双通道（结构 / 语义负例各一例必须拦截）。依赖 xmllint 与 .NET 8，且要先跑功能测试落盘产物；CI 在构建后执行，例外逐条登记在 `tooling/lib/ooxml-validation.mjs` |
 
 **改完代码必须跑**：`npm run check && npm test && npm run build && npm run verify`。四条都绿才算完成
 （`verify` 要读测试落盘的断言数与 `dist` 产物体积，所以排在最后）。

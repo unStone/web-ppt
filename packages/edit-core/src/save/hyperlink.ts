@@ -149,8 +149,9 @@ export function createHyperlinkSaveContext(
           const id = findXmlAttribute(child, {
             localName: 'id', namespaceUri: OFFICE_RELATIONSHIPS_NS,
           })?.value;
+          // 悬停链接在文字 rPr 里叫 hlinkMouseOver，在形状 cNvPr 里叫 hlinkHover（CT_NonVisualDrawingProps）
           if (id && dangling.has(id) && child.namespaceUri === DRAWINGML_NS
-            && (child.localName === 'hlinkClick' || child.localName === 'hlinkMouseOver')) {
+            && ['hlinkClick', 'hlinkMouseOver', 'hlinkHover'].includes(child.localName)) {
             removeXmlChild(parent, child);
             retired.add(id);
           } else visit(child);

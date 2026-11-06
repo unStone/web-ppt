@@ -22,6 +22,20 @@ jobs:
           cache: pip
           cache-dependency-path: tooling/font-glyph-requirements.txt
 
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: 缓存 OOXML schema 与 NuGet 包
+        # schema 由 prepare 脚本按 SHA256 钉版下载，脚本不变则内容不变；
+        # NuGet 还原结果只取决于 csproj 的包引用版本。
+        uses: actions/cache@v4
+        with:
+          path: |
+            out/ooxml-schemas
+            ~/.nuget/packages
+          key: ooxml-${{ hashFiles('tooling/prepare-ooxml-schemas.mjs', 'tooling/ooxml-validate/ooxml-validate.csproj') }}
+
       - name: 安装字体与 PDF 独立读取依赖
         run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
 
@@ -43,7 +57,8 @@ jobs:
         # writer / calc 是 OLE 嵌入文档外部打开测试的导入 filter——只装 impress 时
         # soffice 对 .docx/.xlsx 报 "source file could not be loaded"。
         # ffmpeg 供视频导出测试生成媒体与独立提帧断言（缺失时相关套件自行降级）。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk ffmpeg
+        # libxml2-utils 提供 OOXML 门禁的 xmllint（XSD 结构校验）。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk ffmpeg libxml2-utils
 
       - name: 全量功能测试
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
@@ -73,6 +88,11 @@ jobs:
 
       - name: 构建
         run: npm run build
+
+      - name: OOXML 合法性门禁
+        # 依赖全量功能测试落盘的保存产物与 dist 构建：XSD（ECMA-376 Transitional）
+        # 与 Open XML SDK 双通道校验，任一错误失败并打印错误 Id、部件与 XPath。
+        run: npm run test:ooxml
 
       - name: 官网双语生产回归
         run: npm run test:site:i18n

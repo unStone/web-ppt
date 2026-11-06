@@ -65,7 +65,7 @@ export async function runEditorTransitionBrowserContract({
   const viewLayer = viewMount.querySelector('[data-ppt-layer="static"]');
   const editLayer = editMount.querySelector('[data-ppt-layer="static"]');
   if (!viewLayer || !editLayer || viewLayer.getAnimations().length !== 0
-    || editLayer.getAnimations().length !== 0 || view.queryTransition().value?.type !== 'fade'
+    || editLayer.getAnimations().length !== 0 || view.queryTransition().value?.type !== 'wedge'
     || view.queryTransition().value?.durationMs !== 800 || previewNode(viewMount)) {
     throw new Error('Chrome 切换初始查询错误或挂载时发生了意外自动播放');
   }
@@ -170,7 +170,7 @@ export async function runEditorTransitionBrowserContract({
     || viewLayer.querySelector('svg') !== viewSvg || editLayer.querySelector('svg') !== editSvg) {
     throw new Error('Chrome 编辑/多视图查询未同步，或元数据修改触发了静态 SVG 重绘');
   }
-  if (!edit.setTransition(null) || edit.queryTransition().value?.type !== 'fade'
+  if (!edit.setTransition(null) || edit.queryTransition().value?.type !== 'wedge'
     || edit.queryTransition().direct) {
     throw new Error('Chrome 恢复来源切换失败');
   }
@@ -180,7 +180,7 @@ export async function runEditorTransitionBrowserContract({
   await adapter.applyBinding({
     session, sessionOwnership: 'external', slideId: fade, mode: 'view', textMode: 'svg',
   });
-  if (adapter.queryTransition()?.value?.type !== 'fade'
+  if (adapter.queryTransition()?.value?.type !== 'wedge'
     || adapter.setTransition({ type: 'cut' }) !== false) {
     throw new Error('Chrome adapter 查询或查看权限边界失败');
   }

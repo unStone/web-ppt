@@ -45,6 +45,8 @@
     "test:media": "node tooling/test-media-insertion.mjs",
     "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
     "test:ole:libreoffice": "node tooling/test-ole-edit.mjs && node tooling/test-ole-edit-libreoffice.mjs",
+    "pretest:ooxml": "npm run build && dotnet build tooling/ooxml-validate",
+    "test:ooxml": "node tooling/test-ooxml-validation.mjs",
     "test:core": "node tooling/test-core.mjs && node tooling/test-parse-preview-parts.mjs",
     "test:zip": "node --expose-gc tooling/test-zip-security.mjs",
     "test:zip:dist": "node --expose-gc tooling/test-zip-security.mjs --dist",

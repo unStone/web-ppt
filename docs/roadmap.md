@@ -26,7 +26,7 @@
 ### 1.2 验证状态
 
 门禁关系与测试套件见[测试规范](engineering/testing.md)。断言数、快照数、指纹数和包体积由 `npm run verify` 按测试与构建产物核对，入口文档不另维护一套总数。
-Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。当前没有 OOXML 结构与语义校验门禁，由[桌面 005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)补齐。
+Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不等于 Windows 验收通过。OOXML 结构与语义校验门禁已由[桌面 005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)补齐（`npm run test:ooxml`）。
 
 ### 1.3 里程碑
 
@@ -42,7 +42,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | M7 | 设计：主题、母版、版式、三套按需模板与统一交付旅程 | ✅ Chrome + 11 件 Office 清单 |
 | 扩展 | 图表/批注/页面适配/内部对象编辑、高级渲染、直接导出与旧 PPT | ✅ 七类能力完成；支持边界见能力矩阵 |
 | M8 | Agent 读写接口 | ✅ 001–008 全部完成 |
-| M9 | 桌面能力补齐：新建图表 / SmartArt、SmartArt 引擎、动画库、公式、放映、导出、导入安全与 OOXML 门禁 | 进行中（004 已完成） |
+| M9 | 桌面能力补齐：新建图表 / SmartArt、SmartArt 引擎、动画库、公式、放映、导出、导入安全与 OOXML 门禁 | 进行中（004、005 已完成） |
 
 ---
 
@@ -142,7 +142,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | SmartArt 与图表细节 | layoutDef 约束 / 规则解释器；趋势线、误差线、数据表 | 6 种布局族；三类图表元素不绘制 | 对方领先 → 桌面 001、003 |
 | 创作面 | 新建图表与 SmartArt、22 套主题、动画库与窗格、公式、合并形状、绘图笔、视图、审阅工具 | 编辑已有对象为主 | 对方领先 → 桌面 002、006–008、013–018 |
 | 放映与交付 | 演讲者双窗口、笔与激光笔、录制、MP4 / GIF / 讲义 PDF | WebM、矢量 PDF（嵌入字体、中文可搜索） | 各有领先 → 桌面 009–011、019 |
-| 工程验证 | Vitest 约 2471 用例、Playwright 约 923 用例（含 axe），无渲染快照 | 逐字节快照、LibreOffice SSIM 对照、真机门禁、确定性固件 | 本仓库领先；导入安全已由桌面 004 完成，OOXML 校验缺失 → 桌面 005 |
+| 工程验证 | Vitest 约 2471 用例、Playwright 约 923 用例（含 axe），无渲染快照 | 逐字节快照、LibreOffice SSIM 对照、真机门禁、确定性固件 | 本仓库领先；导入安全（桌面 004）与 OOXML 校验（桌面 005）均已完成 |
 
 外部代码的参考规则（上游 MIT 可移植、HeyPuter AGPL 不移植）见[桌面地图](wayfinder/ppt-desktop-parity/map.md#外部代码参考规则)。
 
@@ -162,9 +162,9 @@ flowchart TD
 | Windows 真机验收 | 有（PowerPoint 修复提示风险） | 有（自托管 runner） | 按用户要求延后；1.0 不再豁免 |
 | ChartEx 真实语料 | 有（六类缺 PowerPoint 存出样本） | 有（公开语料或真机） | [data-fidelity 002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)，1.0 条件 |
 | SmartArt / OLE 真实样本、高级渲染根因 | 依样本而定 | 有（公开语料 + `npm run compare`） | [portability 008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md)，不绑定版本；008 的样本同时服务桌面 001 |
-| 缺 OOXML 结构与语义校验 | 有（LibreOffice 容忍的错误 PowerPoint 会要求修复） | 有（XSD + Open XML SDK，上游有现成工具） | 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)，P1，0.8.0 |
-| 不能新建图表 | 有（图表是第二高频对象） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.8.0 |
-| 趋势线 / 误差线 / 数据表不绘制 | 有（显示比 PowerPoint 少元素） | 有（上游预览器可参考） | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md)，P1，0.8.0 |
+| OOXML 结构与语义校验 | 有（LibreOffice 容忍的错误 PowerPoint 会要求修复） | 已补齐（XSD + Open XML SDK 双通道，桌面 005 完成） | ✅ [桌面 005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) |
+| 不能新建图表 | 有（图表是第二高频对象） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.9.0 |
+| 趋势线 / 误差线 / 数据表不绘制 | 有（显示比 PowerPoint 少元素） | 有（上游预览器可参考） | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md)，P1，0.9.0 |
 | SmartArt 无缓存排布偏离 | 有（布局族外的布局与编辑后重排不准） | 有（ECMA-376 §21.4，须自行实现） | 桌面 [001](wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md)，P1，依赖真实样本，0.9.0 |
 | 不能新建 SmartArt | 有 | 有（001 之后） | 桌面 [006](wayfinder/ppt-desktop-parity/tickets/006-smartart-authoring.md)，0.9.0 |
 | 动画目录只有 8 个效果 | 有（无法新增大多数动画与运动路径） | 有（上游预设表可参考） | 桌面 [007](wayfinder/ppt-desktop-parity/tickets/007-animation-catalog.md)，0.9.0 |
@@ -190,8 +190,8 @@ flowchart TD
 ```mermaid
 flowchart LR
     V6["0.6.0<br/>已发布"] --> V7["0.7.0<br/>未单独发布<br/>能力并入 0.8 beta"]
-    V7 --> V8["0.8.0<br/>beta.3 已发布<br/>桌面安全与图表补齐"]
-    V8 --> V9["0.9.0<br/>SmartArt · 动画库 · 公式<br/>放映 · 导出 · 字体 · 合并形状"]
+    V7 --> V8["0.8.0<br/>导入安全 · OOXML 门禁<br/>Agent 第三批转正"]
+    V8 --> V9["0.9.0<br/>新建图表 · 图表细节 · SmartArt<br/>动画库 · 公式 · 放映 · 导出 · 字体 · 合并形状"]
     V9 --> V1["1.0.0<br/>API 冻结"]
 ```
 
@@ -200,13 +200,13 @@ flowchart LR
 | **0.6.0**（八包 `latest`） | 矢量 PDF 转正、视频音轨与内嵌视频合成、OLE 官网入口；Agent describe、lint、Node 渲染 | 已关闭 | ✅ 2026-11-02 发布；Windows 真机经维护者决定延后且未计为通过 |
 | **0.7.0**（未单独发布） | Agent 命令工具面、MCP server 与 Agent Skill；新增 `@web-ppt/agent-mcp` | Agent 004 / 005（已关闭） | 首发流水线终止后，能力并入 `0.8.0-beta.1` |
 | **0.8.0-beta.1–3**（`next` 为 beta.3） | Agent 第三批、九包发布与安装验收、MCP 握手版本修正 | Agent 004–008（已关闭） | ✅ 2026-11-04 发布；四项门禁、CI、OIDC、隔离安装与真实 CLI 握手通过 |
-| **0.8.0** | Agent 第三批转正；新建图表与图表细节渲染；导入安全与 OOXML 门禁 | 桌面 002 / 003 / 004 / 005 | 所列票据关闭；四项门禁 + OOXML 门禁；beta 反馈周期 |
-| **0.9.0** | SmartArt 引擎与新建、动画库、公式、放映工具、MP4 / JPEG / GIF、讲义与备注页、嵌入字体写入、合并形状 | 桌面 001 / 006–013 | 所列票据关闭；beta 反馈周期 |
+| **0.8.0** | Agent 第三批转正；导入安全与 OOXML 门禁 | Agent 004–008、桌面 004 / 005（已关闭） | 四项门禁 + OOXML 门禁；原列入本版的桌面 002 / 003 应维护者发版要求顺延到 0.9.0；Windows 真机经维护者决定延后且未计为通过 |
+| **0.9.0** | 新建图表与图表细节渲染、SmartArt 引擎与新建、动画库、公式、放映工具、MP4 / JPEG / GIF、讲义与备注页、嵌入字体写入、合并形状 | 桌面 001–003 / 006–013 | 所列票据关闭；beta 反馈周期 |
 | **1.0.0** | 冻结 0.9 的全部公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.9 beta 反馈收口；ChartEx 真实语料与 Windows 真机（§7.3） |
 
 版本分配的理由：
 
-- 0.8.0 先做导入安全与 OOXML 门禁，后续所有新建能力（图表、SmartArt、公式、字体）的保存产物都在这道门禁下验收；新建图表复用 Agent 007 模板填充的原生图表生成能力。
+- 0.8.0 先做导入安全与 OOXML 门禁，后续所有新建能力（图表、SmartArt、公式、字体）的保存产物都在这道门禁下验收。新建图表（002）与图表细节（003）应维护者要求不阻挡 0.8.0 转正，顺延到 0.9.0；新建图表复用 Agent 007 模板填充的原生图表生成能力。
 - 桌面 001 优先级为 P1，可以立即开工，但完成条件依赖 portability 008 的真实样本，所以放在 0.9.0 发布，不让样本获取阻挡 0.8.0。
 - P3 票（桌面 014–020）与长尾格式票不绑定版本，关闭时随当时的 beta 线发布；1.0 之后以 minor 版本追加，不改变已冻结的接口。
 
@@ -265,13 +265,13 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    subgraph P08["0.8.0（现在）"]
+    subgraph P08["0.8.0"]
       S4["桌面 004 导入安全"]
       V5["桌面 005 OOXML 门禁"]
+    end
+    subgraph P09["0.9.0（现在）"]
       C2["桌面 002 新建图表"]
       C3["桌面 003 图表细节"]
-    end
-    subgraph P09["0.9.0"]
       E1["桌面 001 SmartArt 引擎"] --> E6["桌面 006 新建 SmartArt"]
       T7["桌面 007–013"]
     end
@@ -290,20 +290,21 @@ flowchart LR
 | CI 偶发失败 | `Runtime.evaluate` 超时的根因已定位并修复（被 `Fetch.enable` 拦截却未失败的请求永久挂起）；编辑性能预算（50MB 恢复、210 页回环超 500ms）为 `continue-on-error` 采样，根因待查 | 根因写入对应测试或[测试规范](engineering/testing.md)；master 连续推送 CI 绿 |
 | 已发布版本的缺陷 | 用户反馈的问题 | 以补丁版发布，不混入下一 minor 的能力 |
 
-#### 0.8.0：新建图表 · OOXML 门禁
+#### 0.8.0：导入安全 · OOXML 门禁
 
-Agent 004–008 已完成并随 `0.8.0-beta.3` 交付；桌面 004 导入安全已完成。以下是剩余发布门禁。
+Agent 004–008 随 `0.8.0-beta.3` 交付，桌面 004 导入安全与 005 OOXML 门禁已完成，0.8.0 以此转正。原列入本版的桌面 002 / 003 应维护者发版要求顺延到 0.9.0。
 
-| 票据 | 剩余 | 是否阻挡发布 |
-|---|---|---|
-| 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) OOXML 门禁 | XSD 与 Open XML SDK 两道校验进入 CI；现有保存产物零错误或逐条登记例外；负例拦截 | 是 |
-| 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 是 |
-| 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | 趋势线、误差线、数据表进入 Schema 与两条文本路径；编辑命令与入口 | 是 |
+| 票据 | 结果 |
+|---|---|
+| 桌面 [004](wayfinder/ppt-desktop-parity/tickets/004-import-archive-limits.md) 导入安全 | ✅ 统一安全读取、可配置上限、57 项断言 |
+| 桌面 [005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) OOXML 门禁 | ✅ 双通道进入 CI 与发布流水线、148 份产物零错误、例外逐条登记、负例拦截 |
 
 #### 0.9.0：创作、放映与交付补齐
 
 | 票据 | 剩余 | 依赖 |
 |---|---|---|
+| 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 无 |
+| 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | 趋势线、误差线、数据表进入 Schema 与两条文本路径；编辑命令与入口 | 无 |
 | 桌面 [001](wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md) SmartArt 引擎 | 布局树、全部算法、约束与规则重试；与 PowerPoint 缓存逐形状对照 | portability 008 的真实样本；可立即开工 |
 | 桌面 [006](wayfinder/ppt-desktop-parity/tickets/006-smartart-authoring.md) 新建 SmartArt | 自编布局目录、插入 / 切换布局 / 文本转换命令、产品入口 | 001 |
 | 桌面 [007](wayfinder/ppt-desktop-parity/tickets/007-animation-catalog.md) 动画库 | 全部预设、运动路径、时间设置、动画刷与动画窗格 | 无 |

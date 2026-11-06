@@ -45,7 +45,9 @@ if (!['@web-ppt/edit-core', '@web-ppt/edit-core/xml', '@web-ppt/edit-core/opc']
   .every((entry) => sharedImports.has(entry))) {
   throw new Error('edit-core/chart 没有复用身份、分数序或 XML / OPC 入口');
 }
-const budget = { raw: 85_000, gzip: 25_010 };
+// gzip 25_160（2026-11-06）：桌面 005 OOXML 门禁的轴标题序位修复带入 ~150B 的
+// 后继锚点表（chart/xml-data.ts），已按单字符串字面量压缩到最低。
+const budget = { raw: 85_000, gzip: 25_160 };
 const actual = { raw: closure.raw, gzip: closure.gzip };
 if (['共享删行区域超过安全上限', '共享单元格覆盖无效', '共享缓存来源身份无效'].some(marker => implementation.includes(marker))) {
   throw new Error('chart 默认入口静态引入了共享工作簿实现');

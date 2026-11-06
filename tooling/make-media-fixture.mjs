@@ -400,8 +400,8 @@ function mediaPic({ x, y, w, h, name, kind, linkRid, embedRid, blipRid, mediaRid
   const tag = kind === 'audio' ? 'a:audioFile' : 'a:videoFile';
   const ref = linkRid ? `r:link="${linkRid}"` : `r:embed="${embedRid}"`;
   const p14media = mediaRid
-    ? `<a:extLst><a:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">` +
-      `<p14:media xmlns:p14="${NS_P14}" r:embed="${mediaRid}"/></a:ext></a:extLst>`
+    ? `<p:extLst><p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">` +
+      `<p14:media xmlns:p14="${NS_P14}" r:embed="${mediaRid}"/></p:ext></p:extLst>`
     : '';
   return (
     '<p:pic><p:nvPicPr>' +
@@ -459,8 +459,10 @@ function slideDoc(body, extraNs = '', timing = '') {
   return (
     `${XML}<p:sld xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}"${extraNs}>` +
     `<p:cSld><p:spTree>${nvGrp}${body}</p:spTree></p:cSld>` +
+    // CT_Slide 的 sequence：clrMapOvr 在 transition / timing 之前
+    '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>' +
     timing +
-    '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>'
+    '</p:sld>'
   );
 }
 

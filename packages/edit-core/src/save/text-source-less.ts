@@ -1,5 +1,4 @@
 import type { FlatTextParagraph, TextMark } from '../types';
-import { insertXmlChildUnchecked } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS } from '../xml/qname';
 import { setXmlAttribute } from '../xml/mutate';
@@ -62,7 +61,7 @@ export function materializeRunProperties(properties: XmlElement, mark: TextMark)
   if (mark.props.color) {
     const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');
     appendDrawingColor(fill, mark.props.color);
-    insertXmlChildUnchecked(properties, fill);
+    insertXmlInOrder(properties, fill);
   }
   if (!mark.props.fonts[0]) return;
   const slots = [
@@ -73,6 +72,6 @@ export function materializeRunProperties(properties: XmlElement, mark: TextMark)
   for (const [name, typeface] of slots) {
     const font = namespacedElement(properties, DRAWINGML_NS, name);
     setXmlAttribute(font, 'typeface', typeface);
-    insertXmlChildUnchecked(properties, font);
+    insertXmlInOrder(properties, font);
   }
 }

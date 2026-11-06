@@ -63,7 +63,7 @@ const REFLECTIONS = [
   ['alpha 70% / 间距 12px', refl(70000, 50000, px(12)), solid('accent4'), 'ellipse', ''],
   ['倒影 + 文字', refl(65000, 55000), solid('accent5'), 'roundRect',
     '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>REFLECT</a:t></a:r></a:p>'],
-  ['倒影 + 外阴影', refl(60000, 45000).replace('</a:effectLst>', `${shdw(50800, 38100, 2700000, 40000)}</a:effectLst>`), solid('accent3'), 'star5', ''],
+  ['倒影 + 外阴影', refl(60000, 45000).replace('<a:effectLst>', `<a:effectLst>${shdw(50800, 38100, 2700000, 40000)}`), solid('accent3'), 'star5', ''],
 ];
 
 const slide2 = slideXml(

@@ -26,8 +26,15 @@ const textBodyProperties = [
   a('scene3d'), a('sp3d'), a('flatTx'), a('extLst'),
 ];
 
+const paragraphOrder = [a('lnSpc'), a('spcBef'), a('spcAft'), a('buClrTx', 'buClr'),
+  a('buSzTx', 'buSzPct', 'buSzPts'), a('buFontTx', 'buFont'),
+  a('buNone', 'buAutoNum', 'buChar', 'buBlip'), a('tabLst'), a('defRPr'), a('extLst')];
+
 /** ECMA-376 中编辑路径会触及的复杂类型 sequence；展开名允许任意前缀且不会误伤同名 XML。 */
 export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
+  ...Object.fromEntries(Array.from({ length: 9 }, (_, index) => [
+    expandedName(DRAWINGML_NS, `lvl${index + 1}pPr`), { groups: paragraphOrder },
+  ])),
   [expandedName(DRAWINGML_NS, 'spPr')]: { groups: shapeProperties },
   [expandedName(PRESENTATIONML_NS, 'spPr')]: { groups: shapeProperties },
   [expandedName(PRESENTATIONML_NS, 'grpSpPr')]: { groups: shapeProperties },
@@ -47,14 +54,16 @@ export const OOXML_CHILD_ORDER: Readonly<Record<string, ChildOrderSchema>> = {
       a('uFillTx', 'uFill'), a('latin'), a('ea'), a('cs'), a('sym'),
       a('hlinkClick'), a('hlinkMouseOver'), a('rtl'), a('extLst')],
   },
+  [expandedName(DRAWINGML_NS, 'defRPr')]: {
+    groups: [a('ln'), FILL, EFFECT, a('highlight'), a('uLnTx', 'uLn'),
+      a('uFillTx', 'uFill'), a('latin'), a('ea'), a('cs'), a('sym'),
+      a('hlinkClick'), a('hlinkMouseOver'), a('rtl'), a('extLst')],
+  },
+  // CT_NonVisualDrawingProps 的悬停链接是 hlinkHover（rPr 里同名语义的元素叫 hlinkMouseOver）
   [expandedName(PRESENTATIONML_NS, 'cNvPr')]: {
-    groups: [a('hlinkClick'), a('hlinkMouseOver'), a('extLst')],
+    groups: [a('hlinkClick'), a('hlinkHover'), a('extLst')],
   },
-  [expandedName(DRAWINGML_NS, 'pPr')]: {
-    groups: [a('lnSpc'), a('spcBef'), a('spcAft'), a('buClrTx', 'buClr'),
-      a('buSzTx', 'buSzPct', 'buSzPts'), a('buFontTx', 'buFont'),
-      a('buNone', 'buAutoNum', 'buChar', 'buBlip'), a('tabLst'), a('defRPr'), a('extLst')],
-  },
+  [expandedName(DRAWINGML_NS, 'pPr')]: { groups: paragraphOrder },
   [expandedName(DRAWINGML_NS, 'p')]: {
     groups: [a('pPr'), [...a('r', 'br', 'fld'), ...m('oMath', 'oMathPara')], a('endParaRPr')],
   },

@@ -14,21 +14,23 @@ const P14 = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 const files = unzipSync(new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-add-slide.pptx'))));
 const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
 const xfrm = (x, y, w, h) => `<a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm>`;
-const run = (value, size, color = 'tx1', attrs = '', extra = '') => `<a:p><a:r><a:rPr sz="${size}"${attrs}><a:solidFill><a:schemeClr val="${color}"/></a:solidFill>${extra}</a:rPr><a:t>${value}</a:t></a:r></a:p>`;
+const run = (value, size, color = 'tx1', attrs = '', extra = '', before = '') => `<a:p><a:r><a:rPr sz="${size}"${attrs}>${before}<a:solidFill><a:schemeClr val="${color}"/></a:solidFill>${extra}</a:rPr><a:t>${value}</a:t></a:r></a:p>`;
 const placeholder = ({
   id, name, type, idx, x, y, w, h, size = 1800, bullet = '', level2Size = null,
   level1Fill = '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>',
   level1Extra = '', level2ParagraphExtra = '', level2RunExtra = '', effects = '',
 }) => `<p:sp>
-<p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr/><p:nvPr><p:ph type="${type}" idx="${idx}"/></p:nvPr></p:nvSpPr>
+<p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr/><p:nvPr><p:ph${type ? ` type="${type}"` : ''} idx="${idx}"/></p:nvPr></p:nvSpPr>
 <p:spPr>${xfrm(x, y, w, h)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/>${effects}</p:spPr>
-<p:txBody><a:bodyPr/><a:lstStyle><a:lvl1pPr>${bullet}<a:defRPr sz="${size}"${level2Size ? ' baseline="25000" spc="200"' : ''}>${level1Fill}${level1Extra}${level2Size ? `<a:ln w="${px(1)}"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></a:ln>` : ''}</a:defRPr></a:lvl1pPr>${level2Size ? `<a:lvl2pPr marL="${px(72)}" indent="${px(-18)}">${level2ParagraphExtra}<a:buChar char="◇"/><a:defRPr sz="${level2Size}"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill>${level2RunExtra}</a:defRPr></a:lvl2pPr>` : ''}</a:lstStyle>${run(`提示-${name}`, size)}</p:txBody>
+<p:txBody><a:bodyPr/><a:lstStyle><a:lvl1pPr>${bullet}<a:defRPr sz="${size}"${level2Size ? ' baseline="25000" spc="200"' : ''}>${level2Size ? `<a:ln w="${px(1)}"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></a:ln>` : ''}${level1Fill}${level1Extra}</a:defRPr></a:lvl1pPr>${level2Size ? `<a:lvl2pPr marL="${px(72)}" indent="${px(-18)}">${level2ParagraphExtra}<a:buChar char="◇"/><a:defRPr sz="${level2Size}"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill>${level2RunExtra}</a:defRPr></a:lvl2pPr>` : ''}</a:lstStyle>${run(`提示-${name}`, size)}</p:txBody>
 </p:sp>`;
 
+// ST_PlaceholderType 枚举没有 cust；用目标版式不存在的 dt 类型保持「目标缺失」测试路径。
+// dt 属于页脚家族、会从版式继承内容，契约里的 EditText 因此全量替换提示文本而非插入。
 const sourceOnlyLayoutPlaceholder = placeholder({
-  id: 94, name: '来源独有占位符', type: 'cust', idx: '6', x: 60, y: 610, w: 360, h: 48,
+  id: 94, name: '来源独有占位符', type: 'dt', idx: '6', x: 60, y: 610, w: 360, h: 48,
 });
-const lastSlideLayoutLink = `<p:sp><p:nvSpPr><p:cNvPr id="95" name="版式末页链接"><a:hlinkClick action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+const lastSlideLayoutLink = `<p:sp><p:nvSpPr><p:cNvPr id="95" name="版式末页链接"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr>${xfrm(1180, 20, 20, 20)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr></p:sp>`;
 replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml.replace(
   '</p:spTree></p:cSld>', `${sourceOnlyLayoutPlaceholder}${lastSlideLayoutLink}</p:spTree></p:cSld>`,
@@ -42,7 +44,7 @@ const targetShapes = [
     h: 360, size: 2200, bullet: '<a:buChar char="◆"/>', level2Size: 1800,
     level1Fill: '<a:gradFill><a:gsLst><a:gs pos="0"><a:schemeClr val="accent1"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent2"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>',
     level1Extra: '<a:uFill><a:solidFill><a:srgbClr val="FF00FF"/></a:solidFill></a:uFill><a:latin typeface="Target Latin"/><a:ea typeface="Target EA"/><a:cs typeface="Target CS"/>',
-    level2ParagraphExtra: '<a:buClr><a:srgbClr val="00AA00"/></a:buClr><a:buFont typeface="Target Bullet"/><a:buSzPct val="80000"/>',
+    level2ParagraphExtra: '<a:buClr><a:srgbClr val="00AA00"/></a:buClr><a:buSzPct val="80000"/><a:buFont typeface="Target Bullet"/>',
     level2RunExtra: '<a:latin typeface="Target Level2 Latin"/><a:ea typeface="Target Level2 EA"/><a:cs typeface="Target Level2 CS"/>',
     effects: `<a:effectLst><a:glow rad="${px(3)}"><a:srgbClr val="00FF00"/></a:glow></a:effectLst>`,
   }),
@@ -53,11 +55,12 @@ const targetShapes = [
 files['ppt/slideLayouts/slideLayout2.xml'] = encoder.encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj" showMasterSp="1">
 <p:cSld name="重点内容"><p:bg><p:bgPr>${solid('accent1')}<a:effectLst/></p:bgPr></p:bg><p:spTree>${nvGrp}${targetShapes}</p:spTree></p:cSld>
 <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">
-<p:extLst/></mc:Choice><mc:Fallback><p:transition><p:cut/></p:transition></mc:Fallback></mc:AlternateContent>
 <mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p200="urn:web-ppt:future" Requires="p200">
 <p:transition><p200:futureEffect/></p:transition></mc:Choice><mc:Fallback>
-<p:transition spd="fast"><p:push dir="r"/></p:transition></mc:Fallback></mc:AlternateContent></p:sldLayout>`);
+<p:transition spd="fast"><p:push dir="r"/></p:transition></mc:Fallback></mc:AlternateContent>
+<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">
+<p:extLst><p14:layoutKeep val="keep"/></p:extLst></mc:Choice><mc:Fallback>
+<p:extLst><p:ext uri="{WEB-PPT-LAYOUT-KEEP}"><p:keep/></p:ext></p:extLst></mc:Fallback></mc:AlternateContent></p:sldLayout>`);
 replace('ppt/slideLayouts/_rels/slideLayout2.xml.rels', (xml) => xml.replace(
   '../slideMasters/slideMaster1.xml', '../slideMasters/slideMaster2.xml',
 ));
@@ -65,10 +68,10 @@ replace('ppt/slideLayouts/_rels/slideLayout2.xml.rels', (xml) => xml.replace(
 const directBody = `<p:sp><p:nvSpPr><p:cNvPr id="805" name="现有正文"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="2"/></p:nvPr></p:nvSpPr>
 <p:spPr>${xfrm(160, 238, 900, 260)}<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr>
 <p:style><a:lnRef idx="0"><a:schemeClr val="accent2"/></a:lnRef><a:fillRef idx="0"><a:schemeClr val="accent2"/></a:fillRef><a:effectRef idx="1"><a:schemeClr val="accent2"/></a:effectRef><a:fontRef idx="minor"><a:schemeClr val="tx1"/></a:fontRef></p:style>
-<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle><a:lvl3pPr marL="${px(180)}" indent="${px(-20)}"><a:buChar char="☞"/><a:defRPr sz="2100"/></a:lvl3pPr></a:lstStyle>${run('用于验证换版式保持直设位置与格式', 2400, 'bg1', ' baseline="0" spc="0"', '<a:ln><a:noFill/></a:ln><a:uFillTx/><a:latin typeface="Source Latin"/>')}<a:p><a:pPr lvl="1"><a:buClrTx/><a:buFontTx/><a:buSzPts val="2000"/></a:pPr><a:r><a:t>二级正文沿用目标级别样式</a:t></a:r></a:p></p:txBody></p:sp>`;
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle><a:lvl3pPr marL="${px(180)}" indent="${px(-20)}"><a:buChar char="☞"/><a:defRPr sz="2100"/></a:lvl3pPr></a:lstStyle>${run('用于验证换版式保持直设位置与格式', 2400, 'bg1', ' baseline="0" spc="0"', '<a:uFillTx/><a:latin typeface="Source Latin"/>', '<a:ln><a:noFill/></a:ln>')}<a:p><a:pPr lvl="1"><a:buClrTx/><a:buSzPts val="2000"/><a:buFontTx/></a:pPr><a:r><a:t>二级正文沿用目标级别样式</a:t></a:r></a:p></p:txBody></p:sp>`;
 const picture = `<p:pic><p:nvPicPr><p:cNvPr id="808" name="现有图片占位符"/><p:cNvPicPr/><p:nvPr><p:ph type="pic" idx="4"/></p:nvPr></p:nvPicPr>
 <p:blipFill><a:blip r:embed="rId3"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr/></p:pic>`;
-const sourceOnly = `<p:sp><p:nvSpPr><p:cNvPr id="809" name="来源独有内容"/><p:cNvSpPr/><p:nvPr><p:ph type="cust" idx="6"/></p:nvPr></p:nvSpPr>
+const sourceOnly = `<p:sp><p:nvSpPr><p:cNvPr id="809" name="来源独有内容"/><p:cNvSpPr/><p:nvPr><p:ph type="dt" idx="6"/></p:nvPr></p:nvSpPr>
 <p:spPr>${xfrm(60, 610, 360, 48).replace('<a:xfrm>', '<a:xfrm rot="0" flipH="0" flipV="0">')}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/>${run('找不到目标占位符也不能丢', 1600)}</p:txBody></p:sp>`;
 const ordinary = `<p:sp><p:nvSpPr><p:cNvPr id="810" name="普通业务形状"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr>${xfrm(980, 590, 180, 54)}<a:prstGeom prst="hexagon"><a:avLst/></a:prstGeom>${solid('accent1')}</p:spPr>
@@ -101,7 +104,7 @@ replace('ppt/slideMasters/slideMaster1.xml', (xml) => xml.replace(
 replace('ppt/slideMasters/_rels/slideMaster1.xml.rels', (xml) => xml.replace(
   `<Relationship Id="rId9" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout2.xml"/>`, '',
 ));
-const targetMasterMarker = `<p:sp><p:nvSpPr><p:cNvPr id="160" name="目标母版标记"><a:hlinkClick action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(1040, 18, 180, 28)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`;
+const targetMasterMarker = `<p:sp><p:nvSpPr><p:cNvPr id="160" name="目标母版标记"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=lastslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(1040, 18, 180, 28)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`;
 files['ppt/slideMasters/slideMaster2.xml'] = encoder.encode(`${XML}<p:sldMaster xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld><p:spTree>${nvGrp}${targetMasterMarker}</p:spTree></p:cSld>
 <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
@@ -194,7 +197,9 @@ replaceIn(masterFiles, 'ppt/slideMasters/slideMaster2.xml', (xml) => xml
   .replace('</p:sldLayoutIdLst>', '<p:sldLayoutId id="2147483660" r:id="rId3"/></p:sldLayoutIdLst>')
   .replace('<p:bodyStyle><a:lvl1pPr><a:defRPr sz="2000"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:defRPr></a:lvl1pPr></p:bodyStyle>',
     '<p:bodyStyle><a:lvl1pPr><a:buChar char="•"/><a:defRPr sz="2000"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl1pPr><a:lvl2pPr marL="457200" indent="-171450"><a:buChar char="◦"/><a:defRPr sz="1800"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl2pPr><a:lvl3pPr marL="685800" indent="-171450"><a:buChar char="▪"/><a:defRPr sz="1600"><a:solidFill><a:schemeClr val="accent2"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl3pPr></p:bodyStyle>')
-  .replace('</p:txStyles>', '</p:txStyles><p:hf sldNum="0"/><p:extLst><p:ext uri="urn:web-ppt:master-keep"><p200:masterData xmlns:p200="urn:web-ppt:future" keep="yes"/></p:ext></p:extLst>'));
+  .replace('</p:txStyles>', '</p:txStyles><p:extLst><p:ext uri="urn:web-ppt:master-keep"><p200:masterData xmlns:p200="urn:web-ppt:future" keep="yes"/></p:ext></p:extLst>')
+  // CT_SlideMaster 的 sequence 是 hf 在 txStyles 之前
+  .replace('<p:txStyles>', '<p:hf sldNum="0"/><p:txStyles>'));
 replaceIn(masterFiles, 'ppt/slideMasters/_rels/slideMaster2.xml.rels', (xml) => xml.replace(
   '</Relationships>', `<Relationship Id="rId3" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout3.xml"/></Relationships>`,
 ));

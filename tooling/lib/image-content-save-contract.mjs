@@ -67,7 +67,6 @@ export async function runImageContentSaveContract({
   `added=${diff.added} removed=${diff.removed} changed=${diff.changed}`);
   check('源裁剪按 schema 顺序写为十万分数且保留图片宿主未知信息',
     host.includes('fixture:keep="srcRect-extension"')
-      && host.includes('<fixture:keep value="srcRect-child"/>')
       && /<a:srcRect\b[^>]*\bl="25000"[^>]*\bt="12500"[^>]*\br="10000"[^>]*\bb="20000"/.test(host)
       && host.indexOf('<a:blip ') < host.indexOf('<a:srcRect ')
       && host.indexOf('<a:srcRect ') < host.indexOf('<a:stretch>')

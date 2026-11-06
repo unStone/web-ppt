@@ -53,6 +53,7 @@ flowchart LR
 | 固件只能由 `tooling/make-*-fixture.mjs` 生成，手写 OOXML、内置编码器、零外部样本 | 字节必须确定性：CI 用 `git diff --exit-code --stat fixtures/` 验证重跑一致，生成脚本里出现时间戳或随机数会让任何人跑一次都带进 diff |
 | 生成脚本挂进 `npm run fixtures`（依赖序复杂时用 `prefixtures` / `postfixtures` 两段） | 测试样本与脚本永远同步 |
 | **新能力必须同时加固件** | 历史教训：隐藏页曾零固件覆盖，`skipHidden` 的真 bug 在近千项断言下存活；快照挡得住「变了」，挡不住「一开始就没测过」 |
+| 固件本身必须是合法 OOXML（sequence 顺序、枚举取值、关系与 Content Types 闭合） | 引擎原样保留来源内容，固件里的非法结构会流进保存产物、被 OOXML 门禁（§7.6）拦下；「未知内容被保留」的探针用 `urn:web-ppt:*` 命名空间的属性或元素，放在 schema 允许扩展的位置（`extLst`），MS 扩展属性在根上声明 `mc:Ignorable` |
 
 `.ppt` 样本特殊：LibreOffice 转换非确定性，`make-ppt-samples.mjs` 按**渲染结果**而非字节比对，内容没变就保留原文件。
 
@@ -79,6 +80,21 @@ flowchart LR
 
 `npm run test:site:i18n` 的触屏悬停契约（`site-present-bar-browser-contract`）依赖 `Emulation.setEmulatedMedia` 改写 `hover` / `pointer` 媒体特性：CI 的 Linux headless Chrome 没有输入设备、默认即 `(hover: none)`，断言恒过；macOS Chrome 实测（2026-10-30 headless 最小复现）仿真不生效、`matchMedia` 仍报可悬停，本地必红。本地验证该套件的其他契约时跑到此断言即止，以 CI 结果为准。
 
+## 7.6 OOXML 合法性门禁
+
+`npm run test:ooxml`（票据 [桌面 005](../wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md)）对**全部保存产物**做两道独立校验，任一错误失败并打印错误 Id、部件与 XPath：
+
+| 通道 | 工具 | 覆盖 |
+|---|---|---|
+| 结构校验 | `xmllint` + ECMA-376 5th edition Transitional XSD（下载经 SHA256 钉版，见 `prepare-ooxml-schemas.mjs`） | 每个部件按根命名空间映射到 XSD，sequence 顺序、必填子元素、枚举与取值范围 |
+| 语义校验 | .NET `OpenXmlValidator`（`tooling/ooxml-validate/`，Microsoft365 档案） | 属性共存约束、关系目标存在性、跨部件不变量 |
+
+输入集是 `out/edit-save`、`out/v07-integration`、`out/v08-integration` 的 office-artifacts 清单加 `out/agent-tools`、`out/agent-mcp`、`out/template-fill` 的生成产物——所以必须**先跑功能测试**再跑本门禁（`pretest:ooxml` 只负责 build 与 .NET 还原）。人为注入的结构错误（改坏根元素）与语义错误（关系目标缺失）各一例必须被拦截（负例测试）。CI 在构建后单独执行；依赖 `xmllint`（Ubuntu: `libxml2-utils`）与 .NET SDK 8。
+
+两道通道校验**同一份等价归一化副本**（SDK 通道把归一化后的部件重新打包，包结构与关系不变），归一化只剥非 OOXML 词汇：MCE `AlternateContent` 取 Fallback 展开并按根 `mc:Ignorable` 丢弃可忽略前缀；`urn:web-ppt:*` 的测试标记（固件用来证明未知内容被保留的探针，其存活性由功能断言负责），标记剥空后的 `ext` 空壳整只移除，但 `<ext uri="urn:web-ppt:*">` 是产品写入的真实扩展（如图表数据身份清单），内容原样保留；`a:t` 上的 `xml:space="preserve"`。SDK 的 `[load-error]`（包无法加载）与 `[Sch_*]` / `[Sem_*]` 一样计为失败。例外逐条登记在 `tooling/lib/ooxml-validation.mjs`（XSD 与生态实践的已知分歧，如 `buSzPct` 千分比整数；`a:p` 内的裸 `m:oMath` 两个校验器都不认，双通道放行；无 ECMA XSD 的 chartex / InkML 部件），**不允许按部件或文件整类忽略**，新增例外必须写明规则形态与原因。
+
+通过校验不等于 PowerPoint 验收通过：XSD 与 SDK 都不覆盖渲染语义和 PowerPoint 的私有宽容度，Windows 真机门禁（[powerpoint-runner.md](powerpoint-runner.md)）仍是正式发布条件。反过来，LibreOffice 能容忍的顺序错误 PowerPoint 会要求修复——本门禁正是为这类差距存在。
+
 ## 8. 测试套件
 
 `npm test` 运行全部功能套件；下表的分套件命令用于定位问题。断言数由 §3 的链路实测比对，改文案前先跑测试拿实测值。
@@ -98,7 +114,8 @@ flowchart LR
 | `node tooling/test-agent-node-render.mjs` | Agent Node 渲染 21 项断言：缺测字 / 光栅化注入的稳定 reason、注入渲染、跨进程确定性、HarfBuzz 真实测量整页渲染与 PNG 尺寸换算；`--dist` 复验 `@web-ppt/core/node` 发布入口 |
 | `node tooling/test-agent-node-render-parity.mjs` | Agent Node 双端对照 4 项断言：同一字体字节双端注册（浏览器 FontFace / Node Provider）下全部固件整页 SVG 指纹比对，差异页必须归因（公式测量源 / textPath 字距放大）；缺字固件不满足同一字体前提，跳过并计数；`--dist` 复验 |
 | `npm run test:ole:libreoffice` | OLE 外部打开 11 项断言：嵌入 DOCX run 改字与 XLSX 样式 / 富文本改写后重组为独立文档，LibreOffice 打开转换（fodt / fods / xlsx）核对文字、颜色与 run 边界；CI 在功能测试后单独执行 |
-| `npm run test:edit` | 编辑模型 1154 项 + 保存 582 项 + PowerPoint 证据 9 项 + 181 份固件、1210 对独立进程 SVG 指纹 |
+| `npm run test:ooxml` | OOXML 合法性 4 项断言：全部保存产物过 ECMA-376 XSD 与 OpenXmlValidator 双通道，结构与语义负例各一例必须被拦截（§7.6）；依赖 xmllint 与 .NET 8，先跑功能测试落盘产物 |
+| `npm run test:edit` | 编辑模型 1154 项 + 保存 584 项 + PowerPoint 证据 9 项 + 181 份固件、1210 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |

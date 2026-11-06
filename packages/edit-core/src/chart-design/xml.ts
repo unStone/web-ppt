@@ -1,7 +1,7 @@
 import { cloneXmlNodeWithNamespaceClosure as clone, createXmlElement, createXmlText, insertXmlChildUnchecked as insert,
   removeXmlChild as remove, parseXmlTree, serializeXmlTree, setXmlAttribute } from '@web-ppt/edit-core/xml';
 import type { XmlElement } from '@web-ppt/edit-core/xml';
-import { chartXml, makeDataElement as make, xmlAttribute as attr } from '../chart/xml-data';
+import { axisTitleAnchor, chartXml, makeDataElement as make, xmlAttribute as attr } from '../chart/xml-data';
 import { CHART_PLOTS } from '../chart/plot-kinds';
 import { MAX_CHART_POINTS } from '../chart/validation';
 import type { ChartDesign, ChartType } from './types';
@@ -59,10 +59,32 @@ function seriesFor(source: XmlElement, plot: XmlElement, kind: ChartType) {
   return series;
 }
 
+/** 轴标题按 EG_AxShared 序列归位：title 必须落在 numFmt 之前，紧贴 crossAx 是非法位置。 */
+const normalizeAxisTitle = (axis: XmlElement): void => {
+  const title = child(axis, 'title');
+  if (!title) return;
+  remove(axis, title);
+  insert(axis, title, axisTitleAnchor(axis));
+};
+
 function convert(plotArea: XmlElement, design: ChartDesign): XmlElement[] {
   const plots = children(plotArea).filter((node) => CHART_PLOTS[node.localName]);
   if (!plots.length) throw new Error('图表没有可编辑绘图区');
-  const kind = design.type; if (!kind) return plots;
+  const kind = design.type;
+  if (!kind) {
+    for (const plot of plots) {
+      if (CHART_PLOTS[plot.localName] !== 'line' && CHART_PLOTS[plot.localName] !== 'scatter') {
+        for (const series of children(plot, 'ser')) {
+          const smooth = child(series, 'smooth');
+          if (smooth) remove(series, smooth);
+        }
+      }
+    }
+    for (const axis of children(plotArea)) {
+      if (axis.localName.endsWith('Ax')) normalizeAxisTitle(axis);
+    }
+    return plots;
+  }
   if (plots.some((node) => xy(CHART_PLOTS[node.localName]) !== xy(kind))) throw new Error('类别图与 XY 图的数据轴不同，需要先提供对应的数据');
   const sources = plots.flatMap((node) => children(node, 'ser'));
   if (kind === 'pie' && sources.length > 1) throw new Error('饼图只支持一个数据系列');
@@ -82,6 +104,7 @@ function convert(plotArea: XmlElement, design: ChartDesign): XmlElement[] {
     for (const axis of axes) add(plot, 'axId', attr(child(axis, 'axId'), 'val')!);
   } else for (const axis of children(plotArea).filter((n) => n.localName.endsWith('Ax'))) remove(plotArea, axis);
   for (const source of plots) remove(plotArea, source);
+  for (const axis of children(plotArea).filter(node => node.localName.endsWith('Ax'))) normalizeAxisTitle(axis);
   return [plot];
 }
 
@@ -104,6 +127,7 @@ function chartAxes(area: XmlElement, kind: ChartType, horizontal: boolean): XmlE
     update(axis, 'axId', String(1001 + index));
     update(axis, 'crossAx', String(index ? 1001 : 1002));
     update(axis, 'axPos', (index === 0) === (kind === 'bar' && horizontal) ? 'l' : 'b');
+    normalizeAxisTitle(axis);
     axes.push(axis);
   }
   for (const axis of source) if (!axes.includes(axis)) remove(area, axis);

@@ -17,7 +17,8 @@ const shape = sp({
   name: '生成形状', bodyPr: '<a:bodyPr anchor="ctr" lIns="91440" rIns="91440"/>',
 }).replace('name="生成形状"/>',
   'name="生成形状"><a:hlinkClick r:id="rId4"/></p:cNvPr>')
-  .replace('<a:rPr sz="1800">', '<a:rPr sz="1800"><a:hlinkClick r:id="rId4"/>');
+  // CT_TextCharacterProperties 里 hlinkClick 在填充与字体之后，不能插在 rPr 开头
+  .replace('</a:rPr>', '<a:hlinkClick r:id="rId4"/></a:rPr>');
 const image = `<p:pic>
 <p:nvPicPr><p:cNvPr id="201" name="生成图片"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
 <p:blipFill><a:blip r:embed="rId2"/><a:srcRect l="4000" t="8000" r="12000" b="16000"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>

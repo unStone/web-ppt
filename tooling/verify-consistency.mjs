@@ -231,6 +231,7 @@ if (!siteStat) {
     'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile', 'metafileFixture', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
     'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice', 'zipSecurity',
+    'ooxmlValidation',
   ];
   const measured = suites.every((key) => typeof counts[key] === 'number')
     ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
@@ -355,6 +356,8 @@ if (!counts) {
     ['AGENTS.md', /双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
     ['docs/engineering/testing.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
     ['AGENTS.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
+    ['docs/engineering/testing.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
+    ['AGENTS.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
     ['docs/engineering/testing.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['docs/engineering/testing.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],

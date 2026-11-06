@@ -23,7 +23,9 @@ const direct = `<p:sp><p:nvSpPr><p:cNvPr id="813" name="页面直接格式"/><p:
 replace('ppt/slides/slide7.xml', (xml) => xml
   .replace('<p:sld show="0"', '<p:sld')
   .replace('</p:spTree>', `${themeReference}${direct}</p:spTree>`));
-replace('ppt/theme/theme1.xml', (xml) => xml.replace('<a:theme ', '<a:theme data-keep="theme-source" '));
+// 未知属性保留探针必须用命名空间前缀：无命名空间属性永远过不了 XSD，也无法被校验器统一剥除
+replace('ppt/theme/theme1.xml', (xml) => xml
+  .replace('<a:theme ', '<a:theme xmlns:tk="urn:web-ppt:theme" tk:keep="theme-source" '));
 
 const bytes = makeZip(Object.entries(files));
 writeFileSync(join(root, 'fixtures/sample-editor-theme.pptx'), bytes);

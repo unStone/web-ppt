@@ -33,7 +33,9 @@ const direct = (type, attrs, index) => {
   const duration = index === 0
     ? ` xmlns:x14="${P14}" x14:dur="800" fixture:dur="4999"`
     : ` xmlns:p14="${P14}" p14:dur="${800 + index * 7}"`;
-  const sourceType = type === 'fade' ? 'fadeThroughBlack' : type === 'dissolve' ? 'random' : type;
+  // fade 槽用合法的 wedge 充当「引擎不管理的标准效果」保留探针；
+  // fadeThroughBlack 是非标准元素名，读侧别名（publicEffectType）仍兼容旧文件
+  const sourceType = type === 'fade' ? 'wedge' : type === 'dissolve' ? 'random' : type;
   const aliasAttrs = type === 'dissolve'
     ? ' xmlns:fixture="urn:web-ppt:transition-fixture" fixture:alias="keep"' : '';
   return `<p:transition${duration}` +
@@ -53,7 +55,9 @@ const morph = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14
   `xmlns:p159="${P159}" Requires="p159"><p:transition p14:dur="1600">` +
   `<p159:morph option="byWord"/></p:transition></mc:Choice><mc:Fallback>` +
   `<p:transition spd="med"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>`;
-const timing = '<p:timing xmlns:fixture="urn:web-ppt:transition-fixture" fixture:keep="timing"><p:tnLst/></p:timing>';
+// CT_TimeNodeList 至少要一个子元素；空 tnLst 过不了 XSD，给最小 tmRoot
+const timing = '<p:timing xmlns:fixture="urn:web-ppt:transition-fixture" fixture:keep="timing">'
+  + '<p:tnLst><p:par><p:cTn id="9" dur="indefinite" restart="never" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>';
 const unrelatedMce = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">` +
   '<p:extLst><p:ext uri="{TRANSITION-KEEP}"/></p:extLst></mc:Choice>' +
   '<mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>';
@@ -69,9 +73,12 @@ const slides = definitions.map((transition, index) => {
   });
   const suffix = `${index === 1 ? unknownCarrier : ''}${transition ?? ''}`
     + `${index === 1 ? timing + unrelatedMce : ''}`;
-  return slideXml(body, '', index === 1
-    ? `xmlns:fixture="urn:web-ppt:transition-fixture" xmlns:mc="${MC}" `
-      + 'mc:Ignorable="fixture" fixture:keep="root"' : '')
+  // 每页根声明 p14/x14 可忽略：p:transition 上的 p14:dur、x14:dur 是 PowerPoint 2010+ 的
+  // 标准扩展写法，必须按 MCE 规则在根声明，否则 XSD 拒绝未声明属性
+  return slideXml(body, '', `xmlns:mc="${MC}" xmlns:p14="${P14}" xmlns:x14="${P14}" `
+    + (index === 1
+      ? 'xmlns:fixture="urn:web-ppt:transition-fixture" mc:Ignorable="p14 x14 fixture" fixture:keep="root"'
+      : 'mc:Ignorable="p14 x14"'))
     .replace('</p:sld>', `${suffix}</p:sld>`);
 });
 

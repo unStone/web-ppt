@@ -45,13 +45,26 @@ jobs:
           cache: pip
           cache-dependency-path: tooling/font-glyph-requirements.txt
 
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: 缓存 OOXML schema 与 NuGet 包
+        uses: actions/cache@v4
+        with:
+          path: |
+            out/ooxml-schemas
+            ~/.nuget/packages
+          key: ooxml-${{ hashFiles('tooling/prepare-ooxml-schemas.mjs', 'tooling/ooxml-validate/ooxml-validate.csproj') }}
+
       - name: 安装字体与 PDF 独立读取依赖
         run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
 
       - name: 安装图元真实样本依赖
         # test:metafile 会用 LibreOffice 把 showcase 转成真实 EMF/WMF；缺依赖时会
         # 合法跳过 22 项，但 verify 仍会按发布文档声明的完整 130 项拒绝发布。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk
+        # libxml2-utils 提供 OOXML 门禁的 xmllint（XSD 结构校验）。
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk libxml2-utils
 
       - name: 校验 tag 与包版本一致
         # tag 与 package.json 对不上时，发出去的版本号会让人迷惑，不如直接失败
@@ -118,6 +131,12 @@ jobs:
       # 万一构建失败，能在动 registry 之前就失败掉
       - name: 构建
         run: npm run build
+
+      - name: OOXML 合法性门禁
+        # 与 CI 同口径：XSD + Open XML SDK 双通道校验全部保存产物。
+        # 依赖全量功能测试落盘的产物，所以只在补跑全量的路径上执行。
+        if: steps.gate.outputs.ci-green != 'green'
+        run: npm run test:ooxml
 
       - name: 生成 verify 依赖的测试落盘
         # verify-v08-readiness 读源码模式批注测试的落盘报告（source-report.json）；

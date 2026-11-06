@@ -21,7 +21,7 @@ files['ppt/notesSlides/notesSlide1.xml'] = encoder.encode(`${XML}<p:notes xmlns:
 </p:txBody></p:sp>
 <p:pic><p:nvPicPr><p:cNvPr id="5" name="备注图片"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="image-ref"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>
 <p:sp><p:nvSpPr><p:cNvPr id="3" name="页脚"/><p:cNvSpPr/><p:nvPr><p:ph type="ftr" idx="2"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>页脚不得进入备注正文</a:t></a:r></a:p></p:txBody></p:sp>
-<p:sp><p:nvSpPr><p:cNvPr id="4" name="页码"/><p:cNvSpPr/><p:nvPr><p:ph type="sldNum" idx="3"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{NOTES-PAGE-FIELD}" type="slidenum"><a:t>1</a:t></a:fld></a:p></p:txBody></p:sp>
+<p:sp><p:nvSpPr><p:cNvPr id="4" name="页码"/><p:cNvSpPr/><p:nvPr><p:ph type="sldNum" idx="3"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{3F2504E0-4F89-41D3-9A0C-0305E82C3301}" type="slidenum"><a:t>1</a:t></a:fld></a:p></p:txBody></p:sp>
 </p:spTree></p:cSld><p:extLst><p:ext uri="{WEB-PPT-NOTES-KEEP}"><fixture:keep xmlns:fixture="urn:web-ppt:notes" value="unknown-extension"/></p:ext></p:extLst>
 </p:notes>`);
 
@@ -30,7 +30,8 @@ files['ppt/notesSlides/_rels/notesSlide1.xml.rels'] = encoder.encode(`${XML}<Rel
 <Relationship Id="image-ref" Type="${REL}/image" Target="../media/shared.png"/>
 <Relationship Id="master-ref" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/>
 <Relationship Id="slide-back" Type="${REL}/slide" Target="../slides/slide1.xml"/>
-<Relationship Id="unknown-ref" Type="urn:web-ppt:notes:unknown" Target="../../customXml/keep.xml"/>
+<!-- 共享部件在整个包里只能有一种关系类型（Open XML SDK 否则拒绝加载），与演示文稿侧的未知关系同型 -->
+<Relationship Id="unknown-ref" Type="urn:web-ppt:unknown" Target="../../customXml/keep.xml"/>
 </Relationships>`);
 
 const emptyNotes = decoder.decode(files['ppt/notesSlides/notesSlide4.xml'])

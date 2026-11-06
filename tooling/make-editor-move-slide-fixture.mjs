@@ -29,7 +29,7 @@ const tablePageField = (index) => `<p:graphicFrame>
 </p:graphicFrame>`;
 const pageField = (index) => index === 2 ? tablePageField(index) : textPageField(index);
 const nextLink = (index) => `<p:sp>
-<p:nvSpPr><p:cNvPr id="${30 + index}" name="下一页 ${index}"><a:hlinkClick action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:nvSpPr><p:cNvPr id="${30 + index}" name="下一页 ${index}"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(1180)}" y="${px(40)}"/><a:ext cx="${px(40)}" cy="${px(40)}"/></a:xfrm><a:prstGeom prst="rightArrow"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr>
 </p:sp>`;
 const slide = (index) => slideXml(`<p:sp>

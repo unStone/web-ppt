@@ -100,12 +100,14 @@ export async function runChangeLayoutSaveContract({
     type: 'AddSlide', layoutId: createdSource, at: { after: createdDoc.slideOrder[0] },
   });
   const createdId = [...createdResult.createdSlides][0];
+  // 自定义占位符按 idx 定位：ST_PlaceholderType 枚举没有 cust，固件已改为只带 idx 的合法形态
   const createdCust = Object.values(createdDoc.elements).find((record) =>
-    record.parent === createdId && record.meta.ph?.type === 'cust');
+    record.parent === createdId && record.meta.ph?.idx === '6');
   createdEditor.exec({
     type: 'EditText', id: createdCust.id,
     ops: [{
-      type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+      // dt 占位符从版式继承提示文本，全量替换而非零宽插入
+      type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 10 },
       text: '目标缺失也必须保留',
     }],
   });
@@ -141,7 +143,7 @@ export async function runChangeLayoutSaveContract({
   const createdNumber = createdSlide.elements.find((element) =>
     element.editInfo?.placeholder?.type === 'sldNum');
   const reopenedCreatedCust = createdSlide.elements.find((element) =>
-    element.editInfo?.placeholder?.type === 'cust');
+    element.editInfo?.placeholder?.idx === '6');
   check('会话中新页换版式以确定 rId 物化目标关系并可重开',
     /Id="rId1"[^>]*Type="[^"]+\/slideLayout"[^>]*Target="\.\.\/slideLayouts\/slideLayout2\.xml"/.test(createdRelationships)
       && createdSlide.editInfo.layoutId === createdTarget

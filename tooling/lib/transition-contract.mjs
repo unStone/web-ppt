@@ -81,12 +81,12 @@ export async function runTransitionContract({ edit, core, load, check }) {
   editor.undo();
   check('撤销恢复前一个直接切换值', editor.toSlide(fade).transition.type === 'push');
   editor.undo();
-  check('再次撤销恢复来源切换', editor.toSlide(fade).transition.type === 'fade'
+  check('再次撤销恢复来源切换', editor.toSlide(fade).transition.type === 'wedge'
     && !edit.querySlideTransition(doc, [fade]).direct);
   editor.redo();
   check('重做保持规范化结果', editor.toSlide(fade).transition.type === 'push');
   editor.exec({ type: 'SetTransition', id: fade, t: null });
-  check('null 删除覆盖并恢复来源', editor.toSlide(fade).transition.type === 'fade'
+  check('null 删除覆盖并恢复来源', editor.toSlide(fade).transition.type === 'wedge'
     && !edit.querySlideTransition(doc, [fade]).direct);
 
   const stable = JSON.stringify(doc.slides[none].ovr);

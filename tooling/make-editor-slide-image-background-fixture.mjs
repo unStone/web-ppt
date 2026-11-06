@@ -17,9 +17,9 @@ const inheritedMediaRelationship = `<Relationship Id="rId4" Type="${REL}/audio" 
 const stretch = `<p:bg xmlns:fixture="urn:web-ppt:slide-image-background" fixture:slot="stretch">
 <p:bgPr fixture:keep="stretch"><a:blipFill dpi="96" rotWithShape="0">
 <a:blip r:embed="rId2"><a:alphaModFix amt="72000"/><a:extLst><a:ext uri="{BACKGROUND-BLIP}"><fixture:keep value="blip-extension"/></a:ext></a:extLst></a:blip>
-<a:srcRect l="8000" t="4000" r="12000" b="6000"><fixture:keep value="crop-extension"/></a:srcRect>
+<a:srcRect l="8000" t="4000" r="12000" b="6000"/>
 <a:stretch><a:fillRect l="1000"/></a:stretch></a:blipFill>
-<a:effectLst/><a:extLst><a:ext uri="{BACKGROUND-HOST}"><fixture:keep value="host-extension"/></a:ext></a:extLst>
+<a:effectLst/><p:extLst><p:ext uri="{BACKGROUND-HOST}"><fixture:keep value="host-extension"/></p:ext><p:ext uri="{BACKGROUND-CROP}"><fixture:keep value="crop-extension"/></p:ext></p:extLst>
 </p:bgPr></p:bg>`;
 const tile = `<p:bg xmlns:fixture="urn:web-ppt:slide-image-background" fixture:slot="tile">
 <p:bgPr fixture:keep="tile"><a:blipFill dpi="96"><a:blip r:embed="rId2"/>
@@ -41,10 +41,10 @@ replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml
     + '<p:bgPr fixture:keep="inherited"><a:blipFill dpi="120"><a:blip r:embed="rId2">'
     + '<a:extLst><a:ext uri="{INHERITED-BLIP}"><fixture:keep value="inherited-blip-extension"/>'
     + '<fixture:linked r:id="rId3"/><fixture:media r:id="rId4"/></a:ext></a:extLst>'
-    + '</a:blip><a:srcRect l="5000" t="10000" r="15000" b="20000">'
-    + '<fixture:keep value="inherited-crop-extension"/></a:srcRect><a:stretch><a:fillRect/></a:stretch>'
-    + '</a:blipFill><a:effectLst/><a:extLst><a:ext uri="{INHERITED-HOST}">'
-    + '<fixture:keep value="inherited-host-extension"/></a:ext></a:extLst></p:bgPr></p:bg>',
+    + '</a:blip><a:srcRect l="5000" t="10000" r="15000" b="20000"/>'
+    + '<a:stretch><a:fillRect/></a:stretch></a:blipFill><a:effectLst/><p:extLst><p:ext uri="{INHERITED-HOST}">'
+    + '<fixture:keep value="inherited-host-extension"/></p:ext>'
+    + '<p:ext uri="{INHERITED-CROP}"><fixture:keep value="inherited-crop-extension"/></p:ext></p:extLst></p:bgPr></p:bg>',
 ));
 replace('ppt/slideLayouts/_rels/slideLayout1.xml.rels', (xml) =>
   xml.replace('</Relationships>',

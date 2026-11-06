@@ -28,7 +28,7 @@ function picture({ id, name, rid, x, y, w, h, crop = '', attrs = '', extra = '',
 
 const external = picture({
   id: 3101, name: 'image-external', rid: 'rId8', x: 40, y: 40, w: 260, h: 170,
-  crop: '<a:srcRect xmlns:fixture="urn:web-ppt:image-content" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="fixture" fixture:keep="srcRect-extension" l="5000" t="10000" r="15000" b="20000"><fixture:keep value="srcRect-child"/></a:srcRect>',
+  crop: '<a:srcRect xmlns:fixture="urn:web-ppt:image-content" fixture:keep="srcRect-extension" l="5000" t="10000" r="15000" b="20000"/>',
   attrs: ' rot="900000" flipH="1"', link: true,
   extra: '<a:extLst><a:ext uri="{WEB-PPT-IMAGE-HOST}"><fixture:keep value="host-extension"/></a:ext></a:extLst>',
 });

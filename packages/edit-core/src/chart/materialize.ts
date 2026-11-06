@@ -18,7 +18,7 @@ import {
   CHART_NS, DRAWING_NS, STRICT_CHART_NS, STRICT_DRAWING_NS,
 } from './xml-namespaces';
 import {
-  chartXml, xmlAttribute as attr, appendXml as append, makeDataElement as make, setDataText as setText,
+  chartXml, xmlAttribute as attr, appendXml as append, axisTitleAnchor, makeDataElement as make, setDataText as setText,
 } from './xml-data';
 import { CHART_PLOTS as PLOTS } from './plot-kinds';
 
@@ -375,6 +375,23 @@ export function materializeChartTree(
     writeSeries(target.node, series, categories, order, sourceIndex);
     writtenIds.set(target.node, series.id);
   });
+  for (const plot of children(plotArea)) {
+    const kind = PLOTS[plot.localName];
+    if (kind !== 'line' && kind !== 'scatter') {
+      for (const series of children(plot, 'ser')) {
+        const smooth = child(series, 'smooth');
+        if (smooth) removeXmlChild(series, smooth);
+      }
+    }
+    if (plot.localName.endsWith('Ax')) {
+      const title = child(plot, 'title');
+      if (title) {
+        // 轴标题按 EG_AxShared 序列落位：title 在 numFmt 之前，紧贴 crossAx 反而非法
+        removeXmlChild(plot, title);
+        append(plot, title, axisTitleAnchor(plot));
+      }
+    }
+  }
   const physicalSeriesOrder = children(plotArea).flatMap((plot) => children(plot, 'ser'))
     .flatMap((node) => writtenIds.has(node) ? [writtenIds.get(node)!] : []);
   const activeKinds = new Set(visible.map((series) => series.plotKind));

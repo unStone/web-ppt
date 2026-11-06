@@ -35,13 +35,13 @@ const source = deck({
   extraEntries: [['ppt/tableStyles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="${STYLE_ID}">
 <a:tblStyle styleId="${STYLE_ID}" styleName="Web PPT Theme Table">
-<a:wholeTbl><a:tcStyle><a:tcBdr>
+<a:wholeTbl><a:tcTxStyle><a:schemeClr val="dk1"/></a:tcTxStyle><a:tcStyle><a:tcBdr>
 <a:left><a:ln w="12700">${solid('accent3')}</a:ln></a:left><a:right><a:ln w="12700">${solid('accent3')}</a:ln></a:right>
 <a:top><a:ln w="12700">${solid('accent3')}</a:ln></a:top><a:bottom><a:ln w="12700">${solid('accent3')}</a:ln></a:bottom>
-</a:tcBdr><a:fill><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></a:fill></a:tcStyle><a:tcTxStyle><a:schemeClr val="dk1"/></a:tcTxStyle></a:wholeTbl>
-<a:firstRow><a:tcStyle><a:fill>${solid('accent1')}</a:fill></a:tcStyle><a:tcTxStyle b="on"><a:schemeClr val="lt1"/></a:tcTxStyle></a:firstRow>
+</a:tcBdr><a:fill><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></a:fill></a:tcStyle></a:wholeTbl>
 <a:band1H><a:tcStyle><a:fill><a:solidFill><a:schemeClr val="accent2"><a:tint val="85000"/></a:schemeClr></a:solidFill></a:fill></a:tcStyle></a:band1H>
 <a:band2H><a:tcStyle><a:fill><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></a:fill></a:tcStyle></a:band2H>
+<a:firstRow><a:tcTxStyle b="on"><a:schemeClr val="lt1"/></a:tcTxStyle><a:tcStyle><a:fill>${solid('accent1')}</a:fill></a:tcStyle></a:firstRow>
 </a:tblStyle></a:tblStyleLst>`]],
 });
 

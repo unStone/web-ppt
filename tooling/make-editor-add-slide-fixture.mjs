@@ -13,7 +13,7 @@ const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships
 const xfrm = (x, y, w, h) => `<a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm>`;
 const text = (value, size = 1800) => `<a:p><a:r><a:rPr sz="${size}"/><a:t>${value}</a:t></a:r></a:p>`;
 const actionShape = ({ id, name, x, y, rid = '', action = 'ppaction://hlinkshowjump?jump=nextslide' }) => `<p:sp>
-<p:nvSpPr><p:cNvPr id="${id}" name="${name}"><a:hlinkClick${rid ? ` r:id="${rid}"` : ''} action="${action}"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:nvSpPr><p:cNvPr id="${id}" name="${name}"><a:hlinkClick r:id="${rid}" action="${action}"/></p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr>${xfrm(x, y, 24, 24)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
 </p:sp>`;
 const placeholder = ({ id, name, type, idx, x, y, w, h, prompt = '', content = '', ownXfrm = true }) => `<p:sp>
@@ -76,8 +76,14 @@ replace('ppt/slideMasters/_rels/slideMaster1.xml.rels', (xml) => xml
   .replace('</Relationships>', `<Relationship Id="rId9" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout2.xml"/></Relationships>`));
 replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml
   .replace('type="obj"', 'type="tx"').replace('name="Blank"', 'name="标题和正文"'));
-replace('[Content_Types].xml', (xml) => xml
-  .replace('</Types>', '<Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/></Types>'));
+replace('[Content_Types].xml', (xml) => {
+  // slide1 下面改名为非规范的 slide7；Override 必须跟着改，否则 slide7 落到
+  // application/xml 默认类型——LibreOffice 容忍，Open XML SDK 与 PowerPoint 拒绝加载
+  if (!xml.includes('PartName="/ppt/slides/slide1.xml"')) throw new Error('基础包缺少 slide1 的 Override');
+  return xml
+    .replace('PartName="/ppt/slides/slide1.xml"', 'PartName="/ppt/slides/slide7.xml"')
+    .replace('</Types>', '<Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/></Types>');
+});
 replace('ppt/theme/theme1.xml', (xml) => xml
   .replace('<a:accent1><a:srgbClr val="2E75B6"/></a:accent1>', '<a:accent1><a:srgbClr val="D94F70"/></a:accent1>'));
 

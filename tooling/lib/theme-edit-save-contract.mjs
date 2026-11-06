@@ -30,7 +30,7 @@ export async function runThemeEditSaveContract({
   check('保存只改目标主题 part 并保留未知来源词法',
     diff.added.length === 0 && diff.removed.length === 0
       && diff.changed.join(',') === theme.id
-      && xml.includes('data-keep="theme-source"')
+      && xml.includes('tk:keep="theme-source"')
       && xml.includes('val="112233"')
       && xml.includes('typeface="Theme Edited Latin"')
       && xml.includes('script="Jpan"') && xml.includes('typeface="Theme Japanese"')

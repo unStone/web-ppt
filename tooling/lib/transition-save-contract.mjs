@@ -131,7 +131,8 @@ export async function runTransitionSaveContract({ edit, core, load, check, saveA
   const preserveVortex = preserveDoc.slideOrder[21];
   const preserveGlitter = preserveDoc.slideOrder[26];
   preserveEditor.exec({
-    type: 'SetTransition', id: preserveFade, t: { type: 'fade', durationMs: 1250 },
+    // 固件 slide2 的效果是 wedge（合法且引擎不管理的标准效果，替代原 fadeThroughBlack 探针）
+    type: 'SetTransition', id: preserveFade, t: { type: 'wedge', durationMs: 1250 },
   });
   preserveEditor.exec({
     type: 'SetTransition', id: preserveTimed, t: { type: 'none' },
@@ -155,7 +156,7 @@ export async function runTransitionSaveContract({ edit, core, load, check, saveA
   const glitterXml = decoder.decode(preservedSave.package.parts['ppt/slides/slide27.xml']);
   check('未开放的点击策略、声音、扩展属性与同效果属性原样保留',
     preservedXml.includes('advClick="0"') && preservedXml.includes('fixture:transition="keep"')
-      && preservedXml.includes('<p:fadeThroughBlack') && preservedXml.includes('fixture:effect="keep"')
+      && preservedXml.includes('<p:wedge') && preservedXml.includes('fixture:effect="keep"')
       && preservedXml.includes('fixture:dur="4999"')
       && preservedXml.includes('<fixture:fade fixture:child="keep"/>')
       && preservedXml.includes('<p:sndAc><p:endSnd/></p:sndAc>'));

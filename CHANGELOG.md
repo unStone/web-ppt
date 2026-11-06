@@ -2,6 +2,22 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 0.8.0 - 2026-11-06
+
+0.8.0 稳定版：`0.8.0-beta.3` 的全部内容转正到 `latest`，包括 Agent 命令工具面、本机 MCP server 与 Agent Skill（`@web-ppt/agent-mcp` 首个稳定版）、模板填充 `@web-ppt/edit-core/fill`、编辑器 WebMCP 与 Agent 配对评测工具。相对 0.6.0 的逐项变化见下方 `0.8.0-beta.1` 至 `0.8.0-beta.3` 条目。本版另含：
+
+- 新增导入安全上限：`parse()` 在解压前检查 EOCD、中央目录、条目名称、声明大小与压缩比，解压时再核对实际输出；默认上限为 4096 个条目、单条目 128 MiB、总量 512 MiB、压缩比 1000，可通过 `zip` 选项逐项覆盖，`parseInWorker` 使用同一配置。核心解析、Worker、保存原包、OLE 与内嵌工作簿共用这套边界；重复名称、路径穿越、伪造大小和超限输入抛出 `ZipSafetyError`（`reason` 为稳定的 `zip-*` 代码），ZIP64 以 `zip64-unsupported` 明确拒绝。
+- 修复保存产物的 OOXML 结构：图表数据编辑与图表设计把轴标题写到 `numFmt` 之后（schema 规定标题在数字格式之前）；非折线 / 散点图系列残留 `c:smooth`；生成式文字的字符与段落属性（`ln`、填充、字体、项目符号尺寸等）按 schema 顺序写入。
+- 修复形状悬停超链接的保存：目标页删除后悬空引用未清理；给仅有悬停链接的形状新增点击链接时，`hlinkClick` 误写到 `hlinkHover` 之后（cNvPr 的 schema 顺序要求其在前）。
+
+破坏性变更核对：无 API 撤除；超出默认 ZIP 上限或结构异常的输入改为抛出 `ZipSafetyError`，需要更大文件时通过 `zip` 选项放宽。
+
+安装：无版本号安装即得 0.8.0，九包必须同版本；`@next` 标签留给 0.9 线。原计划随 0.8.0 交付的新建图表与图表细节渲染（桌面 002 / 003）顺延到 0.9.0。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+Windows PowerPoint 真机验收继续延后，未记为通过；0.8.0 先行转正，四项自动门禁、OOXML 合法性门禁（ECMA-376 XSD 与 Open XML SDK 双通道）与 LibreOffice 外部打开清单全部通过。
+
 ## 0.8.0-beta.3 - 2026-11-04
 
 九包已实际通过 GitHub OIDC 发布到 npm `next`。官方 registry 的匿名下载、实际 SRI、隔离安装、SDK / fill Schema 和 MCP `beta.3` 握手及十工具均通过，Node 20 / 24 均已复验。

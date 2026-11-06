@@ -42,7 +42,7 @@ const solidFill = (scheme) => `<a:solidFill><a:schemeClr val="${scheme}"/></a:so
 
 /** 通用系列：cat + val */
 function ser(i, name, cats, vals, opts = {}) {
-  const { fill, ln, marker, smooth, fmt = 'General', dPts = '', dLbls = '' } = opts;
+  const { fill, ln, marker, smooth, line = false, fmt = 'General', dPts = '', dLbls = '' } = opts;
   const spPr = fill || ln ? `<c:spPr>${fill ?? ''}${ln ?? ''}</c:spPr>` : '';
   return (
     `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${tx(name)}${spPr}` +
@@ -51,7 +51,7 @@ function ser(i, name, cats, vals, opts = {}) {
     dLbls +
     `<c:cat>${strRef('Sheet1!$A$2:$A$9', cats)}</c:cat>` +
     `<c:val>${numRef('Sheet1!$B$2:$B$9', vals, fmt)}</c:val>` +
-    (smooth ? '<c:smooth val="1"/>' : '<c:smooth val="0"/>') +
+    (line ? (smooth ? '<c:smooth val="1"/>' : '<c:smooth val="0"/>') : '') +
     '</c:ser>'
   );
 }
@@ -141,7 +141,7 @@ const chartBar = chartSpace(
     '<c:gapWidth val="150"/><c:overlap val="-20"/>' +
     '<c:axId val="101"/><c:axId val="102"/></c:barChart>' +
     catAx(101, 102) +
-    valAx(102, 101, 'l', '<c:numFmt formatCode="#,##0" sourceLinked="0"/><c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>金额（万元）</a:t></a:r></a:p></c:rich></c:tx></c:title>') +
+    valAx(102, 101, 'l', '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>金额（万元）</a:t></a:r></a:p></c:rich></c:tx></c:title><c:numFmt formatCode="#,##0" sourceLinked="0"/>') +
     '</c:plotArea>' +
     legend('b'),
 );
@@ -188,11 +188,13 @@ const chartLine = chartSpace(
     ser(0, '新增用户', MONTHS, [120, 168, 145, 210, 198, 265, 240, 310], {
       ln: `<a:ln w="28575">${solidFill('accent1')}</a:ln>`,
       marker: marker('circle', 7),
+      line: true,
       fmt: '#,##0',
     }) +
     ser(1, '净增（含流失）', MONTHS, [40, -18, 62, null, 30, 96, -12, 140], {
       ln: `<a:ln w="28575">${solidFill('accent2')}</a:ln>`,
       marker: marker('diamond', 7),
+      line: true,
       smooth: true,
       fmt: '#,##0',
     }) +
@@ -327,6 +329,7 @@ const chartCombo = chartSpace(
     ser(2, '同比增长率', MONTHS6, [0.082, 0.115, 0.094, 0.203, 0.248, 0.291], {
       ln: `<a:ln w="28575">${solidFill('accent2')}</a:ln>`,
       marker: marker('circle', 7),
+      line: true,
       fmt: '0%',
     }) +
     '<c:marker val="1"/>' +
