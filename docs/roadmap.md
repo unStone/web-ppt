@@ -1,6 +1,6 @@
 # 能力盘点与演进路线
 
-> 更新于 2026-11-05，Git 基线 `v0.8.0-beta.3`，九包 npm `next` 均为 `0.8.0-beta.3`；MCP 实际安装握手版本与包清单一致。既有八包稳定版仍为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
+> 更新于 2026-11-07，Git 基线 `v0.8.0`，九包 npm `latest` 均为 `0.8.0`（`next` 仍为 `0.8.0-beta.3`，留给 0.9 线）；MCP 实际安装握手报告 `0.8.0`，与包清单一致。本文是跨地图的唯一状态汇总：单票状态以各 wayfinder 票据的 `status` 为准，扩展能力与限制见[能力矩阵与格式边界](api/expanded-capabilities.md)，版本交付记录见 CHANGELOG 与 [0.5.0-beta.5 交付记录](releases/0.5.0-beta.5.md)。Windows 真机按用户要求继续跳过。
 
 盘点当前的真实完成度，列全「读 / 写 / 交付」三条线的能力和缺口，给出到 1.0 的版本路径。缺口来自三处：现有开放票据、与 [HeyPuter presentation](https://github.com/HeyPuter/everything/tree/007af35ff7e31684d29030c0056c9d5a238dfc62/src/presentation)（2026-11-02 版本）的逐模块对比、上游 [office-kit/pptx](https://github.com/office-kit/pptx/tree/18b7e75cfa7fd1c6e9891ce1285a76c7889b644b) 0.28.0 的能力核对。
 范围与词汇沿用 [编辑能力技术方案](design/editing-design.md) 与 [CONTEXT.md](../CONTEXT.md)。
@@ -16,11 +16,11 @@
 
 | 线 | 状态 |
 |---|---|
-| 发布 | 九包 npm `next` 均为 `0.8.0-beta.3`，既有八包稳定版为 `0.6.0`，MCP 的 `latest` 为 `0.8.0-beta.1`；实际 OIDC、匿名隔离安装与 MCP 握手均已验证 |
+| 发布 | 九包 npm `latest` 均为 `0.8.0`（OIDC + provenance），`next` 仍为 `0.8.0-beta.3`；实际 OIDC、匿名隔离安装与 MCP 握手（`0.8.0`）均已验证 |
 | 读：解析与渲染 | `.pptx` / `.ppt` / EMF / WMF / EMF+ / PICT 收敛到统一 Schema；187 个预设几何、三维相机投影、15 种艺术字变形、OMML、ChartEx 与地图、加密文件、嵌入字体读取均已完成 |
 | 写：编辑与保存 | 编辑主线（M0–M7）、七类扩展（图表深度编辑、批注、页面适配、SmartArt / OLE / 墨迹内部编辑、高级渲染、PDF / WebM、原生 `.ppt`、无来源复制）与内容流转（高级文本、多级类别、共享工作簿、字体 Provider、矢量 PDF、视频音轨与内嵌视频合成、旧 PPT 外观写入、OLE 深度编辑）已完成 |
 | Agent 接口 | [研发地图](wayfinder/ppt-agent-interface/map.md) 001–008 全部完成：describe、lint、Node 渲染、命令工具面、MCP 与 Skill、WebMCP、模板填充与任务评测 |
-| 桌面能力补齐 | [研发地图](wayfinder/ppt-desktop-parity/map.md)已建立；004 导入安全完成，其余 19 张票处于规划状态，范围与判定见 §3 |
+| 桌面能力补齐 | [研发地图](wayfinder/ppt-desktop-parity/map.md)已建立；004 导入安全与 005 OOXML 门禁完成，其余 18 张票处于规划状态（002 / 003 已确认顺延到 0.9.0），范围与判定见 §3 |
 | 外部缺陷 | #7 组合缩放与 #8 英文撇号已于 2026-10-29 修复并关闭 |
 
 ### 1.2 验证状态
@@ -111,7 +111,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 
 | 能力 | 状态 |
 |---|---|
-| 发布包 | npm 九包 `next` 均为 `0.8.0-beta.3`；既有八包 `latest` 为 `0.6.0`，MCP 的 `latest` 为 `beta.1`；九包实际 OIDC 与匿名隔离安装均通过，MCP Trusted Publisher 已激活且握手软件版本正确 |
+| 发布包 | npm 九包 `latest` 均为 `0.8.0`（OIDC + provenance），`next` 仍为 `0.8.0-beta.3`；九包实际 OIDC、匿名隔离安装与 MCP 握手（`0.8.0`、十工具）均通过，MCP Trusted Publisher 已激活 |
 | 框架适配 | ✅ React + Vue 薄适配，单一 adapter contract，Svelte / WC 可直接复用 |
 | 崩溃恢复 | ✅ 版本化帧 + IndexedDB 分块 + 原子换代 + 挂载前决策 |
 | 协同 | ✅ 字段级 LWW、分数序、可插拔 provider、BroadcastChannel 双标签页 |
@@ -200,7 +200,7 @@ flowchart LR
 | **0.6.0**（八包 `latest`） | 矢量 PDF 转正、视频音轨与内嵌视频合成、OLE 官网入口；Agent describe、lint、Node 渲染 | 已关闭 | ✅ 2026-11-02 发布；Windows 真机经维护者决定延后且未计为通过 |
 | **0.7.0**（未单独发布） | Agent 命令工具面、MCP server 与 Agent Skill；新增 `@web-ppt/agent-mcp` | Agent 004 / 005（已关闭） | 首发流水线终止后，能力并入 `0.8.0-beta.1` |
 | **0.8.0-beta.1–3**（`next` 为 beta.3） | Agent 第三批、九包发布与安装验收、MCP 握手版本修正 | Agent 004–008（已关闭） | ✅ 2026-11-04 发布；四项门禁、CI、OIDC、隔离安装与真实 CLI 握手通过 |
-| **0.8.0** | Agent 第三批转正；导入安全与 OOXML 门禁 | Agent 004–008、桌面 004 / 005（已关闭） | 四项门禁 + OOXML 门禁；原列入本版的桌面 002 / 003 应维护者发版要求顺延到 0.9.0；Windows 真机经维护者决定延后且未计为通过 |
+| **0.8.0**（九包 `latest`） | Agent 第三批转正；导入安全与 OOXML 门禁 | Agent 004–008、桌面 004 / 005（已关闭） | ✅ 2026-11-06 发布；四项门禁 + OOXML 门禁；原列入本版的桌面 002 / 003 经维护者确认顺延到 0.9.0；Windows 真机经维护者决定延后且未计为通过 |
 | **0.9.0** | 新建图表与图表细节渲染、SmartArt 引擎与新建、动画库、公式、放映工具、MP4 / JPEG / GIF、讲义与备注页、嵌入字体写入、合并形状 | 桌面 001–003 / 006–013 | 所列票据关闭；beta 反馈周期 |
 | **1.0.0** | 冻结 0.9 的全部公开 API 与 Agent 工具 Schema | [API 契约、迁移说明与类型回归](api/api-stability.md) | 0.9 beta 反馈收口；ChartEx 真实语料与 Windows 真机（§7.3） |
 
