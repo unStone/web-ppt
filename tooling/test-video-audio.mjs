@@ -34,6 +34,8 @@ await bundleBrowser({ root, entry, output: join(out, 'contract.mjs'), aliases: [
 const bundledModule = await import(join(out, 'contract.mjs'));
 
 let failures = 0;
+// 本套件断言几乎全部依赖 ffmpeg/ffprobe 与样例生成，计数会随环境漂移——与 test-video.mjs
+// 同一口径：不写入 counts.json，verify 不对这些环境条件断言做规模核对。
 const check = (label, ok, detail = '') => { console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`); if (!ok) failures++; };
 
 await withChartBrowser(root, async browser => {

@@ -9,6 +9,7 @@
  * 断言字体颜色与填充在办公软件的解析往返后仍然在场。
  */
 import { countedAssert } from './lib/counted-assert.mjs';
+import { requireSoffice } from './lib/soffice.mjs';
 const { assert, record } = countedAssert('oleLibreOffice');
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -35,11 +36,7 @@ const { core, edit, ole } = process.argv.includes('--dist') ? Object.fromEntries
     ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
   ] });
 
-const SOFFICE_CANDIDATES = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice', '/usr/bin/soffice', '/usr/local/bin/soffice', 'soffice',
-];
-const soffice = SOFFICE_CANDIDATES.find((p) => p === 'soffice' || existsSync(p));
-if (!soffice) throw new Error('未找到 LibreOffice；macOS: brew install --cask libreoffice');
+const soffice = requireSoffice();
 
 // ---------------- SDK 编辑并保存 ----------------
 const RUN_TEXT = 'LibreOffice 对照改写';

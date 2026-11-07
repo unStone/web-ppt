@@ -54,6 +54,8 @@ await bundleBrowser({ root, entry, output: join(out, 'contract.mjs'), aliases: p
 ] });
 
 let failures = 0;
+// 本套件断言依赖 ffmpeg 与真实浏览器时序，计数会随环境漂移——与 test-video.mjs
+// 同一口径：不写入 counts.json，verify 不对这些环境条件断言做规模核对。
 const check = (label, ok, detail = '') => { console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`); if (!ok) failures++; };
 
 /** ffmpeg 提取 WebM 指定时刻帧的平均亮度；给定页面坐标区域时只统计该区域（导出画布与页面 1:1） */
@@ -195,16 +197,23 @@ await withChartBrowser(root, async browser => {
       const mediaEl = { kind: 'image', x: 60, y: 60, w: 160, h: 120, rot: 0, flipH: false, flipV: false,
         src: '', crop: null, name: '长视频', media: { kind: 'video', src: url, mime: 'video/mp4',
           playback: { volume: 1, loop: false, clickGroup: 0 } } };
+      const heapMeasured = typeof performance.memory?.usedJSHeapSize === 'number';
       const before = performance.memory?.usedJSHeapSize ?? 0;
       const slide = { ...pres.slides[0], animations: undefined, timing: undefined, elements: [mediaEl] };
       const blob = await presentationToVideo({ ...pres, slides: [slide] }, { videoOverlay: true, mediaPosters: true,
         fps: 12, slideDurationMs: 900, clickDelayMs: 100 });
       const after = performance.memory?.usedJSHeapSize ?? 0;
       URL.revokeObjectURL(url);
-      return { size: blob.size, heapGrowth: after - before };
+      return { size: blob.size, heapMeasured, heapGrowth: after - before };
     })()`);
-    check('60s 长视频导出完成（按需 seek，内存有界）', longResult.size > 1000 && longResult.heapGrowth < 60 * 1024 * 1024,
-      `size=${longResult.size} heap+${Math.round(longResult.heapGrowth / 1024 / 1024)}MB`);
+    check('60s 长视频导出完成（按需 seek）', longResult.size > 1000, `size=${longResult.size}`);
+    // performance.memory 是 Chromium 专有 API：不可用时如实说明，不能让「增长 0」假充通过
+    if (longResult.heapMeasured) {
+      check('长视频导出内存有界（堆增长 <60MB）', longResult.heapGrowth < 60 * 1024 * 1024,
+        `heap+${Math.round(longResult.heapGrowth / 1024 / 1024)}MB`);
+    } else {
+      console.log('  performance.memory 不可用：内存有界断言未执行（非 Chromium 环境）');
+    }
   }
 });
 

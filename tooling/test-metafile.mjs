@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync } from 'no
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { recordCount } from './lib/measured.mjs';
+import { findSoffice } from './lib/soffice.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/metafile');
@@ -747,10 +748,7 @@ check('随机破坏 400 例全部安全', fuzzBad === 0, `异常/脏输出 ${fuz
 // ---------------- 用例 4：LibreOffice 真实样本 ----------------
 
 group('真实样本（LibreOffice 转换）');
-const SOFFICE = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice',
-  '/usr/bin/soffice', '/usr/local/bin/soffice',
-].find((p) => existsSync(p));
+const SOFFICE = findSoffice();
 const srcPptx = join(root, 'fixtures/showcase.pptx');
 
 function convert(fmt) {

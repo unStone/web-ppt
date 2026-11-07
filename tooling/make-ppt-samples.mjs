@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findSoffice } from './lib/soffice.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -30,11 +31,7 @@ function fingerprint(bundle, file) {
     { cwd: root, encoding: 'utf8' });
 }
 
-const SOFFICE = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice',
-  '/usr/bin/soffice',
-  '/usr/local/bin/soffice',
-].find((p) => existsSync(p));
+const SOFFICE = findSoffice();
 
 if (!SOFFICE) {
   console.log('未找到 LibreOffice，跳过 .ppt 样本生成（仓库里已有的样本保持不变）');

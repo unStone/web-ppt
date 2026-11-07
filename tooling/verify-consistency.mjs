@@ -356,6 +356,8 @@ if (!counts) {
     ['AGENTS.md', /双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
     ['docs/engineering/testing.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
     ['AGENTS.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
+    ['docs/engineering/testing.md', /动画统一验收 ([\d,]+) 项断言/, ['animationAcceptance']],
+    ['AGENTS.md', /动画统一验收 ([\d,]+) 项断言/, ['animationAcceptance']],
     ['docs/engineering/testing.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
     ['AGENTS.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
     ['docs/engineering/testing.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],

@@ -4,6 +4,7 @@ import {execFileSync} from 'node:child_process';
 import ts from 'typescript';
 import {build} from 'vite';
 import {withChartBrowser} from './lib/chart-browser-lab.mjs';
+import {recordCount} from './lib/measured.mjs';
 
 const root=resolve('.'),dist=process.argv.includes('--dist'),directory=dist?'browser-dist':'browser';
 const out=resolve(root,`out/font-glyphs/${directory}`);
@@ -27,5 +28,6 @@ for(const file of report.vectorExports.files){
   file.byteLength=file.bytes.length;delete file.bytes;
 }
 delete report.vectorExports.images;
+recordCount('fontBrowser',report.assertions);
 writeFileSync(resolve(root,`out/font-glyphs/browser-document${dist?'-dist':''}.json`),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));

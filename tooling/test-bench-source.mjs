@@ -1,10 +1,27 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 mkdirSync(join(root, 'out'), { recursive: true });
+
+// 本脚本靠临时搬走 dist 来逼 bench 走源码；进程在 finally 之前被杀时 dist 会留在
+// out/bench-source-* 里，工作区从此缺 dist。每次开跑先自愈上轮遗留，再进入本轮。
+for (const dir of readdirSync(join(root, 'out'))) {
+  if (!dir.startsWith('bench-source-')) continue;
+  const savedDir = join(root, 'out', dir);
+  for (const name of ['core', 'edit-core']) {
+    const saved = join(savedDir, name);
+    const source = join(root, 'packages', name, 'dist');
+    if (existsSync(saved) && !existsSync(source)) {
+      renameSync(saved, source);
+      console.log(`  已从上轮中断恢复 packages/${name}/dist`);
+    }
+  }
+  rmSync(savedDir, { recursive: true, force: true });
+}
+
 const temporary = mkdtempSync(join(root, 'out/bench-source-'));
 const moved = [];
 try {

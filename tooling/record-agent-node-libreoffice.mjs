@@ -10,22 +10,20 @@
  * 不同），数值用于横向比较与定位整片差异，不是及格线——票据 003 的验收要求。
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
 import { PNG } from 'pngjs';
 import * as hb from 'harfbuzzjs';
+import { grayFromRgba, grayMetrics } from './lib/ssim-metrics.mjs';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = resolve(root, 'out/agent-node-render/libreoffice');
 mkdirSync(out, { recursive: true });
 
-const SOFFICE_CANDIDATES = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice', '/usr/bin/soffice', '/usr/local/bin/soffice', 'soffice',
-];
-const soffice = SOFFICE_CANDIDATES.find((p) => p === 'soffice' || existsSync(p));
-if (!soffice) throw new Error('未找到 LibreOffice；macOS: brew install --cask libreoffice');
+const soffice = requireSoffice();
 
 const REF_W = 1280, REF_H = 720;
 const filter = `png:impress_png_Export:{"PixelWidth":{"type":"long","value":${REF_W}},"PixelHeight":{"type":"long","value":${REF_H}}}`;
@@ -53,57 +51,21 @@ await provider.register({ id: 'bold', origin: 'explicit', bytes: fontSample('lat
 await provider.register({ id: 'chinese', origin: 'explicit', bytes: fontSample('chinese.ttf') }, { purpose: 'edit' });
 const faceForRun = (style, script) => (script === 'cjk' || script === 'hani' ? 'chinese' : style.b ? 'bold' : 'latin');
 
-/** SSIM：8×8 非重叠窗口，与 compare-libreoffice 的口径一致。 */
-function ssim(a, b, w, h) {
-  const C1 = (0.01 * 255) ** 2, C2 = (0.03 * 255) ** 2, B = 8;
-  let sum = 0, n = 0;
-  for (let by = 0; by + B <= h; by += B) for (let bx = 0; bx + B <= w; bx += B) {
-    let ma = 0, mb = 0;
-    for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
-      ma += a[(by + y) * w + bx + x]; mb += b[(by + y) * w + bx + x];
-    }
-    ma /= B * B; mb /= B * B;
-    let va = 0, vb = 0, cov = 0;
-    for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
-      const da = a[(by + y) * w + bx + x] - ma, db = b[(by + y) * w + bx + x] - mb;
-      va += da * da; vb += db * db; cov += da * db;
-    }
-    va /= B * B - 1; vb /= B * B - 1; cov /= B * B - 1;
-    sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2)); n++;
-  }
-  return n ? sum / n : 1;
-}
-
-function grayOf(data, w, h) {
-  const g = new Float64Array(w * h);
-  for (let i = 0; i < g.length; i++) {
-    const o = i * 4;
-    const alpha = data[o + 3] / 255;
-    g[i] = (data[o] * 0.299 + data[o + 1] * 0.587 + data[o + 2] * 0.114) * alpha + 255 * (1 - alpha);
-  }
-  return g;
-}
-
-function metrics(nodePng, officePng) {
-  const w = Math.min(nodePng.width, officePng.width), h = Math.min(nodePng.height, officePng.height);
-  const a = grayOf(nodePng.data, w, h), b = grayOf(officePng.data, w, h);
-  let sum = 0, max = 0, diff = 0;
-  for (let i = 0; i < w * h; i++) {
-    const d = Math.abs(a[i] - b[i]);
-    sum += d; if (d > max) max = d; if (d > 8) diff++;
-  }
-  return { mae: +(sum / (w * h)).toFixed(2), deltaMax: Math.round(max), diffRatioPct: +(diff / (w * h) * 100).toFixed(2), ssim: +ssim(a, b, w, h).toFixed(4) };
-}
+/** SSIM 与像素指标统一走 lib/ssim-metrics.mjs，与 compare.html 同一份实现。 */
 
 const report = [];
 for (const fixture of FIXTURES) {
   const name = basename(fixture);
   const dir = join(out, name.replace(/\.[^.]+$/, ''));
   mkdirSync(dir, { recursive: true });
-  execFileSync(soffice, ['--headless', '--norestore', '--convert-to', filter, '--outdir', dir, fixture], { stdio: 'ignore', timeout: 300_000 });
   const refPath = join(dir, 'reference.png');
+  // 先清掉上一轮的参考图（必须在转换前）：转换静默失败时绝不能拿陈旧参考图继续算指标
   for (const f of readdirSync(dir)) {
-    if (f.endsWith('.png') && f !== 'reference.png' && !f.startsWith('node-')) renameSync(join(dir, f), refPath);
+    if (f.endsWith('.png') && !f.startsWith('node-')) unlinkSync(join(dir, f));
+  }
+  execFileSync(soffice, ['--headless', '--norestore', '--convert-to', filter, '--outdir', dir, fixture], { stdio: 'ignore', timeout: 300_000 });
+  for (const f of readdirSync(dir)) {
+    if (f.endsWith('.png') && !f.startsWith('node-')) renameSync(join(dir, f), refPath);
   }
   if (!existsSync(refPath)) throw new Error(`${name}：LibreOffice 未产出参考图`);
 
@@ -133,7 +95,9 @@ for (const fixture of FIXTURES) {
   const nodePng = PNG.sync.read(Buffer.from(png));
   const officePng = PNG.sync.read(readFileSync(refPath));
   writeFileSync(join(dir, 'node-1.png'), Buffer.from(png));
-  report.push({ name, page: 1, size: `${nodePng.width}x${nodePng.height}`, ...metrics(nodePng, officePng) });
+  const w = Math.min(nodePng.width, officePng.width), h = Math.min(nodePng.height, officePng.height);
+  const m = grayMetrics(grayFromRgba(nodePng.data, w, h), grayFromRgba(officePng.data, w, h), w, h);
+  report.push({ name, page: 1, size: `${nodePng.width}x${nodePng.height}`, ...m });
 }
 provider.dispose();
 writeFileSync(join(out, 'libreoffice-parity.json'), JSON.stringify(report, null, 2) + '\n');

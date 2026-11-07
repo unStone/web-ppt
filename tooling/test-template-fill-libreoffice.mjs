@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const out = join(root, 'out/template-fill');
@@ -13,7 +14,7 @@ execFileSync(process.execPath, [join(root, browser ? 'tooling/test-template-fill
 const artifacts = browser ? ['fixture', 'editorial', 'aurora', 'midnight'].map(name => `browser-${name}${suffix}`)
   : ['fixture-filled', 'editorial-filled', 'aurora-filled', 'midnight-filled'];
 if (process.env.TEMPLATE_FILL_EXTERNAL) artifacts.push(browser ? `browser-external${suffix}` : 'external-filled');
-const evidence = { libreOffice: execFileSync('soffice', ['--version'], { encoding: 'utf8' }).trim(), artifacts: {} };
+const evidence = { libreOffice: execFileSync(requireSoffice(), ['--version'], { encoding: 'utf8' }).trim(), artifacts: {} };
 evidence.scope = '验证无修复打开、页数及实际缩略图；不声明跨读取器像素一致';
 evidence.limitations = [{ reason: 'quicklook-dynamic-field-inheritance',
   detail: 'Quick Look 对 Midnight 动态页码的主题文字色继承存在预览差异；独立 LibreOffice PDF 为白色页码，动态字段和继承链仍保留',

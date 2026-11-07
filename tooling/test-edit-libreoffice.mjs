@@ -5,6 +5,7 @@ import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path
 import { fileURLToPath } from 'node:url';
 import { unzipSync, unzlibSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
+import { requireSoffice } from './lib/soffice.mjs';
 import { runRemoveSlideLibreOfficeContract } from './lib/remove-slide-libreoffice-contract.mjs';
 import { runDuplicateSlideLibreOfficeContract } from './lib/duplicate-slide-libreoffice-contract.mjs';
 import { runChangeLayoutLibreOfficeContract } from './lib/change-layout-libreoffice-contract.mjs';
@@ -72,14 +73,7 @@ const savedPath = requested
   : await generateSavedPath();
 if (!existsSync(savedPath)) throw new Error(`找不到待验证的保存产物：${savedPath}`);
 
-const candidates = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice',
-  '/usr/bin/soffice',
-  '/usr/local/bin/soffice',
-  '/opt/homebrew/bin/soffice',
-];
-const soffice = candidates.find((candidate) => existsSync(candidate));
-if (!soffice) throw new Error('未找到 LibreOffice；CI 与本地验收必须安装 soffice');
+const soffice = requireSoffice();
 
 function savedShapeGeometry(bytes, name) {
   const parts = unzipSync(bytes);
@@ -240,6 +234,8 @@ function exportLibreOfficeSvg(label, sourcePath = savedPath) {
   const svg = join(out, `${basename(sourcePath, extname(sourcePath))}.svg`);
   if (existsSync(svg)) unlinkSync(svg);
   const exported = spawnSync(soffice, [
+    // 独立 profile：本机开着 GUI LibreOffice 时不会撞用户 profile 锁（chart/ole 套件同此做法）
+    `-env:UserInstallation=file://${join(out, 'lo-profile')}`,
     '--headless', '--norestore', '--convert-to', 'svg', '--outdir', out, sourcePath,
   ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
   if (exported.error) throw exported.error;
@@ -253,6 +249,7 @@ function exportLibreOfficePng(label, sourcePath = savedPath) {
   const png = join(out, `${basename(sourcePath, extname(sourcePath))}.png`);
   if (existsSync(png)) unlinkSync(png);
   const exported = spawnSync(soffice, [
+    `-env:UserInstallation=file://${join(out, 'lo-profile')}`,
     '--headless', '--norestore', '--convert-to', 'png', '--outdir', out, sourcePath,
   ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
   if (exported.error) throw exported.error;
@@ -276,6 +273,7 @@ const pdfFormat = [
   ? 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
   : 'pdf';
 const opened = spawnSync(soffice, [
+  `-env:UserInstallation=file://${join(out, 'lo-profile')}`,
   '--headless', '--norestore', '--convert-to', pdfFormat, '--outdir', out, savedPath,
 ], { cwd: root, encoding: 'utf8', timeout: 300_000 });
 if (opened.error) throw opened.error;

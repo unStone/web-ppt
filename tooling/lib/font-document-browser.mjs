@@ -1,4 +1,5 @@
-const ensure=(condition,message)=>{if(!condition)throw new Error(message);};
+let assertions=0;
+const ensure=(condition,message)=>{assertions++;if(!condition)throw new Error(message);};
 
 export async function fontDocumentBrowserContract(){
   const html=await fetch('/packages/site/editor.html').then(response=>response.text());
@@ -126,5 +127,5 @@ export async function fontDocumentBrowserContract(){
   const cancelled=await fontInitializationBrowserContract({createEditorApplication,openEditor,adjustments,bytes,host});
   const {vectorPdfExportLifetimeBrowser}=await import('./vector-pdf-export-lifetime-browser.mjs');
   const vectorExports=await vectorPdfExportLifetimeBrowser({createEditorApplication,openEditor,adjustments,host});
-  return {cycles:results,closed:previous.state(),cancelled,readerLifetime,vectorExports};
+  return {cycles:results,closed:previous.state(),cancelled,readerLifetime,vectorExports,assertions};
 }

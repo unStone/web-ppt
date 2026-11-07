@@ -102,7 +102,9 @@ const eq = (name, actual, expected) =>
   check(name, Object.is(actual, expected), `期望 ${JSON.stringify(expected)}，实际 ${JSON.stringify(actual)}`);
 const load = (name) => {
   const file = join(root, 'fixtures', name);
-  return existsSync(file) ? new Uint8Array(readFileSync(file)) : null;
+  // 固件由 npm run fixtures 全量生成；缺失必须显式失败，静默跳过会让整块验收假绿
+  if (!existsSync(file)) throw new Error(`缺少固件 ${name}：先跑 npm run fixtures 生成测试文件`);
+  return new Uint8Array(readFileSync(file));
 };
 const walk = (elements, fn) => {
   for (const element of elements) {
@@ -196,8 +198,7 @@ console.log('\n\x1b[36m▸ 分数序\x1b[0m');
 
 console.log('\n\x1b[36m▸ EditDoc 建模\x1b[0m');
 const bytes = load('showcase.pptx');
-if (!bytes) failures.push('缺少 showcase.pptx');
-else {
+{
   const pres = await core.parse(bytes, { edit: true, keepPackage: true, lazy: false });
   const doc = edit.createDoc(pres, { idPrefix: 'fixture-' });
   const same = edit.createDoc(pres, { idPrefix: 'fixture-' });
@@ -311,7 +312,7 @@ else {
   edit.disposeDoc(readonlyDoc);
 
   const pptBytes = load('showcase.ppt');
-  if (pptBytes) {
+  {
     const legacy = await core.parse(pptBytes, { edit: true });
     const legacyDoc = edit.createDoc(legacy, { idPrefix: 'legacy-' });
     check('.ppt 进入可生成保存的编辑模型', legacyDoc.meta.readonly === false && legacyDoc.package === null);
@@ -336,7 +337,6 @@ else {
   let framedFiles = 0, protectedChildren = 0;
   for (const name of frameFiles) {
     const frameBytes = load(name);
-    if (!frameBytes) continue;
     const framePres = await core.parse(frameBytes, { edit: true, keepPackage: true, lazy: false });
     const frameDoc = edit.createDoc(framePres, { idPrefix: `${name}-` });
     const frames = Object.values(frameDoc.elements).filter((record) => record.meta.editable === 'frame');

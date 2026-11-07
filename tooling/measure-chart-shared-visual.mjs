@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { withChartBrowser } from './lib/chart-browser-lab.mjs';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root = resolve('.'), out = resolve('out/chart-shared/visual');
 mkdirSync(out, { recursive: true });
@@ -14,7 +15,7 @@ cases.push({stem:'render-mixed-scatter',fixture:'sample-chart-shared-mixed-scatt
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const report = { method: '首页面 1280×720；LibreOffice 实际 PNG 与两条引擎文字路径；无相似度及格线。',
   runnerSha256: digest(readFileSync(import.meta.filename)), rendererManifest: 'out/chart-shared/mixed-render-gate-inputs.json',
-  office: execFileSync('/Applications/LibreOffice.app/Contents/MacOS/soffice', ['--version'], { encoding: 'utf8' }).trim(),
+  office: execFileSync(requireSoffice(), ['--version'], { encoding: 'utf8' }).trim(),
   toolSha256: digest(readFileSync('tooling/compare-libreoffice.mjs')), cases: [], savePathPixels: [] };
 const persist = () => writeFileSync(`${out}/result.json`, JSON.stringify(report, null, 2) + '\n');
 for (const item of cases) for (const variant of ['original', 'patched', 'generated']) {

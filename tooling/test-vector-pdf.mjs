@@ -18,6 +18,13 @@ import {vectorPdfImagePatternsContract} from './lib/vector-pdf-image-patterns-co
 import {vectorPdfNormalizationContract} from './lib/vector-pdf-normalization-contract.mjs';
 
 const root=resolve('.'),out=resolve(root,'out/vector-pdf');mkdirSync(out,{recursive:true});
+// python3 是独立核对器（inspect-vector-pdf*.py）的硬依赖：缺失时给出可操作的指引，
+// 而不是让后续 execFileSync 以 ENOENT 裸崩
+try{execFileSync('python3',['--version'],{stdio:'ignore'});}
+catch{
+  console.error('未找到 python3。矢量 PDF 的独立核对依赖它：安装 python3 并确保在 PATH 中后重跑。');
+  process.exit(1);
+}
 const entry=resolve(out,'entry.mjs');
 writeFileSync(entry,`export {parse,renderSlideToSvg} from '@web-ppt/core';
 export {presentationToVectorPdf,VectorPdfError} from '@web-ppt/core/pdf/vector';

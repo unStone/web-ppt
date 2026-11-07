@@ -4,8 +4,9 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { resolve, join, basename } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import { JSDOM } from 'jsdom';
+import { requireSoffice } from './lib/soffice.mjs';
 
-const out=resolve('out/chart-hierarchy'),soffice=process.env.SOFFICE??'/Applications/LibreOffice.app/Contents/MacOS/soffice';
+const out=resolve('out/chart-hierarchy'),soffice=requireSoffice();
 const c='http://schemas.openxmlformats.org/drawingml/2006/chart';
 const snapshot=bytes=>{
   const parts=unzipSync(bytes),result=[];

@@ -23,14 +23,9 @@ const bundled = await bundleBrowser({
 });
 const dist = process.argv.includes('--dist');
 const core = dist ? await import('@web-ppt/core') : bundled.core;
-const isPreviewDeferredPart = dist
-  ? (name) => !name.endsWith('/') && (
-    /\/(?:media|embeddings)\//i.test(name)
-    || /^ppt\/slides\/(?:_rels\/)?slide[^/]+$/i.test(name)
-    || /^ppt\/(?:notesSlides|comments|charts|diagrams)\//i.test(name)
-    || /^ppt\/vbaProject/i.test(name)
-  )
-  : bundled.isPreviewDeferredPart;
+// isPreviewDeferredPart 不在发布面上，dist 模式没有真实现可断言；分类检查只在源码
+// 模式跑，dist 下同一逻辑由 core.parse 的行为断言间接覆盖，不再维护一份手抄正则
+const isPreviewDeferredPart = dist ? null : bundled.isPreviewDeferredPart;
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const png = (color) => makePng(8, 8, () => color);
@@ -106,18 +101,22 @@ const check = (condition, label) => {
   count++;
 };
 
-check(isPreviewDeferredPart('ppt/media/image1.png'), '照片路径推迟');
-check(isPreviewDeferredPart('ppt/media/media1.bin'), '视频 bin 推迟');
-check(isPreviewDeferredPart('ppt/slides/slide2.xml'), '后页 XML 推迟');
-check(isPreviewDeferredPart('ppt/slides/_rels/slide2.xml.rels'), '后页关系推迟');
-check(isPreviewDeferredPart('ppt/embeddings/oleObject1.bin'), '嵌入物推迟');
-check(isPreviewDeferredPart('ppt/notesSlides/notesSlide1.xml'), '备注推迟');
-check(isPreviewDeferredPart('ppt/vbaProject.bin'), 'VBA 推迟');
-check(!isPreviewDeferredPart('ppt/slides/'), '目录项不推迟');
-check(!isPreviewDeferredPart('ppt/media/'), '媒体目录项不推迟');
-check(!isPreviewDeferredPart('ppt/slideLayouts/slideLayout1.xml'), '版式不推迟');
-check(!isPreviewDeferredPart('ppt/presentation.xml'), 'presentation 不推迟');
-check(!isPreviewDeferredPart('ppt/commentAuthors.xml'), '批注作者不推迟');
+if (!dist) {
+  check(isPreviewDeferredPart('ppt/media/image1.png'), '照片路径推迟');
+  check(isPreviewDeferredPart('ppt/media/media1.bin'), '视频 bin 推迟');
+  check(isPreviewDeferredPart('ppt/slides/slide2.xml'), '后页 XML 推迟');
+  check(isPreviewDeferredPart('ppt/slides/_rels/slide2.xml.rels'), '后页关系推迟');
+  check(isPreviewDeferredPart('ppt/embeddings/oleObject1.bin'), '嵌入物推迟');
+  check(isPreviewDeferredPart('ppt/notesSlides/notesSlide1.xml'), '备注推迟');
+  check(isPreviewDeferredPart('ppt/vbaProject.bin'), 'VBA 推迟');
+  check(!isPreviewDeferredPart('ppt/slides/'), '目录项不推迟');
+  check(!isPreviewDeferredPart('ppt/media/'), '媒体目录项不推迟');
+  check(!isPreviewDeferredPart('ppt/slideLayouts/slideLayout1.xml'), '版式不推迟');
+  check(!isPreviewDeferredPart('ppt/presentation.xml'), 'presentation 不推迟');
+  check(!isPreviewDeferredPart('ppt/commentAuthors.xml'), '批注作者不推迟');
+} else {
+  console.log('  dist 模式：isPreviewDeferredPart 不在发布面，分类检查跳过（行为断言覆盖同一逻辑）');
+}
 
 const unused = new Uint8Array(64 * 1024).fill(7);
 const intact = photoDeck(unused);

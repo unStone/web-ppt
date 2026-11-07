@@ -1,8 +1,10 @@
-import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { installDomEnv } from './lib/dom-env.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
+import { countedAssert } from './lib/counted-assert.mjs';
+
+const { assert, record } = countedAssert('openPage');
 
 const { window, dom } = installDomEnv();
 dom.reconfigure({ url: 'https://web-ppt.test/viewer/?file=/deck.pptx&p=5#stage' });
@@ -71,4 +73,5 @@ api.clearOpenPageParam();
 assert.equal(location.search, '');
 assert.equal(location.hash, '#stage');
 
+record();
 console.log('open-page 页码解析与回写通过');

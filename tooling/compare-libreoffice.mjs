@@ -17,22 +17,9 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-const SOFFICE_CANDIDATES = [
-  '/Applications/LibreOffice.app/Contents/MacOS/soffice',
-  '/usr/bin/soffice',
-  '/usr/local/bin/soffice',
-  'soffice',
-];
-
-function findSoffice() {
-  for (const p of SOFFICE_CANDIDATES) {
-    if (p === 'soffice' || existsSync(p)) return p;
-  }
-  return null;
-}
 
 const input = process.argv[2];
 if (!input) {
@@ -40,11 +27,7 @@ if (!input) {
   process.exit(1);
 }
 
-const soffice = findSoffice();
-if (!soffice) {
-  console.error('未找到 LibreOffice。macOS: brew install --cask libreoffice');
-  process.exit(1);
-}
+const soffice = requireSoffice();
 
 const src = resolve(root, input);
 if (!existsSync(src)) {
@@ -55,6 +38,12 @@ const name = basename(src).replace(/\.[^.]+$/, '');
 const outDir = join(root, 'out/compare', name);
 mkdirSync(outDir, { recursive: true });
 
+const refPath = join(outDir, 'reference.png');
+// 先清掉上一轮的 PNG 产物：转换静默失败时绝不能拿陈旧参考图继续算指标
+for (const f of readdirSync(outDir)) {
+  if (f.endsWith('.png')) unlinkSync(join(outDir, f));
+}
+
 const REF_W = 1280;
 const REF_H = 720;
 const filter = `png:impress_png_Export:{"PixelWidth":{"type":"long","value":${REF_W}},"PixelHeight":{"type":"long","value":${REF_H}}}`;
@@ -64,9 +53,8 @@ execFileSync(soffice, ['--headless', '--norestore', '--convert-to', filter, '--o
   timeout: 300_000,
 });
 
-const refPath = join(outDir, 'reference.png');
 for (const f of readdirSync(outDir)) {
-  if (f.endsWith('.png') && f !== 'reference.png') renameSync(join(outDir, f), refPath);
+  if (f.endsWith('.png')) renameSync(join(outDir, f), refPath);
 }
 if (!existsSync(refPath)) {
   console.error('LibreOffice 未产出参考图');
@@ -86,6 +74,8 @@ const engine = readFileSync(bundlePath, 'utf8');
 unlinkSync(bundlePath);
 const refB64 = readFileSync(refPath).toString('base64');
 const srcB64 = readFileSync(src).toString('base64');
+// 指标实现与 record-agent-node-libreoffice 共用同一份：剥掉 export 后以经典脚本内嵌
+const ssimLib = readFileSync(join(root, 'tooling/lib/ssim-metrics.mjs'), 'utf8').replace(/^export /gm, '');
 
 writeFileSync(join(outDir, 'compare.html'), `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>对比 · ${name}</title>
@@ -120,34 +110,11 @@ writeFileSync(join(outDir, 'compare.html'), `<!doctype html>
 </div>
 <pre id="err"></pre>
 <script>${engine}</script>
+<script>${ssimLib}</script>
 <script>
 const b64 = (s) => { const raw = atob(s); const u = new Uint8Array(raw.length); for (let i=0;i<raw.length;i++) u[i]=raw.charCodeAt(i); return u; };
 const REF = b64(${JSON.stringify(refB64)});
 const SRC = b64(${JSON.stringify(srcB64)});
-
-function gray(d, i) { return 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; }
-
-/** 灰度 SSIM，8×8 非重叠窗口 */
-function ssim(a, b, w, h) {
-  const C1 = (0.01*255)**2, C2 = (0.03*255)**2, B = 8;
-  let sum = 0, n = 0;
-  for (let by = 0; by + B <= h; by += B) {
-    for (let bx = 0; bx + B <= w; bx += B) {
-      let ma=0, mb=0;
-      for (let y=0;y<B;y++) for (let x=0;x<B;x++) { const i=((by+y)*w+bx+x)*4; ma+=gray(a,i); mb+=gray(b,i); }
-      const N = B*B; ma/=N; mb/=N;
-      let va=0, vb=0, cov=0;
-      for (let y=0;y<B;y++) for (let x=0;x<B;x++) {
-        const i=((by+y)*w+bx+x)*4; const da=gray(a,i)-ma, db=gray(b,i)-mb;
-        va+=da*da; vb+=db*db; cov+=da*db;
-      }
-      va/=N-1; vb/=N-1; cov/=N-1;
-      sum += ((2*ma*mb+C1)*(2*cov+C2))/((ma*ma+mb*mb+C1)*(va+vb+C2));
-      n++;
-    }
-  }
-  return n ? sum/n : 1;
-}
 
 (async () => {
   try {
@@ -171,22 +138,13 @@ function ssim(a, b, w, h) {
     const B = draw('myC', myBmp);
     draw('mineC', myBmp);
 
-    let sum = 0, max = 0, diffPx = 0;
-    const N = W*H;
-    for (let i=0;i<A.length;i+=4) {
-      const d0=Math.abs(A[i]-B[i]), d1=Math.abs(A[i+1]-B[i+1]), d2=Math.abs(A[i+2]-B[i+2]);
-      sum += d0+d1+d2;
-      const m = Math.max(d0,d1,d2);
-      if (m > max) max = m;
-      if (m > 8) diffPx++;
-    }
-    const mae = sum/(N*3);
-    const s = ssim(A, B, W, H);
+    // 指标与 record-agent-node-libreoffice 同口径：灰度上算 MAE / Δmax / 差异像素 / SSIM
+    const m = grayMetrics(grayFromRgba(A, W, H), grayFromRgba(B, W, H), W, H);
     document.getElementById('metrics').innerHTML =
-      '<div>SSIM<b>' + s.toFixed(4) + '</b></div>' +
-      '<div>平均绝对误差<b>' + mae.toFixed(2) + '</b></div>' +
-      '<div>最大通道偏差<b>Δ' + max + '</b></div>' +
-      '<div>差异像素（Δ&gt;8）<b>' + (100*diffPx/N).toFixed(2) + '%</b></div>';
+      '<div>SSIM<b>' + m.ssim.toFixed(4) + '</b></div>' +
+      '<div>平均绝对误差<b>' + m.mae.toFixed(2) + '</b></div>' +
+      '<div>最大偏差<b>Δ' + m.deltaMax + '</b></div>' +
+      '<div>差异像素（Δ&gt;8）<b>' + m.diffRatioPct.toFixed(2) + '%</b></div>';
 
     // 差异热力图：偏差越大越红
     const heatData = new ImageData(W, H);

@@ -5,8 +5,9 @@ import { resolve, join, basename, posix } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import { JSDOM } from 'jsdom';
 import { createHash } from 'node:crypto';
+import { requireSoffice } from './lib/soffice.mjs';
 
-const out = resolve('out/chart-shared'), soffice = process.env.SOFFICE ?? '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+const out = resolve('out/chart-shared'), soffice = requireSoffice();
 const inputs = resolve(process.env.CHART_SHARED_INPUTS ?? out);
 const cases = process.env.CHART_SHARED_CASES ?? 'tooling/chart-shared-cases.json';
 const report = resolve(process.env.CHART_SHARED_REPORT ?? join(out, 'libreoffice.json'));

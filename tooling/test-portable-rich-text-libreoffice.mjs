@@ -4,9 +4,10 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { resolve, join, basename } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import { JSDOM } from 'jsdom';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root=resolve('.'),out=join(root,'out/portable-rich-text');
-const soffice=process.env.SOFFICE ?? '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+const soffice=requireSoffice();
 const m='http://schemas.openxmlformats.org/officeDocument/2006/math';
 const snapshot=bytes=>{
   const parts=unzipSync(bytes),result=[];

@@ -1,9 +1,11 @@
-import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { zipSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
+import { countedAssert } from './lib/counted-assert.mjs';
+
+const { assert, record } = countedAssert('openKind');
 
 const root = process.cwd();
 const out = resolve(root, 'out/open-kind');
@@ -65,4 +67,5 @@ assert.throws(() => rejectIfNotPresentation(pdfReject), (error) => (
 ), 'PDF 必须在认文件处拒绝');
 assert.doesNotThrow(() => rejectIfNotPresentation(showcase), '真演示文稿不能被认文件拒绝');
 
+record();
 console.log('打开前认文件通过');

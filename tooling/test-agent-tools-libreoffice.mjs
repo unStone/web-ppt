@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { requireSoffice } from './lib/soffice.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const out = join(root, 'out/agent-tools');
 execFileSync(process.execPath, [join(root, 'tooling/test-agent-tools.mjs'), '--dist'], { cwd: root, stdio: 'inherit' });
-const evidence = { libreOffice: execFileSync('soffice', ['--version'], { encoding: 'utf8' }).trim(), artifacts: {} };
+const evidence = { libreOffice: execFileSync(requireSoffice(), ['--version'], { encoding: 'utf8' }).trim(), artifacts: {} };
 for (const name of ['patch', 'generated']) {
   const file = join(out, `${name}.pptx`);
   execFileSync(process.execPath, [join(root, 'tooling/test-edit-libreoffice.mjs'), file, '2'], { cwd: root, stdio: 'inherit' });
