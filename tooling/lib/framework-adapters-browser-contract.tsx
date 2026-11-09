@@ -1,4 +1,4 @@
-import React, { StrictMode, createRef, useState } from 'react';
+import { StrictMode, createRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createApp, h, reactive } from 'vue';
 import { openEditor } from '@web-ppt/editor';
