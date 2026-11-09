@@ -1,0 +1,70 @@
+name: 渲染差异 · Rendering difference
+description: 页面、文本、动画或切换效果与 PowerPoint 不一致 · Output differs from PowerPoint
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        渲染问题必须附带能复现的文件。样本含敏感内容时，删到只剩出问题的那一页并替换文字后再上传。
+        A reproducible file is required. Strip it down to the affected slide and replace sensitive text if needed.
+  - type: input
+    id: version
+    attributes:
+      label: 包与版本 · Package versions
+      description: 例如 `@web-ppt/core@0.8.0`；在线 Demo 上发现的问题填写「在线 Demo」 · Write "online demo" if found there
+      placeholder: '@web-ppt/core@0.8.0, @web-ppt/viewer-core@0.8.0'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 浏览器与系统 · Browser and OS
+      placeholder: Chrome 148 / macOS 15
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 差异类型 · Area
+      multiple: true
+      options:
+        - 形状 / 几何 · Shapes / geometry
+        - 文本排版 · Text layout
+        - 颜色 / 填充 / 效果 · Color / fill / effects
+        - 图片 / 媒体 · Images / media
+        - 表格 / 图表 · Tables / charts
+        - 动画 / 切换 · Animations / transitions
+        - 其他 · Other
+    validations:
+      required: true
+  - type: dropdown
+    id: path
+    attributes:
+      label: 输出路径 · Output path
+      description: 屏幕预览与 PNG 走 foreignObject；独立 SVG 与打印 HTML 走原生 text
+      options:
+        - 屏幕预览 / 查看器 · On-screen viewer
+        - 导出 PNG / 图片 ZIP · PNG export
+        - 独立 SVG / 打印 HTML · Standalone SVG / print HTML
+        - 编辑器 · Editor
+        - 不确定 · Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: 样本文件 · Sample file
+      description: 把 .pptx / .ppt 拖到这里上传，并写明出问题的页码 · Drag the file here and note the slide number
+    validations:
+      required: true
+  - type: textarea
+    id: comparison
+    attributes:
+      label: 对照截图 · Screenshots
+      description: 同一页在 PowerPoint（或 WPS / Keynote，请注明）与 Web-PPT 中的截图 · The same slide in PowerPoint and in Web-PPT
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 补充说明 · Additional context

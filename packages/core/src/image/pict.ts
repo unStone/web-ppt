@@ -12,8 +12,10 @@
  */
 
 import {
-  BS_NULL, BS_SOLID, Gfx, PS_NULL, PS_SOLID, Reader, base64, defFont, encodePng, rgb,
+  BS_NULL, BS_SOLID, PS_NULL, PS_SOLID, Reader, defFont, rgb,
 } from './gdi';
+import { Gfx } from './gdi-gfx';
+import { base64, encodePng } from './dib';
 import type { Brush, Fnt, Pen, Pt, Rect } from './gdi';
 import type { MetafileOptions } from './emf';
 

@@ -1,4 +1,5 @@
-import type { CreateBlankPptxOptions } from '../generate';
+// dist 同时存在 generate.js 与 generate/，声明文件里的 '../generate' 会被解析到无类型的 JS 产物
+import type { CreateBlankPptxOptions } from '../generate/index';
 
 export type BuiltinTemplateId = 'aurora' | 'editorial' | 'midnight';
 

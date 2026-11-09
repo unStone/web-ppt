@@ -1,0 +1,70 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "packages/*/src/**/*.ts",
+      "packages/*/src/**/*.tsx",
+      "packages/*/*.ts",
+      "tooling/**/*.mjs",
+      "tooling/**/*.ts",
+      // 由生成器产出，问题应在生成器里修
+      "!**/generated*.ts",
+      "!tooling/agent-eval/records"
+    ]
+  },
+  // 现有代码不是按格式化器排版的；整体重排单独成一次提交，避免淹没功能改动
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      // 只启用能指向真实缺陷的规则。recommended 预设里的风格规则与本仓库的既定写法冲突：
+      // 解析器大量使用「先校验再非空断言」、十六进制键的规范对照表、二进制格式里的控制字符正则、
+      // while ((m = re.exec())) 循环，逐条改写只会制造无关 diff。
+      "preset": "none",
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": { "level": "error", "options": { "ignoreRestSiblings": true } },
+        "noUnreachable": "error",
+        "noConstAssign": "error",
+        "noSelfAssign": "error",
+        "noUnsafeFinally": "error",
+        "noUnsafeOptionalChaining": "error",
+        "noSwitchDeclarations": "error",
+        "noInvalidConstructorSuper": "error",
+        "noPrecisionLoss": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noUnusedLabels": "error",
+        "noEmptyPattern": "error",
+        "noSetterReturn": "error",
+        "noGlobalObjectCalls": "error"
+      },
+      "suspicious": {
+        "noDuplicateObjectKeys": "error",
+        "noDuplicateCase": "error",
+        "noDuplicateClassMembers": "error",
+        "noDuplicateParameters": "error",
+        "noDuplicateElseIf": "error",
+        "noFallthroughSwitchClause": "error",
+        "noSelfCompare": "error",
+        "noAsyncPromiseExecutor": "error",
+        "noCompareNegZero": "error",
+        "noDebugger": "error",
+        "noRedeclare": "error",
+        "noSparseArray": "error",
+        "noUnsafeNegation": "error",
+        "noGlobalIsNan": "error",
+        "noMisleadingCharacterClass": "error",
+        "noFunctionAssign": "error",
+        "noImportAssign": "error",
+        "noClassAssign": "error",
+        "noCatchAssign": "error",
+        "noLabelVar": "error",
+        "noDoubleEquals": "error",
+        "noIrregularWhitespace": "error",
+        "noThenProperty": "error"
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { emfToSvg, isEmf, record } from '../emf';
 import type { MetafileOptions } from '../emf';
-import { Gfx, n } from '../gdi';
+import { n } from '../gdi';
+import { Gfx } from '../gdi-gfx';
 import { Bytes } from './binary';
 import { EmfPlus } from './renderer';
 

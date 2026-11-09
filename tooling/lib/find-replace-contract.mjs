@@ -218,6 +218,7 @@ export async function runFindReplaceContract({ edit, core, load, check }) {
         wholeWord: undefined,
       }))
       && rejected(() => edit.findText(doc, {
+        // biome-ignore lint/suspicious/noSparseArray: 有意构造带空洞的页 id 列表，断言查找拒绝该输入
         query: 'Needle', scope: { kind: 'slides', slideIds: [doc.slideOrder[0], , doc.slideOrder[1]] },
       }))
       && rejected(() => edit.findText(doc, {

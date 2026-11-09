@@ -480,11 +480,11 @@ console.log('esbuild 打包完成 →', bundle);
 
 const { metafileToSvg, detectMetafile, metafileToDataUri } = await import(`file://${bundle}`);
 
-// gdi.ts 单独打包：dibToDataUri 不从 image/index.ts 导出，但测 RLE 需要直接调它
-const gdiBundle = join(outDir, 'gdi-bundle.mjs');
-execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image/gdi.ts'), '--bundle', '--format=esm',
-  '--platform=node', '--log-level=warning', `--outfile=${gdiBundle}`], { cwd: root, stdio: 'inherit' });
-const { dibToDataUri } = await import(`file://${gdiBundle}`);
+// dib.ts 单独打包：dibToDataUri 不从 image/index.ts 导出，但测 RLE 需要直接调它
+const dibBundle = join(outDir, 'dib-bundle.mjs');
+execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image/dib.ts'), '--bundle', '--format=esm',
+  '--platform=node', '--log-level=warning', `--outfile=${dibBundle}`], { cwd: root, stdio: 'inherit' });
+const { dibToDataUri } = await import(`file://${dibBundle}`);
 
 // ---------------- 用例 1：合成 EMF ----------------
 

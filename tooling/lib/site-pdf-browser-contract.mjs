@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { openFixture,changeValue } from './site-editor-browser-helpers.mjs';
+import { openFixture } from './site-editor-browser-helpers.mjs';
 import {runSiteVectorPdfBrowserContract} from './site-vector-pdf-browser-contract.mjs';
 export async function runSitePdfBrowserContract(context) {
  const {evaluate,waitFor,click}=context;mkdirSync('out/pdf',{recursive:true});

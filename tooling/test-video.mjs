@@ -89,6 +89,6 @@ const mono=(...values)=>({samples:Float32Array.from(values),sampleRate:1000,chan
   check(dual[0]===0.25&&dual[1]===-0.25,'立体声保留声道');
   check(mixAudioClips([{...mono(1)}],1,{sampleRate:1000})[0]===1&&mixAudioClips([{...mono(1)}],1,{sampleRate:1000})[1]===1,'单声道复制到双声道');
 }
-for(const [label,clip,total] of [['负起始',{...mono(1),startMs:-1},1],['截止早于起始',{...mono(1),endMs:-1},1],['坏采样率',{...mono(1),sampleRate:0},1],['坏声道',{...mono(1),channels:3},1],['奇数样本',{...mono(1),channels:2},1]].map(x=>x)) bad(()=>mixAudioClips([clip],total),/混音|片段/);
+for(const [,clip,total] of [['负起始',{...mono(1),startMs:-1},1],['截止早于起始',{...mono(1),endMs:-1},1],['坏采样率',{...mono(1),sampleRate:0},1],['坏声道',{...mono(1),channels:3},1],['奇数样本',{...mono(1),channels:2},1]].map(x=>x)) bad(()=>mixAudioClips([clip],total),/混音|片段/);
 bad(()=>mixAudioClips([mono(1)],-1),/混音总时长/);
 p.dispose();recordCount('video',count);console.log(`视频导出 ${count} 项通过`);

@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
-import { basename, extname, join } from 'node:path';
+import { basename, join } from 'node:path';
 import { unzipSync, unzlibSync } from 'fflate';
 
 const decoder = new TextDecoder();

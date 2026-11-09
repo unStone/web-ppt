@@ -21,7 +21,7 @@ export async function runEditorAddTableBrowserContract({ openEditor, load }) {
   let geometryError = Infinity;
   try {
     const editView = session.mount(editMount, { mode: 'edit', textMode: 'svg', zoom: 0.75, snapping: false });
-    const viewView = session.mount(viewMount, { mode: 'view', textMode: 'svg', zoom: 0.75, snapping: false });
+    session.mount(viewMount, { mode: 'view', textMode: 'svg', zoom: 0.75, snapping: false });
     const placeholder = Object.values(session.editor.doc.elements).find((record) =>
       record.src.name === '空内容占位符');
     session.editor.select({ kind: 'elements', ids: [placeholder.id], enteredGroup: null });

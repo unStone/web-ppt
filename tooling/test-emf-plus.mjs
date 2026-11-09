@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { unzipSync } from 'fflate';
 import { resolve, join } from 'node:path';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
-import { Buf, cat, plus, emf, comment, header, eof, object, solidBrush, file, example, version } from './lib/emf-plus-fixture.mjs';
+import { Buf, plus, emf, comment, header, eof, object, solidBrush, file, example, version } from './lib/emf-plus-fixture.mjs';
 import { recordCount } from './lib/measured.mjs';
 const root=resolve('.'),out=join(root,'out/emf-plus');mkdirSync(out,{recursive:true});
 const entry=join(out,'entry.mjs');writeFileSync(entry,`export * from '${root}/packages/core/src/emf-plus.ts';export * as core from '${root}/packages/core/src/index.ts';`);

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { unzipSync } from 'fflate';
-import { nativeFixture, chartXml, CX } from './lib/chartex-native-fixture.mjs';
+import { nativeFixture, chartXml } from './lib/chartex-native-fixture.mjs';
 import { makeZip } from './lib/ooxml.mjs';
 
 const parts = unzipSync(nativeFixture()), decoder = new TextDecoder(), encoder = new TextEncoder();

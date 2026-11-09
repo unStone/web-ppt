@@ -11,7 +11,7 @@
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deck, makeZip, NS, nvGrp, px, slideXml, sp, XML } from './lib/ooxml.mjs';
+import { deck, makeZip, NS, px, slideXml, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const W = 1280, H = 720;

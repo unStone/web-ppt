@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题 · Security vulnerability
+    url: https://github.com/unStone/web-ppt/security/advisories/new
+    about: 请私密报告，不要公开提交 · Report privately, not in a public issue
+  - name: 使用咨询 · Questions
+    url: https://github.com/unStone/web-ppt/discussions
+    about: 用法与集成问题请在 Discussions 提问 · Ask usage and integration questions in Discussions

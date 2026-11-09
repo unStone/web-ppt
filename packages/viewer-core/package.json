@@ -27,6 +27,9 @@
     "directory": "packages/viewer-core"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/viewer-core.js",
   "module": "./dist/viewer-core.js",
@@ -58,7 +61,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.8.0"
+    "@web-ppt/core": "0.8.0"
   },
   "publishConfig": {
     "access": "public"

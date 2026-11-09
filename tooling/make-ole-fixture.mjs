@@ -16,7 +16,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { label, makePng, makeZip, NS, nextShapeId, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
+import { makePng, makeZip, NS, nvGrp, px, slideXml, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const W = 1280, H = 720;

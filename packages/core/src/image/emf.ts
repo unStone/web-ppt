@@ -4,10 +4,12 @@
  */
 
 import {
-  BS_NULL, BS_SOLID, Gfx, ID_MAT, MM_TEXT, PS_NULL,
+  BS_NULL, BS_SOLID, ID_MAT, MM_TEXT, PS_NULL,
   RDH_RECTANGLES, RGN_AND, RGN_COPY,
-  Reader, compose, decodeAnsi, defFont, dibToDataUri,
+  Reader, compose, decodeAnsi, defFont,
 } from './gdi';
+import { Gfx } from './gdi-gfx';
+import { dibToDataUri } from './dib';
 import type { Brush, Fnt, Mat, Pen, Pt, Rect } from './gdi';
 
 const EMF_SIG = 0x464d4520; // ' EMF'

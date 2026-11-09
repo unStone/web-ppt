@@ -44,11 +44,11 @@ const RULES = [
   },
   {
     match: (f) => /^tooling\/(test|check)-[^/]+\.mjs$/.test(f) || f === 'package.json',
-    docs: 'docs/engineering/testing.md（门禁、套件表与断言计数登记）、AGENTS 的断言数（npm test 后实测，verify 会比对）、docs/engineering/development.md 命令表',
+    docs: 'docs/engineering/testing.md（门禁、套件表与断言计数登记，npm test 后实测，verify 会比对）、docs/engineering/development.md 命令表',
   },
   {
     match: (f) => /^test\/snapshots\//.test(f),
-    docs: 'README / README.en / AGENTS / docs/engineering/testing.md 的快照数',
+    docs: 'README / README.en / docs/engineering/testing.md 的快照数',
   },
   {
     match: (f) => /^\.github\/workflows\//.test(f) || f === 'CHANGELOG.md',

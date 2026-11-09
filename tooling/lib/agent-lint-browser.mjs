@@ -25,7 +25,7 @@ window.runLintFixture=async file=>{
 };
 window.testLintOcclusion=async()=>{
  const p=await core.parse(new Uint8Array(await fetch('/fixtures/sample-agent-lint.pptx').then(r=>r.arrayBuffer())),{edit:true,keepPackage:true,lazy:false});
- const doc=edit.createDoc(p),editor=new edit.Editor(doc),slideId=doc.slideOrder[6],id=doc.slides[slideId].children[0];
+ const doc=edit.createDoc(p),editor=new edit.Editor(doc),slideId=doc.slideOrder[6];
  try{
   editor.exec({type:'AddShape',slideId,preset:'rect',rect:{x:30,y:30,w:240,h:110}});
   const cover=editor.selection.ids[0];editor.exec({type:'SetFill',id:cover,fill:{type:'solid',color:'#ffffff'}});

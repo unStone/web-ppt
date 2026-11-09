@@ -14,7 +14,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readCounts } from './lib/measured.mjs';
 import { moduleClosure } from './lib/module-closure.mjs';
@@ -97,6 +97,19 @@ for (const p of published) versions.set(p.version, [...(versions.get(p.version) 
 check(`${published.length} 个发布包版本一致`, versions.size === 1,
   versions.size === 1 ? '' : [...versions].map(([v, names]) => `${v}: ${names.join(' ')}`).join(' | '));
 if (versions.size === 1) console.log(`  全部为 ${[...versions.keys()][0]}`);
+
+// 九包必须同版本：包之间的依赖若写范围，npm 会放行混装的不同修订版，问题拖到运行时才暴露。
+// 改版本统一走 `npm run release:version`，它会同时改写这里检查的 peer。
+const publishedNames = new Set(published.map((p) => p.name));
+for (const p of published) {
+  for (const field of ['dependencies', 'peerDependencies']) {
+    for (const [name, range] of Object.entries(p[field] ?? {})) {
+      if (!publishedNames.has(name)) continue;
+      check(`${p.name} 的 ${field}.${name} 精确等于自身版本`, range === p.version, `实际 ${range}，应为 ${p.version}`);
+    }
+  }
+  check(`${p.name} 声明 engines.node`, typeof p.engines?.node === 'string', '与 CI 的最低 Node 版本一致');
+}
 
 // ---------------- 文档链接 ----------------
 section('文档链接');
@@ -185,7 +198,6 @@ const snapshotCount = readdirSync(join(root, 'test/snapshots')).filter((f) => f.
 // 已无对应渲染的旧文件，否则这里数出来的是垃圾。
 const SNAPSHOT_CLAIMS = [
   ['README.md', /(\d+)\s*个(?:渲染快照|归一化 SVG|快照)/g],
-  ['AGENTS.md', /(\d+)\s*个(?:渲染快照|归一化 SVG|快照)/g],
   ['docs/engineering/testing.md', /(\d+)\s*个(?:渲染快照|归一化 SVG|快照)/g],
   ['README.en.md', /(\d+)\s+(?:render snapshots?|render snapshot baselines|normalized SVG baselines)/g],
 ];
@@ -228,7 +240,7 @@ if (!siteStat) {
 } else if (counts) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
-    'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
+    'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'designJourney', 'powerpoint', 'editor', 'adapters', 'collab',
     'metafile', 'metafileFixture', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
     'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice', 'zipSecurity',
     'ooxmlValidation',
@@ -302,19 +314,18 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
         .filter(Boolean).join('；'));
   }
 
-  // CHANGELOG 只核对当前包版本对应的条目；旧版本数字是历史证据，不能拿今天的构建覆盖。
+  // 发布记录按「主.次.修订」版本线归档（预发布版并入同一版本线），只核对当前包版本所属的记录；
+  // 旧记录的数字是历史证据，不能拿今天的构建覆盖。
   const currentVersion = versions.size === 1 ? [...versions.keys()][0] : '';
-  const changelog = read('CHANGELOG.md');
-  const releaseStart = currentVersion ? changelog.indexOf(`## ${currentVersion} -`) : -1;
-  const releaseEnd = releaseStart < 0 ? -1 : changelog.indexOf('\n## ', releaseStart + 3);
-  const currentRelease = releaseStart < 0 ? ''
-    : changelog.slice(releaseStart, releaseEnd < 0 ? undefined : releaseEnd);
+  const releaseLine = currentVersion.replace(/-.*$/, '');
+  const releaseRecord = `docs/releases/${releaseLine}.md`;
+  const currentRelease = releaseLine && existsSync(join(root, releaseRecord)) ? read(releaseRecord) : '';
   const collabSizes = /`@web-ppt\/collab`[\s\S]{0,700}?发布入口为 ([\d.]+)KB gzip；[\s\S]{0,120}?([\d,]+)B gzip/
     .exec(currentRelease);
-  check(`CHANGELOG ${currentVersion} 能定位 collab 两种体积口径`, collabSizes !== null,
-    '当前版本条目需同时声明发布入口与排除 peer 的测试薄包');
+  check(`${releaseRecord} 能定位 collab 两种体积口径`, collabSizes !== null,
+    '当前版本线的发布记录需存在，并同时声明发布入口与排除 peer 的测试薄包');
   if (collabSizes) {
-    compareEntrySize('CHANGELOG.md', '@web-ppt/collab', collabSizes[1]);
+    compareEntrySize(releaseRecord, '@web-ppt/collab', collabSizes[1]);
     if (typeof counts?.collabThinGzip !== 'number') {
       console.log('  \x1b[33m跳过 CHANGELOG collab 薄包体积：先 npm run test:collab\x1b[0m');
     } else {
@@ -335,42 +346,28 @@ if (!counts) {
   console.log('  \x1b[33m跳过：out/verify/counts.json 不存在，先 npm test\x1b[0m');
 } else {
   const COUNT_CLAIMS = [
-    // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接
+    // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接，AGENTS 只引用 §8
     ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
-    ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
     ['docs/engineering/testing.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
-    ['AGENTS.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
     ['docs/engineering/testing.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
-    ['AGENTS.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
     ['docs/engineering/testing.md', /官网 WebMCP ([\d,]+) 项浏览器断言/, ['siteWebMcp']],
-    ['AGENTS.md', /官网 WebMCP ([\d,]+) 项浏览器断言/, ['siteWebMcp']],
     ['docs/engineering/testing.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
-    ['AGENTS.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
     ['docs/engineering/testing.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
-    ['AGENTS.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
     ['docs/engineering/testing.md', /ZIP 安全 ([\d,]+) 项断言/, ['zipSecurity']],
-    ['AGENTS.md', /ZIP 安全 ([\d,]+) 项断言/, ['zipSecurity']],
     ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
-    ['AGENTS.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
     ['docs/engineering/testing.md', /Agent Node 双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
-    ['AGENTS.md', /双端对照 ([\d,]+) 项断言/, ['agentNodeParity']],
     ['docs/engineering/testing.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
-    ['AGENTS.md', /OLE 外部打开 ([\d,]+) 项断言/, ['oleLibreOffice']],
     ['docs/engineering/testing.md', /动画统一验收 ([\d,]+) 项断言/, ['animationAcceptance']],
-    ['AGENTS.md', /动画统一验收 ([\d,]+) 项断言/, ['animationAcceptance']],
     ['docs/engineering/testing.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
-    ['AGENTS.md', /OOXML 合法性 ([\d,]+) 项断言/, ['ooxmlValidation']],
     ['docs/engineering/testing.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
-    ['AGENTS.md', /多级类别 ([\d,]+) 项断言/, ['chartHierarchy']],
     ['docs/engineering/testing.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
-    ['AGENTS.md', /扩展能力 ([\d,]+) 项断言/, ['expanded']],
     ['docs/engineering/testing.md', /高级文本流转 ([\d,]+) 项断言/, ['portableRichText']],
-    ['AGENTS.md', /高级文本流转 ([\d,]+) 项断言/, ['portableRichText']],
+    ['docs/engineering/testing.md', /字段级协同 ([\d,]+) 项断言/, ['collab']],
     ['docs/engineering/testing.md', /核心解析 \/ 渲染，([\d,]+) 项断言/, ['core']],
     ['docs/engineering/testing.md', /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
       ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],
     ['docs/engineering/testing.md', /内置模板 ([\d,]+) 项断言/, ['templates']],
-    ['docs/engineering/testing.md', /0\.7 跨能力集成 ([\d,]+) 项断言/, ['v07']],
+    ['docs/engineering/testing.md', /设计旅程 ([\d,]+) 项断言/, ['designJourney']],
     ['docs/engineering/testing.md', /经典图表数据编辑 ([\d,]+) 项断言/, ['chartData']],
     ['docs/engineering/testing.md', /兼容回退 ([\d,]+) 项断言/, ['chartexFallback']],
     ['docs/engineering/testing.md', /ChartEx 原生 ([\d,]+) 项断言/, ['chartexNative']],
@@ -379,10 +376,6 @@ if (!counts) {
     ['docs/engineering/testing.md', /([\d,]+) 项会话 \/ adapter/, ['editor']],
     ['docs/engineering/testing.md', /EMF \/ WMF \/ PICT 解码器，([\d,]+) 项断言/, ['metafile']],
     ['docs/engineering/testing.md', /React \/ Vue 的 ([\d,]+) 项 SSR/, ['adapters']],
-    ['AGENTS.md', /全部测试：([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) \+ ([\d,]+) 项断言/,
-      ['core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'v07', 'powerpoint', 'editor', 'adapters', 'collab',
-        'metafile', 'media', 'chartexNative', 'comments']],
-    ['AGENTS.md', /([\d,]+) 对编辑等价指纹/, ['equivalence']],
   ];
   let countClaims = 0;
   const skipped = new Set();

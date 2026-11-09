@@ -14,12 +14,13 @@ import {
   axisInsets, depthOf, floor3D, lineH, makeCartesian, makeCatView, makeValueView, needWrap,
   renderAxes, renderSideAxis, reserveDepth, shrink, tickTarget, valueExtent,
 } from './frame';
-import {
-  BarSlot, PlotEnv, markerEl, markerSymbol, pointFill, renderAreas, renderBars,
-  renderLines, renderOfPie, renderPie, renderPie3D, renderRadar, renderRadarGrid,
-  renderStock, renderSurface,
-} from './plots';
-import type { RadarFrame, SurfaceFrame } from './plots';
+import { BarSlot, renderAreas, renderBars, renderLines, renderStock } from './plots';
+import { PlotEnv, markerEl, markerSymbol, pointFill } from './plot-marks';
+import { renderOfPie, renderPie, renderPie3D } from './plots-pie';
+import { renderRadar, renderRadarGrid } from './plots-radar';
+import { renderSurface } from './plots-surface';
+import type { RadarFrame } from './plots-radar';
+import type { SurfaceFrame } from './plots-surface';
 import { bindXYAxes, paintXY, xyInsets } from './xy';
 import { Depth3D, Rect, formatNumber, lineEl, measure, mix, niceScale, px, rectEl, solid, strokeFrom, textEl } from './util';
 

@@ -44,7 +44,6 @@ for(const name of ['sample.ppt','sample-ppt-edit.pptx']){
 }
 const p=await core.parse(readFileSync('fixtures/sample-ppt-edit.pptx'),{edit:true,keepPackage:true}),editor=new edit.Editor(edit.createDoc(p));
 const slide=editor.doc.slideOrder[0];
-const id=editor.doc.slides[slide].children[0];
 editor.exec({type:'SetNotes',id:slide,text:'中文备注\nNative notes'});
 const withNotes=ppt.savePpt(editor.doc);writeFileSync(`${out}/notes.ppt`,withNotes);
 const notes=await core.parse(withNotes);check(notes.slides[0].notes==='中文备注\nNative notes','原生演讲者备注');notes.dispose();

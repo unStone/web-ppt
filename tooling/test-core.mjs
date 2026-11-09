@@ -1672,7 +1672,8 @@ group('惰性解析');
     check('渲染结果一致', lib.renderSlideToSvg(lazy, lazy.slides[0], { textMode: 'svg' })
       === lib.renderSlideToSvg(eager, eager.slides[0], { textMode: 'svg' }));
 
-    // 缓存：同一页取两次必须是同一个对象
+    // 缓存：同一页取两次必须是同一个对象（slides[2] 是惰性 getter，两次读取各触发一次）
+    // biome-ignore lint/suspicious/noSelfCompare: 比较的是两次 getter 调用的返回值
     check('同页重复访问返回同一对象', lazy.slides[2] === lazy.slides[2]);
 
     // 全量模式下应可结构化克隆（Worker 传输的前提）

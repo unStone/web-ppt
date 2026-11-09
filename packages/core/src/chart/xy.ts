@@ -2,7 +2,8 @@ import type { SlideElement } from '../types';
 import { defaultAxis, type Axis, type ChartModel, type PlotGroup } from './model';
 import { axisInsets, makeValueView, makeXY, renderAxes, tickTarget, valueExtent, xExtent,
   type AxisView, type Extent, type Insets } from './frame';
-import { renderBubbles, renderScatter, type PlotEnv } from './plots';
+import { renderBubbles, renderScatter } from './plots';
+import type { PlotEnv } from './plot-marks';
 import type { Rect } from './util';
 
 interface XYAxes { group: PlotGroup; x: AxisView; y: AxisView }

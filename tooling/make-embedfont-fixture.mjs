@@ -23,7 +23,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeTtf, wrapEot, TTEMBED_SUBSET, TTEMBED_TTCOMPRESSED, TTEMBED_XORENCRYPTDATA } from './lib/font.mjs';
-import { deck, label, NS, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
+import { deck, label, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const W = 1280, H = 720;

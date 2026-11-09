@@ -21,8 +21,6 @@ export async function runEditorTableCellTextBrowserContract({ openEditor, load }
   const mount = document.createElement('div');
   mount.className = 'contract-offscreen';
   document.body.append(mount);
-  const semantic = Object.values(session.editor.doc.elements)
-    .find((record) => record.src.name === '表格文字综合');
   const view = session.mount(mount, {
     mode: 'edit', textMode: 'html', slideId: session.editor.doc.slideOrder[0],
   });

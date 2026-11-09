@@ -5,7 +5,7 @@
  * 字节级检查覆盖，混音核与双轨封装另有 Node 全量断言）。
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { withChartBrowser } from './lib/chart-browser-lab.mjs';

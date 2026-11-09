@@ -116,17 +116,6 @@ jobs:
         if: steps.gate.outputs.ci-green != 'green'
         run: npm run test:functional
 
-      # 与 CI 同口径：保留性能采样，但 beta 阶段不让宿主并行负载阻断发布。
-      - name: 浏览器 DOM 编辑层性能采样
-        if: steps.gate.outputs.ci-green != 'green'
-        continue-on-error: true
-        run: npm run test:editor:performance
-
-      - name: 编辑性能预算
-        if: steps.gate.outputs.ci-green != 'green'
-        continue-on-error: true
-        run: npm run bench:edit
-
       # 各包的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
       # 万一构建失败，能在动 registry 之前就失败掉
       - name: 构建
@@ -137,11 +126,6 @@ jobs:
         # 依赖全量功能测试落盘的产物，所以只在补跑全量的路径上执行。
         if: steps.gate.outputs.ci-green != 'green'
         run: npm run test:ooxml
-
-      - name: 生成 verify 依赖的测试落盘
-        # verify-v08-readiness 读源码模式批注测试的落盘报告（source-report.json）；
-        # 快路径跳过全量测试时该文件不存在，在此补跑（31 项断言，秒级）
-        run: node tooling/test-comments.mjs
 
       # 放在构建之后：体积核对要读 dist 产物。
       # 守的是单测碰不到的一类问题——LICENSE 与各处声明不符、npm 链接指向不存在的包、

@@ -12,7 +12,7 @@ import { countedAssert } from './lib/counted-assert.mjs';
 import { requireSoffice } from './lib/soffice.mjs';
 const { assert, record } = countedAssert('oleLibreOffice');
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { unzipSync, zipSync } from 'fflate';

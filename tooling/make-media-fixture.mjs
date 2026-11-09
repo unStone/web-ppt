@@ -19,7 +19,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const NS_C = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
 const NS_MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const NS_P14 = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
-const NS_A14 = 'http://schemas.microsoft.com/office/drawing/2010/main';
 const NS_INKML = 'http://www.w3.org/2003/InkML';
 
 const esc = (s) =>

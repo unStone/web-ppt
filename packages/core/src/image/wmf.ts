@@ -6,9 +6,11 @@
  */
 
 import {
-  BS_NULL, BS_SOLID, Gfx, MM_ANISOTROPIC, PS_NULL, Reader,
-  decodeAnsi, defFont, dibHeaderSize, dibToDataUri,
+  BS_NULL, BS_SOLID, MM_ANISOTROPIC, PS_NULL, Reader,
+  decodeAnsi, defFont,
 } from './gdi';
+import { Gfx } from './gdi-gfx';
+import { dibHeaderSize, dibToDataUri } from './dib';
 import type { Brush, Fnt, Pen, Pt, Rect } from './gdi';
 import type { MetafileOptions } from './emf';
 

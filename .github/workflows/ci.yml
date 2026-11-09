@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
 
@@ -64,27 +64,17 @@ jobs:
         # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
         run: npm run test:functional
 
-      # runner 的固定计算基线会随宿主并行负载从 5ms 漂到 40ms；beta.2 先保留
-      # 采样与红灯证据，但不让已被环境自检判定受扰的 p95 阻断功能发布。
-      - name: 浏览器 DOM 编辑层性能采样
-        continue-on-error: true
-        run: npm run test:editor:performance
-
       - name: 保存产物外部打开测试
         # manifest 是唯一产物清单；新增保存工件无需再维护第二份手写子集。
         run: node tooling/test-edit-libreoffice-all.mjs --include-site
 
-      - name: 0.7 统一清单外部打开测试
+      - name: 设计旅程统一清单外部打开测试
         # 共用唯一清单，避免两套真实软件门禁的验收范围分叉。
-        run: node tooling/test-v07-libreoffice-all.mjs
+        run: node tooling/test-design-journey-libreoffice.mjs
 
       - name: OLE 嵌入文档外部打开测试
         # 嵌入 DOCX/XLSX 改写后由 LibreOffice 打开核对（票据 014 / 015 的外部读取器验收）
         run: node tooling/test-ole-edit-libreoffice.mjs
-
-      - name: 编辑性能预算
-        continue-on-error: true
-        run: npm run bench:edit
 
       - name: 构建
         run: npm run build
@@ -114,3 +104,23 @@ jobs:
             test/snapshots/
             out/core/
           retention-days: 7
+
+  # 主门禁跑在 .node-version（当前 LTS）上；engines 声明的最低版本只复验
+  # 直接在 Node 里运行的发布产物：本机 MCP、Node 渲染入口与 ZIP 安全边界。
+  node-minimum:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 构建
+        run: npm run build
+      - name: 本机 MCP 发布产物
+        run: npm run test:mcp:dist
+      - name: Node 渲染发布入口
+        run: node tooling/test-agent-node-render.mjs --dist
+      - name: ZIP 安全发布入口
+        run: npm run test:zip:dist

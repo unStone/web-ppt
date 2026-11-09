@@ -24,7 +24,7 @@ export async function runEditorThemeBrowserContract({ openEditor, listThemes, lo
     const otherSlide = [...session.editor.exec({
       type: 'AddSlide', layoutId: otherLayout, at: { after: sourceSlide },
     }).createdSlides][0];
-    const sourceView = session.mount(sourceMount, {
+    session.mount(sourceMount, {
       slideId: sourceSlide, mode: 'edit', textMode: 'svg', snapping: false,
     });
     session.mount(otherMount, {

@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { join } from 'node:path';
 import { sourceAliasArgs } from './bundle-browser.mjs';
 
 let importSequence = 0;

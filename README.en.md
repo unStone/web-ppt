@@ -111,8 +111,6 @@ session.dispose();
 
 Templates, design canvas, selection pane, shortcuts and clipboard, low-level `EditDoc`, preset handles and save paths: [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
 
-The 0.7 template journey (`npm run test:v07`) covers template → theme → master → layout → ordinary slide → reopen; details are in [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
-
 ### Optional entries
 
 | Capability | Docs |
@@ -165,7 +163,7 @@ Every parsing pipeline converges on one schema, and the renderer knows the schem
 |---|---|
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
-| `npm run check` | TypeScript type check |
+| `npm run check` | TypeScript type check and Biome lint |
 | `npm test` | Every test suite |
 | `npm run build` | Build all nine publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp) |
 | `npm run verify` | License / version / links / documented numbers against measured values |

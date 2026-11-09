@@ -158,7 +158,7 @@ await withChartBrowser(root, async (browser) => {
   }
 
   // ---- 端点 + 中点 + 文本宿主：所有步骤统一断言 ----
-  for (const [key, { step, byTarget }] of samples) {
+  for (const [, { step, byTarget }] of samples) {
     const label = `${step.effect}/${step.kind}#${step.target}`;
     const s0 = byTarget.get(0), sm = byTarget.get(0.5), s1 = byTarget.get(1);
     if (s0.missing !== undefined || s0.noAnimation !== undefined) continue;

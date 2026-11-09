@@ -20,6 +20,9 @@
     "directory": "packages/collab"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/collab.js",
   "module": "./dist/collab.js",
@@ -47,7 +50,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/edit-core": "^0.8.0"
+    "@web-ppt/edit-core": "0.8.0"
   },
   "publishConfig": {
     "access": "public"

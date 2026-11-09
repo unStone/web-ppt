@@ -1,9 +1,8 @@
 import type { OpcPackage, Slide, SlideLayoutTemplate, SlideMasterTemplate } from '../types';
 import { attr, kid, kids } from '../xml';
 import type { DeferredAsset } from './asset-store';
-import {
-  parseCommentAuthors, parseLayoutCatalog, parseMasterCatalog, parseSlide,
-} from './parser';
+import { parseLayoutCatalog, parseMasterCatalog, parseSlide } from './parser';
+import { parseCommentAuthors } from './comments';
 import { Pkg } from './package-reader';
 import { relByType } from './slide-inheritance';
 import { parseThemeCatalog } from './theme-catalog';

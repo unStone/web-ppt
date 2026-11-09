@@ -1,4 +1,4 @@
-import { base64, encodePng } from '../gdi';
+import { base64, encodePng } from '../dib';
 import type { Mat } from '../gdi';
 import { Bytes, color } from './binary';
 import type { Box } from './binary';
