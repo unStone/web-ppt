@@ -11,8 +11,9 @@ const out=resolve(root,`out/font-glyphs/${directory}`);
 mkdirSync(out,{recursive:true});
 const paths=ts.readConfigFile(resolve(root,'tsconfig.json'),ts.sys.readFile).config.compilerOptions.paths;
 const alias=dist?[]:Object.entries(paths).sort(([a],[b])=>b.length-a.length).map(([find,[path]])=>({find,replacement:resolve(root,path)}));
-await build({configFile:false,root,base:`/out/font-glyphs/${directory}/`,resolve:{alias},worker:{format:'es'},esbuild:{supported:{'top-level-await':true}},
-  build:{outDir:out,emptyOutDir:true,target:'es2020',lib:{entry:resolve(root,'tooling/lib/font-document-browser.mjs'),formats:['es'],fileName:()=> 'contract.mjs'}}});
+// HarfBuzz 初始化含顶层 await；Oxc 不支持按特性放行，目标取首个含顶层 await 的 ES2022。
+await build({configFile:false,root,base:`/out/font-glyphs/${directory}/`,resolve:{alias},worker:{format:'es'},
+  build:{outDir:out,emptyOutDir:true,target:'es2022',lib:{entry:resolve(root,'tooling/lib/font-document-browser.mjs'),formats:['es'],fileName:()=> 'contract.mjs'}}});
 const report=await withChartBrowser(root,async browser=>{
   const value=await browser.evaluate(`import('/out/font-glyphs/${directory}/contract.mjs').then(module=>module.fontDocumentBrowserContract())`);
   const targets=await browser.request('Target.getTargets');

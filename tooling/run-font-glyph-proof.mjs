@@ -8,8 +8,9 @@ const root=resolve('.'),out=resolve(root,'out/font-glyphs');
 mkdirSync(out,{recursive:true});
 const paths=ts.readConfigFile(resolve(root,'tsconfig.json'),ts.sys.readFile).config.compilerOptions.paths;
 const alias=Object.entries(paths).sort(([a],[b])=>b.length-a.length).map(([find,[path]])=>({find,replacement:resolve(root,path)}));
+// HarfBuzz 初始化含顶层 await；Oxc 不支持按特性放行，目标取首个含顶层 await 的 ES2022。
 await build({configFile:false,root,base:'/out/font-glyphs/proof/',resolve:{alias},worker:{format:'es'},
-  esbuild:{supported:{'top-level-await':true}},build:{outDir:resolve(out,'proof'),emptyOutDir:true,target:'es2020',
+  build:{outDir:resolve(out,'proof'),emptyOutDir:true,target:'es2022',
     lib:{entry:resolve(root,'tooling/lib/font-proof-browser.mjs'),formats:['es'],fileName:()=> 'proof.mjs'}}});
 const result=await withChartBrowser(root,async browser=>{
   const value=await browser.evaluate("import('/out/font-glyphs/proof/proof.mjs').then(module=>module.fontProofBrowser())");
