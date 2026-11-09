@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "cacheDir": ".turbo/cache",
+  "remoteCache": { "enabled": false },
+  "tasks": {
+    "//#build:packages": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "packages/*/src/**",
+        "packages/*/*.ts",
+        "packages/*/*.json",
+        "packages/*/*.html",
+        "packages/*/schemas/**",
+        "packages/*/skills/**",
+        "tooling/**"
+      ],
+      "env": ["WEB_PPT_BUILD_RUNTIME", "NODE_ENV", "NODE_OPTIONS", "VITE_*"],
+      "outputs": [
+        "packages/core/dist/**",
+        "packages/edit-core/dist/**",
+        "packages/viewer-core/dist/**",
+        "packages/editor/dist/**",
+        "packages/react/dist/**",
+        "packages/vue/dist/**",
+        "packages/fonts/dist/**",
+        "packages/collab/dist/**",
+        "packages/agent-mcp/dist/**",
+        "out/agent-describe/default-entry-proof.json",
+        "out/agent-tools/default-entry-proof.json",
+        "out/agent-mcp/default-entry-proof.json"
+      ],
+      "outputLogs": "new-only"
+    }
+  }
+}

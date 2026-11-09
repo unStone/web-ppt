@@ -207,5 +207,6 @@ check(!!keptOle.package?.parts['ppt/embeddings/oleObject1.bin'], 'keepPackage �
 check(keptOle.package.parts['ppt/slides/slide3.xml'].length > 0, 'keepPackage 后页 XML 仍在 parts');
 keptOle.dispose();
 
-recordCount('parsePreviewParts', count);
+// dist 模式少跑分类检查，断言数与源码模式不同；同一计数键只登记源码口径，避免两种口径互相覆盖。
+if (!dist) recordCount('parsePreviewParts', count);
 console.log(`预览解析跳过后页与未引用嵌入物 ${count} 项通过${dist ? '（独立产物）' : ''}`);
