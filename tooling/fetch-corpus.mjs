@@ -20,8 +20,7 @@ const OUT = join(ROOT, 'corpus');
 const CONCURRENCY = 6;
 
 /** git 存 blob 的方式：sha1("blob " + 字节数 + "\0" + 内容) */
-const blobSha = (buf) =>
-  createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex');
+const blobSha = (buf) => createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex');
 
 const doc = JSON.parse(readFileSync(join(ROOT, 'fixtures/corpus.json'), 'utf8'));
 const only = process.argv[2];

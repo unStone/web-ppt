@@ -48,12 +48,13 @@ async function mountFallback({ path, mode }) {
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(sourceImage, x, y, w, h);
   const samples = [];
-  for (let row = 1; row < 20; row++) for (let col = 1; col < 20; col++) {
-    const px = Math.floor(x + w * col / 20);
-    const py = Math.floor(y + h * row / 20);
-    const rgb = [...context.getImageData(px, py, 1, 1).data].slice(0, 3);
-    if (Math.min(...rgb) < 220) samples.push({ x: px, y: py, rgb });
-  }
+  for (let row = 1; row < 20; row++)
+    for (let col = 1; col < 20; col++) {
+      const px = Math.floor(x + (w * col) / 20);
+      const py = Math.floor(y + (h * row) / 20);
+      const rgb = [...context.getImageData(px, py, 1, 1).data].slice(0, 3);
+      if (Math.min(...rgb) < 220) samples.push({ x: px, y: py, rgb });
+    }
   if (samples.length < 10) throw new Error('来源图片没有足够可观察的非白区域');
   globalThis.__chartexVisual = { samples, overlay, presentation };
   return { sourceSha256, imageHash, samples: samples.length, width: 960, height, mode, svg };
@@ -85,20 +86,22 @@ async function compareScreenshot(base64) {
 /** 实际截图与源 PNG 的独立解码比较；不能用 DOM 存在或图片 onload 替代可见性证据。 */
 export async function runChartExBrowserContract({ evaluate, request, out, sources }) {
   const results = [];
-  for (const source of sources) for (const mode of ['screen', 'standalone-svg']) {
-    const { svg, ...result } = await evaluate(`(${mountFallback.toString()})(${JSON.stringify({ path: source.path, mode })})`, true);
-    if (source.sha256 && result.sourceSha256 !== source.sha256) throw new Error('真实 ChartEx 来源文件哈希变化');
-    if (source.imageHash && result.imageHash !== source.imageHash) throw new Error('真实回退图哈希变化');
-    const screenshot = await request('Page.captureScreenshot', {
-      format: 'png', clip: { x: 0, y: 0, width: result.width, height: result.height, scale: 1 },
-      captureBeyondViewport: true,
-    });
-    const mae = await evaluate(`(${compareScreenshot.toString()})(${JSON.stringify(screenshot.result.data)})`, true);
-    const filename = `chartex-${source.name}-${mode}.png`;
-    writeFileSync(join(out, filename), Buffer.from(screenshot.result.data, 'base64'));
-    if (svg) writeFileSync(join(out, `chartex-${source.name}.svg`), svg);
-    results.push({ source: source.name, ...result, mae, screenshot: filename });
-  }
+  for (const source of sources)
+    for (const mode of ['screen', 'standalone-svg']) {
+      const { svg, ...result } = await evaluate(`(${mountFallback.toString()})(${JSON.stringify({ path: source.path, mode })})`, true);
+      if (source.sha256 && result.sourceSha256 !== source.sha256) throw new Error('真实 ChartEx 来源文件哈希变化');
+      if (source.imageHash && result.imageHash !== source.imageHash) throw new Error('真实回退图哈希变化');
+      const screenshot = await request('Page.captureScreenshot', {
+        format: 'png',
+        clip: { x: 0, y: 0, width: result.width, height: result.height, scale: 1 },
+        captureBeyondViewport: true,
+      });
+      const mae = await evaluate(`(${compareScreenshot.toString()})(${JSON.stringify(screenshot.result.data)})`, true);
+      const filename = `chartex-${source.name}-${mode}.png`;
+      writeFileSync(join(out, filename), Buffer.from(screenshot.result.data, 'base64'));
+      if (svg) writeFileSync(join(out, `chartex-${source.name}.svg`), svg);
+      results.push({ source: source.name, ...result, mae, screenshot: filename });
+    }
   writeFileSync(join(out, 'chartex-visual-report.json'), `${JSON.stringify(results, null, 2)}\n`);
   console.log(`  ChartEx 真浏览器回退 · ${results.length} 条屏幕/独立 SVG 路径像素验证通过`);
 }

@@ -38,12 +38,25 @@ const titleLayout = [
   placeholder({ id: 93, name: '图片占位符', type: 'pic', idx: '4', x: 1040, y: 620, w: 120, h: 40, prompt: '单击此处添加图片' }),
 ].join('');
 
-const sourceSlide = slideXml([
-  placeholder({ id: 801, name: '现有标题', type: 'title', idx: '1', x: 0, y: 0, w: 0, h: 0, content: '现有页面', ownXfrm: false }),
-  placeholder({ id: 805, name: '现有正文', type: 'body', idx: '2', x: 0, y: 0, w: 0, h: 0, content: '用于验证新增页插入位置', ownXfrm: false }),
-  actionShape({ id: 806, name: '现有页下一页链接', x: 1240, y: 680 }),
-  actionShape({ id: 807, name: '现有页自身链接', x: 1200, y: 680, rid: 'rId2', action: 'ppaction://hlinksldjump' }),
-].join(''));
+const sourceSlide = slideXml(
+  [
+    placeholder({ id: 801, name: '现有标题', type: 'title', idx: '1', x: 0, y: 0, w: 0, h: 0, content: '现有页面', ownXfrm: false }),
+    placeholder({
+      id: 805,
+      name: '现有正文',
+      type: 'body',
+      idx: '2',
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      content: '用于验证新增页插入位置',
+      ownXfrm: false,
+    }),
+    actionShape({ id: 806, name: '现有页下一页链接', x: 1240, y: 680 }),
+    actionShape({ id: 807, name: '现有页自身链接', x: 1200, y: 680, rid: 'rId2', action: 'ppaction://hlinksldjump' }),
+  ].join(''),
+);
 
 const sectionExtension = `<p:extLst><p:ext uri="{ADD-SLIDE-SECTION}">
 <fixture:sectionLst xmlns:fixture="urn:web-ppt:add-slide"><fixture:section><fixture:sldIdLst><fixture:sldId id="KEEP-SECTION"/></fixture:sldIdLst></fixture:section></fixture:sectionLst>
@@ -53,7 +66,10 @@ const sectionExtension = `<p:extLst><p:ext uri="{ADD-SLIDE-SECTION}">
 </p:ext></p:extLst>`;
 
 const source = deck({
-  name: 'Add Slide Theme', width: 1280, height: 720, slides: [sourceSlide],
+  name: 'Add Slide Theme',
+  width: 1280,
+  height: 720,
+  slides: [sourceSlide],
   layoutShapes: titleLayout,
   masterShapes: `<p:sp><p:nvSpPr><p:cNvPr id="60" name="母版标记"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(1180, 660, 60, 24)}<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid('accent2')}</p:spPr></p:sp>`,
   presExtra: sectionExtension,
@@ -63,38 +79,56 @@ const source = deck({
 });
 
 const files = unzipSync(source);
-const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
-replace('ppt/presentation.xml', (xml) => xml
-  .replace('<p:sldId id="256" r:id="rId2"/>', '<p:sldId id="900" r:id="rId40"/>'));
-replace('ppt/_rels/presentation.xml.rels', (xml) => xml
-  .replace('Id="rId2" Type="' + REL + '/slide" Target="slides/slide1.xml"',
-    'Target="slides/slide7.xml" Type="' + REL + '/slide" Id="rId40"'));
-replace('ppt/slideMasters/slideMaster1.xml', (xml) => xml
-  .replace('<p:sldLayoutId id="2147483649" r:id="rId1"/>',
-    '<p:sldLayoutId id="2147483649" r:id="rId1"/><p:sldLayoutId id="2147483657" r:id="rId9"/>'));
-replace('ppt/slideMasters/_rels/slideMaster1.xml.rels', (xml) => xml
-  .replace('</Relationships>', `<Relationship Id="rId9" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout2.xml"/></Relationships>`));
-replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml
-  .replace('type="obj"', 'type="tx"').replace('name="Blank"', 'name="标题和正文"'));
+const replace = (part, fn) => {
+  files[part] = encoder.encode(fn(decoder.decode(files[part])));
+};
+replace('ppt/presentation.xml', (xml) => xml.replace('<p:sldId id="256" r:id="rId2"/>', '<p:sldId id="900" r:id="rId40"/>'));
+replace('ppt/_rels/presentation.xml.rels', (xml) =>
+  xml.replace(
+    'Id="rId2" Type="' + REL + '/slide" Target="slides/slide1.xml"',
+    'Target="slides/slide7.xml" Type="' + REL + '/slide" Id="rId40"',
+  ),
+);
+replace('ppt/slideMasters/slideMaster1.xml', (xml) =>
+  xml.replace(
+    '<p:sldLayoutId id="2147483649" r:id="rId1"/>',
+    '<p:sldLayoutId id="2147483649" r:id="rId1"/><p:sldLayoutId id="2147483657" r:id="rId9"/>',
+  ),
+);
+replace('ppt/slideMasters/_rels/slideMaster1.xml.rels', (xml) =>
+  xml.replace(
+    '</Relationships>',
+    `<Relationship Id="rId9" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout2.xml"/></Relationships>`,
+  ),
+);
+replace('ppt/slideLayouts/slideLayout1.xml', (xml) => xml.replace('type="obj"', 'type="tx"').replace('name="Blank"', 'name="标题和正文"'));
 replace('[Content_Types].xml', (xml) => {
   // slide1 下面改名为非规范的 slide7；Override 必须跟着改，否则 slide7 落到
   // application/xml 默认类型——LibreOffice 容忍，Open XML SDK 与 PowerPoint 拒绝加载
   if (!xml.includes('PartName="/ppt/slides/slide1.xml"')) throw new Error('基础包缺少 slide1 的 Override');
   return xml
     .replace('PartName="/ppt/slides/slide1.xml"', 'PartName="/ppt/slides/slide7.xml"')
-    .replace('</Types>', '<Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/></Types>');
+    .replace(
+      '</Types>',
+      '<Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/></Types>',
+    );
 });
-replace('ppt/theme/theme1.xml', (xml) => xml
-  .replace('<a:accent1><a:srgbClr val="2E75B6"/></a:accent1>', '<a:accent1><a:srgbClr val="D94F70"/></a:accent1>'));
+replace('ppt/theme/theme1.xml', (xml) =>
+  xml.replace('<a:accent1><a:srgbClr val="2E75B6"/></a:accent1>', '<a:accent1><a:srgbClr val="D94F70"/></a:accent1>'),
+);
 
-files['ppt/slideLayouts/slideLayout2.xml'] = encoder.encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="blank" showMasterSp="0">
+files['ppt/slideLayouts/slideLayout2.xml'] =
+  encoder.encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="blank" showMasterSp="0">
 <p:cSld name="空白"><p:spTree>${nvGrp}<p:sp><p:nvSpPr><p:cNvPr id="95" name="空白版式角标"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(32, 648, 180, 32)}<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid('accent1')}</p:spPr></p:sp></p:spTree></p:cSld>
 <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
-files['ppt/slideLayouts/_rels/slideLayout2.xml.rels'] = encoder.encode(`${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
+files['ppt/slideLayouts/_rels/slideLayout2.xml.rels'] = encoder.encode(
+  `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`,
+);
 files['ppt/slides/slide7.xml'] = files['ppt/slides/slide1.xml'];
 files['ppt/slides/_rels/slide7.xml.rels'] = files['ppt/slides/_rels/slide1.xml.rels'];
-replace('ppt/slides/_rels/slide7.xml.rels', (xml) => xml.replace('</Relationships>',
-  `<Relationship Id="rId2" Type="${REL}/slide" Target="slide7.xml"/></Relationships>`));
+replace('ppt/slides/_rels/slide7.xml.rels', (xml) =>
+  xml.replace('</Relationships>', `<Relationship Id="rId2" Type="${REL}/slide" Target="slide7.xml"/></Relationships>`),
+);
 delete files['ppt/slides/slide1.xml'];
 delete files['ppt/slides/_rels/slide1.xml.rels'];
 

@@ -21,16 +21,17 @@ export function categoryCommandPatches(doc: EditDoc, id: string, state: ChartDat
     return categoryLevelPatches(doc, id, category, payload.levels, origin, previousCategoryId(state, category.id));
   }
   assertChartName(payload.label, '类别名称');
-  if (category.levels) return categoryLevelPatches(doc, id, category,
-    [...category.levels.slice(0, -1), payload.label], origin);
+  if (category.levels) return categoryLevelPatches(doc, id, category, [...category.levels.slice(0, -1), payload.label], origin);
   const path = ['elements', id, 'ovr', 'extensions', 'chart-data', 'categories', category.id, 'label'] as const;
-  return { forward: [{ op: 'set', path, value: payload.label, origin } as ExtensionPatch],
-    inverse: [{ op: 'set', path, value: category.label, origin } as ExtensionPatch] };
+  return {
+    forward: [{ op: 'set', path, value: payload.label, origin } as ExtensionPatch],
+    inverse: [{ op: 'set', path, value: category.label, origin } as ExtensionPatch],
+  };
 }
 
 export function previousCategoryId(state: ChartDatasetState, id: ChartPointId): ChartPointId | null {
-  const categories = orderedChartRecords(Object.values(state.categories).filter(category => !category.removed));
-  return categories[categories.findIndex(category => category.id === id) - 1]?.id ?? null;
+  const categories = orderedChartRecords(Object.values(state.categories).filter((category) => !category.removed));
+  return categories[categories.findIndex((category) => category.id === id) - 1]?.id ?? null;
 }
 
 export function assertCategoryCapacity(state: ChartDatasetState): void {
@@ -41,26 +42,35 @@ export function assertCategoryCapacity(state: ChartDatasetState): void {
 }
 
 export function categoryLevelOverride(doc: EditDoc, id: string, categoryId: string, level: number): string | null | undefined {
-  const state = chartDatasetOverrides(doc, id) as {
-    categories?: Record<string, { levels?: Record<string, unknown> }>;
-  } | undefined;
+  const state = chartDatasetOverrides(doc, id) as
+    | {
+        categories?: Record<string, { levels?: Record<string, unknown> }>;
+      }
+    | undefined;
   const value = state?.categories?.[categoryId]?.levels?.[level];
   return value === null || typeof value === 'string' ? value : undefined;
 }
 
 function categoryLevelCleared(doc: EditDoc, id: string, categoryId: string, level: number): string | null | undefined {
-  const state = chartDatasetOverrides(doc, id) as {
-    categories?: Record<string, { levelClears?: Record<string, unknown> }>;
-  } | undefined;
+  const state = chartDatasetOverrides(doc, id) as
+    | {
+        categories?: Record<string, { levelClears?: Record<string, unknown> }>;
+      }
+    | undefined;
   const value = state?.categories?.[categoryId]?.levelClears?.[level];
   return value === null || typeof value === 'string' ? value : undefined;
 }
 
 export function categoryLevelPatches(
-  doc: EditDoc, id: string, category: ChartCategory, levels: readonly (string | null)[], origin: string,
+  doc: EditDoc,
+  id: string,
+  category: ChartCategory,
+  levels: readonly (string | null)[],
+  origin: string,
   previousId: ChartPointId | null = null,
 ) {
-  const forward: ExtensionPatch[] = [], inverse: ExtensionPatch[] = [];
+  const forward: ExtensionPatch[] = [],
+    inverse: ExtensionPatch[] = [];
   levels.forEach((value, index) => {
     const current = category.levels?.[index];
     if (value === current) return;
@@ -71,9 +81,21 @@ export function categoryLevelPatches(
     inverse.unshift(previous === undefined ? { op: 'del', path, origin } : { op: 'set', path, value: previous, origin });
     const cleared = categoryLevelCleared(doc, id, category.id, index);
     if (index < levels.length - 1 && (value === null || cleared !== undefined)) {
-      const clearPath = ['elements', id, 'ovr', 'extensions', 'chart-data', 'categories', category.id, 'levelClears', String(index)] as const;
+      const clearPath = [
+        'elements',
+        id,
+        'ovr',
+        'extensions',
+        'chart-data',
+        'categories',
+        category.id,
+        'levelClears',
+        String(index),
+      ] as const;
       forward.push(value === null ? { op: 'set', path: clearPath, value: previousId, origin } : { op: 'del', path: clearPath, origin });
-      inverse.unshift(cleared !== undefined ? { op: 'set', path: clearPath, value: cleared, origin } : { op: 'del', path: clearPath, origin });
+      inverse.unshift(
+        cleared !== undefined ? { op: 'set', path: clearPath, value: cleared, origin } : { op: 'del', path: clearPath, origin },
+      );
     }
   });
   return { forward, inverse };

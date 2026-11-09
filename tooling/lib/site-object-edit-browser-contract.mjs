@@ -14,10 +14,15 @@ export async function runSiteObjectEditBrowserContract(context) {
   await click('#undo');
   await waitFor(`!document.querySelector('#canvasMount').textContent.includes('原文 <新节点> & 编辑')`, 'SmartArt 撤销');
   await click('#redo');
-  await waitFor(`!document.querySelector('#chartInspector').hidden && document.querySelector('#canvasMount').textContent.includes('原文 <新节点> & 编辑')`, 'SmartArt 重做');
+  await waitFor(
+    `!document.querySelector('#chartInspector').hidden && document.querySelector('#canvasMount').textContent.includes('原文 <新节点> & 编辑')`,
+    'SmartArt 重做',
+  );
   await click(`${root} form button:nth-of-type(3)`);
   await waitFor(`document.querySelector('${root} [name="node"]').options.length === 4`, 'SmartArt 新增子节点');
-  const added = await evaluate(`[...document.querySelector('${root} [name="node"]').options].find((n) => n.textContent.endsWith('New node')).value`);
+  const added = await evaluate(
+    `[...document.querySelector('${root} [name="node"]').options].find((n) => n.textContent.endsWith('New node')).value`,
+  );
   await changeValue(context, `${root} [name="node"]`, added);
   await changeValue(context, `${root} [name="parent"]`, '');
   await waitFor(`document.querySelector('${root} [name="parent"]').value === ''`, 'SmartArt 子节点提升为顶层');
@@ -25,8 +30,11 @@ export async function runSiteObjectEditBrowserContract(context) {
   await waitFor(`document.querySelector('#chartInspector h2').textContent === 'SmartArt 节点'`, 'SmartArt 中文工具');
   await captureSaveAndReopen(context, 'smartart-edit-reopened.pptx');
   await selectPaneObject(context, 'SmartArt');
-  await waitFor(`document.querySelector('${root} [name="node"]')?.options.length === 4
-    && document.querySelector('#canvasMount').textContent.includes('原文 <新节点> & 编辑')`, 'SmartArt 数据和缓存保存重开');
+  await waitFor(
+    `document.querySelector('${root} [name="node"]')?.options.length === 4
+    && document.querySelector('#canvasMount').textContent.includes('原文 <新节点> & 编辑')`,
+    'SmartArt 数据和缓存保存重开',
+  );
   await openFixture(context, '/fixtures/sample-ole-edit.pptx', 'ole-edit-ui.pptx');
   await selectPaneObject(context, 'Object 21');
   const ole = '[data-ole-editor]';
@@ -46,8 +54,12 @@ export async function runSiteObjectEditBrowserContract(context) {
   // 的 setRun 断言：格式保留、保存重开、历史恢复）完整验证；浏览器层的交互断言在 CI
   // 慢机上因面板每次命令后整体重建的时序连续不稳定（本地不可复现），此处只验入口
   // 在场与格式徽标，不再逐事件断言 value。
-  await waitFor(`document.querySelectorAll('${ole} .ole-run input').length >= 2
-    && document.querySelector('${ole} .ole-run span')?.textContent.includes('B')`, 'OLE 文档 run 级工具与格式徽标', 400);
+  await waitFor(
+    `document.querySelectorAll('${ole} .ole-run input').length >= 2
+    && document.querySelector('${ole} .ole-run span')?.textContent.includes('B')`,
+    'OLE 文档 run 级工具与格式徽标',
+    400,
+  );
   await captureSaveAndReopen(context, 'ole-edit-reopened.pptx');
   await selectPaneObject(context, 'Object 21');
   await waitFor(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.value === '6789'`, 'OLE 工作簿保存重开');
@@ -60,11 +72,16 @@ export async function runSiteObjectEditBrowserContract(context) {
   await waitFor(`!!document.querySelector('${ole} [aria-label="营业数据 B2"]')`, 'OLE 工作簿再次就绪');
   await evaluate(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.focus()`);
   await waitFor(`document.querySelector('${ole} .ole-style') !== null`, '样式与富文本表单在场');
-  await evaluate(`(() => { const form = document.querySelector('${ole} .ole-style'); const color = form.querySelector('[aria-label="填充颜色"]'); color.value = 'e2efda'; [...form.querySelectorAll('button')].find((n) => n.textContent === '应用样式').click(); })()`);
+  await evaluate(
+    `(() => { const form = document.querySelector('${ole} .ole-style'); const color = form.querySelector('[aria-label="填充颜色"]'); color.value = 'e2efda'; [...form.querySelectorAll('button')].find((n) => n.textContent === '应用样式').click(); })()`,
+  );
   await click('#undo');
   await waitFor(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.value === '6789'`, '样式命令撤销后单元格值不受影响');
   await click('[data-site-locale="en"]');
-  await waitFor(`[...document.querySelectorAll('${ole} .ole-style button')].some((n) => n.textContent === 'Apply style')`, '样式表单英文文案');
+  await waitFor(
+    `[...document.querySelectorAll('${ole} .ole-style button')].some((n) => n.textContent === 'Apply style')`,
+    '样式表单英文文案',
+  );
   await click('[data-site-locale="zh-CN"]');
   await evaluate(`document.querySelector('${ole} [aria-label="营业数据 B2"]')?.focus()`);
   await evaluate(`(() => {
@@ -85,19 +102,46 @@ export async function runSiteObjectEditBrowserContract(context) {
   await waitFor(`document.querySelector('${ink} [name="stroke"]')?.options.length === 2`, '墨迹笔画工具');
   await changeValue(context, `${ink} [aria-label="笔画颜色"]`, '#cc2200');
   await click(`${ink} button:nth-of-type(1)`);
-  await waitFor(`!document.querySelector('#chartInspector').hidden && document.querySelector('[data-ink-editor] [aria-label="笔画颜色"]')?.value === '#cc2200' && document.querySelector('#canvasMount path[stroke="#cc2200"]') !== null`, '墨迹笔刷实际投影');
+  await waitFor(
+    `!document.querySelector('#chartInspector').hidden && document.querySelector('[data-ink-editor] [aria-label="笔画颜色"]')?.value === '#cc2200' && document.querySelector('#canvasMount path[stroke="#cc2200"]') !== null`,
+    '墨迹笔刷实际投影',
+  );
   await click(`${ink} button:nth-of-type(4)`);
   await waitFor(`document.querySelector('${ink} [name="stroke"]')?.options.length === 1`, '删除单笔画');
   await click('#undo');
   await waitFor(`document.querySelector('${ink} [name="stroke"]')?.options.length === 2`, '撤销删除笔画');
-  const box = await evaluate(`(() => { const svg = document.querySelector('${ink} svg'); svg.scrollIntoView({ block: 'center' }); const b = svg.getBoundingClientRect(); return { x: b.x + b.width * 0.3, y: b.y + b.height * 0.4 }; })()`);
-  await context.request('Input.dispatchMouseEvent', { type: 'mousePressed', x: box.x, y: box.y, button: 'left', buttons: 1, clickCount: 1 });
-  for (let i = 1; i <= 4; i++) await context.request('Input.dispatchMouseEvent', { type: 'mouseMoved', x: box.x + i * 9, y: box.y + i * 5, button: 'left', buttons: 1 });
-  await context.request('Input.dispatchMouseEvent', { type: 'mouseReleased', x: box.x + 36, y: box.y + 20, button: 'left', buttons: 0, clickCount: 1 });
+  const box = await evaluate(
+    `(() => { const svg = document.querySelector('${ink} svg'); svg.scrollIntoView({ block: 'center' }); const b = svg.getBoundingClientRect(); return { x: b.x + b.width * 0.3, y: b.y + b.height * 0.4 }; })()`,
+  );
+  await context.request('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: box.x,
+    y: box.y,
+    button: 'left',
+    buttons: 1,
+    clickCount: 1,
+  });
+  for (let i = 1; i <= 4; i++)
+    await context.request('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: box.x + i * 9,
+      y: box.y + i * 5,
+      button: 'left',
+      buttons: 1,
+    });
+  await context.request('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: box.x + 36,
+    y: box.y + 20,
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+  });
   await waitFor(`document.querySelector('${ink} [name="stroke"]')?.options.length === 3`, '真实指针手绘新增笔画');
   await captureSaveAndReopen(context, 'ink-edit-reopened.pptx');
   await selectPaneObject(context, '墨迹 1');
-  await waitFor(`document.querySelector('${ink} [name="stroke"]')?.options.length === 3 && document.querySelector('#canvasMount path[stroke="#cc2200"]') !== null`, '墨迹原生笔画保存重开');
+  await waitFor(
+    `document.querySelector('${ink} [name="stroke"]')?.options.length === 3 && document.querySelector('#canvasMount path[stroke="#cc2200"]') !== null`,
+    '墨迹原生笔画保存重开',
+  );
 }
-
-

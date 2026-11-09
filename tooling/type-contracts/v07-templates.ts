@@ -1,6 +1,8 @@
 import {
-  createPptxFromTemplate, listBuiltinTemplates,
-  type BuiltinTemplateId, type BuiltinTemplatePreviewToken,
+  createPptxFromTemplate,
+  listBuiltinTemplates,
+  type BuiltinTemplateId,
+  type BuiltinTemplatePreviewToken,
 } from '@web-ppt/edit-core/templates';
 import * as editorTemplates from '@web-ppt/editor/templates';
 import * as reactTemplates from '@web-ppt/react/templates';

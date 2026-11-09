@@ -8,45 +8,40 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import { relationshipPartFor } from './clipboard-parts';
 
 function child(parent: XmlElement | null, localName: string, namespaceUri?: string): XmlElement | null {
-  return parent && findXmlChild(parent, {
-    localName, ...(namespaceUri ? { namespaceUri } : {}),
-  });
+  return (
+    parent
+    && findXmlChild(parent, {
+      localName,
+      ...(namespaceUri ? { namespaceUri } : {}),
+    })
+  );
 }
 
 function attr(element: XmlElement | null, localName: string): string | null {
-  return element ? findXmlAttribute(element, { localName })?.value ?? null : null;
+  return element ? (findXmlAttribute(element, { localName })?.value ?? null) : null;
 }
 
 function placeholderOf(host: XmlElement) {
-  const nonVisual = xmlElementChildren(host).find((candidate) => [
-    'nvSpPr', 'nvPicPr', 'nvCxnSpPr', 'nvGraphicFramePr',
-  ].includes(candidate.localName)) ?? null;
+  const nonVisual =
+    xmlElementChildren(host).find((candidate) => ['nvSpPr', 'nvPicPr', 'nvCxnSpPr', 'nvGraphicFramePr'].includes(candidate.localName))
+    ?? null;
   const ph = child(child(nonVisual, 'nvPr', PRESENTATIONML_NS), 'ph', PRESENTATIONML_NS);
   if (!ph) return null;
   const idx = attr(ph, 'idx');
   return { type: attr(ph, 'type') ?? 'obj', ...(idx === null ? {} : { idx }) };
 }
 
-function placeholderGeometry(
-  document: XmlDocument | null,
-  query: NonNullable<ElementRecord['meta']['ph']>,
-): XmlElement | undefined {
+function placeholderGeometry(document: XmlDocument | null, query: NonNullable<ElementRecord['meta']['ph']>): XmlElement | undefined {
   if (!document) return undefined;
-  const shapeTree = child(
-    child(document.root, 'cSld', PRESENTATIONML_NS), 'spTree', PRESENTATIONML_NS,
-  );
+  const shapeTree = child(child(document.root, 'cSld', PRESENTATIONML_NS), 'spTree', PRESENTATIONML_NS);
   if (!shapeTree) return undefined;
   const host = findPlaceholderByIdentity(
-    xmlElementChildren(shapeTree).filter((candidate) => [
-      'sp', 'pic', 'cxnSp', 'graphicFrame',
-    ].includes(candidate.localName)),
+    xmlElementChildren(shapeTree).filter((candidate) => ['sp', 'pic', 'cxnSp', 'graphicFrame'].includes(candidate.localName)),
     placeholderOf,
     query,
   );
   const properties = host ? child(host, 'spPr', PRESENTATIONML_NS) : null;
-  return child(properties, 'custGeom', DRAWINGML_NS)
-    ?? child(properties, 'prstGeom', DRAWINGML_NS)
-    ?? undefined;
+  return child(properties, 'custGeom', DRAWINGML_NS) ?? child(properties, 'prstGeom', DRAWINGML_NS) ?? undefined;
 }
 
 /** 保存期间按 part 缓存保留型 XML；继承 custGeom 复制公式树，而不是从烘焙 path 反推。 */
@@ -61,8 +56,11 @@ export function createLayoutFallbackGeometryResolver(doc: EditDoc) {
   };
   const masterPart = (layoutPart: string): string | null => {
     const relationships = document(relationshipPartFor(layoutPart));
-    const relation = relationships && xmlElementChildren(relationships.root).find((candidate) =>
-      candidate.localName === 'Relationship' && attr(candidate, 'Type')?.endsWith('/slideMaster'));
+    const relation =
+      relationships
+      && xmlElementChildren(relationships.root).find(
+        (candidate) => candidate.localName === 'Relationship' && attr(candidate, 'Type')?.endsWith('/slideMaster'),
+      );
     const target = relation ? attr(relation, 'Target') : null;
     return target ? resolveRelationshipTarget(layoutPart, target) : null;
   };
@@ -70,8 +68,9 @@ export function createLayoutFallbackGeometryResolver(doc: EditDoc) {
     const layoutPart = slide.sourceLayoutId;
     const query = record.meta.ph;
     if (!layoutPart || !query) return undefined;
-    return placeholderGeometry(document(layoutPart), query)
-      ?? (masterPart(layoutPart)
-        ? placeholderGeometry(document(masterPart(layoutPart)!), query) : undefined);
+    return (
+      placeholderGeometry(document(layoutPart), query)
+      ?? (masterPart(layoutPart) ? placeholderGeometry(document(masterPart(layoutPart)!), query) : undefined)
+    );
   };
 }

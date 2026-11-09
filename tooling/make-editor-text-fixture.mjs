@@ -23,13 +23,25 @@ const richText = `<a:p><a:pPr algn="l"><a:lnSpc>
 <a:t>1</a:t></a:fld><a:endParaRPr sz="1500"/></a:p>`;
 
 const rich = sp({
-  x: 90, y: 80, w: 620, h: 310, prst: 'roundRect', fill: solid('F8FAFC'), name: '文本综合',
+  x: 90,
+  y: 80,
+  w: 620,
+  h: 310,
+  prst: 'roundRect',
+  fill: solid('F8FAFC'),
+  name: '文本综合',
   bodyPr: '<a:bodyPr wrap="square" anchor="t"><a:normAutofit fontScale="92000" lnSpcReduction="8000"/></a:bodyPr>',
   text: richText,
 });
 
 const empty = sp({
-  x: 770, y: 100, w: 360, h: 130, prst: 'rect', fill: solid('FFF7ED'), name: '空文本框',
+  x: 770,
+  y: 100,
+  w: 360,
+  h: 130,
+  prst: 'rect',
+  fill: solid('FFF7ED'),
+  name: '空文本框',
   bodyPr: '<a:bodyPr anchor="ctr"/>',
   text: '<a:p><a:pPr algn="ctr"/><a:endParaRPr sz="2200" b="1"/></a:p>',
 });
@@ -42,7 +54,13 @@ const rotated = `<p:sp>
 <a:r><a:rPr sz="2000"/><a:t>旋转后仍可编辑</a:t></a:r></a:p></p:txBody></p:sp>`;
 
 const repeated = sp({
-  x: 770, y: 510, w: 360, h: 100, prst: 'rect', fill: solid('F5F3FF'), name: '重复格式',
+  x: 770,
+  y: 510,
+  w: 360,
+  h: 100,
+  prst: 'rect',
+  fill: solid('F5F3FF'),
+  name: '重复格式',
   bodyPr: '<a:bodyPr anchor="ctr"/>',
   text: `<a:p><a:pPr algn="ctr"/>
 <a:r><a:rPr sz="2000"><?format keep?><a:solidFill><a:srgbClr val="DC2626"/></a:solidFill></a:rPr><a:t>同</a:t></a:r>
@@ -52,7 +70,13 @@ const repeated = sp({
 });
 
 const splitFormat = sp({
-  x: 90, y: 510, w: 620, h: 100, prst: 'rect', fill: solid('EFF6FF'), name: '中段格式',
+  x: 90,
+  y: 510,
+  w: 620,
+  h: 100,
+  prst: 'rect',
+  fill: solid('EFF6FF'),
+  name: '中段格式',
   bodyPr: '<a:bodyPr anchor="ctr"/>',
   text: `<a:p><a:pPr algn="ctr"/>
 <!--split-before:  keep--><?split-format  keep = "yes"?>
@@ -61,7 +85,13 @@ const splitFormat = sp({
 });
 
 const paragraphFormat = sp({
-  x: 90, y: 620, w: 1040, h: 85, prst: 'rect', fill: solid('F0FDFA'), name: '段落格式',
+  x: 90,
+  y: 620,
+  w: 1040,
+  h: 85,
+  prst: 'rect',
+  fill: solid('F0FDFA'),
+  name: '段落格式',
   bodyPr: '<a:bodyPr anchor="ctr"/>',
   lstStyle: `<a:lstStyle><a:lvl1pPr algn="r" marL="190500" indent="-95250">
 <a:lnSpc><a:spcPct val="125000"/></a:lnSpc>
@@ -80,7 +110,9 @@ const paragraphFormat = sp({
 });
 
 const bytes = deck({
-  name: 'Editor Text', width: 1280, height: 720,
+  name: 'Editor Text',
+  width: 1280,
+  height: 720,
   slides: [slideXml(rich + empty + rotated + repeated + splitFormat + paragraphFormat)],
 });
 

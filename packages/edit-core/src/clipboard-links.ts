@@ -4,22 +4,18 @@ import { assertDataObject } from './data-validation';
 import { assertLinkOverride, queryElementLink, supportsElementLink } from './hyperlink';
 import { flattenTextBody } from './text-model';
 import { textRunEditLength } from './text-position';
-import type {
-  ClipboardPortableLink, ClipboardTextLink, ElementClipboardRecordMeta, TextRange,
-} from './commands/types';
-import type {
-  EditDoc, ElementOverrides, LinkOverride, LinkSourceValue, TableCellOverrides,
-} from './types';
+import type { ClipboardPortableLink, ClipboardTextLink, ElementClipboardRecordMeta, TextRange } from './commands/types';
+import type { EditDoc, ElementOverrides, LinkOverride, LinkSourceValue, TableCellOverrides } from './types';
 import { queryRunLink } from './run-links';
 
 function portableTarget(doc: EditDoc, value: LinkSourceValue | null): ClipboardPortableLink | null {
   if (!value) return null;
   if (value.kind !== 'slide') return structuredClone(value);
   const part = doc.slides[value.slideId]?.origin?.part;
-  const packageTarget = part && doc.package?.parts[part]
-    ? packageTargetIdentity(doc.package, part) : undefined;
+  const packageTarget = part && doc.package?.parts[part] ? packageTargetIdentity(doc.package, part) : undefined;
   return {
-    kind: 'slide', sourceSlideId: value.slideId,
+    kind: 'slide',
+    sourceSlideId: value.slideId,
     ...(packageTarget ? { packageTarget } : {}),
   };
 }
@@ -31,38 +27,32 @@ function exactRunRange(paragraph: number, run: number, value: TextRun): TextRang
   };
 }
 
-function bodyLinks(
-  doc: EditDoc,
-  id: string,
-  body: TextBody | null,
-  cell?: { r: number; c: number },
-): ClipboardTextLink[] {
+function bodyLinks(doc: EditDoc, id: string, body: TextBody | null, cell?: { r: number; c: number }): ClipboardTextLink[] {
   if (!body) return [];
-  return body.paragraphs.flatMap((paragraph, p) => paragraph.runs.flatMap((run, r) => {
-    const state = queryRunLink(doc, id, exactRunRange(p, r, run), cell);
-    const value = state.value ? portableTarget(doc, state.value)
-      : state.direct ? { kind: 'none' as const } : null;
-    return value ? [{ paragraph: p, run: r, ...(cell ? { cell: { ...cell } } : {}), value }] : [];
-  }));
+  return body.paragraphs.flatMap((paragraph, p) =>
+    paragraph.runs.flatMap((run, r) => {
+      const state = queryRunLink(doc, id, exactRunRange(p, r, run), cell);
+      const value = state.value ? portableTarget(doc, state.value) : state.direct ? { kind: 'none' as const } : null;
+      return value ? [{ paragraph: p, run: r, ...(cell ? { cell: { ...cell } } : {}), value }] : [];
+    }),
+  );
 }
 
-export function copiedLinkMeta(
-  doc: EditDoc,
-  id: string,
-  element: SlideElement,
-): Pick<ElementClipboardRecordMeta, 'link' | 'textLinks'> {
+export function copiedLinkMeta(doc: EditDoc, id: string, element: SlideElement): Pick<ElementClipboardRecordMeta, 'link' | 'textLinks'> {
   const editableText = doc.elements[id]?.meta.editable === 'full';
-  const elementState = supportsElementLink(element.kind)
-    ? queryElementLink(doc, [id]) : null;
-  const link = elementState?.value ? portableTarget(doc, elementState.value)
-    : elementState?.direct ? { kind: 'none' as const } : null;
-  const textLinks = editableText && element.kind === 'shape'
-    ? bodyLinks(doc, id, element.text)
-    : editableText && element.kind === 'table'
-      ? element.rows.flatMap((row, r) => row.cells.flatMap((cell, c) =>
-        // 合并占位格没有独立文本身份；读取它会绕过表格主格拓扑。
-        cell.merged ? [] : bodyLinks(doc, id, cell.text, { r, c })))
-      : [];
+  const elementState = supportsElementLink(element.kind) ? queryElementLink(doc, [id]) : null;
+  const link = elementState?.value ? portableTarget(doc, elementState.value) : elementState?.direct ? { kind: 'none' as const } : null;
+  const textLinks =
+    editableText && element.kind === 'shape'
+      ? bodyLinks(doc, id, element.text)
+      : editableText && element.kind === 'table'
+        ? element.rows.flatMap((row, r) =>
+            row.cells.flatMap((cell, c) =>
+              // 合并占位格没有独立文本身份；读取它会绕过表格主格拓扑。
+              cell.merged ? [] : bodyLinks(doc, id, cell.text, { r, c }),
+            ),
+          )
+        : [];
   return {
     ...(link ? { link } : {}),
     ...(textLinks.length ? { textLinks } : {}),
@@ -82,8 +72,7 @@ export function assertClipboardPortableLink(value: unknown, label: string): asse
     }
     if (candidate.packageTarget) {
       assertDataObject(candidate.packageTarget, ['rootHash', 'closureHash'], `${label}.packageTarget`);
-      if (!/^[0-9a-f]{64}$/.test(candidate.packageTarget.rootHash)
-        || !/^[0-9a-f]{64}$/.test(candidate.packageTarget.closureHash)) {
+      if (!/^[0-9a-f]{64}$/.test(candidate.packageTarget.rootHash) || !/^[0-9a-f]{64}$/.test(candidate.packageTarget.closureHash)) {
         throw new Error(`${label}.packageTarget 无效`);
       }
     }
@@ -109,12 +98,11 @@ export function assertClipboardTextLinks(value: unknown, label: string): asserts
   value.forEach((entry, index) => {
     assertDataObject(entry, ['paragraph', 'run', 'cell', 'value'], `${label}[${index}]`);
     const link = entry as ClipboardTextLink;
-    if (!Number.isInteger(link.paragraph) || link.paragraph < 0
-      || !Number.isInteger(link.run) || link.run < 0) throw new Error(`${label}[${index}] 位置无效`);
+    if (!Number.isInteger(link.paragraph) || link.paragraph < 0 || !Number.isInteger(link.run) || link.run < 0)
+      throw new Error(`${label}[${index}] 位置无效`);
     if (link.cell) {
       assertDataObject(link.cell, ['r', 'c'], `${label}[${index}].cell`);
-      if (!Number.isInteger(link.cell.r) || link.cell.r < 0
-        || !Number.isInteger(link.cell.c) || link.cell.c < 0) {
+      if (!Number.isInteger(link.cell.r) || link.cell.r < 0 || !Number.isInteger(link.cell.c) || link.cell.c < 0) {
         throw new Error(`${label}[${index}].cell 无效`);
       }
     }
@@ -133,8 +121,7 @@ function mappedLink(doc: EditDoc, value: ClipboardPortableLink): AppliedLink {
   if (value.kind === 'relative') return { kind: 'relative', action: value.action };
   if (value.kind === 'unsupported') return { kind: 'unsupported' };
   if (doc.slides[value.sourceSlideId]) return { kind: 'slide', slideId: value.sourceSlideId };
-  const part = value.packageTarget && doc.package
-    ? resolvePackageTarget(doc.package, value.packageTarget) : null;
+  const part = value.packageTarget && doc.package ? resolvePackageTarget(doc.package, value.packageTarget) : null;
   const slideId = part && doc.slideOrder.find((id) => doc.slides[id].origin?.part === part);
   return { kind: 'slide', slideId: slideId || value.sourceSlideId };
 }
@@ -145,11 +132,7 @@ function sourceRun(body: TextBody, link: ClipboardTextLink): TextRun {
   return run;
 }
 
-function prepareBody(
-  doc: EditDoc,
-  body: TextBody,
-  links: readonly ClipboardTextLink[],
-): ReturnType<typeof flattenTextBody> | null {
+function prepareBody(doc: EditDoc, body: TextBody, links: readonly ClipboardTextLink[]): ReturnType<typeof flattenTextBody> | null {
   const direct: Array<{ link: ClipboardTextLink; value: LinkOverride }> = [];
   for (const link of links) {
     const run = sourceRun(body, link);
@@ -169,7 +152,8 @@ function prepareBody(
     const mark = flat.paragraphs[item.link.paragraph]?.marks[item.link.run];
     if (!mark) throw new Error('剪贴板文字链接格式位置不存在');
     (mark as { runOverrides?: typeof mark.runOverrides }).runOverrides = {
-      ...mark.runOverrides, link: item.value,
+      ...mark.runOverrides,
+      link: item.value,
     };
   }
   return flat;
@@ -195,7 +179,11 @@ export function applyCopiedLinks(
   }
   const textLinks = meta.textLinks ?? [];
   if (element.kind === 'shape' && element.text) {
-    const flat = prepareBody(doc, element.text, textLinks.filter((link) => !link.cell));
+    const flat = prepareBody(
+      doc,
+      element.text,
+      textLinks.filter((link) => !link.cell),
+    );
     if (flat) overrides.text = flat;
   } else if (element.kind === 'table') {
     const cells: Record<string, TableCellOverrides> = {};

@@ -26,18 +26,22 @@ const custom = `<p:sp>
 ${solid('accent2')}<a:ln w="19050"><a:solidFill><a:srgbClr val="1D4ED8"/></a:solidFill></a:ln>
 </p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr/></a:p></p:txBody></p:sp>`;
 
-const load = Array.from({ length: 59 }, (_, index) => sp({
-  x: 20 + index % 12 * 100,
-  y: 20 + Math.floor(index / 12) * 130,
-  w: 72,
-  h: 50,
-  prst: index % 2 ? 'roundRect' : 'rect',
-  fill: solid(index % 2 ? 'accent4' : 'accent5'),
-  name: `vertex-load-${index + 1}`,
-})).join('');
+const load = Array.from({ length: 59 }, (_, index) =>
+  sp({
+    x: 20 + (index % 12) * 100,
+    y: 20 + Math.floor(index / 12) * 130,
+    w: 72,
+    h: 50,
+    prst: index % 2 ? 'roundRect' : 'rect',
+    fill: solid(index % 2 ? 'accent4' : 'accent5'),
+    name: `vertex-load-${index + 1}`,
+  }),
+).join('');
 
 const bytes = deck({
-  name: 'Editor Vertex', width: 1280, height: 720,
+  name: 'Editor Vertex',
+  width: 1280,
+  height: 720,
   slides: [slideXml(load + custom)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

@@ -1,6 +1,4 @@
-import {
-  openFixture, saveAndReopen, selectPaneObject,
-} from './site-editor-browser-helpers.mjs';
+import { openFixture, saveAndReopen, selectPaneObject } from './site-editor-browser-helpers.mjs';
 
 async function selectedImageHref(evaluate) {
   return evaluate(`(() => {
@@ -32,28 +30,37 @@ export async function runSiteEditorImageToolbarContract(context) {
   await waitFor("document.querySelector('#cropImageTen').getAttribute('aria-pressed') === 'true'", '图片裁剪重做');
 
   const hrefBefore = await selectedImageHref(evaluate);
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/assets/replacement.png').then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], 'replacement.png', { type: 'image/png' }));
     const input = document.querySelector('#replaceImageInput'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor("document.querySelector('#statusText').textContent === '图片已替换'", '图片替换写入');
   const hrefAfter = await selectedImageHref(evaluate);
   if (!hrefAfter || hrefAfter === hrefBefore) throw new Error('替换图片没有更新真实画布图片源');
   await click('#undo');
-  await waitFor(`(() => {
+  await waitFor(
+    `(() => {
     const row = [...document.querySelectorAll('[data-pane-element]')].find((node) => node.getAttribute('aria-selected') === 'true');
     const image = row && document.querySelector('[data-edit-id="' + CSS.escape(row.dataset.paneElement) + '"] image');
     return (image?.getAttribute('href') || image?.getAttribute('xlink:href') || '') === ${JSON.stringify(hrefBefore)};
-  })()`, '图片替换撤销');
+  })()`,
+    '图片替换撤销',
+  );
   await click('#redo');
-  await waitFor(`(() => {
+  await waitFor(
+    `(() => {
     const row = [...document.querySelectorAll('[data-pane-element]')].find((node) => node.getAttribute('aria-selected') === 'true');
     const image = row && document.querySelector('[data-edit-id="' + CSS.escape(row.dataset.paneElement) + '"] image');
     return (image?.getAttribute('href') || image?.getAttribute('xlink:href') || '') !== ${JSON.stringify(hrefBefore)};
-  })()`, '图片替换重做');
+  })()`,
+    '图片替换重做',
+  );
 
   await saveAndReopen(context, 'image-content-reopen.pptx');
   await selectPaneObject(context, 'image-external');

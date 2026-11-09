@@ -116,11 +116,14 @@ function rectMask(paths: readonly (readonly Point[])[], anchors: readonly MaskAn
     opacity: 1,
     maskImage: paths.map(() => 'linear-gradient(#000,#000)').join(', '),
     maskRepeat: 'no-repeat',
-    maskPosition: paths.map((points, index) =>
-      `${anchors[index]?.x === 'right' ? `right ${percent(100 - points[2][0])}` : `left ${percent(points[0][0])}`} `
-        + `${anchors[index]?.y === 'bottom' ? `bottom ${percent(100 - points[2][1])}` : `top ${percent(points[0][1])}`}`).join(', '),
-    maskSize: paths.map((points) =>
-      `${percent(points[2][0] - points[0][0])} ${percent(points[2][1] - points[0][1])}`).join(', '),
+    maskPosition: paths
+      .map(
+        (points, index) =>
+          `${anchors[index]?.x === 'right' ? `right ${percent(100 - points[2][0])}` : `left ${percent(points[0][0])}`} `
+          + `${anchors[index]?.y === 'bottom' ? `bottom ${percent(100 - points[2][1])}` : `top ${percent(points[0][1])}`}`,
+      )
+      .join(', '),
+    maskSize: paths.map((points) => `${percent(points[2][0] - points[0][0])} ${percent(points[2][1] - points[0][1])}`).join(', '),
     maskOrigin: 'fill-box',
     maskClip: 'fill-box',
   };
@@ -128,10 +131,17 @@ function rectMask(paths: readonly (readonly Point[])[], anchors: readonly MaskAn
 
 function shapeMask(paths: readonly (readonly Point[])[], evenodd = false): Keyframe {
   const coordinate = (value: number) => Math.round(value * 1000) / 1000;
-  const d = paths.map((points) =>
-    `M${coordinate(points[0][0])} ${coordinate(points[0][1])} `
-      + points.slice(1).map(([x, y]) => `L${coordinate(x)} ${coordinate(y)}`).join(' ')
-      + ' Z').join(' ');
+  const d = paths
+    .map(
+      (points) =>
+        `M${coordinate(points[0][0])} ${coordinate(points[0][1])} `
+        + points
+          .slice(1)
+          .map(([x, y]) => `L${coordinate(x)} ${coordinate(y)}`)
+          .join(' ')
+        + ' Z',
+    )
+    .join(' ');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path fill="#000" fill-rule="${evenodd ? 'evenodd' : 'nonzero'}" d="${d}"/></svg>`;
   return {
     opacity: 1,
@@ -145,37 +155,46 @@ function shapeMask(paths: readonly (readonly Point[])[], evenodd = false): Keyfr
 }
 
 function rect(left: number, top: number, right: number, bottom: number): Point[] {
-  return [[left, top], [right, top], [right, bottom], [left, bottom]];
+  return [
+    [left, top],
+    [right, top],
+    [right, bottom],
+    [left, bottom],
+  ];
 }
 
 export function splitClip(dir: string | undefined, open: boolean): Keyframe {
   const vertical = dir?.endsWith('vert') ?? true;
   const inward = dir?.startsWith('in') ?? false;
   const span = open ? 50 : 0;
-  if (vertical) return rectMask(inward
-    ? [rect(0, 0, span, 100), rect(100 - span, 0, 100, 100)]
-    : [rect(50 - span, 0, 50, 100), rect(50, 0, 50 + span, 100)]);
-  return rectMask(inward
-    ? [rect(0, 0, 100, span), rect(0, 100 - span, 100, 100)]
-    : [rect(0, 50 - span, 100, 50), rect(0, 50, 100, 50 + span)]);
+  if (vertical)
+    return rectMask(
+      inward ? [rect(0, 0, span, 100), rect(100 - span, 0, 100, 100)] : [rect(50 - span, 0, 50, 100), rect(50, 0, 50 + span, 100)],
+    );
+  return rectMask(
+    inward ? [rect(0, 0, 100, span), rect(0, 100 - span, 100, 100)] : [rect(0, 50 - span, 100, 50), rect(0, 50, 100, 50 + span)],
+  );
 }
 
 export function checkerboardClip(dir: string | undefined, open: boolean): Keyframe {
   const paths: Point[][] = [];
-  for (let row = 0; row < 6; row++) for (let col = 0; col < 8; col++) {
-    const left = col * 12.5;
-    const top = row * (100 / 6);
-    const right = left + 12.5;
-    const bottom = top + 100 / 6;
-    const reverse = (row + col) % 2 === 1;
-    if (dir === 'down') {
-      paths.push(rect(left, reverse ? bottom - (open ? bottom - top : 0) : top,
-        right, reverse ? bottom : top + (open ? bottom - top : 0)));
-    } else {
-      paths.push(rect(reverse ? right - (open ? right - left : 0) : left, top,
-        reverse ? right : left + (open ? right - left : 0), bottom));
+  for (let row = 0; row < 6; row++)
+    for (let col = 0; col < 8; col++) {
+      const left = col * 12.5;
+      const top = row * (100 / 6);
+      const right = left + 12.5;
+      const bottom = top + 100 / 6;
+      const reverse = (row + col) % 2 === 1;
+      if (dir === 'down') {
+        paths.push(
+          rect(left, reverse ? bottom - (open ? bottom - top : 0) : top, right, reverse ? bottom : top + (open ? bottom - top : 0)),
+        );
+      } else {
+        paths.push(
+          rect(reverse ? right - (open ? right - left : 0) : left, top, reverse ? right : left + (open ? right - left : 0), bottom),
+        );
+      }
     }
-  }
   return rectMask(paths);
 }
 
@@ -185,13 +204,11 @@ export function randomBarsClip(dir: string | undefined, open: boolean | number):
   const progress = typeof open === 'boolean' ? Number(open) : open;
   const paths: Point[][] = [];
   for (let index = 0; index < count; index++) {
-    const start = index * 100 / count;
-    const end = (index + 1) * 100 / count;
+    const start = (index * 100) / count;
+    const end = ((index + 1) * 100) / count;
     const rank = (index * 73) % count;
     const span = Math.min(1, Math.max(0, progress * count - rank)) * (end - start);
-    paths.push(vertical
-      ? rect(start, 0, start + span, 100)
-      : rect(0, start, 100, start + span));
+    paths.push(vertical ? rect(start, 0, start + span, 100) : rect(0, start, 100, start + span));
   }
   return rectMask(paths);
 }
@@ -203,8 +220,8 @@ export function stripsClip(dir: string | undefined, open: boolean | number): Key
   const count = 8;
   const paths: Point[][] = [];
   for (let row = 0; row < count; row++) {
-    const top = row * 100 / count;
-    const bottom = (row + 1) * 100 / count;
+    const top = (row * 100) / count;
+    const bottom = ((row + 1) * 100) / count;
     const delay = (up ? count - row - 1 : row) / (2 * count);
     const extent = Math.min(1, Math.max(0, (progress - delay) / (1 - (count - 1) / (2 * count))));
     const width = extent * 100;
@@ -214,36 +231,48 @@ export function stripsClip(dir: string | undefined, open: boolean | number): Key
 }
 
 function irisPoints(effect: 'circle' | 'diamond' | 'plus', radius: number): Point[] {
-  if (effect === 'circle') return Array.from({ length: 40 }, (_, index) => {
-    const angle = index * Math.PI / 20 - Math.PI / 2;
-    return [50 + radius * Math.cos(angle), 50 + radius * Math.sin(angle)];
-  });
-  if (effect === 'diamond') return [[50, 50 - radius], [50 + radius, 50],
-    [50, 50 + radius], [50 - radius, 50]];
+  if (effect === 'circle')
+    return Array.from({ length: 40 }, (_, index) => {
+      const angle = (index * Math.PI) / 20 - Math.PI / 2;
+      return [50 + radius * Math.cos(angle), 50 + radius * Math.sin(angle)];
+    });
+  if (effect === 'diamond')
+    return [
+      [50, 50 - radius],
+      [50 + radius, 50],
+      [50, 50 + radius],
+      [50 - radius, 50],
+    ];
   const thin = radius / 3;
-  return [[50 - thin, 50 - radius], [50 + thin, 50 - radius],
-    [50 + thin, 50 - thin], [50 + radius, 50 - thin],
-    [50 + radius, 50 + thin], [50 + thin, 50 + thin],
-    [50 + thin, 50 + radius], [50 - thin, 50 + radius],
-    [50 - thin, 50 + thin], [50 - radius, 50 + thin],
-    [50 - radius, 50 - thin], [50 - thin, 50 - thin]];
+  return [
+    [50 - thin, 50 - radius],
+    [50 + thin, 50 - radius],
+    [50 + thin, 50 - thin],
+    [50 + radius, 50 - thin],
+    [50 + radius, 50 + thin],
+    [50 + thin, 50 + thin],
+    [50 + thin, 50 + radius],
+    [50 - thin, 50 + radius],
+    [50 - thin, 50 + thin],
+    [50 - radius, 50 + thin],
+    [50 - radius, 50 - thin],
+    [50 - thin, 50 - thin],
+  ];
 }
 
 export function irisClip(effect: 'circle' | 'diamond' | 'plus', dir: string | undefined, open: boolean | number): Keyframe {
   const progress = typeof open === 'boolean' ? Number(open) : open;
   if (effect === 'plus' && dir === 'in') {
     const span = progress * 50;
-    return rectMask([
-      rect(0, 0, span, span), rect(100 - span, 0, 100, span),
-      rect(0, 100 - span, span, 100), rect(100 - span, 100 - span, 100, 100),
-    ], [{}, { x: 'right' }, { y: 'bottom' }, { x: 'right', y: 'bottom' }]);
+    return rectMask(
+      [rect(0, 0, span, span), rect(100 - span, 0, 100, span), rect(0, 100 - span, span, 100), rect(100 - span, 100 - span, 100, 100)],
+      [{}, { x: 'right' }, { y: 'bottom' }, { x: 'right', y: 'bottom' }],
+    );
   }
   const fullRadius = effect === 'circle' ? 72 : effect === 'diamond' ? 101 : 151;
   const radius = (dir === 'in' ? 1 - progress : progress) * fullRadius;
   const aperture = irisPoints(effect, radius);
-  return dir === 'in'
-    ? shapeMask([rect(0, 0, 100, 100), aperture], true)
-    : shapeMask([aperture]);
+  return dir === 'in' ? shapeMask([rect(0, 0, 100, 100), aperture], true) : shapeMask([aperture]);
 }
 
 export function wheelClip(spokes: string | undefined, open: boolean | number): Keyframe {
@@ -251,11 +280,11 @@ export function wheelClip(spokes: string | undefined, open: boolean | number): K
   const progress = typeof open === 'boolean' ? Number(open) : open;
   const paths: Point[][] = [];
   for (let sector = 0; sector < count; sector++) {
-    const start = -Math.PI / 2 + sector * 2 * Math.PI / count;
-    const sweep = progress * 2 * Math.PI / count;
+    const start = -Math.PI / 2 + (sector * 2 * Math.PI) / count;
+    const sweep = (progress * 2 * Math.PI) / count;
     const arc: Point[] = [[50, 50]];
     for (let index = 0; index <= 16; index++) {
-      const angle = start + sweep * index / 16;
+      const angle = start + (sweep * index) / 16;
       arc.push([50 + 200 * Math.cos(angle), 50 + 200 * Math.sin(angle)]);
     }
     paths.push(arc);
@@ -266,25 +295,28 @@ export function wheelClip(spokes: string | undefined, open: boolean | number): K
 export function dissolveClip(open: boolean | number, seed: number): Keyframe {
   const progress = typeof open === 'boolean' ? Number(open) : open;
   const paths: Point[][] = [];
-  for (let row = 0; row < 8; row++) for (let col = 0; col < 10; col++) {
-    const left = col * 10;
-    const top = row * 12.5;
-    const right = (col + 1) * 10;
-    const bottom = (row + 1) * 12.5;
-    let hash = Math.imul(row * 10 + col + seed * 101, 0x45d9f3b);
-    hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
-    hash = (hash ^ (hash >>> 16)) >>> 0;
-    const turn = (hash % 17) / 17;
-    const centerX = left + (right - left) * turn;
-    const centerY = top + (bottom - top) * (1 - turn);
-    const rank = (hash >>> 8) % 8;
-    const extent = Math.min(1, Math.max(0, progress * 8 - rank));
-    paths.push(rect(
-      centerX + (left - centerX) * extent,
-      centerY + (top - centerY) * extent,
-      centerX + (right - centerX) * extent,
-      centerY + (bottom - centerY) * extent,
-    ));
-  }
+  for (let row = 0; row < 8; row++)
+    for (let col = 0; col < 10; col++) {
+      const left = col * 10;
+      const top = row * 12.5;
+      const right = (col + 1) * 10;
+      const bottom = (row + 1) * 12.5;
+      let hash = Math.imul(row * 10 + col + seed * 101, 0x45d9f3b);
+      hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+      hash = (hash ^ (hash >>> 16)) >>> 0;
+      const turn = (hash % 17) / 17;
+      const centerX = left + (right - left) * turn;
+      const centerY = top + (bottom - top) * (1 - turn);
+      const rank = (hash >>> 8) % 8;
+      const extent = Math.min(1, Math.max(0, progress * 8 - rank));
+      paths.push(
+        rect(
+          centerX + (left - centerX) * extent,
+          centerY + (top - centerY) * extent,
+          centerX + (right - centerX) * extent,
+          centerY + (bottom - centerY) * extent,
+        ),
+      );
+    }
   return rectMask(paths);
 }

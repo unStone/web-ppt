@@ -7,7 +7,8 @@ export async function runStandalonePasswordContract({ evaluate, request, waitFor
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...key });
   };
-  const submitPassword = async (password) => evaluate(`(() => {
+  const submitPassword = async (password) =>
+    evaluate(`(() => {
     const input = document.querySelector('#viewerPassword');
     const form = document.querySelector('#viewerPasswordForm');
     if (!input || !form) throw new Error('密码框不在');
@@ -23,7 +24,7 @@ export async function runStandalonePasswordContract({ evaluate, request, waitFor
   if (await evaluate("document.querySelector('#stage svg')")) {
     throw new Error('密码框出现时仍留着旧幻灯片');
   }
-  if (!await evaluate("document.querySelector('#viewerPasswordDescription')?.textContent.includes('sample-encrypted-agile.pptx')")) {
+  if (!(await evaluate("document.querySelector('#viewerPasswordDescription')?.textContent.includes('sample-encrypted-agile.pptx')"))) {
     throw new Error('密码框没有按文本显示文件名');
   }
   await press('g', 71, 'KeyG');
@@ -65,7 +66,8 @@ export async function runStandalonePasswordContract({ evaluate, request, waitFor
 
   await request('Page.navigate', { url: await standalone('/demo/sample-encrypted-agile.pptx') });
   await waitFor("document.querySelector('#viewerPasswordDialog')?.open === true", '换文件前密码框仍开着');
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/demo/showcase.pptx').then((r) => r.arrayBuffer());
     const file = new File([bytes], 'after-password.pptx');
     const input = document.querySelector('#fileInput');
@@ -73,12 +75,18 @@ export async function runStandalonePasswordContract({ evaluate, request, waitFor
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor(
     "document.querySelector('#fileInfo')?.textContent.includes('after-password.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready' && document.querySelector('#stage svg') && !document.querySelector('#viewerPasswordDialog')",
     '密码框开着时后一次打开赢',
   );
-  if (await evaluate("/已取消打开/.test(document.querySelector('#stage')?.textContent ?? '') || document.querySelector('#fileInfo').textContent.includes('sample-encrypted-agile')")) {
+  if (
+    await evaluate(
+      "/已取消打开/.test(document.querySelector('#stage')?.textContent ?? '') || document.querySelector('#fileInfo').textContent.includes('sample-encrypted-agile')",
+    )
+  ) {
     throw new Error('被换掉的密码框取消写进了新打开');
   }
   if (String(await evaluate('location.search')).includes('file=')) {

@@ -47,8 +47,12 @@ export function parseEffects(effectLst: Element | null, ctx: ColorCtx): Effects 
 }
 
 const END_TYPES: Record<string, LineEndType> = {
-  none: 'none', triangle: 'triangle', stealth: 'stealth',
-  diamond: 'diamond', oval: 'oval', arrow: 'arrow',
+  none: 'none',
+  triangle: 'triangle',
+  stealth: 'stealth',
+  diamond: 'diamond',
+  oval: 'oval',
+  arrow: 'arrow',
 };
 
 const END_SIZE: Record<string, number> = { sm: 2, med: 3, lg: 5 };
@@ -84,7 +88,10 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
 
   const contourW = numAttr(sp3d, 'contourW');
   if (contourW !== null) out.contourWidth = emu(contourW);
-  for (const [tag, key] of [['extrusionClr', 'extrusionColor'], ['contourClr', 'contourColor']] as const) {
+  for (const [tag, key] of [
+    ['extrusionClr', 'extrusionColor'],
+    ['contourClr', 'contourColor'],
+  ] as const) {
     const color = childColor(kid(sp3d, tag), ctx);
     if (color) out[key] = color;
   }
@@ -96,12 +103,15 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
   const camera = kid(scene3d, 'camera');
   const preset = attr(camera, 'prst');
   if (preset) out.camera = preset;
-  const fov = numAttr(camera, 'fov'), zoom = numAttr(camera, 'zoom');
+  const fov = numAttr(camera, 'fov'),
+    zoom = numAttr(camera, 'zoom');
   if (fov !== null) out.fieldOfView = fov / 60000;
   if (zoom !== null) out.zoom = zoom / 100000;
   const z = numAttr(sp3d, 'z');
   if (z !== null) out.z = emu(z);
-  const rig = kid(scene3d, 'lightRig'), light = attr(rig, 'rig'), direction = attr(rig, 'dir');
+  const rig = kid(scene3d, 'lightRig'),
+    light = attr(rig, 'rig'),
+    direction = attr(rig, 'dir');
   if (light) out.lightRig = light;
   if (direction) out.lightDirection = direction;
   if (bevelT) out.bevelTopWidth = emu(numAttr(bevelT, 'w') ?? 76200);
@@ -112,7 +122,6 @@ export function parse3D(spPr: Element | null, ctx: ColorCtx): Shape3D | undefine
     out.rotY = (numAttr(rot, 'lon') ?? 0) / 60000;
     out.rotZ = (numAttr(rot, 'rev') ?? 0) / 60000;
   }
-
 
   return Object.keys(out).length ? out : undefined;
 }

@@ -1,11 +1,7 @@
 import type { TextBody } from '@web-ppt/core';
 import { textFragmentFromRange, textPositionToIndex } from '@web-ppt/edit-core';
-import type {
-  RunPropertyOverrides, TextEditOp, TextFragment, TextPosition,
-} from '@web-ppt/edit-core';
-import {
-  readTextClipboard, textFragmentToHtml, writeTextClipboard,
-} from './text-clipboard';
+import type { RunPropertyOverrides, TextEditOp, TextFragment, TextPosition } from '@web-ppt/edit-core';
+import { readTextClipboard, textFragmentToHtml, writeTextClipboard } from './text-clipboard';
 
 interface ClipboardTextContext {
   text: TextBody;
@@ -23,8 +19,7 @@ type PasteIntent = { kind: 'default' } | { kind: 'plain-once'; resetTimer: numbe
 const PASTE_INTENT_TIMEOUT_MS = 1000;
 
 function fragmentLength(fragment: TextFragment): number {
-  return fragment.paragraphs.reduce((length, paragraph) => length + paragraph.text.length, 0)
-    + Math.max(0, fragment.paragraphs.length - 1);
+  return fragment.paragraphs.reduce((length, paragraph) => length + paragraph.text.length, 0) + Math.max(0, fragment.paragraphs.length - 1);
 }
 
 function withPendingProps(fragment: TextFragment, pending: RunPropertyOverrides): TextFragment {
@@ -42,7 +37,9 @@ export class TextClipboardController {
   private root: HTMLDivElement | null = null;
   private pasteIntent: PasteIntent = { kind: 'default' };
 
-  constructor(options: TextClipboardControllerOptions) { this.options = options; }
+  constructor(options: TextClipboardControllerOptions) {
+    this.options = options;
+  }
 
   bind(root: HTMLDivElement): void {
     this.root = root;
@@ -50,8 +47,7 @@ export class TextClipboardController {
     root.addEventListener('cut', (event) => this.cut(event));
     root.addEventListener('paste', (event) => this.paste(event));
     root.addEventListener('keydown', (event) => {
-      if (event.key.toLowerCase() !== 'v' || !event.shiftKey || event.altKey
-        || (!event.ctrlKey && !event.metaKey)) return;
+      if (event.key.toLowerCase() !== 'v' || !event.shiftKey || event.altKey || (!event.ctrlKey && !event.metaKey)) return;
       this.armPlainPasteIntent(root);
     });
   }
@@ -99,9 +95,7 @@ export class TextClipboardController {
 
   private armPlainPasteIntent(root: HTMLDivElement): void {
     this.resetPasteIntent();
-    const resetTimer = root.ownerDocument.defaultView?.setTimeout(
-      () => this.resetPasteIntent(), PASTE_INTENT_TIMEOUT_MS,
-    ) ?? null;
+    const resetTimer = root.ownerDocument.defaultView?.setTimeout(() => this.resetPasteIntent(), PASTE_INTENT_TIMEOUT_MS) ?? null;
     this.pasteIntent = { kind: 'plain-once', resetTimer };
   }
 
@@ -126,8 +120,16 @@ export class TextClipboardController {
     if (!parsed) return;
     const fragment = withPendingProps(parsed, this.options.pendingProps());
     const from = textPositionToIndex(context.text, context.positions.from);
-    this.options.commit([{
-      type: 'replaceFragment', ...context.positions, fragment,
-    }], from + fragmentLength(fragment), plainOnly ? '粘贴纯文本' : '粘贴文字');
+    this.options.commit(
+      [
+        {
+          type: 'replaceFragment',
+          ...context.positions,
+          fragment,
+        },
+      ],
+      from + fragmentLength(fragment),
+      plainOnly ? '粘贴纯文本' : '粘贴文字',
+    );
   }
 }

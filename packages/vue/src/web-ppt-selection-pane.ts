@@ -1,6 +1,4 @@
-import {
-  defineComponent, h, onBeforeUnmount, shallowRef, watchEffect,
-} from 'vue';
+import { defineComponent, h, onBeforeUnmount, shallowRef, watchEffect } from 'vue';
 import type { PropType } from 'vue';
 import type { SelectionPane, WebPptAdapter } from '@web-ppt/editor';
 
@@ -29,7 +27,9 @@ export const WebPptSelectionPane = defineComponent({
       attached = null;
     });
     expose({
-      get pane(): SelectionPane | null { return props.adapter?.snapshot.selectionPane ?? null; },
+      get pane(): SelectionPane | null {
+        return props.adapter?.snapshot.selectionPane ?? null;
+      },
     } satisfies WebPptSelectionPaneHandle);
     return () => h('div', { ...attrs, ref: container });
   },

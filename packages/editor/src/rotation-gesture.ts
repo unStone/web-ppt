@@ -1,13 +1,9 @@
-import {
-  elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint,
-} from '@web-ppt/edit-core';
+import { elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
-import {
-  constrainedRotation, pointerAngle, rotateElementAroundSlideCenter, shortestRotationDelta,
-} from './rotation-geometry';
+import { constrainedRotation, pointerAngle, rotateElementAroundSlideCenter, shortestRotationDelta } from './rotation-geometry';
 import { updateSelectionOverlayFrame } from './selection-overlay';
 import { modelXfrmFields, transformFrameCorners, transformPreviewMatrix } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
@@ -47,8 +43,7 @@ interface RotationGestureOptions {
   zoom: () => number;
 }
 
-const matrixAttribute = (matrix: AffineMatrix): string =>
-  `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e} ${matrix.f})`;
+const matrixAttribute = (matrix: AffineMatrix): string => `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e} ${matrix.f})`;
 
 function axisAlignedCorners(points: readonly SpacePoint[]): RotationCorners {
   const xs = points.map((point) => point.x);
@@ -58,8 +53,10 @@ function axisAlignedCorners(points: readonly SpacePoint[]): RotationCorners {
   const right = Math.max(...xs);
   const bottom = Math.max(...ys);
   return [
-    { x: left, y: top }, { x: right, y: top },
-    { x: right, y: bottom }, { x: left, y: bottom },
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
   ];
 }
 
@@ -77,42 +74,45 @@ export class RotationGestureController {
     this.lifecycle = new PointerGestureLifecycle(options.root);
   }
 
-  get isActive(): boolean { return this.lifecycle.isActive; }
+  get isActive(): boolean {
+    return this.lifecycle.isActive;
+  }
 
   begin(event: PointerEvent, ids: readonly ElementId[]): void {
     this.cancel();
     const roots = outermostSelectedElementIds(this.options.editor.doc, ids);
     if (roots.some((id) => this.options.editor.doc.elements[id]?.meta.editable !== 'full')) return;
-    const targets = roots
-      .map((id): RotationTarget | null => {
-        const partition = findElementPartition(this.options.staticLayer, id);
-        if (!partition) return null;
-        return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
-      });
+    const targets = roots.map((id): RotationTarget | null => {
+      const partition = findElementPartition(this.options.staticLayer, id);
+      if (!partition) return null;
+      return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
+    });
     if (!targets.length || targets.some((target) => target === null)) return;
     const typedTargets = targets as RotationTarget[];
-    const targetCorners = typedTargets.map((target) =>
-      transformFrameCorners(this.options.editor.doc, target.id, target.source));
-    const originalCorners = typedTargets.length === 1
-      ? targetCorners[0]
-      : axisAlignedCorners(targetCorners.flat());
+    const targetCorners = typedTargets.map((target) => transformFrameCorners(this.options.editor.doc, target.id, target.source));
+    const originalCorners = typedTargets.length === 1 ? targetCorners[0] : axisAlignedCorners(targetCorners.flat());
     const selectionCenter = midpoint(originalCorners[0], originalCorners[2]);
-    const angleCenter = typedTargets.length === 1
-      ? {
-        x: typedTargets[0].source.x + typedTargets[0].source.w / 2,
-        y: typedTargets[0].source.y + typedTargets[0].source.h / 2,
-      }
-      : selectionCenter;
+    const angleCenter =
+      typedTargets.length === 1
+        ? {
+            x: typedTargets[0].source.x + typedTargets[0].source.w / 2,
+            y: typedTargets[0].source.y + typedTargets[0].source.h / 2,
+          }
+        : selectionCenter;
     const startSlide = this.currentSlide({ x: event.clientX, y: event.clientY });
-    const start = typedTargets.length === 1
-      ? slideToElementEditParentPoint(this.options.editor.doc, typedTargets[0].id, startSlide)
-      : startSlide;
+    const start =
+      typedTargets.length === 1 ? slideToElementEditParentPoint(this.options.editor.doc, typedTargets[0].id, startSlide) : startSlide;
     const session: RotationSession = {
-      targets: typedTargets, selectionCenter, angleCenter,
-      previousAngle: pointerAngle(angleCenter, start), accumulatedDelta: 0, originalCorners,
+      targets: typedTargets,
+      selectionCenter,
+      angleCenter,
+      previousAngle: pointerAngle(angleCenter, start),
+      accumulatedDelta: 0,
+      originalCorners,
     };
     this.lifecycle.begin(event, {
-      cursor: 'grabbing', dataset: { name: 'editRotating', value: '' },
+      cursor: 'grabbing',
+      dataset: { name: 'editRotating', value: '' },
       start: () => this.startPreview(session),
       observePointer: (snapshot) => this.observe(session, snapshot),
       frame: (snapshot) => this.applyFrame(session, snapshot),
@@ -121,26 +121,34 @@ export class RotationGestureController {
     });
   }
 
-  move(event: PointerEvent): void { this.lifecycle.move(event); }
-  finish(event: PointerEvent): void { this.lifecycle.finish(event); }
+  move(event: PointerEvent): void {
+    this.lifecycle.move(event);
+  }
+  finish(event: PointerEvent): void {
+    this.lifecycle.finish(event);
+  }
   modifier(event: KeyboardEvent): boolean {
     return event.key === 'Shift' && this.lifecycle.modifier(event);
   }
-  cancel(): void { this.lifecycle.cancel(); }
-  cancelPointer(event: PointerEvent): void { this.lifecycle.cancelPointer(event); }
+  cancel(): void {
+    this.lifecycle.cancel();
+  }
+  cancelPointer(event: PointerEvent): void {
+    this.lifecycle.cancelPointer(event);
+  }
 
   private currentSlide(screen: SpacePoint): SpacePoint {
     const rect = this.options.stage.getBoundingClientRect();
     return screenToSlidePoint(screen, {
-      left: rect.left, top: rect.top, zoom: this.options.zoom(),
+      left: rect.left,
+      top: rect.top,
+      zoom: this.options.zoom(),
     });
   }
 
   private anglePointer(session: RotationSession, screen: SpacePoint): SpacePoint {
     const slide = this.currentSlide(screen);
-    return session.targets.length === 1
-      ? slideToElementEditParentPoint(this.options.editor.doc, session.targets[0].id, slide)
-      : slide;
+    return session.targets.length === 1 ? slideToElementEditParentPoint(this.options.editor.doc, session.targets[0].id, slide) : slide;
   }
 
   private observe(session: RotationSession, snapshot: PointerGestureSnapshot): void {
@@ -163,14 +171,11 @@ export class RotationGestureController {
     const delta = constrainedRotation(session.accumulatedDelta, snapshot.shiftKey);
     const frames = session.targets.map((target) => ({
       target,
-      frame: rotateElementAroundSlideCenter(
-        this.options.editor.doc, target.id, target.source, session.selectionCenter, delta,
-      ),
+      frame: rotateElementAroundSlideCenter(this.options.editor.doc, target.id, target.source, session.selectionCenter, delta),
     }));
     return {
       frames,
-      corners: axisAlignedCorners(frames.flatMap(({ target, frame }) =>
-        transformFrameCorners(this.options.editor.doc, target.id, frame))),
+      corners: axisAlignedCorners(frames.flatMap(({ target, frame }) => transformFrameCorners(this.options.editor.doc, target.id, frame))),
       displayedRotation: null,
     };
   }
@@ -201,23 +206,23 @@ export class RotationGestureController {
   private commit(session: RotationSession, snapshot: PointerGestureSnapshot): (() => void) | null {
     const proposal = this.proposal(session, snapshot);
     if (!proposal.frames.some(({ target, frame }) => this.changed(target.source, frame))) return null;
-    return () => this.options.editor.transaction((transaction) => {
-      for (const { target, frame } of proposal.frames) {
-        transaction.exec({
-          type: 'SetXfrm', id: target.id,
-          ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'rot']),
-        });
-      }
-    }, '旋转元素');
+    return () =>
+      this.options.editor.transaction((transaction) => {
+        for (const { target, frame } of proposal.frames) {
+          transaction.exec({
+            type: 'SetXfrm',
+            id: target.id,
+            ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'rot']),
+          });
+        }
+      }, '旋转元素');
   }
 
   private clearPreview(session: RotationSession): void {
     for (const target of session.targets) {
       if (target.wrapper?.parentNode) target.wrapper.replaceWith(target.partition);
     }
-    updateSelectionOverlayFrame(
-      this.options.interactionLayer, session.originalCorners, this.options.zoom(),
-    );
+    updateSelectionOverlayFrame(this.options.interactionLayer, session.originalCorners, this.options.zoom());
     this.showAngle(false);
   }
 
@@ -233,7 +238,6 @@ export class RotationGestureController {
   }
 
   private changed(source: TransformFrame, frame: TransformFrame): boolean {
-    return Math.abs(source.x - frame.x) >= 1e-9 || Math.abs(source.y - frame.y) >= 1e-9
-      || Math.abs(source.rot - frame.rot) >= 1e-9;
+    return Math.abs(source.x - frame.x) >= 1e-9 || Math.abs(source.y - frame.y) >= 1e-9 || Math.abs(source.rot - frame.rot) >= 1e-9;
   }
 }

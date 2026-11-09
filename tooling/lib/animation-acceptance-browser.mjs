@@ -19,12 +19,47 @@
  */
 
 export const TRANSITION_TYPES = [
-  'none', 'fade', 'cut', 'push', 'pull', 'cover', 'wipe', 'split', 'zoom', 'dissolve',
-  'checker', 'blinds', 'comb', 'wheel', 'circle', 'diamond', 'plus', 'wedge',
-  'newsflash', 'randomBar', 'strips',
-  'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
-  'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
-  'doors', 'window', 'prism', 'morph',
+  'none',
+  'fade',
+  'cut',
+  'push',
+  'pull',
+  'cover',
+  'wipe',
+  'split',
+  'zoom',
+  'dissolve',
+  'checker',
+  'blinds',
+  'comb',
+  'wheel',
+  'circle',
+  'diamond',
+  'plus',
+  'wedge',
+  'newsflash',
+  'randomBar',
+  'strips',
+  'vortex',
+  'switch',
+  'flip',
+  'ripple',
+  'honeycomb',
+  'glitter',
+  'warp',
+  'flythrough',
+  'flash',
+  'shred',
+  'reveal',
+  'wheelReverse',
+  'ferris',
+  'gallery',
+  'conveyor',
+  'pan',
+  'doors',
+  'window',
+  'prism',
+  'morph',
 ];
 
 export function createAnimationAcceptance(api) {
@@ -86,7 +121,8 @@ export function createAnimationAcceptance(api) {
     const mix = (0.5 - lo.offset) / (frames[hi].offset - lo.offset);
     const out = {};
     for (const key of ['opacity', 'maskSize']) {
-      const a = parseFloat(lo[key]), b = parseFloat(frames[hi][key]);
+      const a = parseFloat(lo[key]),
+        b = parseFloat(frames[hi][key]);
       if (Number.isFinite(a) && Number.isFinite(b)) out[key] = String(a + (b - a) * mix);
     }
     return out;
@@ -100,11 +136,16 @@ export function createAnimationAcceptance(api) {
       const steps = [];
       pres.slides.forEach((slide, index) => {
         for (const step of slide.animations ?? []) {
-          if (!step.mediaCommand) steps.push({
-            slide: index, target: step.target, kind: step.kind, effect: step.effect,
-            dir: step.dir, durationMs: step.durationMs,
-            pathEnd: step.motionPath?.[step.motionPath.length - 1] ?? null,
-          });
+          if (!step.mediaCommand)
+            steps.push({
+              slide: index,
+              target: step.target,
+              kind: step.kind,
+              effect: step.effect,
+              dir: step.dir,
+              durationMs: step.durationMs,
+              pathEnd: step.motionPath?.[step.motionPath.length - 1] ?? null,
+            });
         }
       });
       return { slides: pres.slides.length, steps, transitions: pres.slides.filter((s) => s.transition).length };
@@ -145,7 +186,8 @@ export function createAnimationAcceptance(api) {
       anim.pause();
       anim.currentTime = step.delayMs + t * step.durationMs;
       const declared = framesFor(step);
-      const t0 = t === 0, t1 = t === 1;
+      const t0 = t === 0,
+        t1 = t === 1;
       // 百分比 transform（fly/fly-bounce 的 translateY(±60%)）按元素自身尺寸解析，
       // 探针必须与元素同尺寸，归一化值才能和计算样式可比
       const base = baseSamples.get(target);
@@ -157,14 +199,20 @@ export function createAnimationAcceptance(api) {
       // 它的 t=0 端点只断言 opacity，位移由几何断言覆盖
       const dynamicTransform = step.effect === 'fly';
       const want = t0
-        ? (step.effect === 'appear' && step.kind === 'entrance'
-          ? normalize(declared.to) : normalize(declared.from))
-        : t1 ? normalize(declared.to) : null;
+        ? step.effect === 'appear' && step.kind === 'entrance'
+          ? normalize(declared.to)
+          : normalize(declared.from)
+        : t1
+          ? normalize(declared.to)
+          : null;
       if (dynamicTransform && want) delete want.transform;
       const keyframes = anim.effect?.getKeyframes?.() ?? [];
       const settled = t1 && step.kind === 'emphasis' ? settledDeclaration(step) : null;
       return {
-        target, effect: step.effect, kind: step.kind, dir: step.dir,
+        target,
+        effect: step.effect,
+        kind: step.kind,
+        dir: step.dir,
         got: sampleOf(node),
         want,
         base,
@@ -172,7 +220,9 @@ export function createAnimationAcceptance(api) {
         keyframeCount: keyframes.length,
         midWant: t === 0.5 && keyframes.length > 2 ? normalize(midpointExpectation(keyframes)) : null,
         settled: settled ? normalize(settled) : null,
-        linear: !!step.motionPath?.length || ['randomBar', 'strips', 'wheel', 'circle', 'diamond', 'plus', 'dissolve', 'bounce', 'swivel'].includes(step.effect),
+        linear:
+          !!step.motionPath?.length
+          || ['randomBar', 'strips', 'wheel', 'circle', 'diamond', 'plus', 'dissolve', 'bounce', 'swivel'].includes(step.effect),
       };
     },
 
@@ -182,7 +232,10 @@ export function createAnimationAcceptance(api) {
       lastHandle?.cancel();
       const outgoing = document.createElement('div');
       const incoming = document.createElement('div');
-      for (const [el, color] of [[outgoing, '#c0504d'], [incoming, '#4f6228']]) {
+      for (const [el, color] of [
+        [outgoing, '#c0504d'],
+        [incoming, '#4f6228'],
+      ]) {
         el.style.cssText = `position:absolute;inset:0;width:1280px;height:720px;background:${color}`;
         container.appendChild(el);
       }
@@ -211,8 +264,10 @@ export function createAnimationAcceptance(api) {
           animation.pause();
           animation.currentTime = t * 600;
         }
-        const opacitySum = [...outgoing.querySelectorAll('[data-el]'), ...incoming.querySelectorAll('[data-el]')]
-          .reduce((sum, el) => sum + parseFloat(getComputedStyle(el).opacity), 0);
+        const opacitySum = [...outgoing.querySelectorAll('[data-el]'), ...incoming.querySelectorAll('[data-el]')].reduce(
+          (sum, el) => sum + parseFloat(getComputedStyle(el).opacity),
+          0,
+        );
         const result = { type, dir, morph: true, opacitySum, animationCount: lastHandle.animations.length };
         outgoing.remove();
         incoming.remove();
@@ -220,13 +275,17 @@ export function createAnimationAcceptance(api) {
       }
       inAnim.pause();
       inAnim.currentTime = t * 600;
-      if (outAnim) { outAnim.pause(); outAnim.currentTime = t * 600; }
+      if (outAnim) {
+        outAnim.pause();
+        outAnim.currentTime = t * 600;
+      }
       // 切换关键帧可能是阶梯式多帧（cut 在 0.5 翻页）：端点取首末帧，
       // 中点优先取精确命中 offset=0.5 的帧
       const inKeyframes = inAnim.effect?.getKeyframes?.() ?? inFrames;
       const exactMid = inKeyframes.find((k) => k.offset !== undefined && Math.abs(k.offset - 0.5) < 1e-9);
       const result = {
-        type, dir,
+        type,
+        dir,
         incoming: sampleOf(incoming),
         outgoing: outgoing.isConnected ? sampleOf(outgoing) : null,
         wantIn0: normalize(inKeyframes[0], true),

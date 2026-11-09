@@ -10,7 +10,9 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const files = unzipSync(readFileSync(join(root, 'fixtures/sample-editor-remove-slide.pptx')));
-const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
+const replace = (part, fn) => {
+  files[part] = encoder.encode(fn(decoder.decode(files[part])));
+};
 
 const nestedGroup = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="50" name="外层组合"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -41,18 +43,25 @@ move('ppt/slides/slide2.xml', 'ppt/slides/source-page.xml');
 move('ppt/slides/_rels/slide2.xml.rels', 'ppt/slides/_rels/source-page.xml.rels');
 move('ppt/notesSlides/notesSlide2.xml', 'ppt/notesSlides/source-note.xml');
 move('ppt/notesSlides/_rels/notesSlide2.xml.rels', 'ppt/notesSlides/_rels/source-note.xml.rels');
-replaceNoncanonical('[Content_Types].xml', (xml) => xml
-  .replace('/ppt/slides/slide2.xml', '/ppt/slides/source-page.xml')
-  .replace('/ppt/notesSlides/notesSlide2.xml', '/ppt/notesSlides/source-note.xml'));
+replaceNoncanonical('[Content_Types].xml', (xml) =>
+  xml
+    .replace('/ppt/slides/slide2.xml', '/ppt/slides/source-page.xml')
+    .replace('/ppt/notesSlides/notesSlide2.xml', '/ppt/notesSlides/source-note.xml'),
+);
 replaceNoncanonical('ppt/_rels/presentation.xml.rels', (xml) =>
-  xml.replace('Target="slides/slide2.xml"', 'Target="slides/source-page.xml"'));
-replaceNoncanonical('ppt/slides/_rels/source-page.xml.rels', (xml) => xml
-  .replace(`Id="rId1" Type="${REL}/slideLayout"`, `Id="layout-main" Type="${REL}/slideLayout"`)
-  .replace(`Id="rId9" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide2.xml"`,
-    `Id="notes-main" Type="${REL}/notesSlide" Target="../notesSlides/source-note.xml"`));
-replaceNoncanonical('ppt/notesSlides/_rels/source-note.xml.rels', (xml) => xml
-  .replace('Id="rId10"', 'Id="slide-back"')
-  .replace('Target="../slides/slide2.xml"', 'Target="../slides/source-page.xml"'));
+  xml.replace('Target="slides/slide2.xml"', 'Target="slides/source-page.xml"'),
+);
+replaceNoncanonical('ppt/slides/_rels/source-page.xml.rels', (xml) =>
+  xml
+    .replace(`Id="rId1" Type="${REL}/slideLayout"`, `Id="layout-main" Type="${REL}/slideLayout"`)
+    .replace(
+      `Id="rId9" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide2.xml"`,
+      `Id="notes-main" Type="${REL}/notesSlide" Target="../notesSlides/source-note.xml"`,
+    ),
+);
+replaceNoncanonical('ppt/notesSlides/_rels/source-note.xml.rels', (xml) =>
+  xml.replace('Id="rId10"', 'Id="slide-back"').replace('Target="../slides/slide2.xml"', 'Target="../slides/source-page.xml"'),
+);
 const noncanonicalOutput = makeZip(Object.entries(noncanonical));
 writeFileSync(join(root, 'fixtures/sample-editor-duplicate-slide-noncanonical.pptx'), noncanonicalOutput);
 console.log(`fixtures/sample-editor-duplicate-slide-noncanonical.pptx 已生成（${(noncanonicalOutput.length / 1024).toFixed(1)} KB）`);

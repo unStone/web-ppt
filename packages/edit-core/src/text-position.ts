@@ -9,8 +9,7 @@ export function textRunEditLength(run: Pick<TextRun, 'text' | 'math'>): number {
 }
 
 export function textBodyEditText(body: TextBody): string {
-  return body.paragraphs.map((paragraph) => paragraph.runs
-    .map((run) => run.math?.length ? TEXT_ATOM : run.text).join('')).join('\n');
+  return body.paragraphs.map((paragraph) => paragraph.runs.map((run) => (run.math?.length ? TEXT_ATOM : run.text)).join('')).join('\n');
 }
 
 export function textPositionAtIndex(body: TextBody, index: number): TextPosition {

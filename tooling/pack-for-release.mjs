@@ -17,7 +17,10 @@ mkdirSync(directory, { recursive: true });
 const output = mkdtempSync(join(directory, 'pack-'));
 // prepack 同步 README / LICENSE；目录 publish 的 prepublishOnly 会把已验证的 dist 再构建一遍。
 const packedText = execFileSync('npm', ['pack', '--json', '--foreground-scripts=false', '--pack-destination', output], {
-  cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 16 * 1024 * 1024,
+  cwd,
+  encoding: 'utf8',
+  stdio: ['ignore', 'pipe', 'inherit'],
+  maxBuffer: 16 * 1024 * 1024,
 });
 const packed = JSON.parse(packedText);
 if (!Array.isArray(packed) || packed.length !== 1) {
@@ -40,9 +43,9 @@ if (artifact.integrity !== integrity || artifact.shasum !== shasum || artifact.s
   throw new Error(`${label} 打包文件的完整性摘要或大小与 npm 元数据不符: ${tarball}`);
 }
 if (!Array.isArray(artifact.files)) throw new Error(`${label} 打包元数据缺少 files 清单`);
-const files = new Set(artifact.files.map(file => file.path));
+const files = new Set(artifact.files.map((file) => file.path));
 const required = ['package.json', 'README.md', 'CHANGELOG.md', 'LICENSE'];
-const targets = value => {
+const targets = (value) => {
   if (value === undefined || value === null) return [];
   if (typeof value === 'string') return [value];
   if (typeof value === 'object') return Object.values(value).flatMap(targets);

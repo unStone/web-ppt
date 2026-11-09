@@ -4,11 +4,7 @@ import { elementState } from '../xml/state';
 import type { XmlElement } from '../xml/types';
 
 /** 沿用源 part 已绑定的前缀；没有绑定时才为新命名空间声明稳定前缀。 */
-export function namespacedElement(
-  parent: XmlElement,
-  namespaceUri: string,
-  localName: string,
-): XmlElement {
+export function namespacedElement(parent: XmlElement, namespaceUri: string, localName: string): XmlElement {
   const namespaces = elementState(parent).namespaces;
   const bound = [...namespaces].find(([, uri]) => uri === namespaceUri)?.[0];
   if (bound !== undefined) return createXmlElement(bound ? `${bound}:${localName}` : localName);

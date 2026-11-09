@@ -1,12 +1,14 @@
-import type {
-  TextBodyLayoutProperties, TextVert,
-} from '../types';
+import type { TextBodyLayoutProperties, TextVert } from '../types';
 import { TEXT_BODY_PROPERTY_BITS } from '../text-body-edit';
 import { attr, emu, kid, numAttr } from '../xml';
 
 const VERT: Record<string, TextVert> = {
-  horz: 'horz', vert: 'vert', vert270: 'vert270', wordArtVert: 'wordArtVert',
-  eaVert: 'vert', mongolianVert: 'vert',
+  horz: 'horz',
+  vert: 'vert',
+  vert270: 'vert270',
+  wordArtVert: 'wordArtVert',
+  eaVert: 'vert',
+  mongolianVert: 'vert',
 };
 
 function attribute(sources: readonly (Element | null)[], name: string): string | null {
@@ -27,9 +29,7 @@ function autoFitElement(sources: readonly (Element | null)[]): Element | null {
   return null;
 }
 
-export function parseTextBodyLayout(
-  sources: readonly (Element | null)[],
-): TextBodyLayoutProperties {
+export function parseTextBodyLayout(sources: readonly (Element | null)[]): TextBodyLayoutProperties {
   const anchorRaw = attribute(sources, 'anchor') ?? 't';
   const ins = (name: string, fallback: number): number => {
     const value = attribute(sources, name);
@@ -49,8 +49,7 @@ export function parseTextBodyLayout(
     fontScale: explicitScale !== null && explicitScale !== undefined ? explicitScale / 100000 : 1,
     ...(normal ? { autoFitNormal: true } : {}),
     ...(normal && (explicitScale === null || explicitScale === undefined) ? { autoFitCompute: true } : {}),
-    ...(normal && (numAttr(autoFit, 'lnSpcReduction') ?? 0)
-      ? { lnSpcReduction: (numAttr(autoFit, 'lnSpcReduction') ?? 0) / 100000 } : {}),
+    ...(normal && (numAttr(autoFit, 'lnSpcReduction') ?? 0) ? { lnSpcReduction: (numAttr(autoFit, 'lnSpcReduction') ?? 0) / 100000 } : {}),
     ...(shape ? { autoFitShape: true } : {}),
     ...(vert !== 'horz' ? { vert } : {}),
     ...(attribute(sources, 'anchorCtr') === '1' ? { anchorCtr: true } : {}),
@@ -59,9 +58,7 @@ export function parseTextBodyLayout(
   };
 }
 
-export function directTextBodyProperties(
-  bodyPr: Element | null,
-): number {
+export function directTextBodyProperties(bodyPr: Element | null): number {
   if (!bodyPr) return 0;
   let direct = 0;
   if (attr(bodyPr, 'anchor') !== null) direct |= TEXT_BODY_PROPERTY_BITS.anchor;

@@ -2,9 +2,7 @@ import { base64ToBytes, sha256 } from '../clipboard-binary';
 import { assertDataObject } from '../data-validation';
 import { assertImageCrop, canEditImageContent } from '../image-content';
 import type { EditDoc, ElementImageReplacement, ElementInsertionResource } from '../types';
-import {
-  packageContentType, packageContentTypeOverride, resolveRelationshipTarget,
-} from '../clipboard-source';
+import { packageContentType, packageContentTypeOverride, resolveRelationshipTarget } from '../clipboard-source';
 import type { ElementCropPatch, ElementImageReplacementPatch, ImageResourcePatch, Patch } from './types';
 import { validateStoredImageFormat } from './image-format';
 import { registeredEditExtensions } from '../extension-runtime';
@@ -22,11 +20,7 @@ interface ValidatedResource {
 const validatedResources = new WeakMap<object, ValidatedResource>();
 
 /** OPC 信任必须落到精确目标 part；只认相同字节会允许远端 Patch 覆写别的媒体。 */
-function assertResourceTargetState(
-  doc: EditDoc | undefined,
-  resource: ElementInsertionResource,
-  label: string,
-): boolean {
+function assertResourceTargetState(doc: EditDoc | undefined, resource: ElementInsertionResource, label: string): boolean {
   const pkg = doc?.package;
   const extension = resource.targetPart.slice(resource.targetPart.lastIndexOf('.') + 1).toLowerCase();
   if (extension !== resource.extension.toLowerCase()) {
@@ -46,11 +40,12 @@ function assertResourceTargetState(
     return false;
   }
   let mime = '';
-  try { mime = packageContentType(pkg, resource.targetPart, extension); } catch {
+  try {
+    mime = packageContentType(pkg, resource.targetPart, extension);
+  } catch {
     throw new Error(`${label} 的 OPC Content-Type 无效`);
   }
-  if (extension !== resource.extension.toLowerCase() || mime !== resource.mime
-    || sha256(bytes) !== resource.hash) {
+  if (extension !== resource.extension.toLowerCase() || mime !== resource.mime || sha256(bytes) !== resource.hash) {
     throw new Error(`${label} 与目标 OPC part 的字节或类型不一致`);
   }
   if (resource.created && !doc?.saveState.createdParts.includes(resource.targetPart)) {
@@ -76,8 +71,12 @@ export function assertImageReplacement(
   assertDataObject(value, ['src', 'relationships', 'resourceHash', 'suppressedRelationshipId'], label);
   const replacement = value as ElementImageReplacement;
   const resource = resources[replacement.resourceHash];
-  if (!/^[0-9a-f]{64}$/.test(replacement.resourceHash) || !resource
-    || !resource.mime.startsWith('image/') || replacement.src !== `web-ppt-resource:${resource.hash}`) {
+  if (
+    !/^[0-9a-f]{64}$/.test(replacement.resourceHash)
+    || !resource
+    || !resource.mime.startsWith('image/')
+    || replacement.src !== `web-ppt-resource:${resource.hash}`
+  ) {
     throw new Error(`${label} 的资源身份无效`);
   }
   if (!Array.isArray(replacement.relationships) || replacement.relationships.length !== (sourcePart ? 1 : 0)) {
@@ -90,42 +89,58 @@ export function assertImageReplacement(
   }
   assertDataObject(replacement.relationships[0], ['sourceId', 'targetId', 'type', 'target', 'targetMode'], `${label}.relationships[0]`);
   const relationship = replacement.relationships[0] as ElementImageReplacement['relationships'][number];
-  if (!relationship.sourceId || !/^rId\d+$/.test(relationship.targetId)
-    || relationship.type !== IMAGE_REL || !relationship.target || relationship.targetMode !== undefined
-    || resolveRelationshipTarget(sourcePart, relationship.target) !== resource.targetPart) {
+  if (
+    !relationship.sourceId
+    || !/^rId\d+$/.test(relationship.targetId)
+    || relationship.type !== IMAGE_REL
+    || !relationship.target
+    || relationship.targetMode !== undefined
+    || resolveRelationshipTarget(sourcePart, relationship.target) !== resource.targetPart
+  ) {
     throw new Error(`${label} 的关系或资源身份无效`);
   }
-  if (replacement.suppressedRelationshipId !== undefined
-    && (!/^rId\d+$/.test(replacement.suppressedRelationshipId)
-      || replacement.suppressedRelationshipId === relationship.targetId)) {
+  if (
+    replacement.suppressedRelationshipId !== undefined
+    && (!/^rId\d+$/.test(replacement.suppressedRelationshipId) || replacement.suppressedRelationshipId === relationship.targetId)
+  ) {
     throw new Error(`${label} 的被替换关系身份无效`);
   }
 }
 
-export function assertImageResource(
-  value: unknown,
-  label: string,
-  doc?: EditDoc,
-): asserts value is ElementInsertionResource {
+export function assertImageResource(value: unknown, label: string, doc?: EditDoc): asserts value is ElementInsertionResource {
   assertDataObject(value, ['targetPart', 'hash', 'mime', 'extension', 'bytes', 'created'], label);
   const resource = value as ElementInsertionResource;
-  if (!/^ppt\/media\/[A-Za-z0-9_.-]+$/.test(resource.targetPart)
+  if (
+    !/^ppt\/media\/[A-Za-z0-9_.-]+$/.test(resource.targetPart)
     || !/^[0-9a-f]{64}$/.test(resource.hash)
-    || typeof resource.mime !== 'string' || !resource.mime
-    || typeof resource.extension !== 'string' || !/^[a-z0-9]+$/.test(resource.extension)
-    || typeof resource.bytes !== 'string' || typeof resource.created !== 'boolean') {
+    || typeof resource.mime !== 'string'
+    || !resource.mime
+    || typeof resource.extension !== 'string'
+    || !/^[a-z0-9]+$/.test(resource.extension)
+    || typeof resource.bytes !== 'string'
+    || typeof resource.created !== 'boolean'
+  ) {
     throw new Error(`${label} 的媒体身份无效`);
   }
   const packageBound = assertResourceTargetState(doc, resource, label);
   const cached = validatedResources.get(resource);
-  if (cached?.targetPart === resource.targetPart && cached.hash === resource.hash
-    && cached.mime === resource.mime && cached.extension === resource.extension
-    && cached.bytes === resource.bytes && cached.created === resource.created) {
+  if (
+    cached?.targetPart === resource.targetPart
+    && cached.hash === resource.hash
+    && cached.mime === resource.mime
+    && cached.extension === resource.extension
+    && cached.bytes === resource.bytes
+    && cached.created === resource.created
+  ) {
     if (!cached.packageSource || packageBound) return;
     throw new Error(`${label} 的扩展媒体格式不是当前文档的 OPC 来源`);
   }
   let bytes: Uint8Array;
-  try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error(`${label} 不是有效 Base64`); }
+  try {
+    bytes = base64ToBytes(resource.bytes);
+  } catch {
+    throw new Error(`${label} 不是有效 Base64`);
+  }
   if (sha256(bytes) !== resource.hash) throw new Error(`${label} 的哈希不匹配`);
   let packageSource = false;
   if (resource.mime.startsWith('image/')) {
@@ -133,40 +148,48 @@ export function assertImageResource(
       validateStoredImageFormat(bytes, resource.mime, resource.extension, label, false);
     } catch (uploadError) {
       if (!packageBound || resource.created) throw uploadError;
-      packageSource = validateStoredImageFormat(
-        bytes, resource.mime, resource.extension, label, true,
-      );
+      packageSource = validateStoredImageFormat(bytes, resource.mime, resource.extension, label, true);
     }
   } else {
     packageSource = packageBound && !resource.created;
-    if (!packageSource && ![...registeredEditExtensions().values()]
-      .some((runtime) => runtime.validateResource?.(resource, bytes))) {
+    if (!packageSource && ![...registeredEditExtensions().values()].some((runtime) => runtime.validateResource?.(resource, bytes))) {
       throw new Error(`${label} 的非图片媒体不是当前文档的 OPC 来源`);
     }
   }
   validatedResources.set(resource, {
-    targetPart: resource.targetPart, hash: resource.hash, mime: resource.mime,
-    extension: resource.extension, bytes: resource.bytes, created: resource.created, packageSource,
+    targetPart: resource.targetPart,
+    hash: resource.hash,
+    mime: resource.mime,
+    extension: resource.extension,
+    bytes: resource.bytes,
+    created: resource.created,
+    packageSource,
   });
 }
 
 /** 无来源溯源的背景只能是公开上传白名单，不能把包内扩展格式伪装成上传。 */
 export function assertUploadImageResource(resource: ElementInsertionResource, label: string): void {
   let bytes: Uint8Array;
-  try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error(`${label} 不是有效 Base64`); }
+  try {
+    bytes = base64ToBytes(resource.bytes);
+  } catch {
+    throw new Error(`${label} 不是有效 Base64`);
+  }
   validateStoredImageFormat(bytes, resource.mime, resource.extension, label, false);
 }
 
 /** 一批远端资源不能把不同字节分配给同一目标；相同内容复用同一 part 是合法去重。 */
-export function assertImageResourceTargets(
-  doc: EditDoc,
-  resources: Readonly<Record<string, ElementInsertionResource>>,
-): void {
+export function assertImageResourceTargets(doc: EditDoc, resources: Readonly<Record<string, ElementInsertionResource>>): void {
   const targets = new Map<string, ElementInsertionResource>();
   const claim = (resource: ElementInsertionResource): void => {
     const previous = targets.get(resource.targetPart);
-    if (previous && (previous.hash !== resource.hash || previous.mime !== resource.mime
-      || previous.extension !== resource.extension || previous.bytes !== resource.bytes)) {
+    if (
+      previous
+      && (previous.hash !== resource.hash
+        || previous.mime !== resource.mime
+        || previous.extension !== resource.extension
+        || previous.bytes !== resource.bytes)
+    ) {
       throw new Error(`多个媒体资源争用目标 part：${resource.targetPart}`);
     }
     targets.set(resource.targetPart, resource);
@@ -188,13 +211,11 @@ function cloneValidatedImageResource(resource: ElementInsertionResource): Elemen
 }
 
 export function isElementCropPatch(patch: Patch): patch is ElementCropPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'crop';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'crop';
 }
 
 export function isElementImageReplacementPatch(patch: Patch): patch is ElementImageReplacementPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'meta' && patch.path[3] === 'imageReplacement';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'meta' && patch.path[3] === 'imageReplacement';
 }
 
 export function isImageResourcePatch(patch: Patch): patch is ImageResourcePatch {
@@ -228,10 +249,7 @@ export function validateImageResourcePatch(doc: EditDoc, patch: ImageResourcePat
 
 export { applyRecordOverridePatch as applyElementCropPatch } from './record-override';
 
-export function applyElementImageReplacementPatch(
-  doc: EditDoc,
-  patch: ElementImageReplacementPatch,
-): void {
+export function applyElementImageReplacementPatch(doc: EditDoc, patch: ElementImageReplacementPatch): void {
   const record = doc.elements[patch.path[1]];
   if (patch.op === 'set') record.meta.imageReplacement = structuredClone(patch.value);
   else delete record.meta.imageReplacement;

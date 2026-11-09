@@ -6,7 +6,9 @@ import { OFFICE_MEDIA_REL, POWERPOINT_2010_NS, mediaPropertiesMarkup } from '../
 export const OFFICE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 export const MEDIA_REL = OFFICE_MEDIA_REL;
 export const MEDIA_NAMESPACES = {
-  'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS, 'xmlns:r': OFFICE_REL,
+  'xmlns:a': DRAWINGML_NS,
+  'xmlns:p': PRESENTATIONML_NS,
+  'xmlns:r': OFFICE_REL,
   'xmlns:p14': POWERPOINT_2010_NS,
 };
 

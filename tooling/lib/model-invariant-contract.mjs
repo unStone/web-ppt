@@ -17,30 +17,41 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
     const candidate = structuredClone(base);
     mutate(candidate);
     let rejected = false;
-    try { edit.validateEditDoc(candidate); } catch { rejected = true; }
+    try {
+      edit.validateEditDoc(candidate);
+    } catch {
+      rejected = true;
+    }
     check(name, rejected);
   };
 
   let valid = true;
-  try { edit.validateEditDoc(base); } catch { valid = false; }
+  try {
+    edit.validateEditDoc(base);
+  } catch {
+    valid = false;
+  }
   check('有效文档通过全局不变量', valid);
   rejects('拒绝孤儿元素', (doc) => {
-    doc.slides[doc.slideOrder[0]].children = doc.slides[doc.slideOrder[0]].children
-      .filter((id) => id !== shape.id);
+    doc.slides[doc.slideOrder[0]].children = doc.slides[doc.slideOrder[0]].children.filter((id) => id !== shape.id);
   });
   rejects('拒绝重复或倒置的兄弟 z 序', (doc) => {
     const children = doc.slides[doc.slideOrder[0]].children;
     doc.elements[children[1]].z = doc.elements[children[0]].z;
   });
-  rejects('拒绝非法稀疏层级键', (doc) => { doc.elements[shape.id].order = 'bad-0'; });
+  rejects('拒绝非法稀疏层级键', (doc) => {
+    doc.elements[shape.id].order = 'bad-0';
+  });
   rejects('拒绝 children 与有效层级键顺序不一致', (doc) => {
     const children = doc.slides[doc.slideOrder[0]].children;
-    doc.elements[children[0]].order = edit.fractionalIndexBetween(
-      doc.elements[children.at(-1)].z, null, children[0],
-    );
+    doc.elements[children[0]].order = edit.fractionalIndexBetween(doc.elements[children.at(-1)].z, null, children[0]);
   });
-  rejects('拒绝为零的组子坐标范围', (doc) => { doc.elements[group.id].src.scaleX = 0; });
-  rejects('拒绝没有段落的文本体', (doc) => { doc.elements[shape.id].src.text.paragraphs = []; });
+  rejects('拒绝为零的组子坐标范围', (doc) => {
+    doc.elements[group.id].src.scaleX = 0;
+  });
+  rejects('拒绝没有段落的文本体', (doc) => {
+    doc.elements[shape.id].src.text.paragraphs = [];
+  });
   rejects('拒绝非表格元素携带单元格覆盖', (doc) => {
     doc.elements[shape.id].ovr.tableCells = { '0:0': { text: { kind: 'empty' } } };
   });
@@ -69,9 +80,7 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
     };
   });
   rejects('拒绝重复的追加行顺序', (doc) => {
-    const order = edit.fractionalIndexBetween(
-      edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row-a',
-    );
+    const order = edit.fractionalIndexBetween(edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row-a');
     doc.elements[table.id].ovr.tableRows = {
       'row-a': { order },
       'row-b': { order },
@@ -80,9 +89,7 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
   rejects('拒绝用数字坐标覆盖新增行单元格', (doc) => {
     doc.elements[table.id].ovr.tableRows = {
       row: {
-        order: edit.fractionalIndexBetween(
-          edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row',
-        ),
+        order: edit.fractionalIndexBetween(edit.initialFractionalIndex(table.src.rows.length - 1), null, 'row'),
       },
     };
     doc.elements[table.id].ovr.tableCells = {
@@ -101,12 +108,18 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
   rejects('拒绝指向不存在 OPC part 的写回锚点', (doc) => {
     doc.elements[shape.id].meta.origin.part = 'ppt/slides/missing.xml';
   });
-  rejects('拒绝非组元素拥有 children', (doc) => { doc.elements[shape.id].children = []; });
+  rejects('拒绝非组元素拥有 children', (doc) => {
+    doc.elements[shape.id].children = [];
+  });
 
   const invalid = structuredClone(base);
   invalid.slides[invalid.slideOrder[0]].children = [];
   let constructorRejected = false;
-  try { new edit.Editor(invalid); } catch { constructorRejected = true; }
+  try {
+    new edit.Editor(invalid);
+  } catch {
+    constructorRejected = true;
+  }
   check('Editor 在会话入口拒绝非法模型', constructorRejected);
 
   const guarded = structuredClone(base);
@@ -114,21 +127,26 @@ export async function runModelInvariantContract({ edit, core, load, check }) {
   guarded.elements[shape.id].src.text.paragraphs = [];
   const beforeRejectedCommit = JSON.stringify(guarded.elements[shape.id].ovr);
   let commitRejected = false;
-  try { guardedEditor.exec({ type: 'SetXfrm', id: shape.id, x: shape.src.x + 1 }); } catch {
+  try {
+    guardedEditor.exec({ type: 'SetXfrm', id: shape.id, x: shape.src.x + 1 });
+  } catch {
     commitRejected = true;
   }
-  check('事务边界重验受影响元素且失败后回滚', commitRejected
-    && JSON.stringify(guarded.elements[shape.id].ovr) === beforeRejectedCommit);
+  check('事务边界重验受影响元素且失败后回滚', commitRejected && JSON.stringify(guarded.elements[shape.id].ovr) === beforeRejectedCommit);
 
   const brokenParent = structuredClone(base);
   const brokenParentEditor = new edit.Editor(brokenParent);
   brokenParent.elements[shape.id].parent = 'missing-parent';
   const beforeBrokenParent = JSON.stringify(brokenParent.elements[shape.id].ovr);
   let brokenParentRejected = false;
-  try { brokenParentEditor.exec({ type: 'SetXfrm', id: shape.id, x: shape.src.x + 2 }); } catch {
+  try {
+    brokenParentEditor.exec({ type: 'SetXfrm', id: shape.id, x: shape.src.x + 2 });
+  } catch {
     brokenParentRejected = true;
   }
-  check('失效阶段失败发生在 patch 落模前', brokenParentRejected
-    && JSON.stringify(brokenParent.elements[shape.id].ovr) === beforeBrokenParent);
+  check(
+    '失效阶段失败发生在 patch 落模前',
+    brokenParentRejected && JSON.stringify(brokenParent.elements[shape.id].ovr) === beforeBrokenParent,
+  );
   edit.disposeDoc(base);
 }

@@ -14,33 +14,26 @@ function validate(command: SetRunPropsCommand): void {
   assertRunPropertyOverrides(command.props, 'SetRunProps.props');
 }
 
-export function setRunPropsPatches(
-  doc: EditDoc,
-  command: SetRunPropsCommand,
-  origin: string,
-): CommandPatches {
+export function setRunPropsPatches(doc: EditDoc, command: SetRunPropsCommand, origin: string): CommandPatches {
   validate(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
   const { body: source, before, patchTarget } = textTargetContext(doc, target);
   const props: RunPropertyOverrides = {
     ...command.props,
-    ...(own(command.props, 'color') && command.props.color !== null
-      ? { color: normalizeDrawingColor(command.props.color!) } : {}),
+    ...(own(command.props, 'color') && command.props.color !== null ? { color: normalizeDrawingColor(command.props.color!) } : {}),
     ...(own(command.props, 'highlight') && command.props.highlight !== null
-      ? { highlight: normalizeDrawingColor(command.props.highlight!) } : {}),
+      ? { highlight: normalizeDrawingColor(command.props.highlight!) }
+      : {}),
     ...(own(command.props, 'link') && command.props.link !== null
-      ? { link: normalizeLinkTarget(doc, command.props.link!, 'SetRunProps.props.link') } : {}),
+      ? { link: normalizeLinkTarget(doc, command.props.link!, 'SetRunProps.props.link') }
+      : {}),
   };
-  const body = before?.kind === 'flat'
-    ? textBodyFromOverride(before)
-    : source;
+  const body = before?.kind === 'flat' ? textBodyFromOverride(before) : source;
   queryTextRunProps(body, command.range, before?.kind === 'flat' ? before : undefined);
   if (textPositionToIndex(body, command.range.from) === textPositionToIndex(body, command.range.to)) {
     return { forward: [], inverse: [] };
   }
-  const value: TextOverride = applyRunProps(
-    body, command.range, props, before?.kind === 'flat' ? before : undefined,
-  );
+  const value: TextOverride = applyRunProps(body, command.range, props, before?.kind === 'flat' ? before : undefined);
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) {
     return { forward: [], inverse: [] };

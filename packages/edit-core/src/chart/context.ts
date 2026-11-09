@@ -10,9 +10,18 @@ export type ChartRelationships = Record<string, { type: string; target: string; 
 const relationshipCache = new WeakMap<Uint8Array, Map<string, ChartRelationships>>();
 
 const DEFAULT_COLOR_MAP: Record<string, string> = {
-  bg1: 'lt1', tx1: 'dk1', bg2: 'lt2', tx2: 'dk2',
-  accent1: 'accent1', accent2: 'accent2', accent3: 'accent3', accent4: 'accent4',
-  accent5: 'accent5', accent6: 'accent6', hlink: 'hlink', folHlink: 'folHlink',
+  bg1: 'lt1',
+  tx1: 'dk1',
+  bg2: 'lt2',
+  tx2: 'dk2',
+  accent1: 'accent1',
+  accent2: 'accent2',
+  accent3: 'accent3',
+  accent4: 'accent4',
+  accent5: 'accent5',
+  accent6: 'accent6',
+  hlink: 'hlink',
+  folHlink: 'folHlink',
 };
 
 export function chartRelationshipPart(part: string): string {
@@ -22,7 +31,10 @@ export function chartRelationshipPart(part: string): string {
 
 function resolvePart(base: string, target: string): string {
   if (target.startsWith('/')) return target.slice(1);
-  const stack = base.slice(0, base.lastIndexOf('/') + 1).split('/').filter(Boolean);
+  const stack = base
+    .slice(0, base.lastIndexOf('/') + 1)
+    .split('/')
+    .filter(Boolean);
   for (const segment of target.split('/')) {
     if (segment === '..') stack.pop();
     else if (segment && segment !== '.') stack.push(segment);
@@ -34,20 +46,27 @@ export function chartRelationships(doc: EditDoc, part: string): ChartRelationshi
   const bytes = chartSourceBytes(doc, chartRelationshipPart(part));
   if (!bytes) return {};
   let entries = relationshipCache.get(bytes);
-  if (!entries) { entries = new Map(); relationshipCache.set(bytes, entries); }
+  if (!entries) {
+    entries = new Map();
+    relationshipCache.set(bytes, entries);
+  }
   const cached = entries.get(part);
   if (cached) return cached;
   const result: ChartRelationships = Object.create(null);
   for (const node of xmlElementChildren(parseXmlTree(bytes).root, {
-    localName: 'Relationship', namespaceUri: PACKAGE_REL_NS,
+    localName: 'Relationship',
+    namespaceUri: PACKAGE_REL_NS,
   })) {
     const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
     const type = findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
     const target = findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
-    const external = findXmlAttribute(node, {
-      localName: 'TargetMode', namespaceUri: null,
-    })?.value === 'External';
-    if (id && type && target) result[id] = { type, target: external ? target : resolvePart(part, target), ...(external ? { external: true as const } : {}) };
+    const external =
+      findXmlAttribute(node, {
+        localName: 'TargetMode',
+        namespaceUri: null,
+      })?.value === 'External';
+    if (id && type && target)
+      result[id] = { type, target: external ? target : resolvePart(part, target), ...(external ? { external: true as const } : {}) };
   }
   entries.set(part, result);
   return result;
@@ -60,10 +79,16 @@ function owningSlide(doc: EditDoc, id: ElementId) {
 }
 
 const hex = (color: string): string => {
-  const values = color.match(/rgba?\(([^)]+)\)/)?.[1].split(',').slice(0, 3)
+  const values = color
+    .match(/rgba?\(([^)]+)\)/)?.[1]
+    .split(',')
+    .slice(0, 3)
     .map((value) => Math.max(0, Math.min(255, Math.round(Number(value.trim())))));
   return values?.length === 3 && values.every(Number.isFinite)
-    ? values.map((value) => value.toString(16).padStart(2, '0')).join('').toUpperCase()
+    ? values
+        .map((value) => value.toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase()
     : color.replace('#', '');
 };
 
@@ -74,20 +99,22 @@ export function chartRenderContext(doc: EditDoc, id: ElementId, part: string): C
   const themeId = layout?.themeId ?? master?.themeId;
   const theme = themeId ? doc.themes[themeId] : undefined;
   const colors = { ...theme?.src.colors, ...theme?.ovr.colors };
-  const fonts = structuredClone(theme?.src.fonts ?? {
-    major: { latin: '', ea: '', cs: '', scripts: {} },
-    minor: { latin: '', ea: '', cs: '', scripts: {} },
-  });
+  const fonts = structuredClone(
+    theme?.src.fonts ?? {
+      major: { latin: '', ea: '', cs: '', scripts: {} },
+      minor: { latin: '', ea: '', cs: '', scripts: {} },
+    },
+  );
   for (const family of ['major', 'minor'] as const) {
     Object.assign(fonts[family], theme?.ovr.fonts?.[family]);
   }
   const clrMap = { ...DEFAULT_COLOR_MAP };
   const masterBytes = master && chartSourceBytes(doc, master.id);
   const masterRoot = masterBytes ? parseXmlTree(masterBytes).root : null;
-  const map = masterRoot && isPresentationNamespace(masterRoot.namespaceUri)
-    ? xmlElementChildren(masterRoot).find((item) =>
-      item.localName === 'clrMap' && item.namespaceUri === masterRoot.namespaceUri)
-    : null;
+  const map =
+    masterRoot && isPresentationNamespace(masterRoot.namespaceUri)
+      ? xmlElementChildren(masterRoot).find((item) => item.localName === 'clrMap' && item.namespaceUri === masterRoot.namespaceUri)
+      : null;
   for (const attribute of map?.attributes ?? []) clrMap[attribute.localName] = attribute.value;
   return {
     ctx: { theme: Object.fromEntries(Object.entries(colors).map(([key, value]) => [key, hex(value)])), clrMap },

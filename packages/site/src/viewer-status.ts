@@ -17,7 +17,8 @@ export function createViewerStatus(stage: HTMLElement): {
   const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
   const paintLoading = (phase: Extract<OpenPhase, 'opening' | 'download' | 'parsing'>): void => {
     setOpenPhase(stage, phase);
-    stage.innerHTML = '<div class="loading"><div class="loading-label"></div>'
+    stage.innerHTML =
+      '<div class="loading"><div class="loading-label"></div>'
       + '<div class="loading-bar"><i style="width:100%"></i></div>'
       + '<div class="loading-note"></div></div>';
   };

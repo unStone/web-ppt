@@ -11,7 +11,10 @@ mkdirSync(out, { recursive: true });
 const source = resolve(root, process.argv[2] ?? 'fixtures/sample-chartex-fallback.pptx');
 const bytes = readFileSync(source);
 const core = await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: join(out, 'core.mjs') });
-const edit = await bundleBrowser({ root, entry: join(root, 'packages/edit-core/src/index.ts'), output: join(out, 'edit.mjs'),
+const edit = await bundleBrowser({
+  root,
+  entry: join(root, 'packages/edit-core/src/index.ts'),
+  output: join(out, 'edit.mjs'),
   aliases: [
     ['@web-ppt/core/geometry/handles', join(root, 'packages/core/src/geometry/handles/index.ts')],
     ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
@@ -33,10 +36,22 @@ try {
     const frames = reopened.slides.flatMap((slide) => slide.elements).filter((el) => el.editInfo?.requiresOriginal);
     if (!frames.length) throw new Error('生成包重开丢失兼容对象');
     writeFileSync(output, result);
-    const report = { source, sourceHash: createHash('sha256').update(bytes).digest('hex'), output,
-      outputHash: createHash('sha256').update(result).digest('hex'), slides: reopened.slides.length,
-      originalDisposed: presentation.package.disposed, moveApplied, frameCount: frames.length, officeVerified: false };
+    const report = {
+      source,
+      sourceHash: createHash('sha256').update(bytes).digest('hex'),
+      output,
+      outputHash: createHash('sha256').update(result).digest('hex'),
+      slides: reopened.slides.length,
+      originalDisposed: presentation.package.disposed,
+      moveApplied,
+      frameCount: frames.length,
+      officeVerified: false,
+    };
     writeFileSync(`${output}.json`, JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report));
-  } finally { reopened.dispose(); }
-} finally { editor.dispose(); }
+  } finally {
+    reopened.dispose();
+  }
+} finally {
+  editor.dispose();
+}

@@ -15,7 +15,10 @@ const core = await import(`${pathToFileURL(corePath).href}?worker=${process.pid}
 const edit = await import(`${pathToFileURL(editPath).href}?worker=${process.pid}`);
 const pres = await core.parse(new Uint8Array(readFileSync(file)), {
   // 两侧都保留资源表并内联成 data URI；否则 asset: 序号会把包身份误算进视觉指纹。
-  edit: mode === 'projected', keepPackage: true, lazy: false, assets: 'defer',
+  edit: mode === 'projected',
+  keepPackage: true,
+  lazy: false,
+  assets: 'defer',
 });
 const doc = mode === 'projected' ? edit.createDoc(pres, { idPrefix: 'generated-fingerprint-' }) : null;
 const slides = doc ? doc.slideOrder.map((id) => edit.toSlide(doc, id)) : pres.slides;
@@ -35,9 +38,11 @@ const inlineAssets = (value) => {
 const withoutNonVisualIdentity = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(withoutNonVisualIdentity);
-  return Object.fromEntries(Object.entries(value)
-    .filter(([key]) => key !== 'id' && key !== 'editInfo' && key !== 'name')
-    .map(([key, child]) => [key, withoutNonVisualIdentity(child)]));
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'id' && key !== 'editInfo' && key !== 'name')
+      .map(([key, child]) => [key, withoutNonVisualIdentity(child)]),
+  );
 };
 const result = [];
 for (const [index, raw] of slides.entries()) {
@@ -45,11 +50,13 @@ for (const [index, raw] of slides.entries()) {
   const entry = { hidden: !!slide.hidden, notes: slide.notes ?? '' };
   for (const textMode of ['html', 'svg']) {
     const svg = core.renderSlideToSvg(pres, slide, {
-      textMode, idPrefix: `generated-${index}-${textMode}-`,
+      textMode,
+      idPrefix: `generated-${index}-${textMode}-`,
     });
     entry[textMode] = `${svg.length}:${createHash('sha256').update(svg).digest('hex')}`;
   }
   result.push(entry);
 }
-if (doc) edit.disposeDoc(doc); else pres.dispose?.();
+if (doc) edit.disposeDoc(doc);
+else pres.dispose?.();
 process.stdout.write(JSON.stringify(result));

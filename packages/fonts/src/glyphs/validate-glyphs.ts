@@ -1,16 +1,25 @@
-import type {SfntFont} from './sfnt';
-import {validateGlyphData} from './glyph-data';
-import type {FontValidationPause} from './validation-budget';
+import type { SfntFont } from './sfnt';
+import { validateGlyphData } from './glyph-data';
+import type { FontValidationPause } from './validation-budget';
 
 export async function validateGlyphStorage(bytes: Uint8Array, font: SfntFont, pause: FontValidationPause): Promise<void> {
-  const view = new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
-  const {tables,info} = font;
-  const head = tables.get('head')!, loca = tables.get('loca')!, glyf = tables.get('glyf')!;
-  const hhea = tables.get('hhea')!, hmtx = tables.get('hmtx')!;
-  const format = view.getInt16(head.offset + 50), width = format === 0 ? 2 : 4;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const { tables, info } = font;
+  const head = tables.get('head')!,
+    loca = tables.get('loca')!,
+    glyf = tables.get('glyf')!;
+  const hhea = tables.get('hhea')!,
+    hmtx = tables.get('hmtx')!;
+  const format = view.getInt16(head.offset + 50),
+    width = format === 0 ? 2 : 4;
   const metrics = view.getUint16(hhea.offset + 34);
-  if (![0,1].includes(format) || loca.length < (info.glyphCount + 1) * width ||
-      !metrics || metrics > info.glyphCount || hmtx.length < metrics * 4 + (info.glyphCount - metrics) * 2) {
+  if (
+    ![0, 1].includes(format)
+    || loca.length < (info.glyphCount + 1) * width
+    || !metrics
+    || metrics > info.glyphCount
+    || hmtx.length < metrics * 4 + (info.glyphCount - metrics) * 2
+  ) {
     throw new Error('invalid-font');
   }
   let previous = 0;
@@ -22,5 +31,5 @@ export async function validateGlyphStorage(bytes: Uint8Array, font: SfntFont, pa
     }
     previous = offsets[i] = offset;
   }
-  await validateGlyphData(view,glyf.offset,offsets,pause);
+  await validateGlyphData(view, glyf.offset, offsets, pause);
 }

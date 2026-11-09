@@ -1,6 +1,4 @@
-import {
-  changeValue, openFixture, saveAndReopen, selectPaneObject,
-} from './site-editor-browser-helpers.mjs';
+import { changeValue, openFixture, saveAndReopen, selectPaneObject } from './site-editor-browser-helpers.mjs';
 
 async function selectFirstCharacter(context, name) {
   const { evaluate, waitFor } = context;
@@ -50,14 +48,18 @@ export async function runSiteEditorTextToolbarContract(context) {
   const sizeBefore = await evaluate("document.querySelector('#textFontSize').value");
   await changeValue(context, '#textFontSize', '37');
   await waitFor("document.querySelector('#textFontSize').value === '37'", '字号写入');
-  await click('#undo'); await waitFor(`document.querySelector('#textFontSize').value === ${JSON.stringify(sizeBefore)}`, '字号撤销');
-  await click('#redo'); await waitFor("document.querySelector('#textFontSize').value === '37'", '字号重做');
+  await click('#undo');
+  await waitFor(`document.querySelector('#textFontSize').value === ${JSON.stringify(sizeBefore)}`, '字号撤销');
+  await click('#redo');
+  await waitFor("document.querySelector('#textFontSize').value === '37'", '字号重做');
 
   const colorBefore = await evaluate("document.querySelector('#textColor').value");
   await changeValue(context, '#textColor', '#aabbcc');
   await waitFor("document.querySelector('#textColor').value === '#aabbcc'", '文字颜色写入');
-  await click('#undo'); await waitFor(`document.querySelector('#textColor').value === ${JSON.stringify(colorBefore)}`, '文字颜色撤销');
-  await click('#redo'); await waitFor("document.querySelector('#textColor').value === '#aabbcc'", '文字颜色重做');
+  await click('#undo');
+  await waitFor(`document.querySelector('#textColor').value === ${JSON.stringify(colorBefore)}`, '文字颜色撤销');
+  await click('#redo');
+  await waitFor("document.querySelector('#textColor').value === '#aabbcc'", '文字颜色重做');
 
   await changeValue(context, '#textUnderlineStyle', 'wavyDbl');
   await changeValue(context, '#textStrikeStyle', 'dblStrike');
@@ -70,52 +72,72 @@ export async function runSiteEditorTextToolbarContract(context) {
   await changeValue(context, '#textSpacing', '2');
   await changeValue(context, '#textCaps', 'small');
   await changeValue(context, '#textBaseline', '-25');
-  await waitFor(`document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
+  await waitFor(
+    `document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
     && document.querySelector('#textStrikeStyle').value === 'dblStrike'
     && document.querySelector('#textHighlightEnabled').checked
     && document.querySelector('#textHighlight').value === '#fff176'
     && document.querySelector('#textSpacing').value === '2'
     && document.querySelector('#textCaps').value === 'small'
-    && document.querySelector('#textBaseline').value === '-25'`, '高级字符格式写入');
+    && document.querySelector('#textBaseline').value === '-25'`,
+    '高级字符格式写入',
+  );
   await click('#textClearFormat');
-  await waitFor(`document.querySelector('#textUnderlineStyle').value !== 'wavyDbl'
+  await waitFor(
+    `document.querySelector('#textUnderlineStyle').value !== 'wavyDbl'
     && document.querySelector('#textStrikeStyle').value !== 'dblStrike'
-    && !document.querySelector('#textHighlightEnabled').checked`, '清除字符格式');
+    && !document.querySelector('#textHighlightEnabled').checked`,
+    '清除字符格式',
+  );
   await click('#undo');
-  await waitFor(`document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
+  await waitFor(
+    `document.querySelector('#textUnderlineStyle').value === 'wavyDbl'
     && document.querySelector('#textStrikeStyle').value === 'dblStrike'
     && document.querySelector('#textHighlightEnabled').checked
     && document.querySelector('#textSpacing').value === '2'
     && document.querySelector('#textCaps').value === 'small'
-    && document.querySelector('#textBaseline').value === '-25'`, '清除字符格式撤销');
+    && document.querySelector('#textBaseline').value === '-25'`,
+    '清除字符格式撤销',
+  );
 
   const alignBefore = await evaluate("document.querySelector('#textAlign').value");
   await changeValue(context, '#textAlign', 'center');
   await waitFor("document.querySelector('#textAlign').value === 'center'", '段落对齐写入');
-  await click('#undo'); await waitFor(`document.querySelector('#textAlign').value === ${JSON.stringify(alignBefore)}`, '段落对齐撤销');
-  await click('#redo'); await waitFor("document.querySelector('#textAlign').value === 'center'", '段落对齐重做');
+  await click('#undo');
+  await waitFor(`document.querySelector('#textAlign').value === ${JSON.stringify(alignBefore)}`, '段落对齐撤销');
+  await click('#redo');
+  await waitFor("document.querySelector('#textAlign').value === 'center'", '段落对齐重做');
 
   await changeValue(context, '#textBulletKind', 'char');
   await changeValue(context, '#textBulletChar', '→');
-  await waitFor("document.querySelector('#textBulletKind').value === 'char' && document.querySelector('#textBulletChar').value === '→'", '字符项目符号写入');
+  await waitFor(
+    "document.querySelector('#textBulletKind').value === 'char' && document.querySelector('#textBulletChar').value === '→'",
+    '字符项目符号写入',
+  );
   await changeValue(context, '#textBulletKind', 'autoNum');
   await changeValue(context, '#textBulletScheme', 'romanLcPeriod');
   await changeValue(context, '#textBulletStart', '4');
-  await waitFor(`document.querySelector('#textBulletKind').value === 'autoNum'
+  await waitFor(
+    `document.querySelector('#textBulletKind').value === 'autoNum'
     && document.querySelector('#textBulletScheme').value === 'romanLcPeriod'
-    && document.querySelector('#textBulletStart').value === '4'`, '自动编号制式与起点写入');
+    && document.querySelector('#textBulletStart').value === '4'`,
+    '自动编号制式与起点写入',
+  );
   await click('#undo');
   await waitFor("document.querySelector('#textBulletStart').value === '1'", '自动编号起点撤销');
   await click('#redo');
   await waitFor("document.querySelector('#textBulletStart').value === '4'", '自动编号起点重做');
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), (char) => char.charCodeAt(0));
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], 'bullet.png', { type: 'image/png' }));
     const input = document.querySelector('#textBulletImageInput');
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor("document.querySelector('#textBulletKind').value === 'image'", '图片项目符号上传');
   await changeValue(context, '#textBulletFont', 'Wingdings');
   await evaluate(`(() => {
@@ -126,12 +148,15 @@ export async function runSiteEditorTextToolbarContract(context) {
   await changeValue(context, '#textBulletColor', '#336699');
   await changeValue(context, '#textBulletSizeKind', 'percent');
   await changeValue(context, '#textBulletSize', '135');
-  await waitFor(`document.querySelector('#textBulletKind').value === 'image'
+  await waitFor(
+    `document.querySelector('#textBulletKind').value === 'image'
     && document.querySelector('#textBulletFont').value === 'Wingdings'
     && document.querySelector('#textBulletColorEnabled').checked
     && document.querySelector('#textBulletColor').value === '#336699'
     && document.querySelector('#textBulletSizeKind').value === 'percent'
-    && document.querySelector('#textBulletSize').value === '135'`, '图片项目符号样式写入');
+    && document.querySelector('#textBulletSize').value === '135'`,
+    '图片项目符号样式写入',
+  );
 
   await click('#findText');
   await changeValue(context, '#searchQuery', '同', 'input');
@@ -166,22 +191,29 @@ export async function runSiteEditorTextToolbarContract(context) {
     bulletSizeKind: document.querySelector('#textBulletSizeKind').value,
     bulletSize: document.querySelector('#textBulletSize').value,
   }))()`);
-  const reopenedFormattingOk = reopenedFormatting.bold === 'true'
-    && reopenedFormatting.italic === 'true' && reopenedFormatting.underline === 'true'
-    && reopenedFormatting.size === '37' && reopenedFormatting.color === '#aabbcc'
+  const reopenedFormattingOk =
+    reopenedFormatting.bold === 'true'
+    && reopenedFormatting.italic === 'true'
+    && reopenedFormatting.underline === 'true'
+    && reopenedFormatting.size === '37'
+    && reopenedFormatting.color === '#aabbcc'
     && reopenedFormatting.underlineStyle === 'wavyDbl'
     && reopenedFormatting.strikeStyle === 'dblStrike'
     && reopenedFormatting.highlight === '#fff176'
-    && reopenedFormatting.spacing === '2' && reopenedFormatting.caps === 'small'
+    && reopenedFormatting.spacing === '2'
+    && reopenedFormatting.caps === 'small'
     && reopenedFormatting.baseline === '-25'
-    && reopenedFormatting.align === 'center' && reopenedFormatting.bulletKind === 'image'
+    && reopenedFormatting.align === 'center'
+    && reopenedFormatting.bulletKind === 'image'
     && reopenedFormatting.bulletFont === 'Wingdings'
     && reopenedFormatting.bulletColor === '#336699'
-    && reopenedFormatting.bulletSizeKind === 'percent' && reopenedFormatting.bulletSize === '135';
+    && reopenedFormatting.bulletSizeKind === 'percent'
+    && reopenedFormatting.bulletSize === '135';
   if (!reopenedFormattingOk) {
     throw new Error(`文字格式重开验证失败：${JSON.stringify(reopenedFormatting)}`);
   }
-  await waitFor(`document.querySelector('#textBold').getAttribute('aria-pressed') === 'true'
+  await waitFor(
+    `document.querySelector('#textBold').getAttribute('aria-pressed') === 'true'
     && document.querySelector('#textItalic').getAttribute('aria-pressed') === 'true'
     && document.querySelector('#textUnderline').getAttribute('aria-pressed') === 'true'
     && document.querySelector('#textFontSize').value === '37'
@@ -198,7 +230,9 @@ export async function runSiteEditorTextToolbarContract(context) {
     && document.querySelector('#textBulletFont').value === 'Wingdings'
     && document.querySelector('#textBulletColor').value === '#336699'
     && document.querySelector('#textBulletSizeKind').value === 'percent'
-    && document.querySelector('#textBulletSize').value === '135'`, '文字格式重开验证');
+    && document.querySelector('#textBulletSize').value === '135'`,
+    '文字格式重开验证',
+  );
   const replaced = await evaluate(`(() => {
     const row = [...document.querySelectorAll('[data-pane-element]')]
       .find((candidate) => candidate.querySelector('[data-pane-name]')?.textContent === '重复格式');

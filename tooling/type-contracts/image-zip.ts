@@ -1,9 +1,5 @@
 import type { Presentation } from '@web-ppt/core';
-import {
-  PresentationImageExportError,
-  presentationToImageZip,
-  type PresentationImageZipOptions,
-} from '@web-ppt/core/image-zip';
+import { PresentationImageExportError, presentationToImageZip, type PresentationImageZipOptions } from '@web-ppt/core/image-zip';
 
 declare const presentation: Presentation;
 const options: PresentationImageZipOptions = {

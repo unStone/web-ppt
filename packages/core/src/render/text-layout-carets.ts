@@ -9,7 +9,7 @@ const lineWidth = (line: Line): number => (line.squeezed ? line.width - line.squ
 function sourceCharacters(token: Token): Array<{ from: number; to: number; display: string }> {
   const out: Array<{ from: number; to: number; display: string }> = [];
   const source = token.run.text;
-  for (let from = token.from; from < token.to;) {
+  for (let from = token.from; from < token.to; ) {
     const cp = source.codePointAt(from)!;
     const value = String.fromCodePoint(cp);
     const to = Math.min(token.to, from + value.length);
@@ -19,16 +19,13 @@ function sourceCharacters(token: Token): Array<{ from: number; to: number; displ
   return out;
 }
 
-function tokenCarets(
-  token: Token,
-  startX: number,
-  squeezed: boolean,
-  scale: number,
-  measurer?: TextMeasure,
-): TextLayoutCaret[] {
+function tokenCarets(token: Token, startX: number, squeezed: boolean, scale: number, measurer?: TextMeasure): TextLayoutCaret[] {
   const effectiveWidth = token.width - (squeezed ? token.squeeze : 0);
   if (token.atomic) {
-    return [{ offset: token.from, x: startX }, { offset: token.to, x: startX + effectiveWidth }];
+    return [
+      { offset: token.from, x: startX },
+      { offset: token.to, x: startX + effectiveWidth },
+    ];
   }
   const chars = sourceCharacters(token);
   if (!chars.length) return [{ offset: token.from, x: startX }];
@@ -62,8 +59,7 @@ export function publicSegments(
 ): TextLayoutSegment[] {
   let cursor = lineStart;
   const segments = line.segs.map((segment) => {
-    const width = segment.width
-      - (line.squeezed ? squeezeTotal(segment.text) * fontSize(segment.run, scale) : 0);
+    const width = segment.width - (line.squeezed ? squeezeTotal(segment.text) * fontSize(segment.run, scale) : 0);
     const carets: TextLayoutCaret[] = [];
     let tokenX = cursor;
     if (includeCarets && !segment.bullet) {

@@ -14,16 +14,16 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   console.log('\n\x1b[36m▸ 元素动画保留型保存\x1b[0m');
   const input = load('sample-editor-animations.pptx');
   const presentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const doc = edit.createDoc(presentation, { idPrefix: 'animation-save-' });
   const editor = new edit.Editor(doc);
   const [sourceSlide, plainSlide] = doc.slideOrder;
   const [plainA, plainB] = doc.slides[plainSlide].children;
-  const motionPath = [
-    ...Array.from({ length: 21 }, (_, index) => [index, 0]),
-    [30, -2], [120, -60], [240, 30],
-  ];
+  const motionPath = [...Array.from({ length: 21 }, (_, index) => [index, 0]), [30, -2], [120, -60], [240, 30]];
   const steps = [
     { target: plainA, kind: 'entrance', effect: 'appear', trigger: 'click', delayMs: 0, durationMs: 601 },
     { target: plainA, kind: 'entrance', effect: 'fade', trigger: 'click', delayMs: 0, durationMs: 602 },
@@ -37,13 +37,15 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
     { target: plainA, kind: 'entrance', effect: 'dissolve', trigger: 'click', delayMs: 0, durationMs: 680 },
     { target: plainB, kind: 'emphasis', effect: 'spin', trigger: 'click', delayMs: 80, durationMs: 900 },
     { target: plainB, kind: 'emphasis', effect: 'grow', trigger: 'withPrev', delayMs: 40, durationMs: 880 },
-    { target: plainA, kind: 'motion', trigger: 'afterPrev', delayMs: 50, durationMs: 1200,
-      motionPath },
+    { target: plainA, kind: 'motion', trigger: 'afterPrev', delayMs: 50, durationMs: 1200, motionPath },
     { target: plainB, kind: 'exit', effect: 'fade', trigger: 'click', delayMs: 0, durationMs: 500 },
   ];
 
   const preservePresentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const preserveDoc = edit.createDoc(preservePresentation, { idPrefix: 'animation-preserve-' });
   const preserveEditor = new edit.Editor(preserveDoc);
@@ -54,57 +56,93 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   preserveEditor.exec({ type: 'SetName', id: preserveTarget, name: '同页非动画编辑' });
   const preserved = await preserveEditor.saveDetailed();
   const preservedXml = decoder.decode(preserved.package.parts[preservePart]);
-  check('复杂来源页只改非动画属性时 timing/MCE 子树逐字直通',
-    animationCarrier(originalPreserveXml)
-      && animationCarrier(preservedXml) === animationCarrier(originalPreserveXml));
-  preserveEditor.exec({ type: 'SetAnimations', slideId: preserveSlide, steps: [{
-    target: preserveTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
-    delayMs: 10, durationMs: 700,
-  }] });
+  check(
+    '复杂来源页只改非动画属性时 timing/MCE 子树逐字直通',
+    animationCarrier(originalPreserveXml) && animationCarrier(preservedXml) === animationCarrier(originalPreserveXml),
+  );
+  preserveEditor.exec({
+    type: 'SetAnimations',
+    slideId: preserveSlide,
+    steps: [
+      {
+        target: preserveTarget,
+        kind: 'entrance',
+        effect: 'fade',
+        trigger: 'click',
+        delayMs: 10,
+        durationMs: 700,
+      },
+    ],
+  });
   await preserveEditor.saveDetailed();
   preserveEditor.exec({ type: 'SetAnimations', slideId: preserveSlide, steps: null });
   preserveEditor.exec({ type: 'SetName', id: preserveTarget, name: null });
   const restoredComplex = await preserveEditor.saveDetailed();
-  check('复杂来源显式替换后 null 从首次基线恢复原 part 字节',
-    diffPackageBytes(input, restoredComplex.bytes).equal);
+  check('复杂来源显式替换后 null 从首次基线恢复原 part 字节', diffPackageBytes(input, restoredComplex.bytes).equal);
   edit.disposeDoc(preserveDoc);
 
   editor.exec({ type: 'SetAnimations', slideId: plainSlide, steps });
   const saved = await editor.saveDetailed();
   const artifact = saveArtifact('element-animations.pptx', saved.bytes);
   const diff = diffPackageBytes(input, saved.bytes);
-  check('动画编辑只修改目标 slide part', diff.added.length === 0 && diff.removed.length === 0
-    && diff.changed.join('|') === 'ppt/slides/slide2.xml', diff.changed.join('|'));
+  check(
+    '动画编辑只修改目标 slide part',
+    diff.added.length === 0 && diff.removed.length === 0 && diff.changed.join('|') === 'ppt/slides/slide2.xml',
+    diff.changed.join('|'),
+  );
 
   const xml = decoder.decode(saved.package.parts['ppt/slides/slide2.xml']);
   const timingAt = xml.indexOf('<p:timing');
-  check('四类动画写为规范根时间树、触发节点与唯一 cTn id',
+  check(
+    '四类动画写为规范根时间树、触发节点与唯一 cTn id',
     timingAt > xml.indexOf('<p:clrMapOvr')
-      && xml.includes('nodeType="tmRoot"') && xml.includes('nodeType="mainSeq"')
-      && xml.includes('presetClass="entr"') && xml.includes('presetClass="emph"')
-      && xml.includes('presetClass="path"') && xml.includes('presetClass="exit"')
-      && xml.includes('nodeType="withEffect"') && xml.includes('nodeType="afterEffect"')
+      && xml.includes('nodeType="tmRoot"')
+      && xml.includes('nodeType="mainSeq"')
+      && xml.includes('presetClass="entr"')
+      && xml.includes('presetClass="emph"')
+      && xml.includes('presetClass="path"')
+      && xml.includes('presetClass="exit"')
+      && xml.includes('nodeType="withEffect"')
+      && xml.includes('nodeType="afterEffect"')
       && new Set([...xml.matchAll(/<p:cTn\b[^>]*\bid="(\d+)"/g)].map((match) => match[1])).size
-        === [...xml.matchAll(/<p:cTn\b[^>]*\bid="(\d+)"/g)].length);
-  check('入口/退出可见性、精确时长、方向与运动路径均有 OOXML 行为',
-    xml.includes('val="visible"') && xml.includes('val="hidden"')
-      && !xml.includes('filter="appear"') && xml.includes('filter="fade"')
-      && xml.includes('filter="wipe(right)"') && xml.includes('dur="640"')
-      && xml.includes('filter="slide(fromLeft)"') && xml.includes('filter="slide(fromRight)"')
-      && xml.includes('filter="slide(fromTop)"') && xml.includes('filter="slide(fromBottom)"')
-      && xml.includes('filter="box(in)"') && xml.includes('filter="box(out)"')
+        === [...xml.matchAll(/<p:cTn\b[^>]*\bid="(\d+)"/g)].length,
+  );
+  check(
+    '入口/退出可见性、精确时长、方向与运动路径均有 OOXML 行为',
+    xml.includes('val="visible"')
+      && xml.includes('val="hidden"')
+      && !xml.includes('filter="appear"')
+      && xml.includes('filter="fade"')
+      && xml.includes('filter="wipe(right)"')
+      && xml.includes('dur="640"')
+      && xml.includes('filter="slide(fromLeft)"')
+      && xml.includes('filter="slide(fromRight)"')
+      && xml.includes('filter="slide(fromTop)"')
+      && xml.includes('filter="slide(fromBottom)"')
+      && xml.includes('filter="box(in)"')
+      && xml.includes('filter="box(out)"')
       && xml.includes('filter="dissolve"')
-      && xml.includes('presetID="1"') && xml.includes('presetID="22"')
-      && xml.includes('presetID="23"') && xml.includes('presetID="59"')
+      && xml.includes('presetID="1"')
+      && xml.includes('presetID="22"')
+      && xml.includes('presetID="23"')
+      && xml.includes('presetID="59"')
       && xml.includes('presetID="61"')
-      && xml.includes('dur="900"') && xml.includes('dur="1200"')
-      && xml.includes('<p:animMotion') && xml.includes('path="M 0 0 L'));
+      && xml.includes('dur="900"')
+      && xml.includes('dur="1200"')
+      && xml.includes('<p:animMotion')
+      && xml.includes('path="M 0 0 L'),
+  );
   const exitFragment = xml.slice(xml.indexOf('presetClass="exit"'));
-  check('退出可见性只在效果时长结束后置为 hidden',
-    /<p:set><p:cBhvr><p:cTn\b[^>]*dur="1"[^>]*><p:stCondLst><p:cond delay="500"\/><\/p:stCondLst>/.test(exitFragment));
+  check(
+    '退出可见性只在效果时长结束后置为 hidden',
+    /<p:set><p:cBhvr><p:cTn\b[^>]*dur="1"[^>]*><p:stCondLst><p:cond delay="500"\/><\/p:stCondLst>/.test(exitFragment),
+  );
 
   const reopenedPresentation = await core.parse(saved.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const reopenedDoc = edit.createDoc(reopenedPresentation, { idPrefix: 'animation-reopen-' });
   const reopenedEditor = new edit.Editor(reopenedDoc);
@@ -116,61 +154,82 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
     const inputStep = steps[index];
     if (!inputStep) return false;
     const target = inputStep.target === plainA ? reopenedA : reopenedB;
-    return step.target === target && step.kind === inputStep.kind
-      && step.trigger === inputStep.trigger && step.delayMs === inputStep.delayMs
+    return (
+      step.target === target
+      && step.kind === inputStep.kind
+      && step.trigger === inputStep.trigger
+      && step.delayMs === inputStep.delayMs
       && step.durationMs === inputStep.durationMs
-      && step.effect === inputStep.effect && step.dir === inputStep.dir;
+      && step.effect === inputStep.effect
+      && step.dir === inputStep.dir
+    );
   });
-  check('保存重开后顺序、目标、类别、触发、时长与全部路径顶点一致',
-    !reopened.sourceReadonly && reopened.value.length === steps.length && sameSteps
-      && reopened.value.slice(2, 6).map((step) => step.dir).join('|') === 'l|r|u|d'
+  check(
+    '保存重开后顺序、目标、类别、触发、时长与全部路径顶点一致',
+    !reopened.sourceReadonly
+      && reopened.value.length === steps.length
+      && sameSteps
+      && reopened.value
+        .slice(2, 6)
+        .map((step) => step.dir)
+        .join('|') === 'l|r|u|d'
       && reopenedPath.length === motionPath.length
-      && reopenedPath.every(([x, y], index) =>
-        Math.abs(x - motionPath[index][0]) < 0.001 && Math.abs(y - motionPath[index][1]) < 0.001));
+      && reopenedPath.every(([x, y], index) => Math.abs(x - motionPath[index][0]) < 0.001 && Math.abs(y - motionPath[index][1]) < 0.001),
+  );
 
   const removedSourceTarget = reopenedEditor.exec({ type: 'RemoveElement', id: reopenedA });
   reopenedEditor.exec({ type: 'SetAnimations', slideId: reopenedDoc.slideOrder[1], steps: null });
   const afterNull = edit.querySlideAnimations(reopenedDoc, [reopenedDoc.slideOrder[1]]);
-  const removedSourceSpid = removedSourceTarget.forward.find((patch) => patch.op === 'remove')
-    ?.value.records[reopenedA].meta.origin.spid;
+  const removedSourceSpid = removedSourceTarget.forward.find((patch) => patch.op === 'remove')?.value.records[reopenedA].meta.origin.spid;
   const removedSourceSaved = await reopenedEditor.saveDetailed();
   const removedSourceXml = decoder.decode(removedSourceSaved.package.parts['ppt/slides/slide2.xml']);
-  check('受支持来源 Remove→null 不会恢复已删除目标或悬空 spTgt',
-    !afterNull.direct && afterNull.value.every((step) => step.target !== reopenedA)
-      && !removedSourceXml.includes(`<p:spTgt spid="${removedSourceSpid}"`));
+  check(
+    '受支持来源 Remove→null 不会恢复已删除目标或悬空 spTgt',
+    !afterNull.direct
+      && afterNull.value.every((step) => step.target !== reopenedA)
+      && !removedSourceXml.includes(`<p:spTgt spid="${removedSourceSpid}"`),
+  );
   edit.disposeDoc(reopenedDoc);
 
   const boundaryPresentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const boundaryDoc = edit.createDoc(boundaryPresentation, { idPrefix: 'animation-boundary-' });
   const boundaryEditor = new edit.Editor(boundaryDoc);
   const boundarySlide = boundaryDoc.slideOrder[1];
   const boundaryTarget = boundaryDoc.slides[boundarySlide].children[0];
   const boundarySteps = Array.from({ length: 128 }, () => ({
-    target: boundaryTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
-    delayMs: 0, durationMs: 500,
+    target: boundaryTarget,
+    kind: 'entrance',
+    effect: 'fade',
+    trigger: 'click',
+    delayMs: 0,
+    durationMs: 500,
   }));
   boundaryEditor.exec({ type: 'SetAnimations', slideId: boundarySlide, steps: boundarySteps });
   const boundarySaved = await boundaryEditor.saveDetailed();
   const boundaryReopenPresentation = await core.parse(boundarySaved.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
-  const boundaryReopenDoc = edit.createDoc(
-    boundaryReopenPresentation, { idPrefix: 'animation-boundary-reopen-' },
+  const boundaryReopenDoc = edit.createDoc(boundaryReopenPresentation, { idPrefix: 'animation-boundary-reopen-' });
+  const boundaryState = edit.querySlideAnimations(boundaryReopenDoc, [boundaryReopenDoc.slideOrder[1]]);
+  check(
+    '公开最大时间线由 writer 保存后仍能完整回读',
+    !boundaryState.sourceReadonly
+      && boundaryState.value.length === 128
+      && boundaryState.value.every((step) => step.effect === 'fade' && step.trigger === 'click'),
   );
-  const boundaryState = edit.querySlideAnimations(
-    boundaryReopenDoc, [boundaryReopenDoc.slideOrder[1]],
-  );
-  check('公开最大时间线由 writer 保存后仍能完整回读',
-    !boundaryState.sourceReadonly && boundaryState.value.length === 128
-      && boundaryState.value.every((step) => step.effect === 'fade' && step.trigger === 'click'));
   edit.disposeDoc(boundaryReopenDoc);
   edit.disposeDoc(boundaryDoc);
 
   const sourceBefore = presentation.package.parts['ppt/slides/slide1.xml'];
-  check('未触碰复杂来源时间树保持原 part 字节',
-    saved.package.parts['ppt/slides/slide1.xml'] === sourceBefore);
+  check('未触碰复杂来源时间树保持原 part 字节', saved.package.parts['ppt/slides/slide1.xml'] === sourceBefore);
   const identity = await editor.saveDetailed();
   check('相同模型连续保存复用当前包 identity', identity.mode === 'identity' && identity.bytes === saved.bytes);
   editor.exec({ type: 'SetAnimations', slideId: plainSlide, steps: null });
@@ -178,29 +237,51 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   check('连续保存后恢复来源从首次基线重建原包', diffPackageBytes(input, reset.bytes).equal);
 
   const sourceA = doc.slides[sourceSlide].children[0];
-  editor.exec({ type: 'SetAnimations', slideId: sourceSlide, steps: [{
-    target: sourceA, kind: 'entrance', effect: 'fade', trigger: 'click', delayMs: 20, durationMs: 700,
-  }] });
+  editor.exec({
+    type: 'SetAnimations',
+    slideId: sourceSlide,
+    steps: [
+      {
+        target: sourceA,
+        kind: 'entrance',
+        effect: 'fade',
+        trigger: 'click',
+        delayMs: 20,
+        durationMs: 700,
+      },
+    ],
+  });
   const replaced = await editor.saveDetailed();
   const replacedXml = decoder.decode(replaced.package.parts['ppt/slides/slide1.xml']);
-  check('显式替换 MCE 分支内 tnLst 时保留载体、timing 根、build、extLst 与无关 MCE',
-    replacedXml.includes('fixture:keep="timing"') && replacedXml.includes('{ANIMATION-KEEP}')
+  check(
+    '显式替换 MCE 分支内 tnLst 时保留载体、timing 根、build、extLst 与无关 MCE',
+    replacedXml.includes('fixture:keep="timing"')
+      && replacedXml.includes('{ANIMATION-KEEP}')
       && replacedXml.includes('fixture:keepBuild="yes"')
       && replacedXml.includes(`<p:bldP spid="${doc.elements[sourceA].src.id}" grpId="0" build="p"/>`)
       && replacedXml.includes('<fixture:payload value="keep"/>')
-      && replacedXml.includes('<mc:AlternateContent') && !replacedXml.includes('<p:animClr')
+      && replacedXml.includes('<mc:AlternateContent')
+      && !replacedXml.includes('<p:animClr')
       && [...replacedXml.matchAll(/<p:timing\b/g)].length === 2
-      && [...replacedXml.matchAll(/presetClass="entr"/g)].length === 2);
+      && [...replacedXml.matchAll(/presetClass="entr"/g)].length === 2,
+  );
   editor.exec({ type: 'SetAnimations', slideId: sourceSlide, steps: [] });
   const clearedSource = await editor.saveDetailed();
   const clearedSourceXml = decoder.decode(clearedSource.package.parts['ppt/slides/slide1.xml']);
-  check('空时间线删除 tnLst 但保留 build 与 timing 的其他载荷',
-    clearedSourceXml.includes('<p:timing') && !clearedSourceXml.includes('<p:tnLst')
+  check(
+    '空时间线删除 tnLst 但保留 build 与 timing 的其他载荷',
+    clearedSourceXml.includes('<p:timing')
+      && !clearedSourceXml.includes('<p:tnLst')
       && [...clearedSourceXml.matchAll(/<p:timing\b/g)].length === 1
-      && clearedSourceXml.includes('<p:bldLst') && clearedSourceXml.includes('{ANIMATION-KEEP}'));
+      && clearedSourceXml.includes('<p:bldLst')
+      && clearedSourceXml.includes('{ANIMATION-KEEP}'),
+  );
 
   const deletePresentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const deleteDoc = edit.createDoc(deletePresentation, { idPrefix: 'animation-delete-' });
   const deleteEditor = new edit.Editor(deleteDoc);
@@ -214,9 +295,12 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   deleteEditor.exec({ type: 'RemoveElement', id: deleteSourceA });
   deleteEditor.exec({ type: 'SetAnimations', slideId: deleteSourceSlide, steps: null });
   deleteEditor.exec({ type: 'RemoveElement', id: deleteSourceGroup });
-  const deletedCopy = [...deleteEditor.exec({
-    type: 'DuplicateSlide', id: deleteSourceSlide,
-  }).createdSlides][0];
+  const deletedCopy = [
+    ...deleteEditor.exec({
+      type: 'DuplicateSlide',
+      id: deleteSourceSlide,
+    }).createdSlides,
+  ][0];
   deleteEditor.exec({ type: 'RemoveElement', id: deleteUnsupported });
   const deleted = await deleteEditor.saveDetailed();
   const deletedSourceXml = decoder.decode(deleted.package.parts['ppt/slides/slide1.xml']);
@@ -224,32 +308,44 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   const deletedCopyXml = decoder.decode(deleted.package.parts[deletedCopyPart]);
   const deletedUnsupportedXml = decoder.decode(deleted.package.parts['ppt/slides/slide4.xml']);
   const deletedSourceState = edit.querySlideAnimations(deleteDoc, [deleteSourceSlide]);
-  check('sourceReadonly 删除保留无关 unsupported 行为并清理 tnLst/build 目标',
-    !deletedSourceState.direct && deletedSourceState.value.length === 1
+  check(
+    'sourceReadonly 删除保留无关 unsupported 行为并清理 tnLst/build 目标',
+    !deletedSourceState.direct
+      && deletedSourceState.value.length === 1
       && deletedSourceState.value[0].target === deleteSourceB
       && deletedSourceXml.includes('fixture:keepTarget="yes"')
       && !deletedSourceXml.includes('fixture:dropTarget="yes"')
       && !deletedSourceXml.includes('fixture:triggerOwner="yes"')
       && deletedSourceXml.includes('fixture:keepBuild="yes"')
       && !deletedSourceXml.includes(`<p:spTgt spid="${deleteSourceSpid}"`)
-      && !deletedSourceXml.includes(`<p:bldP spid="${deleteSourceSpid}"`));
-  check('unsupported-only 删除唯一目标后不留下悬空行为',
+      && !deletedSourceXml.includes(`<p:bldP spid="${deleteSourceSpid}"`),
+  );
+  check(
+    'unsupported-only 删除唯一目标后不留下悬空行为',
     !deletedUnsupportedXml.includes(`<p:spTgt spid="${deleteUnsupportedSpid}"`)
       && !deletedUnsupportedXml.includes('<p:animClr')
-      && deletedUnsupportedXml.includes('fixture:keepList="yes"'));
-  check('删除含动画子元素的来源组后复制页不会遗留子元素 timing 引用',
+      && deletedUnsupportedXml.includes('fixture:keepList="yes"'),
+  );
+  check(
+    '删除含动画子元素的来源组后复制页不会遗留子元素 timing 引用',
     !deletedCopyXml.includes(`<p:spTgt spid="${deleteSourceGroupChildSpid}"`)
       && deletedCopyXml.includes('fixture:keepTarget="yes"')
       && !deletedCopyXml.includes('fixture:dropTarget="yes"')
-      && !deletedCopyXml.includes('fixture:triggerOwner="yes"'));
+      && !deletedCopyXml.includes('fixture:triggerOwner="yes"'),
+  );
   const deletedReopenPresentation = await core.parse(deleted.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const deletedReopenDoc = edit.createDoc(deletedReopenPresentation, { idPrefix: 'animation-delete-reopen-' });
   const deletedReopen = edit.querySlideAnimations(deletedReopenDoc, [deletedReopenDoc.slideOrder[0]]);
-  check('删除保存重开后复杂来源只剩仍存在目标',
+  check(
+    '删除保存重开后复杂来源只剩仍存在目标',
     deletedReopen.value.length === 1
-      && deletedReopen.value[0].target === deletedReopenDoc.slides[deletedReopenDoc.slideOrder[0]].children[0]);
+      && deletedReopen.value[0].target === deletedReopenDoc.slides[deletedReopenDoc.slideOrder[0]].children[0],
+  );
   edit.disposeDoc(deletedReopenDoc);
   edit.disposeDoc(deleteDoc);
 
@@ -266,12 +362,17 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
       const id = 20_000 + index;
       return `<p:cBhvr><p:cTn id="${id}" dur="500"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr>`;
     }).join('');
-    const sharedConditions = Array.from({ length: count }, () =>
-      `<p:cond delay="0"><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cond>`).join('');
+    const sharedConditions = Array.from(
+      { length: count },
+      () => `<p:cond delay="0"><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cond>`,
+    ).join('');
     const timing = `<p:timing><p:tnLst>${effects}<p14:anim xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sharedBehaviors}</p14:anim><p:par><p:cTn id="30000"><p:stCondLst>${sharedConditions}</p:stCondLst></p:cTn></p:par></p:tnLst></p:timing>`;
     parts[stressPart] = new TextEncoder().encode(source.replace('</p:sld>', `${timing}</p:sld>`));
     const presentation = await core.parse(zipSync(parts), {
-      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+      edit: true,
+      keepPackage: true,
+      lazy: false,
+      assets: 'defer',
     });
     const doc = edit.createDoc(presentation, { idPrefix: `animation-delete-stress-${count}-` });
     const editor = new edit.Editor(doc);
@@ -288,47 +389,86 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   // 绝对毫秒与比率都受 CI 宿主并行负载影响（cordis 页面服务轮先例：隔离绿、共享红）。
   // 4 倍输入线性=4×、平方=16×：阈值 12 排除平方退化的同时给共享 runner 留噪声余量。
   const stressRatio = largeStress.elapsed / Math.max(smallStress.elapsed, 1);
-  check('大量点击及同父行为/条件目标删除保持线性预算且不留引用',
+  check(
+    '大量点击及同父行为/条件目标删除保持线性预算且不留引用',
     stressRatio < 12 && !smallStress.hasTarget && !largeStress.hasTarget,
-    `1000=${smallStress.elapsed.toFixed(1)}ms，4000=${largeStress.elapsed.toFixed(1)}ms，${stressRatio.toFixed(2)}×`);
+    `1000=${smallStress.elapsed.toFixed(1)}ms，4000=${largeStress.elapsed.toFixed(1)}ms，${stressRatio.toFixed(2)}×`,
+  );
 
   const operationsPresentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const operationsDoc = edit.createDoc(operationsPresentation, { idPrefix: 'animation-operations-' });
   const operationsEditor = new edit.Editor(operationsDoc);
   const operationsSource = operationsDoc.slideOrder[0];
-  const copiedSource = [...operationsEditor.exec({
-    type: 'DuplicateSlide', id: operationsSource,
-  }).createdSlides][0];
+  const copiedSource = [
+    ...operationsEditor.exec({
+      type: 'DuplicateSlide',
+      id: operationsSource,
+    }).createdSlides,
+  ][0];
   const operationsPlain = operationsDoc.slideOrder[2];
   const operationsPlainTarget = operationsDoc.slides[operationsPlain].children[0];
-  operationsEditor.exec({ type: 'SetAnimations', slideId: operationsPlain, steps: [{
-    target: operationsPlainTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
-    delayMs: 0, durationMs: 500,
-  }] });
-  const copiedOverride = [...operationsEditor.exec({
-    type: 'DuplicateSlide', id: operationsPlain,
-  }).createdSlides][0];
-  const addedSlide = [...operationsEditor.exec({
-    type: 'AddSlide', layoutId: operationsDoc.layoutOrder[0], at: { after: operationsDoc.slideOrder.at(-1) },
-  }).createdSlides][0];
   operationsEditor.exec({
-    type: 'AddShape', slideId: addedSlide, preset: 'rect', rect: { x: 100, y: 100, w: 240, h: 120 },
+    type: 'SetAnimations',
+    slideId: operationsPlain,
+    steps: [
+      {
+        target: operationsPlainTarget,
+        kind: 'entrance',
+        effect: 'fade',
+        trigger: 'click',
+        delayMs: 0,
+        durationMs: 500,
+      },
+    ],
   });
-  const addedShape = operationsEditor.selection.kind === 'elements'
-    ? operationsEditor.selection.ids[0] : null;
-  operationsEditor.exec({ type: 'SetAnimations', slideId: addedSlide, steps: [{
-    target: addedShape, kind: 'entrance', effect: 'wipe', dir: 'l', trigger: 'click',
-    delayMs: 0, durationMs: 600,
-  }] });
+  const copiedOverride = [
+    ...operationsEditor.exec({
+      type: 'DuplicateSlide',
+      id: operationsPlain,
+    }).createdSlides,
+  ][0];
+  const addedSlide = [
+    ...operationsEditor.exec({
+      type: 'AddSlide',
+      layoutId: operationsDoc.layoutOrder[0],
+      at: { after: operationsDoc.slideOrder.at(-1) },
+    }).createdSlides,
+  ][0];
+  operationsEditor.exec({
+    type: 'AddShape',
+    slideId: addedSlide,
+    preset: 'rect',
+    rect: { x: 100, y: 100, w: 240, h: 120 },
+  });
+  const addedShape = operationsEditor.selection.kind === 'elements' ? operationsEditor.selection.ids[0] : null;
+  operationsEditor.exec({
+    type: 'SetAnimations',
+    slideId: addedSlide,
+    steps: [
+      {
+        target: addedShape,
+        kind: 'entrance',
+        effect: 'wipe',
+        dir: 'l',
+        trigger: 'click',
+        delayMs: 0,
+        durationMs: 600,
+      },
+    ],
+  });
   const operationsSaved = await operationsEditor.saveDetailed();
   const operationsReopenPresentation = await core.parse(operationsSaved.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
-  const operationsReopenDoc = edit.createDoc(
-    operationsReopenPresentation, { idPrefix: 'animation-operations-reopen-' },
-  );
+  const operationsReopenDoc = edit.createDoc(operationsReopenPresentation, { idPrefix: 'animation-operations-reopen-' });
   const copiedSourceIndex = operationsDoc.slideOrder.indexOf(copiedSource);
   const copiedOverrideIndex = operationsDoc.slideOrder.indexOf(copiedOverride);
   const addedSlideIndex = operationsDoc.slideOrder.indexOf(addedSlide);
@@ -338,19 +478,26 @@ export async function runAnimationSaveContract({ edit, core, load, check, saveAr
   const copiedSourceState = edit.querySlideAnimations(operationsReopenDoc, [copiedSourceReopenId]);
   const copiedOverrideState = edit.querySlideAnimations(operationsReopenDoc, [copiedOverrideReopenId]);
   const addedState = edit.querySlideAnimations(operationsReopenDoc, [addedReopenId]);
-  check('复制复杂来源/直接覆盖与新增页动画保存重开均重映射到各自元素',
-    copiedSourceState.sourceReadonly && copiedSourceState.value.length === 3
-      && copiedSourceState.value.every((step) =>
-        operationsReopenDoc.slides[copiedSourceReopenId].children.includes(step.target))
-      && !copiedOverrideState.sourceReadonly && copiedOverrideState.value.length === 1
+  check(
+    '复制复杂来源/直接覆盖与新增页动画保存重开均重映射到各自元素',
+    copiedSourceState.sourceReadonly
+      && copiedSourceState.value.length === 3
+      && copiedSourceState.value.every((step) => operationsReopenDoc.slides[copiedSourceReopenId].children.includes(step.target))
+      && !copiedOverrideState.sourceReadonly
+      && copiedOverrideState.value.length === 1
       && operationsReopenDoc.slides[copiedOverrideReopenId].children.includes(copiedOverrideState.value[0].target)
-      && !addedState.sourceReadonly && addedState.value.length === 1
-      && operationsReopenDoc.slides[addedReopenId].children.includes(addedState.value[0].target));
+      && !addedState.sourceReadonly
+      && addedState.value.length === 1
+      && operationsReopenDoc.slides[addedReopenId].children.includes(addedState.value[0].target),
+  );
   edit.disposeDoc(operationsReopenDoc);
   edit.disposeDoc(operationsDoc);
 
   const cleanPresentation = await core.parse(input, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const cleanDoc = edit.createDoc(cleanPresentation, { idPrefix: 'animation-clean-' });
   const cleanEditor = new edit.Editor(cleanDoc);

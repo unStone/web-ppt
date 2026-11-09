@@ -13,8 +13,8 @@ export function readIdentityScopes(value: unknown): ChartIdentityScopes | undefi
   if (!Array.isArray(scope.frames) || scope.frames.length > MAX_CHART_POINTS) throw new Error('图表框架身份数量超限');
   const keys = new Set<string>();
   for (const item of scope.frames) {
-    if (!Array.isArray(item) || item.length !== 2 || typeof item[0] !== 'string'
-      || !item[0] || item[0].length > 1024 || keys.has(item[0])) throw new Error('图表框架身份定位无效');
+    if (!Array.isArray(item) || item.length !== 2 || typeof item[0] !== 'string' || !item[0] || item[0].length > 1024 || keys.has(item[0]))
+      throw new Error('图表框架身份定位无效');
     assertChartIdentity(item[1], item[1], '图表框架身份');
     keys.add(item[0]);
   }
@@ -23,5 +23,6 @@ export function readIdentityScopes(value: unknown): ChartIdentityScopes | undefi
 
 export function scopedIdentity(value: unknown, scope: ChartIdentityScopes | undefined, prefix: string): unknown {
   return scope && typeof value === 'string' && value.startsWith(`${scope.prefix}:`)
-    ? `${prefix}${value.slice(scope.prefix.length)}` : value;
+    ? `${prefix}${value.slice(scope.prefix.length)}`
+    : value;
 }

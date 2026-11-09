@@ -4,8 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const icon = readFileSync(join(root, 'packages/edit-core/src/media/audio-icon.ts'), 'utf8')
-  .match(/AUDIO_ICON_PNG = '([^']+)'/)?.[1];
+const icon = readFileSync(join(root, 'packages/edit-core/src/media/audio-icon.ts'), 'utf8').match(/AUDIO_ICON_PNG = '([^']+)'/)?.[1];
 if (!icon) throw new Error('缺少默认音频图标边界标记');
 const sentinels = ['音频不是完整的 PCM WAV 文件', '视频不是完整的自包含 MP4 文件', icon];
 const seen = new Set();
@@ -28,8 +27,10 @@ if (!sentinels.every((sentinel) => entry.includes(sentinel)) || !entry.includes(
 const implementation = await import('@web-ppt/edit-core/media');
 for (const name of ['editor', 'react', 'vue']) {
   const adapter = await import(`@web-ppt/${name}/media`);
-  if (adapter.createMediaEditor !== implementation.createMediaEditor
-    || adapter.registerMediaEditing !== implementation.registerMediaEditing) {
+  if (
+    adapter.createMediaEditor !== implementation.createMediaEditor
+    || adapter.registerMediaEditing !== implementation.registerMediaEditing
+  ) {
     throw new Error(`${name}/media 没有转发同一媒体实现`);
   }
 }

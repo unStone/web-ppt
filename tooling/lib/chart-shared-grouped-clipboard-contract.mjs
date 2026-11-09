@@ -6,18 +6,22 @@ export async function testSharedGroupedClipboard({ core, edit, chart, assert }) 
     const presentation = await core.parse(input, { edit: true, keepPackage: true, lazy: false });
     const editor = new edit.Editor(edit.createDoc(presentation));
     const frames = [];
-    editor.subscribeRecovery(frame => frames.push(frame));
-    const slideId = editor.doc.slideOrder[0], sourceId = editor.doc.slides[slideId].children[0];
+    editor.subscribeRecovery((frame) => frames.push(frame));
+    const slideId = editor.doc.slideOrder[0],
+      sourceId = editor.doc.slides[slideId].children[0];
     editor.exec({ type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 40, h: 40 } });
     editor.exec({ type: 'Group', ids: [...editor.doc.slides[slideId].children] });
-    assert.ok(chart.listEditableCharts(editor.doc).some(frame => frame.id === sourceId),
-      '组合后首次加载图表入口时，空组合容器不能遮蔽原生孩子来源');
-    const data = chart.queryChartData(editor.doc, sourceId), api = chart.createChartDataEditor(editor);
+    assert.ok(
+      chart.listEditableCharts(editor.doc).some((frame) => frame.id === sourceId),
+      '组合后首次加载图表入口时，空组合容器不能遮蔽原生孩子来源',
+    );
+    const data = chart.queryChartData(editor.doc, sourceId),
+      api = chart.createChartDataEditor(editor);
     api.setValue(sourceId, data.series[0].id, data.series[0].points[1].id, 987);
-    const original = new Set(chart.listEditableCharts(editor.doc).map(frame => frame.id));
+    const original = new Set(chart.listEditableCharts(editor.doc).map((frame) => frame.id));
     const group = editor.doc.elements[sourceId].parent;
     editor.exec({ type: 'PasteElements', payload: edit.copyElements(editor.doc, [group]), at: { parentId: slideId, x: 30, y: 30 } });
-    const pasted = chart.listEditableCharts(editor.doc).find(frame => !original.has(frame.id));
+    const pasted = chart.listEditableCharts(editor.doc).find((frame) => !original.has(frame.id));
     assert.ok(pasted, '复制整个组合后立即识别其原生图表后代');
     const copied = chart.queryChartData(editor.doc, pasted.id);
     assert.equal(copied.series[0].points[1].value, 987);
@@ -30,9 +34,14 @@ export async function testSharedGroupedClipboard({ core, edit, chart, assert }) 
     assert.equal(chart.queryChartData(restored.doc, pasted.id).series[0].points[1].value, 876, '冷恢复重建组合、粘贴、共享修改与解组');
     const reopened = await core.parse(await restored.save(), { edit: true, keepPackage: true, lazy: false });
     const doc = edit.createDoc(reopened);
-    const linked = chart.listEditableCharts(doc).filter(frame => frame.binding.chartPart === data.binding.chartPart);
+    const linked = chart.listEditableCharts(doc).filter((frame) => frame.binding.chartPart === data.binding.chartPart);
     assert.equal(linked.length, 3);
-    assert.ok(linked.every(frame => chart.queryChartData(doc, frame.id).series[0].points[1].value === 876));
-    edit.disposeDoc(doc); reopened.dispose(); restored.dispose(); recovering.dispose(); editor.dispose(); presentation.dispose();
+    assert.ok(linked.every((frame) => chart.queryChartData(doc, frame.id).series[0].points[1].value === 876));
+    edit.disposeDoc(doc);
+    reopened.dispose();
+    restored.dispose();
+    recovering.dispose();
+    editor.dispose();
+    presentation.dispose();
   }
 }

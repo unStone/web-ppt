@@ -14,16 +14,19 @@ export function readWorkbookCells(parts: Readonly<Record<string, Uint8Array>>, m
   const result = new Map<string, WorkbookCellValue>();
   for (const [sheet, part] of map.sheets) {
     const root = parseXmlTree(parts[part]).root;
-    for (const row of children(child(root, 'sheetData'), 'row')) for (const cell of children(row, 'c')) {
-      const type = attr(cell, 't'), raw = text(child(cell, 'v'));
-      let value: WorkbookCellValue = { kind: 'unsupported', value: null };
-      if (child(cell, 'f')) value = { kind: 'unsupported', value: null };
-      else if (!child(cell, 'v') && !child(cell, 'is')) value = { kind: 'blank', value: null };
-      else if (type === 'inlineStr') value = { kind: 'string', value: text(child(cell, 'is')) };
-      else if (type === 's' && /^\d+$/.test(raw) && Number(raw) < shared.length) value = { kind: 'string', value: shared[Number(raw)] };
-      else if ((type === null || type === 'n') && raw.trim() && Number.isFinite(Number(raw))) value = { kind: 'number', value: Number(raw) };
-      result.set(workbookCellKey(sheet, attr(cell, 'r')?.toUpperCase() ?? ''), value);
-    }
+    for (const row of children(child(root, 'sheetData'), 'row'))
+      for (const cell of children(row, 'c')) {
+        const type = attr(cell, 't'),
+          raw = text(child(cell, 'v'));
+        let value: WorkbookCellValue = { kind: 'unsupported', value: null };
+        if (child(cell, 'f')) value = { kind: 'unsupported', value: null };
+        else if (!child(cell, 'v') && !child(cell, 'is')) value = { kind: 'blank', value: null };
+        else if (type === 'inlineStr') value = { kind: 'string', value: text(child(cell, 'is')) };
+        else if (type === 's' && /^\d+$/.test(raw) && Number(raw) < shared.length) value = { kind: 'string', value: shared[Number(raw)] };
+        else if ((type === null || type === 'n') && raw.trim() && Number.isFinite(Number(raw)))
+          value = { kind: 'number', value: Number(raw) };
+        result.set(workbookCellKey(sheet, attr(cell, 'r')?.toUpperCase() ?? ''), value);
+      }
   }
   return result;
 }

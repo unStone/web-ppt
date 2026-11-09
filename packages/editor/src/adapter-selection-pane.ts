@@ -13,7 +13,9 @@ export class AdapterSelectionPaneBinding {
   private currentContainer: HTMLElement | null = null;
   private currentPane: SelectionPane | null = null;
 
-  get pane(): SelectionPane | null { return this.currentPane; }
+  get pane(): SelectionPane | null {
+    return this.currentPane;
+  }
 
   attach(
     container: HTMLElement | null,
@@ -23,8 +25,7 @@ export class AdapterSelectionPaneBinding {
     onError: (error: unknown) => void,
   ): void {
     if (container === this.currentContainer) return;
-    const next = container && session
-      ? this.mount(session, container, view, fallbackSlide, onError) : null;
+    const next = container && session ? this.mount(session, container, view, fallbackSlide, onError) : null;
     this.currentContainer = container;
     this.commit(next);
   }
@@ -35,8 +36,7 @@ export class AdapterSelectionPaneBinding {
     fallbackSlide: SlideId | null,
     onError: (error: unknown) => void,
   ): SelectionPane | null {
-    return this.currentContainer
-      ? this.mount(session, this.currentContainer, view, fallbackSlide, onError) : null;
+    return this.currentContainer ? this.mount(session, this.currentContainer, view, fallbackSlide, onError) : null;
   }
 
   commit(next: SelectionPane | null): void {
@@ -53,7 +53,9 @@ export class AdapterSelectionPaneBinding {
     }
   }
 
-  release(): void { this.commit(null); }
+  release(): void {
+    this.commit(null);
+  }
 
   dispose(): void {
     this.release();
@@ -67,10 +69,12 @@ export class AdapterSelectionPaneBinding {
     fallbackSlide: SlideId | null,
     onError: (error: unknown) => void,
   ): SelectionPane {
-    const slideId = view.slideId && session.editor.doc.slides[view.slideId]
-      ? view.slideId : fallbackSlide ?? session.editor.doc.slideOrder[0];
+    const slideId =
+      view.slideId && session.editor.doc.slides[view.slideId] ? view.slideId : (fallbackSlide ?? session.editor.doc.slideOrder[0]);
     return session.mountSelectionPane(container, {
-      mode: view.mode ?? 'edit', slideId, onError,
+      mode: view.mode ?? 'edit',
+      slideId,
+      onError,
     });
   }
 }

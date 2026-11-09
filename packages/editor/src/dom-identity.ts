@@ -21,15 +21,12 @@ function includingRoot(root: ParentNode, selector: string): SVGElement[] {
 }
 
 function findByIdentity(root: ParentNode, attribute: 'editId' | 'editRoot', id: string): SVGElement | null {
-  return includingRoot(root, `[data-${attribute === 'editId' ? 'edit-id' : 'edit-root'}]`)
-    .find((node) => node.dataset[attribute] === id) ?? null;
+  return (
+    includingRoot(root, `[data-${attribute === 'editId' ? 'edit-id' : 'edit-root'}]`).find((node) => node.dataset[attribute] === id) ?? null
+  );
 }
 
-function bindProjectedIdentities(
-  root: ParentNode,
-  doc: EditDoc,
-  ids: readonly (ElementId | null)[],
-): void {
+function bindProjectedIdentities(root: ParentNode, doc: EditDoc, ids: readonly (ElementId | null)[]): void {
   const nodes = includingRoot(root, '[data-el]');
   if (nodes.length !== ids.length) throw new Error('渲染节点与编辑投影的元素数量不一致');
   nodes.forEach((node, index) => {
@@ -87,9 +84,7 @@ export function bindDesignIdentities(root: ParentNode, doc: EditDoc, target: Des
   const layout = doc.layouts[target.id];
   if (!layout) throw new Error(`找不到版式设计目标：${target.id}`);
   const master = layout.showMasterShapes === false ? undefined : doc.masters[layout.origin.masterPart];
-  bindProjectedIdentities(root, doc, elementIds(doc, [
-    ...(master?.children ?? []), ...layout.children,
-  ]));
+  bindProjectedIdentities(root, doc, elementIds(doc, [...(master?.children ?? []), ...layout.children]));
 }
 
 export function findElementPartition(root: ParentNode, id: ElementId): SVGElement | null {
@@ -130,8 +125,8 @@ export function touchedElementPartitions(
   for (const id of touched) {
     let record = doc.elements[id];
     if (!record) continue;
-    while (typeof record.parent === 'string' && doc.elements[record.parent]
-      && touched.has(record.parent)) record = doc.elements[record.parent];
+    while (typeof record.parent === 'string' && doc.elements[record.parent] && touched.has(record.parent))
+      record = doc.elements[record.parent];
     let owner = record;
     while (doc.elements[owner.parent]) owner = doc.elements[owner.parent];
     if (owner.parent === slideId) {
@@ -143,10 +138,6 @@ export function touchedElementPartitions(
 }
 
 /** 百分比在小页面上会把一次局部修改误判成整页重绘；只有真实批量提交才考虑换整页。 */
-export function shouldRenderWholeSlide(
-  partitionCount: number,
-  topLevelCount: number,
-  slideTopLevelCount: number,
-): boolean {
+export function shouldRenderWholeSlide(partitionCount: number, topLevelCount: number, slideTopLevelCount: number): boolean {
   return partitionCount > 8 && topLevelCount / Math.max(slideTopLevelCount, 1) > 0.3;
 }

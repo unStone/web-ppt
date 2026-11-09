@@ -1,6 +1,4 @@
-import type {
-  ElementId, ElementRecord, RemovedElementRecord, SlideId,
-} from '../types';
+import type { ElementId, ElementRecord, RemovedElementRecord, SlideId } from '../types';
 
 export interface GroupCommand {
   readonly type: 'Group';

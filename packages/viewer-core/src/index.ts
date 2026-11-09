@@ -11,8 +11,13 @@ export { Viewer } from './viewer';
 export { foreignObjectScalesCorrectly, resetForeignObjectProbe } from './foreign-object';
 export type { ViewerOptions } from './viewer';
 export {
-  autoAdvanceMs, framesFor, morphPairs, playGroup, playTransition,
-  playTransitionControlled, transitionFrames,
+  autoAdvanceMs,
+  framesFor,
+  morphPairs,
+  playGroup,
+  playTransition,
+  playTransitionControlled,
+  transitionFrames,
 } from './playback';
 export { settledDeclaration } from './settled';
 // 这几个是对 AnimStep 的纯推导，实现已下沉到 core；此处转出以保持既有 API

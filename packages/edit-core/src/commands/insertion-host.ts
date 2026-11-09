@@ -1,7 +1,5 @@
 import { assertDesignTarget } from '../design-target';
-import type {
-  DesignTarget, EditDoc, ElementId, LayoutRecord, MasterRecord, SlideId, SlideRecord,
-} from '../types';
+import type { DesignTarget, EditDoc, ElementId, LayoutRecord, MasterRecord, SlideId, SlideRecord } from '../types';
 
 export interface InsertionCanvas {
   readonly kind: 'slide' | 'layout' | 'master';
@@ -48,20 +46,26 @@ export function resolveInsertionCanvas(
     if (command.target.kind === 'master') {
       const master = doc.masters[command.target.id];
       return {
-        kind: 'master', id: master.id, children: master.children,
+        kind: 'master',
+        id: master.id,
+        children: master.children,
         part: incrementalMasterInsertionPart(doc, master),
       };
     }
     const layout = doc.layouts[command.target.id];
     return {
-      kind: 'layout', id: layout.id, children: layout.children,
+      kind: 'layout',
+      id: layout.id,
+      children: layout.children,
       part: incrementalLayoutInsertionPart(doc, layout),
     };
   }
   const slide = doc.slides[command.slideId!];
   if (!slide) throw new Error(`找不到${label}目标页：${String(command.slideId)}`);
   return {
-    kind: 'slide', id: slide.id, children: slide.children,
+    kind: 'slide',
+    id: slide.id,
+    children: slide.children,
     part: incrementalInsertionPart(doc, slide),
   };
 }

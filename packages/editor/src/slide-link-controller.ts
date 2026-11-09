@@ -1,12 +1,6 @@
-import {
-  normalizeExternalLinkTarget, queryElementLink, queryRunLink,
-} from '@web-ppt/edit-core';
-import type {
-  Editor, LinkSourceValue, LinkTarget, RunLinkState, SlideId,
-} from '@web-ppt/edit-core';
-import type {
-  EditorMode, LinkFollowHandler, LinkFollowSource,
-} from './slide-editor-types';
+import { normalizeExternalLinkTarget, queryElementLink, queryRunLink } from '@web-ppt/edit-core';
+import type { Editor, LinkSourceValue, LinkTarget, RunLinkState, SlideId } from '@web-ppt/edit-core';
+import type { EditorMode, LinkFollowHandler, LinkFollowSource } from './slide-editor-types';
 
 interface SlideLinkControllerOptions {
   editor: Editor;
@@ -19,13 +13,13 @@ interface SlideLinkControllerOptions {
 }
 
 function relativeTarget(
-  order: readonly SlideId[], current: SlideId, action: Extract<LinkSourceValue, { kind: 'relative' }>['action'],
+  order: readonly SlideId[],
+  current: SlideId,
+  action: Extract<LinkSourceValue, { kind: 'relative' }>['action'],
 ): SlideId | null {
   if (!order.length) return null;
   const currentIndex = Math.max(0, order.indexOf(current));
-  const index = action === 'next' ? currentIndex + 1
-    : action === 'previous' ? currentIndex - 1
-    : action === 'first' ? 0 : order.length - 1;
+  const index = action === 'next' ? currentIndex + 1 : action === 'previous' ? currentIndex - 1 : action === 'first' ? 0 : order.length - 1;
   return order[Math.max(0, Math.min(order.length - 1, index))] ?? null;
 }
 
@@ -55,9 +49,12 @@ export class SlideLinkController {
 
   follow(target?: LinkTarget): boolean {
     if (target) {
-      const normalized = target.kind === 'external'
-        ? normalizeExternalLinkTarget(target.href)
-        : this.options.editor.doc.slides[target.slideId] ? { ...target } : null;
+      const normalized =
+        target.kind === 'external'
+          ? normalizeExternalLinkTarget(target.href)
+          : this.options.editor.doc.slides[target.slideId]
+            ? { ...target }
+            : null;
       return normalized ? this.perform(normalized, 'api') : false;
     }
     return this.followSelection('api');
@@ -79,22 +76,28 @@ export class SlideLinkController {
     const selection = this.options.editor.selection;
     if (selection.kind === 'text') {
       const before = (left: typeof selection.anchor, right: typeof selection.focus): boolean =>
-        left.p < right.p || (left.p === right.p && (left.r < right.r
-          || (left.r === right.r && left.off <= right.off)));
-      const state = this.options.queryRunLink() ?? queryRunLink(
-        this.options.editor.doc, selection.id,
-        before(selection.anchor, selection.focus)
-          ? { from: selection.anchor, to: selection.focus }
-          : { from: selection.focus, to: selection.anchor },
-        selection.cell,
-      );
+        left.p < right.p || (left.p === right.p && (left.r < right.r || (left.r === right.r && left.off <= right.off)));
+      const state =
+        this.options.queryRunLink()
+        ?? queryRunLink(
+          this.options.editor.doc,
+          selection.id,
+          before(selection.anchor, selection.focus)
+            ? { from: selection.anchor, to: selection.focus }
+            : { from: selection.focus, to: selection.anchor },
+          selection.cell,
+        );
       return state && !state.mixed && state.followable ? state.value : null;
     }
-    if (selection.kind !== 'elements' || !selection.ids.length
+    if (
+      selection.kind !== 'elements'
+      || !selection.ids.length
       || selection.ids.some((id) => {
         const kind = this.options.editor.doc.elements[id]?.src.kind;
         return kind !== 'shape' && kind !== 'image';
-      })) return null;
+      })
+    )
+      return null;
     const state = queryElementLink(this.options.editor.doc, selection.ids);
     return !state.mixed && state.followable ? state.value : null;
   }
@@ -113,24 +116,22 @@ export class SlideLinkController {
     return href ? normalizeExternalLinkTarget(href) : null;
   }
 
-  private followValue(
-    value: LinkSourceValue, source: LinkFollowSource, event?: MouseEvent | KeyboardEvent,
-  ): boolean {
+  private followValue(value: LinkSourceValue, source: LinkFollowSource, event?: MouseEvent | KeyboardEvent): boolean {
     if (value.kind === 'unsupported') return false;
-    const target = value.kind === 'relative'
-      ? relativeTarget(this.options.editor.doc.slideOrder, this.options.slideId(), value.action)
-      : value.kind === 'slide' ? value.slideId : null;
+    const target =
+      value.kind === 'relative'
+        ? relativeTarget(this.options.editor.doc.slideOrder, this.options.slideId(), value.action)
+        : value.kind === 'slide'
+          ? value.slideId
+          : null;
     if (value.kind !== 'external') {
-      return target && this.options.editor.doc.slides[target]
-        ? this.perform({ kind: 'slide', slideId: target }, source, event) : false;
+      return target && this.options.editor.doc.slides[target] ? this.perform({ kind: 'slide', slideId: target }, source, event) : false;
     }
     const normalized = normalizeExternalLinkTarget(value.href);
     return normalized ? this.perform(normalized, source, event) : false;
   }
 
-  private perform(
-    target: LinkTarget, source: LinkFollowSource, event?: MouseEvent | KeyboardEvent,
-  ): boolean {
+  private perform(target: LinkTarget, source: LinkFollowSource, event?: MouseEvent | KeyboardEvent): boolean {
     if (this.options.onFollow?.(structuredClone(target), { source, ...(event ? { event } : {}) }) === true) {
       return true;
     }
@@ -138,8 +139,7 @@ export class SlideLinkController {
       this.options.setSlide(target.slideId);
       return true;
     }
-    const opened = this.options.root.ownerDocument.defaultView
-      ?.open(target.href, '_blank', 'noopener,noreferrer');
+    const opened = this.options.root.ownerDocument.defaultView?.open(target.href, '_blank', 'noopener,noreferrer');
     if (opened) opened.opener = null;
     return true;
   }

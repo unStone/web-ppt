@@ -47,10 +47,8 @@ export interface DecodedFont {
   mime: string;
 }
 
-const be32 = (b: Uint8Array, at: number): number =>
-  ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >>> 0;
-const le32 = (b: Uint8Array, at: number): number =>
-  ((b[at + 3] << 24) | (b[at + 2] << 16) | (b[at + 1] << 8) | b[at]) >>> 0;
+const be32 = (b: Uint8Array, at: number): number => ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >>> 0;
+const le32 = (b: Uint8Array, at: number): number => ((b[at + 3] << 24) | (b[at + 2] << 16) | (b[at + 1] << 8) | b[at]) >>> 0;
 const le16 = (b: Uint8Array, at: number): number => (b[at + 1] << 8) | b[at];
 
 /** 已经是浏览器直接认的字体格式就原样放行 */

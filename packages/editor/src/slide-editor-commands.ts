@@ -1,19 +1,42 @@
 import {
-  normalizeSlideAnimations, projectAnimationSteps, querySlideAnimations, querySlideLayout,
-  querySlideNotes, querySlideTransition,
+  normalizeSlideAnimations,
+  projectAnimationSteps,
+  querySlideAnimations,
+  querySlideLayout,
+  querySlideNotes,
+  querySlideTransition,
 } from '@web-ppt/edit-core';
 import type {
-  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, ElementAltTextState, ElementId, ImageCrop, LinkTarget, ParagraphPropertiesState, ParagraphPropertyInput,
-  RunLinkState, RunPropertiesState, RunPropertyOverrides, SlideId, SlideLayoutState,
-  SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideNotesState, SlideSizeState, TextBodyProperties, TextBodyPropertyOverrides,
-  SlideAnimationState, SlideTransitionInput, SlideTransitionState,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  EditAnimationStep,
+  ElementAltTextState,
+  ElementId,
+  ImageCrop,
+  LinkTarget,
+  ParagraphPropertiesState,
+  ParagraphPropertyInput,
+  RunLinkState,
+  RunPropertiesState,
+  RunPropertyOverrides,
+  SlideId,
+  SlideLayoutState,
+  SectionId,
+  SectionRecord,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
+  SlideNotesState,
+  SlideSizeState,
+  TextBodyProperties,
+  TextBodyPropertyOverrides,
+  SlideAnimationState,
+  SlideTransitionInput,
+  SlideTransitionState,
 } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
 import type { TextEditorController } from './text-editor';
 import type { ImageInsertionController } from './image-insertion';
-import type {
-  ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions,
-} from './image-insertion';
+import type { ImageBackgroundOptions, ImageInsertOptions, ImageReplaceOptions } from './image-insertion';
 import type { ImageCropGestureController } from './image-crop-gesture';
 import type { SlideLinkController } from './slide-link-controller';
 import type { EditorMode } from './slide-editor-types';
@@ -26,9 +49,7 @@ import type { TextSearchOpenOptions } from './text-search-types';
 import type { TextSearchViewBinding } from './text-search-view';
 import type { TransitionPreviewController } from './transition-preview';
 import type { AnimationPreviewController } from './animation-preview';
-import {
-  commonObjectSlideCommands, CommonObjectSlideCommands,
-} from './common-object-slide-commands';
+import { commonObjectSlideCommands, CommonObjectSlideCommands } from './common-object-slide-commands';
 
 interface SlideEditorCommandsOptions {
   readonly session: EditorSession;
@@ -67,27 +88,51 @@ export class SlideEditorCommands {
     return true;
   }
 
-  cancelFormatPainter(): void { this.options.formatPainter.cancel(); }
-  openTextSearch(options: TextSearchOpenOptions): void { this.options.textSearch.open(options); }
-  closeTextSearch(): void { this.options.textSearch.close(); }
-  nextTextSearch() { return this.options.textSearch.next(); }
-  previousTextSearch() { return this.options.textSearch.previous(); }
-  replaceCurrentText(): boolean { return this.options.textSearch.replaceCurrent(); }
-  replaceAllText(): number { return this.options.textSearch.replaceAll(); }
+  cancelFormatPainter(): void {
+    this.options.formatPainter.cancel();
+  }
+  openTextSearch(options: TextSearchOpenOptions): void {
+    this.options.textSearch.open(options);
+  }
+  closeTextSearch(): void {
+    this.options.textSearch.close();
+  }
+  nextTextSearch() {
+    return this.options.textSearch.next();
+  }
+  previousTextSearch() {
+    return this.options.textSearch.previous();
+  }
+  replaceCurrentText(): boolean {
+    return this.options.textSearch.replaceCurrent();
+  }
+  replaceAllText(): number {
+    return this.options.textSearch.replaceAll();
+  }
   followLink(target?: LinkTarget): boolean {
     return !this.options.destroyed() && this.options.links.follow(target);
   }
-  releaseTextEditing(): void { this.options.textEditor.releaseTextEditing(); }
+  releaseTextEditing(): void {
+    this.options.textEditor.releaseTextEditing();
+  }
   registerTextUi(element: HTMLElement): () => void {
     return this.options.textEditor.registerExternalUi(element);
   }
-  queryRunProps(): RunPropertiesState | null { return this.options.textEditor.queryRunProps(); }
-  queryRunLink(): RunLinkState | null { return this.options.textEditor.queryRunLink(); }
+  queryRunProps(): RunPropertiesState | null {
+    return this.options.textEditor.queryRunProps();
+  }
+  queryRunLink(): RunLinkState | null {
+    return this.options.textEditor.queryRunLink();
+  }
   setRunProps(props: RunPropertyOverrides): boolean {
     return this.options.textEditor.setRunProps(props);
   }
-  clearFormat(): boolean { return this.options.textEditor.clearFormat(); }
-  queryParaProps(): ParagraphPropertiesState | null { return this.options.textEditor.queryParaProps(); }
+  clearFormat(): boolean {
+    return this.options.textEditor.clearFormat();
+  }
+  queryParaProps(): ParagraphPropertiesState | null {
+    return this.options.textEditor.queryParaProps();
+  }
   setParaProps(props: ParagraphPropertyInput): boolean {
     return this.options.textEditor.setParaProps(props);
   }
@@ -102,9 +147,7 @@ export class SlideEditorCommands {
     return setSelectionBodyProps(o.session.editor, o.slideId(), props);
   }
 
-  distributeElements(
-    axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
-  ): boolean {
+  distributeElements(axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[]): boolean {
     const o = this.options;
     return this.common.distribute(!o.destroyed() && o.mode() === 'edit', axis, ids);
   }
@@ -118,7 +161,9 @@ export class SlideEditorCommands {
     return this.common.setAltText(!o.destroyed() && o.mode() === 'edit', value, id);
   }
 
-  listSections(): SectionRecord[] { return this.common.listSections(); }
+  listSections(): SectionRecord[] {
+    return this.common.listSections();
+  }
 
   addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
     const o = this.options;
@@ -137,7 +182,9 @@ export class SlideEditorCommands {
     const o = this.options;
     return this.common.removeSection(!o.destroyed() && o.mode() === 'edit', id);
   }
-  querySlideSize(): SlideSizeState { return this.common.querySlideSize(); }
+  querySlideSize(): SlideSizeState {
+    return this.common.querySlideSize();
+  }
   setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     const o = this.options;
     return this.common.setSlideSize(!o.destroyed() && o.mode() === 'edit', value);
@@ -192,12 +239,13 @@ export class SlideEditorCommands {
   }
   previewAnimations(value?: readonly EditAnimationStep[]): Promise<boolean> {
     const o = this.options;
-    const steps = value === undefined
-      ? o.session.editor.toSlide(o.slideId()).animations
-      : projectAnimationSteps(
-        o.session.editor.doc,
-        normalizeSlideAnimations(o.session.editor.doc, o.slideId(), value, 'previewAnimations.steps'),
-      );
+    const steps =
+      value === undefined
+        ? o.session.editor.toSlide(o.slideId()).animations
+        : projectAnimationSteps(
+            o.session.editor.doc,
+            normalizeSlideAnimations(o.session.editor.doc, o.slideId(), value, 'previewAnimations.steps'),
+          );
     return o.animationPreview().preview(steps);
   }
 
@@ -231,16 +279,16 @@ export class SlideEditorCommands {
     const o = this.options;
     if (o.destroyed() || o.mode() !== 'edit') return false;
     const selection = o.session.editor.selection;
-    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : undefined);
+    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : undefined);
     return !!target && o.imageCropGesture.enter(target);
   }
-  endImageCrop(): void { this.options.imageCropGesture.exit(); }
+  endImageCrop(): void {
+    this.options.imageCropGesture.exit();
+  }
 
   private selectedImageId(explicit?: ElementId): ElementId {
     const selection = this.options.session.editor.selection;
-    const id = explicit ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : undefined);
+    const id = explicit ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : undefined);
     if (!id || this.options.session.editor.doc.elements[id]?.src.kind !== 'image') {
       throw new Error('替换图片需要指定图片或先单选一张图片');
     }

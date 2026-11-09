@@ -9,7 +9,7 @@ export function retainCompatibilitySource(pkg: PptxPackageReader, host: Element,
   const files = pkg.files;
   if (!files) return;
   let assets = retained.get(pkg);
-  if (!assets) retained.set(pkg, assets = new Map());
+  if (!assets) retained.set(pkg, (assets = new Map()));
   const keep = (path: string): void => {
     const bytes = files[path];
     if (bytes) assets!.set(path, { url: `web-ppt-source:${path}`, mime: 'application/octet-stream', bytes });
@@ -47,7 +47,7 @@ export function retainCompatibilitySource(pkg: PptxPackageReader, host: Element,
 }
 
 export function compatibilityAssets(pkg: PptxPackageReader): PresentationEditAsset[] {
-  return [...retained.get(pkg)?.values() ?? []];
+  return [...(retained.get(pkg)?.values() ?? [])];
 }
 
 export function releaseCompatibilitySource(pkg: PptxPackageReader): void {

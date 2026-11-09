@@ -2,14 +2,27 @@
 export { parseXmlTree, serializeXmlTree, serializeXmlTreeBytes } from './tree';
 export { removeXmlAttribute, setXmlAttribute } from './mutate';
 export {
-  cloneXmlNode, cloneXmlNodeWithNamespaceClosure, createXmlElement, createXmlText, insertXmlChildUnchecked,
-  removeXmlChild, reorderXmlChildren,
+  cloneXmlNode,
+  cloneXmlNodeWithNamespaceClosure,
+  createXmlElement,
+  createXmlText,
+  insertXmlChildUnchecked,
+  removeXmlChild,
+  reorderXmlChildren,
 } from './nodes';
 export { insertXmlChild, insertXmlInOrder, OOXML_CHILD_ORDER } from './order';
 export { findXmlAttribute, findXmlChild, findXmlDescendant, xmlElementChildren } from './query';
 export type { CreateXmlElementOptions } from './nodes';
 export type { XmlNameSelector } from './query';
 export type {
-  XmlAttribute, XmlCdata, XmlComment, XmlDeclaration, XmlDocument, XmlElement, XmlNode,
-  XmlProcessingInstruction, XmlQuote, XmlText,
+  XmlAttribute,
+  XmlCdata,
+  XmlComment,
+  XmlDeclaration,
+  XmlDocument,
+  XmlElement,
+  XmlNode,
+  XmlProcessingInstruction,
+  XmlQuote,
+  XmlText,
 } from './types';

@@ -8,19 +8,37 @@ import { DRAWINGML_NS, OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml
 import { generatedTextBody } from './text-body';
 import { hasNativeText } from './text-effects';
 
-const esc = (value: string): string => value
-  .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const esc = (value: string): string => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 const EMPTY_TABLE_TEXT: TextBody = {
-  anchor: 'top', insets: [4.8, 9.6, 4.8, 9.6], wrap: true, fontScale: 1,
-  paragraphs: [{
-    align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null,
-    lineHeight: null, spaceBefore: 0, spaceAfter: 0,
-    runs: [{
-      text: '', b: false, i: false, u: false, strike: false,
-      size: 18, color: '#000000', fonts: [],
-    }],
-  }],
+  anchor: 'top',
+  insets: [4.8, 9.6, 4.8, 9.6],
+  wrap: true,
+  fontScale: 1,
+  paragraphs: [
+    {
+      align: 'left',
+      lvl: 0,
+      marL: 0,
+      indent: 0,
+      bullet: null,
+      lineHeight: null,
+      spaceBefore: 0,
+      spaceAfter: 0,
+      runs: [
+        {
+          text: '',
+          b: false,
+          i: false,
+          u: false,
+          strike: false,
+          size: 18,
+          color: '#000000',
+          fonts: [],
+        },
+      ],
+    },
+  ],
 };
 
 function coveringCell(
@@ -37,12 +55,7 @@ function coveringCell(
   return null;
 }
 
-function tableCellMarkup(
-  rows: readonly { readonly cells: readonly TableCell[] }[],
-  row: number,
-  column: number,
-  styled: boolean,
-): string {
+function tableCellMarkup(rows: readonly { readonly cells: readonly TableCell[] }[], row: number, column: number, styled: boolean): string {
   const cell = rows[row].cells[column];
   const attrs: string[] = [];
   if (!cell.merged) {
@@ -59,32 +72,39 @@ function tableCellMarkup(
   const paragraph = body?.paragraphs[0];
   const run = paragraph?.runs[0];
   const direct = (paragraph?.editInfo?.directRun ?? 0) | (run?.editInfo?.direct ?? 0);
-  const markupCell: TableCell = base ? {
-    ...cell,
-    fill: structuredClone(base.fill),
-    borders: structuredClone(base.borders),
-    text: structuredClone(base.text),
-    editInfo: {
-      ...cell.editInfo,
-      ...(base.textTemplate ? { textTemplate: structuredClone(base.textTemplate) } : {}),
+  const markupCell: TableCell = base
+    ? {
+        ...cell,
+        fill: structuredClone(base.fill),
+        borders: structuredClone(base.borders),
+        text: structuredClone(base.text),
+        editInfo: {
+          ...cell.editInfo,
+          ...(base.textTemplate ? { textTemplate: structuredClone(base.textTemplate) } : {}),
+        },
+      }
+    : cell;
+  let markup = directTableCellMarkup(
+    {
+      ...markupCell,
+      ...(!markupCell.editInfo?.textTemplate && !markupCell.text?.paragraphs[0]?.runs[0]
+        ? { editInfo: { textTemplate: EMPTY_TABLE_TEXT } }
+        : {}),
     },
-  } : cell;
-  let markup = directTableCellMarkup({
-    ...markupCell,
-    ...(!markupCell.editInfo?.textTemplate && !markupCell.text?.paragraphs[0]?.runs[0]
-      ? { editInfo: { textTemplate: EMPTY_TABLE_TEXT } } : {}),
-  }, {
-    sparseAppearance: true,
-    ...(base ? {
-      omitTextBold: !(direct & TEXT_RUN_DIRECT_BITS.b),
-      omitTextColor: !(direct & TEXT_RUN_DIRECT_BITS.color),
-    } : {}),
-  });
-  if (cell.text && (cell.text.warp || cell.text.paragraphs.some(p => p.runs.some(hasNativeText)))) {
-    markup = markup.replace(/<a:txBody>[\s\S]*?<\/a:txBody>/,
-      generatedTextBody(cell.text, `table/${row}/${column}`, 1, 'a', !!base));
+    {
+      sparseAppearance: true,
+      ...(base
+        ? {
+            omitTextBold: !(direct & TEXT_RUN_DIRECT_BITS.b),
+            omitTextColor: !(direct & TEXT_RUN_DIRECT_BITS.color),
+          }
+        : {}),
+    },
+  );
+  if (cell.text && (cell.text.warp || cell.text.paragraphs.some((p) => p.runs.some(hasNativeText)))) {
+    markup = markup.replace(/<a:txBody>[\s\S]*?<\/a:txBody>/, generatedTextBody(cell.text, `table/${row}/${column}`, 1, 'a', !!base));
   }
-  return attrs.length ? markup.replace('<a:tc>', `<a:tc ${attrs.join(' ')}>` ) : markup;
+  return attrs.length ? markup.replace('<a:tc>', `<a:tc ${attrs.join(' ')}>`) : markup;
 }
 
 export function tableInsertion(record: ElementRecord, spid: number): ElementInsertionSource {
@@ -92,13 +112,20 @@ export function tableInsertion(record: ElementRecord, spid: number): ElementInse
   if (source.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
   const columns = source.colWidths.map((width) => `<a:gridCol w="${Math.round(width * 9525)}"/>`).join('');
   const styled = !!source.editInfo?.tableStyle;
-  const rows = source.rows.map((row, r) => `<a:tr h="${Math.round(row.height * 9525)}">${row.cells
-    .map((_, c) => tableCellMarkup(source.rows, r, c, styled)).join('')}</a:tr>`).join('');
+  const rows = source.rows
+    .map(
+      (row, r) =>
+        `<a:tr h="${Math.round(row.height * 9525)}">${row.cells.map((_, c) => tableCellMarkup(source.rows, r, c, styled)).join('')}</a:tr>`,
+    )
+    .join('');
   const name = esc(source.name ?? `表格 ${spid}`);
   const settings = source.editInfo?.tableStyle;
-  const switches = settings ? ([
-    'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol',
-  ] as const).filter((field) => settings[field]).map((field) => `${field}="1"`).join(' ') : '';
+  const switches = settings
+    ? (['firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'] as const)
+        .filter((field) => settings[field])
+        .map((field) => `${field}="1"`)
+        .join(' ')
+    : '';
   const properties = settings
     ? `<a:tblPr${switches ? ` ${switches}` : ''}><a:tableStyleId>${esc(settings.styleId)}</a:tableStyleId></a:tblPr>`
     : '<a:tblPr/>';
@@ -114,8 +141,8 @@ ${properties}<a:tblGrid>${columns}</a:tblGrid>${rows}</a:tbl></a:graphicData></a
 export function generatedTableStyleDefinitions(doc: EditDoc): readonly TableStyleDefinition[] {
   const definitions = new Map<string, TableStyleDefinition>();
   for (const record of Object.values(doc.elements)) {
-    const settings: TableStyleSettings | undefined = record.src.kind === 'table'
-      ? effectiveElement(doc, record.id).editInfo?.tableStyle : undefined;
+    const settings: TableStyleSettings | undefined =
+      record.src.kind === 'table' ? effectiveElement(doc, record.id).editInfo?.tableStyle : undefined;
     if (!settings) continue;
     const definition = tableStyleDefinitionForElement(doc, record.id, settings.styleId);
     if (!definition) throw new Error(`表格 ${record.id} 的样式定义不存在：${settings.styleId}`);

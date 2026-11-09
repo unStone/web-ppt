@@ -6,23 +6,36 @@ import { own } from './data-validation';
 export { STYLE_PROPERTY_FIELDS } from './run-property-fields';
 const RUN_OVERRIDE_FIELDS = [...STYLE_PROPERTY_FIELDS, 'u', 'strike', 'link'] as const;
 
-export const underlineOf = (run: Pick<TextRun, 'u' | 'underline'>): TextUnderlineStyle =>
-  run.underline ?? (run.u ? 'sng' : 'none');
+export const underlineOf = (run: Pick<TextRun, 'u' | 'underline'>): TextUnderlineStyle => run.underline ?? (run.u ? 'sng' : 'none');
 export const strikeTypeOf = (run: Pick<TextRun, 'strike' | 'strikeType'>): TextStrikeStyle =>
   run.strikeType ?? (run.strike ? 'sngStrike' : 'noStrike');
 
 export function runProperties(run: Omit<TextRun, 'text'>): RunProperties {
   return {
-    font: run.fonts[0] ?? null, size: run.size, color: run.color,
-    b: run.b, i: run.i, u: run.u, strike: run.strike,
-    underline: underlineOf(run), strikeType: strikeTypeOf(run),
-    highlight: run.highlight ?? null, spacing: run.spacing ?? 0,
-    caps: run.caps ?? 'none', baseline: run.baseline ?? 0,
+    font: run.fonts[0] ?? null,
+    size: run.size,
+    color: run.color,
+    b: run.b,
+    i: run.i,
+    u: run.u,
+    strike: run.strike,
+    underline: underlineOf(run),
+    strikeType: strikeTypeOf(run),
+    highlight: run.highlight ?? null,
+    spacing: run.spacing ?? 0,
+    caps: run.caps ?? 'none',
+    baseline: run.baseline ?? 0,
   };
 }
 
 export const DEFAULT_RUN: Omit<TextRun, 'text'> = {
-  b: false, i: false, u: false, strike: false, size: 18, color: '#000000', fonts: [],
+  b: false,
+  i: false,
+  u: false,
+  strike: false,
+  size: 18,
+  color: '#000000',
+  fonts: [],
 };
 
 export const DEFAULT_PROPERTIES: RunProperties = runProperties(DEFAULT_RUN);
@@ -37,9 +50,9 @@ export function visibleHighlight(value: string | null | undefined): string | nul
 }
 
 export function sameRunOverrides(left?: RunPropertyOverrides, right?: RunPropertyOverrides): boolean {
-  return RUN_OVERRIDE_FIELDS.every((field) => own(left ?? {}, field)
-    === own(right ?? {}, field)
-    && Object.is(left?.[field], right?.[field]));
+  return RUN_OVERRIDE_FIELDS.every(
+    (field) => own(left ?? {}, field) === own(right ?? {}, field) && Object.is(left?.[field], right?.[field]),
+  );
 }
 
 export function sameInherited(left?: RunProperties, right?: RunProperties): boolean {
@@ -93,29 +106,33 @@ export function formattedMark(mark: TextMark, input: RunPropertyOverrides): Text
   for (const field of STYLE_PROPERTY_FIELDS) {
     if (!own(props, field)) continue;
     const value = props[field];
-    (effective as unknown as Record<string, unknown>)[field] = value === null
-      ? inherited[field] : value;
+    (effective as unknown as Record<string, unknown>)[field] = value === null ? inherited[field] : value;
   }
   const underline = effective.underline;
   const strikeType = effective.strikeType;
   const nextProps = {
     ...mark.props,
     fonts: effective.font ? [effective.font] : [],
-    size: effective.size, color: effective.color, b: effective.b, i: effective.i,
-    u: underline !== 'none', strike: strikeType !== 'noStrike',
-    underline: optional(underline, 'none'), strikeType: optional(strikeType, 'noStrike'),
+    size: effective.size,
+    color: effective.color,
+    b: effective.b,
+    i: effective.i,
+    u: underline !== 'none',
+    strike: strikeType !== 'noStrike',
+    underline: optional(underline, 'none'),
+    strikeType: optional(strikeType, 'noStrike'),
     highlight: effective.highlight,
-    spacing: optional(effective.spacing, 0), caps: optional(effective.caps, 'none'),
+    spacing: optional(effective.spacing, 0),
+    caps: optional(effective.caps, 'none'),
     baseline: optional(effective.baseline, 0),
   };
   if (props.font === null) {
     nextProps.fonts = [...(mark.inheritedFonts ?? (inherited.font ? [inherited.font] : []))];
   }
   return {
-    ...mark, props: nextProps,
-    ...(Object.keys(nextOverrides).length
-      ? { runOverrides: nextOverrides as RunPropertyOverrides }
-      : { runOverrides: undefined }),
+    ...mark,
+    props: nextProps,
+    ...(Object.keys(nextOverrides).length ? { runOverrides: nextOverrides as RunPropertyOverrides } : { runOverrides: undefined }),
   };
 }
 
@@ -123,14 +140,17 @@ export function clearedMark(mark: TextMark): TextMark {
   const inheritedSource = mark.inheritedRunProps ?? mark.props;
   const inherited = mark.inheritedProps ?? runProperties(inheritedSource);
   const underline = inheritedSource.underline ?? (inheritedSource.u ? 'sng' : inherited.underline);
-  const strikeType = inheritedSource.strikeType
-    ?? (inheritedSource.strike ? 'sngStrike' : inherited.strikeType);
+  const strikeType = inheritedSource.strikeType ?? (inheritedSource.strike ? 'sngStrike' : inherited.strikeType);
   const props = {
     ...mark.props,
-    b: inheritedSource.b, i: inheritedSource.i,
-    u: underline !== 'none', strike: strikeType !== 'noStrike',
-    underline: optional(underline, 'none'), strikeType: optional(strikeType, 'noStrike'),
-    size: inheritedSource.size, color: inheritedSource.color,
+    b: inheritedSource.b,
+    i: inheritedSource.i,
+    u: underline !== 'none',
+    strike: strikeType !== 'noStrike',
+    underline: optional(underline, 'none'),
+    strikeType: optional(strikeType, 'noStrike'),
+    size: inheritedSource.size,
+    color: inheritedSource.color,
     fonts: [...(mark.inheritedFonts ?? inheritedSource.fonts)],
     baseline: optional(inheritedSource.baseline ?? 0, 0),
     spacing: optional(inheritedSource.spacing ?? 0, 0),
@@ -144,10 +164,11 @@ export function clearedMark(mark: TextMark): TextMark {
     highlight: inheritedSource.highlight ?? null,
     underlineColor: inheritedSource.underlineColor ?? null,
   };
-  const link = mark.runOverrides && own(mark.runOverrides, 'link')
-    ? { link: mark.runOverrides.link } : undefined;
+  const link = mark.runOverrides && own(mark.runOverrides, 'link') ? { link: mark.runOverrides.link } : undefined;
   return {
-    ...mark, props, clearDirectFormatting: true,
+    ...mark,
+    props,
+    clearDirectFormatting: true,
     ...(link ? { runOverrides: link } : { runOverrides: undefined }),
   };
 }

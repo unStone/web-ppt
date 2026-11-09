@@ -1,7 +1,6 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const p95 = (samples) => [...samples].sort((left, right) => left - right)
-  [Math.floor(samples.length * 0.95)];
+const p95 = (samples) => [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
 /** 会话控制器在真实浏览器中共享单一状态；首个切片不依赖任何产品搜索栏。 */
 export async function runEditorFindReplaceBrowserContract({ openEditor, createWebPptAdapter, load }) {
@@ -13,8 +12,11 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   session.editor.select({ kind: 'elements', ids: [selectedId], enteredGroup: null });
   const selectionBeforeSearch = JSON.stringify(session.editor.selection);
   search.open({
-    mode: 'find', query: 'NEEDLE', scope: { kind: 'document' },
-    matchCase: false, wholeWord: true,
+    mode: 'find',
+    query: 'NEEDLE',
+    scope: { kind: 'document' },
+    matchCase: false,
+    wholeWord: true,
   });
   const initial = search.snapshot;
   const first = initial.current;
@@ -22,49 +24,76 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   for (let index = 0; index < initial.matches.length - 1; index++) search.next();
   const wrapped = search.snapshot.current;
   const previous = search.previous();
-  if (!initial.open || initial.matches.length !== 6 || initial.currentIndex !== 0
-    || !first || second?.key === first.key || wrapped?.key !== first.key
-    || previous?.key !== initial.matches[initial.matches.length - 1].key) {
+  if (
+    !initial.open
+    || initial.matches.length !== 6
+    || initial.currentIndex !== 0
+    || !first
+    || second?.key === first.key
+    || wrapped?.key !== first.key
+    || previous?.key !== initial.matches[initial.matches.length - 1].key
+  ) {
     throw new Error('会话查找没有建立稳定结果或前后循环导航');
   }
   let invalidOpenRejected = false;
   try {
     search.open({ mode: 'replace', query: 'Needle', matchCase: 'invalid' });
-  } catch { invalidOpenRejected = true; }
+  } catch {
+    invalidOpenRejected = true;
+  }
   search.setReplacement('strict-probe');
-  if (!invalidOpenRejected || search.snapshot.mode !== 'find'
-    || search.snapshot.query !== 'NEEDLE' || search.snapshot.matchCase !== false) {
+  if (
+    !invalidOpenRejected
+    || search.snapshot.mode !== 'find'
+    || search.snapshot.query !== 'NEEDLE'
+    || search.snapshot.matchCase !== false
+  ) {
     throw new Error('非法会话选项在拒绝前部分修改了查找状态');
   }
 
   const current = search.snapshot.current;
   session.editor.exec({
-    type: 'ReplaceText', from: 'NEEDLE', to: '已改', matchCase: false, wholeWord: true,
+    type: 'ReplaceText',
+    from: 'NEEDLE',
+    to: '已改',
+    matchCase: false,
+    wholeWord: true,
     scope: {
-      kind: 'match', match: {
-        slideId: current.slideId, id: current.id,
-        ...(current.cell ? { cell: current.cell } : {}), range: current.range,
+      kind: 'match',
+      match: {
+        slideId: current.slideId,
+        id: current.id,
+        ...(current.cell ? { cell: current.cell } : {}),
+        range: current.range,
       },
     },
   });
-  if (search.snapshot.matches.length !== 5 || search.snapshot.current?.key === current.key
+  if (
+    search.snapshot.matches.length !== 5
+    || search.snapshot.current?.key === current.key
     || !search.snapshot.currentInvalidated
-    || JSON.stringify(session.editor.selection) !== selectionBeforeSearch) {
+    || JSON.stringify(session.editor.selection) !== selectionBeforeSearch
+  ) {
     throw new Error('文档事务后会话查找没有增量重查或仍指向失效命中');
   }
-  const hiddenGroup = Object.values(session.editor.doc.elements)
-    .find((record) => record.src.name === 'find-group');
+  const hiddenGroup = Object.values(session.editor.doc.elements).find((record) => record.src.name === 'find-group');
   session.editor.exec({ type: 'SetElementHidden', id: hiddenGroup.id, hidden: true });
-  if (search.snapshot.matches.length !== 4
+  if (
+    search.snapshot.matches.length !== 4
     || search.snapshot.matches.some((match) => match.id === hiddenGroup.id)
-    || JSON.stringify(session.editor.selection) !== selectionBeforeSearch) {
+    || JSON.stringify(session.editor.selection) !== selectionBeforeSearch
+  ) {
     throw new Error('隐藏组没有增量退出可见文字索引，或后台重扫破坏了普通选区');
   }
   session.editor.undo();
   if (search.snapshot.matches.length !== 5) throw new Error('恢复可见性后查找索引没有恢复命中');
   session.dispose();
   let disposedRejected = false;
-  try { search.open({ mode: 'find' }); } catch { disposedRejected = true; }
+  try {
+    search.open({ mode: 'find' });
+  } catch {
+    disposedRejected = true;
+  }
   if (!search.disposed || !disposedRejected) throw new Error('会话销毁没有封闭查找控制器重入');
 
   const firstMount = document.createElement('div');
@@ -78,51 +107,72 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   const firstView = viewSession.mount(firstMount, { mode: 'view', slideId: firstSlide, textMode: 'html' });
   const secondView = viewSession.mount(secondMount, { mode: 'edit', slideId: firstSlide, textMode: 'svg' });
   firstView.openTextSearch({
-    mode: 'find', query: 'Needle', scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+    mode: 'find',
+    query: 'Needle',
+    scope: { kind: 'document' },
+    matchCase: false,
+    wholeWord: true,
   });
   const currentId = viewSession.textSearch.snapshot.current.id;
-  const currentRoot = [...firstMount.querySelectorAll('[data-edit-root]')]
-    .find((element) => element.dataset.editRoot === currentId);
-  if (firstView.element.dataset.textSearch !== 'find'
+  const currentRoot = [...firstMount.querySelectorAll('[data-edit-root]')].find((element) => element.dataset.editRoot === currentId);
+  if (
+    firstView.element.dataset.textSearch !== 'find'
     || secondView.element.dataset.textSearch !== 'find'
     || firstView.element.dataset.textSearchReplaceDisabled !== 'true'
     || !currentRoot?.hasAttribute('data-ppt-search-current')
     || firstMount.querySelectorAll('[data-ppt-layer]').length !== 3
     || firstMount.querySelector('[data-ppt-search-overlay]')?.hidden
     || firstMount.querySelector('[data-ppt-search-overlay]')?.dataset.pptSearchExact !== 'true'
-    || !firstMount.querySelector('[data-ppt-search-current-range]')) {
+    || !firstMount.querySelector('[data-ppt-search-current-range]')
+  ) {
     throw new Error('查看模式查找没有共享状态、数据属性或可见高亮');
   }
   for (let index = 0; index < 4; index++) firstView.nextTextSearch();
-  const firstRange = [...firstMount.querySelectorAll('[data-ppt-search-range]')]
-    .map((element) => element.getAttribute('style')).join('|');
+  const firstRange = [...firstMount.querySelectorAll('[data-ppt-search-range]')].map((element) => element.getAttribute('style')).join('|');
   const countObserver = new MutationObserver(() => {});
   countObserver.observe(firstView.element, {
-    subtree: true, attributes: true, attributeFilter: ['data-ppt-search-matches'],
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-ppt-search-matches'],
   });
   firstView.nextTextSearch();
-  const secondRange = [...firstMount.querySelectorAll('[data-ppt-search-range]')]
-    .map((element) => element.getAttribute('style')).join('|');
+  const secondRange = [...firstMount.querySelectorAll('[data-ppt-search-range]')].map((element) => element.getAttribute('style')).join('|');
   const countMutations = countObserver.takeRecords();
   countObserver.disconnect();
   const viewReplaceBlocked = firstView.replaceCurrentText() === false;
-  if (firstView.slideId !== viewSession.editor.doc.slideOrder[1]
+  if (
+    firstView.slideId !== viewSession.editor.doc.slideOrder[1]
     || secondView.slideId !== firstSlide
-    || firstRange === secondRange || !firstRange || !secondRange
-    || countMutations.length !== 0 || !viewReplaceBlocked) {
-    throw new Error(`跨页导航、精确命中、增量标记或查看模式权限不符合契约：${JSON.stringify({
-      firstSlide: firstView.slideId,
-      expected: viewSession.editor.doc.slideOrder[1],
-      secondSlide: secondView.slideId,
-      firstRange, secondRange, countMutations: countMutations.length, viewReplaceBlocked,
-    })}`);
+    || firstRange === secondRange
+    || !firstRange
+    || !secondRange
+    || countMutations.length !== 0
+    || !viewReplaceBlocked
+  ) {
+    throw new Error(
+      `跨页导航、精确命中、增量标记或查看模式权限不符合契约：${JSON.stringify({
+        firstSlide: firstView.slideId,
+        expected: viewSession.editor.doc.slideOrder[1],
+        secondSlide: secondView.slideId,
+        firstRange,
+        secondRange,
+        countMutations: countMutations.length,
+        viewReplaceBlocked,
+      })}`,
+    );
   }
 
   firstView.closeTextSearch();
   firstView.element.focus();
-  const key = (value, init = {}) => firstView.element.dispatchEvent(new KeyboardEvent('keydown', {
-    key: value, bubbles: true, cancelable: true, ...init,
-  }));
+  const key = (value, init = {}) =>
+    firstView.element.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: value,
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      }),
+    );
   key('f', { ctrlKey: true });
   if (!viewSession.textSearch.snapshot.open || viewSession.textSearch.snapshot.mode !== 'find') {
     throw new Error('Ctrl/Cmd+F 没有打开会话查找');
@@ -151,25 +201,34 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   adapter.attach(adapterMount);
   adapter.setView({ mode: 'view' });
   adapter.openTextSearch({
-    mode: 'replace', query: 'NEEDLE', replacement: 'adapter',
-    scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+    mode: 'replace',
+    query: 'NEEDLE',
+    replacement: 'adapter',
+    scope: { kind: 'document' },
+    matchCase: false,
+    wholeWord: true,
   });
   const viewState = adapter.snapshot.textSearch;
   const viewText = viewState.current?.text;
   const viewReplace = adapter.replaceCurrentText();
   for (let index = 0; index < 4; index++) adapter.nextTextSearch();
-  const adapterCrossPage = adapter.snapshot.slideId === adapterSession.editor.doc.slideOrder[1]
+  const adapterCrossPage =
+    adapter.snapshot.slideId === adapterSession.editor.doc.slideOrder[1]
     && adapter.snapshot.view?.slideId === adapterSession.editor.doc.slideOrder[1];
   adapter.previousTextSearch();
-  if (!viewState.open || viewState.matches.length !== 6 || viewState.canReplace
-    || viewReplace || !adapterCrossPage
-    || adapterSession.textSearch.snapshot.matches[0]?.text !== viewText) {
+  if (
+    !viewState.open
+    || viewState.matches.length !== 6
+    || viewState.canReplace
+    || viewReplace
+    || !adapterCrossPage
+    || adapterSession.textSearch.snapshot.matches[0]?.text !== viewText
+  ) {
     throw new Error('adapter 没有共享查看态查找、跨页联动或正确限制替换权限');
   }
   adapter.setView({ mode: 'edit' });
   adapter.setTextSearchReplacement('adapter');
-  if (!adapter.snapshot.textSearch.canReplace || !adapter.replaceCurrentText()
-    || adapter.snapshot.textSearch.matches.length !== 5) {
+  if (!adapter.snapshot.textSearch.canReplace || !adapter.replaceCurrentText() || adapter.snapshot.textSearch.matches.length !== 5) {
     throw new Error('adapter 编辑态没有替换当前命中或同步状态');
   }
   adapter.setTextSearchQuery('NEEDLE');
@@ -178,19 +237,21 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   const beforeRepeatReplace = adapter.snapshot.slideId;
   adapter.setTextSearchReplacement('NEEDLE++');
   const repeatCount = adapter.replaceAllText();
-  const repeatRevealed = beforeRepeatReplace === adapterSession.editor.doc.slideOrder[1]
+  const repeatRevealed =
+    beforeRepeatReplace === adapterSession.editor.doc.slideOrder[1]
     && adapter.snapshot.textSearch.matches.length === 5
     && adapter.snapshot.slideId === adapter.snapshot.textSearch.current?.slideId
     && adapter.snapshot.view?.slideId === adapter.snapshot.textSearch.current?.slideId;
   adapter.setTextSearchReplacement('adapter');
-  if (repeatCount !== 5 || !repeatRevealed
-    || adapter.replaceAllText() !== 5 || adapter.snapshot.textSearch.matches.length !== 0) {
+  if (repeatCount !== 5 || !repeatRevealed || adapter.replaceAllText() !== 5 || adapter.snapshot.textSearch.matches.length !== 0) {
     throw new Error('adapter 没有通过会话控制器执行一次全部替换');
   }
   adapter.closeTextSearch();
   if (adapter.snapshot.textSearch.open) throw new Error('adapter 没有关闭查找状态');
   let updates = 0;
-  adapter.subscribe(() => { updates++; });
+  adapter.subscribe(() => {
+    updates++;
+  });
   adapter.dispose();
   const beforeDetachedMutation = updates;
   adapterSession.textSearch.open({ mode: 'find', query: 'adapter' });
@@ -204,23 +265,35 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   perfMount.className = 'contract-offscreen';
   document.body.append(perfMount);
   const perfSession = await openEditor(await load('sample-editor-60.pptx'), {
-    idPrefix: 'browser-find-60-', historyLimit: 200,
+    idPrefix: 'browser-find-60-',
+    historyLimit: 200,
   });
   const perfSlide = perfSession.editor.doc.slideOrder[0];
   const perfIds = perfSession.editor.doc.slides[perfSlide].children;
   perfSession.editor.transaction((transaction) => {
-    for (const id of perfIds) transaction.exec({
-      type: 'EditText', id,
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: 'Needle',
-      }],
-    });
+    for (const id of perfIds)
+      transaction.exec({
+        type: 'EditText',
+        id,
+        ops: [
+          {
+            type: 'replace',
+            from: { p: 0, r: 0, off: 0 },
+            to: { p: 0, r: 0, off: 0 },
+            text: 'Needle',
+          },
+        ],
+      });
   }, '查找性能文字准备');
   perfSession.editor.history.clear();
   const perfView = perfSession.mount(perfMount, { slideId: perfSlide, mode: 'edit', textMode: 'svg' });
   perfView.openTextSearch({
-    mode: 'replace', query: 'Needle', replacement: 'Changed',
-    scope: { kind: 'slide', slideId: perfSlide }, matchCase: true, wholeWord: true,
+    mode: 'replace',
+    query: 'Needle',
+    replacement: 'Changed',
+    scope: { kind: 'slide', slideId: perfSlide },
+    matchCase: true,
+    wholeWord: true,
   });
   const navigationSamples = [];
   for (let index = 0; index < 80; index++) {
@@ -237,8 +310,11 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   }
   const navigationP95 = p95(navigationSamples);
   const replaceP95 = p95(replaceSamples);
-  if (perfIds.length !== 60 || perfSession.textSearch.snapshot.matches.length !== 60
-    || perfMount.querySelectorAll('[data-ppt-search-matches]').length !== 60) {
+  if (
+    perfIds.length !== 60
+    || perfSession.textSearch.snapshot.matches.length !== 60
+    || perfMount.querySelectorAll('[data-ppt-search-matches]').length !== 60
+  ) {
     throw new Error('60 元素查找导航/替换后的匹配模型或 DOM 不一致');
   }
   recordPerformanceBudget('60 元素查找导航反馈 p95', navigationP95, 16);
@@ -247,7 +323,8 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   perfMount.remove();
 
   const pagesSession = await openEditor(await load('sample-editor-find-replace.pptx'), {
-    idPrefix: 'browser-find-200-', historyLimit: 500,
+    idPrefix: 'browser-find-200-',
+    historyLimit: 500,
   });
   const duplicateSource = pagesSession.editor.doc.slideOrder[1];
   while (pagesSession.editor.doc.slideOrder.length < 200) {
@@ -259,7 +336,11 @@ export async function runEditorFindReplaceBrowserContract({ openEditor, createWe
   }
   const buildStarted = performance.now();
   pagesSession.textSearch.open({
-    mode: 'find', query: 'Needle', scope: { kind: 'document' }, matchCase: false, wholeWord: true,
+    mode: 'find',
+    query: 'Needle',
+    scope: { kind: 'document' },
+    matchCase: false,
+    wholeWord: true,
   });
   const buildMs = performance.now() - buildStarted;
   pagesSession.textSearch.setReplacement('Indexed');

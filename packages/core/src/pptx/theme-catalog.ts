@@ -1,6 +1,4 @@
-import type {
-  PresentationTheme, ThemeColorScheme, ThemeFontCollection, ThemeFontScheme,
-} from '../types';
+import type { PresentationTheme, ThemeColorScheme, ThemeFontCollection, ThemeFontScheme } from '../types';
 import { THEME_COLOR_SLOTS } from '../types';
 import { attr, kid, kids, walk } from '../xml';
 import { parseColor, parseCssRgb } from './color';
@@ -26,14 +24,17 @@ function fontCollection(source: Element | null): ThemeFontCollection {
 /** 同一份解析结果同时供公开目录与继承求值使用，避免两套主题语义悄悄漂移。 */
 export function parseThemeSource(root: Element | null, id = ''): PresentationTheme {
   const scheme = walk(root, 'themeElements', 'clrScheme');
-  const colors = Object.fromEntries(THEME_COLOR_SLOTS.map((slot) => {
-    const color = kid(kid(scheme, slot), 'srgbClr')
-      ?? kid(kid(scheme, slot), 'sysClr')
-      ?? kid(kid(scheme, slot), 'prstClr')
-      ?? kid(kid(scheme, slot), 'scrgbClr')
-      ?? kid(kid(scheme, slot), 'hslClr');
-    return [slot, color ? parseColor(color, { theme: {}, clrMap: {} }) : EMPTY_COLOR];
-  })) as unknown as ThemeColorScheme;
+  const colors = Object.fromEntries(
+    THEME_COLOR_SLOTS.map((slot) => {
+      const color =
+        kid(kid(scheme, slot), 'srgbClr')
+        ?? kid(kid(scheme, slot), 'sysClr')
+        ?? kid(kid(scheme, slot), 'prstClr')
+        ?? kid(kid(scheme, slot), 'scrgbClr')
+        ?? kid(kid(scheme, slot), 'hslClr');
+      return [slot, color ? parseColor(color, { theme: {}, clrMap: {} }) : EMPTY_COLOR];
+    }),
+  ) as unknown as ThemeColorScheme;
   const fontScheme = walk(root, 'themeElements', 'fontScheme');
   const fonts: ThemeFontScheme = {
     major: fontCollection(kid(fontScheme, 'majorFont')),
@@ -44,10 +45,18 @@ export function parseThemeSource(root: Element | null, id = ''): PresentationThe
 
 /** 继承求值仍使用 OOXML 的六位十六进制颜色表。 */
 export function themeColorsForInheritance(theme: PresentationTheme): Record<string, string> {
-  return Object.fromEntries(Object.entries(theme.colors).map(([slot, color]) => {
-    const [r, g, b] = parseCssRgb(color);
-    return [slot, [r, g, b].map((value) => Math.round(value).toString(16).padStart(2, '0')).join('').toUpperCase()];
-  }));
+  return Object.fromEntries(
+    Object.entries(theme.colors).map(([slot, color]) => {
+      const [r, g, b] = parseCssRgb(color);
+      return [
+        slot,
+        [r, g, b]
+          .map((value) => Math.round(value).toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase(),
+      ];
+    }),
+  );
 }
 
 export interface ThemeCatalog {

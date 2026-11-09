@@ -3,8 +3,12 @@ import type { ElementId } from './identities';
 import type { MasterDesignTarget } from './layout-types';
 import type { LayoutPropertyState } from './layout-types';
 import type {
-  ParagraphBullet, ParagraphProperties, ParagraphPropertyInput, ParagraphPropertyOverrides,
-  RunProperties, RunPropertyOverrides,
+  ParagraphBullet,
+  ParagraphProperties,
+  ParagraphPropertyInput,
+  ParagraphPropertyOverrides,
+  RunProperties,
+  RunPropertyOverrides,
 } from './types';
 
 export type MasterRunPropertyOverrides = Omit<RunPropertyOverrides, 'link'>;
@@ -16,8 +20,7 @@ export interface MasterTextLevelOverrides {
   run?: MasterRunPropertyOverrides;
 }
 
-export type MasterTextStyleOverrides = Partial<Record<MasterTextCategory,
-  Record<number, MasterTextLevelOverrides>>>;
+export type MasterTextStyleOverrides = Partial<Record<MasterTextCategory, Record<number, MasterTextLevelOverrides>>>;
 
 export interface MasterOverrides {
   /** 缺少字段表示来源；显式无背景使用 Fill.none。 */

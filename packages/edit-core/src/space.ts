@@ -3,12 +3,32 @@ import type { ElementBase, GroupElement, SlideElement } from '@web-ppt/core';
 import { effectiveElement } from './projection';
 import type { EditDoc, ElementId } from './types';
 
-export interface SpacePoint { x: number; y: number }
+export interface SpacePoint {
+  x: number;
+  y: number;
+}
 
 /** SVG 同口径仿射矩阵：x' = ax + cy + e，y' = bx + dy + f。 */
-export interface AffineMatrix { a: number; b: number; c: number; d: number; e: number; f: number }
-export interface SlideViewport { left: number; top: number; zoom: number }
-export interface ElementFrameTransform { x: number; y: number; w: number; h: number; rot: number }
+export interface AffineMatrix {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+}
+export interface SlideViewport {
+  left: number;
+  top: number;
+  zoom: number;
+}
+export interface ElementFrameTransform {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+}
 
 const IDENTITY: AffineMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
@@ -28,7 +48,7 @@ const scaling = (x: number, y: number): AffineMatrix => ({ a: x, b: 0, c: 0, d: 
 
 function rotationAround(degrees: number, cx: number, cy: number): AffineMatrix {
   if (!degrees) return IDENTITY;
-  const radians = degrees * Math.PI / 180;
+  const radians = (degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const rotation = { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
@@ -46,17 +66,14 @@ function flipInFrame(element: ElementBase): AffineMatrix {
   if (!element.flipH && !element.flipV) return IDENTITY;
   const cx = element.w / 2;
   const cy = element.h / 2;
-  return composeSpaceMatrices(translation(cx, cy), composeSpaceMatrices(
-    scaling(element.flipH ? -1 : 1, element.flipV ? -1 : 1),
-    translation(-cx, -cy),
-  ));
+  return composeSpaceMatrices(
+    translation(cx, cy),
+    composeSpaceMatrices(scaling(element.flipH ? -1 : 1, element.flipV ? -1 : 1), translation(-cx, -cy)),
+  );
 }
 
 function childrenToGroupFrame(group: GroupElement): AffineMatrix {
-  return composeSpaceMatrices(
-    scaling(group.scaleX || 1, group.scaleY || 1),
-    translation(-group.childX, -group.childY),
-  );
+  return composeSpaceMatrices(scaling(group.scaleX || 1, group.scaleY || 1), translation(-group.childX, -group.childY));
 }
 
 function elementChain(doc: EditDoc, id: ElementId): ElementId[] {
@@ -159,9 +176,7 @@ function editParentToSlide(chain: RenderedChain): AffineMatrix {
   let matrix = IDENTITY;
   for (let index = 0; index < chain.elements.length - 1; index++) {
     const element = chain.elements[index];
-    matrix = composeSpaceMatrices(
-      matrix, composeSpaceMatrices(elementFrameToParentMatrix(element), flipInFrame(element)),
-    );
+    matrix = composeSpaceMatrices(matrix, composeSpaceMatrices(elementFrameToParentMatrix(element), flipInFrame(element)));
   }
   return matrix;
 }
@@ -177,9 +192,7 @@ function renderedParent(chain: RenderedChain, id: ElementId): GroupElement | nul
 export function elementFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
   const chain = renderedChain(doc, id);
   return composeSpaceMatrices(
-    composeSpaceMatrices(
-      editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1]),
-    ),
+    composeSpaceMatrices(editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1])),
     scaling(chain.kx, chain.ky),
   );
 }
@@ -197,9 +210,7 @@ export function elementContentToSlideMatrix(doc: EditDoc, id: ElementId): Affine
 export function elementParentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
   const chain = renderedChain(doc, id);
   const parent = renderedParent(chain, id);
-  return parent
-    ? composeSpaceMatrices(editParentToSlide(chain), childrenToGroupFrame(parent))
-    : IDENTITY;
+  return parent ? composeSpaceMatrices(editParentToSlide(chain), childrenToGroupFrame(parent)) : IDENTITY;
 }
 
 /** 组的子坐标系包含自身 frame、翻转及 chOff/chExt 缩放，不能等同于组所在父坐标系。 */
@@ -221,9 +232,7 @@ export function renderedElement(doc: EditDoc, id: ElementId): SlideElement {
 /** 渲染外框到幻灯片坐标：沿祖先组只叠加外框平移、旋转与翻转，缩放已进入外框尺寸。 */
 export function renderedFrameToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
   const chain = renderedChain(doc, id);
-  return composeSpaceMatrices(
-    editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1]),
-  );
+  return composeSpaceMatrices(editParentToSlide(chain), elementFrameToParentMatrix(chain.elements[chain.elements.length - 1]));
 }
 
 export function renderedContentToSlideMatrix(doc: EditDoc, id: ElementId): AffineMatrix {
@@ -251,8 +260,13 @@ export interface ElementEditFrame extends ElementFrameTransform {
 export function elementEditFrame(doc: EditDoc, id: ElementId): ElementEditFrame {
   const element = renderedElement(doc, id);
   return {
-    x: element.x, y: element.y, w: element.w, h: element.h, rot: element.rot,
-    flipH: element.flipH, flipV: element.flipV,
+    x: element.x,
+    y: element.y,
+    w: element.w,
+    h: element.h,
+    rot: element.rot,
+    flipH: element.flipH,
+    flipV: element.flipV,
   };
 }
 
@@ -269,9 +283,7 @@ export function slideToElementEditParentPoint(doc: EditDoc, id: ElementId, point
  * 编辑外框 → 模型外框（父组子坐标）。旋转只改角度，宽高按目标角度所在象限承接的组缩放除回去：
  * 跨过 45° 等边界时画面尺寸保持不变，由模型宽高吸收轴向互换。
  */
-export function editFrameToModelFrame(
-  doc: EditDoc, id: ElementId, frame: ElementFrameTransform,
-): ElementFrameTransform {
+export function editFrameToModelFrame(doc: EditDoc, id: ElementId, frame: ElementFrameTransform): ElementFrameTransform {
   const parent = renderedParent(renderedChain(doc, id), id);
   if (!parent) return { x: frame.x, y: frame.y, w: frame.w, h: frame.h, rot: frame.rot };
   return { ...unplaceGroupFrame(parent, frame), rot: frame.rot };
@@ -282,16 +294,11 @@ export function groupEditChildrenToSlideMatrix(doc: EditDoc, groupId: ElementId)
   const chain = renderedChain(doc, groupId);
   const group = chain.elements[chain.elements.length - 1];
   if (group.kind !== 'group') throw new Error(`非组元素没有子坐标系：${groupId}`);
-  return composeSpaceMatrices(
-    editParentToSlide(chain),
-    composeSpaceMatrices(elementFrameToParentMatrix(group), flipInFrame(group)),
-  );
+  return composeSpaceMatrices(editParentToSlide(chain), composeSpaceMatrices(elementFrameToParentMatrix(group), flipInFrame(group)));
 }
 
 /** 组合内的编辑外框 → 该组合子坐标里的模型外框。 */
-export function groupEditFrameToModelFrame(
-  doc: EditDoc, groupId: ElementId, frame: ElementFrameTransform,
-): ElementFrameTransform {
+export function groupEditFrameToModelFrame(doc: EditDoc, groupId: ElementId, frame: ElementFrameTransform): ElementFrameTransform {
   const group = renderedElement(doc, groupId);
   if (group.kind !== 'group') throw new Error(`非组元素没有子坐标系：${groupId}`);
   return { ...unplaceGroupFrame(group, frame), rot: frame.rot };

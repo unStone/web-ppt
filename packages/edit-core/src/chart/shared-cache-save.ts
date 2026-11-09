@@ -14,8 +14,9 @@ import { patchChartWorkbook } from './workbook';
 
 export function saveSharedData(doc: EditDoc): EditExtensionSavePlan | void {
   const workbookPlan = saveSharedChartParts(doc);
-  const changes = { ...workbookPlan?.changes }, baselines = { ...workbookPlan?.baselines };
-  const mounted = new Set(Object.values(doc.elements).map(record => chartPartForElement(doc, record.id)));
+  const changes = { ...workbookPlan?.changes },
+    baselines = { ...workbookPlan?.baselines };
+  const mounted = new Set(Object.values(doc.elements).map((record) => chartPartForElement(doc, record.id)));
   for (const part of nativeChartParts(doc).charts) {
     // 挂载中的部件由基础图表扩展保存；最后一个框架被删除后，文档仍需提交并可撤销缓存数据。
     if (mounted.has(part)) continue;
@@ -25,7 +26,10 @@ export function saveSharedData(doc: EditDoc): EditExtensionSavePlan | void {
     const original = chartSourceBytes(doc, part)!;
     const workbook = state.binding.workbookPart;
     if (chartDatasetStatesEqual(state, mergeChartDatasetState(structuredClone(source), undefined).state)) {
-      if (doc.saveState.baselines[part]) { changes[part] = original; baselines[part] = original; }
+      if (doc.saveState.baselines[part]) {
+        changes[part] = original;
+        baselines[part] = original;
+      }
       if (workbook && doc.saveState.baselines[workbook]) {
         changes[workbook] = baselines[workbook] = chartSourceBytes(doc, workbook)!;
       }
@@ -40,8 +44,12 @@ export function saveSharedData(doc: EditDoc): EditExtensionSavePlan | void {
       baselines[workbook] = doc.saveState.baselines[workbook] ?? bytes.slice();
     }
     const manifest = readChartIdentityManifest(parseXmlTree(original).root, undefined, NATIVE_CHART_ID);
-    changes[part] = serializeXmlTreeBytes(materializeChartTree(original, NATIVE_CHART_ID, state, undefined,
-      { prefix: NATIVE_CHART_ID, frames: manifest?.scopes?.frames ?? [] }));
+    changes[part] = serializeXmlTreeBytes(
+      materializeChartTree(original, NATIVE_CHART_ID, state, undefined, {
+        prefix: NATIVE_CHART_ID,
+        frames: manifest?.scopes?.frames ?? [],
+      }),
+    );
     baselines[part] = doc.saveState.baselines[part] ?? original.slice();
   }
   return Object.keys(changes).length ? { changes, baselines } : undefined;

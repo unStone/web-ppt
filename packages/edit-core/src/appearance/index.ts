@@ -12,14 +12,17 @@ import type { AppearanceCommand, AppearanceState, PictureFx } from './types';
 export type { AppearanceCommand, SetPictureFxCommand, SetScene3DCommand, PictureFx } from './types';
 export { SCENE_MATERIALS } from './values';
 
-const state = (doc: EditDoc, id: ElementId): AppearanceState =>
-  doc.elements[id]?.ovr.extensions?.appearance as AppearanceState ?? {};
+const state = (doc: EditDoc, id: ElementId): AppearanceState => (doc.elements[id]?.ovr.extensions?.appearance as AppearanceState) ?? {};
 
 function validatePatch(doc: EditDoc, patch: ExtensionPatch): void {
   const field = patch.path[5];
   const record = doc.elements[patch.path[1]];
-  if (patch.path.length !== 6 || !['picture', 'scene'].includes(field)
-    || record.src.kind !== (field === 'picture' ? 'image' : 'shape') || record.src.editInfo?.requiresOriginal) {
+  if (
+    patch.path.length !== 6
+    || !['picture', 'scene'].includes(field)
+    || record.src.kind !== (field === 'picture' ? 'image' : 'shape')
+    || record.src.editInfo?.requiresOriginal
+  ) {
     throw new Error('外观补丁目标或字段无效');
   }
   if (patch.op === 'set') {
@@ -38,22 +41,23 @@ function commandPatches(doc: EditDoc, extension: ExtensionCommand, origin: strin
   const input = command.type === 'SetPictureFx' ? command.effects : command.scene;
   const path = ['elements', command.id, 'ovr', 'extensions', 'appearance', field] as const;
   const before = state(doc, command.id)[field];
-  const value = input === null ? undefined : JSON.stringify(
-    command.type === 'SetPictureFx' ? normalizePicture(input) : normalizeScene(input));
+  const value =
+    input === null ? undefined : JSON.stringify(command.type === 'SetPictureFx' ? normalizePicture(input) : normalizeScene(input));
   const forward: ExtensionPatch = value === undefined ? { op: 'del', path, origin } : { op: 'set', path, value, origin };
   validatePatch(doc, forward);
   if (value === before) return { forward: [], inverse: [] };
-  return { forward: [forward], inverse: [before === undefined
-    ? { op: 'del', path, origin } : { op: 'set', path, value: before, origin }] };
+  return { forward: [forward], inverse: [before === undefined ? { op: 'del', path, origin } : { op: 'set', path, value: before, origin }] };
 }
 
 let registered = false;
 export function registerAppearanceEditing(): void {
   if (registered) return;
   registerEditExtension('appearance', {
-    command: commandPatches, validatePatch, materialize: materializeAppearance,
-    supportsGenerated: (element) => element.kind === 'shape' || element.kind === 'image' &&
-      (!element.filter || element.filter === 'grayscale(1)'),
+    command: commandPatches,
+    validatePatch,
+    materialize: materializeAppearance,
+    supportsGenerated: (element) =>
+      element.kind === 'shape' || (element.kind === 'image' && (!element.filter || element.filter === 'grayscale(1)')),
     project(doc, id, element) {
       const value = state(doc, id);
       if (value.picture !== undefined && element.kind === 'image') {
@@ -70,9 +74,11 @@ export function registerAppearanceEditing(): void {
 
 export function createAppearanceEditor(editor: Pick<Editor, 'doc' | 'exec'>) {
   registerAppearanceEditing();
-  return { exec(command: AppearanceCommand) {
-    return editor.exec({ type: 'Extension', namespace: 'appearance', id: command.id, payload: command });
-  } };
+  return {
+    exec(command: AppearanceCommand) {
+      return editor.exec({ type: 'Extension', namespace: 'appearance', id: command.id, payload: command });
+    },
+  };
 }
 
 export function queryPictureFx(doc: EditDoc, id: ElementId): PictureFx {

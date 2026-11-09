@@ -1,8 +1,6 @@
 function isNativeControl(target: EventTarget | null): boolean {
   if (!target || typeof target !== 'object' || (target as Node).nodeType !== 1) return false;
-  return !!(target as Element).closest(
-    'button, input, textarea, select, [contenteditable]:not([contenteditable="false"])',
-  );
+  return !!(target as Element).closest('button, input, textarea, select, [contenteditable]:not([contenteditable="false"])');
 }
 
 function eventHasNativeControl(event: Event): boolean {

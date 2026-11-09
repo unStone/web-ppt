@@ -38,14 +38,18 @@ export async function runTrustedEngineTextContract({ evaluate, request }) {
       && value === state.before.slice(0, state.insertion) + '真' + state.before.slice(state.insertion);
   })()`);
   await request('Input.imeSetComposition', {
-    text: '中', selectionStart: 1, selectionEnd: 1,
+    text: '中',
+    selectionStart: 1,
+    selectionEnd: 1,
   });
   await evaluate(`(() => {
     const state = globalThis.editorContract.engineTextResult;
     state.compositionNode = state.mount.querySelector('[data-ppt-text-editor="' + state.id + '"]');
   })()`);
   await request('Input.imeSetComposition', {
-    text: '中文', selectionStart: 2, selectionEnd: 2,
+    text: '中文',
+    selectionStart: 2,
+    selectionEnd: 2,
   });
   const stable = await evaluate(`(() => {
     const state = globalThis.editorContract.engineTextResult;
@@ -70,8 +74,7 @@ export async function runTrustedEngineTextContract({ evaluate, request }) {
     state.view.destroy(); state.session.dispose(); state.mount.remove();
     return result;
   })()`);
-  if (!inserted || !stable || !result.value || !result.engine
-    || !result.trustedBeforeInput || !result.trustedComposition) {
+  if (!inserted || !stable || !result.value || !result.engine || !result.trustedBeforeInput || !result.trustedComposition) {
     throw new Error(`真实 engine 文字/IME 输入失败：${JSON.stringify({ inserted, stable, ...result })}`);
   }
 }

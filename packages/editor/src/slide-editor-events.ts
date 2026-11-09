@@ -14,10 +14,7 @@ interface SlideEditorEventHandlers {
 }
 
 /** 事件表集中绑定与释放，构造失败和 destroy 共用同一份对称清理。 */
-export function bindSlideEditorEditEvents(
-  element: HTMLElement,
-  handlers: SlideEditorEventHandlers,
-): () => void {
+export function bindSlideEditorEditEvents(element: HTMLElement, handlers: SlideEditorEventHandlers): () => void {
   const entries = Object.entries(handlers) as [string, EventListener][];
   entries.push(['lostpointercapture', handlers.pointercancel as EventListener]);
   for (const [type, handler] of entries) {

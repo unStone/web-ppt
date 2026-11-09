@@ -9,7 +9,10 @@ export async function runSiteEditorLanguageContract({ evaluate, click, waitFor }
       zoom: document.querySelector('#zoomLabel').textContent };
   })()`);
   await click('[data-site-locale="en"]');
-  await waitFor("document.documentElement.lang === 'en' && document.querySelector('#saveFile').textContent === 'Save a copy'", '英文工具栏');
+  await waitFor(
+    "document.documentElement.lang === 'en' && document.querySelector('#saveFile').textContent === 'Save a copy'",
+    '英文工具栏',
+  );
   const preserved = await evaluate(`(() => ({
     sameCanvas: globalThis.__languageCanvas === document.querySelector('#canvasMount').firstElementChild,
     file: document.querySelector('#fileName').textContent,
@@ -23,7 +26,10 @@ export async function runSiteEditorLanguageContract({ evaluate, click, waitFor }
   await waitFor(`document.querySelectorAll('[data-pane-element]').length === ${before.count - 1}`, '英文界面保留撤销历史');
   await waitFor("document.querySelector('#statusText').textContent === 'Last action undone'", '英文撤销状态');
   await click('[data-site-locale="zh-CN"]');
-  await waitFor("document.documentElement.lang === 'zh-CN' && document.querySelector('#saveFile').textContent === '保存副本'", '切回中文工具栏');
+  await waitFor(
+    "document.documentElement.lang === 'zh-CN' && document.querySelector('#saveFile').textContent === '保存副本'",
+    '切回中文工具栏',
+  );
   await waitFor("document.querySelector('#statusText').textContent === '已撤销上一步'", '已显示状态随语言切换');
   await click('#redo');
   await waitFor(`document.querySelectorAll('[data-pane-element]').length === ${before.count}`, '切回中文保留重做历史');
@@ -38,9 +44,13 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
     const url = new URL(path, directory).href;
     await request('Page.navigate', { url });
     // Page.navigate 会先切 URL，再创建新 documentElement；该空窗在慢 CI 上可稳定被轮询撞到。
-    await waitFor(`location.href === ${JSON.stringify(url)} && document.documentElement?.lang === ${JSON.stringify(language)}
+    await waitFor(
+      `location.href === ${JSON.stringify(url)} && document.documentElement?.lang === ${JSON.stringify(language)}
       && document.documentElement.dataset.siteLanguageReady === 'true'
-      && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`, `${path} 语言解析`, 600);
+      && document.querySelector('[data-site-locale="${language}"]')?.getAttribute('aria-current') === 'true'`,
+      `${path} 语言解析`,
+      600,
+    );
     if (!path.startsWith('editor')) return;
     const ready = `document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading`;
@@ -58,14 +68,17 @@ export async function runSiteLanguagePreferencesContract({ evaluate, click, requ
       await waitFor("document.documentElement.lang === 'en'", '用户选择英文');
       await navigate(`${page}.html`, 'en');
       await navigate(`${page}.html?lang=zh-CN&context=kept#kept`, 'zh-CN');
-      if (!await evaluate("location.search.includes('context=kept') && location.hash === '#kept'")) {
+      if (!(await evaluate("location.search.includes('context=kept') && location.hash === '#kept'"))) {
         throw new Error('语言初始化不能清除不属于页面业务的查询参数和位置深链接');
       }
       await click('[data-site-locale="zh-CN"]');
       await navigate(`${page}.en.html`, 'en');
       await navigate(`${page}.html?lang=unknown`, 'en');
       await request('Page.reload');
-      await waitFor("document.documentElement?.lang === 'en' && document.querySelector('[data-site-locale=\"en\"]')?.getAttribute('aria-current') === 'true'", '未知语言刷新仍回退英文');
+      await waitFor(
+        "document.documentElement?.lang === 'en' && document.querySelector('[data-site-locale=\"en\"]')?.getAttribute('aria-current') === 'true'",
+        '未知语言刷新仍回退英文',
+      );
       await request('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
       await request('Network.setUserAgentOverride', { userAgent, acceptLanguage: 'fr-FR' });
       await navigate(`${page}.html`, 'en');

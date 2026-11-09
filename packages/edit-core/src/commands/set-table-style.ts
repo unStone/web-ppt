@@ -1,17 +1,11 @@
 import { own } from '../data-validation';
 import { assertTableStyleSettings } from '../table-style';
 import type { EditDoc } from '../types';
-import type {
-  CommandPatches, ElementTableStylePatch, SetTableStyleCommand,
-} from './types';
+import type { CommandPatches, ElementTableStylePatch, SetTableStyleCommand } from './types';
 
 const SWITCHES = ['firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'] as const;
 
-export function setTableStylePatches(
-  doc: EditDoc,
-  command: SetTableStyleCommand,
-  origin: string,
-): CommandPatches {
+export function setTableStylePatches(doc: EditDoc, command: SetTableStyleCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改表样式');
   const record = doc.elements[command.id];
   if (!record || record.src.kind !== 'table') throw new Error(`找不到表格：${command.id}`);
@@ -28,15 +22,23 @@ export function setTableStylePatches(
       inverse: [{ op: 'set', path, value: structuredClone(record.ovr.tableStyle!), origin }],
     };
   }
-  const value = assertTableStyleSettings(doc, command.id, {
-    styleId: command.styleId,
-    ...Object.fromEntries(SWITCHES.map((field) => [field, command[field]])),
-  }, 'SetTableStyle');
+  const value = assertTableStyleSettings(
+    doc,
+    command.id,
+    {
+      styleId: command.styleId,
+      ...Object.fromEntries(SWITCHES.map((field) => [field, command[field]])),
+    },
+    'SetTableStyle',
+  );
   if (hadOverride && JSON.stringify(record.ovr.tableStyle) === JSON.stringify(value)) {
     return { forward: [], inverse: [] };
   }
   const forward: ElementTableStylePatch = {
-    op: 'set', path, value: structuredClone(value), origin,
+    op: 'set',
+    path,
+    value: structuredClone(value),
+    origin,
   };
   const inverse: ElementTableStylePatch = hadOverride
     ? { op: 'set', path, value: structuredClone(record.ovr.tableStyle!), origin }

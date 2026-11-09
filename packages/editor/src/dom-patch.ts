@@ -60,11 +60,12 @@ function renderElementParts(
   const element = editor.renderedElement(id);
   const record = editor.doc.elements[id]!;
   // 插入组合时可复用现有孩子；重绘现存组合必须带上孩子，否则替换容器会把内容一并清空。
-  const structuralShell = inserting
-    && record.meta.insertion && record.meta.insertion.containsDescendants === false;
+  const structuralShell = inserting && record.meta.insertion && record.meta.insertion.containsDescendants === false;
   const projected = structuralShell ? { ...element, children: [] } : element;
   const rendered = renderElementToSvg(projected, {
-    textMode, idPrefix: `${idPrefix}${id}-`, includeEditMarkers: true,
+    textMode,
+    idPrefix: `${idPrefix}${id}-`,
+    includeEditMarkers: true,
   });
   const markup = svgChildren(staticLayer.ownerDocument, rendered.markup);
   if (markup.length !== 1) return null;
@@ -77,13 +78,7 @@ function renderElementParts(
 }
 
 /** markup 与它引用的 defs 在同一同步提交中换代，浏览器没有机会绘制半个状态。 */
-export function patchElement(
-  staticLayer: HTMLElement,
-  editor: Editor,
-  id: ElementId,
-  idPrefix: string,
-  textMode: 'html' | 'svg',
-): boolean {
+export function patchElement(staticLayer: HTMLElement, editor: Editor, id: ElementId, idPrefix: string, textMode: 'html' | 'svg'): boolean {
   const current = findElementPartition(staticLayer, id);
   const svg = staticLayer.querySelector<SVGSVGElement>('svg');
   const defs = svg?.querySelector<SVGDefsElement>('defs');
@@ -119,8 +114,7 @@ export function insertElementPartition(
   knownChildren?: readonly SVGElement[],
 ): boolean {
   const record = editor.doc.elements[id];
-  const siblings = editor.doc.slides[record?.parent]?.children
-    ?? editor.doc.elements[record?.parent]?.children;
+  const siblings = editor.doc.slides[record?.parent]?.children ?? editor.doc.elements[record?.parent]?.children;
   if (!record || !siblings) return false;
   const index = siblings.indexOf(id);
   if (index < 0) return false;
@@ -139,15 +133,14 @@ export function insertElementPartition(
   if ((!anchor && !fallbackParent) || !defs) return false;
   const rendered = renderElementParts(staticLayer, editor, id, idPrefix, textMode, true);
   if (!rendered) return false;
-  const reusableChildren = record.meta.insertion?.containsDescendants === false
+  const reusableChildren =
+    record.meta.insertion?.containsDescendants === false
     && !!record.children?.length
-    && (knownChildren?.length === record.children.length
-      || record.children.every((child) => !!findElementPartition(staticLayer, child)));
+    && (knownChildren?.length === record.children.length || record.children.every((child) => !!findElementPartition(staticLayer, child)));
   if (reusableChildren) {
     const childContainer = rendered.next.querySelector<SVGGElement>('[data-edit-group-children]');
     if (!childContainer) return false;
-    childContainer.append(...(knownChildren
-      ?? record.children!.map((child) => findElementPartition(staticLayer, child)!)));
+    childContainer.append(...(knownChildren ?? record.children!.map((child) => findElementPartition(staticLayer, child)!)));
     // 新组合的 OOXML 容器没有自身视觉定义；孩子继续持有原 defs，避免 60 元素结构操作重绘。
   } else defs.append(...rendered.nextDefs);
   if (!anchor) fallbackParent!.appendChild(rendered.next);
@@ -157,14 +150,9 @@ export function insertElementPartition(
 }
 
 /** 按模型目标序倒序移动受影响分区；锚点标记保证末元素不会越过非元素装饰节点。 */
-export function reorderElementPartitions(
-  staticLayer: HTMLElement,
-  editor: Editor,
-  ids: ReadonlySet<ElementId>,
-): boolean {
+export function reorderElementPartitions(staticLayer: HTMLElement, editor: Editor, ids: ReadonlySet<ElementId>): boolean {
   const partitions = new Map(
-    [...staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')]
-      .map((node) => [node.dataset.editRoot!, node] as const),
+    [...staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')].map((node) => [node.dataset.editRoot!, node] as const),
   );
   const parents = new Map<string, ElementId[]>();
   for (const id of ids) {

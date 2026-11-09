@@ -7,7 +7,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { readJsonl, inspectCliEvents, inspectProtocol, summarizeResults, verifyBundle } from './records.mjs';
 import { captureImplementation } from './metadata.mjs';
 
-const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const failure = (reason, message, category = 'infrastructure') => ({ category, reason, ...(message && { message }) });
 
 function resolveInside(base, path) {
@@ -15,8 +15,7 @@ function resolveInside(base, path) {
   assert(!isAbsolute(path), `记录路径必须相对：${path}`);
   const result = resolve(base, path);
   const difference = relative(base, result);
-  assert(difference && difference !== '..' && !difference.startsWith(`..${sep}`) && !isAbsolute(difference),
-    `记录路径越界：${path}`);
+  assert(difference && difference !== '..' && !difference.startsWith(`..${sep}`) && !isAbsolute(difference), `记录路径越界：${path}`);
   return result;
 }
 
@@ -54,12 +53,18 @@ export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   else {
     if (run.process.status === 'timeout') {
       failures.push(failure('agent-timeout', undefined, 'resource'));
-      resourceLimits.push({ kind: 'wall-clock', reason: 'agent-timeout',
-        limitMs: run.requested.timeoutMs, observedMs: run.process.elapsedMs, source: 'runner-timer' });
+      resourceLimits.push({
+        kind: 'wall-clock',
+        reason: 'agent-timeout',
+        limitMs: run.requested.timeoutMs,
+        observedMs: run.process.elapsedMs,
+        source: 'runner-timer',
+      });
     }
     if (run.process.status === 'cancelled') failures.push(failure('agent-cancelled'));
     if (run.process.spawnError) failures.push(failure('agent-cli-unavailable', run.process.spawnError.message));
-    if (run.process.status === 'failed') failures.push(failure('agent-process-failed', `exit=${run.process.exitCode}, signal=${run.process.signal}`));
+    if (run.process.status === 'failed')
+      failures.push(failure('agent-process-failed', `exit=${run.process.exitCode}, signal=${run.process.signal}`));
   }
   const input = await optionalBytes(resolveInside(runDirectory, run.paths.input));
   const output = await optionalBytes(resolveInside(runDirectory, run.paths.output));
@@ -75,48 +80,72 @@ export async function judgeRecordedRun(experimentDirectory, plan, judgeTask) {
   if (!cli.completedTurns) failures.push(failure('agent-completion-unobserved'));
   if (!cli.usage.length) failures.push(failure('agent-usage-unobserved'));
   const protocolEvents = await optionalJsonl(resolveInside(runDirectory, run.paths.protocol), failures, 'mcp-protocol-missing');
-  const protocol = inspectProtocol(protocolEvents, { condition: plan.condition,
-    outputPath: resolveInside(runDirectory, run.paths.output), outputBytes: output,
+  const protocol = inspectProtocol(protocolEvents, {
+    condition: plan.condition,
+    outputPath: resolveInside(runDirectory, run.paths.output),
+    outputBytes: output,
     portableOutputPath: `<experiment>/${plan.directory}/${run.paths.output}`,
-    requireLifecycle: true, requireCatalog: true, maxCalls: run.requested.maxCalls });
+    requireLifecycle: true,
+    requireCatalog: true,
+    maxCalls: run.requested.maxCalls,
+  });
   failures.push(...protocol.failures);
   resourceLimits.push(...protocol.resourceLimits);
   let judgment = null;
   if (input && output) {
     try {
       judgment = await judgeTask({ taskId: plan.taskId, inputBytes: input, outputBytes: output });
-      failures.push(...judgment.failures.map(item => ({ category: 'task', ...item })));
+      failures.push(...judgment.failures.map((item) => ({ category: 'task', ...item })));
       if (!judgment.pass && judgment.failures.length === 0) failures.push(failure('semantic-judgment-failed', undefined, 'task'));
     } catch (error) {
       failures.push(failure('judgment-execution-failed', error.message));
     }
   }
-  return { ...plan, attempted: Number.isInteger(run.process?.pid) && run.process.pid > 0,
+  return {
+    ...plan,
+    attempted: Number.isInteger(run.process?.pid) && run.process.pid > 0,
     pass: Boolean(judgment?.pass) && failures.length === 0,
-    semanticPass: judgment?.pass ?? false, semanticAssessed: judgment !== null, failures, resourceLimits,
-    inputSha256: input ? sha(input) : null, outputSha256: output ? sha(output) : null,
+    semanticPass: judgment?.pass ?? false,
+    semanticAssessed: judgment !== null,
+    failures,
+    resourceLimits,
+    inputSha256: input ? sha(input) : null,
+    outputSha256: output ? sha(output) : null,
     promptSha256: prompt ? sha(prompt) : null,
-    process: run.process, requested: run.requested, cliVersion: run.cliVersion,
-    actualModels: cli.actualModels, usage: cli.usage, protocol,
-    description: judgment?.description ?? null, lint: judgment?.lint ?? null };
+    process: run.process,
+    requested: run.requested,
+    cliVersion: run.cliVersion,
+    actualModels: cli.actualModels,
+    usage: cli.usage,
+    protocol,
+    description: judgment?.description ?? null,
+    lint: judgment?.lint ?? null,
+  };
 }
 
-export async function rejudgeExperiment(directory, { requireIntegrity = true, judgeTask, writeReport = false,
-  allowTestDouble = false } = {}) {
+export async function rejudgeExperiment(
+  directory,
+  { requireIntegrity = true, judgeTask, writeReport = false, allowTestDouble = false } = {},
+) {
   const root = resolve(directory);
   if (requireIntegrity) await verifyBundle(root);
   const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
   assert.equal(manifest.version, 1, '评测清单版本必须为1');
-  assert(manifest.engine === 'codex-cli' || (allowTestDouble && manifest.engine === 'external-agent-test-double'),
-    '默认重判只接受真实 Codex CLI 证据，测试替身需要测试代码显式允许');
+  assert(
+    manifest.engine === 'codex-cli' || (allowTestDouble && manifest.engine === 'external-agent-test-double'),
+    '默认重判只接受真实 Codex CLI 证据，测试替身需要测试代码显式允许',
+  );
   assert(Array.isArray(manifest.runs) && manifest.runs.length > 0, '评测清单没有运行计划');
-  const ids = manifest.runs.map(run => run.id);
+  const ids = manifest.runs.map((run) => run.id);
   assert.equal(new Set(ids).size, ids.length, '运行计划ID重复');
   const judge = judgeTask ?? (await import('./judge.mjs')).judgeTask;
   const currentImplementation = await captureImplementation(resolve(import.meta.dirname, '../..'));
-  const rejudgment = { recordedImplementation: manifest.implementation, currentImplementation,
+  const rejudgment = {
+    recordedImplementation: manifest.implementation,
+    currentImplementation,
     sourceMatches: manifest.implementation?.fingerprint === currentImplementation.fingerprint,
-    agentContextMatches: manifest.implementation?.contextFingerprint === currentImplementation.contextFingerprint };
+    agentContextMatches: manifest.implementation?.contextFingerprint === currentImplementation.contextFingerprint,
+  };
   const results = [];
   for (const plan of manifest.runs) {
     try {
@@ -125,14 +154,14 @@ export async function rejudgeExperiment(directory, { requireIntegrity = true, ju
       results.push({ ...plan, attempted: false, pass: false, failures: [failure('record-unreadable', error.message)] });
     }
   }
-  const schemas = new Set(results.map(run => run.protocol?.toolCatalogSha256).filter(Boolean));
+  const schemas = new Set(results.map((run) => run.protocol?.toolCatalogSha256).filter(Boolean));
   if (schemas.size > 1) {
     for (const run of results) {
       run.failures.push(failure('tool-catalog-varies-between-runs', undefined, 'protocol'));
       run.pass = false;
     }
   }
-  const observedModels = new Set(results.flatMap(run => run.actualModels ?? []));
+  const observedModels = new Set(results.flatMap((run) => run.actualModels ?? []));
   if (observedModels.size > 1) {
     for (const run of results) {
       run.failures.push(failure('reported-model-varies-between-runs'));
@@ -140,12 +169,19 @@ export async function rejudgeExperiment(directory, { requireIntegrity = true, ju
     }
   }
   for (const run of results) {
-    const task = manifest.tasks?.find(task => task.id === run.taskId);
+    const task = manifest.tasks?.find((task) => task.id === run.taskId);
     const controlled = manifest.configuration;
-    const expected = controlled && { model: controlled.model, effort: controlled.effort,
-      timeoutMs: controlled.timeoutMs, maxCalls: controlled.maxCalls };
-    const controlMatches = expected && isDeepStrictEqual(run.requested, expected)
-      && run.cliVersion === manifest.cli?.version && task?.inputSha256 === run.inputSha256
+    const expected = controlled && {
+      model: controlled.model,
+      effort: controlled.effort,
+      timeoutMs: controlled.timeoutMs,
+      maxCalls: controlled.maxCalls,
+    };
+    const controlMatches =
+      expected
+      && isDeepStrictEqual(run.requested, expected)
+      && run.cliVersion === manifest.cli?.version
+      && task?.inputSha256 === run.inputSha256
       && task?.promptSha256 === run.promptSha256;
     if (!controlMatches) {
       run.failures.push(failure('controlled-inputs-mismatch', undefined, 'protocol'));
@@ -156,11 +192,19 @@ export async function rejudgeExperiment(directory, { requireIntegrity = true, ju
   if (!rejudgment.sourceMatches) {
     summary.limitations.push('当前源码或依赖指纹与记录时不同；这是新判定实现的复判结果，不宣称原实现精确重现。');
   }
-  if (results.some(run => run.actualModels?.length === 0)) {
+  if (results.some((run) => run.actualModels?.length === 0)) {
     summary.limitations.push('部分CLI记录未公开实际服务端model字段，仅记录请求model；不把请求值伪装为服务端观察值。');
   }
-  const report = { version: 1, outcomePolicyVersion: 2, experiment: manifest.id,
-    engine: manifest.engine, manifest, rejudgment, results, summary };
+  const report = {
+    version: 1,
+    outcomePolicyVersion: 2,
+    experiment: manifest.id,
+    engine: manifest.engine,
+    manifest,
+    rejudgment,
+    results,
+    summary,
+  };
   if (writeReport) await writeFile(join(root, 'results.json'), `${JSON.stringify(report, null, 2)}\n`);
   return report;
 }

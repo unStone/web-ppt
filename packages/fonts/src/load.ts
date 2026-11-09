@@ -102,12 +102,7 @@ export function isInstalled(family: string, doc: Document = globalThis.document)
  * （我们是把 CSS 文本注入到页面里，相对路径会按页面地址解析，必然 404）。
  * `unicode-range` 原样保留——按需下载全靠它。
  */
-export function rewriteFontFaceCss(
-  css: string,
-  original: string,
-  cssHref: string,
-  opts: { readonly preferLocal?: boolean } = {},
-): string {
+export function rewriteFontFaceCss(css: string, original: string, cssHref: string, opts: { readonly preferLocal?: boolean } = {}): string {
   const dir = cssHref.slice(0, cssHref.lastIndexOf('/') + 1);
   const name = original.replace(/['\\]/g, '');
   const rewritten = css
@@ -133,11 +128,7 @@ function coversCodePoint(block: string, codePoint: number): boolean {
  * 再复制一份只含 U+5F 的面单独缩放。同字重的面按声明逆序匹配 unicode-range，所以下划线面
  * 必须追加在最后。它按替代字体自己的度量缩放，调用方不能再让 local(原字体名) 抢先命中。
  */
-function adjustLatinFaceCss(
-  css: string,
-  weight: number,
-  adjust: { readonly bold: number; readonly underscore: number },
-): string {
+function adjustLatinFaceCss(css: string, weight: number, adjust: { readonly bold: number; readonly underscore: number }): string {
   const blocks = css.match(/@font-face\s*\{[^}]*\}/g) ?? [];
   const sized = (block: string, percent: number): string => block.replace(/\s*\}$/, `\n  size-adjust: ${percent}%;\n}`);
   const out = weight >= 600 ? blocks.map((block) => sized(block, adjust.bold)) : [...blocks];
@@ -160,11 +151,14 @@ const LATIN_CHARS = /[\u0000-\u024f\u1e00-\u1eff\u2000-\u206f]/;
 async function fetchCss(url: string): Promise<string | null> {
   let job = cssCache.get(url);
   if (!job) {
-    job = fetch(url).then((r) => (r.ok ? r.text() : null)).catch(() => null).then((css) => {
-      // 短时网络失败不应永久缓存成“该字重不存在”；下一页仍可重试。
-      if (css === null) cssCache.delete(url);
-      return css;
-    });
+    job = fetch(url)
+      .then((r) => (r.ok ? r.text() : null))
+      .catch(() => null)
+      .then((css) => {
+        // 短时网络失败不应永久缓存成“该字重不存在”；下一页仍可重试。
+        if (css === null) cssCache.delete(url);
+        return css;
+      });
     cssCache.set(url, job);
   }
   return job;

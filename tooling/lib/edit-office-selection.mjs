@@ -3,7 +3,9 @@ import { ALL_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_ARTIFACTS } from './edit-save-of
 
 export function selectEditOfficeArtifacts(args) {
   const { values } = parseArgs({
-    args, strict: true, allowPositionals: false,
+    args,
+    strict: true,
+    allowPositionals: false,
     options: {
       'include-site': { type: 'boolean', default: false },
       'site-only': { type: 'boolean', default: false },
@@ -13,7 +15,8 @@ export function selectEditOfficeArtifacts(args) {
     throw new Error('--include-site 与 --site-only 不能同时使用');
   }
   const models = EDIT_SAVE_OFFICE_ARTIFACTS.map((artifact) => ({
-    ...artifact, path: `out/edit-save/${artifact.file}`,
+    ...artifact,
+    path: `out/edit-save/${artifact.file}`,
   }));
   if (values['include-site']) return ALL_OFFICE_ARTIFACTS;
   if (!values['site-only']) return models;

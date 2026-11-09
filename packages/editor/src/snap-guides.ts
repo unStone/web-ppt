@@ -55,9 +55,7 @@ export function renderSnapGuides(layer: SVGGElement, guides: readonly SnapGuide[
   }
   for (const guide of guides) {
     if (guide.kind === 'spacing') {
-      const group = layer.querySelector<SVGGElement>(
-        `[data-edit-spacing-slot="${guide.axis}"]`,
-      )!;
+      const group = layer.querySelector<SVGGElement>(`[data-edit-spacing-slot="${guide.axis}"]`)!;
       group.removeAttribute('display');
       group.dataset.editSpacingGuide = guide.axis;
       group.dataset.editSnapSource = guide.source;
@@ -82,11 +80,14 @@ export function renderSnapGuides(layer: SVGGElement, guides: readonly SnapGuide[
           const arrow = arrows[intervalIndex * 2 + endpointIndex];
           arrow.setAttribute('stroke-width', String(1 / zoom));
           const direction = endpointIndex === 0 ? 1 : -1;
-          arrow.setAttribute('points', guide.axis === 'x'
-            ? `${endpoint + direction * arrowSize},${guide.cross - arrowSize} ${endpoint},${guide.cross} `
-              + `${endpoint + direction * arrowSize},${guide.cross + arrowSize}`
-            : `${guide.cross - arrowSize},${endpoint + direction * arrowSize} ${guide.cross},${endpoint} `
-              + `${guide.cross + arrowSize},${endpoint + direction * arrowSize}`);
+          arrow.setAttribute(
+            'points',
+            guide.axis === 'x'
+              ? `${endpoint + direction * arrowSize},${guide.cross - arrowSize} ${endpoint},${guide.cross} `
+                  + `${endpoint + direction * arrowSize},${guide.cross + arrowSize}`
+              : `${guide.cross - arrowSize},${endpoint + direction * arrowSize} ${guide.cross},${endpoint} `
+                  + `${guide.cross + arrowSize},${endpoint + direction * arrowSize}`,
+          );
         });
       });
       continue;

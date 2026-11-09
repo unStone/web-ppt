@@ -10,76 +10,119 @@ const P159 = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
 const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 
 const standard = [
-  ['fade', ''], ['cut', ''], ['push', ' dir="l"'], ['pull', ' dir="r"'],
-  ['cover', ' dir="u"'], ['wipe', ' dir="d"'], ['split', ' orient="vert" dir="out"'],
-  ['zoom', ' dir="in"'], ['dissolve', ''], ['checker', ' dir="horz"'],
-  ['blinds', ' dir="vert"'], ['comb', ' dir="horz"'], ['wheel', ''], ['circle', ''],
-  ['diamond', ''], ['plus', ''], ['wedge', ''], ['newsflash', ''], ['randomBar', ' dir="vert"'],
+  ['fade', ''],
+  ['cut', ''],
+  ['push', ' dir="l"'],
+  ['pull', ' dir="r"'],
+  ['cover', ' dir="u"'],
+  ['wipe', ' dir="d"'],
+  ['split', ' orient="vert" dir="out"'],
+  ['zoom', ' dir="in"'],
+  ['dissolve', ''],
+  ['checker', ' dir="horz"'],
+  ['blinds', ' dir="vert"'],
+  ['comb', ' dir="horz"'],
+  ['wheel', ''],
+  ['circle', ''],
+  ['diamond', ''],
+  ['plus', ''],
+  ['wedge', ''],
+  ['newsflash', ''],
+  ['randomBar', ' dir="vert"'],
   ['strips', ' dir="rd"'],
 ];
 const extended = [
-  ['vortex', ''], ['switch', ''], ['flip', ''], ['ripple', ''], ['honeycomb', ''],
-  ['glitter', ' dir="l" pattern="hexagon"'], ['warp', ''], ['flythrough', ' dir="in"'], ['flash', ''],
-  ['shred', ''], ['reveal', ' dir="r"'], ['wheelReverse', ''], ['ferris', ''],
-  ['gallery', ' dir="l"'], ['conveyor', ' dir="r"'], ['pan', ' dir="u"'],
-  ['doors', ' dir="vert"'], ['window', ' dir="horz"'], ['prism', ''],
+  ['vortex', ''],
+  ['switch', ''],
+  ['flip', ''],
+  ['ripple', ''],
+  ['honeycomb', ''],
+  ['glitter', ' dir="l" pattern="hexagon"'],
+  ['warp', ''],
+  ['flythrough', ' dir="in"'],
+  ['flash', ''],
+  ['shred', ''],
+  ['reveal', ' dir="r"'],
+  ['wheelReverse', ''],
+  ['ferris', ''],
+  ['gallery', ' dir="l"'],
+  ['conveyor', ' dir="r"'],
+  ['pan', ' dir="u"'],
+  ['doors', ' dir="vert"'],
+  ['window', ' dir="horz"'],
+  ['prism', ''],
 ];
 
 const direct = (type, attrs, index) => {
-  const untouched = index === 0
-    ? ' advClick="0" fixture:transition="keep"' : index === 1 ? ' advClick="0"' : '';
+  const untouched = index === 0 ? ' advClick="0" fixture:transition="keep"' : index === 1 ? ' advClick="0"' : '';
   const sound = index === 0 ? '<p:sndAc><p:endSnd/></p:sndAc>' : '';
   const unknown = index === 0 ? '<fixture:fade fixture:child="keep"/>' : '';
-  const duration = index === 0
-    ? ` xmlns:x14="${P14}" x14:dur="800" fixture:dur="4999"`
-    : ` xmlns:p14="${P14}" p14:dur="${800 + index * 7}"`;
+  const duration =
+    index === 0 ? ` xmlns:x14="${P14}" x14:dur="800" fixture:dur="4999"` : ` xmlns:p14="${P14}" p14:dur="${800 + index * 7}"`;
   // fade 槽用合法的 wedge 充当「引擎不管理的标准效果」保留探针；
   // fadeThroughBlack 是非标准元素名，读侧别名（publicEffectType）仍兼容旧文件
   const sourceType = type === 'fade' ? 'wedge' : type === 'dissolve' ? 'random' : type;
-  const aliasAttrs = type === 'dissolve'
-    ? ' xmlns:fixture="urn:web-ppt:transition-fixture" fixture:alias="keep"' : '';
-  return `<p:transition${duration}` +
-    `${index === 1 ? ' advTm="2400"' : ''}${untouched}>` +
-    `${unknown}<p:${sourceType}${attrs}${aliasAttrs}${index === 0 ? ' fixture:effect="keep"' : ''}/>${sound}</p:transition>`;
+  const aliasAttrs = type === 'dissolve' ? ' xmlns:fixture="urn:web-ppt:transition-fixture" fixture:alias="keep"' : '';
+  return (
+    `<p:transition${duration}`
+    + `${index === 1 ? ' advTm="2400"' : ''}${untouched}>`
+    + `${unknown}<p:${sourceType}${attrs}${aliasAttrs}${index === 0 ? ' fixture:effect="keep"' : ''}/>${sound}</p:transition>`
+  );
 };
 const alternate = (type, attrs, index) =>
-  `<mc:AlternateContent xmlns:mc="${MC}"` +
-  (index === 0 ? ' xmlns:fixture="urn:web-ppt:transition-fixture" mc:Ignorable="fixture" fixture:carrier="keep"' : '') + '>' +
-  (index === 0 ? '<mc:Choice xmlns:p200="urn:web-ppt:future" Requires="p200"><p:transition><p200:futureEffect/></p:transition></mc:Choice>' : '') +
-  `<mc:Choice xmlns:p14="${P14}" Requires="p14"${index === 0 ? ' fixture:branch="keep"' : ''}>` +
-  `<p:transition p14:dur="${1100 + index * 9}"><p14:${type}${attrs}/></p:transition>` +
-  (index === 0 ? '<fixture:keep xmlns:fixture="urn:web-ppt:transition-fixture" value="choice"/>' : '') +
-  `</mc:Choice><mc:Fallback><p:transition spd="med"><p:fade/></p:transition></mc:Fallback>` +
-  `</mc:AlternateContent>`;
-const morph = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" ` +
-  `xmlns:p159="${P159}" Requires="p159"><p:transition p14:dur="1600">` +
-  `<p159:morph option="byWord"/></p:transition></mc:Choice><mc:Fallback>` +
-  `<p:transition spd="med"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>`;
+  `<mc:AlternateContent xmlns:mc="${MC}"`
+  + (index === 0 ? ' xmlns:fixture="urn:web-ppt:transition-fixture" mc:Ignorable="fixture" fixture:carrier="keep"' : '')
+  + '>'
+  + (index === 0
+    ? '<mc:Choice xmlns:p200="urn:web-ppt:future" Requires="p200"><p:transition><p200:futureEffect/></p:transition></mc:Choice>'
+    : '')
+  + `<mc:Choice xmlns:p14="${P14}" Requires="p14"${index === 0 ? ' fixture:branch="keep"' : ''}>`
+  + `<p:transition p14:dur="${1100 + index * 9}"><p14:${type}${attrs}/></p:transition>`
+  + (index === 0 ? '<fixture:keep xmlns:fixture="urn:web-ppt:transition-fixture" value="choice"/>' : '')
+  + `</mc:Choice><mc:Fallback><p:transition spd="med"><p:fade/></p:transition></mc:Fallback>`
+  + `</mc:AlternateContent>`;
+const morph =
+  `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" `
+  + `xmlns:p159="${P159}" Requires="p159"><p:transition p14:dur="1600">`
+  + `<p159:morph option="byWord"/></p:transition></mc:Choice><mc:Fallback>`
+  + `<p:transition spd="med"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>`;
 // CT_TimeNodeList 至少要一个子元素；空 tnLst 过不了 XSD，给最小 tmRoot
-const timing = '<p:timing xmlns:fixture="urn:web-ppt:transition-fixture" fixture:keep="timing">'
+const timing =
+  '<p:timing xmlns:fixture="urn:web-ppt:transition-fixture" fixture:keep="timing">'
   + '<p:tnLst><p:par><p:cTn id="9" dur="indefinite" restart="never" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>';
-const unrelatedMce = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">` +
-  '<p:extLst><p:ext uri="{TRANSITION-KEEP}"/></p:extLst></mc:Choice>' +
-  '<mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>';
+const unrelatedMce =
+  `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14">`
+  + '<p:extLst><p:ext uri="{TRANSITION-KEEP}"/></p:extLst></mc:Choice>'
+  + '<mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>';
 const unknownCarrier = '<fixture:transition><fixture:cut/></fixture:transition>';
 
-const definitions = [null, ...standard.map(([type, attrs], index) => direct(type, attrs, index)),
-  ...extended.map(([type, attrs], index) => alternate(type, attrs, index)), morph];
+const definitions = [
+  null,
+  ...standard.map(([type, attrs], index) => direct(type, attrs, index)),
+  ...extended.map(([type, attrs], index) => alternate(type, attrs, index)),
+  morph,
+];
 const slides = definitions.map((transition, index) => {
   const body = sp({
-    x: 300, y: 230, w: 680, h: 220, name: `transition-${index}`,
+    x: 300,
+    y: 230,
+    w: 680,
+    h: 220,
+    name: `transition-${index}`,
     fill: '<a:solidFill><a:schemeClr val="accent1"/></a:solidFill>',
     text: label(index === 0 ? '无切换' : `切换 ${index}`, 3600, 'FFFFFF'),
   });
-  const suffix = `${index === 1 ? unknownCarrier : ''}${transition ?? ''}`
-    + `${index === 1 ? timing + unrelatedMce : ''}`;
+  const suffix = `${index === 1 ? unknownCarrier : ''}${transition ?? ''}` + `${index === 1 ? timing + unrelatedMce : ''}`;
   // 每页根声明 p14/x14 可忽略：p:transition 上的 p14:dur、x14:dur 是 PowerPoint 2010+ 的
   // 标准扩展写法，必须按 MCE 规则在根声明，否则 XSD 拒绝未声明属性
-  return slideXml(body, '', `xmlns:mc="${MC}" xmlns:p14="${P14}" xmlns:x14="${P14}" `
-    + (index === 1
-      ? 'xmlns:fixture="urn:web-ppt:transition-fixture" mc:Ignorable="p14 x14 fixture" fixture:keep="root"'
-      : 'mc:Ignorable="p14 x14"'))
-    .replace('</p:sld>', `${suffix}</p:sld>`);
+  return slideXml(
+    body,
+    '',
+    `xmlns:mc="${MC}" xmlns:p14="${P14}" xmlns:x14="${P14}" `
+      + (index === 1
+        ? 'xmlns:fixture="urn:web-ppt:transition-fixture" mc:Ignorable="p14 x14 fixture" fixture:keep="root"'
+        : 'mc:Ignorable="p14 x14"'),
+  ).replace('</p:sld>', `${suffix}</p:sld>`);
 });
 
 const bytes = deck({ name: 'Editor Transitions', width: 1280, height: 720, slides });

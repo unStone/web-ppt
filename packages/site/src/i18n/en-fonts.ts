@@ -1,8 +1,10 @@
 export const fontMessages = {
   '字体与缺字': 'Fonts and missing glyphs',
   '部分字体无法用于编辑，请打开字体工具检查': 'Some fonts cannot be used for editing. Open the font tool to check',
-  '检查文稿字体并加载本机字体文件。字体仅用于本次预览和图片、SVG 导出，关闭文稿后释放；新增字体不会写入 PPTX。': 'Check presentation fonts and load local font files. Fonts apply to this preview and image/SVG exports, and are released when the presentation closes. Added fonts are not written to the PPTX.',
-  '按编辑许可检查字体；未取得字节或缺字的内容仍可能使用系统回退字体，不能保证跨设备一致。': 'Fonts are checked for editing permission. Text with unavailable bytes or missing glyphs may use system fallback fonts, so appearance across devices is not guaranteed.',
+  '检查文稿字体并加载本机字体文件。字体仅用于本次预览和图片、SVG 导出，关闭文稿后释放；新增字体不会写入 PPTX。':
+    'Check presentation fonts and load local font files. Fonts apply to this preview and image/SVG exports, and are released when the presentation closes. Added fonts are not written to the PPTX.',
+  '按编辑许可检查字体；未取得字节或缺字的内容仍可能使用系统回退字体，不能保证跨设备一致。':
+    'Fonts are checked for editing permission. Text with unavailable bytes or missing glyphs may use system fallback fonts, so appearance across devices is not guaranteed.',
   '正在检查字体与缺字…': 'Checking fonts and missing glyphs…',
   '重新检查字体': 'Check fonts again',
   '已应用字体': 'Applied fonts',
@@ -36,7 +38,8 @@ export const fontMessages = {
   '字体不包含部分字符': 'The font is missing some characters',
   '暂不支持这种文字脚本': 'This writing script is not supported yet',
   '暂不支持双向或从右到左整形': 'Bidirectional and right-to-left shaping are not supported yet',
-  '暂不支持竖排、艺术字、公式或小型大写的字形检查': 'Glyph checks for vertical text, WordArt, formulas and small caps are not supported yet',
+  '暂不支持竖排、艺术字、公式或小型大写的字形检查':
+    'Glyph checks for vertical text, WordArt, formulas and small caps are not supported yet',
   '文字或脚本参数无效': 'Text or script parameters are invalid',
   '字形引擎无法完成请求，请重试': 'The glyph engine could not complete the request; try again',
   '请提供静态单字体 TTF 文件': 'Provide a static single-face TTF file',

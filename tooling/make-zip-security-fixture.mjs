@@ -8,10 +8,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, 'fixtures/zip-security');
 mkdirSync(directory, { recursive: true });
 const base = unzipSync(readFileSync(join(root, 'fixtures/sample.pptx')));
-const write = (name, parts) => writeFileSync(
-  join(directory, name),
-  makeZip(Object.entries(parts).sort(([left], [right]) => left.localeCompare(right))),
-);
+const write = (name, parts) =>
+  writeFileSync(join(directory, name), makeZip(Object.entries(parts).sort(([left], [right]) => left.localeCompare(right))));
 const copy = () => ({ ...base });
 
 write('sample-zip-bomb.pptx', { ...copy(), 'ppt/media/bomb.bin': new Uint8Array(16 * 1024 * 1024) });
@@ -57,7 +55,10 @@ const zip64 = readFileSync(join(root, 'fixtures/sample.pptx'));
 const zip64View = new DataView(zip64.buffer, zip64.byteOffset, zip64.byteLength);
 let zip64End = -1;
 for (let offset = zip64.length - 22; offset >= 0; offset--) {
-  if (zip64View.getUint32(offset, true) === 0x06054b50) { zip64End = offset; break; }
+  if (zip64View.getUint32(offset, true) === 0x06054b50) {
+    zip64End = offset;
+    break;
+  }
 }
 if (zip64End < 0) throw new Error('ZIP64 固件缺少 EOCD');
 zip64View.setUint16(zip64End + 10, 0xffff, true);

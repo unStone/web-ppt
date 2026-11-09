@@ -6,10 +6,7 @@ export const BLANK_LAYER = 'present-blank';
  * 遮罩里这些键只恢复当前页，避免看不见的时候悄悄翻页。
  * Home / End 不在这里：它们要跳到首尾页，由 slide-ends 在本监听之前处理。
  */
-const RESTORE_KEYS = new Set([
-  ' ', 'Enter', 'ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp',
-  'PageDown', 'PageUp',
-]);
+const RESTORE_KEYS = new Set([' ', 'Enter', 'ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp']);
 
 type Veil = 'black' | 'white';
 
@@ -29,13 +26,9 @@ function english(): boolean {
 function chromeCopy(on: boolean): { title: string; label: string } {
   // 不进共享词库：编辑器首包会把 en-home 整表打进去。
   if (on) {
-    return english()
-      ? { title: 'Show slide (B or .)', label: 'Show slide' }
-      : { title: '取消黑屏（B 或 .）', label: '取消黑屏' };
+    return english() ? { title: 'Show slide (B or .)', label: 'Show slide' } : { title: '取消黑屏（B 或 .）', label: '取消黑屏' };
   }
-  return english()
-    ? { title: 'Black screen (B or .)', label: 'Black screen' }
-    : { title: '黑屏（B 或 .）', label: '黑屏' };
+  return english() ? { title: 'Black screen (B or .)', label: 'Black screen' } : { title: '黑屏（B 或 .）', label: '黑屏' };
 }
 
 /**
@@ -88,16 +81,16 @@ export function bindBlankScreen(options: {
     // pointerup 先把层关掉后，浏览器会把随后的 click 打到下面的幻灯片。
     swallowClick = true;
     window.clearTimeout(swallowTimer);
-    swallowTimer = window.setTimeout(() => { swallowClick = false; }, 50);
+    swallowTimer = window.setTimeout(() => {
+      swallowClick = false;
+    }, 50);
   };
 
   const paintLayer = (): void => {
     const copy = chromeCopy(veil === 'black');
     layer.classList.toggle('is-on', veil !== null);
     layer.classList.toggle('is-white', veil === 'white');
-    layer.setAttribute('aria-label', veil === 'white'
-      ? (english() ? 'Show slide' : '取消白屏')
-      : copy.label);
+    layer.setAttribute('aria-label', veil === 'white' ? (english() ? 'Show slide' : '取消白屏') : copy.label);
     if (button) {
       button.setAttribute('aria-pressed', String(veil === 'black'));
       button.title = copy.title;
@@ -116,11 +109,19 @@ export function bindBlankScreen(options: {
     paintLayer();
   };
 
-  const set = (next: boolean): void => { apply(next ? 'black' : null); };
-  const clear = (): void => { apply(null); };
+  const set = (next: boolean): void => {
+    apply(next ? 'black' : null);
+  };
+  const clear = (): void => {
+    apply(null);
+  };
   // 按钮只负责黑屏。白的时候按它是换成黑，不是把遮罩直接拿掉。
-  const toggle = (): void => { apply(veil === 'black' ? null : 'black'); };
-  const toggleWhite = (): void => { apply(veil === 'white' ? null : 'white'); };
+  const toggle = (): void => {
+    apply(veil === 'black' ? null : 'black');
+  };
+  const toggleWhite = (): void => {
+    apply(veil === 'white' ? null : 'white');
+  };
 
   const dismiss = (event: Event): void => {
     if (!veil) {
@@ -145,8 +146,7 @@ export function bindBlankScreen(options: {
   };
 
   const onKey = (event: KeyboardEvent): void => {
-    const typing = event.target instanceof Element
-      && !!event.target.closest('input,select,textarea,[contenteditable]');
+    const typing = event.target instanceof Element && !!event.target.closest('input,select,textarea,[contenteditable]');
     if (typing || event.isComposing || (keysActive && !keysActive())) return;
     if (!presenting()) {
       if (veil) apply(null);
@@ -185,7 +185,9 @@ export function bindBlankScreen(options: {
   const langWatch = new MutationObserver(() => paintLayer());
   langWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   // Viewer.paint() 会 innerHTML 清空舞台；盖着的时候必须把同一层座回去。
-  const seatWatch = new MutationObserver(() => { if (veil) attach(); });
+  const seatWatch = new MutationObserver(() => {
+    if (veil) attach();
+  });
   seatWatch.observe(stage, { childList: true });
 
   return {

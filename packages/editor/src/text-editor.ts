@@ -1,11 +1,24 @@
 import {
-  slideOfElement, queryParaProps as queryHeadlessParaProps,
-  queryRunLink as queryHeadlessRunLink, queryRunProps, textBodyEditText,
-  textPositionAtIndex, textPositionToIndex,
+  slideOfElement,
+  queryParaProps as queryHeadlessParaProps,
+  queryRunLink as queryHeadlessRunLink,
+  queryRunProps,
+  textBodyEditText,
+  textPositionAtIndex,
+  textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type {
-  EditorChange, ElementId, ParagraphPropertiesState, ParagraphPropertyInput, RunLinkState,
-  RunPropertiesState, RunPropertyOverrides, Selection, TableCellAddress, TextEditOp, TextPosition,
+  EditorChange,
+  ElementId,
+  ParagraphPropertiesState,
+  ParagraphPropertyInput,
+  RunLinkState,
+  RunPropertiesState,
+  RunPropertyOverrides,
+  Selection,
+  TableCellAddress,
+  TextEditOp,
+  TextPosition,
 } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { compositionChangedRange, rangePositions, readEditableDom, rebaseRange } from './text-dom';
@@ -40,8 +53,13 @@ export class TextEditorController {
   private readonly externalUi = new Set<HTMLElement>();
   private readonly onDocumentPointerDown = (event: Event): void => {
     const target = event.target;
-    if (this.activeId && target instanceof Node && !this.options.boundary.contains(target)
-      && ![...this.externalUi].some((element) => element.contains(target))) this.close();
+    if (
+      this.activeId
+      && target instanceof Node
+      && !this.options.boundary.contains(target)
+      && ![...this.externalUi].some((element) => element.contains(target))
+    )
+      this.close();
   };
 
   constructor(options: TextEditorControllerOptions) {
@@ -54,8 +72,11 @@ export class TextEditorController {
       commit: (ops, nextIndex, label) => this.commit(ops, nextIndex, label),
     });
     this.keyboard = new TextKeyboardController({
-      editor: options.editor, composing: () => this.composing, activeCell: () => this.activeCell,
-      context: () => this.textContext(), close: (select) => this.close(select),
+      editor: options.editor,
+      composing: () => this.composing,
+      activeCell: () => this.activeCell,
+      context: () => this.textContext(),
+      close: (select) => this.close(select),
       navigateTableCell: (reverse) => this.navigateTableCell(reverse),
       changeListLevel: (delta) => {
         const context = this.composing ? null : this.textContext();
@@ -65,10 +86,14 @@ export class TextEditorController {
         }
       },
       formatSelection: (field) => this.formatSelection(field),
-      stepFontSize: (direction) => stepSelectedFontSize(
-        options.editor, this.composing ? null : this.textContext(), direction,
-        (props) => this.setRunProps(props), (from, to) => this.setSelection(from, to),
-      ),
+      stepFontSize: (direction) =>
+        stepSelectedFontSize(
+          options.editor,
+          this.composing ? null : this.textContext(),
+          direction,
+          (props) => this.setRunProps(props),
+          (from, to) => this.setSelection(from, to),
+        ),
       setParaProps: (props) => this.setParaProps(props),
       restoreSelection: (from, to) => this.setSelection(from, to),
       selectAllElements: options.selectAllElements,
@@ -76,43 +101,44 @@ export class TextEditorController {
     });
   }
 
-  get isActive(): boolean { return this.activeId !== null; }
-  get activeElementId(): ElementId | null { return this.activeId; }
-  get isComposing(): boolean { return this.composing; }
+  get isActive(): boolean {
+    return this.activeId !== null;
+  }
+  get activeElementId(): ElementId | null {
+    return this.activeId;
+  }
+  get isComposing(): boolean {
+    return this.composing;
+  }
 
   registerExternalUi(element: HTMLElement): () => void {
     this.externalUi.add(element);
-    return () => { this.externalUi.delete(element); };
+    return () => {
+      this.externalUi.delete(element);
+    };
   }
 
   queryRunProps(): RunPropertiesState | null {
     const context = this.textContext();
     if (!context) return null;
-    const state = queryRunProps(
-      this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
-    );
-    if (textPositionToIndex(context.text, context.positions.from)
-      !== textPositionToIndex(context.text, context.positions.to)) return state;
-    return Object.fromEntries(Object.entries(state).map(([field, value]) => {
-      const pending = this.pendingFormat.props[field as keyof RunPropertyOverrides];
-      return [field, pending === undefined ? value : { value: pending, mixed: false }];
-    })) as unknown as RunPropertiesState;
+    const state = queryRunProps(this.options.editor.doc, context.id, context.positions, context.cell ?? undefined);
+    if (textPositionToIndex(context.text, context.positions.from) !== textPositionToIndex(context.text, context.positions.to)) return state;
+    return Object.fromEntries(
+      Object.entries(state).map(([field, value]) => {
+        const pending = this.pendingFormat.props[field as keyof RunPropertyOverrides];
+        return [field, pending === undefined ? value : { value: pending, mixed: false }];
+      }),
+    ) as unknown as RunPropertiesState;
   }
 
   queryRunLink(): RunLinkState | null {
     const context = this.textContext();
-    return context ? queryHeadlessRunLink(
-      this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
-    ) : null;
+    return context ? queryHeadlessRunLink(this.options.editor.doc, context.id, context.positions, context.cell ?? undefined) : null;
   }
 
   queryParaProps(): ParagraphPropertiesState | null {
     const context = this.textContext();
-    return context
-      ? queryHeadlessParaProps(
-        this.options.editor.doc, context.id, context.positions, context.cell ?? undefined,
-      )
-      : null;
+    return context ? queryHeadlessParaProps(this.options.editor.doc, context.id, context.positions, context.cell ?? undefined) : null;
   }
 
   setParaProps(props: ParagraphPropertyInput): boolean {
@@ -120,12 +146,18 @@ export class TextEditorController {
     if (!context || this.composing) return false;
     this.options.editor.transaction((transaction) => {
       transaction.exec({
-        type: 'SetParaProps', id: context.id, ...textTargetFields(context.cell),
-        range: context.positions, props,
+        type: 'SetParaProps',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        range: context.positions,
+        props,
       });
       transaction.select({
-        kind: 'text', id: context.id, ...textTargetFields(context.cell),
-        anchor: context.positions.from, focus: context.positions.to,
+        kind: 'text',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        anchor: context.positions.from,
+        focus: context.positions.to,
       });
     }, '设置段落格式');
     this.root?.focus({ preventScroll: true });
@@ -139,26 +171,36 @@ export class TextEditorController {
     const from = textPositionToIndex(context.text, context.positions.from);
     const to = textPositionToIndex(context.text, context.positions.to);
     const command = {
-      type: 'SetRunProps' as const, id: context.id, ...textTargetFields(context.cell),
-      range: context.positions, props,
+      type: 'SetRunProps' as const,
+      id: context.id,
+      ...textTargetFields(context.cell),
+      range: context.positions,
+      props,
     };
     if (from === to) {
       // headless no-op 仍负责统一校验；视图只保存不能进入 OOXML 的待输入状态。
       this.options.editor.exec(command);
       this.pendingFormat = {
-        ...this.pendingFormat, props: { ...this.pendingFormat.props, ...props },
+        ...this.pendingFormat,
+        props: { ...this.pendingFormat.props, ...props },
       };
       this.options.editor.select({
-        kind: 'text', id: context.id, ...textTargetFields(context.cell),
-        anchor: context.positions.from, focus: context.positions.to,
+        kind: 'text',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        anchor: context.positions.from,
+        focus: context.positions.to,
       });
     } else {
       this.resetPendingFormat();
       this.options.editor.transaction((transaction) => {
         transaction.exec(command);
         transaction.select({
-          kind: 'text', id: context.id, ...textTargetFields(context.cell),
-          anchor: context.positions.from, focus: context.positions.to,
+          kind: 'text',
+          id: context.id,
+          ...textTargetFields(context.cell),
+          anchor: context.positions.from,
+          focus: context.positions.to,
         });
       }, '设置字符格式');
     }
@@ -173,7 +215,9 @@ export class TextEditorController {
     const from = textPositionToIndex(context.text, context.positions.from);
     const to = textPositionToIndex(context.text, context.positions.to);
     const command = {
-      type: 'ClearFormat' as const, id: context.id, ...textTargetFields(context.cell),
+      type: 'ClearFormat' as const,
+      id: context.id,
+      ...textTargetFields(context.cell),
       range: context.positions,
     };
     this.resetPendingFormat();
@@ -181,15 +225,21 @@ export class TextEditorController {
       this.options.editor.exec(command);
       this.pendingFormat = { props: {}, clearSource: true };
       this.options.editor.select({
-        kind: 'text', id: context.id, ...textTargetFields(context.cell),
-        anchor: context.positions.from, focus: context.positions.to,
+        kind: 'text',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        anchor: context.positions.from,
+        focus: context.positions.to,
       });
     } else {
       this.options.editor.transaction((transaction) => {
         transaction.exec(command);
         transaction.select({
-          kind: 'text', id: context.id, ...textTargetFields(context.cell),
-          anchor: context.positions.from, focus: context.positions.to,
+          kind: 'text',
+          id: context.id,
+          ...textTargetFields(context.cell),
+          anchor: context.positions.from,
+          focus: context.positions.to,
         });
       }, '清除字符格式');
     }
@@ -223,14 +273,20 @@ export class TextEditorController {
     this.options.boundary.ownerDocument.addEventListener('pointerdown', this.onDocumentPointerDown, true);
     const end = textPositionAtIndex(active.text, textBodyEditText(active.text).length);
     this.options.editor.select({
-      kind: 'text', id, ...textTargetFields(this.activeCell), anchor: end, focus: end,
+      kind: 'text',
+      id,
+      ...textTargetFields(this.activeCell),
+      anchor: end,
+      focus: end,
     });
     this.root?.focus({ preventScroll: true });
     this.setCaret(end);
     return true;
   }
 
-  releaseTextEditing(): void { this.close(false); }
+  releaseTextEditing(): void {
+    this.close(false);
+  }
 
   close(selectElement = true): void {
     const id = this.activeId;
@@ -257,8 +313,7 @@ export class TextEditorController {
 
   update(change: EditorChange): void {
     if (!this.activeId) return;
-    if (change.selection.kind !== 'text' || change.selection.id !== this.activeId
-      || !this.options.editor.doc.elements[this.activeId]) {
+    if (change.selection.kind !== 'text' || change.selection.id !== this.activeId || !this.options.editor.doc.elements[this.activeId]) {
       this.close(false);
       return;
     }
@@ -289,15 +344,19 @@ export class TextEditorController {
         this.staticStale = false;
       }
       this.render(change.selection, true);
-    }
-    else this.hideStaticText();
+    } else this.hideStaticText();
   }
 
-  refreshStatic(): void { if (this.activeId) this.hideStaticText(); }
+  refreshStatic(): void {
+    if (this.activeId) this.hideStaticText();
+  }
 
   refreshFonts(): void {
     // 字体异步到达时，IME 持有的 DOM 必须保留到 compositionend。
-    if (this.composing) { this.fontsPending = true; return; }
+    if (this.composing) {
+      this.fontsPending = true;
+      return;
+    }
     this.fontsPending = false;
     this.autofit.reset();
     if (this.activeId) this.render(this.options.editor.selection);
@@ -310,9 +369,7 @@ export class TextEditorController {
 
   private textContext() {
     const active = this.activeText();
-    return active && this.root
-      ? resolveTextEditorContext(this.options.editor, active, this.root)
-      : null;
+    return active && this.root ? resolveTextEditorContext(this.options.editor, active, this.root) : null;
   }
 
   private activeText(): ActiveText | null {
@@ -325,7 +382,9 @@ export class TextEditorController {
     if (!active) return this.close(false);
     const { id, cell } = active;
     const root = createTextEditorRoot(
-      this.options.textLayer.ownerDocument, active, this.options.textLayout,
+      this.options.textLayer.ownerDocument,
+      active,
+      this.options.textLayout,
       this.autofit.displayScale(active),
     );
     this.bind(root);
@@ -358,12 +417,15 @@ export class TextEditorController {
       const model = this.activeText()?.text ?? null;
       const dom = readEditableDom(root);
       const positions = model ? rangePositions(root, model) : null;
-      this.composition = dom.valid && model && positions
-        ? {
-          domText: dom.text, modelText: textBodyEditText(model),
-          from: textPositionToIndex(model, positions.from),
-          to: textPositionToIndex(model, positions.to),
-        } : null;
+      this.composition =
+        dom.valid && model && positions
+          ? {
+              domText: dom.text,
+              modelText: textBodyEditText(model),
+              from: textPositionToIndex(model, positions.from),
+              to: textPositionToIndex(model, positions.to),
+            }
+          : null;
     });
     root.addEventListener('compositionend', () => {
       this.endComposition();
@@ -403,7 +465,11 @@ export class TextEditorController {
     this.render();
     const end = textPositionAtIndex(active.text, textBodyEditText(active.text).length);
     this.options.editor.select({
-      kind: 'text', id: active.id, cell: { ...next }, anchor: end, focus: end,
+      kind: 'text',
+      id: active.id,
+      cell: { ...next },
+      anchor: end,
+      focus: end,
     });
     this.root?.focus({ preventScroll: true });
     this.setCaret(end);
@@ -412,10 +478,14 @@ export class TextEditorController {
   private syncSelection(): void {
     if (this.composing) return;
     const context = this.textContext();
-    if (context) this.options.editor.select({
-      kind: 'text', id: context.id, ...textTargetFields(context.cell),
-      anchor: context.positions.from, focus: context.positions.to,
-    });
+    if (context)
+      this.options.editor.select({
+        kind: 'text',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        anchor: context.positions.from,
+        focus: context.positions.to,
+      });
   }
 
   private beforeInput(event: InputEvent): void {
@@ -436,18 +506,10 @@ export class TextEditorController {
     }
   }
 
-  private commit(
-    ops: readonly TextEditOp[],
-    nextIndex: number,
-    label: string,
-    insertedFrom: number | null = null,
-  ): void {
+  private commit(ops: readonly TextEditOp[], nextIndex: number, label: string, insertedFrom: number | null = null): void {
     const active = this.activeText();
     if (!active) return;
-    const caret = commitTextInput(
-      this.options.editor, active, ops, nextIndex, label, insertedFrom,
-      this.pendingFormat,
-    );
+    const caret = commitTextInput(this.options.editor, active, ops, nextIndex, label, insertedFrom, this.pendingFormat);
     if (caret) this.setCaret(caret);
   }
 
@@ -463,11 +525,10 @@ export class TextEditorController {
     }
     const active = this.activeText();
     const text = active?.text ?? null;
-    const local = after.valid
-      ? compositionChangedRange(snapshot.domText, after.text, snapshot.from, snapshot.to) : null;
+    const local = after.valid ? compositionChangedRange(snapshot.domText, after.text, snapshot.from, snapshot.to) : null;
     const currentText = text ? textBodyEditText(text) : '';
-    const rebased = local && snapshot.domText === snapshot.modelText
-      ? rebaseRange(snapshot.modelText, currentText, local.from, local.to) : null;
+    const rebased =
+      local && snapshot.domText === snapshot.modelText ? rebaseRange(snapshot.modelText, currentText, local.from, local.to) : null;
     if (!active || !text || !local || !rebased || local.text.includes('\n')) {
       this.render(undefined, true);
       return;
@@ -476,32 +537,38 @@ export class TextEditorController {
       if (currentText !== snapshot.modelText) this.render(undefined, true);
       return;
     }
-    this.commit([{
-      type: 'replace', from: textPositionAtIndex(text, rebased.from),
-      to: textPositionAtIndex(text, rebased.to), text: local.text,
-    }], rebased.from + local.text.length, 'IME 输入', rebased.from);
+    this.commit(
+      [
+        {
+          type: 'replace',
+          from: textPositionAtIndex(text, rebased.from),
+          to: textPositionAtIndex(text, rebased.to),
+          text: local.text,
+        },
+      ],
+      rebased.from + local.text.length,
+      'IME 输入',
+      rebased.from,
+    );
   }
 
-  private formatSelection(
-    field: 'b' | 'i' | 'u',
-    knownPositions?: { from: TextPosition; to: TextPosition },
-  ): boolean {
+  private formatSelection(field: 'b' | 'i' | 'u', knownPositions?: { from: TextPosition; to: TextPosition }): boolean {
     if (!this.activeId || !this.root || this.composing) return false;
     const context = this.textContext();
     const positions = knownPositions ?? context?.positions;
     if (!context || !positions) return false;
     const from = textPositionToIndex(context.text, positions.from);
     const to = textPositionToIndex(context.text, positions.to);
-    const state = queryRunProps(
-      this.options.editor.doc, this.activeId, positions, this.activeCell ?? undefined,
-    )[field];
+    const state = queryRunProps(this.options.editor.doc, this.activeId, positions, this.activeCell ?? undefined)[field];
     const pending = this.pendingFormat.props[field];
-    const current = from === to && typeof pending === 'boolean'
-      ? pending : !state.mixed && state.value === true;
+    const current = from === to && typeof pending === 'boolean' ? pending : !state.mixed && state.value === true;
     const value = !current;
     const selection: Selection = {
-      kind: 'text', id: this.activeId, ...textTargetFields(this.activeCell),
-      anchor: positions.from, focus: positions.to,
+      kind: 'text',
+      id: this.activeId,
+      ...textTargetFields(this.activeCell),
+      anchor: positions.from,
+      focus: positions.to,
     };
     if (from === to) {
       return this.setRunProps({ [field]: value });
@@ -510,8 +577,11 @@ export class TextEditorController {
     const labels = { b: '粗体', i: '斜体', u: '下划线' } as const;
     this.options.editor.transaction((transaction) => {
       transaction.exec({
-        type: 'SetRunProps', id: this.activeId!, ...textTargetFields(this.activeCell),
-        range: positions, props: { [field]: value },
+        type: 'SetRunProps',
+        id: this.activeId!,
+        ...textTargetFields(this.activeCell),
+        range: positions,
+        props: { [field]: value },
       });
       transaction.select(selection);
     }, `设置${labels[field]}`);
@@ -522,7 +592,9 @@ export class TextEditorController {
     if (this.root) setTextDomSelection(this.root, anchor, focus);
   }
 
-  private setCaret(position: TextPosition): void { this.setSelection(position, position); }
+  private setCaret(position: TextPosition): void {
+    this.setSelection(position, position);
+  }
 
   private resetPendingFormat(): void {
     this.pendingFormat = { props: {}, clearSource: false };

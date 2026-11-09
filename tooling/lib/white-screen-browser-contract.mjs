@@ -1,11 +1,18 @@
 async function press(request, name, value, modifiers = 0) {
-  const code = name === 'b' || name === 'B' ? 'KeyB'
-    : name === 'w' || name === 'W' ? 'KeyW'
-      : name === 'n' || name === 'N' ? 'KeyN'
-        : name === '.' ? 'Period'
-          : name === ',' || name === '<' ? 'Comma'
-            : name === ' ' ? 'Space'
-              : name;
+  const code =
+    name === 'b' || name === 'B'
+      ? 'KeyB'
+      : name === 'w' || name === 'W'
+        ? 'KeyW'
+        : name === 'n' || name === 'N'
+          ? 'KeyN'
+          : name === '.'
+            ? 'Period'
+            : name === ',' || name === '<'
+              ? 'Comma'
+              : name === ' '
+                ? 'Space'
+                : name;
   const key = {
     key: name,
     code,
@@ -32,9 +39,7 @@ function installFullscreen(root) {
 }
 
 function restoreFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     if (el && globalThis.__nativeRequestFullscreenWhite) {
@@ -51,19 +56,10 @@ function dispatchKey(key, extra = {}) {
   return `document.dispatchEvent(new KeyboardEvent('keydown', { ${flags} }))`;
 }
 
-export async function runWhiteScreenContract({ evaluate, request, click, waitFor }, {
-  trigger,
-  fullscreenRoot = null,
-  stage,
-  pager,
-  prevButton,
-  nextButton,
-  gridButton,
-  blankButton,
-  presenting,
-  search = null,
-  hint = null,
-}) {
+export async function runWhiteScreenContract(
+  { evaluate, request, click, waitFor },
+  { trigger, fullscreenRoot = null, stage, pager, prevButton, nextButton, gridButton, blankButton, presenting, search = null, hint = null },
+) {
   const veilOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
   const whiteOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
   const blackOn = `!!document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on:not(.is-white)`)})`;
@@ -105,7 +101,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
   await press(request, ',', 188);
   await press(request, '<', 188);
   if (await evaluate(veilOn)) throw new Error('浏览态出现了遮罩');
-  if (await evaluate(pageExpr) !== browsePage) throw new Error('浏览态 W 或逗号翻了页');
+  if ((await evaluate(pageExpr)) !== browsePage) throw new Error('浏览态 W 或逗号翻了页');
 
   if (search) {
     await evaluate(`(() => {
@@ -115,18 +111,32 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
       input.setSelectionRange(input.value.length, input.value.length);
     })()`);
     await request('Input.dispatchKeyEvent', {
-      type: 'keyDown', key: 'w', code: 'KeyW', text: 'w', unmodifiedText: 'w',
+      type: 'keyDown',
+      key: 'w',
+      code: 'KeyW',
+      text: 'w',
+      unmodifiedText: 'w',
       windowsVirtualKeyCode: 87,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87,
+      type: 'keyUp',
+      key: 'w',
+      code: 'KeyW',
+      windowsVirtualKeyCode: 87,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyDown', key: ',', code: 'Comma', text: ',', unmodifiedText: ',',
+      type: 'keyDown',
+      key: ',',
+      code: 'Comma',
+      text: ',',
+      unmodifiedText: ',',
       windowsVirtualKeyCode: 188,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: ',', code: 'Comma', windowsVirtualKeyCode: 188,
+      type: 'keyUp',
+      key: ',',
+      code: 'Comma',
+      windowsVirtualKeyCode: 188,
     });
     await waitFor(
       `document.querySelector(${JSON.stringify(search)}).value === 'zzzw,' && !${veilOn} && ${pageExpr} === ${JSON.stringify(browsePage)}`,
@@ -146,7 +156,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     await press(request, 'w', 87);
     await waitFor(`${whiteOn} && ${pageExpr} === ${JSON.stringify(start)}`, '放映中 W 白屏');
     if (!String(await evaluate(background)).includes('255, 255, 255')) throw new Error('白屏层不是白色');
-    if (await evaluate(`document.querySelector(${JSON.stringify(blankButton)}).getAttribute('aria-pressed')`) !== 'false') {
+    if ((await evaluate(`document.querySelector(${JSON.stringify(blankButton)}).getAttribute('aria-pressed')`)) !== 'false') {
       throw new Error('白屏时 B 按钮算成了按下');
     }
     await press(request, 'w', 87);
@@ -179,14 +189,16 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
 
     await press(request, 'w', 87);
     await waitFor(whiteOn, '再白一次以便点层');
-    await evaluate(`document.querySelector(${JSON.stringify(`${stage} .present-blank`)}).dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
+    await evaluate(
+      `document.querySelector(${JSON.stringify(`${stage} .present-blank`)}).dispatchEvent(new MouseEvent('click', { bubbles: true }))`,
+    );
     await waitFor(`!${veilOn} && ${pageExpr} === ${JSON.stringify(start)}`, '点白层恢复且不翻页');
 
     const armed = async (key, value, label) => {
       await evaluate('globalThis.__whiteBubbled = []');
       await press(request, key, value);
       await waitFor(`!${veilOn} && ${pageExpr} === ${JSON.stringify(start)}`, label);
-      if (await evaluate('globalThis.__whiteBubbled.length') !== 0) {
+      if ((await evaluate('globalThis.__whiteBubbled.length')) !== 0) {
         throw new Error(`${label}：按键还冒泡到了翻页`);
       }
     };
@@ -201,9 +213,9 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     await armed('Enter', 13, '白屏中 Enter 只恢复');
     await evaluate('globalThis.__whiteBubbled = []');
     await press(request, 'Enter', 13);
-    if (await evaluate('globalThis.__whiteBubbled.length') !== 1) throw new Error('没有遮罩时 Enter 没有到达原来的监听');
+    if ((await evaluate('globalThis.__whiteBubbled.length')) !== 1) throw new Error('没有遮罩时 Enter 没有到达原来的监听');
     if (await evaluate(veilOn)) throw new Error('没有遮罩时 Enter 打出了白屏');
-    if (await evaluate(pageExpr) !== start && prevButton) {
+    if ((await evaluate(pageExpr)) !== start && prevButton) {
       await evaluate(`(() => {
         const prev = document.querySelector(${JSON.stringify(prevButton)});
         const pager = document.querySelector(${JSON.stringify(pager)});
@@ -216,17 +228,17 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     await waitFor(whiteOn, '再白一次以便 N');
     await press(request, 'n', 78);
     await press(request, 'n', 78);
-    if (!await evaluate(whiteOn) || await evaluate(pageExpr) !== start) throw new Error('N 清掉了白屏或翻了页');
+    if (!(await evaluate(whiteOn)) || (await evaluate(pageExpr)) !== start) throw new Error('N 清掉了白屏或翻了页');
 
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', ctrlKey: true, bubbles: true, cancelable: true }))`);
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', metaKey: true, bubbles: true, cancelable: true }))`);
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: ',', metaKey: true, bubbles: true, cancelable: true }))`);
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: '.', metaKey: true, bubbles: true, cancelable: true }))`);
-    if (!await evaluate(whiteOn) || await evaluate(pageExpr) !== start || !await evaluate(presenting)) {
+    if (!(await evaluate(whiteOn)) || (await evaluate(pageExpr)) !== start || !(await evaluate(presenting))) {
       throw new Error('修饰键清掉了白屏、翻了页或结束了放映');
     }
     await press(request, '<', 188);
-    if (!await evaluate(whiteOn) || await evaluate(pageExpr) !== start) throw new Error('< 被当成白屏键');
+    if (!(await evaluate(whiteOn)) || (await evaluate(pageExpr)) !== start) throw new Error('< 被当成白屏键');
 
     if (search) {
       await evaluate(`(() => {
@@ -235,7 +247,11 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
         input.setSelectionRange(input.value.length, input.value.length);
       })()`);
       await request('Input.dispatchKeyEvent', {
-        type: 'keyDown', key: 'w', code: 'KeyW', text: 'w', unmodifiedText: 'w',
+        type: 'keyDown',
+        key: 'w',
+        code: 'KeyW',
+        text: 'w',
+        unmodifiedText: 'w',
         windowsVirtualKeyCode: 87,
       });
       await request('Input.dispatchKeyEvent', { type: 'keyUp', key: 'w', code: 'KeyW', windowsVirtualKeyCode: 87 });
@@ -272,7 +288,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     await waitFor(gridOn, '白屏时打开网格');
     await press(request, 'w', 87);
     await press(request, ',', 188);
-    if (!await evaluate(whiteOn) || await evaluate(pageExpr) !== start || !await evaluate(gridOn)) {
+    if (!(await evaluate(whiteOn)) || (await evaluate(pageExpr)) !== start || !(await evaluate(gridOn))) {
       throw new Error('网格开着时 W 或逗号改了白屏、翻了页或关掉了网格');
     }
     const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 };
@@ -283,10 +299,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
     await click(gridButton);
     await waitFor(gridOn, '再开网格以便点页');
     await evaluate(`document.querySelector('.slide-grid-item[data-index="2"]').click()`);
-    await waitFor(
-      `!${gridOn} && ${presenting} && !${veilOn} && ${pageExpr}.startsWith('3 /')`,
-      '点网格页清掉白屏并跳页',
-    );
+    await waitFor(`!${gridOn} && ${presenting} && !${veilOn} && ${pageExpr}.startsWith('3 /')`, '点网格页清掉白屏并跳页');
 
     await press(request, 'w', 87);
     await waitFor(whiteOn, '跳页后 W 仍能白屏');
@@ -319,7 +332,7 @@ export async function runWhiteScreenContract({ evaluate, request, click, waitFor
   if (failure) throw failure;
   await evaluate(dispatchKey('w'));
   await evaluate(dispatchKey(','));
-  if (await evaluate(veilOn) || await evaluate(presenting)) throw new Error('退出后 W 或逗号仍白屏或留在放映');
+  if ((await evaluate(veilOn)) || (await evaluate(presenting))) throw new Error('退出后 W 或逗号仍白屏或留在放映');
 }
 
 export async function runStandaloneWhiteScreenContract({ evaluate, request, waitFor, click }) {
@@ -337,17 +350,20 @@ export async function runStandaloneWhiteScreenContract({ evaluate, request, wait
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') && !document.querySelector('#searchInput').disabled",
     '白屏契约 showcase',
   );
-  await runWhiteScreenContract({ evaluate, request, waitFor, click }, {
-    trigger: '#btnPresent',
-    stage: '#stage',
-    pager: '#pageIndicator',
-    prevButton: '#btnPrev',
-    nextButton: '#btnNext',
-    gridButton: '#pvGrid',
-    blankButton: '#pvBlank',
-    presenting: "!document.querySelector('#presenter').hidden",
-    search: '#searchInput',
-    hint: '.hint',
-  });
+  await runWhiteScreenContract(
+    { evaluate, request, waitFor, click },
+    {
+      trigger: '#btnPresent',
+      stage: '#stage',
+      pager: '#pageIndicator',
+      prevButton: '#btnPrev',
+      nextButton: '#btnNext',
+      gridButton: '#pvGrid',
+      blankButton: '#pvBlank',
+      presenting: "!document.querySelector('#presenter').hidden",
+      search: '#searchInput',
+      hint: '.hint',
+    },
+  );
   console.log('  放映白屏通过');
 }

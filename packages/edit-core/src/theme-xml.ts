@@ -16,7 +16,10 @@ function rootElement(bytes: Uint8Array): { document: ReturnType<typeof parseXmlT
 function colorHex(value: string): string {
   const channels = /^rgb\((\d+),(\d+),(\d+)\)$/.exec(value)?.slice(1).map(Number);
   if (!channels) throw new Error(`无法写回主题颜色：${value}`);
-  return channels.map((channel) => channel.toString(16).padStart(2, '0')).join('').toUpperCase();
+  return channels
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 }
 
 function patchColors(themeElements: XmlElement, record: ThemeRecord): void {
@@ -45,9 +48,12 @@ function patchFontCollection(parent: XmlElement, record: ThemeRecord, role: 'maj
     setXmlAttribute(font, 'typeface', override[field]);
   }
   for (const [script, typeface] of Object.entries(override.scripts ?? {})) {
-    let font = collection.children.find((node): node is XmlElement =>
-      node.type === 'element' && node.localName === 'font'
-        && node.attributes.some((attribute) => attribute.localName === 'script' && attribute.value === script));
+    let font = collection.children.find(
+      (node): node is XmlElement =>
+        node.type === 'element'
+        && node.localName === 'font'
+        && node.attributes.some((attribute) => attribute.localName === 'script' && attribute.value === script),
+    );
     if (!font) {
       font = namespacedElement(collection, DRAWINGML_NS, 'font');
       setXmlAttribute(font, 'script', script);

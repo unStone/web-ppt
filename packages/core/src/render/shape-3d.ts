@@ -7,7 +7,9 @@ export interface Shape3DContext {
 }
 export type Shape3DRenderer = (el: ShapeElement, front: string, ctx: Shape3DContext, surface?: string) => string;
 export let shape3DRenderer: Shape3DRenderer | undefined;
-export function setShape3DRenderer(renderer: Shape3DRenderer | undefined): void { shape3DRenderer = renderer; }
+export function setShape3DRenderer(renderer: Shape3DRenderer | undefined): void {
+  shape3DRenderer = renderer;
+}
 
 export function shapeColorChannels(source: string): [number, number, number] {
   const functional = source.match(/rgba?\(([^)]+)\)/);
@@ -16,9 +18,7 @@ export function shapeColorChannels(source: string): [number, number, number] {
     return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
   }
   const hex = source.replace('#', '');
-  return hex.length >= 6
-    ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
-    : [128, 128, 128];
+  return hex.length >= 6 ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)] : [128, 128, 128];
 }
 
 export function mixShapeColor(color: string, target: string, ratio: number): string {
@@ -39,18 +39,15 @@ export function extrusionLayers(el: ShapeElement, shape3d: Shape3D, baseColor: s
   const output: string[] = [];
   for (let index = steps; index >= 1; index--) {
     const progress = index / steps;
-    output.push(`<g transform="translate(${round(dx * progress)} ${round(dy * progress)})">`
-      + `<path d="${el.path}" fill="${side}" fill-rule="nonzero"/></g>`);
+    output.push(
+      `<g transform="translate(${round(dx * progress)} ${round(dy * progress)})">`
+        + `<path d="${el.path}" fill="${side}" fill-rule="nonzero"/></g>`,
+    );
   }
   return output.join('');
 }
 
-export function bevelOverlay(
-  el: ShapeElement,
-  shape3d: Shape3D,
-  baseColor: string,
-  ctx: Shape3DContext,
-): string {
+export function bevelOverlay(el: ShapeElement, shape3d: Shape3D, baseColor: string, ctx: Shape3DContext): string {
   const bevel = shape3d.bevelTop ?? 0;
   if (bevel <= 0.3 || !el.path) return '';
   const light = mixShapeColor(baseColor, '#fff', 0.5);
@@ -58,8 +55,10 @@ export function bevelOverlay(
   const width = Math.min(bevel * 2, Math.min(el.w, el.h) / 3);
   const id = ctx.nextId('bv');
   ctx.defs.push(`<clipPath id="${id}"><path d="${el.path}"/></clipPath>`);
-  return `<g clip-path="url(#${id})"><path d="${el.path}" fill="none" stroke="${light}" `
+  return (
+    `<g clip-path="url(#${id})"><path d="${el.path}" fill="none" stroke="${light}" `
     + `stroke-width="${round(width)}" stroke-linejoin="round" opacity="0.55"/>`
     + `<path d="${el.path}" fill="none" stroke="${dark}" stroke-width="${round(width / 3)}" `
-    + `stroke-linejoin="round" opacity="0.35" transform="translate(0 ${round(width / 3)})"/></g>`;
+    + `stroke-linejoin="round" opacity="0.35" transform="translate(0 ${round(width / 3)})"/></g>`
+  );
 }

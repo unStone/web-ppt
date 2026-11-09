@@ -1,10 +1,7 @@
 import { canvasTargetOfElement, sameCanvas } from '../design-target';
 import { effectiveElement } from '../projection';
 import { outermostSelectedElementIds } from '../selection';
-import {
-  elementFrameToSlideMatrix, elementParentToSlideMatrix, inverseTransformSpaceVector,
-  transformSpacePoint,
-} from '../space';
+import { elementFrameToSlideMatrix, elementParentToSlideMatrix, inverseTransformSpaceVector, transformSpacePoint } from '../space';
 import type { SpacePoint } from '../space';
 import type { EditDoc, ElementId } from '../types';
 import { elementTransformPatches } from './element-transform';
@@ -22,14 +19,16 @@ export interface ArrangementTarget {
   readonly bounds: ElementWorldBounds;
 }
 
-const cleanDelta = (value: number): number => Math.abs(value) < 1e-9 ? 0 : value;
+const cleanDelta = (value: number): number => (Math.abs(value) < 1e-9 ? 0 : value);
 
 export function elementWorldBounds(doc: EditDoc, id: ElementId): ElementWorldBounds {
   const element = effectiveElement(doc, id);
   const matrix = elementFrameToSlideMatrix(doc, id);
   const points = [
-    { x: 0, y: 0 }, { x: element.w, y: 0 },
-    { x: element.w, y: element.h }, { x: 0, y: element.h },
+    { x: 0, y: 0 },
+    { x: element.w, y: 0 },
+    { x: element.w, y: element.h },
+    { x: 0, y: element.h },
   ].map((point) => transformSpacePoint(matrix, point));
   return {
     left: Math.min(...points.map((point) => point.x)),
@@ -40,15 +39,9 @@ export function elementWorldBounds(doc: EditDoc, id: ElementId): ElementWorldBou
 }
 
 /** 排列命令共享“同页、可移动、最外层”边界，避免对齐与分布逐渐产生两套语义。 */
-export function arrangementTargets(
-  doc: EditDoc,
-  ids: readonly ElementId[],
-  minimum: number,
-  label: string,
-): ArrangementTarget[] {
+export function arrangementTargets(doc: EditDoc, ids: readonly ElementId[], minimum: number, label: string): ArrangementTarget[] {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能执行命令');
-  if (!Array.isArray(ids) || ids.length < minimum
-    || ids.some((id) => typeof id !== 'string' || !id)) {
+  if (!Array.isArray(ids) || ids.length < minimum || ids.some((id) => typeof id !== 'string' || !id)) {
     throw new Error(`${label}.ids 必须是至少 ${minimum} 项的元素 id 数组`);
   }
   if (new Set(ids).size !== ids.length) throw new Error(`${label}.ids 不能包含重复 id`);

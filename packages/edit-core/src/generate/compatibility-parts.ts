@@ -8,8 +8,7 @@ import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
 import type { XmlElement } from '../xml/types';
 
 const REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
-const attr = (node: XmlElement, localName: string): string | undefined =>
-  findXmlAttribute(node, { localName, namespaceUri: null })?.value;
+const attr = (node: XmlElement, localName: string): string | undefined => findXmlAttribute(node, { localName, namespaceUri: null })?.value;
 
 /** 不透明对象的依赖保持原字节，只有页面到对象的关系需要换成生成页的新 rId。 */
 export class CompatibilityParts {
@@ -36,15 +35,17 @@ export class CompatibilityParts {
     const bytes = this.source(relationshipPartFor(part));
     if (!bytes) return [];
     return xmlElementChildren(parseXmlTree(bytes).root, {
-      localName: 'Relationship', namespaceUri: REL_NS,
+      localName: 'Relationship',
+      namespaceUri: REL_NS,
     }).map((node) => {
-      const id = attr(node, 'Id'), type = attr(node, 'Type'), target = attr(node, 'Target');
+      const id = attr(node, 'Id'),
+        type = attr(node, 'Type'),
+        target = attr(node, 'Target');
       const mode = attr(node, 'TargetMode');
-      if (!id || !type || !target || mode && mode !== 'Internal' && mode !== 'External') {
+      if (!id || !type || !target || (mode && mode !== 'Internal' && mode !== 'External')) {
         throw new Error(`兼容对象的关系无效：${part}`);
       }
-      return { sourceId: id, targetId: id, type, target,
-        ...(mode === 'External' ? { targetMode: 'External' as const } : {}) };
+      return { sourceId: id, targetId: id, type, target, ...(mode === 'External' ? { targetMode: 'External' as const } : {}) };
     });
   }
 
@@ -82,13 +83,20 @@ export class CompatibilityParts {
       }
       if (previous) continue;
       const direct = declarations.find((node) => node.localName === 'Override' && attr(node, 'PartName') === `/${part}`);
-      const fallback = declarations.find((node) => node.localName === 'Default'
-        && attr(node, 'Extension')?.toLowerCase() === part.split('.').pop()!.toLowerCase());
+      const fallback = declarations.find(
+        (node) => node.localName === 'Default' && attr(node, 'Extension')?.toLowerCase() === part.split('.').pop()!.toLowerCase(),
+      );
       const mime = this.media.get(part)?.mime ?? attr(direct ?? fallback ?? types.root, 'ContentType');
       if (!mime) throw new Error(`兼容对象依赖缺少 Content-Type：${part}`);
-      insertXmlChildUnchecked(types.root, createXmlElement('Override', {
-        attributes: [['PartName', `/${part}`], ['ContentType', mime]],
-      }));
+      insertXmlChildUnchecked(
+        types.root,
+        createXmlElement('Override', {
+          attributes: [
+            ['PartName', `/${part}`],
+            ['ContentType', mime],
+          ],
+        }),
+      );
       parts[part] = bytes;
     }
     parts['[Content_Types].xml'] = serializeXmlTreeBytes(types);

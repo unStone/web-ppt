@@ -1,10 +1,7 @@
 import type { Presentation } from './types';
 const MAX_CANVAS_EDGE = 32_767;
 
-export function validateRasterSize(
-  pres: Presentation,
-  scale: number,
-): { width: number; height: number } {
+export function validateRasterSize(pres: Presentation, scale: number): { width: number; height: number } {
   if (!Number.isFinite(scale) || scale <= 0) {
     throw new RangeError('scale 必须是大于 0 的有限数');
   }
@@ -15,4 +12,3 @@ export function validateRasterSize(
   }
   return { width, height };
 }
-

@@ -5,10 +5,15 @@ export function bindSiteLinks(document: Document): {
   apply: (language: SiteLanguage, page: URL) => void;
   add: (anchor: HTMLAnchorElement, href: string) => void;
 } {
-  const navigation = new Map([...document.querySelectorAll<HTMLAnchorElement>('a[href]')]
-    .filter((anchor) => !anchor.closest('[data-site-language],[data-site-user-content],svg')
-      && (!anchor.closest('.sample-card') || anchor.hasAttribute('data-site-message')))
-    .map((anchor) => [anchor, anchor.getAttribute('href')!]));
+  const navigation = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('a[href]')]
+      .filter(
+        (anchor) =>
+          !anchor.closest('[data-site-language],[data-site-user-content],svg')
+          && (!anchor.closest('.sample-card') || anchor.hasAttribute('data-site-message')),
+      )
+      .map((anchor) => [anchor, anchor.getAttribute('href')!]),
+  );
   const controls = [...document.querySelectorAll<HTMLAnchorElement>('[data-site-locale]')];
   const apply = (language: SiteLanguage, page: URL): void => {
     const directory = page.pathname.slice(0, page.pathname.lastIndexOf('/') + 1);
@@ -30,5 +35,10 @@ export function bindSiteLinks(document: Document): {
       anchor.setAttribute('aria-current', String(locale === language));
     }
   };
-  return { apply, add: (anchor, href) => { navigation.set(anchor, href); } };
+  return {
+    apply,
+    add: (anchor, href) => {
+      navigation.set(anchor, href);
+    },
+  };
 }

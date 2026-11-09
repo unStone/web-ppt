@@ -3,18 +3,48 @@
  * 固件见 tooling/make-group-scale-fixture.mjs；第 4、5 页右侧是同尺寸的未成组对照形状。
  */
 const groupOf = (overrides) => ({
-  kind: 'group', x: 0, y: 0, w: 100, h: 100, rot: 0, flipH: false, flipV: false,
-  childX: 0, childY: 0, scaleX: 1, scaleY: 1, children: [], ...overrides,
+  kind: 'group',
+  x: 0,
+  y: 0,
+  w: 100,
+  h: 100,
+  rot: 0,
+  flipH: false,
+  flipV: false,
+  childX: 0,
+  childY: 0,
+  scaleX: 1,
+  scaleY: 1,
+  children: [],
+  ...overrides,
 });
 const shapeOf = (overrides) => ({
-  kind: 'shape', x: 0, y: 0, w: 10, h: 10, rot: 0, flipH: false, flipV: false,
-  path: null, fill: null, stroke: null, text: null, ...overrides,
+  kind: 'shape',
+  x: 0,
+  y: 0,
+  w: 10,
+  h: 10,
+  rot: 0,
+  flipH: false,
+  flipV: false,
+  path: null,
+  fill: null,
+  stroke: null,
+  text: null,
+  ...overrides,
 });
 
 /** 页面中所有 scale()：除组合翻转的 ±1 外不允许出现，任何其他值都意味着子树仍被整体缩放。 */
 function nonFlipScales(svg) {
-  return [...svg.matchAll(/scale\(([^)]*)\)/g)].map((match) => match[1])
-    .filter((value) => !value.trim().split(/\s+/).every((part) => Math.abs(Number(part)) === 1));
+  return [...svg.matchAll(/scale\(([^)]*)\)/g)]
+    .map((match) => match[1])
+    .filter(
+      (value) =>
+        !value
+          .trim()
+          .split(/\s+/)
+          .every((part) => Math.abs(Number(part)) === 1),
+    );
 }
 
 function maxStrokeWidth(svg) {
@@ -73,21 +103,27 @@ export function runGroupTransformContract({ lib, parsed, check, eq, near }) {
   // 非等比组合中的旋转子元素保持刚体：30° 不交换宽高，120° 交换（与 LibreOffice 一致）。
   const flipped = rotated.elements[0];
   const [, deg30, deg120] = flipped.children.map((child) => lib.placeGroupChild(flipped, child));
-  check('30° 子元素按自身方向缩放（1.5×, 0.75×）', deg30.w === 300 && deg30.h === 60 && deg30.rot === 30,
-    `${deg30.w}×${deg30.h}@${deg30.rot}`);
-  check('120° 子元素宽高交换承接组缩放（0.75×, 1.5×）', deg120.w === 150 && deg120.h === 120 && deg120.rot === 120,
-    `${deg120.w}×${deg120.h}@${deg120.rot}`);
+  check(
+    '30° 子元素按自身方向缩放（1.5×, 0.75×）',
+    deg30.w === 300 && deg30.h === 60 && deg30.rot === 30,
+    `${deg30.w}×${deg30.h}@${deg30.rot}`,
+  );
+  check(
+    '120° 子元素宽高交换承接组缩放（0.75×, 1.5×）',
+    deg120.w === 150 && deg120.h === 120 && deg120.rot === 120,
+    `${deg120.w}×${deg120.h}@${deg120.rot}`,
+  );
   near('120° 子元素中心按组映射 x', deg120.x + deg120.w / 2, (220 + 100) * 1.5, 1e-6);
   near('120° 子元素中心按组映射 y', deg120.y + deg120.h / 2, (220 + 40) * 0.75, 1e-6);
-  check('组合翻转与旋转仍是刚体变换', /rotate\(20 /.test(render(rotated, 'svg'))
-    && render(rotated, 'svg').includes('scale(-1 1)'));
+  check('组合翻转与旋转仍是刚体变换', /rotate\(20 /.test(render(rotated, 'svg')) && render(rotated, 'svg').includes('scale(-1 1)'));
 
   // path data 按轴缩放覆盖相对命令、隐式重复与紧凑弧线标志。
-  const scaledPath = (path, scaleX, scaleY) =>
-    lib.placeGroupChild(groupOf({ scaleX, scaleY }), shapeOf({ path })).path;
-  eq('相对命令、隐式 lineto 与紧凑弧线标志逐项缩放',
+  const scaledPath = (path, scaleX, scaleY) => lib.placeGroupChild(groupOf({ scaleX, scaleY }), shapeOf({ path })).path;
+  eq(
+    '相对命令、隐式 lineto 与紧凑弧线标志逐项缩放',
     scaledPath('m10 10 20 0 h5 v5 a5 5 0 01 10 0 c1 2 3 4 5 6 s1 1 2 2 q1 1 2 2 t3 3 z', 2, 3),
-    'm 20 30 l 40 0 h 10 v 15 a 10 15 0 0 1 20 0 c 2 6 6 12 10 18 s 2 3 4 6 q 2 3 4 6 t 6 9 z');
+    'm 20 30 l 40 0 h 10 v 15 a 10 15 0 0 1 20 0 c 2 6 6 12 10 18 s 2 3 4 6 q 2 3 4 6 t 6 9 z',
+  );
   eq('等比缩放保留弧线倾角', scaledPath('M 0 0 A 10 5 45 0 1 10 10', 2, 2), 'M 0 0 A 20 10 45 0 1 20 20');
   const tilted = scaledPath('M 0 0 A 10 5 45 0 1 10 10', 2, 1).split(' ').map(Number);
   near('非等比缩放倾斜弧线时面积按 kx·ky 缩放', tilted[4] * tilted[5], 10 * 5 * 2, 0.2);
@@ -95,15 +131,32 @@ export function runGroupTransformContract({ lib, parsed, check, eq, near }) {
   eq('90° 倾斜弧线在非等比缩放下交换半轴', scaledPath('M 0 0 A 10 5 90 0 1 10 10', 2, 3), 'M 0 0 A 30 10 90 0 1 20 30');
 
   let invalid = '';
-  try { scaledPath('M 0 0 L x 1', 2, 2); } catch (error) { invalid = error.message; }
+  try {
+    scaledPath('M 0 0 L x 1', 2, 2);
+  } catch (error) {
+    invalid = error.message;
+  }
   check('无效 path data 立即抛出并定位位置', invalid.includes('路径数据无效') && invalid.includes('位置'), invalid);
-  const broken = lib.renderSlideToSvg(presentation, {
-    ...scaled,
-    elements: [groupOf({ scaleX: 2, scaleY: 2, children: [
-      shapeOf({ id: 71, path: 'M 0 0 L x 1' }),
-      shapeOf({ id: 72, path: 'M 0 0 L 10 10', stroke: { color: '#000', width: 2, dash: null } }),
-    ] })],
-  }, { textMode: 'svg' });
-  check('组内单个子元素折算失败只占位自身，兄弟照常渲染',
-    (broken.match(/data-render-error="1"/g) ?? []).length === 1 && broken.includes('L 20 20'), broken.slice(0, 800));
+  const broken = lib.renderSlideToSvg(
+    presentation,
+    {
+      ...scaled,
+      elements: [
+        groupOf({
+          scaleX: 2,
+          scaleY: 2,
+          children: [
+            shapeOf({ id: 71, path: 'M 0 0 L x 1' }),
+            shapeOf({ id: 72, path: 'M 0 0 L 10 10', stroke: { color: '#000', width: 2, dash: null } }),
+          ],
+        }),
+      ],
+    },
+    { textMode: 'svg' },
+  );
+  check(
+    '组内单个子元素折算失败只占位自身，兄弟照常渲染',
+    (broken.match(/data-render-error="1"/g) ?? []).length === 1 && broken.includes('L 20 20'),
+    broken.slice(0, 800),
+  );
 }

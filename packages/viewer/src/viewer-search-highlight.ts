@@ -26,10 +26,7 @@ function highlightRegistry(): HighlightRegistry | undefined {
   return css?.highlights;
 }
 
-function pointAt(
-  nodes: ReadonlyArray<{ node: Text; start: number }>,
-  index: number,
-): { node: Text; offset: number } {
+function pointAt(nodes: ReadonlyArray<{ node: Text; start: number }>, index: number): { node: Text; offset: number } {
   for (const item of nodes) {
     const end = item.start + item.node.data.length;
     if (index <= end) return { node: item.node, offset: index - item.start };
@@ -41,7 +38,7 @@ function textContainers(root: ParentNode): Element[] {
   const htmlBodies = [...root.querySelectorAll('foreignObject')];
   const svgTexts = [...root.querySelectorAll('text')].filter((node) => !node.closest('foreignObject'));
   const found = [...htmlBodies, ...svgTexts];
-  return found.length ? found : (root instanceof Element ? [root] : []);
+  return found.length ? found : root instanceof Element ? [root] : [];
 }
 
 function rangesInContainer(container: Element, query: string): Range[] {
