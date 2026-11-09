@@ -15,8 +15,7 @@
       "tooling/**/*.tsx",
       "**/*.json",
       "packages/*/src/**/*.css",
-      "packages/*/*.html",
-      "tooling/*.html",
+      // HTML 不纳入：Biome 会在元素内部插入换行缩进，改变 DOM 的 textContent，官网语言切换契约直接比对按钮文本
       // 由生成器产出，问题应在生成器里修；生成器带 --check 的会逐字节比对
       "!**/generated*.ts",
       "!**/package-lock.json",
@@ -54,11 +53,6 @@
   "json": {
     "formatter": {
       "expand": "always"
-    }
-  },
-  "html": {
-    "formatter": {
-      "enabled": true
     }
   },
   "assist": {
