@@ -75,17 +75,6 @@ export function createAnimationAcceptance(api) {
     };
   };
 
-  const eq = (a, b) => Math.abs(parseFloat(a) - parseFloat(b)) < 1e-4;
-  /** 只比较 want 里出现的通道；数值通道 1e-4，字符串通道归一化空白后精确比较 */
-  const same = (got, want) => {
-    if (want.opacity !== undefined && !eq(got.opacity, want.opacity)) return false;
-    if (want.transform !== undefined && got.transform !== want.transform) return false;
-    if (want.clipPath !== undefined && got.clipPath !== want.clipPath) return false;
-    if (want.maskSize !== undefined
-      && got.maskSize.replace(/\s+/g, ' ') !== String(want.maskSize).replace(/\s+/g, ' ')) return false;
-    return true;
-  };
-
   /** 0.5 处的期望值：先找精确命中 offset=0.5 的关键帧，再对相邻两帧做数值插值 */
   const midpointExpectation = (keyframes) => {
     const frames = keyframes.filter((k) => k.offset !== undefined || k.offset === 0);

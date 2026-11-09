@@ -45,7 +45,7 @@ const catalog = listBuiltinTemplates(); // 极光 / 刊页 / 夜幕，以及轻�
 const session = await openEditor(createPptxFromTemplate(catalog[0].id));
 ```
 
-0.7 的统一门禁（`npm run test:v07`）沿“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”走完三套模板；`SetTheme` 走 `exec`，母版与版式走 `execDesign`，它们共享历史、恢复、协同和保存协议，但普通页面不能越权修改设计画布。
+设计旅程门禁（`npm run test:design-journey`）沿“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”走完三套模板；`SetTheme` 走 `exec`，母版与版式走 `execDesign`，它们共享历史、恢复、协同和保存协议，但普通页面不能越权修改设计画布。
 
 ## 设计画布
 

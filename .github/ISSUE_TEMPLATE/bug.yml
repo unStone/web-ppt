@@ -1,0 +1,46 @@
+name: 缺陷 · Bug
+description: 解析失败、抛出异常、编辑或保存结果错误 · Parse failures, exceptions, wrong edit or save results
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: 包与版本 · Package versions
+      description: 九个 @web-ppt 包必须同版本，请全部列出 · All @web-ppt packages must share one version; list them all
+      placeholder: '@web-ppt/core@0.8.0, @web-ppt/editor@0.8.0'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 运行环境 · Environment
+      description: 浏览器 / Node 版本，是否在 Worker 中解析
+      placeholder: Chrome 148, parseInWorker / Node 24
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤 · Steps to reproduce
+      description: 最小可运行代码或操作步骤 · Minimal code or steps
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果 · Actual result
+      description: 完整错误信息与堆栈；保存问题请说明用哪个软件打开保存产物 · Full error and stack; for save issues, name the app that opened the file
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果 · Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: 样本文件 · Sample file
+      description: 问题与具体文件相关时请上传 · Attach the file if the issue depends on it

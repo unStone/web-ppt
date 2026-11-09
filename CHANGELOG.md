@@ -1,6 +1,12 @@
 # 更新日志
 
-本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
+
+## 未发布
+
+- 包之间的 peer 依赖改为精确版本（例如 `@web-ppt/editor@0.8.1` 要求 `@web-ppt/core@0.8.1`）：九个包必须同版本，混装时 npm 在安装阶段报告冲突，不再到运行时才出错。
+- 修复发布声明文件的 3 处相对导入（`@web-ppt/core` 的 `pptx/geometry`、`@web-ppt/edit-core` 的 `templates` 与 `lint`）被 TypeScript 解析到无类型的 JS 产物：`CreateBlankPptxOptions`、`PresentationDescription` 等类型在宿主侧不再退化为 `any`，关闭 `skipLibCheck` 时也不再报 TS7016。
+- 全部包声明 `engines.node >= 22`。Node 20 已于 2026-04-30 停止维护，CI 改为在 Node 22 与 24 上验证；浏览器端用法不受影响。
 
 ## 0.8.0 - 2026-11-06
 
@@ -12,39 +18,19 @@
 
 破坏性变更核对：无 API 撤除；超出默认 ZIP 上限或结构异常的输入改为抛出 `ZipSafetyError`，需要更大文件时通过 `zip` 选项放宽。
 
-安装：无版本号安装即得 0.8.0，九包必须同版本；`@next` 标签留给 0.9 线。原计划随 0.8.0 交付的新建图表与图表细节渲染（桌面 002 / 003）顺延到 0.9.0。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
-
-Windows PowerPoint 真机验收继续延后，未记为通过；0.8.0 先行转正，四项自动门禁、OOXML 合法性门禁（ECMA-376 XSD 与 Open XML SDK 双通道）与 LibreOffice 外部打开清单全部通过。
+安装：无版本号安装即得 0.8.0，九包必须同版本；`@next` 标签留给 0.9 线。原计划随 0.8.0 交付的新建图表与图表细节渲染（桌面 002 / 003）顺延到 0.9.0。发布验证见 [0.8.0 发布记录](docs/releases/0.8.0.md)。
 
 ## 0.8.0-beta.3 - 2026-11-04
 
-九包已实际通过 GitHub OIDC 发布到 npm `next`。官方 registry 的匿名下载、实际 SRI、隔离安装、SDK / fill Schema 和 MCP `beta.3` 握手及十工具均通过，Node 20 / 24 均已复验。
-
-- MCP 初始化的 `serverInfo.version` 唯一读取自身公开包清单，源码、独立构建和隔离安装均报告实际软件版本。
-- MCP 源码与发布产物回归均验证真实 stdio 握手版本，避免后续发版遗漏手写常量。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
-
-Windows PowerPoint 真机验收继续延后，未记为通过。
+- 修复 `@web-ppt/agent-mcp` 初始化握手报告的 `serverInfo.version` 停在 `0.8.0-beta.1`：版本改为读取自身公开的包清单，与实际安装版本一致。
 
 ## 0.8.0-beta.2 - 2026-11-04
 
-- 新增仓库 Agent 配对评测工具：复用生产 MCP 比较自动 lint 反馈，保存全部尝试和真实产物；`npm run eval:agent` 可离线重判已提交证据，真实模型调用使用独立显式命令。评测结果不作为发布门禁，不增加 SDK 运行时依赖。
-- 修复图元固件生成依赖本机 LibreOffice 缓存的问题：使用已登记哈希的原有 EMF / WMF 资产，生成字节保持原基线，并校验缓存污染与跨进程确定性。
-- 模板二进制边界改为审计 npm 实际发布文件清单，覆盖全部发布包；仓库私有评测文稿可保留，SDK 包夹带二进制模板仍会被拒绝。
-- 官网语言回归隔离后台字体完成回调，保留视图、页码、内容和下载断言；触屏回归使用实际设备能力仿真，并在场景结束恢复原输入状态与原生字体方法。
-
-九包已通过 GitHub OIDC 发布，MCP Trusted Publisher 已完成首次成功发布激活。隔离安装发现此版 MCP 握手仍报告 `beta.1`，修正在 `beta.3`；SDK 编辑行为与 `0.8.0-beta.1` 一致。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
-
-Windows PowerPoint 真机验收继续延后，未记为通过。
+`@web-ppt/agent-mcp` 在本版握手时仍报告 `0.8.0-beta.1`，已在 `0.8.0-beta.3` 修复；SDK 编辑行为与 `0.8.0-beta.1` 一致。本版其余改动只涉及仓库测试与评测工具，见 [0.8.0 发布记录](docs/releases/0.8.0.md)。
 
 ## 0.8.0-beta.1 - 2026-11-04
 
-本版已发布到 npm `next`，九包需安装同一版本。`0.7.0` 的已实现能力一并纳入本次 beta；既有八包的 `latest` 保持 `0.6.0`，`agent-mcp` 首版为本次 beta。九包已通过官方 registry 全新安装、SDK 入口、填充 Schema 与真实 MCP 握手验证。
+九包需安装同一版本。`0.7.0` 的已实现能力一并纳入本次 beta；`@web-ppt/agent-mcp` 首版为本次 beta。
 
 - 新增 `@web-ppt/edit-core/fill`：按结构化大纲选择模板版式，生成标题、章节、正文、双栏、图片及八种原生图表；生成副本可修复出血、字体、对比度和文字适配，完整检查后保存并规范化重开。输入保持不变，大纲 Schema 公开，跨进程产物字节确定。
 - 修复备注增量保存缺少备注母版闭包导致独立读取器超时；仅作用显式改写或新建备注，保持未编辑来源字节、已有母版设计和完整撤销语义。
@@ -54,19 +40,11 @@ Windows PowerPoint 真机验收继续延后，未记为通过。
 - 新增 `@web-ppt/edit-core/agent` 命令工具面：全部公开命令由 TypeScript 生成 JSON Schema，支持单条 / 批量原子编辑、受影响页布局观察、单元素样式查询、撤销 / 重做、Node SVG / PNG 渲染及保存；独立按需入口不引入 MCP / 模型依赖。
 - 新增 `@web-ppt/agent-mcp` 本机 stdio MCP server 与 Agent Skill：打开、describe、单元素查询、lint、SVG/PNG 渲染、原子编辑、撤销/重做、保存和关闭；会话串行、关闭取消、原子落盘且无网络请求。真实 Claude Code 与 Codex 固定任务产物已通过 LibreOffice 与 Quick Look。
 
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
-
-Windows PowerPoint 真机验收继续延后，未记为通过；稳定版仍需 beta 反馈与真机验收。
-
 ## 0.6.0 - 2026-11-02
 
 0.6.0 稳定版：`0.6.0-beta.1` 的全部内容转正到 `latest`，包括 Agent 结构化读出、布局检查与 Node 无 Office 渲染，矢量 PDF 正式入口，视频音轨与内嵌视频合成，以及 OLE DOCX / XLSX 深度编辑官网入口。相对 0.5.0 的逐项变化见下方 `0.6.0-beta.1` 条目。
 
 安装：无版本号安装即得 0.6.0，八包必须同版本；`@next` 标签留给 0.7 线。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip。
-
-Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.6.0 先行转正，四项自动门禁与 LibreOffice 外部打开清单全部通过。
 
 ## 0.6.0-beta.1 - 2026-10-31
 
@@ -77,7 +55,6 @@ Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.6.
 - 内嵌视频合成（`videoOverlay`，仍默认关闭）升级：组链经 `placeGroupChild` 折算、元素 rotate / flip / 裁剪 / 透明度 / CSS filter 与媒体间层叠在画布按 SVG 渲染一致重建；`playback.loop` 循环取模；跨页策略为元素随所属页呈现。可变帧率按时间戳取帧、60s 长视频内存有界（<60MB）、`video-overlay-frame-unavailable` 稳定复现样本（MSE 缺口媒体）均通过独立验收。
 - 视频音轨（`audio`，已随 0.5.0-beta.6 发布）补齐验收证据：FFmpeg 独立测量的脉冲与画面标记同轴（偏差 ≤130ms 声明边界）、`AbortSignal` 取消与资源释放、循环音频跨页持续。
 - OLE 嵌入文档官网面板补齐：嵌入 DOCX 的 run 级改字（保留相邻 run 格式）、嵌入 XLSX 的单元格样式（字体 / 填充 / 边框）与 sharedStrings 富文本入口，中英文文案与撤销语义齐全；`readEmbeddedPackage` 自 `@web-ppt/edit-core/ole` 公开导出供宿主提取嵌入文档；改写后的 DOCX / XLSX 经 LibreOffice 打开与重写往返验证（文字、颜色与 run 边界保留）。
-- `@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
 
 ## 0.5.0 - 2026-10-29
 
@@ -86,10 +63,6 @@ Windows PowerPoint 真机验收经维护者决定延后，未记为通过；0.6.
 破坏性变更核对：无 API 撤除；0.5 线新增能力均为增量或按需入口，唯一语义变化是 `elementFrameToSlideMatrix` / `elementParentToSlideMatrix` 改为沿渲染链求值（仅非等比组合内非 90° 整数倍旋转等场景结果不同，见 beta.7 条目）。
 
 安装：无版本号安装即得 0.5.0，八包必须同版本；`@next` 标签留给 0.6 线。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
-
-Windows PowerPoint 真机验收经维护者决定延后，0.5.0 先行转正；四项自动门禁（含 LibreOffice 外部打开清单）全部通过，后续问题以 0.5.x 补丁版修复。
 
 ## 0.5.0-beta.7 - 2026-10-26
 
@@ -122,8 +95,6 @@ Windows PowerPoint 真机验收经维护者决定延后，0.5.0 先行转正；�
 - 等线缺席时西文改用合成字族：`local()` 引用系统 Arial 度量族，粗体 `size-adjust: 95.4%`、下划线 `74.6%`，只在页面出现等线时声明；`@web-ppt/fonts` 的替换路径对 Arimo 套用同一组参数。取代窄体回退与连续空格半字宽的处理；依据是 #8 附带的 PowerPoint 导出图逐词拟合，断行与填空线长度与 PowerPoint 一致。
 - `Viewer` 执行动画时间线里的 `mediacall` 媒体调用（`playFrom` / `pause` / `stop` 等），`afterPrev` 等定时触发的音视频按时播放，切页或取消时暂停；`play()` 被浏览器拒绝时容器派发 `web-ppt-playback-error`。媒体调用步骤不再给图标留下强调动画的半透明终态（#7）。
 
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
-
 ## 0.5.0-beta.6 - 2026-10-10
 
 ### 新增
@@ -141,8 +112,6 @@ Windows PowerPoint 真机验收经维护者决定延后，0.5.0 先行转正；�
 
 - 修复矢量 PDF 跨页复用渐变 Pattern 时未在当前页注册资源导致的整段取色错误（单页导出不触发）。
 - 修正 README 已知限制与能力矩阵的三处失真（EMF+ / OMML / 3D）及打开密码文件的能力描述。
-
-`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
 
 ## 0.5.0-beta.5 - 2026-09-10
 

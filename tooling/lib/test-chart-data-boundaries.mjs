@@ -117,7 +117,6 @@ async function testApiAndColdBoundaries({ core, edit, chart, bytes, check, eq })
   const editor = new edit.Editor(opened.doc);
   const api = chart.createChartDataEditor(editor);
   const category = chart.queryChartData(opened.doc, categoryId);
-  const scatter = chart.queryChartData(opened.doc, scatterId);
   let categoryPointRejected = false;
   try { api.removePoint(categoryId, category.series[0].id, category.categories[0].id); }
   catch { categoryPointRejected = true; }

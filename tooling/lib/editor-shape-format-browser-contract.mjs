@@ -13,8 +13,8 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
   const session = await openEditor(await load('sample-editor-shape-format.pptx'), {
     idPrefix: 'browser-shape-format-',
   });
-  const editView = session.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
-  const viewView = session.mount(viewMount, { mode: 'view', textMode: 'svg', snapping: false });
+  session.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
+  session.mount(viewMount, { mode: 'view', textMode: 'svg', snapping: false });
   const target = byName(session.editor.doc, 'format-inherited');
   const sibling = byName(session.editor.doc, 'format-pattern');
   const picture = byName(session.editor.doc, 'format-picture-border');

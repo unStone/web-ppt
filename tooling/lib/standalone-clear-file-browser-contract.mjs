@@ -1,5 +1,3 @@
-const PASSWORD = 'web-ppt-2024';
-
 export async function runStandaloneClearFileContract({ evaluate, request, waitFor, click }) {
   const standalone = (query = '') => evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
   const press = async (name, value, code = name) => {

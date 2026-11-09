@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { basename, extname, join, posix } from 'node:path';
+import { basename, join, posix } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { unzipSync, zipSync } from 'fflate';
 

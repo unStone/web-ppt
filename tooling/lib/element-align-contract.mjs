@@ -42,7 +42,7 @@ export async function runElementAlignContract({ edit, core, load, check }) {
   const rotatedAfter = bounds(edit, doc, rotated.id);
   check('多元素按旋转后世界 AABB 左边对齐且只移动必要目标',
     near(plainAfter.left, 80) && near(rotatedAfter.left, 80)
-      && near(editor.effectiveElement(rotated.id).x, 100.21405702547954, 1e-6)
+      && near(editor.effectiveElement(rotated.id).x, 100.21405702547953, 1e-6)
       && result.forward.length === 1 && result.forward[0].path[3] === 'x'
       && editor.history.undoCount === historyBefore + 1);
   editor.undo();

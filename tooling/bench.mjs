@@ -42,7 +42,6 @@ const EDIT = EDIT_MODE();
 const entries = [];
 const slideXmls = [];
 for (let i = 1; i <= 7; i++) slideXmls.push(dec.decode(src[`ppt/slides/slide${i}.xml`]));
-const slideRels = dec.decode(src['ppt/slides/_rels/slide1.xml.rels']);
 let n = 0;
 const sldIds = [], presRels = [];
 for (let r = 0; r < REPEAT; r++) {

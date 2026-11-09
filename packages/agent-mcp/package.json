@@ -21,6 +21,9 @@
     "directory": "packages/agent-mcp"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/agent-mcp.js",
   "module": "./dist/agent-mcp.js",
@@ -48,8 +51,8 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.8.0",
-    "@web-ppt/edit-core": "^0.8.0"
+    "@web-ppt/core": "0.8.0",
+    "@web-ppt/edit-core": "0.8.0"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",

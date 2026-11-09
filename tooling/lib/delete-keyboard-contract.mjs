@@ -14,7 +14,7 @@ export async function runDeleteKeyboardContract({ check, lib, root }) {
   const eventContainer = document.createElement('div');
   const sharedContainer = document.createElement('div');
   const eventView = session.mount(eventContainer, { mode: 'edit', textMode: 'svg' });
-  const sharedView = session.mount(sharedContainer, { mode: 'edit', textMode: 'svg' });
+  session.mount(sharedContainer, { mode: 'edit', textMode: 'svg' });
   const target = Object.values(session.editor.doc.elements)
     .find((record) => record.src.name === 'delete-shape');
   const peer = Object.values(session.editor.doc.elements)

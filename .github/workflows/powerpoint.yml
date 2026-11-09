@@ -31,8 +31,8 @@ jobs:
       - name: 用 PowerPoint 未修复打开全部编辑产物
         run: npm run test:edit:powerpoint
 
-      - name: 用 PowerPoint 打开 0.8 图表与媒体统一清单
-        run: npm run test:v08:powerpoint
+      - name: 用 PowerPoint 打开图表与媒体统一清单
+        run: npm run test:chart-media:powerpoint
 
       - name: 上传 PowerPoint 证据
         if: always()

@@ -111,8 +111,6 @@ session.dispose();
 
 模板、设计画布、选择窗格、快捷键与剪贴板、低层 `EditDoc`、预设调节柄与保存链路见[编辑器接入](docs/api/editor.md)。
 
-0.7 的模板旅程（`npm run test:v07`）覆盖“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，细节见[编辑器接入](docs/api/editor.md)。
-
 ### 按需入口
 
 | 能力 | 文档 |
@@ -165,7 +163,7 @@ session.dispose();
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
-| `npm run check` | TypeScript 类型检查 |
+| `npm run check` | TypeScript 类型检查与 Biome 静态检查 |
 | `npm test` | 全部测试 |
 | `npm run build` | 构建九个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp） |
 | `npm run verify` | 许可证 / 版本 / 链接 / 文档数字与实测比对 |

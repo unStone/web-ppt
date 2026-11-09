@@ -72,7 +72,7 @@ for (const generated of [false, true]) {
   result.dispose(); left.p.dispose(); left.editor.dispose(); right.p.dispose(); right.editor.dispose();
 }
 {
-  const { p, editor, api, slide } = await make();
+  const { p, editor, slide } = await make();
   editor.exec({ type: 'DuplicateSlide', id: slide });
   const result = await core.parse(await editor.save(), { lazy: false });
   assert.equal(result.slides[1].comments[2].parentId, result.slides[1].comments[1].id, '原样复制批注保留线程');

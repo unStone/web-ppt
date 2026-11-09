@@ -1,0 +1,31 @@
+name: 性能采样
+
+# 托管 runner 的固定计算基线会随宿主并行负载从 5ms 漂到 40ms，p95 不能作为 PR 门禁。
+# 这里定期在 master 上采样，用于观察趋势；失败只代表本次采样超预算，
+# 结合日志里的环境自检判断是否真的退化。
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - name: 浏览器 DOM 编辑层
+            run: npm run test:editor:performance
+          - name: 编辑性能预算
+            run: npm run bench:edit
+    name: ${{ matrix.suite.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: 采样
+        run: ${{ matrix.suite.run }}

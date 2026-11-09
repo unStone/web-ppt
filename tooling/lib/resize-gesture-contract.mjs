@@ -44,7 +44,6 @@ export async function runResizeGestureContract({ check, lib, root }) {
   const sibling = container.querySelector(`[data-edit-id="${siblingId}"]`);
   const staticSvg = container.querySelector('[data-ppt-layer="static"] svg');
   const defs = staticSvg.querySelector('defs');
-  const source = session.editor.effectiveElement(targetId);
   const historyBefore = session.editor.history.undoCount;
   const east = container.querySelector('[data-edit-resize-handle="e"]');
   east.dispatchEvent(pointer('pointerdown', 350, 195));
@@ -313,7 +312,6 @@ export async function runResizeGestureContract({ check, lib, root }) {
   spaceSession.editor.undo();
 
   const outer = byName('space-outer-group');
-  const groupSource = spaceSession.editor.effectiveElement(outer.id);
   spaceSession.editor.select({ kind: 'elements', ids: [outer.id], enteredGroup: null });
   const groupStart = rectCenter(spaceContainer.querySelector('[data-edit-handle="se"]'));
   const groupEnd = { x: groupStart.x + 80, y: groupStart.y + 50 };

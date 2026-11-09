@@ -2,7 +2,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deck, label, nextShapeId, nvGrp, px, slideXml } from './lib/ooxml.mjs';
+import { deck, label, nextShapeId, px, slideXml } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';

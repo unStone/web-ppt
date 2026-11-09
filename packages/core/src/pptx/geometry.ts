@@ -3,8 +3,9 @@
  * 纯计算部分（预设形状表 / presetGeom）在 ../geometry，格式无关。
  */
 import { attr, kid, kids, numAttr } from '../xml';
-import { ep, n, rad } from '../geometry';
-import type { Adj, Geom, Pt } from '../geometry';
+// 写全 /index：dist 同时存在 geometry.js 与 geometry/，声明文件里的 '../geometry' 会被解析到无类型的 JS 产物
+import { ep, n, rad } from '../geometry/index';
+import type { Adj, Geom, Pt } from '../geometry/index';
 import {
   builtinGuideValues, DRAWINGML_DEGREE, evaluateGuideDefinitions, guideToken,
 } from '../geometry/guides';
@@ -14,8 +15,8 @@ import type {
   CustomGeometryPointRole, CustomGeometryScalar,
 } from '../geometry/custom';
 
-export { isKnownPreset, presetGeom, resolveGeomPath } from '../geometry';
-export type { Adj, Geom, GeomSpec, Pt } from '../geometry';
+export { isKnownPreset, presetGeom, resolveGeomPath } from '../geometry/index';
+export type { Adj, Geom, GeomSpec, Pt } from '../geometry/index';
 
 /** avLst → 调节值表（保留 100000 制原值） */
 export function parseAdjustments(avLst: Element | null): Adj {

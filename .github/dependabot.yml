@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # 根 package-lock 覆盖全部 workspace。按开发依赖与运行时依赖分组，
+  # 避免每个小版本各开一个 PR；发布包的运行时依赖单独成组，便于逐条核对体积与行为。
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      runtime:
+        dependency-type: production
+      dev-minor:
+        dependency-type: development
+        update-types: [minor, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
+
+  # 字体与 PDF 独立读取的 Python 依赖是精确钉版，升级要经过 test:fonts 复验。
+  - package-ecosystem: pip
+    directory: /tooling
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore

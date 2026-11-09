@@ -11,8 +11,8 @@ assert.equal(
 );
 assert.match(
   scripts['test:functional'],
-  /test-v07-integration\.mjs/,
-  '唯一功能门禁必须包含 0.7 集成行为契约',
+  /test-design-journey\.mjs/,
+  '唯一功能门禁必须包含设计旅程行为契约',
 );
 for (const workflow of ['ci.yml', 'release.yml']) {
   const source = readFileSync(resolve(root, '.github/workflows', workflow), 'utf8');
@@ -21,12 +21,14 @@ for (const workflow of ['ci.yml', 'release.yml']) {
     1,
     `${workflow} 必须且只能执行一次唯一功能门禁`,
   );
-  assert.match(
-    source,
-    /continue-on-error: true\n\s+run: npm run test:editor:performance/,
-    `${workflow} 必须单独保留可观测的 beta 性能采样`,
-  );
+  // 托管 runner 的 p95 受宿主负载干扰，性能采样不得混进功能门禁
+  assert.doesNotMatch(source, /test:editor:performance|bench:edit/, `${workflow} 不执行性能采样`);
 }
+const performance = readFileSync(resolve(root, '.github/workflows/performance.yml'), 'utf8');
+for (const command of ['npm run test:editor:performance', 'npm run bench:edit']) {
+  assert.ok(performance.includes(`run: ${command}`), `performance.yml 必须定期采样 ${command}`);
+}
+assert.match(performance, /schedule:/, 'performance.yml 必须定时运行');
 // 官网是独立流水线；凡运行 PDF 独立读取的入口，都必须先安装同一份固定依赖。
 const workflows = resolve(root, '.github/workflows');
 for (const workflow of readdirSync(workflows).filter(name => /\.ya?ml$/.test(name))) {

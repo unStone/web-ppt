@@ -1,6 +1,6 @@
 import { countedAssert } from './lib/counted-assert.mjs';
 const {assert,record}=countedAssert('cfb');
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 const root = resolve(import.meta.dirname, '..'), out = join(root, 'out/cfb'); mkdirSync(out, { recursive: true });

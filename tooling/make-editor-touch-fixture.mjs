@@ -2,7 +2,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
+import { deck, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hairline = '<a:ln w="9525"><a:solidFill><a:srgbClr val="7C3AED"/></a:solidFill></a:ln>';

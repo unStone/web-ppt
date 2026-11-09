@@ -1,2 +1,9 @@
 # 评测证据按字节记录哈希，跨平台检出不能转换换行。
 tooling/agent-eval/records/** -text
+
+# 由 tooling/generate-*.mjs、make-*.mjs 与快照更新生成，PR diff 默认折叠、不计入语言统计。
+# 改动它们应改生成器，再重新生成。
+packages/*/src/**/generated*.ts linguist-generated=true
+packages/edit-core/schemas/*.schema.json linguist-generated=true
+test/snapshots/** linguist-generated=true
+fixtures/** linguist-generated=true

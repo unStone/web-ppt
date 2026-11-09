@@ -4,7 +4,7 @@ export async function runDefaultMediaPosterContract({ core, edit, media, source,
   const presentation = await core.parse(source, { edit: true, keepPackage: true, lazy: false });
   const doc = edit.createDoc(presentation), editor = new edit.Editor(doc);
   try {
-    const id = media.createMediaEditor(editor).exec({
+    media.createMediaEditor(editor).exec({
       type: 'AddMedia', slideId: doc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
       source: { kind: 'embedded', bytes: makeWav(0.1), mime: 'audio/wav' },
     });

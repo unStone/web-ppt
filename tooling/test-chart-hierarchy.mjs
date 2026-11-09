@@ -11,7 +11,7 @@ const {assert,record}=countedAssert('chartHierarchy');
 const root=resolve('.'),out=join(root,'out/chart-hierarchy');mkdirSync(out,{recursive:true});
 writeFileSync(join(out,'entry.mjs'),`export * as core from '@web-ppt/core';export * as edit from '@web-ppt/edit-core';export * as chart from '@web-ppt/edit-core/chart';export * as generate from '@web-ppt/edit-core/generate';export * as collab from '@web-ppt/collab';export * as design from '@web-ppt/edit-core/chart-design';`);
 const modules=process.argv.includes('--dist') ? Object.fromEntries(await Promise.all([['core','@web-ppt/core'],['edit','@web-ppt/edit-core'],['chart','@web-ppt/edit-core/chart'],['generate','@web-ppt/edit-core/generate'],['collab','@web-ppt/collab'],['design','@web-ppt/edit-core/chart-design']].map(async([key,path])=>[key,await import(path)]))) : await bundleBrowser({root,entry:join(out,'entry.mjs'),output:join(out,'contract.mjs'),aliases:[['@web-ppt/collab',join(root,'packages/collab/src/index.ts')],['@web-ppt/core',join(root,'packages/core/src/index.ts')],['@web-ppt/edit-core',join(root,'packages/edit-core/src/index.ts')]]});
-const {core,edit,chart,generate}=modules;
+const {core,edit,chart}=modules;
 const input=readFileSync('fixtures/sample-chart-hierarchy.pptx');
 const parse=bytes=>core.parse(bytes,{keepPackage:true,edit:true,lazy:false});
 const p=await parse(input),doc=edit.createDoc(p),editor=new edit.Editor(doc),api=chart.createChartDataEditor(editor);

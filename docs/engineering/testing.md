@@ -6,7 +6,7 @@
 
 | 门禁 | 命令 | 拦截目标 | 为什么排这个位置 |
 |---|---|---|---|
-| 类型检查 | `npm run check` | 走源码的 tsc 全仓类型错误 | 不需要构建，最快失败 |
+| 类型与静态检查 | `npm run check` | 走源码的 tsc 全仓类型错误；Biome 检查未使用的导入 / 变量、不可达代码、重复键等缺陷类规则 | 不需要构建，最快失败 |
 | 测试 | `npm test` = `test:functional` + `test:editor:performance` | 行为回归、快照漂移、契约破坏 | 唯一入口清单，见 §2 |
 | 构建 | `npm run build` | 九个发布包的产物编译与各能力边界审计（§6） | verify 要读 dist |
 | 跨产物一致性 | `npm run verify` | 文档数字照抄旧值、死链、发布包清单漂移、`--dist` 复验 | 必须最后跑：读 dist 体积与测试落盘的断言数 |
@@ -39,7 +39,7 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 flowchart LR
   T["test-xxx.mjs<br/>全绿后调 recordCount(key, pass)"] --> C["out/verify/counts.json"]
   C --> V["verify-consistency.mjs<br/>按 COUNT_CLAIMS 正则比对"]
-  V --> D["README / README.en / AGENTS<br/>官网首页大数"]
+  V --> D["testing.md §8 分套件明细<br/>README / README.en 快照数<br/>官网首页大数"]
 ```
 
 - `recordCount` 只在测试全绿路径调用（`tooling/lib/measured.mjs` 的约定：失败运行不留半截数字）。
@@ -74,7 +74,7 @@ flowchart LR
 
 ## 7. 性能门禁的现状
 
-浏览器性能契约（如复制 16ms 预算）受宿主并行负载影响，历史上固定基线曾从 5ms 漂到 40ms。现状：CI 与发布流水线保留采样并落红灯证据，但 `continue-on-error` 不阻断发布；独立运行（隔离环境）则必须过预算。判定性能回归时先跑隔离复测，再下结论。
+浏览器性能契约（如复制 16ms 预算）受宿主并行负载影响，历史上固定基线曾从 5ms 漂到 40ms。因此 PR CI 与发布流水线不跑性能采样，`performance.yml` 每周一在 master 上采样 `test:editor:performance` 与 `bench:edit` 观察趋势；本地 `npm test` 仍包含编辑器性能采样，独立运行（隔离环境）必须过预算。判定性能回归时先跑隔离复测，再下结论。
 
 ## 7.5 本地跑不全的套件
 
@@ -118,14 +118,15 @@ flowchart LR
 | `npm run test:ooxml` | OOXML 合法性 4 项断言：全部保存产物过 ECMA-376 XSD 与 OpenXmlValidator 双通道，结构与语义负例各一例必须被拦截（§7.6）；依赖 xmllint 与 .NET 8，先跑功能测试落盘产物 |
 | `npm run test:edit` | 编辑模型 1154 项 + 保存 584 项 + PowerPoint 证据 9 项 + 181 份固件、1210 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
-| `npm run test:v07` | 0.7 跨能力集成 31 项断言：三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
-| `npm run test:v08` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
+| `npm run test:design-journey` | 设计旅程 31 项断言：模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开，三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
+| `npm run test:chart-media` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
 | `npm run test:chartex` | ChartEx 原生 104 项断言：层级与统计边界、配置继承、两种文本及保存路径 |
 | `npm run test:comments` | 批注保存与导出 31 项断言：复制/恢复、两条保存、只读面板、默认关闭与安全转义；[批注交付](../api/comments.md) |
 | `npm run test:media` | 媒体插入 892 项断言：WAV/MP4、外链、海报、历史、复制、恢复/协同、两种保存、经典引用为 NULL 时回退 p14:media 和严格 XML；[阶段 API](../api/media-insertion.md) |
 | `npm run test:editor` | 451 项会话 / adapter / 三层 DOM / 选择变换 / 文字、触屏与 engine 行盒断言 + 真实 Chrome 框架生命周期、可信输入、系统剪贴板、pointer capture 与性能门禁 |
 | `node tooling/test-open-kind.mjs` | 打开前认文件 19 项断言：魔数识别、扩展名不能盖过魔数、word/excel/odp 识别、错误映射与拒绝 |
 | `node tooling/test-open-page.mjs` | 页码参数解析与回写 32 项断言：非法值钳制、`?p=` 迁移、hash 保留与清空 |
+| `npm run test:collab` | 字段级协同 134 项断言：双副本收敛、离线回放、协议与原子提交、保存、BroadcastChannel 契约与排除 peer 的测试薄包体积 |
 | `npm run test:adapters` | React / Vue 的 12 项 SSR、依赖边界、公开入口与排除 peer 后 5KB 体积门禁 |
 | `npm run test:metafile` | EMF / WMF / PICT 解码器，130 项断言 + 模糊测试 |
 | `npm run test:metafile:fixture` | 图元固件确定性 115 项断言：原有复杂媒体保留、缓存独立、资源哈希、失败不覆盖和双进程重建；`test:metafile:fixture:dist` 使用发布入口复验 |
@@ -135,9 +136,9 @@ flowchart LR
 | `npm run test:edit:equivalence` | 单独运行全固件只读 / 编辑投影逐字节等价门禁 |
 | `npm run test:edit:m1` | M1 最小写回验收 + 71 份模型保存产物的 LibreOffice 真实打开测试 |
 | `npm run test:edit:libreoffice` | 用 LibreOffice 打开补丁保存产物并导出 PDF |
-| `npm run test:v07:libreoffice` | 用 LibreOffice 无修复打开 0.7 单一清单中的 11 份跨能力产物 |
-| `npm run test:templates:libreoffice` | 兼容命令；转发到同一份 0.7 LibreOffice 清单，不再维护模板子集 |
-| `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开同一份 0.7 十一件清单，运行手册见 [powerpoint-runner.md](powerpoint-runner.md) |
+| `npm run test:design-journey:libreoffice` | 用 LibreOffice 无修复打开设计旅程单一清单中的 11 份跨能力产物 |
+| `npm run test:templates:libreoffice` | 兼容命令；转发到同一份设计旅程 LibreOffice 清单，不再维护模板子集 |
+| `npm run test:edit:powerpoint` | Windows + PowerPoint：禁用修复后用 COM 打开同一份设计旅程十一件清单，运行手册见 [powerpoint-runner.md](powerpoint-runner.md) |
 
 ## 9. 测试分层
 

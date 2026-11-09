@@ -90,7 +90,6 @@ mkdirSync(out, { recursive: true });
 const bundleDir = join(out, 'bundle');
 rmSync(bundleDir, { recursive: true, force: true });
 mkdirSync(bundleDir, { recursive: true });
-const bundle = join(bundleDir, 'editor-page.js');
 const metafile = join(bundleDir, 'meta.json');
 const aliases = [
   ['@web-ppt/fonts/glyphs/browser', join(root, 'packages/fonts/src/glyphs/browser.ts')],
@@ -264,7 +263,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // ZIP 中央目录预检、有界输出与真实语料的 EOCD 尾随换行兼容，合计实测超出 2162B，上调 2200B
 // OOXML 门禁配套：轴标题序位归位、lvl*pPr / defRPr 顺序表登记与 hlinkHover 悬停链接修复，
 // 合计实测超出 160B（前两项 46B、悬停链接 114B），上调 200B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 51_300 };
+// core 五个超长模块按职责拆成 21 个文件（代码逐行搬运、无行为变化）：本测试的非压缩 esbuild 产物
+// 给每个模块加一行 `// 路径` 注释，实测 raw +1061B、gzip +537B（561,646B），上调 600B；压缩发布产物不含这类注释
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 51_900 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

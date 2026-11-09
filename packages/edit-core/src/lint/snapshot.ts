@@ -3,6 +3,9 @@ import type { Fill, SlideElement, TextBody } from '@web-ppt/core';
 import { renderedElement, toSlide } from '@web-ppt/edit-core';
 import type { EditDoc } from '@web-ppt/edit-core';
 import { readDescription } from '../describe/read';
+// 显式引用 describe/types：推断类型若让 tsc 自行起名，声明里会写成 import("../describe")，
+// 而 dist 同时存在 describe.js 与 describe/，该路径会被解析到无类型的 JS 产物。
+import type { DescriptionElement, PresentationDescription } from '../describe/types';
 import { LayoutLintError } from './types';
 
 export interface TextUnit {
@@ -23,7 +26,7 @@ export function textUnits(element: SlideElement): TextUnit[] {
 }
 export function snapshot(doc: EditDoc) {
   const projected = new Map<string, SlideElement>();
-  const description = readDescription(doc, (page, id, element) => projected.set(`${page}:${id}`, element));
+  const description: PresentationDescription = readDescription(doc, (page, id, element) => projected.set(`${page}:${id}`, element));
   const visibleNodes = new Map<SlideElement, SlideElement>();
   const slides = doc.slideOrder.map((id, index) => {
     const hidden = new Set(description.slides[index].elements.filter(e => e.hidden).map(e => projected.get(`${index + 1}:${e.id}`)));
@@ -35,7 +38,7 @@ export function snapshot(doc: EditDoc) {
     return { ...toSlide(doc, id), elements: toSlide(doc, id).elements.flatMap(visible) };
   });
   return { description, slides,
-    elements: description.slides.map(slide => slide.elements.map(item => {
+    elements: description.slides.map(slide => slide.elements.map((item: DescriptionElement) => {
       const raw = projected.get(`${slide.number}:${item.id}`)!;
       let rendered = renderedElement(doc, item.id);
       // 设计画布的动态字段在页面投影上求值，组合里的字段也不能退回未代入页码的模板文字。

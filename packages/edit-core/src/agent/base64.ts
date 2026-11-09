@@ -8,7 +8,7 @@ export function decodeBase64(value: string, commandIndex: number): Uint8Array {
   }
   try {
     return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
-  } catch (error) {
+  } catch {
     throw new AgentToolError('invalid-base64', `命令 ${commandIndex} 的图片字节无法解码`, commandIndex);
   }
 }

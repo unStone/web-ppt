@@ -83,8 +83,8 @@ check('基础包没有 React/Vue 运行时依赖', basePackages.every((pkg) => {
   const runtime = { ...pkg.dependencies, ...pkg.peerDependencies, ...pkg.optionalDependencies };
   return !runtime.react && !runtime['react-dom'] && !runtime.vue;
 }));
-check('viewer-core peer 下界包含其运行时使用的 core 新导出',
-  viewerPackage.peerDependencies?.['@web-ppt/core'] === `^${corePackage.version}`);
+check('viewer-core 的 core peer 精确锁定同版本',
+  viewerPackage.peerDependencies?.['@web-ppt/core'] === corePackage.version);
 
 check('React 入口公开组件、选择窗格与 hook', !!react.WebPptEditor && !!react.WebPptSelectionPane
   && typeof react.useWebPptAdapter === 'function');

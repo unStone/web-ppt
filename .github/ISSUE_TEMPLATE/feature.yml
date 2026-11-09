@@ -1,0 +1,32 @@
+name: 需求 · Feature request
+description: 新的格式能力、编辑能力或 API · New format support, editing capability or API
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先查看 [格式能力](https://github.com/unStone/web-ppt/blob/master/docs/api/format-capabilities.md)、[格式限制](https://github.com/unStone/web-ppt/blob/master/docs/api/format-limitations.md) 与 [路线图](https://github.com/unStone/web-ppt/blob/master/docs/roadmap.md)。
+        Please check the capability matrix, known limitations and roadmap first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题 · Problem
+      description: 你在做什么、现在卡在哪里 · What you are building and what blocks you
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的能力 · Proposed capability
+      description: 期望的行为或 API 形态 · Expected behavior or API shape
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 目前的替代做法 · Current workaround
+  - type: textarea
+    id: sample
+    attributes:
+      label: 样本文件 · Sample file
+      description: 与文件格式相关的需求请附带样本 · Attach a sample for format-related requests

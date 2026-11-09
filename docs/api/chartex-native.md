@@ -47,7 +47,7 @@ MC 回退依赖继续保留。补丁保存、原包释放后的生成保存、�
 | 默认回归 | `npm run test:chartex`；确定性八页固件，数学边界、命名空间、两条文本路径、编辑与保存 |
 | 真实漏斗 | `node tooling/test-chartex-native.mjs --corpus`；额外验证真实漏斗原生输入与缓存冲突回退 |
 | 真实浏览器 | `npm run test:editor:functional`；八页屏幕、独立 SVG 解码、PNG 像素与打印 HTML |
-| LibreOffice | `npm run test:v08:libreoffice`；统一清单的无修复打开与 PDF 导出，不能单独证明原生布局等价 |
+| LibreOffice | `npm run test:chart-media:libreoffice`；统一清单的无修复打开与 PDF 导出，不能单独证明原生布局等价 |
 | Windows PowerPoint | 16.0 Build 4266 的交互桌面探针可打开八页固件及真实漏斗，但均显示图片；不构成原生布局 oracle |
 | 体积 | `tooling/check-chartex-boundary.mjs`；默认 core/worker 不含布局与工作簿实现，独立 OPC 不引入 core |
 
