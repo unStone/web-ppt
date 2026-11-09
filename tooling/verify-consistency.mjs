@@ -303,7 +303,7 @@ function nextReleaseSizeRecord() {
   const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
   // 浅克隆默认不带 tag：一个 v* tag 都看不到时无法区分「未发布」与「没取 tag」，不能猜
   if (git('tag', '--list', 'v*') === '') {
-    throw new Error('本地没有任何 v* tag，无法判定当前版本是否已发布；CI 检出需开启 fetch-tags，本地先 git fetch --tags');
+    throw new Error('本地没有任何 v* tag，无法判定当前版本是否已发布；CI 检出后需显式 git fetch v* tag，本地先 git fetch --tags');
   }
   const tag = `v${version}`;
   const tagged = git('tag', '--list', tag) !== '';
