@@ -12,8 +12,9 @@ const sourceHash=createHash('sha256').update(source).digest('hex');
 if(sourceHash!=='b683af99cf4e71db112fe87db15840846c53dbc7a6839cbf84804980d21af9ce')throw new Error('真实 MTX 语料 hash 不一致');
 const paths=ts.readConfigFile(resolve(root,'tsconfig.json'),ts.sys.readFile).config.compilerOptions.paths;
 const alias=Object.entries(paths).sort(([a],[b])=>b.length-a.length).map(([find,[path]])=>({find,replacement:resolve(root,path)}));
+// HarfBuzz 初始化含顶层 await；Oxc 不支持按特性放行，目标取首个含顶层 await 的 ES2022。
 await build({configFile:false,root,base:'/out/font-glyphs/cost/',resolve:{alias},worker:{format:'es'},
-  esbuild:{supported:{'top-level-await':true}},build:{outDir:resolve(out,'cost'),emptyOutDir:true,target:'es2020',
+  build:{outDir:resolve(out,'cost'),emptyOutDir:true,target:'es2022',
     lib:{entry:resolve(root,'tooling/lib/font-cost-browser.mjs'),formats:['es'],fileName:()=> 'cost.mjs'}}});
 const report=await withChartBrowser(root,async browser=>{
   const cycles=[];

@@ -50,23 +50,23 @@ export default defineConfig({
   base,
   server: { port: 5174 },
   worker: { format: 'es' },
-  // HarfBuzz 的初始化含 TLA，保留在按需 module Worker 中；其他语法仍沿用 Vite 的浏览器目标。
-  esbuild: { supported: { 'top-level-await': true } },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
+    // HarfBuzz 的初始化含顶层 await，保留在按需 module Worker 中。Vite 默认的浏览器目标
+    // 已支持顶层 await，而 Oxc 不能按特性单独放行，所以 build.target 不能调低到 ES2022 以下。
+    rolldownOptions: {
       input: Object.fromEntries(SITE_PAGES.map((f) => [f.replace('.html', ''), resolve(__dirname, f)])),
       output: {
         /**
          * 共享 chunk 与样式表显式命名。
          *
-         * 默认名取自 rollup 随手挑中的某个内部模块——整个引擎所在的 chunk 一会儿
+         * 默认名取自打包器随手挑中的某个内部模块——整个引擎所在的 chunk 一会儿
          * 叫 `fetch-bytes-*.js`、一会儿叫 `samples-index-*.js`，连 vite 的 preload
          * 垫片都能叫成 `style-*.js`。名字与内容毫无关系，换个 import 顺序就会变，
          * 排查线上问题时纯属干扰。
          *
-         * 所以按**内容**认，不按 rollup 给的名字认：认得出来的叫真名，认不出来的
+         * 所以按**内容**认，不按打包器给的名字认：认得出来的叫真名，认不出来的
          * 老实叫 chunk，别硬安一个听着像那么回事的名字。
          */
         chunkFileNames: (info) => {

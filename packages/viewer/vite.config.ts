@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { defineConfig } from 'vite';
 
-const fixtures = resolve(__dirname, '../../fixtures');
+const fixtures = resolve(import.meta.dirname, '../../fixtures');
 
 export default defineConfig({
   server: { port: 5173 },

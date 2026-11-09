@@ -11,6 +11,6 @@ export default defineConfig({
       fileName: (_format, entryName) => `${entryName}.js`,
       formats: ['es'],
     },
-    rollupOptions: { external: ['@web-ppt/edit-core', '@web-ppt/core', '@web-ppt/core/geometry', '@web-ppt/core/zip', 'fflate'] },
+    rolldownOptions: { external: ['@web-ppt/edit-core', '@web-ppt/core', '@web-ppt/core/geometry', '@web-ppt/core/zip', 'fflate'] },
   },
 });

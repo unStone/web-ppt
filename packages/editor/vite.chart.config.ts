@@ -6,6 +6,6 @@ export default defineConfig({
     emptyOutDir: false,
     lib: { entry: { chart: 'src/chart/index.ts', 'chart-shared': 'src/chart-shared/index.ts' },
       fileName: (_format, name) => `${name}.js`, formats: ['es'] },
-    rollupOptions: { external: ['@web-ppt/edit-core/chart', '@web-ppt/edit-core/chart-shared'] },
+    rolldownOptions: { external: ['@web-ppt/edit-core/chart', '@web-ppt/edit-core/chart-shared'] },
   },
 });

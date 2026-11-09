@@ -5,7 +5,7 @@ export default defineConfig({
     copyPublicDir: false,
     emptyOutDir: false,
     lib: { entry: 'src/adjustments/index.ts', fileName: 'adjustments', formats: ['es'] },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         '@web-ppt/core', '@web-ppt/core/geometry/handles',
         '@web-ppt/edit-core', '@web-ppt/viewer-core',

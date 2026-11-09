@@ -4,7 +4,7 @@ export default defineConfig({
   build: {
     copyPublicDir: false, target: 'node22',
     lib: { entry: { 'agent-mcp': 'src/index.ts', cli: 'src/cli.ts' }, formats: ['es'] },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         /^node:/, /^@modelcontextprotocol\/sdk\//, 'zod', '@cfworker/json-schema',
         /^@web-ppt\/(?:core|edit-core)(?:\/|$)/,
