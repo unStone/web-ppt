@@ -267,7 +267,9 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 给每个模块加一行 `// 路径` 注释，实测 raw +1061B、gzip +537B（561,646B），上调 600B；压缩发布产物不含这类注释
 // 本闭包由 esbuild 打包；Vite 8 不再附带 esbuild，测试改用显式依赖的 0.28（Vite 8 可选 peer 下限 0.27），
 // 同一源码 0.21.5 → 0.28.2 实测 561,646B → 562,911B gzip，增 1265B，上调 1300B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 53_200 };
+// 整仓 Biome 重排（无行为变化）：非压缩 esbuild 产物沿用源码里对象 / 数组字面量的分行，
+// 实测 gzip 563,644B，超出 595B，上调 600B（raw 仍在预算内）；压缩产物不受源码排版影响
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 53_800 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
