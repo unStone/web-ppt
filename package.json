@@ -134,7 +134,7 @@
     "@microsoft/api-extractor": "7.60.1",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@npmcli/arborist": "9.9.1",
-    "@npmcli/map-workspaces": "5.0.3",
+    "@npmcli/map-workspaces": "6.0.0",
     "@resvg/resvg-js": "^2.6.2",
     "@types/culori": "4.0.1",
     "@types/emscripten": "1.41.5",
