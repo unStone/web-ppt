@@ -281,6 +281,49 @@ if (!siteStat) {
   check(`官网称 ${siteStat[2]} 个快照`, Number(siteStat[2]) === snapshotCount, `实测 ${snapshotCount} 个`);
 }
 
+/**
+ * 当前实测体积该核对的发布记录。
+ *
+ * 已发布版本的记录（docs/releases/<主.次.修订>.md，预发布版并入同一版本线）是打 tag 那一刻产物的历史证据，
+ * 不能拿今天的构建改写。「已发布」以 tag `v<版本>` 判定：发版 checklist 先写 CHANGELOG 版本条目与发布记录、
+ * 跑门禁，最后才打 tag（docs/engineering/releasing.md §2）。CHANGELOG 的版本日期在门禁之前就已写入，
+ * 拿它判定会让发版当次的记录逃过核对。
+ *
+ * | tag 状态 | 场景 | 核对对象 |
+ * |---|---|---|
+ * | 不存在 | 发版准备中（版本已改、尚未打 tag） | 该版本线的发布记录，缺失即失败 |
+ * | 指向 HEAD | 发布流水线自身 | 该版本线的发布记录，缺失即失败 |
+ * | 指向更早的提交 | 发布后的日常开发 | CHANGELOG「未发布」；没有声明时跳过并说明原因 |
+ */
+function nextReleaseSizeRecord() {
+  if (versions.size !== 1) {
+    throw new Error(`发布包版本不一致（${[...versions.keys()].join('、')}），无法判定体积口径该核对哪份发布记录`);
+  }
+  const [version] = versions.keys();
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  // 浅克隆默认不带 tag：一个 v* tag 都看不到时无法区分「未发布」与「没取 tag」，不能猜
+  if (git('tag', '--list', 'v*') === '') {
+    throw new Error('本地没有任何 v* tag，无法判定当前版本是否已发布；CI 检出需开启 fetch-tags，本地先 git fetch --tags');
+  }
+  const tag = `v${version}`;
+  const tagged = git('tag', '--list', tag) !== '';
+  if (!tagged || git('rev-parse', `${tag}^{commit}`) === git('rev-parse', 'HEAD')) {
+    const where = `docs/releases/${version.replace(/-.*$/, '')}.md`;
+    return { where, text: existsSync(join(root, where)) ? read(where) : '', required: true };
+  }
+  const where = 'CHANGELOG.md「未发布」';
+  const unreleased = /^## 未发布\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(read('CHANGELOG.md'));
+  if (!unreleased) {
+    return { where, text: '', required: false, skipReason: `${tag} 已发布，其记录是历史；CHANGELOG 没有「未发布」条目可核对` };
+  }
+  return {
+    where,
+    text: unreleased[1],
+    required: false,
+    skipReason: `${tag} 已发布，其记录是历史；CHANGELOG「未发布」尚未声明 collab 双体积口径`,
+  };
+}
+
 // 体积：dist 在才查，让 `npm run verify` 不必先构建也能跑完前面几组。
 // 容差 2%：日常改动不该天天弄红文档，但 editor 那种 40.61 → 61.82 的错误陈述必须拦下。
 const TOLERANCE = 0.02;
@@ -346,26 +389,30 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
     );
   }
 
-  // 发布记录按「主.次.修订」版本线归档（预发布版并入同一版本线），只核对当前包版本所属的记录；
-  // 旧记录的数字是历史证据，不能拿今天的构建覆盖。
-  const currentVersion = versions.size === 1 ? [...versions.keys()][0] : '';
-  const releaseLine = currentVersion.replace(/-.*$/, '');
-  const releaseRecord = `docs/releases/${releaseLine}.md`;
-  const currentRelease = releaseLine && existsSync(join(root, releaseRecord)) ? read(releaseRecord) : '';
-  const collabSizes = /`@web-ppt\/collab`[\s\S]{0,700}?发布入口为 ([\d.]+)KB gzip；[\s\S]{0,120}?([\d,]+)B gzip/.exec(currentRelease);
-  check(
-    `${releaseRecord} 能定位 collab 两种体积口径`,
-    collabSizes !== null,
-    '当前版本线的发布记录需存在，并同时声明发布入口与排除 peer 的测试薄包',
-  );
+  // collab 的双体积口径（发布入口 KB gzip + 排除 peer 的测试薄包 B gzip）只拿当前实测核对「下一次发布」的记录。
+  const record = nextReleaseSizeRecord();
+  const collabSizes = /`@web-ppt\/collab`[\s\S]{0,700}?发布入口为 ([\d.]+)KB gzip；[\s\S]{0,120}?([\d,]+)B gzip/.exec(record.text);
+  if (record.required) {
+    check(
+      `${record.where} 能定位 collab 两种体积口径`,
+      collabSizes !== null,
+      '待发布版本线的发布记录需存在，并同时声明发布入口与排除 peer 的测试薄包',
+    );
+  } else if (!collabSizes) {
+    console.log(`  \x1b[33m跳过 collab 双体积口径：${record.skipReason}\x1b[0m`);
+  }
   if (collabSizes) {
-    compareEntrySize(releaseRecord, '@web-ppt/collab', collabSizes[1]);
+    compareEntrySize(record.where, '@web-ppt/collab', collabSizes[1]);
     if (typeof counts?.collabThinGzip !== 'number') {
-      console.log('  \x1b[33m跳过 CHANGELOG collab 薄包体积：先 npm run test:collab\x1b[0m');
+      console.log(`  \x1b[33m跳过 ${record.where} 的 collab 薄包体积：先 npm run test:collab\x1b[0m`);
     } else {
       sizeClaims++;
       const claimedThin = Number(collabSizes[2].replace(/,/g, ''));
-      check(`CHANGELOG 称 collab 测试薄包为 ${claimedThin}B`, claimedThin === counts.collabThinGzip, `实测 ${counts.collabThinGzip}B gzip`);
+      check(
+        `${record.where} 称 collab 测试薄包为 ${claimedThin}B`,
+        claimedThin === counts.collabThinGzip,
+        `实测 ${counts.collabThinGzip}B gzip`,
+      );
     }
   }
   console.log(`  ${sizeClaims} 处 gzip 体积声明`);

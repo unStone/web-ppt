@@ -15,6 +15,9 @@ jobs:
       id-token: write        # OIDC 换取短期发布令牌所必需，缺了会退回要 NPM_TOKEN
     steps:
       - uses: actions/checkout@v4
+        with:
+          # verify 按 tag v<版本> 判定发布记录是否已成历史，看不到 tag 时直接失败
+          fetch-tags: true
       - uses: actions/setup-node@v4
         with:
           # Trusted Publishing 要求 Node ≥ 22.14.0

@@ -341,6 +341,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # verify 按 tag v<版本> 判定发布记录是否已成历史，看不到 tag 时直接失败
+          fetch-tags: true
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
