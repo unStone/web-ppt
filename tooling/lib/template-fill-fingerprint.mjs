@@ -16,9 +16,13 @@ const measureText = createTemplateFillMeasurement(resolve(import.meta.dirname, '
 try {
   const result = {};
   for (const textMode of ['html', 'svg']) {
-    const pages = (doc ? doc.slideOrder.map(id => api.edit.toSlide(doc, id)) : presentation.slides)
-      .map(slide => normalizeSvg(api.core.renderSlideToSvg(presentation, slide, { textMode, measureText })));
+    const pages = (doc ? doc.slideOrder.map((id) => api.edit.toSlide(doc, id)) : presentation.slides).map((slide) =>
+      normalizeSvg(api.core.renderSlideToSvg(presentation, slide, { textMode, measureText })),
+    );
     result[textMode] = createHash('sha256').update(pages.join('\n')).digest('hex');
   }
   process.stdout.write(JSON.stringify(result));
-} finally { if (doc) api.edit.disposeDoc(doc); else presentation.dispose?.(); }
+} finally {
+  if (doc) api.edit.disposeDoc(doc);
+  else presentation.dispose?.();
+}

@@ -10,15 +10,16 @@ const all = selectEditOfficeArtifacts(['--include-site']);
 const paths = (artifacts) => artifacts.map((artifact) => artifact.path);
 
 assert.deepEqual(all, ALL_OFFICE_ARTIFACTS, '原 --include-site 必须保留完整清单及元数据');
-assert.deepEqual(model.map(({ path, ...artifact }) => artifact), EDIT_SAVE_OFFICE_ARTIFACTS,
-  '默认模型验证必须保留原清单及页数回退');
+assert.deepEqual(
+  model.map(({ path, ...artifact }) => artifact),
+  EDIT_SAVE_OFFICE_ARTIFACTS,
+  '默认模型验证必须保留原清单及页数回退',
+);
 assert.ok(site.length > 0, '官网外部打开门禁必须有实际工件');
 assert.equal(new Set(paths(all)).size, all.length, '总清单的每件产物只能出现一次');
-assert.equal(new Set([...paths(model), ...paths(site)]).size, model.length + site.length,
-  '并行验证的模型与官网产物不能重复');
+assert.equal(new Set([...paths(model), ...paths(site)]).size, model.length + site.length, '并行验证的模型与官网产物不能重复');
 assert.deepEqual([...model, ...site], all, '两个独立入口必须恰好覆盖完整清单及全部验收元数据');
-assert.equal(selectEditOfficeArtifacts(['--site-only', '--site-only']).length, site.length,
-  '重复同一布尔标志不能改变覆盖范围');
+assert.equal(selectEditOfficeArtifacts(['--site-only', '--site-only']).length, site.length, '重复同一布尔标志不能改变覆盖范围');
 assert.throws(() => selectEditOfficeArtifacts(['--include-site', '--site-only']), /不能同时使用/);
 assert.throws(() => selectEditOfficeArtifacts(['--unknown']), { code: 'ERR_PARSE_ARGS_UNKNOWN_OPTION' });
 assert.throws(() => selectEditOfficeArtifacts(['sample.pptx']), { code: 'ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL' });

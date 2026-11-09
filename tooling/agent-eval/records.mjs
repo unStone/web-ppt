@@ -8,16 +8,16 @@ export { readJsonl, inspectCliEvents } from './cli-events.mjs';
 export { inspectProtocol } from './run-protocol.mjs';
 
 const conditions = ['with-lint', 'without-lint'];
-const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const textExtensions = ['.json', '.jsonl', '.toml', '.txt', '.log', '.md'];
 
 export function summarizeResults(results) {
-  const classification = row => {
+  const classification = (row) => {
     if (row.pass) return null;
     if (!row.attempted) return 'infrastructure';
-    if (row.failures.some(item => item.category === 'resource')) return 'resource';
-    if (row.failures.some(item => item.category === 'infrastructure')) return 'infrastructure';
-    if (row.failures.some(item => item.category === 'protocol')) return 'protocol';
+    if (row.failures.some((item) => item.category === 'resource')) return 'resource';
+    if (row.failures.some((item) => item.category === 'infrastructure')) return 'infrastructure';
+    if (row.failures.some((item) => item.category === 'protocol')) return 'protocol';
     return 'task';
   };
   for (const row of results) {
@@ -25,28 +25,35 @@ export function summarizeResults(results) {
     assert(Array.isArray(row.failures), '运行结果必须包含失败原因列表');
     assert(!row.pass || (row.attempted && row.failures.length === 0), '未启动或存在失败的运行不能报告成功');
   }
-  const summary = { version: 1, conditions: {},
-    countDefinitions: { attempted: 'Observed CLI process PID; missing records do not prove startup',
-      highLevelFailures: 'Mutually exclusive terminal outcome: resource > infrastructure > protocol > task; resource requires observed runner/host budget evidence',
+  const summary = {
+    version: 1,
+    conditions: {},
+    countDefinitions: {
+      attempted: 'Observed CLI process PID; missing records do not prove startup',
+      highLevelFailures:
+        'Mutually exclusive terminal outcome: resource > infrastructure > protocol > task; resource requires observed runner/host budget evidence',
       semanticCompletionRate: 'Saved bytes pass final semantic judgment; does not waive workflow, protocol or budget failures',
-      failuresByReason: 'Per-run reason counts may overlap; do not sum as failed runs' },
-    pairs: { planned: 0, recorded: 0, attempted: 0, evaluable: 0, evaluated: 0,
-    bothPassed: 0, withOnly: 0, withoutOnly: 0, neither: 0 },
-  limitations: ['受控任务与有限配对样本不支持普遍因果结论。',
-    '基础设施失败单独保留，不归因于自动 lint 反馈。',
-    '资源限制表示在统一预算下终止，不断言其根因一定来自模型或外部服务；所有原始诊断仍保留。'] };
+      failuresByReason: 'Per-run reason counts may overlap; do not sum as failed runs',
+    },
+    pairs: { planned: 0, recorded: 0, attempted: 0, evaluable: 0, evaluated: 0, bothPassed: 0, withOnly: 0, withoutOnly: 0, neither: 0 },
+    limitations: [
+      '受控任务与有限配对样本不支持普遍因果结论。',
+      '基础设施失败单独保留，不归因于自动 lint 反馈。',
+      '资源限制表示在统一预算下终止，不断言其根因一定来自模型或外部服务；所有原始诊断仍保留。',
+    ],
+  };
   for (const condition of conditions) {
-    const rows = results.filter(row => row.condition === condition);
-    const attempted = rows.filter(row => row.attempted).length;
-    const passed = rows.filter(row => row.pass).length;
-    const semanticPassed = rows.filter(row => row.semanticPass === true).length;
-    const semanticUnknown = rows.filter(row => typeof row.semanticPass !== 'boolean').length;
-    const infrastructureFailures = rows.filter(row => classification(row) === 'infrastructure').length;
-    const evaluable = rows.filter(row => row.attempted && classification(row) !== 'infrastructure').length;
+    const rows = results.filter((row) => row.condition === condition);
+    const attempted = rows.filter((row) => row.attempted).length;
+    const passed = rows.filter((row) => row.pass).length;
+    const semanticPassed = rows.filter((row) => row.semanticPass === true).length;
+    const semanticUnknown = rows.filter((row) => typeof row.semanticPass !== 'boolean').length;
+    const infrastructureFailures = rows.filter((row) => classification(row) === 'infrastructure').length;
+    const evaluable = rows.filter((row) => row.attempted && classification(row) !== 'infrastructure').length;
     const failuresByReason = {};
     const usageTotals = {};
     for (const row of rows) {
-      for (const reason of new Set(row.failures.map(failure => failure.reason))) {
+      for (const reason of new Set(row.failures.map((failure) => failure.reason))) {
         failuresByReason[reason] = (failuresByReason[reason] ?? 0) + 1;
       }
       for (const usage of row.usage ?? []) {
@@ -55,21 +62,29 @@ export function summarizeResults(results) {
         }
       }
     }
-    summary.conditions[condition] = { planned: rows.length, total: rows.length, attempted,
-      notStarted: rows.length - attempted, passed,
-      failed: rows.length - passed, infrastructureFailures,
-      resourceFailures: rows.filter(row => classification(row) === 'resource').length,
-      taskFailures: rows.filter(row => classification(row) === 'task').length,
-      protocolFailures: rows.filter(row => classification(row) === 'protocol').length,
+    summary.conditions[condition] = {
+      planned: rows.length,
+      total: rows.length,
+      attempted,
+      notStarted: rows.length - attempted,
+      passed,
+      failed: rows.length - passed,
+      infrastructureFailures,
+      resourceFailures: rows.filter((row) => classification(row) === 'resource').length,
+      taskFailures: rows.filter((row) => classification(row) === 'task').length,
+      protocolFailures: rows.filter((row) => classification(row) === 'protocol').length,
       completionRate: rows.length ? passed / rows.length : null,
-      semanticAssessed: rows.filter(row => row.semanticAssessed === true).length,
-      semanticPassed, semanticUnknown,
+      semanticAssessed: rows.filter((row) => row.semanticAssessed === true).length,
+      semanticPassed,
+      semanticUnknown,
       semanticCompletionRate: rows.length && !semanticUnknown ? semanticPassed / rows.length : null,
       attemptedCompletionRate: attempted ? passed / attempted : null,
-      evaluable, evaluableCompletionRate: evaluable ? passed / evaluable : null,
+      evaluable,
+      evaluableCompletionRate: evaluable ? passed / evaluable : null,
       usageTotals: Object.keys(usageTotals).length ? usageTotals : null,
-      unknownUsageRuns: rows.filter(row => row.attempted && !row.usage?.length).length,
-      failuresByReason };
+      unknownUsageRuns: rows.filter((row) => row.attempted && !row.usage?.length).length,
+      failuresByReason,
+    };
   }
   const pairs = new Map();
   for (const row of results) {
@@ -87,11 +102,10 @@ export function summarizeResults(results) {
     summary.pairs.recorded++;
     if (!withLint.attempted || !withoutLint.attempted) continue;
     summary.pairs.attempted++;
-    if ([withLint, withoutLint].some(row => classification(row) === 'infrastructure')) continue;
+    if ([withLint, withoutLint].some((row) => classification(row) === 'infrastructure')) continue;
     summary.pairs.evaluable++;
     summary.pairs.evaluated++;
-    const property = withLint.pass ? (withoutLint.pass ? 'bothPassed' : 'withOnly')
-      : (withoutLint.pass ? 'withoutOnly' : 'neither');
+    const property = withLint.pass ? (withoutLint.pass ? 'bothPassed' : 'withOnly') : withoutLint.pass ? 'withoutOnly' : 'neither';
     summary.pairs[property]++;
   }
   return summary;
@@ -103,7 +117,7 @@ async function filesIn(directory, prefix = '') {
     const path = join(prefix, name);
     const stat = await lstat(join(directory, path));
     if (stat.isSymbolicLink()) throw new Error(`证据目录不允许符号链接：${path}`);
-    if (stat.isDirectory()) files.push(...await filesIn(directory, path));
+    if (stat.isDirectory()) files.push(...(await filesIn(directory, path)));
     else if (stat.isFile()) files.push(path);
     else throw new Error(`证据目录含非普通文件：${path}`);
   }
@@ -119,7 +133,9 @@ function portableText(text, mappings) {
   let result = text;
   for (const [source, target] of mappings) result = result.replaceAll(source, target);
   // 发现认证材料时停止导出；不能把凭据静默改写成看似原始的证据。
-  if (/\bnpm_[A-Za-z0-9]{20,}|\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}|authorization["']?\s*[:=]\s*["']?bearer\s+[A-Za-z0-9_.-]{12,}/i.test(result)) {
+  if (
+    /\bnpm_[A-Za-z0-9]{20,}|\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}|authorization["']?\s*[:=]\s*["']?bearer\s+[A-Za-z0-9_.-]{12,}/i.test(result)
+  ) {
     throw new Error('证据文本疑似含认证材料，已拒绝导出；原始文件仍保留于本机目录');
   }
   return result;
@@ -141,14 +157,21 @@ export async function exportBundle({ sourceDirectory, destination, repoRoot }) {
   assert(!inside(source, await realpath(dirname(target))), '证据真实目标父目录不能位于源目录中');
   // mkdir独占目标，所有文件wx写入；清单最后落盘，半份目录不会被误判为有效证据。
   await mkdir(target);
-  const mappings = [[source, '<experiment>'], [resolve(sourceDirectory), '<experiment>'], [resolve(repoRoot), '<repo>'], [homedir(), '<home>']]
-    .filter(([path]) => path.length > 1).sort((left, right) => right[0].length - left[0].length);
+  const mappings = [
+    [source, '<experiment>'],
+    [resolve(sourceDirectory), '<experiment>'],
+    [resolve(repoRoot), '<repo>'],
+    [homedir(), '<home>'],
+  ]
+    .filter(([path]) => path.length > 1)
+    .sort((left, right) => right[0].length - left[0].length);
   const files = [];
   for (const path of await filesIn(source)) {
     if (path === 'evidence-manifest.json') throw new Error('源目录已包含证据清单，禁止嵌套导出');
     const input = await readFile(join(source, path));
-    const bytes = textExtensions.some(extension => path.endsWith(extension))
-      ? Buffer.from(portableText(input.toString('utf8'), mappings)) : input;
+    const bytes = textExtensions.some((extension) => path.endsWith(extension))
+      ? Buffer.from(portableText(input.toString('utf8'), mappings))
+      : input;
     await mkdir(dirname(join(target, path)), { recursive: true });
     await writeFile(join(target, path), bytes, { flag: 'wx' });
     files.push({ path: path.split(sep).join('/'), bytes: bytes.length, sha256: sha(bytes), rawSha256: sha(input) });
@@ -176,7 +199,7 @@ export async function verifyBundle(directory) {
     assert.equal(bytes.length, file.bytes, `证据字节数不符：${file.path}`);
     assert.equal(sha(bytes), file.sha256, `证据哈希不符：${file.path}`);
   }
-  const actual = (await filesIn(root)).filter(path => path !== 'evidence-manifest.json').map(path => path.split(sep).join('/'));
+  const actual = (await filesIn(root)).filter((path) => path !== 'evidence-manifest.json').map((path) => path.split(sep).join('/'));
   assert.deepEqual(actual.sort(), [...seen].sort(), '证据清单必须覆盖全部文件');
   return manifest;
 }

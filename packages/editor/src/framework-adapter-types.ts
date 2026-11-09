@@ -1,34 +1,49 @@
 import type {
-  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, EditorChange, ElementAltTextState,
-  ElementId, SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideAnimationState,
-  SlideId, SlideSizeState, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  EditAnimationStep,
+  EditorChange,
+  ElementAltTextState,
+  ElementId,
+  SectionId,
+  SectionRecord,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
+  SlideAnimationState,
+  SlideId,
+  SlideSizeState,
+  SlideTransitionInput,
+  SlideTransitionState,
+  TextSearchMatch,
 } from '@web-ppt/edit-core';
 import type { RecoveryCandidate, RecoveryDecision } from './recovery-store';
 import type { EditorSession, OpenEditorOptions } from './session';
 import type { SelectionPane } from './selection-pane-types';
 import type {
-  EditorContextRequest, EditorMode, LinkFollowHandler, SlideEditor, SlideEditorOptions,
+  EditorContextRequest,
+  EditorMode,
+  LinkFollowHandler,
+  SlideEditor,
+  SlideEditorOptions,
   TouchNavigationChange,
 } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
-import type {
-  FormatPainterSnapshot, FormatPainterStartOptions,
-} from './format-painter-types';
-import type {
-  TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
-} from './text-search-types';
+import type { FormatPainterSnapshot, FormatPainterStartOptions } from './format-painter-types';
+import type { TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot } from './text-search-types';
 
-export type WebPptDocument = {
-  readonly source: WebPptSource;
-  readonly openOptions?: OpenEditorOptions;
-  readonly session?: never;
-  readonly ownership?: never;
-} | {
-  readonly session: EditorSession;
-  readonly ownership: 'external';
-  readonly source?: never;
-  readonly openOptions?: never;
-};
+export type WebPptDocument =
+  | {
+      readonly source: WebPptSource;
+      readonly openOptions?: OpenEditorOptions;
+      readonly session?: never;
+      readonly ownership?: never;
+    }
+  | {
+      readonly session: EditorSession;
+      readonly ownership: 'external';
+      readonly source?: never;
+      readonly openOptions?: never;
+    };
 
 export interface WebPptViewOptions {
   readonly mode?: EditorMode;
@@ -76,22 +91,28 @@ export interface WebPptAdapterCallbacks {
   readonly onRecovery?: (candidate: RecoveryCandidate) => RecoveryDecision | Promise<RecoveryDecision>;
 }
 
-export type WebPptAdapterBinding = WebPptViewOptions & WebPptAdapterCallbacks & ({
-  readonly source: WebPptSource;
-  readonly openOptions?: OpenEditorOptions;
-  readonly session?: never;
-  readonly sessionOwnership?: never;
-} | {
-  readonly session: EditorSession;
-  readonly sessionOwnership: 'external';
-  readonly source?: never;
-  readonly openOptions?: never;
-} | {
-  readonly source?: null;
-  readonly session?: null;
-  readonly sessionOwnership?: never;
-  readonly openOptions?: OpenEditorOptions;
-});
+export type WebPptAdapterBinding = WebPptViewOptions &
+  WebPptAdapterCallbacks &
+  (
+    | {
+        readonly source: WebPptSource;
+        readonly openOptions?: OpenEditorOptions;
+        readonly session?: never;
+        readonly sessionOwnership?: never;
+      }
+    | {
+        readonly session: EditorSession;
+        readonly sessionOwnership: 'external';
+        readonly source?: never;
+        readonly openOptions?: never;
+      }
+    | {
+        readonly source?: null;
+        readonly session?: null;
+        readonly sessionOwnership?: never;
+        readonly openOptions?: OpenEditorOptions;
+      }
+  );
 
 export interface WebPptAdapterSnapshot extends WebPptViewState {
   readonly status: 'idle' | 'opening' | 'recovering' | 'ready' | 'error' | 'disposed';

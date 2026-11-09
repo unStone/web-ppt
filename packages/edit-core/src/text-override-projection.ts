@@ -1,8 +1,6 @@
 import { own } from './data-validation';
 import { paragraphLayoutDirectFlags, PARAGRAPH_LAYOUT_DIRECT_BITS, textRunDirectFlags } from '@web-ppt/core';
-import type {
-  Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo,
-} from '@web-ppt/core';
+import type { Paragraph, TextBody, TextFontSlots, TextRun, TextRunEditInfo } from '@web-ppt/core';
 import type { FlatTextParagraph, LinkOverride, TextMark, TextOverride } from './types';
 import { runProperties } from './run-style';
 import { FONT_DIRECT_BITS, FONT_OVERRIDE_BIT, RUN_DIRECT_FIELDS } from './run-property-fields';
@@ -37,7 +35,7 @@ function projectedRunEditInfo(
   useMarkProps = false,
 ): TextRunEditInfo | undefined {
   const overrides = mark.runOverrides;
-  let bits = mark.clearDirectFormatting ? 0 : sourceRun?.editInfo?.direct ?? 0;
+  let bits = mark.clearDirectFormatting ? 0 : (sourceRun?.editInfo?.direct ?? 0);
   for (const [field, bit] of RUN_DIRECT_FIELDS) {
     if (!own(overrides ?? {}, field)) continue;
     bits = overrides?.[field] === null ? bits & ~bit : bits | bit;
@@ -45,41 +43,39 @@ function projectedRunEditInfo(
   if (own(overrides ?? {}, 'font')) {
     bits = overrides?.font === null ? bits & ~FONT_DIRECT_BITS : bits | FONT_OVERRIDE_BIT;
   }
-  if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly
-    && !mark.clearDirectFormatting) return undefined;
+  if (!sourceRun?.editInfo && bits === 0 && !mark.sourceLinkReadonly && !mark.clearDirectFormatting) return undefined;
 
   const sourceInfo = sourceRun?.editInfo;
   const inheritedRunProps = useMarkProps
-    ? mark.inheritedRunProps ?? sourceInfo?.inheritedRunProps
-    : sourceInfo?.inheritedRunProps ?? mark.inheritedRunProps;
+    ? (mark.inheritedRunProps ?? sourceInfo?.inheritedRunProps)
+    : (sourceInfo?.inheritedRunProps ?? mark.inheritedRunProps);
   const preferredInheritedFonts = useMarkProps
-    ? mark.inheritedFonts ?? sourceInfo?.inheritedRunProps.fonts
-    : sourceInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts;
-  const inheritedFonts = [...(preferredInheritedFonts
-    ?? (mark.inheritedProps?.font ? [mark.inheritedProps.font] : props.fonts))];
+    ? (mark.inheritedFonts ?? sourceInfo?.inheritedRunProps.fonts)
+    : (sourceInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts);
+  const inheritedFonts = [...(preferredInheritedFonts ?? (mark.inheritedProps?.font ? [mark.inheritedProps.font] : props.fonts))];
   const effectiveFonts = [...props.fonts];
-  const inheritedSlots = (useMarkProps
-    ? mark.inheritedFontSlots ?? sourceInfo?.inheritedFontSlots
-    : sourceInfo?.inheritedFontSlots ?? mark.inheritedFontSlots)
-    ?? fontSlots(inheritedFonts);
+  const inheritedSlots =
+    (useMarkProps
+      ? (mark.inheritedFontSlots ?? sourceInfo?.inheritedFontSlots)
+      : (sourceInfo?.inheritedFontSlots ?? mark.inheritedFontSlots)) ?? fontSlots(inheritedFonts);
   return {
     inheritedRunProps: inheritedRunProps
       ? structuredClone(inheritedRunProps)
       : {
-        b: mark.inheritedProps?.b ?? props.b,
-        i: mark.inheritedProps?.i ?? props.i,
-        u: mark.inheritedProps?.u ?? props.u,
-        strike: mark.inheritedProps?.strike ?? props.strike,
-        size: mark.inheritedProps?.size ?? props.size,
-        color: mark.inheritedProps?.color ?? props.color,
-        fonts: inheritedFonts,
-        underline: mark.inheritedProps?.underline,
-        strikeType: mark.inheritedProps?.strikeType,
-        highlight: mark.inheritedProps?.highlight,
-        spacing: mark.inheritedProps?.spacing || undefined,
-        caps: mark.inheritedProps?.caps === 'none' ? undefined : mark.inheritedProps?.caps,
-        baseline: mark.inheritedProps?.baseline || undefined,
-      },
+          b: mark.inheritedProps?.b ?? props.b,
+          i: mark.inheritedProps?.i ?? props.i,
+          u: mark.inheritedProps?.u ?? props.u,
+          strike: mark.inheritedProps?.strike ?? props.strike,
+          size: mark.inheritedProps?.size ?? props.size,
+          color: mark.inheritedProps?.color ?? props.color,
+          fonts: inheritedFonts,
+          underline: mark.inheritedProps?.underline,
+          strikeType: mark.inheritedProps?.strikeType,
+          highlight: mark.inheritedProps?.highlight,
+          spacing: mark.inheritedProps?.spacing || undefined,
+          caps: mark.inheritedProps?.caps === 'none' ? undefined : mark.inheritedProps?.caps,
+          baseline: mark.inheritedProps?.baseline || undefined,
+        },
     inheritedFontSlots: structuredClone(inheritedSlots),
     direct: textRunDirectFlags(bits),
     fontSlots: own(overrides ?? {}, 'font')
@@ -88,14 +84,12 @@ function projectedRunEditInfo(
         : uniformFontSlots(effectiveFonts[0] ?? null)
       : useMarkProps && !(bits & FONT_DIRECT_BITS)
         ? structuredClone(inheritedSlots)
-        : sourceInfo?.fontSlots ?? fontSlots(effectiveFonts),
+        : (sourceInfo?.fontSlots ?? fontSlots(effectiveFonts)),
     ...(sourceInfo?.readonlyLink || mark.sourceLinkReadonly ? { readonlyLink: true } : {}),
   };
 }
 
-const PARAGRAPH_DIRECT_FIELDS = [
-  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent',
-] as const;
+const PARAGRAPH_DIRECT_FIELDS = ['level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent'] as const;
 
 function projectedParagraphEditInfo(
   paragraph: FlatTextParagraph,
@@ -113,55 +107,61 @@ function projectedParagraphEditInfo(
     if (overrides?.[field] === null) delete directParagraphProps[field];
     else directParagraphProps[field] = true;
   }
-  if (!sourceInfo && !paragraph.inheritedParagraphProps
-    && !paragraph.directParagraphProps && !overrides) return undefined;
+  if (!sourceInfo && !paragraph.inheritedParagraphProps && !paragraph.directParagraphProps && !overrides) return undefined;
   const inherited = useFlatLayout
-    ? paragraph.inheritedParagraphProps ?? sourceInfo?.inheritedParagraphProps
-    : sourceInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
+    ? (paragraph.inheritedParagraphProps ?? sourceInfo?.inheritedParagraphProps)
+    : (sourceInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps);
   let directLayout = sourceInfo?.directLayout ?? paragraphLayoutDirectFlags(0);
   if (own(overrides ?? {}, 'bullet')) {
-    directLayout = paragraphLayoutDirectFlags(overrides?.bullet === null
-      ? directLayout & ~PARAGRAPH_LAYOUT_DIRECT_BITS.bullet
-      : directLayout | PARAGRAPH_LAYOUT_DIRECT_BITS.bullet);
+    directLayout = paragraphLayoutDirectFlags(
+      overrides?.bullet === null ? directLayout & ~PARAGRAPH_LAYOUT_DIRECT_BITS.bullet : directLayout | PARAGRAPH_LAYOUT_DIRECT_BITS.bullet,
+    );
   }
   const requestedBullet = overrides?.bullet;
   const requested = own(overrides ?? {}, 'bullet')
     ? requestedBullet?.kind === 'autoNum'
       ? { ...requestedBullet, startAt: requestedBullet.startAt ?? 1 }
-      : requestedBullet ?? sourceInfo?.inheritedBullet ?? { kind: 'none' as const }
-    : sourceInfo?.bullet ?? { kind: 'none' as const };
-  const bullet: NonNullable<Paragraph['editInfo']>['bullet'] = requested.kind === 'blip'
-    ? {
-      kind: 'image', rid: paragraph.bulletImageOverride?.relationships[0]?.targetId
-        ?? (sourceInfo?.bullet.kind === 'image' ? sourceInfo.bullet.rid : ''),
-      src: requested.image.src,
-      ...(requested.color !== undefined ? { color: requested.color } : {}),
-      ...(requested.font !== undefined ? { font: requested.font } : {}),
-      ...(requested.size !== undefined ? { size: requested.size } : {}),
-    }
-    : requested;
+      : (requestedBullet ?? sourceInfo?.inheritedBullet ?? { kind: 'none' as const })
+    : (sourceInfo?.bullet ?? { kind: 'none' as const });
+  const bullet: NonNullable<Paragraph['editInfo']>['bullet'] =
+    requested.kind === 'blip'
+      ? {
+          kind: 'image',
+          rid:
+            paragraph.bulletImageOverride?.relationships[0]?.targetId ?? (sourceInfo?.bullet.kind === 'image' ? sourceInfo.bullet.rid : ''),
+          src: requested.image.src,
+          ...(requested.color !== undefined ? { color: requested.color } : {}),
+          ...(requested.font !== undefined ? { font: requested.font } : {}),
+          ...(requested.size !== undefined ? { size: requested.size } : {}),
+        }
+      : requested;
   return {
-    inheritedParagraphProps: structuredClone(inherited ?? {
-      level: props.lvl,
-      align: props.align,
-      lineHeight: props.lineHeight,
-      spaceBefore: props.spaceBefore,
-      spaceAfter: props.spaceAfter,
-      marginLeft: props.marL,
-      indent: props.indent,
-    }),
+    inheritedParagraphProps: structuredClone(
+      inherited ?? {
+        level: props.lvl,
+        align: props.align,
+        lineHeight: props.lineHeight,
+        spaceBefore: props.spaceBefore,
+        spaceAfter: props.spaceAfter,
+        marginLeft: props.marL,
+        indent: props.indent,
+      },
+    ),
     directParagraphProps,
     directRun: sourceInfo?.directRun ?? textRunDirectFlags(0),
     directLayout,
     bullet: structuredClone(bullet),
     inheritedBullet: structuredClone(sourceInfo?.inheritedBullet ?? { kind: 'none' as const }),
     ...(overrides?.bullet?.kind === 'autoNum'
-      ? { autoNumbering: {
-        scheme: overrides.bullet.type, startAt: overrides.bullet.startAt ?? 1,
-      } }
-      : !own(overrides ?? {}, 'bullet')
-        && sourceInfo?.autoNumbering
-        ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) } : {}),
+      ? {
+          autoNumbering: {
+            scheme: overrides.bullet.type,
+            startAt: overrides.bullet.startAt ?? 1,
+          },
+        }
+      : !own(overrides ?? {}, 'bullet') && sourceInfo?.autoNumbering
+        ? { autoNumbering: structuredClone(sourceInfo.autoNumbering) }
+        : {}),
   };
 }
 
@@ -176,21 +176,30 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     }
   }
   const overrides = mark.runOverrides;
-  const sourceInherited = sourceRun?.editInfo?.inheritedRunProps
-    ? runProperties(sourceRun.editInfo.inheritedRunProps) : undefined;
-  const inherited = (useMarkProps ? mark.inheritedProps ?? sourceInherited
-    : sourceInherited ?? mark.inheritedProps) ?? runProperties(props);
+  const sourceInherited = sourceRun?.editInfo?.inheritedRunProps ? runProperties(sourceRun.editInfo.inheritedRunProps) : undefined;
+  const inherited =
+    (useMarkProps ? (mark.inheritedProps ?? sourceInherited) : (sourceInherited ?? mark.inheritedProps)) ?? runProperties(props);
   if (mark.clearDirectFormatting) {
-    const full = (useMarkProps ? mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps
-      : sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps) ?? mark.props;
+    const full =
+      (useMarkProps
+        ? (mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps)
+        : (sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps)) ?? mark.props;
     Object.assign(props, {
-      b: full.b, i: full.i, u: full.u, strike: full.strike,
-      size: full.size, color: full.color, fonts: [...full.fonts],
-      outline: full.outline ?? null, gradient: full.gradient ?? null,
+      b: full.b,
+      i: full.i,
+      u: full.u,
+      strike: full.strike,
+      size: full.size,
+      color: full.color,
+      fonts: [...full.fonts],
+      outline: full.outline ?? null,
+      gradient: full.gradient ?? null,
       gradientFill: full.gradientFill ?? null,
-      shadow: full.shadow ?? null, shadowEffect: full.shadowEffect ?? null,
+      shadow: full.shadow ?? null,
+      shadowEffect: full.shadowEffect ?? null,
       generationIssues: full.generationIssues,
-      highlight: full.highlight ?? null, underlineColor: full.underlineColor ?? null,
+      highlight: full.highlight ?? null,
+      underlineColor: full.underlineColor ?? null,
     });
     for (const field of ['underline', 'strikeType', 'baseline', 'spacing', 'caps'] as const) {
       const value = full[field];
@@ -201,11 +210,9 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
   }
   if (overrides?.font !== undefined) {
     const inheritedFonts = useMarkProps
-      ? mark.inheritedFonts ?? sourceRun?.editInfo?.inheritedRunProps.fonts
-      : sourceRun?.editInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts;
-    props.fonts = overrides.font === null
-      ? [...(inheritedFonts ?? mark.props.fonts)]
-      : overrides.font ? [overrides.font] : [];
+      ? (mark.inheritedFonts ?? sourceRun?.editInfo?.inheritedRunProps.fonts)
+      : (sourceRun?.editInfo?.inheritedRunProps.fonts ?? mark.inheritedFonts);
+    props.fonts = overrides.font === null ? [...(inheritedFonts ?? mark.props.fonts)] : overrides.font ? [overrides.font] : [];
   }
   for (const field of ['size', 'color', 'b', 'i', 'highlight'] as const) {
     const value = overrides?.[field];
@@ -214,15 +221,20 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     }
   }
   if (overrides?.color !== undefined) {
-    const full = (useMarkProps ? mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps
-      : sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps);
-    props.gradient = overrides.color === null ? full?.gradient ?? null : null;
-    props.gradientFill = overrides.color === null ? full?.gradientFill ?? null : null;
+    const full = useMarkProps
+      ? (mark.inheritedRunProps ?? sourceRun?.editInfo?.inheritedRunProps)
+      : (sourceRun?.editInfo?.inheritedRunProps ?? mark.inheritedRunProps);
+    props.gradient = overrides.color === null ? (full?.gradient ?? null) : null;
+    props.gradientFill = overrides.color === null ? (full?.gradientFill ?? null) : null;
   }
   const underlineOverride = own(overrides ?? {}, 'underline')
     ? overrides?.underline
     : own(overrides ?? {}, 'u')
-      ? overrides?.u === null ? null : overrides?.u ? 'sng' : 'none'
+      ? overrides?.u === null
+        ? null
+        : overrides?.u
+          ? 'sng'
+          : 'none'
       : undefined;
   if (underlineOverride !== undefined) {
     const value = underlineOverride === null ? inherited.underline : underlineOverride;
@@ -233,7 +245,11 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
   const strikeOverride = own(overrides ?? {}, 'strikeType')
     ? overrides?.strikeType
     : own(overrides ?? {}, 'strike')
-      ? overrides?.strike === null ? null : overrides?.strike ? 'sngStrike' : 'noStrike'
+      ? overrides?.strike === null
+        ? null
+        : overrides?.strike
+          ? 'sngStrike'
+          : 'noStrike'
       : undefined;
   if (strikeOverride !== undefined) {
     const value = strikeOverride === null ? inherited.strikeType : strikeOverride;
@@ -242,7 +258,9 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     else props.strikeType = value;
   }
   for (const [field, empty] of [
-    ['spacing', 0], ['caps', 'none'], ['baseline', 0],
+    ['spacing', 0],
+    ['caps', 'none'],
+    ['baseline', 0],
   ] as const) {
     const value = overrides?.[field];
     if (value === undefined) continue;
@@ -251,9 +269,7 @@ function textRun(mark: TextMark, text: string, sourceRun?: TextRun, useMarkProps
     else (props as unknown as Record<string, unknown>)[field] = effective;
   }
   if (props.field && sourceRun) {
-    const preservesField = mark.preserveSource
-      && sourceRun.field?.toLowerCase() === props.field.toLowerCase()
-      && sourceRun.text === text;
+    const preservesField = mark.preserveSource && sourceRun.field?.toLowerCase() === props.field.toLowerCase() && sourceRun.text === text;
     // 字段缓存一旦被局部改写，保存会降级为普通 run；投影必须采用同一字段身份语义。
     if (!preservesField) delete props.field;
   }
@@ -265,16 +281,19 @@ function bodyFromOverride(
   override: Extract<TextOverride, { kind: 'flat' }>,
   source?: TextBody | null,
 ): Omit<TextBody, 'paragraphs' | 'editInfo'> {
-  const { paragraphs: _paragraphs, editInfo: _editInfo, ...sourceBody } = source ?? {
-    ...override.body, paragraphs: [],
+  const {
+    paragraphs: _paragraphs,
+    editInfo: _editInfo,
+    ...sourceBody
+  } = source ?? {
+    ...override.body,
+    paragraphs: [],
   };
   const body = { ...sourceBody };
   const overrides = override.bodyOverrides;
   const assign = <K extends 'anchor' | 'insets' | 'wrap'>(field: K): void => {
     if (overrides?.[field] === undefined) return;
-    const value = overrides[field] === null
-      ? source?.editInfo?.inherited?.[field] ?? override.body[field]
-      : override.body[field];
+    const value = overrides[field] === null ? (source?.editInfo?.inherited?.[field] ?? override.body[field]) : override.body[field];
     body[field] = structuredClone(value) as never;
   };
   assign('anchor');
@@ -282,8 +301,7 @@ function bodyFromOverride(
   assign('wrap');
   const assignOptional = <K extends 'vert' | 'anchorCtr' | 'columns' | 'columnGap'>(field: K): void => {
     if (overrides?.[field] === undefined) return;
-    const value = overrides[field] === null
-      ? source?.editInfo?.inherited?.[field] : override.body[field];
+    const value = overrides[field] === null ? source?.editInfo?.inherited?.[field] : override.body[field];
     if (value === undefined) delete body[field];
     else body[field] = value as never;
   };
@@ -292,15 +310,10 @@ function bodyFromOverride(
   assignOptional('columns');
   assignOptional('columnGap');
   if (overrides?.autoFit !== undefined) {
-    for (const field of [
-      'autoFitShape', 'autoFitNormal', 'autoFitCompute', 'lnSpcReduction',
-    ] as const) delete body[field];
-    const autoFitSource = overrides.autoFit === null
-      ? source?.editInfo?.inherited ?? override.body : override.body;
+    for (const field of ['autoFitShape', 'autoFitNormal', 'autoFitCompute', 'lnSpcReduction'] as const) delete body[field];
+    const autoFitSource = overrides.autoFit === null ? (source?.editInfo?.inherited ?? override.body) : override.body;
     body.fontScale = autoFitSource.fontScale;
-    for (const field of [
-      'autoFitShape', 'autoFitNormal', 'autoFitCompute', 'lnSpcReduction',
-    ] as const) {
+    for (const field of ['autoFitShape', 'autoFitNormal', 'autoFitCompute', 'lnSpcReduction'] as const) {
       const value = autoFitSource[field];
       if (value !== undefined) body[field] = value as never;
     }
@@ -317,21 +330,23 @@ function paragraphFromOverride(
   const overrides = paragraph.paragraphOverrides;
   // level 会连带九级样式中的符号、缩进与字符默认值；投影必须采用已重基的扁平结果。
   const levelChanged = own(overrides ?? {}, 'level');
-  const props = source && !levelChanged && !useFlatLayout
-    ? paragraphProps(source) : { ...paragraph.props };
+  const props = source && !levelChanged && !useFlatLayout ? paragraphProps(source) : { ...paragraph.props };
   const fields = [
     ['level', 'lvl'],
-    ['align', 'align'], ['lineHeight', 'lineHeight'], ['spaceBefore', 'spaceBefore'],
-    ['spaceAfter', 'spaceAfter'], ['marginLeft', 'marL'], ['indent', 'indent'],
+    ['align', 'align'],
+    ['lineHeight', 'lineHeight'],
+    ['spaceBefore', 'spaceBefore'],
+    ['spaceAfter', 'spaceAfter'],
+    ['marginLeft', 'marL'],
+    ['indent', 'indent'],
   ] as const;
   for (const [overrideField, paragraphField] of fields) {
     if (overrides?.[overrideField] === undefined) continue;
     const inherited = levelChanged
-      ? paragraph.inheritedParagraphProps ?? source?.editInfo?.inheritedParagraphProps
-      : source?.editInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps;
-    const value = overrides[overrideField] === null
-      ? inherited?.[overrideField] ?? paragraph.props[paragraphField]
-      : paragraph.props[paragraphField];
+      ? (paragraph.inheritedParagraphProps ?? source?.editInfo?.inheritedParagraphProps)
+      : (source?.editInfo?.inheritedParagraphProps ?? paragraph.inheritedParagraphProps);
+    const value =
+      overrides[overrideField] === null ? (inherited?.[overrideField] ?? paragraph.props[paragraphField]) : paragraph.props[paragraphField];
     props[paragraphField] = value as never;
   }
   if (own(overrides ?? {}, 'bullet') || useFlatBullets) {
@@ -350,35 +365,24 @@ export function textBodyFromOverride(
   source?: TextBody | null,
   resolveLink?: (link: Exclude<LinkOverride, { kind: 'none' }>) => string | undefined,
 ): TextBody {
-  const hasLevelChanges = override.paragraphs.some((paragraph) =>
-    own(paragraph.paragraphOverrides ?? {}, 'level'));
-  const hasBulletChanges = override.paragraphs.some((paragraph) =>
-    own(paragraph.paragraphOverrides ?? {}, 'bullet'));
+  const hasLevelChanges = override.paragraphs.some((paragraph) => own(paragraph.paragraphOverrides ?? {}, 'level'));
+  const hasBulletChanges = override.paragraphs.some((paragraph) => own(paragraph.paragraphOverrides ?? {}, 'bullet'));
   return {
     ...bodyFromOverride(override, source),
     // mark 与 data-r / TextPosition 必须一一对应；同来源切片已在 normalizedParagraph 合并。
     paragraphs: override.paragraphs.map((paragraph, paragraphIndex): Paragraph => {
       const sourceParagraph = source?.paragraphs[paragraph.sourceParagraph ?? paragraphIndex];
-      const levelChanged = own(
-        paragraph.paragraphOverrides ?? {}, 'level',
-      );
-      const paragraphProps = paragraphFromOverride(
-        paragraph, sourceParagraph, hasLevelChanges, hasBulletChanges,
-      );
+      const levelChanged = own(paragraph.paragraphOverrides ?? {}, 'level');
+      const paragraphProps = paragraphFromOverride(paragraph, sourceParagraph, hasLevelChanges, hasBulletChanges);
       const { bulletImage, ...orderedParagraphProps } = paragraphProps;
-      const editInfo = projectedParagraphEditInfo(
-        paragraph, paragraphProps, sourceParagraph, levelChanged || hasLevelChanges,
-      );
+      const editInfo = projectedParagraphEditInfo(paragraph, paragraphProps, sourceParagraph, levelChanged || hasLevelChanges);
       return {
         ...orderedParagraphProps,
         ...(editInfo ? { editInfo } : {}),
         runs: paragraph.marks.map((mark, markIndex) => {
-          const sourceRun = source?.paragraphs[
-            mark.source?.paragraph ?? paragraph.sourceParagraph ?? paragraphIndex
-          ]?.runs[mark.source?.run ?? markIndex];
-          const run = textRun(
-            mark, paragraph.text.slice(mark.from, mark.to), sourceRun, levelChanged,
-          );
+          const sourceRun =
+            source?.paragraphs[mark.source?.paragraph ?? paragraph.sourceParagraph ?? paragraphIndex]?.runs[mark.source?.run ?? markIndex];
+          const run = textRun(mark, paragraph.text.slice(mark.from, mark.to), sourceRun, levelChanged);
           const overrideLink = mark.runOverrides?.link;
           if (overrideLink === undefined || overrideLink === null) return run;
           if (overrideLink.kind === 'none') {

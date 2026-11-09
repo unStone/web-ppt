@@ -7,15 +7,36 @@ import type { TransitionType } from './types';
  * 否则同一份文件会出现“读取是空、预览向下、保存又采用另一默认值”的漂移。
  */
 const DEFAULT_DIRECTIONS: Readonly<Partial<Record<TransitionType, string>>> = Object.freeze({
-  push: 'l', pull: 'l', cover: 'l', wipe: 'l', split: 'horz-out', zoom: 'out',
-  checker: 'horz', blinds: 'horz', comb: 'horz', randomBar: 'horz', strips: 'lu',
-  vortex: 'l', ripple: 'center', glitter: 'l', warp: 'out', flythrough: 'in',
-  shred: 'in', reveal: 'l', pan: 'l', doors: 'horz', window: 'horz', prism: 'l',
+  push: 'l',
+  pull: 'l',
+  cover: 'l',
+  wipe: 'l',
+  split: 'horz-out',
+  zoom: 'out',
+  checker: 'horz',
+  blinds: 'horz',
+  comb: 'horz',
+  randomBar: 'horz',
+  strips: 'lu',
+  vortex: 'l',
+  ripple: 'center',
+  glitter: 'l',
+  warp: 'out',
+  flythrough: 'in',
+  shred: 'in',
+  reveal: 'l',
+  pan: 'l',
+  doors: 'horz',
+  window: 'horz',
+  prism: 'l',
 });
 
 const PREFERRED_DIRECTIONS: Readonly<Partial<Record<TransitionType, string>>> = Object.freeze({
   ...DEFAULT_DIRECTIONS,
-  switch: 'l', flip: 'l', ferris: 'l', gallery: 'l',
+  switch: 'l',
+  flip: 'l',
+  ferris: 'l',
+  gallery: 'l',
   conveyor: 'l',
 });
 

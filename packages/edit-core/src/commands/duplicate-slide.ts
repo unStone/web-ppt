@@ -4,14 +4,15 @@ import { allocateElementId, allocateSlideId } from '../document';
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
 import { parseXmlTree } from '../xml/tree';
-import {
-  allocateNotesPart, allocateSlideOpcIdentity, presentationSlideIdForPart,
-} from './add-slide-identity';
+import { allocateNotesPart, allocateSlideOpcIdentity, presentationSlideIdForPart } from './add-slide-identity';
 import type { CommandPatches, DuplicateSlideCommand, SlideTreePatch } from './types';
 import { sectionOfSlide } from '../sections';
 import { maxPartSpid } from './spid';
 
-function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
+function sourceRelationshipInfo(
+  doc: EditDoc,
+  sourceId: SlideId,
+): {
   layoutId: string;
   notesSourcePart?: string;
   notesRelationshipId?: string;
@@ -20,16 +21,17 @@ function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   if (source.creation) {
     return {
       layoutId: source.creation.layoutRelationshipId,
-      ...(source.notes ? {
-        ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
-        notesRelationshipId: source.notes.relationshipId,
-      } : {}),
+      ...(source.notes
+        ? {
+            ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
+            notesRelationshipId: source.notes.relationshipId,
+          }
+        : {}),
     };
   }
   const part = source.origin?.part;
   const relsPart = part && relationshipPartFor(part);
-  const bytes = relsPart
-    && (doc.saveState.baselines[relsPart] ?? doc.package?.parts[relsPart]);
+  const bytes = relsPart && (doc.saveState.baselines[relsPart] ?? doc.package?.parts[relsPart]);
   if (!bytes) throw new Error(`页面 ${sourceId} 缺少关系 part`);
   let layoutId: string | undefined;
   for (const relation of xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })) {
@@ -41,14 +43,19 @@ function sourceRelationshipInfo(doc: EditDoc, sourceId: SlideId): {
   if (!layoutId) throw new Error(`页面 ${sourceId} 缺少版式关系`);
   return {
     layoutId,
-    ...(source.notes ? {
-      ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
-      notesRelationshipId: source.notes.relationshipId,
-    } : {}),
+    ...(source.notes
+      ? {
+          ...(source.notes.sourcePart ? { notesSourcePart: source.notes.sourcePart } : {}),
+          notesRelationshipId: source.notes.relationshipId,
+        }
+      : {}),
   };
 }
 
-function duplicateRemovedSpids(doc: EditDoc, sourceId: SlideId): {
+function duplicateRemovedSpids(
+  doc: EditDoc,
+  sourceId: SlideId,
+): {
   roots: number[];
   animations: number[];
 } {
@@ -60,10 +67,8 @@ function duplicateRemovedSpids(doc: EditDoc, sourceId: SlideId): {
     return !!origin && origin.part === source.origin?.part && !record.meta.created;
   });
   const roots = current.flatMap((record) => record.meta.origin?.spid ?? []);
-  const animations = current.flatMap((record) =>
-    record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : []));
-  const unique = (values: readonly number[]) =>
-    [...new Set(values)].sort((left, right) => left - right);
+  const animations = current.flatMap((record) => record.sourceSpids ?? (record.meta.origin ? [record.meta.origin.spid] : []));
+  const unique = (values: readonly number[]) => [...new Set(values)].sort((left, right) => left - right);
   return {
     roots: unique([...inheritedRoots, ...roots]),
     animations: unique([...inheritedAnimations, ...animations]),
@@ -106,15 +111,13 @@ function duplicateRecords(
     records[targetElementId] = record;
   }
   return {
-    children: doc.slides[sourceId].children.map((id) => remap.get(id)!), records, remap,
+    children: doc.slides[sourceId].children.map((id) => remap.get(id)!),
+    records,
+    remap,
   };
 }
 
-export function duplicateSlidePatches(
-  doc: EditDoc,
-  command: DuplicateSlideCommand,
-  origin: string,
-): CommandPatches {
+export function duplicateSlidePatches(doc: EditDoc, command: DuplicateSlideCommand, origin: string): CommandPatches {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
     throw new Error('只读或非 OOXML 编辑文档不能复制页面');
   }
@@ -133,31 +136,40 @@ export function duplicateSlidePatches(
     after: source.id,
     before: doc.slideOrder[sourceIndex + 1] ?? null,
     slide: {
-      ...structuredClone(source), id, children: cloned.children,
-      ...(source.sourceAnimations ? {
-        sourceAnimations: source.sourceAnimations.map((step) => ({
-          ...structuredClone(step), target: cloned.remap.get(step.target)!,
-        })),
-      } : {}),
+      ...structuredClone(source),
+      id,
+      children: cloned.children,
+      ...(source.sourceAnimations
+        ? {
+            sourceAnimations: source.sourceAnimations.map((step) => ({
+              ...structuredClone(step),
+              target: cloned.remap.get(step.target)!,
+            })),
+          }
+        : {}),
       ovr: {
         ...structuredClone(source.ovr),
-        ...(source.ovr.animations ? {
-          animations: source.ovr.animations.map((step) => ({
-            ...structuredClone(step), target: cloned.remap.get(step.target)!,
-          })),
-        } : {}),
+        ...(source.ovr.animations
+          ? {
+              animations: source.ovr.animations.map((step) => ({
+                ...structuredClone(step),
+                target: cloned.remap.get(step.target)!,
+              })),
+            }
+          : {}),
       },
       dynamicSlideNumbers: source.dynamicSlideNumbers.map((elementId) => cloned.remap.get(elementId)!),
       dynamicSlideLinks: source.dynamicSlideLinks.map((elementId) => cloned.remap.get(elementId)!),
       origin: { part: opc.part },
-      ...(notesPart && relationshipInfo.notesRelationshipId ? {
-        notes: {
-          ...(relationshipInfo.notesSourcePart
-            ? { sourcePart: relationshipInfo.notesSourcePart } : {}),
-          targetPart: notesPart,
-          relationshipId: relationshipInfo.notesRelationshipId,
-        },
-      } : {}),
+      ...(notesPart && relationshipInfo.notesRelationshipId
+        ? {
+            notes: {
+              ...(relationshipInfo.notesSourcePart ? { sourcePart: relationshipInfo.notesSourcePart } : {}),
+              targetPart: notesPart,
+              relationshipId: relationshipInfo.notesRelationshipId,
+            },
+          }
+        : {}),
       // 副本仍从同一页 XML 基线起步；保留来源版式才能让未保存的 SetLayout 继续做稀疏继承。
       sourceLayoutId: source.sourceLayoutId ?? source.layoutId,
       creation: {
@@ -165,15 +177,21 @@ export function duplicateSlidePatches(
         layoutRelationshipId: relationshipInfo.layoutId,
         ...(source.creation?.duplicateSourcePart
           ? { duplicateSourcePart: source.creation.duplicateSourcePart }
-          : source.creation ? {} : { duplicateSourcePart: source.origin.part }),
-        ...(relationshipInfo.notesSourcePart ? {
-          duplicateNotesSourcePart: relationshipInfo.notesSourcePart,
-          duplicateNotesPart: notesPart,
-        } : {}),
+          : source.creation
+            ? {}
+            : { duplicateSourcePart: source.origin.part }),
+        ...(relationshipInfo.notesSourcePart
+          ? {
+              duplicateNotesSourcePart: relationshipInfo.notesSourcePart,
+              duplicateNotesPart: notesPart,
+            }
+          : {}),
         ...(removedSpids.roots.length ? { duplicateRemovedSpids: removedSpids.roots } : {}),
-        ...(removedSpids.animations.length ? {
-          duplicateRemovedAnimationSpids: removedSpids.animations,
-        } : {}),
+        ...(removedSpids.animations.length
+          ? {
+              duplicateRemovedAnimationSpids: removedSpids.animations,
+            }
+          : {}),
         presentationSlideId: opc.presentationSlideId,
         presentationRelationshipId: opc.presentationRelationshipId,
         sectionAfterSlideId: presentationSlideIdForPart(doc, source.origin.part),

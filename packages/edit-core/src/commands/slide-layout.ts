@@ -7,16 +7,8 @@ export function isSlideLayoutPatch(patch: { readonly path: readonly unknown[] })
   return patch.path.length === 3 && patch.path[0] === 'slides' && patch.path[2] === 'layoutId';
 }
 
-export function validateSlideLayoutPatch(
-  doc: EditDoc,
-  patch: SlideLayoutPatch,
-  index: number,
-): void {
-  assertDataObject(
-    patch,
-    patch.op === 'set' ? ['op', 'path', 'value', 'origin'] : ['op', 'path', 'origin'],
-    `Patch ${index}`,
-  );
+export function validateSlideLayoutPatch(doc: EditDoc, patch: SlideLayoutPatch, index: number): void {
+  assertDataObject(patch, patch.op === 'set' ? ['op', 'path', 'value', 'origin'] : ['op', 'path', 'origin'], `Patch ${index}`);
   const id = patch.path[1];
   if (!own(doc.slides, id)) throw new Error(`版式 Patch 指向不存在的幻灯片：${id}`);
   if (patch.op === 'set' && !doc.layoutOrder.includes(patch.value)) {
@@ -31,11 +23,7 @@ export function applySlideLayoutPatch(doc: EditDoc, patch: SlideLayoutPatch): vo
   afterSlideDesignChange(doc, patch.path[1]);
 }
 
-export function setLayoutPatches(
-  doc: EditDoc,
-  command: SetLayoutCommand,
-  origin: string,
-): CommandPatches {
+export function setLayoutPatches(doc: EditDoc, command: SetLayoutCommand, origin: string): CommandPatches {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
     throw new Error('只读或非 OOXML 编辑文档不能切换版式');
   }
@@ -48,8 +36,6 @@ export function setLayoutPatches(
   if (slide.layoutId === command.layoutId) return { forward: [], inverse: [] };
   const path = ['slides', command.id, 'layoutId'] as const;
   const forward: SlideLayoutPatch = { op: 'set', path, value: command.layoutId, origin };
-  const inverse: SlideLayoutPatch = slide.layoutId
-    ? { op: 'set', path, value: slide.layoutId, origin }
-    : { op: 'del', path, origin };
+  const inverse: SlideLayoutPatch = slide.layoutId ? { op: 'set', path, value: slide.layoutId, origin } : { op: 'del', path, origin };
   return { forward: [forward], inverse: [inverse] };
 }

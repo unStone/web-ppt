@@ -13,11 +13,7 @@ export interface Fetched {
   ms: number;
 }
 
-export async function fetchBytes(
-  src: string,
-  onProgress: (got: number, total: number) => void,
-  signal?: AbortSignal,
-): Promise<Fetched> {
+export async function fetchBytes(src: string, onProgress: (got: number, total: number) => void, signal?: AbortSignal): Promise<Fetched> {
   const t0 = performance.now();
   const res = await fetch(src, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

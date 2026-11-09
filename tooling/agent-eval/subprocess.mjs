@@ -3,7 +3,7 @@ import { open } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
-const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function signalGroup(child, signal) {
   if (!child.pid) return;
@@ -39,8 +39,19 @@ async function stopTree(child, graceMs) {
   if (groupExists(child.pid)) signalGroup(child, 'SIGKILL');
 }
 
-export async function executeChild({ command, args, cwd, env = process.env, stdoutPath,
-  stderrPath, timeoutMs, graceMs = 2000, signal, input = '', onProgress }) {
+export async function executeChild({
+  command,
+  args,
+  cwd,
+  env = process.env,
+  stdoutPath,
+  stderrPath,
+  timeoutMs,
+  graceMs = 2000,
+  signal,
+  input = '',
+  onProgress,
+}) {
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) throw new Error(`无效 Agent 超时预算：${timeoutMs}`);
   if (!Number.isInteger(graceMs) || graceMs < 0) throw new Error(`无效 Agent 清理预算：${graceMs}`);
   const stdout = await open(stdoutPath, 'wx');
@@ -61,19 +72,22 @@ export async function executeChild({ command, args, cwd, env = process.env, stdo
   let stdinError;
   let spawnError;
   let exit;
-  const requestStop = reason => {
+  const requestStop = (reason) => {
     cause ??= reason;
     stopping ??= stopTree(child, graceMs);
   };
   const abort = () => requestStop('cancelled');
   try {
-    child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32',
-      stdio: ['pipe', stdout.fd, stderr.fd] });
-    const closed = new Promise(resolve => {
-      child.once('error', error => { spawnError = error; });
+    child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: ['pipe', stdout.fd, stderr.fd] });
+    const closed = new Promise((resolve) => {
+      child.once('error', (error) => {
+        spawnError = error;
+      });
       child.once('close', (exitCode, exitSignal) => resolve({ exitCode, signal: exitSignal }));
     });
-    child.stdin.on('error', error => { stdinError = { code: error.code, message: error.message }; });
+    child.stdin.on('error', (error) => {
+      stdinError = { code: error.code, message: error.message };
+    });
     child.stdin.end(input);
     timeout = setTimeout(() => requestStop('timeout'), timeoutMs);
     heartbeat = onProgress ? setInterval(() => onProgress({ pid: child.pid, elapsedMs: Date.now() - started }), 30000) : undefined;
@@ -85,10 +99,16 @@ export async function executeChild({ command, args, cwd, env = process.env, stdo
     await stopping;
     await stdout.sync();
     await stderr.sync();
-    return { status: cause ?? (spawnError || exit.exitCode !== 0 ? 'failed' : 'completed'),
-      pid: child.pid ?? null, ...exit, startedAt, endedAt: new Date().toISOString(),
-      elapsedMs: Date.now() - started, ...(spawnError && { spawnError: { code: spawnError.code, message: spawnError.message } }),
-      ...(stdinError && { stdinError }) };
+    return {
+      status: cause ?? (spawnError || exit.exitCode !== 0 ? 'failed' : 'completed'),
+      pid: child.pid ?? null,
+      ...exit,
+      startedAt,
+      endedAt: new Date().toISOString(),
+      elapsedMs: Date.now() - started,
+      ...(spawnError && { spawnError: { code: spawnError.code, message: spawnError.message } }),
+      ...(stdinError && { stdinError }),
+    };
   } finally {
     clearTimeout(timeout);
     clearInterval(heartbeat);

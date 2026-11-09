@@ -16,8 +16,7 @@ export function assertToolInput<T extends AgentToolName>(name: T, input: unknown
   if (!validate({ [name]: input })) {
     const errors = validate.errors ?? [];
     const detail = errors.map((error) => `${error.instancePath || '/'} ${error.message ?? '校验失败'}`).join('; ');
-    const commandPath = errors.map((error) => /\/commands\/(\d+)(?:\/|$)/.exec(error.instancePath ?? ''))
-      .find((match) => match !== null);
+    const commandPath = errors.map((error) => /\/commands\/(\d+)(?:\/|$)/.exec(error.instancePath ?? '')).find((match) => match !== null);
     const commandIndex = commandPath ? Number(commandPath[1]) : null;
     throw new AgentToolError('invalid-input', `${name} 输入不符合 JSON Schema${detail ? `：${detail}` : ''}`, commandIndex);
   }

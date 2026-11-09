@@ -8,8 +8,14 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MATH_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/math';
 
 const rich = sp({
-  x: 35, y: 35, w: 410, h: 190, name: 'find-rich', fill: solid('F8FAFC'),
-  effect: '<a:extLst><a:ext uri="{WEB-PPT-FIND}"><fixture:keep xmlns:fixture="urn:web-ppt:find-replace" value="adjacent"/></a:ext></a:extLst>',
+  x: 35,
+  y: 35,
+  w: 410,
+  h: 190,
+  name: 'find-rich',
+  fill: solid('F8FAFC'),
+  effect:
+    '<a:extLst><a:ext uri="{WEB-PPT-FIND}"><fixture:keep xmlns:fixture="urn:web-ppt:find-replace" value="adjacent"/></a:ext></a:extLst>',
   text: `<a:p><a:r><a:rPr sz="1700"/><a:t>Alpha alpha ALPHA alphaBeta 阿尔法 🙂 ΟΣ ος</a:t></a:r></a:p>
 <a:p><a:r><a:rPr sz="1800" b="1"/><a:t>Need</a:t></a:r><a:r><a:rPr sz="1800" i="1"/><a:t>le</a:t></a:r></a:p>
 <a:p><a:r><a:rPr sz="1600"/><a:t>Need</a:t></a:r><a:fld id="{00000000-0000-0000-0000-000000000060}" type="slidenum"><a:rPr sz="1600"/><a:t>1</a:t></a:fld><a:fld id="{00000000-0000-0000-0000-000000000062}" type="web-ppt-protected"><a:rPr sz="1600"/><a:t>Needle</a:t></a:fld><a:r><a:rPr sz="1600"/><a:t>le</a:t></a:r></a:p>
@@ -18,7 +24,12 @@ const rich = sp({
 });
 
 const groupChild = sp({
-  x: 10, y: 10, w: 205, h: 80, name: 'find-group-child', fill: solid('DCFCE7'),
+  x: 10,
+  y: 10,
+  w: 205,
+  h: 80,
+  name: 'find-group-child',
+  fill: solid('DCFCE7'),
   text: '<a:p><a:r><a:rPr sz="1700"/><a:t>Needle group</a:t></a:r></a:p>',
 });
 const group = `<p:grpSp>
@@ -38,16 +49,28 @@ const table = `<p:graphicFrame>
 </a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 
 const pageTwo = sp({
-  x: 60, y: 70, w: 520, h: 150, name: 'find-page-two', fill: solid('EFF6FF'),
+  x: 60,
+  y: 70,
+  w: 520,
+  h: 150,
+  name: 'find-page-two',
+  fill: solid('EFF6FF'),
   text: '<a:p><a:r><a:rPr sz="2200"/><a:t>Needle middle Needle NeedleCase</a:t></a:r></a:p>',
 });
 const pageThree = sp({
-  x: 60, y: 70, w: 520, h: 150, name: 'find-no-match', fill: solid('FFF7ED'),
+  x: 60,
+  y: 70,
+  w: 520,
+  h: 150,
+  name: 'find-no-match',
+  fill: solid('FFF7ED'),
   text: '<a:p><a:r><a:rPr sz="2200"/><a:t>这里没有目标文字</a:t></a:r></a:p>',
 });
 
 const bytes = deck({
-  name: 'Editor Find Replace', width: 960, height: 540,
+  name: 'Editor Find Replace',
+  width: 960,
+  height: 540,
   slides: [slideXml(rich + group + table), slideXml(pageTwo), slideXml(pageThree)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

@@ -40,22 +40,33 @@ export class PointerGestureLifecycle {
     this.root = root;
   }
 
-  get isActive(): boolean { return this.active !== null; }
+  get isActive(): boolean {
+    return this.active !== null;
+  }
 
   begin(event: PointerEvent, gesture: PointerGesture): void {
     this.cancel();
     const screen = { x: event.clientX, y: event.clientY };
     this.active = {
-      pointerId: pointerId(event), startScreen: screen,
+      pointerId: pointerId(event),
+      startScreen: screen,
       snapshot: {
-        screen, altKey: event.altKey, ctrlKey: event.ctrlKey,
-        metaKey: event.metaKey, shiftKey: event.shiftKey,
+        screen,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
       },
-      gesture, started: false, frame: null, cursor: this.root.style.cursor,
+      gesture,
+      started: false,
+      frame: null,
+      cursor: this.root.style.cursor,
     };
     try {
       this.root.setPointerCapture?.(pointerId(event));
-    } catch { /* 合成事件没有活动指针；可信浏览器输入仍必须捕获成功。 */ }
+    } catch {
+      /* 合成事件没有活动指针；可信浏览器输入仍必须捕获成功。 */
+    }
   }
 
   move(event: PointerEvent): void {
@@ -69,10 +80,7 @@ export class PointerGestureLifecycle {
       throw error;
     }
     if (!active.started) {
-      const distance = Math.hypot(
-        active.snapshot.screen.x - active.startScreen.x,
-        active.snapshot.screen.y - active.startScreen.y,
-      );
+      const distance = Math.hypot(active.snapshot.screen.x - active.startScreen.x, active.snapshot.screen.y - active.startScreen.y);
       if (distance < GESTURE_THRESHOLD) return;
       active.started = true;
       try {
@@ -126,8 +134,11 @@ export class PointerGestureLifecycle {
     const active = this.active;
     if (!active || !['Shift', 'Alt', 'Control', 'Meta'].includes(event.key)) return false;
     active.snapshot = {
-      ...active.snapshot, altKey: event.altKey, ctrlKey: event.ctrlKey,
-      metaKey: event.metaKey, shiftKey: event.shiftKey,
+      ...active.snapshot,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
     };
     if (active.started) this.scheduleFrame(active);
     return true;
@@ -144,8 +155,10 @@ export class PointerGestureLifecycle {
   private updateSnapshot(active: ActivePointerGesture, event: PointerEvent): void {
     active.snapshot = {
       screen: { x: event.clientX, y: event.clientY },
-      altKey: event.altKey, ctrlKey: event.ctrlKey,
-      metaKey: event.metaKey, shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
     };
   }
 
@@ -184,7 +197,9 @@ export class PointerGestureLifecycle {
       delete this.root.dataset[active.gesture.dataset.name];
       try {
         if (this.root.hasPointerCapture?.(active.pointerId)) this.root.releasePointerCapture(active.pointerId);
-      } catch { /* cancel/lostcapture 时浏览器可能已释放指针。 */ }
+      } catch {
+        /* cancel/lostcapture 时浏览器可能已释放指针。 */
+      }
     }
   }
 }

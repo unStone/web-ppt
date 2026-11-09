@@ -62,13 +62,14 @@ export async function runStandaloneFileProgressContract({ evaluate, request, wai
       "document.querySelector('#fileInfo')?.textContent.includes('held-remote.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready' && document.querySelector('#stage svg')",
       '远程下载后解析成功',
     );
-    if (!await evaluate('globalThis.__sawRemoteParsing === true')) {
+    if (!(await evaluate('globalThis.__sawRemoteParsing === true'))) {
       throw new Error('远程打开没有出现解析中');
     }
 
     await request('Page.navigate', { url: await standalone('/demo/held-remote.pptx') });
     await waitFor("document.querySelector('#stage')?.dataset.openPhase === 'download'", '第二次远程进入下载');
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes = await fetch('/demo/showcase.pptx').then((r) => r.arrayBuffer());
       const file = new File([bytes], 'local-wins.pptx');
       const input = document.querySelector('#fileInput');
@@ -76,7 +77,9 @@ export async function runStandaloneFileProgressContract({ evaluate, request, wai
       transfer.items.add(file);
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`, true);
+    })()`,
+      true,
+    );
     await waitFor(
       "document.querySelector('#fileInfo')?.textContent.includes('local-wins.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
       '下载中途本地打开赢',

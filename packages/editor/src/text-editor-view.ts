@@ -3,12 +3,7 @@ import type { TextPosition } from '@web-ppt/edit-core';
 import { domPointAt } from './text-dom';
 import type { ActiveText } from './text-editor-types';
 
-export function createTextEditorRoot(
-  document: Document,
-  active: ActiveText,
-  layout: 'browser' | 'engine',
-  scale?: number,
-): HTMLDivElement {
+export function createTextEditorRoot(document: Document, active: ActiveText, layout: 'browser' | 'engine', scale?: number): HTMLDivElement {
   const root = document.createElement('div');
   root.dataset.pptTextEditor = active.id;
   if (active.cell) root.dataset.pptTextCell = `${active.cell.r}:${active.cell.c}`;
@@ -40,11 +35,7 @@ export function createTextEditorRoot(
   return root;
 }
 
-export function setTextDomSelection(
-  root: HTMLDivElement,
-  anchor: TextPosition,
-  focus: TextPosition,
-): void {
+export function setTextDomSelection(root: HTMLDivElement, anchor: TextPosition, focus: TextPosition): void {
   const start = domPointAt(root, anchor);
   const end = domPointAt(root, focus);
   const selection = root.ownerDocument.defaultView?.getSelection();

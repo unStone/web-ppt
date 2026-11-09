@@ -1,9 +1,7 @@
 import { TEXT_BODY_PROPERTY_BITS } from '@web-ppt/core';
 import type { TextBodyEditInfo, TextBodyLayoutProperties } from '@web-ppt/core';
 import { textTargetContext } from './commands/text-target';
-import type {
-  EditDoc, TableCellAddress, TextBodyOverride, TextBodyProperties, TextBodyPropertyOverrides, TextOverride,
-} from './types';
+import type { EditDoc, TableCellAddress, TextBodyOverride, TextBodyProperties, TextBodyPropertyOverrides, TextOverride } from './types';
 
 const same = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
 
@@ -16,19 +14,12 @@ function properties(body: TextBodyLayoutProperties): TextBodyProperties {
     anchorCtr: body.anchorCtr ?? false,
     columns: body.columns ?? 1,
     columnGap: body.columnGap ?? 0,
-    autoFit: body.autoFitShape ? 'shape'
-      : body.autoFitNormal || body.autoFitCompute ? 'normal' : 'none',
+    autoFit: body.autoFitShape ? 'shape' : body.autoFitNormal || body.autoFitCompute ? 'normal' : 'none',
   };
 }
 
-export function queryBodyProps(
-  doc: EditDoc,
-  id: string,
-  cell?: TableCellAddress,
-): TextBodyProperties {
-  const { body: source, before } = textTargetContext(
-    doc, { id, ...(cell !== undefined ? { cell } : {}) },
-  );
+export function queryBodyProps(doc: EditDoc, id: string, cell?: TableCellAddress): TextBodyProperties {
+  const { body: source, before } = textTargetContext(doc, { id, ...(cell !== undefined ? { cell } : {}) });
   return properties(before?.body ?? source);
 }
 
@@ -43,9 +34,14 @@ export function applyBodyProps(
   };
   const overrides: Record<string, unknown> = { ...initial.bodyOverrides };
   const current = properties(body);
-  const inherited = properties(sourceEditInfo?.inherited ?? {
-    anchor: 'top', insets: [4.8, 9.6, 4.8, 9.6], wrap: true, fontScale: 1,
-  });
+  const inherited = properties(
+    sourceEditInfo?.inherited ?? {
+      anchor: 'top',
+      insets: [4.8, 9.6, 4.8, 9.6],
+      wrap: true,
+      fontScale: 1,
+    },
+  );
   const direct = sourceEditInfo?.direct ?? 0;
   const assign = <F extends keyof TextBodyPropertyOverrides>(
     field: F,
@@ -60,9 +56,15 @@ export function applyBodyProps(
     } else overrides[field] = value;
     if (!same(current[field], value)) apply(value);
   };
-  assign('anchor', (value) => { body.anchor = value; });
-  assign('insets', (value) => { body.insets = [...value]; });
-  assign('wrap', (value) => { body.wrap = value; });
+  assign('anchor', (value) => {
+    body.anchor = value;
+  });
+  assign('insets', (value) => {
+    body.insets = [...value];
+  });
+  assign('wrap', (value) => {
+    body.wrap = value;
+  });
   assign('vert', (value) => {
     if (value === 'horz') delete body.vert;
     else body.vert = value;

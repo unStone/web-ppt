@@ -3,11 +3,7 @@ import { assertEffects, normalizeEffects } from '../shape-effects';
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementEffectsPatch, SetEffectsCommand } from './types';
 
-export function setEffectsPatches(
-  doc: EditDoc,
-  command: SetEffectsCommand,
-  origin: string,
-): CommandPatches {
+export function setEffectsPatches(doc: EditDoc, command: SetEffectsCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改二维效果');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
@@ -26,7 +22,7 @@ export function setEffectsPatches(
       inverse: [{ op: 'set', path, value: structuredClone(record.ovr.effects ?? {}), origin }],
     };
   }
-  const before = hadOverride ? record.ovr.effects ?? {} : record.src.effects ?? {};
+  const before = hadOverride ? (record.ovr.effects ?? {}) : (record.src.effects ?? {});
   // 即便当前有效值相同，首次直设仍要写覆盖；否则 {} 无法屏蔽未来的主题效果变化。
   if (hadOverride && JSON.stringify(before) === JSON.stringify(value)) {
     return { forward: [], inverse: [] };

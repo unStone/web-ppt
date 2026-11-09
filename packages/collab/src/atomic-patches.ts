@@ -1,6 +1,4 @@
-import type {
-  ElementHierarchyPatch, ElementRecord, ElementTreePatch, Patch, SlideRecord, SlideTreePatch,
-} from '@web-ppt/edit-core';
+import type { ElementHierarchyPatch, ElementRecord, ElementTreePatch, Patch, SlideRecord, SlideTreePatch } from '@web-ppt/edit-core';
 
 const unsafeKey = (key: string): boolean => key === '__proto__' || key === 'prototype' || key === 'constructor';
 
@@ -16,8 +14,7 @@ export function foldInsertedElementOverrides(patches: readonly Patch[]): Patch[]
     let records: Readonly<Record<string, ElementRecord | null>> | null = null;
     if (patch.op === 'insert' && patch.path.length === 2 && patch.path[0] === 'elements') {
       records = (result[index] as ElementTreePatch).value.records;
-    } else if (patch.op === 'set' && patch.path.length === 3 && patch.path[0] === 'elements'
-      && patch.path[2] === 'hierarchy') {
+    } else if (patch.op === 'set' && patch.path.length === 3 && patch.path[0] === 'elements' && patch.path[2] === 'hierarchy') {
       records = (result[index] as ElementHierarchyPatch).value.records;
     }
     for (const [id, record] of Object.entries(records ?? {})) {
@@ -35,8 +32,7 @@ export function foldInsertedElementOverrides(patches: readonly Patch[]): Patch[]
   const omitted = new Set<number>();
   for (let index = 0; index < patches.length; index++) {
     const patch = patches[index];
-    if (patch.path.length >= 3 && patch.path[0] === 'slides'
-      && (patch.op === 'set' || patch.op === 'del')) {
+    if (patch.path.length >= 3 && patch.path[0] === 'slides' && (patch.op === 'set' || patch.op === 'del')) {
       const target = slideInsertion.get(patch.path[1]);
       if (!target || target.index >= index) continue;
       const keys = patch.path.slice(2);
@@ -58,8 +54,8 @@ export function foldInsertedElementOverrides(patches: readonly Patch[]): Patch[]
       omitted.add(index);
       continue;
     }
-    if (patch.path.length !== 4 || patch.path[0] !== 'elements' || patch.path[2] !== 'ovr'
-      || patch.op !== 'set' && patch.op !== 'del') continue;
+    if (patch.path.length !== 4 || patch.path[0] !== 'elements' || patch.path[2] !== 'ovr' || (patch.op !== 'set' && patch.op !== 'del'))
+      continue;
     if (unsafeKey(patch.path[3])) continue;
     const target = insertion.get(patch.path[1]);
     if (!target || target.index >= index) continue;

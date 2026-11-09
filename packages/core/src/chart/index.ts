@@ -11,8 +11,20 @@ import type { Axis, ChartModel, ManualLayout, PlotGroup, Series } from './model'
 import { defaultAxis, isStacked, isXY, parseModel } from './model';
 import type { AxisView, Cartesian, Grid, Side } from './frame';
 import {
-  axisInsets, depthOf, floor3D, lineH, makeCartesian, makeCatView, makeValueView, needWrap,
-  renderAxes, renderSideAxis, reserveDepth, shrink, tickTarget, valueExtent,
+  axisInsets,
+  depthOf,
+  floor3D,
+  lineH,
+  makeCartesian,
+  makeCatView,
+  makeValueView,
+  needWrap,
+  renderAxes,
+  renderSideAxis,
+  reserveDepth,
+  shrink,
+  tickTarget,
+  valueExtent,
 } from './frame';
 import { BarSlot, renderAreas, renderBars, renderLines, renderStock } from './plots';
 import { PlotEnv, markerEl, markerSymbol, pointFill } from './plot-marks';
@@ -64,8 +76,7 @@ interface LegendItem {
 
 function legendItems(m: ChartModel, groups: PlotGroup[], cats: string[], ctx: ColorCtx): LegendItem[] {
   const items: LegendItem[] = [];
-  const pieOnly = groups.length > 0
-    && groups.every((g) => g.kind === 'pie' || g.kind === 'doughnut' || g.kind === 'ofPie');
+  const pieOnly = groups.length > 0 && groups.every((g) => g.kind === 'pie' || g.kind === 'doughnut' || g.kind === 'ofPie');
   if (pieOnly) {
     const g = groups[0];
     const s = g.series[0];
@@ -86,7 +97,7 @@ function legendItems(m: ChartModel, groups: PlotGroup[], cats: string[], ctx: Co
       const line = g.kind === 'line' || g.kind === 'scatter';
       items.push({
         label: s.name,
-        fill: line ? solid(s.color) : s.fill ?? solid(s.color),
+        fill: line ? solid(s.color) : (s.fill ?? solid(s.color)),
         color: s.color,
         stroke: line ? strokeFrom(s.ln, s.color, px(2)) : null,
         marker: line ? { sym: markerSymbol(g, s, si), s } : null,
@@ -256,9 +267,7 @@ function build(root: Element, W: number, H: number, env: ChartEnv): SlideElement
   }
 
   const groups = m.groups.filter((g) => g.series.length > 0);
-  const cartGroups = groups.filter(
-    (g) => g.kind === 'bar' || g.kind === 'line' || g.kind === 'area' || g.kind === 'stock',
-  );
+  const cartGroups = groups.filter((g) => g.kind === 'bar' || g.kind === 'line' || g.kind === 'area' || g.kind === 'stock');
   const xyGroups = groups.filter((g) => isXY(g.kind));
   const pieGroups = groups.filter((g) => g.kind === 'pie' || g.kind === 'doughnut');
   const ofPieGroups = groups.filter((g) => g.kind === 'ofPie');
@@ -266,8 +275,7 @@ function build(root: Element, W: number, H: number, env: ChartEnv): SlideElement
   const surfaceGroups = groups.filter((g) => g.kind === 'surface');
   const badTags = m.unsupported.slice();
 
-  if (!cartGroups.length && !xyGroups.length && !pieGroups.length && !radarGroups.length
-    && !ofPieGroups.length && !surfaceGroups.length) {
+  if (!cartGroups.length && !xyGroups.length && !pieGroups.length && !radarGroups.length && !ofPieGroups.length && !surfaceGroups.length) {
     const what = badTags.length ? Array.from(new Set(badTags)).join('/') : '未知类型';
     return out.concat([placeholder(W, H, `不支持的图表类型: ${what}`)]);
   }
@@ -293,17 +301,20 @@ function build(root: Element, W: number, H: number, env: ChartEnv): SlideElement
   }
 
   // 图例
-  const active = cartGroups.length ? groups.filter(g => cartGroups.includes(g) || xyGroups.includes(g))
-    : xyGroups.length ? xyGroups
-    : radarGroups.length ? radarGroups
-    : surfaceGroups.length ? surfaceGroups
-    : ofPieGroups.length ? ofPieGroups
-    : pieGroups;
+  const active = cartGroups.length
+    ? groups.filter((g) => cartGroups.includes(g) || xyGroups.includes(g))
+    : xyGroups.length
+      ? xyGroups
+      : radarGroups.length
+        ? radarGroups
+        : surfaceGroups.length
+          ? surfaceGroups
+          : ofPieGroups.length
+            ? ofPieGroups
+            : pieGroups;
   const cats = categories(cartGroups.length ? cartGroups : active);
   // 曲面图的图例是色带，由绘图本体自带，这里不再列系列
-  const items = surfaceGroups.length && surfaceGroups.length === groups.length
-    ? []
-    : legendItems(m, active, cats, env.ctx);
+  const items = surfaceGroups.length && surfaceGroups.length === groups.length ? [] : legendItems(m, active, cats, env.ctx);
   const legend = layoutLegend(m, items, region, fonts);
   region = legend.region;
   if (m.plotLayout && m.plotLayout.target !== 'inner') region = applyLayout(region, m.plotLayout, W, H);
@@ -503,13 +514,7 @@ function cartesian(
           rect,
           view: secView,
           pos: (i) => c2.val(secView.ticks[i] ?? 0),
-          at: vertical
-            ? secSide === 'r'
-              ? rect.x + rect.w
-              : rect.x
-            : secSide === 't'
-              ? rect.y
-              : rect.y + rect.h,
+          at: vertical ? (secSide === 'r' ? rect.x + rect.w : rect.x) : secSide === 't' ? rect.y : rect.y + rect.h,
           grid: !valView.axis.majorGrid && !!secView.axis.majorGrid,
           depth,
         },
@@ -547,15 +552,7 @@ function cartesian(
 
 // ---------- 数值 × 数值 ----------
 
-function scatter(
-  m: ChartModel,
-  groups: PlotGroup[],
-  region: Rect,
-  W: number,
-  H: number,
-  fonts: string[],
-  pe: PlotEnv,
-): SlideElement[] {
+function scatter(m: ChartModel, groups: PlotGroup[], region: Rect, W: number, H: number, fonts: string[], pe: PlotEnv): SlideElement[] {
   const axes = bindXYAxes(m, groups, region).axes();
   let rect = shrink(region, xyInsets(m, axes, { l: 0, r: 0, t: 0, b: 0 }));
   if (m.plotLayout && m.plotLayout.target === 'inner') rect = applyLayout(rect, m.plotLayout, W, H);
@@ -619,7 +616,8 @@ function radar(m: ChartModel, groups: PlotGroup[], region: Rect, W: number, H: n
   const cy = rect.y + rect.h / 2;
 
   const frame: RadarFrame = {
-    cx, cy,
+    cx,
+    cy,
     radius: side / 2,
     norm: (v) => clampUnit((v - scale.min) / span),
     angle: (i) => (i * Math.PI * 2) / count,

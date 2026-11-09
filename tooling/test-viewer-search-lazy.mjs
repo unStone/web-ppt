@@ -62,13 +62,14 @@ function wrapSlides(slides, onRead) {
 }
 
 await assert.rejects(
-  () => api.searchSlidesIncrementally({
-    slides: pres.slides,
-    query: '   ',
-    cache: new Map(),
-    isCurrent: () => true,
-    onHit() {},
-  }),
+  () =>
+    api.searchSlidesIncrementally({
+      slides: pres.slides,
+      query: '   ',
+      cache: new Map(),
+      isCurrent: () => true,
+      onHit() {},
+    }),
   /空查询不能扫描后页/,
 );
 count++;

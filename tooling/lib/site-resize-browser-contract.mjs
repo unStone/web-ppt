@@ -13,14 +13,22 @@ export async function runSiteResizeBrowserContract(context) {
   await changeValue(context, '#slideSizeDialog [name=height]', '400');
   await click('#slideSizeDialog [data-apply]');
   await waitFor(`${viewBox} === '0 0 640 400' && !document.querySelector('#slideSizeDialog')`, '适配后画布');
-  await click('#undo'); await waitFor(`${viewBox} === '0 0 1280 720'`, '撤销画布尺寸');
-  await click('#redo'); await waitFor(`${viewBox} === '0 0 640 400'`, '重做画布尺寸');
+  await click('#undo');
+  await waitFor(`${viewBox} === '0 0 1280 720'`, '撤销画布尺寸');
+  await click('#redo');
+  await waitFor(`${viewBox} === '0 0 640 400'`, '重做画布尺寸');
   await click('#slideSizeTools');
   await waitFor("document.querySelector('#slideSizeDialog')?.open", '页面尺寸弹窗就绪');
-  if (!await evaluate("document.querySelector('#slideSizeDialog [name=width]').value === '640' && document.querySelector('#slideSizeDialog [name=height]').value === '400'")) throw new Error('页面尺寸弹窗未同步当前值');
+  if (
+    !(await evaluate(
+      "document.querySelector('#slideSizeDialog [name=width]').value === '640' && document.querySelector('#slideSizeDialog [name=height]').value === '400'",
+    ))
+  )
+    throw new Error('页面尺寸弹窗未同步当前值');
   await changeValue(context, '#slideSizeDialog [name=width]', '0');
   await click('#slideSizeDialog [data-apply]');
-  if (!await evaluate(`document.querySelector('#slideSizeDialog')?.open && ${viewBox} === '0 0 640 400'`)) throw new Error('非法页面尺寸未拦截');
+  if (!(await evaluate(`document.querySelector('#slideSizeDialog')?.open && ${viewBox} === '0 0 640 400'`)))
+    throw new Error('非法页面尺寸未拦截');
   await click('#slideSizeDialog [data-cancel]');
   await captureSaveAndReopen(context, 'resize-saved.pptx');
   await waitFor(`${viewBox} === '0 0 640 400'`, '保存重开保持画布');

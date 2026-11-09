@@ -1,7 +1,4 @@
-import type {
-  AnimStep, Fill, Paragraph, Presentation, ShapeElement,
-  Slide, SlideElement, TextRun, Transition,
-} from '../types';
+import type { AnimStep, Fill, Paragraph, Presentation, ShapeElement, Slide, SlideElement, TextRun, Transition } from '../types';
 import { metafileDataUrl } from '../metafile';
 import { collectAutoNums } from './autonum';
 import { Cfb } from './cfb';
@@ -104,7 +101,7 @@ function themeFontIndex(
 }
 
 function themeFonts(master: MasterInfo | null, shared: Shared) {
-  const name = (index: number | undefined): string => index === undefined ? '' : shared.fonts[index] ?? '';
+  const name = (index: number | undefined): string => (index === undefined ? '' : (shared.fonts[index] ?? ''));
   return {
     majorLatin: name(themeFontIndex(master?.styles, shared.envStyles, [TX.TITLE, TX.CENTER_TITLE], 'fontIdx')),
     majorEa: name(themeFontIndex(master?.styles, shared.envStyles, [TX.TITLE, TX.CENTER_TITLE], 'asianFontIdx')),
@@ -140,10 +137,21 @@ function parseMaster(dv: DataView, rec: Rec, shared: Shared): MasterInfo {
   const background = drawing ? drawingBackground(dv, drawing, scheme, blipUrl) : null;
 
   const ctx: Ctx = {
-    dv, scheme, fonts: shared.fonts, blobs: shared.blobs, listText: [], scale: shared.scale,
-    styles, envStyles: shared.envStyles, links: new Map(), masterPass: true,
-    levelCache: new Map(), slideIndex: 1, slideCount: 1,
-    autoNums: collectAutoNums(dv, rec), autoNumCursor: 0,
+    dv,
+    scheme,
+    fonts: shared.fonts,
+    blobs: shared.blobs,
+    listText: [],
+    scale: shared.scale,
+    styles,
+    envStyles: shared.envStyles,
+    links: new Map(),
+    masterPass: true,
+    levelCache: new Map(),
+    slideIndex: 1,
+    slideCount: 1,
+    autoNums: collectAutoNums(dv, rec),
+    autoNumCursor: 0,
     edit: shared.edit,
   };
   const elements = drawing ? drawingElements(ctx, drawing) : [];
@@ -324,28 +332,44 @@ export function parsePpt(bytes: Uint8Array, password?: string, edit = false): Pr
   }
 
   if (!slides.length) throw new Error('.ppt 中未找到幻灯片');
-  const editAssets = edit ? blobs.flatMap((url, index) => {
-    const blip = url?.startsWith('blob:') ? blips[index] : undefined;
-    return url && blip ? [{ url, mime: blip.mime, bytes: blip.data.slice() }] : [];
-  }) : [];
+  const editAssets = edit
+    ? blobs.flatMap((url, index) => {
+        const blip = url?.startsWith('blob:') ? blips[index] : undefined;
+        return url && blip ? [{ url, mime: blip.mime, bytes: blip.data.slice() }] : [];
+      })
+    : [];
   let disposed = false;
   return {
-    width, height, slides, source: 'ppt',
-    ...(edit ? { editInfo: {
-      layouts: [],
-      masters: [],
-      themes: [legacyPresentationTheme(
-        (primaryMaster as MasterInfo | null)?.scheme ?? DEFAULT_SCHEME,
-        themeFonts(primaryMaster as MasterInfo | null, shared),
-      )],
-      assets: editAssets,
-    } } : {}),
+    width,
+    height,
+    slides,
+    source: 'ppt',
+    ...(edit
+      ? {
+          editInfo: {
+            layouts: [],
+            masters: [],
+            themes: [
+              legacyPresentationTheme(
+                (primaryMaster as MasterInfo | null)?.scheme ?? DEFAULT_SCHEME,
+                themeFonts(primaryMaster as MasterInfo | null, shared),
+              ),
+            ],
+            assets: editAssets,
+          },
+        }
+      : {}),
     dispose: () => {
       if (disposed) return;
       disposed = true;
-      for (const url of blobs) if (url?.startsWith('blob:')) {
-        try { URL.revokeObjectURL(url); } catch { /* data URI 与已释放 URL 无需处理。 */ }
-      }
+      for (const url of blobs)
+        if (url?.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(url);
+          } catch {
+            /* data URI 与已释放 URL 无需处理。 */
+          }
+        }
     },
   };
 }
@@ -383,13 +407,31 @@ function slidesFromTextList(dv: DataView, docLen: number, width: number, height:
   }
 
   const mkRun = (text: string, size: number, b: boolean, color: string): TextRun => ({
-    text, b, i: false, u: false, strike: false, size, color, fonts: [],
+    text,
+    b,
+    i: false,
+    u: false,
+    strike: false,
+    size,
+    color,
+    fonts: [],
   });
   const mkPara = (runs: TextRun[], bullet: string | null): Paragraph => ({
-    align: 'left', lvl: 0, marL: bullet ? 24 : 0, indent: bullet ? -24 : 0,
-    bullet, lineHeight: null, spaceBefore: 0, spaceAfter: 6, runs,
+    align: 'left',
+    lvl: 0,
+    marL: bullet ? 24 : 0,
+    indent: bullet ? -24 : 0,
+    bullet,
+    lineHeight: null,
+    spaceBefore: 0,
+    spaceAfter: 6,
+    runs,
   });
-  const splitLines = (t: string): string[] => t.split(/[\r\n\v]/).map((x) => x.trim()).filter(Boolean);
+  const splitLines = (t: string): string[] =>
+    t
+      .split(/[\r\n\v]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
 
   return out
     .filter((s) => s.titles.length || s.bodies.length)
@@ -397,20 +439,44 @@ function slidesFromTextList(dv: DataView, docLen: number, width: number, height:
       const elements: ShapeElement[] = [];
       if (s.titles.length) {
         elements.push({
-          kind: 'shape', x: width * 0.06, y: height * 0.05, w: width * 0.88, h: height * 0.16,
-          rot: 0, flipH: false, flipV: false, path: null, fill: null, stroke: null,
+          kind: 'shape',
+          x: width * 0.06,
+          y: height * 0.05,
+          w: width * 0.88,
+          h: height * 0.16,
+          rot: 0,
+          flipH: false,
+          flipV: false,
+          path: null,
+          fill: null,
+          stroke: null,
           text: {
-            anchor: 'middle', insets: [4, 8, 4, 8], wrap: true, fontScale: 1,
+            anchor: 'middle',
+            insets: [4, 8, 4, 8],
+            wrap: true,
+            fontScale: 1,
             paragraphs: s.titles.flatMap((t) => splitLines(t).map((l) => mkPara([mkRun(l, 34, true, 'rgb(30,30,30)')], null))),
           },
         });
       }
       if (s.bodies.length) {
         elements.push({
-          kind: 'shape', x: width * 0.06, y: height * 0.24, w: width * 0.88, h: height * 0.68,
-          rot: 0, flipH: false, flipV: false, path: null, fill: null, stroke: null,
+          kind: 'shape',
+          x: width * 0.06,
+          y: height * 0.24,
+          w: width * 0.88,
+          h: height * 0.68,
+          rot: 0,
+          flipH: false,
+          flipV: false,
+          path: null,
+          fill: null,
+          stroke: null,
           text: {
-            anchor: 'top', insets: [4, 8, 4, 8], wrap: true, fontScale: 1,
+            anchor: 'top',
+            insets: [4, 8, 4, 8],
+            wrap: true,
+            fontScale: 1,
             paragraphs: s.bodies.flatMap((t) => splitLines(t).map((l) => mkPara([mkRun(l, 20, false, 'rgb(50,50,50)')], '•'))),
           },
         });
@@ -465,10 +531,21 @@ function parseSlide(dv: DataView, slideRec: Rec, shared: Shared, env: SlideEnv):
   }
 
   const ctx: Ctx = {
-    dv, scheme, fonts: shared.fonts, blobs: shared.blobs, listText, scale: shared.scale,
-    styles: env.master?.styles ?? new Map(), envStyles: shared.envStyles, links,
-    masterPass: false, levelCache: new Map(), slideIndex: env.index, slideCount: env.count,
-    autoNums: collectAutoNums(dv, slideRec), autoNumCursor: 0,
+    dv,
+    scheme,
+    fonts: shared.fonts,
+    blobs: shared.blobs,
+    listText,
+    scale: shared.scale,
+    styles: env.master?.styles ?? new Map(),
+    envStyles: shared.envStyles,
+    links,
+    masterPass: false,
+    levelCache: new Map(),
+    slideIndex: env.index,
+    slideCount: env.count,
+    autoNums: collectAutoNums(dv, slideRec),
+    autoNumCursor: 0,
     edit: shared.edit,
   };
 
@@ -481,7 +558,7 @@ function parseSlide(dv: DataView, slideRec: Rec, shared: Shared, env: SlideEnv):
   // 背景：本页自带的背景形状 → 母版背景 → 配色方案第 0 项
   const blipUrl = (idx: number): string | null => shared.blobs[idx - 1] ?? null;
   const own = drawing ? drawingBackground(dv, drawing, scheme, blipUrl) : null;
-  const inherited = env.followMasterBackground ? env.master?.background ?? null : null;
+  const inherited = env.followMasterBackground ? (env.master?.background ?? null) : null;
   const background: Fill = inherited ?? own ?? { type: 'solid', color: escherColor(0x08000000, scheme) };
 
   // 放映信息：隐藏标记、切换效果、动画

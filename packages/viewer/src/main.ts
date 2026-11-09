@@ -256,9 +256,13 @@ async function openRemote(src: string, explicit: boolean): Promise<void> {
   showOpenDownload(stage, 0, 0);
   const name = decodeURIComponent(src.split('/').pop() || src);
   try {
-    const { bytes } = await fetchBytes(src, (got, total) => {
-      if (opens.isCurrent(token)) showOpenDownload(stage, got, total);
-    }, ac.signal);
+    const { bytes } = await fetchBytes(
+      src,
+      (got, total) => {
+        if (opens.isCurrent(token)) showOpenDownload(stage, got, total);
+      },
+      ac.signal,
+    );
     if (!opens.isCurrent(token)) return;
     openAbort = null;
     await finishOpen(bytes, explicit ? name : `${name}（内置示例）`, token, true);
@@ -318,14 +322,17 @@ function buildThumbs(count: number): void {
     items.push(div);
   }
 
-  thumbObserver = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      const div = e.target as HTMLElement;
-      thumbObserver?.unobserve(div);
-      renderThumb(div);
-    }
-  }, { root: thumbs, rootMargin: '300px 0px' });
+  thumbObserver = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const div = e.target as HTMLElement;
+        thumbObserver?.unobserve(div);
+        renderThumb(div);
+      }
+    },
+    { root: thumbs, rootMargin: '300px 0px' },
+  );
 
   // IO 第一次 watch 就会回调。先滚到当前页，深链才不会先 inflate 栏顶那几页。
   const current = items[viewer?.index ?? 0];
@@ -346,9 +353,7 @@ function renderThumb(div: HTMLElement): void {
   div.classList.remove('pending');
   div.style.aspectRatio = '';
   div.innerHTML =
-    viewer.renderSlide(i) +
-    `<span class="no">${i + 1}</span>` +
-    (slide.hidden ? '<span class="hidden-badge">隐藏</span>' : '');
+    viewer.renderSlide(i) + `<span class="no">${i + 1}</span>` + (slide.hidden ? '<span class="hidden-badge">隐藏</span>' : '');
   if (slide.hidden) div.classList.add('hidden-slide');
   if (i === viewer.index) div.classList.add('active');
 }
@@ -480,7 +485,9 @@ bindSwipeNav({
   viewer: () => viewer,
   isAdvanceTarget: isViewerSwipeTarget,
   allow: () => presenting || fitMode,
-  afterChange: () => { if (presenting) renderPresenter(); },
+  afterChange: () => {
+    if (presenting) renderPresenter();
+  },
 });
 
 // ---------- 导出 ----------
@@ -507,7 +514,10 @@ async function withToast(label: string, fn: () => Promise<void>): Promise<void> 
 const exportPng = (): Promise<void> =>
   withToast('导出 PNG', async () => {
     if (!viewer) return;
-    download(await slideToPng(viewer.presentation, viewer.slide, 2, { showComments: commentsTools.showComments }), `slide-${viewer.index + 1}.png`);
+    download(
+      await slideToPng(viewer.presentation, viewer.slide, 2, { showComments: commentsTools.showComments }),
+      `slide-${viewer.index + 1}.png`,
+    );
   });
 
 const exportSvg = (): Promise<void> =>
@@ -570,8 +580,13 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   switch (e.key) {
-    case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
-    case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+    case 'ArrowRight':
+    case 'ArrowDown':
+    case 'PageDown':
+    case ' ':
+    case 'ArrowLeft':
+    case 'ArrowUp':
+    case 'PageUp':
       // 网页表写的是裸方向键。带修饰键时留给浏览器，不能退批次。
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) break;
       e.preventDefault();
@@ -591,14 +606,25 @@ document.addEventListener('keydown', (e) => {
       viewer?.finishAnimations();
       if (presenting) renderPresenter();
       break;
-    case '+': case '=': stepZoom(1); break;
-    case '-': stepZoom(-1); break;
-    case '0': applyFit(); break;
-    case 'n': case 'N':
+    case '+':
+    case '=':
+      stepZoom(1);
+      break;
+    case '-':
+      stepZoom(-1);
+      break;
+    case '0':
+      applyFit();
+      break;
+    case 'n':
+    case 'N':
       if (!viewer) return;
       btnNotes.click();
       break;
-    case 'f': case 'F': void enterPresent(); break;
+    case 'f':
+    case 'F':
+      void enterPresent();
+      break;
     case 'Escape':
       if (grid.consumeEscape()) break;
       if (presenting) {
@@ -631,11 +657,15 @@ presenter.addEventListener('click', (e) => {
 });
 
 // Ctrl/Cmd + 滚轮缩放
-stageScroll.addEventListener('wheel', (e) => {
-  if (!e.ctrlKey && !e.metaKey) return;
-  e.preventDefault();
-  stepZoom(e.deltaY < 0 ? 1 : -1);
-}, { passive: false });
+stageScroll.addEventListener(
+  'wheel',
+  (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    stepZoom(e.deltaY < 0 ? 1 : -1);
+  },
+  { passive: false },
+);
 
 document.addEventListener('dragover', (e) => {
   e.preventDefault();

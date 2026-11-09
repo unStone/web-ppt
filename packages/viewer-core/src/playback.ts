@@ -10,9 +10,14 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
   const shift = (x: string, y: string): string => `translate(${x}, ${y})`;
   const dirVec = (): [string, string] => {
     const vectors: Readonly<Record<string, [string, string]>> = {
-      l: ['-100%', '0'], r: ['100%', '0'], u: ['0', '-100%'], d: ['0', '100%'],
-      lu: ['-100%', '-100%'], ld: ['-100%', '100%'],
-      ru: ['100%', '-100%'], rd: ['100%', '100%'],
+      l: ['-100%', '0'],
+      r: ['100%', '0'],
+      u: ['0', '-100%'],
+      d: ['0', '100%'],
+      lu: ['-100%', '-100%'],
+      ld: ['-100%', '100%'],
+      ru: ['100%', '-100%'],
+      rd: ['100%', '100%'],
     };
     return vectors[d] ?? vectors.d;
   };
@@ -21,10 +26,18 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     case 'cut':
       // cut 没有补间，但仍要让旧页在切点前可见；否则预览只会创建一条视觉空动画。
       return incoming
-        ? [{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.49 },
-          { opacity: 1, offset: 0.5 }, { opacity: 1, offset: 1 }]
-        : [{ opacity: 1, offset: 0 }, { opacity: 1, offset: 0.49 },
-          { opacity: 0, offset: 0.5 }, { opacity: 0, offset: 1 }];
+        ? [
+            { opacity: 0, offset: 0 },
+            { opacity: 0, offset: 0.49 },
+            { opacity: 1, offset: 0.5 },
+            { opacity: 1, offset: 1 },
+          ]
+        : [
+            { opacity: 1, offset: 0 },
+            { opacity: 1, offset: 0.49 },
+            { opacity: 0, offset: 0.5 },
+            { opacity: 0, offset: 1 },
+          ];
     case 'push':
     case 'pull': {
       const [x, y] = dirVec();
@@ -36,9 +49,7 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     }
     case 'cover': {
       const [x, y] = dirVec();
-      return incoming
-        ? [{ transform: shift(x, y) }, { transform: 'translate(0,0)' }]
-        : [{ opacity: 1 }, { opacity: 1 }];
+      return incoming ? [{ transform: shift(x, y) }, { transform: 'translate(0,0)' }] : [{ opacity: 1 }, { opacity: 1 }];
     }
     case 'wipe': {
       const clipHidden = wipeClip(d || 'd', true);
@@ -50,11 +61,18 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       const out = d.endsWith('out');
       const hidden = vertical ? 'inset(0 50% 0 50%)' : 'inset(50% 0 50% 0)';
       const shown = 'inset(0 0 0 0)';
-      return incoming ? (out ? [{ clipPath: hidden }, { clipPath: shown }] : [{ clipPath: shown }, { clipPath: shown }]) : [{ clipPath: shown }, { clipPath: hidden }];
+      return incoming
+        ? out
+          ? [{ clipPath: hidden }, { clipPath: shown }]
+          : [{ clipPath: shown }, { clipPath: shown }]
+        : [{ clipPath: shown }, { clipPath: hidden }];
     }
     case 'zoom':
       return incoming
-        ? [{ opacity: 0, transform: d === 'out' ? 'scale(1.4)' : 'scale(0.6)' }, { opacity: 1, transform: 'scale(1)' }]
+        ? [
+            { opacity: 0, transform: d === 'out' ? 'scale(1.4)' : 'scale(0.6)' },
+            { opacity: 1, transform: 'scale(1)' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     case 'wheel':
     case 'circle':
@@ -62,99 +80,146 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     case 'plus':
     case 'wedge':
       return incoming
-        ? [{ opacity: 0, transform: 'scale(0.7)' }, { opacity: 1, transform: 'scale(1)' }]
+        ? [
+            { opacity: 0, transform: 'scale(0.7)' },
+            { opacity: 1, transform: 'scale(1)' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
 
     // ---- p14 扩展 ----
     // 这些效果原版是 GPU 网格变形（蜂巢、碎纸、涡流…），DOM 里没有对等物。
     // 取每种最有辨识度的那一维（旋转轴 / 缩放中心 / 裁剪形状）做近似，
     // 保证"不同的效果看起来确实不同"，不追求逐帧还原。
-    case 'ripple':
-      {
-        const origins: Readonly<Record<string, string>> = {
-          lu: '0% 0%', ld: '0% 100%', ru: '100% 0%', rd: '100% 100%', center: '50% 50%',
-        };
-        const origin = origins[d] ?? origins.center;
-        return incoming
-          ? [{ clipPath: `circle(0% at ${origin})` }, { clipPath: `circle(145% at ${origin})` }]
-          : [{ opacity: 1 }, { opacity: 1 }];
-      }
+    case 'ripple': {
+      const origins: Readonly<Record<string, string>> = {
+        lu: '0% 0%',
+        ld: '0% 100%',
+        ru: '100% 0%',
+        rd: '100% 100%',
+        center: '50% 50%',
+      };
+      const origin = origins[d] ?? origins.center;
+      return incoming
+        ? [{ clipPath: `circle(0% at ${origin})` }, { clipPath: `circle(145% at ${origin})` }]
+        : [{ opacity: 1 }, { opacity: 1 }];
+    }
     case 'vortex': {
       const [x, y] = dirVec();
       const angle = d === 'r' || d === 'd' ? 180 : -180;
       return incoming
-        ? [{ opacity: 0, transformOrigin: `${x === '0' ? '50%' : x.startsWith('-') ? '0%' : '100%'} ${y === '0' ? '50%' : y.startsWith('-') ? '0%' : '100%'}`, transform: `scale(0.2) rotate(${angle}deg)` }, { opacity: 1, transform: 'none' }]
+        ? [
+            {
+              opacity: 0,
+              transformOrigin: `${x === '0' ? '50%' : x.startsWith('-') ? '0%' : '100%'} ${y === '0' ? '50%' : y.startsWith('-') ? '0%' : '100%'}`,
+              transform: `scale(0.2) rotate(${angle}deg)`,
+            },
+            { opacity: 1, transform: 'none' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     }
     case 'honeycomb':
       return incoming
-        ? [{ opacity: 0, transform: 'scale(0.85) rotate(-6deg)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.1)' }];
+        ? [
+            { opacity: 0, transform: 'scale(0.85) rotate(-6deg)' },
+            { opacity: 1, transform: 'none' },
+          ]
+        : [
+            { opacity: 1, transform: 'none' },
+            { opacity: 0, transform: 'scale(1.1)' },
+          ];
     case 'glitter':
       return incoming
-        ? [{ opacity: 0, clipPath: wipeClip(d || 'l', true) }, { opacity: 1, clipPath: wipeClip(d || 'l', false) }]
+        ? [
+            { opacity: 0, clipPath: wipeClip(d || 'l', true) },
+            { opacity: 1, clipPath: wipeClip(d || 'l', false) },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     case 'shred': {
       const outward = d === 'out';
       return incoming
-        ? [{ opacity: 0, transform: outward ? 'scale(1.35) rotate(5deg)' : 'scale(0.72) rotate(-5deg)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: outward ? 'scaleY(0.72)' : 'scaleY(1.2)' }];
+        ? [
+            { opacity: 0, transform: outward ? 'scale(1.35) rotate(5deg)' : 'scale(0.72) rotate(-5deg)' },
+            { opacity: 1, transform: 'none' },
+          ]
+        : [
+            { opacity: 1, transform: 'none' },
+            { opacity: 0, transform: outward ? 'scaleY(0.72)' : 'scaleY(1.2)' },
+          ];
     }
     case 'flash':
       // 闪白：拉高亮度再落回，比单纯淡入更贴近原效果
       return incoming
-        ? [{ opacity: 0, filter: 'brightness(3)' }, { opacity: 1, filter: 'brightness(1)' }]
-        : [{ opacity: 1, filter: 'brightness(1)' }, { opacity: 0, filter: 'brightness(3)' }];
+        ? [
+            { opacity: 0, filter: 'brightness(3)' },
+            { opacity: 1, filter: 'brightness(1)' },
+          ]
+        : [
+            { opacity: 1, filter: 'brightness(1)' },
+            { opacity: 0, filter: 'brightness(3)' },
+          ];
     case 'reveal': {
       const [x, y] = dirVec();
       return incoming
-        ? [{ opacity: 0, transform: shift(x, y) }, { opacity: 1, transform: 'translate(0,0)' }]
+        ? [
+            { opacity: 0, transform: shift(x, y) },
+            { opacity: 1, transform: 'translate(0,0)' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     }
     case 'wheelReverse':
       return incoming
-        ? [{ opacity: 0, transform: 'scale(1.3) rotate(20deg)' }, { opacity: 1, transform: 'none' }]
+        ? [
+            { opacity: 0, transform: 'scale(1.3) rotate(20deg)' },
+            { opacity: 1, transform: 'none' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     case 'doors': {
       // 门从中间向两侧打开：新页由中缝向外展开
       const hidden = d === 'horz' ? 'inset(50% 0 50% 0)' : 'inset(0 50% 0 50%)';
-      return incoming
-        ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }]
-        : [{ opacity: 1 }, { opacity: 1 }];
+      return incoming ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }] : [{ opacity: 1 }, { opacity: 1 }];
     }
     case 'window': {
       const hidden = d === 'horz' ? 'inset(0 50% 0 50%)' : 'inset(50% 0 50% 0)';
-      return incoming
-        ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }]
-        : [{ opacity: 1 }, { opacity: 1 }];
+      return incoming ? [{ clipPath: hidden }, { clipPath: 'inset(0 0 0 0)' }] : [{ opacity: 1 }, { opacity: 1 }];
     }
     case 'switch':
     case 'flip': {
       const sign = (t.type === 'flip' ? -1 : 1) * (d === 'r' ? -1 : 1);
       return incoming
-        ? [{ opacity: 0, transform: `perspective(1400px) rotateY(${sign * -80}deg)` },
-          { opacity: 1, transform: 'perspective(1400px) rotateY(0)' }]
-        : [{ opacity: 1, transform: 'perspective(1400px) rotateY(0)' },
-          { opacity: 0, transform: `perspective(1400px) rotateY(${sign * 80}deg)` }];
+        ? [
+            { opacity: 0, transform: `perspective(1400px) rotateY(${sign * -80}deg)` },
+            { opacity: 1, transform: 'perspective(1400px) rotateY(0)' },
+          ]
+        : [
+            { opacity: 1, transform: 'perspective(1400px) rotateY(0)' },
+            { opacity: 0, transform: `perspective(1400px) rotateY(${sign * 80}deg)` },
+          ];
     }
     case 'prism': {
       const vertical = d === 'u' || d === 'd';
       const sign = d === 'r' || d === 'd' ? -1 : 1;
-      const rotate = (degrees: number): string => vertical
-        ? `rotateX(${degrees}deg)` : `rotateY(${degrees}deg)`;
+      const rotate = (degrees: number): string => (vertical ? `rotateX(${degrees}deg)` : `rotateY(${degrees}deg)`);
       return incoming
-        ? [{ opacity: 0, transform: `perspective(1400px) ${rotate(sign * -70)}` },
-          { opacity: 1, transform: `perspective(1400px) ${rotate(0)}` }]
-        : [{ opacity: 1, transform: `perspective(1400px) ${rotate(0)}` },
-          { opacity: 0, transform: `perspective(1400px) ${rotate(sign * 70)}` }];
+        ? [
+            { opacity: 0, transform: `perspective(1400px) ${rotate(sign * -70)}` },
+            { opacity: 1, transform: `perspective(1400px) ${rotate(0)}` },
+          ]
+        : [
+            { opacity: 1, transform: `perspective(1400px) ${rotate(0)}` },
+            { opacity: 0, transform: `perspective(1400px) ${rotate(sign * 70)}` },
+          ];
     }
     case 'ferris': {
       const sign = d === 'r' ? -1 : 1;
       return incoming
-        ? [{ opacity: 0, transform: `perspective(1400px) rotateX(${sign * 70}deg)` },
-          { opacity: 1, transform: 'perspective(1400px) rotateX(0)' }]
-        : [{ opacity: 1, transform: 'perspective(1400px) rotateX(0)' },
-          { opacity: 0, transform: `perspective(1400px) rotateX(${sign * -70}deg)` }];
+        ? [
+            { opacity: 0, transform: `perspective(1400px) rotateX(${sign * 70}deg)` },
+            { opacity: 1, transform: 'perspective(1400px) rotateX(0)' },
+          ]
+        : [
+            { opacity: 1, transform: 'perspective(1400px) rotateX(0)' },
+            { opacity: 0, transform: `perspective(1400px) rotateX(${sign * -70}deg)` },
+          ];
     }
     case 'gallery':
     case 'conveyor': {
@@ -162,10 +227,14 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       const from = d.includes('l') ? '-100%' : '100%';
       const to = d.includes('l') ? '100%' : '-100%';
       return incoming
-        ? [{ transform: `perspective(1600px) translateX(${from}) rotateY(${back}deg)` },
-          { transform: 'perspective(1600px) translateX(0) rotateY(0)' }]
-        : [{ transform: 'perspective(1600px) translateX(0) rotateY(0)' },
-          { transform: `perspective(1600px) translateX(${to}) rotateY(${-back}deg)` }];
+        ? [
+            { transform: `perspective(1600px) translateX(${from}) rotateY(${back}deg)` },
+            { transform: 'perspective(1600px) translateX(0) rotateY(0)' },
+          ]
+        : [
+            { transform: 'perspective(1600px) translateX(0) rotateY(0)' },
+            { transform: `perspective(1600px) translateX(${to}) rotateY(${-back}deg)` },
+          ];
     }
     case 'pan': {
       // 与 push 同构，只是 PowerPoint 里配的时长更长
@@ -179,14 +248,26 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
       const fromScale = d === 'out' ? 2.2 : 0.15;
       const toScale = d === 'out' ? 0.15 : 2.2;
       return incoming
-        ? [{ opacity: 0, transform: `perspective(1000px) scale(${fromScale})` }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `perspective(1000px) scale(${toScale})` }];
+        ? [
+            { opacity: 0, transform: `perspective(1000px) scale(${fromScale})` },
+            { opacity: 1, transform: 'none' },
+          ]
+        : [
+            { opacity: 1, transform: 'none' },
+            { opacity: 0, transform: `perspective(1000px) scale(${toScale})` },
+          ];
     }
     case 'warp': {
       const outward = d === 'out';
       return incoming
-        ? [{ opacity: 0, transform: outward ? 'skewX(-18deg) scale(1.35)' : 'skewX(18deg) scale(0.65)' }, { opacity: 1, transform: 'none' }]
-        : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: outward ? 'skewX(18deg) scale(0.65)' : 'skewX(-18deg) scale(1.35)' }];
+        ? [
+            { opacity: 0, transform: outward ? 'skewX(-18deg) scale(1.35)' : 'skewX(18deg) scale(0.65)' },
+            { opacity: 1, transform: 'none' },
+          ]
+        : [
+            { opacity: 1, transform: 'none' },
+            { opacity: 0, transform: outward ? 'skewX(18deg) scale(0.65)' : 'skewX(-18deg) scale(1.35)' },
+          ];
     }
 
     case 'blinds':
@@ -194,22 +275,34 @@ export function transitionFrames(t: Transition, incoming: boolean): Keyframe[] {
     case 'randomBar': {
       const hidden = wipeClip(d, true);
       return incoming
-        ? [{ opacity: 0.2, clipPath: hidden }, { opacity: 1, clipPath: wipeClip(d, false) }]
+        ? [
+            { opacity: 0.2, clipPath: hidden },
+            { opacity: 1, clipPath: wipeClip(d, false) },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     }
     case 'comb': {
       const transform = d === 'vert' ? 'translateY(-100%)' : 'translateX(-100%)';
       return incoming
-        ? [{ opacity: 0, transform }, { opacity: 1, transform: 'translate(0,0)' }]
+        ? [
+            { opacity: 0, transform },
+            { opacity: 1, transform: 'translate(0,0)' },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     }
     case 'strips': {
       const corners: Readonly<Record<string, string>> = {
-        lu: '0% 0%', ld: '0% 100%', ru: '100% 0%', rd: '100% 100%',
+        lu: '0% 0%',
+        ld: '0% 100%',
+        ru: '100% 0%',
+        rd: '100% 100%',
       };
       const origin = corners[d] ?? corners.rd;
       return incoming
-        ? [{ opacity: 0, clipPath: `circle(0% at ${origin})` }, { opacity: 1, clipPath: `circle(145% at ${origin})` }]
+        ? [
+            { opacity: 0, clipPath: `circle(0% at ${origin})` },
+            { opacity: 1, clipPath: `circle(145% at ${origin})` },
+          ]
         : [{ opacity: 1 }, { opacity: 0 }];
     }
     case 'newsflash':
@@ -241,9 +334,7 @@ function settle(jobs: Promise<unknown>[], durationMs: number): Promise<void> {
  * 配对成功的旧元素立刻置 0，新元素全程不透明，看起来才是"同一个东西在动"，
  * 而不是两层叠化。option="byWord"/"byChar" 的细粒度拆分不做，一律按对象处理。
  */
-export function morphPairs(
-  outgoing: Element, incoming: Element,
-): { node: HTMLElement; from: DOMRect; to: DOMRect }[] {
+export function morphPairs(outgoing: Element, incoming: Element): { node: HTMLElement; from: DOMRect; to: DOMRect }[] {
   const outMap = new Map<string, DOMRect>();
   outgoing.querySelectorAll('[data-el]').forEach((el) => {
     const r = el.getBoundingClientRect();
@@ -267,26 +358,28 @@ export interface TransitionPlayHandle {
   cancel(): void;
 }
 
-function transitionHandle(
-  animations: Animation[], outgoing: HTMLElement | null, durationMs: number,
-): TransitionPlayHandle {
+function transitionHandle(animations: Animation[], outgoing: HTMLElement | null, durationMs: number): TransitionPlayHandle {
   let released = false;
   const release = (): void => {
     if (released) return;
     released = true;
     for (const animation of animations) {
-      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+      try {
+        animation.cancel();
+      } catch {
+        /* timeline 已释放。 */
+      }
     }
     outgoing?.remove();
   };
-  const finished = settle(animations.map((animation) => animation.finished), durationMs)
-    .then(release);
+  const finished = settle(
+    animations.map((animation) => animation.finished),
+    durationMs,
+  ).then(release);
   return { animations, finished, cancel: release };
 }
 
-function playMorphControlled(
-  outgoing: HTMLElement | null, incoming: HTMLElement, t: Transition,
-): TransitionPlayHandle {
+function playMorphControlled(outgoing: HTMLElement | null, incoming: HTMLElement, t: Transition): TransitionPlayHandle {
   if (!outgoing) return transitionHandle([], null, t.durationMs);
   const opts: KeyframeAnimationOptions = { duration: t.durationMs, easing: 'ease-in-out', fill: 'both' };
   const pairs = morphPairs(outgoing, incoming);
@@ -294,7 +387,11 @@ function playMorphControlled(
   const animations: Animation[] = [];
 
   const run = (node: HTMLElement, frames: Keyframe[]): void => {
-    try { animations.push(node.animate(frames, opts)); } catch { /* 不支持则跳过 */ }
+    try {
+      animations.push(node.animate(frames, opts));
+    } catch {
+      /* 不支持则跳过 */
+    }
   };
 
   for (const { node, from, to } of pairs) {
@@ -345,7 +442,11 @@ export function playTransitionControlled(
     // 第二层 animate 失败时，第一层可能已经创建；必须同步回收，不能留下 fill:both 残影。
     for (const animation of animations) {
       void animation.finished.catch(() => undefined);
-      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+      try {
+        animation.cancel();
+      } catch {
+        /* timeline 已释放。 */
+      }
     }
     outgoing?.remove();
     return transitionHandle([], null, 0);
@@ -353,11 +454,7 @@ export function playTransitionControlled(
   return transitionHandle(animations, outgoing, t.durationMs);
 }
 
-export function playTransition(
-  outgoing: HTMLElement | null,
-  incoming: HTMLElement,
-  t: Transition | undefined,
-): Promise<void> {
+export function playTransition(outgoing: HTMLElement | null, incoming: HTMLElement, t: Transition | undefined): Promise<void> {
   return playTransitionControlled(outgoing, incoming, t).finished;
 }
 

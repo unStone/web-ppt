@@ -30,7 +30,11 @@ function cloneCell(source: TableCell): TableCell {
   // src 与编辑默认值都是不可变来源；每格只需独立外壳，视觉和空文字模板按行型共享，
   // 否则 20×10 创建会无意义地深克隆 200 份完整字体、边框和段落树。
   return {
-    ...source, colSpan: 1, rowSpan: 1, merged: false, text: null,
+    ...source,
+    colSpan: 1,
+    rowSpan: 1,
+    merged: false,
+    text: null,
     editInfo: { textTemplate: source.editInfo.textTemplate },
   };
 }
@@ -50,18 +54,25 @@ function sourceTable(
 ): TableElement {
   // 只在文档默认值与新元素之间深克隆一次；表内同一行型按不可变值共享。
   const localDefaults = structuredClone(defaults);
-  const rows = rowEmu.map((height, index) =>
-    rowAt(localDefaults, index, command.cols, height / EMU_PER_PX));
+  const rows = rowEmu.map((height, index) => rowAt(localDefaults, index, command.cols, height / EMU_PER_PX));
   const appendHeight = rows[rows.length - 1].height;
   const regular = [
     rowAt(localDefaults, command.rows, command.cols, appendHeight),
     rowAt(localDefaults, command.rows + 1, command.cols, appendHeight),
   ] as const;
   return {
-    kind: 'table', ...(spid === undefined ? {} : { id: spid }), name,
-    x: command.rect.x, y: command.rect.y, w: command.rect.w, h: command.rect.h,
-    rot: 0, flipH: false, flipV: false,
-    colWidths: columnEmu.map((width) => width / EMU_PER_PX), rows,
+    kind: 'table',
+    ...(spid === undefined ? {} : { id: spid }),
+    name,
+    x: command.rect.x,
+    y: command.rect.y,
+    w: command.rect.w,
+    h: command.rect.h,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    colWidths: columnEmu.map((width) => width / EMU_PER_PX),
+    rows,
     editInfo: {
       tableRowAppend: {
         ...(command.rows === 1 ? { previousLast: rows[0] } : {}),
@@ -85,8 +96,7 @@ function tableMarkup(
   columnEmu: readonly number[],
   rowEmu: readonly number[],
 ): string {
-  const style = defaults.styleId
-    ? `<a:tableStyleId>${xmlText(defaults.styleId)}</a:tableStyleId>` : '';
+  const style = defaults.styleId ? `<a:tableStyleId>${xmlText(defaults.styleId)}</a:tableStyleId>` : '';
   const row = (height: number, index: number) => {
     const cell = directTableCellMarkup(source.rows[index].cells[0]);
     return `<a:tr h="${height}">${cell.repeat(command.cols)}</a:tr>`;
@@ -105,65 +115,75 @@ ${rowEmu.map(row).join('\n')}
 function assertCommand(doc: EditDoc, command: AddTableCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增表格');
   const target = resolveInsertionCanvas(doc, command, '新增表格');
-  const defaults = target.kind === 'layout'
-    ? resolvedLayoutTemplate(doc, target.id)?.defaultTable ?? doc.layouts[target.id].defaultTable
-    : target.kind === 'master'
-      ? resolvedMasterTemplate(doc, target.id)?.defaultTable ?? doc.masters[target.id].defaultTable
-    : currentTableDefaults(doc, target.id) ?? (target.part ? undefined : GENERATED_TABLE_DEFAULTS);
+  const defaults =
+    target.kind === 'layout'
+      ? (resolvedLayoutTemplate(doc, target.id)?.defaultTable ?? doc.layouts[target.id].defaultTable)
+      : target.kind === 'master'
+        ? (resolvedMasterTemplate(doc, target.id)?.defaultTable ?? doc.masters[target.id].defaultTable)
+        : (currentTableDefaults(doc, target.id) ?? (target.part ? undefined : GENERATED_TABLE_DEFAULTS));
   const canvas = { ...target, defaults };
   if (!canvas.defaults) throw new Error(`新增表格目标画布缺少主题默认值：${canvas.id}`);
   assertTableDimension(command.rows, 'AddTable.rows');
   assertTableDimension(command.cols, 'AddTable.cols');
   assertInsertionRect(command.rect, 'AddTable.rect');
-  const placeholder = command.placeholderId === undefined
-    ? undefined : doc.elements[command.placeholderId];
+  const placeholder = command.placeholderId === undefined ? undefined : doc.elements[command.placeholderId];
   if (placeholder) assertElementUnlocked(doc, placeholder.id);
-  if (command.placeholderId !== undefined
-    && !isEmptyContentPlaceholder(doc, canvas.id, command.placeholderId)) {
+  if (command.placeholderId !== undefined && !isEmptyContentPlaceholder(doc, canvas.id, command.placeholderId)) {
     throw new Error(`AddTable.placeholderId 必须是目标页中的空内容占位符：${String(command.placeholderId)}`);
   }
   const frameEmu = {
-    x: pxToEmu(command.rect.x), y: pxToEmu(command.rect.y),
-    w: pxToEmu(command.rect.w), h: pxToEmu(command.rect.h),
+    x: pxToEmu(command.rect.x),
+    y: pxToEmu(command.rect.y),
+    w: pxToEmu(command.rect.w),
+    h: pxToEmu(command.rect.h),
   };
   const normalized: AddTableCommand = {
     ...command,
     rect: {
-      x: frameEmu.x / EMU_PER_PX, y: frameEmu.y / EMU_PER_PX,
-      w: frameEmu.w / EMU_PER_PX, h: frameEmu.h / EMU_PER_PX,
+      x: frameEmu.x / EMU_PER_PX,
+      y: frameEmu.y / EMU_PER_PX,
+      w: frameEmu.w / EMU_PER_PX,
+      h: frameEmu.h / EMU_PER_PX,
     },
   };
   const columns = distributeEmu(frameEmu.w, command.cols, 'AddTable.rect.w');
   const rows = distributeEmu(frameEmu.h, command.rows, 'AddTable.rect.h');
-  return { ...canvas, defaults: canvas.defaults, placeholder, columns, rows, normalized } as
-    typeof canvas & { defaults: TableCreationDefaults; placeholder: typeof placeholder;
-      columns: number[]; rows: number[]; normalized: AddTableCommand; part: string | null };
+  return { ...canvas, defaults: canvas.defaults, placeholder, columns, rows, normalized } as typeof canvas & {
+    defaults: TableCreationDefaults;
+    placeholder: typeof placeholder;
+    columns: number[];
+    rows: number[];
+    normalized: AddTableCommand;
+    part: string | null;
+  };
 }
 
 /** 表格视觉默认值、即时模型和 OOXML 宿主共用一个来源，再交给既有结构历史与保存主干。 */
-export function addTablePatches(
-  doc: EditDoc,
-  command: AddTableCommand,
-  origin: string,
-): CommandPatches {
+export function addTablePatches(doc: EditDoc, command: AddTableCommand, origin: string): CommandPatches {
   const { id: parent, children: siblings, defaults, placeholder, columns, rows, normalized, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '表格' : `表格 ${spid}`;
   const source = sourceTable(spid, name, normalized, defaults, columns, rows);
-  const insertion: ElementInsertionSource | undefined = part && spid !== undefined ? {
-    markup: tableMarkup(spid, name, normalized, defaults, source, columns, rows),
-    namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
-    spids: { [String(spid)]: spid },
-  } : undefined;
+  const insertion: ElementInsertionSource | undefined =
+    part && spid !== undefined
+      ? {
+          markup: tableMarkup(spid, name, normalized, defaults, source, columns, rows),
+          namespaces: { 'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS },
+          spids: { [String(spid)]: spid },
+        }
+      : undefined;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent,
+    id,
+    parent,
     z: placeholder ? elementOrder(placeholder) : fractionalIndexBetween(previous, null, id),
     ...(placeholder ? { order: elementOrder(placeholder) } : {}),
-    src: source, ovr: {},
+    src: source,
+    ovr: {},
     meta: {
-      editable: 'full', created: true,
+      editable: 'full',
+      created: true,
       ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };

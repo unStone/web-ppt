@@ -14,11 +14,7 @@ export interface DuplicateNotesParts {
   readonly targetPart: string;
 }
 
-function packageSource(
-  doc: EditDoc,
-  baselines: Readonly<Record<string, Uint8Array>>,
-  part: string,
-): Uint8Array {
+function packageSource(doc: EditDoc, baselines: Readonly<Record<string, Uint8Array>>, part: string): Uint8Array {
   const source = baselines[part] ?? doc.package?.parts[part];
   if (!source) throw new Error(`页面副本缺少来源 OPC part：${part}`);
   return source;
@@ -61,11 +57,7 @@ export function duplicateNotesParts(slides: readonly SlideRecord[]): DuplicateNo
   });
 }
 
-function patchRelationshipTarget(
-  source: Uint8Array,
-  type: string,
-  target: string,
-): { bytes: Uint8Array; found: boolean } {
+function patchRelationshipTarget(source: Uint8Array, type: string, target: string): { bytes: Uint8Array; found: boolean } {
   const tree = parseXmlTree(source);
   let found = false;
   for (const relation of xmlElementChildren(tree.root, { localName: 'Relationship' })) {
@@ -80,13 +72,9 @@ function patchRelationshipTarget(
   return { bytes: serializeXmlTreeBytes(tree), found };
 }
 
-export function patchDuplicateSlideRelationships(
-  source: Uint8Array,
-  notes: DuplicateNotesParts | undefined,
-): Uint8Array {
+export function patchDuplicateSlideRelationships(source: Uint8Array, notes: DuplicateNotesParts | undefined): Uint8Array {
   if (!notes) return source;
-  const patched = patchRelationshipTarget(source, NOTES_REL,
-    relativeTarget(notes.slidePart, notes.targetPart));
+  const patched = patchRelationshipTarget(source, NOTES_REL, relativeTarget(notes.slidePart, notes.targetPart));
   if (!patched.found) throw new Error(`页面副本 ${notes.slidePart} 缺少 notesSlide 关系`);
   return patched.bytes;
 }
@@ -103,24 +91,33 @@ export function cloneDuplicateNotesParts(
   if (!sourceRelationships) {
     return {
       notes: bytes,
-      relationships: patchRelationshipPart(undefined, [{
-        sourceId: 'rId1', targetId: 'rId1', type: SLIDE_REL, target,
-      }]),
+      relationships: patchRelationshipPart(undefined, [
+        {
+          sourceId: 'rId1',
+          targetId: 'rId1',
+          type: SLIDE_REL,
+          target,
+        },
+      ]),
     };
   }
   const patched = patchRelationshipTarget(sourceRelationships, SLIDE_REL, target);
   if (patched.found) return { notes: bytes, relationships: patched.bytes };
-  const ids = xmlElementChildren(parseXmlTree(sourceRelationships).root, { localName: 'Relationship' })
-    .flatMap((relation) => {
-      const id = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
-      const match = id && /^rId(\d+)$/.exec(id);
-      return match ? [Number(match[1])] : [];
-    });
+  const ids = xmlElementChildren(parseXmlTree(sourceRelationships).root, { localName: 'Relationship' }).flatMap((relation) => {
+    const id = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
+    const match = id && /^rId(\d+)$/.exec(id);
+    return match ? [Number(match[1])] : [];
+  });
   const id = `rId${Math.max(0, ...ids) + 1}`;
   return {
     notes: bytes,
-    relationships: patchRelationshipPart(sourceRelationships, [{
-      sourceId: id, targetId: id, type: SLIDE_REL, target,
-    }]),
+    relationships: patchRelationshipPart(sourceRelationships, [
+      {
+        sourceId: id,
+        targetId: id,
+        type: SLIDE_REL,
+        target,
+      },
+    ]),
   };
 }

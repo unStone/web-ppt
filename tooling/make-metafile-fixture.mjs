@@ -8,7 +8,8 @@ import { readCanonicalMetafiles } from './lib/metafile-assets.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { 'showcase.emf': emf, 'showcase.wmf': wmf } = readCanonicalMetafiles(join(root, 'tooling/metafile-assets'));
 
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 const pic = (id, rid, x, y, w, h, name) => `<p:pic>
 <p:nvPicPr><p:cNvPr id="${id}" name="${name}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
 <p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
@@ -16,13 +17,28 @@ const pic = (id, rid, x, y, w, h, name) => `<p:pic>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
 
 const slide1 = slideXml(
-  sp({ x: 24, y: 14, w: 800, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"/><a:t>EMF / WMF 矢量图元文件</a:t></a:r></a:p>` }) +
-  pic(10, 'rId2', 30, 60, 600, 340, 'emf') +
-  sp({ x: 30, y: 405, w: 600, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('EMF（增强型图元文件）', 1000) }) +
-  pic(11, 'rId3', 650, 60, 600, 340, 'wmf') +
-  sp({ x: 650, y: 405, w: 600, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('WMF（Windows 图元文件）', 1000) }) +
-  sp({ x: 30, y: 450, w: 1220, h: 60, prst: 'roundRect', fill: solid('accent1'),
-       text: `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1300"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>两张图都由浏览器端解码为 SVG，无服务端参与</a:t></a:r></a:p>` }),
+  sp({
+    x: 24,
+    y: 14,
+    w: 800,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"/><a:t>EMF / WMF 矢量图元文件</a:t></a:r></a:p>`,
+  })
+    + pic(10, 'rId2', 30, 60, 600, 340, 'emf')
+    + sp({ x: 30, y: 405, w: 600, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('EMF（增强型图元文件）', 1000) })
+    + pic(11, 'rId3', 650, 60, 600, 340, 'wmf')
+    + sp({ x: 650, y: 405, w: 600, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('WMF（Windows 图元文件）', 1000) })
+    + sp({
+      x: 30,
+      y: 450,
+      w: 1220,
+      h: 60,
+      prst: 'roundRect',
+      fill: solid('accent1'),
+      text: `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1300"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>两张图都由浏览器端解码为 SVG，无服务端参与</a:t></a:r></a:p>`,
+    }),
 );
 
 const ct = `${XML}<Types xmlns="${NS.ct}">
@@ -63,29 +79,57 @@ const layout = `${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="
 
 const rel = (items) => `${XML}<Relationships xmlns="${NS.rel}">${items}</Relationships>`;
 
-writeFileSync(join(root, 'fixtures/sample-metafile.pptx'), makeZip([
-  ['[Content_Types].xml', ct],
-  ['_rels/.rels', rel(`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>`)],
-  ['ppt/presentation.xml', `${XML}<p:presentation xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
+writeFileSync(
+  join(root, 'fixtures/sample-metafile.pptx'),
+  makeZip([
+    ['[Content_Types].xml', ct],
+    [
+      '_rels/.rels',
+      rel(
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>`,
+      ),
+    ],
+    [
+      'ppt/presentation.xml',
+      `${XML}<p:presentation xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
 <p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst>
-<p:sldSz cx="${px(W)}" cy="${px(H)}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`],
-  ['ppt/_rels/presentation.xml.rels', rel(
-    `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>` +
-    `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>`)],
-  ['ppt/theme/theme1.xml', theme],
-  ['ppt/slideMasters/slideMaster1.xml', master],
-  ['ppt/slideMasters/_rels/slideMaster1.xml.rels', rel(
-    `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>` +
-    `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>`)],
-  ['ppt/slideLayouts/slideLayout1.xml', layout],
-  ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', rel(`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`)],
-  ['ppt/slides/slide1.xml', slide1],
-  ['ppt/slides/_rels/slide1.xml.rels', rel(
-    `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>` +
-    `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.emf"/>` +
-    `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.wmf"/>`)],
-  ['ppt/media/image1.emf', emf],
-  ['ppt/media/image2.wmf', wmf],
-]));
+<p:sldSz cx="${px(W)}" cy="${px(H)}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`,
+    ],
+    [
+      'ppt/_rels/presentation.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>`
+          + `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>`,
+      ),
+    ],
+    ['ppt/theme/theme1.xml', theme],
+    ['ppt/slideMasters/slideMaster1.xml', master],
+    [
+      'ppt/slideMasters/_rels/slideMaster1.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`
+          + `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>`,
+      ),
+    ],
+    ['ppt/slideLayouts/slideLayout1.xml', layout],
+    [
+      'ppt/slideLayouts/_rels/slideLayout1.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`,
+      ),
+    ],
+    ['ppt/slides/slide1.xml', slide1],
+    [
+      'ppt/slides/_rels/slide1.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`
+          + `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.emf"/>`
+          + `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.wmf"/>`,
+      ),
+    ],
+    ['ppt/media/image1.emf', emf],
+    ['ppt/media/image2.wmf', wmf],
+  ]),
+);
 console.log('fixtures/sample-metafile.pptx 已生成');

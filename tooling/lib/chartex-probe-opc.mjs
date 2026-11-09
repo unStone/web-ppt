@@ -12,9 +12,8 @@ export function relationships(parts, part) {
     const target = attr('Target');
     const external = attr('TargetMode') === 'External';
     // 外链只登记，不允许探针把本地文件引用升级为网络访问。
-    const resolved = target && !external
-      ? posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join(posix.dirname(part), target)) : null;
-    return { id: attr('Id'), type: attr('Type'), target, external, resolved,
-      exists: resolved !== null && Object.hasOwn(parts, resolved) };
+    const resolved =
+      target && !external ? posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join(posix.dirname(part), target)) : null;
+    return { id: attr('Id'), type: attr('Type'), target, external, resolved, exists: resolved !== null && Object.hasOwn(parts, resolved) };
   });
 }

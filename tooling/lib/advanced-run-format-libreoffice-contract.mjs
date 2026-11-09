@@ -23,17 +23,20 @@ export function runAdvancedRunFormatLibreOfficeContract({ exportSvg }) {
   const evidence = {
     inheritedUnderlineAndDoubleStrike: inheritedLines >= 3,
     directUnderlineAndStrike: directLines >= 2,
-    smallCaps: new Set(sizes).size >= 2
-      && direct.includes('>A</tspan>') && direct.includes('>DVANCED</tspan>'),
+    smallCaps: new Set(sizes).size >= 2 && direct.includes('>A</tspan>') && direct.includes('>DVANCED</tspan>'),
     baselineScale: Math.max(...sizes) > 0 && Math.max(...sizes) < 600,
     // 变量日期由 LibreOffice 按执行当天与 locale 输出，不能把生成测试那天写死。
-    clearedField: (dateText.match(/\d+/g)?.length ?? 0) >= 2
-      && !dateField.includes('text-decoration='),
+    clearedField: (dateText.match(/\d+/g)?.length ?? 0) >= 2 && !dateField.includes('text-decoration='),
   };
   if (!Object.values(evidence).every(Boolean)) {
-    throw new Error(`LibreOffice 高级文字证据无效：${JSON.stringify({
-      ...evidence, inheritedLines, directLines, sizes,
-    })}`);
+    throw new Error(
+      `LibreOffice 高级文字证据无效：${JSON.stringify({
+        ...evidence,
+        inheritedLines,
+        directLines,
+        sizes,
+      })}`,
+    );
   }
   return `，高级文字装饰线、small caps、baseline 与清除字段格式 oracle 一致`;
 }

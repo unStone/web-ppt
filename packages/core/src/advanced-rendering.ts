@@ -7,28 +7,51 @@ export async function prepareAdvancedRendering(input: Uint8Array | ArrayBuffer):
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
   const contains = (data: Uint8Array) => {
     for (let i = 0; i + 16 <= data.length; i++) {
-      if (data[i] === 0x45 && data[i + 1] === 0x4d && data[i + 2] === 0x46 && data[i + 3] === 0x2b
-        && data[i + 4] === 1 && data[i + 5] === 0x40) return true;
+      if (
+        data[i] === 0x45
+        && data[i + 1] === 0x4d
+        && data[i + 2] === 0x46
+        && data[i + 3] === 0x2b
+        && data[i + 4] === 1
+        && data[i + 5] === 0x40
+      )
+        return true;
     }
     return false;
   };
-  let needed = false, spatial = false;
+  let needed = false,
+    spatial = false;
   try {
     if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
       let total = 0;
       // 解析只对 .emf/.wmf 走图元 hook；解照片找不到会被用到的 EMF+，还会占满预算漏掉三维 XML。
-      const media = safeUnzipSync(bytes, { filter: e => (/\/media\/.+\.[ew]mf$/i.test(e.name) || /^ppt\/(slides|slideLayouts|slideMasters|theme)\/.*\.xml$/.test(e.name)) && e.originalSize <= 32 * 1024 * 1024
-        && (total += e.originalSize) <= 128 * 1024 * 1024 });
+      const media = safeUnzipSync(bytes, {
+        filter: (e) =>
+          (/\/media\/.+\.[ew]mf$/i.test(e.name) || /^ppt\/(slides|slideLayouts|slideMasters|theme)\/.*\.xml$/.test(e.name))
+          && e.originalSize <= 32 * 1024 * 1024
+          && (total += e.originalSize) <= 128 * 1024 * 1024,
+      });
       needed = Object.values(media).some(contains);
-      spatial = Object.entries(media).some(([name, data]) => name.endsWith('.xml')
-        && /<(?:[\w]+:)?(?:scene3d|sp3d)[\s>]/.test(new TextDecoder().decode(data)));
+      spatial = Object.entries(media).some(
+        ([name, data]) => name.endsWith('.xml') && /<(?:[\w]+:)?(?:scene3d|sp3d)[\s>]/.test(new TextDecoder().decode(data)),
+      );
     } else needed = contains(bytes);
-  } catch { return; }
+  } catch {
+    return;
+  }
   if (spatial) {
-    try { threeD ??= import('@web-ppt/core/three-d').then(m => m.enableThreeD()); await threeD; }
-    catch { threeD = undefined; }
+    try {
+      threeD ??= import('@web-ppt/core/three-d').then((m) => m.enableThreeD());
+      await threeD;
+    } catch {
+      threeD = undefined;
+    }
   }
   if (!needed) return;
-  try { ready ??= import('@web-ppt/core/emf-plus').then(m => m.enableEmfPlus()); await ready; }
-  catch { ready = undefined; }
+  try {
+    ready ??= import('@web-ppt/core/emf-plus').then((m) => m.enableEmfPlus());
+    await ready;
+  } catch {
+    ready = undefined;
+  }
 }

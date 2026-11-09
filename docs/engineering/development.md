@@ -8,7 +8,8 @@
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo 与编辑器） |
-| `npm run check` | 全仓 TypeScript 类型检查与 Biome 静态检查（走源码，不需要先构建）；单独跑静态检查用 `npm run lint` |
+| `npm run check` | 全仓 TypeScript 类型检查与 Biome 静态检查、格式检查（走源码，不需要先构建）；单独跑静态检查用 `npm run lint` |
+| `npm run format` | 按 `biome.jsonc` 重排格式。Biome 对个别成员链的首遍结果不是不动点，`check` 仍报格式差异时再跑一次 |
 | `npm test` | 全部功能测试，分套件命令见 [testing.md §8](testing.md#8-测试套件) |
 | `npm run build` | 构建全部发布包 |
 | `npm run build:site` | 构建官网静态产物 |

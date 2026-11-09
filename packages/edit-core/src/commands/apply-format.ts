@@ -7,14 +7,16 @@ import { effectiveElement } from '../projection';
 import { queryRunProps } from '../run-properties';
 import { normalizeEffects } from '../shape-effects';
 import { normalizeStroke } from '../shape-stroke';
-import {
-  applyParagraphProps, applyRunProps, flattenTextBody, textBodyFromOverride,
-} from '../text-model';
+import { applyParagraphProps, applyRunProps, flattenTextBody, textBodyFromOverride } from '../text-model';
 import { textBodyEditText, textPositionAtIndex, textPositionToIndex } from '../text-position';
 import { assertTableCellAddress } from '../table-cell';
 import type {
-  EditDoc, ElementImageReplacement, ParagraphPropertyOverrides, RunPropertyOverrides,
-  TextBodyPropertyOverrides, TextOverride,
+  EditDoc,
+  ElementImageReplacement,
+  ParagraphPropertyOverrides,
+  RunPropertyOverrides,
+  TextBodyPropertyOverrides,
+  TextOverride,
 } from '../types';
 import { assertFormatMask } from './format-painter-types';
 import type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
@@ -22,22 +24,15 @@ import type { CommandPatches, ImageResourcePatch, Patch } from './types';
 import { directFormatPatches } from './direct-format-patches';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
 import type { TextTargetContext } from './text-target';
-import {
-  prepareBulletImageResource, resolveBulletImageResource,
-} from './bullet-image-resource';
+import { prepareBulletImageResource, resolveBulletImageResource } from './bullet-image-resource';
 import { NO_HIGHLIGHT, STYLE_PROPERTY_FIELDS } from '../run-style';
 
 const TEXT_FIELDS = new Set<FormatMaskField>(['run', 'paragraph', 'body']);
-const PARAGRAPH_FIELDS = [
-  'level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent', 'bullet',
-] as const;
+const PARAGRAPH_FIELDS = ['level', 'align', 'lineHeight', 'spaceBefore', 'spaceAfter', 'marginLeft', 'indent', 'bullet'] as const;
 
 function validate(command: ApplyFormatCommand): void {
-  assertDataObject(command, [
-    'type', 'from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange',
-  ], 'ApplyFormat');
-  if (typeof command.from !== 'string' || !command.from
-    || typeof command.to !== 'string' || !command.to) {
+  assertDataObject(command, ['type', 'from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange'], 'ApplyFormat');
+  if (typeof command.from !== 'string' || !command.from || typeof command.to !== 'string' || !command.to) {
     throw new Error('ApplyFormat.from/to 必须是非空元素身份');
   }
   for (const field of ['fromCell', 'toCell', 'fromRange', 'toRange'] as const) {
@@ -47,8 +42,10 @@ function validate(command: ApplyFormatCommand): void {
   }
   assertFormatMask(command.mask, 'ApplyFormat.mask');
   const hasText = command.mask.some((field) => TEXT_FIELDS.has(field));
-  if (!hasText && (command.fromCell !== undefined || command.toCell !== undefined
-    || command.fromRange !== undefined || command.toRange !== undefined)) {
+  if (
+    !hasText
+    && (command.fromCell !== undefined || command.toCell !== undefined || command.fromRange !== undefined || command.toRange !== undefined)
+  ) {
     throw new Error('对象格式刷不能携带文字目标字段');
   }
   const hasRangeFormat = command.mask.includes('run') || command.mask.includes('paragraph');
@@ -61,11 +58,7 @@ function validate(command: ApplyFormatCommand): void {
   if (command.toRange !== undefined) assertTextRange(command.toRange, 'ApplyFormat.toRange');
 }
 
-export function applyFormatPatches(
-  doc: EditDoc,
-  command: ApplyFormatCommand,
-  origin: string,
-): CommandPatches {
+export function applyFormatPatches(doc: EditDoc, command: ApplyFormatCommand, origin: string): CommandPatches {
   validate(command);
   if (doc.meta.readonly) throw new Error('只读编辑文档不能使用格式刷');
   const source = doc.elements[command.from];
@@ -93,8 +86,7 @@ function uniformRunProps(doc: EditDoc, command: ApplyFormatCommand, range: Retur
     if (state[field].mixed || (state[field].value === null && field !== 'highlight')) {
       throw new Error(`格式来源的字符属性 ${field} 不是单一有效值`);
     }
-    props[field] = field === 'highlight' && state.highlight.value === null
-      ? NO_HIGHLIGHT : state[field].value;
+    props[field] = field === 'highlight' && state.highlight.value === null ? NO_HIGHLIGHT : state[field].value;
   }
   return props as RunPropertyOverrides;
 }
@@ -106,37 +98,35 @@ function uniformParagraphProps(
   source: TextTargetContext,
   target: TextTargetContext,
   origin: string,
-): { readonly props: ParagraphPropertyOverrides;
+): {
+  readonly props: ParagraphPropertyOverrides;
   readonly imageOverride?: ElementImageReplacement;
-  readonly resourcePatch?: ImageResourcePatch } {
+  readonly resourcePatch?: ImageResourcePatch;
+} {
   const state = queryParaProps(doc, command.from, range, command.fromCell);
   const props: Record<string, unknown> = {};
   for (const field of PARAGRAPH_FIELDS) {
     if (state[field].mixed) throw new Error(`格式来源的段落属性 ${field} 不是单一有效值`);
-    props[field] = field === 'lineHeight' && state[field].value === null
-      ? DEFAULT_TEXT_LINE_HEIGHT
-      : field === 'bullet' && state.bullet.value === null
-        ? { kind: 'none' } : state[field].value;
+    props[field] =
+      field === 'lineHeight' && state[field].value === null
+        ? DEFAULT_TEXT_LINE_HEIGHT
+        : field === 'bullet' && state.bullet.value === null
+          ? { kind: 'none' }
+          : state[field].value;
   }
   let imageOverride: ElementImageReplacement | undefined;
   let resourcePatch: ImageResourcePatch | undefined;
   const bullet = props.bullet as import('../types').ParagraphBullet | null;
   if (bullet?.kind === 'blip') {
-    const sourceParagraphs = source.before?.kind === 'flat'
-      ? source.before.paragraphs.slice(range.from.p, range.to.p + 1) : [];
-    const images = sourceParagraphs.flatMap((paragraph) =>
-      paragraph.bulletImageOverride ? [paragraph.bulletImageOverride] : []);
+    const sourceParagraphs = source.before?.kind === 'flat' ? source.before.paragraphs.slice(range.from.p, range.to.p + 1) : [];
+    const images = sourceParagraphs.flatMap((paragraph) => (paragraph.bulletImageOverride ? [paragraph.bulletImageOverride] : []));
     const hashes = new Set(images.map((image) => image.resourceHash));
-    const retained = hashes.size === 1 && images.length === sourceParagraphs.length
-      ? doc.imageResources[images[0].resourceHash] : undefined;
-    const resource = retained ?? resolveBulletImageResource(
-      doc, bullet.image.src, 'ApplyFormat.bullet.image',
-    );
+    const retained =
+      hashes.size === 1 && images.length === sourceParagraphs.length ? doc.imageResources[images[0].resourceHash] : undefined;
+    const resource = retained ?? resolveBulletImageResource(doc, bullet.image.src, 'ApplyFormat.bullet.image');
     const part = target.record.meta.origin?.part;
     if (!part || !doc.package) throw new Error('格式目标缺少可写图片项目符号资源');
-    const prepared = prepareBulletImageResource(
-      doc, part, 'rIdBulletFormat', resource, origin,
-    );
+    const prepared = prepareBulletImageResource(doc, part, 'rIdBulletFormat', resource, origin);
     imageOverride = prepared.image;
     resourcePatch = prepared.resourcePatch;
     props.bullet = { ...bullet, image: { src: imageOverride.src } };
@@ -148,23 +138,19 @@ function uniformParagraphProps(
   };
 }
 
-function textFormatPatches(
-  doc: EditDoc,
-  command: ApplyFormatCommand,
-  origin: string,
-): CommandPatches {
+function textFormatPatches(doc: EditDoc, command: ApplyFormatCommand, origin: string): CommandPatches {
   const sourceTarget = {
-    id: command.from, ...(command.fromCell !== undefined ? { cell: command.fromCell } : {}),
+    id: command.from,
+    ...(command.fromCell !== undefined ? { cell: command.fromCell } : {}),
   };
   const targetTarget = {
-    id: command.to, ...(command.toCell !== undefined ? { cell: command.toCell } : {}),
+    id: command.to,
+    ...(command.toCell !== undefined ? { cell: command.toCell } : {}),
   };
   const source = textTargetContext(doc, sourceTarget);
   const target = textTargetContext(doc, targetTarget);
-  const sourceBody = source.before?.kind === 'flat'
-    ? textBodyFromOverride(source.before) : source.body;
-  const targetBody = target.before?.kind === 'flat'
-    ? textBodyFromOverride(target.before) : target.body;
+  const sourceBody = source.before?.kind === 'flat' ? textBodyFromOverride(source.before) : source.body;
+  const targetBody = target.before?.kind === 'flat' ? textBodyFromOverride(target.before) : target.body;
   const fromRange = command.fromRange ?? wholeRange(sourceBody);
   const toRange = command.toRange ?? wholeRange(targetBody);
   const copiesRun = command.mask.includes('run');
@@ -173,50 +159,59 @@ function textFormatPatches(
   if ((copiesRun || copiesParagraph) && target.empty) {
     throw new Error('空文字目标没有可保持内容的字符或段落范围');
   }
-  if (copiesRun && textPositionToIndex(targetBody, toRange.from)
-    === textPositionToIndex(targetBody, toRange.to)) {
+  if (copiesRun && textPositionToIndex(targetBody, toRange.from) === textPositionToIndex(targetBody, toRange.to)) {
     throw new Error('字符格式刷的目标范围不能为空');
   }
-  let value = target.before?.kind === 'flat'
-    ? target.before : flattenTextBody(targetBody);
+  let value = target.before?.kind === 'flat' ? target.before : flattenTextBody(targetBody);
   let resourcePatch: ImageResourcePatch | undefined;
-  if (copiesRun) value = applyRunProps(
-    targetBody, toRange, uniformRunProps(doc, command, fromRange), value,
-  ) as Extract<TextOverride, { kind: 'flat' }>;
+  if (copiesRun)
+    value = applyRunProps(targetBody, toRange, uniformRunProps(doc, command, fromRange), value) as Extract<TextOverride, { kind: 'flat' }>;
   if (copiesParagraph) {
     const format = uniformParagraphProps(doc, command, fromRange, source, target, origin);
     resourcePatch = format.resourcePatch;
     value = applyParagraphProps(
-      targetBody, toRange, format.props, value,
-      target.levelTemplate, target.body, format.imageOverride,
+      targetBody,
+      toRange,
+      format.props,
+      value,
+      target.levelTemplate,
+      target.body,
+      format.imageOverride,
     ) as Extract<TextOverride, { kind: 'flat' }>;
   }
   if (copiesBody) {
     const props = queryBodyProps(doc, command.from, command.fromCell) as TextBodyPropertyOverrides;
     value = applyBodyProps(value, props, target.body.editInfo);
   }
-  const finalValue: TextOverride = target.empty && !copiesRun && !copiesParagraph
-    ? {
-      kind: 'empty', body: value.body,
-      ...(value.bodyOverrides ? { bodyOverrides: value.bodyOverrides } : {}),
-    }
-    : value;
+  const finalValue: TextOverride =
+    target.empty && !copiesRun && !copiesParagraph
+      ? {
+          kind: 'empty',
+          body: value.body,
+          ...(value.bodyOverrides ? { bodyOverrides: value.bodyOverrides } : {}),
+        }
+      : value;
   if (target.before && JSON.stringify(target.before) === JSON.stringify(finalValue)) {
     return { forward: [], inverse: [] };
   }
   return {
     forward: [...(resourcePatch ? [resourcePatch] : []), setTextPatch(target.patchTarget, finalValue, origin)],
-    inverse: [inverseTextPatch(target.patchTarget, target.before, origin), ...(resourcePatch ? [{
-      op: 'del' as const, path: resourcePatch.path, origin,
-    }] : [])],
+    inverse: [
+      inverseTextPatch(target.patchTarget, target.before, origin),
+      ...(resourcePatch
+        ? [
+            {
+              op: 'del' as const,
+              path: resourcePatch.path,
+              origin,
+            },
+          ]
+        : []),
+    ],
   };
 }
 
-function objectFormatPatches(
-  doc: EditDoc,
-  command: ApplyFormatCommand,
-  origin: string,
-): CommandPatches {
+function objectFormatPatches(doc: EditDoc, command: ApplyFormatCommand, origin: string): CommandPatches {
   const source = effectiveElement(doc, command.from);
   const target = doc.elements[command.to];
   const forward: Patch[] = [];
@@ -231,24 +226,18 @@ function objectFormatPatches(
         throw new Error('填充格式只能在形状之间复制');
       }
       if (source.fill?.type === 'image') throw new Error('图片填充属于媒体内容，不能通过格式刷复制');
-      append(directFormatPatches(
-        doc, command.to, field, source.fill ?? { type: 'none' }, origin,
-      ));
+      append(directFormatPatches(doc, command.to, field, source.fill ?? { type: 'none' }, origin));
     } else if (field === 'stroke') {
-      if ((source.kind !== 'shape' && source.kind !== 'image')
-        || (target.src.kind !== 'shape' && target.src.kind !== 'image')) {
+      if ((source.kind !== 'shape' && source.kind !== 'image') || (target.src.kind !== 'shape' && target.src.kind !== 'image')) {
         throw new Error('描边格式只支持形状或图片');
       }
       const stroke = source.stroke ? normalizeStroke(source.stroke) : null;
       append(directFormatPatches(doc, command.to, field, stroke, origin));
     } else if (field === 'effects') {
-      if (!['shape', 'image', 'group'].includes(source.kind)
-        || !['shape', 'image', 'group'].includes(target.src.kind)) {
+      if (!['shape', 'image', 'group'].includes(source.kind) || !['shape', 'image', 'group'].includes(target.src.kind)) {
         throw new Error('二维效果格式只支持形状、图片或组合');
       }
-      append(directFormatPatches(
-        doc, command.to, field, normalizeEffects(source.effects ?? {}), origin,
-      ));
+      append(directFormatPatches(doc, command.to, field, normalizeEffects(source.effects ?? {}), origin));
     }
   }
   if (command.mask.some((field) => TEXT_FIELDS.has(field))) append(textFormatPatches(doc, command, origin));

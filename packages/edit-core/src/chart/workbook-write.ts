@@ -1,16 +1,18 @@
 import type { OpcPackage } from '@web-ppt/core';
 import { disposeOpcPackage, patchOpcPackage } from '@web-ppt/edit-core/opc';
-import {
-  parseXmlTree, removeXmlAttribute, removeXmlChild, serializeXmlTreeBytes, setXmlAttribute,
-} from '@web-ppt/edit-core/xml';
+import { parseXmlTree, removeXmlAttribute, removeXmlChild, serializeXmlTreeBytes, setXmlAttribute } from '@web-ppt/edit-core/xml';
 import type { XmlDocument, XmlElement, XmlNode } from '@web-ppt/edit-core/xml';
 import { columnName, parseChartFormula } from './formula';
 import { orderedChartRecords } from './ordering';
 import type { ChartDatasetState } from './types';
 import type { WorkbookMap } from './workbook';
 import {
-  worksheetXml, xmlAttribute as attr, xmlContent as text,
-  appendXml as append, makeDataElement as make, setDataText as setText,
+  worksheetXml,
+  xmlAttribute as attr,
+  xmlContent as text,
+  appendXml as append,
+  makeDataElement as make,
+  setDataText as setText,
 } from './xml-data';
 import { addressParts, rangeCells, worksheetRangeBounds } from './workbook-range';
 import { canonicalNumericCategories } from './category-value';
@@ -35,20 +37,29 @@ function ensure(parent: XmlElement, name: string, before: XmlNode | null = null)
 }
 
 function writeRange(
-  writes: Map<string, Map<string, CellValue>>, formula: string | null,
-  values: readonly (string | number | null)[], kind: CellValue['kind'], clearOnly = false,
+  writes: Map<string, Map<string, CellValue>>,
+  formula: string | null,
+  values: readonly (string | number | null)[],
+  kind: CellValue['kind'],
+  clearOnly = false,
 ): void {
   const range = parseChartFormula(formula);
   if (!range) return;
   let sheet = writes.get(range.sheet);
-  if (!sheet) { sheet = new Map(); writes.set(range.sheet, sheet); }
+  if (!sheet) {
+    sheet = new Map();
+    writes.set(range.sheet, sheet);
+  }
   rangeCells(formula).forEach((cell, index) => {
-    sheet!.set(cell, { kind, value: clearOnly ? null : values[index] ?? null });
+    sheet!.set(cell, { kind, value: clearOnly ? null : (values[index] ?? null) });
   });
 }
 
 function workbookWrites(
-  source: ChartDatasetState, planned: ChartDatasetState, parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
+  source: ChartDatasetState,
+  planned: ChartDatasetState,
+  parts: Readonly<Record<string, Uint8Array>>,
+  map: WorkbookMap,
 ): Map<string, Map<string, CellValue>> {
   const writes = new Map<string, Map<string, CellValue>>();
   for (const series of orderedChartRecords(Object.values(source.series))) {
@@ -59,8 +70,9 @@ function workbookWrites(
     }
   }
   const categories = orderedChartRecords(Object.values(planned.categories).filter((item) => !item.removed));
-  const categoryBinding = orderedChartRecords(Object.values(planned.series)).find((series) => !series.removed
-    && series.bindings.categories?.formula)?.bindings.categories;
+  const categoryBinding = orderedChartRecords(Object.values(planned.series)).find(
+    (series) => !series.removed && series.bindings.categories?.formula,
+  )?.bindings.categories;
   const categoryNumbers = canonicalNumericCategories(categories.map((item) => item.label));
   const numericCategories = categoryBinding?.cache === 'number' && categoryNumbers !== null;
   const hierarchy = categoryWorkbookWrites(source, planned, parts, map);
@@ -68,16 +80,34 @@ function workbookWrites(
     const cells = writes.get(hierarchy.sheet) ?? new Map();
     for (const [address, value] of hierarchy.cells) cells.set(address, value);
     writes.set(hierarchy.sheet, cells);
-  } else writeRange(writes, categoryBinding?.formula ?? null,
-    numericCategories ? categoryNumbers : categories.map((item) => item.label),
-    numericCategories ? 'number' : 'string');
+  } else
+    writeRange(
+      writes,
+      categoryBinding?.formula ?? null,
+      numericCategories ? categoryNumbers : categories.map((item) => item.label),
+      numericCategories ? 'number' : 'string',
+    );
   for (const series of orderedChartRecords(Object.values(planned.series).filter((item) => !item.removed))) {
     const points = orderedChartRecords(Object.values(series.points).filter((item) => !item.removed));
     writeRange(writes, series.bindings.name.formula, [series.name], 'string');
-    writeRange(writes, series.bindings.values?.formula ?? series.bindings.y?.formula ?? null,
-      points.map((point) => point.value), 'number');
-    writeRange(writes, series.bindings.x?.formula ?? null, points.map((point) => point.x ?? null), 'number');
-    writeRange(writes, series.bindings.size?.formula ?? null, points.map((point) => point.size ?? null), 'number');
+    writeRange(
+      writes,
+      series.bindings.values?.formula ?? series.bindings.y?.formula ?? null,
+      points.map((point) => point.value),
+      'number',
+    );
+    writeRange(
+      writes,
+      series.bindings.x?.formula ?? null,
+      points.map((point) => point.x ?? null),
+      'number',
+    );
+    writeRange(
+      writes,
+      series.bindings.size?.formula ?? null,
+      points.map((point) => point.size ?? null),
+      'number',
+    );
   }
   return writes;
 }
@@ -122,8 +152,7 @@ function cellOf(sheet: XmlDocument, address: string): XmlElement {
   let cell = children(row, 'c').find((item) => attr(item, 'r') === address);
   if (!cell) {
     cell = make(row, 'c', [['r', address]]);
-    const before = children(row, 'c').find((item) =>
-      addressParts(attr(item, 'r') ?? 'A1').column > wanted.column) ?? null;
+    const before = children(row, 'c').find((item) => addressParts(attr(item, 'r') ?? 'A1').column > wanted.column) ?? null;
     append(row, cell, before);
   }
   return cell;
@@ -185,13 +214,13 @@ function expandWorksheetDimension(sheet: XmlDocument): void {
     include(current.end);
   }
   const data = child(sheet.root, 'sheetData');
-  for (const row of children(data, 'row')) for (const cell of children(row, 'c')) {
-    const address = attr(cell, 'r');
-    if (address) include(addressParts(address.toUpperCase()));
-  }
+  for (const row of children(data, 'row'))
+    for (const cell of children(row, 'c')) {
+      const address = attr(cell, 'r');
+      if (address) include(addressParts(address.toUpperCase()));
+    }
   if (!Number.isFinite(minColumn)) return;
-  const dimension = existing ?? ensure(sheet.root, 'dimension',
-    children(sheet.root).find((item) => item.localName !== 'sheetPr') ?? null);
+  const dimension = existing ?? ensure(sheet.root, 'dimension', children(sheet.root).find((item) => item.localName !== 'sheetPr') ?? null);
   const first = `${columnName(minColumn)}${minRow}`;
   const last = `${columnName(maxColumn)}${maxRow}`;
   setXmlAttribute(dimension, 'ref', first === last ? first : `${first}:${last}`);
@@ -208,7 +237,9 @@ export function writeChartWorkbook(
 }
 
 export function writeWorkbookCells(
-  sourceBytes: Uint8Array, parts: Readonly<Record<string, Uint8Array>>, map: WorkbookMap,
+  sourceBytes: Uint8Array,
+  parts: Readonly<Record<string, Uint8Array>>,
+  map: WorkbookMap,
   writes: ReadonlyMap<string, ReadonlyMap<string, CellValue>>,
 ): Uint8Array {
   const shared = new SharedStrings(map.sharedStrings ? parts[map.sharedStrings] : undefined);
@@ -228,7 +259,11 @@ export function writeWorkbookCells(
     changes[map.sharedStrings] = serializeXmlTreeBytes(shared.tree);
   }
   const borrowed: OpcPackage = {
-    format: 'pptx', bytes: sourceBytes, parts, assets: Object.freeze({}), disposed: false,
+    format: 'pptx',
+    bytes: sourceBytes,
+    parts,
+    assets: Object.freeze({}),
+    disposed: false,
   };
   const result = patchOpcPackage(borrowed, changes);
   const bytes = result.bytes.slice();

@@ -1,20 +1,13 @@
 import { THEME_COLOR_SLOTS } from '@web-ppt/core';
-import type {
-  ThemeColorScheme, ThemeColorSlot, ThemeFontCollection, ThemeFontScheme,
-} from '@web-ppt/core';
+import type { ThemeColorScheme, ThemeColorSlot, ThemeFontCollection, ThemeFontScheme } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
 import { assertDrawingColor, normalizeDrawingColor } from './shape-fill';
-import type {
-  EditDoc, ThemeFontCollectionOverrides, ThemeOverrides, ThemeRecord, ThemeState,
-} from './types';
+import type { EditDoc, ThemeFontCollectionOverrides, ThemeOverrides, ThemeRecord, ThemeState } from './types';
 
 const colorSlots = new Set<string>(THEME_COLOR_SLOTS);
 const FONT_FIELDS = ['latin', 'ea', 'cs'] as const;
 
-function effectiveFont(
-  source: ThemeFontCollection,
-  override: ThemeFontCollectionOverrides | undefined,
-): ThemeFontCollection {
+function effectiveFont(source: ThemeFontCollection, override: ThemeFontCollectionOverrides | undefined): ThemeFontCollection {
   return {
     latin: override?.latin ?? source.latin,
     ea: override?.ea ?? source.ea,
@@ -34,9 +27,12 @@ export function effectiveTheme(record: ThemeRecord): { colors: ThemeColorScheme;
 }
 
 export function themeHasOverrides(record: ThemeRecord): boolean {
-  return !!Object.keys(record.ovr.colors ?? {}).length
-    || !!Object.values(record.ovr.fonts ?? {}).some((font) =>
-      FONT_FIELDS.some((field) => own(font ?? {}, field)) || !!Object.keys(font?.scripts ?? {}).length);
+  return (
+    !!Object.keys(record.ovr.colors ?? {}).length
+    || !!Object.values(record.ovr.fonts ?? {}).some(
+      (font) => FONT_FIELDS.some((field) => own(font ?? {}, field)) || !!Object.keys(font?.scripts ?? {}).length,
+    )
+  );
 }
 
 export function queryTheme(doc: EditDoc, id: string): ThemeState {
@@ -44,7 +40,8 @@ export function queryTheme(doc: EditDoc, id: string): ThemeState {
   if (!record) throw new Error(`主题不存在：${id}`);
   const effective = effectiveTheme(record);
   return {
-    id, name: record.name,
+    id,
+    name: record.name,
     colors: structuredClone(effective.colors),
     fonts: structuredClone(effective.fonts),
     source: structuredClone(record.src),

@@ -6,7 +6,12 @@ import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const innerLeaf = sp({
-  x: 10, y: 10, w: 55, h: 40, fill: solid('accent6'), name: 'multi-inner-leaf',
+  x: 10,
+  y: 10,
+  w: 55,
+  h: 40,
+  fill: solid('accent6'),
+  name: 'multi-inner-leaf',
 });
 const inner = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="1201" name="multi-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -26,17 +31,28 @@ ${sp({ x: 230, y: 130, w: 70, h: 50, fill: solid('accent4'), name: 'multi-child-
 </p:grpSp>`;
 
 const bytes = deck({
-  name: 'Editor Multiselect', width: 1000, height: 600,
+  name: 'Editor Multiselect',
+  width: 1000,
+  height: 600,
   slides: [
-    slideXml([
-      sp({ x: 70, y: 80, w: 100, h: 70, fill: solid('accent1'), name: 'multi-back' }),
-      sp({ x: 200, y: 80, w: 100, h: 70, fill: solid('accent3'), name: 'multi-middle' }),
-      outer,
-      sp({ x: 780, y: 80, w: 100, h: 70, fill: solid('accent5'), name: 'multi-front' }),
-    ].join('')),
-    slideXml(sp({
-      x: 100, y: 100, w: 120, h: 80, fill: solid('accent2'), name: 'multi-second-page',
-    })),
+    slideXml(
+      [
+        sp({ x: 70, y: 80, w: 100, h: 70, fill: solid('accent1'), name: 'multi-back' }),
+        sp({ x: 200, y: 80, w: 100, h: 70, fill: solid('accent3'), name: 'multi-middle' }),
+        outer,
+        sp({ x: 780, y: 80, w: 100, h: 70, fill: solid('accent5'), name: 'multi-front' }),
+      ].join(''),
+    ),
+    slideXml(
+      sp({
+        x: 100,
+        y: 100,
+        w: 120,
+        h: 80,
+        fill: solid('accent2'),
+        name: 'multi-second-page',
+      }),
+    ),
   ],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

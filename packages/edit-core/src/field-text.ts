@@ -7,8 +7,18 @@ export function fieldTextWithoutDirect(source: TextBody): TextBody {
   const inheritedBody = text.editInfo?.inherited;
   if (inheritedBody) {
     for (const field of [
-      'anchor', 'insets', 'wrap', 'fontScale', 'autoFitCompute', 'autoFitNormal',
-      'lnSpcReduction', 'vert', 'anchorCtr', 'autoFitShape', 'columns', 'columnGap',
+      'anchor',
+      'insets',
+      'wrap',
+      'fontScale',
+      'autoFitCompute',
+      'autoFitNormal',
+      'lnSpcReduction',
+      'vert',
+      'anchorCtr',
+      'autoFitShape',
+      'columns',
+      'columnGap',
     ] as const) {
       const value = inheritedBody[field];
       if (value === undefined) delete text[field];
@@ -21,27 +31,41 @@ export function fieldTextWithoutDirect(source: TextBody): TextBody {
     if (inheritedParagraph) {
       Object.assign(paragraph, {
         lvl: inheritedParagraph.level,
-        align: inheritedParagraph.align, lineHeight: inheritedParagraph.lineHeight,
-        spaceBefore: inheritedParagraph.spaceBefore, spaceAfter: inheritedParagraph.spaceAfter,
-        marL: inheritedParagraph.marginLeft, indent: inheritedParagraph.indent,
+        align: inheritedParagraph.align,
+        lineHeight: inheritedParagraph.lineHeight,
+        spaceBefore: inheritedParagraph.spaceBefore,
+        spaceAfter: inheritedParagraph.spaceAfter,
+        marL: inheritedParagraph.marginLeft,
+        indent: inheritedParagraph.indent,
       });
     }
     if (paragraph.editInfo) {
       paragraph.editInfo = {
-        ...paragraph.editInfo, directParagraphProps: {},
-        directRun: textRunDirectFlags(0), directLayout: paragraphLayoutDirectFlags(0),
+        ...paragraph.editInfo,
+        directParagraphProps: {},
+        directRun: textRunDirectFlags(0),
+        directLayout: paragraphLayoutDirectFlags(0),
       };
     }
     for (const run of paragraph.runs) {
       const inheritedRun = run.editInfo?.inheritedRunProps;
       if (inheritedRun) {
         Object.assign(run, {
-          b: inheritedRun.b, i: inheritedRun.i, u: inheritedRun.u, strike: inheritedRun.strike,
-          underline: inheritedRun.underline, strikeType: inheritedRun.strikeType,
-          size: inheritedRun.size, color: inheritedRun.color, fonts: [...inheritedRun.fonts],
-          baseline: inheritedRun.baseline, spacing: inheritedRun.spacing, caps: inheritedRun.caps,
+          b: inheritedRun.b,
+          i: inheritedRun.i,
+          u: inheritedRun.u,
+          strike: inheritedRun.strike,
+          underline: inheritedRun.underline,
+          strikeType: inheritedRun.strikeType,
+          size: inheritedRun.size,
+          color: inheritedRun.color,
+          fonts: [...inheritedRun.fonts],
+          baseline: inheritedRun.baseline,
+          spacing: inheritedRun.spacing,
+          caps: inheritedRun.caps,
           outline: structuredClone(inheritedRun.outline),
-          gradient: inheritedRun.gradient, highlight: inheritedRun.highlight,
+          gradient: inheritedRun.gradient,
+          highlight: inheritedRun.highlight,
           underlineColor: inheritedRun.underlineColor,
         });
       }

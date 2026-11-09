@@ -122,9 +122,11 @@ function renderRun(run: TextRun, scale: number, squeeze: boolean, marker: string
   if (run.math?.length) {
     const m = mathOf(run, scale);
     if (m && m.w > 0) {
-      return `<svg${marker} xmlns="http://www.w3.org/2000/svg" width="${r(m.w)}" height="${r(m.h + m.d)}"` +
-        ` viewBox="0 ${r(-m.h)} ${r(m.w)} ${r(m.h + m.d)}"` +
-        ` style="display:inline-block;vertical-align:${r(-m.d)}px;overflow:visible">${m.svg}</svg>`;
+      return (
+        `<svg${marker} xmlns="http://www.w3.org/2000/svg" width="${r(m.w)}" height="${r(m.h + m.d)}"`
+        + ` viewBox="0 ${r(-m.h)} ${r(m.w)} ${r(m.h + m.d)}"`
+        + ` style="display:inline-block;vertical-align:${r(-m.d)}px;overflow:visible">${m.svg}</svg>`
+      );
     }
   }
   const empty = !run.text;
@@ -141,9 +143,10 @@ function fittedText(
   opts: Pick<RenderTextBodyHtmlOptions, 'insets' | 'vert' | 'scale' | 'measureText'>,
 ): TextBody {
   const fixedScale = opts.scale;
-  const scale = Number.isFinite(fixedScale) && fixedScale! > 0
-    ? fixedScale!
-    : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
+  const scale =
+    Number.isFinite(fixedScale) && fixedScale! > 0
+      ? fixedScale!
+      : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
   return scale === t.fontScale ? t : { ...t, fontScale: scale };
 }
 
@@ -152,12 +155,7 @@ interface EngineLineState {
   pieces: string[];
 }
 
-function engineRunMarker(
-  paragraphIndex: number,
-  runIndex: number,
-  from: number,
-  to: number,
-): string {
+function engineRunMarker(paragraphIndex: number, runIndex: number, from: number, to: number): string {
   return ` data-r="${paragraphIndex}.${runIndex}" data-from="${from}" data-to="${to}"`;
 }
 
@@ -172,18 +170,14 @@ function positionedEngineRun(
   semanticOnly = false,
 ): string {
   const body = renderRun({ ...run, text }, scale, squeeze, marker);
-  const style = `position:absolute;left:${r(left)}px;top:0;height:${r(lineHeight)}px;`
+  const style =
+    `position:absolute;left:${r(left)}px;top:0;height:${r(lineHeight)}px;`
     + `line-height:${r(lineHeight)}px;white-space:pre;`
     + (semanticOnly ? 'width:0;overflow:hidden;opacity:0;' : 'overflow:visible;');
   return `<span data-engine-${semanticOnly ? 'semantic' : 'segment'}="true" style="${esc(style)}">${body}</span>`;
 }
 
-function renderEngineParagraph(
-  text: TextBody,
-  paragraphIndex: number,
-  lines: readonly TextLayoutLine[],
-  scale: number,
-): string {
+function renderEngineParagraph(text: TextBody, paragraphIndex: number, lines: readonly TextLayoutLine[], scale: number): string {
   const paragraph = text.paragraphs[paragraphIndex];
   const states: EngineLineState[] = lines.map((line) => ({ line, pieces: [] }));
   if (!states.length) return `<div data-p="${paragraphIndex}"></div>`;
@@ -192,27 +186,23 @@ function renderEngineParagraph(
   let currentRun = 0;
   let lastState = states[0];
 
-  const emitSemantic = (
-    runIndex: number,
-    from: number,
-    to: number,
-    state: EngineLineState,
-    x: number,
-  ): void => {
+  const emitSemantic = (runIndex: number, from: number, to: number, state: EngineLineState, x: number): void => {
     const run = paragraph.runs[runIndex];
     const empty = !run.text.length;
     if (to <= from && (!empty || emittedEmpty[runIndex])) return;
     emittedEmpty[runIndex] ||= empty;
-    state.pieces.push(positionedEngineRun(
-      run,
-      run.text.slice(from, to),
-      scale,
-      state.line.squeezed,
-      engineRunMarker(paragraphIndex, runIndex, from, to),
-      x - state.line.x,
-      state.line.height,
-      true,
-    ));
+    state.pieces.push(
+      positionedEngineRun(
+        run,
+        run.text.slice(from, to),
+        scale,
+        state.line.squeezed,
+        engineRunMarker(paragraphIndex, runIndex, from, to),
+        x - state.line.x,
+        state.line.height,
+        true,
+      ),
+    );
   };
 
   const finishRun = (runIndex: number, state: EngineLineState, x: number): void => {
@@ -233,11 +223,17 @@ function renderEngineParagraph(
             size: first.size * (paragraph.bulletSize ?? 1),
             color: paragraph.bulletColor ?? first.color,
           });
-          state.pieces.push(positionedEngineRun(
-            bullet, segment.text, scale, state.line.squeezed,
-            ' data-bullet="true" contenteditable="false"',
-            segment.x - state.line.x, state.line.height,
-          ));
+          state.pieces.push(
+            positionedEngineRun(
+              bullet,
+              segment.text,
+              scale,
+              state.line.squeezed,
+              ' data-bullet="true" contenteditable="false"',
+              segment.x - state.line.x,
+              state.line.height,
+            ),
+          );
         }
         continue;
       }
@@ -251,15 +247,17 @@ function renderEngineParagraph(
       const atomic = !!run.math?.length;
       const from = atomic ? 0 : segment.from;
       const to = atomic ? 1 : segment.to;
-      state.pieces.push(positionedEngineRun(
-        run,
-        atomic ? run.text : run.text.slice(segment.from, segment.to),
-        scale,
-        state.line.squeezed,
-        engineRunMarker(paragraphIndex, segment.runIndex, from, to),
-        segment.x - state.line.x,
-        state.line.height,
-      ));
+      state.pieces.push(
+        positionedEngineRun(
+          run,
+          atomic ? run.text : run.text.slice(segment.from, segment.to),
+          scale,
+          state.line.squeezed,
+          engineRunMarker(paragraphIndex, segment.runIndex, from, to),
+          segment.x - state.line.x,
+          state.line.height,
+        ),
+      );
       cursors[segment.runIndex] = segment.to;
       currentRun = segment.runIndex;
     }
@@ -271,23 +269,23 @@ function renderEngineParagraph(
     currentRun++;
   }
 
-  const lineMarkup = states.map(({ line, pieces }) => {
-    const style = `position:absolute;left:${r(line.x)}px;top:${r(line.y)}px;`
-      + `width:${r(Math.max(1, line.width))}px;height:${r(line.height)}px;`
-      + `line-height:${r(line.height)}px;white-space:pre;overflow:visible;`
-      + (line.rtl ? 'direction:rtl;unicode-bidi:plaintext;' : '');
-    return `<span data-engine-line="${paragraphIndex}.${line.lineIndex}" data-x="${r(line.x)}" `
-      + `data-y="${r(line.y)}" style="${esc(style)}">${pieces.join('')}</span>`;
-  }).join('');
+  const lineMarkup = states
+    .map(({ line, pieces }) => {
+      const style =
+        `position:absolute;left:${r(line.x)}px;top:${r(line.y)}px;`
+        + `width:${r(Math.max(1, line.width))}px;height:${r(line.height)}px;`
+        + `line-height:${r(line.height)}px;white-space:pre;overflow:visible;`
+        + (line.rtl ? 'direction:rtl;unicode-bidi:plaintext;' : '');
+      return (
+        `<span data-engine-line="${paragraphIndex}.${line.lineIndex}" data-x="${r(line.x)}" `
+        + `data-y="${r(line.y)}" style="${esc(style)}">${pieces.join('')}</span>`
+      );
+    })
+    .join('');
   return `<div data-p="${paragraphIndex}" style="position:absolute;inset:0">${lineMarkup}</div>`;
 }
 
-function renderEngineTextBodyToHtml(
-  source: TextBody,
-  w: number,
-  h: number,
-  opts: RenderTextBodyHtmlOptions,
-): string {
+function renderEngineTextBodyToHtml(source: TextBody, w: number, h: number, opts: RenderTextBodyHtmlOptions): string {
   const layout = layoutText(source, w, h, {
     insets: opts.insets,
     anchor: opts.anchor,
@@ -296,16 +294,21 @@ function renderEngineTextBodyToHtml(
     measureText: opts.measureText,
   });
   const linesByParagraph = source.paragraphs.map((_, paragraphIndex) =>
-    layout.lines.filter((line) => line.paragraphIndex === paragraphIndex));
-  const paragraphs = source.paragraphs.map((_, paragraphIndex) =>
-    renderEngineParagraph(source, paragraphIndex, linesByParagraph[paragraphIndex], layout.scale)).join('');
+    layout.lines.filter((line) => line.paragraphIndex === paragraphIndex),
+  );
+  const paragraphs = source.paragraphs
+    .map((_, paragraphIndex) => renderEngineParagraph(source, paragraphIndex, linesByParagraph[paragraphIndex], layout.scale))
+    .join('');
   const [a, b, c, d, e, f] = layout.transform;
-  const style = `position:relative;width:${r(layout.layoutWidth)}px;height:${r(layout.layoutHeight)}px;`
+  const style =
+    `position:relative;width:${r(layout.layoutWidth)}px;height:${r(layout.layoutHeight)}px;`
     + 'box-sizing:border-box;white-space:pre;overflow:visible;transform-origin:0 0;'
     + `transform:matrix(${r(a)},${r(b)},${r(c)},${r(d)},${r(e)},${r(f)});`;
-  return `<div data-layout="engine" data-font-scale="${r(layout.scale)}" `
+  return (
+    `<div data-layout="engine" data-font-scale="${r(layout.scale)}" `
     + `data-autofit="${layout.autoFit}" xmlns="http://www.w3.org/1999/xhtml" `
-    + `style="${esc(style)}">${paragraphs}</div>`;
+    + `style="${esc(style)}">${paragraphs}</div>`
+  );
 }
 
 /**
@@ -313,66 +316,57 @@ function renderEngineTextBodyToHtml(
  * 也不设置 contenteditable。调用方拥有焦点、IME 与生命周期，core 只负责确定性排版。
  * 艺术字变形无法由 HTML 表达；编辑时返回未变形文字，提交后的静态预览仍走 SVG 路径。
  */
-export function renderTextBodyToHtml(
-  source: TextBody,
-  w: number,
-  h: number,
-  opts: RenderTextBodyHtmlOptions = {},
-): string {
+export function renderTextBodyToHtml(source: TextBody, w: number, h: number, opts: RenderTextBodyHtmlOptions = {}): string {
   if (opts.layout === 'engine') return renderEngineTextBodyToHtml(source, w, h, opts);
   const t = fittedText(source, w, h, opts);
   const [pt, pr, pb, pl] = opts.insets ?? t.insets;
   const scale = t.fontScale;
   const markers = opts.includeEditMarkers !== false;
 
-  const paras = t.paragraphs.map((p, pi) => {
-    const first = p.runs[0];
-    const baseSize = (first?.size ?? 18) * scale;
-    const squeeze = t.wrap
-      && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true, opts.measureText);
-    const runs = p.runs.map((run, ri) =>
-      renderRun(run, scale, squeeze, markers ? ` data-r="${pi}.${ri}"` : '')).join('');
+  const paras = t.paragraphs
+    .map((p, pi) => {
+      const first = p.runs[0];
+      const baseSize = (first?.size ?? 18) * scale;
+      const squeeze = t.wrap && paraNeedsSqueeze(p, w - pl - pr - Math.max(0, p.marL), scale, true, opts.measureText);
+      const runs = p.runs.map((run, ri) => renderRun(run, scale, squeeze, markers ? ` data-r="${pi}.${ri}"` : '')).join('');
 
-    let bullet = '';
-    // 项目符号由段落属性控制，不是正文字符；编辑层里禁止直接把光标落进去。
-    const bulletMarker = markers ? ' data-bullet="true" contenteditable="false"' : '';
-    if (p.bulletImage) {
-      bullet = `<img${bulletMarker} src="${esc(p.bulletImage)}" style="height:${r(baseSize * 0.8)}px;vertical-align:middle;margin-right:4px"/>`;
-    } else if (p.bullet) {
-      const size = baseSize * (p.bulletSize ?? 1);
-      const color = p.bulletColor ?? first?.color ?? '#000';
-      const font = p.bulletFont && !/wingdings|webdings|symbol/i.test(p.bulletFont)
-        ? `font-family:${stack([p.bulletFont], FONT_FALLBACK)};`
-        : '';
-      bullet = `<span${bulletMarker} style="${esc(`font-size:${r(size)}px;color:${color};${font}`)}">${esc(p.bullet)}&#160;</span>`;
-    }
+      let bullet = '';
+      // 项目符号由段落属性控制，不是正文字符；编辑层里禁止直接把光标落进去。
+      const bulletMarker = markers ? ' data-bullet="true" contenteditable="false"' : '';
+      if (p.bulletImage) {
+        bullet = `<img${bulletMarker} src="${esc(p.bulletImage)}" style="height:${r(baseSize * 0.8)}px;vertical-align:middle;margin-right:4px"/>`;
+      } else if (p.bullet) {
+        const size = baseSize * (p.bulletSize ?? 1);
+        const color = p.bulletColor ?? first?.color ?? '#000';
+        const font =
+          p.bulletFont && !/wingdings|webdings|symbol/i.test(p.bulletFont) ? `font-family:${stack([p.bulletFont], FONT_FALLBACK)};` : '';
+        bullet = `<span${bulletMarker} style="${esc(`font-size:${r(size)}px;color:${color};${font}`)}">${esc(p.bullet)}&#160;</span>`;
+      }
 
-    const style =
-      `margin:${r(p.spaceBefore)}px 0 ${r(p.spaceAfter)}px 0;` +
-      `text-align:${p.align};` +
-      `padding-left:${r(Math.max(0, p.marL))}px;` +
-      `text-indent:${r(p.indent)}px;` +
-      `line-height:${p.lineHeight !== null ? r(p.lineHeight) : '1.2'};` +
-      (p.rtl ? 'direction:rtl;' : '') +
-      `white-space:${t.wrap ? 'pre-wrap' : 'pre'};word-break:break-word;`;
-    const paraMarker = markers ? ` data-p="${pi}"` : '';
-    return `<div${paraMarker} style="${esc(style)}">${bullet}${runs}</div>`;
-  }).join('');
+      const style =
+        `margin:${r(p.spaceBefore)}px 0 ${r(p.spaceAfter)}px 0;`
+        + `text-align:${p.align};`
+        + `padding-left:${r(Math.max(0, p.marL))}px;`
+        + `text-indent:${r(p.indent)}px;`
+        + `line-height:${p.lineHeight !== null ? r(p.lineHeight) : '1.2'};`
+        + (p.rtl ? 'direction:rtl;' : '')
+        + `white-space:${t.wrap ? 'pre-wrap' : 'pre'};word-break:break-word;`;
+      const paraMarker = markers ? ` data-p="${pi}"` : '';
+      return `<div${paraMarker} style="${esc(style)}">${bullet}${runs}</div>`;
+    })
+    .join('');
 
   const anchor = opts.anchor ?? t.anchor;
   const vert = opts.vert ?? t.vert;
   const boxStyle =
-    `width:${r(w)}px;height:${r(h)}px;box-sizing:border-box;` +
-    `display:flex;flex-direction:column;justify-content:${ANCHOR_CSS[anchor]};` +
-    (t.anchorCtr ? 'align-items:center;' : '') +
-    `padding:${r(pt)}px ${r(pr)}px ${r(pb)}px ${r(pl)}px;` +
-    (t.columns ? `column-count:${t.columns};column-gap:${r(t.columnGap ?? 0)}px;display:block;` : '') +
-    (vert ? VERT_CSS[vert] ?? '' : '') +
-    'overflow:visible;';
-  const mode = t.autoFitShape ? 'shape'
-    : source.autoFitNormal || source.autoFitCompute ? 'normal' : 'none';
-  const rootMarkers = markers
-    ? ` data-font-scale="${r(scale)}" data-autofit="${mode}"`
-    : '';
+    `width:${r(w)}px;height:${r(h)}px;box-sizing:border-box;`
+    + `display:flex;flex-direction:column;justify-content:${ANCHOR_CSS[anchor]};`
+    + (t.anchorCtr ? 'align-items:center;' : '')
+    + `padding:${r(pt)}px ${r(pr)}px ${r(pb)}px ${r(pl)}px;`
+    + (t.columns ? `column-count:${t.columns};column-gap:${r(t.columnGap ?? 0)}px;display:block;` : '')
+    + (vert ? (VERT_CSS[vert] ?? '') : '')
+    + 'overflow:visible;';
+  const mode = t.autoFitShape ? 'shape' : source.autoFitNormal || source.autoFitCompute ? 'normal' : 'none';
+  const rootMarkers = markers ? ` data-font-scale="${r(scale)}" data-autofit="${mode}"` : '';
   return `<div${rootMarkers} xmlns="http://www.w3.org/1999/xhtml" style="${esc(boxStyle)}">${paras}</div>`;
 }

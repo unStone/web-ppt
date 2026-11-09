@@ -1,6 +1,4 @@
-import {
-  elementParentToSlideMatrix, inverseTransformSpaceVector, outermostSelectedElementIds, slideOfElement,
-} from '@web-ppt/edit-core';
+import { elementParentToSlideMatrix, inverseTransformSpaceVector, outermostSelectedElementIds, slideOfElement } from '@web-ppt/edit-core';
 import type { KeyboardControllerOptions } from './keyboard-context';
 import { shouldYieldKeyboardEvent } from './keyboard-owner';
 import { isSelectable } from './selection-hit';
@@ -28,8 +26,7 @@ export class KeyboardNudgeController {
 
   keyDown(event: KeyboardEvent): boolean {
     const direction = ARROW_DELTA[event.key];
-    if (!direction || event.ctrlKey || event.metaKey || event.altKey
-      || shouldYieldKeyboardEvent(event)) return false;
+    if (!direction || event.ctrlKey || event.metaKey || event.altKey || shouldYieldKeyboardEvent(event)) return false;
     if (this.options.gestureActive()) {
       event.preventDefault();
       return true;
@@ -37,8 +34,7 @@ export class KeyboardNudgeController {
     const selection = this.options.editor.selection;
     if (selection.kind !== 'elements') return false;
     const doc = this.options.editor.doc;
-    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId()
-      || !isSelectable(doc, id))) return false;
+    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId() || !isSelectable(doc, id))) return false;
     const roots = outermostSelectedElementIds(doc, selection.ids);
     let hold = this.activeHolds.get(event.key);
     if (!hold) {
@@ -52,12 +48,16 @@ export class KeyboardNudgeController {
       const parentDelta = inverseTransformSpaceVector(elementParentToSlideMatrix(doc, id), worldDelta);
       return { id, x: source.x + parentDelta.x, y: source.y + parentDelta.y };
     });
-    this.options.editor.transaction((transaction) => {
-      for (const position of positions) transaction.exec({ type: 'SetXfrm', ...position });
-    }, '微移元素', {
-      mergeKey: `keyboard-nudge:${this.options.namespace}:${hold.id}:${event.key}:${roots.join(',')}`,
-      time: hold.time,
-    });
+    this.options.editor.transaction(
+      (transaction) => {
+        for (const position of positions) transaction.exec({ type: 'SetXfrm', ...position });
+      },
+      '微移元素',
+      {
+        mergeKey: `keyboard-nudge:${this.options.namespace}:${hold.id}:${event.key}:${roots.join(',')}`,
+        time: hold.time,
+      },
+    );
     event.preventDefault();
     return true;
   }

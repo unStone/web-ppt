@@ -13,26 +13,25 @@ function allocateRowId(doc: EditDoc, record: ElementRecord, origin: string): str
   }
 }
 
-export function insertRowPatches(
-  doc: EditDoc,
-  command: InsertRowCommand,
-  origin: string,
-): CommandPatches {
+export function insertRowPatches(doc: EditDoc, command: InsertRowCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能执行命令');
   const record = doc.elements[command.id];
   if (!record || record.src.kind !== 'table') throw new Error(`找不到可追加行的表格：${command.id}`);
   if (record.meta.editable !== 'full' || record.meta.locked) throw new Error(`表格不可编辑：${command.id}`);
   if (!record.src.rows.length || !record.src.colWidths.length) throw new Error(`表格没有可复制的行列：${command.id}`);
   if (command.at !== undefined) {
-    if (!command.at || typeof command.at !== 'object'
-      || Reflect.ownKeys(command.at).length !== 1 || !own(command.at, 'before')
-      || (command.at.before !== null && (typeof command.at.before !== 'string' || !command.at.before))) {
+    if (
+      !command.at
+      || typeof command.at !== 'object'
+      || Reflect.ownKeys(command.at).length !== 1
+      || !own(command.at, 'before')
+      || (command.at.before !== null && (typeof command.at.before !== 'string' || !command.at.before))
+    ) {
       throw new Error('InsertRow.at 必须是只含稳定 before 行身份的纯数据对象');
     }
   }
   const rows = orderedTableRows(record);
-  const before = command.at?.before === null || command.at === undefined
-    ? null : tableRowById(record, command.at.before);
+  const before = command.at?.before === null || command.at === undefined ? null : tableRowById(record, command.at.before);
   if (command.at?.before && !before) throw new Error(`找不到插入位置行：${command.at.before}`);
   const nextIndex = before ? rows.findIndex((row) => row.id === before.id) : rows.length;
   const previous = rows[nextIndex - 1] ?? null;

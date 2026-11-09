@@ -21,7 +21,11 @@ export interface EditorPage {
   stop(): void;
 }
 
-declare module 'cordis' { interface Context { editorPage: EditorPage } }
+declare module 'cordis' {
+  interface Context {
+    editorPage: EditorPage;
+  }
+}
 
 async function editorOpenFailure(error: unknown): Promise<SiteMessage> {
   // 只看 name，映射按需加载——静态导入会把人话词条打进首开闭包。
@@ -50,15 +54,32 @@ export const editorPagePlugin = {
 
 function createPage(lifetime: AbortController): EditorPage & { release(): void } {
   const { signal } = lifetime;
-  const { app, toolbar, fileInput, fileName, canvasMount, canvasState, objectList,
-    slideList, slideCount, statusText, documentKind, pageIndicator, zoomLabel,
-    dropLayer, inspectorElement } = editorElements;
+  const {
+    app,
+    toolbar,
+    fileInput,
+    fileName,
+    canvasMount,
+    canvasState,
+    objectList,
+    slideList,
+    slideCount,
+    statusText,
+    documentKind,
+    pageIndicator,
+    zoomLabel,
+    dropLayer,
+    inspectorElement,
+  } = editorElements;
   const commentsButton = document.querySelector<HTMLButtonElement>('#commentsTools')!;
   const slideSizeButton = document.querySelector<HTMLButtonElement>('#slideSizeTools')!;
   let application: EditorApplication | undefined;
   let current: EditorDocument | null = null;
-  let stopped = false, released = false;
-  let activeName = 'showcase.pptx', pptConversionAccepted = false, newDocument = false;
+  let stopped = false,
+    released = false;
+  let activeName = 'showcase.pptx',
+    pptConversionAccepted = false,
+    newDocument = false;
   const feedback = createEditorFeedback(statusText, signal);
   const { notice, reportError } = feedback;
   const canWriteDocument = () => !!current && !current.session.editor.doc.meta.readonly;
@@ -69,15 +90,32 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     const stem = activeName.replace(/\.(pptx?|potx?|ppsx?)$/i, '');
     return newDocument || current?.session.editor.doc.meta.source === 'ppt' ? `${stem}.pptx` : `${stem}-edited.pptx`;
   };
-  const viewport = createEditorViewport(() => ({ document: current, ready: ready(), writable: canWriteDocument(),
-    conversionRequired: !!needsPptConversion(), name: activeName, outputName: outputName(),
-    acceptConversion() { pptConversionAccepted = true; }, sync: syncControls }), feedback, signal);
+  const viewport = createEditorViewport(
+    () => ({
+      document: current,
+      ready: ready(),
+      writable: canWriteDocument(),
+      conversionRequired: !!needsPptConversion(),
+      name: activeName,
+      outputName: outputName(),
+      acceptConversion() {
+        pptConversionAccepted = true;
+      },
+      sync: syncControls,
+    }),
+    feedback,
+    signal,
+  );
 
   function syncControls(): void {
     if (signal.aborted) return;
-    const editor = current?.session.editor, files = application?.files;
-    const loaded = ready(), capable = loaded && canWriteDocument(), writable = capable && !needsPptConversion();
-    const index = viewport.index(), mode = viewport.mode;
+    const editor = current?.session.editor,
+      files = application?.files;
+    const loaded = ready(),
+      capable = loaded && canWriteDocument(),
+      writable = capable && !needsPptConversion();
+    const index = viewport.index(),
+      mode = viewport.mode;
     buttons.newFile.disabled = !application || !!app.dataset.loading || !!files?.busy;
     fileInput.disabled = buttons.newFile.disabled;
     buttons.undo.disabled = !writable || mode !== 'edit' || !editor!.history.undoCount;
@@ -90,11 +128,18 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     buttons.saveAs.disabled = !writable;
     buttons.saveAs.hidden = !files?.localAvailable || !files?.localTarget(current?.session ?? null);
     setText(buttons.save.querySelector('span')!, '保存副本');
-    setAttributeMessage(buttons.localSave, 'title', message('保存目标：{name}', { name: files?.localTarget(current?.session ?? null) ?? message('请选择保存位置') }));
+    setAttributeMessage(
+      buttons.localSave,
+      'title',
+      message('保存目标：{name}', { name: files?.localTarget(current?.session ?? null) ?? message('请选择保存位置') }),
+    );
     buttons.exportImages.disabled = !loaded;
     buttons.fonts.disabled = !loaded;
-    setAttributeMessage(buttons.fonts,'title',message(current?.fonts?.state().initialIssues
-      ? '部分字体无法用于编辑，请打开字体工具检查' : '字体与缺字'));
+    setAttributeMessage(
+      buttons.fonts,
+      'title',
+      message(current?.fonts?.state().initialIssues ? '部分字体无法用于编辑，请打开字体工具检查' : '字体与缺字'),
+    );
     buttons.fonts.toggleAttribute('data-has-issue', !!current?.fonts?.state().initialIssues);
     buttons.exportDocument.disabled = !loaded;
     for (const button of [buttons.addShape, buttons.addImage, buttons.media, slideSizeButton, buttons.addTable]) {
@@ -115,18 +160,24 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     slideCount.textContent = String(total);
     if (!editor) setText(documentKind, '未打开文稿');
     else if (editor.doc.meta.readonly) setText(documentKind, '{format} · 只读预览', { format: editor.doc.meta.source.toUpperCase() });
-    else setText(documentKind, editor.doc.meta.source === 'ppt'
-      ? pptConversionAccepted ? 'PPT → PPTX · 可编辑' : 'PPT · 转换后可编辑' : 'PPTX · 可编辑');
+    else
+      setText(
+        documentKind,
+        editor.doc.meta.source === 'ppt' ? (pptConversionAccepted ? 'PPT → PPTX · 可编辑' : 'PPT · 转换后可编辑') : 'PPTX · 可编辑',
+      );
     const name = `${editor?.isDirty() ? '● ' : ''}${activeName}`;
     fileName.textContent = name;
     setText(document.querySelector('title')!, '{name} · Web-PPT 编辑器', { name });
-    viewport.syncSelection(); application?.tools?.sync();
+    viewport.syncSelection();
+    application?.tools?.sync();
     commentsButton.disabled = !loaded;
     application?.recovery.sync(current?.session ?? null);
   }
   const hideLoading = () => {
     if (signal.aborted) return;
-    canvasState.hidden = true; delete app.dataset.loading; syncControls();
+    canvasState.hidden = true;
+    delete app.dataset.loading;
+    syncControls();
   };
   const showOpenFailure = (error: SiteMessage) => {
     if (signal.aborted) return;
@@ -134,10 +185,12 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     canvasState.querySelector('.spinner')?.setAttribute('hidden', '');
     setText(canvasState.querySelector('strong')!, '演示文稿打开失败');
     setMessage(canvasState.querySelector('small')!, error);
-    delete app.dataset.loading; notice(error, 'error'); syncControls();
+    delete app.dataset.loading;
+    notice(error, 'error');
+    syncControls();
   };
-  const confirmReplacement = () => !signal.aborted && (!current?.session.editor.isDirty()
-    || window.confirm(t('当前修改还没有保存，仍然打开另一份文件吗？')));
+  const confirmReplacement = () =>
+    !signal.aborted && (!current?.session.editor.isDirty() || window.confirm(t('当前修改还没有保存，仍然打开另一份文件吗？')));
   const openDocument: EditorOpenHost['open'] = async (source, name, options, requestSignal) => {
     const owner = application;
     const stale = () => signal.aborted || requestSignal.aborted;
@@ -147,36 +200,59 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     setMessage(canvasState.querySelector('strong')!, message('正在打开 {name}', { name }));
     setText(canvasState.querySelector('small')!, '解析和渲染完全在浏览器中进行');
     canvasState.querySelector('.spinner')?.removeAttribute('hidden');
-    app.dataset.loading = 'true'; syncControls();
+    app.dataset.loading = 'true';
+    syncControls();
     notice(message('正在打开 {name}', { name }));
     try {
       const prepared = await prepareEditorDocument(source, owner.recovery, requestSignal);
       const next = prepared.session;
-      if (stale()) { next.dispose(); return; }
+      if (stale()) {
+        next.dispose();
+        return;
+      }
       current = null;
       owner.tools?.bindSession();
       viewport.reset(!next.editor.doc.meta.readonly && next.editor.doc.meta.source !== 'ppt' ? 'edit' : 'view');
       viewport.renderNavigation();
-      const mounted = await owner.replace(next, {
-        mode: viewport.mode, zoom: 1, snapping: true, onSlideChange: viewport.onSlideChange,
-        onTouchNavigate: viewport.onTouchNavigate, onContextRequest: viewport.onContextRequest, onError: reportError,
-      }, prepared.modules, requestSignal);
+      const mounted = await owner.replace(
+        next,
+        {
+          mode: viewport.mode,
+          zoom: 1,
+          snapping: true,
+          onSlideChange: viewport.onSlideChange,
+          onTouchNavigate: viewport.onTouchNavigate,
+          onContextRequest: viewport.onContextRequest,
+          onError: reportError,
+        },
+        prepared.modules,
+        requestSignal,
+      );
       if (!mounted || stale()) return;
-      current = mounted; activeName = name; newDocument = !!options.newDocument; pptConversionAccepted = false;
-      owner.tools?.bindSession(); viewport.renderNavigation();
-      hideLoading(); viewport.fitOnNextFrame();
-      const readyMessage = next.editor.doc.meta.source === 'ppt'
-        ? message('{name} 已打开；进入编辑时会先确认另存为 {output}', { name, output: outputName() })
-        : next.editor.doc.meta.readonly
-          ? message('{name} 已打开；当前文件缺少安全写回上下文，只能预览', { name })
-          : message('{name} 已就绪，可直接选择、拖动或双击编辑文字', { name });
+      current = mounted;
+      activeName = name;
+      newDocument = !!options.newDocument;
+      pptConversionAccepted = false;
+      owner.tools?.bindSession();
+      viewport.renderNavigation();
+      hideLoading();
+      viewport.fitOnNextFrame();
+      const readyMessage =
+        next.editor.doc.meta.source === 'ppt'
+          ? message('{name} 已打开；进入编辑时会先确认另存为 {output}', { name, output: outputName() })
+          : next.editor.doc.meta.readonly
+            ? message('{name} 已打开；当前文件缺少安全写回上下文，只能预览', { name })
+            : message('{name} 已就绪，可直接选择、拖动或双击编辑文字', { name });
       notice(readyMessage, canWriteDocument() ? 'success' : 'normal');
       mounted.view.element.focus();
     } catch (error) {
       if (stale()) return;
       const failure = await editorOpenFailure(error);
-      if (current) { hideLoading(); notice(failure, 'error'); current.view.element.focus(); }
-      else showOpenFailure(failure);
+      if (current) {
+        hideLoading();
+        notice(failure, 'error');
+        current.view.element.focus();
+      } else showOpenFailure(failure);
     }
   };
   const stop = () => {
@@ -185,18 +261,31 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
     lifetime.abort();
     // 会话还要完成已提交的文件交付，但 SDK 画布与面板不能继续接收编辑意图。
     canvasMount.inert = objectList.inert = true;
-    current?.view.setMode('view'); current?.pane.setMode('view');
+    current?.view.setMode('view');
+    current?.pane.setMode('view');
     for (const button of Object.values(buttons)) button.disabled = true;
     fileInput.disabled = commentsButton.disabled = slideSizeButton.disabled = true;
   };
   return {
-    get current() { return current; }, notice,
+    get current() {
+      return current;
+    },
+    notice,
     host: {
-      canvas: canvasMount, objects: objectList,
-      tools: { snapshot: () => ({ session: current?.session ?? null, view: current?.view ?? null,
-        fonts: current?.fonts,
-        adjustments: current?.adjustments ?? null, name: activeName, writable: ready() && canMutateDocument() && viewport.mode === 'edit' }),
-        showSlide: viewport.showSlide, openInspector: viewport.openInspector },
+      canvas: canvasMount,
+      objects: objectList,
+      tools: {
+        snapshot: () => ({
+          session: current?.session ?? null,
+          view: current?.view ?? null,
+          fonts: current?.fonts,
+          adjustments: current?.adjustments ?? null,
+          name: activeName,
+          writable: ready() && canMutateDocument() && viewport.mode === 'edit',
+        }),
+        showSlide: viewport.showSlide,
+        openInspector: viewport.openInspector,
+      },
       textTools: [toolbar, document.querySelector<HTMLElement>('#siteLanguage')!, inspectorElement],
       onChange(change) {
         if (signal.aborted) return;
@@ -210,7 +299,10 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
           for (const id of change.touchedElements) {
             let record = current.session.editor.doc.elements[id];
             while (record) {
-              if (current.session.editor.doc.slides[record.parent]) { affected.add(record.parent); break; }
+              if (current.session.editor.doc.slides[record.parent]) {
+                affected.add(record.parent);
+                break;
+              }
               record = current.session.editor.doc.elements[record.parent];
             }
           }
@@ -218,29 +310,61 @@ function createPage(lifetime: AbortController): EditorPage & { release(): void }
           if (!affected.size && change.touchedElements.size) affected.add(current.view.slideId);
           viewport.refreshNavigation(affected);
         }
-        syncControls(); void application?.recovery.flush(current?.session ?? null);
+        syncControls();
+        void application?.recovery.flush(current?.session ?? null);
       },
     },
-    fileHost: { buttons, sync: syncControls, snapshot: () => ({ session: current?.session ?? null,
-      name: outputName(), writable: !signal.aborted && canMutateDocument(), loading: !!app.dataset.loading,
-      showComments: application?.tools?.showComments ?? false }) },
-    openHost: { input: fileInput, dropLayer, newFile: buttons.newFile,
-      confirmReplacement, open: openDocument, failed: showOpenFailure, cancelled: hideLoading },
-    connect(owner) { if (!signal.aborted) { application = owner; syncControls(); } },
+    fileHost: {
+      buttons,
+      sync: syncControls,
+      snapshot: () => ({
+        session: current?.session ?? null,
+        name: outputName(),
+        writable: !signal.aborted && canMutateDocument(),
+        loading: !!app.dataset.loading,
+        showComments: application?.tools?.showComments ?? false,
+      }),
+    },
+    openHost: {
+      input: fileInput,
+      dropLayer,
+      newFile: buttons.newFile,
+      confirmReplacement,
+      open: openDocument,
+      failed: showOpenFailure,
+      cancelled: hideLoading,
+    },
+    connect(owner) {
+      if (!signal.aborted) {
+        application = owner;
+        syncControls();
+      }
+    },
     stop,
     release() {
       if (released) return;
       released = true;
-      stop(); current = null; application = undefined;
-      delete app.dataset.loading; dropLayer.hidden = true;
-      canvasMount.replaceChildren(); objectList.replaceChildren(); slideList.replaceChildren();
+      stop();
+      current = null;
+      application = undefined;
+      delete app.dataset.loading;
+      dropLayer.hidden = true;
+      canvasMount.replaceChildren();
+      objectList.replaceChildren();
+      slideList.replaceChildren();
       canvasMount.inert = objectList.inert = false;
-      pageIndicator.textContent = '— / —'; slideCount.textContent = '0'; zoomLabel.textContent = '100%';
+      pageIndicator.textContent = '— / —';
+      slideCount.textContent = '0';
+      zoomLabel.textContent = '100%';
       fileName.textContent = '';
       setText(document.querySelector('title')!, '在线 PPT 编辑器 · Web-PPT');
-      setText(documentKind, '未打开文稿'); setText(statusText, '未打开文稿'); statusText.dataset.tone = 'normal';
-      canvasState.hidden = false; canvasState.querySelector('.spinner')?.setAttribute('hidden', '');
-      setText(canvasState.querySelector('strong')!, '未打开文稿'); setMessage(canvasState.querySelector('small')!, '');
+      setText(documentKind, '未打开文稿');
+      setText(statusText, '未打开文稿');
+      statusText.dataset.tone = 'normal';
+      canvasState.hidden = false;
+      canvasState.querySelector('.spinner')?.setAttribute('hidden', '');
+      setText(canvasState.querySelector('strong')!, '未打开文稿');
+      setMessage(canvasState.querySelector('small')!, '');
     },
   };
 }

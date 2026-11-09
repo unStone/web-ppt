@@ -26,7 +26,10 @@ export interface PresetAdjustmentHit {
   readonly distance: number;
 }
 
-export interface PresetAdjustmentPoint { readonly x: number; readonly y: number }
+export interface PresetAdjustmentPoint {
+  readonly x: number;
+  readonly y: number;
+}
 
 const MIN_ADJUSTMENT = -2147483648;
 const MAX_ADJUSTMENT = 2147483647;
@@ -46,17 +49,10 @@ function handleValues(
 ): Record<string, number> {
   // a:ahLst 的约束可把百分比调节值与 ssd* 坐标混用；必须按 Office 的 EMU
   // 坐标空间求值，过早换成 px 会把 star24 等形状的上限缩小 9525 倍。
-  return presetGuideValues(
-    width * EMU_PER_CSS_PX, height * EMU_PER_CSS_PX,
-    definition[0], definition[1], adjustments,
-  );
+  return presetGuideValues(width * EMU_PER_CSS_PX, height * EMU_PER_CSS_PX, definition[0], definition[1], adjustments);
 }
 
-function constraint(
-  raw: RawPresetHandle,
-  values: Readonly<Record<string, number>>,
-  first: boolean,
-): PresetAdjustmentValue | null {
+function constraint(raw: RawPresetHandle, values: Readonly<Record<string, number>>, first: boolean): PresetAdjustmentValue | null {
   const offset = first ? 1 : 4;
   const name = raw[offset];
   if (!name) return null;
@@ -70,7 +66,8 @@ function constraint(
   const current = Math.min(max, Math.max(min, values[name] ?? 0));
   return {
     axis: first ? firstAxis : secondAxis,
-    name, value: current,
+    name,
+    value: current,
     min: Number.isFinite(min) ? min : MIN_ADJUSTMENT,
     max: Number.isFinite(max) ? max : MAX_ADJUSTMENT,
   };
@@ -88,32 +85,22 @@ function resolveHandle(
   const first = constraint(raw, values, true);
   const second = constraint(raw, values, false);
   return {
-    index, kind: raw[0],
+    index,
+    kind: raw[0],
     x: guideToken(raw[7], values) / EMU_PER_CSS_PX,
     y: guideToken(raw[8], values) / EMU_PER_CSS_PX,
     adjustments: [first, second].filter((value): value is PresetAdjustmentValue => !!value),
   };
 }
 
-export function resolvePresetAdjustmentHandles(
-  geometry: GeomSpec,
-  width: number,
-  height: number,
-): readonly PresetAdjustmentHandle[] {
+export function resolvePresetAdjustmentHandles(geometry: GeomSpec, width: number, height: number): readonly PresetAdjustmentHandle[] {
   assertFrame(width, height);
   const definition = PRESET_HANDLE_DEFINITIONS[geometry.preset];
   if (!definition) return [];
-  return definition[2].map((raw, index) =>
-    resolveHandle(raw, definition, geometry.adj, width, height, index));
+  return definition[2].map((raw, index) => resolveHandle(raw, definition, geometry.adj, width, height, index));
 }
 
-export function clampPresetAdjustment(
-  geometry: GeomSpec,
-  width: number,
-  height: number,
-  name: string,
-  value: number,
-): number {
+export function clampPresetAdjustment(geometry: GeomSpec, width: number, height: number, name: string, value: number): number {
   if (typeof name !== 'string' || !name || !Number.isFinite(value)) {
     throw new Error('预设调节值名称和值无效');
   }
@@ -186,9 +173,7 @@ export function dragPresetAdjustmentHandle(
   for (let pass = 0; pass < 3; pass++) {
     const handle = resolveHandle(raw, definition, result.adj, width, height, handleIndex);
     for (const adjustment of handle.adjustments) {
-      const value = bestAdjustment(
-        result, definition, raw, handleIndex, adjustment, width, height, target,
-      );
+      const value = bestAdjustment(result, definition, raw, handleIndex, adjustment, width, height, target);
       result = { ...result, adj: { ...result.adj, [adjustment.name]: value } };
     }
   }
@@ -200,8 +185,8 @@ export function hitTestPresetAdjustmentHandles(
   point: PresetAdjustmentPoint,
   tolerance: number,
 ): PresetAdjustmentHit | null {
-  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)
-    || !Number.isFinite(tolerance) || tolerance < 0) throw new Error('句柄命中参数无效');
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || !Number.isFinite(tolerance) || tolerance < 0)
+    throw new Error('句柄命中参数无效');
   let hit: PresetAdjustmentHit | null = null;
   for (const handle of handles) {
     const distance = Math.sqrt(distanceSquared(handle, point));

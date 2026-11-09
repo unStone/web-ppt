@@ -14,12 +14,16 @@ import type { CommandPatches, ElementHierarchyPatch, GroupCommand } from './type
 import { cloneHierarchyRecord } from './hierarchy-record';
 import { isCanvasRoot } from '../design-target';
 
-interface GroupFrame { x: number; y: number; w: number; h: number }
+interface GroupFrame {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 function assertIds(ids: unknown): asserts ids is readonly ElementId[] {
   assertDataArray(ids, 'Group.ids');
-  if (ids.length < 2 || ids.some((id) => typeof id !== 'string' || !id)
-    || new Set(ids).size !== ids.length) {
+  if (ids.length < 2 || ids.some((id) => typeof id !== 'string' || !id) || new Set(ids).size !== ids.length) {
     throw new Error('Group.ids 必须包含至少两个不重复元素身份');
   }
 }
@@ -29,15 +33,19 @@ function groupFrame(doc: EditDoc, ids: readonly ElementId[]): GroupFrame {
     const element = effectiveElement(doc, id);
     const matrix = elementFrameToParentMatrix(element);
     return [
-      { x: 0, y: 0 }, { x: element.w, y: 0 },
-      { x: element.w, y: element.h }, { x: 0, y: element.h },
+      { x: 0, y: 0 },
+      { x: element.w, y: 0 },
+      { x: element.w, y: element.h },
+      { x: 0, y: element.h },
     ].map((point) => transformSpacePoint(matrix, point));
   });
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);
   const frame = {
-    x: Math.min(...xs), y: Math.min(...ys),
-    w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys),
+    x: Math.min(...xs),
+    y: Math.min(...ys),
+    w: Math.max(...xs) - Math.min(...xs),
+    h: Math.max(...ys) - Math.min(...ys),
   };
   assertFrameRect(frame, '组合边界');
   return frame;
@@ -64,9 +72,18 @@ function insertionSource(spid: number, name: string, frame: GroupFrame): Element
 
 function sourceGroup(spid: number | undefined, name: string, frame: GroupFrame): GroupElement {
   return {
-    kind: 'group', ...(spid === undefined ? {} : { id: spid }), name,
-    ...frame, rot: 0, flipH: false, flipV: false,
-    childX: frame.x, childY: frame.y, scaleX: 1, scaleY: 1, children: [],
+    kind: 'group',
+    ...(spid === undefined ? {} : { id: spid }),
+    name,
+    ...frame,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    childX: frame.x,
+    childY: frame.y,
+    scaleX: 1,
+    scaleY: 1,
+    children: [],
   };
 }
 
@@ -97,61 +114,80 @@ export function groupPatches(doc: EditDoc, command: GroupCommand, origin: string
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '组合' : `组合 ${spid}`;
   const top = ordered.reduce((candidate, current) =>
-    elementOrder(doc.elements[current]) > elementOrder(doc.elements[candidate]) ? current : candidate);
+    elementOrder(doc.elements[current]) > elementOrder(doc.elements[candidate]) ? current : candidate,
+  );
   const group: ElementRecord = {
-    id, parent, z: elementOrder(doc.elements[top]),
-    src: sourceGroup(spid, name, frame), ovr: {},
+    id,
+    parent,
+    z: elementOrder(doc.elements[top]),
+    src: sourceGroup(spid, name, frame),
+    ovr: {},
     meta: {
-      editable: 'full', created: true,
-      ...(part && spid !== undefined ? {
-        origin: { part, spid }, insertion: insertionSource(spid, name, frame),
-      } : {}),
+      editable: 'full',
+      created: true,
+      ...(part && spid !== undefined
+        ? {
+            origin: { part, spid },
+            insertion: insertionSource(spid, name, frame),
+          }
+        : {}),
     },
     children: ordered,
   };
-  const moved = Object.fromEntries(ordered.map((childId, index) => {
-    const before = doc.elements[childId];
-    const cloned = cloneHierarchyRecord(before);
-    const { order: _order, ...withoutOrder } = cloned;
-    const z = initialFractionalIndex(index);
-    return [childId, {
-      ...withoutOrder, parent: id, z, order: z,
-      meta: {
-        ...cloned.meta,
-        ...(!before.meta.created && before.meta.sourceParent === undefined
-          ? { sourceParent: before.parent } : {}),
-      },
-    } satisfies ElementRecord];
-  }));
+  const moved = Object.fromEntries(
+    ordered.map((childId, index) => {
+      const before = doc.elements[childId];
+      const cloned = cloneHierarchyRecord(before);
+      const { order: _order, ...withoutOrder } = cloned;
+      const z = initialFractionalIndex(index);
+      return [
+        childId,
+        {
+          ...withoutOrder,
+          parent: id,
+          z,
+          order: z,
+          meta: {
+            ...cloned.meta,
+            ...(!before.meta.created && before.meta.sourceParent === undefined ? { sourceParent: before.parent } : {}),
+          },
+        } satisfies ElementRecord,
+      ];
+    }),
+  );
   const nextSiblings = siblings.filter((childId) => !requested.has(childId));
-  const insertionIndex = nextSiblings.findIndex((childId) =>
-    elementOrder(doc.elements[childId]) > group.z);
+  const insertionIndex = nextSiblings.findIndex((childId) => elementOrder(doc.elements[childId]) > group.z);
   nextSiblings.splice(insertionIndex < 0 ? nextSiblings.length : insertionIndex, 0, id);
   const forward: ElementHierarchyPatch = {
-    op: 'set', path: ['elements', id, 'hierarchy'], origin,
+    op: 'set',
+    path: ['elements', id, 'hierarchy'],
+    origin,
     value: {
-      parent, affected: [id, ...ordered],
+      parent,
+      affected: [id, ...ordered],
       records: { [id]: group, ...moved },
       children: { [parent]: nextSiblings, [id]: ordered },
       removed: { [id]: null },
     },
   };
   const inverse: ElementHierarchyPatch = {
-    op: 'set', path: ['elements', id, 'hierarchy'], origin,
+    op: 'set',
+    path: ['elements', id, 'hierarchy'],
+    origin,
     value: {
-      parent, affected: [id, ...ordered],
+      parent,
+      affected: [id, ...ordered],
       records: {
         [id]: null,
-        ...Object.fromEntries(ordered.map((childId) => [
-          childId, cloneHierarchyRecord(doc.elements[childId]),
-        ])),
+        ...Object.fromEntries(ordered.map((childId) => [childId, cloneHierarchyRecord(doc.elements[childId])])),
       },
       children: { [parent]: [...siblings] },
       removed: { [id]: null },
     },
   };
   return {
-    forward: [forward], inverse: [inverse],
+    forward: [forward],
+    inverse: [inverse],
     selection: { kind: 'elements', ids: [id], enteredGroup: isCanvasRoot(doc, parent) ? null : parent },
   };
 }

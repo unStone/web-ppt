@@ -19,7 +19,10 @@ function chunk(type, data) {
   const out = new Uint8Array(12 + data.length);
   const dv = new DataView(out.buffer);
   dv.setUint32(0, data.length);
-  out.set([...type].map((c) => c.charCodeAt(0)), 4);
+  out.set(
+    [...type].map((c) => c.charCodeAt(0)),
+    4,
+  );
   out.set(data, 8);
   dv.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
   return out;
@@ -38,15 +41,23 @@ export function makePng(w, h, pixelFn, dpi, alpha = false) {
   dv.setUint32(0, w);
   dv.setUint32(4, h);
   ihdr.set([8, alpha ? 6 : 2, 0, 0, 0], 8);
-  const physical = dpi === undefined ? [] : [chunk('pHYs', (() => {
-    const data = new Uint8Array(9);
-    const view = new DataView(data.buffer);
-    const pixelsPerMeter = Math.round(dpi / 0.0254);
-    view.setUint32(0, pixelsPerMeter);
-    view.setUint32(4, pixelsPerMeter);
-    data[8] = 1;
-    return data;
-  })())];
+  const physical =
+    dpi === undefined
+      ? []
+      : [
+          chunk(
+            'pHYs',
+            (() => {
+              const data = new Uint8Array(9);
+              const view = new DataView(data.buffer);
+              const pixelsPerMeter = Math.round(dpi / 0.0254);
+              view.setUint32(0, pixelsPerMeter);
+              view.setUint32(4, pixelsPerMeter);
+              data[8] = 1;
+              return data;
+            })(),
+          ),
+        ];
   return concat([
     new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk('IHDR', ihdr),
@@ -90,7 +101,11 @@ export function makeWav(seconds = 0.05, rate = 8000) {
   const samples = Math.floor(seconds * rate);
   const out = new Uint8Array(44 + samples);
   const view = new DataView(out.buffer);
-  const ascii = (offset, value) => out.set([...value].map((char) => char.charCodeAt(0)), offset);
+  const ascii = (offset, value) =>
+    out.set(
+      [...value].map((char) => char.charCodeAt(0)),
+      offset,
+    );
   ascii(0, 'RIFF');
   view.setUint32(4, 36 + samples, true);
   ascii(8, 'WAVE');
@@ -135,9 +150,7 @@ export function makeExifJpeg(width, height, dpiX, dpiY) {
   app1.set([0xff, 0xe1]);
   new DataView(app1.buffer).setUint16(2, exif.length + 2);
   app1.set(exif, 4);
-  const sof = new Uint8Array([
-    0xff, 0xc0, 0, 11, 8, height >>> 8, height & 0xff, width >>> 8, width & 0xff, 1, 1, 0x11, 0,
-  ]);
+  const sof = new Uint8Array([0xff, 0xc0, 0, 11, 8, height >>> 8, height & 0xff, width >>> 8, width & 0xff, 1, 1, 0x11, 0]);
   return concat([new Uint8Array([0xff, 0xd8]), app1, sof, new Uint8Array([0xff, 0xd9])]);
 }
 
@@ -231,7 +244,24 @@ export const nextShapeId = () => ++shapeId;
 
 /** 便捷形状构造 */
 /** `bodyPr` 覆盖 txBody 的默认 <a:bodyPr anchor="ctr"/>，用于测自动缩放等文本框属性 */
-export function sp({ x, y, w, h, prst = 'rect', avLst = '', fill = '', ln = '', effect = '', text = '', rot, flipH, flipV, name = 'sp', bodyPr = '', lstStyle = '' }) {
+export function sp({
+  x,
+  y,
+  w,
+  h,
+  prst = 'rect',
+  avLst = '',
+  fill = '',
+  ln = '',
+  effect = '',
+  text = '',
+  rot,
+  flipH,
+  flipV,
+  name = 'sp',
+  bodyPr = '',
+  lstStyle = '',
+}) {
   const xfrmAttrs = [rot ? ` rot="${rot}"` : '', flipH ? ' flipH="1"' : '', flipV ? ' flipV="1"' : ''].join('');
   return `<p:sp>
 <p:nvSpPr><p:cNvPr id="${nextShapeId()}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
@@ -245,7 +275,8 @@ export function label(t, size = 900, color = '404040') {
   return `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="${size}"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`;
 }
 
-export const solid = (c) => `<a:solidFill>${c.startsWith('accent') || ['tx1', 'tx2', 'bg1', 'bg2'].includes(c) ? `<a:schemeClr val="${c}"/>` : `<a:srgbClr val="${c}"/>`}</a:solidFill>`;
+export const solid = (c) =>
+  `<a:solidFill>${c.startsWith('accent') || ['tx1', 'tx2', 'bg1', 'bg2'].includes(c) ? `<a:schemeClr val="${c}"/>` : `<a:srgbClr val="${c}"/>`}</a:solidFill>`;
 
 /** `attrs` 用于给 <p:sld> 加属性，例如隐藏页的 show="0" */
 export function slideXml(body, bg = '', attrs = '') {
@@ -271,17 +302,32 @@ ${body}
  * `extraTypes` 追加 [Content_Types] 的 Override，`extraEntries` 追加任意部件。
  */
 export function deck({
-  name = 'Fixture', width, height, slides, presExtra = '', presRels = '', extraTypes = '',
-  extraEntries = [], masterShapes = '', layoutShapes = '', slideRelationships = [],
+  name = 'Fixture',
+  width,
+  height,
+  slides,
+  presExtra = '',
+  presRels = '',
+  extraTypes = '',
+  extraEntries = [],
+  masterShapes = '',
+  layoutShapes = '',
+  slideRelationships = [],
   bgFillStyleLst = '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'.repeat(3),
 }) {
-  const slideOverrides = slides.map((_, i) =>
-    `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
+  const slideOverrides = slides
+    .map(
+      (_, i) =>
+        `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`,
+    )
+    .join('');
   const rel = (items) => `${XML}<Relationships xmlns="${NS.rel}">${items}</Relationships>`;
   const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
   const entries = [
-    ['[Content_Types].xml', `${XML}<Types xmlns="${NS.ct}">
+    [
+      '[Content_Types].xml',
+      `${XML}<Types xmlns="${NS.ct}">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="xml" ContentType="application/xml"/>
 <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
@@ -289,18 +335,28 @@ export function deck({
 <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
 ${slideOverrides}${extraTypes}
 <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
-</Types>`],
+</Types>`,
+    ],
     ['_rels/.rels', rel(`<Relationship Id="rId1" Type="${REL}/officeDocument" Target="ppt/presentation.xml"/>`)],
-    ['ppt/presentation.xml', `${XML}<p:presentation xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
+    [
+      'ppt/presentation.xml',
+      `${XML}<p:presentation xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
 <p:sldIdLst>${slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join('')}</p:sldIdLst>
-<p:sldSz cx="${px(width)}" cy="${px(height)}"/><p:notesSz cx="6858000" cy="9144000"/>${presExtra}</p:presentation>`],
-    ['ppt/_rels/presentation.xml.rels', rel(
-      `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="slideMasters/slideMaster1.xml"/>` +
-      slides.map((_, i) => `<Relationship Id="rId${i + 2}" Type="${REL}/slide" Target="slides/slide${i + 1}.xml"/>`).join('') +
-      `<Relationship Id="rId${slides.length + 2}" Type="${REL}/theme" Target="theme/theme1.xml"/>` +
-      presRels)],
-    ['ppt/theme/theme1.xml', `${XML}<a:theme xmlns:a="${NS.a}" name="${name}">
+<p:sldSz cx="${px(width)}" cy="${px(height)}"/><p:notesSz cx="6858000" cy="9144000"/>${presExtra}</p:presentation>`,
+    ],
+    [
+      'ppt/_rels/presentation.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="slideMasters/slideMaster1.xml"/>`
+          + slides.map((_, i) => `<Relationship Id="rId${i + 2}" Type="${REL}/slide" Target="slides/slide${i + 1}.xml"/>`).join('')
+          + `<Relationship Id="rId${slides.length + 2}" Type="${REL}/theme" Target="theme/theme1.xml"/>`
+          + presRels,
+      ),
+    ],
+    [
+      'ppt/theme/theme1.xml',
+      `${XML}<a:theme xmlns:a="${NS.a}" name="${name}">
 <a:themeElements>
 <a:clrScheme name="${name}">
 <a:dk1><a:sysClr val="windowText" lastClr="1A1A1A"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>
@@ -321,8 +377,11 @@ ${slideOverrides}${extraTypes}
 <a:bgFillStyleLst>${bgFillStyleLst}</a:bgFillStyleLst>
 </a:fmtScheme>
 </a:themeElements>
-</a:theme>`],
-    ['ppt/slideMasters/slideMaster1.xml', `${XML}<p:sldMaster xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
+</a:theme>`,
+    ],
+    [
+      'ppt/slideMasters/slideMaster1.xml',
+      `${XML}<p:sldMaster xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld>
 <p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>
 <p:spTree>${nvGrp}${masterShapes}</p:spTree></p:cSld>
@@ -333,18 +392,30 @@ ${slideOverrides}${extraTypes}
 <p:bodyStyle><a:lvl1pPr><a:buNone/><a:defRPr sz="1600"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:defRPr></a:lvl1pPr></p:bodyStyle>
 <p:otherStyle><a:lvl1pPr><a:defRPr sz="1400"/></a:lvl1pPr></p:otherStyle>
 </p:txStyles>
-</p:sldMaster>`],
-    ['ppt/slideMasters/_rels/slideMaster1.xml.rels', rel(
-      `<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>` +
-      `<Relationship Id="rId2" Type="${REL}/theme" Target="../theme/theme1.xml"/>`)],
-    ['ppt/slideLayouts/slideLayout1.xml', `${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj">
+</p:sldMaster>`,
+    ],
+    [
+      'ppt/slideMasters/_rels/slideMaster1.xml.rels',
+      rel(
+        `<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`
+          + `<Relationship Id="rId2" Type="${REL}/theme" Target="../theme/theme1.xml"/>`,
+      ),
+    ],
+    [
+      'ppt/slideLayouts/slideLayout1.xml',
+      `${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj">
 <p:cSld name="Blank"><p:spTree>${nvGrp}${layoutShapes}</p:spTree></p:cSld>
-<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`],
-    ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', rel(
-      `<Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`)],
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`,
+    ],
+    [
+      'ppt/slideLayouts/_rels/slideLayout1.xml.rels',
+      rel(`<Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/>`),
+    ],
   ];
   slides.forEach((xml, i) => {
-    const slideRels = rel(`<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${slideRelationships[i] ?? ''}`);
+    const slideRels = rel(
+      `<Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${slideRelationships[i] ?? ''}`,
+    );
     entries.push([`ppt/slides/slide${i + 1}.xml`, xml]);
     entries.push([`ppt/slides/_rels/slide${i + 1}.xml.rels`, slideRels]);
   });
@@ -361,20 +432,20 @@ ${slideOverrides}${extraTypes}
  */
 export function writeCfb(streams) {
   const SECTOR = 512;
-  const padded = streams.map(([name, data]) => [name, data.length < 4096
-    ? Buffer.concat([data, Buffer.alloc(4096 - data.length)]) : data]);
+  const padded = streams.map(([name, data]) => [name, data.length < 4096 ? Buffer.concat([data, Buffer.alloc(4096 - data.length)]) : data]);
 
-  const dirEntries = 1 + padded.length;                 // Root + 各流
+  const dirEntries = 1 + padded.length; // Root + 各流
   const dirSectors = Math.ceil(dirEntries / 4);
   const streamSectors = padded.map(([, d]) => Math.ceil(d.length / SECTOR));
   const totalData = streamSectors.reduce((a, b) => a + b, 0);
-  const fatEntries = 1 + dirSectors + totalData;        // FAT 自身 + 目录 + 数据
+  const fatEntries = 1 + dirSectors + totalData; // FAT 自身 + 目录 + 数据
   const fatSectors = Math.ceil(fatEntries / (SECTOR / 4));
 
   const fat = Buffer.alloc(fatSectors * SECTOR, 0xff);
   const setFat = (i, v) => fat.writeUInt32LE(v >>> 0, i * 4);
   let next = 0;
-  const fatStart = next; for (let i = 0; i < fatSectors; i++) setFat(next++, 0xfffffffd);
+  const fatStart = next;
+  for (let i = 0; i < fatSectors; i++) setFat(next++, 0xfffffffd);
   const dirStart = next;
   for (let i = 0; i < dirSectors; i++) setFat(next, i === dirSectors - 1 ? 0xfffffffe : next + 1), next++;
   const starts = [];
@@ -389,10 +460,10 @@ export function writeCfb(streams) {
     const nm = Buffer.from(name + ' ', 'utf16le');
     nm.copy(dir, off);
     dir.writeUInt16LE(nm.length, off + 64);
-    dir.writeUInt8(type, off + 66);        // 5=Root 2=Stream
-    dir.writeUInt8(1, off + 67);           // color: black
-    dir.writeInt32LE(-1, off + 68);        // left
-    dir.writeInt32LE(-1, off + 72);        // right
+    dir.writeUInt8(type, off + 66); // 5=Root 2=Stream
+    dir.writeUInt8(1, off + 67); // color: black
+    dir.writeInt32LE(-1, off + 68); // left
+    dir.writeInt32LE(-1, off + 72); // right
     dir.writeInt32LE(type === 5 ? 1 : -1, off + 76); // child
     dir.writeUInt32LE(start >>> 0, off + 116);
     dir.writeUInt32LE(size >>> 0, off + 120);
@@ -406,21 +477,24 @@ export function writeCfb(streams) {
 
   const header = Buffer.alloc(SECTOR);
   Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(header, 0);
-  header.writeUInt16LE(0x003e, 24);       // minor version
-  header.writeUInt16LE(3, 26);            // major version（512 字节扇区）
-  header.writeUInt16LE(0xfffe, 28);       // 小端标记
-  header.writeUInt16LE(9, 30);            // 扇区大小 = 1<<9
-  header.writeUInt16LE(6, 32);            // 迷你扇区大小 = 1<<6
+  header.writeUInt16LE(0x003e, 24); // minor version
+  header.writeUInt16LE(3, 26); // major version（512 字节扇区）
+  header.writeUInt16LE(0xfffe, 28); // 小端标记
+  header.writeUInt16LE(9, 30); // 扇区大小 = 1<<9
+  header.writeUInt16LE(6, 32); // 迷你扇区大小 = 1<<6
   header.writeUInt32LE(fatSectors, 44);
   header.writeUInt32LE(dirStart, 48);
-  header.writeUInt32LE(4096, 56);         // mini stream cutoff
-  header.writeUInt32LE(0xfffffffe, 60);   // 无 MiniFAT
+  header.writeUInt32LE(4096, 56); // mini stream cutoff
+  header.writeUInt32LE(0xfffffffe, 60); // 无 MiniFAT
   header.writeUInt32LE(0, 64);
-  header.writeUInt32LE(0xfffffffe, 68);   // 无 DIFAT 扩展
+  header.writeUInt32LE(0xfffffffe, 68); // 无 DIFAT 扩展
   header.writeUInt32LE(0, 72);
   for (let i = 0; i < 109; i++) header.writeUInt32LE(i < fatSectors ? fatStart + i : 0xffffffff, 76 + i * 4);
 
-  const body = [fat, dir, ...padded.map(([, d]) =>
-    d.length % SECTOR ? Buffer.concat([d, Buffer.alloc(SECTOR - (d.length % SECTOR))]) : d)];
+  const body = [
+    fat,
+    dir,
+    ...padded.map(([, d]) => (d.length % SECTOR ? Buffer.concat([d, Buffer.alloc(SECTOR - (d.length % SECTOR))]) : d)),
+  ];
   return Buffer.concat([header, ...body]);
 }

@@ -21,13 +21,16 @@ export function assertSharedGrowthSpace(shared: SharedGroup, resource: InsertedR
     const family = sharedXYFamilyByKey(shared, key);
     add(family, xyRecordLayout(family, record));
   }
-  spaces.sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
-  for (let index = 0; index < spaces.length; index++) for (let peer = 0; peer < index; peer++) {
-    const a = spaces[index], b = spaces[peer];
-    if (a.sheet !== b.sheet) continue;
-    const overlaps = a.horizontal === b.horizontal
-      ? a.start <= b.end && b.start <= a.end && [...a.lanes].some(lane => b.lanes.has(lane))
-      : [...a.lanes].some(lane => lane >= b.start && lane <= b.end) && [...b.lanes].some(lane => lane >= a.start && lane <= a.end);
-    if (overlaps) throw new Error(`共享记录扩展区域 ${decodeURIComponent(a.key)} 与 ${decodeURIComponent(b.key)} 重叠`);
-  }
+  spaces.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  for (let index = 0; index < spaces.length; index++)
+    for (let peer = 0; peer < index; peer++) {
+      const a = spaces[index],
+        b = spaces[peer];
+      if (a.sheet !== b.sheet) continue;
+      const overlaps =
+        a.horizontal === b.horizontal
+          ? a.start <= b.end && b.start <= a.end && [...a.lanes].some((lane) => b.lanes.has(lane))
+          : [...a.lanes].some((lane) => lane >= b.start && lane <= b.end) && [...b.lanes].some((lane) => lane >= a.start && lane <= a.end);
+      if (overlaps) throw new Error(`共享记录扩展区域 ${decodeURIComponent(a.key)} 与 ${decodeURIComponent(b.key)} 重叠`);
+    }
 }

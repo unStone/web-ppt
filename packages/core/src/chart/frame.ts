@@ -6,8 +6,21 @@ import type { ShapeElement, SlideElement } from '../types';
 import type { Axis, ChartModel, PlotGroup, View3D } from './model';
 import { isStacked } from './model';
 import {
-  Depth3D, Pt, Rect, Scale, clamp, formatNumber, lineEl, measure, mix, niceScale, quadEl,
-  solid, strokeFrom, textEl, tickValues,
+  Depth3D,
+  Pt,
+  Rect,
+  Scale,
+  clamp,
+  formatNumber,
+  lineEl,
+  measure,
+  mix,
+  niceScale,
+  quadEl,
+  solid,
+  strokeFrom,
+  textEl,
+  tickValues,
 } from './util';
 
 export type Side = 'l' | 'r' | 'b' | 't';
@@ -158,13 +171,37 @@ export function floor3D(rect: Rect, d: Depth3D, base: string): ShapeElement[] {
     if (el) out.push(el);
   };
   // 背墙
-  push([[x0 + d.dx, y0 + d.dy], [x1 + d.dx, y0 + d.dy], [x1 + d.dx, y1 + d.dy], [x0 + d.dx, y1 + d.dy]], wall);
+  push(
+    [
+      [x0 + d.dx, y0 + d.dy],
+      [x1 + d.dx, y0 + d.dy],
+      [x1 + d.dx, y1 + d.dy],
+      [x0 + d.dx, y1 + d.dy],
+    ],
+    wall,
+  );
   // 侧墙（dx>0 时看到左侧墙）
   const sx = d.dx >= 0 ? x0 : x1;
-  push([[sx, y0], [sx + d.dx, y0 + d.dy], [sx + d.dx, y1 + d.dy], [sx, y1]], side);
+  push(
+    [
+      [sx, y0],
+      [sx + d.dx, y0 + d.dy],
+      [sx + d.dx, y1 + d.dy],
+      [sx, y1],
+    ],
+    side,
+  );
   // 地面（dy<0 俯视看到底面）
   const fy = d.dy <= 0 ? y1 : y0;
-  push([[x0, fy], [x1, fy], [x1 + d.dx, fy + d.dy], [x0 + d.dx, fy + d.dy]], floor);
+  push(
+    [
+      [x0, fy],
+      [x1, fy],
+      [x1 + d.dx, fy + d.dy],
+      [x0 + d.dx, fy + d.dy],
+    ],
+    floor,
+  );
   return out;
 }
 
@@ -283,17 +320,9 @@ function makeScale(e: Extent, ax: Axis, target: number): Scale {
 }
 
 /** 依据可用长度估算合适的刻度数 */
-export const tickTarget = (len: number, size: number): number =>
-  Math.round(clamp(len / Math.max(size * 3.2, 1), 2, 12));
+export const tickTarget = (len: number, size: number): number => Math.round(clamp(len / Math.max(size * 3.2, 1), 2, 12));
 
-export function makeValueView(
-  ax: Axis,
-  side: Side,
-  e: Extent,
-  target: number,
-  fallbackFmt: string | null,
-  m: ChartModel,
-): AxisView {
+export function makeValueView(ax: Axis, side: Side, e: Extent, target: number, fallbackFmt: string | null, m: ChartModel): AxisView {
   const scale = makeScale(e, ax, target);
   const ticks = tickValues(scale);
   const fmt = ax.fmt ?? fallbackFmt;
@@ -326,12 +355,7 @@ export function makeCatView(ax: Axis, side: Side, cats: string[], between: boole
 
 // ---------- 映射 ----------
 
-export function makeCartesian(
-  rect: Rect,
-  horizontal: boolean,
-  catView: AxisView,
-  valView: AxisView,
-): Cartesian {
+export function makeCartesian(rect: Rect, horizontal: boolean, catView: AxisView, valView: AxisView): Cartesian {
   const catLen = horizontal ? rect.h : rect.w;
   const n = Math.max(catView.catCount, 1);
   const band = catView.between ? catLen / n : n > 1 ? catLen / (n - 1) : catLen;
@@ -359,31 +383,26 @@ function valueMapping(rect: Rect, horizontal: boolean, view: AxisView) {
       if (view.axis.reversed) t = 1 - t;
       return horizontal ? rect.x + t * rect.w : rect.y + rect.h - t * rect.h;
     },
-    clampValue: (value: number): number => Number.isFinite(value) ? clamp(value, scale.min, scale.max) : scale.min,
+    clampValue: (value: number): number => (Number.isFinite(value) ? clamp(value, scale.min, scale.max) : scale.min),
   };
 }
 
 export function makeXY(rect: Rect, xView: AxisView, yView: AxisView): XYPlot {
-  const x = valueMapping(rect, true, xView), y = valueMapping(rect, false, yView);
+  const x = valueMapping(rect, true, xView),
+    y = valueMapping(rect, false, yView);
   return { rect, x: x.at, y: y.at, clampX: x.clampValue, clampY: y.clampValue };
 }
 
 // ---------- 留白 ----------
 
 /** 绘图区四周为轴标签 / 轴标题预留的空间；extra 为次值轴 */
-export function axisInsets(
-  m: ChartModel,
-  hAxis: AxisView,
-  vAxis: AxisView,
-  hWrap: boolean,
-  extra: AxisView | null = null,
-): Insets {
+export function axisInsets(m: ChartModel, hAxis: AxisView, vAxis: AxisView, hWrap: boolean, extra: AxisView | null = null): Insets {
   const gap = m.textSize * 0.45;
   const titleH = lineH(m.textSize * 1.05) + gap * 0.6;
   const ins: Insets = { l: m.textSize * 0.4, r: m.textSize * 0.8, t: m.textSize * 0.8, b: m.textSize * 0.3 };
 
   const add = (view: AxisView, side: Side, horizontal: boolean, wrap = false): void => {
-    if (showTicks(view)) ins[side] += (horizontal ? wrap ? wrapH(view.size) : lineH(view.size) : maxLabelW(view)) + gap;
+    if (showTicks(view)) ins[side] += (horizontal ? (wrap ? wrapH(view.size) : lineH(view.size)) : maxLabelW(view)) + gap;
     if (view.axis.title) ins[side] += titleH;
   };
   add(vAxis, vAxis.side === 'r' ? 'r' : 'l', false);
@@ -453,33 +472,36 @@ export function renderAxes(m: ChartModel, g: Grid, fonts: string[]): SlideElemen
     if (!stroke) continue;
     const edge = horizontal ? g.hEdge : g.vEdge;
     const at = edge ?? (horizontal ? g.hPos : g.vPos);
-    const n = edge ? horizontal ? g.hEdgeCount : g.vEdgeCount : view.ticks.length;
+    const n = edge ? (horizontal ? g.hEdgeCount : g.vEdgeCount) : view.ticks.length;
     for (let i = 0; i < n; i++) {
       const p = at(i);
-      const x = horizontal ? p : rect.x, y = horizontal ? rect.y : p;
-      out.push(...gridLine(x, y, horizontal ? p : rect.x + rect.w,
-        horizontal ? rect.y + rect.h : p, d, stroke));
+      const x = horizontal ? p : rect.x,
+        y = horizontal ? rect.y : p;
+      out.push(...gridLine(x, y, horizontal ? p : rect.x + rect.w, horizontal ? rect.y + rect.h : p, d, stroke));
       if (d && g.gridWalls !== false) {
         const ax = horizontal ? p : d.dx < 0 ? rect.x + rect.w : rect.x;
-        const ay = horizontal ? d.dy > 0 ? rect.y : rect.y + rect.h : p;
+        const ay = horizontal ? (d.dy > 0 ? rect.y : rect.y + rect.h) : p;
         const el = lineEl(ax, ay, ax + d.dx, ay + d.dy, stroke);
         if (el) out.push(el);
       }
     }
   }
 
-  const lines: SlideElement[] = [], labels: SlideElement[] = [], titles: SlideElement[] = [];
+  const lines: SlideElement[] = [],
+    labels: SlideElement[] = [],
+    titles: SlideElement[] = [];
   // 两条轴共用文字与线条布局；分层收集，仍保持网格、轴线、刻度、标题的绘制顺序。
   for (const horizontal of [true, false]) {
-    const view = horizontal ? hAxis : vAxis, pos = horizontal ? g.hPos : g.vPos;
+    const view = horizontal ? hAxis : vAxis,
+      pos = horizontal ? g.hPos : g.vPos;
     const at = horizontal ? g.hLineAt : g.vLineAt;
     if (!view.axis.del) {
       const stroke = strokeFrom(view.axis.line, axisColor, 1);
-      const line = horizontal ? lineEl(rect.x, at, rect.x + rect.w, at, stroke)
-        : lineEl(at, rect.y, at, rect.y + rect.h, stroke);
+      const line = horizontal ? lineEl(rect.x, at, rect.x + rect.w, at, stroke) : lineEl(at, rect.y, at, rect.y + rect.h, stroke);
       if (line) lines.push(line);
     }
-    const size = view.size, wrap = horizontal && g.hWrap;
+    const size = view.size,
+      wrap = horizontal && g.hWrap;
     const boxH = wrap ? wrapH(size) : lineH(size);
     let space = 0;
     if (showTicks(view)) {
@@ -489,24 +511,36 @@ export function renderAxes(m: ChartModel, g: Grid, fonts: string[]): SlideElemen
         if (!label) continue;
         const boxW = wrap ? Math.max(g.hBand * 0.98, size * 2) : labelBoxW(label, size);
         const x = horizontal ? pos(i) - boxW / 2 : view.side === 'r' ? rect.x + rect.w + gap : rect.x - gap - boxW;
-        const y = horizontal ? view.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap : pos(i) - boxH / 2;
-        const el = textEl(x, y, boxW, boxH, label, { size, color: view.color,
+        const y = horizontal ? (view.side === 't' ? rect.y - gap - boxH : rect.y + rect.h + gap) : pos(i) - boxH / 2;
+        const el = textEl(x, y, boxW, boxH, label, {
+          size,
+          color: view.color,
           align: horizontal ? 'center' : view.side === 'r' ? 'left' : 'right',
-          anchor: horizontal ? view.side === 't' ? 'bottom' : 'top' : 'middle', fonts });
+          anchor: horizontal ? (view.side === 't' ? 'bottom' : 'top') : 'middle',
+          fonts,
+        });
         if (wrap && el.text) el.text.wrap = true;
         labels.push(el);
       }
     }
     if (view.axis.title) {
-      const size = m.textSize * 1.05, h = lineH(size);
+      const size = m.textSize * 1.05,
+        h = lineH(size);
       if (horizontal) {
         const y = view.side === 't' ? rect.y - space - gap - h : rect.y + rect.h + space + gap * 0.4;
-        titles.push(textEl(rect.x, y, rect.w, h, view.axis.title,
-          { size, color: m.textColor, align: 'center', anchor: 'middle', fonts }));
+        titles.push(textEl(rect.x, y, rect.w, h, view.axis.title, { size, color: m.textColor, align: 'center', anchor: 'middle', fonts }));
       } else {
         const cx = view.side === 'r' ? rect.x + rect.w + space + gap * 0.4 + h / 2 : rect.x - space - gap * 0.4 - h / 2;
-        titles.push(textEl(cx - rect.h / 2, rect.y + rect.h / 2 - h / 2, rect.h, h, view.axis.title,
-          { size, color: m.textColor, align: 'center', anchor: 'middle', fonts, rot: view.side === 'r' ? 90 : -90 }));
+        titles.push(
+          textEl(cx - rect.h / 2, rect.y + rect.h / 2 - h / 2, rect.h, h, view.axis.title, {
+            size,
+            color: m.textColor,
+            align: 'center',
+            anchor: 'middle',
+            fonts,
+            rot: view.side === 'r' ? 90 : -90,
+          }),
+        );
       }
     }
   }
@@ -532,9 +566,27 @@ export function renderSideAxis(m: ChartModel, sp: SideAxisSpec, fonts: string[])
   const vertical = sp.view.side === 'l' || sp.view.side === 'r';
   const view = sp.grid ? sp.view : { ...sp.view, axis: { ...sp.view.axis, majorGrid: null } };
   const hidden = { ...view, axis: { ...view.axis, del: true, majorGrid: null, title: null } };
-  return renderAxes(m, { rect: sp.rect, hAxis: vertical ? hidden : view, vAxis: vertical ? view : hidden,
-    hPos: sp.pos, vPos: sp.pos, hEdge: null, hEdgeCount: 0, vEdge: null, vEdgeCount: 0,
-    hLineAt: sp.at, vLineAt: sp.at, hWrap: false, hBand: 0, depth: sp.depth, gridWalls: false }, fonts);
+  return renderAxes(
+    m,
+    {
+      rect: sp.rect,
+      hAxis: vertical ? hidden : view,
+      vAxis: vertical ? view : hidden,
+      hPos: sp.pos,
+      vPos: sp.pos,
+      hEdge: null,
+      hEdgeCount: 0,
+      vEdge: null,
+      vEdgeCount: 0,
+      hLineAt: sp.at,
+      vLineAt: sp.at,
+      hWrap: false,
+      hBand: 0,
+      depth: sp.depth,
+      gridWalls: false,
+    },
+    fonts,
+  );
 }
 
 /** 类目标签总宽超过带宽时启用换行 */

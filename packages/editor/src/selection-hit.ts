@@ -4,9 +4,10 @@ import type { EditDoc, ElementId, Selection, SlideId, TableCellAddress } from '@
 const TOUCH_HIT_RADIUS = 12;
 
 function elementsFromPath(path: EventTarget[], root: Element): Element[] {
-  return path.filter((target): target is Element =>
-    !!target && typeof target === 'object'
-      && (target as Node).nodeType === 1 && root.contains(target as Node));
+  return path.filter(
+    (target): target is Element =>
+      !!target && typeof target === 'object' && (target as Node).nodeType === 1 && root.contains(target as Node),
+  );
 }
 
 export function tableCellAddressFromPath(path: EventTarget[], root: Element): TableCellAddress | null {
@@ -27,11 +28,7 @@ export function isSelectable(doc: EditDoc, id: ElementId): boolean {
   return true;
 }
 
-export function selectableElementIdsFromPath(
-  doc: EditDoc,
-  path: EventTarget[],
-  root: Element,
-): ElementId[] {
+export function selectableElementIdsFromPath(doc: EditDoc, path: EventTarget[], root: Element): ElementId[] {
   return elementsFromPath(path, root)
     .map((element) => (element as SVGElement).dataset.editId)
     .filter((id): id is ElementId => !!id && isSelectable(doc, id));
@@ -58,19 +55,21 @@ export function touchHitCandidate(
   let nearestId: ElementId | undefined;
   let nearestDistance = Number.POSITIVE_INFINITY;
   let nearestOrder = -1;
-  const geometries = root.querySelectorAll<SVGGeometryElement>(
-    'path, rect, circle, ellipse, line, polyline, polygon',
-  );
+  const geometries = root.querySelectorAll<SVGGeometryElement>('path, rect, circle, ellipse, line, polyline, polygon');
   geometries.forEach((geometry, order) => {
     const rect = geometry.getBoundingClientRect();
-    if (screen.x < rect.left - TOUCH_HIT_RADIUS || screen.x > rect.right + TOUCH_HIT_RADIUS
-      || screen.y < rect.top - TOUCH_HIT_RADIUS || screen.y > rect.bottom + TOUCH_HIT_RADIUS) return;
+    if (
+      screen.x < rect.left - TOUCH_HIT_RADIUS
+      || screen.x > rect.right + TOUCH_HIT_RADIUS
+      || screen.y < rect.top - TOUCH_HIT_RADIUS
+      || screen.y > rect.bottom + TOUCH_HIT_RADIUS
+    )
+      return;
     const id = hitFromElement(doc, geometry, root, enteredGroup);
     if (!id) return;
     const distance = geometryScreenDistance(geometry, screen, rect);
     if (distance > TOUCH_HIT_RADIUS) return;
-    if (distance < nearestDistance - 1e-6
-      || Math.abs(distance - nearestDistance) <= 1e-6 && order > nearestOrder) {
+    if (distance < nearestDistance - 1e-6 || (Math.abs(distance - nearestDistance) <= 1e-6 && order > nearestOrder)) {
       nearestId = id;
       nearestDistance = distance;
       nearestOrder = order;
@@ -88,30 +87,20 @@ export function pathWithinRoot(element: Element | null | undefined, root: Elemen
   return path;
 }
 
-function pointSegmentDistance(
-  point: { x: number; y: number },
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-): number {
+function pointSegmentDistance(point: { x: number; y: number }, start: { x: number; y: number }, end: { x: number; y: number }): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const lengthSquared = dx * dx + dy * dy;
-  const t = lengthSquared > 0
-    ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared))
-    : 0;
+  const t = lengthSquared > 0 ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)) : 0;
   return Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy);
 }
 
-function geometryScreenDistance(
-  geometry: SVGGeometryElement,
-  screen: { x: number; y: number },
-  rect: DOMRect,
-): number {
+function geometryScreenDistance(geometry: SVGGeometryElement, screen: { x: number; y: number }, rect: DOMRect): number {
   try {
     const matrix = geometry.getScreenCTM();
     const length = geometry.getTotalLength();
     if (!matrix || !Number.isFinite(length) || length <= 0) return Number.POSITIVE_INFINITY;
-    const sampleCount = Math.max(8, Math.min(256, Math.ceil((rect.width + rect.height) * 2 / 4)));
+    const sampleCount = Math.max(8, Math.min(256, Math.ceil(((rect.width + rect.height) * 2) / 4)));
     const project = (offset: number) => {
       const local = geometry.getPointAtLength(offset);
       return {
@@ -122,7 +111,7 @@ function geometryScreenDistance(
     let previous = project(0);
     let nearest = Number.POSITIVE_INFINITY;
     for (let index = 1; index <= sampleCount; index++) {
-      const next = project(length * index / sampleCount);
+      const next = project((length * index) / sampleCount);
       nearest = Math.min(nearest, pointSegmentDistance(screen, previous, next));
       previous = next;
     }
@@ -156,33 +145,20 @@ export function alternateSelectableElementId(
   return candidates[0];
 }
 
-export function directSelectableChildIds(
-  doc: EditDoc,
-  slideId: SlideId,
-  enteredGroup: ElementId | null,
-): ElementId[] {
-  const children = enteredGroup ? doc.elements[enteredGroup]?.children ?? [] : doc.slides[slideId].children;
+export function directSelectableChildIds(doc: EditDoc, slideId: SlideId, enteredGroup: ElementId | null): ElementId[] {
+  const children = enteredGroup ? (doc.elements[enteredGroup]?.children ?? []) : doc.slides[slideId].children;
   return children.filter((id) => isSelectable(doc, id));
 }
 
-export function enteredGroupOnSlide(
-  doc: EditDoc,
-  enteredGroup: ElementId | null,
-  slideId: SlideId,
-): ElementId | null {
+export function enteredGroupOnSlide(doc: EditDoc, enteredGroup: ElementId | null, slideId: SlideId): ElementId | null {
   if (!enteredGroup) return null;
   let ancestor: ElementId | SlideId = enteredGroup;
   while (doc.elements[ancestor]) ancestor = doc.elements[ancestor].parent;
   return ancestor === slideId ? enteredGroup : null;
 }
 
-export function outermostHitCandidate(
-  doc: EditDoc,
-  candidates: ElementId[],
-  enteredGroup: ElementId | null,
-): ElementId | undefined {
+export function outermostHitCandidate(doc: EditDoc, candidates: ElementId[], enteredGroup: ElementId | null): ElementId | undefined {
   if (!enteredGroup) return candidates[candidates.length - 1];
-  const descendants = candidates.filter((id) => id !== enteredGroup
-    && isElementDescendantOf(doc, id, enteredGroup));
+  const descendants = candidates.filter((id) => id !== enteredGroup && isElementDescendantOf(doc, id, enteredGroup));
   return descendants[descendants.length - 1];
 }

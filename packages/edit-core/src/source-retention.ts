@@ -14,7 +14,10 @@ export function insertionPackageTargets(record: ElementRecord | null): string[] 
 }
 
 /** 命令、协同和恢复都在结构补丁落模前保留依赖，不能依赖本地命令的准备过程。 */
-export function retainInsertionSources(doc: EditDoc, tree: { records: Readonly<Record<string, ElementRecord | null>>; slide?: SlideRecord }): void {
+export function retainInsertionSources(
+  doc: EditDoc,
+  tree: { records: Readonly<Record<string, ElementRecord | null>>; slide?: SlideRecord },
+): void {
   const pkg = doc.package;
   if (!pkg || pkg.disposed) return;
   const creation = tree.slide?.creation;

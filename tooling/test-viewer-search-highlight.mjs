@@ -27,9 +27,15 @@ Object.defineProperty(globalThis, 'CSS', {
   configurable: true,
   value: {
     highlights: {
-      delete(name) { return store.delete(name); },
-      get(name) { return store.get(name); },
-      set(name, value) { store.set(name, value); },
+      delete(name) {
+        return store.delete(name);
+      },
+      get(name) {
+        return store.get(name);
+      },
+      set(name, value) {
+        store.set(name, value);
+      },
     },
   },
 });
@@ -115,8 +121,12 @@ count++;
     return {
       length: 1,
       0: { left: 10, top: 20, width: 40, height: 12, right: 50, bottom: 32 },
-      item(i) { return this[i]; },
-      [Symbol.iterator]: function* () { yield this[0]; },
+      item(i) {
+        return this[i];
+      },
+      [Symbol.iterator]: function* () {
+        yield this[0];
+      },
     };
   };
   try {
@@ -126,7 +136,10 @@ count++;
     check(boxes.filter((box) => box.classList.contains('ppt-find-current')).length === 1, '默认深色框是第一处');
     api.applySearchHighlight([host], 'hit', 1);
     const moved = [...host.querySelectorAll('.ppt-find-box')];
-    check(moved.length === 3 && moved[1].classList.contains('ppt-find-current') && !moved[0].classList.contains('ppt-find-current'), '指定下标时深色框跟着走');
+    check(
+      moved.length === 3 && moved[1].classList.contains('ppt-find-current') && !moved[0].classList.contains('ppt-find-current'),
+      '指定下标时深色框跟着走',
+    );
     api.clearSearchHighlight();
     check(api.searchOverlayBoxCount() === 0, '清除后黄框也空');
   } finally {
@@ -164,8 +177,12 @@ const bound = searchApi.bindViewerSearch({
   highlightRoots: () => [stage],
   presentation: () => pres,
   viewer: () => ({
-    get index() { return index; },
-    goTo(next) { index = next; },
+    get index() {
+      return index;
+    },
+    goTo(next) {
+      index = next;
+    },
   }),
   presenting: () => presenting,
   onJump() {},
@@ -222,11 +239,17 @@ check(api.searchHighlightCount() === 0 && query.value === '' && query.disabled, 
     highlightRoots: () => [stage2],
     presentation: () => pres2,
     viewer: () => ({
-      get index() { return index2; },
-      goTo(next) { index2 = next; },
+      get index() {
+        return index2;
+      },
+      goTo(next) {
+        index2 = next;
+      },
     }),
     presenting: () => false,
-    onJump() { renderStage(); },
+    onJump() {
+      renderStage();
+    },
   });
   bound2.enable();
   query2.value = 'alpha';
@@ -274,11 +297,17 @@ check(api.searchHighlightCount() === 0 && query.value === '' && query.disabled, 
     highlightRoots: () => [stageAgain],
     presentation: () => presAgain,
     viewer: () => ({
-      get index() { return indexAgain; },
-      goTo(next) { indexAgain = next; },
+      get index() {
+        return indexAgain;
+      },
+      goTo(next) {
+        indexAgain = next;
+      },
     }),
     presenting: () => presentingAgain,
-    onJump() { stageAgain.textContent = indexAgain === 0 ? 'alpha once' : 'alpha alpha'; },
+    onJump() {
+      stageAgain.textContent = indexAgain === 0 ? 'alpha once' : 'alpha alpha';
+    },
   });
   boundAgain.enable();
   queryAgain.value = 'alpha';
@@ -405,11 +434,8 @@ const gridSource = readFileSync(resolve(root, 'packages/site/src/slide-grid.ts')
 check(gridSource.includes('event.altKey') && gridSource.includes('event.metaKey'), '带修饰键的 G 不切换网格');
 check(searchSource.includes('isSearchRootVisible'), '关掉的备注不参与下一处');
 check(mainSource.includes('search?.syncHighlight()'), '翻页与放映会同步高亮');
-check(
-  mainSource.slice(mainSource.indexOf('btnNotes.addEventListener')).includes('search?.syncHighlight()'),
-  '备注开关会再量一次盒子',
-);
-check(mainSource.includes("highlightRoots: () => [stage, notesBody]"), '舞台和备注都是标字根');
+check(mainSource.slice(mainSource.indexOf('btnNotes.addEventListener')).includes('search?.syncHighlight()'), '备注开关会再量一次盒子');
+check(mainSource.includes('highlightRoots: () => [stage, notesBody]'), '舞台和备注都是标字根');
 
 const renderFiles = ['packages/core/src/render/svg.ts', 'packages/core/src/render/text-html.ts'];
 for (const file of renderFiles) {

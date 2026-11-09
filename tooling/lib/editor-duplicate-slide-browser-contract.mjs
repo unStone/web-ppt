@@ -1,10 +1,9 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const percentile95 = (samples) => [...samples].sort((left, right) => left - right)
-  [Math.floor(samples.length * 0.95)];
+const percentile95 = (samples) => [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
-const pageNumber = (root) => [...root.querySelectorAll('text')]
-  .map((node) => node.textContent?.trim()).find((text) => /^\d+$/.test(text ?? ''));
+const pageNumber = (root) =>
+  [...root.querySelectorAll('text')].map((node) => node.textContent?.trim()).find((text) => /^\d+$/.test(text ?? ''));
 
 /** 真实浏览器验证独立副本挂载，以及 200 页/60 元素复制与撤销完整反馈预算。 */
 export async function runEditorDuplicateSlideBrowserContract({ openEditor, load }) {
@@ -21,23 +20,33 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
   try {
     const source = [...session.editor.doc.slideOrder];
     const sourceView = session.mount(sourceMount, {
-      slideId: source[1], mode: 'edit', textMode: 'svg',
+      slideId: source[1],
+      mode: 'edit',
+      textMode: 'svg',
     });
     const successorView = session.mount(successorMount, {
-      slideId: source[2], mode: 'view', textMode: 'svg',
+      slideId: source[2],
+      mode: 'view',
+      textMode: 'svg',
     });
     const sourceStatic = sourceMount.querySelector('[data-ppt-layer="static"]');
     const successorStatic = successorMount.querySelector('[data-ppt-layer="static"]');
     const sourceSvg = sourceStatic.querySelector('svg');
     const successorSvg = successorStatic.querySelector('svg');
     let observed = null;
-    const unsubscribe = session.editor.subscribe((change) => { observed = change; });
+    const unsubscribe = session.editor.subscribe((change) => {
+      observed = change;
+    });
     const result = session.editor.exec({ type: 'DuplicateSlide', id: source[1] });
     const duplicateId = [...result.createdSlides][0];
     const duplicateView = session.mount(duplicateMount, {
-      slideId: duplicateId, mode: 'edit', textMode: 'svg',
+      slideId: duplicateId,
+      mode: 'edit',
+      textMode: 'svg',
     });
-    if (sourceView.slideId !== source[1] || successorView.slideId !== source[2]
+    if (
+      sourceView.slideId !== source[1]
+      || successorView.slideId !== source[2]
       || sourceStatic.querySelector('svg') !== sourceSvg
       || successorStatic.querySelector('svg') !== successorSvg
       || pageNumber(successorStatic) !== '4'
@@ -45,7 +54,9 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
       || !duplicateMount.textContent.includes('可删除页面 2')
       || pageNumber(duplicateMount) !== '3'
       || !observed?.createdSlides.has(duplicateId)
-      || observed.removedSlides.size || observed.movedSlides.size) {
+      || observed.removedSlides.size
+      || observed.movedSlides.size
+    ) {
       throw new Error('DuplicateSlide 没有保持多视图身份、动态字段或框架订阅语义');
     }
     unsubscribe();
@@ -60,19 +71,21 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
   perfMount.className = 'contract-offscreen';
   document.body.append(perfMount);
   const performanceSession = await openEditor(await load('sample-editor-add-slide.pptx'), {
-    idPrefix: 'browser-duplicate-slide-perf-', historyLimit: 500,
+    idPrefix: 'browser-duplicate-slide-perf-',
+    historyLimit: 500,
   });
   try {
     const editor = performanceSession.editor;
     const sourceId = editor.doc.slideOrder[0];
     for (let index = 0; index < 59; index++) {
       editor.exec({
-        type: 'AddShape', slideId: sourceId, preset: 'rect',
+        type: 'AddShape',
+        slideId: sourceId,
+        preset: 'rect',
         rect: { x: 20 + (index % 10) * 80, y: 20 + Math.floor(index / 10) * 70, w: 60, h: 40 },
       });
     }
-    const layoutId = editor.doc.layoutOrder.find((id) =>
-      editor.doc.layouts[id].name === '标题和正文');
+    const layoutId = editor.doc.layoutOrder.find((id) => editor.doc.layouts[id].name === '标题和正文');
     let after = sourceId;
     while (editor.doc.slideOrder.length < 200) {
       const created = editor.exec({ type: 'AddSlide', layoutId, at: { after } });
@@ -80,7 +93,9 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
     }
     const tailId = editor.doc.slideOrder.at(-1);
     const tailView = performanceSession.mount(perfMount, {
-      slideId: tailId, mode: 'view', textMode: 'svg',
+      slideId: tailId,
+      mode: 'view',
+      textMode: 'svg',
     });
     editor.history.clear();
     const duplicateSamples = [];
@@ -89,8 +104,8 @@ export async function runEditorDuplicateSlideBrowserContract({ openEditor, load 
       let started = performance.now();
       const duplicated = editor.exec({ type: 'DuplicateSlide', id: sourceId });
       duplicateSamples.push(performance.now() - started);
-      if (![...duplicated.createdSlides][0] || editor.doc.slideOrder.length !== 201
-        || tailView.slideId !== tailId) throw new Error('200 页复制反馈不完整');
+      if (![...duplicated.createdSlides][0] || editor.doc.slideOrder.length !== 201 || tailView.slideId !== tailId)
+        throw new Error('200 页复制反馈不完整');
       started = performance.now();
       editor.undo();
       undoSamples.push(performance.now() - started);

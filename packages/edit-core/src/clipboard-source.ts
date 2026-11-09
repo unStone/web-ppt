@@ -1,9 +1,7 @@
 import type { OpcPackage } from '@web-ppt/core';
 import { bytesToBase64, sha256 } from './clipboard-binary';
 import type { ClipboardRelationship, ClipboardResource } from './commands/types';
-import type {
-  EditDoc, ElementRecord, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
-} from './types';
+import type { EditDoc, ElementRecord, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource } from './types';
 import { findXmlAttribute, xmlElementChildren } from './xml/query';
 import { parseXmlTree } from './xml/tree';
 import type { XmlElement } from './xml/types';
@@ -42,10 +40,7 @@ export function relativeTarget(fromPart: string, targetPart: string): string {
 
 export function resolveRelationshipTarget(fromPart: string, target: string): string {
   const clean = target.split('#', 1)[0];
-  const segments = [
-    ...(clean.startsWith('/') ? [] : fromPart.split('/').slice(0, -1)),
-    ...clean.replace(/^\//, '').split('/'),
-  ];
+  const segments = [...(clean.startsWith('/') ? [] : fromPart.split('/').slice(0, -1)), ...clean.replace(/^\//, '').split('/')];
   const normalized: string[] = [];
   for (const segment of segments) {
     if (!segment || segment === '.') continue;
@@ -99,8 +94,7 @@ export function packageTargetIdentity(pkg: OpcPackage, targetPart: string): Pack
     const relsPart = relationshipPartFor(part);
     const relsBytes = pkg.parts[relsPart];
     const relationships: string[] = [];
-    for (const node of relsBytes
-      ? xmlElementChildren(parseXmlTree(relsBytes).root, { localName: 'Relationship' }) : []) {
+    for (const node of relsBytes ? xmlElementChildren(parseXmlTree(relsBytes).root, { localName: 'Relationship' }) : []) {
       const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
       const type = findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
       const mode = findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
@@ -121,7 +115,10 @@ export function packageTargetIdentity(pkg: OpcPackage, targetPart: string): Pack
     closureHash: sha256(new TextEncoder().encode(JSON.stringify(nodes.sort()))),
   };
   cached.set(targetPart, identity);
-  packageTargetSources.set(identity, [...visited].flatMap((part) => [part, relationshipPartFor(part)]));
+  packageTargetSources.set(
+    identity,
+    [...visited].flatMap((part) => [part, relationshipPartFor(part)]),
+  );
   return identity;
 }
 
@@ -131,11 +128,16 @@ export function packageTargetParts(pkg: OpcPackage, part: string): readonly stri
 }
 
 export function resolvePackageTarget(pkg: OpcPackage, identity: PackageTargetIdentity): string | null {
-  if (!identity || !/^[0-9a-f]{64}$/.test(identity.rootHash)
-    || !/^[0-9a-f]{64}$/.test(identity.closureHash)) return null;
-  const candidates = Object.keys(pkg.parts).filter((part) =>
-    part !== '[Content_Types].xml' && !part.includes('/_rels/') && !part.startsWith('_rels/')
-      && partHash(pkg, part) === identity.rootHash).sort();
+  if (!identity || !/^[0-9a-f]{64}$/.test(identity.rootHash) || !/^[0-9a-f]{64}$/.test(identity.closureHash)) return null;
+  const candidates = Object.keys(pkg.parts)
+    .filter(
+      (part) =>
+        part !== '[Content_Types].xml'
+        && !part.includes('/_rels/')
+        && !part.startsWith('_rels/')
+        && partHash(pkg, part) === identity.rootHash,
+    )
+    .sort();
   return candidates.find((part) => packageTargetIdentity(pkg, part).closureHash === identity.closureHash) ?? null;
 }
 
@@ -208,8 +210,7 @@ interface ResolvedClipboardRelationship {
   resource?: ClipboardResource;
 }
 
-const isMediaRelationship = (type: string): boolean =>
-  MEDIA_REL_TYPES.has(type.slice(type.lastIndexOf('/') + 1));
+const isMediaRelationship = (type: string): boolean => MEDIA_REL_TYPES.has(type.slice(type.lastIndexOf('/') + 1));
 
 function appendClipboardRelationship(
   pkg: OpcPackage,
@@ -220,14 +221,18 @@ function appendClipboardRelationship(
 ): void {
   if (source.targetMode === 'External') {
     relationships.push({
-      sourceId: source.sourceId, type: source.type, target: source.target!, targetMode: 'External',
+      sourceId: source.sourceId,
+      type: source.type,
+      target: source.target!,
+      targetMode: 'External',
     });
     return;
   }
   if (!source.targetPart) throw new Error(`内部关系缺少目标 part：${source.sourceId}`);
   if (!isMediaRelationship(source.type)) {
     relationships.push({
-      sourceId: source.sourceId, type: source.type,
+      sourceId: source.sourceId,
+      type: source.type,
       packageTarget: packageTargetIdentity(effectivePackage?.() ?? pkg, source.targetPart),
     });
     return;
@@ -249,15 +254,16 @@ export function clipboardClosure(
   if (!ids.length) return { relationships: [], resources: [] };
   const relsPart = relationshipPartFor(sourcePart);
   const relsBytes = pkg.parts[relsPart];
-  const rels = relsBytes
-    ? xmlElementChildren(parseXmlTree(relsBytes).root, { localName: 'Relationship' }) : [];
-  const insertedRelationships = new Map<string, {
-    relationship: ElementInsertionRelationship;
-    resources: ReadonlyMap<string, ElementInsertionResource>;
-  }>();
+  const rels = relsBytes ? xmlElementChildren(parseXmlTree(relsBytes).root, { localName: 'Relationship' }) : [];
+  const insertedRelationships = new Map<
+    string,
+    {
+      relationship: ElementInsertionRelationship;
+      resources: ReadonlyMap<string, ElementInsertionResource>;
+    }
+  >();
   for (const insertion of insertions) {
-    const insertionResources = new Map((insertion.resources ?? [])
-      .map((resource) => [resource.targetPart, resource] as const));
+    const insertionResources = new Map((insertion.resources ?? []).map((resource) => [resource.targetPart, resource] as const));
     for (const relationship of insertion.relationships ?? []) {
       if (insertedRelationships.has(relationship.targetId)) {
         throw new Error(`新建元素关系 id 重复：${relationship.targetId}`);
@@ -268,16 +274,23 @@ export function clipboardClosure(
   const relationships: ClipboardRelationship[] = [];
   const resources = new Map<string, ClipboardResource>();
   for (const sourceId of ids) {
-    const node = rels.find((candidate) =>
-      findXmlAttribute(candidate, { localName: 'Id', namespaceUri: null })?.value === sourceId);
+    const node = rels.find((candidate) => findXmlAttribute(candidate, { localName: 'Id', namespaceUri: null })?.value === sourceId);
     if (!node) {
       const inserted = insertedRelationships.get(sourceId);
       if (!inserted) throw new Error(`元素引用了不存在的 OPC 关系：${sourceId}`);
       const source = inserted.relationship;
       if (source.targetMode === 'External') {
-        appendClipboardRelationship(pkg, {
-          sourceId, type: source.type, target: source.target, targetMode: 'External',
-        }, relationships, resources);
+        appendClipboardRelationship(
+          pkg,
+          {
+            sourceId,
+            type: source.type,
+            target: source.target,
+            targetMode: 'External',
+          },
+          relationships,
+          resources,
+        );
         continue;
       }
       const targetPart = resolveRelationshipTarget(sourcePart, source.target);
@@ -287,12 +300,22 @@ export function clipboardClosure(
       }
       const resource = inserted.resources.get(targetPart);
       if (!resource) throw new Error(`新建元素关系缺少内存资源：${targetPart}`);
-      appendClipboardRelationship(pkg, {
-        sourceId, type: source.type, targetPart,
-        resource: {
-          hash: resource.hash, mime: resource.mime, extension: resource.extension, bytes: resource.bytes,
+      appendClipboardRelationship(
+        pkg,
+        {
+          sourceId,
+          type: source.type,
+          targetPart,
+          resource: {
+            hash: resource.hash,
+            mime: resource.mime,
+            extension: resource.extension,
+            bytes: resource.bytes,
+          },
         },
-      }, relationships, resources);
+        relationships,
+        resources,
+      );
       continue;
     }
     const type = findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
@@ -312,10 +335,17 @@ export function clipboardClosure(
     if (!bytes) throw new Error(`OPC 关系目标不存在：${targetPart}`);
     const extension = targetPart.slice(targetPart.lastIndexOf('.') + 1).toLowerCase();
     const hash = sha256(bytes);
-    appendClipboardRelationship(pkg, {
-      sourceId, type, targetPart,
-      resource: { hash, extension, mime: packageContentType(pkg, targetPart, extension), bytes: bytesToBase64(bytes) },
-    }, relationships, resources);
+    appendClipboardRelationship(
+      pkg,
+      {
+        sourceId,
+        type,
+        targetPart,
+        resource: { hash, extension, mime: packageContentType(pkg, targetPart, extension), bytes: bytesToBase64(bytes) },
+      },
+      relationships,
+      resources,
+    );
   }
   return { relationships, resources: [...resources.values()] };
 }

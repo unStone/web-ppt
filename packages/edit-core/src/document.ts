@@ -5,9 +5,7 @@ import { releaseProjectionCache } from './projection';
 import { initialFractionalIndex } from './fractional-index';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from './dynamic-slide-fields';
 import type { OwnedOpcPackage } from './opc-owner-protocol';
-import type {
-  CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource,
-} from './types';
+import type { CreateDocOptions, EditDoc, EditableKind, ElementId, ElementMeta, ElementRecord, SlideId, SlideSource } from './types';
 import { sourceAnimationSteps } from './slide-animation';
 import { logicalIdentityPrefix } from './identity-allocation';
 import { assertSlideSize } from './slide-size';
@@ -24,9 +22,8 @@ function sessionPrefix(explicit: string | undefined): string {
   sessionSerial++;
   const words = new Uint32Array(2);
   globalThis.crypto?.getRandomValues?.(words);
-  const entropy = words[0] || words[1]
-    ? `${words[0].toString(36)}${words[1].toString(36)}`
-    : `${Date.now().toString(36)}${sessionSerial.toString(36)}`;
+  const entropy =
+    words[0] || words[1] ? `${words[0].toString(36)}${words[1].toString(36)}` : `${Date.now().toString(36)}${sessionSerial.toString(36)}`;
   return `d${entropy}-`;
 }
 
@@ -57,8 +54,7 @@ export function elementMetaOf(
     ...(info?.customGeometry ? { customGeometry: info.customGeometry } : {}),
     ...(info?.placeholder ? { ph: info.placeholder } : {}),
     ...(info?.placeholderDirect ? { placeholderDirect: info.placeholderDirect } : {}),
-    ...(info?.placeholderInheritedEffects
-      ? { placeholderInheritedEffects: info.placeholderInheritedEffects } : {}),
+    ...(info?.placeholderInheritedEffects ? { placeholderInheritedEffects: info.placeholderInheritedEffects } : {}),
     ...(info?.origin ? { origin: info.origin } : {}),
     ...(info?.moveLocked ? { moveLocked: true } : {}),
     ...(info?.textTemplate ? { textTemplate: info.textTemplate } : {}),
@@ -88,27 +84,26 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     writablePart: string | null,
     dynamicSlideNumbers: ElementId[],
     dynamicSlideLinks: ElementId[],
-  ): ElementId[] => source.map((el, index) => {
-    const id = `${prefix}e${(++elementSeq).toString(36)}`;
-    const meta = elementMetaOf(el, inherited, pres.source, writablePart);
-    const record: ElementRecord = {
-      id,
-      parent,
-      z: initialFractionalIndex(index),
-      src: el,
-      ovr: {},
-      meta,
-    };
-    elements[id] = record;
-    if (hasDynamicSlideNumber(el)) dynamicSlideNumbers.push(id);
-    if (hasDynamicSlideLink(el)) dynamicSlideLinks.push(id);
-    if (el.kind === 'group') {
-      record.children = addElements(
-        el.children, id, meta.editable, writablePart, dynamicSlideNumbers, dynamicSlideLinks,
-      );
-    }
-    return id;
-  });
+  ): ElementId[] =>
+    source.map((el, index) => {
+      const id = `${prefix}e${(++elementSeq).toString(36)}`;
+      const meta = elementMetaOf(el, inherited, pres.source, writablePart);
+      const record: ElementRecord = {
+        id,
+        parent,
+        z: initialFractionalIndex(index),
+        src: el,
+        ovr: {},
+        meta,
+      };
+      elements[id] = record;
+      if (hasDynamicSlideNumber(el)) dynamicSlideNumbers.push(id);
+      if (hasDynamicSlideLink(el)) dynamicSlideLinks.push(id);
+      if (el.kind === 'group') {
+        record.children = addElements(el.children, id, meta.editable, writablePart, dynamicSlideNumbers, dynamicSlideLinks);
+      }
+      return id;
+    });
 
   const elementsOwnedBy = (source: readonly SlideElement[], part: string | null): SlideElement[] =>
     source.filter((element) => {
@@ -129,54 +124,57 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
       dynamicSlideNumbers,
       dynamicSlideLinks,
       origin: slide.editInfo?.origin ?? null,
-      ...(slide.editInfo?.notes ? {
-        notes: {
-          sourcePart: slide.editInfo.notes.part,
-          targetPart: slide.editInfo.notes.part,
-          relationshipId: slide.editInfo.notes.relationshipId,
-        },
-      } : {}),
+      ...(slide.editInfo?.notes
+        ? {
+            notes: {
+              sourcePart: slide.editInfo.notes.part,
+              targetPart: slide.editInfo.notes.part,
+              relationshipId: slide.editInfo.notes.relationshipId,
+            },
+          }
+        : {}),
       ...(slide.editInfo?.layoutId ? { layoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.layoutId ? { sourceLayoutId: slide.editInfo.layoutId } : {}),
       ...(slide.editInfo?.directBackground ? { sourceDirectBackground: true as const } : {}),
       ...(slide.editInfo?.directTransition ? { sourceDirectTransition: true as const } : {}),
       ...(slide.editInfo?.hideMasterShapes ? { sourceHideMasterShapes: true as const } : {}),
-      ...(slide.editInfo?.defaultShape
-        ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
-      ...(slide.editInfo?.defaultTable
-        ? { defaultTable: structuredClone(slide.editInfo.defaultTable) } : {}),
-      ...(slide.editInfo?.tableStyles
-        ? { tableStyles: structuredClone(slide.editInfo.tableStyles) } : {}),
+      ...(slide.editInfo?.defaultShape ? { defaultShape: structuredClone(slide.editInfo.defaultShape) } : {}),
+      ...(slide.editInfo?.defaultTable ? { defaultTable: structuredClone(slide.editInfo.defaultTable) } : {}),
+      ...(slide.editInfo?.tableStyles ? { tableStyles: structuredClone(slide.editInfo.tableStyles) } : {}),
     };
     slides[id] = record;
     slideOrder.push(id);
     record.children = addElements(
       elementsOwnedBy(slide.elements, record.origin?.part ?? null),
-      id, 'full', record.origin?.part ?? null, dynamicSlideNumbers, dynamicSlideLinks,
+      id,
+      'full',
+      record.origin?.part ?? null,
+      dynamicSlideNumbers,
+      dynamicSlideLinks,
     );
   }
 
   const masters: EditDoc['masters'] = Object.create(null);
   for (const source of pres.editInfo?.masters ?? []) {
     const master = {
-      ...structuredClone(source), children: [] as ElementId[], ovr: {},
+      ...structuredClone(source),
+      children: [] as ElementId[],
+      ovr: {},
     } satisfies EditDoc['masters'][string];
     masters[master.id] = master;
-    master.children = addElements(
-      elementsOwnedBy(source.elements, master.id), master.id, 'full', master.id, [], [],
-    );
+    master.children = addElements(elementsOwnedBy(source.elements, master.id), master.id, 'full', master.id, [], []);
   }
 
   const layouts: EditDoc['layouts'] = Object.create(null);
   for (const source of pres.editInfo?.layouts ?? []) {
     const layout = {
-      ...structuredClone(source), children: [] as ElementId[], ovr: {},
+      ...structuredClone(source),
+      children: [] as ElementId[],
+      ovr: {},
     } satisfies EditDoc['layouts'][string];
     layouts[layout.id] = layout;
     // 母版图形只在母版树保留一份；版式画布在投影阶段组合只读母版层。
-    layout.children = addElements(
-      elementsOwnedBy(source.elements, layout.id), layout.id, 'full', layout.id, [], [],
-    );
+    layout.children = addElements(elementsOwnedBy(source.elements, layout.id), layout.id, 'full', layout.id, [], []);
   }
 
   if (pres.source === 'pptx') {
@@ -196,9 +194,7 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
   }
 
   const pkg = pres.package ?? null;
-  const patchable = pres.source === 'pptx'
-    ? !!pkg && !pkg.disposed && slideOrder.every((id) => slides[id].origin !== null)
-    : true;
+  const patchable = pres.source === 'pptx' ? !!pkg && !pkg.disposed && slideOrder.every((id) => slides[id].origin !== null) : true;
   const sectionState = (() => {
     const records: EditDoc['sections']['records'] = {};
     const order: EditDoc['sections']['order'] = [];
@@ -216,8 +212,12 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
   })();
   const doc: EditDoc = {
     meta: {
-      width: pres.width, height: pres.height, source: pres.source, readonly: !patchable,
-      sourceWidth: pres.width, sourceHeight: pres.height,
+      width: pres.width,
+      height: pres.height,
+      source: pres.source,
+      readonly: !patchable,
+      sourceWidth: pres.width,
+      sourceHeight: pres.height,
       ...(pres.editInfo?.tableStylesPart ? { tableStylesPart: pres.editInfo.tableStylesPart } : {}),
     },
     identity: { prefix, nextSlide: slideSeq + 1, nextElement: elementSeq + 1, nextSpid: {} },
@@ -228,19 +228,25 @@ export function createDoc(pres: Presentation, opts: CreateDocOptions = {}): Edit
     layoutOrder: pres.editInfo?.layouts.map((layout) => layout.id) ?? [],
     masters,
     masterOrder: pres.editInfo?.masters.map((master) => master.id) ?? [],
-    themes: Object.fromEntries((pres.editInfo?.themes ?? []).map((theme) => [theme.id, {
-      id: theme.id,
-      name: theme.name,
-      src: { colors: structuredClone(theme.colors), fonts: structuredClone(theme.fonts) },
-      ovr: {},
-    }])),
+    themes: Object.fromEntries(
+      (pres.editInfo?.themes ?? []).map((theme) => [
+        theme.id,
+        {
+          id: theme.id,
+          name: theme.name,
+          src: { colors: structuredClone(theme.colors), fonts: structuredClone(theme.fonts) },
+          ovr: {},
+        },
+      ]),
+    ),
     themeOrder: pres.editInfo?.themes.map((theme) => theme.id) ?? [],
     elements,
     removedElements: {},
     imageResources: {},
     package: pkg,
     saveState: {
-      baselines: Object.create(null), createdParts: [],
+      baselines: Object.create(null),
+      createdParts: [],
       sourceSlideParts: slideOrder.flatMap((id) => slides[id].origin?.part ?? []),
     },
   };
@@ -263,8 +269,12 @@ export function createEmptyDoc(opts: { width: number; height: number; idPrefix?:
   const prefix = sessionPrefix(opts.idPrefix);
   return {
     meta: {
-      width: opts.width, height: opts.height, source: 'pptx', readonly: false,
-      sourceWidth: opts.width, sourceHeight: opts.height,
+      width: opts.width,
+      height: opts.height,
+      source: 'pptx',
+      readonly: false,
+      sourceWidth: opts.width,
+      sourceHeight: opts.height,
     },
     identity: { prefix, nextSlide: 1, nextElement: 1, nextSpid: {} },
     slides: {},

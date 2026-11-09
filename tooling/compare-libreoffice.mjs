@@ -64,11 +64,19 @@ if (!existsSync(refPath)) {
 // 打成 iife：产物要能在 file:// 下用普通 <script> 跑，ES module 在 file:// 会被 CORS 拦掉
 console.log('打包引擎…');
 const bundlePath = join(outDir, 'core.iife.js');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/core/src/index.ts'),
-  '--bundle', '--format=iife', '--global-name=WebPPT', '--platform=browser',
-  `--outfile=${bundlePath}`,
-], { stdio: 'inherit', cwd: root });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/index.ts'),
+    '--bundle',
+    '--format=iife',
+    '--global-name=WebPPT',
+    '--platform=browser',
+    `--outfile=${bundlePath}`,
+  ],
+  { stdio: 'inherit', cwd: root },
+);
 
 const engine = readFileSync(bundlePath, 'utf8');
 unlinkSync(bundlePath);
@@ -77,7 +85,9 @@ const srcB64 = readFileSync(src).toString('base64');
 // 指标实现与 record-agent-node-libreoffice 共用同一份：剥掉 export 后以经典脚本内嵌
 const ssimLib = readFileSync(join(root, 'tooling/lib/ssim-metrics.mjs'), 'utf8').replace(/^export /gm, '');
 
-writeFileSync(join(outDir, 'compare.html'), `<!doctype html>
+writeFileSync(
+  join(outDir, 'compare.html'),
+  `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>对比 · ${name}</title>
 <style>
   :root{color-scheme:dark}
@@ -184,7 +194,8 @@ const SRC = b64(${JSON.stringify(srcB64)});
   }
 })();
 </script>
-</body></html>`);
+</body></html>`,
+);
 
 console.log(`完成：${join(outDir, 'compare.html')}`);
 console.log(`直接打开即可（无需 dev server）：open ${join(outDir, 'compare.html')}`);

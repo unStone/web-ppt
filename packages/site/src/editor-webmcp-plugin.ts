@@ -8,31 +8,40 @@ import { prepareFileSave } from './editor-file-save';
 import { download } from './download';
 
 interface ModelContext {
-  registerTool(tool: {
-    name: string;
-    description: string;
-    inputSchema: Record<string, unknown>;
-    execute(input: unknown, options?: { signal?: AbortSignal }): Promise<unknown>;
-  }, options: { signal: AbortSignal }): Promise<void>;
+  registerTool(
+    tool: {
+      name: string;
+      description: string;
+      inputSchema: Record<string, unknown>;
+      execute(input: unknown, options?: { signal?: AbortSignal }): Promise<unknown>;
+    },
+    options: { signal: AbortSignal },
+  ): Promise<void>;
 }
 
 type ModelDocument = Document & { modelContext?: ModelContext };
 
 function failure(error: unknown): AgentToolFailure {
   const source = error as Partial<AgentToolError>;
-  return { ok: false, error: {
-    reason: typeof source?.reason === 'string' ? source.reason : 'tool-failed',
-    message: error instanceof Error ? error.message : String(error),
-    commandIndex: typeof source?.commandIndex === 'number' ? source.commandIndex : null,
-    elementId: typeof source?.elementId === 'string' ? source.elementId : null,
-    slideNumber: typeof source?.slideNumber === 'number' ? source.slideNumber : null,
-  } };
+  return {
+    ok: false,
+    error: {
+      reason: typeof source?.reason === 'string' ? source.reason : 'tool-failed',
+      message: error instanceof Error ? error.message : String(error),
+      commandIndex: typeof source?.commandIndex === 'number' ? source.commandIndex : null,
+      elementId: typeof source?.elementId === 'string' ? source.elementId : null,
+      slideNumber: typeof source?.slideNumber === 'number' ? source.slideNumber : null,
+    },
+  };
 }
 
 function rootSchema(base: Readonly<Record<string, unknown>>): Record<string, unknown> {
   let resolved = base;
   while (typeof resolved.$ref === 'string') {
-    resolved = resolved.$ref.split('/').slice(1).reduce((value, key) => value[key] as Record<string, unknown>, base);
+    resolved = resolved.$ref
+      .split('/')
+      .slice(1)
+      .reduce((value, key) => value[key] as Record<string, unknown>, base);
   }
   return { ...resolved, ...(base.definitions ? { definitions: base.definitions } : {}) };
 }
@@ -46,12 +55,17 @@ async function waitForFonts(signal: AbortSignal): Promise<void> {
   if (!document.fonts) return;
   let abort = () => {};
   try {
-    await Promise.race([document.fonts.ready, new Promise<never>((_, reject) => {
-      abort = () => reject(new AgentToolError('aborted', '字体等待已取消'));
-      signal.addEventListener('abort', abort, { once: true });
-    })]);
+    await Promise.race([
+      document.fonts.ready,
+      new Promise<never>((_, reject) => {
+        abort = () => reject(new AgentToolError('aborted', '字体等待已取消'));
+        signal.addEventListener('abort', abort, { once: true });
+      }),
+    ]);
     active(signal);
-  } finally { signal.removeEventListener('abort', abort); }
+  } finally {
+    signal.removeEventListener('abort', abort);
+  }
 }
 
 function browserMeasurement(): TextMeasure {
@@ -67,8 +81,8 @@ function browserMeasurement(): TextMeasure {
       fonts.push('WebPPT DengXian Latin', 'Arial', 'Helvetica', 'Arimo', 'Liberation Sans');
     }
     fonts.push('PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei');
-    const stack = [...new Set(fonts)].map(font => JSON.stringify(font)).join(',');
-    const size = run.size * scale * (run.baseline ? .65 : 1);
+    const stack = [...new Set(fonts)].map((font) => JSON.stringify(font)).join(',');
+    const size = run.size * scale * (run.baseline ? 0.65 : 1);
     context.font = `${run.i ? 'italic ' : ''}${run.b ? '700 ' : '400 '}${size}px ${stack || 'sans-serif'},sans-serif`;
     return context.measureText(text).width + (run.spacing ?? 0) * text.length;
   };
@@ -80,7 +94,10 @@ async function pixels(svg: string, width: number, height: number, signal?: Abort
   let abort = () => {};
   try {
     await new Promise<void>((resolve, reject) => {
-      abort = () => { image.src = ''; reject(new AgentToolError('aborted', '对比度取样已取消')); };
+      abort = () => {
+        image.src = '';
+        reject(new AgentToolError('aborted', '对比度取样已取消'));
+      };
       signal?.addEventListener('abort', abort, { once: true });
       image.onload = () => resolve();
       image.onerror = () => reject(new AgentToolError('contrast-rasterizer-failed', '浏览器无法解码对比度取样 SVG'));
@@ -88,13 +105,16 @@ async function pixels(svg: string, width: number, height: number, signal?: Abort
     });
     if (signal) active(signal);
     const canvas = document.createElement('canvas');
-    canvas.width = width; canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
     try {
       const context = canvas.getContext('2d');
       if (!context) throw new AgentToolError('canvas-unavailable', '当前浏览器不能提供对比度取样 Canvas');
       context.drawImage(image, 0, 0, width, height);
       return context.getImageData(0, 0, width, height).data;
-    } finally { canvas.width = canvas.height = 0; }
+    } finally {
+      canvas.width = canvas.height = 0;
+    }
   } finally {
     signal?.removeEventListener('abort', abort);
     image.onload = image.onerror = null;
@@ -107,7 +127,10 @@ async function imageSize(src: string, signal: AbortSignal): Promise<ImageMetadat
   let abort = () => {};
   try {
     await new Promise<void>((resolve, reject) => {
-      abort = () => { image.src = ''; reject(new AgentToolError('aborted', '图片尺寸读取已取消')); };
+      abort = () => {
+        image.src = '';
+        reject(new AgentToolError('aborted', '图片尺寸读取已取消'));
+      };
       signal.addEventListener('abort', abort, { once: true });
       image.onload = () => resolve();
       image.onerror = () => reject(new AgentToolError('image-metadata-unavailable', '浏览器无法读取图片的原始尺寸'));
@@ -135,12 +158,18 @@ export const editorWebMcpPlugin = {
     const cancel = () => lifetime.abort();
     config.signal?.addEventListener('abort', cancel, { once: true });
     if (config.signal?.aborted) lifetime.abort();
-    let closed = false, revision = 0;
-    const stop = () => { closed = true; lifetime.abort(); };
+    let closed = false,
+      revision = 0;
+    const stop = () => {
+      closed = true;
+      lifetime.abort();
+    };
     documentScope.stopAgentTools = stop;
     let pending: Promise<void> = Promise.resolve();
     const measureText = browserMeasurement();
-    const unsubscribe = session.editor.subscribe(change => { if (change.source !== 'selection') revision++; });
+    const unsubscribe = session.editor.subscribe((change) => {
+      if (change.source !== 'selection') revision++;
+    });
     ctx.effect(() => () => {
       stop();
       if (documentScope.stopAgentTools === stop) delete documentScope.stopAgentTools;
@@ -175,13 +204,18 @@ export const editorWebMcpPlugin = {
           try {
             current(signal);
             if (prepared.changed) throw new AgentToolError('document-changed', '文稿在生成期间已变化，请重新保存');
-            download(new Blob([new Uint8Array(prepared.bytes)], {
-              type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            }), fileName);
+            download(
+              new Blob([new Uint8Array(prepared.bytes)], {
+                type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+              }),
+              fileName,
+            );
             prepared.confirm();
             await ctx.editorRecovery.flush(session);
             return { ok: true, value: { fileName, bytes: prepared.bytes.byteLength } };
-          } finally { prepared.release(); }
+          } finally {
+            prepared.release();
+          }
         });
       }
       if (name === 'edit' || name === 'undo' || name === 'redo' || name === 'lint' || name === 'render') {
@@ -190,16 +224,17 @@ export const editorWebMcpPlugin = {
       }
       const presentation = session.toPresentation();
       const agent = new AgentSession(session.editor, {
-        measureText, presentation,
+        measureText,
+        presentation,
         lint: {
-          signal, measureText,
+          signal,
+          measureText,
           resolveContrast: createSvgContrastSampler({ rasterize: pixels, embeddedFonts: presentation.embeddedFonts }),
-          resolveImageMetadata: context => context.element.kind === 'image' ? imageSize(context.element.src, signal) : undefined,
+          resolveImageMetadata: (context) => (context.element.kind === 'image' ? imageSize(context.element.src, signal) : undefined),
         },
         rasterize: async () => {
           const render = input as AgentRenderInput;
-          const blob = await slideToPng(presentation, presentation.slides[render.slideNumber - 1], render.scale,
-            { strictResources: true });
+          const blob = await slideToPng(presentation, presentation.slides[render.slideNumber - 1], render.scale, { strictResources: true });
           active(signal);
           return new Uint8Array(await blob.arrayBuffer());
         },
@@ -211,10 +246,18 @@ export const editorWebMcpPlugin = {
         const result = await task;
         if (result.ok && (signal.aborted || revision !== committedRevision)) {
           const value = result.value as AgentMutationResult;
-          return { ok: true, value: { ...value, lint: { status: 'failed', slideNumbers: value.lint.slideNumbers,
-            reason: signal.aborted ? 'aborted' : 'document-changed',
-            message: '命令已提交；提交后的布局观察因取消或后续编辑而失效',
-          } } };
+          return {
+            ok: true,
+            value: {
+              ...value,
+              lint: {
+                status: 'failed',
+                slideNumbers: value.lint.slideNumbers,
+                reason: signal.aborted ? 'aborted' : 'document-changed',
+                message: '命令已提交；提交后的布局观察因取消或后续编辑而失效',
+              },
+            },
+          };
         }
         return result;
       }
@@ -238,22 +281,30 @@ export const editorWebMcpPlugin = {
     try {
       for (const tool of listAgentTools()) {
         active(lifetime.signal);
-        await modelContext.registerTool({
-          name: `ppt_${tool.name}`, description: tool.description, inputSchema: rootSchema(tool.inputSchema),
-          execute(input, options = {}) {
-            const request = new AbortController();
-            const abort = () => request.abort();
-            lifetime.signal.addEventListener('abort', abort, { once: true });
-            options.signal?.addEventListener('abort', abort, { once: true });
-            if (lifetime.signal.aborted || options.signal?.aborted) request.abort();
-            const task = pending.then(() => run(tool.name, input, request.signal)).catch(failure).finally(() => {
-              lifetime.signal.removeEventListener('abort', abort);
-              options.signal?.removeEventListener('abort', abort);
-            });
-            pending = task.then(() => {});
-            return task;
+        await modelContext.registerTool(
+          {
+            name: `ppt_${tool.name}`,
+            description: tool.description,
+            inputSchema: rootSchema(tool.inputSchema),
+            execute(input, options = {}) {
+              const request = new AbortController();
+              const abort = () => request.abort();
+              lifetime.signal.addEventListener('abort', abort, { once: true });
+              options.signal?.addEventListener('abort', abort, { once: true });
+              if (lifetime.signal.aborted || options.signal?.aborted) request.abort();
+              const task = pending
+                .then(() => run(tool.name, input, request.signal))
+                .catch(failure)
+                .finally(() => {
+                  lifetime.signal.removeEventListener('abort', abort);
+                  options.signal?.removeEventListener('abort', abort);
+                });
+              pending = task.then(() => {});
+              return task;
+            },
           },
-        }, { signal: lifetime.signal });
+          { signal: lifetime.signal },
+        );
       }
     } catch (error) {
       const cancelled = lifetime.signal.aborted;

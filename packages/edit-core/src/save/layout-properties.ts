@@ -23,11 +23,13 @@ export function patchLayoutProperties(document: XmlDocument, record: LayoutRecor
   const fill = record.ovr.background!;
   assertVectorFill(fill, `版式 ${record.id} 的背景覆盖`);
   const common = findXmlChild(document.root, {
-    localName: 'cSld', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cSld',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!common) throw new Error(`版式 ${record.id} 缺少 p:cSld`);
   let background = findXmlChild(common, {
-    localName: 'bg', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bg',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!background) {
     background = namespacedElement(common, PRESENTATIONML_NS, 'bg');
@@ -39,7 +41,8 @@ export function patchLayoutProperties(document: XmlDocument, record: LayoutRecor
     }
   }
   let properties = findXmlChild(background, {
-    localName: 'bgPr', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bgPr',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!properties) {
     properties = namespacedElement(background, PRESENTATIONML_NS, 'bgPr');

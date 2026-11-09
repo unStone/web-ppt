@@ -142,7 +142,10 @@ function linearShade(props: EscherProps): { angle: number; backFirst: boolean; a
   let foreFirst = degrees >= 0;
   let focus = signed(props.simple.get(P.fillFocus) ?? 0);
   if (focus === 0) foreFirst = !foreFirst;
-  else if (focus < 0) { focus = -focus; foreFirst = !foreFirst; }
+  else if (focus < 0) {
+    focus = -focus;
+    foreFirst = !foreFirst;
+  }
   const axial = focus > 40 && focus < 60;
   if (axial) foreFirst = !foreFirst;
   let angle = 90 - degrees;
@@ -171,7 +174,14 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
       const back = escherColor(c2 ?? 0xffffff, scheme, backOpacity);
       // 5 / 6 以中心或形状为焦点，没有线性方向可读，沿用竖向近似。
       if (type === 5 || type === 6) {
-        return { type: 'gradient', angle: 90, stops: [{ pos: 0, color: fore }, { pos: 1, color: back }] };
+        return {
+          type: 'gradient',
+          angle: 90,
+          stops: [
+            { pos: 0, color: fore },
+            { pos: 1, color: back },
+          ],
+        };
       }
       const shade = linearShade(props);
       const [start, end] = shade.backFirst ? [back, fore] : [fore, back];
@@ -179,8 +189,15 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
         type: 'gradient',
         angle: shade.angle,
         stops: shade.axial
-          ? [{ pos: 0, color: start }, { pos: 0.5, color: end }, { pos: 1, color: start }]
-          : [{ pos: 0, color: start }, { pos: 1, color: end }],
+          ? [
+              { pos: 0, color: start },
+              { pos: 0.5, color: end },
+              { pos: 1, color: start },
+            ]
+          : [
+              { pos: 0, color: start },
+              { pos: 1, color: end },
+            ],
       };
     }
   }
@@ -191,8 +208,16 @@ export function shapeFill(props: EscherProps, scheme: Scheme, blipUrl: (idx: num
 
 /** edit-core/ppt/appearance.ts 的 DASH_PRESETS 按同一张表反查，两边必须同步。 */
 const DASH_MAP: Record<number, number[]> = {
-  1: [4, 3], 2: [1, 3], 3: [4, 3, 1, 3], 4: [4, 3, 1, 3, 1, 3],
-  5: [8, 3], 6: [8, 3, 1, 3], 7: [8, 3, 1, 3, 1, 3], 8: [1, 1], 9: [3, 3], 10: [3, 3, 1, 3],
+  1: [4, 3],
+  2: [1, 3],
+  3: [4, 3, 1, 3],
+  4: [4, 3, 1, 3, 1, 3],
+  5: [8, 3],
+  6: [8, 3, 1, 3],
+  7: [8, 3, 1, 3, 1, 3],
+  8: [1, 1],
+  9: [3, 3],
+  10: [3, 3, 1, 3],
 };
 
 /** 图片矩形裁剪；cropFrom* 缺省为 0。全 0 时返回 null，与「未裁剪」同义。 */
@@ -208,7 +233,11 @@ export function shapeCrop(props: EscherProps): { l: number; t: number; r: number
 }
 
 const ARROW_MAP: Record<number, 'triangle' | 'stealth' | 'diamond' | 'oval' | 'arrow'> = {
-  1: 'triangle', 2: 'stealth', 3: 'diamond', 4: 'oval', 5: 'arrow',
+  1: 'triangle',
+  2: 'stealth',
+  3: 'diamond',
+  4: 'oval',
+  5: 'arrow',
 };
 
 export function shapeStroke(props: EscherProps, scheme: Scheme): Stroke | null {
@@ -253,52 +282,167 @@ export function shapeShadow(props: EscherProps, scheme: Scheme): Effects['shadow
  * 编号严格按 [MS-ODRAW] 2.4.24，任何偏移都会让形状张冠李戴。
  */
 export const MSO_SHAPE: Record<number, string> = {
-  1: 'rect', 2: 'roundRect', 3: 'ellipse', 4: 'diamond', 5: 'triangle', 6: 'rtTriangle',
-  7: 'parallelogram', 8: 'trapezoid', 9: 'hexagon', 10: 'octagon', 11: 'plus', 12: 'star5',
-  13: 'rightArrow', 14: 'rightArrow', 15: 'homePlate', 16: 'cube', 17: 'wedgeRoundRectCallout',
-  18: 'star8', 19: 'arc', 20: 'line', 21: 'plaque', 22: 'can', 23: 'donut',
+  1: 'rect',
+  2: 'roundRect',
+  3: 'ellipse',
+  4: 'diamond',
+  5: 'triangle',
+  6: 'rtTriangle',
+  7: 'parallelogram',
+  8: 'trapezoid',
+  9: 'hexagon',
+  10: 'octagon',
+  11: 'plus',
+  12: 'star5',
+  13: 'rightArrow',
+  14: 'rightArrow',
+  15: 'homePlate',
+  16: 'cube',
+  17: 'wedgeRoundRectCallout',
+  18: 'star8',
+  19: 'arc',
+  20: 'line',
+  21: 'plaque',
+  22: 'can',
+  23: 'donut',
   // 24-31 为文本形状，统一按矩形文本框处理
-  24: 'rect', 25: 'octagon', 26: 'hexagon', 27: 'rect', 28: 'wave', 29: 'donut', 30: 'rect', 31: 'donut',
-  32: 'straightConnector1', 33: 'bentConnector2', 34: 'bentConnector3', 35: 'bentConnector4',
-  36: 'bentConnector5', 37: 'curvedConnector2', 38: 'curvedConnector3', 39: 'curvedConnector4',
+  24: 'rect',
+  25: 'octagon',
+  26: 'hexagon',
+  27: 'rect',
+  28: 'wave',
+  29: 'donut',
+  30: 'rect',
+  31: 'donut',
+  32: 'straightConnector1',
+  33: 'bentConnector2',
+  34: 'bentConnector3',
+  35: 'bentConnector4',
+  36: 'bentConnector5',
+  37: 'curvedConnector2',
+  38: 'curvedConnector3',
+  39: 'curvedConnector4',
   40: 'curvedConnector5',
-  41: 'callout1', 42: 'callout2', 43: 'callout2',
-  44: 'callout1', 45: 'callout2', 46: 'callout2',
-  47: 'borderCallout1', 48: 'borderCallout2', 49: 'borderCallout2',
-  50: 'borderCallout1', 51: 'borderCallout2', 52: 'borderCallout2',
-  53: 'ribbon', 54: 'ribbon2', 55: 'chevron', 56: 'pentagon', 57: 'noSmoking',
-  58: 'star8', 59: 'star16', 60: 'star32',
-  61: 'wedgeRectCallout', 62: 'wedgeRoundRectCallout', 63: 'wedgeEllipseCallout',
-  64: 'wave', 65: 'foldedCorner',
-  66: 'leftArrow', 67: 'downArrow', 68: 'upArrow', 69: 'leftRightArrow', 70: 'upDownArrow',
-  71: 'irregularSeal1', 72: 'irregularSeal2', 73: 'lightningBolt', 74: 'heart',
+  41: 'callout1',
+  42: 'callout2',
+  43: 'callout2',
+  44: 'callout1',
+  45: 'callout2',
+  46: 'callout2',
+  47: 'borderCallout1',
+  48: 'borderCallout2',
+  49: 'borderCallout2',
+  50: 'borderCallout1',
+  51: 'borderCallout2',
+  52: 'borderCallout2',
+  53: 'ribbon',
+  54: 'ribbon2',
+  55: 'chevron',
+  56: 'pentagon',
+  57: 'noSmoking',
+  58: 'star8',
+  59: 'star16',
+  60: 'star32',
+  61: 'wedgeRectCallout',
+  62: 'wedgeRoundRectCallout',
+  63: 'wedgeEllipseCallout',
+  64: 'wave',
+  65: 'foldedCorner',
+  66: 'leftArrow',
+  67: 'downArrow',
+  68: 'upArrow',
+  69: 'leftRightArrow',
+  70: 'upDownArrow',
+  71: 'irregularSeal1',
+  72: 'irregularSeal2',
+  73: 'lightningBolt',
+  74: 'heart',
   75: 'rect', // pictureFrame：按图片处理，几何退化为矩形
   76: 'quadArrow',
-  77: 'leftArrowCallout', 78: 'rightArrowCallout', 79: 'upArrowCallout', 80: 'downArrowCallout',
-  81: 'leftRightArrowCallout', 82: 'upArrowCallout', 83: 'quadArrow',
-  84: 'bevel', 85: 'leftBracket', 86: 'rightBracket', 87: 'leftBrace', 88: 'rightBrace',
-  89: 'leftRightUpArrow', 90: 'bentArrow', 91: 'bentArrow', 92: 'star24',
-  93: 'stripedRightArrow', 94: 'notchedRightArrow', 95: 'blockArc', 96: 'smileyFace',
-  97: 'verticalScroll', 98: 'horizontalScroll', 99: 'circularArrow', 100: 'circularArrow',
-  101: 'uturnArrow', 102: 'curvedRightArrow', 103: 'curvedLeftArrow', 104: 'curvedUpArrow',
-  105: 'curvedDownArrow', 106: 'cloudCallout', 107: 'ribbon', 108: 'ribbon2',
-  109: 'flowChartProcess', 110: 'flowChartDecision', 111: 'flowChartInputOutput',
-  112: 'flowChartPredefinedProcess', 113: 'flowChartInternalStorage', 114: 'flowChartDocument',
-  115: 'flowChartMultidocument', 116: 'flowChartTerminator', 117: 'flowChartPreparation',
-  118: 'flowChartManualInput', 119: 'flowChartManualOperation', 120: 'flowChartConnector',
-  121: 'flowChartPunchedCard', 122: 'flowChartPunchedTape', 123: 'flowChartSummingJunction',
-  124: 'flowChartOr', 125: 'flowChartCollate', 126: 'flowChartSort', 127: 'flowChartExtract',
-  128: 'flowChartMerge', 129: 'flowChartOnlineStorage', 130: 'flowChartOnlineStorage',
-  131: 'flowChartMagneticTape', 132: 'flowChartMagneticDisk', 133: 'flowChartMagneticDrum',
-  134: 'flowChartDisplay', 135: 'flowChartDelay',
-  176: 'flowChartAlternateProcess', 177: 'flowChartOffpageConnector',
-  178: 'callout1', 179: 'callout1', 180: 'borderCallout1', 181: 'borderCallout1',
-  182: 'leftRightUpArrow', 183: 'sun', 184: 'moon', 185: 'bracketPair', 186: 'bracePair',
-  187: 'star4', 188: 'doubleWave',
-  189: 'actionButtonBlank', 190: 'actionButtonHome', 191: 'actionButtonHelp',
-  192: 'actionButtonInformation', 193: 'actionButtonForwardNext', 194: 'actionButtonBackPrevious',
-  195: 'actionButtonEnd', 196: 'actionButtonBeginning', 197: 'actionButtonReturn',
-  198: 'actionButtonDocument', 199: 'actionButtonSound', 200: 'actionButtonMovie',
+  77: 'leftArrowCallout',
+  78: 'rightArrowCallout',
+  79: 'upArrowCallout',
+  80: 'downArrowCallout',
+  81: 'leftRightArrowCallout',
+  82: 'upArrowCallout',
+  83: 'quadArrow',
+  84: 'bevel',
+  85: 'leftBracket',
+  86: 'rightBracket',
+  87: 'leftBrace',
+  88: 'rightBrace',
+  89: 'leftRightUpArrow',
+  90: 'bentArrow',
+  91: 'bentArrow',
+  92: 'star24',
+  93: 'stripedRightArrow',
+  94: 'notchedRightArrow',
+  95: 'blockArc',
+  96: 'smileyFace',
+  97: 'verticalScroll',
+  98: 'horizontalScroll',
+  99: 'circularArrow',
+  100: 'circularArrow',
+  101: 'uturnArrow',
+  102: 'curvedRightArrow',
+  103: 'curvedLeftArrow',
+  104: 'curvedUpArrow',
+  105: 'curvedDownArrow',
+  106: 'cloudCallout',
+  107: 'ribbon',
+  108: 'ribbon2',
+  109: 'flowChartProcess',
+  110: 'flowChartDecision',
+  111: 'flowChartInputOutput',
+  112: 'flowChartPredefinedProcess',
+  113: 'flowChartInternalStorage',
+  114: 'flowChartDocument',
+  115: 'flowChartMultidocument',
+  116: 'flowChartTerminator',
+  117: 'flowChartPreparation',
+  118: 'flowChartManualInput',
+  119: 'flowChartManualOperation',
+  120: 'flowChartConnector',
+  121: 'flowChartPunchedCard',
+  122: 'flowChartPunchedTape',
+  123: 'flowChartSummingJunction',
+  124: 'flowChartOr',
+  125: 'flowChartCollate',
+  126: 'flowChartSort',
+  127: 'flowChartExtract',
+  128: 'flowChartMerge',
+  129: 'flowChartOnlineStorage',
+  130: 'flowChartOnlineStorage',
+  131: 'flowChartMagneticTape',
+  132: 'flowChartMagneticDisk',
+  133: 'flowChartMagneticDrum',
+  134: 'flowChartDisplay',
+  135: 'flowChartDelay',
+  176: 'flowChartAlternateProcess',
+  177: 'flowChartOffpageConnector',
+  178: 'callout1',
+  179: 'callout1',
+  180: 'borderCallout1',
+  181: 'borderCallout1',
+  182: 'leftRightUpArrow',
+  183: 'sun',
+  184: 'moon',
+  185: 'bracketPair',
+  186: 'bracePair',
+  187: 'star4',
+  188: 'doubleWave',
+  189: 'actionButtonBlank',
+  190: 'actionButtonHome',
+  191: 'actionButtonHelp',
+  192: 'actionButtonInformation',
+  193: 'actionButtonForwardNext',
+  194: 'actionButtonBackPrevious',
+  195: 'actionButtonEnd',
+  196: 'actionButtonBeginning',
+  197: 'actionButtonReturn',
+  198: 'actionButtonDocument',
+  199: 'actionButtonSound',
+  200: 'actionButtonMovie',
   202: 'rect', // textBox
 };
 
@@ -319,11 +463,16 @@ export function extractBlips(pictures: Uint8Array): { mime: string; data: Uint8A
   const dv = new DataView(pictures.buffer, pictures.byteOffset, pictures.byteLength);
 
   const RASTER: Record<number, string> = {
-    0xf01d: 'image/jpeg', 0xf01e: 'image/png', 0xf01f: 'image/bmp', 0xf029: 'image/tiff',
+    0xf01d: 'image/jpeg',
+    0xf01e: 'image/png',
+    0xf01f: 'image/bmp',
+    0xf029: 'image/tiff',
     0xf02a: 'image/jpeg',
   };
   const METAFILE: Record<number, string> = {
-    0xf01a: 'image/emf', 0xf01b: 'image/wmf', 0xf01c: 'image/pict',
+    0xf01a: 'image/emf',
+    0xf01b: 'image/wmf',
+    0xf01c: 'image/pict',
   };
 
   for (const rec of records(dv, 0, pictures.length)) {
@@ -400,9 +549,18 @@ export function readSp(dv: DataView, rec: Rec): { id: number; flags: number } {
 }
 
 export const SP_FLAG = {
-  GROUP: 0x1, CHILD: 0x2, PATRIARCH: 0x4, DELETED: 0x8,
-  OLE: 0x10, HAVEMASTER: 0x20, FLIPH: 0x40, FLIPV: 0x80,
-  CONNECTOR: 0x100, HAVEANCHOR: 0x200, BACKGROUND: 0x400, HAVESPT: 0x800,
+  GROUP: 0x1,
+  CHILD: 0x2,
+  PATRIARCH: 0x4,
+  DELETED: 0x8,
+  OLE: 0x10,
+  HAVEMASTER: 0x20,
+  FLIPH: 0x40,
+  FLIPV: 0x80,
+  CONNECTOR: 0x100,
+  HAVEANCHOR: 0x200,
+  BACKGROUND: 0x400,
+  HAVESPT: 0x800,
 };
 
 /** 复杂属性里的 Unicode 字符串（如 pibName） */

@@ -11,23 +11,20 @@ export interface TextEditorContext {
   positions: { from: TextPosition; to: TextPosition };
 }
 
-export function resolveTextEditorContext(
-  editor: Editor,
-  active: ActiveText,
-  root: HTMLDivElement,
-): TextEditorContext | null {
+export function resolveTextEditorContext(editor: Editor, active: ActiveText, root: HTMLDivElement): TextEditorContext | null {
   const dom = rangePositions(root, active.text);
   const selection = editor.selection;
-  const positions = dom ?? (selection.kind === 'text' && selection.id === active.id
-    && sameTextCell(selection.cell, active.cell)
-    ? { from: selection.anchor, to: selection.focus }
-    : null);
+  const positions =
+    dom
+    ?? (selection.kind === 'text' && selection.id === active.id && sameTextCell(selection.cell, active.cell)
+      ? { from: selection.anchor, to: selection.focus }
+      : null);
   return positions
     ? {
-      id: active.id,
-      cell: active.cell ? { ...active.cell } : null,
-      text: active.text,
-      positions,
-    }
+        id: active.id,
+        cell: active.cell ? { ...active.cell } : null,
+        text: active.text,
+        positions,
+      }
     : null;
 }

@@ -24,7 +24,8 @@ function patchCrop(fill: XmlElement, crop: ImageCrop): void {
   }
   // 已有节点可能携带未来版本扩展；只改已知四边，不能用重建换掉未知属性与子节点。
   if (previous) return;
-  const before = findXmlChild(fill, { localName: 'tile', namespaceUri: DRAWINGML_NS })
+  const before =
+    findXmlChild(fill, { localName: 'tile', namespaceUri: DRAWINGML_NS })
     ?? findXmlChild(fill, { localName: 'stretch', namespaceUri: DRAWINGML_NS });
   if (before) insertXmlChildUnchecked(fill, node, before);
   else insertXmlInOrder(fill, node);

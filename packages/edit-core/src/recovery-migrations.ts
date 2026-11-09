@@ -10,7 +10,8 @@ export function recoveryMigrationSources(frames: readonly RecoveryFrame[]): Read
       if (!Array.isArray(patch?.path) || !isExtensionMigrationPatch(patch)) continue;
       const receipt = readExtensionMigration(patch.op === 'set' ? patch.value : undefined);
       for (const route of receipt.routes) {
-        const key = JSON.stringify(route.source), previous = declared.get(key);
+        const key = JSON.stringify(route.source),
+          previous = declared.get(key);
         if (previous === route.address) continue;
         if (previous !== undefined) throw new Error('恢复日志不能重新指定扩展地址');
         declared.set(key, route.address);

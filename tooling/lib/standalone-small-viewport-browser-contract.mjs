@@ -60,7 +60,7 @@ export async function runStandaloneSmallViewportContract({ evaluate, request, wa
       '小视口打开失败',
     );
     await evaluate(dispatchSwipeScript('#stage', -80, 0));
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== '- / -') {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== '- / -') {
       throw new Error('打开失败后窄屏滑动制造了假页码');
     }
 
@@ -98,7 +98,7 @@ export async function runStandaloneSmallViewportContract({ evaluate, request, wa
       const start = presenting.page;
       await press('b', 66, 'KeyB');
       await waitFor("document.querySelector('#stage .present-blank.is-on')", '窄屏放映 B 黑屏');
-      if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+      if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
         throw new Error('窄屏 B 黑屏改变了页码');
       }
       const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 };

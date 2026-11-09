@@ -1,8 +1,6 @@
 import { textRunDirectFlags, TEXT_RUN_DIRECT_BITS } from '../edit-metadata';
 import { TEXT_STRIKE_STYLES, TEXT_UNDERLINE_STYLES } from '../types';
-import type {
-  Paragraph, TextBody, TextCapsStyle, TextRun, TextStrikeStyle, TextUnderlineStyle, TextWarp,
-} from '../types';
+import type { Paragraph, TextBody, TextCapsStyle, TextRun, TextStrikeStyle, TextUnderlineStyle, TextWarp } from '../types';
 import type { TextRunDirectFlags } from '../edit-metadata';
 import { attr, boolAttr, emu, kid, kids, numAttr, pt100 } from '../xml';
 import { ColorCtx, childColor } from './color';
@@ -190,25 +188,38 @@ export function parseRunPropsDetailed(
   let bits = 0;
   if (!rPr) return { props: out, direct: textRunDirectFlags(bits) };
   const sz = numAttr(rPr, 'sz');
-  if (sz !== null) { out.sz = sz; bits |= TEXT_RUN_DIRECT_BITS.size; }
-  if (attr(rPr, 'b') !== null) { out.b = boolAttr(rPr, 'b'); bits |= TEXT_RUN_DIRECT_BITS.b; }
-  if (attr(rPr, 'i') !== null) { out.i = boolAttr(rPr, 'i'); bits |= TEXT_RUN_DIRECT_BITS.i; }
+  if (sz !== null) {
+    out.sz = sz;
+    bits |= TEXT_RUN_DIRECT_BITS.size;
+  }
+  if (attr(rPr, 'b') !== null) {
+    out.b = boolAttr(rPr, 'b');
+    bits |= TEXT_RUN_DIRECT_BITS.b;
+  }
+  if (attr(rPr, 'i') !== null) {
+    out.i = boolAttr(rPr, 'i');
+    bits |= TEXT_RUN_DIRECT_BITS.i;
+  }
   const u = attr(rPr, 'u');
   if (u !== null) {
-    out.u = (TEXT_UNDERLINE_STYLES as readonly string[]).includes(u)
-      ? u as TextUnderlineStyle : 'sng';
+    out.u = (TEXT_UNDERLINE_STYLES as readonly string[]).includes(u) ? (u as TextUnderlineStyle) : 'sng';
     bits |= TEXT_RUN_DIRECT_BITS.u;
   }
   const strike = attr(rPr, 'strike');
   if (strike !== null) {
-    out.strike = (TEXT_STRIKE_STYLES as readonly string[]).includes(strike)
-      ? strike as TextStrikeStyle : 'sngStrike';
+    out.strike = (TEXT_STRIKE_STYLES as readonly string[]).includes(strike) ? (strike as TextStrikeStyle) : 'sngStrike';
     bits |= TEXT_RUN_DIRECT_BITS.strike;
   }
   const baseline = numAttr(rPr, 'baseline');
-  if (baseline !== null) { out.baseline = baseline / 1000; bits |= TEXT_RUN_DIRECT_BITS.baseline; }
+  if (baseline !== null) {
+    out.baseline = baseline / 1000;
+    bits |= TEXT_RUN_DIRECT_BITS.baseline;
+  }
   const spc = numAttr(rPr, 'spc');
-  if (spc !== null) { out.spc = pt100(spc); bits |= TEXT_RUN_DIRECT_BITS.spacing; }
+  if (spc !== null) {
+    out.spc = pt100(spc);
+    bits |= TEXT_RUN_DIRECT_BITS.spacing;
+  }
   const cap = attr(rPr, 'cap');
   if (cap) {
     out.caps = cap === 'all' ? 'all' : cap === 'small' ? 'small' : 'none';
@@ -235,18 +246,16 @@ export function parseRunPropsDetailed(
     out.color = 'transparent';
     out.gradient = null;
   }
-  if (solidFill || grad || ['noFill', 'blipFill', 'pattFill', 'grpFill']
-    .some((name) => !!kid(rPr, name))) {
+  if (solidFill || grad || ['noFill', 'blipFill', 'pattFill', 'grpFill'].some((name) => !!kid(rPr, name))) {
     bits |= TEXT_RUN_DIRECT_BITS.color | TEXT_RUN_DIRECT_BITS.gradient;
   }
-  if (!solidFill && !grad && ['blipFill', 'pattFill', 'grpFill']
-    .some((name) => !!kid(rPr, name))) {
+  if (!solidFill && !grad && ['blipFill', 'pattFill', 'grpFill'].some((name) => !!kid(rPr, name))) {
     out.color = 'transparent';
     out.gradient = null;
   }
   const uFill = childColor(kid(rPr, 'uFill'), ctx) ?? childColor(kid(kid(rPr, 'uFill'), 'solidFill'), ctx);
   if (uFill) out.uColor = uFill;
-  if (kid(rPr, 'uFillTx') || kid(rPr, 'uFill') && !uFill) out.uColor = null;
+  if (kid(rPr, 'uFillTx') || (kid(rPr, 'uFill') && !uFill)) out.uColor = null;
   if (kid(rPr, 'uFillTx') || kid(rPr, 'uFill')) bits |= TEXT_RUN_DIRECT_BITS.underlineColor;
   const highlight = kid(rPr, 'highlight');
   if (highlight) out.highlight = childColor(highlight, ctx) ?? null;
@@ -320,8 +329,7 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
   const layout = parseTextBodyLayout(bodyPrs);
   const hasBodyFallback = (env.bodyPrFallbacks ?? []).some(Boolean);
   // 普通预览是热路径；只有编辑清除直设时才需要单独求一次回退值。
-  const inheritedLayout = env.edit && hasBodyFallback
-    ? parseTextBodyLayout(bodyPrs.slice(1)) : undefined;
+  const inheritedLayout = env.edit && hasBodyFallback ? parseTextBodyLayout(bodyPrs.slice(1)) : undefined;
 
   const counters: number[] = [];
   const paragraphs: Paragraph[] = [];
@@ -337,76 +345,74 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
 
     const runs: TextRun[] = [];
     const collectRuns = (parent: Element, depth: number): void => {
-    for (let node = parent.firstElementChild; node; node = node.nextElementSibling) {
-      if (node.localName === 'r' || node.localName === 'fld') {
-        const rPr = kid(node, 'rPr');
-        const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
-        const rp = mergeRun(merged.rp, parsedRun.props);
-        const hlink = kid(rPr, 'hlinkClick');
-        let readonlyLink = false;
-        if (hlink && env.resolveLink) {
-          const url = env.resolveLink(attr(hlink, 'r:id') ?? '', attr(hlink, 'action'));
-          if (url) rp.link = url;
-          else readonlyLink = true;
+      for (let node = parent.firstElementChild; node; node = node.nextElementSibling) {
+        if (node.localName === 'r' || node.localName === 'fld') {
+          const rPr = kid(node, 'rPr');
+          const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
+          const rp = mergeRun(merged.rp, parsedRun.props);
+          const hlink = kid(rPr, 'hlinkClick');
+          let readonlyLink = false;
+          if (hlink && env.resolveLink) {
+            const url = env.resolveLink(attr(hlink, 'r:id') ?? '', attr(hlink, 'action'));
+            if (url) rp.link = url;
+            else readonlyLink = true;
+          }
+          let text = kid(node, 't')?.textContent ?? '';
+          if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
+          const run = finalizeRun(text, rp, env, merged.rp, parsedRun.direct);
+          if (env.edit && readonlyLink && run.editInfo) run.editInfo = { ...run.editInfo, readonlyLink: true };
+          runs.push(node.localName === 'fld' ? { ...run, field: attr(node, 'type') ?? 'unknown' } : run);
+          if (text.trim()) hasContent = true;
+        } else if (node.localName === 'br') {
+          // a:br 自带 rPr；忽略它会让带格式硬换行保存重开后退回段落默认字符格式。
+          const rPr = kid(node, 'rPr');
+          const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
+          const rp = mergeRun(merged.rp, parsedRun.props);
+          runs.push(finalizeRun('\n', rp, env, merged.rp, parsedRun.direct));
+        } else if (node.localName === 'm' && node.namespaceURI === 'http://schemas.microsoft.com/office/drawing/2010/main') {
+          if (depth > 0) collectRuns(node, depth - 1);
+        } else if (node.localName === 'AlternateContent') {
+          // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
+          const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
+          if (branch && depth > 0) collectRuns(branch, depth - 1);
+        } else if (node.localName === 'oMathPara' || node.localName === 'oMath') {
+          // OMML：解析成格式无关的公式树，排版交给渲染层（排版要测文本宽度）。
+          // text 字段保留线性文本，搜索与纯文本导出仍然可用。
+          const math = parseOmml(node);
+          const text = math.length ? mathPlainText(math) : mathText(node);
+          const issues = mathGenerationIssues(node);
+          if (math.length || text || issues.length) {
+            const run = finalizeRun(text, { ...merged.rp, i: true }, env, merged.rp);
+            if (math.length) run.math = math;
+            if (issues.length) run.generationIssues = [...(run.generationIssues ?? []), ...issues];
+            runs.push(run);
+            hasContent = true;
+          }
+        } else if (depth > 0 && (node.localName === 'Choice' || node.localName === 'Fallback')) {
+          collectRuns(node, depth - 1);
         }
-        let text = kid(node, 't')?.textContent ?? '';
-        if (node.localName === 'fld' && !text) text = fieldText(attr(node, 'type'), env);
-        const run = finalizeRun(text, rp, env, merged.rp, parsedRun.direct);
-        if (env.edit && readonlyLink && run.editInfo) run.editInfo = { ...run.editInfo, readonlyLink: true };
-        runs.push(node.localName === 'fld'
-          ? { ...run, field: attr(node, 'type') ?? 'unknown' }
-          : run);
-        if (text.trim()) hasContent = true;
-      } else if (node.localName === 'br') {
-        // a:br 自带 rPr；忽略它会让带格式硬换行保存重开后退回段落默认字符格式。
-        const rPr = kid(node, 'rPr');
-        const parsedRun = parseRunPropsDetailed(rPr, env.ctx, env.fonts);
-        const rp = mergeRun(merged.rp, parsedRun.props);
-        runs.push(finalizeRun('\n', rp, env, merged.rp, parsedRun.direct));
-      } else if (node.localName === 'm' && node.namespaceURI === 'http://schemas.microsoft.com/office/drawing/2010/main') {
-        if (depth > 0) collectRuns(node, depth - 1);
-      } else if (node.localName === 'AlternateContent') {
-        // mc:AlternateContent 里 Choice 是新版内容、Fallback 是兼容内容，取其一即可
-        const branch = kid(node, 'Choice') ?? kid(node, 'Fallback');
-        if (branch && depth > 0) collectRuns(branch, depth - 1);
-      } else if (node.localName === 'oMathPara' || node.localName === 'oMath') {
-        // OMML：解析成格式无关的公式树，排版交给渲染层（排版要测文本宽度）。
-        // text 字段保留线性文本，搜索与纯文本导出仍然可用。
-        const math = parseOmml(node);
-        const text = math.length ? mathPlainText(math) : mathText(node);
-        const issues = mathGenerationIssues(node);
-        if (math.length || text || issues.length) {
-          const run = finalizeRun(text, { ...merged.rp, i: true }, env, merged.rp);
-          if (math.length) run.math = math;
-          if (issues.length) run.generationIssues = [...(run.generationIssues ?? []), ...issues];
-          runs.push(run);
-          hasContent = true;
-        }
-      } else if (depth > 0 && (node.localName === 'Choice' || node.localName === 'Fallback')) {
-        collectRuns(node, depth - 1);
       }
-    }
     };
     collectRuns(p, 4);
     if (runs.length === 0) {
       const endRPr = kid(p, 'endParaRPr');
       const parsedRun = parseRunPropsDetailed(endRPr, env.ctx, env.fonts);
-      runs.push(finalizeRun(
-        '', mergeRun(merged.rp, parsedRun.props), env, merged.rp, parsedRun.direct,
-      ));
+      runs.push(finalizeRun('', mergeRun(merged.rp, parsedRun.props), env, merged.rp, parsedRun.direct));
     }
 
-    paragraphs.push(materializeParagraph({
-      lvl,
-      resolved: merged,
-      inherited,
-      direct,
-      directRun: parsedParagraph.directRun,
-      runs,
-      counters,
-      lnSpcReduction: layout.lnSpcReduction ?? 0,
-      env,
-    }));
+    paragraphs.push(
+      materializeParagraph({
+        lvl,
+        resolved: merged,
+        inherited,
+        direct,
+        directRun: parsedParagraph.directRun,
+        runs,
+        counters,
+        lnSpcReduction: layout.lnSpcReduction ?? 0,
+        env,
+      }),
+    );
   }
 
   // 编辑解析必须保留空段落及 endParaRPr 的格式入口；普通查看仍把它收敛成 null，避免空形状生成 DOM。
@@ -415,10 +421,14 @@ export function parseTextBody(txBody: Element | null, env: TextEnv, includeEmpty
     ...layout,
     paragraphs,
     warp: parseWarp(bodyPrs),
-    ...(env.edit ? { editInfo: {
-      direct: directTextBodyProperties(bodyPr),
-      ...(inheritedLayout ? { inherited: inheritedLayout } : {}),
-    } } : {}),
+    ...(env.edit
+      ? {
+          editInfo: {
+            direct: directTextBodyProperties(bodyPr),
+            ...(inheritedLayout ? { inherited: inheritedLayout } : {}),
+          },
+        }
+      : {}),
   };
 }
 

@@ -1,7 +1,5 @@
 import type { FormatPainter } from './format-painter-types';
-import type {
-  FormatPainterSnapshot, FormatPainterStartOptions, FormatPainterTarget,
-} from './format-painter-types';
+import type { FormatPainterSnapshot, FormatPainterStartOptions, FormatPainterTarget } from './format-painter-types';
 
 /** 视图绑定只投影状态与错误；格式真相仍完全属于会话控制器。 */
 export class FormatPainterViewBinding {
@@ -16,17 +14,31 @@ export class FormatPainterViewBinding {
     this.sync(painter.snapshot);
   }
 
-  get active(): boolean { return this.painter.snapshot.active; }
+  get active(): boolean {
+    return this.painter.snapshot.active;
+  }
 
-  start(options: FormatPainterStartOptions): boolean { return this.painter.start(options); }
-  apply(target: FormatPainterTarget): boolean { return this.painter.apply(target); }
-  cancel(): void { this.painter.cancel(); }
-  destroy(): void { this.unsubscribe(); }
+  start(options: FormatPainterStartOptions): boolean {
+    return this.painter.start(options);
+  }
+  apply(target: FormatPainterTarget): boolean {
+    return this.painter.apply(target);
+  }
+  cancel(): void {
+    this.painter.cancel();
+  }
+  destroy(): void {
+    this.unsubscribe();
+  }
 
   report(error: unknown): void {
     const CustomEventCtor = this.root.ownerDocument.defaultView?.CustomEvent ?? CustomEvent;
     this.root.dispatchEvent(new CustomEventCtor('webpptformaterror', { detail: error }));
-    try { this.onError?.(error); } catch { /* 宿主错误观察者不能破坏格式刷状态。 */ }
+    try {
+      this.onError?.(error);
+    } catch {
+      /* 宿主错误观察者不能破坏格式刷状态。 */
+    }
   }
 
   private sync(snapshot: FormatPainterSnapshot): void {

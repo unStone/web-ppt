@@ -2,8 +2,11 @@ import { renderSlideToSvg } from '@web-ppt/core';
 import type { Presentation } from '@web-ppt/core';
 import type { Editor, EditorChange, ElementId, Selection, SlideId } from '@web-ppt/edit-core';
 import {
-  bindSlideIdentities, findElementPartition, syncElementTreeVisibility,
-  syncElementVisibility, syncSlideVisibility,
+  bindSlideIdentities,
+  findElementPartition,
+  syncElementTreeVisibility,
+  syncElementVisibility,
+  syncSlideVisibility,
 } from './dom-identity';
 import { insertElementPartition, patchElement } from './dom-patch';
 import { patchSlideDom } from './slide-dom-update';
@@ -31,8 +34,12 @@ export class SlideDomRenderer {
     const slideId = this.options.slideId();
     staticLayer.innerHTML = renderSlideToSvg(
       // DOM 预览复用宿主已安装的 FontFace；独立导出仍从 presentation 取得字体声明。
-      this.options.browserFontsReady() ? { ...presentation, embeddedFonts: undefined } : presentation, editor.toSlide(slideId), {
-        textMode, idPrefix: `${idPrefix}${slideId}-`, includeEditMarkers: true,
+      this.options.browserFontsReady() ? { ...presentation, embeddedFonts: undefined } : presentation,
+      editor.toSlide(slideId),
+      {
+        textMode,
+        idPrefix: `${idPrefix}${slideId}-`,
+        includeEditMarkers: true,
       },
     );
     bindSlideIdentities(staticLayer, editor.doc, slideId);
@@ -43,9 +50,18 @@ export class SlideDomRenderer {
   update(change: EditorChange, deferElement: ElementId | null): void {
     const { staticLayer, editor, idPrefix, textMode } = this.options;
     const slideId = this.options.slideId();
-    if (!patchSlideDom({
-      staticLayer, editor, slideId, change, idPrefix, textMode, deferElement,
-    })) this.render(change.selection);
+    if (
+      !patchSlideDom({
+        staticLayer,
+        editor,
+        slideId,
+        change,
+        idPrefix,
+        textMode,
+        deferElement,
+      })
+    )
+      this.render(change.selection);
     else {
       for (const id of change.renderElements) {
         if (editor.doc.elements[id]) syncElementTreeVisibility(staticLayer, editor.doc, id);
@@ -68,12 +84,12 @@ export class SlideDomRenderer {
 
   renderSelection(selection: Selection): void {
     renderPlaceholderOverlay(
-      this.options.interactionLayer, this.options.editor.doc, this.options.slideId(),
-      this.options.zoom(), this.options.editable(),
+      this.options.interactionLayer,
+      this.options.editor.doc,
+      this.options.slideId(),
+      this.options.zoom(),
+      this.options.editable(),
     );
-    renderSelectionOverlay(
-      this.options.interactionLayer, this.options.editor.doc, selection,
-      this.options.slideId(), this.options.zoom(),
-    );
+    renderSelectionOverlay(this.options.interactionLayer, this.options.editor.doc, selection, this.options.slideId(), this.options.zoom());
   }
 }

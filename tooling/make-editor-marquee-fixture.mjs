@@ -6,15 +6,31 @@ import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const plain = sp({
-  x: 100, y: 100, w: 120, h: 80, fill: solid('accent1'), name: 'marquee-plain',
+  x: 100,
+  y: 100,
+  w: 120,
+  h: 80,
+  fill: solid('accent1'),
+  name: 'marquee-plain',
 });
 const rotated = sp({
-  x: 350, y: 100, w: 120, h: 80, rot: 1800000, flipH: true,
-  fill: solid('accent3'), name: 'marquee-rotated-flipped',
+  x: 350,
+  y: 100,
+  w: 120,
+  h: 80,
+  rot: 1800000,
+  flipH: true,
+  fill: solid('accent3'),
+  name: 'marquee-rotated-flipped',
 });
 const nestedLeaf = sp({
-  x: 0, y: 0, w: 30, h: 25, flipV: true,
-  fill: solid('accent5'), name: 'marquee-nested-leaf',
+  x: 0,
+  y: 0,
+  w: 30,
+  h: 25,
+  flipV: true,
+  fill: solid('accent5'),
+  name: 'marquee-nested-leaf',
 });
 const inner = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="901" name="marquee-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -24,8 +40,13 @@ const inner = `<p:grpSp>
 ${nestedLeaf}
 </p:grpSp>`;
 const sibling = sp({
-  x: 10, y: 10, w: 40, h: 30, rot: 900000,
-  fill: solid('accent2'), name: 'marquee-group-sibling',
+  x: 10,
+  y: 10,
+  w: 40,
+  h: 30,
+  rot: 900000,
+  fill: solid('accent2'),
+  name: 'marquee-group-sibling',
 });
 const outer = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="902" name="marquee-outer-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -37,12 +58,21 @@ ${sibling}
 </p:grpSp>`;
 
 const bytes = deck({
-  name: 'Editor Marquee', width: 1000, height: 600,
+  name: 'Editor Marquee',
+  width: 1000,
+  height: 600,
   slides: [
     slideXml(plain + rotated + outer),
-    slideXml(sp({
-      x: 100, y: 100, w: 120, h: 80, fill: solid('accent4'), name: 'marquee-second-slide',
-    })),
+    slideXml(
+      sp({
+        x: 100,
+        y: 100,
+        w: 120,
+        h: 80,
+        fill: solid('accent4'),
+        name: 'marquee-second-slide',
+      }),
+    ),
   ],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

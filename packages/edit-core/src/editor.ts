@@ -3,9 +3,7 @@ import { prepareExtensionCopies } from './extension-copy';
 import { rebaseExtensionCopyHistory } from './extension-copy-history';
 import { isDocumentExtensionPatch } from './document-extensions';
 import { assertPatchCount } from './commands/patch-count';
-import {
-  assertPureCommand, commandPatches, commandSelectsInsertedElement, commandTargetIds,
-} from './commands/dispatch';
+import { assertPureCommand, commandPatches, commandSelectsInsertedElement, commandTargetIds } from './commands/dispatch';
 import { isElementTreePatch } from './commands/element-tree';
 import { isElementHierarchyPatch } from './commands/element-hierarchy';
 import { isElementOrderPatch } from './commands/element-order';
@@ -15,19 +13,38 @@ import { fitTextShapePatches } from './commands/fit-text-shape';
 import { isImageResourcePatch } from './commands/element-image-content';
 import { isElementInteractionPatch } from './commands/element-interaction';
 import {
-  affectsSlideSequence, bodyPropsPatchElements, hasDocumentPatch, panePatchElements,
+  affectsSlideSequence,
+  bodyPropsPatchElements,
+  hasDocumentPatch,
+  panePatchElements,
   renderPatchSlides,
 } from './change-classification';
 import type {
-  Command, DesignCommand, EditorChange, EditorOptions, EditorPatchEvent, EditorPatchSubscriber,
-  EditorPatchSubscribeOptions, EditorSubscriber,
-  ExternalPatchOptions, History, HistoryEntry, Patch, Selection, SlideChangeSets, Transaction,
-  TransactionOptions, TransactionResult,
+  Command,
+  DesignCommand,
+  EditorChange,
+  EditorOptions,
+  EditorPatchEvent,
+  EditorPatchSubscriber,
+  EditorPatchSubscribeOptions,
+  EditorSubscriber,
+  ExternalPatchOptions,
+  History,
+  HistoryEntry,
+  Patch,
+  Selection,
+  SlideChangeSets,
+  Transaction,
+  TransactionOptions,
+  TransactionResult,
 } from './commands/types';
 import { HistoryStore } from './history';
 import type { HistoryPatchLink } from './history';
 import {
-  activeImageResourceHashes, historyImageResourceHashes, imageReachabilityMayChange, imageResourcePatchClosure,
+  activeImageResourceHashes,
+  historyImageResourceHashes,
+  imageReachabilityMayChange,
+  imageResourcePatchClosure,
 } from './image-resource-history';
 import { validateEditDoc, validateEditElements } from './model-invariants';
 import type { OpcPatchResult } from './opc/types';
@@ -35,16 +52,12 @@ import { effectiveElement, toSlide } from './projection';
 import { renderedContentToSlideMatrix, renderedElement, renderedFrameToSlideMatrix } from './space';
 import { RecoveryJournal, restoreRecoveryFrames } from './recovery';
 import type { RecoveryFrameSource, RecoverySubscriber } from './recovery-types';
-import {
-  cloneSelection, normalizeSelection, selectionAfterInteractionState, selectionAfterStructure,
-} from './selection';
+import { cloneSelection, normalizeSelection, selectionAfterInteractionState, selectionAfterStructure } from './selection';
 import { validateCommandRelations } from './transaction-validation';
 import type { DesignTarget, EditDoc, ElementId, SlideId } from './types';
 import { changeFromPatches } from './patch-change';
 import { assertEditIdentityWatermark, mergeEditIdentityWatermark } from './identity-watermark';
-import {
-  advanceCollaborationVersion, assertCollaborationVersionAvailable,
-} from './identity-allocation';
+import { advanceCollaborationVersion, assertCollaborationVersionAvailable } from './identity-allocation';
 import { EditorPatchJournal, reportEditorSubscriberError } from './patch-events';
 import { assertDesignTarget, canvasTargetOfElement, sameCanvas } from './design-target';
 import { toDesignCanvas } from './design';
@@ -67,7 +80,9 @@ class TransactionCollector implements Transaction {
     this.selection = selection;
   }
 
-  close(): void { this.active = false; }
+  close(): void {
+    this.active = false;
+  }
 }
 
 export class Editor {
@@ -89,9 +104,10 @@ export class Editor {
     validateEditDoc(doc);
     this.doc = doc;
     this.origin = options.origin ?? 'local';
-    const recovered = options.recoveryFrames && options.recoveryFrames.length
-      ? restoreRecoveryFrames(doc, options.recoveryFrames)
-      : { selection: { kind: 'none' } as const, dirty: false, sequence: 0 };
+    const recovered =
+      options.recoveryFrames && options.recoveryFrames.length
+        ? restoreRecoveryFrames(doc, options.recoveryFrames)
+        : { selection: { kind: 'none' } as const, dirty: false, sequence: 0 };
     this.currentSelection = cloneSelection(recovered.selection);
     if (recovered.dirty) {
       this.currentState = 1;
@@ -100,30 +116,40 @@ export class Editor {
     this.recoveryJournal = new RecoveryJournal(recovered.sequence);
     this.activeImageResources = activeImageResourceHashes(doc);
     this.historyStore = new HistoryStore(options.historyLimit, options.historyByteLimit, {
-      canonicalPath: path => canonicalExtensionPath(doc, path),
+      canonicalPath: (path) => canonicalExtensionPath(doc, path),
       rebase: (entry, patches) => rebaseExtensionCopyHistory(doc, entry, patches),
       externalByteSize: (entries) => this.historyImageResourceBytes(entries),
       changed: (entries) => this.pruneImageResources(entries),
       canMerge: ({ forward, inverse }) => {
-        try { this.assertReplayableHistory(forward, inverse); return true; }
-        catch { return false; }
+        try {
+          this.assertReplayableHistory(forward, inverse);
+          return true;
+        } catch {
+          return false;
+        }
       },
     });
     this.history = this.historyStore;
     this.pruneImageResources([]);
-    this.unsubscribeExtensions = observeEditExtensionRegistration(doc,
+    this.unsubscribeExtensions = observeEditExtensionRegistration(
+      doc,
       (render, slides) => this.emit('external', render, slides, new Set(), render, new Set()),
-      patches => {
+      (patches) => {
         const recovery = this.recoveryJournal.prepare(doc, patches);
         applyPatches(doc, patches);
         this.historyStore.breakMerge();
         this.emitRecovery('transaction', patches, '扩展数据地址迁移', undefined, recovery);
-      });
+      },
+    );
   }
 
-  get selection(): Selection { return cloneSelection(this.currentSelection); }
+  get selection(): Selection {
+    return cloneSelection(this.currentSelection);
+  }
 
-  isDirty(): boolean { return this.currentState !== this.savedState; }
+  isDirty(): boolean {
+    return this.currentState !== this.savedState;
+  }
 
   async save(): Promise<Uint8Array> {
     return (await this.saveDetailed()).bytes;
@@ -165,17 +191,16 @@ export class Editor {
   subscribe(subscriber: EditorSubscriber): () => void {
     if (typeof subscriber !== 'function') throw new Error('订阅者必须是函数');
     this.subscribers.add(subscriber);
-    return () => { this.subscribers.delete(subscriber); };
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
   }
 
   subscribeRecovery(subscriber: RecoverySubscriber): () => void {
     return this.recoveryJournal.subscribe(subscriber);
   }
 
-  subscribePatches(
-    subscriber: EditorPatchSubscriber,
-    options: EditorPatchSubscribeOptions = {},
-  ): () => void {
+  subscribePatches(subscriber: EditorPatchSubscriber, options: EditorPatchSubscribeOptions = {}): () => void {
     return this.patchJournal.subscribe(subscriber, options);
   }
 
@@ -189,29 +214,28 @@ export class Editor {
     if (!commands.length) throw new Error('execDesign 缺少命令');
     for (const command of commands) {
       assertPureCommand(command);
-      if (command.type === 'SetBackground' || command.type === 'SetTransition'
+      if (
+        command.type === 'SetBackground'
+        || command.type === 'SetTransition'
         || command.type === 'SetMasterTextStyle'
-        || command.type === 'AddShape' || command.type === 'AddImage' || command.type === 'AddTable') {
+        || command.type === 'AddShape'
+        || command.type === 'AddImage'
+        || command.type === 'AddTable'
+      ) {
         if (!('target' in command) || !command.target || !sameCanvas(command.target, target)) {
           throw new Error('设计目标不一致');
         }
         continue;
       }
       const ids = commandTargetIds(command);
-      if (!ids.length || ids.some((id) =>
-        !sameCanvas(canvasTargetOfElement(this.doc, id), target))) {
+      if (!ids.length || ids.some((id) => !sameCanvas(canvasTargetOfElement(this.doc, id), target))) {
         throw new Error(`${command.type} 设计目标不一致`);
       }
     }
-    return this.commit(commands, null,
-      commands[1] ? '批量设计' : commands[0].type, {}, target);
+    return this.commit(commands, null, commands[1] ? '批量设计' : commands[0].type, {}, target);
   }
 
-  transaction(
-    callback: (transaction: Transaction) => void,
-    label: string,
-    options: TransactionOptions = {},
-  ): TransactionResult {
+  transaction(callback: (transaction: Transaction) => void, label: string, options: TransactionOptions = {}): TransactionResult {
     if (!label.trim()) throw new Error('事务标签不能为空');
     const transaction = new TransactionCollector();
     try {
@@ -222,25 +246,34 @@ export class Editor {
     return this.commit(transaction.commands, transaction.selection, label, options);
   }
 
-  undo(): EditorChange | null { return this.replayHistory('undo'); }
+  undo(): EditorChange | null {
+    return this.replayHistory('undo');
+  }
 
-  redo(): EditorChange | null { return this.replayHistory('redo'); }
+  redo(): EditorChange | null {
+    return this.replayHistory('redo');
+  }
 
   private replayHistory(source: 'undo' | 'redo'): EditorChange | null {
     const undo = source === 'undo';
     const entry = undo ? this.historyStore.peekUndo() : this.historyStore.peekRedo();
     if (!entry) return null;
-    const patches = (undo ? entry.inverse : entry.forward).map(patch => canonicalExtensionPatch(this.doc, patch));
-    const inverse = (undo ? entry.forward : entry.inverse).map(patch => canonicalExtensionPatch(this.doc, patch));
+    const patches = (undo ? entry.inverse : entry.forward).map((patch) => canonicalExtensionPatch(this.doc, patch));
+    const inverse = (undo ? entry.forward : entry.inverse).map((patch) => canonicalExtensionPatch(this.doc, patch));
     const outgoing = this.transportPatches(patches, this.origin);
     assertCollaborationVersionAvailable(this.doc.identity);
     // 远端 Patch 可能改变模型或占用 OPC 身份，两个方向都须在完整暂存模型上重新验真。
     const dirty = applyPatches(this.doc, patches);
     this.refreshActiveImageResources(patches);
     this.currentSelection = cloneSelection(undo ? entry.selectionBefore : entry.selectionAfter);
-    if (undo) this.historyStore.moveToRedo(); else this.historyStore.moveToUndo();
-    this.currentState = this.currentState === (undo ? entry.afterState : entry.beforeState)
-      ? (undo ? entry.beforeState : entry.afterState) : this.nextState++;
+    if (undo) this.historyStore.moveToRedo();
+    else this.historyStore.moveToUndo();
+    this.currentState =
+      this.currentState === (undo ? entry.afterState : entry.beforeState)
+        ? undo
+          ? entry.beforeState
+          : entry.afterState
+        : this.nextState++;
     const change = changeFromPatches(this.doc, patches, inverse, source, this.selection, dirty);
     const time = Date.now();
     advanceCollaborationVersion(this.doc.identity);
@@ -255,7 +288,7 @@ export class Editor {
     if (!Array.isArray(patches)) throw new Error('外部补丁必须是数组');
     const time = options.time ?? Date.now();
     const origin = options.origin ?? 'external';
-    const label = options.label && options.label.trim() || '外部编辑';
+    const label = (options.label && options.label.trim()) || '外部编辑';
     if (!Number.isFinite(time)) throw new Error('外部补丁时间必须是有限数字');
     if (typeof origin !== 'string' || !origin) throw new Error('外部补丁 origin 必须是非空字符串');
     if (options.identity) assertEditIdentityWatermark(options.identity);
@@ -270,8 +303,7 @@ export class Editor {
     const history = this.historyStore.prepareRebase(patches);
     const dirty = applyPatches(this.doc, patches);
     if (options.identity) mergeEditIdentityWatermark(this.doc.identity, options.identity);
-    const structural = patches.some((patch) =>
-      isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
+    const structural = patches.some((patch) => isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
     if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
     if (patches.some(isElementInteractionPatch)) {
       this.currentSelection = selectionAfterInteractionState(this.doc, this.currentSelection);
@@ -287,13 +319,25 @@ export class Editor {
     return change;
   }
 
-  toSlide(id: SlideId) { return toSlide(this.doc, id); }
-  toDesignCanvas(target: DesignTarget) { return toDesignCanvas(this.doc, target); }
-  effectiveElement(id: ElementId) { return effectiveElement(this.doc, id); }
+  toSlide(id: SlideId) {
+    return toSlide(this.doc, id);
+  }
+  toDesignCanvas(target: DesignTarget) {
+    return toDesignCanvas(this.doc, target);
+  }
+  effectiveElement(id: ElementId) {
+    return effectiveElement(this.doc, id);
+  }
   /** 组变换折算后的外框，与画面同源；覆盖层经实例调用，避免独立打包的入口读到另一份投影缓存。 */
-  renderedElement(id: ElementId) { return renderedElement(this.doc, id); }
-  renderedFrameToSlideMatrix(id: ElementId) { return renderedFrameToSlideMatrix(this.doc, id); }
-  renderedContentToSlideMatrix(id: ElementId) { return renderedContentToSlideMatrix(this.doc, id); }
+  renderedElement(id: ElementId) {
+    return renderedElement(this.doc, id);
+  }
+  renderedFrameToSlideMatrix(id: ElementId) {
+    return renderedFrameToSlideMatrix(this.doc, id);
+  }
+  renderedContentToSlideMatrix(id: ElementId) {
+    return renderedContentToSlideMatrix(this.doc, id);
+  }
 
   dispose(): void {
     this.unsubscribeExtensions();
@@ -309,10 +353,11 @@ export class Editor {
   ): TransactionResult {
     for (const command of commands) {
       assertPureCommand(command);
-      if (!designTarget && ('target' in command && (command.target as DesignTarget | null)
-        && (command.target as DesignTarget).id
-        || commandTargetIds(command).some((id) =>
-          this.doc.elements[id] && canvasTargetOfElement(this.doc, id).kind !== 'slide'))) {
+      if (
+        !designTarget
+        && (('target' in command && (command.target as DesignTarget | null) && (command.target as DesignTarget).id)
+          || commandTargetIds(command).some((id) => this.doc.elements[id] && canvasTargetOfElement(this.doc, id).kind !== 'slide'))
+      ) {
         throw new Error('用execDesign');
       }
     }
@@ -332,7 +377,8 @@ export class Editor {
     const bodyPropsElements = new Set<ElementId>();
     const origin = options.origin ?? this.origin;
     const recordsHistory = options.recordHistory !== false && origin === this.origin;
-    let historyForward: Patch[] = [], historyInverse: Patch[] = [];
+    let historyForward: Patch[] = [],
+      historyInverse: Patch[] = [];
     let rebasedHistory: ReadonlyMap<HistoryEntry, HistoryEntry> | undefined;
     const autoFitTargets = new Set<ElementId>();
     const historyLinks: HistoryPatchLink[] = [];
@@ -350,7 +396,10 @@ export class Editor {
         for (const id of dirty.dirtyElements) renderElements.add(id);
       }
       if (patches.forward.some(isDocumentExtensionPatch)) {
-        for (const id of dirty.dirtyElements) { renderElements.add(id); touchedElements.add(id); }
+        for (const id of dirty.dirtyElements) {
+          renderElements.add(id);
+          touchedElements.add(id);
+        }
       }
       for (const id of renderPatchSlides(this.doc, patches.forward, dirty.dirtySlides)) renderSlides.add(id);
       for (const patch of patches.forward) {
@@ -373,51 +422,58 @@ export class Editor {
     try {
       if (commands.length && commands.every((command) => command.type === 'SetZ')) {
         applyCommandPatches(setZBatchPatches(this.doc, commands, origin));
-      } else for (const command of commands) {
-        const patches = commandPatches(this.doc, command, origin);
-        applyCommandPatches(patches);
-        if (patches.selection) commandSelection = patches.selection;
-        // 批量文字命令没有单一 command.id；以实际文字 patch 为真相才能完整覆盖所有 shape。
-        for (const patch of patches.forward) {
-          if (patch.path[0] === 'elements' && patch.path.length === 4 && patch.path[3] === 'text') {
-            autoFitTargets.add(patch.path[1]);
+      } else
+        for (const command of commands) {
+          const patches = commandPatches(this.doc, command, origin);
+          applyCommandPatches(patches);
+          if (patches.selection) commandSelection = patches.selection;
+          // 批量文字命令没有单一 command.id；以实际文字 patch 为真相才能完整覆盖所有 shape。
+          for (const patch of patches.forward) {
+            if (patch.path[0] === 'elements' && patch.path.length === 4 && patch.path[3] === 'text') {
+              autoFitTargets.add(patch.path[1]);
+            }
           }
         }
-      }
       for (const id of autoFitTargets) {
         const element = effectiveElement(this.doc, id);
         if (element.kind === 'shape' && element.text && element.text.autoFitShape) {
           const fitted = fitTextShapePatches(this.doc, { type: 'FitTextShape', id }, origin);
-          if (fitted.forward.length) historyLinks.push({
-            trigger: ['elements', id, 'ovr', 'text'],
-            related: fitted.forward.map((patch) => patch.path),
-          });
+          if (fitted.forward.length)
+            historyLinks.push({
+              trigger: ['elements', id, 'ovr', 'text'],
+              related: fitted.forward.map((patch) => patch.path),
+            });
           applyCommandPatches(fitted);
         }
       }
-      const structural = forward.some((patch) =>
-        isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
+      const structural = forward.some((patch) => isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch));
       if (requestedSelection) this.currentSelection = normalizeSelection(this.doc, requestedSelection);
       else if (commandSelection) this.currentSelection = normalizeSelection(this.doc, commandSelection);
       else if (commands.length === 1 && commands[0].type === 'PasteElements') {
-        const ids = forward.filter((patch) => patch.path.length === 2 && patch.op === 'insert')
-          .map((patch) => patch.path[1]);
+        const ids = forward.filter((patch) => patch.path.length === 2 && patch.op === 'insert').map((patch) => patch.path[1]);
         this.currentSelection = normalizeSelection(this.doc, {
-          kind: 'elements', ids, enteredGroup: this.doc.slides[commands[0].at.parentId]
-            ? null : commands[0].at.parentId,
+          kind: 'elements',
+          ids,
+          enteredGroup: this.doc.slides[commands[0].at.parentId] ? null : commands[0].at.parentId,
         });
       } else if (commands.length === 1 && commandSelectsInsertedElement(commands[0])) {
         const inserted = forward.find((patch) => patch.path.length === 2 && patch.op === 'insert');
-        if (inserted) this.currentSelection = normalizeSelection(this.doc, {
-          kind: 'elements', ids: [inserted.path[1]], enteredGroup: null,
-        });
+        if (inserted)
+          this.currentSelection = normalizeSelection(this.doc, {
+            kind: 'elements',
+            ids: [inserted.path[1]],
+            enteredGroup: null,
+          });
       } else if (structural) this.currentSelection = selectionAfterStructure(this.doc, this.currentSelection);
       if (forward.some(isElementInteractionPatch)) {
         this.currentSelection = selectionAfterInteractionState(this.doc, this.currentSelection);
       }
       if (structural) validateEditDoc(this.doc);
-      else validateEditElements(this.doc, forward
-        .filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]));
+      else
+        validateEditElements(
+          this.doc,
+          forward.filter((patch) => patch.path[0] === 'elements').map((patch) => patch.path[1]),
+        );
       const migrations = extensionMigrationPatches(this.doc, forward);
       outgoing = this.transportPatches(migrations.length ? [...migrations, ...forward] : forward, origin);
       if (recordsHistory) {
@@ -473,8 +529,13 @@ export class Editor {
       if (forward.length) this.queuePatches('transaction', outgoing.patches, origin, label, operationTime);
       this.emitRecovery(forward.length ? 'transaction' : 'selection', forward, label, operationTime, outgoing.recovery);
       this.emit(
-        'transaction', dirtyElements, dirtySlides, touchedElements,
-        renderElements, reorderedElements, bodyPropsElements,
+        'transaction',
+        dirtyElements,
+        dirtySlides,
+        touchedElements,
+        renderElements,
+        reorderedElements,
+        bodyPropsElements,
         slideChanges,
         renderSlides,
         paneElements,
@@ -482,7 +543,12 @@ export class Editor {
       this.patchJournal.flush();
     }
     return {
-      forward, inverse, dirtyElements, dirtySlides, renderSlides, selection: selectionAfter,
+      forward,
+      inverse,
+      dirtyElements,
+      dirtySlides,
+      renderSlides,
+      selection: selectionAfter,
       ...slideChanges,
     };
   }
@@ -510,30 +576,43 @@ export class Editor {
   private transportPatches(patches: readonly Patch[], origin: string) {
     // 必须在落模前冻结日志前缀；落模后补声明会把新凭据插到其历史来源之前。
     const recovery = this.recoveryJournal.prepare(this.doc, patches);
-    return { recovery, patches: this.patchJournal.observed ? this.patchJournal.transport(this.doc,
-      imageResourcePatchClosure(this.doc, patches, origin), origin) : patches };
+    return {
+      recovery,
+      patches: this.patchJournal.observed
+        ? this.patchJournal.transport(this.doc, imageResourcePatchClosure(this.doc, patches, origin), origin)
+        : patches,
+    };
   }
 
   private assertReplayableHistory(...directions: readonly Patch[][]): void {
     for (const patches of directions) imageResourcePatchClosure(this.doc, patches, this.origin);
   }
 
-  private queuePatches(
-    source: EditorPatchEvent['source'], patches: readonly Patch[], origin: string, label: string, time: number,
-  ): void {
+  private queuePatches(source: EditorPatchEvent['source'], patches: readonly Patch[], origin: string, label: string, time: number): void {
     // 协同是可选能力；未订阅时不能为结构事务深拷贝整棵元素树。
     if (!this.patchJournal.observed) return;
     this.patchJournal.queue({
-      source, patches: structuredClone(patches), identity: structuredClone(this.doc.identity),
-      origin, label, time,
+      source,
+      patches: structuredClone(patches),
+      identity: structuredClone(this.doc.identity),
+      origin,
+      label,
+      time,
     });
   }
 
   private emitPatchChange(change: EditorChange): void {
     this.emit(
-      change.source, change.dirtyElements, change.dirtySlides, change.touchedElements,
-      change.renderElements, change.reorderedElements, change.bodyPropsElements,
-      change, change.renderSlides, change.paneElements,
+      change.source,
+      change.dirtyElements,
+      change.dirtySlides,
+      change.touchedElements,
+      change.renderElements,
+      change.reorderedElements,
+      change.bodyPropsElements,
+      change,
+      change.renderSlides,
+      change.paneElements,
     );
   }
 
@@ -546,7 +625,9 @@ export class Editor {
     reordered: Set<ElementId>,
     bodyProps: Set<ElementId> = new Set(),
     slideChanges: SlideChangeSets = {
-      createdSlides: new Set(), removedSlides: new Set(), movedSlides: new Set(),
+      createdSlides: new Set(),
+      removedSlides: new Set(),
+      movedSlides: new Set(),
       notesSlides: new Set(),
       removedSlideFallbacks: new Map(),
     },

@@ -1,7 +1,6 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const p95 = (samples) => [...samples].sort((left, right) => left - right)
-  [Math.floor(samples.length * 0.95)];
+const p95 = (samples) => [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
 /** 真实浏览器验证多视图稳定身份与 200 页页序提交预算。 */
 export async function runEditorMoveSlideBrowserContract({ openEditor, load }) {
@@ -22,14 +21,22 @@ export async function runEditorMoveSlideBrowserContract({ openEditor, load }) {
     const editSvg = editStatic.querySelector('svg');
     const viewSvg = viewStatic.querySelector('svg');
     let observed = null;
-    const unsubscribe = session.editor.subscribe((change) => { observed = change; });
+    const unsubscribe = session.editor.subscribe((change) => {
+      observed = change;
+    });
     session.editor.exec({ type: 'MoveSlide', id: second, at: { after: null } });
-    if (editView.slideId !== second || viewView.slideId !== third
-      || !editStatic.textContent.includes('1') || !viewStatic.textContent.includes('3')
-      || editStatic.querySelector('svg') !== editSvg || viewStatic.querySelector('svg') !== viewSvg
+    if (
+      editView.slideId !== second
+      || viewView.slideId !== third
+      || !editStatic.textContent.includes('1')
+      || !viewStatic.textContent.includes('3')
+      || editStatic.querySelector('svg') !== editSvg
+      || viewStatic.querySelector('svg') !== viewSvg
       || !observed?.movedSlides.has(second)
-      || observed.createdSlides.size || observed.removedSlides.size
-      || session.editor.doc.slideOrder.join(',') !== [second, first, third].join(',')) {
+      || observed.createdSlides.size
+      || observed.removedSlides.size
+      || session.editor.doc.slideOrder.join(',') !== [second, first, third].join(',')
+    ) {
       throw new Error('MoveSlide 没有保持多视图身份、增量 DOM 或框架订阅语义');
     }
     unsubscribe();
@@ -40,11 +47,13 @@ export async function runEditorMoveSlideBrowserContract({ openEditor, load }) {
   }
 
   const performanceSession = await openEditor(await load('sample-editor-add-slide.pptx'), {
-    idPrefix: 'browser-move-slide-perf-', historyLimit: 400,
+    idPrefix: 'browser-move-slide-perf-',
+    historyLimit: 400,
   });
   try {
-    const layoutId = performanceSession.editor.doc.layoutOrder.find((id) =>
-      performanceSession.editor.doc.layouts[id].name === '标题和正文');
+    const layoutId = performanceSession.editor.doc.layoutOrder.find(
+      (id) => performanceSession.editor.doc.layouts[id].name === '标题和正文',
+    );
     let after = performanceSession.editor.doc.slideOrder[0];
     while (performanceSession.editor.doc.slideOrder.length < 200) {
       const result = performanceSession.editor.exec({ type: 'AddSlide', layoutId, at: { after } });

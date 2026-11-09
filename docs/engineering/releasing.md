@@ -21,7 +21,7 @@ PR 连续推送通过 `cancel-in-progress` 取消旧运行；master / main 的 C
 | # | 动作 | 说明 |
 |---|---|---|
 | 1 | `npm run release:version -- X.Y.Z` | 九个包的版本、包之间的精确 peer 版本与 `package-lock.json` 一次改齐；verify 拒绝版本不一致或 peer 不是精确当前版本。MCP 握手软件版本自动读取包清单，回归校验一致；流水线逐包校验 tag 与版本一致 |
-| 2 | 把 `CHANGELOG.md` 的「未发布」改成版本条目，新建或续写 `docs/releases/X.Y.Z.md` | 预发布版并入同一版本线的记录；verify 审计当前版本线记录（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红） |
+| 2 | 把 `CHANGELOG.md` 的「未发布」改成版本条目，新建或续写 `docs/releases/X.Y.Z.md` | 预发布版并入同一版本线的记录；tag `vX.Y.Z` 不存在或指向 HEAD 时，verify 用当前实测审计该记录（如 collab 的双体积口径：发布入口 KB gzip + 测试薄包 B gzip，两者缺一 verify 红）。打 tag 后记录成为历史，日常开发改核对 CHANGELOG「未发布」，未声明时黄字跳过；看不到任何 `v*` tag 时 verify 直接失败 |
 | 3 | 本地过四门禁 `npm run check && npm test && npm run build && npm run verify`，再跑 `npm run test:ooxml` | verify 必须在 build 之后（读 dist 体积）且在 test 之后（读 `out/verify/counts.json` 断言数）；OOXML 门禁读 `npm test` 落盘的保存产物，本机需要 xmllint 与 .NET SDK 8，CI 与发布流水线自带 |
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
 | 5 | 等待发布流水线成功，逐包查询官方 registry 的版本与 dist-tag，并完成安装验证 | beta 使用 `next`，稳定版使用 `latest`；tag、提交或文档条目不代表 npm 已发布。新包首发与发布授权未完成时，保留待发布状态 |

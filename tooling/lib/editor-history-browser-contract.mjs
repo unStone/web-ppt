@@ -38,10 +38,17 @@ export async function runEditorHistoryBrowserContract({ openEditor, load }) {
       return current.x === sources[index].x + 1 && current.y === sources[index].y;
     });
     const selection = session.editor.selection;
-    if (ids.length !== 60 || !consumed || !moved
-      || selection.kind !== 'elements' || selection.ids.join(',') !== ids.join(',')
-      || session.editor.history.undoCount !== 1 || session.editor.history.redoCount !== 0
-      || !session.editor.isDirty() || mount.querySelectorAll('[data-edit-id]').length !== 60) {
+    if (
+      ids.length !== 60
+      || !consumed
+      || !moved
+      || selection.kind !== 'elements'
+      || selection.ids.join(',') !== ids.join(',')
+      || session.editor.history.undoCount !== 1
+      || session.editor.history.redoCount !== 0
+      || !session.editor.isDirty()
+      || mount.querySelectorAll('[data-edit-id]').length !== 60
+    ) {
       throw new Error('60 元素撤销/重做的模型、历史或选区不一致');
     }
     recordPerformanceBudget('60 元素撤销 p95', undoP95, 8);
@@ -72,7 +79,8 @@ export async function runTrustedHistoryContract({ evaluate, dispatchKey }) {
     view.element.focus({ preventScroll: true });
     globalThis.trustedHistoryContract = { view, id, source, events };
   })()`);
-  const snapshot = () => evaluate(`(() => {
+  const snapshot = () =>
+    evaluate(`(() => {
     const state = globalThis.trustedHistoryContract;
     const { perfSession } = globalThis.editorContract;
     return {
@@ -106,27 +114,59 @@ export async function runTrustedHistoryContract({ evaluate, dispatchKey }) {
     delete globalThis.trustedHistoryContract;
     return result;
   })()`);
-  const statesCorrect = ctrlUndo.x === result.sourceX && ctrlUndo.undo === 0 && ctrlUndo.redo === 1
-    && !ctrlUndo.dirty && metaRedo.x === result.sourceX + 9 && metaRedo.undo === 1 && metaRedo.redo === 0
-    && metaRedo.dirty && metaUndo.x === result.sourceX && metaUndo.undo === 0 && metaUndo.redo === 1
-    && !metaUndo.dirty && shiftRedo.x === result.sourceX + 9
-    && shiftRedo.undo === 1 && shiftRedo.redo === 0 && shiftRedo.dirty;
+  const statesCorrect =
+    ctrlUndo.x === result.sourceX
+    && ctrlUndo.undo === 0
+    && ctrlUndo.redo === 1
+    && !ctrlUndo.dirty
+    && metaRedo.x === result.sourceX + 9
+    && metaRedo.undo === 1
+    && metaRedo.redo === 0
+    && metaRedo.dirty
+    && metaUndo.x === result.sourceX
+    && metaUndo.undo === 0
+    && metaUndo.redo === 1
+    && !metaUndo.dirty
+    && shiftRedo.x === result.sourceX + 9
+    && shiftRedo.undo === 1
+    && shiftRedo.redo === 0
+    && shiftRedo.dirty;
   const expectedModifiers = [
     { key: 'z', ctrl: true, meta: false, shift: false },
     { key: 'y', ctrl: false, meta: true, shift: false },
     { key: 'z', ctrl: false, meta: true, shift: false },
     { key: 'z', ctrl: false, meta: true, shift: true },
   ];
-  const eventsCorrect = result.events.length === expectedModifiers.length
-    && result.events.every((event, index) => event.trusted && event.prevented
-      && event.key === expectedModifiers[index].key
-      && event.ctrl === expectedModifiers[index].ctrl
-      && event.meta === expectedModifiers[index].meta
-      && event.shift === expectedModifiers[index].shift);
-  if (!statesCorrect || !eventsCorrect || !result.focused
-    || !ctrlUndo.focused || !metaRedo.focused || !metaUndo.focused || !shiftRedo.focused) {
-    throw new Error(`真实撤销重做快捷键失败：${JSON.stringify({
-      ctrlUndo, metaRedo, metaUndo, shiftRedo, result, statesCorrect, eventsCorrect,
-    })}`);
+  const eventsCorrect =
+    result.events.length === expectedModifiers.length
+    && result.events.every(
+      (event, index) =>
+        event.trusted
+        && event.prevented
+        && event.key === expectedModifiers[index].key
+        && event.ctrl === expectedModifiers[index].ctrl
+        && event.meta === expectedModifiers[index].meta
+        && event.shift === expectedModifiers[index].shift,
+    );
+  if (
+    !statesCorrect
+    || !eventsCorrect
+    || !result.focused
+    || !ctrlUndo.focused
+    || !metaRedo.focused
+    || !metaUndo.focused
+    || !shiftRedo.focused
+  ) {
+    throw new Error(
+      `真实撤销重做快捷键失败：${JSON.stringify({
+        ctrlUndo,
+        metaRedo,
+        metaUndo,
+        shiftRedo,
+        result,
+        statesCorrect,
+        eventsCorrect,
+      })}`,
+    );
   }
 }

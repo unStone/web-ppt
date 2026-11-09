@@ -5,8 +5,12 @@ import { setAttributeMessage, setAttributeText, setMessage } from './i18n/runtim
 import { bindChartRecoveryLabels } from './editor-chart-recovery-labels';
 
 const placeholderMessages: Readonly<Record<string, SiteMessage>> = {
-  title: message('添加标题'), ctrTitle: message('添加标题'), subTitle: message('添加副标题'),
-  body: message('添加正文'), obj: message('添加内容'), pic: message('添加图片'),
+  title: message('添加标题'),
+  ctrTitle: message('添加标题'),
+  subTitle: message('添加副标题'),
+  body: message('添加正文'),
+  obj: message('添加内容'),
+  pic: message('添加图片'),
 };
 
 export function bindViewLabels(session: EditorSession, view: SlideEditor): () => void {
@@ -14,12 +18,19 @@ export function bindViewLabels(session: EditorSession, view: SlideEditor): () =>
   const textLayer = view.element.querySelector('[data-ppt-layer="text"]')!;
   const interaction = view.element.querySelector('[data-ppt-layer="interaction"]')!;
   function syncSearch(): void {
-    const search = session.textSearch.snapshot, current = search.current;
-    const label = !search.open ? message('幻灯片编辑画布') : current
-      ? message('查找结果 {index}/{count}：{excerpt}', {
-        index: search.currentIndex + 1, count: search.matches.length,
-        excerpt: current.before + current.text + current.after,
-      }) : search.query ? message('未找到“{query}”', { query: search.query }) : message('查找文字');
+    const search = session.textSearch.snapshot,
+      current = search.current;
+    const label = !search.open
+      ? message('幻灯片编辑画布')
+      : current
+        ? message('查找结果 {index}/{count}：{excerpt}', {
+            index: search.currentIndex + 1,
+            count: search.matches.length,
+            excerpt: current.before + current.text + current.after,
+          })
+        : search.query
+          ? message('未找到“{query}”', { query: search.query })
+          : message('查找文字');
     setAttributeMessage(view.element, 'aria-label', label);
   }
   function syncText(): void {
@@ -29,10 +40,17 @@ export function bindViewLabels(session: EditorSession, view: SlideEditor): () =>
     if (input?.dataset.pptTextEditor !== selection.id) return;
     const item = querySelectionPane(session.editor.doc, view.slideId).find((item) => item.id === selection.id);
     if (!item) return;
-    setAttributeMessage(input, 'aria-label', selection.cell
-      ? message('编辑单元格：{name}，第 {row} 行，第 {column} 列', {
-        name: item.name, row: selection.cell.r + 1, column: selection.cell.c + 1,
-      }) : message('编辑文字：{name}', { name: item.name }));
+    setAttributeMessage(
+      input,
+      'aria-label',
+      selection.cell
+        ? message('编辑单元格：{name}，第 {row} 行，第 {column} 列', {
+            name: item.name,
+            row: selection.cell.r + 1,
+            column: selection.cell.c + 1,
+          })
+        : message('编辑文字：{name}', { name: item.name }),
+    );
   }
   function labelImageChooser(event: Event): void {
     const input = event.target;
@@ -68,7 +86,10 @@ export function bindViewLabels(session: EditorSession, view: SlideEditor): () =>
   syncPlaceholders();
   return () => {
     releaseChartLabels();
-    observer.disconnect(); textObserver.disconnect(); placeholderObserver.disconnect(); unsubscribe();
+    observer.disconnect();
+    textObserver.disconnect();
+    placeholderObserver.disconnect();
+    unsubscribe();
     view.element.removeEventListener('click', labelImageChooser, true);
   };
 }

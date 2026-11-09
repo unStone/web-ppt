@@ -1,10 +1,12 @@
 import {
-  composeSpaceMatrices, editFrameToModelFrame, elementEditParentToSlideMatrix, elementFrameToParentMatrix,
-  invertSpaceMatrix, transformSpacePoint,
+  composeSpaceMatrices,
+  editFrameToModelFrame,
+  elementEditParentToSlideMatrix,
+  elementFrameToParentMatrix,
+  invertSpaceMatrix,
+  transformSpacePoint,
 } from '@web-ppt/edit-core';
-import type {
-  AffineMatrix, EditDoc, Editor, ElementEditFrame, ElementId, SpacePoint,
-} from '@web-ppt/edit-core';
+import type { AffineMatrix, EditDoc, Editor, ElementEditFrame, ElementId, SpacePoint } from '@web-ppt/edit-core';
 
 export const MIN_FRAME_SIZE = 1 / 9525;
 
@@ -29,10 +31,7 @@ export function transformPreviewMatrix(source: TransformFrame, next: TransformFr
   return composeSpaceMatrices(
     elementFrameToParentMatrix(next),
     composeSpaceMatrices(
-      scaleMatrix(
-        next.w / Math.max(source.w, MIN_FRAME_SIZE),
-        next.h / Math.max(source.h, MIN_FRAME_SIZE),
-      ),
+      scaleMatrix(next.w / Math.max(source.w, MIN_FRAME_SIZE), next.h / Math.max(source.h, MIN_FRAME_SIZE)),
       composeSpaceMatrices(flipDelta(source, next), invertSpaceMatrix(elementFrameToParentMatrix(source))),
     ),
   );
@@ -46,7 +45,9 @@ const XFRM_FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot'];
  * 相差至少 1e-9 时写入。渲染外框往返模型会带入舍入误差，不能因此产生无意义的补丁。
  */
 export function modelXfrmFields(
-  editor: Pick<Editor, 'doc' | 'effectiveElement'>, id: ElementId, frame: TransformFrame,
+  editor: Pick<Editor, 'doc' | 'effectiveElement'>,
+  id: ElementId,
+  frame: TransformFrame,
   always: readonly XfrmField[],
 ): Partial<Record<XfrmField, number>> {
   const model = editFrameToModelFrame(editor.doc, id, frame);
@@ -58,13 +59,12 @@ export function modelXfrmFields(
   return fields;
 }
 
-export function transformFrameCorners(doc: EditDoc, id: ElementId, frame: TransformFrame): [
-  SpacePoint, SpacePoint, SpacePoint, SpacePoint,
-] {
-  const matrix = composeSpaceMatrices(
-    elementEditParentToSlideMatrix(doc, id),
-    elementFrameToParentMatrix(frame),
-  );
+export function transformFrameCorners(
+  doc: EditDoc,
+  id: ElementId,
+  frame: TransformFrame,
+): [SpacePoint, SpacePoint, SpacePoint, SpacePoint] {
+  const matrix = composeSpaceMatrices(elementEditParentToSlideMatrix(doc, id), elementFrameToParentMatrix(frame));
   return [
     transformSpacePoint(matrix, { x: 0, y: 0 }),
     transformSpacePoint(matrix, { x: frame.w, y: 0 }),

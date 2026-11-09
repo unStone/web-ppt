@@ -1,9 +1,7 @@
 import type { TextSearchMatch } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
 import type { EditorMode } from './slide-editor-types';
-import type {
-  TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
-} from './text-search-types';
+import type { TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot } from './text-search-types';
 import type { WebPptTextSearchState } from './framework-adapter-types';
 
 const IDLE: WebPptTextSearchState = Object.freeze({
@@ -48,17 +46,23 @@ export class AdapterTextSearchBinding {
     this.session?.textSearch.open(options);
     this.revealCurrent();
   }
-  close(): void { this.session?.textSearch.close(); }
+  close(): void {
+    this.session?.textSearch.close();
+  }
   setQuery(query: string): void {
     this.session?.textSearch.setQuery(query);
     this.revealCurrent();
   }
-  setReplacement(replacement: string): void { this.session?.textSearch.setReplacement(replacement); }
+  setReplacement(replacement: string): void {
+    this.session?.textSearch.setReplacement(replacement);
+  }
   setOptions(options: Partial<TextSearchOptions>): void {
     this.session?.textSearch.setOptions(options);
     this.revealCurrent();
   }
-  next(): TextSearchMatch | null { return this.navigate(() => this.session?.textSearch.next() ?? null); }
+  next(): TextSearchMatch | null {
+    return this.navigate(() => this.session?.textSearch.next() ?? null);
+  }
   previousMatch(): TextSearchMatch | null {
     return this.navigate(() => this.session?.textSearch.previous() ?? null);
   }

@@ -7,7 +7,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
 // PowerPoint 生成的 defaultTextStyle 几乎总写着 tx1；fontRef 的 lt1 必须压过它。
-const defaultTextStyle = '<p:defaultTextStyle><a:lvl1pPr><a:defRPr sz="1800">'
+const defaultTextStyle =
+  '<p:defaultTextStyle><a:lvl1pPr><a:defRPr sz="1800">'
   + '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:defRPr></a:lvl1pPr></p:defaultTextStyle>';
 
 /** PowerPoint 新建形状的 p:style：填充 accent1、文字 lt1。 */
@@ -25,7 +26,8 @@ const para = (value, rPr = '<a:rPr sz="2400"/>') => `<a:p><a:pPr algn="ctr"/><a:
 const gd = (name, value) => `<a:gd name="${name}" fmla="val ${value}"/>`;
 
 // WPS 插入的图标只写 extLst 里的 asvg:svgBlip，a:blip 上没有位图兼容副本。
-const iconSvg = `${XML}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
+const iconSvg =
+  `${XML}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
   + '<rect x="4" y="4" width="56" height="56" rx="12" fill="#AA418D"/>'
   + '<path d="M32 12 L38 26 L53 27 L41 37 L45 52 L32 44 L19 52 L23 37 L11 27 L26 26 Z" fill="#FFFFFF"/></svg>';
 const svgOnlyPicture = `<p:pic><p:nvPicPr><p:cNvPr id="${nextShapeId()}" name="仅 SVG 图标"/>
@@ -47,47 +49,81 @@ ${solid('3E70AE')}<a:ln><a:noFill/></a:ln></p:spPr>
 <p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/>${para('Speaking', '<a:rPr sz="2400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>')}</p:txBody></p:sp>
 </p:grpSp>`;
 
-const slide = slideXml([
-  styledShape({ x: 60, y: 60, w: 200, h: 120, name: 'fontRef 白字', text: para('A') }),
-  styledShape({
-    x: 300, y: 60, w: 200, h: 120, name: 'rPr 显式颜色',
-    text: para('B', '<a:rPr sz="2400"><a:solidFill><a:srgbClr val="FFC000"/></a:solidFill></a:rPr>'),
-  }),
-  styledShape({
-    x: 540, y: 60, w: 200, h: 120, name: 'lstStyle 颜色',
-    lstStyle: '<a:lvl1pPr><a:defRPr><a:solidFill><a:srgbClr val="1F3864"/></a:solidFill></a:defRPr></a:lvl1pPr>',
-    text: para('C'),
-  }),
-  svgOnlyPicture,
-  // cs 只服务复杂文种：拉丁标题不能被 Arial Black 接管，阿拉伯文仍要用到它。
-  sp({
-    x: 780, y: 200, w: 420, h: 90, name: 'cs 字体', bodyPr: '<a:bodyPr wrap="square" anchor="t"/>',
-    text: '<a:p><a:r><a:rPr sz="4800" b="1"><a:latin typeface="微软雅黑"/><a:ea typeface="微软雅黑"/>'
-      + '<a:cs typeface="Arial Black"/></a:rPr><a:t>Vocabulary</a:t></a:r>'
-      + '<a:r><a:rPr sz="2400"><a:latin typeface="微软雅黑"/><a:cs typeface="Arial Black"/></a:rPr><a:t> مرحبا</a:t></a:r></a:p>',
-  }),
-  sp({
-    x: 80, y: 300, w: 240, h: 80, prst: 'wedgeRoundRectCallout', name: '尾尖朝上的圆角标注',
-    avLst: gd('adj1', -33572) + gd('adj2', -82088) + gd('adj3', 16667), fill: solid('3E70AE'),
-    text: para('上'),
-  }),
-  sp({
-    x: 480, y: 280, w: 200, h: 100, prst: 'wedgeRectCallout', name: '尾尖朝右的矩形标注',
-    avLst: gd('adj1', 75000) + gd('adj2', -10000), fill: solid('70AD47'),
-    text: para('右'),
-  }),
-  normalizedCallout,
-].join('\n'), '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>');
+const slide = slideXml(
+  [
+    styledShape({ x: 60, y: 60, w: 200, h: 120, name: 'fontRef 白字', text: para('A') }),
+    styledShape({
+      x: 300,
+      y: 60,
+      w: 200,
+      h: 120,
+      name: 'rPr 显式颜色',
+      text: para('B', '<a:rPr sz="2400"><a:solidFill><a:srgbClr val="FFC000"/></a:solidFill></a:rPr>'),
+    }),
+    styledShape({
+      x: 540,
+      y: 60,
+      w: 200,
+      h: 120,
+      name: 'lstStyle 颜色',
+      lstStyle: '<a:lvl1pPr><a:defRPr><a:solidFill><a:srgbClr val="1F3864"/></a:solidFill></a:defRPr></a:lvl1pPr>',
+      text: para('C'),
+    }),
+    svgOnlyPicture,
+    // cs 只服务复杂文种：拉丁标题不能被 Arial Black 接管，阿拉伯文仍要用到它。
+    sp({
+      x: 780,
+      y: 200,
+      w: 420,
+      h: 90,
+      name: 'cs 字体',
+      bodyPr: '<a:bodyPr wrap="square" anchor="t"/>',
+      text:
+        '<a:p><a:r><a:rPr sz="4800" b="1"><a:latin typeface="微软雅黑"/><a:ea typeface="微软雅黑"/>'
+        + '<a:cs typeface="Arial Black"/></a:rPr><a:t>Vocabulary</a:t></a:r>'
+        + '<a:r><a:rPr sz="2400"><a:latin typeface="微软雅黑"/><a:cs typeface="Arial Black"/></a:rPr><a:t> مرحبا</a:t></a:r></a:p>',
+    }),
+    sp({
+      x: 80,
+      y: 300,
+      w: 240,
+      h: 80,
+      prst: 'wedgeRoundRectCallout',
+      name: '尾尖朝上的圆角标注',
+      avLst: gd('adj1', -33572) + gd('adj2', -82088) + gd('adj3', 16667),
+      fill: solid('3E70AE'),
+      text: para('上'),
+    }),
+    sp({
+      x: 480,
+      y: 280,
+      w: 200,
+      h: 100,
+      prst: 'wedgeRectCallout',
+      name: '尾尖朝右的矩形标注',
+      avLst: gd('adj1', 75000) + gd('adj2', -10000),
+      fill: solid('70AD47'),
+      text: para('右'),
+    }),
+    normalizedCallout,
+  ].join('\n'),
+  '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>',
+);
 
 // bgRef 的 1001 指 bgFillStyleLst 第 1 项；第 3 项放渐变，取错项时背景会变灰。
 const solidPh = '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>';
-const bgFillStyleLst = solidPh + solidPh + '<a:gradFill rotWithShape="1"><a:gsLst>'
+const bgFillStyleLst =
+  solidPh
+  + solidPh
+  + '<a:gradFill rotWithShape="1"><a:gsLst>'
   + '<a:gs pos="0"><a:schemeClr val="phClr"/></a:gs>'
   + '<a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="63000"/></a:schemeClr></a:gs>'
   + '</a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill>';
 
 const bytes = deck({
-  name: 'WPS Interop', width: 1280, height: 720,
+  name: 'WPS Interop',
+  width: 1280,
+  height: 720,
   slides: [slide],
   presExtra: defaultTextStyle,
   bgFillStyleLst,

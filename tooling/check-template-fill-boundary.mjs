@@ -10,8 +10,10 @@ const manifest = JSON.parse(readFileSync(join(root, 'packages/edit-core/package.
 assert.equal(manifest.exports['./fill'].import, './dist/fill.js');
 assert.equal(manifest.exports['./fill'].types, './dist/fill/index.d.ts');
 assert.equal(manifest.exports['./fill/schema.json'], './schemas/template-fill.schema.json');
-assert.equal(createRequire(import.meta.url).resolve('@web-ppt/edit-core/fill/schema.json'),
-  join(root, 'packages/edit-core/schemas/template-fill.schema.json'));
+assert.equal(
+  createRequire(import.meta.url).resolve('@web-ppt/edit-core/fill/schema.json'),
+  join(root, 'packages/edit-core/schemas/template-fill.schema.json'),
+);
 const main = moduleClosure(join(root, 'packages/edit-core/dist/edit-core.js'));
 assert(!main.source.includes('fillTemplate'), '默认编辑入口不能包含模板填充实现');
 const fill = moduleClosure(join(root, 'packages/edit-core/dist/fill.js'));
@@ -21,7 +23,9 @@ assert(!/\b(?:node:fs|node:http|node:https|document\.|window\.)/.test(fill.sourc
 const out = join(root, 'out/template-fill');
 mkdirSync(out, { recursive: true });
 const consumer = join(out, 'consumer.ts');
-writeFileSync(consumer, `import { fillTemplate, templateFillSchema, TemplateFillError, type TemplateFillOutline } from '@web-ppt/edit-core/fill';
+writeFileSync(
+  consumer,
+  `import { fillTemplate, templateFillSchema, TemplateFillError, type TemplateFillOutline } from '@web-ppt/edit-core/fill';
 const outline: TemplateFillOutline = { version: 1, slides: [{ type: 'title', title: 'Editable' }] };
 void fillTemplate('editorial', outline, { lint: { measureText: text => text.length } }).then(result => {
   const bytes: Uint8Array = result.bytes;
@@ -32,14 +36,41 @@ void TemplateFillError; void templateFillSchema;
 // @ts-expect-error 大纲页类型不能是未知值
 const invalid: TemplateFillOutline = { version: 1, slides: [{ type: 'unknown', title: 'Invalid' }] };
 void invalid;
-`);
-execFileSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), consumer,
-  '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'ESNext', '--moduleResolution', 'bundler'],
-{ cwd: root, stdio: 'inherit' });
-const packed = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
-  cwd: join(root, 'packages/edit-core'), encoding: 'utf8',
-}))[0];
-for (const file of ['dist/fill.js', 'dist/fill/index.d.ts', 'dist/fill/api.d.ts', 'dist/fill/types.d.ts', 'schemas/template-fill.schema.json']) {
-  assert(packed.files.some(item => item.path === file), `npm 包必须包含 ${file}`);
+`,
+);
+execFileSync(
+  process.execPath,
+  [
+    join(root, 'node_modules/typescript/bin/tsc'),
+    consumer,
+    '--noEmit',
+    '--strict',
+    '--skipLibCheck',
+    '--target',
+    'ES2020',
+    '--module',
+    'ESNext',
+    '--moduleResolution',
+    'bundler',
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
+const packed = JSON.parse(
+  execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
+    cwd: join(root, 'packages/edit-core'),
+    encoding: 'utf8',
+  }),
+)[0];
+for (const file of [
+  'dist/fill.js',
+  'dist/fill/index.d.ts',
+  'dist/fill/api.d.ts',
+  'dist/fill/types.d.ts',
+  'schemas/template-fill.schema.json',
+]) {
+  assert(
+    packed.files.some((item) => item.path === file),
+    `npm 包必须包含 ${file}`,
+  );
 }
 console.log(`模板填充发布边界通过：${fill.gzip}B gzip；默认闭包、类型、Schema 与 npm 清单通过`);

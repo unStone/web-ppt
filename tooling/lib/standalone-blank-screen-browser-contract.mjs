@@ -50,7 +50,7 @@ export async function runStandaloneBlankScreenContract({ evaluate, request, wait
     const start = await evaluate("document.querySelector('#pageIndicator').textContent");
     await press('b', 66);
     await waitFor("document.querySelector('#stage .present-blank.is-on')", '放映中 B 黑屏');
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
       throw new Error('B 黑屏改变了页码');
     }
     await press('b', 66);
@@ -60,7 +60,7 @@ export async function runStandaloneBlankScreenContract({ evaluate, request, wait
     await waitFor("document.querySelector('#stage .present-blank.is-on')", '再黑一次以便点层');
     await evaluate("document.querySelector('#stage .present-blank').dispatchEvent(new MouseEvent('click', { bubbles: true }))");
     await waitFor("!document.querySelector('#stage .present-blank.is-on')", '点黑层恢复');
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
       throw new Error('点黑层被当成舞台前进');
     }
 
@@ -73,7 +73,7 @@ export async function runStandaloneBlankScreenContract({ evaluate, request, wait
       slide.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     })()`);
     await waitFor("!document.querySelector('#stage .present-blank.is-on')", 'pointerup 恢复黑层');
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
       throw new Error('pointerup 后的 click 翻了页');
     }
 
@@ -81,7 +81,7 @@ export async function runStandaloneBlankScreenContract({ evaluate, request, wait
     await waitFor("document.querySelector('#stage .present-blank.is-on')", '再黑一次以便空格');
     await press(' ', 32);
     await waitFor("!document.querySelector('#stage .present-blank.is-on')", '黑屏中空格只恢复');
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
       throw new Error('黑屏中空格翻了页');
     }
 
@@ -89,7 +89,7 @@ export async function runStandaloneBlankScreenContract({ evaluate, request, wait
     await waitFor("document.querySelector('#stage .present-blank.is-on')", '再黑一次以便滑动');
     await evaluate(dispatchSwipeScript('#stage .present-blank', -80, 0));
     await waitFor("!document.querySelector('#stage .present-blank.is-on')", '滑黑层只恢复');
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== start) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== start) {
       throw new Error('滑黑层翻了页');
     }
 

@@ -1,6 +1,10 @@
 import {
-  bodyPropsPatchElements, panePatchElements, patchElements, renderPatchElements,
-  renderPatchSlides, reorderedPatchElements,
+  bodyPropsPatchElements,
+  panePatchElements,
+  patchElements,
+  renderPatchElements,
+  renderPatchSlides,
+  reorderedPatchElements,
 } from './change-classification';
 import { slidePatchSets } from './commands/slide-tree';
 import type { EditorChange, Patch, Selection } from './commands/types';

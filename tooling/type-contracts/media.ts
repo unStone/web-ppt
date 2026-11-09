@@ -10,14 +10,19 @@ export function mediaContract(editor: Editor, command: AddMediaCommand): Element
 
 export function mp4Contract(editor: Editor, bytes: Uint8Array, poster: MediaPoster): ElementId {
   return createMediaEditor(editor).exec({
-    type: 'AddMedia', slideId: editor.doc.slideOrder[0], rect: { x: 20, y: 30, w: 320, h: 240 },
-    source: { kind: 'embedded', bytes, mime: 'video/mp4' }, poster,
+    type: 'AddMedia',
+    slideId: editor.doc.slideOrder[0],
+    rect: { x: 20, y: 30, w: 320, h: 240 },
+    source: { kind: 'embedded', bytes, mime: 'video/mp4' },
+    poster,
   });
 }
 
 export function externalContract(editor: Editor, poster: MediaPoster): ElementId {
   const command: AddMediaCommand = {
-    type: 'AddMedia', slideId: editor.doc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
+    type: 'AddMedia',
+    slideId: editor.doc.slideOrder[0],
+    rect: { x: 20, y: 30, w: 80, h: 80 },
     source: { kind: 'external', mediaKind: 'audio', url: 'https://example.test/audio' },
   };
   const id = editorMedia(editor).exec(command);
@@ -27,9 +32,17 @@ export function externalContract(editor: Editor, poster: MediaPoster): ElementId
 
 export function videoNeedsPoster(editor: Editor, bytes: Uint8Array): void {
   // @ts-expect-error 视频不能省略海报，即使媒体采用显式外链。
-  createMediaEditor(editor).exec({ type: 'AddMedia', slideId: editor.doc.slideOrder[0],
-    rect: { x: 20, y: 30, w: 80, h: 80 }, source: { kind: 'external', mediaKind: 'video', url: 'https://example.test/video' } });
+  createMediaEditor(editor).exec({
+    type: 'AddMedia',
+    slideId: editor.doc.slideOrder[0],
+    rect: { x: 20, y: 30, w: 80, h: 80 },
+    source: { kind: 'external', mediaKind: 'video', url: 'https://example.test/video' },
+  });
   // @ts-expect-error 本地视频同样要求海报。
-  createMediaEditor(editor).exec({ type: 'AddMedia', slideId: editor.doc.slideOrder[0],
-    rect: { x: 20, y: 30, w: 80, h: 80 }, source: { kind: 'embedded', bytes, mime: 'video/mp4' } });
+  createMediaEditor(editor).exec({
+    type: 'AddMedia',
+    slideId: editor.doc.slideOrder[0],
+    rect: { x: 20, y: 30, w: 80, h: 80 },
+    source: { kind: 'embedded', bytes, mime: 'video/mp4' },
+  });
 }

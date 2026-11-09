@@ -9,8 +9,7 @@ const MAX_SPID = 0xffff_ffff;
 function maxSourceSpid(doc: EditDoc, part: string): number {
   const creation = Object.values(doc.slides).find((slide) => slide.origin?.part === part)?.creation;
   const source = creation?.duplicateSourcePart ?? part;
-  const bytes = doc.saveState.baselines[part] ?? doc.package?.parts[part]
-    ?? doc.saveState.baselines[source] ?? doc.package?.parts[source];
+  const bytes = doc.saveState.baselines[part] ?? doc.package?.parts[part] ?? doc.saveState.baselines[source] ?? doc.package?.parts[source];
   if (!bytes) {
     if (creation && !creation.duplicateSourcePart) return 0;
     throw new Error(`无法读取元素目标 part：${part}`);
@@ -24,8 +23,12 @@ function maxSourceSpid(doc: EditDoc, part: string): number {
 }
 
 function maxModelSpid(doc: EditDoc, part: string): number {
-  return Math.max(0, ...[...Object.values(doc.elements), ...Object.values(doc.removedElements)]
-    .map((record) => record.meta.origin?.part === part ? maxElementSpid(record) : 0));
+  return Math.max(
+    0,
+    ...[...Object.values(doc.elements), ...Object.values(doc.removedElements)].map((record) =>
+      record.meta.origin?.part === part ? maxElementSpid(record) : 0,
+    ),
+  );
 }
 
 export function maxPartSpid(doc: EditDoc, part: string): number {
@@ -38,8 +41,11 @@ function preparePartRange(doc: EditDoc, part: string): void {
   const key = `spid:${part}`;
   const existing = allocation.ranges[key];
   if (existing) {
-    if (existing.step !== allocation.count || existing.end !== MAX_SPID + 1
-      || (existing.next - (allocation.slot + 1)) % allocation.count !== 0) {
+    if (
+      existing.step !== allocation.count
+      || existing.end !== MAX_SPID + 1
+      || (existing.next - (allocation.slot + 1)) % allocation.count !== 0
+    ) {
       throw new Error(`目标 part 的 spid 分区无效：${part}`);
     }
     return;
@@ -51,14 +57,18 @@ function preparePartRange(doc: EditDoc, part: string): void {
   const next = first + rounds * allocation.count;
   if (!Number.isSafeInteger(next) || next > MAX_SPID) throw new Error(`目标 part 的 spid 已耗尽：${part}`);
   allocation.ranges[key] = {
-    base: first, maximum: MAX_SPID, next, end: MAX_SPID + 1, step: allocation.count,
+    base: first,
+    maximum: MAX_SPID,
+    next,
+    end: MAX_SPID + 1,
+    step: allocation.count,
   };
 }
 
 export function prepareElementSpidNamespaces(doc: EditDoc): void {
   const parts = new Set([
-    ...Object.values(doc.slides).flatMap((slide) => slide.origin ? [slide.origin.part] : []),
-    ...Object.values(doc.elements).flatMap((record) => record.meta.origin ? [record.meta.origin.part] : []),
+    ...Object.values(doc.slides).flatMap((slide) => (slide.origin ? [slide.origin.part] : [])),
+    ...Object.values(doc.elements).flatMap((record) => (record.meta.origin ? [record.meta.origin.part] : [])),
   ]);
   for (const part of parts) preparePartRange(doc, part);
 }

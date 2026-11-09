@@ -17,14 +17,25 @@ const helper = join(root, 'tooling/publish-if-new.sh');
 const trace = join(temporary, 'trace.jsonl');
 const lifecycle = join(cwd, 'lifecycle.txt');
 const env = {
-  ...process.env, PATH: `${wrappers}${delimiter}${process.env.PATH}`,
-  RELEASE_TEST_REAL_PATH: process.env.PATH, RELEASE_TEST_TRACE: trace,
+  ...process.env,
+  PATH: `${wrappers}${delimiter}${process.env.PATH}`,
+  RELEASE_TEST_REAL_PATH: process.env.PATH,
+  RELEASE_TEST_TRACE: trace,
   npm_config_cache: join(temporary, 'npm-cache'),
 };
 // npm 在 dry-run 之前也可能尝试 OIDC；发布测试不能继承 CI 的交换入口或令牌。
-for (const key of ['NPM_TOKEN', 'NODE_AUTH_TOKEN', 'NPM_ID_TOKEN', 'SIGSTORE_ID_TOKEN',
-  'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) delete env[key];
-writeFileSync(join(wrappers, 'npm'), `#!/usr/bin/env node
+for (const key of [
+  'NPM_TOKEN',
+  'NODE_AUTH_TOKEN',
+  'NPM_ID_TOKEN',
+  'SIGSTORE_ID_TOKEN',
+  'ACTIONS_ID_TOKEN_REQUEST_URL',
+  'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
+])
+  delete env[key];
+writeFileSync(
+  join(wrappers, 'npm'),
+  `#!/usr/bin/env node
 import { appendFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 const args = process.argv.slice(2);
@@ -49,42 +60,71 @@ if (args[0] === 'pack' && process.env.RELEASE_TEST_CORRUPT) {
   if (mode === 'integrity') value[0].integrity = 'sha512-invalid';
   process.stdout.write(JSON.stringify(value));
 } else process.stdout.write(result.stdout);
-`);
+`,
+);
 chmodSync(join(wrappers, 'npm'), 0o755);
 writeFileSync(join(wrappers, 'package.json'), JSON.stringify({ type: 'module' }));
-writeFileSync(join(cwd, 'lifecycle.mjs'), `import { appendFileSync, writeFileSync } from 'node:fs';
+writeFileSync(
+  join(cwd, 'lifecycle.mjs'),
+  `import { appendFileSync, writeFileSync } from 'node:fs';
 const event = process.argv[2];
 appendFileSync('lifecycle.txt', event + '\\n');
 if (event === 'prepublishOnly') throw new Error('prepublishOnly 构建哨兵');
 for (const name of ['README.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(name, event + ':' + name);
-`);
+`,
+);
 mkdirSync(join(cwd, 'dist'));
 writeFileSync(join(cwd, 'dist/index.js'), 'export const ready = true;\n');
 writeFileSync(join(cwd, 'dist/index.d.ts'), 'export declare const ready: boolean;\n');
 const manifest = {
-  name: '@web-ppt/release-lifecycle-proof', version: '1.0.0', type: 'module',
-  main: './dist/index.js', types: './dist/index.d.ts',
+  name: '@web-ppt/release-lifecycle-proof',
+  version: '1.0.0',
+  type: 'module',
+  main: './dist/index.js',
+  types: './dist/index.d.ts',
   exports: { '.': { types: './dist/index.d.ts', import: './dist/index.js' }, './package.json': './package.json' },
-  files: ['dist', 'README.md', 'CHANGELOG.md', 'LICENSE'], publishConfig: { access: 'public' },
+  files: ['dist', 'README.md', 'CHANGELOG.md', 'LICENSE'],
+  publishConfig: { access: 'public' },
   scripts: { prepublishOnly: 'node lifecycle.mjs prepublishOnly', prepack: 'node lifecycle.mjs prepack' },
 };
-const setVersion = version => {
+const setVersion = (version) => {
   manifest.version = version;
   writeFileSync(join(cwd, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 };
-const events = () => existsSync(lifecycle) ? readFileSync(lifecycle, 'utf8').trim().split('\n') : [];
-const traceEntries = () => existsSync(trace) ? readFileSync(trace, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
-const reset = () => { rmSync(trace, { force: true }); rmSync(lifecycle, { force: true }); };
-const run = (args = [], extra = {}) => spawnSync('bash', [helper, ...args], {
-  cwd, env: { ...env, ...extra }, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
-});
+const events = () => (existsSync(lifecycle) ? readFileSync(lifecycle, 'utf8').trim().split('\n') : []);
+const traceEntries = () =>
+  existsSync(trace)
+    ? readFileSync(trace, 'utf8')
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+    : [];
+const reset = () => {
+  rmSync(trace, { force: true });
+  rmSync(lifecycle, { force: true });
+};
+const run = (args = [], extra = {}) =>
+  spawnSync('bash', [helper, ...args], {
+    cwd,
+    env: { ...env, ...extra },
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
+  });
 let passed = 0;
 const checks = [];
-const check = (name, fn) => { reset(); fn(); passed++; checks.push(name); };
-const hashDist = () => Object.fromEntries(readdirSync(join(cwd, 'dist')).map(name => {
-  const file = join(cwd, 'dist', name);
-  return [name, [createHash('sha256').update(readFileSync(file)).digest('hex'), String(statSync(file, { bigint: true }).mtimeNs)]];
-}));
+const check = (name, fn) => {
+  reset();
+  fn();
+  passed++;
+  checks.push(name);
+};
+const hashDist = () =>
+  Object.fromEntries(
+    readdirSync(join(cwd, 'dist')).map((name) => {
+      const file = join(cwd, 'dist', name);
+      return [name, [createHash('sha256').update(readFileSync(file)).digest('hex'), String(statSync(file, { bigint: true }).mtimeNs)]];
+    }),
+  );
 try {
   setVersion('1.0.0');
   for (const args of [['--unknown'], ['--verified-build', '--verified-build'], ['--verified-build', '--unknown']]) {
@@ -95,20 +135,31 @@ try {
       assert.deepEqual(traceEntries(), []);
     });
   }
-  for (const args of [[], ['--verified-build']]) check(`${args.length ? '复用' : '默认'}模式已存在版本不打包`, () => {
-    assert.equal(run(args, { RELEASE_TEST_EXISTS: 'true' }).status, 0);
-    assert.deepEqual(traceEntries().map(entry => entry.args[0]), ['view']);
-    assert.deepEqual(events(), []);
-  });
-  for (const [version, tag] of [['1.0.0', 'latest'], ['1.0.0-beta.1', 'next']]) {
+  for (const args of [[], ['--verified-build']])
+    check(`${args.length ? '复用' : '默认'}模式已存在版本不打包`, () => {
+      assert.equal(run(args, { RELEASE_TEST_EXISTS: 'true' }).status, 0);
+      assert.deepEqual(
+        traceEntries().map((entry) => entry.args[0]),
+        ['view'],
+      );
+      assert.deepEqual(events(), []);
+    });
+  for (const [version, tag] of [
+    ['1.0.0', 'latest'],
+    ['1.0.0-beta.1', 'next'],
+  ]) {
     check(`默认 ${version} 保持目录 publish 与 ${tag}`, () => {
       setVersion(version);
       const result = run();
       assert.equal(result.status, 0, result.stderr);
-      assert.deepEqual(traceEntries().map(entry => entry.args), [
-        ['view', `${manifest.name}@${version}`, 'version'], ['publish', '--tag', tag],
-      ]);
-      assert.ok(traceEntries().every(entry => entry.cwd === cwd));
+      assert.deepEqual(
+        traceEntries().map((entry) => entry.args),
+        [
+          ['view', `${manifest.name}@${version}`, 'version'],
+          ['publish', '--tag', tag],
+        ],
+      );
+      assert.ok(traceEntries().every((entry) => entry.cwd === cwd));
     });
     check(`已验证 ${version} 只打包一次并 dry-run 明确 tgz 与 ${tag}`, () => {
       setVersion(version);
@@ -116,11 +167,14 @@ try {
       const result = run(['--verified-build'], { RELEASE_TEST_PUBLISH: 'dry-run' });
       assert.equal(result.status, 0, result.stderr);
       const entries = traceEntries();
-      assert.deepEqual(entries.map(entry => entry.args[0]), ['view', 'pack', 'publish']);
+      assert.deepEqual(
+        entries.map((entry) => entry.args[0]),
+        ['view', 'pack', 'publish'],
+      );
       const publish = entries.at(-1).args;
       assert.ok(publish[1].endsWith('.tgz'));
       assert.deepEqual(publish.slice(2), ['--tag', tag]);
-      assert.ok(entries.every(entry => entry.cwd === cwd));
+      assert.ok(entries.every((entry) => entry.cwd === cwd));
       assert.deepEqual(events(), ['prepack']);
       assert.deepEqual(hashDist(), before);
       writeFileSync(join(output, 'last-dry-run.log'), result.stdout);
@@ -138,7 +192,9 @@ try {
   }
   check('普通目录 publish dry-run 仍执行 prepublishOnly 构建哨兵', () => {
     const result = spawnSync('npm', ['publish', '--dry-run', '--offline', '--tag', 'next'], {
-      cwd, env: { ...env, PATH: process.env.PATH }, encoding: 'utf8',
+      cwd,
+      env: { ...env, PATH: process.env.PATH },
+      encoding: 'utf8',
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /prepublishOnly 构建哨兵/);
@@ -148,7 +204,7 @@ try {
     check(`打包元数据 ${mode} 异常时不进入 publish`, () => {
       const result = run(['--verified-build'], { RELEASE_TEST_CORRUPT: mode });
       assert.notEqual(result.status, 0);
-      assert.ok(!traceEntries().some(entry => entry.args[0] === 'publish'));
+      assert.ok(!traceEntries().some((entry) => entry.args[0] === 'publish'));
     });
   }
   check('缺失已声明发布入口时不进入 publish', () => {
@@ -157,15 +213,15 @@ try {
     const result = run(['--verified-build']);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /missing\.js/);
-    assert.ok(!traceEntries().some(entry => entry.args[0] === 'publish'));
+    assert.ok(!traceEntries().some((entry) => entry.args[0] === 'publish'));
     delete manifest.exports['./missing'];
     setVersion('1.0.0');
   });
   check('release 九包仅在根构建和 verify 后显式复用已验产物', () => {
     const release = parse(readFileSync(join(root, '.github/workflows/release.yml'), 'utf8'));
     const steps = release.jobs.publish.steps;
-    const build = steps.findIndex(step => step.run === 'npm run build');
-    const verify = steps.findIndex(step => step.run === 'npm run verify');
+    const build = steps.findIndex((step) => step.run === 'npm run build');
+    const verify = steps.findIndex((step) => step.run === 'npm run verify');
     const publish = steps.map((step, index) => ({ step, index })).filter(({ step }) => step.run?.includes('publish-if-new.sh'));
     assert.equal(publish.length, 9);
     for (const { step, index } of publish) {
@@ -175,8 +231,10 @@ try {
       assert.equal(pkg.scripts.prepublishOnly, 'npm run build');
     }
   });
-  writeFileSync(join(output, 'validation.json'), `${JSON.stringify({ passed, checks, actualPublishing: false,
-    actualOidcExchange: false }, null, 2)}\n`);
+  writeFileSync(
+    join(output, 'validation.json'),
+    `${JSON.stringify({ passed, checks, actualPublishing: false, actualOidcExchange: false }, null, 2)}\n`,
+  );
   console.log(`发布复用构建：${passed} 项生命周期、参数、工件和标签契约通过（未真实发布或交换 OIDC）`);
 } finally {
   rmSync(temporary, { recursive: true, force: true });

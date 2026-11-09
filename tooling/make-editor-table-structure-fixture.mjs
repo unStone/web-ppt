@@ -19,7 +19,9 @@ const rows = [
   ],
   [
     cell('纵向合并', 'rowSpan="2"', `<a:tcPr anchor="b">${solid('DCFCE7')}</a:tcPr>`),
-    cell('中一'), cell('中二'), cell('中三', '', `<a:tcPr vert="vert">${solid('F3E8FF')}</a:tcPr>`),
+    cell('中一'),
+    cell('中二'),
+    cell('中三', '', `<a:tcPr vert="vert">${solid('F3E8FF')}</a:tcPr>`),
   ],
   [cell('纵向占位', 'vMerge="1"'), cell('下一'), cell('下二'), cell('下三')],
 ];
@@ -34,7 +36,10 @@ ${rows.map((cells, index) => `<a:tr h="${px(heights[index])}">${cells.join('')}<
 </a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 
 const bytes = deck({
-  name: 'Editor Table Structure', width: 1280, height: 720, slides: [slideXml(table)],
+  name: 'Editor Table Structure',
+  width: 1280,
+  height: 720,
+  slides: [slideXml(table)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 writeFileSync(join(root, 'fixtures/sample-editor-table-structure.pptx'), bytes);

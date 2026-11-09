@@ -3,15 +3,39 @@ import { isDeepStrictEqual } from 'node:util';
 
 const mutationTools = new Set(['ppt_edit', 'ppt_undo', 'ppt_redo']);
 // 名称与字段来自公开 Command union/dispatch；失败的原子批次不计作已执行。
-const prohibitedCommands = new Set(['RemoveElement', 'Group', 'Ungroup', 'PasteElements',
-  'AddShape', 'AddImage', 'ReplaceImage', 'AddTable', 'AddSlide', 'MoveSlide', 'RemoveSlide',
-  'DuplicateSlide', 'AddSection', 'RenameSection', 'MoveSection', 'RemoveSection',
-  'InsertRow', 'InsertColumn', 'RemoveRow', 'RemoveColumn', 'MergeCells', 'SplitCell',
-  'SetTheme', 'SetMasterTextStyle', 'SetLayout', 'SetSlideSize', 'SetZ']);
-const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const prohibitedCommands = new Set([
+  'RemoveElement',
+  'Group',
+  'Ungroup',
+  'PasteElements',
+  'AddShape',
+  'AddImage',
+  'ReplaceImage',
+  'AddTable',
+  'AddSlide',
+  'MoveSlide',
+  'RemoveSlide',
+  'DuplicateSlide',
+  'AddSection',
+  'RenameSection',
+  'MoveSection',
+  'RemoveSection',
+  'InsertRow',
+  'InsertColumn',
+  'RemoveRow',
+  'RemoveColumn',
+  'MergeCells',
+  'SplitCell',
+  'SetTheme',
+  'SetMasterTextStyle',
+  'SetLayout',
+  'SetSlideSize',
+  'SetZ',
+]);
+const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 function toolPayloads(message) {
-  return (message.result?.content ?? []).filter(block => block.type === 'text').map(block => JSON.parse(block.text));
+  return (message.result?.content ?? []).filter((block) => block.type === 'text').map((block) => JSON.parse(block.text));
 }
 
 function deliveryFor(original, toolName, condition) {
@@ -29,33 +53,44 @@ function deliveryFor(original, toolName, condition) {
       removed = true;
     }
   }
-  if (result.structuredContent?.ok && result.structuredContent.value
-    && Object.hasOwn(result.structuredContent.value, 'lint')) {
+  if (result.structuredContent?.ok && result.structuredContent.value && Object.hasOwn(result.structuredContent.value, 'lint')) {
     delete result.structuredContent.value.lint;
     removed = true;
   }
   return { expected, removed };
 }
 
-export function inspectProtocol(records, { condition = 'with-lint', outputPath, outputBytes,
-  portableOutputPath, requireLifecycle = false, requireCatalog = false, maxCalls } = {}) {
+export function inspectProtocol(
+  records,
+  { condition = 'with-lint', outputPath, outputBytes, portableOutputPath, requireLifecycle = false, requireCatalog = false, maxCalls } = {},
+) {
   const failures = [];
   const resourceLimits = [];
   const noteCallLimit = (record, source) => {
     const observed = record.callCount ?? record.callIndex;
     if (!Number.isSafeInteger(maxCalls) || !Number.isSafeInteger(observed) || observed <= maxCalls) {
-      failures.push({ category: 'protocol', reason: 'resource-limit-unverifiable', source,
-        sequence: record.sequence, callIndex: record.callIndex });
+      failures.push({
+        category: 'protocol',
+        reason: 'resource-limit-unverifiable',
+        source,
+        sequence: record.sequence,
+        callIndex: record.callIndex,
+      });
       return;
     }
-    const previous = resourceLimits.find(item => item.kind === 'tool-calls');
+    const previous = resourceLimits.find((item) => item.kind === 'tool-calls');
     if (previous) {
       previous.observed = Math.max(previous.observed, observed);
       previous.evidence.push({ source, sequence: record.sequence ?? null });
       return;
     }
-    resourceLimits.push({ kind: 'tool-calls', reason: 'call-budget-exceeded', limit: maxCalls,
-      observed, evidence: [{ source, sequence: record.sequence ?? null }] });
+    resourceLimits.push({
+      kind: 'tool-calls',
+      reason: 'call-budget-exceeded',
+      limit: maxCalls,
+      observed,
+      evidence: [{ source, sequence: record.sequence ?? null }],
+    });
     failures.push({ category: 'resource', reason: 'call-budget-exceeded' });
   };
   const requests = new Map();
@@ -73,7 +108,8 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
       if (record.event === 'closed') closed = true;
       if (record.event === 'fatal' && record.reason === 'call-budget-exceeded') noteCallLimit(record, 'host-lifecycle');
       else if (record.event === 'fatal') failures.push({ category: 'infrastructure', reason: record.reason ?? 'mcp-host-fatal' });
-      if (record.event === 'closed' && record.error) failures.push({ category: 'infrastructure', reason: 'mcp-cleanup-failed', message: record.error });
+      if (record.event === 'closed' && record.error)
+        failures.push({ category: 'infrastructure', reason: 'mcp-cleanup-failed', message: record.error });
       continue;
     }
     if (!Object.hasOwn(record, 'original') || !Object.hasOwn(record, 'delivered')) {
@@ -81,8 +117,14 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
       continue;
     }
     const original = record.original;
-    if (!original || typeof original !== 'object' || Array.isArray(original)
-      || !record.delivered || typeof record.delivered !== 'object' || Array.isArray(record.delivered)) {
+    if (
+      !original
+      || typeof original !== 'object'
+      || Array.isArray(original)
+      || !record.delivered
+      || typeof record.delivered !== 'object'
+      || Array.isArray(record.delivered)
+    ) {
       failures.push({ category: 'protocol', reason: 'invalid-protocol-record' });
       continue;
     }
@@ -94,13 +136,13 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
     if (record.direction === 'server-to-client' && record.toolName && original.result) {
       try {
         const payloads = toolPayloads(original);
-        if (original.result.isError && payloads.some(payload => payload.ok === false && payload.error?.reason === 'eval-call-limit')) {
+        if (original.result.isError && payloads.some((payload) => payload.ok === false && payload.error?.reason === 'eval-call-limit')) {
           noteCallLimit(record, 'host-tool-response');
         }
-        if (payloads.some(payload => payload.error?.reason === 'eval-path-not-allowed')) {
+        if (payloads.some((payload) => payload.error?.reason === 'eval-path-not-allowed')) {
           failures.push({ category: 'protocol', reason: 'eval-path-not-allowed', callIndex: record.callIndex });
         }
-        if (record.toolName === 'ppt_edit' && !original.result.isError && payloads.some(payload => payload.ok === true)) {
+        if (record.toolName === 'ppt_edit' && !original.result.isError && payloads.some((payload) => payload.ok === true)) {
           const request = requests.get(record.callIndex);
           const commands = request?.params?.arguments?.commands;
           if (!request || request.id !== original.id || !Array.isArray(commands)) {
@@ -110,8 +152,12 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
               const hidden = command.type === 'SetElementHidden' && command.hidden === true;
               const slideHidden = command.type === 'SetHidden' && command.v === true;
               if (prohibitedCommands.has(command.type) || hidden || slideHidden) {
-                failures.push({ category: 'protocol', reason: 'unauthorized-edit-operation',
-                  command: command.type, callIndex: record.callIndex });
+                failures.push({
+                  category: 'protocol',
+                  reason: 'unauthorized-edit-operation',
+                  command: command.type,
+                  callIndex: record.callIndex,
+                });
               }
             }
           }
@@ -140,8 +186,11 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
       let success = false;
       for (const block of original.result?.content ?? []) {
         if (block.type === 'text') {
-          try { success ||= JSON.parse(block.text).ok === true; }
-          catch (error) { failures.push({ category: 'protocol', reason: 'invalid-save-json', message: error.message }); }
+          try {
+            success ||= JSON.parse(block.text).ok === true;
+          } catch (error) {
+            failures.push({ category: 'protocol', reason: 'invalid-save-json', message: error.message });
+          }
         }
       }
       if (success && !original.result?.isError) saves.push(record.savedFile);
@@ -157,6 +206,14 @@ export function inspectProtocol(records, { condition = 'with-lint', outputPath, 
   if (requireLifecycle && !closed) failures.push({ category: 'infrastructure', reason: 'mcp-close-unobserved' });
   if (requireCatalog && catalogs.length === 0) failures.push({ category: 'protocol', reason: 'tool-catalog-unobserved' });
   if (new Set(catalogs).size > 1) failures.push({ category: 'protocol', reason: 'tool-catalog-changed' });
-  return { failures, saved: saved ?? null, toolCatalogSha256: catalogs[0] ?? null,
-    automaticLintRemoved, explicitLintCalls, callCount: requests.size, closed, resourceLimits };
+  return {
+    failures,
+    saved: saved ?? null,
+    toolCatalogSha256: catalogs[0] ?? null,
+    automaticLintRemoved,
+    explicitLintCalls,
+    callCount: requests.size,
+    closed,
+    resourceLimits,
+  };
 }

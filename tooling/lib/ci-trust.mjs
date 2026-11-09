@@ -2,37 +2,64 @@ import { SOURCE_GROUPS, DIST_GROUPS } from '../ci/plan.mjs';
 
 const workflowPath = '.github/workflows/ci.yml';
 const legacySteps = [
-  '类型检查', '重新生成测试文件', '校验固件确定性', '全量功能测试',
-  '浏览器 DOM 编辑层性能采样', '保存产物外部打开测试', '0.7 统一清单外部打开测试',
-  'OLE 嵌入文档外部打开测试', '编辑性能预算', '构建', '官网双语生产回归', '跨产物一致性',
+  '类型检查',
+  '重新生成测试文件',
+  '校验固件确定性',
+  '全量功能测试',
+  '浏览器 DOM 编辑层性能采样',
+  '保存产物外部打开测试',
+  '0.7 统一清单外部打开测试',
+  'OLE 嵌入文档外部打开测试',
+  '编辑性能预算',
+  '构建',
+  '官网双语生产回归',
+  '跨产物一致性',
 ];
 const modernJobs = [
-  'changes', 'build', 'editing', 'browser', 'verify', 'site', 'office', 'performance', 'check',
-  ...SOURCE_GROUPS.filter(group => !['editing', 'browser'].includes(group)).map(group => `source (${group})`),
-  ...DIST_GROUPS.filter(group => group !== 'base').map(group => `dist (${group})`),
+  'changes',
+  'build',
+  'editing',
+  'browser',
+  'verify',
+  'site',
+  'office',
+  'performance',
+  'check',
+  ...SOURCE_GROUPS.filter((group) => !['editing', 'browser'].includes(group)).map((group) => `source (${group})`),
+  ...DIST_GROUPS.filter((group) => group !== 'base').map((group) => `dist (${group})`),
 ];
-const succeeded = item => item?.status === 'completed' && item.conclusion === 'success';
-const full = reason => ({ result: 'full', reason });
+const succeeded = (item) => item?.status === 'completed' && item.conclusion === 'success';
+const full = (reason) => ({ result: 'full', reason });
 
 function hasRunIdentity(run, { repository, sha }) {
-  return run?.name === 'CI' && run.event === 'push'
-    && ['master', 'main'].includes(run.head_branch) && run.head_sha === sha
-    && run.path === workflowPath && run.repository?.full_name === repository
+  return (
+    run?.name === 'CI'
+    && run.event === 'push'
+    && ['master', 'main'].includes(run.head_branch)
+    && run.head_sha === sha
+    && run.path === workflowPath
+    && run.repository?.full_name === repository
     && run.head_repository?.full_name === repository
-    && Number.isSafeInteger(run.id) && run.id > 0
-    && typeof run.created_at === 'string' && Number.isFinite(Date.parse(run.created_at));
+    && Number.isSafeInteger(run.id)
+    && run.id > 0
+    && typeof run.created_at === 'string'
+    && Number.isFinite(Date.parse(run.created_at))
+  );
 }
 
 export function selectLatestPushCI(runs, identity) {
   if (!Array.isArray(runs)) throw new Error('GitHub workflow_runs 必须是数组');
-  return runs.filter(run => hasRunIdentity(run, identity))
-    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id)[0] ?? null;
+  return (
+    runs
+      .filter((run) => hasRunIdentity(run, identity))
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id)[0] ?? null
+  );
 }
 
 function missingStep(job, names) {
   if (!Array.isArray(job.steps)) return `${job.name} 缺少 step 证据`;
   for (const name of names) {
-    const matches = job.steps.filter(step => step.name === name);
+    const matches = job.steps.filter((step) => step.name === name);
     if (matches.length !== 1 || !succeeded(matches[0])) return `${job.name} 的 ${name} 未完整成功`;
   }
   return null;

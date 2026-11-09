@@ -47,9 +47,7 @@ import { runV06IntegrationSaveContract } from './lib/v06-integration-save-contra
 import { runThemeEditSaveContract } from './lib/theme-edit-save-contract.mjs';
 import { runLayoutEditSaveContract } from './lib/layout-edit-save-contract.mjs';
 import { runMasterEditSaveContract } from './lib/master-edit-save-contract.mjs';
-import {
-  EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST,
-} from './lib/edit-save-office-artifacts.mjs';
+import { EDIT_SAVE_OFFICE_ARTIFACTS, EDIT_SAVE_OFFICE_MANIFEST } from './lib/edit-save-office-artifacts.mjs';
 import { recordCount } from './lib/measured.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,13 +69,21 @@ const corePath = join(out, 'core.mjs');
 const editPath = join(out, 'edit.mjs');
 const generatePath = join(out, 'generate.mjs');
 const core = await bundleBrowser({
-  root, entry: join(root, 'packages/core/src/index.ts'), output: corePath,
+  root,
+  entry: join(root, 'packages/core/src/index.ts'),
+  output: corePath,
 });
 const edit = await bundleBrowser({
-  root, entry: join(root, 'packages/edit-core/src/index.ts'), output: editPath, aliases,
+  root,
+  entry: join(root, 'packages/edit-core/src/index.ts'),
+  output: editPath,
+  aliases,
 });
 const generate = await bundleBrowser({
-  root, entry: join(root, 'tooling/lib/generated-save-public-entry.ts'), output: generatePath, aliases,
+  root,
+  entry: join(root, 'tooling/lib/generated-save-public-entry.ts'),
+  output: generatePath,
+  aliases,
 });
 const fixturesDir = join(root, 'fixtures');
 const load = (name) => new Uint8Array(readFileSync(join(fixturesDir, name)));
@@ -97,23 +103,31 @@ const check = (label, condition, detail = '') => {
   else failures.push(`${label}${detail ? `：${detail}` : ''}`);
   return condition;
 };
-const eq = (label, actual, expected) => check(label, Object.is(actual, expected),
-  `期望 ${String(expected)}，实际 ${String(actual)}`);
+const eq = (label, actual, expected) => check(label, Object.is(actual, expected), `期望 ${String(expected)}，实际 ${String(actual)}`);
 
 await runGeneratedSaveContract({
-  core, edit: generate, generate, load, check, eq, saveArtifact,
+  core,
+  edit: generate,
+  generate,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/generated-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/generated-save-fingerprint.mjs'), corePath, editPath, filePath, mode],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
   renderGeneratedBulletFingerprint: (file, mode) => {
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/generated-bullet-fingerprint.mjs'),
-      corePath, generatePath, file, mode,
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/generated-bullet-fingerprint.mjs'), corePath, generatePath, file, mode],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
@@ -124,82 +138,119 @@ await runV06IntegrationSaveContract({ edit, core, generate, check, saveArtifact 
 await runGroupUngroupSaveContract({ edit, core, load, check, saveArtifact });
 await runListLevelSaveContract({ edit, core, load, check, saveArtifact });
 await runBulletFormatSaveContract({
-  edit, core, load, check, saveArtifact,
+  edit,
+  core,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 await runVertexSaveContract({ edit, core, load, check, saveArtifact });
 await runPresetShapeSaveContract({
-  core, edit, generate, load, check, saveArtifact,
+  core,
+  edit,
+  generate,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 await runAdvancedRunFormatSaveContract({
-  core, edit, generate, load, check, saveArtifact,
+  core,
+  edit,
+  generate,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 await runTableStyleSaveContract({
-  edit, core, load, check, saveArtifact,
+  edit,
+  core,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 await runThemeEditSaveContract({
-  edit, core, load, check, saveArtifact,
+  edit,
+  core,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runLayoutEditSaveContract({
-  core, edit, load, check, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runMasterEditSaveContract({
-  core, edit, load, check, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
@@ -214,212 +265,297 @@ await runM1SaveContract({
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runEngineTextSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runTableCellTextSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runShapeAutofitSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runBodyPropsSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runTableRowInsertSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runTableStructureSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runAddShapeSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runAddImageSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runAddTableSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runAddSlideSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runMoveSlideSaveContract({
-  core, edit, load, check, eq,
+  core,
+  edit,
+  load,
+  check,
+  eq,
   saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runRemoveSlideSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runDuplicateSlideSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runChangeLayoutSaveContract({
-  core, edit, load, check, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runShapeFormatSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runSlidePropertiesSaveContract({
-  core, edit, load, check, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
@@ -427,37 +563,54 @@ await runSlidePropertiesSaveContract({
 await runSlideNotesSaveContract({ core, edit, load, check, saveArtifact });
 
 await runSlideImageBackgroundSaveContract({
-  core, edit, load, check, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runShapeEffectsSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
 
 await runImageContentSaveContract({
-  core, edit, load, check, eq, saveArtifact,
+  core,
+  edit,
+  load,
+  check,
+  eq,
+  saveArtifact,
   renderFingerprint: (file, mode, scenario) => {
     const filePath = isAbsolute(file) ? file : join(fixturesDir, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode,
-      JSON.stringify(scenario),
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/m1-save-fingerprint.mjs'), corePath, editPath, filePath, mode, JSON.stringify(scenario)],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });
@@ -473,8 +626,7 @@ await runCommentsSaveContract({ core, edit, load, out, check });
 await runAppearanceSaveContract({ core, edit, load, check, eq, root, out });
 await runMixedEditingContract({ root, out, check, eq });
 const expectedArtifactNames = EDIT_SAVE_OFFICE_ARTIFACTS.map(({ file }) => file).sort();
-check('真实 Office 门禁覆盖本轮全部保存产物',
-  [...savedArtifactNames].sort().join('\n') === expectedArtifactNames.join('\n'));
+check('真实 Office 门禁覆盖本轮全部保存产物', [...savedArtifactNames].sort().join('\n') === expectedArtifactNames.join('\n'));
 
 console.log('\n' + '─'.repeat(60));
 if (failures.length) {
@@ -482,10 +634,17 @@ if (failures.length) {
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exitCode = 1;
 } else {
-  writeFileSync(manifestPath, `${JSON.stringify({
-    version: 1,
-    artifacts: EDIT_SAVE_OFFICE_ARTIFACTS,
-  }, null, 2)}\n`);
+  writeFileSync(
+    manifestPath,
+    `${JSON.stringify(
+      {
+        version: 1,
+        artifacts: EDIT_SAVE_OFFICE_ARTIFACTS,
+      },
+      null,
+      2,
+    )}\n`,
+  );
   recordCount('save', passed);
   console.log(`\x1b[32m✓ M1 保存验收全部通过（${passed} 项断言）\x1b[0m`);
 }

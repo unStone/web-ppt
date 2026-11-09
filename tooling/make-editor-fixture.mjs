@@ -5,22 +5,25 @@ import { fileURLToPath } from 'node:url';
 import { deck, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const shapes = (rotation = 0) => Array.from({ length: 60 }, (_, index) => {
-  const column = index % 10;
-  const row = Math.floor(index / 10);
-  return sp({
-    x: 20 + column * 124,
-    y: 20 + row * 112,
-    w: 112,
-    h: 90,
-    rot: rotation,
-    prst: index % 3 === 0 ? 'roundRect' : 'rect',
-    fill: solid(`accent${index % 6 + 1}`),
-    name: `性能形状 ${index + 1}`,
-  });
-}).join('');
+const shapes = (rotation = 0) =>
+  Array.from({ length: 60 }, (_, index) => {
+    const column = index % 10;
+    const row = Math.floor(index / 10);
+    return sp({
+      x: 20 + column * 124,
+      y: 20 + row * 112,
+      w: 112,
+      h: 90,
+      rot: rotation,
+      prst: index % 3 === 0 ? 'roundRect' : 'rect',
+      fill: solid(`accent${(index % 6) + 1}`),
+      name: `性能形状 ${index + 1}`,
+    });
+  }).join('');
 const bytes = deck({
-  name: 'Editor 60 Elements', width: 1280, height: 720,
+  name: 'Editor 60 Elements',
+  width: 1280,
+  height: 720,
   slides: [slideXml(shapes()), slideXml(shapes(2700000))],
 });
 

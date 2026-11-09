@@ -12,14 +12,17 @@ const SHAPE_NAMESPACES = new Set([
 ]);
 
 function hasUnsupported(elements: readonly SlideElement[]): boolean {
-  return elements.some((element) => element.kind === 'unsupported'
-    || element.kind === 'group' && hasUnsupported(element.children));
+  return elements.some((element) => element.kind === 'unsupported' || (element.kind === 'group' && hasUnsupported(element.children)));
 }
 
 function sourceShapes(alternate: Element): Element[] {
-  return Array.from(alternate.children).filter((branch) => branch.namespaceURI === MC_NAMESPACE)
-    .flatMap((branch) => Array.from(branch.children).flatMap((node) =>
-      node.namespaceURI === MC_NAMESPACE && node.localName === 'AlternateContent' ? sourceShapes(node) : [node]));
+  return Array.from(alternate.children)
+    .filter((branch) => branch.namespaceURI === MC_NAMESPACE)
+    .flatMap((branch) =>
+      Array.from(branch.children).flatMap((node) =>
+        node.namespaceURI === MC_NAMESPACE && node.localName === 'AlternateContent' ? sourceShapes(node) : [node],
+      ),
+    );
 }
 
 export function parseCompatibleShapes(
@@ -34,10 +37,12 @@ export function parseCompatibleShapes(
     has: (namespace) => SHAPE_NAMESPACES.has(namespace) || supportsChartEx(namespace, packageReader),
   });
   const source = kids(alternate, 'Choice').find((node) => node.namespaceURI === MC_NAMESPACE);
-  let elements = selected ? parse(selected) : Array.from(source?.children ?? []).flatMap((node) => {
-    const missing = placeholder(node);
-    return missing ? [missing] : [];
-  });
+  let elements = selected
+    ? parse(selected)
+    : Array.from(source?.children ?? []).flatMap((node) => {
+        const missing = placeholder(node);
+        return missing ? [missing] : [];
+      });
   // hook 已接入不代表当前数据能被解释；组内占位也算失败，不能再次用“非空”冒充支持。
   if (selected?.localName === 'Choice' && hasUnsupported(elements)) {
     const fallback = kids(alternate, 'Fallback').find((node) => node.namespaceURI === MC_NAMESPACE);
@@ -47,11 +52,13 @@ export function parseCompatibleShapes(
   // 分支只是同一源对象的投影，改内部内容会让其他 Office 版本显示不同结果。
   if (edit) {
     const moveLocked = sourceShapes(alternate).some((source) => placeholder(source)?.editInfo?.moveLocked);
-    for (const element of elements) element.editInfo = {
-      ...element.editInfo, editable: element.editInfo?.editable === 'none' ? 'none' : 'frame',
-      requiresOriginal: true,
-      ...(moveLocked ? { moveLocked: true } : {}),
-    };
+    for (const element of elements)
+      element.editInfo = {
+        ...element.editInfo,
+        editable: element.editInfo?.editable === 'none' ? 'none' : 'frame',
+        requiresOriginal: true,
+        ...(moveLocked ? { moveLocked: true } : {}),
+      };
   }
   return elements;
 }

@@ -20,39 +20,52 @@ export async function runAddShapeEditorContract({ check, lib, root, window }) {
   const editSibling = editStatic.querySelector(`[data-edit-id="${siblingId}"]`);
   const viewSibling = viewStatic.querySelector(`[data-edit-id="${siblingId}"]`);
   session.editor.exec({
-    type: 'AddShape', slideId, preset: 'hexagon', rect: { x: 440, y: 180, w: 240, h: 150 },
+    type: 'AddShape',
+    slideId,
+    preset: 'hexagon',
+    rect: { x: 440, y: 180, w: 240, h: 150 },
   });
   const id = session.editor.selection.kind === 'elements' ? session.editor.selection.ids[0] : null;
   const editPartition = editStatic.querySelector(`[data-edit-id="${id}"]`);
   const viewPartition = viewStatic.querySelector(`[data-edit-id="${id}"]`);
-  check('新增形状在编辑/查看视图同步增量插入且不重建页面或既有兄弟',
-    !!id && !!editPartition && !!viewPartition
-      && editStatic.querySelector('svg') === editSvg && viewStatic.querySelector('svg') === viewSvg
+  check(
+    '新增形状在编辑/查看视图同步增量插入且不重建页面或既有兄弟',
+    !!id
+      && !!editPartition
+      && !!viewPartition
+      && editStatic.querySelector('svg') === editSvg
+      && viewStatic.querySelector('svg') === viewSvg
       && editStatic.querySelector(`[data-edit-id="${siblingId}"]`) === editSibling
       && viewStatic.querySelector(`[data-edit-id="${siblingId}"]`) === viewSibling
       && !!editMount.querySelector(`[data-edit-selection-id="${id}"]`)
-      && viewMount.querySelector('[data-ppt-layer="interaction"]').style.display === 'none');
+      && viewMount.querySelector('[data-ppt-layer="interaction"]').style.display === 'none',
+  );
 
   editPartition.dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true, composed: true }));
   const editable = editMount.querySelector(`[data-ppt-text-editor="${id}"]`);
-  check('新增空形状可直接复用既有双击文字编辑面',
-    editable?.getAttribute('contenteditable') === 'true'
-      && session.editor.selection.kind === 'text' && session.editor.selection.id === id);
+  check(
+    '新增空形状可直接复用既有双击文字编辑面',
+    editable?.getAttribute('contenteditable') === 'true' && session.editor.selection.kind === 'text' && session.editor.selection.id === id,
+  );
   session.editor.select({ kind: 'elements', ids: [id], enteredGroup: null });
   const beforeMove = editStatic.querySelector(`[data-edit-id="${id}"]`);
   session.editor.exec({ type: 'SetXfrm', id, x: 480 });
-  check('新增形状继续复用既有变换、撤销与分区替换路径',
+  check(
+    '新增形状继续复用既有变换、撤销与分区替换路径',
     session.editor.effectiveElement(id).x === 480
       && editStatic.querySelector(`[data-edit-id="${id}"]`) !== beforeMove
-      && editStatic.querySelector(`[data-edit-id="${siblingId}"]`) === editSibling);
+      && editStatic.querySelector(`[data-edit-id="${siblingId}"]`) === editSibling,
+  );
   session.editor.undo();
   session.editor.undo();
-  check('撤销新增只移除新分区并保留查看/编辑视图兄弟身份',
+  check(
+    '撤销新增只移除新分区并保留查看/编辑视图兄弟身份',
     !session.editor.doc.elements[id]
       && !editStatic.querySelector(`[data-edit-id="${id}"]`)
       && !viewStatic.querySelector(`[data-edit-id="${id}"]`)
       && editStatic.querySelector(`[data-edit-id="${siblingId}"]`) === editSibling
-      && viewStatic.querySelector(`[data-edit-id="${siblingId}"]`) === viewSibling);
+      && viewStatic.querySelector(`[data-edit-id="${siblingId}"]`) === viewSibling,
+  );
   editView.destroy();
   viewView.destroy();
   session.dispose();

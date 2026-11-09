@@ -11,7 +11,8 @@ for (let i = 0; i < args.length; i++) {
   if (args[i] === '--sha') sha = args[++i];
   else throw new Error(`未知参数 ${args[i]}；${usage}`);
 }
-if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error(`需要 40 位 commit SHA（--sha 或 GITHUB_TOKEN 同级的 GITHUB_SHA），收到：${sha || '(空)'}`);
+if (!/^[0-9a-f]{40}$/.test(sha))
+  throw new Error(`需要 40 位 commit SHA（--sha 或 GITHUB_TOKEN 同级的 GITHUB_SHA），收到：${sha || '(空)'}`);
 
 const repository = process.env.GITHUB_REPOSITORY;
 const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;

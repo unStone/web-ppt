@@ -6,15 +6,24 @@ export async function runSiteRecoveryBrowserContract(context) {
   const source = '/fixtures/sample-editor-add-slide.pptx';
   const other = '/fixtures/sample-editor-preset-shape.pptx';
   const count = () => evaluate("document.querySelectorAll('#slideList [data-slide-id]').length");
-  const requestOpen = name => evaluate(`(async () => {
+  const requestOpen = (name) =>
+    evaluate(
+      `(async () => {
     const bytes = await fetch('${source}').then(response => response.arrayBuffer());
     const transfer = new DataTransfer(); transfer.items.add(new File([bytes], '${name}'));
     const input = document.querySelector('#fileInput'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
-  const ready = name => waitFor(`document.querySelector('#fileName').textContent.replace(/^● /, '') === '${name}'
-    && !document.querySelector('#editorApp').dataset.loading`, `${name} 已打开`);
-  const recorded = () => waitFor("document.querySelector('#recoveryState').textContent === '恢复记录已写入本机'", '真实 IndexedDB 恢复帧落盘');
+  })()`,
+      true,
+    );
+  const ready = (name) =>
+    waitFor(
+      `document.querySelector('#fileName').textContent.replace(/^● /, '') === '${name}'
+    && !document.querySelector('#editorApp').dataset.loading`,
+      `${name} 已打开`,
+    );
+  const recorded = () =>
+    waitFor("document.querySelector('#recoveryState').textContent === '恢复记录已写入本机'", '真实 IndexedDB 恢复帧落盘');
 
   await openFixture(context, source, 'recovery-native-first.pptx', { discardRecovery: true });
   assert.equal(await evaluate("document.querySelector('#recoveryToggle').checked"), true);
@@ -49,7 +58,8 @@ export async function runSiteRecoveryBrowserContract(context) {
   } finally {
     await evaluate('delete globalThis.__recoveryLanguageHome');
   }
-  const shutdown = await evaluate(`(async () => {
+  const shutdown = await evaluate(
+    `(async () => {
     const frame = document.createElement('iframe');
     document.body.append(frame);
     frame.contentDocument.documentElement.lang = 'zh-CN';
@@ -62,7 +72,9 @@ export async function runSiteRecoveryBrowserContract(context) {
     try {
       return await frame.contentWindow.eval('import("/recovery-shutdown.mjs").then(api => api.runRecoveryShutdownContract("${other}"))');
     } finally { frame.remove(); }
-  })()`, true);
+  })()`,
+    true,
+  );
   assert.deepEqual(shutdown, { pendingWritesPersisted: true, actions: ['replace', 'dispose'] });
   console.log('官网恢复服务：真实 IndexedDB 落盘、跨文稿恢复、新打开取消悬挂选择及语言入口归还通过');
   console.log('Cordis 应用：关闭下次打开恢复偏好后，切换/退出等待待写帧，关闭存储重开仍可恢复');

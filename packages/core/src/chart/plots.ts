@@ -9,7 +9,17 @@ import type { Cartesian, XYPlot } from './frame';
 import { lineH } from './frame';
 import { Depth3D, Pt, Rect, clamp, darken, lineEl, mix, nf, px, shapeEl, solid, strokeFrom } from './util';
 import {
-  PlotEnv, box3D, circlePath, labelEl, labelString, markerEl, markerSymbol, num, pathEl, pointFill, pointStroke,
+  PlotEnv,
+  box3D,
+  circlePath,
+  labelEl,
+  labelString,
+  markerEl,
+  markerSymbol,
+  num,
+  pathEl,
+  pointFill,
+  pointStroke,
 } from './plot-marks';
 
 // ---------- 柱 / 条 ----------
@@ -30,13 +40,7 @@ interface BarRec {
   anchor: Pt;
 }
 
-export function renderBars(
-  g: PlotGroup,
-  c: Cartesian,
-  slot: BarSlot,
-  env: PlotEnv,
-  depth: Depth3D | null = null,
-): SlideElement[] {
+export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotEnv, depth: Depth3D | null = null): SlideElement[] {
   const out: SlideElement[] = [];
   const gapW = clamp(g.gapWidth, 0, 800) / 100;
   const ov = clamp(g.overlap, -100, 100) / 100;
@@ -120,8 +124,7 @@ export function renderBars(
   } else {
     for (const b of recs) {
       out.push(
-        shapeEl(b.r.x, b.r.y, b.r.w, b.r.h,
-          `M 0 0 L ${nf(b.r.w)} 0 L ${nf(b.r.w)} ${nf(b.r.h)} L 0 ${nf(b.r.h)} Z`, b.fill, b.stroke),
+        shapeEl(b.r.x, b.r.y, b.r.w, b.r.h, `M 0 0 L ${nf(b.r.w)} 0 L ${nf(b.r.w)} ${nf(b.r.h)} L 0 ${nf(b.r.h)} Z`, b.fill, b.stroke),
       );
     }
   }
@@ -307,8 +310,13 @@ export function renderScatter(g: PlotGroup, p: XYPlot, env: PlotEnv): SlideEleme
       if (mk) overlay.push(mk);
       if (labelVisible(s.dLbls)) {
         const size = s.dLbls.size ?? env.size * 0.92;
-      const el2 = labelEl(q[0], q[1] - lineH(size) * 0.85,
-        labelString(s, i, num(s.vals[i]) ?? 0, null, env, null, s.cats[i] ?? String(i + 1)), s.dLbls, env);
+        const el2 = labelEl(
+          q[0],
+          q[1] - lineH(size) * 0.85,
+          labelString(s, i, num(s.vals[i]) ?? 0, null, env, null, s.cats[i] ?? String(i + 1)),
+          s.dLbls,
+          env,
+        );
         if (el2) overlay.push(el2);
       }
     }
@@ -434,10 +442,10 @@ export function renderStock(g: PlotGroup, c: Cartesian, env: PlotEnv): SlideElem
       };
       const spec = up ? g.upDown.upFill : g.upDown.downFill;
       const fill = spec ?? solid(up ? 'rgb(255,255,255)' : lineColor);
-      const stroke = strokeFrom(up ? g.upDown.upLn : g.upDown.downLn, lineColor, 1)
-        ?? { color: lineColor, width: 1, dash: null };
-      out.push(shapeEl(rect.x, rect.y, rect.w, rect.h,
-        `M 0 0 L ${nf(rect.w)} 0 L ${nf(rect.w)} ${nf(rect.h)} L 0 ${nf(rect.h)} Z`, fill, stroke));
+      const stroke = strokeFrom(up ? g.upDown.upLn : g.upDown.downLn, lineColor, 1) ?? { color: lineColor, width: 1, dash: null };
+      out.push(
+        shapeEl(rect.x, rect.y, rect.w, rect.h, `M 0 0 L ${nf(rect.w)} 0 L ${nf(rect.w)} ${nf(rect.h)} L 0 ${nf(rect.h)} Z`, fill, stroke),
+      );
     } else {
       // OHLC：开盘在左、收盘在右
       if (ov !== null) {
