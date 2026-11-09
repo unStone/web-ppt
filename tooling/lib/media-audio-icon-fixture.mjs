@@ -1,4 +1,21 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import ts from 'typescript';
 import { makePng } from './ooxml.mjs';
+
+/** 用 TypeScript 解析器读出 edit-core 内置的图标常量；按文本匹配会随源码排版失效。 */
+export function readStoredAudioIcon(root) {
+  const path = join(root, 'packages/edit-core/src/media/audio-icon.ts');
+  const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest);
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const { name, initializer } of statement.declarationList.declarations) {
+      if (ts.isIdentifier(name) && name.text === 'AUDIO_ICON_PNG' && initializer && ts.isStringLiteral(initializer))
+        return initializer.text;
+    }
+  }
+  throw new Error(`${path} 缺少字符串常量 AUDIO_ICON_PNG`);
+}
 
 /** 自制扬声器图标只用确定性几何，生成时抗锯齿，不把栅格器装进发布包。 */
 export function makeAudioIcon() {

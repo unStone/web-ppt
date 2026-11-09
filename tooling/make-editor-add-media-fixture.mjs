@@ -1,10 +1,10 @@
 /** 音频插入从无媒体页面开始，避免原包资源偶然遮住新资源闭包缺陷。 */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deck, slideXml, solid, sp, NS, makeWav } from './lib/ooxml.mjs';
 import { makeMp4 } from './lib/media-mp4-fixture.mjs';
-import { makeAudioIcon } from './lib/media-audio-icon-fixture.mjs';
+import { makeAudioIcon, readStoredAudioIcon } from './lib/media-audio-icon-fixture.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const bytes = deck({
@@ -22,8 +22,7 @@ writeFileSync(join(root, 'fixtures/sample-editor-media.mp4'), makeMp4());
 writeFileSync(join(root, 'fixtures/sample-editor-media-fragmented.mp4'), makeMp4(true));
 writeFileSync(join(root, 'fixtures/sample-editor-media.wav'), makeWav(0.4));
 const icon = makeAudioIcon();
-const stored = readFileSync(join(root, 'packages/edit-core/src/media/audio-icon.ts'), 'utf8').match(/AUDIO_ICON_PNG = '([^']+)'/)?.[1];
-if (stored !== Buffer.from(icon).toString('base64')) throw new Error('默认音频图标与确定性生成器不一致');
+if (readStoredAudioIcon(root) !== Buffer.from(icon).toString('base64')) throw new Error('默认音频图标与确定性生成器不一致');
 writeFileSync(join(root, 'fixtures/sample-editor-audio-icon.png'), icon);
 const picture = (id) =>
   `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="兼容音频 ${id}"/>`
