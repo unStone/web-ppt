@@ -9,27 +9,27 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: tooling/font-glyph-requirements.txt
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
       - name: 缓存 OOXML schema 与 NuGet 包
         # schema 由 prepare 脚本按 SHA256 钉版下载，脚本不变则内容不变；
         # NuGet 还原结果只取决于 csproj 的包引用版本。
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             out/ooxml-schemas
@@ -97,7 +97,7 @@ jobs:
 
       - name: 上传快照差异
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: snapshot-actual
           path: |
@@ -110,8 +110,8 @@ jobs:
   node-minimum:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
