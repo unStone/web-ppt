@@ -6,11 +6,15 @@
 
 | workflow | 触发 | 职责 |
 |---|---|---|
-| `ci.yml` | push 到 master / PR | 主 job（`.node-version`）：类型检查 → 重生成固件并 `git diff` 验证确定性 → `test:functional` → LibreOffice / 统一清单外部打开测试 → 构建 → OOXML 合法性门禁 → verify；`node-minimum` job 在 `engines` 声明的最低 Node 上复验 MCP、Node 渲染与 ZIP 安全发布产物 |
+| `ci.yml` | push 到 master / main、PR 或手动 | 从唯一门禁入口（`test:functional` / `verify` / `test:ci:external`）展开源码、发布产物与外部读取器分组并按数据依赖并行：类型 / 固件 / 构建、独立进程等价分片、功能分组、LibreOffice 与 OOXML 合法性门禁；`node-minimum` 在 `engines` 声明的最低 Node 上复验 MCP、Node 渲染与 ZIP 安全发布产物；`check` 汇总核对覆盖与报告完整性 |
 | `performance.yml` | 每周一定时或手动 | 在 master 上采样编辑器性能与编辑预算，只观察趋势，见 [testing.md §7](testing.md#7-性能门禁的现状) |
 | `release.yml` | 推 `v*` tag 或手动 | 见 §2，发布九个包到 npm |
 | `powerpoint.yml` | 仅 `workflow_dispatch`，限 master / tag | 装有桌面 Office 的自托管 Windows 机器执行真机门禁（不跑 PR 代码），运行手册见 [powerpoint-runner.md](powerpoint-runner.md) |
-| `pages.yml` | push 到 master | 部署官网，单实例并发（新推送取消排队旧任务） |
+| `pages.yml` | master / main 的成功 push CI 完成，或手动指定 CI run_id | 下载该次 CI 已验证的站点产物后部署；不重复安装依赖、构建和测试；纯文档及过期自动部署跳过 |
+
+PR 连续推送通过 `cancel-in-progress` 取消旧运行；master / main 的 CI 使用每次运行独立的并发组，逐提交完整执行。路径过滤只跳过文档提交的重任务，始终生成 `check` 结论。
+
+官网只接受本仓库 master / main 上由 `ci.yml` 触发且成功完成的 push 运行。自动部署还要求该提交仍为分支 HEAD，避免较旧 CI 晚完成后覆盖新站点；手动指定 `run_id` 可以重部署仍未过期的历史产物，没有 `site-dist` 或产物已过期时明确失败。
 
 ## 2. 发版 checklist
 
@@ -22,9 +26,9 @@
 | 4 | `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z` | OIDC Trusted Publishing，**Secrets 里不存任何 npm 凭据** |
 | 5 | 等待发布流水线成功，逐包查询官方 registry 的版本与 dist-tag，并完成安装验证 | beta 使用 `next`，稳定版使用 `latest`；tag、提交或文档条目不代表 npm 已发布。新包首发与发布授权未完成时，保留待发布状态 |
 
-流水线内部顺序：`npm ci` → Python / LibreOffice / .NET 环境准备 → tag 版本校验 → npm 首发引导校验 → **门禁信任判定** → `fixtures` → [`check` → `test:functional`] → `build` → [OOXML 门禁] → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。OOXML 门禁与方括号里的两步一样只在拿不到绿色 CI 时补跑（依赖功能测试落盘的保存产物）。
+流水线内部顺序：**门禁信任判定** → `npm ci` → Python / 中文字体与 .NET 环境准备 → [LibreOffice / xmllint 安装] → tag 版本校验 → [`check`] → npm 首发引导校验 → `fixtures` → [`test:functional`] → `build` → [OOXML 门禁] → `verify` → 按 `core → edit-core → viewer-core → editor → react → vue → fonts → collab → agent-mcp` 顺序发布（peer 依赖序，不能反）。
 
-方括号里的步骤只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上 `push` 事件的 CI workflow 结论——绿色则这些步骤已由 CI 在同一 commit、同样干净的环境里全量跑过，release 跳过它们（**实测 2026-11-01：42.5 → 10.3 分钟，-76%**）；查无 run、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致。判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag：tag 触发时 `GITHUB_SHA` 是 tag 对象的 SHA，而 CI run 按 commit SHA 索引。
+方括号里的步骤只在**门禁信任判定**拿不到绿色时执行。判定逻辑（`tooling/check-ci-green.mjs`）：查询 tag 指向的 commit 上可信 `push` CI 的完整门禁证据；纯文档跳过的绿色运行不作为全量通过证据。查无完整运行、run 未完成、结论非 success 或 API 请求失败一律全量跑，安全级别与没有信任链时一致；判定用 `git rev-parse "<ref>^{commit}"` 解引用 annotated tag，CI run 按 commit SHA 索引。
 
 跳过 `test:functional` 时 verify 的断言数核对会黄字跳过（`out/verify/counts.json` 不存在）；该核对已由同 commit 的 CI verify 覆盖，不构成发布盲区。`fixtures` 生成不可跳：verify 的 `--dist` 测试要读固件。verify 链对测试落盘依赖的两处降级（`measure-expanded` 的套件计数、`verify-consistency` 的 counts）在快路径下黄字跳过、全量路径行为不变——完整性均由同 commit 的 CI 覆盖。
 
@@ -63,8 +67,9 @@ npm trust list @web-ppt/agent-mcp --json --registry=https://registry.npmjs.org/
 ## 4. 重跑与跳过的语义
 
 - 发布用 `tooling/publish-if-new.sh`：registry 已有该版本就跳过。九步串行发布中间挂掉后整个 job 重跑，没有这层守卫，前面已成功的包会以 EPUBLISHCONFLICT 再次弄红，埋掉真正的失败原因。
+- release 在根 `build` 和 `verify` 完成后使用 `--verified-build`：运行真实 `npm pack` 保留 `prepack` 的文档同步，校验包身份、完整性及发布文件清单，再从当前包目录发布明确的 `.tgz`，保持 `next` / `latest` 标签。默认调用 helper 及普通本地 `npm publish` 仍执行 `prepublishOnly` 构建；未知或重复参数立即失败。生命周期由本地真实 tarball dry-run 验证，OIDC 交换仍须以正式发布结果为准。
 - 门禁信任判定（§2）只在目标 commit 的 push CI 绿时跳过重复门禁；rerun 失败的 release 时若 CI 也红了，会自动回退全量路径，不需要人工干预。
-- LibreOffice 缺席时图元测试合法跳过 22 项，但 verify 按文档声明的完整 130 项拒绝发布——发布流水线因此显式安装 `libreoffice-impress fonts-noto-cjk`；本地补跑相关验证前先确认环境等价。
+- LibreOffice 缺席时图元测试合法跳过 22 项，但 verify 按文档声明的完整 130 项拒绝发布；发布全量路径显式安装 `libreoffice-impress`，快路径复用同提交完整 CI 的证据。中文字体与 PDF 读取依赖始终安装，保持发布产物复验环境一致。
 - 发布流水线不跑性能采样：受宿主负载干扰的 p95 不阻断发布，趋势由 `performance.yml` 观察（见 [testing.md](testing.md#7-性能门禁的现状)）。
 
 ## 5. 常见失败速查

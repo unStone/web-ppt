@@ -4,9 +4,44 @@ on:
   push:
     branches: [master, main]
   pull_request:
+  workflow_dispatch:
 
+permissions:
+  contents: read
+
+# PR 连续推送只保留最新运行；可信分支按 run_id 隔离，逐提交完整执行。
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# 分组由 tooling/ci/plan.mjs 从 package.json 的唯一门禁（test:functional / verify / test:ci:external）
+# 自动展开；各 job 只按真实数据依赖等待上游产物，汇总时核对每条命令恰好执行一次。
 jobs:
-  check:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ github.event_name == 'workflow_dispatch' || steps.paths.outputs.code == 'true' || steps.paths.outputs.runtime == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: paths
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
+              - '!docs/**'
+            runtime:
+              # 发布的 Agent Skill 是工具输入，其 Markdown 变化仍需验证。
+              - 'packages/*/skills/**'
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,18 +49,254 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-      - run: npm ci
-
-      - uses: actions/setup-python@v5
+      - run: npm ci --no-audit --no-fund
+      - name: 类型与静态检查
+        run: npm run check
+      - name: 重新生成测试文件
+        run: npm run fixtures
+      - name: 校验固件确定性
+        # 生成脚本必须是确定性的：同样的输入重跑两次字节一致，否则快照会随机漂移。
+        run: git diff --exit-code --stat fixtures/ tooling/agent-eval/fixtures/
+      - name: 构建
+        run: npm run build
+      - uses: actions/upload-artifact@v4
         with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: tooling/font-glyph-requirements.txt
+          name: packages
+          overwrite: true
+          path: |
+            packages/*/dist/
+            out/agent-describe/default-entry-proof.json
+            out/agent-tools/default-entry-proof.json
+            out/agent-mcp/default-entry-proof.json
+          if-no-files-found: error
+          retention-days: 1
 
+  saving:
+    name: source (saving)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: 源码保存契约
+        run: node tooling/ci/run-group.mjs source saving
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-saving
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: save-inputs
+          overwrite: true
+          path: |
+            out/edit-save/*.pptx
+            out/edit-save/office-artifacts.json
+          if-no-files-found: error
+          retention-days: 1
+
+  editing:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          office: impress
+      - name: 源码编辑与保存契约
+        run: node tooling/ci/run-group.mjs source editing
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-editing
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edit-inputs
+          overwrite: true
+          path: |
+            out/comments/source-report.json
+            out/builtin-templates/*.pptx
+            out/chartex-native/*.pptx
+            out/v08-integration/chart-data-*.pptx
+            out/media-insertion/*.pptx
+          if-no-files-found: error
+          retention-days: 1
+      - name: 上传快照差异
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-actual
+          overwrite: true
+          path: |
+            test/snapshots/
+            out/core/
+          retention-days: 7
+
+  integration:
+    name: source (integration)
+    needs: [saving, editing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          office: impress
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - uses: actions/download-artifact@v4
+        with:
+          name: edit-inputs
+          path: out
+      - name: 跨能力集成与完整清单
+        run: node tooling/ci/run-group.mjs source integration
+      - name: 设计旅程统一清单外部打开测试
+        run: node tooling/test-design-journey-libreoffice.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-integration
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-inputs
+          overwrite: true
+          path: |
+            out/v07-integration/*.pptx
+            out/v07-integration/office-artifacts.json
+            out/v08-integration/*.pptx
+            out/v08-integration/office-artifacts.json
+          if-no-files-found: error
+          retention-days: 1
+
+  source:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [browser-unit, agent, expanded, render, charts, migration-0, migration-1, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python: ${{ matrix.group == 'render' }}
+          media: ${{ matrix.group == 'render' }}
+      - name: 全量功能测试分组
+        run: node tooling/ci/run-group.mjs source ${{ matrix.group }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-${{ matrix.group }}
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+      # Agent 命令工具、MCP 与模板填充的保存产物同样要过 OOXML 合法性门禁
+      - uses: actions/upload-artifact@v4
+        if: matrix.group == 'agent'
+        with:
+          name: agent-inputs
+          overwrite: true
+          path: |
+            out/agent-tools/*.pptx
+            out/agent-mcp/*.pptx
+            out/template-fill/*.pptx
+          if-no-files-found: error
+          retention-days: 1
+
+  browser:
+    needs: saving
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python: 'true'
+          office: impress
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - name: 浏览器源码功能契约
+        run: node tooling/ci/run-group.mjs source browser
+      - name: 官网下载产物外部打开测试
+        run: node tooling/test-edit-libreoffice-all.mjs --site-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-browser
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+
+  dist:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [agent, expanded, render, charts, migration-0, migration-1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python: ${{ matrix.group == 'render' }}
+          media: ${{ matrix.group == 'render' }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - name: 发布产物复验分组
+        run: node tooling/ci/run-group.mjs dist ${{ matrix.group }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.group }}
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+
+  office:
+    needs: saving
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          office: 'true'
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - name: 保存产物外部打开测试
+        run: node tooling/ci/run-group.mjs external office
+      - uses: actions/upload-artifact@v4
+        with:
+          name: external-office
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+
+  ooxml:
+    needs: [build, saving, integration, source]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-
       - name: 缓存 OOXML schema 与 NuGet 包
         # schema 由 prepare 脚本按 SHA256 钉版下载，脚本不变则内容不变；
         # NuGet 还原结果只取决于 csproj 的包引用版本。
@@ -35,79 +306,114 @@ jobs:
             out/ooxml-schemas
             ~/.nuget/packages
           key: ooxml-${{ hashFiles('tooling/prepare-ooxml-schemas.mjs', 'tooling/ooxml-validate/ooxml-validate.csproj') }}
-
-      - name: 安装字体与 PDF 独立读取依赖
-        run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
-
-      - name: 类型检查
-        run: npm run check
-
-      - name: 重新生成测试文件
-        # fixture 由脚本手写 OOXML 生成，确保仓库里的与脚本一致
-        run: npm run fixtures
-
-      - name: 校验固件确定性
-        # 生成脚本必须是确定性的：同样的输入重跑两次字节一致。
-        # 否则任何人跑一次 npm run fixtures 都会带进无关 diff，
-        # 甚至让快照随机漂移。
-        run: git diff --exit-code --stat fixtures/ tooling/agent-eval/fixtures/
-
-      - name: 安装 LibreOffice 与中文字体
-        # 功能门禁中的图元真实样本和后续外部 oracle 都依赖同一套环境。
-        # writer / calc 是 OLE 嵌入文档外部打开测试的导入 filter——只装 impress 时
-        # soffice 对 .docx/.xlsx 报 "source file could not be loaded"。
-        # ffmpeg 供视频导出测试生成媒体与独立提帧断言（缺失时相关套件自行降级）。
-        # libxml2-utils 提供 OOXML 门禁的 xmllint（XSD 结构校验）。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-noto-cjk ffmpeg libxml2-utils
-
-      - name: 全量功能测试
-        # 唯一入口与本地 npm test、发布流水线共用，避免拆分清单漏跑新套件。
-        run: npm run test:functional
-
-      - name: 保存产物外部打开测试
-        # manifest 是唯一产物清单；新增保存工件无需再维护第二份手写子集。
-        run: node tooling/test-edit-libreoffice-all.mjs --include-site
-
-      - name: 设计旅程统一清单外部打开测试
-        # 共用唯一清单，避免两套真实软件门禁的验收范围分叉。
-        run: node tooling/test-design-journey-libreoffice.mjs
-
-      - name: OLE 嵌入文档外部打开测试
-        # 嵌入 DOCX/XLSX 改写后由 LibreOffice 打开核对（票据 014 / 015 的外部读取器验收）
-        run: node tooling/test-ole-edit-libreoffice.mjs
-
-      - name: 构建
-        run: npm run build
-
+      - name: 安装 xmllint
+        run: sudo apt-get install -y --no-install-recommends libxml2-utils
+      - name: 构建 Open XML SDK 校验器
+        run: dotnet build tooling/ooxml-validate
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-inputs
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-inputs
+          path: out
       - name: OOXML 合法性门禁
-        # 依赖全量功能测试落盘的保存产物与 dist 构建：XSD（ECMA-376 Transitional）
-        # 与 Open XML SDK 双通道校验，任一错误失败并打印错误 Id、部件与 XPath。
-        run: npm run test:ooxml
+        # XSD（ECMA-376 Transitional）与 Open XML SDK 双通道，任一错误失败并打印错误 Id、部件与 XPath。
+        run: node tooling/ci/run-group.mjs external ooxml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: external-ooxml
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
 
+  verify:
+    needs: [saving, editing, integration, source, browser, office, ooxml, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: source-*
+          merge-multiple: true
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: external-*
+          merge-multiple: true
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        with:
+          name: edit-inputs
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-inputs
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
+      - name: 核对源码分组完整性与合并计数
+        run: node tooling/ci/merge-results.mjs source
+      - name: 跨产物一致性
+        run: node tooling/ci/run-group.mjs dist base
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-base
+          overwrite: true
+          path: out/ci-results/
+          if-no-files-found: error
+          retention-days: 1
+
+  site:
+    needs: [saving, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python: 'true'
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - uses: actions/download-artifact@v4
+        with:
+          name: save-inputs
+          path: out/edit-save
       - name: 官网双语生产回归
         run: npm run test:site:i18n
         env:
           SITE_BASE: /web-ppt/
-
-      # 放在构建之后：体积核对要读 dist 产物。
-      # 守的是单测碰不到的一类问题——LICENSE 与各处声明不符、npm 链接指向不存在的包、
-      # 文档里的体积和快照数照抄旧值。
-      - name: 跨产物一致性
-        run: npm run verify
-
-      - name: 上传快照差异
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: snapshot-actual
-          path: |
-            test/snapshots/
-            out/core/
+          name: site-dist
+          overwrite: true
+          path: packages/site/dist/
+          if-no-files-found: error
           retention-days: 7
 
   # 主门禁跑在 .node-version（当前 LTS）上；engines 声明的最低版本只复验
   # 直接在 Node 里运行的发布产物：本机 MCP、Node 渲染入口与 ZIP 安全边界。
   node-minimum:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,12 +421,53 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - name: 构建
-        run: npm run build
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
       - name: 本机 MCP 发布产物
         run: npm run test:mcp:dist
       - name: Node 渲染发布入口
         run: node tooling/test-agent-node-render.mjs --dist
       - name: ZIP 安全发布入口
         run: npm run test:zip:dist
+
+  # 保留原 required check 名称；路径过滤只跳过重任务，不跳过此结论。
+  check:
+    if: always()
+    needs: [changes, build, saving, editing, integration, source, browser, dist, office, ooxml, verify, site, node-minimum]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 核对全部门禁结论
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: node tooling/ci/job-status.mjs
+      - uses: actions/setup-node@v4
+        if: needs.changes.outputs.code == 'true'
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        if: needs.changes.outputs.code == 'true'
+      - uses: actions/download-artifact@v4
+        if: needs.changes.outputs.code == 'true'
+        with:
+          pattern: source-*
+          merge-multiple: true
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        if: needs.changes.outputs.code == 'true'
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: out/ci-results
+      - uses: actions/download-artifact@v4
+        if: needs.changes.outputs.code == 'true'
+        with:
+          pattern: external-*
+          merge-multiple: true
+          path: out/ci-results
+      - name: 核对全部执行计划
+        if: needs.changes.outputs.code == 'true'
+        run: node tooling/ci/merge-results.mjs all
