@@ -28,8 +28,14 @@ export type { TemplateFillBinding, TemplateFillOptions, TemplateFillResult } fro
 export type { TemplateRepair as TemplateFillRepair } from './repair';
 
 function snapshotOptions(options: TemplateFillOptions): TemplateFillOptions {
-  if (!options || typeof options !== 'object' || !options.lint || typeof options.lint !== 'object' || Array.isArray(options.lint)
-    || typeof options.lint.measureText !== 'function') {
+  if (
+    !options
+    || typeof options !== 'object'
+    || !options.lint
+    || typeof options.lint !== 'object'
+    || Array.isArray(options.lint)
+    || typeof options.lint.measureText !== 'function'
+  ) {
     throw new TemplateFillError('measurement-required', '模板填充必须通过 options.lint.measureText 提供真实文字测量');
   }
   if (options.idPrefix !== undefined && (typeof options.idPrefix !== 'string' || !options.idPrefix)) {
@@ -41,35 +47,55 @@ function snapshotOptions(options: TemplateFillOptions): TemplateFillOptions {
   if (options.repair !== undefined && typeof options.repair !== 'boolean') {
     throw new TemplateFillError('invalid-options', 'repair 必须是布尔值');
   }
-  if (options.lint.checks !== undefined && !Array.isArray(options.lint.checks)
-    || options.lint.fonts !== undefined && (!options.lint.fonts
-      || !Array.isArray(options.lint.fonts.available) || !Array.isArray(options.lint.fonts.embedded))) {
+  if (
+    (options.lint.checks !== undefined && !Array.isArray(options.lint.checks))
+    || (options.lint.fonts !== undefined
+      && (!options.lint.fonts || !Array.isArray(options.lint.fonts.available) || !Array.isArray(options.lint.fonts.embedded)))
+  ) {
     throw new TemplateFillError('invalid-options', '布局检查的 checks 和字体库存必须使用数组');
   }
-  if (options.lint.fonts && [...options.lint.fonts.available, ...options.lint.fonts.embedded]
-    .some(font => typeof font !== 'string' || !font.trim())) {
+  if (
+    options.lint.fonts
+    && [...options.lint.fonts.available, ...options.lint.fonts.embedded].some((font) => typeof font !== 'string' || !font.trim())
+  ) {
     throw new TemplateFillError('invalid-options', '字体库存必须使用非空字体名');
   }
   for (const signal of [options.signal, options.lint.signal]) {
-    if (signal !== undefined && (typeof signal?.aborted !== 'boolean'
-      || typeof signal.addEventListener !== 'function' || typeof signal.removeEventListener !== 'function')) {
+    if (
+      signal !== undefined
+      && (typeof signal?.aborted !== 'boolean'
+        || typeof signal.addEventListener !== 'function'
+        || typeof signal.removeEventListener !== 'function')
+    ) {
       throw new TemplateFillError('invalid-options', '取消信号必须是 AbortSignal');
     }
   }
-  return { ...options, lint: { ...options.lint,
-    ...(options.lint.checks ? { checks: [...options.lint.checks] } : {}),
-    ...(options.lint.fonts ? { fonts: { available: [...options.lint.fonts.available], embedded: [...options.lint.fonts.embedded] } } : {}),
-  } };
+  return {
+    ...options,
+    lint: {
+      ...options.lint,
+      ...(options.lint.checks ? { checks: [...options.lint.checks] } : {}),
+      ...(options.lint.fonts
+        ? { fonts: { available: [...options.lint.fonts.available], embedded: [...options.lint.fonts.embedded] } }
+        : {}),
+    },
+  };
 }
 
 async function templateBytes(source: Uint8Array | BuiltinTemplateId): Promise<Uint8Array> {
   if (typeof source === 'string') {
     const { createPptxFromTemplate } = await import('../templates');
-    try { return createPptxFromTemplate(source); }
-    catch (error) { throw new TemplateFillError('template-not-found', String(error), null, 'template'); }
+    try {
+      return createPptxFromTemplate(source);
+    } catch (error) {
+      throw new TemplateFillError('template-not-found', String(error), null, 'template');
+    }
   }
-  try { return copyImageBytes(source, '模板字节'); }
-  catch (error) { throw new TemplateFillError('invalid-template', error instanceof Error ? error.message : String(error)); }
+  try {
+    return copyImageBytes(source, '模板字节');
+  } catch (error) {
+    throw new TemplateFillError('invalid-template', error instanceof Error ? error.message : String(error));
+  }
 }
 
 async function privateDocument(bytes: Uint8Array, prefix: string): Promise<{ presentation: Presentation; doc: EditDoc; editor: Editor }> {
@@ -82,7 +108,8 @@ async function privateDocument(bytes: Uint8Array, prefix: string): Promise<{ pre
     }
     return { presentation, doc, editor: new Editor(doc) };
   } catch (error) {
-    if (doc) disposeDoc(doc); else presentation.dispose?.();
+    if (doc) disposeDoc(doc);
+    else presentation.dispose?.();
     throw error;
   }
 }
@@ -110,7 +137,9 @@ export async function fillTemplate(
   let current: Awaited<ReturnType<typeof privateDocument>> | undefined;
   const release = () => {
     if (!current) return;
-    current.editor.dispose(); disposeDoc(current.doc); current = undefined;
+    current.editor.dispose();
+    disposeDoc(current.doc);
+    current = undefined;
   };
   try {
     requireActive(lifetime.signal);
@@ -129,8 +158,7 @@ export async function fillTemplate(
     }
     const repairs: TemplateRepair[] = [];
     if (options.repair !== false) {
-      const design = await repairTemplate(current.doc, current.editor, options.lint,
-        { signal: lifetime.signal, phase: 'design' });
+      const design = await repairTemplate(current.doc, current.editor, options.lint, { signal: lifetime.signal, phase: 'design' });
       repairs.push(...design.repairs);
       if (design.changed) {
         const revised = await savedBytes(current.doc);
@@ -140,23 +168,45 @@ export async function fillTemplate(
       requireActive(lifetime.signal);
     }
     const plans = planTemplateSlides(current.doc, copied.slides);
-    const chartStyles = plans.map(plan => plan.object ? chartSlotStyle(current!.doc, plan.object) : {});
+    const chartStyles = plans.map((plan) => (plan.object ? chartSlotStyle(current!.doc, plan.object) : {}));
     const inventory = [...(options.lint.fonts?.available ?? []), ...(options.lint.fonts?.embedded ?? [])];
-    const knownFonts = new Set(inventory.map(font => font.trim().toLowerCase()));
-    const fallbackFont = inventory.find(font => !['serif', 'sans-serif', 'monospace', 'system-ui'].includes(font.trim().toLowerCase()));
+    const knownFonts = new Set(inventory.map((font) => font.trim().toLowerCase()));
+    const fallbackFont = inventory.find((font) => !['serif', 'sans-serif', 'monospace', 'system-ui'].includes(font.trim().toLowerCase()));
     chartStyles.forEach((style, index) => {
-      if (options.repair === false || copied.slides[index].type !== 'chart' || !fallbackFont
-        || !style.fontFamily || knownFonts.has(style.fontFamily.trim().toLowerCase())) return;
-      repairs.push({ elementId: null, slideNumber: index + 1, source: null, reason: 'missing-font',
-        action: 'select-chart-font', before: { font: style.fontFamily }, after: { font: fallbackFont } });
+      if (
+        options.repair === false
+        || copied.slides[index].type !== 'chart'
+        || !fallbackFont
+        || !style.fontFamily
+        || knownFonts.has(style.fontFamily.trim().toLowerCase())
+      )
+        return;
+      repairs.push({
+        elementId: null,
+        slideNumber: index + 1,
+        source: null,
+        reason: 'missing-font',
+        action: 'select-chart-font',
+        before: { font: style.fontFamily },
+        after: { font: fallbackFont },
+      });
       style.fontFamily = fallbackFont;
     });
     const pages = materializeOutline(current.editor, copied.slides, plans, images, lifetime.signal);
     const placements: TemplateChartPlacement[] = copied.slides.flatMap((slide, index) => {
       if (slide.type !== 'chart') return [];
       const slot = plans[index].object!;
-      return [{ slidePart: pages[index].slidePart, rect: slot.rect, chart: slide.chart,
-        rot: slot.rot, flipH: slot.flipH, flipV: slot.flipV, ...chartStyles[index] }];
+      return [
+        {
+          slidePart: pages[index].slidePart,
+          rect: slot.rect,
+          chart: slide.chart,
+          rot: slot.rot,
+          flipH: slot.flipH,
+          flipV: slot.flipV,
+          ...chartStyles[index],
+        },
+      ];
     });
     const saved = await savedBytes(current.doc);
     requireActive(lifetime.signal);
@@ -165,8 +215,7 @@ export async function fillTemplate(
     current = await privateDocument(output, prefix);
     requireActive(lifetime.signal);
     if (options.repair !== false) {
-      const repaired = await repairTemplate(current.doc, current.editor, options.lint,
-        { signal: lifetime.signal, phase: 'all' });
+      const repaired = await repairTemplate(current.doc, current.editor, options.lint, { signal: lifetime.signal, phase: 'all' });
       repairs.push(...repaired.repairs);
       if (repaired.changed) {
         output = await savedBytes(current.doc);
@@ -179,35 +228,51 @@ export async function fillTemplate(
     const bindings: TemplateFillBinding[] = copied.slides.map((slide, index) => {
       const slideId = current!.doc.slideOrder[index];
       const plan = plans[index];
-      const objectIds = current!.doc.slides[slideId].children.filter(id => {
+      const objectIds = current!.doc.slides[slideId].children.filter((id) => {
         const record = current!.doc.elements[id];
-        return record.meta.origin?.part === current!.doc.slides[slideId].origin?.part
-          && (slide.type === 'image' ? record.src.kind === 'image'
-            : slide.type === 'chart' && !!chartPartForElement(current!.doc, id));
+        return (
+          record.meta.origin?.part === current!.doc.slides[slideId].origin?.part
+          && (slide.type === 'image' ? record.src.kind === 'image' : slide.type === 'chart' && !!chartPartForElement(current!.doc, id))
+        );
       });
       if ((slide.type === 'image' || slide.type === 'chart') && objectIds.length !== 1) {
-        throw new TemplateFillError('invalid-result', `第 ${index + 1} 页预期一个原生 ${slide.type} 对象，实际 ${objectIds.length} 个`, index + 1);
+        throw new TemplateFillError(
+          'invalid-result',
+          `第 ${index + 1} 页预期一个原生 ${slide.type} 对象，实际 ${objectIds.length} 个`,
+          index + 1,
+        );
       }
-      return { slideNumber: index + 1, slideId, layoutId: plan.layoutId,
+      return {
+        slideNumber: index + 1,
+        slideId,
+        layoutId: plan.layoutId,
         titleId: pageSlot(current!.doc, slideId, plan.title),
-        bodyIds: plan.bodies.map(slot => pageSlot(current!.doc, slideId, slot)), objectId: objectIds[0] ?? null };
+        bodyIds: plan.bodies.map((slot) => pageSlot(current!.doc, slideId, slot)),
+        objectId: objectIds[0] ?? null,
+      };
     });
     const lint = await lintPresentation(current.doc, { ...options.lint, signal: lifetime.signal });
     requireActive(lifetime.signal);
     if (options.requireClean !== false && lint.issues.length) {
       const first = lint.issues[0];
-      throw new TemplateFillError('layout-invalid',
+      throw new TemplateFillError(
+        'layout-invalid',
         `生成文稿有 ${lint.issues.length} 项布局问题；首项为第 ${first.slideNumber} 页 ${first.elementId} 的 ${first.reason}`,
-        first.slideNumber, null, first.elementId, lint);
+        first.slideNumber,
+        null,
+        first.elementId,
+        lint,
+      );
     }
-    const canonicalRepairs = repairs.map(repair => {
+    const canonicalRepairs = repairs.map((repair) => {
       if (!repair.source) {
         if (repair.action !== 'select-chart-font' || repair.slideNumber === null) return repair;
         const id = bindings[repair.slideNumber - 1].objectId;
-        return { ...repair, elementId: id, source: id ? current!.doc.elements[id].meta.origin ?? null : null };
+        return { ...repair, elementId: id, source: id ? (current!.doc.elements[id].meta.origin ?? null) : null };
       }
-      const record = Object.values(current!.doc.elements).find(element =>
-        element.meta.origin?.part === repair.source!.part && element.meta.origin.spid === repair.source!.spid);
+      const record = Object.values(current!.doc.elements).find(
+        (element) => element.meta.origin?.part === repair.source!.part && element.meta.origin.spid === repair.source!.spid,
+      );
       return { ...repair, elementId: record?.id ?? null };
     });
     return { bytes: output, description, lint, bindings, repairs: canonicalRepairs };
@@ -215,10 +280,13 @@ export async function fillTemplate(
     if (error instanceof TemplateFillError) throw error;
     const detail = error as { reason?: unknown; slideNumber?: unknown; elementId?: unknown; field?: unknown };
     const reason = typeof detail?.reason === 'string' ? detail.reason : 'template-fill-failed';
-    throw new TemplateFillError(reason, error instanceof Error ? error.message : String(error),
+    throw new TemplateFillError(
+      reason,
+      error instanceof Error ? error.message : String(error),
       typeof detail?.slideNumber === 'number' ? detail.slideNumber : null,
       typeof detail?.field === 'string' ? detail.field : null,
-      typeof detail?.elementId === 'string' ? detail.elementId : null);
+      typeof detail?.elementId === 'string' ? detail.elementId : null,
+    );
   } finally {
     release();
     for (const signal of signals) signal.removeEventListener('abort', abort);

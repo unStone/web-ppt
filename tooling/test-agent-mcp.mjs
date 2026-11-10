@@ -19,19 +19,29 @@ await mkdir(out, { recursive: true });
 const dist = process.argv.includes('--dist');
 const entry = join(out, 'entry.mjs');
 await copyFile(join(root, 'fixtures/sample-agent-mcp.pptx'), join(out, 'source.pptx'));
-await writeFile(entry, `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
-export * as mcp from ${JSON.stringify(join(root, 'packages/agent-mcp/src/index.ts'))};`);
-const api = dist ? {
-  core: await import('@web-ppt/core'), mcp: await import('@web-ppt/agent-mcp'),
-} : await bundleNode({ root, entry, output: join(out, 'contract.mjs') });
+await writeFile(
+  entry,
+  `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
+export * as mcp from ${JSON.stringify(join(root, 'packages/agent-mcp/src/index.ts'))};`,
+);
+const api = dist
+  ? {
+      core: await import('@web-ppt/core'),
+      mcp: await import('@web-ppt/agent-mcp'),
+    }
+  : await bundleNode({ root, entry, output: join(out, 'contract.mjs') });
 const { core, mcp } = api;
 
 async function withBlockedRename(path, action) {
   const originalRename = fsPromises.rename;
   let started;
   let release;
-  const ready = new Promise((resolve) => { started = resolve; });
-  const permitted = new Promise((resolve) => { release = resolve; });
+  const ready = new Promise((resolve) => {
+    started = resolve;
+  });
+  const permitted = new Promise((resolve) => {
+    release = resolve;
+  });
   fsPromises.rename = async (source, destination) => {
     if (destination === path) {
       started();
@@ -57,15 +67,22 @@ for (const operation of ['save', 'render']) {
     const id = description.value.slides[0].elements[0].id;
     const path = join(out, `queued-${operation}-${next}.${operation === 'save' ? 'pptx' : 'svg'}`);
     await withBlockedRename(path, async (ready, release) => {
-      const pending = operation === 'save'
-        ? writing.save(opened.sessionId, path)
-        : writing.render(opened.sessionId, { slideNumber: 1, format: 'svg' }, path);
+      const pending =
+        operation === 'save'
+          ? writing.save(opened.sessionId, path)
+          : writing.render(opened.sessionId, { slideNumber: 1, format: 'svg' }, path);
       await ready;
       let finished = false;
-      const following = (next === 'edit'
-        ? writing.call(opened.sessionId, 'edit', { commands: [{ type: 'SetName', id, name: '写入之后' }] })
-        : next === 'close' ? writing.close(opened.sessionId) : writing.dispose())
-        .then((value) => { finished = true; return value; });
+      const following = (
+        next === 'edit'
+          ? writing.call(opened.sessionId, 'edit', { commands: [{ type: 'SetName', id, name: '写入之后' }] })
+          : next === 'close'
+            ? writing.close(opened.sessionId)
+            : writing.dispose()
+      ).then((value) => {
+        finished = true;
+        return value;
+      });
       await new Promise((resolve) => setImmediate(resolve));
       try {
         check.equal(finished, false, `${operation} 文件交付完成前不得执行 ${next}`);
@@ -81,8 +98,14 @@ for (const operation of ['save', 'render']) {
 }
 
 const manager = new mcp.AgentMcpSessionManager();
-await check.rejects(() => manager.open('https://example.invalid/deck.pptx'), (error) => error.reason === 'invalid-path');
-await check.rejects(() => manager.open(join(out, 'missing.pptx')), (error) => error.reason === 'open-failed');
+await check.rejects(
+  () => manager.open('https://example.invalid/deck.pptx'),
+  (error) => error.reason === 'invalid-path',
+);
+await check.rejects(
+  () => manager.open(join(out, 'missing.pptx')),
+  (error) => error.reason === 'open-failed',
+);
 const opened = await manager.open(join(out, 'source.pptx'));
 check.equal(opened.sessionId, 'session-1');
 check.equal(opened.path, join(out, 'source.pptx'));
@@ -123,19 +146,34 @@ const savedPres = await core.parse(await readFile(savedPath), { lazy: false });
 check(savedPres.slides[0].elements.some((element) => element.name === '第二次'));
 savedPres.dispose();
 await manager.call(opened.sessionId, 'edit', { commands: [{ type: 'SetName', id: title.id, name: '尚未交付' }] });
-await check.rejects(() => manager.save(opened.sessionId, join(out, 'missing-dir', 'failed.pptx')), (error) => error.reason === 'save-failed');
+await check.rejects(
+  () => manager.save(opened.sessionId, join(out, 'missing-dir', 'failed.pptx')),
+  (error) => error.reason === 'save-failed',
+);
 check(editor.isDirty(), '文件交付失败必须保留脏状态');
 check(!(await readdir(out)).some((name) => name.endsWith('.tmp')));
-await check.rejects(() => manager.save(opened.sessionId, 'https://example.invalid/saved.pptx'), (error) => error.reason === 'invalid-path');
+await check.rejects(
+  () => manager.save(opened.sessionId, 'https://example.invalid/saved.pptx'),
+  (error) => error.reason === 'invalid-path',
+);
 await manager.close(opened.sessionId);
-await check.rejects(() => manager.call(opened.sessionId, 'describe', {}), (error) => error.reason === 'target-not-found');
+await check.rejects(
+  () => manager.call(opened.sessionId, 'describe', {}),
+  (error) => error.reason === 'target-not-found',
+);
 await manager.dispose();
-await check.rejects(() => manager.open(join(out, 'source.pptx')), (error) => error.reason === 'session-disposed');
-const cancelling = new mcp.AgentMcpSessionManager({ lint: {
-  resolvePlaceholderPrompts: ({ signal }) => new Promise((resolve) => {
-    signal.addEventListener('abort', () => resolve(undefined), { once: true });
-  }),
-} });
+await check.rejects(
+  () => manager.open(join(out, 'source.pptx')),
+  (error) => error.reason === 'session-disposed',
+);
+const cancelling = new mcp.AgentMcpSessionManager({
+  lint: {
+    resolvePlaceholderPrompts: ({ signal }) =>
+      new Promise((resolve) => {
+        signal.addEventListener('abort', () => resolve(undefined), { once: true });
+      }),
+  },
+});
 const cancelOpen = await cancelling.open(join(out, 'source.pptx'));
 const pendingLint = cancelling.call(cancelOpen.sessionId, 'lint', { checks: ['placeholder-prompt-left'] });
 await new Promise((resolve) => setTimeout(resolve, 0));
@@ -146,12 +184,18 @@ await cancelling.dispose();
 const cliPath = dist ? join(root, 'packages/agent-mcp/dist/cli.js') : join(out, 'cli.mjs');
 if (!dist) await bundleNode({ root, entry: join(root, 'packages/agent-mcp/src/cli.ts'), output: cliPath });
 const configPath = join(out, 'runtime.json');
-await writeFile(configPath, JSON.stringify({
-  measureModule: join(root, 'tooling/lib/agent-mcp-runtime.mjs'),
-  rasterizerModule: join(root, 'tooling/lib/agent-mcp-runtime.mjs'),
-}));
+await writeFile(
+  configPath,
+  JSON.stringify({
+    measureModule: join(root, 'tooling/lib/agent-mcp-runtime.mjs'),
+    rasterizerModule: join(root, 'tooling/lib/agent-mcp-runtime.mjs'),
+  }),
+);
 const networkCalls = [];
-const blocked = (name) => () => { networkCalls.push(name); throw new Error(`禁止网络调用：${name}`); };
+const blocked = (name) => () => {
+  networkCalls.push(name);
+  throw new Error(`禁止网络调用：${name}`);
+};
 const original = { fetch: globalThis.fetch, http: http.request, https: https.request, net: net.connect, tls: tls.connect };
 globalThis.fetch = blocked('fetch');
 http.request = blocked('http.request');
@@ -165,10 +209,10 @@ try {
   await client.connect(transport);
   check.equal(client.getServerVersion()?.version, manifest.version, 'MCP 初始化版本必须来自当前包清单');
   const listed = await client.listTools();
-  check.deepEqual(listed.tools.map((tool) => tool.name), [
-    'ppt_open', 'ppt_describe', 'ppt_element', 'ppt_lint', 'ppt_render', 'ppt_edit',
-    'ppt_undo', 'ppt_redo', 'ppt_save', 'ppt_close',
-  ]);
+  check.deepEqual(
+    listed.tools.map((tool) => tool.name),
+    ['ppt_open', 'ppt_describe', 'ppt_element', 'ppt_lint', 'ppt_render', 'ppt_edit', 'ppt_undo', 'ppt_redo', 'ppt_save', 'ppt_close'],
+  );
   check(listed.tools.find((tool) => tool.name === 'ppt_edit').inputSchema.properties.commands);
   check(listed.tools.find((tool) => tool.name === 'ppt_lint').inputSchema.properties.maxIssues);
   const call = async (name, args) => {
@@ -179,7 +223,10 @@ try {
   const remote = await call('ppt_open', { path: join(out, 'source.pptx') });
   const remoteDescription = await call('ppt_describe', { sessionId: remote.sessionId });
   const remoteTitle = remoteDescription.slides[0].elements.find((element) => element.name === '页面标题');
-  const remoteEdit = await call('ppt_edit', { sessionId: remote.sessionId, commands: [{ type: 'SetName', id: remoteTitle.id, name: 'MCP 标题' }] });
+  const remoteEdit = await call('ppt_edit', {
+    sessionId: remote.sessionId,
+    commands: [{ type: 'SetName', id: remoteTitle.id, name: 'MCP 标题' }],
+  });
   check(remoteEdit.history.undoCount === 1);
   const svgPath = join(out, 'slide-1.svg');
   const rendered = await call('ppt_render', { sessionId: remote.sessionId, slideNumber: 1, format: 'svg', path: svgPath });

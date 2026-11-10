@@ -17,7 +17,7 @@ const projectedRows = new WeakMap<ElementRecord, Map<TableRowId, AppendedRowProj
 export function orderedTableRowInsertions(record: ElementRecord): OrderedTableRowInsertion[] {
   return Object.entries(record.ovr.tableRows ?? {})
     .map(([id, insertion]) => ({ id, ...insertion }))
-    .sort((left, right) => left.order < right.order ? -1 : left.order > right.order ? 1 : 0);
+    .sort((left, right) => (left.order < right.order ? -1 : left.order > right.order ? 1 : 0));
 }
 
 export function lastTableRowOrder(record: ElementRecord): string {
@@ -32,10 +32,12 @@ function emptyTextTemplate(body: TextBody): TextBody {
   if (!paragraph || !run) throw new Error('表格行模板缺少可继承的段落与字符格式');
   return {
     ...structuredClone(body),
-    paragraphs: [{
-      ...structuredClone(paragraph),
-      runs: [{ ...structuredClone(run), text: '', math: undefined }],
-    }],
+    paragraphs: [
+      {
+        ...structuredClone(paragraph),
+        runs: [{ ...structuredClone(run), text: '', math: undefined }],
+      },
+    ],
   };
 }
 
@@ -88,13 +90,10 @@ export function tableRowsWithoutTextOverrides(record: ElementRecord): TableRow[]
   if (!insertions.length) {
     projectedRows.delete(record);
     const rows = orderedTableRows(record);
-    return rows.length === source.rows.length
-      ? source.rows
-      : rows.map((entry) => source.rows[entry.source!]);
+    return rows.length === source.rows.length ? source.rows : rows.map((entry) => source.rows[entry.source!]);
   }
   const styles = source.editInfo?.tableRowAppend;
-  const allAppended = insertions.every((insertion) =>
-    insertion.order > initialFractionalIndex(source.rows.length - 1));
+  const allAppended = insertions.every((insertion) => insertion.order > initialFractionalIndex(source.rows.length - 1));
   const sourceRows = [...source.rows];
   if (styles && allAppended) sourceRows[sourceRows.length - 1] = styles.previousLast ?? styles.regular[1];
   const nextCache = new Map<TableRowId, AppendedRowProjection>();
@@ -103,7 +102,9 @@ export function tableRowsWithoutTextOverrides(record: ElementRecord): TableRow[]
     if (entry.source !== null) return sourceRows[entry.source];
     const index = appendedIndex.get(entry.id)!;
     const styleTemplate = allAppended
-      ? (index === insertions.length - 1 ? styles?.last[index % 2] : styles?.regular[index % 2])
+      ? index === insertions.length - 1
+        ? styles?.last[index % 2]
+        : styles?.regular[index % 2]
       : undefined;
     const resolved = styleTemplate ?? tableRowTemplate(record, entry);
     const row = projectedAppendRow(record, entry.id, resolved);
@@ -119,8 +120,7 @@ export function tableRowHeightDelta(record: ElementRecord): number {
   if (record.src.kind !== 'table') return 0;
   const base = typeof record.ovr.h === 'number' ? record.ovr.h : record.src.h;
   const scale = record.src.h > 0 ? base / record.src.h : 1;
-  return orderedTableRowInsertions(record)
-    .reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0) * scale;
+  return orderedTableRowInsertions(record).reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0) * scale;
 }
 
 export function effectiveTableFrameHeight(record: ElementRecord): number {
@@ -131,7 +131,6 @@ export function effectiveTableFrameHeight(record: ElementRecord): number {
 /** SetXfrm 面向当前可见整表；稀疏覆盖保存的是追加前 frame，故需反解同一缩放比例。 */
 export function tableBaseFrameHeight(record: ElementRecord, effectiveHeight: number): number {
   if (record.src.kind !== 'table') return effectiveHeight;
-  const appended = orderedTableRowInsertions(record)
-    .reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0);
-  return record.src.h > 0 ? effectiveHeight * record.src.h / (record.src.h + appended) : effectiveHeight;
+  const appended = orderedTableRowInsertions(record).reduce((sum, insertion) => sum + tableRowTemplate(record, insertion).height, 0);
+  return record.src.h > 0 ? (effectiveHeight * record.src.h) / (record.src.h + appended) : effectiveHeight;
 }

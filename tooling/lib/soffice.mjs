@@ -23,8 +23,10 @@ export function findSoffice() {
 export function requireSoffice() {
   const soffice = findSoffice();
   if (!soffice) {
-    throw new Error('未找到 LibreOffice（soffice）。macOS: brew install --cask libreoffice；'
-      + 'CI: apt-get install libreoffice-impress；自定安装用 SOFFICE 环境变量指定可执行文件路径。');
+    throw new Error(
+      '未找到 LibreOffice（soffice）。macOS: brew install --cask libreoffice；'
+        + 'CI: apt-get install libreoffice-impress；自定安装用 SOFFICE 环境变量指定可执行文件路径。',
+    );
   }
   return soffice;
 }

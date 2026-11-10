@@ -11,20 +11,23 @@ export interface SeedSeriesReferences {
   readonly sizes?: string;
 }
 
-interface CellValue { readonly row: number; readonly column: number; readonly value: string | number | null }
+interface CellValue {
+  readonly row: number;
+  readonly column: number;
+  readonly value: string | number | null;
+}
 
 function formula(column: number, count: number, row = 2): string {
-  return chartFormula({ sheet: 'Sheet1', startColumn: column, endColumn: column,
-    startRow: row, endRow: row + count - 1 });
+  return chartFormula({ sheet: 'Sheet1', startColumn: column, endColumn: column, startRow: row, endRow: row + count - 1 });
 }
 
 function cell(source: CellValue) {
   const attributes: Record<string, string> = { r: `${columnName(source.column)}${source.row}` };
   if (source.value === null) return element('c', attributes);
   if (typeof source.value === 'number') return element('c', attributes, [element('v', {}, [String(source.value)])]);
-  return element('c', { ...attributes, t: 'inlineStr' }, [element('is', {}, [
-    element('t', /^\s|\s$/.test(source.value) ? { 'xml:space': 'preserve' } : {}, [source.value]),
-  ])]);
+  return element('c', { ...attributes, t: 'inlineStr' }, [
+    element('is', {}, [element('t', /^\s|\s$/.test(source.value) ? { 'xml:space': 'preserve' } : {}, [source.value])]),
+  ]);
 }
 
 export function seedChartWorkbook(chart: TemplateFillChart): {
@@ -54,9 +57,12 @@ export function seedChartWorkbook(chart: TemplateFillChart): {
       put(base + 2, 1, `${source.name} Size`);
       writeColumn(base + 2, source.sizes!);
     }
-    return { name: formula(values, 1, 1), values: formula(values, source.values.length),
+    return {
+      name: formula(values, 1, 1),
+      values: formula(values, source.values.length),
       ...(xy ? { x: formula(base, source.values.length) } : {}),
-      ...(chart.type === 'bubble' ? { sizes: formula(base + 2, source.values.length) } : {}) };
+      ...(chart.type === 'bubble' ? { sizes: formula(base + 2, source.values.length) } : {}),
+    };
   });
   const rows = new Map<number, CellValue[]>();
   for (const source of cells) {
@@ -64,28 +70,43 @@ export function seedChartWorkbook(chart: TemplateFillChart): {
     row.push(source);
     rows.set(source.row, row);
   }
-  const rowNodes = [...rows].sort(([left], [right]) => left - right).map(([row, contents]) =>
-    element('row', { r: row }, contents.sort((left, right) => left.column - right.column).map(cell)));
+  const rowNodes = [...rows]
+    .sort(([left], [right]) => left - right)
+    .map(([row, contents]) => element('row', { r: row }, contents.sort((left, right) => left.column - right.column).map(cell)));
   const parts = {
-    '[Content_Types].xml': serializeXmlTreeBytes(seedDocument('Types', { '': NS.types }, [
-      element('Default', { Extension: 'rels', ContentType: 'application/vnd.openxmlformats-package.relationships+xml' }),
-      element('Default', { Extension: 'xml', ContentType: 'application/xml' }),
-      element('Override', { PartName: '/xl/workbook.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml' }),
-      element('Override', { PartName: '/xl/worksheets/sheet1.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml' }),
-    ])),
-    '_rels/.rels': serializeXmlTreeBytes(seedDocument('Relationships', { '': NS.relationships }, [
-      element('Relationship', { Id: 'rId1', Type: `${NS.office}/officeDocument`, Target: 'xl/workbook.xml' }),
-    ])),
-    'xl/workbook.xml': serializeXmlTreeBytes(seedDocument('workbook', { '': NS.spreadsheet, r: NS.office }, [
-      element('sheets', {}, [element('sheet', { name: 'Sheet1', sheetId: 1, 'r:id': 'rId1' })]),
-      element('calcPr', { calcId: 191029 }),
-    ])),
-    'xl/_rels/workbook.xml.rels': serializeXmlTreeBytes(seedDocument('Relationships', { '': NS.relationships }, [
-      element('Relationship', { Id: 'rId1', Type: `${NS.office}/worksheet`, Target: 'worksheets/sheet1.xml' }),
-    ])),
-    'xl/worksheets/sheet1.xml': serializeXmlTreeBytes(seedDocument('worksheet', { '': NS.spreadsheet }, [
-      element('sheetData', {}, rowNodes),
-    ])),
+    '[Content_Types].xml': serializeXmlTreeBytes(
+      seedDocument('Types', { '': NS.types }, [
+        element('Default', { Extension: 'rels', ContentType: 'application/vnd.openxmlformats-package.relationships+xml' }),
+        element('Default', { Extension: 'xml', ContentType: 'application/xml' }),
+        element('Override', {
+          PartName: '/xl/workbook.xml',
+          ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml',
+        }),
+        element('Override', {
+          PartName: '/xl/worksheets/sheet1.xml',
+          ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
+        }),
+      ]),
+    ),
+    '_rels/.rels': serializeXmlTreeBytes(
+      seedDocument('Relationships', { '': NS.relationships }, [
+        element('Relationship', { Id: 'rId1', Type: `${NS.office}/officeDocument`, Target: 'xl/workbook.xml' }),
+      ]),
+    ),
+    'xl/workbook.xml': serializeXmlTreeBytes(
+      seedDocument('workbook', { '': NS.spreadsheet, r: NS.office }, [
+        element('sheets', {}, [element('sheet', { name: 'Sheet1', sheetId: 1, 'r:id': 'rId1' })]),
+        element('calcPr', { calcId: 191029 }),
+      ]),
+    ),
+    'xl/_rels/workbook.xml.rels': serializeXmlTreeBytes(
+      seedDocument('Relationships', { '': NS.relationships }, [
+        element('Relationship', { Id: 'rId1', Type: `${NS.office}/worksheet`, Target: 'worksheets/sheet1.xml' }),
+      ]),
+    ),
+    'xl/worksheets/sheet1.xml': serializeXmlTreeBytes(
+      seedDocument('worksheet', { '': NS.spreadsheet }, [element('sheetData', {}, rowNodes)]),
+    ),
   };
   const packaged = createOpcPackage(parts);
   disposeOpcPackage(packaged.package);

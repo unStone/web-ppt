@@ -5,7 +5,9 @@ export default defineConfig({
     copyPublicDir: false,
     emptyOutDir: false,
     lib: {
-      entry: 'src/geometry/handles/index.ts', fileName: 'geometry-handles', formats: ['es'],
+      entry: 'src/geometry/handles/index.ts',
+      fileName: 'geometry-handles',
+      formats: ['es'],
     },
   },
 });

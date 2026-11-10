@@ -16,9 +16,15 @@ import { runMediaPosterBoundaries } from './lib/media-poster-boundaries.mjs';
 import { runMediaPosterReplayContract } from './lib/media-poster-replay-contract.mjs';
 import { runMediaFallbackSaveContract } from './lib/media-fallback-save-contract.mjs';
 let passed = 0;
-const assert = new Proxy(nodeAssert, { get: (target, key) => (...args) => {
-  const result = target[key](...args); passed++; return result;
-} });
+const assert = new Proxy(nodeAssert, {
+  get:
+    (target, key) =>
+    (...args) => {
+      const result = target[key](...args);
+      passed++;
+      return result;
+    },
+});
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/media-insertion');
@@ -29,16 +35,26 @@ const aliases = [
   ['@web-ppt/edit-core/media', join(root, 'packages/edit-core/src/media/index.ts')],
   ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
 ];
-const [core, edit, media, collab] = process.argv.includes('--dist') ? await Promise.all([
-  import('@web-ppt/core'), import('@web-ppt/edit-core'), import('@web-ppt/edit-core/media'), import('@web-ppt/collab'),
-]) : await Promise.all([
-  bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: join(out, 'core.mjs') }),
-  bundleBrowser({ root, entry: join(root, 'packages/edit-core/src/index.ts'), output: join(out, 'edit.mjs'), aliases }),
-  bundleBrowser({ root, entry: join(root, 'packages/edit-core/src/media/index.ts'), output: join(out, 'media.mjs'), aliases }),
-  bundleBrowser({ root, entry: join(root, 'packages/collab/src/index.ts'), output: join(out, 'collab.mjs'), aliases }),
-]);
-if (!process.argv.includes('--dist')) await bundleBrowser({ root,
-  entry: join(root, 'tooling/lib/media-registration-consumer.mjs'), output: join(out, 'registration.mjs'), aliases });
+const [core, edit, media, collab] = process.argv.includes('--dist')
+  ? await Promise.all([
+      import('@web-ppt/core'),
+      import('@web-ppt/edit-core'),
+      import('@web-ppt/edit-core/media'),
+      import('@web-ppt/collab'),
+    ])
+  : await Promise.all([
+      bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: join(out, 'core.mjs') }),
+      bundleBrowser({ root, entry: join(root, 'packages/edit-core/src/index.ts'), output: join(out, 'edit.mjs'), aliases }),
+      bundleBrowser({ root, entry: join(root, 'packages/edit-core/src/media/index.ts'), output: join(out, 'media.mjs'), aliases }),
+      bundleBrowser({ root, entry: join(root, 'packages/collab/src/index.ts'), output: join(out, 'collab.mjs'), aliases }),
+    ]);
+if (!process.argv.includes('--dist'))
+  await bundleBrowser({
+    root,
+    entry: join(root, 'tooling/lib/media-registration-consumer.mjs'),
+    output: join(out, 'registration.mjs'),
+    aliases,
+  });
 const source = new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx')));
 assert.equal(typeof media.registerMediaEditing, 'function', '恢复接收端使用不会被摇树删除的显式注册');
 for (const generated of [false, true]) {
@@ -51,7 +67,9 @@ for (const generated of [false, true]) {
     const bytes = makeWav(0.1);
     runMediaInsertionBoundaries({ editor, media, assert });
     const id = media.createMediaEditor(editor).exec({
-      type: 'AddMedia', slideId: doc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
+      type: 'AddMedia',
+      slideId: doc.slideOrder[0],
+      rect: { x: 20, y: 30, w: 80, h: 80 },
       source: { kind: 'embedded', bytes, mime: 'audio/wav' },
       poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
     });
@@ -68,14 +86,19 @@ for (const generated of [false, true]) {
     editor.redo();
     assert.equal(edit.effectiveElement(doc, id).media.kind, 'audio');
     const identity = structuredClone(doc.identity);
-    assert.throws(() => media.createMediaEditor(editor).exec({
-      type: 'AddMedia', slideId: doc.slideOrder[0], rect: { x: 0, y: 0, w: 80, h: 80 },
-      source: { kind: 'embedded', bytes: new Uint8Array(44), mime: 'audio/wav' },
-      poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
-    }), /PCM WAV/);
+    assert.throws(
+      () =>
+        media.createMediaEditor(editor).exec({
+          type: 'AddMedia',
+          slideId: doc.slideOrder[0],
+          rect: { x: 0, y: 0, w: 80, h: 80 },
+          source: { kind: 'embedded', bytes: new Uint8Array(44), mime: 'audio/wav' },
+          poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
+        }),
+      /PCM WAV/,
+    );
     assert.deepEqual(doc.identity, identity, '失败命令不能消耗媒体身份');
-    editor.exec({ type: 'PasteElements', payload: edit.copyElements(doc, [id]),
-      at: { parentId: doc.slideOrder[0], x: 180, y: 120 } });
+    editor.exec({ type: 'PasteElements', payload: edit.copyElements(doc, [id]), at: { parentId: doc.slideOrder[0], x: 180, y: 120 } });
     const copied = editor.selection.ids[0];
     assert.notEqual(copied, id, '副本拥有独立身份');
     assert.equal(edit.effectiveElement(doc, copied).media.src, projection.media.src, '副本包含音频字节');
@@ -88,14 +111,19 @@ for (const generated of [false, true]) {
       const remoteDoc = edit.createDoc(remotePresentation, { idPrefix: 'media-' });
       const remoteEditor = new edit.Editor(remoteDoc, mode === 'recovery' ? { recoveryFrames: frames } : {});
       try {
-        if (mode === 'external') for (const frame of frames) if (frame.patches.length) {
-          remoteEditor.applyExternalPatches(frame.patches);
-        }
+        if (mode === 'external')
+          for (const frame of frames)
+            if (frame.patches.length) {
+              remoteEditor.applyExternalPatches(frame.patches);
+            }
         assert.equal(edit.effectiveElement(remoteDoc, copied).media.src, projection.media.src, `${mode} 保留完整媒体源`);
         if (generated) remotePresentation.dispose();
         const parts = unzipSync(await remoteEditor.save());
         assert.equal(Object.keys(parts).filter((part) => part.endsWith('.wav')).length, 1, `${mode} 保存按字节去重`);
-      } finally { remoteEditor.dispose(); remotePresentation.dispose(); }
+      } finally {
+        remoteEditor.dispose();
+        remotePresentation.dispose();
+      }
     }
     if (generated) {
       presentation.dispose();
@@ -104,8 +132,11 @@ for (const generated of [false, true]) {
     const saved = await editor.saveDetailed();
     if (!generated && !process.argv.includes('--dist')) {
       writeFileSync(join(out, 'recovery.json'), JSON.stringify(frames));
-      const registration = spawnSync(process.execPath, [join(root, 'tooling/lib/media-registration-contract.mjs'),
-        out, join(root, 'fixtures/sample-editor-add-media.pptx')], { encoding: 'utf8' });
+      const registration = spawnSync(
+        process.execPath,
+        [join(root, 'tooling/lib/media-registration-contract.mjs'), out, join(root, 'fixtures/sample-editor-add-media.pptx')],
+        { encoding: 'utf8' },
+      );
       assert.equal(registration.status, 0, `独立进程恢复前显式注册：${registration.stderr}`);
     }
     writeFileSync(join(out, generated ? 'generated.pptx' : 'patched.pptx'), saved.bytes);
@@ -124,7 +155,9 @@ for (const generated of [false, true]) {
       assert.equal(audio.media.mime, 'audio/wav');
       assert.equal(audio.media.external, undefined);
       assert.equal(reopened.slides[0].elements.filter((element) => element.media).length, 2, '原件与副本离线重开');
-    } finally { reopened.dispose(); }
+    } finally {
+      reopened.dispose();
+    }
   } finally {
     editor.dispose();
     edit.disposeDoc(doc);
@@ -137,8 +170,12 @@ await runDefaultMediaPosterContract({ core, edit, media, source, assert, root, o
 await runMediaPosterReplayContract({ core, edit, media, source, assert });
 await runMediaPosterReplacementContract({ core, edit, media, source, assert, root, out });
 await runMediaPosterBoundaries({ core, edit, media, assert, root, out });
-await runMediaFallbackSaveContract({ core, edit, assert,
-  fallback: new Uint8Array(readFileSync(join(root, 'fixtures/sample-media-fallback.pptx'))) });
+await runMediaFallbackSaveContract({
+  core,
+  edit,
+  assert,
+  fallback: new Uint8Array(readFileSync(join(root, 'fixtures/sample-media-fallback.pptx'))),
+});
 const legacy = await core.parse(new Uint8Array(readFileSync(join(root, 'fixtures/sample.ppt'))), { edit: true });
 const legacyDoc = edit.createDoc(legacy, { idPrefix: 'media-legacy-' });
 const legacyEditor = new edit.Editor(legacyDoc);
@@ -146,17 +183,23 @@ try {
   assert.equal(legacyDoc.package, null, '传统 PPT 插入没有 OOXML 原包');
   const wav = makeWav(0.1);
   const id = media.createMediaEditor(legacyEditor).exec({
-    type: 'AddMedia', slideId: legacyDoc.slideOrder[0], rect: { x: 20, y: 30, w: 80, h: 80 },
+    type: 'AddMedia',
+    slideId: legacyDoc.slideOrder[0],
+    rect: { x: 20, y: 30, w: 80, h: 80 },
     source: { kind: 'embedded', bytes: wav, mime: 'audio/wav' },
     poster: { bytes: makePng(8, 8, () => [40, 80, 120]), mime: 'image/png' },
   });
-  legacyEditor.undo(); legacyEditor.redo();
+  legacyEditor.undo();
+  legacyEditor.redo();
   assert.deepEqual(Buffer.from(legacyEditor.effectiveElement(id).media.src.split(',')[1], 'base64'), Buffer.from(wav));
   const parts = unzipSync(await legacyEditor.save());
   const audio = Object.keys(parts).filter((part) => part.endsWith('.wav'));
   assert.equal(audio.length, 1, '无原包来源插入仍能生成嵌入资源');
   assert.deepEqual(parts[audio[0]], wav);
-} finally { legacyEditor.dispose(); legacy.dispose(); }
+} finally {
+  legacyEditor.dispose();
+  legacy.dispose();
+}
 const strictXml = spawnSync(process.execPath, [join(root, 'tooling/test-media-dom.mjs')], { encoding: 'utf8' });
 assert.equal(strictXml.status, 0, `保存产物兼容严格 XML 解析器：${strictXml.stderr}`);
 if (!process.argv.includes('--dist')) recordCount('media', passed);

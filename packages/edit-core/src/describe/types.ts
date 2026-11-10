@@ -76,8 +76,14 @@ export interface DescribeOptions {
 }
 
 export type DescribeFailureReason =
-  | 'invalid-budget' | 'token-counter-required' | 'invalid-token-count' | 'token-count-failed' | 'budget-too-small'
-  | 'invalid-document' | 'unaddressable-element' | 'invalid-geometry';
+  | 'invalid-budget'
+  | 'token-counter-required'
+  | 'invalid-token-count'
+  | 'token-count-failed'
+  | 'budget-too-small'
+  | 'invalid-document'
+  | 'unaddressable-element'
+  | 'invalid-geometry';
 
 export class DescribeError extends Error {
   constructor(

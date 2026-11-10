@@ -23,16 +23,10 @@ export function assertXmlQName(name: string, kind: '元素' | '属性'): void {
 
 export const splitQName = (name: string): { prefix: string | null; localName: string } => {
   const colon = name.indexOf(':');
-  return colon < 0
-    ? { prefix: null, localName: name }
-    : { prefix: name.slice(0, colon), localName: name.slice(colon + 1) };
+  return colon < 0 ? { prefix: null, localName: name } : { prefix: name.slice(0, colon), localName: name.slice(colon + 1) };
 };
 
-export function namespaceForQName(
-  name: string,
-  namespaces: ReadonlyMap<string, string>,
-  attribute: boolean,
-): string | null {
+export function namespaceForQName(name: string, namespaces: ReadonlyMap<string, string>, attribute: boolean): string | null {
   const parts = splitQName(name);
   if (attribute && (name === 'xmlns' || parts.prefix === 'xmlns')) return XMLNS_NS;
   if (parts.prefix === 'xml') return XML_NS;

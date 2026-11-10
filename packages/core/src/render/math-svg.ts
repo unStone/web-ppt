@@ -35,10 +35,20 @@ import { round as r, escapeXml as esc } from './serialize';
  * 我们是自己定位的，需要的是有实体宽度的间隔形式。
  */
 const SPACING_ACCENT: Record<string, string> = {
-  '\u0300': '\u02cb', '\u0301': '\u02ca', '\u0302': '\u02c6', '\u0303': '\u02dc',
-  '\u0306': '\u02d8', '\u0307': '\u02d9', '\u0308': '\u00a8', '\u030a': '\u02da',
-  '\u030c': '\u02c7', '\u20d6': '\u2190', '\u20d7': '\u2192', '\u20e1': '\u2194',
-  '\u20db': '\u22ef', '\u20dc': '\u22ef',
+  '\u0300': '\u02cb',
+  '\u0301': '\u02ca',
+  '\u0302': '\u02c6',
+  '\u0303': '\u02dc',
+  '\u0306': '\u02d8',
+  '\u0307': '\u02d9',
+  '\u0308': '\u00a8',
+  '\u030a': '\u02da',
+  '\u030c': '\u02c7',
+  '\u20d6': '\u2190',
+  '\u20d7': '\u2192',
+  '\u20e1': '\u2194',
+  '\u20db': '\u22ef',
+  '\u20dc': '\u22ef',
 };
 
 /** 画成横线而非字形的重音（上划线 / 下划线各种写法） */
@@ -57,8 +67,7 @@ interface Ctx {
   color: string;
 }
 
-const sub = (ctx: Ctx, factor: number): Ctx =>
-  ({ ...ctx, size: Math.max(ctx.size * factor, ctx.size * MIN_SCALE) });
+const sub = (ctx: Ctx, factor: number): Ctx => ({ ...ctx, size: Math.max(ctx.size * factor, ctx.size * MIN_SCALE) });
 
 function empty(): Box {
   return { w: 0, h: 0, d: 0, draw: () => '' };
@@ -69,8 +78,8 @@ const ASC = 0.72;
 const DESC = 0.22;
 
 function textSvg(text: string, ctx: Ctx, italic: boolean, bold: boolean, x: number, y: number, tf = ''): string {
-  const style = `font-family:${MATH_FONT};font-size:${r(ctx.size)}px;` +
-    (italic ? 'font-style:italic;' : '') + (bold ? 'font-weight:700;' : '');
+  const style =
+    `font-family:${MATH_FONT};font-size:${r(ctx.size)}px;` + (italic ? 'font-style:italic;' : '') + (bold ? 'font-weight:700;' : '');
   return tf
     ? `<text x="0" y="0" style="${style}" fill="${ctx.color}" xml:space="preserve" transform="${tf}">${esc(text)}</text>`
     : `<text x="${r(x)}" y="${r(y)}" style="${style}" fill="${ctx.color}" xml:space="preserve">${esc(text)}</text>`;
@@ -103,8 +112,7 @@ function stretchyDelim(chr: string, ctx: Ctx, h: number, d: number): Box {
     w: g.w,
     h,
     d,
-    draw: (x, y) => textSvg(chr, ctx, false, false, 0, 0,
-      `translate(${r(x)} ${r(y + dy)}) scale(1 ${r(k)})`),
+    draw: (x, y) => textSvg(chr, ctx, false, false, 0, 0, `translate(${r(x)} ${r(y + dy)}) scale(1 ${r(k)})`),
   };
 }
 
@@ -130,7 +138,10 @@ function hbox(boxes: Box[]): Box {
     draw: (x, y) => {
       let cx = x;
       const out: string[] = [];
-      for (const b of boxes) { out.push(b.draw(cx, y)); cx += b.w; }
+      for (const b of boxes) {
+        out.push(b.draw(cx, y));
+        cx += b.w;
+      }
       return out.join('');
     },
   };
@@ -140,11 +151,14 @@ function hbox(boxes: Box[]): Box {
 function vbox(boxes: Box[], gap: number, baselineIdx: number): Box {
   if (!boxes.length) return empty();
   const w = Math.max(...boxes.map((b) => b.w));
-  let above = 0, below = 0;
+  let above = 0,
+    below = 0;
   boxes.forEach((b, i) => {
     if (i < baselineIdx) above += b.h + b.d + gap;
-    else if (i === baselineIdx) { above += b.h; below += b.d; }
-    else below += b.h + b.d + gap;
+    else if (i === baselineIdx) {
+      above += b.h;
+      below += b.d;
+    } else below += b.h + b.d + gap;
   });
   return {
     w,
@@ -201,10 +215,7 @@ function layoutNode(node: MathNode, ctx: Ctx): Box {
         d,
         draw: (x, y) => {
           const barY = y - axis;
-          const out = [
-            num.draw(x + (w - num.w) / 2, barY - gap - num.d),
-            den.draw(x + (w - den.w) / 2, barY + th + gap + den.h),
-          ];
+          const out = [num.draw(x + (w - num.w) / 2, barY - gap - num.d), den.draw(x + (w - den.w) / 2, barY + th + gap + den.h)];
           if (node.type !== 'noBar') {
             out.push(`<rect x="${r(x + pad * 0.4)}" y="${r(barY)}" width="${r(w - pad * 0.8)}" height="${r(th)}" fill="${ctx.color}"/>`);
           }
@@ -232,8 +243,9 @@ function layoutNode(node: MathNode, ctx: Ctx): Box {
           const top = y - h;
           const bot = y + d;
           // 根号：短撇 + 长斜 + 顶横线，一笔折线画完
-          const path = `M ${r(x0)} ${r(bot - (bot - top) * 0.45)} L ${r(x0 + hookW * 0.3)} ${r(bot - (bot - top) * 0.3)} ` +
-            `L ${r(x0 + hookW * 0.62)} ${r(bot)} L ${r(x0 + hookW)} ${r(top)} L ${r(x + w)} ${r(top)}`;
+          const path =
+            `M ${r(x0)} ${r(bot - (bot - top) * 0.45)} L ${r(x0 + hookW * 0.3)} ${r(bot - (bot - top) * 0.3)} `
+            + `L ${r(x0 + hookW * 0.62)} ${r(bot)} L ${r(x0 + hookW)} ${r(top)} L ${r(x + w)} ${r(top)}`;
           const out = [
             `<path d="${path}" fill="none" stroke="${ctx.color}" stroke-width="${r(th)}" stroke-linejoin="miter"/>`,
             base.draw(x0 + hookW + ctx.size * 0.06, y),
@@ -321,7 +333,10 @@ function layoutNode(node: MathNode, ctx: Ctx): Box {
         draw: (x, y) => {
           let cx = x;
           const out: string[] = [];
-          for (const b of parts) { out.push(b.draw(cx, y)); cx += b.w; }
+          for (const b of parts) {
+            out.push(b.draw(cx, y));
+            cx += b.w;
+          }
           return out.join('');
         },
       };
@@ -385,28 +400,33 @@ function layoutNode(node: MathNode, ctx: Ctx): Box {
         const g = glyph(chr, { ...ctx, size: markSize }, false, false);
         // 箭头之类比底宽得多，等比压窄，否则符号左右都甩出底外
         const sx = g.w > base.w * 1.1 && base.w > 0 ? (base.w * 1.1) / g.w : 1;
-        mark = sx === 1 ? g : {
-          w: g.w * sx,
-          h: g.h,
-          d: g.d,
-          draw: (x, y) => `<g transform="translate(${r(x)} ${r(y)}) scale(${r(sx)} 1)">${g.draw(0, 0)}</g>`,
-        };
+        mark =
+          sx === 1
+            ? g
+            : {
+                w: g.w * sx,
+                h: g.h,
+                d: g.d,
+                draw: (x, y) => `<g transform="translate(${r(x)} ${r(y)}) scale(${r(sx)} 1)">${g.draw(0, 0)}</g>`,
+              };
       }
       if (node.below) {
         return {
           w: Math.max(base.w, mark.w),
           h: base.h,
           d: base.d + gap + mark.h + mark.d,
-          draw: (x, y) => base.draw(x + (Math.max(base.w, mark.w) - base.w) / 2, y) +
-            mark.draw(x + (Math.max(base.w, mark.w) - mark.w) / 2, y + base.d + gap + mark.h),
+          draw: (x, y) =>
+            base.draw(x + (Math.max(base.w, mark.w) - base.w) / 2, y)
+            + mark.draw(x + (Math.max(base.w, mark.w) - mark.w) / 2, y + base.d + gap + mark.h),
         };
       }
       return {
         w: Math.max(base.w, mark.w),
         h: base.h + gap + mark.h,
         d: base.d,
-        draw: (x, y) => base.draw(x + (Math.max(base.w, mark.w) - base.w) / 2, y) +
-          mark.draw(x + (Math.max(base.w, mark.w) - mark.w) / 2, y - base.h - gap),
+        draw: (x, y) =>
+          base.draw(x + (Math.max(base.w, mark.w) - base.w) / 2, y)
+          + mark.draw(x + (Math.max(base.w, mark.w) - mark.w) / 2, y - base.h - gap),
       };
     }
 

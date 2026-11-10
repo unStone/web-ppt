@@ -42,7 +42,10 @@ export function placeGroupFrame(group: GroupElement, child: SlideElement): Group
   return {
     x: (child.x + child.w / 2 - group.childX) * sx - w / 2,
     y: (child.y + child.h / 2 - group.childY) * sy - h / 2,
-    w, h, kx, ky,
+    w,
+    h,
+    kx,
+    ky,
   };
 }
 
@@ -62,7 +65,8 @@ export function unplaceGroupFrame(
   return {
     x: (frame.x + frame.w / 2) / sx + group.childX - w / 2,
     y: (frame.y + frame.h / 2) / sy + group.childY - h / 2,
-    w, h,
+    w,
+    h,
   };
 }
 
@@ -82,7 +86,8 @@ export function placeGroupChild(group: GroupElement, child: SlideElement): Slide
       return { ...child, ...placed, scaleX: (child.scaleX || 1) * kx, scaleY: (child.scaleY || 1) * ky };
     case 'table':
       return {
-        ...child, ...placed,
+        ...child,
+        ...placed,
         colWidths: child.colWidths.map((width) => width * kx),
         rows: child.rows.map((row) => ({ ...row, height: row.height * ky })),
       };

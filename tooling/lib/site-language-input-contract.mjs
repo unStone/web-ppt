@@ -30,7 +30,7 @@ export async function runSiteLanguageInputContract({ request, evaluate, waitFor 
   await request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await waitFor("document.documentElement.lang === 'zh-CN'", `${page} 触屏切中文`);
   // 种子焦点不是可达性证据；两个方向的原生 Tab 都必须命中，tabindex=-1 不能蒙混过关。
-  await evaluate("document.querySelector('[data-site-locale=\"zh-CN\"]').focus()");
+  await evaluate('document.querySelector(\'[data-site-locale="zh-CN"]\').focus()');
   const key = async (name, code, windowsVirtualKeyCode, modifiers = 0) => {
     for (const type of ['rawKeyDown', 'keyUp']) {
       await request('Input.dispatchKeyEvent', { type, key: name, code, windowsVirtualKeyCode, modifiers });

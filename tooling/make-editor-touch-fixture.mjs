@@ -7,13 +7,26 @@ import { deck, slideXml, solid, sp } from './lib/ooxml.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hairline = '<a:ln w="9525"><a:solidFill><a:srgbClr val="7C3AED"/></a:solidFill></a:ln>';
 const thinOutline = sp({
-  x: 240, y: 150, w: 320, h: 180, fill: '<a:noFill/>', ln: hairline, name: 'touch-thin-outline',
+  x: 240,
+  y: 150,
+  w: 320,
+  h: 180,
+  fill: '<a:noFill/>',
+  ln: hairline,
+  name: 'touch-thin-outline',
 });
 const neighbour = sp({
-  x: 590, y: 150, w: 220, h: 180, fill: solid('accent2'), name: 'touch-neighbour',
+  x: 590,
+  y: 150,
+  w: 220,
+  h: 180,
+  fill: solid('accent2'),
+  name: 'touch-neighbour',
 });
 const bytes = deck({
-  name: 'Editor Touch', width: 1280, height: 720,
+  name: 'Editor Touch',
+  width: 1280,
+  height: 720,
   slides: [slideXml(thinOutline + neighbour)],
 });
 

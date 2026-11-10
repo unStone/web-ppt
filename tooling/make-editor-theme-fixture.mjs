@@ -9,7 +9,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const files = unzipSync(new Uint8Array(readFileSync(join(root, 'fixtures/sample-editor-change-layout.pptx'))));
-const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
+const replace = (part, fn) => {
+  files[part] = encoder.encode(fn(decoder.decode(files[part])));
+};
 const xfrm = (x, y, w, h) => `<a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm>`;
 
 const themeReference = `<p:sp><p:nvSpPr><p:cNvPr id="812" name="主题样式引用"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
@@ -20,12 +22,11 @@ const direct = `<p:sp><p:nvSpPr><p:cNvPr id="813" name="页面直接格式"/><p:
 <p:spPr>${xfrm(520, 590, 180, 54)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="445566"/></a:solidFill></p:spPr>
 <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr><a:latin typeface="Direct Typeface"/></a:rPr><a:t>页面直设</a:t></a:r></a:p></p:txBody></p:sp>`;
 
-replace('ppt/slides/slide7.xml', (xml) => xml
-  .replace('<p:sld show="0"', '<p:sld')
-  .replace('</p:spTree>', `${themeReference}${direct}</p:spTree>`));
+replace('ppt/slides/slide7.xml', (xml) =>
+  xml.replace('<p:sld show="0"', '<p:sld').replace('</p:spTree>', `${themeReference}${direct}</p:spTree>`),
+);
 // 未知属性保留探针必须用命名空间前缀：无命名空间属性永远过不了 XSD，也无法被校验器统一剥除
-replace('ppt/theme/theme1.xml', (xml) => xml
-  .replace('<a:theme ', '<a:theme xmlns:tk="urn:web-ppt:theme" tk:keep="theme-source" '));
+replace('ppt/theme/theme1.xml', (xml) => xml.replace('<a:theme ', '<a:theme xmlns:tk="urn:web-ppt:theme" tk:keep="theme-source" '));
 
 const bytes = makeZip(Object.entries(files));
 writeFileSync(join(root, 'fixtures/sample-editor-theme.pptx'), bytes);

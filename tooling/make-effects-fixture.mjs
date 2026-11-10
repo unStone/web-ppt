@@ -5,18 +5,24 @@ import { fileURLToPath } from 'node:url';
 import { label, makeZip, NS, nextShapeId, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 const title = (t, sub = '') =>
   sp({
-    x: 24, y: 10, w: 900, h: 40, prst: 'rect', fill: '<a:noFill/>',
-    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r>` +
-      (sub ? `<a:r><a:rPr sz="1100"><a:solidFill><a:srgbClr val="808080"/></a:solidFill></a:rPr><a:t>   ${sub}</a:t></a:r>` : '') +
-      '</a:p>',
+    x: 24,
+    y: 10,
+    w: 900,
+    h: 40,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text:
+      `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r>`
+      + (sub ? `<a:r><a:rPr sz="1100"><a:solidFill><a:srgbClr val="808080"/></a:solidFill></a:rPr><a:t>   ${sub}</a:t></a:r>` : '')
+      + '</a:p>',
   });
 
-const caption = (x, y, w, t) =>
-  sp({ x, y, w, h: 18, prst: 'rect', fill: '<a:noFill/>', text: label(t, 800, '555555') });
+const caption = (x, y, w, t) => sp({ x, y, w, h: 18, prst: 'rect', fill: '<a:noFill/>', text: label(t, 800, '555555') });
 
 // ---------- 1. 阴影 / 内阴影 / 发光 / 柔化边缘 ----------
 
@@ -31,24 +37,40 @@ const EFFECTS = [
   ['内阴影（左上）', `<a:effectLst>${inner(50800, 44450, 13500000, 75000)}</a:effectLst>`, solid('accent4'), 'roundRect'],
   ['内阴影（无位移）', `<a:effectLst>${inner(101600, 0, 0, 80000)}</a:effectLst>`, solid('accent6'), 'ellipse'],
   ['内阴影（彩色）', `<a:effectLst>${inner(76200, 38100, 5400000, 90000, '1F3864')}</a:effectLst>`, solid('accent3'), 'roundRect'],
-  ['发光', '<a:effectLst><a:glow rad="152400"><a:schemeClr val="accent2"><a:alpha val="80000"/></a:schemeClr></a:glow></a:effectLst>', solid('accent2'), 'roundRect'],
+  [
+    '发光',
+    '<a:effectLst><a:glow rad="152400"><a:schemeClr val="accent2"><a:alpha val="80000"/></a:schemeClr></a:glow></a:effectLst>',
+    solid('accent2'),
+    'roundRect',
+  ],
   ['柔化边缘', '<a:effectLst><a:softEdge rad="114300"/></a:effectLst>', solid('accent6'), 'roundRect'],
-  ['内阴影 + 发光', `<a:effectLst><a:glow rad="76200"><a:schemeClr val="accent4"/></a:glow>${inner(63500, 44450, 2700000, 80000)}</a:effectLst>`, solid('accent5'), 'roundRect'],
-  ['内阴影（渐变填充）', `<a:effectLst>${inner(76200, 50800, 2700000, 85000)}</a:effectLst>`,
-    '<a:gradFill><a:gsLst><a:gs pos="0"><a:schemeClr val="accent1"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent5"/></a:gs></a:gsLst><a:lin ang="5400000"/></a:gradFill>', 'roundRect'],
+  [
+    '内阴影 + 发光',
+    `<a:effectLst><a:glow rad="76200"><a:schemeClr val="accent4"/></a:glow>${inner(63500, 44450, 2700000, 80000)}</a:effectLst>`,
+    solid('accent5'),
+    'roundRect',
+  ],
+  [
+    '内阴影（渐变填充）',
+    `<a:effectLst>${inner(76200, 50800, 2700000, 85000)}</a:effectLst>`,
+    '<a:gradFill><a:gsLst><a:gs pos="0"><a:schemeClr val="accent1"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent5"/></a:gs></a:gsLst><a:lin ang="5400000"/></a:gradFill>',
+    'roundRect',
+  ],
   ['内阴影 + 文字', `<a:effectLst>${inner(63500, 50800, 2700000, 70000)}</a:effectLst>`, solid('accent4'), 'roundRect'],
 ];
 
-const CW = 200, CH = 130;
+const CW = 200,
+  CH = 130;
 const slide1 = slideXml(
-  title('效果：外阴影 / 内阴影 / 发光 / 柔化边缘', '内阴影用 SVG filter 反转 alpha 实现') +
-  EFFECTS.map(([name, effect, fill, prst], i) => {
-    const x = 40 + (i % 5) * 240, y = 90 + Math.floor(i / 5) * 240;
-    const text = name.endsWith('文字')
-      ? '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1600" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>Inner</a:t></a:r></a:p>'
-      : '';
-    return sp({ x, y, w: CW, h: CH, prst, fill, effect, text, name }) + caption(x, y + CH + 6, CW, name);
-  }).join(''),
+  title('效果：外阴影 / 内阴影 / 发光 / 柔化边缘', '内阴影用 SVG filter 反转 alpha 实现')
+    + EFFECTS.map(([name, effect, fill, prst], i) => {
+      const x = 40 + (i % 5) * 240,
+        y = 90 + Math.floor(i / 5) * 240;
+      const text = name.endsWith('文字')
+        ? '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1600" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>Inner</a:t></a:r></a:p>'
+        : '';
+      return sp({ x, y, w: CW, h: CH, prst, fill, effect, text, name }) + caption(x, y + CH + 6, CW, name);
+    }).join(''),
 );
 
 // ---------- 2. 倒影 ----------
@@ -61,17 +83,29 @@ const REFLECTIONS = [
   ['alpha 50% / size 35%', refl(50000, 35000), solid('accent2'), 'roundRect', ''],
   ['alpha 30% / size 100%', refl(30000, 100000), solid('accent6'), 'roundRect', ''],
   ['alpha 70% / 间距 12px', refl(70000, 50000, px(12)), solid('accent4'), 'ellipse', ''],
-  ['倒影 + 文字', refl(65000, 55000), solid('accent5'), 'roundRect',
-    '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>REFLECT</a:t></a:r></a:p>'],
-  ['倒影 + 外阴影', refl(60000, 45000).replace('<a:effectLst>', `<a:effectLst>${shdw(50800, 38100, 2700000, 40000)}`), solid('accent3'), 'star5', ''],
+  [
+    '倒影 + 文字',
+    refl(65000, 55000),
+    solid('accent5'),
+    'roundRect',
+    '<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>REFLECT</a:t></a:r></a:p>',
+  ],
+  [
+    '倒影 + 外阴影',
+    refl(60000, 45000).replace('<a:effectLst>', `<a:effectLst>${shdw(50800, 38100, 2700000, 40000)}`),
+    solid('accent3'),
+    'star5',
+    '',
+  ],
 ];
 
 const slide2 = slideXml(
-  title('倒影 a:reflection', 'stA → 起始不透明度，endPos → 可见比例，dist → 与本体间距') +
-  REFLECTIONS.map(([name, effect, fill, prst, text], i) => {
-    const x = 60 + (i % 3) * 400, y = 90 + Math.floor(i / 3) * 300;
-    return sp({ x, y, w: 260, h: 120, prst, fill, effect, text, name }) + caption(x, y + 245, 260, name);
-  }).join(''),
+  title('倒影 a:reflection', 'stA → 起始不透明度，endPos → 可见比例，dist → 与本体间距')
+    + REFLECTIONS.map(([name, effect, fill, prst, text], i) => {
+      const x = 60 + (i % 3) * 400,
+        y = 90 + Math.floor(i / 3) * 300;
+      return sp({ x, y, w: 260, h: 120, prst, fill, effect, text, name }) + caption(x, y + 245, 260, name);
+    }).join(''),
 );
 
 // ---------- 3. 艺术字变形 ----------
@@ -107,16 +141,18 @@ const WARPS = [
   ['textDeflate', ''],
 ];
 
-const GW = 250, GH = 190;
+const GW = 250,
+  GH = 190;
 const slide3 = slideXml(
-  title('艺术字变形 a:prstTxWarp（15 个预设）', '文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染') +
-  WARPS.map(([prst, adj], i) => {
-    const x = 15 + (i % 5) * GW, y = 66 + Math.floor(i / 5) * GH;
-    return (
-      wordArt({ x: x + 10, y: y + 6, w: GW - 20, h: GH - 40, prst, adj, text: 'Warp', color: `accent${(i % 6) + 1}`, size: 2200 }) +
-      caption(x, y + GH - 30, GW, prst)
-    );
-  }).join(''),
+  title('艺术字变形 a:prstTxWarp（15 个预设）', '文字排到 &lt;path&gt; 上，用 &lt;textPath&gt; 渲染')
+    + WARPS.map(([prst, adj], i) => {
+      const x = 15 + (i % 5) * GW,
+        y = 66 + Math.floor(i / 5) * GH;
+      return (
+        wordArt({ x: x + 10, y: y + 6, w: GW - 20, h: GH - 40, prst, adj, text: 'Warp', color: `accent${(i % 6) + 1}`, size: 2200 })
+        + caption(x, y + GH - 30, GW, prst)
+      );
+    }).join(''),
 );
 
 // ---------- 4. 降级 / RTL / 组合 ----------
@@ -127,40 +163,67 @@ const rtlPara = (t, rtl, algn) =>
 const AR = 'مرحبا بالعالم 123 نص عربي';
 
 const slide4 = slideXml(
-  title('降级与 RTL', '未实现的变形预设按普通排版渲染，不报错') +
-  // 未支持的预设 → 普通横排
-  wordArt({ x: 40, y: 80, w: 260, h: 90, prst: 'textStop', text: 'textStop', color: 'accent3', size: 1800 }) +
-  caption(40, 176, 260, 'textStop（未实现 → 普通排版）') +
-  wordArt({ x: 330, y: 80, w: 260, h: 90, prst: 'textNoShape', text: 'textNoShape', color: 'accent3', size: 1800 }) +
-  caption(330, 176, 260, 'textNoShape（无变形）') +
-  // 变形 + 倒影 + 阴影组合
-  wordArt({
-    x: 640, y: 74, w: 300, h: 110, prst: 'textArchUp', adj: '<a:gd name="adj" fmla="val 10800000"/>',
-    text: 'ARCH', color: 'accent1', size: 2400, effect: refl(70000, 55000),
-  }) +
-  caption(640, 200, 300, '变形 + 倒影') +
-  wordArt({
-    x: 970, y: 74, w: 280, h: 110, prst: 'textWave1', adj: '', text: 'WAVE',
-    color: 'accent2', size: 2400, effect: `<a:effectLst>${shdw(50800, 38100, 2700000, 45000)}</a:effectLst>`,
-  }) +
-  caption(970, 200, 280, '变形 + 外阴影') +
-  // RTL 与 LTR 对照
-  sp({
-    x: 40, y: 260, w: 560, h: 190, prst: 'rect',
-    fill: '<a:solidFill><a:schemeClr val="lt2"/></a:solidFill>',
-    ln: '<a:ln w="9525"><a:solidFill><a:srgbClr val="C0C8D8"/></a:solidFill></a:ln>',
-    text: rtlPara(AR, true, 'l') + rtlPara(`${AR} — طويل جدا نص للاختبار يلتف على عدة أسطر هنا`, true, 'l') + rtlPara(AR, true, 'r'),
-    name: 'rtl-box',
-  }) +
-  caption(40, 456, 560, 'RTL：direction=rtl，前两段物理左对齐、第三段右对齐') +
-  sp({
-    x: 640, y: 260, w: 560, h: 190, prst: 'rect',
-    fill: '<a:solidFill><a:schemeClr val="lt2"/></a:solidFill>',
-    ln: '<a:ln w="9525"><a:solidFill><a:srgbClr val="C0C8D8"/></a:solidFill></a:ln>',
-    text: rtlPara('Hello world 123 LTR text', false, 'l') + rtlPara('Hello world 123 — a longer line of text that wraps here', false, 'l') + rtlPara('Hello world 123 LTR text', false, 'r'),
-    name: 'ltr-box',
-  }) +
-  caption(640, 456, 560, 'LTR 对照'),
+  title('降级与 RTL', '未实现的变形预设按普通排版渲染，不报错')
+    // 未支持的预设 → 普通横排
+    + wordArt({ x: 40, y: 80, w: 260, h: 90, prst: 'textStop', text: 'textStop', color: 'accent3', size: 1800 })
+    + caption(40, 176, 260, 'textStop（未实现 → 普通排版）')
+    + wordArt({ x: 330, y: 80, w: 260, h: 90, prst: 'textNoShape', text: 'textNoShape', color: 'accent3', size: 1800 })
+    + caption(330, 176, 260, 'textNoShape（无变形）')
+    // 变形 + 倒影 + 阴影组合
+    + wordArt({
+      x: 640,
+      y: 74,
+      w: 300,
+      h: 110,
+      prst: 'textArchUp',
+      adj: '<a:gd name="adj" fmla="val 10800000"/>',
+      text: 'ARCH',
+      color: 'accent1',
+      size: 2400,
+      effect: refl(70000, 55000),
+    })
+    + caption(640, 200, 300, '变形 + 倒影')
+    + wordArt({
+      x: 970,
+      y: 74,
+      w: 280,
+      h: 110,
+      prst: 'textWave1',
+      adj: '',
+      text: 'WAVE',
+      color: 'accent2',
+      size: 2400,
+      effect: `<a:effectLst>${shdw(50800, 38100, 2700000, 45000)}</a:effectLst>`,
+    })
+    + caption(970, 200, 280, '变形 + 外阴影')
+    // RTL 与 LTR 对照
+    + sp({
+      x: 40,
+      y: 260,
+      w: 560,
+      h: 190,
+      prst: 'rect',
+      fill: '<a:solidFill><a:schemeClr val="lt2"/></a:solidFill>',
+      ln: '<a:ln w="9525"><a:solidFill><a:srgbClr val="C0C8D8"/></a:solidFill></a:ln>',
+      text: rtlPara(AR, true, 'l') + rtlPara(`${AR} — طويل جدا نص للاختبار يلتف على عدة أسطر هنا`, true, 'l') + rtlPara(AR, true, 'r'),
+      name: 'rtl-box',
+    })
+    + caption(40, 456, 560, 'RTL：direction=rtl，前两段物理左对齐、第三段右对齐')
+    + sp({
+      x: 640,
+      y: 260,
+      w: 560,
+      h: 190,
+      prst: 'rect',
+      fill: '<a:solidFill><a:schemeClr val="lt2"/></a:solidFill>',
+      ln: '<a:ln w="9525"><a:solidFill><a:srgbClr val="C0C8D8"/></a:solidFill></a:ln>',
+      text:
+        rtlPara('Hello world 123 LTR text', false, 'l')
+        + rtlPara('Hello world 123 — a longer line of text that wraps here', false, 'l')
+        + rtlPara('Hello world 123 LTR text', false, 'r'),
+      name: 'ltr-box',
+    })
+    + caption(640, 456, 560, 'LTR 对照'),
 );
 
 // ---------- 打包 ----------

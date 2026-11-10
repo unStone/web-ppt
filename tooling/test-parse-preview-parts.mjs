@@ -13,8 +13,11 @@ const root = resolve('.');
 const out = join(root, 'out/parse-preview-parts');
 mkdirSync(out, { recursive: true });
 const entry = join(out, 'entry.mjs');
-writeFileSync(entry, `export * as core from '${root}/packages/core/src/index.ts';
-export { isPreviewDeferredPart } from '${root}/packages/core/src/pptx/zip-preview.ts';`);
+writeFileSync(
+  entry,
+  `export * as core from '${root}/packages/core/src/index.ts';
+export { isPreviewDeferredPart } from '${root}/packages/core/src/pptx/zip-preview.ts';`,
+);
 const bundled = await bundleBrowser({
   root,
   entry,
@@ -29,8 +32,7 @@ const isPreviewDeferredPart = dist ? null : bundled.isPreviewDeferredPart;
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const png = (color) => makePng(8, 8, () => color);
-const imageRel = (id, file) =>
-  `<Relationship Id="${id}" Type="${REL}/image" Target="../media/${file}"/>`;
+const imageRel = (id, file) => `<Relationship Id="${id}" Type="${REL}/image" Target="../media/${file}"/>`;
 const pic = (name, rid) => `<p:pic>
 <p:nvPicPr><p:cNvPr id="${name === 'first' ? 2 : 3}" name="${name}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
 <p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
@@ -41,12 +43,28 @@ const pic = (name, rid) => `<p:pic>
 function photoDeck(unusedBytes, extraEntries = []) {
   return deck({
     slides: [
-      slideXml(pic('first', 'rId2') + sp({
-        x: 80, y: 220, w: 240, h: 40, name: 't1', text: label('首页'),
-      })),
-      slideXml(pic('second', 'rId2') + sp({
-        x: 80, y: 220, w: 240, h: 40, name: 't2', text: label('后页'),
-      })),
+      slideXml(
+        pic('first', 'rId2')
+          + sp({
+            x: 80,
+            y: 220,
+            w: 240,
+            h: 40,
+            name: 't1',
+            text: label('首页'),
+          }),
+      ),
+      slideXml(
+        pic('second', 'rId2')
+          + sp({
+            x: 80,
+            y: 220,
+            w: 240,
+            h: 40,
+            name: 't2',
+            text: label('后页'),
+          }),
+      ),
     ],
     width: 1280,
     height: 720,
@@ -159,8 +177,7 @@ textPres.dispose();
 const brokenCurrent = corruptEntry(intact, 'ppt/media/image1.png');
 const failedPage = await core.parse(brokenCurrent);
 check(
-  failedPage.slides[0].elements.some((element) =>
-    element.kind === 'unsupported' && String(element.label).includes('解析失败')),
+  failedPage.slides[0].elements.some((element) => element.kind === 'unsupported' && String(element.label).includes('解析失败')),
   '当前页图损坏走页面失败卡片，不假装图在',
 );
 failedPage.dispose();
@@ -185,8 +202,7 @@ const laterPreview = await core.parse(brokenLater);
 check(laterPreview.slides.length === 3, '只读页数不解后页');
 check(core.slideText(laterPreview.slides[0]).includes('首页'), '损坏后页不挡文本首页');
 check(
-  laterPreview.slides[2].elements.some((element) =>
-    element.kind === 'unsupported' && String(element.label).includes('解析失败')),
+  laterPreview.slides[2].elements.some((element) => element.kind === 'unsupported' && String(element.label).includes('解析失败')),
   '网格读到损坏后页时走失败卡片，不假装页在',
 );
 laterPreview.dispose();
@@ -207,5 +223,6 @@ check(!!keptOle.package?.parts['ppt/embeddings/oleObject1.bin'], 'keepPackage �
 check(keptOle.package.parts['ppt/slides/slide3.xml'].length > 0, 'keepPackage 后页 XML 仍在 parts');
 keptOle.dispose();
 
-recordCount('parsePreviewParts', count);
+// dist 模式少跑分类检查，断言数与源码模式不同；同一计数键只登记源码口径，避免两种口径互相覆盖。
+if (!dist) recordCount('parsePreviewParts', count);
 console.log(`预览解析跳过后页与未引用嵌入物 ${count} 项通过${dist ? '（独立产物）' : ''}`);

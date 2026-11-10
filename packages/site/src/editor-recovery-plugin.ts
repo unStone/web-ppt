@@ -3,7 +3,9 @@ import { createSiteRecovery, type SiteRecovery } from './editor-recovery';
 import type { SiteNotice } from './i18n/message';
 
 declare module 'cordis' {
-  interface Context { editorRecovery: SiteRecovery }
+  interface Context {
+    editorRecovery: SiteRecovery;
+  }
 }
 
 /** 恢复偏好与尚未完成的恢复选择跨文稿存在，由应用作用域持有。 */

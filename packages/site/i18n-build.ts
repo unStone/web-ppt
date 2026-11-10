@@ -27,20 +27,23 @@ function localizedHtml(html: string, language: SiteLanguage): string {
 export function siteI18n(): Plugin {
   const seen = new Map<string, string>();
   const parameters = (value: string): string => [...new Set([...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]))].sort().join(',');
-  for (const catalog of messageCatalogs) for (const [source, target] of Object.entries(catalog)) {
-    if (seen.has(source) && seen.get(source) !== target) throw new Error(`官网词条翻译冲突：${source}`);
-    if (parameters(source) !== parameters(target)) throw new Error(`官网词条参数不一致：${source}`);
-    seen.set(source, target);
-  }
+  for (const catalog of messageCatalogs)
+    for (const [source, target] of Object.entries(catalog)) {
+      if (seen.has(source) && seen.get(source) !== target) throw new Error(`官网词条翻译冲突：${source}`);
+      if (parameters(source) !== parameters(target)) throw new Error(`官网词条参数不一致：${source}`);
+      seen.set(source, target);
+    }
   return {
-    name: 'site-i18n', enforce: 'post',
-    transformIndexHtml: { order: 'post', handler: (html, context) =>
-      localizedHtml(html, context.path.endsWith('.en.html') ? 'en' : 'zh-CN') },
+    name: 'site-i18n',
+    enforce: 'post',
+    transformIndexHtml: {
+      order: 'post',
+      handler: (html, context) => localizedHtml(html, context.path.endsWith('.en.html') ? 'en' : 'zh-CN'),
+    },
     generateBundle(_options, bundle) {
       for (const [name, artifact] of Object.entries(bundle)) {
         if (artifact.type !== 'asset' || !/^(index|samples|editor)\.html$/.test(name)) continue;
-        this.emitFile({ type: 'asset', fileName: name.replace('.html', '.en.html'),
-          source: localizedHtml(String(artifact.source), 'en') });
+        this.emitFile({ type: 'asset', fileName: name.replace('.html', '.en.html'), source: localizedHtml(String(artifact.source), 'en') });
       }
     },
     configureServer(server) {
@@ -52,7 +55,9 @@ export function siteI18n(): Plugin {
           const html = readFileSync(resolve(server.config.root, `${page}.html`), 'utf8');
           response.setHeader('Content-Type', 'text/html; charset=utf-8');
           response.end(await server.transformIndexHtml(url.pathname, html));
-        } catch (error) { next(error); }
+        } catch (error) {
+          next(error);
+        }
       });
     },
   };

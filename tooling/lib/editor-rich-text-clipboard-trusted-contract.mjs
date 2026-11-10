@@ -20,11 +20,14 @@ export async function runTrustedRichTextClipboardContract({ evaluate, dispatchKe
       state.events.push({ type, trusted: event.isTrusted, prevented: event.defaultPrevented });
     });
   })()`);
-  await evaluate(`navigator.clipboard.write([new ClipboardItem({
+  await evaluate(
+    `navigator.clipboard.write([new ClipboardItem({
     'text/plain': new Blob(['可信带格式'], { type: 'text/plain' }),
     'text/html': new Blob(['<b style="font-family:Arial;font-size:20px">可信</b><i>带格式</i>'],
       { type: 'text/html' }),
-  })])`, true);
+  })])`,
+    true,
+  );
   await dispatchKey('v', 'KeyV', 86, modifier, ['paste']);
   const rich = await evaluate(`(() => {
     const state = globalThis.editorContract.richTextResult;
@@ -61,7 +64,8 @@ export async function runTrustedRichTextClipboardContract({ evaluate, dispatchKe
   await dispatchKey('c', 'KeyC', 67, modifier, ['copy']);
   const copied = await evaluate('navigator.clipboard.readText()', true);
   await dispatchKey('x', 'KeyX', 88, modifier, ['cut']);
-  const result = await evaluate(`(async () => {
+  const result = await evaluate(
+    `(async () => {
     const state = globalThis.editorContract.richTextResult;
     const text = state.session.editor.effectiveElement(state.id).text.paragraphs[0].runs
       .map((run) => run.text).join('');
@@ -74,14 +78,27 @@ export async function runTrustedRichTextClipboardContract({ evaluate, dispatchKe
     state.session.editor.undo(); state.session.editor.undo();
     state.view.destroy(); state.session.dispose(); state.mount.remove();
     return result;
-  })()`, true);
-  const eventsCorrect = result.events.length === 4
+  })()`,
+    true,
+  );
+  const eventsCorrect =
+    result.events.length === 4
     && result.events.map((event) => event.type).join('/') === 'paste/paste/copy/cut'
     && result.events.every((event) => event.trusted && event.prevented);
-  if (!eventsCorrect || rich.text !== '可信带格式同同' || !rich.bold || !rich.italic || rich.undo !== 1
-    || !plain.normal || plain.undo !== 1 || copied !== '可信带格式'
-    || result.clipboard !== '可信带格式' || result.text !== '同同'
-    || result.undo !== 2 || !result.active) {
+  if (
+    !eventsCorrect
+    || rich.text !== '可信带格式同同'
+    || !rich.bold
+    || !rich.italic
+    || rich.undo !== 1
+    || !plain.normal
+    || plain.undo !== 1
+    || copied !== '可信带格式'
+    || result.clipboard !== '可信带格式'
+    || result.text !== '同同'
+    || result.undo !== 2
+    || !result.active
+  ) {
     throw new Error(`真实文字剪贴板失败：${JSON.stringify({ rich, plain, copied, result })}`);
   }
 }

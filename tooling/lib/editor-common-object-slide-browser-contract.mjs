@@ -11,10 +11,9 @@ function screenBounds(mount, editor, id) {
   const base = node?.querySelector(':scope > g[transform]');
   const matrix = base?.getScreenCTM();
   if (!matrix) throw new Error(`公共命令缺少浏览器 CTM：${id}`);
-  const points = [
-    new DOMPoint(0, 0), new DOMPoint(element.w, 0),
-    new DOMPoint(element.w, element.h), new DOMPoint(0, element.h),
-  ].map((point) => point.matrixTransform(matrix));
+  const points = [new DOMPoint(0, 0), new DOMPoint(element.w, 0), new DOMPoint(element.w, element.h), new DOMPoint(0, element.h)].map(
+    (point) => point.matrixTransform(matrix),
+  );
   return {
     left: Math.min(...points.map((point) => point.x)),
     right: Math.max(...points.map((point) => point.x)),
@@ -37,16 +36,13 @@ export async function runEditorCommonObjectSlideBrowserContract({ createWebPptAd
       openOptions: { idPrefix: 'browser-common-' },
     });
     const editor = adapter.snapshot.session.editor;
-    const byName = (name) => Object.values(editor.doc.elements)
-      .find((record) => record.src.name === name);
-    const ids = ['common-left', 'common-middle-a', 'common-middle-b', 'common-right']
-      .map((name) => byName(name).id);
+    const byName = (name) => Object.values(editor.doc.elements).find((record) => record.src.name === name);
+    const ids = ['common-left', 'common-middle-a', 'common-middle-b', 'common-right'].map((name) => byName(name).id);
     editor.select({ kind: 'elements', ids, enteredGroup: null });
     const history = editor.history.undoCount;
     if (!adapter.distributeElements('horizontal')) throw new Error('adapter 未执行选区分布');
     mount.querySelector('[data-ppt-layer="static"] svg')?.getBoundingClientRect();
-    const bounds = ids.map((id) => screenBounds(mount, editor, id))
-      .sort((left, right) => left.left - right.left);
+    const bounds = ids.map((id) => screenBounds(mount, editor, id)).sort((left, right) => left.left - right.left);
     const gaps = bounds.slice(1).map((item, index) => item.left - bounds[index].right);
     const geometryError = Math.max(...gaps) - Math.min(...gaps);
     if (geometryError > 0.5 || editor.history.undoCount !== history + 1) {
@@ -68,17 +64,21 @@ export async function runEditorCommonObjectSlideBrowserContract({ createWebPptAd
     const alt = byName('common-alt');
     editor.select({ kind: 'elements', ids: [alt.id], enteredGroup: null });
     const sections = adapter.listSections();
-    if (!adapter.setAltText({ title: 'Chrome 标题', descr: 'Chrome 描述' })
+    if (
+      !adapter.setAltText({ title: 'Chrome 标题', descr: 'Chrome 描述' })
       || adapter.queryAltText()?.descr !== 'Chrome 描述'
       || !adapter.renameSection(sections[0].id, 'Chrome 节')
-      || adapter.listSections()[0].name !== 'Chrome 节') {
+      || adapter.listSections()[0].name !== 'Chrome 节'
+    ) {
       throw new Error('真实 Chrome adapter 的替代文字或节反馈无效');
     }
 
-    const geometry = JSON.stringify(Object.values(editor.doc.elements).map((record) => {
-      const { x, y, w, h } = editor.effectiveElement(record.id);
-      return [record.id, x, y, w, h];
-    }));
+    const geometry = JSON.stringify(
+      Object.values(editor.doc.elements).map((record) => {
+        const { x, y, w, h } = editor.effectiveElement(record.id);
+        return [record.id, x, y, w, h];
+      }),
+    );
     const sizeSamples = [];
     for (let index = 0; index < 80; index++) {
       const wide = index % 2 === 0;
@@ -91,19 +91,27 @@ export async function runEditorCommonObjectSlideBrowserContract({ createWebPptAd
     const stage = mount.querySelector('[data-ppt-stage]');
     const interaction = mount.querySelector('[data-ppt-layer="interaction"]');
     const svg = mount.querySelector('[data-ppt-layer="static"] svg');
-    const geometryAfter = JSON.stringify(Object.values(editor.doc.elements).map((record) => {
+    const geometryAfter = JSON.stringify(
+      Object.values(editor.doc.elements).map((record) => {
         const { x, y, w, h } = editor.effectiveElement(record.id);
         return [record.id, x, y, w, h];
-      }));
-    if (stage?.style.width !== '1600px' || stage?.style.height !== '900px'
+      }),
+    );
+    if (
+      stage?.style.width !== '1600px'
+      || stage?.style.height !== '900px'
       || interaction?.getAttribute('viewBox') !== '0 0 1600 900'
       || svg?.getAttribute('viewBox') !== '0 0 1600 900'
-      || geometryAfter !== geometry) {
-      throw new Error(`页面尺寸没有按最大化语义同步三层画布：${JSON.stringify({
-        stage: [stage?.style.width, stage?.style.height],
-        interaction: interaction?.getAttribute('viewBox'), svg: svg?.getAttribute('viewBox'),
-        geometryStable: geometryAfter === geometry,
-      })}`);
+      || geometryAfter !== geometry
+    ) {
+      throw new Error(
+        `页面尺寸没有按最大化语义同步三层画布：${JSON.stringify({
+          stage: [stage?.style.width, stage?.style.height],
+          interaction: interaction?.getAttribute('viewBox'),
+          svg: svg?.getAttribute('viewBox'),
+          geometryStable: geometryAfter === geometry,
+        })}`,
+      );
     }
     const sizeP95 = percentile95(sizeSamples);
     recordPerformanceBudget('Chrome 页面尺寸完整反馈 p95', sizeP95, 16);

@@ -15,21 +15,26 @@ export interface ElementClipboardRecordMeta {
   readonly textLinks?: readonly ClipboardTextLink[];
 }
 
-export type ClipboardPortableLink = {
-  readonly kind: 'external';
-  readonly href: string;
-} | {
-  readonly kind: 'slide';
-  readonly sourceSlideId: SlideId;
-  readonly packageTarget?: { readonly rootHash: string; readonly closureHash: string };
-} | {
-  readonly kind: 'none';
-} | {
-  readonly kind: 'unsupported';
-} | {
-  readonly kind: 'relative';
-  readonly action: 'next' | 'previous' | 'first' | 'last';
-};
+export type ClipboardPortableLink =
+  | {
+      readonly kind: 'external';
+      readonly href: string;
+    }
+  | {
+      readonly kind: 'slide';
+      readonly sourceSlideId: SlideId;
+      readonly packageTarget?: { readonly rootHash: string; readonly closureHash: string };
+    }
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'unsupported';
+    }
+  | {
+      readonly kind: 'relative';
+      readonly action: 'next' | 'previous' | 'first' | 'last';
+    };
 
 export interface ClipboardTextLink {
   readonly paragraph: number;

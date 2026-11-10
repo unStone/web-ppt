@@ -115,34 +115,34 @@ const overlay = document.createElement('div');
 overlay.className = 'preview';
 overlay.hidden = true;
 overlay.innerHTML =
-  '<div class="preview-box" role="dialog" aria-modal="true" aria-label="样本预览">' +
-  '<div class="preview-bar">' +
-  '<strong class="preview-title"></strong>' +
-  '<div class="spacer"></div>' +
-  '<span class="meta preview-meta"></span>' +
-  '<button class="chip act preview-share">复制链接</button>' +
+  '<div class="preview-box" role="dialog" aria-modal="true" aria-label="样本预览">'
+  + '<div class="preview-bar">'
+  + '<strong class="preview-title"></strong>'
+  + '<div class="spacer"></div>'
+  + '<span class="meta preview-meta"></span>'
+  + '<button class="chip act preview-share">复制链接</button>'
   // download 属性等预览真的拿到文件、有了 href 再补上，理由同 index.html
-  '<a class="chip act preview-dl">下载</a>' +
-  '<button class="chip preview-comments" type="button"></button><button class="chip preview-notes" type="button" disabled>演讲者备注</button>' +
-  '<button class="chip act preview-full" disabled>演示</button>' +
-  '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>' +
-  '</div>' +
-  '<div class="stage-wrap preview-wrap"><div class="stage preview-stage"></div>' +
-  '<div class="present-bar">' +
-  '<button class="icon preview-p-prev" title="上一页" aria-label="上一页">‹</button>' +
-  '<span class="pager preview-p-pager">— / —</span>' +
-  '<button class="icon preview-p-next" title="下一页" aria-label="下一页">›</button>' +
-  '<button class="icon preview-p-grid" aria-pressed="false">G</button>' +
-  '<button class="icon preview-p-notes" title="演讲者备注" aria-label="演讲者备注" disabled>N</button>' +
-  '<button class="icon preview-p-blank" aria-pressed="false">B</button>' +
-  '<button class="icon preview-p-exit" title="退出演示（Esc）" aria-label="退出演示">⨯</button>' +
-  '</div></div>' +
-  '<div class="demo-foot">' +
-  '<button class="icon preview-prev" title="上一页" aria-label="上一页">‹</button>' +
-  '<span class="pager preview-pager">— / —</span>' +
-  '<button class="icon preview-next" title="下一页" aria-label="下一页">›</button>' +
-  '<button class="chip preview-grid" hidden disabled></button>' +
-  '</div></div>';
+  + '<a class="chip act preview-dl">下载</a>'
+  + '<button class="chip preview-comments" type="button"></button><button class="chip preview-notes" type="button" disabled>演讲者备注</button>'
+  + '<button class="chip act preview-full" disabled>演示</button>'
+  + '<button class="icon preview-close" title="关闭（Esc）" aria-label="关闭">⨯</button>'
+  + '</div>'
+  + '<div class="stage-wrap preview-wrap"><div class="stage preview-stage"></div>'
+  + '<div class="present-bar">'
+  + '<button class="icon preview-p-prev" title="上一页" aria-label="上一页">‹</button>'
+  + '<span class="pager preview-p-pager">— / —</span>'
+  + '<button class="icon preview-p-next" title="下一页" aria-label="下一页">›</button>'
+  + '<button class="icon preview-p-grid" aria-pressed="false">G</button>'
+  + '<button class="icon preview-p-notes" title="演讲者备注" aria-label="演讲者备注" disabled>N</button>'
+  + '<button class="icon preview-p-blank" aria-pressed="false">B</button>'
+  + '<button class="icon preview-p-exit" title="退出演示（Esc）" aria-label="退出演示">⨯</button>'
+  + '</div></div>'
+  + '<div class="demo-foot">'
+  + '<button class="icon preview-prev" title="上一页" aria-label="上一页">‹</button>'
+  + '<span class="pager preview-pager">— / —</span>'
+  + '<button class="icon preview-next" title="下一页" aria-label="下一页">›</button>'
+  + '<button class="chip preview-grid" hidden disabled></button>'
+  + '</div></div>';
 document.body.append(overlay);
 
 const q = <T extends Element>(sel: string): T => overlay.querySelector<T>(sel)!;
@@ -170,9 +170,15 @@ const present = bindPresentMode({
       numbers.clear();
       slideGrid?.close();
     }
-    syncPager(); speaker.sync(); slideGrid?.syncChrome();
+    syncPager();
+    speaker.sync();
+    slideGrid?.syncChrome();
   },
-  onEnter: () => { numbers.clear(); blank.clear(); blank.attach(); },
+  onEnter: () => {
+    numbers.clear();
+    blank.clear();
+    blank.attach();
+  },
 });
 const pBlank = q<HTMLButtonElement>('.preview-p-blank');
 // 必须排在黑屏之前：遮罩里的 Enter 会先被吃掉，合法页码就确认不到。
@@ -181,14 +187,22 @@ const numbers = bindSlideNumber({
   presenting: () => present.presenting(),
   keysActive: () => !overlay.hidden && !slideGrid?.showing(),
   viewer: () => viewer,
-  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    syncPager();
+    speaker.sync();
+  },
 });
 // 必须排在黑屏之前：遮罩会把 Home / End 收成「只恢复」，首尾页就跳不过去。
 bindSlideEnds({
   presenting: () => present.presenting(),
   keysActive: () => !overlay.hidden && !slideGrid?.showing(),
   viewer: () => viewer,
-  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    syncPager();
+    speaker.sync();
+  },
 });
 const blank = bindBlankScreen({
   stage: pStage,
@@ -210,13 +224,20 @@ slideGrid = bindSlideGrid({
   keysActive: () => !overlay.hidden,
   browseButtons: [q<HTMLButtonElement>('.preview-grid')],
   presentButtons: [q<HTMLButtonElement>('.preview-p-grid')],
-  onJump: () => { blank.clear(); syncPager(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    syncPager();
+    speaker.sync();
+  },
 });
 bindSwipeNav({
   host: pWrap,
   viewer: () => viewer,
   isAdvanceTarget: isPresentAdvanceTarget,
-  afterChange: () => { syncPager(); speaker.sync(); },
+  afterChange: () => {
+    syncPager();
+    speaker.sync();
+  },
 });
 setAttributeText(q('[role="dialog"]'), 'aria-label', '样本预览');
 setText(pDl, '下载');
@@ -226,7 +247,12 @@ setAttributeText(q('.preview-close'), 'title', '关闭（Esc）');
 setAttributeText(q('.preview-close'), 'aria-label', '关闭');
 setAttributeText(q('.preview-p-exit'), 'title', '退出演示（Esc）');
 setAttributeText(q('.preview-p-exit'), 'aria-label', '退出演示');
-for (const [selector, label] of [['.preview-prev', '上一页'], ['.preview-next', '下一页'], ['.preview-p-prev', '上一页'], ['.preview-p-next', '下一页']] as const) {
+for (const [selector, label] of [
+  ['.preview-prev', '上一页'],
+  ['.preview-next', '下一页'],
+  ['.preview-p-prev', '上一页'],
+  ['.preview-p-next', '下一页'],
+] as const) {
   setAttributeText(q(selector), 'title', label);
   setAttributeText(q(selector), 'aria-label', label);
 }
@@ -254,7 +280,9 @@ const commentsButton = q<HTMLButtonElement>('.preview-comments');
 setText(commentsButton, '批注');
 const commentsTools = bindCommentsTools(commentsButton, () => {
   const current = viewer;
-  return current ? { owner: current, slide: current.slide, presentation: () => current.presentation, name: pTitle.textContent ?? 'sample' } : null;
+  return current
+    ? { owner: current, slide: current.slide, presentation: () => current.presentation, name: pTitle.textContent ?? 'sample' }
+    : null;
 });
 
 function syncPager(): void {
@@ -279,14 +307,18 @@ function closePreview(): void {
   blank.clear();
   overlay.hidden = true;
   releaseFullscreenLanguage();
-  restoreLanguage?.(); restoreLanguage = undefined;
+  restoreLanguage?.();
+  restoreLanguage = undefined;
   syncUrl();
   commentsTools.reset();
   viewer?.destroy();
   viewer = null;
   pFull.disabled = true;
   pFull.removeAttribute('aria-pressed');
-  if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+  if (downloadUrl) {
+    URL.revokeObjectURL(downloadUrl);
+    downloadUrl = null;
+  }
   pDl.hidden = true;
   pDl.removeAttribute('href');
   pDl.removeAttribute('download');
@@ -301,7 +333,8 @@ function closePreview(): void {
  */
 function syncUrl(file?: string, keepPage = false): void {
   const url = new URL(location.href);
-  if (file) url.searchParams.set('sample', file); else url.searchParams.delete('sample');
+  if (file) url.searchParams.set('sample', file);
+  else url.searchParams.delete('sample');
   if (!file || !keepPage) url.searchParams.delete('p');
   const next = `${url.pathname}${url.search}${url.hash}`;
   const current = `${location.pathname}${location.search}${location.hash}`;
@@ -310,9 +343,7 @@ function syncUrl(file?: string, keepPage = false): void {
 }
 
 async function openSample(s: Sample, applyAddressPage = false): Promise<void> {
-  const requestedPage = applyAddressPage
-    ? parseOpenPage(new URLSearchParams(location.search).get('p'))
-    : 1;
+  const requestedPage = applyAddressPage ? parseOpenPage(new URLSearchParams(location.search).get('p')) : 1;
   const generation = ++loadGeneration;
   resetShare();
   speaker.reset();
@@ -394,7 +425,11 @@ async function openSample(s: Sample, applyAddressPage = false): Promise<void> {
   setOpenPhase(pStage, 'ready');
   blank.attach();
   blank.clear();
-  viewer.onChange = () => { syncPager(); speaker.sync(); void ensureFonts(); };
+  viewer.onChange = () => {
+    syncPager();
+    speaker.sync();
+    void ensureFonts();
+  };
   // 浮层里点到幻灯片自带的外链会把人从站点带走，放映时才放行
   viewer.onLinkClick = () => !present.presenting();
   syncPager();
@@ -410,8 +445,10 @@ async function openSample(s: Sample, applyAddressPage = false): Promise<void> {
   void ensureFonts();
 
   setText(pMeta, '{kb}KB · {pages} 页 · 下载 {time} · 解析 {parse}ms', {
-    kb: Math.round(bytes.byteLength / 1024), pages: pres.slides.length,
-    time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`, parse: parseMs.toFixed(0),
+    kb: Math.round(bytes.byteLength / 1024),
+    pages: pres.slides.length,
+    time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`,
+    parse: parseMs.toFixed(0),
   });
 }
 
@@ -423,7 +460,9 @@ q<HTMLButtonElement>('.preview-p-next').addEventListener('click', () => viewer?.
 pFull.addEventListener('click', () => void present.enter());
 q<HTMLButtonElement>('.preview-p-exit').addEventListener('click', () => present.exit());
 // 点浮层的空白处关掉；点到内容区不关
-overlay.addEventListener('click', (e) => { if (e.target === overlay) closePreview(); });
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) closePreview();
+});
 
 addEventListener('keydown', (e) => {
   if (overlay.hidden) return;
@@ -439,11 +478,12 @@ addEventListener('keydown', (e) => {
   // 浮层浏览仍只认左右和空格。Down / Up 留到放映，避免盖住页面时把竖向滚动吃掉。
   const vertical = present.presenting() ? presentVerticalStep(e) : null;
   if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ' || vertical === 'next') {
-    viewer.next(); e.preventDefault();
+    viewer.next();
+    e.preventDefault();
   }
-  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev'
-    || (present.presenting() && presentRewindKey(e))) {
-    viewer.prev(); e.preventDefault();
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev' || (present.presenting() && presentRewindKey(e))) {
+    viewer.prev();
+    e.preventDefault();
   }
 });
 

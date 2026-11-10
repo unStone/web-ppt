@@ -27,20 +27,25 @@ function initializeOpcIdentity(doc: EditDoc): void {
   const pkg = doc.package;
   if (!pkg) throw new Error('新增页需要可写 OOXML 包');
   if (doc.identity.nextSlidePart === undefined) {
-    const parts = [...Object.keys(pkg.parts), ...Object.keys(doc.saveState.baselines), ...Object.values(doc.slides)
-      .flatMap((slide) => slide.origin ? [slide.origin.part] : [])];
-    const highest = Math.max(0, ...parts.flatMap((part) => {
-      const match = /^ppt\/slides\/slide(\d+)\.xml$/.exec(part);
-      return match ? [Number(match[1])] : [];
-    }));
+    const parts = [
+      ...Object.keys(pkg.parts),
+      ...Object.keys(doc.saveState.baselines),
+      ...Object.values(doc.slides).flatMap((slide) => (slide.origin ? [slide.origin.part] : [])),
+    ];
+    const highest = Math.max(
+      0,
+      ...parts.flatMap((part) => {
+        const match = /^ppt\/slides\/slide(\d+)\.xml$/.exec(part);
+        return match ? [Number(match[1])] : [];
+      }),
+    );
     doc.identity.nextSlidePart = highest + 1;
   }
   if (doc.identity.nextPresentationSlideId === undefined) {
     const bytes = sourcePart(doc, 'ppt/presentation.xml');
     if (!bytes) throw new Error('PPTX 缺少 ppt/presentation.xml');
     const xml = decoder.decode(bytes);
-    doc.identity.nextPresentationSlideId = Math.max(255,
-      maximum(xml, /<(?:[A-Za-z_][\w.-]*:)?sldId\b[^>]*\bid\s*=\s*["'](\d+)["']/g)) + 1;
+    doc.identity.nextPresentationSlideId = Math.max(255, maximum(xml, /<(?:[A-Za-z_][\w.-]*:)?sldId\b[^>]*\bid\s*=\s*["'](\d+)["']/g)) + 1;
   }
   if (doc.identity.nextPresentationRelationship === undefined) {
     const bytes = sourcePart(doc, 'ppt/_rels/presentation.xml.rels');
@@ -56,26 +61,25 @@ export function allocateSlideOpcIdentity(doc: EditDoc): {
   presentationRelationshipId: string;
 } {
   initializeOpcIdentity(doc);
-  const partNumber = allocateIdentityRange(
-    doc.identity, 'slidePart', doc.identity.nextSlidePart!,
-  ) ?? doc.identity.nextSlidePart!++;
-  const presentationSlideId = allocateIdentityRange(
-    doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID,
-  ) ?? doc.identity.nextPresentationSlideId!++;
-  const relationshipNumber = allocateIdentityRange(
-    doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!,
-  ) ?? doc.identity.nextPresentationRelationship!++;
+  const partNumber = allocateIdentityRange(doc.identity, 'slidePart', doc.identity.nextSlidePart!) ?? doc.identity.nextSlidePart!++;
+  const presentationSlideId =
+    allocateIdentityRange(doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID)
+    ?? doc.identity.nextPresentationSlideId!++;
+  const relationshipNumber =
+    allocateIdentityRange(doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!)
+    ?? doc.identity.nextPresentationRelationship!++;
   doc.identity.nextSlidePart = Math.max(doc.identity.nextSlidePart!, partNumber + 1);
-  doc.identity.nextPresentationSlideId = Math.max(
-    doc.identity.nextPresentationSlideId!, presentationSlideId + 1,
-  );
-  doc.identity.nextPresentationRelationship = Math.max(
-    doc.identity.nextPresentationRelationship!, relationshipNumber + 1,
-  );
-  if (!Number.isSafeInteger(partNumber) || partNumber <= 0
-    || !Number.isSafeInteger(presentationSlideId) || presentationSlideId < 256
+  doc.identity.nextPresentationSlideId = Math.max(doc.identity.nextPresentationSlideId!, presentationSlideId + 1);
+  doc.identity.nextPresentationRelationship = Math.max(doc.identity.nextPresentationRelationship!, relationshipNumber + 1);
+  if (
+    !Number.isSafeInteger(partNumber)
+    || partNumber <= 0
+    || !Number.isSafeInteger(presentationSlideId)
+    || presentationSlideId < 256
     || presentationSlideId > MAX_PRESENTATION_SLIDE_ID
-    || !Number.isSafeInteger(relationshipNumber) || relationshipNumber <= 0) {
+    || !Number.isSafeInteger(relationshipNumber)
+    || relationshipNumber <= 0
+  ) {
     throw new Error('演示文稿的新增页身份已耗尽');
   }
   return {
@@ -89,18 +93,20 @@ export function allocateNotesPart(doc: EditDoc): string {
   initializeOpcIdentity(doc);
   if (doc.identity.nextNotesPart === undefined) {
     const parts = [
-      ...Object.keys(doc.package!.parts), ...Object.keys(doc.saveState.baselines),
-      ...Object.values(doc.slides).flatMap((slide) =>
-      slide.creation?.duplicateNotesPart ? [slide.creation.duplicateNotesPart] : [])];
-    const highest = Math.max(0, ...parts.flatMap((part) => {
-      const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
-      return match ? [Number(match[1])] : [];
-    }));
+      ...Object.keys(doc.package!.parts),
+      ...Object.keys(doc.saveState.baselines),
+      ...Object.values(doc.slides).flatMap((slide) => (slide.creation?.duplicateNotesPart ? [slide.creation.duplicateNotesPart] : [])),
+    ];
+    const highest = Math.max(
+      0,
+      ...parts.flatMap((part) => {
+        const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
+        return match ? [Number(match[1])] : [];
+      }),
+    );
     doc.identity.nextNotesPart = highest + 1;
   }
-  const partNumber = allocateIdentityRange(
-    doc.identity, 'notesPart', doc.identity.nextNotesPart,
-  ) ?? doc.identity.nextNotesPart++;
+  const partNumber = allocateIdentityRange(doc.identity, 'notesPart', doc.identity.nextNotesPart) ?? doc.identity.nextNotesPart++;
   doc.identity.nextNotesPart = Math.max(doc.identity.nextNotesPart, partNumber + 1);
   if (!Number.isSafeInteger(partNumber) || partNumber <= 0) throw new Error('演示文稿的备注身份已耗尽');
   return `ppt/notesSlides/notesSlide${partNumber}.xml`;
@@ -110,23 +116,22 @@ export function allocateNotesPart(doc: EditDoc): string {
 export function prepareSlideOpcNamespaces(doc: EditDoc): void {
   initializeOpcIdentity(doc);
   ensureIdentityRange(doc.identity, 'slidePart', doc.identity.nextSlidePart!);
-  ensureIdentityRange(
-    doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID,
-  );
-  ensureIdentityRange(
-    doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!,
-  );
+  ensureIdentityRange(doc.identity, 'presentationSlideId', doc.identity.nextPresentationSlideId!, MAX_PRESENTATION_SLIDE_ID);
+  ensureIdentityRange(doc.identity, 'presentationRelationship', doc.identity.nextPresentationRelationship!);
   let firstNotesPart = doc.identity.nextNotesPart;
   if (firstNotesPart === undefined) {
     const parts = [
-      ...Object.keys(doc.package!.parts), ...Object.keys(doc.saveState.baselines),
-      ...Object.values(doc.slides).flatMap((slide) =>
-        slide.notes ? [slide.notes.targetPart] : []),
+      ...Object.keys(doc.package!.parts),
+      ...Object.keys(doc.saveState.baselines),
+      ...Object.values(doc.slides).flatMap((slide) => (slide.notes ? [slide.notes.targetPart] : [])),
     ];
-    const highest = Math.max(0, ...parts.flatMap((part) => {
-      const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
-      return match ? [Number(match[1])] : [];
-    }));
+    const highest = Math.max(
+      0,
+      ...parts.flatMap((part) => {
+        const match = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(part);
+        return match ? [Number(match[1])] : [];
+      }),
+    );
     firstNotesPart = highest + 1;
   }
   // 预留区间不等于消费身份；保持 undefined，恢复验真才能区分“已准备”与“已新增备注”。
@@ -146,24 +151,18 @@ export function presentationSlideIdsByPart(doc: EditDoc): ReadonlyMap<string, nu
   const presentationBytes = sourcePart(doc, 'ppt/presentation.xml');
   if (!relsBytes || !presentationBytes) return result;
   const partByRelationship = new Map<string, string>();
-  for (const relationship of xmlElementChildren(
-    parseXmlTree(relsBytes).root, { localName: 'Relationship' },
-  )) {
+  for (const relationship of xmlElementChildren(parseXmlTree(relsBytes).root, { localName: 'Relationship' })) {
     const target = findXmlAttribute(relationship, { localName: 'Target', namespaceUri: null })?.value;
     const mode = findXmlAttribute(relationship, { localName: 'TargetMode', namespaceUri: null })?.value;
     const type = findXmlAttribute(relationship, { localName: 'Type', namespaceUri: null })?.value;
-    if (target && mode !== 'External' && type?.endsWith('/slide')
-    ) {
+    if (target && mode !== 'External' && type?.endsWith('/slide')) {
       const rid = findXmlAttribute(relationship, { localName: 'Id', namespaceUri: null })?.value;
-      if (rid) partByRelationship.set(
-        rid, resolveRelationshipTarget('ppt/presentation.xml', target),
-      );
+      if (rid) partByRelationship.set(rid, resolveRelationshipTarget('ppt/presentation.xml', target));
     }
   }
   const presentation = parseXmlTree(presentationBytes).root;
   const list = findXmlChild(presentation, { localName: 'sldIdLst', namespaceUri: PRESENTATIONML_NS });
-  for (const node of list
-    ? xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS }) : []) {
+  for (const node of list ? xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS }) : []) {
     const rid = findXmlAttribute(node, { localName: 'id', namespaceUri: OFFICE_REL_NS })?.value;
     const part = rid ? partByRelationship.get(rid) : undefined;
     const value = Number(findXmlAttribute(node, { localName: 'id', namespaceUri: null })?.value);

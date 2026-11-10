@@ -4,9 +4,14 @@ import type { EditDoc, ElementId } from '../types';
 import type { ElementOrderPatch, Patch } from './types';
 
 export function isElementOrderPatch(patch: Patch): patch is ElementOrderPatch {
-  return Array.isArray(patch.path) && patch.path.length === 3
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'order' && (patch.op === 'set' || patch.op === 'del');
+  return (
+    Array.isArray(patch.path)
+    && patch.path.length === 3
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'order'
+    && (patch.op === 'set' || patch.op === 'del')
+  );
 }
 
 export function validateElementOrderPatch(doc: EditDoc, patch: ElementOrderPatch, index: number): void {

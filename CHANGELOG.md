@@ -7,6 +7,12 @@
 - 包之间的 peer 依赖改为精确版本（例如 `@web-ppt/editor@0.8.1` 要求 `@web-ppt/core@0.8.1`）：九个包必须同版本，混装时 npm 在安装阶段报告冲突，不再到运行时才出错。
 - 修复发布声明文件的 3 处相对导入（`@web-ppt/core` 的 `pptx/geometry`、`@web-ppt/edit-core` 的 `templates` 与 `lint`）被 TypeScript 解析到无类型的 JS 产物：`CreateBlankPptxOptions`、`PresentationDescription` 等类型在宿主侧不再退化为 `any`，关闭 `skipLibCheck` 时也不再报 TS7016。
 - 全部包声明 `engines.node >= 22`。Node 20 已于 2026-04-30 停止维护，CI 改为在 Node 22 与 24 上验证；浏览器端用法不受影响。
+- 构建工具由 Vite 5.4 升级到 Vite 8.3：打包改用 Rolldown，转译与压缩改用 Oxc。公开 API、入口文件名和 `exports` 指向的路径均不变，发布产物的字节随之变化：
+  - 默认入口及其相对静态分块的 gzip 体积：core 138.01 → 135.69KB、edit-core 186.67 → 172.93KB、editor 59.56 → 57.35KB、collab 12.20 → 11.35KB、viewer-core 14.09 → 11.18KB、fonts 3.44 → 2.87KB、agent-mcp 3.10 → 3.05KB、vue 1.34 → 1.31KB、react 1.12 → 1.17KB。
+  - 按需入口大多减小；`@web-ppt/core/geometry/handles` 增加 4.4%（20.44 → 21.33KB），原因是保留空白的库产物中数组改为逐行排版。
+  - 共享分块重新拆分：`@web-ppt/core/geometry` 入口变为转发文件，实现在与默认入口共用的共享分块中；edit-core 共享分块的文件名随之改变。分块文件名不属于公开接口，请始终通过 `exports` 子路径导入。
+  - 产物格式：`@__PURE__` 标注与 JSDoc 注释保留，普通注释删除；缩进改为制表符，模块边界处增加源文件路径注释（如 `// src/geometry/guides.ts`）。
+  - 在仓库内开发需要 Node 22.12+（Vite 8 的要求）；发布包的运行环境要求不变。
 
 ## 0.8.0 - 2026-11-06
 

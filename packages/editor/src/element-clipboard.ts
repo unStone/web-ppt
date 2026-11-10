@@ -1,6 +1,4 @@
-import {
-  outermostSelectedElementIds, slideOfElement,
-} from '@web-ppt/edit-core';
+import { outermostSelectedElementIds, slideOfElement } from '@web-ppt/edit-core';
 import type { Editor, ElementClipboardPayload, ElementId, SlideId } from '@web-ppt/edit-core';
 import { shouldYieldClipboardEvent, shouldYieldKeyboardEvent } from './keyboard-owner';
 
@@ -19,28 +17,35 @@ interface ElementClipboardOptions {
 export class ElementClipboardController {
   private readonly options: ElementClipboardOptions;
 
-  constructor(options: ElementClipboardOptions) { this.options = options; }
+  constructor(options: ElementClipboardOptions) {
+    this.options = options;
+  }
 
   private report(error: unknown): void {
     const reporter = this.options.onError ?? globalThis.reportError;
     try {
       if (reporter) reporter(error);
       else console.error('元素剪贴板操作失败', error);
-    } catch { /* 宿主反馈失败不能逃出同步剪贴板事件。 */ }
+    } catch {
+      /* 宿主反馈失败不能逃出同步剪贴板事件。 */
+    }
   }
 
-  copy(event: ClipboardEvent): void { this.write(event, false); }
-  cut(event: ClipboardEvent): void { this.write(event, true); }
+  copy(event: ClipboardEvent): void {
+    this.write(event, false);
+  }
+  cut(event: ClipboardEvent): void {
+    this.write(event, true);
+  }
 
   paste(event: ClipboardEvent): void {
     if (this.shouldYieldBase(event)) return;
     const json = event.clipboardData?.getData(ELEMENT_CLIPBOARD_MIME);
     if (!json) {
-      const image = [...(event.clipboardData?.files ?? [])].find((file) =>
-        file.type.startsWith('image/'));
+      const image = [...(event.clipboardData?.files ?? [])].find((file) => file.type.startsWith('image/'));
       if (!image) return;
       event.preventDefault();
-      void this.options.insertImage(image).catch(error => this.report(error));
+      void this.options.insertImage(image).catch((error) => this.report(error));
       return;
     }
     event.preventDefault();
@@ -53,8 +58,16 @@ export class ElementClipboardController {
   }
 
   duplicate(event: KeyboardEvent): boolean {
-    if (event.ctrlKey === event.metaKey || event.altKey || event.shiftKey || event.repeat || event.key.toLowerCase() !== 'd'
-      || !this.options.editable() || this.options.gestureActive() || shouldYieldKeyboardEvent(event)) {
+    if (
+      event.ctrlKey === event.metaKey
+      || event.altKey
+      || event.shiftKey
+      || event.repeat
+      || event.key.toLowerCase() !== 'd'
+      || !this.options.editable()
+      || this.options.gestureActive()
+      || shouldYieldKeyboardEvent(event)
+    ) {
       return false;
     }
     const selection = this.selectedRoots();
@@ -71,9 +84,13 @@ export class ElementClipboardController {
 
   private shouldYieldBase(event: ClipboardEvent): boolean {
     const selection = this.options.editor.selection;
-    return !this.options.editable() || this.options.gestureActive()
-      || selection.kind === 'text' || selection.kind === 'table'
-      || shouldYieldClipboardEvent(event);
+    return (
+      !this.options.editable()
+      || this.options.gestureActive()
+      || selection.kind === 'text'
+      || selection.kind === 'table'
+      || shouldYieldClipboardEvent(event)
+    );
   }
 
   private selectedRoots(): ElementId[] {
@@ -106,10 +123,13 @@ export class ElementClipboardController {
   private pastePayload(payload: ElementClipboardPayload): void {
     const selection = this.options.editor.selection;
     const enteredGroup = selection.kind === 'elements' ? selection.enteredGroup : null;
-    const parentId = enteredGroup && slideOfElement(this.options.editor.doc, enteredGroup) === this.options.slideId()
-      ? enteredGroup : this.options.slideId();
+    const parentId =
+      enteredGroup && slideOfElement(this.options.editor.doc, enteredGroup) === this.options.slideId()
+        ? enteredGroup
+        : this.options.slideId();
     this.options.editor.exec({
-      type: 'PasteElements', payload,
+      type: 'PasteElements',
+      payload,
       at: { parentId, x: payload.bounds.left + 10, y: payload.bounds.top + 10 },
     });
   }

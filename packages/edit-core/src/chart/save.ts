@@ -12,7 +12,7 @@ import { sharedChartRuntime } from './shared-runtime';
 const NS = 'chart-data';
 
 function storedState(doc: EditDoc, id: string): ChartDatasetState | null {
-  return doc.elements[id]?.ovr.extensions?.[NS] as ChartDatasetState | undefined ?? null;
+  return (doc.elements[id]?.ovr.extensions?.[NS] as ChartDatasetState | undefined) ?? null;
 }
 
 /** 图表和工作簿先形成一个 OPC 原子提交，普通保存随后只处理其余 part。 */
@@ -60,8 +60,13 @@ export function saveChartDatasets(doc: EditDoc): EditExtensionSavePlan | void {
       throw new Error(materializedState.binding.reason ?? '图表数据只读');
     }
     changes[part] = serializeXmlTreeBytes(
-      materializeChartTree(chartBaseline, record.id, materializedState, chartFrameKey(doc, record.id),
-        sharedChartRuntime()?.identityScopes?.(doc, part, chartBaseline, record.id)),
+      materializeChartTree(
+        chartBaseline,
+        record.id,
+        materializedState,
+        chartFrameKey(doc, record.id),
+        sharedChartRuntime()?.identityScopes?.(doc, part, chartBaseline, record.id),
+      ),
     );
   }
   if (!Reflect.ownKeys(changes).length) return;

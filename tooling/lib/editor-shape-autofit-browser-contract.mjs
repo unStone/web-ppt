@@ -5,7 +5,10 @@ function caretAtEnd(root) {
   const walker = document.createTreeWalker(marker, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   let last = node;
-  while (node) { last = node; node = walker.nextNode(); }
+  while (node) {
+    last = node;
+    node = walker.nextNode();
+  }
   const range = document.createRange();
   range.setStart(last ?? marker, last?.textContent.length ?? marker.childNodes.length);
   range.collapse(true);
@@ -13,8 +16,7 @@ function caretAtEnd(root) {
   getSelection().addRange(range);
 }
 
-const percentile95 = (samples) => [...samples]
-  .sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
+const percentile95 = (samples) => [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
 function frameError(mount, session, record) {
   const element = session.editor.effectiveElement(record.id);
@@ -24,31 +26,45 @@ function frameError(mount, session, record) {
   const targetMatrix = base?.getScreenCTM();
   const overlayMatrix = outline?.getScreenCTM();
   if (!targetMatrix || !overlayMatrix) throw new Error('spAutoFit 无法取得静态形状或选框矩阵');
-  const expected = [[0, 0], [element.w, 0], [element.w, element.h], [0, element.h]]
-    .map(([x, y]) => new DOMPoint(x, y).matrixTransform(targetMatrix));
-  const actual = outline.getAttribute('points').trim().split(/\s+/).map((pair) => {
-    const [x, y] = pair.split(',').map(Number);
-    return new DOMPoint(x, y).matrixTransform(overlayMatrix);
-  });
-  return Math.max(...actual.map((point, index) =>
-    Math.hypot(point.x - expected[index].x, point.y - expected[index].y)));
+  const expected = [
+    [0, 0],
+    [element.w, 0],
+    [element.w, element.h],
+    [0, element.h],
+  ].map(([x, y]) => new DOMPoint(x, y).matrixTransform(targetMatrix));
+  const actual = outline
+    .getAttribute('points')
+    .trim()
+    .split(/\s+/)
+    .map((pair) => {
+      const [x, y] = pair.split(',').map(Number);
+      return new DOMPoint(x, y).matrixTransform(overlayMatrix);
+    });
+  return Math.max(...actual.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)));
 }
 
 async function measure({ openEditor, bytes, textMode }) {
   const session = await openEditor(bytes, { idPrefix: `browser-shape-autofit-${textMode}-` });
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === 'sp-autofit-rotated');
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'sp-autofit-rotated');
   const mount = document.createElement('div');
   mount.className = 'contract-offscreen';
   document.body.append(mount);
   const view = session.mount(mount, { mode: 'edit', textMode });
-  mount.querySelector(`[data-edit-id="${record.id}"]`).dispatchEvent(
-    new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }),
-  );
+  mount
+    .querySelector(`[data-edit-id="${record.id}"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
   const samples = [];
   const state = {
-    prevented: true, height: true, partition: true, caret: true, selection: true,
-    monotonic: true, grew: false, heightError: 0, heightSample: '', frameError: 0,
+    prevented: true,
+    height: true,
+    partition: true,
+    caret: true,
+    selection: true,
+    monotonic: true,
+    grew: false,
+    heightError: 0,
+    heightSample: '',
+    frameError: 0,
   };
   const sourceHeight = session.editor.effectiveElement(record.id).h;
   let previousHeight = session.editor.effectiveElement(record.id).h;
@@ -58,7 +74,11 @@ async function measure({ openEditor, bytes, textMode }) {
     const partition = mount.querySelector(`[data-edit-id="${record.id}"]`);
     const started = performance.now();
     const event = new InputEvent('beforeinput', {
-      inputType: 'insertText', data: '增', bubbles: true, composed: true, cancelable: true,
+      inputType: 'insertText',
+      data: '增',
+      bubbles: true,
+      composed: true,
+      cancelable: true,
     });
     editable.dispatchEvent(event);
     editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
@@ -83,15 +103,20 @@ async function measure({ openEditor, bytes, textMode }) {
   }
   state.grew = previousHeight > sourceHeight;
   const editable = mount.querySelector('[data-ppt-text-editor]');
-  editable.dispatchEvent(new KeyboardEvent('keydown', {
-    key: 'Escape', bubbles: true, composed: true, cancelable: true,
-  }));
+  editable.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    }),
+  );
   const error = frameError(mount, session, record);
   const result = {
     p95: percentile95(samples),
-    synchronous: state.prevented && state.height && state.partition && state.caret && state.selection
-      && state.monotonic && state.grew,
-    error, state,
+    synchronous: state.prevented && state.height && state.partition && state.caret && state.selection && state.monotonic && state.grew,
+    error,
+    state,
   };
   view.destroy();
   session.dispose();
@@ -106,8 +131,9 @@ export async function runEditorShapeAutofitBrowserContract({ openEditor, load })
   const engine = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'svg' });
   for (const [mode, result] of Object.entries({ browser, engine })) {
     if (!result.synchronous || result.error > 0.5) {
-      throw new Error(`${mode} spAutoFit 功能失败：同步=${result.synchronous}/`
-        + `${JSON.stringify(result.state)} frame=${result.error.toFixed(3)}px`);
+      throw new Error(
+        `${mode} spAutoFit 功能失败：同步=${result.synchronous}/` + `${JSON.stringify(result.state)} frame=${result.error.toFixed(3)}px`,
+      );
     }
     recordPerformanceBudget(`${mode} spAutoFit p95`, result.p95, 30);
   }

@@ -1,23 +1,30 @@
 import type { Fill, ImageTilePlacement, Transition } from '@web-ppt/core';
 import type { SlideTransitionInput } from '../slide-transition';
 import type {
-  DesignTarget, EditAnimationStep, ImageCrop, LayoutDesignTarget, SlideId, SlideImageBackground,
+  DesignTarget,
+  EditAnimationStep,
+  ImageCrop,
+  LayoutDesignTarget,
+  SlideId,
+  SlideImageBackground,
   SlideNotesBinding,
 } from '../types';
 
-export type SetBackgroundCommand = {
-  readonly type: 'SetBackground';
-  readonly id: SlideId;
-  readonly target?: never;
-  /** null 恢复来源；显式无背景使用 { type: 'none' }。 */
-  readonly fill: Exclude<Fill, { type: 'image' }> | null;
-} | {
-  readonly type: 'SetBackground';
-  readonly target: DesignTarget;
-  readonly id?: never;
-  /** null 恢复来源；版式背景不接受图片，避免隐式扩张 OPC 资源闭包。 */
-  readonly fill: Exclude<Fill, { type: 'image' }> | null;
-};
+export type SetBackgroundCommand =
+  | {
+      readonly type: 'SetBackground';
+      readonly id: SlideId;
+      readonly target?: never;
+      /** null 恢复来源；显式无背景使用 { type: 'none' }。 */
+      readonly fill: Exclude<Fill, { type: 'image' }> | null;
+    }
+  | {
+      readonly type: 'SetBackground';
+      readonly target: DesignTarget;
+      readonly id?: never;
+      /** null 恢复来源；版式背景不接受图片，避免隐式扩张 OPC 资源闭包。 */
+      readonly fill: Exclude<Fill, { type: 'image' }> | null;
+    };
 
 export interface SetBackgroundImageCommand {
   readonly type: 'SetBackgroundImage';
@@ -44,18 +51,20 @@ export interface SetHiddenCommand {
   readonly v: boolean | null;
 }
 
-export type SetTransitionCommand = {
-  readonly type: 'SetTransition';
-  readonly id: SlideId;
-  readonly target?: never;
-  /** null 恢复来源；type=none 明确关闭切换。 */
-  readonly t: SlideTransitionInput | null;
-} | {
-  readonly type: 'SetTransition';
-  readonly target: LayoutDesignTarget;
-  readonly id?: never;
-  readonly t: SlideTransitionInput | null;
-};
+export type SetTransitionCommand =
+  | {
+      readonly type: 'SetTransition';
+      readonly id: SlideId;
+      readonly target?: never;
+      /** null 恢复来源；type=none 明确关闭切换。 */
+      readonly t: SlideTransitionInput | null;
+    }
+  | {
+      readonly type: 'SetTransition';
+      readonly target: LayoutDesignTarget;
+      readonly id?: never;
+      readonly t: SlideTransitionInput | null;
+    };
 
 export interface SetAnimationsCommand {
   readonly type: 'SetAnimations';
@@ -76,126 +85,152 @@ export interface SetNotesCommand {
   readonly text: string;
 }
 
-export type SlideNotesPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
-  readonly origin: string;
-} | {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'notes'];
-  readonly value: SlideNotesBinding;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'notes'];
-  readonly origin: string;
-};
+export type SlideNotesPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'notes'];
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'notes'];
+      readonly value: SlideNotesBinding;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'notes'];
+      readonly origin: string;
+    };
 
-export type SlideLayoutPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'layoutId'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'layoutId'];
-  readonly origin: string;
-};
+export type SlideLayoutPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'layoutId'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'layoutId'];
+      readonly origin: string;
+    };
 
-export type SlideBackgroundPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
-  readonly value: Fill;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
-  readonly origin: string;
-};
+export type SlideBackgroundPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
+      readonly value: Fill;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'background'];
+      readonly origin: string;
+    };
 
-export type SlideBackgroundImagePatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'backgroundImage'];
-  readonly value: SlideImageBackground;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'backgroundImage'];
-  readonly origin: string;
-};
+export type SlideBackgroundImagePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'backgroundImage'];
+      readonly value: SlideImageBackground;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'backgroundImage'];
+      readonly origin: string;
+    };
 
-export type SlideHiddenPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'hidden'];
-  readonly value: boolean;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'hidden'];
-  readonly origin: string;
-};
+export type SlideHiddenPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'hidden'];
+      readonly value: boolean;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'hidden'];
+      readonly origin: string;
+    };
 
-export type SlideTransitionPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
-  readonly value: Transition;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
-  readonly origin: string;
-};
+export type SlideTransitionPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
+      readonly value: Transition;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'transition'];
+      readonly origin: string;
+    };
 
-export type SlideAnimationsPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
-  readonly value: readonly EditAnimationStep[];
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
-  readonly origin: string;
-};
+export type SlideAnimationsPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
+      readonly value: readonly EditAnimationStep[];
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['slides', SlideId, 'ovr', 'animations'];
+      readonly origin: string;
+    };
 
-export type SlidePropertyPatch = SlideBackgroundPatch | SlideBackgroundImagePatch | SlideHiddenPatch
-  | SlideTransitionPatch | SlideAnimationsPatch;
+export type SlidePropertyPatch =
+  | SlideBackgroundPatch
+  | SlideBackgroundImagePatch
+  | SlideHiddenPatch
+  | SlideTransitionPatch
+  | SlideAnimationsPatch;
 
-export type LayoutBackgroundPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['layouts', string, 'ovr', 'background'];
-  readonly value: Exclude<Fill, { type: 'image' }>;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['layouts', string, 'ovr', 'background'];
-  readonly origin: string;
-};
+export type LayoutBackgroundPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['layouts', string, 'ovr', 'background'];
+      readonly value: Exclude<Fill, { type: 'image' }>;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['layouts', string, 'ovr', 'background'];
+      readonly origin: string;
+    };
 
-export type LayoutTransitionPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['layouts', string, 'ovr', 'transition'];
-  readonly value: Transition;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['layouts', string, 'ovr', 'transition'];
-  readonly origin: string;
-};
+export type LayoutTransitionPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['layouts', string, 'ovr', 'transition'];
+      readonly value: Transition;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['layouts', string, 'ovr', 'transition'];
+      readonly origin: string;
+    };
 
 export type LayoutPropertyPatch = LayoutBackgroundPatch | LayoutTransitionPatch;
 
-export type MasterBackgroundPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['masters', string, 'ovr', 'background'];
-  readonly value: Exclude<Fill, { type: 'image' }>;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['masters', string, 'ovr', 'background'];
-  readonly origin: string;
-};
+export type MasterBackgroundPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['masters', string, 'ovr', 'background'];
+      readonly value: Exclude<Fill, { type: 'image' }>;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['masters', string, 'ovr', 'background'];
+      readonly origin: string;
+    };

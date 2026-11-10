@@ -7,20 +7,36 @@ import { attr, boolAttr, kid, kids, numAttr, walk } from '../xml';
 import { EMPTY_LN, LnSpec, accentColor, formatNumber, parseFill, parseLn, px, themeColor } from './util';
 
 export type PlotKind =
-  | 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'scatter' | 'radar'
-  | 'bubble' | 'stock' | 'ofPie' | 'surface' | 'other';
+  | 'bar'
+  | 'line'
+  | 'pie'
+  | 'doughnut'
+  | 'area'
+  | 'scatter'
+  | 'radar'
+  | 'bubble'
+  | 'stock'
+  | 'ofPie'
+  | 'surface'
+  | 'other';
 
 const GROUP_TAGS: Record<string, PlotKind> = {
-  barChart: 'bar', bar3DChart: 'bar',
-  lineChart: 'line', line3DChart: 'line',
+  barChart: 'bar',
+  bar3DChart: 'bar',
+  lineChart: 'line',
+  line3DChart: 'line',
   stockChart: 'stock',
-  pieChart: 'pie', pie3DChart: 'pie',
+  pieChart: 'pie',
+  pie3DChart: 'pie',
   ofPieChart: 'ofPie',
   doughnutChart: 'doughnut',
-  areaChart: 'area', area3DChart: 'area',
-  scatterChart: 'scatter', bubbleChart: 'bubble',
+  areaChart: 'area',
+  area3DChart: 'area',
+  scatterChart: 'scatter',
+  bubbleChart: 'bubble',
   radarChart: 'radar',
-  surfaceChart: 'surface', surface3DChart: 'surface',
+  surfaceChart: 'surface',
+  surface3DChart: 'surface',
 };
 
 /** 值 × 值 坐标系（xVal/yVal）的图种 */
@@ -139,8 +155,16 @@ export interface DLblSpec {
 }
 
 const NO_LBL: DLblSpec = {
-  del: true, showVal: false, showCat: false, showSer: false, showPercent: false, showSize: false,
-  fmt: null, pos: null, size: null, color: null,
+  del: true,
+  showVal: false,
+  showCat: false,
+  showSer: false,
+  showPercent: false,
+  showSize: false,
+  fmt: null,
+  pos: null,
+  size: null,
+  color: null,
 };
 
 function parseDLbls(el: Element | null, ctx: ColorCtx, parent: DLblSpec): DLblSpec {
@@ -163,8 +187,7 @@ function parseDLbls(el: Element | null, ctx: ColorCtx, parent: DLblSpec): DLblSp
   return spec;
 }
 
-export const labelVisible = (l: DLblSpec): boolean =>
-  !l.del && (l.showVal || l.showCat || l.showSer || l.showPercent || l.showSize);
+export const labelVisible = (l: DLblSpec): boolean => !l.del && (l.showVal || l.showCat || l.showSer || l.showPercent || l.showSize);
 
 // ---------- 系列 ----------
 
@@ -314,8 +337,7 @@ export interface PlotGroup {
   bandFills: Map<number, Fill>;
 }
 
-export const isStacked = (g: PlotGroup): boolean =>
-  g.grouping === 'stacked' || g.grouping === 'percentStacked';
+export const isStacked = (g: PlotGroup): boolean => g.grouping === 'stacked' || g.grouping === 'percentStacked';
 
 function parseUpDown(el: Element | null, ctx: ColorCtx): UpDownBars | null {
   if (!el) return null;
@@ -409,15 +431,33 @@ export interface Axis {
 }
 
 const AXIS_TAGS: Record<string, Axis['kind']> = {
-  catAx: 'cat', valAx: 'val', dateAx: 'date', serAx: 'ser',
+  catAx: 'cat',
+  valAx: 'val',
+  dateAx: 'date',
+  serAx: 'ser',
 };
 
 export function defaultAxis(kind: Axis['kind']): Axis {
   return {
-    id: '', kind, del: false, pos: null, crosses: null, crossAx: '', crossBetween: 'between',
-    min: null, max: null, majorUnit: null, reversed: false, fmt: null,
-    majorGrid: null, line: { ...EMPTY_LN }, tickLblPos: 'nextTo', majorTick: 'out',
-    lblSize: null, lblColor: null, title: null,
+    id: '',
+    kind,
+    del: false,
+    pos: null,
+    crosses: null,
+    crossAx: '',
+    crossBetween: 'between',
+    min: null,
+    max: null,
+    majorUnit: null,
+    reversed: false,
+    fmt: null,
+    majorGrid: null,
+    line: { ...EMPTY_LN },
+    tickLblPos: 'nextTo',
+    majorTick: 'out',
+    lblSize: null,
+    lblColor: null,
+    title: null,
   };
 }
 
@@ -469,7 +509,10 @@ function parseLayout(el: Element | null): ManualLayout | null {
   const get = (name: string): number | null => numChild(man, name);
   const out: ManualLayout = {
     target: strChild(man, 'layoutTarget') ?? 'outer',
-    x: get('x'), y: get('y'), w: get('w'), h: get('h'),
+    x: get('x'),
+    y: get('y'),
+    w: get('w'),
+    h: get('h'),
   };
   if (out.x === null && out.y === null && out.w === null && out.h === null) return null;
   return out;
@@ -569,7 +612,7 @@ export function parseModel(root: Element, ctx: ColorCtx): ChartModel {
     titleSize: titleStyle.size ?? titleTxPr.size ?? px(14),
     titleColor: titleStyle.color ?? titleTxPr.color,
     titleBold: titleStyle.bold || titleTxPr.bold,
-    legendPos: legend ? strChild(legend, 'legendPos') ?? 'r' : null,
+    legendPos: legend ? (strChild(legend, 'legendPos') ?? 'r') : null,
     legendOverlay: boolChild(legend, 'overlay', false),
     legendDeleted,
     groups,

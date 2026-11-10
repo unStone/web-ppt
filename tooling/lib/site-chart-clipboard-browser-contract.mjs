@@ -4,7 +4,8 @@ import { openFixture, selectPaneObject, changeValue, captureSaveAndReopen } from
 export async function runSiteChartClipboardBrowserContract(context) {
   const { evaluate, waitFor, click } = context;
   const cell = '[data-chart-category="1"] input[type="number"]';
-  const chartRows = "[...document.querySelectorAll('[data-pane-element]')].filter(row => row.querySelector('[data-pane-name]')?.textContent === '图表')";
+  const chartRows =
+    "[...document.querySelectorAll('[data-pane-element]')].filter(row => row.querySelector('[data-pane-name]')?.textContent === '图表')";
   await openFixture(context, '/fixtures/sample-chart-shared.pptx', 'clipboard-chart-source.pptx');
   await click('#editMode');
   await selectPaneObject(context, '图表');
@@ -33,7 +34,10 @@ export async function runSiteChartClipboardBrowserContract(context) {
   })()`);
   await waitFor(`${chartRows}.length === ${count + 1}`, '匹配当前原生资源的文稿接收图表');
   await evaluate(`${chartRows}.find(row => row.dataset.paneElement !== ${JSON.stringify(originalId)}).click()`);
-  await waitFor(`!document.querySelector('#chartInspector').hidden && document.querySelector('${cell}')?.value === '671'`, '粘贴图表立即显示数据网格');
+  await waitFor(
+    `!document.querySelector('#chartInspector').hidden && document.querySelector('${cell}')?.value === '671'`,
+    '粘贴图表立即显示数据网格',
+  );
   assert.equal(await evaluate("document.querySelectorAll('[data-chart-category]').length"), 6);
   await changeValue(context, cell, '782');
   await evaluate(`${chartRows}.find(row => row.dataset.paneElement === ${JSON.stringify(originalId)}).click()`);
@@ -42,12 +46,16 @@ export async function runSiteChartClipboardBrowserContract(context) {
   await waitFor(`document.querySelector('${cell}')?.value === '671'`, '撤销粘贴图表的数据编辑');
   await click('#undo');
   await waitFor(`${chartRows}.length === ${count}`, '撤销图表粘贴');
-  await click('#redo'); await click('#redo');
+  await click('#redo');
+  await click('#redo');
   await captureSaveAndReopen(context, 'clipboard-chart-reopened.pptx');
   await click('#editMode');
   await waitFor(`${chartRows}.length === ${count + 1}`, '重开保留粘贴框架');
   await evaluate(`${chartRows}.at(-1).click()`);
-  await waitFor(`!document.querySelector('#chartInspector').hidden && document.querySelector('${cell}')?.value === '782'`, '粘贴、联动与历史保留到保存重开');
+  await waitFor(
+    `!document.querySelector('#chartInspector').hidden && document.querySelector('${cell}')?.value === '782'`,
+    '粘贴、联动与历史保留到保存重开',
+  );
   await openFixture(context, '/fixtures/sample-chart-shared.pptx', 'clipboard-obsolete-target.pptx');
   await click('#editMode');
   await evaluate(`(() => {
@@ -56,8 +64,15 @@ export async function runSiteChartClipboardBrowserContract(context) {
     data.setData('application/x-web-ppt-elements+json',globalThis.__chartClipboard);
     root.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));
   })()`);
-  await waitFor("document.querySelector('#statusText').dataset.tone === 'error' && document.querySelector('#statusText').textContent.includes('OPC')", '目标资源过期时显示原子拒绝原因');
+  await waitFor(
+    "document.querySelector('#statusText').dataset.tone === 'error' && document.querySelector('#statusText').textContent.includes('OPC')",
+    '目标资源过期时显示原子拒绝原因',
+  );
   assert.equal(await evaluate(`${chartRows}.length`), 1, '粘贴失败不增加图表框架');
-  assert.equal(await evaluate("document.querySelector('#fileName').textContent"), 'clipboard-obsolete-target.pptx', '失败不把文稿标为已修改');
+  assert.equal(
+    await evaluate("document.querySelector('#fileName').textContent"),
+    'clipboard-obsolete-target.pptx',
+    '失败不把文稿标为已修改',
+  );
   console.log('图表剪贴板：未保存结构编辑、跨文稿粘贴、即时网格、共享编辑、撤销重做与原生保存通过');
 }

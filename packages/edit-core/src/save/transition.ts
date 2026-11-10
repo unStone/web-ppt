@@ -1,13 +1,15 @@
 import type { Transition, TransitionType } from '@web-ppt/core';
 import {
-  cloneXmlNodeWithNamespaceClosure, createXmlElement, insertXmlChildUnchecked,
-  removeXmlChild, reorderXmlChildren, replaceXmlChildren,
+  cloneXmlNodeWithNamespaceClosure,
+  createXmlElement,
+  insertXmlChildUnchecked,
+  removeXmlChild,
+  reorderXmlChildren,
+  replaceXmlChildren,
 } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
-import {
-  MARKUP_COMPATIBILITY_NS, PRESENTATIONML_NS, POWERPOINT_2010_NS,
-} from '../xml/qname';
+import { MARKUP_COMPATIBILITY_NS, PRESENTATIONML_NS, POWERPOINT_2010_NS } from '../xml/qname';
 import { xmlElementChildren } from '../xml/query';
 import { elementState } from '../xml/state';
 import type { XmlDocument, XmlElement, XmlNode } from '../xml/types';
@@ -15,14 +17,49 @@ import { namespacedElement } from './xml-element';
 
 const POWERPOINT_2015_NS = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
 const EXTENDED = new Set<TransitionType>([
-  'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
-  'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
-  'doors', 'window', 'prism',
+  'vortex',
+  'switch',
+  'flip',
+  'ripple',
+  'honeycomb',
+  'glitter',
+  'warp',
+  'flythrough',
+  'flash',
+  'shred',
+  'reveal',
+  'wheelReverse',
+  'ferris',
+  'gallery',
+  'conveyor',
+  'pan',
+  'doors',
+  'window',
+  'prism',
 ]);
 const STANDARD_EFFECTS = new Set<string>([
-  'fade', 'cut', 'push', 'pull', 'cover', 'wipe', 'split', 'zoom', 'dissolve',
-  'checker', 'blinds', 'comb', 'wheel', 'circle', 'diamond', 'plus', 'wedge',
-  'newsflash', 'randomBar', 'strips', 'random', 'fadeThroughBlack',
+  'fade',
+  'cut',
+  'push',
+  'pull',
+  'cover',
+  'wipe',
+  'split',
+  'zoom',
+  'dissolve',
+  'checker',
+  'blinds',
+  'comb',
+  'wheel',
+  'circle',
+  'diamond',
+  'plus',
+  'wedge',
+  'newsflash',
+  'randomBar',
+  'strips',
+  'random',
+  'fadeThroughBlack',
 ]);
 
 const SUPPORTED_CHOICE_NAMESPACES = new Set([POWERPOINT_2010_NS, POWERPOINT_2015_NS]);
@@ -31,38 +68,29 @@ function speed(durationMs: number): string {
   return durationMs <= 625 ? 'fast' : durationMs <= 875 ? 'med' : 'slow';
 }
 
-function removeAttributes(
-  element: XmlElement,
-  predicate: (attribute: XmlElement['attributes'][number]) => boolean,
-): void {
+function removeAttributes(element: XmlElement, predicate: (attribute: XmlElement['attributes'][number]) => boolean): void {
   for (const attribute of [...element.attributes]) {
     if (predicate(attribute)) removeXmlAttribute(element, attribute.name);
   }
 }
 
 function effectNamespace(prefix: 'p' | 'p14' | 'p159'): string {
-  return prefix === 'p' ? PRESENTATIONML_NS
-    : prefix === 'p14' ? POWERPOINT_2010_NS : POWERPOINT_2015_NS;
+  return prefix === 'p' ? PRESENTATIONML_NS : prefix === 'p14' ? POWERPOINT_2010_NS : POWERPOINT_2015_NS;
 }
 
-function sourceEffect(
-  source: XmlElement | undefined,
-  type: TransitionType,
-  prefix: 'p' | 'p14' | 'p159',
-): XmlElement | undefined {
+function sourceEffect(source: XmlElement | undefined, type: TransitionType, prefix: 'p' | 'p14' | 'p159'): XmlElement | undefined {
   const namespace = effectNamespace(prefix);
-  return source && xmlElementChildren(source).find((child) =>
-    child.namespaceUri === namespace && publicEffectType(child) === type);
+  return source && xmlElementChildren(source).find((child) => child.namespaceUri === namespace && publicEffectType(child) === type);
 }
 
 function publicEffectType(element: XmlElement): TransitionType | undefined {
   if (element.namespaceUri === PRESENTATIONML_NS) {
     if (element.localName === 'random') return 'dissolve';
     if (element.localName === 'fadeThroughBlack') return 'fade';
-    return STANDARD_EFFECTS.has(element.localName) ? element.localName as TransitionType : undefined;
+    return STANDARD_EFFECTS.has(element.localName) ? (element.localName as TransitionType) : undefined;
   }
-  if (element.namespaceUri === POWERPOINT_2010_NS
-    && EXTENDED.has(element.localName as TransitionType)) return element.localName as TransitionType;
+  if (element.namespaceUri === POWERPOINT_2010_NS && EXTENDED.has(element.localName as TransitionType))
+    return element.localName as TransitionType;
   if (element.namespaceUri === POWERPOINT_2015_NS && element.localName === 'morph') return 'morph';
   return undefined;
 }
@@ -71,18 +99,10 @@ function isManagedEffect(element: XmlElement): boolean {
   return publicEffectType(element) !== undefined;
 }
 
-function effectElement(
-  value: Transition,
-  prefix: 'p' | 'p14' | 'p159',
-  parent: XmlElement,
-  source?: XmlElement,
-): XmlElement {
+function effectElement(value: Transition, prefix: 'p' | 'p14' | 'p159', parent: XmlElement, source?: XmlElement): XmlElement {
   const previous = sourceEffect(source, value.type, prefix);
-  const effect = previous
-    ? cloneXmlNodeWithNamespaceClosure(previous)
-    : namespacedElement(parent, effectNamespace(prefix), value.type);
-  removeAttributes(effect, (attribute) =>
-    attribute.namespaceUri === null && ['dir', 'orient', 'option'].includes(attribute.localName));
+  const effect = previous ? cloneXmlNodeWithNamespaceClosure(previous) : namespacedElement(parent, effectNamespace(prefix), value.type);
+  removeAttributes(effect, (attribute) => attribute.namespaceUri === null && ['dir', 'orient', 'option'].includes(attribute.localName));
   if (value.type === 'split' && value.dir) {
     const [orient, dir] = value.dir.split('-');
     setXmlAttribute(effect, 'orient', orient);
@@ -99,19 +119,21 @@ function transitionElement(
   parent: XmlElement,
   source?: XmlElement,
 ): XmlElement {
-  const transition = source
-    ? cloneXmlNodeWithNamespaceClosure(source)
-    : namespacedElement(parent, PRESENTATIONML_NS, 'transition');
+  const transition = source ? cloneXmlNodeWithNamespaceClosure(source) : namespacedElement(parent, PRESENTATIONML_NS, 'transition');
   const oldEffects = xmlElementChildren(transition).filter(isManagedEffect);
   for (const child of oldEffects.slice(1)) removeXmlChild(transition, child);
-  removeAttributes(transition, (attribute) =>
-    (attribute.namespaceUri === null && ['spd', 'advTm', 'dur'].includes(attribute.localName))
-      || (attribute.namespaceUri === POWERPOINT_2010_NS && attribute.localName === 'dur'));
+  removeAttributes(
+    transition,
+    (attribute) =>
+      (attribute.namespaceUri === null && ['spd', 'advTm', 'dur'].includes(attribute.localName))
+      || (attribute.namespaceUri === POWERPOINT_2010_NS && attribute.localName === 'dur'),
+  );
   if (!exact) {
     // Fallback 只携带 ISO 属性；否则旧版消费者仍无法理解所谓的兼容分支。
-    removeAttributes(transition, (attribute) =>
-      attribute.namespaceUri === POWERPOINT_2010_NS
-        || attribute.namespaceUri === POWERPOINT_2015_NS);
+    removeAttributes(
+      transition,
+      (attribute) => attribute.namespaceUri === POWERPOINT_2010_NS || attribute.namespaceUri === POWERPOINT_2015_NS,
+    );
   }
   setXmlAttribute(transition, 'spd', speed(value.durationMs));
   if (exact) {
@@ -136,41 +158,40 @@ function fallbackTransition(value: Transition): Transition {
   return {
     type,
     durationMs: value.durationMs,
-    ...(type === 'push' && value.dir && ['l', 'r', 'u', 'd'].includes(value.dir)
-      ? { dir: value.dir } : {}),
+    ...(type === 'push' && value.dir && ['l', 'r', 'u', 'd'].includes(value.dir) ? { dir: value.dir } : {}),
     ...(value.advanceAfterMs !== undefined ? { advanceAfterMs: value.advanceAfterMs } : {}),
   };
 }
 
 function branchTransition(branch: XmlElement | undefined): XmlElement | undefined {
-  return branch && xmlElementChildren(branch).find((child) =>
-    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition');
+  return branch && xmlElementChildren(branch).find((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition');
 }
 
 function supportedChoice(choice: XmlElement): boolean {
-  const requires = choice.attributes.find((attribute) =>
-    attribute.namespaceUri === null && attribute.localName === 'Requires')?.value
-    .trim().split(/\s+/).filter(Boolean) ?? [];
+  const requires =
+    choice.attributes
+      .find((attribute) => attribute.namespaceUri === null && attribute.localName === 'Requires')
+      ?.value.trim()
+      .split(/\s+/)
+      .filter(Boolean) ?? [];
   const namespaces = elementState(choice).namespaces;
-  return requires.length > 0 && requires.every((prefix) =>
-    SUPPORTED_CHOICE_NAMESPACES.has(namespaces.get(prefix) ?? ''));
+  return requires.length > 0 && requires.every((prefix) => SUPPORTED_CHOICE_NAMESPACES.has(namespaces.get(prefix) ?? ''));
 }
 
 function alternateBranches(alternate: XmlElement): {
-  choice?: XmlElement; fallback?: XmlElement;
+  choice?: XmlElement;
+  fallback?: XmlElement;
 } {
   const branches = xmlElementChildren(alternate);
   return {
-    choice: branches.find((branch) => branch.namespaceUri === MARKUP_COMPATIBILITY_NS
-      && branch.localName === 'Choice' && supportedChoice(branch)),
-    fallback: branches.find((branch) => branch.namespaceUri === MARKUP_COMPATIBILITY_NS
-      && branch.localName === 'Fallback'),
+    choice: branches.find(
+      (branch) => branch.namespaceUri === MARKUP_COMPATIBILITY_NS && branch.localName === 'Choice' && supportedChoice(branch),
+    ),
+    fallback: branches.find((branch) => branch.namespaceUri === MARKUP_COMPATIBILITY_NS && branch.localName === 'Fallback'),
   };
 }
 
-function replaceBranchTransition(
-  branch: XmlElement, next: XmlElement,
-): void {
+function replaceBranchTransition(branch: XmlElement, next: XmlElement): void {
   const current = branchTransition(branch);
   if (current) replaceXmlChildren(branch, current, [next]);
   else {
@@ -181,8 +202,7 @@ function replaceBranchTransition(
 
 function moveChoiceFirst(alternate: XmlElement, choice: XmlElement): void {
   const elements = xmlElementChildren(alternate);
-  const firstChoice = elements.findIndex((element) =>
-    element.namespaceUri === MARKUP_COMPATIBILITY_NS && element.localName === 'Choice');
+  const firstChoice = elements.findIndex((element) => element.namespaceUri === MARKUP_COMPATIBILITY_NS && element.localName === 'Choice');
   const choiceIndex = elements.indexOf(choice);
   if (firstChoice < 0 || choiceIndex <= firstChoice) return;
   const ordered = [...elements];
@@ -194,9 +214,10 @@ function moveChoiceFirst(alternate: XmlElement, choice: XmlElement): void {
 
 function alternateCarrier(value: Transition, source?: XmlElement): XmlElement {
   const directSource = source?.namespaceUri === PRESENTATIONML_NS ? source : undefined;
-  const alternate = source?.namespaceUri === MARKUP_COMPATIBILITY_NS
-    ? cloneXmlNodeWithNamespaceClosure(source)
-    : createXmlElement('mc:AlternateContent', { selfClosing: false });
+  const alternate =
+    source?.namespaceUri === MARKUP_COMPATIBILITY_NS
+      ? cloneXmlNodeWithNamespaceClosure(source)
+      : createXmlElement('mc:AlternateContent', { selfClosing: false });
   setXmlAttribute(alternate, 'xmlns:mc', MARKUP_COMPATIBILITY_NS);
   const morph = value.type === 'morph';
   let { choice, fallback: fallbackBranch } = alternateBranches(alternate);
@@ -210,18 +231,17 @@ function alternateCarrier(value: Transition, source?: XmlElement): XmlElement {
   if (morph) setXmlAttribute(choice, 'xmlns:p159', POWERPOINT_2015_NS);
   setXmlAttribute(choice, 'Requires', morph ? 'p159' : 'p14');
   moveChoiceFirst(alternate, choice);
-  replaceBranchTransition(choice, transitionElement(
-    value, morph ? 'p159' : EXTENDED.has(value.type) ? 'p14' : 'p', true, choice, mainSource,
-  ));
+  replaceBranchTransition(
+    choice,
+    transitionElement(value, morph ? 'p159' : EXTENDED.has(value.type) ? 'p14' : 'p', true, choice, mainSource),
+  );
   if (!fallbackBranch) {
     fallbackBranch = createXmlElement('mc:Fallback', { selfClosing: false });
     insertXmlChildUnchecked(alternate, fallbackBranch);
   }
   const fallbackSource = branchTransition(fallbackBranch) ?? directSource;
   const fallback = fallbackTransition(value);
-  replaceBranchTransition(fallbackBranch, transitionElement(
-    fallback, 'p', false, fallbackBranch, fallbackSource,
-  ));
+  replaceBranchTransition(fallbackBranch, transitionElement(fallback, 'p', false, fallbackBranch, fallbackSource));
   return alternate;
 }
 
@@ -229,16 +249,18 @@ function isTransitionAlternate(element: XmlElement): boolean {
   if (element.namespaceUri !== MARKUP_COMPATIBILITY_NS || element.localName !== 'AlternateContent') {
     return false;
   }
-  return xmlElementChildren(element).some((branch) =>
-    branch.namespaceUri === MARKUP_COMPATIBILITY_NS
+  return xmlElementChildren(element).some(
+    (branch) =>
+      branch.namespaceUri === MARKUP_COMPATIBILITY_NS
       && (branch.localName === 'Choice' || branch.localName === 'Fallback')
-      && branchTransition(branch) !== undefined);
+      && branchTransition(branch) !== undefined,
+  );
 }
 
 function carriers(root: XmlElement): XmlElement[] {
-  return xmlElementChildren(root).filter((child) =>
-    (child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition')
-      || isTransitionAlternate(child));
+  return xmlElementChildren(root).filter(
+    (child) => (child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition') || isTransitionAlternate(child),
+  );
 }
 
 function noneTransition(source: XmlElement, value: Transition): XmlElement {
@@ -246,9 +268,12 @@ function noneTransition(source: XmlElement, value: Transition): XmlElement {
   for (const child of xmlElementChildren(transition).filter(isManagedEffect)) {
     removeXmlChild(transition, child);
   }
-  removeAttributes(transition, (attribute) =>
-    (attribute.namespaceUri === null && ['spd', 'dur', 'advTm'].includes(attribute.localName))
-      || (attribute.namespaceUri === POWERPOINT_2010_NS && attribute.localName === 'dur'));
+  removeAttributes(
+    transition,
+    (attribute) =>
+      (attribute.namespaceUri === null && ['spd', 'dur', 'advTm'].includes(attribute.localName))
+      || (attribute.namespaceUri === POWERPOINT_2010_NS && attribute.localName === 'dur'),
+  );
   if (value.advanceAfterMs !== undefined) {
     setXmlAttribute(transition, 'advTm', String(value.advanceAfterMs));
   }
@@ -282,9 +307,7 @@ function noneCarrier(source: XmlElement, value: Transition): XmlElement {
     if (transition) {
       replaceXmlChildren(branches.fallback, transition, [noneTransition(transition, value)]);
     } else {
-      replaceBranchTransition(
-        branches.fallback, namespacedElement(branches.fallback, PRESENTATIONML_NS, 'transition'),
-      );
+      replaceBranchTransition(branches.fallback, namespacedElement(branches.fallback, PRESENTATIONML_NS, 'transition'));
     }
   } else {
     const fallback = createXmlElement('mc:Fallback', { selfClosing: false });
@@ -296,37 +319,41 @@ function noneCarrier(source: XmlElement, value: Transition): XmlElement {
 
 function hasNonePayload(carrier: XmlElement): boolean {
   const materialAttributes = (element: XmlElement, ignored: readonly string[] = []): boolean =>
-    element.attributes.some((attribute) =>
-      attribute.name !== 'xmlns' && attribute.prefix !== 'xmlns'
-        && !(attribute.namespaceUri === null && ignored.includes(attribute.localName)));
+    element.attributes.some(
+      (attribute) =>
+        attribute.name !== 'xmlns'
+        && attribute.prefix !== 'xmlns'
+        && !(attribute.namespaceUri === null && ignored.includes(attribute.localName)),
+    );
   const transitionPayload = (transition: XmlElement): boolean =>
     materialAttributes(transition)
-    || transition.children.some((child) =>
-      child.type === 'element' || (child.type === 'text' && child.value.trim())
-        || (child.type !== 'text'));
+    || transition.children.some(
+      (child) => child.type === 'element' || (child.type === 'text' && child.value.trim()) || child.type !== 'text',
+    );
   if (carrier.namespaceUri === PRESENTATIONML_NS) return transitionPayload(carrier);
-  return materialAttributes(carrier) || xmlElementChildren(carrier).some((branch) =>
-    materialAttributes(branch, ['Requires']) || branch.children.some((child) => {
-      if (child.type !== 'element') return child.type !== 'text' || !!child.value.trim();
-      if (child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition') {
-        return transitionPayload(child);
-      }
-      return true;
-    }));
+  return (
+    materialAttributes(carrier)
+    || xmlElementChildren(carrier).some(
+      (branch) =>
+        materialAttributes(branch, ['Requires'])
+        || branch.children.some((child) => {
+          if (child.type !== 'element') return child.type !== 'text' || !!child.value.trim();
+          if (child.namespaceUri === PRESENTATIONML_NS && child.localName === 'transition') {
+            return transitionPayload(child);
+          }
+          return true;
+        }),
+    )
+  );
 }
 
 /** 只替换 transition 自己占据的 schema 槽位；无关 MCE、timing 与扩展原地保留。 */
-export function patchSlideTransition(
-  document: XmlDocument,
-  value: Transition,
-  blockInherited = false,
-): void {
+export function patchSlideTransition(document: XmlDocument, value: Transition, blockInherited = false): void {
   const existing = carriers(document.root);
   if (value.type === 'none') {
     if (existing[0]) {
       const next = noneCarrier(existing[0], value);
-      const replacements = blockInherited || value.advanceAfterMs !== undefined || hasNonePayload(next)
-        ? [next] : [];
+      const replacements = blockInherited || value.advanceAfterMs !== undefined || hasNonePayload(next) ? [next] : [];
       replaceXmlChildren(document.root, existing[0], replacements);
       for (const duplicate of existing.slice(1)) removeXmlChild(document.root, duplicate);
     } else if (blockInherited || value.advanceAfterMs !== undefined) {

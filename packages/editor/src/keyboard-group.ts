@@ -9,15 +9,14 @@ export class GroupKeyboardController {
 
   keyDown(event: KeyboardEvent): boolean {
     const hasOnePrimary = event.ctrlKey !== event.metaKey;
-    if (event.defaultPrevented || event.key.toLowerCase() !== 'g' || !hasOnePrimary
-      || event.altKey || shouldYieldKeyboardEvent(event)) return false;
+    if (event.defaultPrevented || event.key.toLowerCase() !== 'g' || !hasOnePrimary || event.altKey || shouldYieldKeyboardEvent(event))
+      return false;
     event.preventDefault();
     if (this.options.gestureActive()) return true;
     const selection = this.options.editor.selection;
     if (selection.kind !== 'elements') return true;
     const doc = this.options.editor.doc;
-    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId()
-      || !isSelectable(doc, id))) return true;
+    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId() || !isSelectable(doc, id))) return true;
     const roots = outermostSelectedElementIds(doc, selection.ids);
     try {
       if (event.shiftKey) {
@@ -36,8 +35,7 @@ export class GroupKeyboardController {
     } catch (error) {
       if (this.options.onError) this.options.onError(error);
       else {
-        const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void })
-          .reportError;
+        const reporter = (globalThis as typeof globalThis & { reportError?: (reason: unknown) => void }).reportError;
         if (reporter) reporter(error);
         else console.error('组合快捷键执行失败', error);
       }

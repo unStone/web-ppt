@@ -15,7 +15,8 @@ export async function runSiteAppearanceBrowserContract(context) {
   await click('#appearanceDialog [name=duotone]');
   await click('#appearanceDialog [type=submit]');
   await waitFor("!document.querySelector('#appearanceDialog')", '应用图片效果');
-  await click('#undo'); await click('#redo');
+  await click('#undo');
+  await click('#redo');
   await click('#imageInspector [data-appearance-tools]');
   await waitFor("document.querySelector('#appearanceDialog [name=alpha]')?.value === '45'", '连续查询读取最新投影');
   await evaluate("document.querySelector('#appearanceDialog').close()");
@@ -29,16 +30,23 @@ export async function runSiteAppearanceBrowserContract(context) {
   await captureSaveAndReopen(context, 'appearance-reopened.pptx');
   await selectPaneObject(context, 'plain-shape');
   await click('#shapeInspector [data-appearance-tools]');
-  await waitFor(`document.querySelector('#appearanceDialog [name=extrusion]')?.value === '0'
-    && document.querySelector('#appearanceDialog [name=bevelTop]')?.value === '3'`, '零挤出与斜角重开');
+  await waitFor(
+    `document.querySelector('#appearanceDialog [name=extrusion]')?.value === '0'
+    && document.querySelector('#appearanceDialog [name=bevelTop]')?.value === '3'`,
+    '零挤出与斜角重开',
+  );
   await evaluate("document.querySelector('#appearanceDialog').close()");
   await selectPaneObject(context, 'picture-901');
   await click('#imageInspector [data-appearance-tools]');
-  await waitFor(`document.querySelector('#appearanceDialog [name=alpha]')?.value === '45'
+  await waitFor(
+    `document.querySelector('#appearanceDialog [name=alpha]')?.value === '45'
     && document.querySelector('#appearanceDialog [name=duotone]')?.checked
-    && document.querySelector('#appearanceDialog [name=grayscale]')?.checked`, '图片效果重开');
+    && document.querySelector('#appearanceDialog [name=grayscale]')?.checked`,
+    '图片效果重开',
+  );
   await evaluate("document.querySelector('#appearanceDialog').close()");
-  const pixels = await evaluate(`(async () => {
+  const pixels = await evaluate(
+    `(async () => {
     const core = await import('/chartex-core.mjs');
     const p = await core.parse(await fetch('/fixtures/sample-editor-appearance.pptx').then(r=>r.arrayBuffer()), {lazy:false});
     const image = p.slides[0].elements.find(e=>e.name==='picture-901');
@@ -53,8 +61,10 @@ export async function runSiteAppearanceBrowserContract(context) {
       samples.push([...ctx.getImageData(0,16,1,1).data]);
     }
     p.dispose();return samples;
-  })()`, true);
-  if (pixels.some((pixel) => pixel.slice(0,3).some((value,index) => Math.abs(value-[17,34,51][index])>3))) {
+  })()`,
+    true,
+  );
+  if (pixels.some((pixel) => pixel.slice(0, 3).some((value, index) => Math.abs(value - [17, 34, 51][index]) > 3))) {
     throw new Error(`灰度与双色调的 PNG/SVG 像素不一致：${JSON.stringify(pixels)}`);
   }
   await openFixture(context, '/fixtures/mixed-patched.pptx', 'mixed-features.pptx');
@@ -66,6 +76,6 @@ export async function runSiteAppearanceBrowserContract(context) {
   await runSiteMixedBrowserContract(context);
   const screenshot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   writeFileSync(join(out, 'mixed-features.png'), Buffer.from(screenshot.result.data, 'base64'));
-  writeFileSync(join(out, 'appearance-pixels.json'), JSON.stringify({ png:pixels[0], svg:pixels[1] }, null, 2)+'\n');
+  writeFileSync(join(out, 'appearance-pixels.json'), JSON.stringify({ png: pixels[0], svg: pixels[1] }, null, 2) + '\n');
   console.log('  图片/立体控件、读屏选择、双色调像素与混合内容保存重开通过');
 }

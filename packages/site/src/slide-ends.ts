@@ -19,8 +19,7 @@ export function bindSlideEnds(options: {
 
   const onKey = (event: KeyboardEvent): void => {
     if (!presenting()) return;
-    const typing = event.target instanceof Element
-      && !!event.target.closest('input,select,textarea,[contenteditable]');
+    const typing = event.target instanceof Element && !!event.target.closest('input,select,textarea,[contenteditable]');
     if (typing || event.isComposing || (keysActive && !keysActive())) return;
     if (event.key !== 'Home' && event.key !== 'End') return;
     // Alt+Home / Alt+End 是媒体书签。带修饰键的不是放映表上的首尾页。

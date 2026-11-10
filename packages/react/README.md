@@ -154,4 +154,4 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with React 19.2.8; the optional peer range supports React 18.2–19. The
-framework-excluded ESM is 1.12KB gzip, ships declarations, and does not add React to the base packages.
+framework-excluded ESM is 1.17KB gzip, ships declarations, and does not add React to the base packages.

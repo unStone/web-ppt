@@ -7,17 +7,12 @@ interface CountMarker {
 }
 
 function markerOf(node: Node): Element | null {
-  const element = node.nodeType === node.ELEMENT_NODE ? node as Element : node.parentElement;
+  const element = node.nodeType === node.ELEMENT_NODE ? (node as Element) : node.parentElement;
   return element?.closest('[data-ppt-search-r]') ?? null;
 }
 
 /** 命中框独立于 SVG 缩放层，必须把 viewport 坐标换回编辑器根坐标。 */
-function appendRect(
-  overlay: HTMLElement,
-  rootRect: DOMRect,
-  rect: DOMRect,
-  exact: boolean,
-): void {
+function appendRect(overlay: HTMLElement, rootRect: DOMRect, rect: DOMRect, exact: boolean): void {
   if (rect.width <= 0 || rect.height <= 0) return;
   const box = overlay.ownerDocument.createElement('div');
   box.dataset.pptSearchRange = '';
@@ -47,11 +42,7 @@ export class TextSearchHighlightProjection {
     private readonly overlay: HTMLElement,
   ) {}
 
-  sync(
-    matches: readonly TextSearchMatch[],
-    current: TextSearchMatch | null,
-    slideId: string,
-  ): void {
+  sync(matches: readonly TextSearchMatch[], current: TextSearchMatch | null, slideId: string): void {
     this.syncCounts(matches, slideId);
     this.syncCurrent(current, slideId);
   }
@@ -82,10 +73,10 @@ export class TextSearchHighlightProjection {
     for (const [id, count] of desired) {
       const previous = this.counts.get(id);
       if (previous?.count === count && previous.element.isConnected) continue;
-      if (!partitions) partitions = new Map(
-        [...this.staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')]
-          .map((element) => [element.dataset.editRoot!, element]),
-      );
+      if (!partitions)
+        partitions = new Map(
+          [...this.staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')].map((element) => [element.dataset.editRoot!, element]),
+        );
       const element = partitions.get(id);
       if (!element) continue;
       element.dataset.pptSearchMatches = String(count);
@@ -99,16 +90,14 @@ export class TextSearchHighlightProjection {
     this.overlay.replaceChildren();
     this.overlay.hidden = true;
     delete this.overlay.dataset.pptSearchExact;
-    const target = current?.slideId === slideId ? this.counts.get(current.id)?.element ?? null : null;
+    const target = current?.slideId === slideId ? (this.counts.get(current.id)?.element ?? null) : null;
     if (target !== this.currentTarget) {
       if (this.currentTarget) delete this.currentTarget.dataset.pptSearchCurrent;
       this.currentTarget = target;
       if (target) target.dataset.pptSearchCurrent = '';
     }
     if (!current || !target) return;
-    const scope = current.cell
-      ? target.querySelector<SVGElement>(`[data-table-cell="${current.cell.r}:${current.cell.c}"]`)
-      : target;
+    const scope = current.cell ? target.querySelector<SVGElement>(`[data-table-cell="${current.cell.r}:${current.cell.c}"]`) : target;
     const from = scope ? domPointAt(scope, current.range.from, 'search') : null;
     const to = scope ? domPointAt(scope, current.range.to, 'search') : null;
     const range = target.ownerDocument.createRange();
@@ -121,11 +110,11 @@ export class TextSearchHighlightProjection {
         for (const rect of range.getClientRects()) appendRect(this.overlay, rootRect, rect, true);
         exact = this.overlay.childElementCount > 0;
         this.markRange(scope!, from.node, to.node);
-      } catch { /* DOM 被宿主同步替换时，当前帧退回元素框；下一次同步会恢复精确范围。 */ }
+      } catch {
+        /* DOM 被宿主同步替换时，当前帧退回元素框；下一次同步会恢复精确范围。 */
+      }
     }
-    if (!exact) appendRect(
-      this.overlay, this.root.getBoundingClientRect(), target.getBoundingClientRect(), false,
-    );
+    if (!exact) appendRect(this.overlay, this.root.getBoundingClientRect(), target.getBoundingClientRect(), false);
     this.overlay.dataset.pptSearchExact = String(exact);
     this.overlay.hidden = this.overlay.childElementCount === 0;
   }

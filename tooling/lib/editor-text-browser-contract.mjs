@@ -1,7 +1,6 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const textOf = (element) => element.text?.paragraphs
-  .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
+const textOf = (element) => element.text?.paragraphs.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 
 function caretAtEnd(root) {
   const markers = [...root.querySelectorAll('[data-r]')];
@@ -9,7 +8,10 @@ function caretAtEnd(root) {
   const walker = document.createTreeWalker(marker, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   let last = node;
-  while (node) { last = node; node = walker.nextNode(); }
+  while (node) {
+    last = node;
+    node = walker.nextNode();
+  }
   const range = document.createRange();
   range.setStart(last ?? marker, last?.textContent.length ?? marker.childNodes.length);
   range.collapse(true);
@@ -42,7 +44,11 @@ export async function runEditorTextBrowserContract({ openEditor, load }) {
     caretAtEnd(editable);
     const started = performance.now();
     const input = new InputEvent('beforeinput', {
-      bubbles: true, composed: true, cancelable: true, inputType: 'insertText', data: String(index % 10),
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: String(index % 10),
     });
     const accepted = editable.dispatchEvent(input);
     if (!accepted) prevented++;
@@ -63,9 +69,15 @@ export async function runEditorTextBrowserContract({ openEditor, load }) {
   caretAtEnd(editable);
   const identity = editable;
   editable.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, composed: true }));
-  editable.dispatchEvent(new InputEvent('input', {
-    bubbles: true, composed: true, inputType: 'insertCompositionText', data: '组', isComposing: true,
-  }));
+  editable.dispatchEvent(
+    new InputEvent('input', {
+      bubbles: true,
+      composed: true,
+      inputType: 'insertCompositionText',
+      data: '组',
+      isComposing: true,
+    }),
+  );
   if (mount.querySelector(`[data-ppt-text-editor="${record.id}"]`) !== identity) {
     throw new Error('IME 组词期间替换了 contenteditable 节点');
   }

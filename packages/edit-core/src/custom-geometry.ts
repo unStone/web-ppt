@@ -1,6 +1,4 @@
-import type {
-  CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar,
-} from '@web-ppt/core';
+import type { CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar } from '@web-ppt/core';
 import { materializeCustomGeometryArcs } from '@web-ppt/core/geometry';
 import { assertDataArray, assertDataObject, own } from './data-validation';
 import type { EditDoc, ElementId } from './types';
@@ -59,26 +57,26 @@ export function assertCustomGeometry(value: unknown, label: string): asserts val
   let commandCount = 0;
   geometry.paths.forEach((path, pathIndex) => {
     const pathLabel = `${label}.paths[${pathIndex}]`;
-    assertDataObject(path, [
-      'id', 'width', 'height', 'fill', 'stroke', 'extrusionOk', 'closed', 'commands',
-    ], pathLabel);
+    assertDataObject(path, ['id', 'width', 'height', 'fill', 'stroke', 'extrusionOk', 'closed', 'commands'], pathLabel);
     uniqueId(path.id, `${pathLabel}.id`);
     if (path.id !== `p${pathIndex}`) throw new Error(`${pathLabel}.id 必须使用稳定顺序地址`);
     assertFinite(path.width, `${pathLabel}.width`);
     assertFinite(path.height, `${pathLabel}.height`);
     if (path.width <= 0 || path.height <= 0) throw new Error(`${pathLabel} 的坐标空间必须大于零`);
     assertText(path.fill, `${pathLabel}.fill`);
-    if (typeof path.stroke !== 'boolean' || typeof path.extrusionOk !== 'boolean'
-      || typeof path.closed !== 'boolean') throw new Error(`${pathLabel} 的标志必须是布尔值`);
+    if (typeof path.stroke !== 'boolean' || typeof path.extrusionOk !== 'boolean' || typeof path.closed !== 'boolean')
+      throw new Error(`${pathLabel} 的标志必须是布尔值`);
     assertDataArray(path.commands, `${pathLabel}.commands`);
     commandCount += path.commands.length;
     if (commandCount > MAX_COMMANDS) throw new Error(`${label} 的命令数量过多`);
     path.commands.forEach((command, commandIndex) => {
       const commandLabel = `${pathLabel}.commands[${commandIndex}]`;
       const arc = command.type === 'arc';
-      assertDataObject(command, arc
-        ? ['id', 'type', 'points', 'widthRadius', 'heightRadius', 'startAngle', 'sweepAngle']
-        : ['id', 'type', 'points'], commandLabel);
+      assertDataObject(
+        command,
+        arc ? ['id', 'type', 'points', 'widthRadius', 'heightRadius', 'startAngle', 'sweepAngle'] : ['id', 'type', 'points'],
+        commandLabel,
+      );
       uniqueId(command.id, `${commandLabel}.id`);
       if (command.id !== `${path.id}-c${commandIndex}`) {
         throw new Error(`${commandLabel}.id 必须使用稳定顺序地址`);
@@ -126,36 +124,33 @@ export function assertCustomGeometryOverride(
   label: string,
 ): asserts value is CustomGeometry {
   assertCustomGeometry(value, label);
-  if (current && (JSON.stringify(value.adjustments) !== JSON.stringify(current.adjustments)
-    || JSON.stringify(value.guides) !== JSON.stringify(current.guides))) {
+  if (
+    current
+    && (JSON.stringify(value.adjustments) !== JSON.stringify(current.adjustments)
+      || JSON.stringify(value.guides) !== JSON.stringify(current.guides))
+  ) {
     throw new Error(`${label} 不能改写 avLst/gdLst；调整柄使用独立命令`);
   }
   if (!current && (value.adjustments.length || value.guides.length)) {
     throw new Error(`${label} 不能凭空创建 avLst/gdLst`);
   }
-  const sourcePoints = new Map(current?.paths.flatMap((path) => path.commands.flatMap(
-    (command) => command.points.map((point) => [point.id, point] as const),
-  )) ?? []);
-  const sourceCommands = new Map(current?.paths.flatMap((path) =>
-    path.commands.map((command) => [command.id, command] as const)) ?? []);
-  const sourceScalars = current?.paths.flatMap((path) => path.commands.flatMap((command) => [
-    ...command.points.flatMap((point) => [point.x, point.y]),
-    ...(command.type === 'arc' ? [
-      command.widthRadius, command.heightRadius, command.startAngle, command.sweepAngle,
-    ] : []),
-  ])) ?? [];
-  const sourceScalarKeys = new Set(sourceScalars.map((scalarValue) =>
-    `${scalarValue.expression}\0${String(scalarValue.value)}`));
-  const consistentScalar = (
-    scalarValue: CustomGeometryScalar,
-    source: CustomGeometryScalar | undefined,
-    scalarLabel: string,
-  ): void => {
+  const sourcePoints = new Map(
+    current?.paths.flatMap((path) => path.commands.flatMap((command) => command.points.map((point) => [point.id, point] as const))) ?? [],
+  );
+  const sourceCommands = new Map(current?.paths.flatMap((path) => path.commands.map((command) => [command.id, command] as const)) ?? []);
+  const sourceScalars =
+    current?.paths.flatMap((path) =>
+      path.commands.flatMap((command) => [
+        ...command.points.flatMap((point) => [point.x, point.y]),
+        ...(command.type === 'arc' ? [command.widthRadius, command.heightRadius, command.startAngle, command.sweepAngle] : []),
+      ]),
+    ) ?? [];
+  const sourceScalarKeys = new Set(sourceScalars.map((scalarValue) => `${scalarValue.expression}\0${String(scalarValue.value)}`));
+  const consistentScalar = (scalarValue: CustomGeometryScalar, source: CustomGeometryScalar | undefined, scalarLabel: string): void => {
     if (scalarMatchesNumber(scalarValue)) return;
     const matches = (candidate: CustomGeometryScalar) =>
       candidate.expression === scalarValue.expression && candidate.value === scalarValue.value;
-    if (!(source && matches(source))
-      && !sourceScalarKeys.has(`${scalarValue.expression}\0${String(scalarValue.value)}`)) {
+    if (!(source && matches(source)) && !sourceScalarKeys.has(`${scalarValue.expression}\0${String(scalarValue.value)}`)) {
       throw new Error(`${label} 的 ${scalarLabel} 表达式与求值不一致`);
     }
   };
@@ -203,18 +198,22 @@ export function moveCustomGeometryPoint(
   let found = false;
   const paths = geometry.paths.map((path) => ({
     ...path,
-    commands: path.commands.map((command) => command.type === 'arc' ? { ...command } : ({
-      ...command,
-      points: command.points.map((point) => {
-        if (point.id !== pointId) return { ...point };
-        found = true;
-        return {
-          ...point,
-          x: numericScalar(position.x),
-          y: numericScalar(position.y),
-        };
-      }),
-    })),
+    commands: path.commands.map((command) =>
+      command.type === 'arc'
+        ? { ...command }
+        : {
+            ...command,
+            points: command.points.map((point) => {
+              if (point.id !== pointId) return { ...point };
+              found = true;
+              return {
+                ...point,
+                x: numericScalar(position.x),
+                y: numericScalar(position.y),
+              };
+            }),
+          },
+    ),
   })) as CustomGeometry['paths'];
   if (!found) throw new Error(`找不到自定义几何点：${pointId}`);
   return { adjustments: [...geometry.adjustments], guides: [...geometry.guides], paths };
@@ -235,11 +234,7 @@ function replacePath(
   return { adjustments: [...geometry.adjustments], guides: [...geometry.guides], paths };
 }
 
-export function setCustomGeometryClosed(
-  geometry: CustomGeometry,
-  pathId: string,
-  closed: boolean,
-): CustomGeometry {
+export function setCustomGeometryClosed(geometry: CustomGeometry, pathId: string, closed: boolean): CustomGeometry {
   assertCustomGeometry(geometry, 'geometry');
   if (typeof closed !== 'boolean') throw new Error('closed 必须是布尔值');
   return replacePath(geometry, pathId, (path) => ({ ...path, closed }));
@@ -276,19 +271,20 @@ export function setCustomGeometrySegmentType(
         if (candidate.type === 'move') subpathStart = previous;
       }
       if (!previous) throw new Error(`线段缺少可寻址起点：${commandId}`);
-      const control = (
-        from: CustomGeometryPoint, to: CustomGeometryPoint, ratio: number, id: string,
-      ): CustomGeometryPoint => {
+      const control = (from: CustomGeometryPoint, to: CustomGeometryPoint, ratio: number, id: string): CustomGeometryPoint => {
         const x = from.x.value + (to.x.value - from.x.value) * ratio;
         const y = from.y.value + (to.y.value - from.y.value) * ratio;
         return {
-          id, role: 'control',
+          id,
+          role: 'control',
           x: numericScalar(x),
           y: numericScalar(y),
         };
       };
       replacement = {
-        id: command.id, type: 'cubic', points: [
+        id: command.id,
+        type: 'cubic',
+        points: [
           command.type === 'quadratic'
             ? control(previous, command.points[0], 2 / 3, `${command.id}-c0`)
             : control(previous, anchor, 1 / 3, `${command.id}-c0`),

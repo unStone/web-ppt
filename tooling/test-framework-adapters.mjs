@@ -31,19 +31,40 @@ const aliases = [
 ];
 const bundle = (entry, name, framework) => {
   const file = join(out, `${name}.mjs`);
-  execFileSync('npx', [
-    'esbuild', entry, '--bundle', '--format=esm', '--platform=node', '--log-level=error',
-    `--external:${framework}`, ...sourceAliasArgs(root, aliases),
-    `--outfile=${file}`,
-  ], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      entry,
+      '--bundle',
+      '--format=esm',
+      '--platform=node',
+      '--log-level=error',
+      `--external:${framework}`,
+      ...sourceAliasArgs(root, aliases),
+      `--outfile=${file}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return file;
 };
 const thinBundle = (entry, name, externals) => {
   const file = join(out, `${name}-thin.mjs`);
-  execFileSync('npx', [
-    'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--minify', '--log-level=error',
-    ...externals.map((external) => `--external:${external}`), `--outfile=${file}`,
-  ], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      entry,
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--minify',
+      '--log-level=error',
+      ...externals.map((external) => `--external:${external}`),
+      `--outfile=${file}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return { file, gzip: gzipSync(readFileSync(file)).length };
 };
 
@@ -75,46 +96,64 @@ const vuePackage = readPackage('vue');
 const basePackages = ['core', 'edit-core', 'viewer-core', 'editor'].map(readPackage);
 const corePackage = readPackage('core');
 const viewerPackage = readPackage('viewer-core');
-check('框架只作为对应适配包的 optional peer',
-  reactPackage.peerDependencies?.react && reactPackage.peerDependenciesMeta?.react?.optional === true
-    && vuePackage.peerDependencies?.vue && vuePackage.peerDependenciesMeta?.vue?.optional === true
-    && !reactPackage.dependencies && !vuePackage.dependencies);
-check('基础包没有 React/Vue 运行时依赖', basePackages.every((pkg) => {
-  const runtime = { ...pkg.dependencies, ...pkg.peerDependencies, ...pkg.optionalDependencies };
-  return !runtime.react && !runtime['react-dom'] && !runtime.vue;
-}));
-check('viewer-core 的 core peer 精确锁定同版本',
-  viewerPackage.peerDependencies?.['@web-ppt/core'] === corePackage.version);
+check(
+  '框架只作为对应适配包的 optional peer',
+  reactPackage.peerDependencies?.react
+    && reactPackage.peerDependenciesMeta?.react?.optional === true
+    && vuePackage.peerDependencies?.vue
+    && vuePackage.peerDependenciesMeta?.vue?.optional === true
+    && !reactPackage.dependencies
+    && !vuePackage.dependencies,
+);
+check(
+  '基础包没有 React/Vue 运行时依赖',
+  basePackages.every((pkg) => {
+    const runtime = { ...pkg.dependencies, ...pkg.peerDependencies, ...pkg.optionalDependencies };
+    return !runtime.react && !runtime['react-dom'] && !runtime.vue;
+  }),
+);
+check('viewer-core 的 core peer 精确锁定同版本', viewerPackage.peerDependencies?.['@web-ppt/core'] === corePackage.version);
 
-check('React 入口公开组件、选择窗格与 hook', !!react.WebPptEditor && !!react.WebPptSelectionPane
-  && typeof react.useWebPptAdapter === 'function');
-check('Vue 入口公开组件、选择窗格与 composable', !!vue.WebPptEditor && !!vue.WebPptSelectionPane
-  && typeof vue.useWebPptAdapter === 'function');
-check('React/Vue 按需入口消费同一内置模板目录',
-  JSON.stringify(reactTemplates.listBuiltinTemplates())
-    === JSON.stringify(vueTemplates.listBuiltinTemplates())
+check(
+  'React 入口公开组件、选择窗格与 hook',
+  !!react.WebPptEditor && !!react.WebPptSelectionPane && typeof react.useWebPptAdapter === 'function',
+);
+check(
+  'Vue 入口公开组件、选择窗格与 composable',
+  !!vue.WebPptEditor && !!vue.WebPptSelectionPane && typeof vue.useWebPptAdapter === 'function',
+);
+check(
+  'React/Vue 按需入口消费同一内置模板目录',
+  JSON.stringify(reactTemplates.listBuiltinTemplates()) === JSON.stringify(vueTemplates.listBuiltinTemplates())
     && reactTemplates.createPptxFromTemplate('aurora') instanceof Uint8Array
-    && vueTemplates.createPptxFromTemplate('midnight') instanceof Uint8Array);
-check('React/Vue 图表 seam 公开同一按需 API',
-  ['createChartDataEditor', 'listEditableCharts', 'queryChartData'].every((name) =>
-    typeof reactChart[name] === 'function' && typeof vueChart[name] === 'function'));
+    && vueTemplates.createPptxFromTemplate('midnight') instanceof Uint8Array,
+);
+check(
+  'React/Vue 图表 seam 公开同一按需 API',
+  ['createChartDataEditor', 'listEditableCharts', 'queryChartData'].every(
+    (name) => typeof reactChart[name] === 'function' && typeof vueChart[name] === 'function',
+  ),
+);
 const reactMarkup = renderReact(React.createElement(react.WebPptEditor, { mode: 'view' }));
-const vueMarkup = await renderVue(createSSRApp({
-  render: () => h(vue.WebPptEditor, { mode: 'view' }),
-}));
+const vueMarkup = await renderVue(
+  createSSRApp({
+    render: () => h(vue.WebPptEditor, { mode: 'view' }),
+  }),
+);
 check('React SSR 不访问 window/document', reactMarkup.startsWith('<div'));
 check('Vue SSR 不访问 window/document', vueMarkup.startsWith('<div'));
 
 const reactThin = thinBundle(reactEntry, 'react', ['react', '@web-ppt/editor']);
 const vueThin = thinBundle(vueEntry, 'vue', ['vue', '@web-ppt/editor']);
-const reactChartThin = thinBundle(join(root, 'packages/react/src/chart/index.ts'),
-  'react-chart', ['@web-ppt/editor/chart']);
-const vueChartThin = thinBundle(join(root, 'packages/vue/src/chart/index.ts'),
-  'vue-chart', ['@web-ppt/editor/chart']);
+const reactChartThin = thinBundle(join(root, 'packages/react/src/chart/index.ts'), 'react-chart', ['@web-ppt/editor/chart']);
+const vueChartThin = thinBundle(join(root, 'packages/vue/src/chart/index.ts'), 'vue-chart', ['@web-ppt/editor/chart']);
 check('React 排除 peer 后 gzip 小于 5KB', reactThin.gzip < 5 * 1024, `${reactThin.gzip} bytes`);
 check('Vue 排除 peer 后 gzip 小于 5KB', vueThin.gzip < 5 * 1024, `${vueThin.gzip} bytes`);
-check('框架图表入口只保留薄转发', reactChartThin.gzip < 256 && vueChartThin.gzip < 256,
-  `React ${reactChartThin.gzip} / Vue ${vueChartThin.gzip} bytes`);
+check(
+  '框架图表入口只保留薄转发',
+  reactChartThin.gzip < 256 && vueChartThin.gzip < 256,
+  `React ${reactChartThin.gzip} / Vue ${vueChartThin.gzip} bytes`,
+);
 
 if (failures.length) {
   console.error(`\n\x1b[31m✗ ${failures.length} 项框架适配包验收失败\x1b[0m`);
@@ -122,5 +161,4 @@ if (failures.length) {
   process.exit(1);
 }
 recordCount('adapters', passed);
-console.log(`\n\x1b[32m✓ 框架适配包 ${passed} 项断言通过`
-  + `（React ${reactThin.gzip}B / Vue ${vueThin.gzip}B gzip，不含 peer）\x1b[0m`);
+console.log(`\n\x1b[32m✓ 框架适配包 ${passed} 项断言通过` + `（React ${reactThin.gzip}B / Vue ${vueThin.gzip}B gzip，不含 peer）\x1b[0m`);

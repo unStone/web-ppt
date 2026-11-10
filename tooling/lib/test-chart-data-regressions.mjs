@@ -37,12 +37,16 @@ function coldRecovery(out, fixture, recoveryFrames) {
         record.ovr.extensions?.['chart-data']), saveRejected });
     }).catch((error) => parentPort.postMessage({ error: String(error?.stack ?? error) }));`;
   return new Promise((resolve, reject) => {
-    const worker = new Worker(code, { eval: true, workerData: {
-      core: pathToFileURL(join(out, 'core.mjs')).href,
-      edit: pathToFileURL(join(out, 'edit.mjs')).href,
-      fixture, frames: recoveryFrames,
-    } });
-    worker.once('message', (message) => message.error ? reject(new Error(message.error)) : resolve(message));
+    const worker = new Worker(code, {
+      eval: true,
+      workerData: {
+        core: pathToFileURL(join(out, 'core.mjs')).href,
+        edit: pathToFileURL(join(out, 'edit.mjs')).href,
+        fixture,
+        frames: recoveryFrames,
+      },
+    });
+    worker.once('message', (message) => (message.error ? reject(new Error(message.error)) : resolve(message)));
     worker.once('error', reject);
   });
 }
@@ -140,15 +144,19 @@ function coldExtensionBoundary(out, fixture, recoveryFrames) {
       });
     }).catch((error) => parentPort.postMessage({ error: String(error?.stack ?? error) }));`;
   return new Promise((resolve, reject) => {
-    const worker = new Worker(code, { eval: true, workerData: {
-      core: pathToFileURL(join(out, 'core.mjs')).href,
-      edit: pathToFileURL(join(out, 'edit.mjs')).href,
-      chart: pathToFileURL(join(out, 'chart.mjs')).href,
-      editor: pathToFileURL(join(out, 'editor.mjs')).href,
-      domEnv: new URL('./dom-env.mjs', import.meta.url).href,
-      fixture, frames: recoveryFrames,
-    } });
-    worker.once('message', (message) => message.error ? reject(new Error(message.error)) : resolve(message));
+    const worker = new Worker(code, {
+      eval: true,
+      workerData: {
+        core: pathToFileURL(join(out, 'core.mjs')).href,
+        edit: pathToFileURL(join(out, 'edit.mjs')).href,
+        chart: pathToFileURL(join(out, 'chart.mjs')).href,
+        editor: pathToFileURL(join(out, 'editor.mjs')).href,
+        domEnv: new URL('./dom-env.mjs', import.meta.url).href,
+        fixture,
+        frames: recoveryFrames,
+      },
+    });
+    worker.once('message', (message) => (message.error ? reject(new Error(message.error)) : resolve(message)));
     worker.once('error', reject);
   });
 }
@@ -157,17 +165,21 @@ export async function testChartDataRegressions(context) {
   const { core, edit, chart, collab, bytes, cacheBytes, root, out, recoveryFrames, check, eq } = context;
   const cold = await coldRecovery(out, join(root, 'fixtures/sample-chart-data.pptx'), recoveryFrames);
   check('冷启动可先恢复按需图表补丁', cold.restored && cold.saveRejected);
-  const coldBoundary = await coldExtensionBoundary(
-    out, join(root, 'fixtures/sample-chart-data.pptx'), recoveryFrames,
+  const coldBoundary = await coldExtensionBoundary(out, join(root, 'fixtures/sample-chart-data.pptx'), recoveryFrames);
+  check(
+    '按需扩展注册会使冷态投影缓存失效',
+    !coldBoundary.beforeHas && coldBoundary.afterHas && !coldBoundary.same && coldBoundary.queried === '保存后营收',
   );
-  check('按需扩展注册会使冷态投影缓存失效', !coldBoundary.beforeHas && coldBoundary.afterHas
-    && !coldBoundary.same && coldBoundary.queried === '保存后营收');
-  check('按需扩展注册主动通知已挂载编辑器重绘', coldBoundary.registrationEvents.length === 1
-    && coldBoundary.registrationEvents[0].source === 'external'
-    && coldBoundary.registrationNotified && !coldBoundary.beforeDomHas && coldBoundary.afterDomHas,
-  JSON.stringify(coldBoundary.registrationEvents));
-  check('冷态恶意标量加载后被隔离且不毒化查询', coldBoundary.hostileError === null
-    && coldBoundary.hostileName === '2024 年');
+  check(
+    '按需扩展注册主动通知已挂载编辑器重绘',
+    coldBoundary.registrationEvents.length === 1
+      && coldBoundary.registrationEvents[0].source === 'external'
+      && coldBoundary.registrationNotified
+      && !coldBoundary.beforeDomHas
+      && coldBoundary.afterDomHas,
+    JSON.stringify(coldBoundary.registrationEvents),
+  );
+  check('冷态恶意标量加载后被隔离且不毒化查询', coldBoundary.hostileError === null && coldBoundary.hostileName === '2024 年');
   eq('冷态非法系列字段不吞同批合法点值', coldBoundary.hostileValue, 777);
   check('冷态循环扩展值在通用边界拒绝', coldBoundary.cyclicRejected);
   check('冷态删除不存在扩展路径是真正 no-op', coldBoundary.deleteNoop);
@@ -178,17 +190,18 @@ export async function testChartDataRegressions(context) {
   readonly.doc.meta.readonly = true;
   let readonlyRejected = false;
   try {
-    chart.createChartDataEditor(new edit.Editor(readonly.doc)).setSeriesName(
-      readonlyChart.id, chart.queryChartData(readonly.doc, readonlyChart.id).series[0].id, '越权',
-    );
-  } catch { readonlyRejected = true; }
+    chart
+      .createChartDataEditor(new edit.Editor(readonly.doc))
+      .setSeriesName(readonlyChart.id, chart.queryChartData(readonly.doc, readonlyChart.id).series[0].id, '越权');
+  } catch {
+    readonlyRejected = true;
+  }
   check('图表命令遵守文档只读权限', readonlyRejected && !readonly.doc.elements[readonlyChart.id].ovr.extensions);
   readonly.presentation.dispose();
 
   const sharedParts = unzipSync(bytes);
   sharedParts['ppt/slides/_rels/slide2.xml.rels'] = encoder.encode(
-    decoder.decode(sharedParts['ppt/slides/_rels/slide2.xml.rels'])
-      .replace('../charts/chart2.xml', '../charts/chart1.xml'),
+    decoder.decode(sharedParts['ppt/slides/_rels/slide2.xml.rels']).replace('../charts/chart2.xml', '../charts/chart1.xml'),
   );
   const shared = await fresh(core, edit, zipSync(sharedParts, { level: 0 }), 'chart-shared-');
   const sharedCharts = chart.listEditableCharts(shared.doc);
@@ -205,8 +218,7 @@ export async function testChartDataRegressions(context) {
   sharedBook.presentation.dispose();
 
   const cacheParts = unzipSync(cacheBytes);
-  const missingXml = decoder.decode(cacheParts['ppt/charts/chart1.xml'])
-    .replace(/<c:strCache>[\s\S]*?<\/c:strCache>/, '');
+  const missingXml = decoder.decode(cacheParts['ppt/charts/chart1.xml']).replace(/<c:strCache>[\s\S]*?<\/c:strCache>/, '');
   cacheParts['ppt/charts/chart1.xml'] = encoder.encode(missingXml);
   const missing = await fresh(core, edit, zipSync(cacheParts, { level: 0 }), 'chart-missing-');
   const missingChart = chart.listEditableCharts(missing.doc)[0];
@@ -216,61 +228,65 @@ export async function testChartDataRegressions(context) {
   const missingSaved = await missingEditor.save();
   const missingSavedXml = decoder.decode(unzipSync(missingSaved)['ppt/charts/chart1.xml']);
   const missingName = missingSavedXml.indexOf('补建缓存');
-  check('引用缺失缓存时在 ref 内补建 cache', missingName > 0
-    && missingSavedXml.lastIndexOf('<c:strRef', missingName) > missingSavedXml.lastIndexOf('<c:tx', missingName)
-    && missingSavedXml.lastIndexOf('<c:strCache', missingName) > missingSavedXml.lastIndexOf('<c:strRef', missingName)
-    && missingSavedXml.indexOf('</c:strRef>', missingName) > missingName);
+  check(
+    '引用缺失缓存时在 ref 内补建 cache',
+    missingName > 0
+      && missingSavedXml.lastIndexOf('<c:strRef', missingName) > missingSavedXml.lastIndexOf('<c:tx', missingName)
+      && missingSavedXml.lastIndexOf('<c:strCache', missingName) > missingSavedXml.lastIndexOf('<c:strRef', missingName)
+      && missingSavedXml.indexOf('</c:strRef>', missingName) > missingName,
+  );
   missing.presentation.dispose();
 
   const missingNumberParts = unzipSync(cacheBytes);
   missingNumberParts['ppt/charts/chart1.xml'] = encoder.encode(
-    decoder.decode(missingNumberParts['ppt/charts/chart1.xml'])
-      .replace(/<c:numCache>[\s\S]*?<\/c:numCache>/, ''),
+    decoder.decode(missingNumberParts['ppt/charts/chart1.xml']).replace(/<c:numCache>[\s\S]*?<\/c:numCache>/, ''),
   );
   const missingNumber = await fresh(core, edit, zipSync(missingNumberParts, { level: 0 }), 'chart-num-cache-');
   const missingNumberChart = chart.listEditableCharts(missingNumber.doc)[0];
   const missingNumberData = chart.queryChartData(missingNumber.doc, missingNumberChart.id);
   const missingNumberEditor = new edit.Editor(missingNumber.doc);
-  chart.createChartDataEditor(missingNumberEditor).setValue(
-    missingNumberChart.id, missingNumberData.series[0].id, missingNumberData.categories[0].id, 73,
-  );
+  chart
+    .createChartDataEditor(missingNumberEditor)
+    .setValue(missingNumberChart.id, missingNumberData.series[0].id, missingNumberData.categories[0].id, 73);
   const createdNumberXml = decoder.decode(unzipSync(await missingNumberEditor.save())['ppt/charts/chart1.xml']);
-  check('缺失 numCache 时按 CT_NumData 顺序补 formatCode',
+  check(
+    '缺失 numCache 时按 CT_NumData 顺序补 formatCode',
     /<c:numCache><c:formatCode>General<\/c:formatCode><c:ptCount val="4"(?:\/>|><\/c:ptCount>)/.test(createdNumberXml),
-    createdNumberXml.match(/<c:numCache>[\s\S]*?<\/c:numCache>/)?.[0] ?? '未生成 numCache');
+    createdNumberXml.match(/<c:numCache>[\s\S]*?<\/c:numCache>/)?.[0] ?? '未生成 numCache',
+  );
   missingNumber.presentation.dispose();
 
   const missingCountParts = unzipSync(cacheBytes);
   missingCountParts['ppt/charts/chart1.xml'] = encoder.encode(
-    decoder.decode(missingCountParts['ppt/charts/chart1.xml'])
+    decoder
+      .decode(missingCountParts['ppt/charts/chart1.xml'])
       .replace(/(<c:numCache><c:formatCode>[\s\S]*?<\/c:formatCode>)<c:ptCount[^>]*\/>/, '$1'),
   );
   const missingCount = await fresh(core, edit, zipSync(missingCountParts, { level: 0 }), 'chart-num-count-');
   const missingCountChart = chart.listEditableCharts(missingCount.doc)[0];
   const missingCountData = chart.queryChartData(missingCount.doc, missingCountChart.id);
   const missingCountEditor = new edit.Editor(missingCount.doc);
-  chart.createChartDataEditor(missingCountEditor).setValue(
-    missingCountChart.id, missingCountData.series[0].id, missingCountData.categories[0].id, 74,
-  );
+  chart
+    .createChartDataEditor(missingCountEditor)
+    .setValue(missingCountChart.id, missingCountData.series[0].id, missingCountData.categories[0].id, 74);
   const countXml = decoder.decode(unzipSync(await missingCountEditor.save())['ppt/charts/chart1.xml']);
   const numberCache = countXml.match(/<c:numCache>[\s\S]*?<\/c:numCache>/)?.[0] ?? '';
-  check('缺失 ptCount 时仍保持 formatCode → ptCount → pt',
+  check(
+    '缺失 ptCount 时仍保持 formatCode → ptCount → pt',
     numberCache.indexOf('<c:formatCode>') < numberCache.indexOf('<c:ptCount')
-      && numberCache.indexOf('<c:ptCount') < numberCache.indexOf('<c:pt '));
+      && numberCache.indexOf('<c:ptCount') < numberCache.indexOf('<c:pt '),
+  );
   missingCount.presentation.dispose();
 
   const prefixedParts = unzipSync(cacheBytes);
   prefixedParts['ppt/charts/chart1.xml'] = encoder.encode(
-    decoder.decode(prefixedParts['ppt/charts/chart1.xml'])
-      .replace('xmlns:c=', 'xmlns:cx=').replaceAll('c:', 'cx:'),
+    decoder.decode(prefixedParts['ppt/charts/chart1.xml']).replace('xmlns:c=', 'xmlns:cx=').replaceAll('c:', 'cx:'),
   );
   const prefixed = await fresh(core, edit, zipSync(prefixedParts, { level: 0 }), 'chart-prefix-');
   const prefixedChart = chart.listEditableCharts(prefixed.doc)[0];
   const prefixedData = chart.queryChartData(prefixed.doc, prefixedChart.id);
   const prefixedEditor = new edit.Editor(prefixed.doc);
-  chart.createChartDataEditor(prefixedEditor).setValue(
-    prefixedChart.id, prefixedData.series[0].id, prefixedData.categories[0].id, 9191,
-  );
+  chart.createChartDataEditor(prefixedEditor).setValue(prefixedChart.id, prefixedData.series[0].id, prefixedData.categories[0].id, 9191);
   const prefixedXml = decoder.decode(unzipSync(await prefixedEditor.save())['ppt/charts/chart1.xml']);
   check('替代图表前缀保持绑定', prefixedXml.includes('<cx:pt ') && !prefixedXml.includes('<c:pt '));
   prefixed.presentation.dispose();
@@ -284,14 +300,18 @@ export async function testChartDataRegressions(context) {
   eq('删除全部来源系列后模型确实为空', chart.queryChartData(templates.doc, templateChart.id).series.length, 0);
   const replacement = templateApi.addSeries(templateChart.id, '唯一新系列');
   const templateSaved = await templateEditor.save();
-  check('删除全部来源系列后仍可用预存模板保存',
-    decoder.decode(unzipSync(templateSaved)['ppt/charts/chart1.xml']).includes('唯一新系列'));
+  check('删除全部来源系列后仍可用预存模板保存', decoder.decode(unzipSync(templateSaved)['ppt/charts/chart1.xml']).includes('唯一新系列'));
   templateEditor.undo();
-  check('保存后撤销仍从打开时基线投影', !!templateEditor.effectiveElement(templateChart.id).children.length
-    && !chart.queryChartData(templates.doc, templateChart.id).series.some((series) => series.id === replacement));
+  check(
+    '保存后撤销仍从打开时基线投影',
+    !!templateEditor.effectiveElement(templateChart.id).children.length
+      && !chart.queryChartData(templates.doc, templateChart.id).series.some((series) => series.id === replacement),
+  );
   templateEditor.redo();
-  check('撤销后重做仍恢复重建系列',
-    chart.queryChartData(templates.doc, templateChart.id).series.some((series) => series.id === replacement));
+  check(
+    '撤销后重做仍恢复重建系列',
+    chart.queryChartData(templates.doc, templateChart.id).series.some((series) => series.id === replacement),
+  );
   templates.presentation.dispose();
 
   const emptyPoints = await fresh(core, edit, bytes, 'chart-empty-points-');
@@ -299,11 +319,11 @@ export async function testChartDataRegressions(context) {
   const emptyEditor = new edit.Editor(emptyPoints.doc);
   const emptyApi = chart.createChartDataEditor(emptyEditor);
   for (const kind of ['scatter', 'bubble']) {
-    const item = emptyCharts.find((candidate) => chart.queryChartData(emptyPoints.doc, candidate.id)
-      .series.some((series) => series.plotKind === kind));
+    const item = emptyCharts.find((candidate) =>
+      chart.queryChartData(emptyPoints.doc, candidate.id).series.some((series) => series.plotKind === kind),
+    );
     const added = emptyApi.addSeries(item.id, `空${kind}系列`, kind);
-    const visible = chart.queryChartData(emptyPoints.doc, item.id)
-      .series.some((series) => series.id === added);
+    const visible = chart.queryChartData(emptyPoints.doc, item.id).series.some((series) => series.id === added);
     check(`空点集 ${kind} 系列立即物化`, visible);
     if (visible) emptyApi.removeSeries(item.id, added);
   }
@@ -311,33 +331,31 @@ export async function testChartDataRegressions(context) {
   const categoryData = chart.queryChartData(emptyPoints.doc, categoryChart.id);
   categoryData.categories.forEach((category) => emptyApi.removeCategory(categoryChart.id, category.id));
   const emptyCategorySeries = emptyApi.addSeries(categoryChart.id, '零类别系列');
-  check('零类别的类别系列立即物化', chart.queryChartData(emptyPoints.doc, categoryChart.id)
-    .series.some((series) => series.id === emptyCategorySeries));
+  check(
+    '零类别的类别系列立即物化',
+    chart.queryChartData(emptyPoints.doc, categoryChart.id).series.some((series) => series.id === emptyCategorySeries),
+  );
   emptyPoints.presentation.dispose();
 
   const overlapParts = unzipSync(bytes);
   overlapParts['ppt/charts/chart1.xml'] = encoder.encode(
-    decoder.decode(overlapParts['ppt/charts/chart1.xml'])
-      .replace('Sheet1!$C$2:$C$5', 'Sheet1!$B$2:$B$5'),
+    decoder.decode(overlapParts['ppt/charts/chart1.xml']).replace('Sheet1!$C$2:$C$5', 'Sheet1!$B$2:$B$5'),
   );
   const overlap = await fresh(core, edit, zipSync(overlapParts, { level: 0 }), 'chart-overlap-');
   const overlapChart = chart.listEditableCharts(overlap.doc)[0];
-  eq('不同系列公式范围重叠时明确只读',
-    chart.queryChartData(overlap.doc, overlapChart.id).binding.mode, 'readonly');
+  eq('不同系列公式范围重叠时明确只读', chart.queryChartData(overlap.doc, overlapChart.id).binding.mode, 'readonly');
   overlap.presentation.dispose();
 
   const lastRowParts = unzipSync(bytes);
   lastRowParts['ppt/charts/chart1.xml'] = encoder.encode(
-    decoder.decode(lastRowParts['ppt/charts/chart1.xml'])
-      .replace('Sheet1!$B$2:$B$5', 'Sheet1!$B$1048573:$B$1048576'),
+    decoder.decode(lastRowParts['ppt/charts/chart1.xml']).replace('Sheet1!$B$2:$B$5', 'Sheet1!$B$1048573:$B$1048576'),
   );
   const lastRow = await fresh(core, edit, zipSync(lastRowParts, { level: 0 }), 'chart-last-row-');
   const lastRowChart = chart.listEditableCharts(lastRow.doc)[0];
   const lastRowEditor = new edit.Editor(lastRow.doc);
   eq('Excel 末行内的原始范围仍可同步', chart.queryChartData(lastRow.doc, lastRowChart.id).binding.mode, 'workbook');
   chart.createChartDataEditor(lastRowEditor).addCategory(lastRowChart.id, '越界行');
-  eq('公式扩展越过 Excel 末行时原子降级只读',
-    chart.queryChartData(lastRow.doc, lastRowChart.id).binding.mode, 'readonly');
+  eq('公式扩展越过 Excel 末行时原子降级只读', chart.queryChartData(lastRow.doc, lastRowChart.id).binding.mode, 'readonly');
   lastRow.presentation.dispose();
 
   const shrink = await fresh(core, edit, bytes, 'chart-shrink-');
@@ -355,14 +373,14 @@ export async function testChartDataRegressions(context) {
   eq('空单元格墓碑不阻止范围重新扩展', chart.queryChartData(expand.doc, expandChart.id).binding.mode, 'workbook');
   const expandedParts = unzipSync(await expandEditor.save());
   const expandedBook = unzipSync(expandedParts['ppt/embeddings/chart-data.xlsx']);
-  check('重新扩展写回原末端单元格',
-    decoder.decode(expandedBook['xl/worksheets/sheet1.xml']).includes('r="A5"'));
+  check('重新扩展写回原末端单元格', decoder.decode(expandedBook['xl/worksheets/sheet1.xml']).includes('r="A5"'));
   expand.presentation.dispose();
 
   const collisionParts = unzipSync(bytes);
   const workbook = unzipSync(collisionParts['ppt/embeddings/chart-data.xlsx']);
   workbook['xl/worksheets/sheet1.xml'] = encoder.encode(
-    decoder.decode(workbook['xl/worksheets/sheet1.xml'])
+    decoder
+      .decode(workbook['xl/worksheets/sheet1.xml'])
       .replace('<row r="1">', '<row r="1"><c r="D1" t="inlineStr"><is><t>SECRET</t></is></c>'),
   );
   collisionParts['ppt/embeddings/chart-data.xlsx'] = zipSync(workbook, { level: 0 });
@@ -379,9 +397,9 @@ export async function testChartDataRegressions(context) {
   const rowParts = unzipSync(bytes);
   const rowBook = unzipSync(rowParts['ppt/embeddings/chart-data.xlsx']);
   rowBook['xl/worksheets/sheet1.xml'] = encoder.encode(
-    decoder.decode(rowBook['xl/worksheets/sheet1.xml']).replace(
-      '<row r="8"', '<row r="6"><c r="A6" t="inlineStr"><is><t>KEEP</t></is></c></row>\n<row r="8"',
-    ),
+    decoder
+      .decode(rowBook['xl/worksheets/sheet1.xml'])
+      .replace('<row r="8"', '<row r="6"><c r="A6" t="inlineStr"><is><t>KEEP</t></is></c></row>\n<row r="8"'),
   );
   rowParts['ppt/embeddings/chart-data.xlsx'] = zipSync(rowBook, { level: 0 });
   const rowCollision = await fresh(core, edit, zipSync(rowParts, { level: 0 }), 'chart-row-');
@@ -391,35 +409,43 @@ export async function testChartDataRegressions(context) {
   eq('类别扩展遇未知相邻行时降级只读', chart.queryChartData(rowCollision.doc, rowChart.id).binding.mode, 'readonly');
   const packageBeforeFailure = rowCollision.doc.package;
   let failedAtomically = false;
-  try { await rowEditor.save(); } catch { failedAtomically = rowCollision.doc.package === packageBeforeFailure && !packageBeforeFailure.disposed; }
+  try {
+    await rowEditor.save();
+  } catch {
+    failedAtomically = rowCollision.doc.package === packageBeforeFailure && !packageBeforeFailure.disposed;
+  }
   check('扩展保存失败不提前提交部分包', failedAtomically);
   rowCollision.presentation.dispose();
 
   const oversizedParts = unzipSync(bytes);
-  oversizedParts['ppt/embeddings/chart-data.xlsx'] = forgeOversizedZip(
-    zipSync({ 'xl/workbook.xml': encoder.encode('<workbook/>') }),
-  );
+  oversizedParts['ppt/embeddings/chart-data.xlsx'] = forgeOversizedZip(zipSync({ 'xl/workbook.xml': encoder.encode('<workbook/>') }));
   const oversized = await fresh(core, edit, zipSync(oversizedParts, { level: 0 }), 'chart-oversized-');
   const oversizedChart = chart.listEditableCharts(oversized.doc)[0];
-  eq('嵌入工作簿解压规模超限时降级只读',
-    chart.queryChartData(oversized.doc, oversizedChart.id).binding.mode, 'readonly');
+  eq('嵌入工作簿解压规模超限时降级只读', chart.queryChartData(oversized.doc, oversizedChart.id).binding.mode, 'readonly');
   oversized.presentation.dispose();
 
-  const replicas = await Promise.all(['a', 'b', 'c'].map(async (replica) => {
-    const result = await fresh(core, edit, bytes, 'chart-causal-');
-    return { ...result, editor: new edit.Editor(result.doc, { origin: replica }) };
-  }));
+  const replicas = await Promise.all(
+    ['a', 'b', 'c'].map(async (replica) => {
+      const result = await fresh(core, edit, bytes, 'chart-causal-');
+      return { ...result, editor: new edit.Editor(result.doc, { origin: replica }) };
+    }),
+  );
   const listeners = new Map();
   const queue = [];
   const connections = replicas.map((replica, index) => {
     const id = ['a', 'b', 'c'][index];
     return collab.bindCollaboration(replica.editor, {
-      documentId: 'chart-causal', replicaId: id, replicaSlot: index + 1,
+      documentId: 'chart-causal',
+      replicaId: id,
+      replicaSlot: index + 1,
       provider: {
         send: (message) => {
           for (const peer of listeners.keys()) if (peer !== id) queue.push({ to: peer, message: structuredClone(message) });
         },
-        subscribe: (listener) => { listeners.set(id, listener); return () => listeners.delete(id); },
+        subscribe: (listener) => {
+          listeners.set(id, listener);
+          return () => listeners.delete(id);
+        },
       },
     });
   });
@@ -436,13 +462,13 @@ export async function testChartDataRegressions(context) {
   const causalPoint = chart.queryChartData(replicas[1].doc, causalChart).categories[0].id;
   chart.createChartDataEditor(replicas[1].editor).setValue(causalChart, causalSeries, causalPoint, 42);
   deliver('c', 'b');
-  check('后代字段先到时保持显式 deferred',
-    !chart.queryChartData(replicas[2].doc, causalChart).series.some((item) => item.id === causalSeries));
+  check(
+    '后代字段先到时保持显式 deferred',
+    !chart.queryChartData(replicas[2].doc, causalChart).series.some((item) => item.id === causalSeries),
+  );
   deliver('c', 'a');
-  const causalResult = chart.queryChartData(replicas[2].doc, causalChart)
-    .series.find((item) => item.id === causalSeries);
+  const causalResult = chart.queryChartData(replicas[2].doc, causalChart).series.find((item) => item.id === causalSeries);
   eq('三副本乱序创建不覆盖后到更新', causalResult?.points[0]?.value, 42);
   connections.forEach((connection) => connection.dispose());
   replicas.forEach((replica) => replica.presentation.dispose());
-
 }

@@ -1,22 +1,14 @@
 import { assertDataObject } from '../data-validation';
 import { assertFractionalIndex, initialFractionalIndex } from '../fractional-index';
 import { tableCellStableRefFromKey } from '../table-cell';
-import {
-  isReservedTableColumnId, orderedTableColumns, orderedTableRows, queryTableGrid,
-} from '../table-grid';
+import { isReservedTableColumnId, orderedTableColumns, orderedTableRows, queryTableGrid } from '../table-grid';
 import type { EditDoc, ElementRecord, TableCellOverrides } from '../types';
-import type {
-  Patch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch,
-} from './types';
+import type { Patch, TableCellPropsPatch, TableColumnPatch, TableGridEntryPatch, TableMergePatch } from './types';
 
-const ENTRY_FIELDS = new Set([
-  'tableRemovedRows', 'tableRemovedColumns', 'tableRowHeights', 'tableColumnWidths',
-]);
+const ENTRY_FIELDS = new Set(['tableRemovedRows', 'tableRemovedColumns', 'tableRowHeights', 'tableColumnWidths']);
 const CELL_FIELDS = new Set(['fill', 'borders', 'margins', 'vAlign', 'vert']);
 
-function tableRecord(
-  doc: EditDoc, id: string, index: number,
-): ElementRecord & { readonly src: TableElement } {
+function tableRecord(doc: EditDoc, id: string, index: number): ElementRecord & { readonly src: TableElement } {
   const record = doc.elements[id];
   if (!record || record.src.kind !== 'table' || record.meta.editable !== 'full') {
     throw new Error(`Patch ${index} 没有指向可编辑表格`);
@@ -25,24 +17,45 @@ function tableRecord(
 }
 
 export function isTableColumnPatch(patch: Patch): patch is TableColumnPatch {
-  return patch.path.length === 5 && patch.path[0] === 'elements' && patch.path[2] === 'ovr'
-    && patch.path[3] === 'tableColumns' && (patch.op === 'insert' || patch.op === 'remove');
+  return (
+    patch.path.length === 5
+    && patch.path[0] === 'elements'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'tableColumns'
+    && (patch.op === 'insert' || patch.op === 'remove')
+  );
 }
 
 export function isTableGridEntryPatch(patch: Patch): patch is TableGridEntryPatch {
-  return patch.path.length === 5 && patch.path[0] === 'elements' && patch.path[2] === 'ovr'
-    && ENTRY_FIELDS.has(String(patch.path[3])) && (patch.op === 'set' || patch.op === 'del');
+  return (
+    patch.path.length === 5
+    && patch.path[0] === 'elements'
+    && patch.path[2] === 'ovr'
+    && ENTRY_FIELDS.has(String(patch.path[3]))
+    && (patch.op === 'set' || patch.op === 'del')
+  );
 }
 
 export function isTableMergePatch(patch: Patch): patch is TableMergePatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr'
-    && patch.path[3] === 'tableMerges' && (patch.op === 'set' || patch.op === 'del');
+  return (
+    patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'tableMerges'
+    && (patch.op === 'set' || patch.op === 'del')
+  );
 }
 
 export function isTableCellPropsPatch(patch: Patch): patch is TableCellPropsPatch {
-  return patch.path.length === 6 && patch.path[0] === 'elements' && patch.path[2] === 'ovr'
-    && patch.path[3] === 'tableCells' && typeof patch.path[4] === 'string'
-    && CELL_FIELDS.has(String(patch.path[5])) && (patch.op === 'set' || patch.op === 'del');
+  return (
+    patch.path.length === 6
+    && patch.path[0] === 'elements'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'tableCells'
+    && typeof patch.path[4] === 'string'
+    && CELL_FIELDS.has(String(patch.path[5]))
+    && (patch.op === 'set' || patch.op === 'del')
+  );
 }
 
 export function validateTableColumnPatch(doc: EditDoc, patch: TableColumnPatch, index: number): void {
@@ -54,9 +67,10 @@ export function validateTableColumnPatch(doc: EditDoc, patch: TableColumnPatch, 
   }
   assertDataObject(patch.value, ['order', 'template'], `Patch ${index} 的新增列`);
   assertFractionalIndex(patch.value.order);
-  if (patch.value.template !== undefined
-    && (!Number.isSafeInteger(patch.value.template) || patch.value.template < 0
-      || patch.value.template >= record.src.colWidths.length)) {
+  if (
+    patch.value.template !== undefined
+    && (!Number.isSafeInteger(patch.value.template) || patch.value.template < 0 || patch.value.template >= record.src.colWidths.length)
+  ) {
     throw new Error(`Patch ${index} 的列模板无效`);
   }
   const current = record.ovr.tableColumns?.[id];
@@ -67,15 +81,12 @@ export function validateTableColumnPatch(doc: EditDoc, patch: TableColumnPatch, 
   if (record.src.colWidths.some((_, source) => patch.value.order === initialFractionalIndex(source))) {
     throw new Error(`Patch ${index} 的列顺序与来源列冲突`);
   }
-  if (Object.entries(record.ovr.tableColumns ?? {})
-    .some(([other, value]) => other !== id && value.order === patch.value.order)) {
+  if (Object.entries(record.ovr.tableColumns ?? {}).some(([other, value]) => other !== id && value.order === patch.value.order)) {
     throw new Error(`Patch ${index} 的列顺序重复`);
   }
 }
 
-export function validateTableGridEntryPatch(
-  doc: EditDoc, patch: TableGridEntryPatch, index: number,
-): void {
+export function validateTableGridEntryPatch(doc: EditDoc, patch: TableGridEntryPatch, index: number): void {
   const record = tableRecord(doc, patch.path[1], index);
   const field = patch.path[3];
   const id = patch.path[4];
@@ -94,7 +105,8 @@ export function validateTableGridEntryPatch(
 }
 
 function rectangle(
-  rows: readonly { id: string }[], columns: readonly { id: string }[],
+  rows: readonly { id: string }[],
+  columns: readonly { id: string }[],
   region: { from: { row: string; column: string }; to: { row: string; column: string } },
 ): readonly [number, number, number, number] {
   const r1 = rows.findIndex((row) => row.id === region.from.row);
@@ -120,29 +132,38 @@ export function assertTableMergeRegions(record: ElementRecord, value: unknown, l
         throw new Error(`${label}[${index}] 的行列身份无效`);
       }
     }
-    const [r1, c1, r2, c2] = rectangle(grid.rows, grid.columns, typed as {
-      from: { row: string; column: string }; to: { row: string; column: string };
-    });
+    const [r1, c1, r2, c2] = rectangle(
+      grid.rows,
+      grid.columns,
+      typed as {
+        from: { row: string; column: string };
+        to: { row: string; column: string };
+      },
+    );
     if (r1 === r2 && c1 === c2) throw new Error(`${label}[${index}] 不能是单格合并`);
-    for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) {
-      const key = `${r}:${c}`;
-      if (occupied.has(key)) throw new Error(`${label}[${index}] 与其他合并区域重叠`);
-      occupied.add(key);
-    }
+    for (let r = r1; r <= r2; r++)
+      for (let c = c1; c <= c2; c++) {
+        const key = `${r}:${c}`;
+        if (occupied.has(key)) throw new Error(`${label}[${index}] 与其他合并区域重叠`);
+        occupied.add(key);
+      }
   });
 }
 
 export function validateTableMergePatch(doc: EditDoc, patch: TableMergePatch, index: number): void {
   const record = tableRecord(doc, patch.path[1], index);
-  if (patch.op === 'set') assertTableMergeRegions({
-    ...record,
-    ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
-  }, patch.value, `Patch ${index} 的合并区域`);
+  if (patch.op === 'set')
+    assertTableMergeRegions(
+      {
+        ...record,
+        ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+      },
+      patch.value,
+      `Patch ${index} 的合并区域`,
+    );
 }
 
-export function validateTableCellPropsPatch(
-  doc: EditDoc, patch: TableCellPropsPatch, index: number,
-): void {
+export function validateTableCellPropsPatch(doc: EditDoc, patch: TableCellPropsPatch, index: number): void {
   const record = tableRecord(doc, patch.path[1], index);
   if (!tableCellStableRefFromKey(record, patch.path[4])) {
     throw new Error(`Patch ${index} 的单元格身份无效`);
@@ -150,8 +171,11 @@ export function validateTableCellPropsPatch(
   if (patch.op === 'del') return;
   const field = patch.path[5];
   if (field === 'margins') {
-    if (!Array.isArray(patch.value) || patch.value.length !== 4
-      || patch.value.some((part) => typeof part !== 'number' || !Number.isFinite(part) || part < 0)) {
+    if (
+      !Array.isArray(patch.value)
+      || patch.value.length !== 4
+      || patch.value.some((part) => typeof part !== 'number' || !Number.isFinite(part) || part < 0)
+    ) {
       throw new Error(`Patch ${index} 的单元格边距无效`);
     }
   } else if (field === 'vAlign' && !['top', 'middle', 'bottom'].includes(String(patch.value))) {

@@ -19,8 +19,7 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
     const roots = [...session.editor.doc.slides[view.slideId].children];
     const ids = roots.filter((id) => session.editor.doc.elements[id].meta.editable !== 'none');
     const untouchedId = roots.find((id) => !ids.includes(id));
-    const untouched = untouchedId
-      ? mount.querySelector(`[data-edit-root="${untouchedId}"]`) : null;
+    const untouched = untouchedId ? mount.querySelector(`[data-edit-root="${untouchedId}"]`) : null;
     const svg = mount.querySelector('[data-ppt-layer="static"] svg');
     const groupSamples = [];
     const ungroupSamples = [];
@@ -35,19 +34,25 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
       groupNode?.getBoundingClientRect();
       const groupElapsed = performance.now() - started;
       if (index >= 5) groupSamples.push(groupElapsed);
-      correct &&= groupedSelection.kind === 'elements' && groupedSelection.ids.length === 1
+      correct &&=
+        groupedSelection.kind === 'elements'
+        && groupedSelection.ids.length === 1
         && session.editor.doc.elements[groupId]?.children?.join(',') === ids.join(',')
         && ids.every((id) => groupNode?.contains(mount.querySelector(`[data-edit-root="${id}"]`)));
 
       started = performance.now();
-      correct &&= !view.element.dispatchEvent(keyboardEvent('keydown', 'G', {
-        ctrlKey: true, shiftKey: true,
-      }));
+      correct &&= !view.element.dispatchEvent(
+        keyboardEvent('keydown', 'G', {
+          ctrlKey: true,
+          shiftKey: true,
+        }),
+      );
       const ungroupedSelection = session.editor.selection;
       svg?.getBoundingClientRect();
       const ungroupElapsed = performance.now() - started;
       if (index >= 5) ungroupSamples.push(ungroupElapsed);
-      correct &&= !session.editor.doc.elements[groupId]
+      correct &&=
+        !session.editor.doc.elements[groupId]
         && ungroupedSelection.kind === 'elements'
         && ungroupedSelection.ids.join(',') === ids.join(',')
         && ids.every((id) => mount.querySelectorAll(`[data-edit-root="${id}"]`).length === 1)
@@ -56,11 +61,12 @@ export async function runEditorGroupBrowserContract({ openEditor, load }) {
       session.editor.markSaved();
     }
     const result = { groupP95: p95(groupSamples), ungroupP95: p95(ungroupSamples) };
-    correct &&= (!untouchedId
-      || mount.querySelector(`[data-edit-root="${untouchedId}"]`) === untouched)
+    correct &&=
+      (!untouchedId || mount.querySelector(`[data-edit-root="${untouchedId}"]`) === untouched)
       && mount.querySelector('[data-ppt-layer="static"] svg') === svg
       && session.editor.doc.slides[view.slideId].children.join(',') === roots.join(',')
-      && session.editor.history.undoCount === 0 && session.editor.history.redoCount === 0
+      && session.editor.history.undoCount === 0
+      && session.editor.history.redoCount === 0
       && !session.editor.isDirty();
     if (!correct) throw new Error('60 元素组合/解组最终状态不一致');
     recordPerformanceBudget('60 元素组合 p95', result.groupP95, 8);
@@ -136,13 +142,20 @@ export async function runTrustedGroupContract({ evaluate, dispatchKey }) {
     delete globalThis.trustedGroupContract;
     return result;
   })()`);
-  const eventsCorrect = ungrouped.events.length === 2
+  const eventsCorrect =
+    ungrouped.events.length === 2
     && ungrouped.events.every((event) => event.trusted && event.prevented && event.ctrl)
-    && ungrouped.events[0].key === 'g' && !ungrouped.events[0].shift
-    && ungrouped.events[1].key === 'G' && ungrouped.events[1].shift;
-  if (!Object.values(grouped).every(Boolean)
-    || !Object.entries(ungrouped).filter(([key]) => key !== 'events').every(([, value]) => value)
-    || !eventsCorrect) {
+    && ungrouped.events[0].key === 'g'
+    && !ungrouped.events[0].shift
+    && ungrouped.events[1].key === 'G'
+    && ungrouped.events[1].shift;
+  if (
+    !Object.values(grouped).every(Boolean)
+    || !Object.entries(ungrouped)
+      .filter(([key]) => key !== 'events')
+      .every(([, value]) => value)
+    || !eventsCorrect
+  ) {
     throw new Error(`真实 Ctrl+G / Ctrl+Shift+G 失败：${JSON.stringify({ grouped, ungrouped, eventsCorrect })}`);
   }
 }

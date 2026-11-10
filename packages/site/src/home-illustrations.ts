@@ -12,16 +12,24 @@ export function drawArch(): void {
         stroke="${accent ? 'var(--accent)' : 'var(--line)'}" stroke-width="1.2"/>
       <text x="${x + w / 2}" y="${y + (sub ? 25 : h / 2 + 4)}" text-anchor="middle"
         fill="${accent ? 'var(--accent)' : 'var(--fg)'}" font-size="13" font-weight="600">${title}</text>
-      ${sub ? `<text x="${x + w / 2}" y="${y + 43}" text-anchor="middle"
-        fill="var(--fg-faint)" font-size="10.5" font-family="var(--mono)">${sub}</text>` : ''}
+      ${
+        sub
+          ? `<text x="${x + w / 2}" y="${y + 43}" text-anchor="middle"
+        fill="var(--fg-faint)" font-size="10.5" font-family="var(--mono)">${sub}</text>`
+          : ''
+      }
     </g>`;
 
   const arrow = (x1: number, y1: number, x2: number, y2: number, label = ''): string => `
     <g>
       <path d="M${x1} ${y1} L${x2 - 7} ${y2}" stroke="var(--fg-faint)" stroke-width="1.2" fill="none"/>
       <path d="M${x2 - 7} ${y2 - 3.5} L${x2} ${y2} L${x2 - 7} ${y2 + 3.5}Z" fill="var(--fg-faint)"/>
-      ${label ? `<text x="${(x1 + x2) / 2}" y="${y1 - 7}" text-anchor="middle"
-        fill="var(--fg-faint)" font-size="10" font-family="var(--mono)">${label}</text>` : ''}
+      ${
+        label
+          ? `<text x="${(x1 + x2) / 2}" y="${y1 - 7}" text-anchor="middle"
+        fill="var(--fg-faint)" font-size="10" font-family="var(--mono)">${label}</text>`
+          : ''
+      }
     </g>`;
 
   const host = document.querySelector('#archDiagram')!;
@@ -55,7 +63,6 @@ export function drawArch(): void {
   setAttributeText(host.querySelector('svg')!, 'aria-label', 'Web-PPT 架构图');
   labels.forEach((value, index) => setMessage(host.querySelector(`[data-arch-label="${index}"]`)!, value));
 }
-
 
 /* ── 疑难杂症 ─────────────────────────────────── */
 

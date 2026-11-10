@@ -16,26 +16,38 @@ import { fileURLToPath } from 'node:url';
 import { label, makeZip, NS, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 /** 每页画一个大色块 + 页号 + 可见/隐藏标注，肉眼一眼能看出跳过了哪几页 */
-const page = (n, hidden) => slideXml(
-  sp({
-    x: 40, y: 40, w: W - 80, h: H - 80, prst: 'roundRect',
-    fill: solid(hidden ? 'accent2' : 'accent1'),
-    text:
-      `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="9600" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>` +
-      `<a:t>${n}</a:t></a:r></a:p>` +
-      `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="2400"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>` +
-      `<a:t>${hidden ? '隐藏页' : '可见页'}</a:t></a:r></a:p>`,
-    name: `page${n}`,
-  }) + sp({
-    x: 40, y: H - 76, w: 400, h: 24, prst: 'rect', fill: '<a:noFill/>',
-    text: label(hidden ? 'p:sld show="0"' : 'p:sld（无 show 属性）', 900, 'FFFFFF'),
-  }),
-  '',
-  hidden ? 'show="0"' : '',
-);
+const page = (n, hidden) =>
+  slideXml(
+    sp({
+      x: 40,
+      y: 40,
+      w: W - 80,
+      h: H - 80,
+      prst: 'roundRect',
+      fill: solid(hidden ? 'accent2' : 'accent1'),
+      text:
+        `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="9600" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>`
+        + `<a:t>${n}</a:t></a:r></a:p>`
+        + `<a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="2400"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>`
+        + `<a:t>${hidden ? '隐藏页' : '可见页'}</a:t></a:r></a:p>`,
+      name: `page${n}`,
+    })
+      + sp({
+        x: 40,
+        y: H - 76,
+        w: 400,
+        h: 24,
+        prst: 'rect',
+        fill: '<a:noFill/>',
+        text: label(hidden ? 'p:sld show="0"' : 'p:sld（无 show 属性）', 900, 'FFFFFF'),
+      }),
+    '',
+    hidden ? 'show="0"' : '',
+  );
 
 // 1 可见 / 2 隐藏 / 3 隐藏 / 4 可见 / 5 隐藏
 const HIDDEN = [false, true, true, false, true];
@@ -140,4 +152,6 @@ SLIDES.forEach((xml, i) => {
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 const zip = makeZip(entries);
 writeFileSync(join(root, 'fixtures/sample-hidden.pptx'), zip);
-console.log(`fixtures/sample-hidden.pptx 已生成（${SLIDES.length} 页，隐藏 ${HIDDEN.filter(Boolean).length} 页，${(zip.length / 1024).toFixed(1)} KB）`);
+console.log(
+  `fixtures/sample-hidden.pptx 已生成（${SLIDES.length} 页，隐藏 ${HIDDEN.filter(Boolean).length} 页，${(zip.length / 1024).toFixed(1)} KB）`,
+);

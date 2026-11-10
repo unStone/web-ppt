@@ -1,10 +1,13 @@
-import type {
-  CellBorders, TableCell, TableElement, TableStyleDefinition, TableStylePart, TableStyleSettings,
-} from './types';
+import type { CellBorders, TableCell, TableElement, TableStyleDefinition, TableStylePart, TableStyleSettings } from './types';
 
 const DEFAULT_PREVIEW_SETTINGS: TableStyleSettings = {
-  styleId: '', firstRow: true, lastRow: false, bandRow: true,
-  firstCol: false, lastCol: false, bandCol: false,
+  styleId: '',
+  firstRow: true,
+  lastRow: false,
+  bandRow: true,
+  firstCol: false,
+  lastCol: false,
+  bandCol: false,
 };
 
 function mergePart(target: { fill: TableCell['fill']; borders: CellBorders }, part?: TableStylePart): void {
@@ -63,13 +66,25 @@ export function tableStylePreview(definition: TableStyleDefinition): TableElemen
     cells: Array.from({ length: 3 }, (_, column): TableCell => {
       const appearance = tableStyleCellAppearance(definition, settings, row, column, 3, 3);
       return {
-        colSpan: 1, rowSpan: 1, merged: false,
-        fill: appearance.fill, borders: appearance.borders, text: null,
+        colSpan: 1,
+        rowSpan: 1,
+        merged: false,
+        fill: appearance.fill,
+        borders: appearance.borders,
+        text: null,
       };
     }),
   }));
   return {
-    kind: 'table', x: 0, y: 0, w: 288, h: 96, rot: 0, flipH: false, flipV: false,
-    colWidths: [96, 96, 96], rows,
+    kind: 'table',
+    x: 0,
+    y: 0,
+    w: 288,
+    h: 96,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    colWidths: [96, 96, 96],
+    rows,
   };
 }

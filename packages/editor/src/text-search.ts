@@ -1,12 +1,7 @@
 import { assertFindTextRequest, TEXT_ATOM } from '@web-ppt/edit-core';
-import type {
-  Editor, FindTextRequest, TextPosition, TextSearchMatch, TextSearchScope,
-} from '@web-ppt/edit-core';
+import type { Editor, FindTextRequest, TextPosition, TextSearchMatch, TextSearchScope } from '@web-ppt/edit-core';
 import { SessionTextSearchIndex } from './text-search-index';
-import type {
-  TextSearch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot,
-  TextSearchSubscriber,
-} from './text-search-types';
+import type { TextSearch, TextSearchOpenOptions, TextSearchOptions, TextSearchSnapshot, TextSearchSubscriber } from './text-search-types';
 
 const own = (value: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(value, key);
 const DOCUMENT_SCOPE: TextSearchScope = Object.freeze({ kind: 'document' });
@@ -45,12 +40,20 @@ function positionWeight(position: TextPosition): number {
 }
 
 function sameTarget(left: TextSearchMatch, right: TextSearchMatch): boolean {
-  return left.id === right.id && (left.cell === undefined ? right.cell === undefined
-    : right.cell !== undefined && left.cell.r === right.cell.r && left.cell.c === right.cell.c);
+  return (
+    left.id === right.id
+    && (left.cell === undefined
+      ? right.cell === undefined
+      : right.cell !== undefined && left.cell.r === right.cell.r && left.cell.c === right.cell.c)
+  );
 }
 
 function report(error: unknown): void {
-  try { globalThis.reportError?.(error); } catch { /* 搜索订阅者不能破坏模型事务。 */ }
+  try {
+    globalThis.reportError?.(error);
+  } catch {
+    /* 搜索订阅者不能破坏模型事务。 */
+  }
 }
 
 /** 会话只保留模型身份与纯数据状态；DOM 视图和框架包都是薄消费者。 */
@@ -81,8 +84,12 @@ export class SessionTextSearch implements TextSearch {
     });
   }
 
-  get snapshot(): TextSearchSnapshot { return this.currentSnapshot; }
-  get disposed(): boolean { return this.isDisposed; }
+  get snapshot(): TextSearchSnapshot {
+    return this.currentSnapshot;
+  }
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
 
   open(options: TextSearchOpenOptions = {}): void {
     this.assertActive();
@@ -93,17 +100,18 @@ export class SessionTextSearch implements TextSearch {
       nextMode = options.mode;
     }
     let nextQuery = this.query;
-    if (own(options, 'query')) { this.assertQuery(options.query); nextQuery = options.query; }
+    if (own(options, 'query')) {
+      this.assertQuery(options.query);
+      nextQuery = options.query;
+    }
     let nextReplacement = this.replacement;
     if (own(options, 'replacement')) {
       this.assertReplacement(options.replacement);
       nextReplacement = options.replacement;
     }
     const nextScope = own(options, 'scope') ? this.assertScope(options.scope) : this.scope;
-    const nextMatchCase = own(options, 'matchCase')
-      ? this.assertBoolean(options.matchCase, 'matchCase') : this.matchCase;
-    const nextWholeWord = own(options, 'wholeWord')
-      ? this.assertBoolean(options.wholeWord, 'wholeWord') : this.wholeWord;
+    const nextMatchCase = own(options, 'matchCase') ? this.assertBoolean(options.matchCase, 'matchCase') : this.matchCase;
+    const nextWholeWord = own(options, 'wholeWord') ? this.assertBoolean(options.wholeWord, 'wholeWord') : this.wholeWord;
     this.mode = nextMode;
     this.query = nextQuery;
     this.replacement = nextReplacement;
@@ -144,18 +152,20 @@ export class SessionTextSearch implements TextSearch {
     this.assertActive();
     assertDataObject(options, ['scope', 'matchCase', 'wholeWord'], '文字搜索匹配选项');
     const nextScope = own(options, 'scope') ? this.assertScope(options.scope) : this.scope;
-    const nextMatchCase = own(options, 'matchCase')
-      ? this.assertBoolean(options.matchCase, 'matchCase') : this.matchCase;
-    const nextWholeWord = own(options, 'wholeWord')
-      ? this.assertBoolean(options.wholeWord, 'wholeWord') : this.wholeWord;
+    const nextMatchCase = own(options, 'matchCase') ? this.assertBoolean(options.matchCase, 'matchCase') : this.matchCase;
+    const nextWholeWord = own(options, 'wholeWord') ? this.assertBoolean(options.wholeWord, 'wholeWord') : this.wholeWord;
     this.scope = nextScope;
     this.matchCase = nextMatchCase;
     this.wholeWord = nextWholeWord;
     this.refresh(false, 0);
   }
 
-  next(): TextSearchMatch | null { return this.step(1); }
-  previous(): TextSearchMatch | null { return this.step(-1); }
+  next(): TextSearchMatch | null {
+    return this.step(1);
+  }
+  previous(): TextSearchMatch | null {
+    return this.step(-1);
+  }
 
   replaceCurrent(): boolean {
     this.assertActive();
@@ -166,13 +176,20 @@ export class SessionTextSearch implements TextSearch {
     this.mutating = true;
     try {
       this.editor.exec({
-        type: 'ReplaceText', from: this.query, to: this.replacement,
-        matchCase: this.matchCase, wholeWord: this.wholeWord,
-        scope: { kind: 'match', match: {
-          slideId: current.slideId, id: current.id,
-          ...(current.cell ? { cell: { ...current.cell } } : {}),
-          range: { from: { ...current.range.from }, to: { ...current.range.to } },
-        } },
+        type: 'ReplaceText',
+        from: this.query,
+        to: this.replacement,
+        matchCase: this.matchCase,
+        wholeWord: this.wholeWord,
+        scope: {
+          kind: 'match',
+          match: {
+            slideId: current.slideId,
+            id: current.id,
+            ...(current.cell ? { cell: { ...current.cell } } : {}),
+            range: { from: { ...current.range.from }, to: { ...current.range.to } },
+          },
+        },
       });
     } finally {
       this.mutating = false;
@@ -189,8 +206,12 @@ export class SessionTextSearch implements TextSearch {
     this.mutating = true;
     try {
       this.editor.exec({
-        type: 'ReplaceText', from: this.query, to: this.replacement,
-        matchCase: this.matchCase, wholeWord: this.wholeWord, scope: cloneScope(this.scope),
+        type: 'ReplaceText',
+        from: this.query,
+        to: this.replacement,
+        matchCase: this.matchCase,
+        wholeWord: this.wholeWord,
+        scope: cloneScope(this.scope),
       });
     } finally {
       this.mutating = false;
@@ -203,7 +224,9 @@ export class SessionTextSearch implements TextSearch {
     this.assertActive();
     if (typeof subscriber !== 'function') throw new Error('文字搜索订阅者必须是函数');
     this.subscribers.add(subscriber);
-    return () => { this.subscribers.delete(subscriber); };
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
   }
 
   dispose(): void {
@@ -229,10 +252,14 @@ export class SessionTextSearch implements TextSearch {
       if (exact >= 0) this.currentIndex = exact;
       else {
         this.invalidated = true;
-        const candidates = this.currentMatches.map((match, index) => ({ match, index }))
+        const candidates = this.currentMatches
+          .map((match, index) => ({ match, index }))
           .filter(({ match }) => sameTarget(match, previous))
-          .sort((left, right) => Math.abs(positionWeight(left.match.range.from) - positionWeight(previous.range.from))
-            - Math.abs(positionWeight(right.match.range.from) - positionWeight(previous.range.from)));
+          .sort(
+            (left, right) =>
+              Math.abs(positionWeight(left.match.range.from) - positionWeight(previous.range.from))
+              - Math.abs(positionWeight(right.match.range.from) - positionWeight(previous.range.from)),
+          );
         this.currentIndex = candidates[0]?.index ?? Math.min(this.currentIndex, this.currentMatches.length - 1);
       }
     } else this.currentIndex = Math.min(Math.max(preferredIndex ?? 0, 0), this.currentMatches.length - 1);
@@ -250,17 +277,25 @@ export class SessionTextSearch implements TextSearch {
 
   private request(): FindTextRequest {
     return {
-      query: this.query, scope: cloneScope(this.scope),
-      matchCase: this.matchCase, wholeWord: this.wholeWord,
+      query: this.query,
+      scope: cloneScope(this.scope),
+      matchCase: this.matchCase,
+      wholeWord: this.wholeWord,
     };
   }
 
   private snapshotOf(): TextSearchSnapshot {
     const matches = Object.freeze(this.currentMatches.map(cloneMatch));
     return Object.freeze({
-      open: this.isOpen, mode: this.mode, query: this.query, replacement: this.replacement,
-      scope: cloneScope(this.scope), matchCase: this.matchCase, wholeWord: this.wholeWord,
-      matches, currentIndex: this.currentIndex,
+      open: this.isOpen,
+      mode: this.mode,
+      query: this.query,
+      replacement: this.replacement,
+      scope: cloneScope(this.scope),
+      matchCase: this.matchCase,
+      wholeWord: this.wholeWord,
+      matches,
+      currentIndex: this.currentIndex,
       current: this.currentIndex >= 0 ? matches[this.currentIndex] : null,
       currentInvalidated: this.invalidated,
     });
@@ -269,7 +304,11 @@ export class SessionTextSearch implements TextSearch {
   private publish(): void {
     this.currentSnapshot = this.snapshotOf();
     for (const subscriber of [...this.subscribers]) {
-      try { subscriber(this.currentSnapshot); } catch (error) { report(error); }
+      try {
+        subscriber(this.currentSnapshot);
+      } catch (error) {
+        report(error);
+      }
     }
   }
 
@@ -288,7 +327,8 @@ export class SessionTextSearch implements TextSearch {
   private assertScope(value: unknown): TextSearchScope {
     // scope 校验不能顺带建立搜索缓存，否则打开搜索框会浪费一次全页扫描。
     assertFindTextRequest(this.editor.doc, {
-      query: this.query || '\u0001', scope: value as TextSearchScope,
+      query: this.query || '\u0001',
+      scope: value as TextSearchScope,
     });
     return cloneScope(value as TextSearchScope);
   }

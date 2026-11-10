@@ -15,7 +15,10 @@ export function resolveLink(env: Env, rid: string, action: string | null): strin
   return env.edit ? `slide-part:${encodeURIComponent(rel.target)}` : `slide:${index}`;
 }
 
-export function hyperlinkOf(cNvPr: Element | null, env: Env): {
+export function hyperlinkOf(
+  cNvPr: Element | null,
+  env: Env,
+): {
   readonly link?: string;
   readonly unsupported: boolean;
 } {

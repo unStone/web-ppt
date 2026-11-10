@@ -1,7 +1,6 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const percentile95 = (samples) => [...samples]
-  .sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
+const percentile95 = (samples) => [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
 
 function frameError(mount, session, record) {
   const element = session.editor.effectiveElement(record.id);
@@ -11,27 +10,33 @@ function frameError(mount, session, record) {
   const targetMatrix = base?.getScreenCTM();
   const overlayMatrix = outline?.getScreenCTM();
   if (!targetMatrix || !overlayMatrix) throw new Error('文字框属性无法取得静态形状或选框矩阵');
-  const expected = [[0, 0], [element.w, 0], [element.w, element.h], [0, element.h]]
-    .map(([x, y]) => new DOMPoint(x, y).matrixTransform(targetMatrix));
-  const actual = outline.getAttribute('points').trim().split(/\s+/).map((pair) => {
-    const [x, y] = pair.split(',').map(Number);
-    return new DOMPoint(x, y).matrixTransform(overlayMatrix);
-  });
-  return Math.max(...actual.map((point, index) =>
-    Math.hypot(point.x - expected[index].x, point.y - expected[index].y)));
+  const expected = [
+    [0, 0],
+    [element.w, 0],
+    [element.w, element.h],
+    [0, element.h],
+  ].map(([x, y]) => new DOMPoint(x, y).matrixTransform(targetMatrix));
+  const actual = outline
+    .getAttribute('points')
+    .trim()
+    .split(/\s+/)
+    .map((pair) => {
+      const [x, y] = pair.split(',').map(Number);
+      return new DOMPoint(x, y).matrixTransform(overlayMatrix);
+    });
+  return Math.max(...actual.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)));
 }
 
 async function measure({ openEditor, bytes, textMode }) {
   const session = await openEditor(bytes, { idPrefix: `browser-body-props-${textMode}-` });
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === '文字方向-水平');
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === '文字方向-水平');
   const mount = document.createElement('div');
   mount.className = 'contract-offscreen';
   document.body.append(mount);
   const view = session.mount(mount, { mode: 'edit', textMode });
-  mount.querySelector(`[data-edit-id="${record.id}"]`).dispatchEvent(
-    new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }),
-  );
+  mount
+    .querySelector(`[data-edit-id="${record.id}"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
   const samples = [];
   let synchronous = true;
   let maxFrameError = 0;
@@ -42,12 +47,12 @@ async function measure({ openEditor, bytes, textMode }) {
   for (let index = 0; index < 80; index++) {
     const props = {
       anchor: anchors[index % anchors.length],
-      insets: [2 + index % 4, 3 + index % 5, 4 + index % 3, 5 + index % 6],
+      insets: [2 + (index % 4), 3 + (index % 5), 4 + (index % 3), 5 + (index % 6)],
       wrap: index % 2 === 0,
       vert: directions[index % directions.length],
       anchorCtr: index % 2 === 1,
-      columns: index % 2 + 1,
-      columnGap: 8 + index % 9,
+      columns: (index % 2) + 1,
+      columnGap: 8 + (index % 9),
       autoFit: modes[index % modes.length],
     };
     const partition = mount.querySelector(`[data-edit-id="${record.id}"]`);
@@ -94,8 +99,9 @@ export async function runEditorBodyPropsBrowserContract({ openEditor, load }) {
   const engine = await measure({ openEditor, bytes: bytes.slice(0), textMode: 'svg' });
   for (const [mode, result] of Object.entries({ browser, engine })) {
     if (!result.synchronous || result.frameError > 0.5) {
-      throw new Error(`${mode} 文字框属性功能失败：同步=${result.synchronous}/`
-        + `${result.failures.join(',')} frame=${result.frameError.toFixed(3)}px`);
+      throw new Error(
+        `${mode} 文字框属性功能失败：同步=${result.synchronous}/` + `${result.failures.join(',')} frame=${result.frameError.toFixed(3)}px`,
+      );
     }
     recordPerformanceBudget(`${mode} 文字框属性 p95`, result.p95, 30);
   }

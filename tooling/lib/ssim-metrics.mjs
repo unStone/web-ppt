@@ -19,36 +19,57 @@ export function grayFromRgba(data, w, h) {
 
 /** 灰度 SSIM，8×8 非重叠窗口（C1/C2 取标准 0.01/0.03 × 255²） */
 export function ssimGray(a, b, w, h) {
-  const C1 = (0.01 * 255) ** 2, C2 = (0.03 * 255) ** 2, B = 8;
-  let sum = 0, n = 0;
-  for (let by = 0; by + B <= h; by += B) for (let bx = 0; bx + B <= w; bx += B) {
-    let ma = 0, mb = 0;
-    for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
-      ma += a[(by + y) * w + bx + x]; mb += b[(by + y) * w + bx + x];
+  const C1 = (0.01 * 255) ** 2,
+    C2 = (0.03 * 255) ** 2,
+    B = 8;
+  let sum = 0,
+    n = 0;
+  for (let by = 0; by + B <= h; by += B)
+    for (let bx = 0; bx + B <= w; bx += B) {
+      let ma = 0,
+        mb = 0;
+      for (let y = 0; y < B; y++)
+        for (let x = 0; x < B; x++) {
+          ma += a[(by + y) * w + bx + x];
+          mb += b[(by + y) * w + bx + x];
+        }
+      ma /= B * B;
+      mb /= B * B;
+      let va = 0,
+        vb = 0,
+        cov = 0;
+      for (let y = 0; y < B; y++)
+        for (let x = 0; x < B; x++) {
+          const da = a[(by + y) * w + bx + x] - ma,
+            db = b[(by + y) * w + bx + x] - mb;
+          va += da * da;
+          vb += db * db;
+          cov += da * db;
+        }
+      va /= B * B - 1;
+      vb /= B * B - 1;
+      cov /= B * B - 1;
+      sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2));
+      n++;
     }
-    ma /= B * B; mb /= B * B;
-    let va = 0, vb = 0, cov = 0;
-    for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
-      const da = a[(by + y) * w + bx + x] - ma, db = b[(by + y) * w + bx + x] - mb;
-      va += da * da; vb += db * db; cov += da * db;
-    }
-    va /= B * B - 1; vb /= B * B - 1; cov /= B * B - 1;
-    sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2)); n++;
-  }
   return n ? sum / n : 1;
 }
 
 /** MAE / Δmax / 差异像素（灰度差 >8）占比 / SSIM，一次算齐 */
 export function grayMetrics(a, b, w, h) {
-  let sum = 0, max = 0, diff = 0;
+  let sum = 0,
+    max = 0,
+    diff = 0;
   for (let i = 0; i < w * h; i++) {
     const d = Math.abs(a[i] - b[i]);
-    sum += d; if (d > max) max = d; if (d > 8) diff++;
+    sum += d;
+    if (d > max) max = d;
+    if (d > 8) diff++;
   }
   return {
     mae: +(sum / (w * h)).toFixed(2),
     deltaMax: Math.round(max),
-    diffRatioPct: +(diff / (w * h) * 100).toFixed(2),
+    diffRatioPct: +((diff / (w * h)) * 100).toFixed(2),
     ssim: +ssimGray(a, b, w, h).toFixed(4),
   };
 }

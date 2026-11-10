@@ -10,8 +10,7 @@ function deleteDatabase(name) {
 }
 
 const firstElement = (session) => {
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.meta.editable === 'full');
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.meta.editable === 'full');
   if (!record) throw new Error('恢复浏览器契约缺少可编辑元素');
   return record.id;
 };
@@ -22,8 +21,14 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   }
   const workerResult = await new Promise((resolve, reject) => {
     const worker = new Worker('/tooling/lib/editor-recovery-worker.mjs', { type: 'module' });
-    worker.onmessage = (event) => { worker.terminate(); resolve(event.data); };
-    worker.onerror = (event) => { worker.terminate(); reject(event.error ?? new Error(event.message)); };
+    worker.onmessage = (event) => {
+      worker.terminate();
+      resolve(event.data);
+    };
+    worker.onerror = (event) => {
+      worker.terminate();
+      reject(event.error ?? new Error(event.message));
+    };
   });
   if (!workerResult.imported || !workerResult.withoutDocument) {
     throw new Error(`editor 在 Worker 导入时访问了 DOM：${JSON.stringify(workerResult)}`);
@@ -65,10 +70,12 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   readProbe.dispose();
   if (sourceBlob.reads !== 1) throw new Error(`恢复打开重复读取 Blob：${sourceBlob.reads}`);
   const emptyPrefixStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'empty-prefix-contract',
+    ...options,
+    namespace: 'empty-prefix-contract',
   });
   const emptyPrefixSession = await lib.openEditor(source, {
-    idPrefix: '', recovery: { store: emptyPrefixStore, decide: () => 'discard' },
+    idPrefix: '',
+    recovery: { store: emptyPrefixStore, decide: () => 'discard' },
   });
   const emptyPrefixRecord = await emptyPrefixStore.load(emptyPrefixSession.recovery.source);
   if (emptyPrefixSession.editor.doc.identity.prefix !== '' || emptyPrefixRecord.idPrefix !== '') {
@@ -88,7 +95,13 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   }
   let prompted = 0;
   const first = await lib.openEditor(source, {
-    recovery: { store, decide: () => { prompted++; return 'restore'; } },
+    recovery: {
+      store,
+      decide: () => {
+        prompted++;
+        return 'restore';
+      },
+    },
   });
   const elementId = firstElement(first);
   const sourceX = first.editor.effectiveElement(elementId).x;
@@ -129,10 +142,11 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
       epoch: beforeInvalid.epoch,
       frames: [structuredClone(beforeInvalid.frames[beforeInvalid.frames.length - 1])],
     });
-  } catch { duplicateRejected = true; }
+  } catch {
+    duplicateRejected = true;
+  }
   const afterInvalid = await store.load(sourceIdentity);
-  if (!duplicateRejected || afterInvalid.frames.length !== 1000
-    || afterInvalid.frames[afterInvalid.frames.length - 1].sequence !== 1000) {
+  if (!duplicateRejected || afterInvalid.frames.length !== 1000 || afterInvalid.frames[afterInvalid.frames.length - 1].sequence !== 1000) {
     throw new Error('IndexedDB 重复序号没有原子拒绝');
   }
   first.dispose();
@@ -144,13 +158,14 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   const restored = await lib.openEditor(source.slice(0), {
     recovery: {
       store: reopenedStore,
-      decide: (value) => { candidate = value; return 'restore'; },
+      decide: (value) => {
+        candidate = value;
+        return 'restore';
+      },
     },
   });
   const restoreMs = performance.now() - restoreStart;
-  if (candidate?.frameCount !== 1000
-    || restored.editor.effectiveElement(elementId).x !== sourceX + 2
-    || !restored.editor.isDirty()) {
+  if (candidate?.frameCount !== 1000 || restored.editor.effectiveElement(elementId).x !== sourceX + 2 || !restored.editor.isDirty()) {
     throw new Error('IndexedDB 关闭重开后没有恢复同一模型');
   }
   restored.dispose();
@@ -173,7 +188,10 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
     throw new Error(`IndexedDB 清理未限制日志数量：${JSON.stringify(cleanupStats)}`);
   }
   const bytesStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'bytes-contract', maxJournals: 10, maxBytes: 1,
+    ...options,
+    namespace: 'bytes-contract',
+    maxJournals: 10,
+    maxBytes: 1,
   });
   for (const name of ['sample-edit-xfrm.pptx', 'sample-editor-add-slide.pptx']) {
     now += 100;
@@ -191,53 +209,67 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   }
   await bytesStore.close();
   const clockStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'clock-contract', maxJournals: 10,
+    ...options,
+    namespace: 'clock-contract',
+    maxJournals: 10,
   });
   const clockSession = await lib.openEditor(source, {
     recovery: { store: clockStore, decide: () => 'discard' },
   });
   const clockId = firstElement(clockSession);
   clockSession.editor.exec({
-    type: 'SetXfrm', id: clockId, x: clockSession.editor.effectiveElement(clockId).x + 1,
+    type: 'SetXfrm',
+    id: clockId,
+    x: clockSession.editor.effectiveElement(clockId).x + 1,
   });
   await clockSession.recovery.flush();
   const beforeRollback = await clockStore.load(clockSession.recovery.source);
   now -= 10_000;
   clockSession.editor.exec({
-    type: 'SetXfrm', id: clockId, x: clockSession.editor.effectiveElement(clockId).x + 1,
+    type: 'SetXfrm',
+    id: clockId,
+    x: clockSession.editor.effectiveElement(clockId).x + 1,
   });
   await clockSession.recovery.flush();
   const afterRollback = await clockStore.load(clockSession.recovery.source);
-  if (afterRollback.updatedAt < beforeRollback.updatedAt
-    || afterRollback.createdAt > afterRollback.updatedAt) {
+  if (afterRollback.updatedAt < beforeRollback.updatedAt || afterRollback.createdAt > afterRollback.updatedAt) {
     throw new Error('系统时钟回拨破坏了恢复日志时间单调性');
   }
   clockSession.dispose();
   await clockStore.close();
   now += 10_000;
   const probeStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'growth-probe', maxJournals: 10,
+    ...options,
+    namespace: 'growth-probe',
+    maxJournals: 10,
   });
   const probeSession = await lib.openEditor(source, {
     recovery: { store: probeStore, decide: () => 'discard' },
   });
   const probeId = firstElement(probeSession);
   probeSession.editor.exec({
-    type: 'SetXfrm', id: probeId, x: probeSession.editor.effectiveElement(probeId).x + 1,
+    type: 'SetXfrm',
+    id: probeId,
+    x: probeSession.editor.effectiveElement(probeId).x + 1,
   });
   await probeSession.recovery.flush();
   const oneFrameBytes = (await probeStore.load(probeSession.recovery.source)).estimatedBytes;
   probeSession.dispose();
   await probeStore.close();
   const growthStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'growth-contract', maxJournals: 10, maxBytes: oneFrameBytes * 3,
+    ...options,
+    namespace: 'growth-contract',
+    maxJournals: 10,
+    maxBytes: oneFrameBytes * 3,
   });
   const growthOld = await lib.openEditor(await load('sample-editor-add-slide.pptx'), {
     recovery: { store: growthStore, decide: () => 'discard' },
   });
   const growthOldId = firstElement(growthOld);
   growthOld.editor.exec({
-    type: 'SetXfrm', id: growthOldId, x: growthOld.editor.effectiveElement(growthOldId).x + 1,
+    type: 'SetXfrm',
+    id: growthOldId,
+    x: growthOld.editor.effectiveElement(growthOldId).x + 1,
   });
   await growthOld.recovery.flush();
   growthOld.dispose();
@@ -246,14 +278,16 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   });
   const growthCurrentId = firstElement(growthCurrent);
   growthCurrent.editor.exec({
-    type: 'SetXfrm', id: growthCurrentId,
+    type: 'SetXfrm',
+    id: growthCurrentId,
     x: growthCurrent.editor.effectiveElement(growthCurrentId).x + 1,
   });
   await growthCurrent.recovery.flush();
   const beforeGrowth = await growthStore.stats();
   for (let index = 0; index < 10; index++) {
     growthCurrent.editor.exec({
-      type: 'SetXfrm', id: growthCurrentId,
+      type: 'SetXfrm',
+      id: growthCurrentId,
       x: growthCurrent.editor.effectiveElement(growthCurrentId).x + (index % 2 ? -1 : 1),
     });
     await Promise.resolve();
@@ -266,7 +300,10 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   growthCurrent.dispose();
   await growthStore.close();
   const metadataStore = lib.createIndexedDbRecoveryStore({
-    ...options, namespace: 'metadata-contract', compactAfterChunks: 4, compactToChunks: 2,
+    ...options,
+    namespace: 'metadata-contract',
+    compactAfterChunks: 4,
+    compactToChunks: 2,
   });
   const metadataSession = await lib.openEditor(source, {
     recovery: { store: metadataStore, decide: () => 'restore' },
@@ -274,12 +311,12 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   const metadataId = firstElement(metadataSession);
   const metadataX = metadataSession.editor.effectiveElement(metadataId).x + 1;
   metadataSession.editor.exec({
-    type: 'SetXfrm', id: metadataId, x: metadataX,
+    type: 'SetXfrm',
+    id: metadataId,
+    x: metadataX,
   });
   for (let index = 0; index < 21; index++) {
-    metadataSession.editor.select(index % 2
-      ? { kind: 'none' }
-      : { kind: 'elements', ids: [metadataId], enteredGroup: null });
+    metadataSession.editor.select(index % 2 ? { kind: 'none' } : { kind: 'elements', ids: [metadataId], enteredGroup: null });
     await Promise.resolve();
   }
   await metadataSession.recovery.flush();
@@ -289,15 +326,20 @@ export async function runEditorRecoveryBrowserContract({ lib, load }) {
   const restoredMetadata = await lib.openEditor(source, {
     recovery: {
       store: metadataStore,
-      decide: (candidateValue) => { metadataCandidate = candidateValue; return 'restore'; },
+      decide: (candidateValue) => {
+        metadataCandidate = candidateValue;
+        return 'restore';
+      },
     },
   });
-  if (compactedMetadata.frames.length > 5
+  if (
+    compactedMetadata.frames.length > 5
     || metadataCandidate.frameCount !== compactedMetadata.frames.length
     || restoredMetadata.editor.effectiveElement(metadataId).x !== metadataX
     || restoredMetadata.editor.selection.kind !== 'elements'
     || restoredMetadata.editor.selection.ids[0] !== metadataId
-    || !restoredMetadata.editor.isDirty()) {
+    || !restoredMetadata.editor.isDirty()
+  ) {
     throw new Error(`IndexedDB 元数据帧压缩不等价：${compactedMetadata.frames.length}`);
   }
   restoredMetadata.dispose();

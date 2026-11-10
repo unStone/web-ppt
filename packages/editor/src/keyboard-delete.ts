@@ -8,15 +8,21 @@ export class DeleteKeyboardController {
   constructor(private readonly options: KeyboardControllerOptions) {}
 
   keyDown(event: KeyboardEvent): boolean {
-    if (event.defaultPrevented || (event.key !== 'Delete' && event.key !== 'Backspace')
-      || event.ctrlKey || event.metaKey || event.altKey || shouldYieldKeyboardEvent(event)) return false;
+    if (
+      event.defaultPrevented
+      || (event.key !== 'Delete' && event.key !== 'Backspace')
+      || event.ctrlKey
+      || event.metaKey
+      || event.altKey
+      || shouldYieldKeyboardEvent(event)
+    )
+      return false;
     event.preventDefault();
     if (this.options.gestureActive()) return true;
     const selection = this.options.editor.selection;
     if (selection.kind !== 'elements') return true;
     const doc = this.options.editor.doc;
-    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId()
-      || !isSelectable(doc, id))) return true;
+    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId() || !isSelectable(doc, id))) return true;
     const roots = outermostSelectedElementIds(doc, selection.ids);
     if (!roots.length) return true;
     this.options.editor.transaction((transaction) => {

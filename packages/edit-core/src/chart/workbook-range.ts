@@ -43,6 +43,5 @@ export function worksheetRangeCells(reference: string): string[] {
 export function rangeCells(formula: string | null): string[] {
   const range = parseChartFormula(formula);
   if (!range) return [];
-  return worksheetRangeCells(`${columnName(range.startColumn)}${range.startRow}`
-    + `:${columnName(range.endColumn)}${range.endRow}`);
+  return worksheetRangeCells(`${columnName(range.startColumn)}${range.startRow}` + `:${columnName(range.endColumn)}${range.endRow}`);
 }

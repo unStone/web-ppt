@@ -6,10 +6,19 @@ const p95 = (samples) => {
 };
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-const pointer = (type, point, pointerId) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId, isPrimary: true,
-  button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: point.x, clientY: point.y,
-});
+const pointer = (type, point, pointerId) =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    pointerType: 'mouse',
+    pointerId,
+    isPrimary: true,
+    button: 0,
+    buttons: type === 'pointerup' ? 0 : 1,
+    clientX: point.x,
+    clientY: point.y,
+  });
 
 /** 真实 SVG 布局校验新增几何，并把完整模型→DOM→选择框反馈守在一帧预算内。 */
 export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
@@ -23,29 +32,31 @@ export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
   try {
     const view = geometrySession.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 0.75, snapping: false });
     geometrySession.editor.exec({
-      type: 'AddShape', slideId: view.slideId, preset: 'roundRect',
+      type: 'AddShape',
+      slideId: view.slideId,
+      preset: 'roundRect',
       rect: { x: 360, y: 180, w: 280, h: 160 },
     });
-    const id = geometrySession.editor.selection.kind === 'elements'
-      ? geometrySession.editor.selection.ids[0] : null;
+    const id = geometrySession.editor.selection.kind === 'elements' ? geometrySession.editor.selection.ids[0] : null;
     let partition = mount.querySelector(`[data-edit-id="${id}"]`);
     const frame = mount.querySelector('[data-edit-selection-frame]');
     const stage = mount.querySelector('[data-ppt-stage]');
     const stageRect = stage.getBoundingClientRect();
     const frameRect = frame?.getBoundingClientRect();
-    geometryError = frameRect ? Math.max(
-      Math.abs(frameRect.left - stageRect.left - 360 * 0.75),
-      Math.abs(frameRect.top - stageRect.top - 180 * 0.75),
-      Math.abs(frameRect.width - 280 * 0.75),
-      Math.abs(frameRect.height - 160 * 0.75),
-    ) : Infinity;
+    geometryError = frameRect
+      ? Math.max(
+          Math.abs(frameRect.left - stageRect.left - 360 * 0.75),
+          Math.abs(frameRect.top - stageRect.top - 180 * 0.75),
+          Math.abs(frameRect.width - 280 * 0.75),
+          Math.abs(frameRect.height - 160 * 0.75),
+        )
+      : Infinity;
     const dragStart = center(partition.getBoundingClientRect());
     const dragEnd = { x: dragStart.x + 24, y: dragStart.y + 18 };
     partition.dispatchEvent(pointer('pointerdown', dragStart, 601));
     view.element.dispatchEvent(pointer('pointermove', dragEnd, 601));
     await nextFrame();
-    if (!mount.querySelector('[data-edit-drag-ghost]')
-      || geometrySession.editor.effectiveElement(id).x !== 360) {
+    if (!mount.querySelector('[data-edit-drag-ghost]') || geometrySession.editor.effectiveElement(id).x !== 360) {
       throw new Error('新增形状未进入拖拽预览或预览期提前写入模型');
     }
     view.element.dispatchEvent(pointer('pointerup', dragEnd, 601));
@@ -60,8 +71,7 @@ export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
     resizeHandle.dispatchEvent(pointer('pointerdown', resizeStart, 602));
     view.element.dispatchEvent(pointer('pointermove', resizeEnd, 602));
     await nextFrame();
-    if (!mount.querySelector('[data-edit-resize-ghost]')
-      || geometrySession.editor.effectiveElement(id).w !== 280) {
+    if (!mount.querySelector('[data-edit-resize-ghost]') || geometrySession.editor.effectiveElement(id).w !== 280) {
       throw new Error('新增形状未进入缩放预览或预览期提前写入模型');
     }
     view.element.dispatchEvent(pointer('pointerup', resizeEnd, 602));
@@ -72,8 +82,7 @@ export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
 
     partition = mount.querySelector(`[data-edit-id="${id}"]`);
     partition?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
-    if (!partition || !frame || geometryError > 0.5
-      || !mount.querySelector(`[data-ppt-text-editor="${id}"]`)) {
+    if (!partition || !frame || geometryError > 0.5 || !mount.querySelector(`[data-ppt-text-editor="${id}"]`)) {
       throw new Error(`新增形状几何/选择/文字入口失效：error=${geometryError.toFixed(3)}`);
     }
   } finally {
@@ -95,21 +104,25 @@ export async function runEditorAddShapeBrowserContract({ openEditor, load }) {
     for (let index = 0; index < 80; index++) {
       const started = performance.now();
       performanceSession.editor.exec({
-        type: 'AddShape', slideId, preset: index % 2 ? 'ellipse' : 'rect',
-        rect: { x: 700 + index % 5, y: 500, w: 90, h: 60 },
+        type: 'AddShape',
+        slideId,
+        preset: index % 2 ? 'ellipse' : 'rect',
+        rect: { x: 700 + (index % 5), y: 500, w: 90, h: 60 },
       });
-      const id = performanceSession.editor.selection.kind === 'elements'
-        ? performanceSession.editor.selection.ids[0] : null;
+      const id = performanceSession.editor.selection.kind === 'elements' ? performanceSession.editor.selection.ids[0] : null;
       mount.querySelector(`[data-edit-selection-id="${id}"]`)?.getBoundingClientRect();
       samples.push(performance.now() - started);
       performanceSession.editor.undo();
       staticLayer.querySelector('svg')?.getBoundingClientRect();
     }
     const addP95 = p95(samples);
-    if (performanceSession.editor.doc.slides[slideId].children.length !== 60
+    if (
+      performanceSession.editor.doc.slides[slideId].children.length !== 60
       || staticLayer.querySelector('svg') !== svg
       || staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
-      || performanceSession.editor.isDirty() || performanceSession.editor.history.undoCount !== 0) {
+      || performanceSession.editor.isDirty()
+      || performanceSession.editor.history.undoCount !== 0
+    ) {
       throw new Error('60 元素页新增形状后的 DOM 或历史不稳定');
     }
     recordPerformanceBudget('60 元素页新增形状完整反馈 p95', addP95, 16);

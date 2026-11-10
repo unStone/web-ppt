@@ -40,7 +40,7 @@ export async function installGalleryFontCompletionGate({ request, evaluate }) {
   let active = true;
   return {
     async assertActive() {
-      if (!await evaluate('globalThis.__siteGalleryFontCompletionGate?.active === true', true)) {
+      if (!(await evaluate('globalThis.__siteGalleryFontCompletionGate?.active === true', true))) {
         throw new Error('样本页面未安装字体完成门控');
       }
     },

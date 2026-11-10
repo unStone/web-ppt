@@ -6,9 +6,7 @@ import type { EditDoc, ElementImageReplacement, TextFragment, TextOverride } fro
 import type { CommandPatches, EditTextCommand, ImageResourcePatch } from './types';
 import { inverseTextPatch, setTextPatch, textTargetContext } from './text-target';
 import { renumberParagraphs } from '../paragraph-level';
-import {
-  prepareBulletImageResource, resolveBulletImageResource,
-} from './bullet-image-resource';
+import { prepareBulletImageResource, resolveBulletImageResource } from './bullet-image-resource';
 
 function assertFragment(value: unknown, label: string): asserts value is TextFragment {
   assertDataObject(value, ['paragraphs'], label);
@@ -28,8 +26,13 @@ function assertFragment(value: unknown, label: string): asserts value is TextFra
       const markLabel = `${paragraphLabel}.marks[${markIndex}]`;
       assertDataObject(mark, ['from', 'to', 'props'], markLabel);
       const markData = mark as TextFragment['paragraphs'][number]['marks'][number];
-      if (!Number.isInteger(markData.from) || markData.from !== offset
-        || !Number.isInteger(markData.to) || markData.to <= markData.from || markData.to > data.text.length) {
+      if (
+        !Number.isInteger(markData.from)
+        || markData.from !== offset
+        || !Number.isInteger(markData.to)
+        || markData.to <= markData.from
+        || markData.to > data.text.length
+      ) {
         throw new Error(`${markLabel} 必须连续覆盖有效文字区间`);
       }
       assertRunPropertyOverrides(markData.props, `${markLabel}.props`, true);
@@ -66,11 +69,7 @@ function assertOps(command: EditTextCommand): void {
   });
 }
 
-export function editTextPatches(
-  doc: EditDoc,
-  command: EditTextCommand,
-  origin: string,
-): CommandPatches {
+export function editTextPatches(doc: EditDoc, command: EditTextCommand, origin: string): CommandPatches {
   assertOps(command);
   const target = { id: command.id, ...(command.cell !== undefined ? { cell: command.cell } : {}) };
   const { body: source, before, patchTarget, levelTemplate, record } = textTargetContext(doc, target);
@@ -84,12 +83,8 @@ export function editTextPatches(
       if (paragraph.bullet?.kind !== 'blip') return;
       if (!part || !doc.package) throw new Error('富文本图片项目符号缺少可写回来源');
       const src = paragraph.bullet.image.src;
-      const resource = resolveBulletImageResource(
-        doc, src, 'EditText.fragment.bullet.image',
-      );
-      const prepared = prepareBulletImageResource(
-        doc, part, 'rIdBulletPaste', resource, origin,
-      );
+      const resource = resolveBulletImageResource(doc, src, 'EditText.fragment.bullet.image');
+      const prepared = prepareBulletImageResource(doc, part, 'rIdBulletPaste', resource, origin);
       let targetId = prepared.image.relationships[0].targetId;
       const serial = /^rId(\d+)$/.exec(targetId);
       let next = serial ? Number(serial[1]) : 1;
@@ -108,19 +103,26 @@ export function editTextPatches(
     });
   });
   const body = before?.kind === 'flat' ? textBodyFromOverride(before) : source;
-  const edited: TextOverride = applyTextEditOps(
-    body, command.ops, before?.kind === 'flat' ? before : undefined, fragmentImages,
-  );
-  const value: TextOverride = edited.kind === 'flat' ? {
-    ...edited, paragraphs: renumberParagraphs(source, edited.paragraphs, levelTemplate),
-  } : edited;
+  const edited: TextOverride = applyTextEditOps(body, command.ops, before?.kind === 'flat' ? before : undefined, fragmentImages);
+  const value: TextOverride =
+    edited.kind === 'flat'
+      ? {
+          ...edited,
+          paragraphs: renumberParagraphs(source, edited.paragraphs, levelTemplate),
+        }
+      : edited;
   const baseline = before?.kind === 'flat' ? before : flattenTextBody(body);
   if (JSON.stringify(value) === JSON.stringify(baseline)) return { forward: [], inverse: [] };
   const resources = [...newResources.values()];
   return {
     forward: [...resources, setTextPatch(patchTarget, value, origin)],
-    inverse: [inverseTextPatch(patchTarget, before, origin), ...resources.map((patch) => ({
-      op: 'del' as const, path: patch.path, origin,
-    }))],
+    inverse: [
+      inverseTextPatch(patchTarget, before, origin),
+      ...resources.map((patch) => ({
+        op: 'del' as const,
+        path: patch.path,
+        origin,
+      })),
+    ],
   };
 }

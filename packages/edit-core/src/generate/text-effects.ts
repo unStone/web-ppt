@@ -9,20 +9,35 @@ import { findXmlChild } from '../xml/query';
 import { setXmlAttribute } from '../xml/mutate';
 import type { XmlElement } from '../xml/types';
 
-export const hasNativeText = (run: TextRun): boolean => !!(run.field || run.math?.length
-  || run.outline || run.gradient || run.gradientFill || run.shadow || run.shadowEffect || run.underlineColor);
+export const hasNativeText = (run: TextRun): boolean =>
+  !!(
+    run.field
+    || run.math?.length
+    || run.outline
+    || run.gradient
+    || run.gradientFill
+    || run.shadow
+    || run.shadowEffect
+    || run.underlineColor
+  );
 
 export function validateNativeText(run: TextRun): void {
   if (run.generationIssues?.length) throw new Error(`文字来源语义无法重建：${run.generationIssues.join('、')}`);
   if (run.gradient && !run.gradientFill) throw new Error('文字渐变缺少 gradientFill 结构值');
   if (run.shadow && !run.shadowEffect) throw new Error('文字阴影缺少 shadowEffect 结构值');
   const gradient = run.gradientFill;
-  if (gradient && (!Number.isFinite(gradient.angle) || gradient.angle < 0 || gradient.angle >= 360
-    || gradient.stops.length < 2 || gradient.stops.some(s => !Number.isFinite(s.pos) || s.pos < 0 || s.pos > 1))) {
+  if (
+    gradient
+    && (!Number.isFinite(gradient.angle)
+      || gradient.angle < 0
+      || gradient.angle >= 360
+      || gradient.stops.length < 2
+      || gradient.stops.some((s) => !Number.isFinite(s.pos) || s.pos < 0 || s.pos > 1))
+  ) {
     throw new Error('文字渐变角度或色标无效');
   }
   if (gradient && run.gradient) {
-    const css = `linear-gradient(${Math.round(gradient.angle + 90)}deg,${gradient.stops.map(s => `${s.color} ${Math.round(s.pos * 100)}%`).join(',')})`;
+    const css = `linear-gradient(${Math.round(gradient.angle + 90)}deg,${gradient.stops.map((s) => `${s.color} ${Math.round(s.pos * 100)}%`).join(',')})`;
     if (run.gradient !== css) throw new Error('文字渐变 CSS 与结构值不一致');
   }
   if (run.outline && (!Number.isFinite(run.outline.width) || run.outline.width < 0)) throw new Error('文字描边宽度无效');

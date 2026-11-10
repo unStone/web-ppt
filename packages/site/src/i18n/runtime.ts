@@ -13,7 +13,10 @@ let dictionary: Readonly<Record<string, string>> | undefined;
 let loading: Promise<void> | undefined;
 let generation = 0;
 
-interface ElementMessages { text?: SiteMessage; attributes: Record<string, SiteMessage> }
+interface ElementMessages {
+  text?: SiteMessage;
+  attributes: Record<string, SiteMessage>;
+}
 const dynamic = new WeakMap<Element, ElementMessages>();
 
 function format(source: string, parameters: Readonly<Record<string, MessageParameter>> = {}): string {
@@ -51,7 +54,10 @@ export function setMessage(target: Element, value: string | SiteMessage): void {
   const binding = dynamic.get(target) ?? { attributes: {} };
   if (typeof value === 'string') {
     delete binding.text;
-    if (!Object.keys(binding.attributes).length) { dynamic.delete(target); target.removeAttribute('data-site-dynamic'); }
+    if (!Object.keys(binding.attributes).length) {
+      dynamic.delete(target);
+      target.removeAttribute('data-site-dynamic');
+    }
     target.textContent = value;
     return;
   }
@@ -77,26 +83,43 @@ export function setAttributeMessage(target: Element, attribute: MessageAttribute
 }
 
 export function setAttributeText<S extends Message>(
-  target: Element, attribute: MessageAttribute, source: S, ...args: MessageArguments<S>
+  target: Element,
+  attribute: MessageAttribute,
+  source: S,
+  ...args: MessageArguments<S>
 ): void {
   setAttributeMessage(target, attribute, message(source, ...args));
 }
 
 function savedLanguage(): string | null {
-  try { return localStorage.getItem(preferenceKey); } catch { return null; }
+  try {
+    return localStorage.getItem(preferenceKey);
+  } catch {
+    return null;
+  }
 }
 
 async function changeLanguage(next: SiteLanguage, explicit: boolean): Promise<void> {
   const current = ++generation;
   if (next === 'en' && !dictionary) {
-    loading ??= import('./messages').then((module) => { dictionary = module.messages; })
-      .catch((error) => { loading = undefined; throw error; });
+    loading ??= import('./messages')
+      .then((module) => {
+        dictionary = module.messages;
+      })
+      .catch((error) => {
+        loading = undefined;
+        throw error;
+      });
     await loading;
   }
   if (current !== generation) return;
   language = next;
   if (explicit) {
-    try { localStorage.setItem(preferenceKey, language); } catch { /* URL 在存储被禁用时仍可保留明确选择。 */ }
+    try {
+      localStorage.setItem(preferenceKey, language);
+    } catch {
+      /* URL 在存储被禁用时仍可保留明确选择。 */
+    }
     const url = languageUrl(new URL(location.href), language);
     if (language === 'zh-CN') url.searchParams.set('lang', language);
     history.replaceState(history.state, '', url);
@@ -119,14 +142,20 @@ function reportFailure(error: unknown): void {
   const control = document.querySelector('#siteLanguage');
   if (!control) return;
   let status = control.querySelector('[role="alert"]');
-  if (!status) { status = document.createElement('span'); status.setAttribute('role', 'alert'); control.append(status); }
+  if (!status) {
+    status = document.createElement('span');
+    status.setAttribute('role', 'alert');
+    control.append(status);
+  }
   status.textContent = 'Language unavailable; save and reload / 语言不可用，请保存后刷新';
 }
 
 document.querySelector<HTMLElement>('#siteLanguage')?.addEventListener('pointerdown', (event) => {
   const active = document.activeElement;
-  const editing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
-    || active instanceof HTMLElement && active.isContentEditable;
+  const editing =
+    active instanceof HTMLInputElement
+    || active instanceof HTMLTextAreaElement
+    || (active instanceof HTMLElement && active.isContentEditable);
   if (!editing || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   if (event.target instanceof Element && event.target.closest('[data-site-locale]')) {
     // 切语言不是提交输入；阻止指针转移焦点，避免原生 change 先提交并重建编辑控件。
@@ -137,7 +166,8 @@ document.querySelector<HTMLElement>('#siteLanguage')?.addEventListener('pointerd
 
 document.querySelector('#siteLanguage')?.addEventListener('click', (event) => {
   const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('[data-site-locale]') : null;
-  if (!anchor || event instanceof MouseEvent && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0)) return;
+  if (!anchor || (event instanceof MouseEvent && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0)))
+    return;
   event.preventDefault();
   void changeLanguage(normalizeLanguage(anchor.dataset.siteLocale!), true).catch(reportFailure);
 });
@@ -147,7 +177,8 @@ export const languageReady = changeLanguage(resolveLanguage(new URL(location.hre
     // 中文源词条随页面交付；首次词库失败必须先恢复可用语言，不能把请求结束当成已就绪。
     await changeLanguage('zh-CN', false);
     reportFailure(error);
-  }).then(() => {
+  })
+  .then(() => {
     // 静态 HTML 已有当前语言语义，不能拿 aria-current 猜测增强脚本是否已经接管点击。
     document.documentElement.dataset.siteLanguageReady = 'true';
   });

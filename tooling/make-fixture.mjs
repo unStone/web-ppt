@@ -27,7 +27,10 @@ function chunk(type, data) {
   const out = new Uint8Array(12 + data.length);
   const dv = new DataView(out.buffer);
   dv.setUint32(0, data.length);
-  out.set([...type].map((c) => c.charCodeAt(0)), 4);
+  out.set(
+    [...type].map((c) => c.charCodeAt(0)),
+    4,
+  );
   out.set(data, 8);
   dv.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
   return out;

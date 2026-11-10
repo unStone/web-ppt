@@ -1,8 +1,6 @@
 import type { EditDoc } from '../types';
 import type { SpacePoint } from '../space';
-import {
-  arrangementTargets, translateElementInSlide,
-} from './element-arrangement';
+import { arrangementTargets, translateElementInSlide } from './element-arrangement';
 import type { ElementWorldBounds } from './element-arrangement';
 import type { AlignEdge, AlignElementsCommand, CommandPatches, Patch } from './types';
 
@@ -33,11 +31,7 @@ function worldDelta(item: ElementWorldBounds, target: ElementWorldBounds, edge: 
 }
 
 /** 一个命令直接产出全部位置 patch，避免宿主把六按钮能力错误拆成多段历史。 */
-export function alignElementsPatches(
-  doc: EditDoc,
-  command: AlignElementsCommand,
-  origin: string,
-): CommandPatches {
+export function alignElementsPatches(doc: EditDoc, command: AlignElementsCommand, origin: string): CommandPatches {
   if (!EDGES.has(command.edge)) throw new Error(`未知对齐边：${String(command.edge)}`);
   const items = arrangementTargets(doc, command.ids, 1, 'AlignElements');
   const slideBounds = { left: 0, top: 0, right: doc.meta.width, bottom: doc.meta.height };
@@ -45,9 +39,7 @@ export function alignElementsPatches(
   const forward: Patch[] = [];
   const inverse: Patch[] = [];
   for (const item of items) {
-    const patches = translateElementInSlide(
-      doc, item.id, worldDelta(item.bounds, target, command.edge), origin, 'AlignElements',
-    );
+    const patches = translateElementInSlide(doc, item.id, worldDelta(item.bounds, target, command.edge), origin, 'AlignElements');
     forward.push(...patches.forward);
     inverse.unshift(...patches.inverse);
   }

@@ -3,15 +3,11 @@ import { insertionResourceToken } from '../session-assets';
 import { allocateElementId } from '../document';
 import { elementOrder } from '../element-order';
 import { fractionalIndexBetween } from '../fractional-index';
-import type {
-  EditDoc, ElementInsertionSource, ElementRecord,
-} from '../types';
+import type { EditDoc, ElementInsertionSource, ElementRecord } from '../types';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { prepareInsertionClosures } from './paste-resources';
 import { removeElementPatches } from './element-tree';
-import type {
-  AddImageCommand, ClipboardResource, CommandPatches, ElementClipboardPayload, ElementTreePatch,
-} from './types';
+import type { AddImageCommand, ClipboardResource, CommandPatches, ElementClipboardPayload, ElementTreePatch } from './types';
 import { createImageResource, generatedImageResource, imageResourcePatches } from './image-resource';
 import { assertInsertionRect, pxToEmu } from './insertion-rect';
 import { allocateElementSpid } from './spid';
@@ -34,53 +30,68 @@ function pictureMarkup(spid: number, name: string, rect: AddImageCommand['rect']
 function closurePayload(resource: ClipboardResource, markup: string, spid: number): ElementClipboardPayload {
   const root = 'image';
   return {
-    format: 'web-ppt-elements', version: 1,
+    format: 'web-ppt-elements',
+    version: 1,
     source: { width: 1, height: 1, copyBatchId: resource.hash.slice(0, 32) },
-    bounds: { left: 0, top: 0 }, roots: [root],
+    bounds: { left: 0, top: 0 },
+    roots: [root],
     records: {},
-    ooxml: { roots: { [root]: {
-      markup,
-      namespaces: {
-        'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS, 'xmlns:r': OFFICE_REL_NS,
+    ooxml: {
+      roots: {
+        [root]: {
+          markup,
+          namespaces: {
+            'xmlns:a': DRAWINGML_NS,
+            'xmlns:p': PRESENTATIONML_NS,
+            'xmlns:r': OFFICE_REL_NS,
+          },
+          hostSpids: [String(spid)],
+          relationships: [{ sourceId: SOURCE_RID, type: IMAGE_REL, resourceHash: resource.hash }],
+        },
       },
-      hostSpids: [String(spid)],
-      relationships: [{ sourceId: SOURCE_RID, type: IMAGE_REL, resourceHash: resource.hash }],
-    } } },
+    },
     resources: [resource],
   };
 }
 
-function sourceImage(
-  spid: number | undefined,
-  name: string,
-  rect: AddImageCommand['rect'],
-  resource: ClipboardResource,
-): ImageElement {
+function sourceImage(spid: number | undefined, name: string, rect: AddImageCommand['rect'], resource: ClipboardResource): ImageElement {
   return {
-    kind: 'image', ...(spid === undefined ? {} : { id: spid }), name,
-    x: rect.x, y: rect.y, w: rect.w, h: rect.h, rot: 0, flipH: false, flipV: false,
-    src: insertionResourceToken(resource.hash), crop: null, stroke: null,
+    kind: 'image',
+    ...(spid === undefined ? {} : { id: spid }),
+    name,
+    x: rect.x,
+    y: rect.y,
+    w: rect.w,
+    h: rect.h,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    src: insertionResourceToken(resource.hash),
+    crop: null,
+    stroke: null,
   };
 }
 
 /** 图片与它的关系、媒体闭包共用一个结构 patch，撤销不会留下半张图片或孤儿 part。 */
-export function addImagePatches(
-  doc: EditDoc,
-  command: AddImageCommand,
-  origin: string,
-): CommandPatches {
+export function addImagePatches(doc: EditDoc, command: AddImageCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增图片');
   const canvas = resolveInsertionCanvas(doc, command, '新增图片');
   const part = canvas.part;
-  const placeholder = command.placeholderId === undefined
-    ? undefined : doc.elements[command.placeholderId];
-  const placeholderTextIsEmpty = placeholder?.src.kind === 'shape'
-    && (placeholder.ovr.text?.kind === 'empty'
-      || (placeholder.ovr.text === undefined && placeholder.src.text === null));
+  const placeholder = command.placeholderId === undefined ? undefined : doc.elements[command.placeholderId];
+  const placeholderTextIsEmpty =
+    placeholder?.src.kind === 'shape'
+    && (placeholder.ovr.text?.kind === 'empty' || (placeholder.ovr.text === undefined && placeholder.src.text === null));
   if (placeholder) assertElementUnlocked(doc, placeholder.id);
-  if (command.placeholderId !== undefined && (typeof command.placeholderId !== 'string'
-    || !placeholder || placeholder.parent !== canvas.id || placeholder.meta.ph?.type !== 'pic'
-    || placeholder.meta.editable !== 'full' || placeholder.meta.locked || !placeholderTextIsEmpty)) {
+  if (
+    command.placeholderId !== undefined
+    && (typeof command.placeholderId !== 'string'
+      || !placeholder
+      || placeholder.parent !== canvas.id
+      || placeholder.meta.ph?.type !== 'pic'
+      || placeholder.meta.editable !== 'full'
+      || placeholder.meta.locked
+      || !placeholderTextIsEmpty)
+  ) {
     throw new Error(`AddImage.placeholderId 必须是目标页中的空图片占位符：${String(command.placeholderId)}`);
   }
   assertInsertionRect(command.rect, 'AddImage.rect');
@@ -107,10 +118,14 @@ export function addImagePatches(
   const siblings = canvas.children;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent: canvas.id, z: fractionalIndexBetween(previous, null, id),
-    src: sourceImage(spid, name, command.rect, resource), ovr: {},
+    id,
+    parent: canvas.id,
+    z: fractionalIndexBetween(previous, null, id),
+    src: sourceImage(spid, name, command.rect, resource),
+    ovr: {},
     meta: {
-      editable: 'full', created: true,
+      editable: 'full',
+      created: true,
       ...(part && spid !== undefined ? { origin: { part, spid }, insertion } : {}),
     },
   };

@@ -5,11 +5,12 @@
   "description": "纯浏览器端 PPT 渲染引擎：.pptx / .ppt → 统一 Schema → SVG",
   "license": "MIT",
   "type": "module",
+  "packageManager": "npm@11.19.0",
   "workspaces": [
     "packages/*"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
     "release:version": "node tooling/set-release-version.mjs",
@@ -45,15 +46,20 @@
     "postverify": "node tooling/check-dts-resolution.mjs && npm run api:check && npm run test:describe:dist && node tooling/measure-agent-describe.mjs && npm run test:lint:dist && node tooling/measure-agent-lint.mjs && npm run test:agent:dist && node tooling/measure-agent-tools.mjs && npm run test:mcp:dist && node tooling/measure-agent-mcp.mjs && npm run test:fill:dist && npm run test:metafile:fixture:dist",
     "prepare": "git config core.hooksPath .githooks || true",
     "dev": "npm run dev -w @web-ppt/viewer",
-    "build": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/react && npm run build -w @web-ppt/vue && npm run build -w @web-ppt/fonts && npm run build -w @web-ppt/collab && node tooling/build-agent-mcp.mjs && node tooling/check-template-boundary.mjs && node tooling/check-chart-data-boundary.mjs && node tooling/check-media-boundary.mjs && node tooling/check-site-i18n.mjs && node tooling/check-chartex-boundary.mjs && node tooling/check-appearance-browser-boundary.mjs && node tooling/check-architecture-boundary.mjs",
-    "check": "tsc -p tsconfig.json --noEmit && tsc -p packages/agent-mcp/tsconfig.json --noEmit && npm run lint",
+    "build": "node tooling/build.mjs",
+    "build:packages": "npm run build -w @web-ppt/core && npm run build -w @web-ppt/edit-core && npm run build -w @web-ppt/viewer-core && npm run build -w @web-ppt/editor && npm run build -w @web-ppt/react && npm run build -w @web-ppt/vue && npm run build -w @web-ppt/fonts && npm run build -w @web-ppt/collab && node tooling/build-agent-mcp.mjs && node tooling/check-template-boundary.mjs && node tooling/check-chart-data-boundary.mjs && node tooling/check-media-boundary.mjs && node tooling/check-site-i18n.mjs && node tooling/check-chartex-boundary.mjs && node tooling/check-appearance-browser-boundary.mjs && node tooling/check-architecture-boundary.mjs",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p packages/agent-mcp/tsconfig.json --noEmit && biome check",
     "lint": "biome lint",
+    "format": "biome format --write",
     "test": "npm run test:functional && npm run test:editor:performance",
     "test:media": "node tooling/test-media-insertion.mjs",
     "test:media:libreoffice": "npm run test:media && node tooling/test-media-libreoffice.mjs",
     "test:ole:libreoffice": "node tooling/test-ole-edit.mjs && node tooling/test-ole-edit-libreoffice.mjs",
     "pretest:ooxml": "npm run build && dotnet build tooling/ooxml-validate",
     "test:ooxml": "node tooling/test-ooxml-validation.mjs",
+    "test:ci:external": "npm run test:ci:office && npm run test:ci:ooxml",
+    "test:ci:office": "node tooling/test-edit-libreoffice-all.mjs && node tooling/test-ole-edit-libreoffice.mjs",
+    "test:ci:ooxml": "node tooling/test-ooxml-validation.mjs",
     "test:core": "node tooling/test-core.mjs && node tooling/test-parse-preview-parts.mjs",
     "test:zip": "node --expose-gc tooling/test-zip-security.mjs",
     "test:zip:dist": "node --expose-gc tooling/test-zip-security.mjs --dist",
@@ -137,8 +143,10 @@
     "@types/rbush": "4.0.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "@typescript/typescript6": "^6.0.2",
     "ajv": "8.20.0",
     "culori": "4.0.2",
+    "esbuild": "^0.28.2",
     "fflate": "0.8.3",
     "harfbuzzjs": "1.6.1",
     "jsdom": "^29.1.1",
@@ -151,9 +159,11 @@
     "smol-toml": "1.9.1",
     "terser": "^5.51.2",
     "ts-json-schema-generator": "2.4.0",
-    "typescript": "^5.5.4",
-    "vite": "^5.4.8",
+    "turbo": "2.11.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
     "vue": "3.5.41",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "yaml": "2.9.1"
   }
 }

@@ -42,10 +42,16 @@ function selectionFrame(doc: EditDoc, selection: Selection, slideId: SlideId): S
   const top = Math.min(...ys);
   const right = Math.max(...xs);
   const bottom = Math.max(...ys);
-  return { ids, handles: true, corners: [
-    { x: left, y: top }, { x: right, y: top },
-    { x: right, y: bottom }, { x: left, y: bottom },
-  ] };
+  return {
+    ids,
+    handles: true,
+    corners: [
+      { x: left, y: top },
+      { x: right, y: top },
+      { x: right, y: bottom },
+      { x: left, y: bottom },
+    ],
+  };
 }
 
 function scaleHandlePoints(corners: SelectionFrame['corners']): SpacePoint[] {
@@ -65,8 +71,8 @@ function rotationHandlePoint(corners: SelectionFrame['corners'], distance: numbe
 }
 
 function resizeCursor(point: SpacePoint, center: SpacePoint): string {
-  const degrees = Math.atan2(point.y - center.y, point.x - center.x) * 180 / Math.PI;
-  const direction = Math.round(((degrees % 180) + 180) % 180 / 45) % 4;
+  const degrees = (Math.atan2(point.y - center.y, point.x - center.x) * 180) / Math.PI;
+  const direction = Math.round((((degrees % 180) + 180) % 180) / 45) % 4;
   return ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][direction];
 }
 
@@ -147,13 +153,7 @@ export function updateSelectionOverlayFrame(
   }
 }
 
-export function renderSelectionOverlay(
-  layer: SVGSVGElement,
-  doc: EditDoc,
-  selection: Selection,
-  slideId: SlideId,
-  zoom: number,
-): void {
+export function renderSelectionOverlay(layer: SVGSVGElement, doc: EditDoc, selection: Selection, slideId: SlideId, zoom: number): void {
   for (const child of [...layer.children]) {
     if ((child as SVGElement).dataset.editSelectionIds !== undefined) child.remove();
   }

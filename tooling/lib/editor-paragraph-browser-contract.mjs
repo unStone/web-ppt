@@ -27,19 +27,28 @@ export async function runEditorParagraphBrowserContract({ openEditor, load }) {
   const view = session.mount(mount, { mode: 'edit' });
   const secondary = session.mount(secondaryMount, { mode: 'view' });
   const unregister = view.registerTextUi(toolbar);
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === '段落格式');
-  mount.querySelector(`[data-edit-id="${record.id}"]`).dispatchEvent(
-    new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }),
-  );
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === '段落格式');
+  mount
+    .querySelector(`[data-edit-id="${record.id}"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
   let editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
   selectAcross(editable);
-  editable.dispatchEvent(new PointerEvent('pointerup', {
-    bubbles: true, composed: true, button: 0, isPrimary: true,
-  }));
-  toolbar.dispatchEvent(new PointerEvent('pointerdown', {
-    bubbles: true, composed: true, button: 0, isPrimary: true,
-  }));
+  editable.dispatchEvent(
+    new PointerEvent('pointerup', {
+      bubbles: true,
+      composed: true,
+      button: 0,
+      isPrimary: true,
+    }),
+  );
+  toolbar.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      composed: true,
+      button: 0,
+      isPrimary: true,
+    }),
+  );
   const before = view.queryParaProps();
   const secondaryBefore = secondaryMount.querySelector(`[data-edit-id="${record.id}"]`)?.outerHTML;
   const samples = [];
@@ -58,27 +67,45 @@ export async function runEditorParagraphBrowserContract({ openEditor, load }) {
     throw new Error('真实浏览器外置工具栏未接受自动编号');
   }
   const autoState = view.queryParaProps()?.bullet;
-  const autoBullets = session.editor.effectiveElement(record.id).text.paragraphs
-    .slice(0, 2).map((paragraph) => paragraph.bullet);
+  const autoBullets = session.editor
+    .effectiveElement(record.id)
+    .text.paragraphs.slice(0, 2)
+    .map((paragraph) => paragraph.bullet);
   editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
-  const shortcutAccepted = editable.dispatchEvent(new KeyboardEvent('keydown', {
-    key: '*', code: 'Digit8', ctrlKey: true, shiftKey: true,
-    bubbles: true, composed: true, cancelable: true,
-  }));
+  const shortcutAccepted = editable.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: '*',
+      code: 'Digit8',
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    }),
+  );
   const bulletState = view.queryParaProps()?.bullet;
-  const bullets = session.editor.effectiveElement(record.id).text.paragraphs
-    .slice(0, 2).map((paragraph) => paragraph.bullet);
+  const bullets = session.editor
+    .effectiveElement(record.id)
+    .text.paragraphs.slice(0, 2)
+    .map((paragraph) => paragraph.bullet);
   const selection = getSelection();
   const paragraphs = session.editor.effectiveElement(record.id).text.paragraphs;
-  const ok = before?.align.mixed
-    && paragraphs[0].align === 'left' && paragraphs[1].align === 'left'
+  const ok =
+    before?.align.mixed
+    && paragraphs[0].align === 'left'
+    && paragraphs[1].align === 'left'
     && paragraphs[2].align === 'right'
     && JSON.stringify(autoBullets) === JSON.stringify(['3.', '4.'])
-    && autoState?.value?.kind === 'autoNum' && autoState.value.startAt === 3
-    && !shortcutAccepted && JSON.stringify(bullets) === JSON.stringify(['•', '•'])
-    && bulletState?.value?.kind === 'char' && bulletState.value.char === '•'
+    && autoState?.value?.kind === 'autoNum'
+    && autoState.value.startAt === 3
+    && !shortcutAccepted
+    && JSON.stringify(bullets) === JSON.stringify(['•', '•'])
+    && bulletState?.value?.kind === 'char'
+    && bulletState.value.char === '•'
     && !bulletState.mixed
-    && !!editable && selection?.rangeCount === 1 && !selection.getRangeAt(0).collapsed
+    && !!editable
+    && selection?.rangeCount === 1
+    && !selection.getRangeAt(0).collapsed
     && secondaryMount.querySelector(`[data-edit-id="${record.id}"]`)?.outerHTML !== secondaryBefore;
   view.setMode('view');
   const isolated = view.queryParaProps() === null && !view.setParaProps({ align: 'center' });

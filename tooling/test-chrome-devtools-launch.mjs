@@ -5,8 +5,10 @@ let tick = 0;
 const delayed = await waitForDevToolsPort({
   profile: '/unused',
   isRunning: () => true,
-  readPort: () => tick >= 3 ? 43210 : undefined,
-  delay: async () => { tick += 1; },
+  readPort: () => (tick >= 3 ? 43210 : undefined),
+  delay: async () => {
+    tick += 1;
+  },
   now: () => tick * 100,
   timeoutMs: 1_000,
 });

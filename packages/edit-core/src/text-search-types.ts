@@ -32,10 +32,12 @@ export interface TextSearchTarget {
   readonly range: TextRange;
 }
 
-export type ReplaceTextScope = TextSearchScope | {
-  readonly kind: 'match';
-  readonly match: TextSearchTarget;
-};
+export type ReplaceTextScope =
+  | TextSearchScope
+  | {
+      readonly kind: 'match';
+      readonly match: TextSearchTarget;
+    };
 
 export interface ReplaceTextCommand {
   readonly type: 'ReplaceText';

@@ -24,4 +24,7 @@ export interface SetScene3DCommand {
 }
 
 export type AppearanceCommand = SetPictureFxCommand | SetScene3DCommand;
-export interface AppearanceState { picture?: string; scene?: string }
+export interface AppearanceState {
+  picture?: string;
+  scene?: string;
+}

@@ -6,14 +6,18 @@ export async function runSiteOpenStartPageContract({ evaluate, request, waitFor,
   };
   const ready = (pager) =>
     `document.querySelector('#stage')?.dataset.openPhase === 'ready' && document.querySelector('#pager')?.textContent === ${JSON.stringify(pager)}`;
-  const dropShowcase = (name) => evaluate(`(async () => {
+  const dropShowcase = (name) =>
+    evaluate(
+      `(async () => {
     const bytes = await fetch('demo/showcase.pptx').then((r) => r.arrayBuffer());
     const files = new DataTransfer();
     files.items.add(new File([bytes], ${JSON.stringify(name)}));
     const input = document.querySelector('#pick');
     input.files = files.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+      true,
+    );
 
   await openHome('p=3');
   await waitFor(`${ready('3 / 7')} && document.querySelector('#meta')?.textContent.includes('showcase.pptx')`, '首页 p=3 停在第 3 页');
@@ -55,7 +59,7 @@ export async function runSiteOpenStartPageContract({ evaluate, request, waitFor,
     `${ready('1 / 7')} && document.querySelector('#meta')?.textContent.includes('after-missing-sample.pptx')`,
     '不存在的 sample 带着 p 时拖进来仍从第 1 页开',
   );
-  if (await evaluate("document.querySelector('#pager')?.textContent") !== '1 / 7') {
+  if ((await evaluate("document.querySelector('#pager')?.textContent")) !== '1 / 7') {
     throw new Error('失败深链把地址页套到了下一份文件');
   }
 
@@ -76,7 +80,7 @@ export async function runSiteOpenStartPageContract({ evaluate, request, waitFor,
   await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...escape });
   await request('Input.dispatchKeyEvent', { type: 'keyUp', ...escape });
   await waitFor("!document.querySelector('#stageWrap')?.classList.contains('is-presenting')", '离开放映');
-  if (await evaluate("document.querySelector('#pager')?.textContent") !== '2 / 7') {
+  if ((await evaluate("document.querySelector('#pager')?.textContent")) !== '2 / 7') {
     throw new Error('离开放映后离开了深链页');
   }
 

@@ -3,8 +3,25 @@
  * 坐标处理策略见 gdi.ts 顶部说明，SVG 输出件见 gdi-svg.ts。
  */
 import {
-  BS_DIBPATTERN, BS_HATCHED, BS_NULL, BS_PATTERN, ID_MAT, MM_ISOTROPIC, MM_TEXT, PS_NULL,
-  compose, defBrush, defFont, defPen, esc, fontStack, n, stockObject, xfPt, xfScale, xfScaleY,
+  BS_DIBPATTERN,
+  BS_HATCHED,
+  BS_NULL,
+  BS_PATTERN,
+  ID_MAT,
+  MM_ISOTROPIC,
+  MM_TEXT,
+  PS_NULL,
+  compose,
+  defBrush,
+  defFont,
+  defPen,
+  esc,
+  fontStack,
+  n,
+  stockObject,
+  xfPt,
+  xfScale,
+  xfScaleY,
 } from './gdi';
 import type { Dc, DevInfo, GdiObj, Mat, Pt, Rect } from './gdi';
 import { Path, Svg, arcSegs, arcStart, dashArray, hatchPattern, ok, radialAngle } from './gdi-svg';
@@ -12,21 +29,25 @@ import { Path, Svg, arcSegs, arcStart, dashArray, hatchPattern, ok, radialAngle 
 function cloneDc(d: Dc): Dc {
   return {
     ...d,
-    pen: { ...d.pen }, brush: { ...d.brush }, font: { ...d.font },
+    pen: { ...d.pen },
+    brush: { ...d.brush },
+    font: { ...d.font },
     world: [...d.world] as Mat,
-    winOrg: { ...d.winOrg }, winExt: { ...d.winExt },
-    vpOrg: { ...d.vpOrg }, vpExt: { ...d.vpExt },
+    winOrg: { ...d.winOrg },
+    winExt: { ...d.winExt },
+    vpOrg: { ...d.vpOrg },
+    vpExt: { ...d.vpExt },
     pos: { ...d.pos },
   };
 }
 
 /** 各固定映射模式下 1 个逻辑单位对应的毫米数（y 轴向上，需取反）*/
 const FIXED_MM: Record<number, number> = {
-  2: 0.1,          // MM_LOMETRIC
-  3: 0.01,         // MM_HIMETRIC
-  4: 25.4 / 100,   // MM_LOENGLISH
-  5: 25.4 / 1000,  // MM_HIENGLISH
-  6: 25.4 / 1440,  // MM_TWIPS
+  2: 0.1, // MM_LOMETRIC
+  3: 0.01, // MM_HIMETRIC
+  4: 25.4 / 100, // MM_LOENGLISH
+  5: 25.4 / 1000, // MM_HIENGLISH
+  6: 25.4 / 1440, // MM_TWIPS
 };
 
 // ---------------- 主绘图上下文 ----------------
@@ -45,16 +66,28 @@ export class Gfx {
   constructor(dev: DevInfo) {
     this.dev = dev;
     this.dc = {
-      pen: defPen(), brush: defBrush(), font: defFont(),
-      textColor: '#000000', bkColor: '#ffffff', bkMode: 2, polyFill: 1, textAlign: 0,
-      world: [...ID_MAT] as Mat, mapMode: MM_TEXT,
-      winOrg: { x: 0, y: 0 }, winExt: { x: 1, y: 1 },
-      vpOrg: { x: 0, y: 0 }, vpExt: { x: 1, y: 1 },
-      clip: null, pos: { x: 0, y: 0 },
+      pen: defPen(),
+      brush: defBrush(),
+      font: defFont(),
+      textColor: '#000000',
+      bkColor: '#ffffff',
+      bkMode: 2,
+      polyFill: 1,
+      textAlign: 0,
+      world: [...ID_MAT] as Mat,
+      mapMode: MM_TEXT,
+      winOrg: { x: 0, y: 0 },
+      winExt: { x: 1, y: 1 },
+      vpOrg: { x: 0, y: 0 },
+      vpExt: { x: 1, y: 1 },
+      clip: null,
+      pos: { x: 0, y: 0 },
     };
   }
 
-  get drawn(): number { return this.svg.count; }
+  get drawn(): number {
+    return this.svg.count;
+  }
 
   // -------- 变换 --------
 
@@ -64,7 +97,8 @@ export class Gfx {
     let sx: number, sy: number;
     const fixedMm = FIXED_MM[d.mapMode];
     if (d.mapMode === MM_TEXT) {
-      sx = 1; sy = 1;
+      sx = 1;
+      sy = 1;
     } else if (fixedMm !== undefined) {
       sx = fixedMm * this.dev.pxPerMmX;
       sy = -fixedMm * this.dev.pxPerMmY;
@@ -83,11 +117,15 @@ export class Gfx {
     return compose(d.world, page);
   }
 
-  private tp(x: number, y: number): Pt { return xfPt(this.xf(), x, y); }
+  private tp(x: number, y: number): Pt {
+    return xfPt(this.xf(), x, y);
+  }
 
   // -------- DC 栈 / 对象表 --------
 
-  save(): void { this.stack.push(cloneDc(this.dc)); }
+  save(): void {
+    this.stack.push(cloneDc(this.dc));
+  }
 
   restore(which = -1): void {
     if (!this.stack.length) return;
@@ -107,7 +145,10 @@ export class Gfx {
   /** WMF：对象放进第一个空槽 */
   addObj(o: GdiObj): void {
     for (let i = 0; i < this.objs.length; i++) {
-      if (!this.objs[i]) { this.objs[i] = o; return; }
+      if (!this.objs[i]) {
+        this.objs[i] = o;
+        return;
+      }
     }
     if (this.objs.length < 0x10000) this.objs.push(o);
   }
@@ -117,9 +158,7 @@ export class Gfx {
   }
 
   selectIdx(idx: number): void {
-    const o = (idx & 0x80000000) !== 0 || (idx & 0xffff8000) === 0x8000
-      ? stockObject(idx)
-      : this.objs[idx] ?? null;
+    const o = (idx & 0x80000000) !== 0 || (idx & 0xffff8000) === 0x8000 ? stockObject(idx) : (this.objs[idx] ?? null);
     if (o) this.select(o);
   }
 
@@ -133,20 +172,23 @@ export class Gfx {
 
   intersectClip(r: Rect): void {
     const m = this.xf();
-    const p = [
-      xfPt(m, r.l, r.t), xfPt(m, r.r, r.t), xfPt(m, r.r, r.b), xfPt(m, r.l, r.b),
-    ];
+    const p = [xfPt(m, r.l, r.t), xfPt(m, r.r, r.t), xfPt(m, r.r, r.b), xfPt(m, r.l, r.b)];
     if (p.some((q) => !ok(q))) return;
     const d = `M${n(p[0].x)} ${n(p[0].y)}L${n(p[1].x)} ${n(p[1].y)}L${n(p[2].x)} ${n(p[2].y)}L${n(p[3].x)} ${n(p[3].y)}Z`;
     // 多次 IntersectClipRect 用嵌套 clipPath 表达交集
     const parent = this.dc.clip;
     const key = `clip:${d}|${parent ?? ''}`;
-    this.dc.clip = this.svg.def(key, 'c', (id) =>
-      `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}><path d="${d}"/></clipPath>`);
+    this.dc.clip = this.svg.def(
+      key,
+      'c',
+      (id) => `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}><path d="${d}"/></clipPath>`,
+    );
   }
 
   /** EXTSELECTCLIPRGN 用：清除裁剪 */
-  clearClip(): void { this.dc.clip = null; }
+  clearClip(): void {
+    this.dc.clip = null;
+  }
 
   /**
    * 用一组矩形（区域）设置裁剪。intersect=true 时与当前裁剪求交（嵌套 clipPath），
@@ -159,8 +201,10 @@ export class Gfx {
       const a = xfPt(m, rc.l, rc.t);
       const b = xfPt(m, rc.r, rc.b);
       if (!ok(a) || !ok(b)) continue;
-      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-      const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
+      const x = Math.min(a.x, b.x),
+        y = Math.min(a.y, b.y);
+      const w = Math.abs(b.x - a.x),
+        h = Math.abs(b.y - a.y);
       if (!(w > 0) || !(h > 0)) continue;
       parts.push(`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}"/>`);
     }
@@ -168,11 +212,12 @@ export class Gfx {
     const parent = intersect ? this.dc.clip : null;
     const body = parts.join('');
     const key = `rgn:${body}|${parent ?? ''}`;
-    this.dc.clip = this.svg.def(key, 'c', (id) =>
-      `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}>${body}</clipPath>`);
+    this.dc.clip = this.svg.def(key, 'c', (id) => `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}>${body}</clipPath>`);
   }
 
-  private clipAttr(): string { return this.dc.clip ? ` clip-path="url(#${this.dc.clip})"` : ''; }
+  private clipAttr(): string {
+    return this.dc.clip ? ` clip-path="url(#${this.dc.clip})"` : '';
+  }
 
   // -------- 画笔 / 画刷 → SVG 属性 --------
 
@@ -205,9 +250,13 @@ export class Gfx {
     }
     if ((b.style === BS_PATTERN || b.style === BS_DIBPATTERN) && b.href) {
       const key = `p:${b.href.length}:${b.href.slice(-32)}`;
-      const id = this.svg.def(key, 'q', (i) =>
-        `<pattern id="${i}" width="16" height="16" patternUnits="userSpaceOnUse">` +
-        `<image xlink:href="${b.href}" width="16" height="16" preserveAspectRatio="none"/></pattern>`);
+      const id = this.svg.def(
+        key,
+        'q',
+        (i) =>
+          `<pattern id="${i}" width="16" height="16" patternUnits="userSpaceOnUse">`
+          + `<image xlink:href="${b.href}" width="16" height="16" preserveAspectRatio="none"/></pattern>`,
+      );
       return ` fill="url(#${id})"`;
     }
     if (b.style === BS_PATTERN || b.style === BS_DIBPATTERN) return ` fill="${b.color}"`;
@@ -228,7 +277,10 @@ export class Gfx {
 
   /** 绘图记录的统一出口：路径模式下累积，否则立即输出 */
   private draw(build: (p: Path) => void, mode: 'stroke' | 'fill' | 'both'): void {
-    if (this.inPath) { build(this.path); return; }
+    if (this.inPath) {
+      build(this.path);
+      return;
+    }
     const tmp = new Path();
     build(tmp);
     this.emit(tmp.data, mode);
@@ -236,10 +288,20 @@ export class Gfx {
 
   // -------- 路径模式 --------
 
-  beginPath(): void { this.path.clear(); this.inPath = true; }
-  endPath(): void { this.inPath = false; }
-  abortPath(): void { this.path.clear(); this.inPath = false; }
-  closeFigure(): void { this.path.close(); }
+  beginPath(): void {
+    this.path.clear();
+    this.inPath = true;
+  }
+  endPath(): void {
+    this.inPath = false;
+  }
+  abortPath(): void {
+    this.path.clear();
+    this.inPath = false;
+  }
+  closeFigure(): void {
+    this.path.close();
+  }
 
   finishPath(mode: 'stroke' | 'fill' | 'both'): void {
     this.inPath = false;
@@ -253,8 +315,11 @@ export class Gfx {
     this.inPath = false;
     if (!d) return;
     const parent = this.dc.clip;
-    this.dc.clip = this.svg.def(`clipP:${d}|${parent ?? ''}`, 'c', (id) =>
-      `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}><path d="${d}"/></clipPath>`);
+    this.dc.clip = this.svg.def(
+      `clipP:${d}|${parent ?? ''}`,
+      'c',
+      (id) => `<clipPath id="${id}"${parent ? ` clip-path="url(#${parent})"` : ''}><path d="${d}"/></clipPath>`,
+    );
     this.path.clear();
   }
 
@@ -278,11 +343,14 @@ export class Gfx {
     if (pts.length < 2) return;
     const m = this.xf();
     const dev = pts.map((p) => xfPt(m, p.x, p.y));
-    this.draw((path) => {
-      path.move(dev[0]);
-      for (let i = 1; i < dev.length; i++) path.line(dev[i]);
-      if (close) path.close();
-    }, close ? 'both' : 'stroke');
+    this.draw(
+      (path) => {
+        path.move(dev[0]);
+        for (let i = 1; i < dev.length; i++) path.line(dev[i]);
+        if (close) path.close();
+      },
+      close ? 'both' : 'stroke',
+    );
     const last = pts[pts.length - 1];
     this.dc.pos = { x: last.x, y: last.y };
   }
@@ -296,7 +364,10 @@ export class Gfx {
     } else {
       const from = xfPt(m, this.dc.pos.x, this.dc.pos.y);
       let d = `M${n(from.x)} ${n(from.y)}`;
-      for (const p of pts) { const q = xfPt(m, p.x, p.y); d += `L${n(q.x)} ${n(q.y)}`; }
+      for (const p of pts) {
+        const q = xfPt(m, p.x, p.y);
+        d += `L${n(q.x)} ${n(q.y)}`;
+      }
       this.emit(d, 'stroke');
     }
     const last = pts[pts.length - 1];
@@ -318,7 +389,11 @@ export class Gfx {
       for (; i + 2 < dev.length; i += 3) path.cubic(dev[i], dev[i + 1], dev[i + 2]);
     };
     if (this.inPath) build(this.path);
-    else { const tmp = new Path(); build(tmp); this.emit(tmp.data, 'stroke'); }
+    else {
+      const tmp = new Path();
+      build(tmp);
+      this.emit(tmp.data, 'stroke');
+    }
     if (pts.length) {
       const last = pts[pts.length - 1];
       this.dc.pos = { x: last.x, y: last.y };
@@ -327,38 +402,51 @@ export class Gfx {
 
   polyPoly(polys: Pt[][], close: boolean): void {
     const m = this.xf();
-    this.draw((path) => {
-      for (const poly of polys) {
-        if (poly.length < 2) continue;
-        path.move(xfPt(m, poly[0].x, poly[0].y));
-        for (let i = 1; i < poly.length; i++) path.line(xfPt(m, poly[i].x, poly[i].y));
-        if (close) path.close();
-      }
-    }, close ? 'both' : 'stroke');
+    this.draw(
+      (path) => {
+        for (const poly of polys) {
+          if (poly.length < 2) continue;
+          path.move(xfPt(m, poly[0].x, poly[0].y));
+          for (let i = 1; i < poly.length; i++) path.line(xfPt(m, poly[i].x, poly[i].y));
+          if (close) path.close();
+        }
+      },
+      close ? 'both' : 'stroke',
+    );
   }
 
   rect(r: Rect): void {
     const m = this.xf();
     // 无旋转 / 错切时直接输出 <rect>，输出更小也更好读
     if (!this.inPath && m[1] === 0 && m[2] === 0) {
-      const a = xfPt(m, r.l, r.t), b = xfPt(m, r.r, r.b);
+      const a = xfPt(m, r.l, r.t),
+        b = xfPt(m, r.r, r.b);
       if (ok(a) && ok(b)) {
-        const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
-        this.svg.add(`<rect x="${n(Math.min(a.x, b.x))}" y="${n(Math.min(a.y, b.y))}" ` +
-          `width="${n(w)}" height="${n(h)}"${this.fillAttrs()}${this.strokeAttrs()}${this.clipAttr()}/>`);
+        const w = Math.abs(b.x - a.x),
+          h = Math.abs(b.y - a.y);
+        this.svg.add(
+          `<rect x="${n(Math.min(a.x, b.x))}" y="${n(Math.min(a.y, b.y))}" `
+            + `width="${n(w)}" height="${n(h)}"${this.fillAttrs()}${this.strokeAttrs()}${this.clipAttr()}/>`,
+        );
         return;
       }
     }
     const p = [xfPt(m, r.l, r.t), xfPt(m, r.r, r.t), xfPt(m, r.r, r.b), xfPt(m, r.l, r.b)];
     this.draw((path) => {
-      path.move(p[0]); path.line(p[1]); path.line(p[2]); path.line(p[3]); path.close();
+      path.move(p[0]);
+      path.line(p[1]);
+      path.line(p[2]);
+      path.line(p[3]);
+      path.close();
     }, 'both');
   }
 
   ellipse(r: Rect): void {
     const m = this.xf();
-    const cx = (r.l + r.r) / 2, cy = (r.t + r.b) / 2;
-    const rx = Math.abs(r.r - r.l) / 2, ry = Math.abs(r.b - r.t) / 2;
+    const cx = (r.l + r.r) / 2,
+      cy = (r.t + r.b) / 2;
+    const rx = Math.abs(r.r - r.l) / 2,
+      ry = Math.abs(r.b - r.t) / 2;
     this.draw((path) => {
       path.move(arcStart(cx, cy, rx, ry, 0, m));
       for (const s of arcSegs(cx, cy, rx, ry, 0, Math.PI * 2, m)) path.cubic(s[0], s[1], s[2]);
@@ -368,11 +456,16 @@ export class Gfx {
 
   roundRect(r: Rect, cw: number, ch: number): void {
     const m = this.xf();
-    const l = Math.min(r.l, r.r), t = Math.min(r.t, r.b);
-    const rr = Math.max(r.l, r.r), bb = Math.max(r.t, r.b);
+    const l = Math.min(r.l, r.r),
+      t = Math.min(r.t, r.b);
+    const rr = Math.max(r.l, r.r),
+      bb = Math.max(r.t, r.b);
     const rx = Math.min(Math.abs(cw) / 2, (rr - l) / 2);
     const ry = Math.min(Math.abs(ch) / 2, (bb - t) / 2);
-    if (rx <= 0 || ry <= 0) { this.rect(r); return; }
+    if (rx <= 0 || ry <= 0) {
+      this.rect(r);
+      return;
+    }
     this.draw((path) => {
       path.move(xfPt(m, l + rx, t));
       path.line(xfPt(m, rr - rx, t));
@@ -390,8 +483,10 @@ export class Gfx {
   /** GDI 弧默认逆时针（屏幕上看），即参数角递减方向 */
   arc(r: Rect, xs: number, ys: number, xe: number, ye: number, kind: ArcKind, continueFrom = false): void {
     const m = this.xf();
-    const cx = (r.l + r.r) / 2, cy = (r.t + r.b) / 2;
-    const rx = Math.abs(r.r - r.l) / 2, ry = Math.abs(r.b - r.t) / 2;
+    const cx = (r.l + r.r) / 2,
+      cy = (r.t + r.b) / 2;
+    const rx = Math.abs(r.r - r.l) / 2,
+      ry = Math.abs(r.b - r.t) / 2;
     if (rx <= 0 || ry <= 0) return;
     const a0 = radialAngle(cx, cy, rx, ry, xs, ys);
     let a1 = radialAngle(cx, cy, rx, ry, xe, ye);
@@ -401,8 +496,10 @@ export class Gfx {
     const mode: 'stroke' | 'both' = kind === 'arc' ? 'stroke' : 'both';
     this.draw((path) => {
       const p0 = arcStart(cx, cy, rx, ry, a0, m);
-      if (kind === 'pie') { path.move(xfPt(m, cx, cy)); path.line(p0); }
-      else if (continueFrom && this.inPath) path.line(p0);
+      if (kind === 'pie') {
+        path.move(xfPt(m, cx, cy));
+        path.line(p0);
+      } else if (continueFrom && this.inPath) path.line(p0);
       else path.move(p0);
       for (const s of arcSegs(cx, cy, rx, ry, a0, a1, m)) path.cubic(s[0], s[1], s[2]);
       if (kind !== 'arc') path.close();
@@ -449,9 +546,11 @@ export class Gfx {
       const a = xfPt(m, opaqueRect.l, opaqueRect.t);
       const b = xfPt(m, opaqueRect.r, opaqueRect.b);
       if (ok(a) && ok(b)) {
-        this.svg.add(`<rect x="${n(Math.min(a.x, b.x))}" y="${n(Math.min(a.y, b.y))}" ` +
-          `width="${n(Math.abs(b.x - a.x))}" height="${n(Math.abs(b.y - a.y))}" ` +
-          `fill="${this.dc.bkColor}"${this.clipAttr()}/>`);
+        this.svg.add(
+          `<rect x="${n(Math.min(a.x, b.x))}" y="${n(Math.min(a.y, b.y))}" `
+            + `width="${n(Math.abs(b.x - a.x))}" height="${n(Math.abs(b.y - a.y))}" `
+            + `fill="${this.dc.bkColor}"${this.clipAttr()}/>`,
+        );
       }
     }
 
@@ -487,16 +586,23 @@ export class Gfx {
 
   image(dst: Rect, href: string): void {
     const m = this.xf();
-    const w = dst.r - dst.l, h = dst.b - dst.t;
+    const w = dst.r - dst.l,
+      h = dst.b - dst.t;
     const a = xfPt(m, dst.l, dst.t);
     const b = xfPt(m, dst.l + w, dst.t + h);
     if (!ok(a) || !ok(b)) return;
-    const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-    const dw = Math.abs(b.x - a.x), dh = Math.abs(b.y - a.y);
+    const x = Math.min(a.x, b.x),
+      y = Math.min(a.y, b.y);
+    const dw = Math.abs(b.x - a.x),
+      dh = Math.abs(b.y - a.y);
     if (!(dw > 0) || !(dh > 0)) return;
-    this.svg.add(`<image x="${n(x)}" y="${n(y)}" width="${n(dw)}" height="${n(dh)}" ` +
-      `preserveAspectRatio="none" xlink:href="${href}"${this.clipAttr()}/>`);
+    this.svg.add(
+      `<image x="${n(x)}" y="${n(y)}" width="${n(dw)}" height="${n(dh)}" `
+        + `preserveAspectRatio="none" xlink:href="${href}"${this.clipAttr()}/>`,
+    );
   }
 
-  render(vb: Rect, w: number, h: number): string { return this.svg.render(vb, w, h); }
+  render(vb: Rect, w: number, h: number): string {
+    return this.svg.render(vb, w, h);
+  }
 }

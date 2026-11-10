@@ -1,29 +1,23 @@
 import type { EditDoc, SectionId, SectionState, SectionStatePatch } from '@web-ppt/edit-core';
 
-const compareStableId = (left: SectionId, right: SectionId): number =>
-  left < right ? -1 : left > right ? 1 : 0;
+const compareStableId = (left: SectionId, right: SectionId): number => (left < right ? -1 : left > right ? 1 : 0);
 
-function insertByDesiredOrder(
-  order: SectionId[],
-  desired: readonly SectionId[],
-  target: SectionId,
-): void {
+function insertByDesiredOrder(order: SectionId[], desired: readonly SectionId[], target: SectionId): void {
   const desiredIndex = desired.indexOf(target);
-  const after = desired.slice(0, desiredIndex).reverse().find((id) => order.includes(id)) ?? null;
+  const after =
+    desired
+      .slice(0, desiredIndex)
+      .reverse()
+      .find((id) => order.includes(id)) ?? null;
   const before = desired.slice(desiredIndex + 1).find((id) => order.includes(id)) ?? null;
   const start = after === null ? 0 : order.indexOf(after) + 1;
   const end = before === null ? order.length : order.indexOf(before);
   // 同一逻辑间隙里的并发新增没有共同时间顺序；按稳定 id 排序才能与到达顺序无关。
-  const siblings = [...new Set([...order.slice(start, end), target])]
-    .sort(compareStableId);
+  const siblings = [...new Set([...order.slice(start, end), target])].sort(compareStableId);
   order.splice(start, end - start, ...siblings);
 }
 
-function addSection(
-  current: SectionState,
-  desired: SectionState,
-  target: SectionId,
-): boolean {
+function addSection(current: SectionState, desired: SectionState, target: SectionId): boolean {
   const record = desired.records[target];
   if (!record || current.records[target]) return false;
   const nextRecord = structuredClone(record);
@@ -43,10 +37,7 @@ function addSection(
 }
 
 /** 把远端完整快照收窄成一个节操作，避免覆盖接收端的并发页面成员和其他节。 */
-export function rebaseSectionStatePatch(
-  doc: EditDoc,
-  patch: SectionStatePatch,
-): SectionStatePatch | null {
+export function rebaseSectionStatePatch(doc: EditDoc, patch: SectionStatePatch): SectionStatePatch | null {
   const target = patch.path[2];
   const field = patch.path[3];
   const desired = patch.value;

@@ -3,11 +3,7 @@
  * 官网辅助层换文件已经 reset；独立查看器以前只拆 Viewer，面板和正文还在。
  */
 
-export function resetViewerNotes(
-  panel: HTMLElement,
-  body: HTMLElement,
-  button: HTMLButtonElement,
-): void {
+export function resetViewerNotes(panel: HTMLElement, body: HTMLElement, button: HTMLButtonElement): void {
   panel.hidden = true;
   body.textContent = '';
   button.classList.remove('active');
@@ -16,11 +12,7 @@ export function resetViewerNotes(
   button.setAttribute('aria-expanded', 'false');
 }
 
-export function setViewerNotesOpen(
-  panel: HTMLElement,
-  button: HTMLButtonElement,
-  open: boolean,
-): void {
+export function setViewerNotesOpen(panel: HTMLElement, button: HTMLButtonElement, open: boolean): void {
   if (button.disabled && open) {
     throw new Error('未打开文稿时不能打开备注面板');
   }
